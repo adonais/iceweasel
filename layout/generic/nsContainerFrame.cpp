@@ -4,9 +4,6 @@
 
 /* base class #1 for rendering objects that have child lists */
 
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-#include <xmmintrin.h>
-#endif
 #include "nsContainerFrame.h"
 
 #include <algorithm>
@@ -329,9 +326,6 @@ void nsContainerFrame::BuildDisplayListForNonBlockChildren(
   nsDisplayListSet set(aLists, aLists.Content());
   // The children should be in content order
   while (kid) {
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-    _mm_prefetch((char *)kid->GetNextSibling(), _MM_HINT_T0);
-#endif
     BuildDisplayListForChild(aBuilder, kid, set, aFlags);
     kid = kid->GetNextSibling();
   }
@@ -1015,9 +1009,6 @@ void nsContainerFrame::DisplayOverflowContainers(
     nsDisplayListBuilder* aBuilder, const nsDisplayListSet& aLists) {
   if (nsFrameList* overflowconts = GetOverflowContainers()) {
     for (nsIFrame* frame : *overflowconts) {
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-      _mm_prefetch((char *)frame->GetNextSibling(), _MM_HINT_T0);
-#endif
       BuildDisplayListForChild(aBuilder, frame, aLists);
     }
   }

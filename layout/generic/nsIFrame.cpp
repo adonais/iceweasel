@@ -4,10 +4,6 @@
 
 /* base class of all rendering objects */
 
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-#include <xmmintrin.h>
-#endif
-
 #include "nsIFrame.h"
 
 #include <stdarg.h>
@@ -7772,11 +7768,7 @@ nsIFrame* nsIFrame::GetClosestContentVisibilityAncestor(
   auto* parent = GetInFlowParent();
   bool isAnonymousBlock = Style()->IsAnonBox() && parent &&
                           parent->HasAnyStateBits(NS_FRAME_OWNS_ANON_BOXES);
-  for (nsIFrame* cur = parent; cur;) {
-    nsIFrame* curNext = cur->GetInFlowParent();
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-    _mm_prefetch((char*)curNext, _MM_HINT_NTA);
-#endif
+  for (nsIFrame* cur = parent; cur; cur = cur->GetInFlowParent()) {
     if (!isAnonymousBlock && cur->HidesContent(aInclude)) {
       return cur;
     }
@@ -7785,8 +7777,6 @@ nsIFrame* nsIFrame::GetClosestContentVisibilityAncestor(
     // non-anonymous ancestor, but can be hidden by ancestors further up the
     // tree.
     isAnonymousBlock = false;
-
-    cur = curNext;
   }
 
   return nullptr;

@@ -7,10 +7,6 @@
  * the document's scrollbars and contains fixed-positioned elements
  */
 
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-#include <xmmintrin.h>
-#endif
-
 #include "mozilla/ViewportFrame.h"
 
 #include "MobileViewportManager.h"
@@ -409,10 +405,6 @@ void ViewportFrame::Reflow(nsPresContext* aPresContext,
         mFrames.FirstChild()->IsSubtreeDirty()) {
       // Reflow our one-and-only principal child frame
       nsIFrame* kidFrame = mFrames.FirstChild();
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-      _mm_prefetch((char *)kidFrame, _MM_HINT_NTA);
-      _mm_prefetch((char *)kidFrame + 64, _MM_HINT_NTA);
-#endif
       ReflowOutput kidDesiredSize(aReflowInput);
       const WritingMode kidWM = kidFrame->GetWritingMode();
       LogicalSize availableSpace = aReflowInput.AvailableSize(kidWM);

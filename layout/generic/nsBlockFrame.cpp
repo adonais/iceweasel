@@ -7,10 +7,6 @@
  * boxes, also used for various anonymous boxes
  */
 
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-#include <xmmintrin.h>
-#endif
-
 #include "nsBlockFrame.h"
 
 #include <inttypes.h>
@@ -3337,12 +3333,6 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
 
   // Reflow the lines that are already ours
   for (; line != line_end; ++line, aState.AdvanceToNextLine()) {
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-    if (line.next() != line_end) {
-      _mm_prefetch((char *)line.peekNext()->mFirstChild, _MM_HINT_T0);
-    }
-#endif
-
     DumpLine(aState, line, deltaBCoord, 0);
 #ifdef DEBUG
     AutoNoisyIndenter indent2(gNoisyReflow);
@@ -8242,9 +8232,6 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     // behaviour.
     for (nsIFrame* f : GetChildList(FrameChildListID::Float)) {
       if (f->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW)) {
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-        _mm_prefetch((char *)f->GetNextSibling(), _MM_HINT_T0);
-#endif
         BuildDisplayListForChild(aBuilder, f, aLists);
       }
     }
@@ -8377,9 +8364,6 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     };
 
     for (LineIterator line = LinesBegin(); line != line_end; ++line) {
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-      _mm_prefetch((char *)line.peekNext(), _MM_HINT_T0);
-#endif
       const nsRect lineArea = line->InkOverflowRect();
       const bool lineInLine = line->IsInline();
 

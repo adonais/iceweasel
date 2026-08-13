@@ -111,10 +111,6 @@
 //
 // *****************************************************************************
 
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-#include <xmmintrin.h>
-#endif
-
 #include "mozmemory_wrap.h"
 #include "mozjemalloc.h"
 #include "mozjemalloc_types.h"
@@ -1198,11 +1194,6 @@ arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
                          (gChunkHeaderNumPages << gPageSize2Pow));
     mapelm = &chunk->mPageMap[gChunkHeaderNumPages];
   }
-
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-  _mm_prefetch((char *)run, _MM_HINT_NTA);
-#endif
-
   // Update page map.
   if (!SplitAndAllocRun(run, aSize, aLarge, aZero)) {
     mRunsAvail.Insert(mapelm);
@@ -2259,10 +2250,6 @@ void* arena_t::MallocLarge(size_t aSize, bool aZero) {
     if (!ret) {
       return nullptr;
     }
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-    _mm_prefetch((char *)ret, _MM_HINT_NTA);
-    _mm_prefetch((char *)ret + 64, _MM_HINT_NTA);
-#endif
     mStats.allocated_large += aSize;
     mStats.operations++;
   }

@@ -4,10 +4,6 @@
 
 /* rendering object for css3 multi-column layout */
 
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-#include <xmmintrin.h>
-#endif
-
 #include "nsColumnSetFrame.h"
 
 #include "mozilla/ColumnUtils.h"
@@ -1343,16 +1339,7 @@ void nsColumnSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 
   // Our children won't have backgrounds so it doesn't matter where we put them.
-  const auto& frames = mFrames;
-  for (auto it = frames.begin(); it != frames.end();) {
-    auto f = *it;
-    ++it;
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-    if (it != frames.end()) {
-      _mm_prefetch((char *)*it, _MM_HINT_T0);
-      _mm_prefetch((char *)(*it) + 64, _MM_HINT_T0);
-    }
-#endif
+  for (nsIFrame* f : mFrames) {
     BuildDisplayListForChild(aBuilder, f, aLists);
   }
 }
