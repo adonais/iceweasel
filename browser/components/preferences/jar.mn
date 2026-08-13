@@ -30,6 +30,7 @@ browser.jar:
    content/browser/preferences/FocusHistory.mjs
    content/browser/preferences/DefaultBrowserHelper.mjs
    content/browser/preferences/config/about-firefox.mjs                 (config/about-firefox.mjs)
+   content/browser/preferences/config/about-iceweasel.mjs               (config/about-iceweasel.mjs)
    content/browser/preferences/config/containers.mjs                    (config/containers.mjs)
    content/browser/preferences/config/account-sync.mjs                  (config/account-sync.mjs)
    content/browser/preferences/config/accessibility.mjs                 (config/accessibility.mjs)

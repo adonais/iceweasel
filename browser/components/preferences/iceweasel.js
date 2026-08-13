@@ -24,7 +24,7 @@ function create_element (doc, type, attrs = {}) {
   let el = type.startsWith('html:') ? doc.createElementNS('http://www.w3.org/1999/xhtml', type) : doc.createXULElement(type);
   for (let key of Object.keys(attrs)) {
     if (key === 'innerHTML') {
-      el.innerHTML = attrs[key].replace(/<br>/g, "");
+      el.innerHTML = attrs[key].replace(/<br>/g, ",");
     } else if (key.startsWith('on')) {
       el.addEventListener(key.slice(2).toLocaleLowerCase(), attrs[key]);
     } else {
