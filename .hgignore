@@ -232,6 +232,12 @@ _OPT\.OBJ/
 # Android Gradle artifacts.
 ^mobile/android/gradle/\.gradle
 
+# Written by `mach android gradle-dependencies`, one per Gradle build it
+# enumerates, plus the copies it collects for the toolchain task to check.
+^gradle/verification-metadata\.dryrun\.xml
+^gradle/dependency-inventories/
+^mobile/android/.*/gradle/verification-metadata\.dryrun\.xml
+
 # Android build cache
 ^mobile/android/.*/.build-cache
 ^mobile/android/.*/.gradle

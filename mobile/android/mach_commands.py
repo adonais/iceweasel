@@ -125,24 +125,111 @@ def android_checkstyle_REMOVED(command_context):
     return 1
 
 
+# The Gradle builds the android-gradle-dependencies toolchain task enumerates
+# dependencies for, as (root directory relative to topsrcdir, projects to limit
+# resolution to). An empty project list means the whole build.
+#
+# `--write-verification-metadata` resolves every resolvable configuration of
+# every project that the requested tasks pull into the build, so a pass requests
+# nothing but `help` and expresses its scope through which projects it asks that
+# of. A dependency that is only used conditionally therefore has to be gated on
+# DOWNLOAD_ALL_GRADLE_DEPENDENCIES, which the toolchain task's mozconfig sets,
+# rather than on a Gradle property that a pass would have to name.
+#
+# fenix and focus-android currently resolve nothing the top-level build does
+# not, but they are separate Gradle builds that CI builds standalone, so they
+# get a pass of their own rather than relying on that staying true.
+GRADLE_DEPENDENCY_PASSES = (
+    (".", ()),
+    ("mobile/android/fenix", ()),
+    ("mobile/android/focus-android", ()),
+    ("mobile/android/android-components", ()),
+)
+
+# The projects of the top-level build that a geckoview-lite consumer builds.
+# Enumerating the whole build for those would grow the lite artifact by roughly
+# half again, for dependencies nothing fetching it needs.
+GECKO_GRADLE_PROJECTS = (
+    "annotations",
+    "geckoview",
+    "geckoview_example",
+    "messaging_example",
+    "port_messaging_example",
+    "test_runner",
+)
+
+# What `--write-verification-metadata` writes, per Gradle build, and where the
+# passes' copies are collected for the toolchain task to check the packaged
+# dependency cache against.
+DEPENDENCY_INVENTORY = "verification-metadata.dryrun.xml"
+DEPENDENCY_INVENTORY_DIR = "dependency-inventories"
+
+# Asking Gradle to resolve and record rather than to build. Kept here rather than
+# in the callers because a pass means nothing without them, and because they must
+# not reach the `mach build` that precedes the passes in the toolchain task.
+ENUMERATION_FLAGS = [
+    "--no-configuration-cache",
+    "--write-verification-metadata",
+    "sha256",
+    "--dry-run",
+]
+
+
 @SubCommand(
     "android",
     "gradle-dependencies",
     """Collect Android Gradle dependencies.
     See http://firefox-source-docs.mozilla.org/build/buildsystem/toolchains.html#firefox-for-android-with-gradle""",  # NOQA: E501
 )
+@CommandArgument(
+    "--gecko-only",
+    action="store_true",
+    help="Only enumerate the Gecko-side projects of the top-level build, for "
+    "the geckoview-lite artifact.",
+)
 @CommandArgument("args", nargs=argparse.REMAINDER)
-def android_gradle_dependencies(command_context, args):
-    # We don't want to gate producing dependency archives on clean
-    # lint or checkstyle, particularly because toolchain versions
-    # can change the outputs for those processes.
-    gradle(
-        command_context,
-        command_context.substs["GRADLE_ANDROID_DEPENDENCIES_TASKS"]
-        + ["--continue"]
-        + args,
-        verbose=True,
-    )
+def android_gradle_dependencies(command_context, gecko_only, args):
+    from pathlib import Path
+
+    passes = ((".", GECKO_GRADLE_PROJECTS),) if gecko_only else GRADLE_DEPENDENCY_PASSES
+
+    topsrcdir = Path(command_context.topsrcdir)
+    # Cleared rather than merged into, and the failure to clear is not ignored,
+    # so that a previous run's inventories can never be what gets checked.
+    inventories = topsrcdir / "gradle" / DEPENDENCY_INVENTORY_DIR
+    if inventories.exists():
+        shutil.rmtree(inventories)
+    inventories.mkdir(parents=True)
+
+    for root, projects in passes:
+        # Removed first, so that a pass writing nothing is detectable below.
+        inventory = topsrcdir / root / "gradle" / DEPENDENCY_INVENTORY
+        inventory.unlink(missing_ok=True)
+
+        tasks = [f":{project}:help" for project in projects] or ["help"]
+        ret = gradle(
+            command_context,
+            tasks + ENUMERATION_FLAGS + args,
+            verbose=True,
+            topsrcdir=str(topsrcdir / root),
+        )
+        if ret:
+            return ret
+
+        if not inventory.is_file():
+            command_context.log(
+                logging.ERROR,
+                "gradle-dependencies",
+                {"root": root, "inventory": str(inventory)},
+                "The enumeration pass for {root} wrote no {inventory}. Is "
+                "--write-verification-metadata still in ENUMERATION_FLAGS?",
+            )
+            return 1
+
+        # Named after the whole root, so that two builds whose directories share
+        # a basename cannot quietly overwrite each other's inventory.
+        name = "top-level" if root == "." else root.replace("/", "-")
+        shutil.copyfile(inventory, inventories / f"{name}.xml")
 
     return 0
 

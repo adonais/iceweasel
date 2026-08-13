@@ -13,9 +13,6 @@ cd $GECKO_PATH
 export MOZCONFIG=mobile/android/config/mozconfigs/android-arm-gradle-dependencies/nightly-lite
 ./mach build
 
-# After the `mach build` invocation!
-export GRADLE_FLAGS="--no-configuration-cache --write-verification-metadata sha256 --dry-run"
-
-./mach android gradle-dependencies
+./mach android gradle-dependencies --gecko-only
 
 . taskcluster/scripts/misc/android-gradle-dependencies/after.sh
