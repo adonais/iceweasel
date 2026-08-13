@@ -554,7 +554,6 @@ function init_all() {
   register_module("paneHome", gHomePane);
   register_module("paneSearch", gSearchPane);
   register_module("panePrivacy", gPrivacyPane);
-  register_module("paneIceweasel", gIceweaselPane);
 
   // Restore the cached Firefox Labs nav button visibility so it shows
   // immediately when recipes are expected to be available, before
@@ -602,6 +601,13 @@ function init_all() {
       module: "chrome://browser/content/preferences/config/home-startup.mjs",
     });
 
+    SettingPaneManager.registerPane("iceweasel", {
+      l10nId: "iceweasel-header3",
+      iconSrc: "chrome://browser/skin/preferences/category-iceweasel.svg",
+      groupIds: AppConstants.platform === "win" ? ["icefeatures", "icelibportable", "icefooter"] : ["icefeatures", "icelibportable_linux", "icefooter"],
+      module: "chrome://browser/content/preferences/config/about-iceweasel.mjs",
+    });
+
     if (
       AppConstants.platform == "win" &&
       Services.prefs.getBoolPref("browser.shell.customIcon.enabled", false) &&
@@ -623,6 +629,7 @@ function init_all() {
         NimbusFeatures.moreFromMozilla.getVariable("template");
       register_module("paneMoreFromMozilla", gMoreFromMozillaPane);
     }
+    register_module("paneIceweasel", gIceweaselPane);
   }
 
   gSearchResultsPane.init();
