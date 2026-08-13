@@ -3070,28 +3070,29 @@ static void CollectMatchingShortcutsInDir(const nsAString& aDirPath,
       continue;
     }
 
-    RefPtr<IPropertyStore> propStore;
-    hr = link->QueryInterface(IID_IPropertyStore, getter_AddRefs(propStore));
-    if (FAILED(hr)) {
-      continue;
-    }
-
-    PROPVARIANT pv;
-    hr = propStore->GetValue(PKEY_AppUserModel_ID, &pv);
-    if (FAILED(hr)) {
-      continue;
-    }
-
-    wchar_t storedAUMID[MAX_PATH];
-    hr = PropVariantToString(pv, storedAUMID, MAX_PATH);
-    PropVariantClear(&pv);
-    if (FAILED(hr)) {
-      continue;
-    }
-
-    if (!aAUMID.Equals(storedAUMID)) {
-      continue;
-    }
+    // do not match aumid, by adonais
+    // RefPtr<IPropertyStore> propStore;
+    // hr = link->QueryInterface(IID_IPropertyStore, getter_AddRefs(propStore));
+    // if (FAILED(hr)) {
+    //   continue;
+    // }
+    // 
+    // PROPVARIANT pv;
+    // hr = propStore->GetValue(PKEY_AppUserModel_ID, &pv);
+    // if (FAILED(hr)) {
+    //   continue;
+    // }
+    // 
+    // wchar_t storedAUMID[MAX_PATH];
+    // hr = PropVariantToString(pv, storedAUMID, MAX_PATH);
+    // PropVariantClear(&pv);
+    // if (FAILED(hr)) {
+    //   continue;
+    // }
+    // 
+    // if (!aAUMID.Equals(storedAUMID)) {
+    //   continue;
+    // }
 
     static_assert(MAXPATHLEN == MAX_PATH);
     wchar_t storedExePath[MAX_PATH] = {};
