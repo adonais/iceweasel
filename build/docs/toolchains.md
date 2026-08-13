@@ -204,12 +204,19 @@ local Maven repository is not. Therefore a toolchain job exists for
 producing the required archives, `android-gradle-dependencies`. The
 job runs in a container based on a custom Docker image and spawns a
 Sonatype Nexus proxying Maven repository process in the background.
-The job builds Firefox for Android using Gradle and the in-tree Gradle
-configuration rooted at `build.gradle`. The spawned proxying Maven
-repository downloads external dependencies and collects them. After
-the Gradle build completes, the job archives the Gradle version used
-to build, and the downloaded Maven repository, and exposes them as
-Task Cluster artifacts.
+Rather than building anything, the job asks Gradle to resolve every
+resolvable configuration of every project, with
+`--write-verification-metadata` and `--dry-run`, once per in-tree
+Gradle build. The spawned proxying Maven repository downloads the
+external dependencies that resolving needs and collects them. The job
+then archives the Gradle version used, and the downloaded Maven
+repository, and exposes them as Task Cluster artifacts.
+
+`mach android gradle-dependencies` runs those passes, and each one
+leaves behind an inventory of what it resolved. Before packaging, the
+job checks the collected repositories against those inventories, so
+that an incomplete archive fails here rather than much later as a
+resolution failure in a task that fetched it.
 
 To update the version of Gradle in the archive produced, update
 `gradle/wrapper/gradle-wrapper.properties`. Be sure to also update

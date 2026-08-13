@@ -673,23 +673,6 @@ set_config(
 )
 
 
-@depends(
-    gradle_android_api_lint_tasks,
-    gradle_android_format_lint_check_tasks,
-    gradle_android_checkstyle_tasks,
-)
-@imports(_from="itertools", _import="chain")
-def gradle_android_dependencies_tasks(*tasks):
-    """Gradle tasks run by |mach android dependencies|."""
-
-    # The union, plus a bit more, of all of the Gradle tasks
-    # invoked by the android-* automation jobs.
-    return list(t for t in chain(*tasks))
-
-
-set_config("GRADLE_ANDROID_DEPENDENCIES_TASKS", gradle_android_dependencies_tasks)
-
-
 # Automation uses this to change log levels, not use the daemon, and use
 # offline mode.
 option(env="GRADLE_FLAGS", default="", help="Flags to pass to Gradle")

@@ -8,6 +8,12 @@ echo "running as" $(id)
 
 set -v
 
+# Resolved before the `pushd` below leaves the source directory. The
+# inventories are collected here by `mach android gradle-dependencies`, one per
+# enumeration pass.
+DEPENDENCY_INVENTORIES="$PWD/gradle/dependency-inventories"
+VERIFY_DEPENDENCIES="$PWD/taskcluster/scripts/misc/android-gradle-dependencies/verify_dependencies.py"
+
 # Package everything up.
 pushd $WORKSPACE
 mkdir -p /builds/worker/artifacts
@@ -25,17 +31,21 @@ cp -R ${NEXUS_WORK}/storage/gradle-plugins android-gradle-dependencies
 # a mozconfig.
 cp -a ${GRADLE_USER_HOME}/wrapper/dists/gradle-*-*/*/gradle-*/ android-gradle-dependencies/gradle-dist
 
-tar cavf /builds/worker/artifacts/android-gradle-dependencies.tar.zst android-gradle-dependencies
+# Catch an incomplete artifact here rather than downstream, where it surfaces
+# much later as a confusing resolution failure. Checked before the packaging
+# below so that a failure doesn't pay for compressing the artifact first.
+#
+# GeckoView is built by this task and published to a local Maven repository, so
+# the passes rooted at the standalone Gradle builds resolve it from there. It is
+# not a cached dependency and is deliberately not packaged.
+python3 "$VERIFY_DEPENDENCIES" --inventories "$DEPENDENCY_INVENTORIES" \
+    --unproxied org/mozilla/geckoview \
+    android-gradle-dependencies/mozilla \
+    android-gradle-dependencies/central \
+    android-gradle-dependencies/google \
+    android-gradle-dependencies/gradle-plugins \
+    android-gradle-dependencies/plugins.gradle.org/m2
 
-# Bug 1953671
-# There are intermittent issues where some files seem to be missing from the
-# resulting artifacts. That causes downstream failures which are unpleasant to
-# track down.
-if [[ -e android-gradle-dependencies/central/com/squareup/okio/okio/2.2.2/okio-2.2.2.pom &&
-    ! -e android-gradle-dependencies/central/com/squareup/okio/okio/2.2.2/okio-2.2.2.jar ]]
-then
-    echo "FATAL" "ERROR: incomplete dependencies file generated. try re-running task."
-    exit 1
-fi
+tar cavf /builds/worker/artifacts/android-gradle-dependencies.tar.zst android-gradle-dependencies
 
 popd
