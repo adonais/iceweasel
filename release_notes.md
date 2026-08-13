@@ -1,10 +1,11 @@
 ## Iceweasel  
 
-* SSE3 Optimization. work under Windows 10 and above
+* SSE3 Optimization. works on Windows 10 and above versions or Linux
 * allow installation of unsigned extensions
 * remove some less used modules
-* merge tete's optimization patches
 * disable privacy-related and telemetry options by default
+* Integrate third-party downloaders
+* Integrate third-party userchrome scripts
 * supports libportable(please see portable(example).ini)
 * supports automatic update
 * source code supports cloud compilation on github

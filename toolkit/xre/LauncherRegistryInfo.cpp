@@ -677,15 +677,6 @@ LauncherResult<bool> LauncherRegistryInfo::ClearLauncherCrashTimestamp() {
 
 LauncherResult<std::wstring>
 LauncherRegistryInfo::BuildDefaultBlocklistFilename() {
-  std::wstring defaultBlocklistPath;
-#if defined(_MSC_VER) && defined(TT_MEMUTIL)
-  wchar_t *profd = _wgetenv(L"XRE_PROFILE_PATH");
-  if (profd) {
-    defaultBlocklistPath = profd;
-    defaultBlocklistPath.append(L"\\blocklist-v1");
-    return defaultBlocklistPath;
-  }
-#endif
   // These flags are chosen to avoid I/O, see bug 1363398.
   const DWORD flags =
       KF_FLAG_SIMPLE_IDLIST | KF_FLAG_DONT_VERIFY | KF_FLAG_NO_ALIAS;
@@ -698,7 +689,7 @@ LauncherRegistryInfo::BuildDefaultBlocklistFilename() {
   }
 
   UniquePtr<wchar_t, CoTaskMemFreeDeleter> appDataPath(rawPath);
-  defaultBlocklistPath = appDataPath.get();
+  std::wstring defaultBlocklistPath(appDataPath.get());
 
   UniquePtr<NS_tchar[]> hash;
   std::wstring binPathLower;
