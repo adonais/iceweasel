@@ -112,6 +112,51 @@ const JSWINDOWACTORS = {
 };
 
 export class GeckoViewStartup {
+  // Set while an ACCESS_LOCAL_NETWORK request is in flight. necko already asks
+  // only once per foreground cycle, but the app being foregrounded resets that
+  // while a prompt may still be up, so this stops a second overlapping request:
+  // getAppPermissions() has no in-flight deduplication of its own.
+  #localNetworkPermissionPending = false;
+
+  /**
+   * Asks the app to request the OS ACCESS_LOCAL_NETWORK permission, in response
+   * to networking being about to connect to the local network. Fire and forget:
+   * the connection that triggered this is not waiting on the answer, it will
+   * fail if the permission is missing and the user can retry once granted.
+   *
+   * The answer is reported back to necko so it stops asking while the permission
+   * is held.
+   */
+  async #requestLocalNetworkPermission() {
+    // See: http://developer.android.com/reference/android/Manifest.permission.html
+    const PERM_ACCESS_LOCAL_NETWORK = "android.permission.ACCESS_LOCAL_NETWORK";
+
+    if (this.#localNetworkPermissionPending) {
+      return;
+    }
+    this.#localNetworkPermissionPending = true;
+
+    let granted = false;
+    try {
+      const window = Services.wm.getMostRecentWindow("navigator:geckoview");
+      const actor = window?.browsingContext?.currentWindowGlobal?.getActor(
+        "GeckoViewPermission"
+      );
+      // Already-granted permissions resolve without showing a prompt, so this
+      // doubles as the check that tells necko to stop asking.
+      granted = !!(await actor?.getAppPermissions([PERM_ACCESS_LOCAL_NETWORK]));
+    } catch (error) {
+      warn`Error requesting local network permission: ${error}`;
+    } finally {
+      this.#localNetworkPermissionPending = false;
+      Services.obs.notifyObservers(
+        null,
+        "network:local-network-permission-result",
+        granted ? "granted" : "denied"
+      );
+    }
+  }
+
   /* ----------  nsIObserver  ---------- */
   observe(aSubject, aTopic) {
     debug`observe: ${aTopic}`;
@@ -334,8 +379,16 @@ export class GeckoViewStartup {
 
         Services.obs.addObserver(this, "browser-idle-startup-tasks-finished");
         Services.obs.addObserver(this, "handlersvc-store-initialized");
+        Services.obs.addObserver(
+          this,
+          "network:request-local-network-permission"
+        );
 
         Services.obs.notifyObservers(null, "geckoview-startup-complete");
+        break;
+      }
+      case "network:request-local-network-permission": {
+        this.#requestLocalNetworkPermission();
         break;
       }
       case "browser-idle-startup-tasks-finished": {
