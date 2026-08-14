@@ -33,9 +33,7 @@ export CARGO_TARGET_DIR=/tmp/cargo_target
 export MOZ_SOURCE_REPO=https://github.com/adonais/iceweasel
 export MOZ_FETCHES_DIR=/builds/worker/fetches
 export PATH=$MOZ_FETCHES_DIR/clang/bin:$MOZ_FETCHES_DIR/rust/bin:$PATH
-if [ -z "$MOZBUILD_DOWNLOAD" ]; then
-  export CCACHE=$MOZ_FETCHES_DIR/sccache/sccache
-fi
+export CCACHE=$MOZ_FETCHES_DIR/sccache/sccache
 
 if [ "$TARGETED_OS" == "Windows_NT" ]; then
   export WINSYSROOT=/builds/worker/fetches/vs
@@ -100,8 +98,10 @@ if [ "$MYOBJ_DIR" == "obju32-release" ]; then
   else
     $ICEWEASEL_TREE/configure --enable-profile-use=cross --enable-lto=cross --with-pgo-profile-path=/builds/worker/fetches/merged32.profdata --with-pgo-jarlog=/builds/worker/fetches/en-US32.log
   fi
-else
+elif [ "$TARGETED_OS" == "Windows_NT" ]; then
   $ICEWEASEL_TREE/configure --enable-profile-use=cross --enable-lto=cross --with-pgo-profile-path=/builds/worker/fetches/merged64.profdata --with-pgo-jarlog=/builds/worker/fetches/en-US64.log
+else
+  $ICEWEASEL_TREE/configure --enable-profile-use=cross --enable-lto=cross --with-pgo-profile-path=/builds/worker/fetches/merged.profdata --with-pgo-jarlog=/builds/worker/fetches/en-US.log
 fi
 
 $MAKE -j4

@@ -33,9 +33,7 @@ export CARGO_TARGET_DIR=/tmp/cargo_target
 export MOZ_SOURCE_REPO=https://github.com/adonais/iceweasel
 export MOZ_FETCHES_DIR=/builds/worker/fetches
 export PATH=$MOZ_FETCHES_DIR/clang/bin:$MOZ_FETCHES_DIR/rust/bin:$PATH
-if [ -z "$MOZBUILD_DOWNLOAD" ]; then
-  export CCACHE=$MOZ_FETCHES_DIR/sccache/sccache
-fi
+export CCACHE=$MOZ_FETCHES_DIR/sccache/sccache
 
 if [ "$TARGETED_OS" == "Windows_NT" ]; then
   export WINSYSROOT=/builds/worker/fetches/vs
