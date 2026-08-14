@@ -184,6 +184,9 @@
 @BINPATH@/@DLL_PREFIX@mozavutil@DLL_SUFFIX@
 @BINPATH@/@DLL_PREFIX@mozavcodec@DLL_SUFFIX@
 @BINPATH@/@DLL_PREFIX@mozinference@DLL_SUFFIX@
+#if defined(XP_LINUX) && defined(HAVE_UPCHECK)
+@BINPATH@/upcheck
+#endif
 
 ; [Components]
 #ifdef ACCESSIBILITY

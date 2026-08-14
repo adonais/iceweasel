@@ -2,6 +2,10 @@ FINAL_TARGET_FILES += [
   "Iceweasel.cfg",
 ]
 
+# For upcheck
+if CONFIG["UPCHECK"]:
+    FINAL_TARGET_FILES += ["%" + CONFIG["UPCHECK"]]
+
 # Loading Iceweasel.cfg.
 FINAL_TARGET_FILES.defaults.pref += [
   "autoconfig.js",

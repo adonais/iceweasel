@@ -1734,13 +1734,18 @@ class RecursiveMakeBackend(MakeBackend):
                             ".so",
                             ".dylib",
                         )):
-                            raise Exception(
-                                "Absolute paths installed to FINAL_TARGET_FILES must"
-                                " only be shared libraries or associated debug"
-                                " information."
-                            )
-                        install_manifest.add_optional_exists(dest_file)
-                        absolute_files.append(f.full_path)
+                            # raise Exception(
+                            #     "Absolute paths installed to FINAL_TARGET_FILES must"
+                            #     " only be shared libraries or associated debug"
+                            #     " information."
+                            # )
+                            import shutil
+                            os.makedirs(obj.install_target, exist_ok=True)
+                            print(f"Directory '{obj.install_target}' created successfully.")
+                            shutil.copy2(f.full_path, obj.install_target + "/" + dest_file)
+                        else:
+                            install_manifest.add_optional_exists(dest_file)
+                            absolute_files.append(f.full_path)
                     else:
                         install_manifest.add_link(f.full_path, dest_file)
                 elif f.target_basename != mozpath.basename(f.full_path):

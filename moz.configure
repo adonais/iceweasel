@@ -803,6 +803,15 @@ def nsis_flags(host):
 
 set_config("MAKENSISU_FLAGS", nsis_flags)
 
+upcheck = check_prog("UPCHECK_PATH", ("upcheck",), paths=clang_search_path, when=target_has_linux_kernel)
+
+@depends_if(upcheck)
+def have_upcheck(upcheck):
+    return upcheck
+
+set_config("UPCHECK", have_upcheck)
+set_define("UPCHECK", have_upcheck)
+
 check_prog("7Z", ("7zz",), allow_missing=True, bootstrap="7zz", when=target_is_windows)
 
 
