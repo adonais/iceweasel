@@ -185,7 +185,9 @@ static void EnablePreferLoadFromSystem32IfCompatible() {
       mozilla::IsPreferLoadFromSystem32Enabled()) {
     return;
   }
-
+#if defined(TT_MEMUTIL)
+  bool isCompatible = true;
+#else
   mozilla::Maybe<uint64_t> systemDirVersion;
   if (!GetMSVCP140VersionInfo(VCRuntimeDLLDir::System, systemDirVersion)) {
     return;
@@ -203,6 +205,7 @@ static void EnablePreferLoadFromSystem32IfCompatible() {
       isCompatible = true;
     }
   }
+#endif
 
   if (isCompatible) {
     mozilla::DebugOnly<bool> setOk = mozilla::EnablePreferLoadFromSystem32();
