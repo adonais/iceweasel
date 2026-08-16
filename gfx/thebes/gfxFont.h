@@ -1164,23 +1164,29 @@ class gfxShapedText {
     // debug build), and we'll probably crash.
     DetailedGlyph* Get(uint32_t aOffset, uint32_t aCount) {
       NS_ASSERTION(mOffsetToIndex.Length() > 0, "no detailed glyph records!");
-      // check common cases (fwd iteration, initial entry, etc) first
-      if (mLastUsed < mOffsetToIndex.Length() - 1 &&
-          aOffset == mOffsetToIndex[mLastUsed + 1].mOffset) {
-        ++mLastUsed;
+      // Load the last-used-position hint.
+      nsTArray<DGRec>::index_type lastUsed =
+          mLastUsed.load(std::memory_order_relaxed);
+      // Check common cases (fwd iteration, initial entry, etc) first.
+      if (lastUsed < mOffsetToIndex.Length() - 1 &&
+          aOffset == mOffsetToIndex[lastUsed + 1].mOffset) {
+        ++lastUsed;
       } else if (aOffset == mOffsetToIndex[0].mOffset) {
-        mLastUsed = 0;
-      } else if (aOffset == mOffsetToIndex[mLastUsed].mOffset) {
+        lastUsed = 0;
+      } else if (aOffset == mOffsetToIndex[lastUsed].mOffset) {
         // do nothing
-      } else if (mLastUsed > 0 &&
-                 aOffset == mOffsetToIndex[mLastUsed - 1].mOffset) {
-        --mLastUsed;
+      } else if (lastUsed > 0 &&
+                 aOffset == mOffsetToIndex[lastUsed - 1].mOffset) {
+        --lastUsed;
       } else {
-        mLastUsed = mOffsetToIndex.BinaryIndexOf(aOffset, CompareToOffset());
+        // None of the fast-paths applied, so do the binary search.
+        lastUsed = mOffsetToIndex.BinaryIndexOf(aOffset, CompareToOffset());
       }
-      NS_ASSERTION(mLastUsed != nsTArray<DGRec>::NoIndex,
+      NS_ASSERTION(lastUsed != nsTArray<DGRec>::NoIndex,
                    "detailed glyph record missing!");
-      uint32_t index = mOffsetToIndex[mLastUsed].mIndex;
+      uint32_t index = mOffsetToIndex[lastUsed].mIndex;
+      // Remember the position, as a hint for next time.
+      mLastUsed.store(lastUsed, std::memory_order_relaxed);
       // Ensure that |aCount| records are available, starting at |index|.
       MOZ_RELEASE_ASSERT(index < mDetails.Length() &&
                          aCount <= mDetails.Length() - index);
@@ -1249,7 +1255,10 @@ class gfxShapedText {
     // Records the most recently used index into mOffsetToIndex, so that
     // we can support sequential access more quickly than just doing
     // a binary search each time.
-    nsTArray<DGRec>::index_type mLastUsed = 0;
+    // Atomic because multiple threads may be accessing the same shaped-
+    // word or textrun; if so, they may overwrite each other's values and
+    // degrade performance slightly, but this is harmless.
+    std::atomic<nsTArray<DGRec>::index_type> mLastUsed = 0;
   };
 
   mozilla::UniquePtr<DetailedGlyphStore> mDetailedGlyphs;

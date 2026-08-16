@@ -17,7 +17,7 @@ index acc2e87aa3..55edd768a8 100644
 @@ -118,18 +118,8 @@ void PacketSequencer::PopulatePaddingFields(RtpPacketToSend& packet) {
      return;
    }
- 
+
 -  if (last_timestamp_time_ms_ > 0) {
 -    RTC_DCHECK_GT(last_rtp_timestamp_, 0);
 -    RTC_DCHECK_GT(last_capture_time_ms_, 0);
@@ -32,9 +32,8 @@ index acc2e87aa3..55edd768a8 100644
 -  }
 +  packet.SetTimestamp(last_rtp_timestamp_);
 +  packet.set_capture_time(Timestamp::Millis(last_capture_time_ms_));
- 
+
    // Only change the timestamp of padding packets sent over RTX.
    // Padding only packets over RTP has to be sent as part of a media
--- 
-2.34.1
-
+--
+2.37.1 (Apple Git-137.1)

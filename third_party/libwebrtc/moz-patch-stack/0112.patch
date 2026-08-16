@@ -20,7 +20,6 @@ index 1af19a1fd2..7f601821fc 100644
 @@ -128,17 +128,6 @@ std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateScreenCapturer(
    return capturer;
  }
- 
 -// static
 -std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateTabCapturer(
 -    const DesktopCaptureOptions& options) {
@@ -42,14 +41,14 @@ index 64f3187f51..5efd2efc0f 100644
 @@ -191,10 +191,6 @@ class RTC_EXPORT DesktopCapturer {
    static std::unique_ptr<DesktopCapturer> CreateScreenCapturer(
        const DesktopCaptureOptions& options);
- 
+
 -  // Creates a DesktopCapturer instance which targets to capture tab.
 -  static std::unique_ptr<DesktopCapturer> CreateTabCapturer(
 -      const DesktopCaptureOptions& options);
 -
  #if defined(WEBRTC_USE_PIPEWIRE) || defined(WEBRTC_USE_X11)
    static bool IsRunningUnderWayland();
- 
+
 @@ -225,10 +221,6 @@ class RTC_EXPORT DesktopCapturer {
    // capture screens.
    static std::unique_ptr<DesktopCapturer> CreateRawScreenCapturer(
@@ -59,8 +58,7 @@ index 64f3187f51..5efd2efc0f 100644
 -  static std::unique_ptr<DesktopCapturer> CreateRawTabCapturer(
 -      const DesktopCaptureOptions& options);
  };
- 
- }  // namespace webrtc
--- 
-2.34.1
 
+ }  // namespace webrtc
+--
+2.37.1 (Apple Git-137.1)

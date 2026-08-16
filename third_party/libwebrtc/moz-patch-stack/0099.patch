@@ -1,28 +1,52 @@
 From: Andreas Pehrson <apehrson@mozilla.com>
-Date: Wed, 10 May 2023 07:47:00 +0000
-Subject: Bug 1810949 - In webrtc_libyuv.cc put a label at end of compound
- statement. CLOSED TREE
+Date: Wed, 10 May 2023 07:06:00 +0000
+Subject: Bug 1810949 - cherry-pick upstream libwebrtc commit 32b64e895c.
+ r=webrtc-reviewers,mjf
 
-Differential Revision: https://phabricator.services.mozilla.com/D177600
+Upstream commit: https://webrtc.googlesource.com/src/+/32b64e895c0231fe6891a8f6335d66f1dad4f1f5
+    Improve ergonomics of dealing with pixel formats in v4l2 camera backend
 
-Depends on D177599
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/6ac8147fee0323be3bf1d7f292a2a408a9901159
+    Bug: webrtc:14830
+    Change-Id: Ib49bf65895fe008e75223abb03867d412c1b5a60
+    Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/291531
+    Commit-Queue: Ilya Nikolaevskiy <ilnik@webrtc.org>
+    Reviewed-by: Stefan Holmer <stefan@webrtc.org>
+    Reviewed-by: Ilya Nikolaevskiy <ilnik@webrtc.org>
+    Cr-Commit-Position: refs/heads/main@{#39976}
+
+Differential Revision: https://phabricator.services.mozilla.com/D177231
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/f0afe1a1097f3e02d59fd06d5e83d00a0f4d69ae
 ---
- common_video/libyuv/webrtc_libyuv.cc | 1 +
- 1 file changed, 1 insertion(+)
+ .../video_capture/linux/device_info_v4l2.cc   |  4 ++-
+ .../video_capture/linux/video_capture_v4l2.cc | 31 +++++++++----------
+ 2 files changed, 17 insertions(+), 18 deletions(-)
 
-diff --git a/common_video/libyuv/webrtc_libyuv.cc b/common_video/libyuv/webrtc_libyuv.cc
-index 8c68162624..05a4b184c2 100644
---- a/common_video/libyuv/webrtc_libyuv.cc
-+++ b/common_video/libyuv/webrtc_libyuv.cc
-@@ -47,6 +47,7 @@ size_t CalcBufferSize(VideoType type, int width, int height) {
-       return width * height * 4;
-     case VideoType::kMJPEG:
-     case VideoType::kUnknown:
-+      break;
+diff --git a/modules/video_capture/video_capture_impl.cc b/modules/video_capture/video_capture_impl.cc
+index d227d41c34..9d9a1471e8 100644
+--- a/modules/video_capture/video_capture_impl.cc
++++ b/modules/video_capture/video_capture_impl.cc
+@@ -160,11 +160,17 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
    }
-   RTC_DCHECK_NOTREACHED() << "Unexpected pixel format " << type;
-   return 0;
--- 
-2.34.1
 
+   // Not encoded, convert to I420.
+-  if (frameInfo.videoType != VideoType::kMJPEG &&
+-      CalcBufferSize(frameInfo.videoType, width, abs(height)) !=
+-          videoFrameLength) {
+-    RTC_LOG(LS_ERROR) << "Wrong incoming frame length.";
+-    return -1;
++  if (frameInfo.videoType != VideoType::kMJPEG) {
++    // Allow buffers larger than expected. On linux gstreamer allocates buffers
++    // page-aligned and v4l2loopback passes us the buffer size verbatim which
++    // for most cases is larger than expected.
++    // See https://github.com/umlaeute/v4l2loopback/issues/190.
++    if (auto size = CalcBufferSize(frameInfo.videoType, width, abs(height));
++        videoFrameLength < size) {
++      RTC_LOG(LS_ERROR) << "Wrong incoming frame length. Expected " << size
++                        << ", Got " << videoFrameLength << ".";
++      return -1;
++    }
+   }
+
+   int target_width = width;
+--
+2.37.1 (Apple Git-137.1)

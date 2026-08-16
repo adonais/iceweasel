@@ -52,7 +52,7 @@ index cc1c8feb8d..bfaffa1bdb 100644
 @@ -268,6 +268,26 @@ TEST_F(RtpSenderEgressTest,
    EXPECT_TRUE(transport_.last_packet()->options.included_in_allocation);
  }
- 
+
 +TEST_F(RtpSenderEgressTest,
 +       DoesntWriteTransmissionOffsetOnRtxPaddingBeforeMedia) {
 +  header_extensions_.RegisterByUri(kTransmissionOffsetExtensionId,
@@ -76,6 +76,5 @@ index cc1c8feb8d..bfaffa1bdb 100644
  TEST_F(RtpSenderEgressTest, OnSendSideDelayUpdated) {
    StrictMock<MockSendSideDelayObserver> send_side_delay_observer;
    RtpRtcpInterface::Configuration config = DefaultConfig();
--- 
-2.34.1
-
+--
+2.37.1 (Apple Git-137.1)

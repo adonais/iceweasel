@@ -307,7 +307,7 @@ nsresult EditorBase::InitInternal(Document& aDocument, Element* aRootElement,
     // During edit action, selection is cached. But this selection is invalid
     // now since selection controller is updated, so we have to update this
     // cache.
-    Selection* selection = aSelectionController.GetSelection(
+    RefPtr<Selection> selection = aSelectionController.GetSelection(
         nsISelectionController::SELECTION_NORMAL);
     NS_WARNING_ASSERTION(selection,
                          "SelectionController::GetSelection() failed");

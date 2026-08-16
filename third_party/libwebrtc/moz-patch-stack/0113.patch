@@ -38,7 +38,7 @@ index 1dee78f5ee..2cb6161514 100644
 +                                          pid_t* pid) {
    if (deviceNumber >= NumberOfDevices())
      return -1;
- 
+
 diff --git a/modules/video_capture/linux/device_info_pipewire.h b/modules/video_capture/linux/device_info_pipewire.h
 index a006c85d1b..724717be5e 100644
 --- a/modules/video_capture/linux/device_info_pipewire.h
@@ -53,6 +53,5 @@ index a006c85d1b..724717be5e 100644
    /*
     * Fills the membervariable _captureCapabilities with capabilites for the
     * given device name.
--- 
+--
 2.34.1
-

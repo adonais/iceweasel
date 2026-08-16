@@ -29,7 +29,7 @@ index 2c192fe4f6..2b01fc6930 100644
 @@ -520,11 +520,18 @@ int32_t DeviceInfoDS::CreateCapabilityMap(const char* deviceUniqueIdUTF8)
          hrVC = videoControlConfig->GetFrameRateList(
              outputCapturePin, tmp, size, &listSize, &frameDurationList);
- 
+
 +        if (hrVC == S_OK) {
 +          maxFPS = GetMaxOfFrameArray(frameDurationList, listSize);
 +        }
@@ -47,6 +47,5 @@ index 2c192fe4f6..2b01fc6930 100644
            capability.maxFPS = static_cast<int>(10000000 / maxFPS);
            capability.supportFrameRateControl = true;
          } else  // use existing method
--- 
-2.34.1
-
+--
+2.37.1 (Apple Git-137.1)

@@ -27,7 +27,7 @@ index 6b4c57d01e..2c192fe4f6 100644
 +++ b/modules/video_capture/windows/device_info_ds.cc
 @@ -505,9 +505,9 @@ int32_t DeviceInfoDS::CreateCapabilityMap(const char* deviceUniqueIdUTF8)
        }
- 
+
        if (hrVC == S_OK) {
 -        LONGLONG* frameDurationList;
 -        LONGLONG maxFPS;
@@ -41,7 +41,7 @@ index 6b4c57d01e..2c192fe4f6 100644
 @@ -520,9 +520,10 @@ int32_t DeviceInfoDS::CreateCapabilityMap(const char* deviceUniqueIdUTF8)
          hrVC = videoControlConfig->GetFrameRateList(
              outputCapturePin, tmp, size, &listSize, &frameDurationList);
- 
+
 -        // On some odd cameras, you may get a 0 for duration.
 -        // GetMaxOfFrameArray returns the lowest duration (highest FPS)
 -        if (hrVC == S_OK && listSize > 0 &&
@@ -66,6 +66,5 @@ index b767726107..47fecfe4a1 100644
    LONGLONG maxFPS = maxFps[0];
    for (int i = 0; i < size; i++) {
      if (maxFPS > maxFps[i])
--- 
-2.34.1
-
+--
+2.37.1 (Apple Git-137.1)
