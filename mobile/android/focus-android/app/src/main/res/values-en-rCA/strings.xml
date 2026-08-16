@@ -211,14 +211,14 @@
   <!-- Item in settings that will open a new preference screen for configuring the URL autocomplete behavior. -->
   <string name="preference_subitem_autocomplete">URL Autocomplete</string>
   <!-- Title of "switch" preference that enables/disables autocomplete for the default list -->
-  <string name="preference_switch_autocomplete_topsites">For Top sites</string>
+  <string name="preference_switch_autocomplete_topsites">For top sites</string>
   <!--
     Summary for the toggle to enable autocomplete for the topsites list
     %s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
   -->
   <string name="preference_autocomplete_topsite_summary2">Enable to have %s autocomplete over 450 popular URLs in the address bar.</string>
   <!-- Title of "switch" preference that enables/disables autocomplete for the user-defined list -->
-  <string name="preference_switch_autocomplete_user_list">For Sites You Add</string>
+  <string name="preference_switch_autocomplete_user_list">For sites you add</string>
   <!--
     Summary for the toggle to enable autocomplete for the user-defined list
     %s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
@@ -314,7 +314,7 @@
   <string name="preference_privacy_stealth_summary">Hide webpages when switching apps and block taking screenshots.</string>
   <string name="preference_category_security">Security</string>
   <string name="preference_category_performance">Performance</string>
-  <string name="preference_performance_block_webfonts">Block Web fonts</string>
+  <string name="preference_performance_block_webfonts">Block web fonts</string>
   <!-- This text is shown below the setting for disabling web fonts. Some websites use icons/images from a font and those do not show up if fonts are blocked. -->
   <string name="preference_performance_block_webfonts_summary">May result in missing icons or images</string>
   <string name="preference_performance_block_javascript">Block JavaScript</string>
@@ -817,7 +817,7 @@
   <!-- Preference for exceptions tracking protection -->
   <string name="preference_exceptions">Exceptions</string>
   <!-- Description for the exceptions preference screen -->
-  <string name="preference_exceptions_description">You have disabled Content Blocking for these websites.</string>
+  <string name="preference_exceptions_description">You have disabled content blocking for these websites.</string>
   <!-- Menu item to remove existing exceptions. -->
   <string name="preference_exceptions_menu_remove">Remove</string>
   <!-- Button to remove all websites from the exception list -->
