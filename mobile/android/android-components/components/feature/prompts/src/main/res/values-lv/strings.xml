@@ -9,4 +9,6 @@
 <resources>
   <!-- Text of a confirm button in dialog requesting to open a new window. -->
   <string name="mozac_feature_prompts_allow">Atļaut</string>
+  <!-- Title of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
+  <string name="mozac_feature_prompt_before_unload_dialog_title">Vai tiešām?</string>
 </resources>

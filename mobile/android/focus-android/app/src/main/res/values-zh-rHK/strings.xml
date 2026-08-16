@@ -63,6 +63,7 @@
   <string name="menu_settings">設定</string>
   <string name="menu_about">關於</string>
   <string name="menu_help">說明</string>
+  <string name="menu_terms_of_use">使用条款</string>
   <!--
     Menu item: This is the label for a menu entry that shows how many trackers have been blocked
     for the currently loaded website. The number of blocked trackers is shown below this label.
@@ -155,6 +156,8 @@
     Do not translate or transliterate Focus Nightly.
   -->
   <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage,UnusedResources">喺 Focus Nightly 度搜尋</string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">想知多啲</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">私隱同安全</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -187,6 +190,11 @@
   <string name="preference_category_search">搜尋</string>
   <!-- Title of "switch" preference that enables/disables search suggestions -->
   <string name="preference_show_search_suggestions">獲得搜尋建議</string>
+  <!--
+    Description of the preference that enables/disables search suggestions
+    %1$s will be replaced by the app name (e.g. Firefox Focus)
+  -->
+  <string name="preference_show_search_suggestions_summary">%1$s 會將你喺網址列打嘅嘢傳送畀你用緊嘅搜尋引擎</string>
   <!-- This label is shown below the name of the default search engine in settings -->
   <string name="preference_search_engine_default">預設值</string>
   <!-- This label is shown above the currently selected search engine in settings -->
@@ -199,8 +207,18 @@
   <string name="preference_subitem_autocomplete">自動完成網址</string>
   <!-- Title of "switch" preference that enables/disables autocomplete for the default list -->
   <string name="preference_switch_autocomplete_topsites">熱門網站</string>
+  <!--
+    Summary for the toggle to enable autocomplete for the topsites list
+    %s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
+  -->
+  <string name="preference_autocomplete_topsite_summary2">啟用等 %s 喺網址列自動填寫超過 450 個流行網址。</string>
   <!-- Title of "switch" preference that enables/disables autocomplete for the user-defined list -->
   <string name="preference_switch_autocomplete_user_list">你加入嘅網站</string>
+  <!--
+    Summary for the toggle to enable autocomplete for the user-defined list
+    %s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
+  -->
+  <string name="preference_autocomplete_user_list_summary2">啟用等 %s 自動完成你最鍾意嘅網址。</string>
   <!-- Preference category: Manage (user-defined) sites -->
   <string name="preference_category_autocomplete_manage_sites">管理網站</string>
   <!-- Item in autocomplete settings that will open a new preference screen for adding and removing URLs to the user-defined list -->
@@ -255,6 +273,7 @@
   <string name="preference_privacy_block_analytics">阻擋分析追蹤器</string>
   <string name="preference_privacy_block_analytics_summary">用嚟收集、分析並測量點擊同捲動之類嘅活動</string>
   <string name="preference_privacy_block_social">阻擋社交媒體追蹤器</string>
+  <string name="preference_privacy_block_social_summary">內嵌咗喺網站度，用嚟追蹤你同顯示「分享」掣之類嘅功能</string>
   <string name="preference_privacy_block_content">阻擋其他內容追蹤器</string>
   <string name="preference_privacy_block_content_summary2">開咗佢可能會導致某啲頁面出現異常行為</string>
   <string name="preference_privacy_category_cookies">阻擋 Cookies</string>
@@ -269,6 +288,13 @@
   <string name="preference_privacy_should_block_cookies_yes_option2">好吖，唔該晒</string>
   <!-- Preference Title: Biometrics can be used to unlock Focus if the previous session's data was not erased by the user. -->
   <string name="preference_security_biometric">用指紋去解鎖個 app</string>
+  <!--
+    Preference Summary: Biometrics (iris scan, fingerprint, or facial scan) can be used to unlock Focus if the app had a URL
+    open when the app was last run to ensure that only the phone's owner can view a previous session.
+    %s is the name of the app (for example "Firefox Focus" or "Firefox Klar")
+    Shortcuts is a feature that allows the user to pin his favorite websites to Focus home screen so he can quickly access them.
+  -->
+  <string name="preference_security_biometric_summary2">喺用咗 %s 嚟開啟網站或者加入咗捷徑嘅時候，可以直接用指紋解鎖。</string>
   <!--
     Preference Title: Secure Mode is a setting that prevents the app's content to show up in the "recent apps" screen
     and prevents the user from taking screenshots or casting the app to other displays.
@@ -302,9 +328,18 @@
   <string name="preference_mozilla_telemetry_summary">想知多啲</string>
   <!-- %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
   <string name="preference_mozilla_telemetry_summary2" tools:ignore="BrandUsage">Mozilla 致力只收集大家足以提供並改進 %1$s所需嘅資料。</string>
+  <!-- Preference switch for daily usage ping data collection -->
+  <string name="preference_daily_usage_ping_title">每日使用率上報</string>
+  <string name="preference_daily_usage_ping_description" tools:ignore="BrandUsage">噉樣做會幫 Mozilla 估計活躍用戶嘅數目。</string>
   <string name="preference_daily_usage_ping_learn_more">想知多啲</string>
   <!-- In-app link (in settings) to Focus privacy notice. -->
   <string name="preference_privacy_notice">私隱權告示</string>
+  <!-- In-app link (in settings) to Focus licensing information. -->
+  <string name="preference_licensing_info">版權資料</string>
+  <!-- Link to Focus licensing information from other libraries that we use. -->
+  <string name="preference_libraries_we_use">我哋用咗嘅 libraries</string>
+  <!-- Link to Focus Crash reports list. -->
+  <string name="preference_crashes">單機事故</string>
   <!-- Open Source Licenses page title. %s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
   <string name="open_source_licenses_title">%s | 開放原始碼嘅軟件庫</string>
   <!-- Item in Preferences that shows the about page. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
@@ -337,6 +372,7 @@
   <string name="search_add_error_empty_name">輸入搜尋引擎名稱</string>
   <string name="search_add_error_duplicate_name">有一個已安裝嘅搜尋引擎已經用咗呢個名。</string>
   <string name="search_add_error_empty_search">輸入搜尋字串</string>
+  <string name="search_add_error_format">請檢查搜尋字串符合範例格式</string>
   <!-- Content description (not visible, for screen readers etc.): Clear text in URL bar -->
   <string name="content_description_clear_input">清除輸入</string>
   <!--
@@ -407,12 +443,19 @@
   <string name="external_app_prompt">你可以跳出 %1$s 以 %2$s 開啟呢個連結。</string>
   <!-- This text is the title of a dialog shown if no app could be found for a custom link protocol. -->
   <string name="external_app_prompt_no_app_title">搵個可以開啟連結嘅 app</string>
+  <!--
+    This text is shown in a dialog if no app could be found for a custom link protocol. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar") and %2$s is the name of
+    the app store installed on the device (usually that's Google Play).
+  -->
+  <string name="external_app_prompt_no_app">你嘅裝置冇一個 app 開到呢個連結。你可以跳出 %1$s 去 %2$s 搵下有冇 app 開得到。</string>
   <!-- This label is shown above a list of apps that can be used to open a given link -->
   <string name="external_multiple_apps_matched_exit">係咪要離開私隱瀏覽？</string>
   <!-- Snackbar that will be displayed after a download has completed. %1$s is the file name. -->
   <string name="download_snackbar_finished">%1$s 已完成</string>
   <!-- Snackbar action to immediately open the successfully downloaded file. -->
   <string name="download_snackbar_open">開啟</string>
+  <!-- Snackbar that will be displayed after a website has been added to shortcuts. -->
+  <string name="snackbar_added_to_shortcuts">加咗落捷徑啦！</string>
   <string name="error_hostLookup_title">搵唔到伺服器</string>
   <!--
     New Onboarding flow first screen title
@@ -422,6 +465,24 @@
   <string name="onboarding_first_screen_title">歡迎使用 %1$s</string>
   <!-- New Onboarding flow first screen subtitle the one that appears under title -->
   <string name="onboarding_first_screen_subtitle">快速、私隱、簡潔。</string>
+  <!--
+    New Onboarding flow first screen 'terms of use' text
+
+    %1$s will be replaced by a link using onboarding_first_screen_terms_of_use_link as text
+  -->
+  <string name="onboarding_first_screen_terms_of_use_text_2" tools:ignore="UnusedResources">繼續使用嘅話，就代表你同意%1$s。</string>
+  <!--
+    New Onboarding flow first screen 'terms of use link'
+
+    Text for the link used in onboarding_first_screen_terms_of_use_text
+  -->
+  <string name="onboarding_first_screen_terms_of_use_link_2" tools:ignore="BrandUsage">Firefox 使用條款</string>
+  <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
+  <string name="onboarding_first_screen_privacy_notice_link_2">私隱聲明</string>
+  <!-- New Onboarding flow first screen button label -->
+  <string name="onboarding_first_screen_button_agree_and_continue_2">繼續</string>
+  <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
+  <string name="a11y_link_available">鏈結可用</string>
   <!--
     Onboarding second screen: Title
 
@@ -442,12 +503,16 @@
   <string name="onboarding_second_screen_skip_button_text">略過</string>
   <!-- First run tour (Default browser): Title -->
   <string name="firstrun_defaultbrowser_title">升級你嘅個人私隱</string>
+  <!-- First run tour (Default browser): Text. -->
+  <string name="firstrun_defaultbrowser_text2">私隱瀏覽再創新境界。阻擋廣告以及其他內容，費事佢哋追蹤你去過咩網站，又拖慢網頁載入嘅時間。</string>
   <!-- First run tour (Search): Title -->
   <string name="firstrun_search_title">你想點搜尋，就點搜尋</string>
   <!-- First run tour (Search): Text -->
   <string name="firstrun_search_text">想搜尋吓啲唔同嘅嘢？喺設定度揀選另一個預設嘅搜尋引擎啦。</string>
   <!-- First run tour (Shortcut): Title -->
   <string name="firstrun_shortcut_title">喺你嘅主頁加入捷徑</string>
+  <!-- First run tour (Shortcut): Text. %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
+  <string name="firstrun_shortcut_text">快速返回你喺 %1$s 嘅喜愛網站。只需喺 %1$s 功能表揀選「加入去主畫面」。</string>
   <!-- First run tour (Privacy): Title -->
   <string name="firstrun_privacy_title">私隱就習以為常</string>
   <!-- First run tour (Privacy): Text. %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->

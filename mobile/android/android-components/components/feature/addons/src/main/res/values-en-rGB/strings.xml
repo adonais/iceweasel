@@ -72,7 +72,7 @@
   <!-- Description for the "management" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_management_description">Monitor extension usage and manage themes</string>
   <!-- Description for the "nativeMessaging" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_native_messaging_description">Exchange messages with apps other that this one</string>
+  <string name="mozac_feature_addons_permissions_native_messaging_description">Exchange messages with apps other than this one</string>
   <!-- Description for the "notifications" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_notifications_description">Display notifications to you</string>
   <!-- Description for the "pkcs11" WebExtensions API permission. -->
