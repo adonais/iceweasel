@@ -14,11 +14,6 @@ TARGETED_OS=Windows_NT
 FIND_FILE=".mozconfig"
 ICEWEASEL_TREE=`pwd -W 2>/dev/null || pwd`
 
-if [ "$OS" == "Windows_NT" ]; then
-  echo This script must be run on the Linux platform
-  exit 1
-fi
-
 if [ x"$1" == "x" ]; then
   echo The script must run with parameters!
   exit 1
