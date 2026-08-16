@@ -198,7 +198,7 @@ tasks:
             custom-build-variant-cfg: arm-lite
         fetches:
             toolchain:
-                - android-gradle-dependencies-lite
+                - android-gradle-dependencies
         optimization:
             skip-unless-backstop: null
 
