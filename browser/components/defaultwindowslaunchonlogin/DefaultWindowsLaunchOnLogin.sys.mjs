@@ -87,15 +87,15 @@ export var DefaultWindowsLaunchOnLogin = {
       return;
     }
 
-    // Wait for Nimbus's first Remote Settings update so that any enrollment has
-    // applied its value before we read the pref below.
-    await this.waitForNimbusReady();
-
     if (
       !Services.prefs.getBoolPref(DEFAULT_WINDOWS_LAUNCH_ON_LOGIN_PREF, false)
     ) {
       return;
     }
+
+    // Wait for Nimbus's first Remote Settings update so that any enrollment has
+    // applied its value before we read the pref below.
+    await this.waitForNimbusReady();
 
     // Mark the launch on login as applied so we don't do it again
     Services.prefs.setBoolPref(
