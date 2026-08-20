@@ -48,6 +48,12 @@ mozilla::ipc::IPCResult RemoteDecoderParent::RecvInit(
     return IPC_OK();
   }
 
+  if (mInitAttempted) {
+    aResolver(MediaResult(NS_ERROR_ALREADY_INITIALIZED, __func__));
+    return IPC_OK();
+  }
+  mInitAttempted = true;
+
   RefPtr<RemoteDecoderParent> self = this;
   mDecoder->Init()->Then(
       mManagerThread, __func__,

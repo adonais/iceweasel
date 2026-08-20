@@ -353,6 +353,7 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "g4w.co", true, false, false, -1, &kPinset_google_root_pems },
   { "ggpht.com", true, false, false, -1, &kPinset_google_root_pems },
   { "glass.google.com", true, false, false, -1, &kPinset_google_root_pems },
+  { "gmail.co.ug", true, false, false, -1, &kPinset_google_root_pems },
   { "gmail.com", false, false, false, -1, &kPinset_google_root_pems },
   { "goo.gl", true, false, false, -1, &kPinset_google_root_pems },
   { "google", true, false, false, -1, &kPinset_google_root_pems },
@@ -576,6 +577,7 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "google.to", true, false, false, -1, &kPinset_google_root_pems },
   { "google.tt", true, false, false, -1, &kPinset_google_root_pems },
   { "google.ua", true, false, false, -1, &kPinset_google_root_pems },
+  { "google.ug", true, false, false, -1, &kPinset_google_root_pems },
   { "google.us", true, false, false, -1, &kPinset_google_root_pems },
   { "google.uz", true, false, false, -1, &kPinset_google_root_pems },
   { "google.vg", true, false, false, -1, &kPinset_google_root_pems },
@@ -673,12 +675,14 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "xn--7xa.google.com", true, false, false, -1, &kPinset_google_root_pems },
   { "youtu.be", true, false, false, -1, &kPinset_google_root_pems },
   { "youtube-nocookie.com", true, false, false, -1, &kPinset_google_root_pems },
+  { "youtube.co.ug", true, false, false, -1, &kPinset_google_root_pems },
   { "youtube.com", true, false, false, -1, &kPinset_google_root_pems },
+  { "youtube.ug", true, false, false, -1, &kPinset_google_root_pems },
   { "ytimg.com", true, false, false, -1, &kPinset_google_root_pems },
 };
 
-// Pinning Preload List Length = 383;
+// Pinning Preload List Length = 387;
 
 static const int32_t kUnknownId = -1;
 
-static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1794815595063000);
+static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1795420417591000);

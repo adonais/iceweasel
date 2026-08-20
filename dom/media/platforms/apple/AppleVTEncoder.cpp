@@ -92,6 +92,14 @@ static bool SetProfileLevel(VTCompressionSessionRef& aSession,
 
 RefPtr<MediaDataEncoder::InitPromise> AppleVTEncoder::Init() {
   MOZ_ASSERT(!mInited, "Cannot initialize encoder again without shutting down");
+  if (mSession) {
+    MOZ_ASSERT_UNREACHABLE(
+        "Cannot initialize encoder again without shutting down");
+    return InitPromise::CreateAndReject(
+        MediaResult(NS_ERROR_ALREADY_INITIALIZED,
+                    RESULT_DETAIL("Encoder is already initialized")),
+        __func__);
+  }
 
   if (mConfig.mSize.width == 0 || mConfig.mSize.height == 0) {
     return InitPromise::CreateAndReject(NS_ERROR_ILLEGAL_VALUE, __func__);
