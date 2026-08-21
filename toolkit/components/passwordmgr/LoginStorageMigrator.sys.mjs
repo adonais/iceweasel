@@ -14,10 +14,20 @@ const PREFS = {
   // Also drives Sync's engine selection (services/sync/modules/service.sys.mjs).
   RUST_ACTIVE: "signon.storage.rust.active",
   MIGRATION_ATTEMPTS: "signon.storage.rust.migrationAttempts",
+  // Kill switch, so the restore can be turned off by pref rollout.
+  RESTORE_ENABLED: "signon.storage.rust.restoreEnabled",
+  RESTORE_ATTEMPTS: "signon.storage.rust.restoreAttempts",
+  RESTORE_DONE: "signon.storage.rust.restoreDone",
+  // Non-empty exactly when Sync is configured.
+  SYNC_USERNAME: "services.sync.username",
+  // Sync only carries logins while the passwords engine is on.
+  SYNC_PASSWORDS_ENGINE: "services.sync.engine.passwords",
 };
 
 const MAX_MIGRATION_ATTEMPTS = 10;
 const MAX_RUNTIME_RETRIES = 3;
+const MAX_RESTORE_ATTEMPTS = 5;
+const MAX_LOGINS_TO_RESTORE = 10000;
 
 // Continues the rust mirror's telemetry version sequence (last was 8); the
 // rust_migration_status event is shared with the former mirror.
@@ -77,6 +87,19 @@ function recordMigrationStatus({
   });
 }
 
+// Restores the credentials onto a login that already exists in the JSON store.
+// A property bag rather than an nsILoginInfo, so that nothing else is clobbered,
+// mirroring what the CSV import does in LoginHelper's ImportRowProcessor.
+function credentialPropertyBag(login) {
+  const bag = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+    Ci.nsIWritablePropertyBag
+  );
+  bag.setProperty("username", login.username);
+  bag.setProperty("password", login.password);
+  bag.setProperty("timePasswordChanged", login.timePasswordChanged);
+  return bag;
+}
+
 // Records one event per login that could not be migrated.
 function recordMigrationLoginError(runId, error) {
   Glean.pwmgr.rustMigrationLoginError.record({
@@ -127,9 +150,11 @@ export class LoginStorageMigrator {
         return this.#startMigration();
 
       case "RevertPending":
+        this.#restoreLoginsFromRust();
         return this.#deactivateRust();
 
       default:
+        this.#restoreLoginsFromRust();
         return this.#jsonStorage;
     }
   }
@@ -270,6 +295,8 @@ export class LoginStorageMigrator {
   #completeMigration() {
     Services.prefs.setBoolPref(PREFS.RUST_ACTIVE, true);
     Services.prefs.setIntPref(PREFS.MIGRATION_ATTEMPTS, 0);
+    Services.prefs.setBoolPref(PREFS.RESTORE_DONE, false);
+    Services.prefs.setIntPref(PREFS.RESTORE_ATTEMPTS, 0);
     return this.#rustStorage;
   }
 
@@ -305,13 +332,210 @@ export class LoginStorageMigrator {
     return this.#jsonStorage;
   }
 
-  // Rust is no longer the desired backend but is still active. Deactivate it;
-  // changes made while Rust was active are lost. Reset the attempt budget so a
-  // later re-enable starts fresh.
+  // Rust is no longer the desired backend but is still active. Deactivate it
+  // and reset the attempt budget so a later re-enable starts fresh. Logins
+  // written while Rust was active are restored by #restoreLoginsFromRust.
   #deactivateRust() {
     this.#logger.log("Deactivating Rust backend");
     Services.prefs.setBoolPref(PREFS.RUST_ACTIVE, false);
     Services.prefs.setIntPref(PREFS.MIGRATION_ATTEMPTS, 0);
     return this.#jsonStorage;
+  }
+
+  // Copies logins the JSON store doesn't have out of the disabled Rust store.
+  // The Rust database is left alone; RESTORE_DONE is what makes this a real
+  // no-op from then on, without even the count.
+  // Independent of the returned store and deliberately not awaited: it must not
+  // hold up storage initialization, and if it fails nothing is lost - the
+  // database stays and the next startup retries. Counting here does not
+  // decrypt, so the common case of an empty store never touches the primary
+  // password.
+  async #restoreLoginsFromRust() {
+    const attempt = Services.prefs.getIntPref(PREFS.RESTORE_ATTEMPTS, 0);
+    if (
+      Services.prefs.getBoolPref(PREFS.RESTORE_DONE, false) ||
+      !Services.prefs.getBoolPref(PREFS.RESTORE_ENABLED, true) ||
+      attempt >= MAX_RESTORE_ATTEMPTS
+    ) {
+      return;
+    }
+
+    // Read before the first await
+    const state = this.#state;
+    const runId = Services.uuid.generateUUID();
+    const startedAt = ChromeUtils.now();
+    // The count the run is reported with, so the end states that give up
+    // before reading the store still say how much they gave up on.
+    let loginsInRust = 0;
+    let added = 0;
+    let updated = 0;
+    let skipped = 0;
+    let failed = 0;
+    let fatalError = null;
+    // Stays null while there is nothing worth reporting, which is the case for
+    // every profile that never had the Rust backend enabled.
+    let endState = null;
+
+    try {
+      loginsInRust = await this.#rustStorage.countLoginsAsync("", "", "");
+      if (!loginsInRust) {
+        Services.prefs.setBoolPref(PREFS.RESTORE_DONE, true);
+        return;
+      }
+      if (loginsInRust > MAX_LOGINS_TO_RESTORE) {
+        Services.prefs.setBoolPref(PREFS.RESTORE_DONE, true);
+        endState = "TooManyLogins";
+        return;
+      }
+      if (
+        Services.prefs.getStringPref(PREFS.SYNC_USERNAME, "") &&
+        Services.prefs.getBoolPref(PREFS.SYNC_PASSWORDS_ENGINE, true)
+      ) {
+        Services.prefs.setBoolPref(PREFS.RESTORE_DONE, true);
+        endState = "SyncSkipped";
+        return;
+      }
+      if (!this.#jsonStorage.isLoggedIn) {
+        // Decrypting would prompt for the primary password, so defer
+        this.#restoreOnUnlock();
+        endState = "Deferred";
+        return;
+      }
+
+      // prevent retries on every startup forever
+      Services.prefs.setIntPref(PREFS.RESTORE_ATTEMPTS, attempt + 1);
+
+      const rustLogins = await this.#rustStorage.getAllLogins(false);
+
+      for (const rustLogin of rustLogins) {
+        // Between two logins is the only point where stopping leaves both
+        // stores in a state the next run can pick up from.
+        if (Services.startup.shuttingDown) {
+          endState = "Aborted";
+          break;
+        }
+        try {
+          rustLogin.QueryInterface(Ci.nsILoginMetaInfo);
+          if (await this.#jsonStorage.loginIsDeletedAsync(rustLogin.guid)) {
+            skipped++;
+            continue;
+          }
+          const jsonLogin = await this.#findInJsonStore(rustLogin);
+
+          if (!jsonLogin) {
+            // addLoginsAsync rejects duplicates itself and returns nothing for
+            // them, so even a missed lookup cannot create a second login.
+            const [result] = await this.#jsonStorage.addLoginsAsync(
+              [rustLogin],
+              true
+            );
+            if (result) {
+              added++;
+            } else {
+              skipped++;
+            }
+          } else if (
+            (jsonLogin.username != rustLogin.username ||
+              jsonLogin.password != rustLogin.password) &&
+            rustLogin.timePasswordChanged > jsonLogin.timePasswordChanged
+          ) {
+            await this.#jsonStorage.modifyLoginAsync(
+              jsonLogin,
+              credentialPropertyBag(rustLogin)
+            );
+            updated++;
+          } else {
+            // Identical, or the JSON store holds the newer credentials because
+            // the user changed them in the meantime. Leave it alone.
+            skipped++;
+          }
+        } catch (e) {
+          this.#logger.error("Restore error:", e.message);
+          Glean.pwmgr.rustRestoreLoginError.record({
+            metric_version: telemetryVersion,
+            run_id: runId,
+            error_message: normalizeRustStorageErrorMessage(e),
+          });
+          failed++;
+        }
+      }
+
+      if (!endState) {
+        // Only mark the store as restored if we're complete
+        if (failed) {
+          endState = "Incomplete";
+        } else {
+          Services.prefs.setBoolPref(PREFS.RESTORE_DONE, true);
+          endState = "Restored";
+        }
+      }
+    } catch (e) {
+      this.#logger.error("Restoring logins from Rust failed:", e);
+      fatalError = e;
+      endState = "Failed";
+    } finally {
+      if (endState) {
+        this.#logger.log(
+          `Restore ${endState}: ${added} added, ${updated} updated, ` +
+            `${skipped} skipped, ${failed} failed`
+        );
+        Glean.pwmgr.rustRestoreStatus.record({
+          metric_version: telemetryVersion,
+          run_id: runId,
+          duration_ms: Math.round(ChromeUtils.now() - startedAt),
+          attempt,
+          state,
+          end_state: endState,
+          number_of_logins_to_restore: loginsInRust,
+          number_of_logins_added: added,
+          number_of_logins_updated: updated,
+          number_of_logins_skipped: skipped,
+          number_of_logins_failed: failed,
+          primary_password_set: lazy.LoginHelper.isPrimaryPasswordSet(),
+          error_message: fatalError
+            ? normalizeRustStorageErrorMessage(fatalError)
+            : null,
+        });
+      }
+    }
+  }
+
+  // The JSON store's counterpart of a Rust login: the same record by guid, or,
+  // if the user deleted and re-created it in the meantime, the login with the
+  // same name. Mirrors the lookups LoginHelper's ImportRowProcessor does.
+  async #findInJsonStore(rustLogin) {
+    const [sameGuid] = await this.#jsonStorage.searchLoginsAsync({
+      guid: rustLogin.guid,
+    });
+    if (sameGuid) {
+      return sameGuid.QueryInterface(Ci.nsILoginMetaInfo);
+    }
+    // formActionOrigin and httpRealm may be empty or null, in which case they
+    // are ignored by the search.
+    const candidates = await this.#jsonStorage.searchLoginsAsync({
+      origin: rustLogin.origin,
+      formActionOrigin: rustLogin.formActionOrigin,
+      httpRealm: rustLogin.httpRealm,
+    });
+    const sameName = candidates.find(
+      login => login.username == rustLogin.username
+    );
+    return sameName?.QueryInterface(Ci.nsILoginMetaInfo);
+  }
+
+  // The observer is registered strongly, since nothing else keeps the migrator
+  // alive, so it also has to be dropped when the profile goes away and the user
+  // never unlocked.
+  #restoreOnUnlock() {
+    const topics = ["passwordmgr-crypto-login", "profile-before-change"];
+    const observer = {
+      observe: (_subject, topic) => {
+        topics.forEach(t => Services.obs.removeObserver(observer, t));
+        if (topic == "passwordmgr-crypto-login") {
+          this.#restoreLoginsFromRust();
+        }
+      },
+    };
+    topics.forEach(t => Services.obs.addObserver(observer, t));
   }
 }

@@ -939,6 +939,118 @@ pwmgr:
           The error message or exception string from the failure.
         type: string
 
+  rust_restore_status:
+    type: event
+    description: >
+      One record per run that restores logins out of the deactivated Rust
+      store back into the JSON store, recording duration, login counts and
+      any fatal error.
+    bugs:
+      - https://bugzil.la/2065593
+    data_reviews:
+      - https://bugzil.la/2065593
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - passwords-dev@mozilla.org
+    expires: never
+    extra_keys:
+      metric_version:
+        type: string
+        description: Identifier for rust migration telemetry version
+      run_id:
+        type: string
+        description: Unique identifier for the restore run.
+      duration_ms:
+        description: >
+          Duration of the restore in milliseconds, measured with a monotonic
+          clock.
+        type: quantity
+      attempt:
+        description: >
+          Number of prior restore attempts across sessions (0 on the first
+          attempt). Restores stop being attempted once this reaches its
+          budget.
+        type: quantity
+      state:
+        description: >
+          Migrator state when the restore started: "RevertPending" the first
+          time the Rust backend is deactivated, "JSONPrimary" for a later
+          startup retrying a restore that did not complete.
+        type: string
+      number_of_logins_to_restore:
+        description: >
+          Number of logins found in the Rust store. Reported for every run,
+          including the ones that give up before reading the store, so
+          "TooManyLogins" and "SyncSkipped" say how many logins they left
+          behind.
+        type: quantity
+      number_of_logins_added:
+        description: >
+          Number of logins that did not exist in the JSON store and were added.
+        type: quantity
+      number_of_logins_updated:
+        description: >
+          Number of logins whose credentials were newer in the Rust store and
+          were written back to the JSON store.
+        type: quantity
+      number_of_logins_skipped:
+        description: >
+          Number of logins left untouched because the JSON store already held
+          the same or newer credentials.
+        type: quantity
+      number_of_logins_failed:
+        description: >
+          Number of logins that could not be restored. The Rust store is kept
+          instead of wiped when this is non-zero, so the next startup retries.
+        type: quantity
+      end_state:
+        description: >
+          Outcome of the run: "Restored" when every login made it into the JSON
+          store, "Incomplete" when individual logins failed, "Deferred" when
+          the primary password was locked and the restore is waiting for the
+          unlock, "Aborted" when the browser shut down mid-run, "SyncSkipped"
+          when Sync is set up to carry logins and brings them back itself,
+          "TooManyLogins" when the Rust store held implausibly many logins,
+          "Failed" when a fatal error aborted the run. The Rust database is
+          never touched. "Restored", "SyncSkipped" and "TooManyLogins" are
+          final, the others mean a later startup tries again.
+        type: string
+      primary_password_set:
+        description: >
+          Whether a Primary Password was set at the time of the run.
+        type: boolean
+      error_message:
+        description: >
+          The fatal error that aborted the run, or empty if the run completed.
+        type: string
+
+  rust_restore_login_error:
+    type: event
+    description: >
+      Records one event per login that could not be restored from the
+      deactivated Rust store, with the normalized error message.
+    bugs:
+      - https://bugzil.la/2065593
+    data_reviews:
+      - https://bugzil.la/2065593
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - passwords-dev@mozilla.org
+    expires: never
+    extra_keys:
+      metric_version:
+        type: string
+        description: Identifier for rust migration telemetry version
+      run_id:
+        type: string
+        description: Unique identifier for the restore run
+      error_message:
+        description: >
+          The error message or exception string from the failure.
+        type: string
+
   saving_enabled:
     type: boolean
     lifetime: application
