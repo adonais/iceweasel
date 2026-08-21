@@ -216,3 +216,20 @@ async function assertRuleCount(editor, expected) {
   });
   is(parseInt(element.textContent, 10), expected, "the rule count is correct");
 }
+
+/**
+ * Get the URL for a local test file.
+ *
+ * @param {string} path
+ *        relative path to the test file.
+ * @return {nsIFileURL}
+ *        file:// URL to that test file.
+ */
+function getSupportsFile(path) {
+  const cr = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(
+    Ci.nsIChromeRegistry
+  );
+  const uri = Services.io.newURI(CHROME_URL_ROOT + path);
+  const fileurl = cr.convertChromeURL(uri);
+  return fileurl.QueryInterface(Ci.nsIFileURL);
+}

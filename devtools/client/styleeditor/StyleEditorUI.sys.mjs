@@ -1620,6 +1620,13 @@ export class StyleEditorUI extends EventEmitter {
     this.emit("reloaded");
   }
 
+  /**
+   * Handle new non-original stylesheet ressource.
+   * (Original stylesheets are going to be created from #tryAddingOriginalStyleSheets)
+   *
+   * @param  {Resource} resource
+   *         The STYLESHEET resource which is received from resource command.
+   */
   async #handleStyleSheetResource(resource) {
     try {
       // The fileName is in resource means this stylesheet was imported from file by user.
@@ -1634,6 +1641,17 @@ export class StyleEditorUI extends EventEmitter {
           file = savedFile;
         }
       }
+
+      // As this method only processes actual stylesheet running on the page
+      // (and not the original stylesheet, which may have a forged URL which is different from the displayed content),
+      // trust the file URL and automatically allow saving to matching local file.
+      // (This may change if we start supporting `//# sourceURL` for stylesheets.)
+      if (!file && resource.href?.startsWith("file://")) {
+        const uri = Services.io.newURI(resource.href);
+        uri.QueryInterface(Ci.nsIFileURL);
+        file = uri.file;
+      }
+
       // Check if this file relates to a Local Mode mapping
       // so that we can save directly to the local file
       if (!file && resource.href) {
