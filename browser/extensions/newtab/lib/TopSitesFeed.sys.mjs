@@ -2092,18 +2092,7 @@ export class TopSitesFeed {
   }
 
   async topSiteToSearchTopSite(site) {
-    const searchProvider = getSearchProvider(lazy.NewTabUtils.shortURL(site));
-    if (
-      !searchProvider ||
-      !(await checkHasSearchEngine(searchProvider.keyword))
-    ) {
-      return site;
-    }
-    return {
-      ...site,
-      searchTopSite: true,
-      label: searchProvider.keyword,
-    };
+    return site;
   }
 
   /**

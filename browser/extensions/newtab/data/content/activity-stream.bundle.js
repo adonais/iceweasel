@@ -7763,8 +7763,6 @@ function TopSites(prevState = INITIAL_STATE.TopSites, action) {
         site => !action.data.urls.includes(site.url)
       );
       return Object.assign({}, prevState, { rows: newRows });
-    case actionTypes.UPDATE_SEARCH_SHORTCUTS:
-      return { ...prevState, searchShortcuts: action.data.searchShortcuts };
     case actionTypes.SOV_UPDATED: {
       const sov = {
         ready: action.data.ready,
