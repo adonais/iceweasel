@@ -4015,7 +4015,11 @@ pref("security.storage.encryption.sqlite.enabled", false, locked);
 pref("extensions.formautofill.available", "detect");
 
 #if !defined(ANDROID)
-pref("extensions.formautofill.addresses.supported", "on");
+  #if MOZ_UPDATE_CHANNEL != release && MOZ_UPDATE_CHANNEL != esr
+    pref("extensions.formautofill.addresses.supported", "on");
+  #else
+    pref("extensions.formautofill.addresses.supported", "detect");
+  #endif
 #else
 pref("extensions.formautofill.addresses.supported", "detect");
 #endif
