@@ -35,4 +35,5 @@ load 1819957-1.html
 load 1851726-1.html
 pref(image.testing.decode-sync.enabled,false) load 1862277-1.html
 needs-focus pref(ui.caretBlinkTime,200) pref(image.testing.decode-sync.enabled,false) asserts(0-2) load 1870415-1.html
+pref(apz.fixed-margin-override.enabled,true) load 2063312.html
 load text-decoration-inset-text-combine-upright.html
