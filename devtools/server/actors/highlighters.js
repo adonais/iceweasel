@@ -53,6 +53,9 @@ const registerHighlighter = (typeName, modulePath) => {
 exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
   /**
    * Create a highlighter instance given its typeName.
+   *
+   * @param {Actor} parent: An actor that will manage the created customHighlighterActor
+   * @param {string} typeName: The highlighter to create (see devtools/shared/highlighters.mjs)
    */
   constructor(parent, typeName) {
     super(parent.conn, customHighlighterSpec);
@@ -87,6 +90,8 @@ exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
         "Custom " + typeName + "highlighter cannot be created in a XUL window"
       );
     }
+
+    parent.manage(this);
   }
 
   destroy() {
