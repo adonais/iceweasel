@@ -776,7 +776,7 @@
 
     &.urlbarView-tabGroup {
       color: light-dark(var(--tab-group-color-pale), var(--tab-group-label-text-dark));
-      background-color: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
+      background-color: var(--tab-group-color);
     }
 
     @media not -moz-pref("browser.urlbar.scotchBonnet.enableOverride") {
@@ -1249,7 +1249,7 @@
 
   &[data-action^="tabgroup-"] {
     color: light-dark(var(--tab-group-color-pale), var(--tab-group-label-text-dark));
-    background-color: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
+    background-color: var(--tab-group-color);
     max-width: 30%;
 
     /* Add offset to the focus / selection indicator as the outline color could
