@@ -4022,7 +4022,11 @@ pref("extensions.formautofill.addresses.supported", "detect");
 
 // Use ML for address form field detection.
 #if defined(XP_WIN) || defined(XP_MACOSX)
-pref("extensions.formautofill.useml", true);
+  #if MOZ_UPDATE_CHANNEL != release && MOZ_UPDATE_CHANNEL != esr
+    pref("extensions.formautofill.useml", true);
+  #else
+    pref("extensions.formautofill.useml", false);
+  #endif
 #else
 pref("extensions.formautofill.useml", false);
 #endif
