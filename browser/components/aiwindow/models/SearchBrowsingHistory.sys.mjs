@@ -4,8 +4,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import { sanitizeUntrustedContent } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
-
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
@@ -96,7 +94,7 @@ function buildHistoryRow(row, fromNode = false) {
   }
 
   return {
-    title: sanitizeUntrustedContent(title || url),
+    title: title || url,
     url,
     visitDate: visitDateIso, // ISO timestamp format
     visitCount: visitCount || 0,
