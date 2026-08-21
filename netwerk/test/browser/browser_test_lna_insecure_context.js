@@ -127,6 +127,22 @@ function registerPublicServerHandlers(server) {
   });
 }
 
+// The target of these tests is localhost, so the prompt that would be shown is
+// the loopback-network one. Check the local-network ID too, in case the address
+// space classification of the target ever changes.
+function getLNANotification() {
+  return (
+    PopupNotifications.getNotification(
+      "loopback-network",
+      gBrowser.selectedBrowser
+    ) ||
+    PopupNotifications.getNotification(
+      "local-network",
+      gBrowser.selectedBrowser
+    )
+  );
+}
+
 function observeAndCheck(testType, rand, expectedStatus, message) {
   return new Promise(resolve => {
     const url = `http://localhost:${gLocalServerPort}/?type=${testType}&rand=${rand}`;
@@ -212,15 +228,59 @@ add_task(async function test_lna_insecure_context_blocking() {
 
     // Verify that no notification/prompt was shown (insecure contexts
     // should be blocked without prompting)
-    let popup = PopupNotifications.getNotification(
-      "local-network-access",
-      gBrowser.selectedBrowser
-    );
     ok(
-      !popup,
+      !getLNANotification(),
       `No permission prompt should be shown for ${test.type} from insecure context`
     );
 
     gBrowser.removeTab(tab);
   }
+});
+
+add_task(async function test_lna_insecure_context_prompts_when_pref_disabled() {
+  info(
+    "Testing that LNA requests from HTTP still prompt when " +
+      "network.lna.block_insecure_contexts is false"
+  );
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["network.lna.block_insecure_contexts", false],
+      [
+        "network.proxy.no_proxies_on",
+        `localhost, 127.0.0.1, ${PUBLIC_SERVER_HOST}`,
+      ],
+      [
+        "network.lna.address_space.public.override",
+        `127.0.0.1:${gPublicServerPort}`,
+      ],
+    ],
+  });
+
+  const rand = Math.random();
+  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  const url = `http://${PUBLIC_SERVER_HOST}:${gPublicServerPort}/test.html?test=fetch&rand=${rand}`;
+
+  const popupShown = BrowserTestUtils.waitForEvent(
+    PopupNotifications.panel,
+    "popupshown"
+  );
+  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  await popupShown;
+
+  ok(
+    getLNANotification(),
+    "Permission prompt should be shown for an insecure context when " +
+      "block_insecure_contexts is disabled"
+  );
+
+  const popupHidden = BrowserTestUtils.waitForEvent(
+    PopupNotifications.panel,
+    "popuphidden"
+  );
+  PopupNotifications.panel.firstElementChild.secondaryButton.click();
+  await popupHidden;
+
+  gBrowser.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
 });

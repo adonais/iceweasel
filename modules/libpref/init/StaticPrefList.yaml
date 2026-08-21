@@ -15706,9 +15706,11 @@
 # When true, block LNA requests from insecure contexts (http:// origins that
 # are not localhost or .local). Uses IsPotentiallyTrustworthyOrigin to
 # determine if the origin is trustworthy.
+# The spec requires this, but it is disabled by default until Chrome ships the
+# same restriction, to avoid breaking sites that only work in Firefox.
 - name: network.lna.block_insecure_contexts
   type: RelaxedAtomicBool
-  value: true
+  value: false
   mirror: always
 
 
