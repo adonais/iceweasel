@@ -13,7 +13,6 @@
 
 #include <cstddef>
 #include <cstdint>
-
 #include <functional>
 #include <memory>
 
@@ -81,7 +80,7 @@ class NetEqController {
     bool dtx_or_cng;
     size_t num_samples;
     size_t span_samples;
-    size_t span_samples_no_dtx;
+    size_t span_samples_wait_time;
     size_t num_packets;
   };
 

@@ -513,6 +513,7 @@ if (rtc_enable_protobuf) {
       "rtc_event_log/rtc_event_log_parser.h",
       "rtc_event_log/rtc_event_processor.cc",
       "rtc_event_log/rtc_event_processor.h",
+      "rtc_event_log/rtc_event_processor_order.h",
     ]
 
     deps = [
@@ -625,6 +626,8 @@ if (rtc_enable_protobuf) {
         "../rtc_base:rtc_base_tests_utils",
         "../rtc_base:timeutils",
         "../system_wrappers",
+        "../system_wrappers:field_trial",
+        "../test:field_trial",
         "../test:fileutils",
         "../test:test_support",
         "../test/logging:log_writer",

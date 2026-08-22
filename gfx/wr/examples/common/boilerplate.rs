@@ -207,6 +207,7 @@ pub fn main_wrapper<E: Example>(
     );
     txn.set_display_list(
         epoch,
+        api.get_namespace_id(),
         builder.end(),
     );
     txn.set_root_pipeline(pipeline_id);
@@ -304,6 +305,7 @@ pub fn main_wrapper<E: Example>(
             );
             txn.set_display_list(
                 epoch,
+                api.get_namespace_id(),
                 builder.end(),
             );
             txn.generate_frame(0, RenderReasons::empty());

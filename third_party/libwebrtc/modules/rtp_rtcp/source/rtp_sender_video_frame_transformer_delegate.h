@@ -34,6 +34,7 @@ class RTPVideoFrameSenderInterface {
       uint32_t rtp_timestamp,
       int64_t capture_time_ms,
       rtc::ArrayView<const uint8_t> payload,
+      size_t encoder_output_size,
       RTPVideoHeader video_header,
       absl::optional<int64_t> expected_retransmission_time_ms,
       std::vector<uint32_t> csrcs) = 0;
@@ -57,6 +58,7 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
       rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
       uint32_t ssrc,
       std::vector<uint32_t> csrcs,
+      const std::string& rid,
       TaskQueueFactory* send_transport_queue);
 
   void Init();
@@ -104,6 +106,7 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
   rtc::scoped_refptr<FrameTransformerInterface> frame_transformer_;
   const uint32_t ssrc_;
   std::vector<uint32_t> csrcs_;
+  const std::string rid_;
   // Used when the encoded frames arrives without a current task queue. This can
   // happen if a hardware encoder was used.
   std::unique_ptr<TaskQueueBase, TaskQueueDeleter> transformation_queue_;

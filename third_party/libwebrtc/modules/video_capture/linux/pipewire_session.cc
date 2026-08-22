@@ -358,7 +358,7 @@ void PipeWireSession::OnOpenResponse(GDBusProxy* proxy,
 
   int fd = g_unix_fd_list_get(outlist.get(), index, error.receive());
 
-  if (fd == -1) {
+  if (fd == kInvalidPipeWireFd) {
     RTC_LOG(LS_ERROR) << "Failed to get file descriptor from the list: "
                       << error->message;
     that->Finish(VideoCaptureOptions::Status::ERROR);

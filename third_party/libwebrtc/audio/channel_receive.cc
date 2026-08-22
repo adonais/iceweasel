@@ -343,11 +343,10 @@ void ChannelReceive::OnReceivedPayloadData(
     return;
   }
 
-  int64_t round_trip_time = 0;
-  rtp_rtcp_->RTT(remote_ssrc_, &round_trip_time, /*avg_rtt=*/nullptr,
-                 /*min_rtt=*/nullptr, /*max_rtt=*/nullptr);
+  TimeDelta round_trip_time = rtp_rtcp_->LastRtt().value_or(TimeDelta::Zero());
 
-  std::vector<uint16_t> nack_list = acm_receiver_.GetNackList(round_trip_time);
+  std::vector<uint16_t> nack_list =
+      acm_receiver_.GetNackList(round_trip_time.ms());
   if (!nack_list.empty()) {
     // Can't use nack_list.data() since it's not supported by all
     // compilers.
@@ -744,10 +743,8 @@ void ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   // Deliver RTCP packet to RTP/RTCP module for parsing
   rtp_rtcp_->IncomingRtcpPacket(rtc::MakeArrayView(data, length));
 
-  int64_t rtt = 0;
-  rtp_rtcp_->RTT(remote_ssrc_, &rtt, /*avg_rtt=*/nullptr, /*min_rtt=*/nullptr,
-                 /*max_rtt=*/nullptr);
-  if (rtt == 0) {
+  absl::optional<TimeDelta> rtt = rtp_rtcp_->LastRtt();
+  if (!rtt.has_value()) {
     // Waiting for valid RTT.
     return;
   }
@@ -761,8 +758,7 @@ void ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
 
   {
     MutexLock lock(&ts_stats_lock_);
-    ntp_estimator_.UpdateRtcpTimestamp(TimeDelta::Millis(rtt),
-                                       last_sr->last_remote_timestamp,
+    ntp_estimator_.UpdateRtcpTimestamp(*rtt, last_sr->last_remote_timestamp,
                                        last_sr->last_remote_rtp_timestamp);
     absl::optional<int64_t> remote_to_local_clock_offset =
         ntp_estimator_.EstimateRemoteToLocalClockOffset();
@@ -829,19 +825,18 @@ CallReceiveStatistics ChannelReceive::GetRTCPStatistics() const {
 
   // Data counters.
   if (statistician) {
-    stats.payload_bytes_rcvd = rtp_stats.packet_counter.payload_bytes;
+    stats.payload_bytes_received = rtp_stats.packet_counter.payload_bytes;
 
-    stats.header_and_padding_bytes_rcvd =
+    stats.header_and_padding_bytes_received =
         rtp_stats.packet_counter.header_bytes +
         rtp_stats.packet_counter.padding_bytes;
     stats.packetsReceived = rtp_stats.packet_counter.packets;
-    stats.last_packet_received_timestamp_ms =
-        rtp_stats.last_packet_received_timestamp_ms;
+    stats.last_packet_received = rtp_stats.last_packet_received;
   } else {
-    stats.payload_bytes_rcvd = 0;
-    stats.header_and_padding_bytes_rcvd = 0;
+    stats.payload_bytes_received = 0;
+    stats.header_and_padding_bytes_received = 0;
     stats.packetsReceived = 0;
-    stats.last_packet_received_timestamp_ms = absl::nullopt;
+    stats.last_packet_received = absl::nullopt;
   }
 
   {

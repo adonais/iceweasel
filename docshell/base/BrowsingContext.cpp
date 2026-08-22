@@ -572,6 +572,21 @@ mozilla::ipc::IPCResult BrowsingContext::CreateFromIPC(
   context->mRequestContextId = aInit.mRequestContextId;
   // NOTE: Private browsing ID is set by `SetOriginAttributes`.
 
+  if (aOriginProcess) {
+    if (context->GetBrowserId() == 0) {
+      return IPC_FAIL(aOriginProcess,
+                      "Content BC must have a nonzero BrowserId");
+    }
+    if (!parent) {
+      uint64_t browserProc = std::get<0>(
+          nsContentUtils::SplitProcessSpecificId(context->GetBrowserId()));
+      if (browserProc != aOriginProcess->ChildID()) {
+        return IPC_FAIL(aOriginProcess,
+                        "Content BC BrowserId must come from its own process");
+      }
+    }
+  }
+
   Register(context);
 
   return context->Attach(/* aFromIPC */ true, aOriginProcess);

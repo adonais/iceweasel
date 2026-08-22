@@ -448,9 +448,6 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     // when switching from a static scene to one with motion.
     absl::optional<int> screencast_min_bitrate;
 
-    // Use new combined audio/video bandwidth estimation?
-    absl::optional<bool> combined_audio_video_bwe;
-
 #if defined(WEBRTC_FUCHSIA)
     // TODO(bugs.webrtc.org/11066): Remove entirely once Fuchsia does not use.
     // TODO(bugs.webrtc.org/9891) - Move to crypto_options
@@ -1555,9 +1552,7 @@ class RTC_EXPORT PeerConnectionFactoryInterface
   virtual rtc::scoped_refptr<VideoTrackInterface> CreateVideoTrack(
       rtc::scoped_refptr<VideoTrackSourceInterface> source,
       absl::string_view label) = 0;
-  // TODO(bugs.webrtc.org/15017): Deprecate this function once Chrome
-  // has been updated - it can't land as deprecated.
-  // ABSL_DEPRECATED("Use version with scoped_refptr")
+  ABSL_DEPRECATED("Use version with scoped_refptr")
   virtual rtc::scoped_refptr<VideoTrackInterface> CreateVideoTrack(
       const std::string& label,
       VideoTrackSourceInterface* source) {

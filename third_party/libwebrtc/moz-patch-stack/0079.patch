@@ -1,45 +1,25 @@
-From: Andreas Pehrson <apehrson@mozilla.com>
-Date: Wed, 11 Jan 2023 22:42:00 +0000
-Subject: Bug 1800942 - Add DCHECKs to
- TimestampExtrapolator::ExtrapolateLocalTime. r=mjf
+From: Byron Campen <docfaraday@gmail.com>
+Date: Tue, 4 Apr 2023 16:34:00 -0500
+Subject: Bug 1822194 - (fix-3b51cd328e) - Add missing designated initializer
+ that gcc is sad about.
 
-Differential Revision: https://phabricator.services.mozilla.com/D166536
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/c5df7f40392464ffc63f44a53ddcaab2091741e0
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/108046c7cbb21c6cf19320c0804e9aee1a3eb4bf
 ---
- modules/video_coding/timing/timestamp_extrapolator.cc | 7 +++++++
- 1 file changed, 7 insertions(+)
+ modules/audio_processing/audio_processing_impl.cc | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/modules/video_coding/timing/timestamp_extrapolator.cc b/modules/video_coding/timing/timestamp_extrapolator.cc
-index c91aa1a362..dc62ac674a 100644
---- a/modules/video_coding/timing/timestamp_extrapolator.cc
-+++ b/modules/video_coding/timing/timestamp_extrapolator.cc
-@@ -125,6 +125,7 @@ void TimestampExtrapolator::Update(Timestamp now, uint32_t ts90khz) {
- absl::optional<Timestamp> TimestampExtrapolator::ExtrapolateLocalTime(
-     uint32_t timestamp90khz) const {
-   int64_t unwrapped_ts90khz = unwrapper_.PeekUnwrap(timestamp90khz);
-+  RTC_DCHECK_GE(unwrapped_ts90khz, 0);
- 
-   if (!first_unwrapped_timestamp_) {
-     return absl::nullopt;
-@@ -132,12 +133,18 @@ absl::optional<Timestamp> TimestampExtrapolator::ExtrapolateLocalTime(
-     constexpr double kRtpTicksPerMs = 90;
-     TimeDelta diff = TimeDelta::Millis(
-         (unwrapped_ts90khz - *prev_unwrapped_timestamp_) / kRtpTicksPerMs);
-+    if (diff.ms() < 0) {
-+      RTC_DCHECK_GE(prev_.ms(), -diff.ms());
-+    }
-     return prev_ + diff;
-   } else if (w_[0] < 1e-3) {
-     return start_;
-   } else {
-     double timestampDiff = unwrapped_ts90khz - *first_unwrapped_timestamp_;
-     auto diff_ms = static_cast<int64_t>((timestampDiff - w_[1]) / w_[0] + 0.5);
-+    if (diff_ms < 0) {
-+      RTC_DCHECK_GE(start_.ms(), -diff_ms);
-+    }
-     return start_ + TimeDelta::Millis(diff_ms);
-   }
- }
+diff --git a/modules/audio_processing/audio_processing_impl.cc b/modules/audio_processing/audio_processing_impl.cc
+index c80cc76a3d..c304453388 100644
+--- a/modules/audio_processing/audio_processing_impl.cc
++++ b/modules/audio_processing/audio_processing_impl.cc
+@@ -450,6 +450,7 @@ AudioProcessingImpl::GetGainController2ExperimentParams() {
+                   },
+               .adaptive_digital_controller =
+                   {
++                      .enabled = false,
+                       .headroom_db = static_cast<float>(headroom_db.Get()),
+                       .max_gain_db = static_cast<float>(max_gain_db.Get()),
+                       .initial_gain_db =
 -- 
-2.34.1
+2.39.3 (Apple Git-145)
 

@@ -55,7 +55,7 @@ class RTCPReceiver final {
     virtual void OnReceivedNack(
         const std::vector<uint16_t>& nack_sequence_numbers) = 0;
     virtual void OnReceivedRtcpReportBlocks(
-        const ReportBlockList& report_blocks) = 0;
+        rtc::ArrayView<const ReportBlockData> report_blocks) = 0;
 
    protected:
     virtual ~ModuleRtpRtcp() = default;
@@ -122,18 +122,14 @@ class RTCPReceiver final {
                             int64_t* ntp_timestamp_ms,
                             int64_t* remote_ntp_timestamp_ms) const;
 
-  // Get rtt.
-  int32_t RTT(uint32_t remote_ssrc,
-              int64_t* last_rtt_ms,
-              int64_t* avg_rtt_ms,
-              int64_t* min_rtt_ms,
-              int64_t* max_rtt_ms) const;
+  absl::optional<TimeDelta> AverageRtt() const;
+  absl::optional<TimeDelta> LastRtt() const;
 
   // Returns non-sender RTT metrics for the remote SSRC.
   NonSenderRttStats GetNonSenderRTT() const;
 
   void SetNonSenderRttMeasurement(bool enabled);
-  bool GetAndResetXrRrRtt(int64_t* rtt_ms);
+  absl::optional<TimeDelta> GetAndResetXrRrRtt();
 
   // Called once per second on the worker thread to do rtt calculations.
   // Returns an optional rtt value if one is available.
@@ -257,14 +253,10 @@ class RTCPReceiver final {
     void AddRtt(TimeDelta rtt);
 
     TimeDelta last_rtt() const { return last_rtt_; }
-    TimeDelta min_rtt() const { return min_rtt_; }
-    TimeDelta max_rtt() const { return max_rtt_; }
     TimeDelta average_rtt() const { return sum_rtt_ / num_rtts_; }
 
    private:
     TimeDelta last_rtt_ = TimeDelta::Zero();
-    TimeDelta min_rtt_ = TimeDelta::PlusInfinity();
-    TimeDelta max_rtt_ = TimeDelta::MinusInfinity();
     TimeDelta sum_rtt_ = TimeDelta::Zero();
     size_t num_rtts_ = 0;
   };
@@ -369,12 +361,11 @@ class RTCPReceiver final {
   // The set of registered local SSRCs.
   RegisteredSsrcs registered_ssrcs_;
 
-  RtcpBandwidthObserver* const rtcp_bandwidth_observer_;
+  NetworkLinkRtcpObserver* const network_link_rtcp_observer_;
   RtcpEventObserver* const rtcp_event_observer_;
   RtcpIntraFrameObserver* const rtcp_intra_frame_observer_;
   RtcpLossNotificationObserver* const rtcp_loss_notification_observer_;
   NetworkStateEstimateObserver* const network_state_estimate_observer_;
-  TransportFeedbackObserver* const transport_feedback_observer_;
   VideoBitrateAllocationObserver* const bitrate_allocation_observer_;
   const TimeDelta report_interval_;
 
@@ -392,9 +383,9 @@ class RTCPReceiver final {
   flat_map<uint32_t, std::list<RrtrInformation>::iterator>
       received_rrtrs_ssrc_it_ RTC_GUARDED_BY(rtcp_receiver_lock_);
 
-  // Estimated rtt, zero when there is no valid estimate.
+  // Estimated rtt, nullopt when there is no valid estimate.
   bool xr_rrtr_status_ RTC_GUARDED_BY(rtcp_receiver_lock_);
-  int64_t xr_rr_rtt_ms_;
+  absl::optional<TimeDelta> xr_rr_rtt_;
 
   int64_t oldest_tmmbr_info_ms_ RTC_GUARDED_BY(rtcp_receiver_lock_);
   // Mapped by remote ssrc.

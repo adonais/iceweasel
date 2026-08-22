@@ -469,27 +469,6 @@ rtc_source_set("make_ref_counted") {
   deps = [ "../rtc_base:refcount" ]
 }
 
-rtc_source_set("video_quality_test_fixture_api") {
-  visibility = [ "*" ]
-  testonly = true
-  sources = [ "test/video_quality_test_fixture.h" ]
-  deps = [
-    ":fec_controller_api",
-    ":libjingle_peerconnection_api",
-    ":network_state_predictor_api",
-    ":rtp_parameters",
-    ":simulated_network_api",
-    "../call:fake_network",
-    "../call:rtp_interfaces",
-    "../test:test_common",
-    "../test:video_test_common",
-    "../video/config:encoder_config",
-    "transport:bitrate_settings",
-    "transport:network_control",
-    "video_codecs:video_codecs_api",
-  ]
-}
-
 rtc_source_set("video_quality_analyzer_api") {
   visibility = [ "*" ]
   testonly = true
@@ -498,6 +477,7 @@ rtc_source_set("video_quality_analyzer_api") {
   deps = [
     ":array_view",
     ":stats_observer_interface",
+    "../rtc_base:checks",
     "video:encoded_image",
     "video:video_frame",
     "video:video_rtp_headers",
@@ -655,20 +635,6 @@ rtc_source_set("frame_generator_api") {
   absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
 }
 
-rtc_library("test_dependency_factory") {
-  visibility = [ "*" ]
-  testonly = true
-  sources = [
-    "test/test_dependency_factory.cc",
-    "test/test_dependency_factory.h",
-  ]
-  deps = [
-    ":video_quality_test_fixture_api",
-    "../rtc_base:checks",
-    "../rtc_base:platform_thread_types",
-  ]
-}
-
 if (rtc_include_tests) {
   # TODO(srte): Move to network_emulation sub directory.
   rtc_library("create_network_emulation_manager") {
@@ -685,6 +651,41 @@ if (rtc_include_tests) {
   }
 
   if (!build_with_chromium) {
+    rtc_source_set("video_quality_test_fixture_api") {
+      visibility = [ "*" ]
+      testonly = true
+      sources = [ "test/video_quality_test_fixture.h" ]
+      deps = [
+        ":fec_controller_api",
+        ":libjingle_peerconnection_api",
+        ":network_state_predictor_api",
+        ":rtp_parameters",
+        ":simulated_network_api",
+        "../call:fake_network",
+        "../call:rtp_interfaces",
+        "../test:test_common",
+        "../test:video_test_common",
+        "../video/config:encoder_config",
+        "transport:bitrate_settings",
+        "transport:network_control",
+        "video_codecs:video_codecs_api",
+      ]
+    }
+
+    rtc_library("test_dependency_factory") {
+      visibility = [ "*" ]
+      testonly = true
+      sources = [
+        "test/test_dependency_factory.cc",
+        "test/test_dependency_factory.h",
+      ]
+      deps = [
+        ":video_quality_test_fixture_api",
+        "../rtc_base:checks",
+        "../rtc_base:platform_thread_types",
+      ]
+    }
+
     rtc_library("create_video_quality_test_fixture_api") {
       visibility = [ "*" ]
       testonly = true
@@ -1049,7 +1050,10 @@ if (rtc_include_tests) {
   rtc_library("video_codec_stats_api") {
     visibility = [ "*" ]
     testonly = true
-    sources = [ "test/video_codec_stats.h" ]
+    sources = [
+      "test/video_codec_stats.cc",
+      "test/video_codec_stats.h",
+    ]
     deps = [
       "../api/numerics:numerics",
       "../api/units:data_rate",
@@ -1113,7 +1117,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":video_codec_tester_api",
-      "../modules/video_coding:videocodec_test_impl",
+      "../modules/video_coding:video_codec_tester",
     ]
   }
 

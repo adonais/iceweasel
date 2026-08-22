@@ -1,100 +1,170 @@
-From: Andreas Pehrson <apehrson@mozilla.com>
-Date: Wed, 10 May 2023 07:06:00 +0000
-Subject: Bug 1810949 - cherry-pick upstream libwebrtc commit 32b64e895c.
- r=webrtc-reviewers,mjf
+From: Michael Froman <mjfroman@mac.com>
+Date: Thu, 27 Jul 2023 12:42:44 -0500
+Subject: Bug 1838080: Store the rid in TransformableVideoSenderFrame.
+ r=ng,webrtc-reviewers
 
-Upstream commit: https://webrtc.googlesource.com/src/+/32b64e895c0231fe6891a8f6335d66f1dad4f1f5
-    Improve ergonomics of dealing with pixel formats in v4l2 camera backend
+This is necessary to reliably detect what rid a given keyframe is for, for the
+purposes of resolving promises from RTCRtpScriptTransformer.generateKeyFrame.
 
-    Bug: webrtc:14830
-    Change-Id: Ib49bf65895fe008e75223abb03867d412c1b5a60
-    Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/291531
-    Commit-Queue: Ilya Nikolaevskiy <ilnik@webrtc.org>
-    Reviewed-by: Stefan Holmer <stefan@webrtc.org>
-    Reviewed-by: Ilya Nikolaevskiy <ilnik@webrtc.org>
-    Cr-Commit-Position: refs/heads/main@{#39976}
-
-Differential Revision: https://phabricator.services.mozilla.com/D177231
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/f0afe1a1097f3e02d59fd06d5e83d00a0f4d69ae
+Differential Revision: https://phabricator.services.mozilla.com/D180737
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/2f1a0ba74bf71cfa0bc4e77714b8a5276a70cc36
 ---
- .../video_capture/linux/device_info_v4l2.cc   |  4 ++-
- .../video_capture/linux/video_capture_v4l2.cc | 31 +++++++++----------
- 2 files changed, 17 insertions(+), 18 deletions(-)
+ api/frame_transformer_interface.h                |  1 +
+ modules/rtp_rtcp/source/rtp_sender.h             |  4 ++++
+ modules/rtp_rtcp/source/rtp_sender_video.cc      |  1 +
+ ...tp_sender_video_frame_transformer_delegate.cc | 16 +++++++++++-----
+ ...rtp_sender_video_frame_transformer_delegate.h |  2 ++
+ ...stream_receiver_frame_transformer_delegate.cc |  5 +++++
+ 6 files changed, 24 insertions(+), 5 deletions(-)
 
-diff --git a/modules/video_capture/linux/device_info_v4l2.cc b/modules/video_capture/linux/device_info_v4l2.cc
-index 7651dd6651..f854c2ccc7 100644
---- a/modules/video_capture/linux/device_info_v4l2.cc
-+++ b/modules/video_capture/linux/device_info_v4l2.cc
-@@ -391,10 +391,10 @@ int32_t DeviceInfoV4l2::FillCapabilities(int fd) {
-   video_fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-   video_fmt.fmt.pix.sizeimage = 0;
+diff --git a/api/frame_transformer_interface.h b/api/frame_transformer_interface.h
+index c47bad4243..3e2d7d64ef 100644
+--- a/api/frame_transformer_interface.h
++++ b/api/frame_transformer_interface.h
+@@ -57,6 +57,7 @@ class TransformableVideoFrameInterface : public TransformableFrameInterface {
+  public:
+   virtual ~TransformableVideoFrameInterface() = default;
+   virtual bool IsKeyFrame() const = 0;
++  virtual const std::string& GetRid() const = 0;
  
--  int totalFmts = 5;
-   unsigned int videoFormats[] = {V4L2_PIX_FMT_MJPEG, V4L2_PIX_FMT_YUV420,
-                                  V4L2_PIX_FMT_YUYV, V4L2_PIX_FMT_UYVY,
-                                  V4L2_PIX_FMT_NV12};
-+  constexpr int totalFmts = sizeof(videoFormats) / sizeof(unsigned int);
+   virtual VideoFrameMetadata Metadata() const = 0;
  
-   int sizes = 13;
-   unsigned int size[][2] = {{128, 96},   {160, 120},  {176, 144},  {320, 240},
-@@ -424,6 +424,8 @@ int32_t DeviceInfoV4l2::FillCapabilities(int fd) {
-             cap.videoType = VideoType::kUYVY;
-           } else if (videoFormats[fmts] == V4L2_PIX_FMT_NV12) {
-             cap.videoType = VideoType::kNV12;
-+          } else {
-+            RTC_DCHECK_NOTREACHED();
-           }
+diff --git a/modules/rtp_rtcp/source/rtp_sender.h b/modules/rtp_rtcp/source/rtp_sender.h
+index 158d073b7a..1b053b4802 100644
+--- a/modules/rtp_rtcp/source/rtp_sender.h
++++ b/modules/rtp_rtcp/source/rtp_sender.h
+@@ -143,6 +143,10 @@ class RTPSender {
  
-           // get fps of current camera mode
-diff --git a/modules/video_capture/linux/video_capture_v4l2.cc b/modules/video_capture/linux/video_capture_v4l2.cc
-index c7dcb722bc..baf1916331 100644
---- a/modules/video_capture/linux/video_capture_v4l2.cc
-+++ b/modules/video_capture/linux/video_capture_v4l2.cc
-@@ -130,23 +130,18 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
-   // Supported video formats in preferred order.
-   // If the requested resolution is larger than VGA, we prefer MJPEG. Go for
-   // I420 otherwise.
--  const int nFormats = 6;
--  unsigned int fmts[nFormats];
--  if (capability.width > 640 || capability.height > 480) {
--    fmts[0] = V4L2_PIX_FMT_MJPEG;
--    fmts[1] = V4L2_PIX_FMT_YUV420;
--    fmts[2] = V4L2_PIX_FMT_YUYV;
--    fmts[3] = V4L2_PIX_FMT_UYVY;
--    fmts[4] = V4L2_PIX_FMT_NV12;
--    fmts[5] = V4L2_PIX_FMT_JPEG;
--  } else {
--    fmts[0] = V4L2_PIX_FMT_YUV420;
--    fmts[1] = V4L2_PIX_FMT_YUYV;
--    fmts[2] = V4L2_PIX_FMT_UYVY;
--    fmts[3] = V4L2_PIX_FMT_NV12;
--    fmts[4] = V4L2_PIX_FMT_MJPEG;
--    fmts[5] = V4L2_PIX_FMT_JPEG;
--  }
-+  unsigned int hdFmts[] = {
-+      V4L2_PIX_FMT_MJPEG,  V4L2_PIX_FMT_YUV420, V4L2_PIX_FMT_YUYV,
-+      V4L2_PIX_FMT_UYVY,   V4L2_PIX_FMT_NV12,   V4L2_PIX_FMT_JPEG,
-+  };
-+  unsigned int sdFmts[] = {
-+      V4L2_PIX_FMT_YUV420, V4L2_PIX_FMT_YUYV,   V4L2_PIX_FMT_UYVY,
-+      V4L2_PIX_FMT_NV12,   V4L2_PIX_FMT_MJPEG,  V4L2_PIX_FMT_JPEG,
-+  };
-+  const bool isHd = capability.width > 640 || capability.height > 480;
-+  unsigned int* fmts = isHd ? hdFmts : sdFmts;
-+  static_assert(sizeof(hdFmts) == sizeof(sdFmts));
-+  constexpr int nFormats = sizeof(hdFmts) / sizeof(unsigned int);
+   uint32_t SSRC() const RTC_LOCKS_EXCLUDED(send_mutex_) { return ssrc_; }
  
-   // Enumerate image formats.
-   struct v4l2_fmtdesc fmt;
-@@ -195,6 +190,8 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
-   else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_MJPEG ||
-            video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_JPEG)
-     _captureVideoType = VideoType::kMJPEG;
-+  else
-+    RTC_DCHECK_NOTREACHED();
++  const std::string& Rid() const RTC_LOCKS_EXCLUDED(send_mutex_) {
++    return rid_;
++  }
++
+   absl::optional<uint32_t> FlexfecSsrc() const RTC_LOCKS_EXCLUDED(send_mutex_) {
+     return flexfec_ssrc_;
+   }
+diff --git a/modules/rtp_rtcp/source/rtp_sender_video.cc b/modules/rtp_rtcp/source/rtp_sender_video.cc
+index af447e95a7..1cbf0b8dc3 100644
+--- a/modules/rtp_rtcp/source/rtp_sender_video.cc
++++ b/modules/rtp_rtcp/source/rtp_sender_video.cc
+@@ -169,6 +169,7 @@ RTPSenderVideo::RTPSenderVideo(const Config& config)
+                     config.frame_transformer,
+                     rtp_sender_->SSRC(),
+                     rtp_sender_->Csrcs(),
++                    rtp_sender_->Rid(),
+                     config.task_queue_factory)
+               : nullptr) {
+   if (frame_transformer_delegate_)
+diff --git a/modules/rtp_rtcp/source/rtp_sender_video_frame_transformer_delegate.cc b/modules/rtp_rtcp/source/rtp_sender_video_frame_transformer_delegate.cc
+index 29c33f7b0e..5a68019a8b 100644
+--- a/modules/rtp_rtcp/source/rtp_sender_video_frame_transformer_delegate.cc
++++ b/modules/rtp_rtcp/source/rtp_sender_video_frame_transformer_delegate.cc
+@@ -31,7 +31,8 @@ class TransformableVideoSenderFrame : public TransformableVideoFrameInterface {
+       uint32_t rtp_timestamp,
+       absl::optional<int64_t> expected_retransmission_time_ms,
+       uint32_t ssrc,
+-      std::vector<uint32_t> csrcs)
++      std::vector<uint32_t> csrcs,
++      const std::string& rid)
+       : encoded_data_(encoded_image.GetEncodedData()),
+         pre_transform_payload_size_(encoded_image.size()),
+         header_(video_header),
+@@ -43,7 +44,8 @@ class TransformableVideoSenderFrame : public TransformableVideoFrameInterface {
+         capture_time_identifier_(encoded_image.CaptureTimeIdentifier()),
+         expected_retransmission_time_ms_(expected_retransmission_time_ms),
+         ssrc_(ssrc),
+-        csrcs_(csrcs) {
++        csrcs_(csrcs),
++        rid_(rid) {
+     RTC_DCHECK_GE(payload_type_, 0);
+     RTC_DCHECK_LE(payload_type_, 127);
+   }
+@@ -97,6 +99,8 @@ class TransformableVideoSenderFrame : public TransformableVideoFrameInterface {
  
-   // set format and frame size now
-   if (ioctl(_deviceFd, VIDIOC_S_FMT, &video_fmt) < 0) {
+   Direction GetDirection() const override { return Direction::kSender; }
+ 
++  const std::string& GetRid() const override { return rid_; }
++
+  private:
+   rtc::scoped_refptr<EncodedImageBufferInterface> encoded_data_;
+   const size_t pre_transform_payload_size_;
+@@ -111,6 +115,7 @@ class TransformableVideoSenderFrame : public TransformableVideoFrameInterface {
+ 
+   uint32_t ssrc_;
+   std::vector<uint32_t> csrcs_;
++  const std::string rid_;
+ };
+ }  // namespace
+ 
+@@ -119,11 +124,12 @@ RTPSenderVideoFrameTransformerDelegate::RTPSenderVideoFrameTransformerDelegate(
+     rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
+     uint32_t ssrc,
+     std::vector<uint32_t> csrcs,
++    const std::string& rid,
+     TaskQueueFactory* task_queue_factory)
+     : sender_(sender),
+       frame_transformer_(std::move(frame_transformer)),
+       ssrc_(ssrc),
+-      csrcs_(csrcs),
++      rid_(rid),
+       transformation_queue_(task_queue_factory->CreateTaskQueue(
+           "video_frame_transformer",
+           TaskQueueFactory::Priority::NORMAL)) {}
+@@ -142,7 +148,7 @@ bool RTPSenderVideoFrameTransformerDelegate::TransformFrame(
+     absl::optional<int64_t> expected_retransmission_time_ms) {
+   frame_transformer_->Transform(std::make_unique<TransformableVideoSenderFrame>(
+       encoded_image, video_header, payload_type, codec_type, rtp_timestamp,
+-      expected_retransmission_time_ms, ssrc_, csrcs_));
++      expected_retransmission_time_ms, ssrc_, csrcs_, rid_));
+   return true;
+ }
+ 
+@@ -236,7 +242,7 @@ std::unique_ptr<TransformableVideoFrameInterface> CloneSenderVideoFrame(
+       encoded_image, new_header, original->GetPayloadType(), new_header.codec,
+       original->GetTimestamp(),
+       absl::nullopt,  // expected_retransmission_time_ms
+-      original->GetSsrc(), metadata.GetCsrcs());
++      original->GetSsrc(), metadata.GetCsrcs(), original->GetRid());
+ }
+ 
+ }  // namespace webrtc
+diff --git a/modules/rtp_rtcp/source/rtp_sender_video_frame_transformer_delegate.h b/modules/rtp_rtcp/source/rtp_sender_video_frame_transformer_delegate.h
+index ac934eb332..a5bf65d073 100644
+--- a/modules/rtp_rtcp/source/rtp_sender_video_frame_transformer_delegate.h
++++ b/modules/rtp_rtcp/source/rtp_sender_video_frame_transformer_delegate.h
+@@ -58,6 +58,7 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
+       rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
+       uint32_t ssrc,
+       std::vector<uint32_t> csrcs,
++      const std::string& rid,
+       TaskQueueFactory* send_transport_queue);
+ 
+   void Init();
+@@ -105,6 +106,7 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
+   rtc::scoped_refptr<FrameTransformerInterface> frame_transformer_;
+   const uint32_t ssrc_;
+   std::vector<uint32_t> csrcs_;
++  const std::string rid_;
+   // Used when the encoded frames arrives without a current task queue. This can
+   // happen if a hardware encoder was used.
+   std::unique_ptr<TaskQueueBase, TaskQueueDeleter> transformation_queue_;
+diff --git a/modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate.cc b/modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate.cc
+index 163fcbdf67..b920efadff 100644
+--- a/modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate.cc
++++ b/modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate.cc
+@@ -53,6 +53,11 @@ class TransformableVideoReceiverFrame
+     return frame_->FrameType() == VideoFrameType::kVideoFrameKey;
+   }
+ 
++  const std::string& GetRid() const override {
++    static const std::string empty;
++    return empty;
++  }
++
+   VideoFrameMetadata Metadata() const override { return metadata_; }
+ 
+   void SetMetadata(const VideoFrameMetadata&) override {
 -- 
-2.34.1
+2.39.3 (Apple Git-145)
 

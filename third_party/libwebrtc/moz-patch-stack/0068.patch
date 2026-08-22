@@ -1,23 +1,31 @@
-From: Michael Froman <mjfroman@mac.com>
-Date: Wed, 13 Jul 2022 12:50:36 -0500
-Subject: Bug 1766646 - (fix-4d12174ca5) add missing include to fix build
+From: Andreas Pehrson <apehrson@mozilla.com>
+Date: Mon, 12 Dec 2022 15:47:00 +0000
+Subject: Bug 1451394 - Record video frame captures with PerformanceRecorder in
+ the new mac camera backend. r=padenot
 
+Also includes:
+Bug 1806605 - Pass TrackingId instead of nsCString to CaptureStage.
+
+Differential Revision: https://phabricator.services.mozilla.com/D163687
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a7362238c9e6fbe0d28200f6b41fc40a0c9a2158
 ---
- modules/audio_processing/aec3/multi_channel_content_detector.h | 1 +
- 1 file changed, 1 insertion(+)
+ modules/video_capture/video_capture.h | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/modules/audio_processing/aec3/multi_channel_content_detector.h b/modules/audio_processing/aec3/multi_channel_content_detector.h
-index be8717f3af..1742c5fc17 100644
---- a/modules/audio_processing/aec3/multi_channel_content_detector.h
-+++ b/modules/audio_processing/aec3/multi_channel_content_detector.h
-@@ -11,6 +11,7 @@
- #ifndef MODULES_AUDIO_PROCESSING_AEC3_MULTI_CHANNEL_CONTENT_DETECTOR_H_
- #define MODULES_AUDIO_PROCESSING_AEC3_MULTI_CHANNEL_CONTENT_DETECTOR_H_
+diff --git a/modules/video_capture/video_capture.h b/modules/video_capture/video_capture.h
+index 04203033b0..6614032299 100644
+--- a/modules/video_capture/video_capture.h
++++ b/modules/video_capture/video_capture.h
+@@ -154,6 +154,9 @@ class VideoCaptureModule : public rtc::RefCountInterface {
+   // Return whether the rotation is applied or left pending.
+   virtual bool GetApplyRotation() = 0;
  
-+#include <memory>
- #include <stddef.h>
- 
- #include <memory>
++  // Mozilla: TrackingId setter for use in profiler markers.
++  virtual void SetTrackingId(uint32_t aTrackingIdProcId) {}
++
+  protected:
+   ~VideoCaptureModule() override {}
+ };
 -- 
-2.34.1
+2.39.3 (Apple Git-145)
 

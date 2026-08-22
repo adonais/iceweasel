@@ -2274,6 +2274,8 @@ void HTMLMediaElement::AbortExistingLoads() {
 
   RemoveMediaElementFromURITable();
   mLoadingSrcTriggeringPrincipal = nullptr;
+  // The CORS mode is scoped to the current load.
+  mCORSMode = CORS_NONE;
   DDLOG(DDLogCategory::Property, "loading_src", "");
   DDUNLINKCHILD(mMediaSource.get());
   mMediaSource = nullptr;
@@ -2573,6 +2575,9 @@ void HTMLMediaElement::SelectResource() {
   // If we have a 'src' attribute, use that exclusively.
   nsAutoString src;
   if (mSrcAttrStream) {
+    // Media provider objects use local mode, so a previous URL load's CORS
+    // mode does not apply.
+    mCORSMode = CORS_NONE;
     SetupSrcMediaStreamPlayback(mSrcAttrStream);
   } else if (GetAttr(kNameSpaceID_None, nsGkAtoms::src, src)) {
     nsCOMPtr<nsIURI> uri;
@@ -5185,6 +5190,7 @@ void HTMLMediaElement::UpdateSrcStreamTime() {
 
 void HTMLMediaElement::SetupSrcMediaStreamPlayback(DOMMediaStream* aStream) {
   NS_ASSERTION(!mSrcStream, "Should have been ended already");
+  MOZ_ASSERT(mCORSMode == CORS_NONE);
 
   mLoadingSrc = nullptr;
   mSrcStream = aStream;

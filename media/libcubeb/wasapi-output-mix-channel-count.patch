@@ -1,0 +1,84 @@
+diff --git a/src/cubeb.c b/src/cubeb.c
+index eca2c63ff175..ad6299ad5b50 100644
+--- a/src/cubeb.c
++++ b/src/cubeb.c
+@@ -7,6 +7,7 @@
+ #undef NDEBUG
+ #include "cubeb/cubeb.h"
+ #include "cubeb-internal.h"
++#include "cubeb_mixer.h"
+ #include <assert.h>
+ #include <stddef.h>
+ #include <stdlib.h>
+@@ -97,7 +98,10 @@ validate_stream_params(cubeb_stream_params * input_stream_params,
+     if (output_stream_params->rate < 1000 ||
+         output_stream_params->rate > 192000 ||
+         output_stream_params->channels < 1 ||
+-        output_stream_params->channels > UINT8_MAX) {
++        output_stream_params->channels > UINT8_MAX ||
++        (output_stream_params->layout != CUBEB_LAYOUT_UNDEFINED &&
++         cubeb_channel_layout_nb_channels(output_stream_params->layout) !=
++             output_stream_params->channels)) {
+       return CUBEB_ERROR_INVALID_FORMAT;
+     }
+   }
+@@ -105,7 +109,10 @@ validate_stream_params(cubeb_stream_params * input_stream_params,
+     if (input_stream_params->rate < 1000 ||
+         input_stream_params->rate > 192000 ||
+         input_stream_params->channels < 1 ||
+-        input_stream_params->channels > UINT8_MAX) {
++        input_stream_params->channels > UINT8_MAX ||
++        (input_stream_params->layout != CUBEB_LAYOUT_UNDEFINED &&
++         cubeb_channel_layout_nb_channels(input_stream_params->layout) !=
++             input_stream_params->channels)) {
+       return CUBEB_ERROR_INVALID_FORMAT;
+     }
+   }
+diff --git a/src/cubeb_wasapi.cpp b/src/cubeb_wasapi.cpp
+index e95def2017aa..e79281764f29 100644
+--- a/src/cubeb_wasapi.cpp
++++ b/src/cubeb_wasapi.cpp
+@@ -2646,7 +2646,8 @@ setup_wasapi_stream(cubeb_stream * stm)
+ 
+   // Create output mixer.
+   if (has_output(stm) &&
+-      stm->output_mix_params.layout != stm->output_stream_params.layout) {
++      (stm->output_mix_params.layout != stm->output_stream_params.layout ||
++       stm->output_mix_params.channels != stm->output_stream_params.channels)) {
+     if (stm->output_mix_params.layout == CUBEB_LAYOUT_UNDEFINED) {
+       LOG("Output stream using undefined layout! Any mixing may be "
+           "unpredictable!\n");
+diff --git a/test/test_sanity.cpp b/test/test_sanity.cpp
+index d681c502bbbf..991d9102243b 100644
+--- a/test/test_sanity.cpp
++++ b/test/test_sanity.cpp
+@@ -268,6 +268,29 @@ TEST(cubeb, configure_stream_undefined_layout)
+   cubeb_destroy(ctx);
+ }
+ 
++TEST(cubeb, reject_inconsistent_channel_layout)
++{
++  cubeb * ctx;
++  cubeb_stream * stream;
++  cubeb_stream_params params = {};
++
++  int r = common_init(&ctx, "test_sanity");
++  ASSERT_EQ(r, CUBEB_OK);
++  ASSERT_NE(ctx, nullptr);
++
++  params.format = CUBEB_SAMPLE_FLOAT32NE;
++  params.rate = STREAM_RATE;
++  params.channels = UINT8_MAX;
++  params.layout = CUBEB_LAYOUT_STEREO;
++
++  r = cubeb_stream_init(ctx, &stream, "test", NULL, NULL, NULL, &params,
++                        STREAM_LATENCY, test_data_callback, test_state_callback,
++                        &dummy);
++  EXPECT_EQ(r, CUBEB_ERROR_INVALID_FORMAT);
++
++  cubeb_destroy(ctx);
++}
++
+ static void
+ test_init_start_stop_destroy_multiple_streams(int early, int delay_ms)
+ {

@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use api::{BuiltDisplayList, DisplayListWithCache, ColorF, DynamicProperties, Epoch, FontRenderMode};
+use api::{BuiltDisplayList, DisplayListWithCache, ColorF, DynamicProperties, Epoch, FontRenderMode, IdNamespace};
 use api::{PipelineId, PropertyBinding, PropertyBindingId, PropertyValue, MixBlendMode, StackingContext};
 use api::units::*;
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
@@ -174,6 +174,9 @@ impl SceneProperties {
 #[derive(Clone)]
 pub struct ScenePipeline {
     pub display_list: DisplayListWithCache,
+    /// The id namespace that owns the resources this display list is allowed to
+    /// reference.
+    pub namespace: IdNamespace,
 }
 
 /// A complete representation of the layout bundling visible pipelines together.
@@ -203,6 +206,7 @@ impl Scene {
         &mut self,
         pipeline_id: PipelineId,
         epoch: Epoch,
+        namespace: IdNamespace,
         display_list: BuiltDisplayList,
     ) {
         // Adds a cache to the given display list. If this pipeline already had
@@ -217,6 +221,7 @@ impl Scene {
 
         let new_pipeline = ScenePipeline {
             display_list,
+            namespace,
         };
 
         self.pipelines.insert(pipeline_id, new_pipeline);
