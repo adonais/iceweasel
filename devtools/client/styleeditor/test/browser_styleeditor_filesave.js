@@ -4,19 +4,26 @@
 
 // Test that 'Save' function works.
 
-const TESTCASE_URI_HTML = TEST_BASE_HTTP + "simple.html";
-const TESTCASE_URI_CSS = TEST_BASE_HTTP + "simple.css";
+const TEST_HTML_HTTP_URL = TEST_BASE_HTTPS + "simple.html";
+const TEST_CSS_HTTP_URL = TEST_BASE_HTTPS + "simple.css";
 
-add_task(async function () {
-  const htmlFile = await copy(TESTCASE_URI_HTML, "simple.html");
-  const cssFile = await copy(TESTCASE_URI_CSS, "simple.css");
-  const uri = Services.io.newFileURI(htmlFile);
-  const filePath = uri.resolve("");
+const TEST_HTML_FILE_URL = getSupportsFile("simple.html").spec;
 
-  const { ui } = await openStyleEditorForURL(filePath);
+add_task(async function testSavingToCustomLocalFile() {
+  const { ui } = await openStyleEditorForURL(TEST_HTML_HTTP_URL);
 
-  const editor = ui.editors[0];
+  is(ui.editors.length, 2, "Two sheets present after load.");
+  const editor = ui.editors.find(e => e.friendlyName === "simple.css");
+  ok(editor, "Found the simple stylesheet editor");
   await editor.getSourceEditor();
+  let tooltip = editor.summary
+    .querySelector(".stylesheet-name > label")
+    .getAttribute("tooltiptext");
+  is(
+    tooltip,
+    TEST_CSS_HTTP_URL,
+    "The css tooltip originaly refers to the http URL"
+  );
 
   is(
     editor.savedFile,
@@ -26,8 +33,8 @@ add_task(async function () {
 
   info("Editing the style sheet.");
   let dirty = editor.sourceEditor.once("dirty-change");
-  const beginCursor = { line: 0, ch: 0 };
-  editor.sourceEditor.replaceText("DIRTY TEXT", beginCursor, beginCursor);
+  const newTextContent = "DIRTY TEXT";
+  editor.sourceEditor.replaceText("DIRTY TEXT");
 
   await dirty;
 
@@ -42,8 +49,14 @@ add_task(async function () {
   );
   dirty = editor.sourceEditor.once("dirty-change");
 
-  editor.saveToFile(cssFile, function (file) {
-    ok(file, "file should get saved when explicitly passing a file");
+  const cssFile = new FileUtils.File(
+    PathUtils.join(PathUtils.profileDir, "simple-edited.css")
+  );
+  await new Promise(resolve => {
+    editor.saveToFile(cssFile, function (file) {
+      ok(file, "file should get saved when explicitly passing a file");
+      resolve();
+    });
   });
 
   await dirty;
@@ -59,49 +72,91 @@ add_task(async function () {
     cssFile.path,
     "savedFile should now be set on the editor"
   );
+
+  tooltip = editor.summary
+    .querySelector(".stylesheet-name > label")
+    .getAttribute("tooltiptext");
+  is(
+    tooltip,
+    TEST_CSS_HTTP_URL,
+    "Once saved, the css tooltip still refers to the original HTTP URL"
+  );
+
+  is(
+    readFile(cssFile),
+    newTextContent,
+    "local file content has the expected content"
+  );
 });
 
-function copy(srcChromeURL, destFileName) {
-  return new Promise(resolve => {
-    const destFile = new FileUtils.File(
-      PathUtils.join(PathUtils.profileDir, destFileName)
-    );
-    write(read(srcChromeURL), destFile, resolve);
-  });
-}
+add_task(async function testSavingToExistingLocalFile() {
+  const { ui } = await openStyleEditorForURL(TEST_HTML_FILE_URL);
 
-function read(srcChromeURL) {
-  const scriptableStream = Cc[
-    "@mozilla.org/scriptableinputstream;1"
-  ].getService(Ci.nsIScriptableInputStream);
+  is(ui.editors.length, 2, "Two sheets present after load.");
+  const editor = ui.editors.find(e => e.friendlyName === "simple.css");
+  ok(editor, "Found the simple stylesheet editor");
 
-  const channel = NetUtil.newChannel({
-    uri: srcChromeURL,
-    loadUsingSystemPrincipal: true,
-  });
-  const input = channel.open();
-  scriptableStream.init(input);
+  info("Selecting the related editor");
+  await ui.selectStyleSheet(editor.styleSheet);
+  const styleEditor = await editor.getSourceEditor();
+  const text = styleEditor.sourceEditor.getText();
+  const originalContent = await (
+    await fetch(TEST_BASE_HTTPS + "simple.css")
+  ).text();
+  is(text, originalContent, "style inspector content is correct");
+  const tooltip = editor.summary
+    .querySelector(".stylesheet-name > label")
+    .getAttribute("tooltiptext");
+  // The test file is a symlink and may not be having the exact same file URL as TEST_CSS_FILE_URL
+  ok(
+    tooltip.startsWith("file://") && tooltip.endsWith("simple.css"),
+    "the tooltip refers to the local file URL"
+  );
 
-  let data = "";
-  while (input.available()) {
-    data = data.concat(scriptableStream.read(input.available()));
-  }
-  scriptableStream.close();
-  input.close();
+  info(
+    "Change the stylesheet text and see if we can save changes to the local file"
+  );
+  let dirty = editor.sourceEditor.once("dirty-change");
+  const newContent = "* { color: green }";
+  editor.sourceEditor.setText(newContent);
+  await dirty;
 
+  let onSaved = editor.once("property-change");
+  editor.summary.querySelector(".stylesheet-saveButton").click();
+  await onSaved;
+
+  let updatedFileContent = await (
+    await fetch(TEST_BASE_HTTPS + "simple.css", { cache: "no-store" })
+  ).text();
+  is(updatedFileContent, newContent);
+
+  info(
+    "Revert back to original text content to avoid introducing changes in local repo"
+  );
+  dirty = editor.sourceEditor.once("dirty-change");
+  editor.sourceEditor.setText(originalContent);
+  await dirty;
+
+  onSaved = editor.once("property-change");
+  editor.summary.querySelector(".stylesheet-saveButton").click();
+  await onSaved;
+
+  updatedFileContent = await (
+    await fetch(TEST_BASE_HTTPS + "simple.css")
+  ).text();
+  is(
+    updatedFileContent,
+    originalContent,
+    "Local file text content was reverted"
+  );
+});
+
+function readFile(file) {
+  const fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(
+    Ci.nsIFileInputStream
+  );
+  fstream.init(file, -1, 0, 0);
+  const data = NetUtil.readInputStreamToString(fstream, fstream.available());
+  fstream.close();
   return data;
-}
-
-function write(data, file, callback) {
-  const istream = getInputStream(data);
-  const ostream = FileUtils.openSafeFileOutputStream(file);
-
-  NetUtil.asyncCopy(istream, ostream, function (status) {
-    if (!Components.isSuccessCode(status)) {
-      info("Couldn't write to " + file.path);
-      return;
-    }
-
-    callback(file);
-  });
 }

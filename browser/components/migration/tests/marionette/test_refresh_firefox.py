@@ -303,13 +303,14 @@ class TestFirefoxRefresh(MarionetteTestCase):
         )
 
     def checkPassword(self):
+        # Only match on the origin: the Rust backend normalizes formActionOrigin
+        # to an origin on insert, the JSON backend stores it verbatim.
         loginInfo = self.runAsyncCode(
             """
           let [resolve] = arguments;
           Services.logins.searchLoginsAsync({
             origin: "http://test.marionette.mozilla.com",
-            formActionOrigin: "http://test.marionette.mozilla.com",
-          }).then(ary => resolve(ary.length ? ary : {username: "null", password: "null"}));
+          }).then(resolve);
         """
         )
         self.assertEqual(len(loginInfo), 1)

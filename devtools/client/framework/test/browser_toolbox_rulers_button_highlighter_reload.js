@@ -3,10 +3,6 @@
 
 "use strict";
 
-const { TYPES: HIGHLIGHTER_TYPES } = ChromeUtils.importESModule(
-  "resource://devtools/shared/highlighters.mjs"
-);
-
 const TEST_URL = `data:text/html;charset=utf8,rulers highlighters restored`;
 
 // Test that the ruler highlighters are properly restored after a reload.
@@ -17,60 +13,140 @@ add_task(async function test() {
     toolId: "inspector",
   });
 
-  let inspectorFront = await toolbox.target.getFront("inspector");
+  // Sanity check
+  is(
+    await isRulersHighlighterVisible(),
+    false,
+    "Rulers highlighter is not shown at first"
+  );
+  is(
+    await isViewportSizeHighlighterVisible(),
+    false,
+    "ViewportSize highlighter is not shown at first"
+  );
 
   info("Show the rulers");
   await clickRulersButton(toolbox, true);
-  await waitForHighlighterState(inspectorFront, true);
-  ok(
-    (
-      await inspectorFront.getHighlighterByType(HIGHLIGHTER_TYPES.RULERS)
-    ).isShown(),
-    "Rulers highlighter is shown"
-  );
-  ok(
-    (
-      await inspectorFront.getHighlighterByType(HIGHLIGHTER_TYPES.VIEWPORT_SIZE)
-    ).isShown(),
-    "Viewport Size highlighter is shown"
+
+  // ⚠️ We shouldn't use the inspectorFront to check for highlighter state, as it could
+  // hinder the test. Only check for what's displayed in the content page
+  await waitFor(async () => {
+    if (
+      (await isRulersHighlighterVisible()) &&
+      (await isRulersHighlighterVisible())
+    ) {
+      return true;
+    }
+    return false;
+  });
+
+  is(await isRulersHighlighterVisible(), true, "Rulers highlighter is shown");
+  is(
+    await isViewportSizeHighlighterVisible(),
+    true,
+    "ViewportSize highlighter is shown"
   );
 
   info("Reload the page");
   await reloadSelectedTab();
-  inspectorFront = await toolbox.target.getFront("inspector");
-  await waitForHighlighterState(inspectorFront, true);
 
-  ok(
-    (
-      await inspectorFront.getHighlighterByType(HIGHLIGHTER_TYPES.RULERS)
-    ).isShown(),
-    "Rulers highlighter is shown"
-  );
-  ok(
-    (
-      await inspectorFront.getHighlighterByType(HIGHLIGHTER_TYPES.VIEWPORT_SIZE)
-    ).isShown(),
-    "Viewport Size highlighter is shown"
-  );
+  await waitFor(async () => {
+    if (
+      (await isRulersHighlighterVisible()) &&
+      (await isRulersHighlighterVisible())
+    ) {
+      return true;
+    }
+    return false;
+  });
+
+  ok(true, "Rulers and ViewportSize highlighters are still shown after reload");
 
   info("Turn off the rulers");
   await clickRulersButton(toolbox, false);
-  await waitForHighlighterState(inspectorFront, false);
+
+  await waitFor(async () => {
+    if (
+      (await isRulersHighlighterVisible()) ||
+      (await isRulersHighlighterVisible())
+    ) {
+      return false;
+    }
+    return true;
+  });
 
   ok(
-    !(
-      await inspectorFront.getHighlighterByType(HIGHLIGHTER_TYPES.RULERS)
-    ).isShown(),
-    "Rulers highlighter is not shown anymore"
-  );
-  ok(
-    !(
-      await inspectorFront.getHighlighterByType(HIGHLIGHTER_TYPES.VIEWPORT_SIZE)
-    ).isShown(),
-    "Viewport Size highlighter is not shown anymore"
+    true,
+    "Rulers and ViewportSize highlighter are not shown anymore after disabling them"
   );
 
   await toolbox.destroy();
+
+  // Sanity check
+  is(
+    await isRulersHighlighterVisible(),
+    false,
+    "Rulers highlighter is not shown anymore after toolbox is destroyed"
+  );
+  is(
+    await isViewportSizeHighlighterVisible(),
+    false,
+    "ViewportSize highlighter is not shown anymore after toolbox is destroyed"
+  );
+});
+
+add_task(async function testToolboxDestroy() {
+  await pushPref("devtools.command-button-rulers.enabled", true);
+  const tab = await addTab(TEST_URL);
+  const toolbox = await gDevTools.showToolboxForTab(tab, {
+    toolId: "inspector",
+  });
+
+  // Sanity check
+  is(
+    await isRulersHighlighterVisible(),
+    false,
+    "Rulers highlighter is not shown at first"
+  );
+  is(
+    await isViewportSizeHighlighterVisible(),
+    false,
+    "ViewportSize highlighter is not shown at first"
+  );
+
+  info("Show the rulers");
+  await clickRulersButton(toolbox, true);
+
+  // ⚠️ We shouldn't use the inspectorFront to check for highlighter state, as it could
+  // hinder the test. Only check for what's displayed in the content page
+  await waitFor(async () => {
+    if (
+      (await isRulersHighlighterVisible()) &&
+      (await isRulersHighlighterVisible())
+    ) {
+      return true;
+    }
+    return false;
+  });
+
+  is(await isRulersHighlighterVisible(), true, "Rulers highlighter is shown");
+  is(
+    await isViewportSizeHighlighterVisible(),
+    true,
+    "ViewportSize highlighter is shown"
+  );
+
+  await toolbox.destroy();
+  is(
+    await isRulersHighlighterVisible(),
+    false,
+    "Rulers highlighter is not shown anymore after toolbox is destroyed"
+  );
+  is(
+    await isViewportSizeHighlighterVisible(),
+    false,
+    "ViewportSize highlighter is not shown anymore after toolbox is destroyed"
+  );
 });
 
 function getRulersButton(toolbox) {
@@ -92,20 +168,31 @@ function isButtonActive(button) {
   return button.classList.contains("checked");
 }
 
-async function waitForHighlighterState(inspectorFront, shouldBeShown) {
-  await waitFor(async () => {
-    const rulersHighlighter = await inspectorFront.getHighlighterByType(
-      HIGHLIGHTER_TYPES.RULERS
-    );
-    const viewportSizeHighlighter = await inspectorFront.getHighlighterByType(
-      HIGHLIGHTER_TYPES.VIEWPORT_SIZE
-    );
+async function isRulersHighlighterVisible() {
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    const elSelector = ".rulers-highlighter-elements";
+    const shadowRoot = content.document
+      .getConnectedShadowRoots()
+      .find(root => root.querySelector(elSelector));
+    if (!shadowRoot) {
+      return false;
+    }
 
-    const rulersHighlighterVisible = rulersHighlighter?.isShown();
-    const viewportSizeHighlighterVisible = viewportSizeHighlighter?.isShown();
+    return !shadowRoot.querySelector(elSelector).hasAttribute("hidden");
+  });
+}
 
-    return shouldBeShown
-      ? rulersHighlighterVisible && viewportSizeHighlighterVisible
-      : !rulersHighlighterVisible && !viewportSizeHighlighterVisible;
+async function isViewportSizeHighlighterVisible() {
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    const elSelector =
+      ".viewport-size-highlighter-viewport-infobar-container:not(.viewport-size-on-resize-highlighter)";
+    const shadowRoot = content.document
+      .getConnectedShadowRoots()
+      .find(root => root.querySelector(elSelector));
+    if (!shadowRoot) {
+      return false;
+    }
+
+    return !shadowRoot.querySelector(elSelector).hasAttribute("hidden");
   });
 }

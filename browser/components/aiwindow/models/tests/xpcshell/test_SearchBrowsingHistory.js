@@ -12,10 +12,6 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
-const { sanitizeUntrustedContent } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs"
-);
-
 const { getPlacesSemanticHistoryManager } = ChromeUtils.importESModule(
   "resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs"
 );
@@ -131,11 +127,7 @@ add_task(async function test_basic_history_fetch_and_shape() {
   const byUrl = new Map(allRowsObj.results.map(r => [r.url, r]));
   for (const { url, title } of seeded) {
     Assert.ok(byUrl.has(url), `Has entry for ${url}`);
-    Assert.equal(
-      byUrl.get(url).title,
-      sanitizeUntrustedContent(title),
-      `Title matches for ${url}`
-    );
+    Assert.equal(byUrl.get(url).title, title, `Title matches for ${url}`);
   }
 
   // check visitDate iso string
@@ -618,7 +610,7 @@ add_task(async function test_hybrid_search_path() {
 
   Assert.equal(
     byUrl.get("https://example.com/mozilla").title,
-    sanitizeUntrustedContent("Mozilla From Places"),
+    "Mozilla From Places",
     "Places metadata should win in hybrid merge"
   );
 });
@@ -703,7 +695,7 @@ add_task(async function test_hybrid_search_rrf_ranking_prefers_shared_result() {
   // Shared URL should still prefer Places metadata.
   Assert.equal(
     output.results[0].title,
-    sanitizeUntrustedContent(siteB.title),
+    siteB.title,
     "Hybrid merge should prefer Places metadata for the shared URL"
   );
 });

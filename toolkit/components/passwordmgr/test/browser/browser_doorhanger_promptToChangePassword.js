@@ -6,6 +6,10 @@
 
 // The origin for the test URIs.
 const TEST_ORIGIN = "https://example.com";
+const isRustBackend = Services.prefs.getBoolPref(
+  "signon.storage.rust.enabled",
+  false
+);
 const passwordInputSelector = "#form-basic-password";
 const usernameInputSelector = "#form-basic-username";
 
@@ -645,12 +649,21 @@ let tests = [
       );
       // The Rust storage backend only bumps timePasswordChanged when the
       // password actually changes; here the password is put back to its
-      // original value, so it should be preserved.
-      Assert.equal(
-        finalLogins[0].timePasswordChanged,
-        savedLoginsByName.bobABC.timePasswordChanged,
-        "Check timePasswordChanged didn't change"
-      );
+      // original value, so it should be preserved. The JSON backend bumps it
+      // unconditionally.
+      if (isRustBackend) {
+        Assert.equal(
+          finalLogins[0].timePasswordChanged,
+          savedLoginsByName.bobABC.timePasswordChanged,
+          "Check timePasswordChanged didn't change"
+        );
+      } else {
+        todo_is(
+          finalLogins[0].timePasswordChanged,
+          savedLoginsByName.bobABC.timePasswordChanged,
+          "Check timePasswordChanged didn't change"
+        );
+      }
     },
   },
   {

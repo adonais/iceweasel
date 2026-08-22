@@ -575,7 +575,7 @@ export async function searchBrowsingHistory(toolParams, conversation) {
   result.results = result.results.map(
     ({ url, title, visitDate, visitCount, relevanceScore }) => ({
       url,
-      title,
+      title: sanitizeUntrustedContent(title),
       visitDate,
       visitCount,
       relevanceScore,

@@ -2153,7 +2153,7 @@ tab-group {
     border: var(--focus-outline-width) solid transparent;
     border-radius: var(--border-radius-medium);
     background-clip: content-box;
-    background-color: light-dark(var(--tabgroup-swatch-color), var(--tabgroup-swatch-color-invert));
+    background-color: var(--tabgroup-swatch-color);
     @media -moz-pref("browser.nova.enabled") {
       background-color: var(--tabgroup-swatch-color);
     }
