@@ -7,6 +7,10 @@
 -->
 
 <resources>
+  <!-- Button for the download error screen to try again -->
+  <string name="mozac_summarize_download_error_positive_button">Mēģināt vēlreiz</string>
+  <!-- Generic fallback message for the info error screen -->
+  <string name="mozac_summarize_info_error_message">Vēlāk jāmēģina vēlreiz.</string>
   <!-- Error code shown on long press of the error icon. %1$d is an error code. -->
   <string name="mozac_summarize_info_error_code">Kļūdas kods: %1$d</string>
 </resources>

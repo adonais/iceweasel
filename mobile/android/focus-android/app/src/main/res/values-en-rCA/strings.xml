@@ -276,7 +276,7 @@
   <string name="preference_privacy_block_ads">Block ad trackers</string>
   <string name="preference_privacy_block_ads_summary">Some ads track site visits, even if you don’t click the ads</string>
   <string name="preference_privacy_block_analytics">Block analytic trackers</string>
-  <string name="preference_privacy_block_analytics_summary">Used to collect, analyze and measure activities like tapping and scrolling</string>
+  <string name="preference_privacy_block_analytics_summary">Used to collect, analyse and measure activities like tapping and scrolling</string>
   <string name="preference_privacy_block_social">Block social trackers</string>
   <string name="preference_privacy_block_social_summary">Embedded on sites to track your visits and to display functionality like share buttons</string>
   <string name="preference_privacy_block_content">Block other content trackers</string>

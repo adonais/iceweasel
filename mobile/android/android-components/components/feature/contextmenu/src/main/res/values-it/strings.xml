@@ -12,7 +12,7 @@
   <!-- Text for context menu item to open the link in a private tab. -->
   <string name="mozac_feature_contextmenu_open_link_in_private_tab">Apri in scheda anonima</string>
   <!-- Text for context menu item to open the image in a new tab. -->
-  <string name="mozac_feature_contextmenu_open_image_in_new_tab">Apri immagine in nuova finestra</string>
+  <string name="mozac_feature_contextmenu_open_image_in_new_tab">Apri immagine in nuova scheda</string>
   <!-- Text for context menu item to save / download the link. -->
   <string name="mozac_feature_contextmenu_download_link">Scarica link</string>
   <!-- Text for context menu item to share the link with an other app. -->

@@ -100,7 +100,7 @@
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_unknown_host_title">Adressen ikke funnet</string>
   <!-- In the example, the two URLs in markup do not need to be translated. -->
-  <string name="mozac_browser_errorpages_unknown_host_message"><![CDATA[<p>Nettleseren kunne ikke finne serveren for den oppgitte adressen.</p>\n<ul>\n<li>Kontroller adressen for skrivefeil som f.eks <strong>ww</strong>.example.com i stedet for <strong>www</strong>.example.com.</li>\n<li>Hvis du ikke kan laste noen sider, kan du sjekke enhetens data- eller Wi-Fi-tilkobling.</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_unknown_host_message"><![CDATA[<p>Nettleseren fant ikke serveren for den oppgitte adressen.</p>\n<ul>\n<li>Kontroller adressen for skrivefeil som f.eks <strong>ww</strong>.example.com i stedet for <strong>www</strong>.example.com.</li>\n<li>Hvis du ikke kan laste noen sider, kan du sjekke enhetens data- eller Wi-Fi-tilkobling.</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_no_internet_title_2">Det ser ut til at det er et problem med Internett-tilkoblingen din</string>
   <!-- The main body text of this error page. It will be shown beneath the title -->

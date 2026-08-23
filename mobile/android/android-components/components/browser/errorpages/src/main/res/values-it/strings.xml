@@ -8,7 +8,7 @@
 
 <resources>
   <!-- The button that appears at the bottom of an error page. -->
-  <string name="mozac_browser_errorpages_page_refresh">Riprovare</string>
+  <string name="mozac_browser_errorpages_page_refresh">Riprova</string>
   <!-- The button on an error page that checks whether an archived copy of the unreachable page exists. -->
   <string name="mozac_browser_errorpages_archive_check_button">Controlla versione archiviata</string>
   <!-- The label shown on the archive button while the archived copy is being looked up. -->
@@ -74,7 +74,7 @@
   <!-- The document title and heading of the error page shown when a website cannot be loaded because the browser is in offline mode. -->
   <string name="mozac_browser_errorpages_offline_title">Non in linea</string>
   <!-- The error message shown when a website cannot be loaded because the browser is in offline mode. -->
-  <string name="mozac_browser_errorpages_offline_message"><![CDATA[<p>Il browser si trova in modalità non in linea e non è possibile connettersi con l’elemento richiesto.</p>\n<ul>\n<li>Il dispositivo è collegato a una rete attiva?</li>\n<li>Selezionare “Riprova” per passare alla modalità in linea e ricaricare la pagina.</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_offline_message"><![CDATA[<p>Il browser si trova in modalità non in linea e non è possibile connettersi all’elemento richiesto.</p>\n<ul>\n<li>Il dispositivo è collegato a una rete attiva?</li>\n<li>Selezionare “Riprova” per passare alla modalità in linea e ricaricare la pagina.</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when the browser prevents loading a website on a restricted port. -->
   <string name="mozac_browser_errorpages_port_blocked_title">Porta bloccata per motivi di sicurezza</string>
   <!-- The error message shown when the browser prevents loading a website on a restricted port. -->
