@@ -349,7 +349,11 @@ class SelectableProfileServiceClass extends EventEmitter {
     "browser.crashReports.unsubmittedCheck.autoSubmit2",
     "browser.discovery.enabled",
     "browser.shell.checkDefaultBrowser",
+    // Profiles on one install share a taskbar button, so whether the custom
+    // icon feature works is a property of the install, not of the profile.
+    "browser.shell.customIcon.enabled",
     "browser.shell.customIcon.id",
+    "browser.shell.customIcon.perUserStartMenuShortcutCreated",
     "browser.backup.enabled_on.profiles",
     DAU_GROUPID_PREF_NAME,
     "datareporting.healthreport.uploadEnabled",
