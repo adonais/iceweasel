@@ -43,6 +43,13 @@ smartwindow-group-tabs-just-created-heading = Just created
 # Action that dissolves every group in the "Just created" list. The tabs stay
 # open; only the grouping is removed.
 smartwindow-group-tabs-ungroup = Ungroup Tabs
+# Action that opens a list of the tab groups the user already has, both the open
+# ones and the ones they saved by closing them. Only shown when at least one
+# such group exists.
+smartwindow-group-tabs-view-tab-groups = View Tab Groups
+# Accessible name for the list of existing tab groups the row above opens.
+smartwindow-group-tabs-groups-list =
+    .aria-label = Tab groups
 # Action that closes this window's duplicate tabs, keeping the most recently
 # used tab of each set. Only shown when there are duplicates to close, and
 # $tabCount is exactly how many tabs activating it closes.
