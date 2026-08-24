@@ -245,8 +245,29 @@
   flex-direction: column;
 }
 
+#smartwindow-group-tabs-flyout tab-groups-list {
+  > #tab-groups-list-create-group,
+  > hr {
+    display: none;
+  }
+}
+
 .swgt-ungroup {
   color: var(--text-color-deemphasized);
+}
+
+.swgt-view-tab-groups {
+  &::after {
+    content: url("chrome://global/skin/icons/arrow-right.svg");
+    -moz-context-properties: fill, fill-opacity;
+    fill: currentColor;
+    fill-opacity: var(--opacity-deemphasized-strong);
+    display: flex;
+  }
+
+  &:-moz-locale-dir(rtl)::after {
+    content: url("chrome://global/skin/icons/arrow-left.svg");
+  }
 }
 
 .swgt-ungroup-icon {

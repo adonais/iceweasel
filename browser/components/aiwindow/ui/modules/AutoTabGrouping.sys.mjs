@@ -9,6 +9,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AutoTabGroupingSuggestions:
     "moz-src:///browser/components/aiwindow/ui/modules/AutoTabGroupingSuggestions.sys.mjs",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -287,6 +288,9 @@ export const AutoTabGrouping = {
     card.addEventListener("close-duplicates", () =>
       this._closeDuplicateTabs(win, panel)
     );
+    card.addEventListener("view-tab-groups", e =>
+      this._showGroupsFlyout(win, panel, e.detail.anchor)
+    );
     card.addEventListener("preview", e => {
       // Focusing a row whose flyout was just dismissed must not reopen it;
       // pointing at it again is a fresh request and does.
@@ -367,6 +371,7 @@ export const AutoTabGrouping = {
       this._selectTab(win, panel, e.detail.id, e.detail.index)
     );
     flyoutEl.addEventListener("close-flyout", () => this._leaveFlyout(panel));
+    flyoutEl.addEventListener("close-panel", () => panel.hidePopup());
     flyoutPanel.appendChild(flyoutEl);
     flyoutPanel.addEventListener("mouseenter", () =>
       this._cancelHideFlyout(panel)
@@ -405,7 +410,19 @@ export const AutoTabGrouping = {
     card.suggestions = [...state.suggestions];
     card.recent = [...state.recent];
     card.duplicates = win.gBrowser.getAllDuplicateTabsToClose().length;
+    card.tabGroups = this._tabGroupCount(win);
     return hidden;
+  },
+
+  /**
+   * @param {ChromeWindow} win
+   * @returns {number}
+   */
+  _tabGroupCount(win) {
+    const saved = lazy.PrivateBrowsingUtils.isWindowPrivate(win)
+      ? 0
+      : win.SessionStore.savedGroups.length;
+    return win.gBrowser.getAllTabGroups().length + saved;
   },
 
   _createById(win, panel, id) {
@@ -418,14 +435,34 @@ export const AutoTabGrouping = {
   _showFlyoutById(win, panel, id, anchorRow) {
     const suggestion = this._getState(win).suggestions.find(s => s.id === id);
     if (suggestion) {
-      this._cancelHideFlyout(panel);
       this._showFlyout(win, panel, anchorRow, suggestion);
     }
   },
 
+  /**
+   * @param {ChromeWindow} win
+   * @param {XULElement} panel
+   * @param {Element} anchorRow
+   */
+  _showGroupsFlyout(win, panel, anchorRow) {
+    this._showFlyout(win, panel, anchorRow, null);
+    this._focusFlyout(panel);
+  },
+
+  /**
+   * Show the flyout beside a row, listing either the given suggestion's tabs or,
+   * with no suggestion, the user's tab groups.
+   *
+   * @param {ChromeWindow} win
+   * @param {XULElement} panel
+   * @param {Element} anchorRow
+   * @param {?GroupSuggestion} suggestion
+   */
   _showFlyout(win, panel, anchorRow, suggestion) {
+    this._cancelHideFlyout(panel);
     const flyoutPanel = this._ensureFlyoutPanel(win, panel);
     flyoutPanel._flyoutEl.suggestion = suggestion;
+    flyoutPanel._flyoutEl.groupsListId = suggestion ? 0 : this._nextId++;
 
     if (panel._activeRow && panel._activeRow !== anchorRow) {
       panel._activeRow.classList.remove("is-active");
@@ -473,17 +510,19 @@ export const AutoTabGrouping = {
     return hidden;
   },
 
-  _focusFlyout(panel) {
+  async _focusFlyout(panel) {
     const flyoutPanel = panel._flyoutPanel;
     if (!flyoutPanel) {
       return;
     }
     // Focus is refused while the popup is still opening, and the request goes
     // stale if the flyout hides before it opens.
-    const focusFirstTab = () =>
-      flyoutPanel.querySelector(".swgt-flyout-tab")?.focus();
+    const focusFirstTab = () => flyoutPanel._flyoutEl.focusFirstRow();
     if (flyoutPanel.state === "open") {
-      focusFirstTab();
+      await flyoutPanel._flyoutEl.updateComplete;
+      if (flyoutPanel.state === "open") {
+        focusFirstTab();
+      }
       return;
     }
     panel._focusFlyoutController?.abort();

@@ -12,6 +12,9 @@ const { AutoTabGroupingSuggestions } = ChromeUtils.importESModule(
 const { SmartTabGroupingManager } = ChromeUtils.importESModule(
   "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs"
 );
+const { TabGroupTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TabGroupTestUtils.sys.mjs"
+);
 
 // TODO: Break test into smaller pieces for ATG v1
 requestLongerTimeout(2);
@@ -148,6 +151,7 @@ describe("Auto Tab Grouping toolbar button", () => {
       await BrowserTestUtils.closeWindow(win);
       win = null;
     }
+    TabGroupTestUtils.forgetSavedTabGroups();
     await SpecialPowers.popPrefEnv();
   });
 
@@ -699,6 +703,105 @@ describe("Auto Tab Grouping toolbar button", () => {
         new Set(urls).size,
         urls.length,
         "Every remaining tab is at a distinct URL"
+      );
+    });
+  });
+
+  describe("viewing existing tab groups", () => {
+    it("offers the row once groups exist and switches to the one clicked", async () => {
+      win = await openGroupingWindowWithTabs();
+      const panel = await openPanelWithSuggestions(win);
+
+      Assert.equal(
+        win.gBrowser.getAllTabGroups().length,
+        0,
+        "No tab group exists yet"
+      );
+      Assert.ok(
+        !panel.querySelector(".swgt-view-tab-groups"),
+        "No 'View Tab Groups' row while the user has no groups"
+      );
+
+      panel.querySelector(".swgt-create-all").click();
+      const row = await TestUtils.waitForCondition(
+        () => panel.querySelector(".swgt-view-tab-groups"),
+        "The row appears once the created groups exist"
+      );
+      Assert.equal(
+        row.querySelector(".swgt-row-label").getAttribute("data-l10n-id"),
+        "smartwindow-group-tabs-view-tab-groups",
+        "The row's label is localized via Fluent"
+      );
+
+      row.click();
+      const list = await TestUtils.waitForCondition(
+        () => panel._flyoutPanel?.querySelector("tab-groups-list"),
+        "Activating the row opens the tab groups list"
+      );
+      Assert.equal(
+        panel._flyoutPanel
+          .querySelector(".swgt-flyout-list")
+          .getAttribute("data-l10n-id"),
+        "smartwindow-group-tabs-groups-list",
+        "The list's accessible name is localized via Fluent"
+      );
+      Assert.equal(
+        row.getAttribute("aria-expanded"),
+        "true",
+        "The row reports its list as expanded"
+      );
+      await TestUtils.waitForCondition(
+        () => panel._flyoutPanel.contains(win.document.activeElement),
+        "Activating the row moves focus into the list"
+      );
+
+      // Reopening must rebuild the list, so groups created in between show up.
+      AutoTabGrouping._hideFlyout(panel);
+      row.click();
+      const groupRows = await TestUtils.waitForCondition(() => {
+        const rebuilt = panel._flyoutPanel.querySelector("tab-groups-list");
+        const rows = rebuilt?.querySelectorAll(".tab-group-row");
+        return rebuilt !== list && rows?.length === 2 ? [...rows] : null;
+      }, "Reopening builds a fresh list of both groups");
+
+      const group = win.gBrowser.getTabGroupById(
+        groupRows[1].dataset.tabGroupId
+      );
+      Assert.ok(group, "Each row names a tab group");
+      groupRows[1].click();
+      await TestUtils.waitForCondition(
+        () => !win.document.getElementById("smartwindow-group-tabs-panel"),
+        "Selecting a group closes the panel"
+      );
+      Assert.equal(
+        win.gBrowser.selectedTab.group,
+        group,
+        "The clicked group's tab is selected"
+      );
+    });
+
+    it("takes focus when the list replaces an open suggestion flyout", async () => {
+      win = await openGroupingWindowWithTabs();
+      const panel = await openPanelWithSuggestions(win);
+
+      panel.querySelector(".swgt-suggestion").click();
+      const row = await TestUtils.waitForCondition(
+        () => panel.querySelector(".swgt-view-tab-groups"),
+        "The row appears once the created group exists"
+      );
+      const suggestion = panel.querySelector(".swgt-suggestion");
+      suggestion.dispatchEvent(new win.MouseEvent("mouseenter"));
+      await TestUtils.waitForCondition(
+        () =>
+          panel._flyoutPanel?.state === "open" &&
+          panel._flyoutPanel.querySelector(".swgt-flyout-tab"),
+        "The remaining suggestion's flyout is open"
+      );
+
+      row.click();
+      await TestUtils.waitForCondition(
+        () => win.document.activeElement?.classList.contains("tab-group-row"),
+        "Focus lands in the tab groups list, not on the render it replaced"
       );
     });
   });

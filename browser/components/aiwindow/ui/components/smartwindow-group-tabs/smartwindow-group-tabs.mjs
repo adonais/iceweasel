@@ -2,11 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
+import {
+  html,
+  keyed,
+  nothing,
+} from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/tabbrowser/tab-groups-list.mjs";
 
 const HEADING_ID = "smartwindow-group-tabs-heading";
 const DEFAULT_FAVICON_URL = "chrome://global/skin/icons/defaultFavicon.svg";
+const ROW_SELECTOR = ".swgt-flyout-tab, .tab-group-row";
 
 function colorVar(colorName) {
   return `var(--tab-group-${colorName})`;
@@ -36,6 +43,7 @@ export class SmartwindowGroupTabsCard extends MozLitElement {
     suggestions: { attribute: false },
     recent: { attribute: false },
     duplicates: { type: Number },
+    tabGroups: { type: Number },
   };
 
   constructor() {
@@ -44,6 +52,7 @@ export class SmartwindowGroupTabsCard extends MozLitElement {
     this.suggestions = [];
     this.recent = [];
     this.duplicates = 0;
+    this.tabGroups = 0;
     this.addEventListener("keydown", e => this.#onKeyDown(e));
   }
 
@@ -125,13 +134,18 @@ export class SmartwindowGroupTabsCard extends MozLitElement {
     });
   }
 
-  #onSuggestionKeyDown(event, suggestion) {
+  #onRowKeyDown(event, suggestion = null) {
     if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
       event.preventDefault();
-      this.#emit("preview-enter", {
-        id: suggestion.id,
-        anchor: event.currentTarget,
-      });
+
+      if (suggestion) {
+        this.#emit("preview-enter", {
+          id: suggestion.id,
+          anchor: event.currentTarget,
+        });
+      } else {
+        this.#emit("view-tab-groups", { anchor: event.currentTarget });
+      }
     }
   }
 
@@ -154,7 +168,7 @@ export class SmartwindowGroupTabsCard extends MozLitElement {
       @focus=${e => this.#onSuggestionFocus(e, suggestion)}
       @mouseleave=${() => this.#emit("preview-end")}
       @blur=${() => this.#emit("preview-end")}
-      @keydown=${e => this.#onSuggestionKeyDown(e, suggestion)}
+      @keydown=${e => this.#onRowKeyDown(e, suggestion)}
       @click=${() => this.#emit("create-one", { id: suggestion.id })}
     >
       ${this.#favicons(suggestion.tabInfos)}
@@ -233,15 +247,34 @@ export class SmartwindowGroupTabsCard extends MozLitElement {
               ></span>
             </button>`
         : nothing,
-      this.duplicates
+      this.tabGroups || this.duplicates
         ? html`<hr class="swgt-separator" />
-            <button
-              type="button"
-              class="swgt-row swgt-close-duplicates"
-              data-l10n-id="smartwindow-group-tabs-close-duplicates"
-              data-l10n-args=${JSON.stringify({ tabCount: this.duplicates })}
-              @click=${() => this.#emit("close-duplicates")}
-            ></button>`
+            ${this.tabGroups
+              ? html`<button
+                  type="button"
+                  class="swgt-row swgt-view-tab-groups"
+                  aria-expanded="false"
+                  @click=${e =>
+                    this.#emit("view-tab-groups", { anchor: e.currentTarget })}
+                  @keydown=${e => this.#onRowKeyDown(e)}
+                >
+                  <span
+                    class="swgt-row-label"
+                    data-l10n-id="smartwindow-group-tabs-view-tab-groups"
+                  ></span>
+                </button>`
+              : nothing}
+            ${this.duplicates
+              ? html`<button
+                  type="button"
+                  class="swgt-row swgt-close-duplicates"
+                  data-l10n-id="smartwindow-group-tabs-close-duplicates"
+                  data-l10n-args=${JSON.stringify({
+                    tabCount: this.duplicates,
+                  })}
+                  @click=${() => this.#emit("close-duplicates")}
+                ></button>`
+              : nothing}`
         : nothing,
     ];
   }
@@ -249,12 +282,17 @@ export class SmartwindowGroupTabsCard extends MozLitElement {
 customElements.define("smartwindow-group-tabs-card", SmartwindowGroupTabsCard);
 
 /**
- * Flyout listing the tabs of one suggested group, to the side of its row.
- * Activating a tab switches to it.
+ * Flyout shown to the side of the row it belongs to. It lists either the tabs
+ * of one suggested group (activating a tab switches to it) or, with
+ * groupsListId set, the user's existing tab groups, which the tabbrowser's own
+ * <tab-groups-list> renders and acts on. Each opening of that list gets its own
+ * groupsListId, so a new <tab-groups-list> is built: it only reads the groups
+ * when it is connected.
  */
 export class SmartwindowGroupTabsFlyout extends MozLitElement {
   static properties = {
     suggestion: { attribute: false },
+    groupsListId: { type: Number },
   };
 
   createRenderRoot() {
@@ -266,22 +304,33 @@ export class SmartwindowGroupTabsFlyout extends MozLitElement {
     this.classList.add("swgt-flyout");
   }
 
+  async getUpdateComplete() {
+    const result = await super.getUpdateComplete();
+    await this.querySelector("tab-groups-list")?.updateComplete;
+    return result;
+  }
+
+  focusFirstRow() {
+    this.querySelector(ROW_SELECTOR)?.focus();
+  }
+
   #emit(type, detail) {
     this.dispatchEvent(new CustomEvent(type, { detail }));
   }
 
   #onKeyDown(event) {
-    const row = event.target.closest(".swgt-flyout-tab");
+    const row = event.target.closest(ROW_SELECTOR);
     if (!row) {
       return;
     }
     switch (event.key) {
       case "ArrowDown":
-        row.nextElementSibling?.focus();
+      case "ArrowUp": {
+        const rows = [...this.querySelectorAll(ROW_SELECTOR)];
+        const step = event.key === "ArrowDown" ? 1 : -1;
+        rows[rows.indexOf(row) + step]?.focus();
         break;
-      case "ArrowUp":
-        row.previousElementSibling?.focus();
-        break;
+      }
       case "ArrowLeft":
       case "ArrowRight":
         this.#emit("close-flyout");
@@ -292,7 +341,25 @@ export class SmartwindowGroupTabsFlyout extends MozLitElement {
     event.preventDefault();
   }
 
+  #onGroupsClick(event) {
+    if (event.target.closest("button, moz-button")) {
+      this.#emit("close-panel");
+    }
+  }
+
   render() {
+    if (this.groupsListId) {
+      return html`<div
+        class="swgt-flyout-list"
+        role="group"
+        data-l10n-id="smartwindow-group-tabs-groups-list"
+        @keydown=${e => this.#onKeyDown(e)}
+        @click=${e => this.#onGroupsClick(e)}
+      >
+        ${keyed(this.groupsListId, html`<tab-groups-list></tab-groups-list>`)}
+      </div>`;
+    }
+
     const suggestion = this.suggestion;
     if (!suggestion) {
       return nothing;
