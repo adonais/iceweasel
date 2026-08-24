@@ -1502,7 +1502,7 @@ nsWindowsShellService::GetLaunchOnLoginShortcuts(
 //   NS_ERROR_FILE_ALREADY_EXISTS if shortcuts were found but did not match
 //                                aAUMID or aExePath
 //   NS_OK if a matching shortcut is found
-static nsresult GetMatchingShortcut(int aCSIDL, const nsAString& aAUMID,
+static nsresult GetMatchingShortcut(int aCSIDL, [[maybe_unused]] const nsAString& aAUMID,
                                     const wchar_t aExePath[MAXPATHLEN],
                                     const nsAString& aShortcutSubstring,
                                     /* out */ nsAString& aShortcutPath) {
@@ -1577,29 +1577,29 @@ static nsresult GetMatchingShortcut(int aCSIDL, const nsAString& aAUMID,
     }
     result = NS_ERROR_FILE_ALREADY_EXISTS;
 
-    // Check the AUMID
-    RefPtr<IPropertyStore> propStore;
-    hr = link->QueryInterface(IID_IPropertyStore, getter_AddRefs(propStore));
-    if (NS_WARN_IF(FAILED(hr))) {
-      continue;
-    }
-
-    PROPVARIANT pv;
-    hr = propStore->GetValue(PKEY_AppUserModel_ID, &pv);
-    if (NS_WARN_IF(FAILED(hr))) {
-      continue;
-    }
-
-    wchar_t storedAUMID[MAX_PATH];
-    hr = PropVariantToString(pv, storedAUMID, MAX_PATH);
-    PropVariantClear(&pv);
-    if (NS_WARN_IF(FAILED(hr))) {
-      continue;
-    }
-
-    if (!aAUMID.Equals(storedAUMID)) {
-      continue;
-    }
+    // Do not match aumid, by adonais
+    // RefPtr<IPropertyStore> propStore;
+    // hr = link->QueryInterface(IID_IPropertyStore, getter_AddRefs(propStore));
+    // if (NS_WARN_IF(FAILED(hr))) {
+    //   continue;
+    // }
+    // 
+    // PROPVARIANT pv;
+    // hr = propStore->GetValue(PKEY_AppUserModel_ID, &pv);
+    // if (NS_WARN_IF(FAILED(hr))) {
+    //   continue;
+    // }
+    // 
+    // wchar_t storedAUMID[MAX_PATH];
+    // hr = PropVariantToString(pv, storedAUMID, MAX_PATH);
+    // PropVariantClear(&pv);
+    // if (NS_WARN_IF(FAILED(hr))) {
+    //   continue;
+    // }
+    // 
+    // if (!aAUMID.Equals(storedAUMID)) {
+    //   continue;
+    // }
 
     // Check the exe path
     static_assert(MAXPATHLEN == MAX_PATH);
@@ -1714,7 +1714,7 @@ NS_IMETHODIMP nsWindowsShellService::HasPinnableShortcut(
   return NS_OK;
 }
 
-static bool IsCurrentAppPinnedToTaskbarSync(const nsAString& aumid) {
+static bool IsCurrentAppPinnedToTaskbarSync([[maybe_unused]] const nsAString& aumid) {
   // Use new Windows pinning APIs to determine whether or not we're pinned.
   // If these fail we can safely fall back to the old method for regular
   // installs however MSIX will always return false.
@@ -1833,29 +1833,8 @@ static bool IsCurrentAppPinnedToTaskbarSync(const nsAString& aumid) {
     // have a false negative mismatch.
     if (wcsnicmp(storedExePath, exePath, MAXPATHLEN) == 0 ||
         wcsnicmp(storedExePath, pbExePath, MAXPATHLEN) == 0) {
-      RefPtr<IPropertyStore> propStore;
-      hr = link->QueryInterface(IID_IPropertyStore, getter_AddRefs(propStore));
-      if (NS_WARN_IF(FAILED(hr))) {
-        continue;
-      }
-
-      PROPVARIANT pv;
-      hr = propStore->GetValue(PKEY_AppUserModel_ID, &pv);
-      if (NS_WARN_IF(FAILED(hr))) {
-        continue;
-      }
-
-      wchar_t storedAUMID[MAX_PATH];
-      hr = PropVariantToString(pv, storedAUMID, MAX_PATH);
-      PropVariantClear(&pv);
-      if (NS_WARN_IF(FAILED(hr))) {
-        continue;
-      }
-
-      if (aumid.Equals(storedAUMID)) {
-        isPinned = true;
-        break;
-      }
+      isPinned = true;
+      break;
     }
   } while (FindNextFileW(hFindFile, &findData));
 
@@ -3021,7 +3000,7 @@ nsWindowsShellService::SetShortcutsIcon(
 }
 
 static void CollectMatchingShortcutsInDir(const nsAString& aDirPath,
-                                          const nsAString& aAUMID,
+                                          [[maybe_unused]] const nsAString& aAUMID,
                                           const wchar_t aExePath[MAXPATHLEN],
                                           const nsAString& aShortcutSubstring,
                                           nsTArray<nsString>& aOut) {
