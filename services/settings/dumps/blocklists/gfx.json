@@ -2,6 +2,30 @@
   "data": [
     {
       "os": "Linux",
+      "schema": 1786113883788,
+      "vendor": "0x10de",
+      "details": {
+        "bug": "2055560",
+        "name": "bug2055560_nouveau_mesa_threading_ac_init_crashes"
+      },
+      "devices": [],
+      "enabled": true,
+      "feature": "MESA_THREADING",
+      "hardware": "",
+      "driverVendor": "mesa/nouveau",
+      "versionRange": {
+        "maxVersion": "155.*",
+        "minVersion": ""
+      },
+      "featureStatus": "BLOCKED_DRIVER_VERSION",
+      "windowProtocol": "",
+      "driverVersionMax": "",
+      "desktopEnvironment": "",
+      "id": "aefaa076-01de-431a-81bc-e6aa2f6b84fc",
+      "last_modified": 1787185519530
+    },
+    {
+      "os": "Linux",
       "schema": 1755909310311,
       "vendor": "",
       "details": {
@@ -1609,5 +1633,5 @@
       "last_modified": 1480349134090
     }
   ],
-  "timestamp": 1771613837993
+  "timestamp": 1787185519530
 }

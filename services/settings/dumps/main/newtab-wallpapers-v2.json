@@ -1,6 +1,159 @@
 {
   "data": [
     {
+      "order": 10,
+      "theme": "light",
+      "title": "firefox-orange",
+      "schema": 1787172577590,
+      "category": "firefox",
+      "attachment": {
+        "hash": "305c81072af8a9fbd5226c18b971d1d478c549c12e51bdc14b6fe7b5798171d7",
+        "size": 8810,
+        "filename": "wallpaper-kit-peek.svg",
+        "location": "main-workspace/newtab-wallpapers-v2/20260819200624--c01058f4-5b6c-4ac4-9708-54d5bee8f450--91a8634f-15b5-4b17-836b-de3225cb3b17.svg",
+        "mimetype": "image/svg+xml"
+      },
+      "background_position": "center right",
+      "id": "c01058f4-5b6c-4ac4-9708-54d5bee8f450",
+      "last_modified": 1787198084391
+    },
+    {
+      "order": 30,
+      "theme": "dark",
+      "title": "firefox-desert-dark",
+      "schema": 1787173041884,
+      "category": "firefox",
+      "attachment": {
+        "hash": "340c37f0ac9598af055ba6daa861e1b383617c6459f1c7dda63190374441cc34",
+        "size": 62905,
+        "filename": "wallpaper-landscape1-kit-desert-dark.svg",
+        "location": "main-workspace/newtab-wallpapers-v2/20260819185205--36d49fb5-9fd4-4fa9-9504-2dd0b137d285--a6db06ef-39b8-4133-a41a-e198fbd6ae97.svg",
+        "mimetype": "image/svg+xml"
+      },
+      "background_position": "center left",
+      "id": "36d49fb5-9fd4-4fa9-9504-2dd0b137d285",
+      "last_modified": 1787198084388
+    },
+    {
+      "order": 130,
+      "theme": "dark",
+      "title": "firefox-g-dark",
+      "schema": 1787165767316,
+      "category": "firefox",
+      "attachment": {
+        "hash": "669e42fa36e047c23225972e1a56be8287e0c119c3a184f678afd6efa4eb409c",
+        "size": 8155,
+        "filename": "desktop-wallpaper-g-dark-1920x1080.svg",
+        "location": "main-workspace/newtab-wallpapers-v2/20260819185340--94e8a3ce-1faf-4aa1-a52e-7e15c07ff627--d00502f9-f163-432d-bdb6-d54e7c36da10.svg",
+        "mimetype": "image/svg+xml"
+      },
+      "background_position": "top left",
+      "id": "94e8a3ce-1faf-4aa1-a52e-7e15c07ff627",
+      "last_modified": 1787198084386
+    },
+    {
+      "order": 90,
+      "theme": "dark",
+      "title": "firefox-c-dark",
+      "schema": 1787170216141,
+      "category": "firefox",
+      "attachment": {
+        "hash": "ce78182d597e078fcc3f2e0e1ef59b00bda1d2e6e89d8e68d8e21a64feac24b6",
+        "size": 10267,
+        "filename": "desktop-wallpaper-c-dark-1920x1080.svg",
+        "location": "main-workspace/newtab-wallpapers-v2/20260819201311--8611e834-7285-4b7b-8d56-06eab6a0a227--28518a88-2c98-44b7-ad17-00c6cb774914.svg",
+        "mimetype": "image/svg+xml"
+      },
+      "background_position": "top left",
+      "id": "8611e834-7285-4b7b-8d56-06eab6a0a227",
+      "last_modified": 1787198084383
+    },
+    {
+      "order": 40,
+      "theme": "light",
+      "title": "firefox-desert-light",
+      "schema": 1787173081944,
+      "category": "firefox",
+      "attachment": {
+        "hash": "96b14ef5896ee5738e405e7d4f01c733d21dff56459f6aaff546f4e01f3fe135",
+        "size": 24440,
+        "filename": "wallpaper-landscape1-kit-desert-light.svg",
+        "location": "main-workspace/newtab-wallpapers-v2/20260819185224--dd9512ea-ea90-4d7b-9571-ab8fa3d52d51--c4c169fa-8c84-4cf3-87b5-46dad7dd43b7.svg",
+        "mimetype": "image/svg+xml"
+      },
+      "background_position": "center left",
+      "id": "dd9512ea-ea90-4d7b-9571-ab8fa3d52d51",
+      "last_modified": 1787198084381
+    },
+    {
+      "order": 150,
+      "theme": "light",
+      "title": "firefox-g-light",
+      "schema": 1787166495153,
+      "category": "firefox",
+      "attachment": {
+        "hash": "64bdcff7ed11c8bdc2b1845de7705e3da39159633d8426eff9847a503754a5ce",
+        "size": 16009,
+        "filename": "desktop-wallpaper-g-light-1920x1080.svg",
+        "location": "main-workspace/newtab-wallpapers-v2/20260819185317--2b1b54e2-19e7-4846-9d5b-ebbede82747b--aa4df1eb-b009-467f-b17b-0b73194286c7.svg",
+        "mimetype": "image/svg+xml"
+      },
+      "background_position": "top left",
+      "id": "2b1b54e2-19e7-4846-9d5b-ebbede82747b",
+      "last_modified": 1787198084378
+    },
+    {
+      "order": 110,
+      "theme": "dark",
+      "title": "firefox-d-dark",
+      "schema": 1787170391922,
+      "category": "firefox",
+      "attachment": {
+        "hash": "e8b26d4e229b2a28eae74b7aa5631d8db431e3ee759d3238ec36a5d6d87169ab",
+        "size": 20430,
+        "filename": "desktop-wallpaper-d-dark-1920x1080.svg",
+        "location": "main-workspace/newtab-wallpapers-v2/20260819204733--1a0b388c-db2c-4f86-b953-0e5302573258--ce4d91e8-abc7-4f63-963f-83385d6cd86a.svg",
+        "mimetype": "image/svg+xml"
+      },
+      "background_position": "top right",
+      "id": "1a0b388c-db2c-4f86-b953-0e5302573258",
+      "last_modified": 1787198084376
+    },
+    {
+      "order": 120,
+      "theme": "light",
+      "title": "firefox-d",
+      "schema": 1787172996293,
+      "category": "firefox",
+      "attachment": {
+        "hash": "568ab8b0fed9027ac5036fcd20433025d09ff6fd4279c2ddca2180d94a47eaca",
+        "size": 20168,
+        "filename": "desktop-wallpaper-d-light-1920x1080.svg",
+        "location": "main-workspace/newtab-wallpapers-v2/20260819201015--62aa72d9-b9f3-4f29-88f5-5120ee004e7c--4d48db83-de9c-44dd-bf12-20aa9152f6a5.svg",
+        "mimetype": "image/svg+xml"
+      },
+      "background_position": "top right",
+      "id": "62aa72d9-b9f3-4f29-88f5-5120ee004e7c",
+      "last_modified": 1787198084373
+    },
+    {
+      "order": 100,
+      "theme": "light",
+      "title": "firefox-c",
+      "schema": 1787166506090,
+      "category": "firefox",
+      "attachment": {
+        "hash": "049ff03eb918516a7dd4e795d7f9afc1bab6443ef6396b04c87e51caa722bc5b",
+        "size": 10269,
+        "filename": "desktop-wallpaper-c-light-1920x1080.svg",
+        "location": "main-workspace/newtab-wallpapers-v2/20260819200245--429c288c-8d92-4baa-aefb-a04719882454--cd2122fe-b227-4003-8e18-3cd2cc1c6204.svg",
+        "mimetype": "image/svg+xml"
+      },
+      "background_position": "top left",
+      "id": "429c288c-8d92-4baa-aefb-a04719882454",
+      "last_modified": 1787198084371
+    },
+    {
       "order": 203,
       "theme": "light",
       "title": "wcw-semifinals-arg",
@@ -154,74 +307,6 @@
       "last_modified": 1780931540821
     },
     {
-      "order": 10,
-      "theme": "light",
-      "title": "firefox-orange",
-      "schema": 1780605446111,
-      "category": "firefox",
-      "attachment": {
-        "hash": "27eb5dbe3d52af1b09a7af87fd1cbde9dc550ab1de2736730d02737c482bd049",
-        "size": 10340,
-        "filename": "simplykit.svg",
-        "location": "main-workspace/newtab-wallpapers-v2/e24afb3d-a1f1-4b9f-9a57-940f5ef7261c.svg",
-        "mimetype": "image/svg+xml"
-      },
-      "background_position": "bottom left",
-      "id": "c01058f4-5b6c-4ac4-9708-54d5bee8f450",
-      "last_modified": 1780931540818
-    },
-    {
-      "order": 30,
-      "theme": "dark",
-      "title": "firefox-desert-dark",
-      "schema": 1780605383845,
-      "category": "firefox",
-      "attachment": {
-        "hash": "bf9d8585696d53674a2792846b77114a24f27148b94b3c9bb25a82a2ce31939f",
-        "size": 80860,
-        "filename": "wallpaper-landscape1-kit-desert-dark.svg",
-        "location": "main-workspace/newtab-wallpapers-v2/2c387cda-3d68-4a45-8fd7-41aa4f7c9d2a.svg",
-        "mimetype": "image/svg+xml"
-      },
-      "background_position": "bottom right",
-      "id": "36d49fb5-9fd4-4fa9-9504-2dd0b137d285",
-      "last_modified": 1780931540816
-    },
-    {
-      "order": 130,
-      "theme": "dark",
-      "title": "firefox-g-dark",
-      "schema": 1780605302700,
-      "category": "firefox",
-      "attachment": {
-        "hash": "e04003fa18aeca660ec8eeeedd9cf71653bdafc787c5aa5c7420b5abf8358c61",
-        "size": 9519,
-        "filename": "desktop-wallpaper-g-dark-1920x1080.svg",
-        "location": "main-workspace/newtab-wallpapers-v2/5cd10c63-472c-48e3-800e-d75f5168328a.svg",
-        "mimetype": "image/svg+xml"
-      },
-      "background_position": "bottom left",
-      "id": "94e8a3ce-1faf-4aa1-a52e-7e15c07ff627",
-      "last_modified": 1780931540813
-    },
-    {
-      "order": 90,
-      "theme": "dark",
-      "title": "firefox-c-dark",
-      "schema": 1780605354633,
-      "category": "firefox",
-      "attachment": {
-        "hash": "600b8536a7ff982ee251a29ce1c4548b6ac1a6f5ce1dd4e0e628a2d24cf924e7",
-        "size": 12257,
-        "filename": "desktop-wallpaper-c-dark-1920x1080.svg",
-        "location": "main-workspace/newtab-wallpapers-v2/f86b89b8-1e93-43a7-844a-8718462eb8cc.svg",
-        "mimetype": "image/svg+xml"
-      },
-      "background_position": "top left",
-      "id": "8611e834-7285-4b7b-8d56-06eab6a0a227",
-      "last_modified": 1780931540810
-    },
-    {
       "order": 80,
       "theme": "light",
       "title": "firefox-b-light",
@@ -237,23 +322,6 @@
       "background_position": "center right",
       "id": "e62aae2f-2f52-44a9-a5c5-ca68181185be",
       "last_modified": 1780931540807
-    },
-    {
-      "order": 40,
-      "theme": "light",
-      "title": "firefox-desert-light",
-      "schema": 1780605389368,
-      "category": "firefox",
-      "attachment": {
-        "hash": "69f6bbc929f0dc9009c27d01b8274f450bacc2bc3ce59757525df791e3e6d395",
-        "size": 32801,
-        "filename": "wallpaper-landscape1-kit-desert-light.svg",
-        "location": "main-workspace/newtab-wallpapers-v2/e8b55fa2-4445-46e6-b09a-2d9d7a42e559.svg",
-        "mimetype": "image/svg+xml"
-      },
-      "background_position": "center left",
-      "id": "dd9512ea-ea90-4d7b-9571-ab8fa3d52d51",
-      "last_modified": 1780931540805
     },
     {
       "order": 20,
@@ -273,40 +341,6 @@
       "last_modified": 1780931540802
     },
     {
-      "order": 150,
-      "theme": "light",
-      "title": "firefox-g-light",
-      "schema": 1780605298862,
-      "category": "firefox",
-      "attachment": {
-        "hash": "e8dbbbd65fef02542c2e404efa3779d479052c9193cd5dfb6e4025df36720658",
-        "size": 9519,
-        "filename": "desktop-wallpaper-g-light-1920x1080.svg",
-        "location": "main-workspace/newtab-wallpapers-v2/66cdcc52-7916-4bdd-94be-dc382261ef66.svg",
-        "mimetype": "image/svg+xml"
-      },
-      "background_position": "bottom left",
-      "id": "2b1b54e2-19e7-4846-9d5b-ebbede82747b",
-      "last_modified": 1780931540799
-    },
-    {
-      "order": 110,
-      "theme": "dark",
-      "title": "firefox-d-dark",
-      "schema": 1780605309732,
-      "category": "firefox",
-      "attachment": {
-        "hash": "ffa31ae925ad95a749d6096745ea6af4f7cd58b0646b6c94777ac8a0a25722a9",
-        "size": 25117,
-        "filename": "desktop-wallpaper-d-dark-1920x1080.svg",
-        "location": "main-workspace/newtab-wallpapers-v2/9f4e8a01-0d13-4c40-a005-3c119833a33f.svg",
-        "mimetype": "image/svg+xml"
-      },
-      "background_position": "bottom right",
-      "id": "1a0b388c-db2c-4f86-b953-0e5302573258",
-      "last_modified": 1780931540797
-    },
-    {
       "order": 50,
       "theme": "dark",
       "title": "firefox-a",
@@ -322,23 +356,6 @@
       "background_position": "top right",
       "id": "451090be-cdf1-49fc-b1f3-bd2f3b4ac34d",
       "last_modified": 1780931540794
-    },
-    {
-      "order": 120,
-      "theme": "light",
-      "title": "firefox-d",
-      "schema": 1780605306030,
-      "category": "firefox",
-      "attachment": {
-        "hash": "74988ebbc20bbc957f9b082793fea4f667e307aea3e873ba01a4f094e26e8452",
-        "size": 26913,
-        "filename": "desktop-wallpaper-d-1920x1080.svg",
-        "location": "main-workspace/newtab-wallpapers-v2/3640c0ff-19a2-4f7b-a06a-fdc2232ddd4a.svg",
-        "mimetype": "image/svg+xml"
-      },
-      "background_position": "bottom right",
-      "id": "62aa72d9-b9f3-4f29-88f5-5120ee004e7c",
-      "last_modified": 1780931540791
     },
     {
       "order": 70,
@@ -373,23 +390,6 @@
       "background_position": "bottom center",
       "id": "2e468f89-ac6a-474f-a789-5de0be601887",
       "last_modified": 1780931540786
-    },
-    {
-      "order": 100,
-      "theme": "light",
-      "title": "firefox-c",
-      "schema": 1780605419579,
-      "category": "firefox",
-      "attachment": {
-        "hash": "054a4389ea9087583091de88a5aa45740a3ef067667a963c587208648df87176",
-        "size": 12260,
-        "filename": "desktop-wallpaper-c-light-1920x1080.svg",
-        "location": "main-workspace/newtab-wallpapers-v2/f633134b-dc81-4b54-a8c0-61681e36c56e.svg",
-        "mimetype": "image/svg+xml"
-      },
-      "background_position": "top left",
-      "id": "429c288c-8d92-4baa-aefb-a04719882454",
-      "last_modified": 1780931540784
     },
     {
       "theme": "dark",
@@ -1414,5 +1414,5 @@
       "last_modified": 1718647622926
     }
   ],
-  "timestamp": 1784651279401
+  "timestamp": 1787198084391
 }
