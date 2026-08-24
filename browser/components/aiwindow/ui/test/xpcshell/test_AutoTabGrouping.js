@@ -324,3 +324,28 @@ add_task(function test_tabInfo_resolvesFaviconAndTitle() {
     "A tab with no label falls back to its site name"
   );
 });
+
+add_task(function test_hasEnoughMemory_respectsThreshold() {
+  const minimumPref = "browser.ml.minimumPhysicalMemory";
+  const checkPref = "browser.ml.checkForMemory";
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(minimumPref);
+    Services.prefs.clearUserPref(checkPref);
+  });
+
+  Services.prefs.setIntPref(minimumPref, 1024);
+  Assert.ok(
+    !AutoTabGroupingSuggestions.hasEnoughMemory,
+    "Machines below the threshold do not qualify"
+  );
+  Assert.ok(
+    !AutoTabGroupingSuggestions.isAvailable,
+    "Not enough memory hides the feature"
+  );
+
+  Services.prefs.setBoolPref(checkPref, false);
+  Assert.ok(
+    AutoTabGroupingSuggestions.hasEnoughMemory,
+    "Turning off the platform memory check turns off this one too"
+  );
+});

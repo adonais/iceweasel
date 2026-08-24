@@ -19,6 +19,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
 // smart-window-tab-topic Remote Settings inference-options record.
 const SW_TOPIC_FEATURE_ID = "smart-window-tab-topic";
 const SW_TOPIC_ENGINE_ID = "smart-window-tab-topic-engine";
+
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "mlUtils",
+  "@mozilla.org/ml-utils;1",
+  Ci.nsIMLUtils
+);
+
 ChromeUtils.defineLazyGetter(lazy, "console", () =>
   console.createInstance({
     prefix: "AutoTabGrouping",
@@ -38,6 +46,20 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.smartwindow.autoTabGrouping.minTabsPerGroup",
   2
 );
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "checkForMemory",
+  "browser.ml.checkForMemory",
+  true
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "minimumPhysicalMemoryGiB",
+  "browser.ml.minimumPhysicalMemory",
+  3
+);
+
+const ONE_GIB = 1024 ** 3;
 
 // Drop clusters whose cohesion (average pairwise cosine similarity of the tabs'
 // embeddings, 0..1, set by SmartTabGrouping) is below this, so weakly-related
@@ -89,7 +111,22 @@ export const AutoTabGroupingSuggestions = {
   get isAvailable() {
     return (
       Services.prefs.getBoolPref("browser.ml.enable", false) &&
-      lazy.SmartTabGroupingManager.isAllowed
+      lazy.SmartTabGroupingManager.isAllowed &&
+      this.hasEnoughMemory
+    );
+  },
+
+  /**
+   * We want to gate the Auto Tab Grouping button from the user if their machine
+   * does not have the required memory
+   *
+   * @returns {boolean}
+   */
+  get hasEnoughMemory() {
+    return (
+      !lazy.checkForMemory ||
+      lazy.mlUtils.totalPhysicalMemory >=
+        lazy.minimumPhysicalMemoryGiB * ONE_GIB
     );
   },
 
