@@ -824,6 +824,8 @@
   <string name="preferences_toolbar_shortcut">Eike pya’eha temboporu rupápe</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_toolbar_select_shortcut">Eiporavo mbopya’eha</string>
+  <!-- Title of a menu option allowing to change the shortcut button shown in the toolbar -->
+  <string name="toolbar_shortcut_menu_edit_option">Embosako’i jeike pya’eha</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_gestures">Ñeha’ãnga</string>
   <!-- Preference for settings related to visual options -->
@@ -1302,6 +1304,11 @@
   <string name="preference_light_theme">Tesakã</string>
   <!-- Preference for using dark theme -->
   <string name="preference_dark_theme">Ypytũ</string>
+  <!--
+    Preference for using the OLED theme. For localization, this can be translated as "True Black", "Maximum Darkness",
+    or "Full dark" if needed.
+  -->
+  <string name="preference_oled_theme">Pe iñipytũvéva</string>
   <!-- Preference for using using dark or light theme automatically set by battery -->
   <string name="preference_auto_battery_theme">Batería mboareveha moĩmbyre</string>
   <!-- Preference for using following device theme -->
@@ -1448,6 +1455,16 @@
   <string name="preferences_inactive_tabs">Eguerova tendayke ituja ha ojeporu’ỹva</string>
   <!-- Title of inactive tabs preference -->
   <string name="preferences_inactive_tabs_title">Umi tendayke ehecha’ỹa mokõi arapokõindýpe ohóma tenda ojeporu’ỹvape.</string>
+  <!-- Title for the preference to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_feature">Embojuruja tendayke aty</string>
+  <!--
+    Privacy report
+
+    Category header of a preference that allows a user to enable or disable the privacy report feature
+  -->
+  <string name="preferences_privacy_report">Marandu ñemiguáva</string>
+  <!-- Title of the privacy report preference that allows a user to enable or disable the feature -->
+  <string name="preferences_privacy_report_title">Embojuruja marandu’i ñemigua</string>
   <!--
     Studies
 
@@ -1684,6 +1701,14 @@
   <string name="ungroup_tab_group_confirmation_dialog_confirm">Eipe’a ijatyhágui</string>
   <!-- Text shown on the cancel button in the Ungroup tab group confirmation dialog. -->
   <string name="ungroup_tab_group_confirmation_dialog_cancel">Eheja</string>
+  <!-- Custom accessibility action to reorder a tab up rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_up">Erova tendayke yvate gotyo</string>
+  <!-- Custom accessibility action to reorder a tab left rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_left">Erova tendayke asu gotyo</string>
+  <!-- Custom accessibility action to reorder a tab right rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_right">Erova tendayke akatúa gotyo</string>
+  <!-- Custom accessibility action to reorder a tab down rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_down">Erova tendayke yvy gotyo</string>
   <!--
     Color labels for tab groups, used for accessibility and selection UI.
 
@@ -3091,6 +3116,8 @@
   <string name="ip_protection_location_picker_title" tools:ignore="UnusedResources">Eiporavo VPN rendaite</string>
   <!-- Description for what it means to use the Recommended setting and let the app automatically pick the best server location. -->
   <string name="ip_protection_location_fastest_description" tools:ignore="BrandUsage">Firefox ojuhúta tendaite pya’eteve</string>
+  <!-- Description for an unavailable VPN location in the location list. -->
+  <string name="ip_protection_location_unavailable_description">Ndojeporukuaáiva</string>
   <!-- Error message shown when the selected browser VPN location is unavailable. -->
   <string name="ip_protection_location_unavailable" tools:ignore="UnusedResources">Tendaite ojejuhu’ỹva. Eiporavo ambue tendaite.</string>
   <!-- Snackbar (in-app pop-up notification) text shown when the previously selected browser VPN location is unavailable and the recommended location was used instead. -->
@@ -3390,6 +3417,16 @@
     which navigates the user to a screen displaying all the shortcuts.
   -->
   <string name="homepage_shortcuts_show_all_content_description">Ehechaukapa tairenda mbopya’eha</string>
+  <!--
+    Label for the button in the shortcuts home screen section that expands the section to show
+    every shortcut.
+  -->
+  <string name="homepage_shortcuts_show_all">Techaukapa</string>
+  <!--
+    Label for the button in the shortcuts home screen section that collapses the section back
+    to showing only the first shortcuts.
+  -->
+  <string name="homepage_shortcuts_show_less">Techauka’ive</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Embojuaju jeike pya’eha</string>
   <!-- Title for the "Add to homepage" bottom sheet. -->
@@ -4621,6 +4658,16 @@
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Marandu’i ñemiguáva</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Eikuaave</string>
+  <!--
+    Collections migration homepage card
+
+    Title shown on the collections to tab groups migration card on the homepage.
+  -->
+  <string name="collections_migration_homepage_banner_title">Ñembyatyeta ko’ág̃a atykuéra</string>
+  <!-- Message shown on the collections to tab groups migration card on the homepage. -->
+  <string name="collections_migration_homepage_card_message">Ko’ág̃a ikatu eguereko ne rendaykekuéra hendaitépe</string>
+  <!-- Link text shown on the collections to tab groups migration card that opens the tab groups page in the tab manager. -->
+  <string name="collections_migration_homepage_card_link">Ahecha tendayke aty</string>
   <!-- Google Lens prototype related strings -->
   <string name="preferences_debug_settings_google_lens_integration">Embojuruja juaju Google Lens ndive</string>
   <!-- Lens image search button content description -->
@@ -4705,4 +4752,20 @@
   <string name="firefox_labs_feature_conflict">Tembiapoite ndoikói eiporu hag̃ua.</string>
   <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
   <string name="firefox_labs_no_labs_available_description">Ndaipóri tembiapoite ikatúva eiporu ko’aĝa</string>
+  <!-- Title of the Firefox Labs Sandboxing experiment. -->
+  <string name="firefox_labs_website_isolation_title" tools:ignore="UnusedResources">Ñanduti rogue momombyry</string>
+  <!-- Description of the Firefox Labs Sandboxing experiment. -->
+  <string name="firefox_labs_website_isolation_description" tools:ignore="UnusedResources">Peteĩ jokohave ñanduti rogue pa’ũme oipytyvõva omo’ã hag̃ua ne mba’ekuaarãita tendayke apytépe. Omombegue ne rembiapo, tekopyta, tendaita jokupyty ha mba’éicha oñeñongatu ñeikundaha rembiasakue.</string>
+  <!--
+    PDF viewer toolbar and buttons
+
+    Content description for accessibility (used by screen readers): Description for the button that triggers the start of a signature workflow on the PDF displayed on the screen.
+  -->
+  <string name="pdf_tools_sign_content_description">Emboguejy PDF</string>
+  <!-- Content description for accessibility (used by screen readers): Description of the button that downloads the PDF displayed on the screen to the user's device. -->
+  <string name="pdf_tools_download_content_description">Emboguejy PDF</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that opens the printing dialogue window for the PDF displayed on the screen. -->
+  <string name="pdf_tools_print_content_description">Emonguatia PDF</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that opens the sharing options for the PDF being displayed on the screen. -->
+  <string name="pdf_tools_share_content_description">Emoherakuã PDF</string>
 </resources>

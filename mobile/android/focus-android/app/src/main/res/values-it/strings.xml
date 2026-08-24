@@ -433,7 +433,7 @@
     Content description (not visible, for screen readers etc.): This is the description for the ImageView in the menu that displays
     the number of trackers blocked for the current session
   -->
-  <string name="content_description_trackers_blocked">Numero di tracciamenti bloccati</string>
+  <string name="content_description_trackers_blocked">Numero di elementi traccianti bloccati</string>
   <!--
     Content description (not visible, for screen readers etc.): This is the description for the switch in the menu that temporarily disables/enables
     content blocking for the current session
@@ -447,7 +447,7 @@
   -->
   <string name="external_app_prompt">È possibile uscire da %1$s e aprire questo link in %2$s.</string>
   <!-- This text is the title of a dialog shown if no app could be found for a custom link protocol. -->
-  <string name="external_app_prompt_no_app_title">Trova un app per aprire il link</string>
+  <string name="external_app_prompt_no_app_title">Trova un’app per aprire il link</string>
   <!--
     This text is shown in a dialog if no app could be found for a custom link protocol. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar") and %2$s is the name of
     the app store installed on the device (usually that's Google Play).

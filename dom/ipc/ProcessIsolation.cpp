@@ -255,9 +255,14 @@ static const char* WorkerKindName(WorkerKind aWorkerKind) {
  * When handling a navigation, this method will be called twice: first with the
  * channel's creation URI, and then it will be called with a result principal's
  * URI.
+ *
+ * `aIsWorker` selects process isolation for a remote worker rather than for a
+ * document; see the file:// URI allowlist handling below for why the two
+ * differ.
  */
 static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
-                                                 bool aForChannelCreationURI) {
+                                                 bool aForChannelCreationURI,
+                                                 bool aIsWorker) {
   MOZ_ASSERT(NS_IsMainThread());
 
   nsAutoCString scheme;
@@ -337,7 +342,8 @@ static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
   nsCOMPtr<nsIURI> inner;
   if (nsCOMPtr<nsINestedURI> nested = do_QueryInterface(aURI);
       nested && NS_SUCCEEDED(nested->GetInnerURI(getter_AddRefs(inner)))) {
-    return IsolationBehaviorForURI(inner, aIsSubframe, aForChannelCreationURI);
+    return IsolationBehaviorForURI(inner, aIsSubframe, aForChannelCreationURI,
+                                   aIsWorker);
   }
 
   // If we're doing the initial check based on the channel creation URI, stop
@@ -389,12 +395,22 @@ static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
     }
   }
 
-  nsCOMPtr<nsIScriptSecurityManager> secMan =
-      nsContentUtils::GetSecurityManager();
-  bool inFileURIAllowList = false;
-  if (NS_SUCCEEDED(secMan->InFileURIAllowlist(aURI, &inFileURIAllowList)) &&
-      inFileURIAllowList) {
-    return IsolationBehavior::File;
+  // If the domain is allowlisted to allow it to use file:// URIs, then we have
+  // to run it in a file content process, in case it uses file:// sub-resources.
+  //
+  // This only applies to documents. A worker has no sub-resources of its own to
+  // render, and forcing it into the file process would additionally mean
+  // rejecting it outright whenever the requesting process isn't the file
+  // process (see ValidateBehaviorForWorker). Workers were likewise excluded
+  // from this rule back when it lived in E10SUtils; see bug 2064648.
+  if (!aIsWorker) {
+    nsCOMPtr<nsIScriptSecurityManager> secMan =
+        nsContentUtils::GetSecurityManager();
+    bool inFileURIAllowList = false;
+    if (NS_SUCCEEDED(secMan->InFileURIAllowlist(aURI, &inFileURIAllowList)) &&
+        inFileURIAllowList) {
+      return IsolationBehavior::File;
+    }
   }
 
   return IsolationBehavior::WebContent;
@@ -680,7 +696,8 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   // First, check for any special cases which should be handled using the
   // channel creation URI, and handle them.
   auto behavior = IsolationBehaviorForURI(aChannelCreationURI, aParentWindow,
-                                          /* aForChannelCreationURI */ true);
+                                          /* aForChannelCreationURI */ true,
+                                          /* aIsWorker */ false);
   MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
           ("Channel Creation Isolation Behavior: %s",
            IsolationBehaviorName(behavior)));
@@ -780,7 +797,8 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
       }
     } else if (nsCOMPtr<nsIURI> principalURI = resultOrPrecursor->GetURI()) {
       behavior = IsolationBehaviorForURI(principalURI, aParentWindow,
-                                         /* aForChannelCreationURI */ false);
+                                         /* aForChannelCreationURI */ false,
+                                         /* aIsWorker */ false);
     }
   }
 
@@ -1084,7 +1102,8 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
   if (resultOrPrecursor->GetIsContentPrincipal()) {
     nsCOMPtr<nsIURI> uri = resultOrPrecursor->GetURI();
     behavior = IsolationBehaviorForURI(uri, /* aIsSubframe */ false,
-                                       /* aForChannelCreationURI */ false);
+                                       /* aForChannelCreationURI */ false,
+                                       /* aIsWorker */ true);
   } else if (resultOrPrecursor->IsSystemPrincipal()) {
     MOZ_ASSERT(aWorkerKind == WorkerKindShared);
 
@@ -1281,7 +1300,8 @@ Result<nsCString, nsresult> PredictRemoteTypeForURI(
            aUseRemoteSubframes));
 
   IsolationBehavior behavior = IsolationBehaviorForURI(
-      aURI, /* aIsSubframe */ false, /* aForChannelCreationURI */ true);
+      aURI, /* aIsSubframe */ false, /* aForChannelCreationURI */ true,
+      /* aIsWorker */ false);
   MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
           ("Base Isolation Behavior: %s", IsolationBehaviorName(behavior)));
 
@@ -1292,7 +1312,8 @@ Result<nsCString, nsresult> PredictRemoteTypeForURI(
   if (nsCOMPtr<nsIURI> webAppHandlerURI = MaybeResolveWebAppHandler(uri)) {
     uri = webAppHandlerURI;
     behavior = IsolationBehaviorForURI(uri, /* aIsSubframe */ false,
-                                       /* aForChannelCreationURI */ true);
+                                       /* aForChannelCreationURI */ true,
+                                       /* aIsWorker */ false);
     MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
             ("Resolved WebAppHandler uri:%s isolationBehavior:%s",
              uri->GetSpecOrDefault().get(), IsolationBehaviorName(behavior)));
@@ -1330,7 +1351,8 @@ Result<nsCString, nsresult> PredictRemoteTypeForURI(
       behavior = IsolationBehavior::ForceWebRemoteType;
     } else if (nsCOMPtr<nsIURI> principalURI = principal->GetURI()) {
       behavior = IsolationBehaviorForURI(principalURI, /* aIsSubframe */ false,
-                                         /* aForChannelCreationURI */ false);
+                                         /* aForChannelCreationURI */ false,
+                                         /* aIsWorker */ false);
     }
   }
 
@@ -1565,7 +1587,8 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     // NOTE: The logic for about URIs is somewhat complex, so we lean on
     // IsolationBehaviorForURI to ensure it matches.
     switch (IsolationBehaviorForURI(aboutURI, /* aIsSubframe */ false,
-                                    /* aForChannelCreationURI */ true)) {
+                                    /* aForChannelCreationURI */ true,
+                                    /* aIsWorker */ false)) {
       case IsolationBehavior::Parent:
         return false;
       case IsolationBehavior::Anywhere:

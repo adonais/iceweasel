@@ -352,8 +352,9 @@ export const AIWindow = {
   },
 
   /**
-   * Initializes the toolbox button that opens the "Organize Tabs" panel. The
-   * whole Auto Tab Grouping feature is gated behind a default-off pref.
+   * Initializes the toolbox button that opens the "Organize Tabs" panel, and
+   * starts fetching the models it needs once it is shown. The whole Auto Tab
+   * Grouping feature is gated behind a default-off pref.
    *
    * @param {Window} win
    */
@@ -368,6 +369,9 @@ export const AIWindow = {
       this.isAIWindowActive(win) &&
       lazy.AutoTabGroupingSuggestions.isAvailable
     );
+    if (!button.hidden) {
+      lazy.AutoTabGroupingSuggestions.preloadModels();
+    }
   },
 
   get isDefaultWindow() {

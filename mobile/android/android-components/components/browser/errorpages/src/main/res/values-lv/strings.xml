@@ -7,8 +7,12 @@
 -->
 
 <resources>
+  <!-- The error message shown when a website took long to load. -->
+  <string name="mozac_browser_errorpages_net_timeout_message"><![CDATA[<p>Pieprasītā vietne neatbildēja uz savienojuma pieprasījumu, un pārlūks pārstāja gaidīt atbildi.</p>\n<ul>\n<li>Vai serverī varētu būt liels pieprasījumu skaits vai īslaicīgi darbības traucējumi? Vēlāk jāmēģina vēlreiz.</li>\n<li>Vai nav iespējams pārlūkot citas vietnes? jāpārbauda ierīces savienojums ar tīklu.</li>\n<li>Vai ierīci vai tīklu aizsargā ugunsmūris vai starpniekserveris? Nepareizi iestatījumi var traucēt tīmekļa pārlūkošanu.</li>\n<li>Joprojām ir sarežģījumi? Jāsazinās ar tīkla pārvaldītāju vai interneta pakalpojumu sniedzēju, lai iegūtu palīdzību.</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when a website cannot be loaded because the browser is in offline mode. -->
   <string name="mozac_browser_errorpages_offline_title">Bezsaistē</string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_no_internet_title_2">Izskatās, ka ir sarežģījums ar interneta savienojumu</string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_no_internet_error_code">Kļūdas kods: NS_ERROR_OFFLINE</string>
 </resources>

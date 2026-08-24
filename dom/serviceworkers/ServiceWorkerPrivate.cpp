@@ -504,6 +504,20 @@ nsresult ServiceWorkerPrivate::Initialize() {
   AssertIsOnMainThread();
   MOZ_ASSERT(mInfo);
 
+  // Initialize() is only ever called from our constructor and there is no retry
+  // mechanism, so on failure this ServiceWorkerPrivate can never become usable;
+  // in particular mRemoteWorkerData would stay default-constructed, and its
+  // OptionalServiceWorkerData union would fatally assert the first time
+  // RefreshRemoteWorkerData() touched it. Neutralize ourselves by clearing
+  // mInfo, which is the same state NoteDeadServiceWorkerInfo() establishes and
+  // which SpawnWorkerIfNeeded() already refuses to act on, so that every
+  // operation fails cleanly instead. For fetch that means the interception is
+  // reset and the request goes to the network.
+  //
+  // Note that we run from within ServiceWorkerInfo's constructor, so mInfo
+  // points at a not-yet-fully-constructed object; this only clears the pointer.
+  auto neutralizeOnFailure = MakeScopeExit([&] { mInfo = nullptr; });
+
   nsCOMPtr<nsIPrincipal> principal = mInfo->Principal();
 
   nsCOMPtr<nsIURI> uri;
@@ -787,12 +801,14 @@ nsresult ServiceWorkerPrivate::Initialize() {
   // This fills in the rest of mRemoteWorkerData.serviceWorkerData().
   RefreshRemoteWorkerData(regInfo);
 
+  neutralizeOnFailure.release();
   return NS_OK;
 }
 
 void ServiceWorkerPrivate::RegenerateClientInfo() {
   // inductively, this object can only still be alive after Initialize() if the
-  // mClientInfo was correctly initialized.
+  // mClientInfo was correctly initialized; a failed Initialize() clears mInfo,
+  // which stops us from ever spawning a worker and therefore from getting here.
   MOZ_DIAGNOSTIC_ASSERT(mClientInfo.isSome());
 
   // Preserve the ipAddressSpace from the current RemoteWorkerData clientInfo
@@ -969,8 +985,14 @@ nsresult ServiceWorkerPrivate::SendCookieChangeEvent(
     const net::CookieStruct& aCookie, bool aCookieDeleted,
     RefPtr<ServiceWorkerRegistrationInfo> aRegistration) {
   AssertIsOnMainThread();
-  MOZ_ASSERT(mInfo);
   MOZ_ASSERT(aRegistration);
+
+  // mInfo is cleared both when our ServiceWorkerInfo dies and when Initialize()
+  // failed, and unlike the ops below we dereference it before delegating to
+  // SpawnWorkerIfNeeded(), which is where that is normally caught.
+  if (NS_WARN_IF(!mInfo)) {
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  }
 
   ServiceWorkerCookieChangeEventOpArgs args;
   args.cookie() = aCookie;
@@ -1013,8 +1035,14 @@ nsresult ServiceWorkerPrivate::SendPushEvent(
     const nsAString& aMessageId, const Maybe<nsTArray<uint8_t>>& aData,
     RefPtr<ServiceWorkerRegistrationInfo> aRegistration) {
   AssertIsOnMainThread();
-  MOZ_ASSERT(mInfo);
   MOZ_ASSERT(aRegistration);
+
+  // mInfo is cleared both when our ServiceWorkerInfo dies and when Initialize()
+  // failed, and unlike the ops below we dereference it before delegating to
+  // SpawnWorkerIfNeeded(), which is where that is normally caught.
+  if (NS_WARN_IF(!mInfo)) {
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  }
 
   ServiceWorkerPushEventOpArgs args;
   args.messageId() = nsString(aMessageId);
@@ -1599,6 +1627,8 @@ void ServiceWorkerPrivate::TerminateWorkerCallback(nsITimer* aTimer) {
   // mInfo must be non-null at this point because NoteDeadServiceWorkerInfo
   // which zeroes it calls TerminateWorker which cancels our timer which will
   // ensure we don't get invoked even if the nsTimerEvent is in the event queue.
+  // The other place which zeroes mInfo, a failed Initialize(), stops us from
+  // ever spawning a worker and therefore from ever arming this timer.
   ServiceWorkerManager::LocalizeAndReportToAllClients(
       mInfo->Scope(), "ServiceWorkerGraceTimeoutTermination",
       nsTArray<nsString>{NS_ConvertUTF8toUTF16(mInfo->Scope())});

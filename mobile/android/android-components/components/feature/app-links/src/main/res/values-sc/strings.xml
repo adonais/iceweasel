@@ -11,6 +11,13 @@
   <string name="mozac_feature_applinks_open_in">Aberi in…</string>
   <!-- The title of the prompt that warns users their normal browsing session is trying to open another app -->
   <string name="mozac_feature_applinks_normal_confirm_dialog_title">Aberi in un’àtera aplicatzione</string>
+  <!-- The title of the prompt that warns users their normal browsing session is trying to open another app -->
+  <string name="mozac_feature_applinks_normal_confirm_dialog_title_2">Boles abèrrere custu ligòngiu in un’àtera aplicatzione?</string>
+  <!--
+    The title of the prompt with app suffix.
+    %s is a placeholder that will be replaced by an app name
+  -->
+  <string name="mozac_feature_applinks_normal_confirm_dialog_title_with_app_name_2">Boles abèrrere custu ligòngiu in s’aplicatzione %s?</string>
   <!--
     The message of the prompt to confirm with users that they want to open the link in another app
     %s is a placeholder that will be replaced by the app name
@@ -18,6 +25,8 @@
   <string name="mozac_feature_applinks_normal_confirm_dialog_message">Boles lassare %s pro bìdere custu cuntenutu?</string>
   <!-- Opens the selected time -->
   <string name="mozac_feature_applinks_confirm_dialog_confirm">Aberi</string>
+  <!-- Opens the selected app link -->
+  <string name="mozac_feature_applinks_confirm_dialog_confirm_2">Aberi·ddu in s’aplicatzione</string>
   <!-- Cancels the prompt -->
   <string name="mozac_feature_applinks_confirm_dialog_deny">Annulla</string>
   <!-- The label of the checkbox that, depending of user's choice, can change the Open links in apps setting -->
@@ -36,4 +45,6 @@
   <string name="mozac_feature_applinks_unique_identifier">Identificadore ùnicu</string>
   <!-- The text shown when there is no Firefox URL -->
   <string name="mozac_feature_applinks_none">Nissunu</string>
+  <!-- The subtitle showing where the link was navigated from. %s is the domain. -->
+  <string name="mozac_feature_applinks_link_from">Ligòngiu dae %s</string>
 </resources>

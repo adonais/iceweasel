@@ -22,10 +22,19 @@ const { sinon } = ChromeUtils.importESModule(
 const { MockRegistrar } = ChromeUtils.importESModule(
   "resource://testing-common/MockRegistrar.sys.mjs"
 );
+const { TestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TestUtils.sys.mjs"
+);
 
 const PREF_ENABLED = "signon.storage.rust.enabled";
 const PREF_ACTIVE = "signon.storage.rust.active";
 const PREF_ATTEMPTS = "signon.storage.rust.migrationAttempts";
+const PREF_RESTORE_ENABLED = "signon.storage.rust.restoreEnabled";
+const PREF_RESTORE_ATTEMPTS = "signon.storage.rust.restoreAttempts";
+const PREF_RESTORE_DONE = "signon.storage.rust.restoreDone";
+const PREF_SYNC_USERNAME = "services.sync.username";
+const PREF_SYNC_PASSWORDS_ENGINE = "services.sync.engine.passwords";
+const MAX_RESTORE_ATTEMPTS = 5;
 
 // Brings the shared state (prefs + telemetry) back to a known-clean baseline.
 // Called at the start of every test so a previously failed test can't bleed in.
@@ -36,6 +45,11 @@ function resetState() {
   Services.prefs.setBoolPref(PREF_ENABLED, false);
   Services.prefs.setBoolPref(PREF_ACTIVE, false);
   Services.prefs.clearUserPref(PREF_ATTEMPTS);
+  Services.prefs.clearUserPref(PREF_RESTORE_ENABLED);
+  Services.prefs.clearUserPref(PREF_RESTORE_ATTEMPTS);
+  Services.prefs.clearUserPref(PREF_RESTORE_DONE);
+  Services.prefs.clearUserPref(PREF_SYNC_USERNAME);
+  Services.prefs.clearUserPref(PREF_SYNC_PASSWORDS_ENGINE);
   Services.fog.testResetFOG();
 }
 
@@ -43,6 +57,8 @@ function makeJsonStorage({
   logins = [],
   vulnerable = [],
   isLoggedIn = true,
+  throwOnAdd = null,
+  deletedGuids = [],
 } = {}) {
   return {
     getAllLoginsCalls: 0,
@@ -54,6 +70,31 @@ function makeJsonStorage({
       this.getAllLoginsCalls++;
       return logins;
     },
+    // Tombstones are not in `logins`: the real store hides them from
+    // searchLoginsAsync too, and this is the only way to see them.
+    async loginIsDeletedAsync(guid) {
+      return deletedGuids.includes(guid);
+    },
+    async searchLoginsAsync(matchData) {
+      return logins.filter(login => {
+        login.QueryInterface(Ci.nsILoginMetaInfo);
+        return matchData.guid
+          ? login.guid == matchData.guid
+          : login.origin == matchData.origin;
+      });
+    },
+    addedLogins: [],
+    modifiedLogins: [],
+    async addLoginsAsync(newLogins, _continueOnDuplicates) {
+      if (throwOnAdd) {
+        throw new Error(throwOnAdd);
+      }
+      this.addedLogins.push(...newLogins);
+      return newLogins;
+    },
+    async modifyLoginAsync(oldLogin, newLoginData) {
+      this.modifiedLogins.push([oldLogin, newLoginData]);
+    },
   };
 }
 
@@ -64,9 +105,20 @@ function makeRustStorage({
   addResults = null,
   throwOnRemoveAll = 0,
   throwOnVulnerable = false,
+  logins = [],
+  loginCount = null,
 } = {}) {
   return {
     calls: [],
+    // Not recorded in `calls`: counting is the cheap probe the restore starts
+    // with, not storage work a test cares about.
+    async countLoginsAsync() {
+      return loginCount ?? logins.length;
+    },
+    async getAllLogins(_includeDeleted) {
+      this.calls.push("getAllLogins");
+      return logins;
+    },
     addedBatches: [],
     added: [],
     vulnerable: [],
@@ -181,6 +233,438 @@ add_task(async function test_revertPending_deactivates_rust() {
   );
   Assert.equal(Services.prefs.getIntPref(PREF_ATTEMPTS), 0, "attempts reset");
   Assert.equal(rust.calls.length, 0, "no migration performed");
+});
+
+// A decrypted login as the stores hand it out, with its nsILoginMetaInfo
+// fields filled in.
+function loginWithMeta({
+  guid,
+  username = "user",
+  password = "pass",
+  timePasswordChanged = 1000,
+}) {
+  const login = TestData.formLogin({ username, password });
+  login.QueryInterface(Ci.nsILoginMetaInfo);
+  login.guid = guid;
+  login.timeCreated = 1000;
+  login.timeLastUsed = timePasswordChanged;
+  login.timePasswordChanged = timePasswordChanged;
+  login.timesUsed = 1;
+  return login;
+}
+
+add_task(async function test_revert_restores_added_and_changed_logins() {
+  resetState();
+  Services.prefs.setBoolPref(PREF_ACTIVE, true);
+  const json = makeJsonStorage({
+    logins: [
+      loginWithMeta({ guid: "{keep}" }),
+      loginWithMeta({ guid: "{changed}", password: "old" }),
+    ],
+  });
+  const rust = makeRustStorage({
+    logins: [
+      loginWithMeta({ guid: "{keep}" }),
+      loginWithMeta({
+        guid: "{changed}",
+        password: "new",
+        timePasswordChanged: 2000,
+      }),
+      loginWithMeta({ guid: "{added}", username: "fresh" }),
+    ],
+  });
+
+  const result = await new LoginStorageMigrator(json, rust).run();
+
+  Assert.equal(result, json, "RevertPending returns the JSON store");
+  await TestUtils.waitForCondition(
+    () => Services.prefs.getBoolPref(PREF_RESTORE_DONE, false),
+    "the Rust store is wiped once the logins are restored"
+  );
+  Assert.deepEqual(
+    json.addedLogins.map(login => login.guid),
+    ["{added}"],
+    "only the login missing from JSON is added"
+  );
+  Assert.equal(json.modifiedLogins.length, 1, "one login updated");
+  Assert.equal(
+    json.modifiedLogins[0][1].getProperty("password"),
+    "new",
+    "the changed password is restored"
+  );
+
+  const events = Glean.pwmgr.rustRestoreStatus.testGetValue();
+  Assert.equal(events.length, 1, "one restore status event");
+  const { extra } = events[0];
+  Assert.equal(extra.state, "RevertPending");
+  Assert.equal(extra.end_state, "Restored");
+  Assert.equal(extra.number_of_logins_to_restore, "3");
+  Assert.equal(extra.number_of_logins_added, "1");
+  Assert.equal(extra.number_of_logins_updated, "1");
+  Assert.equal(extra.number_of_logins_skipped, "1");
+  Assert.equal(extra.number_of_logins_failed, "0");
+  Assert.equal(extra.attempt, "0", "first attempt");
+  Assert.ok(!("error_message" in extra), "no error_message on success");
+  Assert.greaterOrEqual(Number(extra.duration_ms), 0, "duration_ms recorded");
+  Assert.equal(
+    Glean.pwmgr.rustRestoreLoginError.testGetValue(),
+    null,
+    "no login errors recorded"
+  );
+});
+
+add_task(async function test_restore_keeps_the_newer_json_password() {
+  resetState();
+  Services.prefs.setBoolPref(PREF_ACTIVE, true);
+  const json = makeJsonStorage({
+    logins: [
+      loginWithMeta({
+        guid: "{a}",
+        password: "fixed-by-user",
+        timePasswordChanged: 3000,
+      }),
+    ],
+  });
+  const rust = makeRustStorage({
+    logins: [
+      loginWithMeta({
+        guid: "{a}",
+        password: "old",
+        timePasswordChanged: 2000,
+      }),
+    ],
+  });
+
+  await new LoginStorageMigrator(json, rust).run();
+  await TestUtils.waitForCondition(
+    () => Services.prefs.getBoolPref(PREF_RESTORE_DONE, false),
+    "the restore ran"
+  );
+
+  Assert.equal(json.modifiedLogins.length, 0, "the newer password is kept");
+  Assert.equal(json.addedLogins.length, 0, "nothing is added");
+
+  const { extra } = Glean.pwmgr.rustRestoreStatus.testGetValue()[0];
+  Assert.equal(extra.end_state, "Restored");
+  Assert.equal(extra.number_of_logins_skipped, "1");
+});
+
+add_task(async function test_restore_matches_a_recreated_login_by_name() {
+  resetState();
+  Services.prefs.setBoolPref(PREF_ACTIVE, true);
+  // Same origin and username as the Rust login, but re-created by the user, so
+  // it has a different guid and a newer password.
+  const json = makeJsonStorage({
+    logins: [
+      loginWithMeta({
+        guid: "{recreated}",
+        password: "fixed-by-user",
+        timePasswordChanged: 3000,
+      }),
+    ],
+  });
+  const rust = makeRustStorage({
+    logins: [
+      loginWithMeta({
+        guid: "{a}",
+        password: "old",
+        timePasswordChanged: 2000,
+      }),
+    ],
+  });
+
+  await new LoginStorageMigrator(json, rust).run();
+  await TestUtils.waitForCondition(
+    () => Services.prefs.getBoolPref(PREF_RESTORE_DONE, false),
+    "the restore ran"
+  );
+
+  Assert.equal(
+    json.addedLogins.length,
+    0,
+    "no duplicate is added for a login the user re-created"
+  );
+  Assert.equal(json.modifiedLogins.length, 0, "the newer password is kept");
+
+  const { extra } = Glean.pwmgr.rustRestoreStatus.testGetValue()[0];
+  Assert.equal(extra.number_of_logins_skipped, "1");
+});
+
+add_task(async function test_restore_leaves_a_deleted_login_deleted() {
+  resetState();
+  Services.prefs.setBoolPref(PREF_ACTIVE, true);
+  // An earlier run restored the login, the user deleted it afterwards, so all
+  // the JSON store has left is a tombstone.
+  const json = makeJsonStorage({ deletedGuids: ["{a}"] });
+  const rust = makeRustStorage({ logins: [loginWithMeta({ guid: "{a}" })] });
+
+  await new LoginStorageMigrator(json, rust).run();
+
+  await TestUtils.waitForCondition(
+    () => Services.prefs.getBoolPref(PREF_RESTORE_DONE, false),
+    "the restore ran"
+  );
+  Assert.equal(json.addedLogins.length, 0, "the login is not brought back");
+  Assert.equal(json.modifiedLogins.length, 0, "and not modified either");
+
+  const { extra } = Glean.pwmgr.rustRestoreStatus.testGetValue()[0];
+  Assert.equal(extra.end_state, "Restored");
+  Assert.equal(extra.number_of_logins_skipped, "1");
+});
+
+add_task(async function test_restore_is_skipped_for_an_empty_rust_store() {
+  resetState();
+  const json = makeJsonStorage();
+  const rust = makeRustStorage();
+
+  await new LoginStorageMigrator(json, rust).run();
+
+  Assert.equal(rust.calls.length, 0, "the Rust store is not read or wiped");
+  Assert.equal(json.getAllLoginsCalls, 0, "the JSON store is not decrypted");
+  Assert.equal(
+    Glean.pwmgr.rustRestoreStatus.testGetValue(),
+    null,
+    "nothing is reported for the profiles that have no logins to restore"
+  );
+  Assert.ok(
+    Services.prefs.getBoolPref(PREF_RESTORE_DONE, false),
+    "marked done, so later startups do not even count again"
+  );
+});
+
+add_task(async function test_restore_keeps_the_rust_store_on_a_login_error() {
+  resetState();
+  Services.prefs.setBoolPref(PREF_ACTIVE, true);
+  const json = makeJsonStorage({ throwOnAdd: "Invalid login: bad data" });
+  const rust = makeRustStorage({ logins: [loginWithMeta({ guid: "{a}" })] });
+
+  await new LoginStorageMigrator(json, rust).run();
+
+  const errors = await TestUtils.waitForCondition(
+    () => Glean.pwmgr.rustRestoreLoginError.testGetValue(),
+    "the failed login is reported"
+  );
+  Assert.equal(errors.length, 1, "one login error recorded");
+  Assert.equal(
+    errors[0].extra.error_message,
+    "bad data",
+    "error message is normalized"
+  );
+
+  const { extra } = Glean.pwmgr.rustRestoreStatus.testGetValue()[0];
+  Assert.equal(extra.end_state, "Incomplete");
+  Assert.equal(extra.number_of_logins_failed, "1");
+  Assert.ok(
+    !Services.prefs.getBoolPref(PREF_RESTORE_DONE, false),
+    "the restore is not marked done, so the next startup retries"
+  );
+  Assert.equal(
+    Services.prefs.getIntPref(PREF_RESTORE_ATTEMPTS),
+    1,
+    "the failed run spent an attempt"
+  );
+});
+
+add_task(async function test_restore_is_skipped_while_sync_is_configured() {
+  resetState();
+  Services.prefs.setBoolPref(PREF_ACTIVE, true);
+  Services.prefs.setStringPref(PREF_SYNC_USERNAME, "user@example.com");
+  const json = makeJsonStorage();
+  const rust = makeRustStorage({ logins: [loginWithMeta({ guid: "{a}" })] });
+
+  await new LoginStorageMigrator(json, rust).run();
+
+  const events = await TestUtils.waitForCondition(
+    () => Glean.pwmgr.rustRestoreStatus.testGetValue(),
+    "the skipped restore is reported"
+  );
+  Assert.equal(events[0].extra.end_state, "SyncSkipped");
+  Assert.equal(json.addedLogins.length, 0, "nothing is written");
+  Assert.ok(!rust.calls.includes("getAllLogins"), "nothing is decrypted");
+  Assert.ok(
+    Services.prefs.getBoolPref(PREF_RESTORE_DONE, false),
+    "marked done, since Sync is not going to stop covering these logins"
+  );
+  Assert.equal(
+    Services.prefs.getIntPref(PREF_RESTORE_ATTEMPTS),
+    0,
+    "not restoring does not spend an attempt"
+  );
+});
+
+add_task(async function test_restore_runs_when_sync_leaves_out_passwords() {
+  resetState();
+  Services.prefs.setBoolPref(PREF_ACTIVE, true);
+  Services.prefs.setStringPref(PREF_SYNC_USERNAME, "user@example.com");
+  // Sync is on but does not carry logins, so nothing else will bring them back.
+  Services.prefs.setBoolPref(PREF_SYNC_PASSWORDS_ENGINE, false);
+  const json = makeJsonStorage();
+  const rust = makeRustStorage({ logins: [loginWithMeta({ guid: "{a}" })] });
+
+  await new LoginStorageMigrator(json, rust).run();
+
+  await TestUtils.waitForCondition(
+    () => Services.prefs.getBoolPref(PREF_RESTORE_DONE, false),
+    "the restore ran"
+  );
+  Assert.equal(json.addedLogins.length, 1, "the login is restored");
+  const { extra } = Glean.pwmgr.rustRestoreStatus.testGetValue()[0];
+  Assert.equal(extra.end_state, "Restored");
+});
+
+add_task(async function test_restore_stops_once_the_attempts_are_spent() {
+  resetState();
+  Services.prefs.setBoolPref(PREF_ACTIVE, true);
+  Services.prefs.setIntPref(PREF_RESTORE_ATTEMPTS, MAX_RESTORE_ATTEMPTS);
+  const json = makeJsonStorage();
+  const rust = makeRustStorage({ logins: [loginWithMeta({ guid: "{a}" })] });
+
+  await new LoginStorageMigrator(json, rust).run();
+
+  Assert.equal(rust.calls.length, 0, "the Rust store is not even counted");
+  Assert.equal(
+    Glean.pwmgr.rustRestoreStatus.testGetValue(),
+    null,
+    "a restore that is no longer attempted is not reported over and over"
+  );
+});
+
+add_task(async function test_restore_can_be_turned_off_by_pref() {
+  resetState();
+  Services.prefs.setBoolPref(PREF_ACTIVE, true);
+  Services.prefs.setBoolPref(PREF_RESTORE_ENABLED, false);
+  const json = makeJsonStorage();
+  const rust = makeRustStorage({ logins: [loginWithMeta({ guid: "{a}" })] });
+
+  await new LoginStorageMigrator(json, rust).run();
+
+  Assert.equal(rust.calls.length, 0, "the kill switch stops everything");
+  Assert.equal(Glean.pwmgr.rustRestoreStatus.testGetValue(), null);
+});
+
+add_task(async function test_restore_refuses_an_implausibly_large_store() {
+  resetState();
+  Services.prefs.setBoolPref(PREF_ACTIVE, true);
+  const json = makeJsonStorage();
+  const rust = makeRustStorage({
+    logins: [loginWithMeta({ guid: "{a}" })],
+    loginCount: 10001,
+  });
+
+  await new LoginStorageMigrator(json, rust).run();
+
+  const events = await TestUtils.waitForCondition(
+    () => Glean.pwmgr.rustRestoreStatus.testGetValue(),
+    "the refusal is reported"
+  );
+  Assert.equal(events[0].extra.end_state, "TooManyLogins");
+  Assert.equal(
+    events[0].extra.number_of_logins_to_restore,
+    "10001",
+    "the size of the store it refused is what makes the refusal actionable"
+  );
+  Assert.ok(
+    !rust.calls.includes("getAllLogins"),
+    "decrypting the whole store is what we are avoiding, so it is not read"
+  );
+  Assert.ok(
+    Services.prefs.getBoolPref(PREF_RESTORE_DONE, false),
+    "marked done, so the refusal is not reported on every startup"
+  );
+});
+
+add_task(async function test_restore_waits_for_the_primary_password() {
+  resetState();
+  Services.prefs.setBoolPref(PREF_ACTIVE, true);
+  const json = makeJsonStorage({ isLoggedIn: false });
+  const rust = makeRustStorage({ logins: [loginWithMeta({ guid: "{a}" })] });
+
+  await new LoginStorageMigrator(json, rust).run();
+
+  Assert.ok(!rust.calls.includes("getAllLogins"), "nothing is decrypted");
+  const deferred = await TestUtils.waitForCondition(
+    () => Glean.pwmgr.rustRestoreStatus.testGetValue(),
+    "the deferred restore is reported"
+  );
+  Assert.equal(deferred[0].extra.end_state, "Deferred");
+  Assert.equal(deferred[0].extra.state, "RevertPending");
+  Assert.ok(
+    !Services.prefs.getBoolPref(PREF_RESTORE_DONE, false),
+    "not done, it has not run yet"
+  );
+
+  json.isLoggedIn = true;
+  Services.obs.notifyObservers(null, "passwordmgr-crypto-login");
+
+  await TestUtils.waitForCondition(
+    () => json.addedLogins.length,
+    "unlocking restores the login"
+  );
+  Assert.equal(json.addedLogins[0].guid, "{a}", "the login is restored");
+
+  const events = await TestUtils.waitForCondition(
+    () =>
+      Glean.pwmgr.rustRestoreStatus.testGetValue()?.length == 2 &&
+      Glean.pwmgr.rustRestoreStatus.testGetValue(),
+    "the restore after the unlock is reported separately"
+  );
+  Assert.equal(events[1].extra.end_state, "Restored");
+  Assert.equal(
+    events[1].extra.state,
+    "JSONPrimary",
+    "Rust was already deactivated when the user unlocked"
+  );
+  Assert.notEqual(
+    events[0].extra.run_id,
+    events[1].extra.run_id,
+    "the two runs are told apart by their run_id"
+  );
+});
+
+add_task(async function test_restore_runs_only_once() {
+  resetState();
+  Services.prefs.setBoolPref(PREF_ACTIVE, true);
+  const json = makeJsonStorage();
+  const rust = makeRustStorage({ logins: [loginWithMeta({ guid: "{a}" })] });
+
+  await new LoginStorageMigrator(json, rust).run();
+  await TestUtils.waitForCondition(
+    () => Services.prefs.getBoolPref(PREF_RESTORE_DONE, false),
+    "the restore ran"
+  );
+  Assert.equal(json.addedLogins.length, 1, "the login is restored");
+
+  // The Rust database still holds the login, so the pref is the only thing
+  // standing between it and a second restore.
+  rust.calls.length = 0;
+  await new LoginStorageMigrator(json, rust).run();
+
+  Assert.equal(rust.calls.length, 0, "the Rust store is not read again");
+  Assert.equal(json.addedLogins.length, 1, "the login is restored just once");
+});
+
+add_task(async function test_activating_rust_clears_the_restore_state() {
+  resetState();
+  Services.prefs.setBoolPref(PREF_ENABLED, true);
+  // Left over from the revert that came before this migration.
+  Services.prefs.setBoolPref(PREF_RESTORE_DONE, true);
+  Services.prefs.setIntPref(PREF_RESTORE_ATTEMPTS, MAX_RESTORE_ATTEMPTS);
+  const json = makeJsonStorage({ logins: [TestData.formLogin({})] });
+  const rust = makeRustStorage();
+
+  const result = await new LoginStorageMigrator(json, rust).run();
+
+  Assert.equal(result, rust, "the migration completed");
+  Assert.equal(
+    Services.prefs.getBoolPref(PREF_RESTORE_DONE),
+    false,
+    "whatever Rust collects from now on has to be restored by a later revert"
+  );
+  Assert.equal(
+    Services.prefs.getIntPref(PREF_RESTORE_ATTEMPTS),
+    0,
+    "and it gets a fresh attempt budget to do it with"
+  );
 });
 
 add_task(async function test_exceedMigrationBudget_falls_back_to_json() {

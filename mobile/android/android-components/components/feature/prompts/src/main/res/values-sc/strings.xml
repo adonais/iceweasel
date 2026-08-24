@@ -69,6 +69,12 @@
   <string name="mozac_feature_prompts_before_unload_stay">Abarra</string>
   <!-- Leave button of the dialog shown when a user is leaving a website and there is still data not saved yet, this indicates that the user wants to leave in the website. -->
   <string name="mozac_feature_prompts_before_unload_leave">Lassa</string>
+  <!-- Message shown when a site wants to create a passkey for a related domain. %1$s is the requesting site, %2$s is the related domain the passkey is for. -->
+  <string name="webauthn_related_origin_create_message">%1$s bolet creare una crae de atzessu pro %2$s.</string>
+  <!-- Message shown when a site wants to use a passkey from a related domain. %1$s is the requesting site, %2$s is the related domain the passkey is for. -->
+  <string name="webauthn_related_origin_use_message">%1$s bolet impreare una crae de atzessu pro %2$s.</string>
+  <!-- Continue button label for WebAuthn related origin prompt. -->
+  <string name="webauthn_continue">Sighi</string>
   <!-- Title of the month chooser dialog. -->
   <string name="mozac_feature_prompts_set_month">Piga unu mese</string>
   <!-- January (short description), used on the month chooser dialog. -->
@@ -165,6 +171,10 @@
   <string name="mozac_feature_prompts_collapse_address_content_description_2">Mìnima is indiritzos sarvados</string>
   <!-- Text for the manage addresses button. -->
   <string name="mozac_feature_prompts_manage_address">Gesti is indiritzos</string>
+  <!-- Text for the title of a save address dialog. -->
+  <string name="mozac_feature_prompts_save_address_prompt_title">Boles sarvare s’indiritzu?</string>
+  <!-- Text for the title of an update address dialog, shown when the address adds information to an already saved address. -->
+  <string name="mozac_feature_prompts_update_address_prompt_title">Boles atualizare s’indiritzu?</string>
   <!--
     Federated Credential Management prompts
 

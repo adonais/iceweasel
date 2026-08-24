@@ -191,8 +191,12 @@ export let StartupOSIntegration = {
         safeCall(() => this.maybePinMSIXToStartMenu());
       }
       safeCall(() => this.ensurePrivateBrowsingShortcutExists());
-      safeCall(() => lazy.CustomIconManager.ensureAppliedOrRevert());
-      safeCall(() => lazy.CustomIconManager.ensureShortcutInPerUserStartMenu());
+      // Run these in order, not concurrently: otherwise ensureAppliedOrRevert
+      // can decide the shortcut was deleted while it is still being created.
+      safeCall(async () => {
+        await lazy.CustomIconManager.ensureAppliedOrRevert();
+        await lazy.CustomIconManager.maybeCreatePerUserStartMenuShortcut();
+      });
     }
   },
 
