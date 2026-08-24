@@ -677,7 +677,19 @@ describe("Auto Tab Grouping toolbar button", () => {
         "The row's label reports that count"
       );
 
+      const hintShown = BrowserTestUtils.waitForEvent(
+        win.document,
+        "popupshown",
+        true,
+        event => event.target.id === "confirmation-hint"
+      );
       row.click();
+      const { target: hint } = await hintShown;
+      Assert.equal(
+        hint.anchorNode?.id,
+        "smartwindow-group-tabs-button-inner",
+        "The hint points at our button, not the All Tabs button which may be absent"
+      );
       await TestUtils.waitForCondition(
         () => win.gBrowser.tabs.length === tabsBefore - 2,
         "Both duplicate tabs are closed"

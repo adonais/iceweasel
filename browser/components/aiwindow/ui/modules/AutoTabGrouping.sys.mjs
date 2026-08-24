@@ -726,7 +726,7 @@ export const AutoTabGrouping = {
   /**
    * Close this window's duplicate tabs, reusing the same tabbrowser action the
    * All Tabs menu offers. The panel is dismissed first: closing tabs raises a
-   * confirmation hint anchored to the All Tabs button, which an open panel
+   * confirmation hint anchored to the ATG button, which an open panel
    * would cover, and the warning prompt is modal.
    *
    * @param {ChromeWindow} win
@@ -735,7 +735,9 @@ export const AutoTabGrouping = {
   _closeDuplicateTabs(win, panel) {
     panel._restoreFocus = true;
     panel.hidePopup();
-    win.gBrowser.removeAllDuplicateTabs();
+    win.gBrowser.removeAllDuplicateTabs({
+      confirmationAnchor: win.document.getElementById(BUTTON_ID),
+    });
   },
 
   _ungroup(win, entry) {
