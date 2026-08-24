@@ -29,21 +29,39 @@ namespace net {
 NS_IMPL_ADDREF(WebSocketChannelChild)
 
 NS_IMETHODIMP_(MozExternalRefCountType) WebSocketChannelChild::Release() {
-  MOZ_ASSERT(0 != mRefCnt, "dup release");
-  --mRefCnt;
-  NS_LOG_RELEASE(this, mRefCnt, "WebSocketChannelChild");
-
-  if (mRefCnt == 1) {
-    MaybeReleaseIPCObject();
-    return mRefCnt;
+  if (!NS_IsMainThread()) {
+    auto [ok, count] = mRefCnt.DecrementWithLimit<2>();
+    if (ok) {
+      NS_LOG_RELEASE(this, count, "WebSocketChannelChild");
+      return count;
+    }
+    nsresult rv = NS_DispatchToMainThread(
+        NewNonOwningRunnableMethod("WebSocketChannelChild::Release", this,
+                                   &WebSocketChannelChild::Release));
+    if (NS_SUCCEEDED(rv)) {
+      return count;
+    }
+    // Dispatch failed (event loop is shutting down). Crash rather than run
+    // main-thread-only logic off-thread.
+    MOZ_CRASH("Failed to dispatch WebSocketChannelChild::Release to main");
+    return count;
   }
 
-  if (mRefCnt == 0) {
+  MOZ_ASSERT(0 != mRefCnt, "dup release");
+  nsrefcnt count = --mRefCnt;
+  NS_LOG_RELEASE(this, count, "WebSocketChannelChild");
+
+  if (count == 1) {
+    MaybeReleaseIPCObject();
+    return 1;
+  }
+
+  if (count == 0) {
     mRefCnt = 1; /* stabilize */
     delete this;
     return 0;
   }
-  return mRefCnt;
+  return count;
 }
 
 NS_INTERFACE_MAP_BEGIN(WebSocketChannelChild)
@@ -96,6 +114,13 @@ void WebSocketChannelChild::ReleaseIPDLReference() {
 }
 
 void WebSocketChannelChild::MaybeReleaseIPCObject() {
+  // Must run on the main thread: it is only reached from the count==1 path of
+  // Release(), which routes off-main-thread releases to the main thread so this
+  // never dereferences `this` without an owned reference. Dispatching from here
+  // (the old behavior) touched `this` off-thread after the caller had already
+  // given up its reference, racing the main-thread IPDL final release.
+  MOZ_ASSERT(NS_IsMainThread());
+
   {
     MutexAutoLock lock(mMutex);
     if (mIPCState != Opened) {
@@ -103,15 +128,6 @@ void WebSocketChannelChild::MaybeReleaseIPCObject() {
     }
 
     mIPCState = Closing;
-  }
-
-  if (!NS_IsMainThread()) {
-    nsCOMPtr<nsIEventTarget> target = GetNeckoTarget();
-    MOZ_ALWAYS_SUCCEEDS(target->Dispatch(
-        NewRunnableMethod("WebSocketChannelChild::MaybeReleaseIPCObject", this,
-                          &WebSocketChannelChild::MaybeReleaseIPCObject),
-        NS_DISPATCH_NORMAL));
-    return;
   }
 
   SendDeleteSelf();

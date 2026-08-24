@@ -20,7 +20,6 @@ LOCAL_INCLUDES += [
 ]
 
 OS_LIBS += [
-    "advapi32",
     "ntdll",
 ]
 
