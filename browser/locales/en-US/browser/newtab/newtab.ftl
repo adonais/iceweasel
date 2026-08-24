@@ -404,6 +404,11 @@ feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
 
+
+iceweasel-external-wallpapers =
+    .label = Enable fetching remote wallpapers
+    .description = This requires a browser restart
+
 ## New Tab Weather
 
 # Variables:
