@@ -48,6 +48,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
+  "preloadEnabled",
+  "browser.smartwindow.autoTabGrouping.preloadModels",
+  true
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
   "checkForMemory",
   "browser.ml.checkForMemory",
   true
@@ -104,10 +110,16 @@ const MAX_LABEL_CACHE_ENTRIES = 50;
 export const AutoTabGroupingSuggestions = {
   _manager: null,
 
+  _preloadPromise: null,
+
   // Reopening the panel over an unchanged set of tabs reuses the title
   // instead of re-running the labeling model.
   _labelCache: new Map(),
 
+  // Organize Tabs is only reachable from an active Smart Window, which the user
+  // has already opted into, so the extra opt-in prefs that
+  // SmartTabGroupingManager.isEnabled checks for the tab strip's own suggestions
+  // don't apply here. All we need is on-device ML and isAllowed's locale check.
   get isAvailable() {
     return (
       Services.prefs.getBoolPref("browser.ml.enable", false) &&
@@ -138,6 +150,36 @@ export const AutoTabGroupingSuggestions = {
       this._manager = new lazy.SmartTabGroupingManager(config);
     }
     return this._manager;
+  },
+
+  /**
+   * Downloads the clustering and labeling models, so the first panel open runs
+   * against a warm cache. Repeated calls share one download and never reject. A
+   * failed download is not retried: every new Smart Window would try again, and
+   * opening the panel downloads the models anyway.
+   *
+   * Gated on its own pref, which test profiles turn off: this is the only place
+   * that reaches the model hub without the user asking for a grouping, so it
+   * would otherwise download models in every test that opens a Smart Window.
+   *
+   * @returns {Promise<void>}
+   */
+  preloadModels() {
+    if (!lazy.preloadEnabled || !this.isAvailable) {
+      return Promise.resolve();
+    }
+    if (!this._preloadPromise) {
+      this._preloadPromise = this._preloadModels();
+    }
+    return this._preloadPromise;
+  },
+
+  async _preloadModels() {
+    try {
+      await this.manager.preloadAllModels();
+    } catch (e) {
+      lazy.console.warn("Preloading the tab grouping models failed", e);
+    }
   },
 
   /**
