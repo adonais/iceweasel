@@ -1398,7 +1398,7 @@ nsWindowsShellService::GetLaunchOnLoginShortcuts(
   if (FAILED(hr)) {
     return NS_ERROR_ABORT;
   }
-  fManager->GetFolder(FOLDERID_RoamingAppData,
+  fManager->GetFolder(FOLDERID_Startup,
                       roamingAppData.StartAssignment());
   hr = roamingAppData->GetPath(0, &roamingAppDataW);
   if (FAILED(hr)) {
@@ -1408,9 +1408,7 @@ nsWindowsShellService::GetLaunchOnLoginShortcuts(
   // Append startup folder to AppData\\Roaming
   roamingAppDataNS.Assign(roamingAppDataW);
   CoTaskMemFree(roamingAppDataW);
-  nsString startupFolder =
-      roamingAppDataNS +
-      u"\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"_ns;
+  nsString startupFolder = roamingAppDataNS;
   nsString startupFolderWildcard = startupFolder + u"\\*.lnk"_ns;
 
   // Get known path for binary file for later comparison with shortcuts.
@@ -1762,8 +1760,8 @@ static bool IsCurrentAppPinnedToTaskbarSync([[maybe_unused]] const nsAString& au
   }
 
   wchar_t folderChars[MAX_PATH] = {};
-  HRESULT hr = SHGetFolderPathW(nullptr, CSIDL_APPDATA, nullptr,
-                                SHGFP_TYPE_CURRENT, folderChars);
+  HRESULT hr = SHGetKnownFolderPath(FOLDERID_UserPinned, SHGFP_TYPE_CURRENT,
+                                    nullptr, folderChars);
   if (NS_WARN_IF(FAILED(hr))) {
     return false;
   }
@@ -1777,7 +1775,7 @@ static bool IsCurrentAppPinnedToTaskbarSync([[maybe_unused]] const nsAString& au
     folder.AppendLiteral("\\");
   }
   folder.AppendLiteral(
-      "Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar");
+      "TaskBar");
   nsAutoString pattern;
   pattern.Assign(folder);
   pattern.AppendLiteral("\\*.lnk");
@@ -3111,12 +3109,12 @@ static nsresult EnumerateInstallShortcutsImpl(const nsAString& aAUMID,
   }
 
   UniquePtr<wchar_t, mozilla::CoTaskMemFreeDeleter> appDataPath;
-  HRESULT hr = SHGetKnownFolderPath(FOLDERID_RoamingAppData, SHGFP_TYPE_CURRENT,
+  HRESULT hr = SHGetKnownFolderPath(FOLDERID_UserPinned, SHGFP_TYPE_CURRENT,
                                     nullptr, getter_Transfers(appDataPath));
   if (SUCCEEDED(hr)) {
     nsAutoString taskbarPath(appDataPath.get());
     taskbarPath.AppendLiteral(
-        "\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar");
+        "\\TaskBar");
     if (taskbarPath.Length() < MAX_PATH) {
       CollectMatchingShortcutsInDir(taskbarPath, aAUMID, exePath,
                                     shortcutSubstring, aOut);
