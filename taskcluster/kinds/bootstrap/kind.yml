@@ -106,7 +106,7 @@ tasks:
     opensuse-leap:
         image: opensuse/leap
         pre-commands:
-            - zypper install -y curl git python3-pip python3-curses gzip
+            - zypper install -y curl git python3 python3-curses gzip
     opensuse-tumbleweed:
         image: opensuse/tumbleweed
         pre-commands:

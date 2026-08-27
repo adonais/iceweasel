@@ -36,7 +36,6 @@ open class MainActivityFirstrunTestRule(
         super.beforeActivityLaunched()
         updateFirstRun(showFirstRun)
         featureSettingsHelper.setShowStartBrowsingCfrEnabled(showStartBrowsingCfrVisibility)
-        featureSettingsHelper.setCookieBannerReductionEnabled(false)
         setLongTapTimeout(3000)
     }
 
@@ -63,7 +62,6 @@ open class MainActivityIntentsTestRule(
     launchActivity: Boolean = true,
     private val showFirstRun: Boolean,
     private val showStartBrowsingCfrVisibility: Boolean = false,
-    private val cookieBannerReductionEnabled: Boolean = false,
 ) :
     IntentsTestRule<MainActivity>(MainActivity::class.java, launchActivity) {
     private val longTapUserPreference = getLongPressTimeout()
@@ -75,7 +73,6 @@ open class MainActivityIntentsTestRule(
 
         updateFirstRun(showFirstRun)
         featureSettingsHelper.setShowStartBrowsingCfrEnabled(showStartBrowsingCfrVisibility)
-        featureSettingsHelper.setCookieBannerReductionEnabled(cookieBannerReductionEnabled)
         setLongTapTimeout(3000)
     }
 

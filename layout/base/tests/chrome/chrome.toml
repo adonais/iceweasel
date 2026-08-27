@@ -88,6 +88,7 @@ support-files = [
   "markA.ttf",
   "markB.ttf",
   "2in_blue.pdf",
+  "2in_blue_3pages.pdf",
   "2in_by_3in_blue.pdf",
   "2in_by_4in_blue.pdf",
 ]

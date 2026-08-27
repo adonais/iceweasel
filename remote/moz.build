@@ -18,4 +18,3 @@ with Files("doc/**"):
     SCHEDULES.exclusive = ["docs"]
 
 SPHINX_TREES["/remote"] = "doc"
-SPHINX_TREES["/testing/marionette"] = "doc/marionette"

@@ -32,31 +32,31 @@ class ZonedDateTimeObject : public NativeObject {
   static const JSClass class_;
   static const JSClass& protoClass_;
 
-  static constexpr uint32_t SECONDS_SLOT = 0;
-  static constexpr uint32_t NANOSECONDS_SLOT = 1;
-  static constexpr uint32_t TIMEZONE_SLOT = 2;
-  static constexpr uint32_t CALENDAR_SLOT = 3;
+  JS_DEFINE_TYPED_SLOT(0, SECONDS_SLOT, Double, Int32);
+  JS_DEFINE_TYPED_SLOT(1, NANOSECONDS_SLOT, Int32);
+  JS_DEFINE_TYPED_SLOT(2, TIMEZONE_SLOT, Object);
+  JS_DEFINE_TYPED_SLOT(3, CALENDAR_SLOT, Int32);
   static constexpr uint32_t SLOT_COUNT = 4;
 
   /**
    * Extract the epoch nanoseconds fields from this ZonedDateTime object.
    */
   EpochNanoseconds epochNanoseconds() const {
-    double seconds = getFixedSlot(SECONDS_SLOT).toNumber();
+    double seconds = getFixedSlotTyped(SECONDS_SLOT).toNumber();
     MOZ_ASSERT(-8'640'000'000'000 <= seconds && seconds <= 8'640'000'000'000);
 
-    int32_t nanoseconds = getFixedSlot(NANOSECONDS_SLOT).toInt32();
+    int32_t nanoseconds = getFixedSlotTyped(NANOSECONDS_SLOT).toInt32();
     MOZ_ASSERT(0 <= nanoseconds && nanoseconds <= 999'999'999);
 
     return {{int64_t(seconds), nanoseconds}};
   }
 
   TimeZoneValue timeZone() const {
-    return TimeZoneValue(getFixedSlot(TIMEZONE_SLOT));
+    return TimeZoneValue(getFixedSlotTyped(TIMEZONE_SLOT));
   }
 
   CalendarValue calendar() const {
-    return CalendarValue(getFixedSlot(CALENDAR_SLOT));
+    return CalendarValue(getFixedSlotTyped(CALENDAR_SLOT));
   }
 
  private:

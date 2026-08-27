@@ -24,6 +24,11 @@ An error of greater than 0.0002 indicates we have 1 icon, any less than this sta
 Else(newssite(cvne), shopify (cvne), tab-restore):
 An error of greater than 0.001 indicates we have the loading bar present, any less than this startup is done
 """
+PERFHERDER_NAMES = {
+    "cold_view_nav_end": "applink_startup",
+    "mobile_restore": "tab_restore",
+    "homeview_startup": "homeview_startup",
+}
 ACCEPTABLE_THRESHOLD_ERROR = {
     "homeview_startup": 0.0002,
     "cold_view_nav_end": 0.003,
@@ -58,6 +63,12 @@ class InvalidLastFrame(Exception):
 
 class ImageAnalzer:
     def __init__(self, browser, test, test_url, profilers):
+        if test == "homeview_startup":
+            self.metric_name = PERFHERDER_NAMES[test]
+        else:
+            self.metric_name = (
+                "shopify_" if "shopify" in test_url else "newssite_"
+            ) + PERFHERDER_NAMES[test]
         self.video = None
         self.browser = browser
         self.test = test
@@ -351,7 +362,7 @@ class ImageAnalzer:
                 + str(self.cpu_data[process]["time"])
                 + ', "name": "'
                 + process
-                + '-cpu-time", "shouldAlert": true }'
+                + f'-cpu-time", "shouldAlert": true, "suite": "{self.metric_name}_submetrics"}}'
             )
 
     def validate_end_frame(self, frame_to_check):
@@ -401,12 +412,6 @@ if __name__ == "__main__":
     test = sys.argv[2]
     test_url = sys.argv[3]
 
-    perfherder_names = {
-        "cold_view_nav_end": "applink_startup",
-        "mobile_restore": "tab_restore",
-        "homeview_startup": "homeview_startup",
-    }
-
     base_testing_dir = os.environ["TESTING_DIR"]
     profiler_combinations = get_profiler_combinations()
     iterations = 10
@@ -438,7 +443,16 @@ if __name__ == "__main__":
         'perfMetrics: {"values": '
         + str(start_video_timestamp)
         + ', "name": "'
-        + perfherder_names[test]
+        + PERFHERDER_NAMES[test]
         + '", "shouldAlert": true}'
     )
+
+    print(
+        'perfMetrics: {"values": '
+        + str(start_video_timestamp)
+        + ', "name": "'
+        + ImageObject.metric_name
+        + f'", "shouldAlert": true, "suite": "{ImageObject.metric_name}_submetrics"}}'
+    )
+
     ImageObject.perfmetrics_cpu_data_ingesting()

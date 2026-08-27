@@ -10,12 +10,11 @@
 # otherwise be specified by building a hardcoded IPDL-C++ AST, as users of this
 # API are often easier to read than users of the AST APIs in these cases.
 
-import re
 import math
+import re
 import textwrap
 
-from ipdl.cxx.ast import Node, Whitespace, GroupNode, VerbatimNode
-
+from ipdl.cxx.ast import GroupNode, Node, VerbatimNode, Whitespace
 
 # -----------------------------------------------------------------------------
 # Public API.

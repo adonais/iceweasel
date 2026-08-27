@@ -336,7 +336,8 @@ void HTMLDialogElement::Show(ErrorResult& aError) {
   RefPtr<Element> hideUntil = GetTopmostPopoverAncestor(nullptr, false);
 
   // 10. Run hide popovers until given document, hideUntil, false, and true.
-  OwnerDoc()->HidePopoversUntil(hideUntil, false, true);
+  RefPtr<Document> doc = OwnerDoc();
+  doc->HidePopoversUntil(hideUntil, false, true);
 
   // 11. Run the dialog focusing steps given this.
   FocusDialog();
@@ -504,7 +505,8 @@ void HTMLDialogElement::ShowModal(Element* aSource, ErrorResult& aError) {
   RefPtr<Element> hideUntil = GetTopmostPopoverAncestor(nullptr, false);
 
   // 19. Run hide popovers until given document, hideUntil, false, and true.
-  OwnerDoc()->HidePopoversUntil(hideUntil, false, true);
+  RefPtr<Document> doc = OwnerDoc();
+  doc->HidePopoversUntil(hideUntil, false, true);
 
   // 20. Run the dialog focusing steps given subject.
   FocusDialog();

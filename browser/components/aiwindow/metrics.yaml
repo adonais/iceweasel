@@ -219,6 +219,7 @@ smart_window:
       User is presented with one or more quick prompts
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062688
     data_reviews:
       - https://phabricator.services.mozilla.com/D282482
     data_sensitivity:
@@ -234,6 +235,11 @@ smart_window:
         unit: count
         description: >
           Number of prompts displayed
+      resume_prompts:
+        type: quantity
+        unit: count
+        description: >
+          Number of displayed prompts that were resume pills
 
   quick_prompt_clicked:
     type: event
@@ -241,6 +247,7 @@ smart_window:
       Recorded when the user selects a prompt suggestion in smart window mode
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2022629
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062688
     data_reviews:
       - https://phabricator.services.mozilla.com/D282482
     data_sensitivity:
@@ -255,6 +262,10 @@ smart_window:
         type: boolean
         description: >
           Boolean indicating if the prompt is a conversation starter, as opposed to a follow-up
+      starter_type:
+        type: string
+        description: >
+          The type of prompt that was clicked: default, resume, or followup
 
   get_page_content:
     type: event
@@ -551,6 +562,51 @@ smart_window:
         description: >
           True when this response (success or failure) was produced by a
           user-initiated retry of a previous turn
+
+  client_error:
+    type: event
+    description: |
+      A client-side runtime or render failure was observed in the Smart Window
+      UI (Lit lifecycle, markdown rendering, malformed message data, or other
+      uncaught UI runtime errors).
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2040803
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2040803#c5
+    data_sensitivity:
+      - technical
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+      model: *model
+      source:
+        type: string
+        description: >
+          The Smart Window surface the failure originated from: lit-render,
+          markdown, message-data, or uncaught
+      name:
+        type: string
+        description: >
+          Error name (e.g. TypeError, SyntaxError, or a custom Error name)
+      message:
+        type: string
+        description: >
+          Sanitized stable error message key. This is not the raw exception
+          message.
+      filename:
+        type: string
+        description: >
+          Source file the error originated from, or empty if unknown
+      lineno:
+        type: quantity
+        unit: count
+        description: >
+          Line number in the source file the error originated from, or 0 if
+          unknown
 
   chat_storage:
     type: quantity
@@ -1208,6 +1264,21 @@ smart_window:
     notification_emails: *emails
     expires: never
 
+  enabled:
+    type: boolean
+    lifetime: application
+    description: |
+      Records if the user currently has Smart Window enabled.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2047007
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D319283
+    data_sensitivity:
+      - interaction
+      - technical
+    notification_emails: *emails
+    expires: never
+
   set_default_optin:
     type: boolean
     description: |
@@ -1526,12 +1597,30 @@ smart_window:
           For example: 2 means the third tile in the row.
       visible_topsites: *visible_topsites
 
+  bookmarkbar:
+    type: labeled_counter
+    description: >
+      Bookmark bar adoption originating from the Smart Window new tab, when the
+      "Only show on New Tab" bookmarks toolbar setting is enabled. The "opened"
+      label counts each time the user opens a bookmark from the bookmarks
+      toolbar while on the Smart Window new tab.
+    labels:
+      - opened
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2030683
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2030683
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+
   # TODO: Follow up Bug https://bugzilla.mozilla.org/show_bug.cgi?id=2046610 for testing telemetry
   # Will land after FE is landed
-  monitor_create:
+  monitor_delete:
     type: event
     description: |
-      Recorded when a Smart Window monitor is created.
+      Recorded when a Smart Window monitor is deleted.
     bugs: &monitor_bugs
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2046610
     data_reviews: &monitor_data_reviews
@@ -1574,17 +1663,22 @@ smart_window:
         description: >
           Whether the monitor is enabled.
 
-  monitor_delete:
+  monitor_create:
     type: event
     description: |
-      Recorded when a Smart Window monitor is deleted.
+      Recorded when a Smart Window monitor is created.
     bugs: *monitor_bugs
     data_reviews: *monitor_data_reviews
     data_sensitivity:
       - interaction
     notification_emails: *emails
     expires: never
-    extra_keys: *monitor_extra_keys
+    extra_keys:
+      <<: *monitor_extra_keys
+      source:
+        type: string
+        description: >
+          Source of the monitor creation.
 
   monitor_edit:
     type: event
@@ -1622,17 +1716,26 @@ smart_window:
     expires: never
     extra_keys: *monitor_extra_keys
 
-  monitor_failure:
+  monitor_complete:
     type: event
     description: |
-      Recorded when a Smart Window monitor run fails.
+      Recorded when a Smart Window monitor run completes (either successfully or with failure).
     bugs: *monitor_bugs
     data_reviews: *monitor_data_reviews
     data_sensitivity:
       - interaction
     notification_emails: *emails
     expires: never
-    extra_keys: *monitor_extra_keys
+    extra_keys:
+      <<: *monitor_extra_keys
+      success:
+        type: boolean
+        description: >
+          Whether the monitor run completed successfully.
+      error_code:
+        type: string
+        description: >
+          Human-readable error message if the monitor run failed. Only present when success is false.
 
   monitor_run_manual:
     type: event
@@ -1658,78 +1761,356 @@ smart_window:
     expires: never
     extra_keys: *monitor_extra_keys
 
-  auto_tab_group_offered:
+  monitor_notification_send:
     type: event
     description: |
-      Recorded when the "Group my tabs" panel finishes clustering and offers one
-      or more suggested tab groups. No URLs or tab titles are included.
-    bugs: &auto_tab_group_bugs
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054506
-    data_reviews: &auto_tab_group_data_reviews
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054506
+      Recorded when a Smart Window monitor sends a notification to the user because its condition was met.
+    bugs: *monitor_bugs
+    data_reviews: *monitor_data_reviews
     data_sensitivity:
       - interaction
     notification_emails: *emails
     expires: never
-    extra_keys:
-      count:
-        type: quantity
-        unit: groups
-        description: >
-          Number of suggested groups offered.
-      median_tabs: &auto_tab_group_median_tabs
-        type: quantity
-        unit: tabs
-        description: >
-          Median number of tabs across the groups in this event, rounded.
-      mean_tabs: &auto_tab_group_mean_tabs
-        type: quantity
-        unit: tabs
-        description: >
-          Mean number of tabs across the groups in this event, rounded.
-      recomputed:
-        type: boolean
-        description: >
-          False for the first set of suggestions offered for a window, true when
-          reopening the panel regenerated the suggestions and replaced a set
-          previously offered for that window.
+    extra_keys: *monitor_extra_keys
 
-  auto_tab_group_created:
+  monitor_notification_click:
     type: event
     description: |
-      Recorded when the user creates one or more suggested tab groups from the
-      "Group my tabs" panel. No URLs or tab titles are included.
-    bugs: *auto_tab_group_bugs
-    data_reviews: *auto_tab_group_data_reviews
+      Recorded when a user interacts with a Smart Window monitor notification.
+    bugs: *monitor_bugs
+    data_reviews: *monitor_data_reviews
     data_sensitivity:
       - interaction
     notification_emails: *emails
     expires: never
     extra_keys:
-      type: &auto_tab_group_type
+      <<: *monitor_extra_keys
+      click_type:
         type: string
         description: >
-          "individual" when a single suggested group was created, "all" when the
-          user created every suggested group at once.
-      count: &auto_tab_group_count
-        type: quantity
-        unit: groups
-        description: >
-          Number of groups affected by this action.
-      median_tabs: *auto_tab_group_median_tabs
-      mean_tabs: *auto_tab_group_mean_tabs
+          Type of notification interaction: "open_url" (body clicked to open watched page), "snooze" (snooze button clicked), or "dismiss" (dismiss button clicked to mute notifications).
 
-  auto_tab_group_undone:
+  # The "Organize Tabs" events below describe one user journey, so they share a
+  # vocabulary of extra keys. None of them record a URL, a tab title, or a
+  # group's generated name: where the amount of text matters, only its length
+  # in characters is reported.
+
+  auto_tab_group_menu_opened:
     type: event
     description: |
-      Recorded when the user ungroups the previously created group(s) from the
-      "Group my tabs" panel, reversing everything in the "Just created" list.
-      Ungrouping keeps the tabs open. No URLs or tab titles are included.
-    bugs: *auto_tab_group_bugs
-    data_reviews: *auto_tab_group_data_reviews
+      Recorded when the user opens the "Organize Tabs" panel. Closing the panel
+      with the same toolbar button does not record anything.
+    bugs: &atg_bugs
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2058218
+    data_reviews: &atg_data_reviews
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2058218
     data_sensitivity:
       - interaction
     notification_emails: *emails
     expires: never
     extra_keys:
-      count: *auto_tab_group_count
+      source:
+        type: string
+        description: >
+          How the panel was opened: "button" for the toolbar button,
+          "callout_click" for the feature callout's "Organize tabs" button,
+          "message" for a messaging system surface that did not identify
+          itself.
+      tabs: &atg_tabs
+        type: quantity
+        unit: tabs
+        description: >
+          Number of tabs open in the window.
+
+  auto_tab_grouping_requested:
+    type: event
+    description: |
+      Recorded when opening the panel asks for a fresh set of suggestions.
+      Reopening a panel whose suggestions are still valid reuses them and does
+      not record this.
+    bugs: *atg_bugs
+    data_reviews: *atg_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      tabs: *atg_tabs
+
+  auto_tab_grouping_started:
+    type: event
+    description: |
+      Recorded when the on-device model actually starts clustering. A request
+      with no start means the feature turned out to be unavailable or the window
+      had too few groupable tabs, so nothing ran.
+    bugs: *atg_bugs
+    data_reviews: *atg_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      tabs: *atg_tabs
+      total_length: &atg_total_length
+        type: quantity
+        unit: characters
+        description: >
+          Total length, in characters, of the tab titles the model is given.
+          The titles themselves are not recorded.
+
+  auto_tab_grouping_completed:
+    type: event
+    description: |
+      Recorded when clustering finishes, whether or not it produced anything.
+      Zero groups with success true means the model ran but found nothing worth
+      suggesting.
+    bugs: *atg_bugs
+    data_reviews: *atg_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      tabs: *atg_tabs
+      groups: &atg_groups
+        type: quantity
+        unit: groups
+        description: >
+          Number of groups suggested.
+      grouped_tabs: &atg_grouped_tabs
+        type: quantity
+        unit: tabs
+        description: >
+          Number of tabs in the group, or across the groups, this event
+          describes.
+      success: &atg_success
+        type: boolean
+        description: >
+          Whether the process finished without error.
+      error_type: &atg_error_type
+        type: string
+        description: >
+          Why the process failed, empty when success is true: the error's name,
+          such as "TypeError", or "TimeoutError" when the process ran out of
+          time. Error messages are never recorded, only the name, so no path,
+          URL or tab title can appear here.
+      total_length:
+        type: quantity
+        unit: characters
+        description: >
+          Total length, in characters, of the tab titles in the suggested
+          groups. The titles themselves are not recorded.
+      time: &atg_time
+        type: quantity
+        unit: milliseconds
+        description: >
+          How long the process took.
+
+  auto_tab_group_suggested:
+    type: event
+    description: |
+      Recorded once for each group offered by a completed clustering run, so a
+      single run's groups can be told apart by size.
+    bugs: *atg_bugs
+    data_reviews: *atg_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      grouped_tabs: *atg_grouped_tabs
+      total_length:
+        type: quantity
+        unit: characters
+        description: >
+          Total length, in characters, of the titles of this group's tabs. The
+          titles themselves are not recorded.
+      grouped_id: &atg_grouped_id
+        type: quantity
+        unit: id
+        description: >
+          Identifies one suggested group so the events about it can be joined
+          together. A counter that starts over every session; it says nothing
+          about the user, the tabs, or the group's name.
+
+  auto_tab_group_window_display:
+    type: event
+    description: |
+      Recorded when the panel has finished loading and is showing the user what
+      it found.
+    bugs: *atg_bugs
+    data_reviews: *atg_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      suggested_groups:
+        type: quantity
+        unit: groups
+        description: >
+          Number of groups listed under "Suggested groups".
+      groups:
+        type: quantity
+        unit: groups
+        description: >
+          Number of groups listed under "Just created", which the user can still
+          ungroup.
+      time:
+        type: quantity
+        unit: milliseconds
+        description: >
+          How long the user waited between asking for the panel and seeing it
+          populated.
+
+  auto_tab_group_accepted:
+    type: event
+    description: |
+      Recorded once for each suggested group the user chooses to create, before
+      the group is made.
+    bugs: *atg_bugs
+    data_reviews: *atg_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      grouped_tabs: *atg_grouped_tabs
+      grouped_id: *atg_grouped_id
+      source: &atg_accept_source
+        type: string
+        description: >
+          "individual_accept" when the user picked this one group,
+          "collective_accept" when they created every suggestion at once.
+
+  auto_tab_group_completed:
+    type: event
+    description: |
+      Recorded once for each accepted group after the tabs have actually been
+      grouped, so an accept that failed can be told from one that worked.
+    bugs: *atg_bugs
+    data_reviews: *atg_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      grouped_tabs: *atg_grouped_tabs
+      grouped_id: *atg_grouped_id
+      source: *atg_accept_source
+      success: *atg_success
+      error_type: *atg_error_type
+
+  auto_tab_ungroup_requested:
+    type: event
+    description: |
+      Recorded once for each group the user chooses to ungroup from the "Just
+      created" list, before the group is dissolved.
+    bugs: *atg_bugs
+    data_reviews: *atg_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      grouped_tabs: *atg_grouped_tabs
+      grouped_id: *atg_grouped_id
+      source: &atg_ungroup_source
+        type: string
+        description: >
+          "collective_ungroup" when the user reversed every group in the "Just
+          created" list at once, which is the only way the panel offers today,
+          and "individual_ungroup" should it ever offer per-group undo.
+
+  auto_tab_ungroup_completed:
+    type: event
+    description: |
+      Recorded once for each group after it has been dissolved. Ungrouping keeps
+      the tabs open.
+    bugs: *atg_bugs
+    data_reviews: *atg_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      grouped_tabs: *atg_grouped_tabs
+      grouped_id: *atg_grouped_id
+      source: *atg_ungroup_source
+      success: *atg_success
+      error_type: *atg_error_type
+
+  close_duplicate_tabs_requested:
+    type: event
+    description: |
+      Recorded when the user picks "Close Duplicate Tabs" in the panel.
+    bugs: *atg_bugs
+    data_reviews: *atg_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      tabs: *atg_tabs
+
+  close_duplicate_tabs_started:
+    type: event
+    description: |
+      Recorded when the search for duplicate tabs starts.
+    bugs: *atg_bugs
+    data_reviews: *atg_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      tabs: *atg_tabs
+      total_length:
+        type: quantity
+        unit: characters
+        description: >
+          Total length, in characters, of the titles of the window's tabs. The
+          titles themselves are not recorded.
+
+  close_duplicate_tabs_completed:
+    type: event
+    description: |
+      Recorded when the search for duplicate tabs finishes, before the user is
+      asked to confirm closing them.
+    bugs: *atg_bugs
+    data_reviews: *atg_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      tabs: *atg_tabs
+      duplicate_tabs: &atg_duplicate_tabs
+        type: quantity
+        unit: tabs
+        description: >
+          Number of tabs found to be duplicates of another open tab.
+      success: *atg_success
+      error_type: *atg_error_type
+      time: *atg_time
+
+  duplicate_tabs_closed:
+    type: event
+    description: |
+      Recorded after the duplicate tabs have been closed. Nothing is recorded if
+      the user declines the confirmation prompt, so a completed search with no
+      close means they backed out.
+    bugs: *atg_bugs
+    data_reviews: *atg_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      duplicate_tabs:
+        type: quantity
+        unit: tabs
+        description: >
+          Number of duplicate tabs that were closed.
+      success: *atg_success
+      error_type: *atg_error_type

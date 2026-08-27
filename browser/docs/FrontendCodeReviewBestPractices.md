@@ -21,7 +21,7 @@ The sections below outline some of the high level expectations when reviewing co
 A code review and automation will check if this patch:
 
 * applies cleanly to mozilla-central and can be built.
-* has a [good commit message](/contributing/contribution_quickref.rst#commit-message) that describes the changes as well as the reason for them where that is not obvious.
+* has a [good commit message](/contributing/contribution_quickref.md#commit-message) that describes the changes as well as the reason for them where that is not obvious.
   * Adding a longer description in a commit message will be used as the summary in Phabricator.
 * fixes the issue at hand.
 * has automated test coverage where appropriate. [Exceptions to this are covered by using the test-exception-\* tags in Phabricator](https://firefox-source-docs.mozilla.org/testing/testing-policy/index.html#exceptions). Here are some common exceptions in frontend where \[new\] test coverage isn’t needed:
@@ -125,10 +125,10 @@ This section covers some frontend-specific aspects of patches that reviewers are
 
 * Use existing components/classes to implement feature designs (see JS/DOM section).
 * Keep in mind all CSS needs to work in RTL languages. Use logical properties (`margin-inline-start` and friends) rather than physical ones (`margin-left`).
-  * See [Firefox RTL (right-to-left) guidelines](/code-quality/coding-style/rtl_guidelines.rst) for more detailed information.
+  * See [Firefox RTL (right-to-left) guidelines](/code-quality/coding-style/rtl_guidelines.md) for more detailed information.
 * See the [Accessibility](#accessibility) section on use of colours, HCM, etc.
-* See detailed [CSS authoring guidelines](/code-quality/coding-style/css_guidelines.rst).
-* See the [Firefox SVG Guidelines](/code-quality/coding-style/svg_guidelines.rst).
+* See detailed [CSS authoring guidelines](/code-quality/coding-style/css_guidelines.md).
+* See the [Firefox SVG Guidelines](/code-quality/coding-style/svg_guidelines.md).
 
 ### Localization
 
@@ -136,7 +136,7 @@ This section covers some frontend-specific aspects of patches that reviewers are
 * For new code, use fluent. For modifying older code, use what the old code uses (but consider switching to fluent if it’s straightforward, as it provides better translation primitives in other languages).
 * When writing experimental features that need strings for en-US only that are not final yet, use fluent and put the ftl file in a `content` rather than `locale` directory and package it accordingly. When strings are final, move them to a regular `locale` directory and include them as normal but make sure to do so outside string freeze and while allowing reasonable time for our (largely volunteer) localisers to submit translations - don’t just dump dozens of strings into `locale` a day before string freeze.
 * If the meaning of a string changes, or \[in fluent\] you add/remove attributes, **you must update the message identifier**.
-* More detailed [fluent review guidelines](/l10n/fluent/review.rst#guidelines-for-fluent-reviewers) are available separately.
+* More detailed [fluent review guidelines](/l10n/fluent/review.md#guidelines-for-fluent-reviewers) are available separately.
 
 ### Accessibility {#accessibility}
 

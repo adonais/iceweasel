@@ -85,7 +85,6 @@ MP3TrackDemuxer::MP3TrackDemuxer(MediaResource* aSource)
       mFirstFrameOffset(0),
       mNumParsedFrames(0),
       mFrameIndex(0),
-      mTotalFrameLen(0),
       mSamplesPerFrame(0),
       mSamplesPerSecond(0),
       mChannels(0) {
@@ -251,10 +250,11 @@ RefPtr<MP3TrackDemuxer::SamplesPromise> MP3TrackDemuxer::GetSamples(
     int32_t aNumSamples) {
   MP3LOGV(
       "GetSamples({}) Begin mOffset={} mNumParsedFrames={} mFrameIndex={} "
-      "mTotalFrameLen={} mSamplesPerFrame={} mSamplesPerSecond={} "
+      "mMeanFrameLen={} mSamplesPerFrame={} mSamplesPerSecond={} "
       "mChannels={}",
-      aNumSamples, mOffset, mNumParsedFrames, mFrameIndex, mTotalFrameLen,
-      mSamplesPerFrame, mSamplesPerSecond, mChannels);
+      aNumSamples, mOffset, mNumParsedFrames, mFrameIndex,
+      mMeanFrameLen.empty() ? 0.0 : mMeanFrameLen.mean(), mSamplesPerFrame,
+      mSamplesPerSecond, mChannels);
 
   if (!aNumSamples) {
     return SamplesPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_DEMUXER_ERR,
@@ -277,11 +277,11 @@ RefPtr<MP3TrackDemuxer::SamplesPromise> MP3TrackDemuxer::GetSamples(
 
   MP3LOGV(
       "GetSamples() End mSamples.Size()={} aNumSamples={} mOffset={} "
-      "mNumParsedFrames={} mFrameIndex={} mTotalFrameLen={} "
+      "mNumParsedFrames={} mFrameIndex={} mMeanFrameLen={} "
       "mSamplesPerFrame={} mSamplesPerSecond={} mChannels={}",
       frames->GetSamples().Length(), aNumSamples, mOffset, mNumParsedFrames,
-      mFrameIndex, mTotalFrameLen, mSamplesPerFrame, mSamplesPerSecond,
-      mChannels);
+      mFrameIndex, mMeanFrameLen.empty() ? 0.0 : mMeanFrameLen.mean(),
+      mSamplesPerFrame, mSamplesPerSecond, mChannels);
 
   if (frames->GetSamples().IsEmpty()) {
     return SamplesPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_END_OF_STREAM,
@@ -392,8 +392,9 @@ media::NullableTimeUnit MP3TrackDemuxer::Duration() const {
         media::TimeUnit::FromSeconds(static_cast<double>(size) * 8 / mBitrate));
   }
 
-  if (AverageFrameLength() > 0) {
-    numFrames = std::lround(AssertedCast<double>(size) / AverageFrameLength());
+  const double averageFrameLength = AverageFrameLength();
+  if (averageFrameLength > 0) {
+    numFrames = std::lround(AssertedCast<double>(size) / averageFrameLength);
   }
 
   return NothingIfNegative(Duration(numFrames) - (EncoderDelay() + Padding()));
@@ -497,9 +498,10 @@ MediaByteRange MP3TrackDemuxer::FindNextFrame() {
 
   MP3LOGV(
       "FindNext() Begin mOffset={} mNumParsedFrames={} mFrameIndex={} "
-      "mTotalFrameLen={} mSamplesPerFrame={} mSamplesPerSecond={} "
+      "mMeanFrameLen={} mSamplesPerFrame={} mSamplesPerSecond={} "
       "mChannels={}",
-      mOffset, mNumParsedFrames, mFrameIndex, mTotalFrameLen, mSamplesPerFrame,
+      mOffset, mNumParsedFrames, mFrameIndex,
+      mMeanFrameLen.empty() ? 0.0 : mMeanFrameLen.mean(), mSamplesPerFrame,
       mSamplesPerSecond, mChannels);
 
   uint8_t buffer[BUFFER_SIZE];
@@ -589,10 +591,11 @@ MediaByteRange MP3TrackDemuxer::FindNextFrame() {
 
   MP3LOGV(
       "FindNext() End mOffset={} mNumParsedFrames={} mFrameIndex={} "
-      "frameHeaderOffset={} mTotalFrameLen={} mSamplesPerFrame={} "
+      "frameHeaderOffset={} mMeanFrameLen={} mSamplesPerFrame={} "
       "mSamplesPerSecond={} mChannels={}, mEOS={}",
-      mOffset, mNumParsedFrames, mFrameIndex, frameHeaderOffset, mTotalFrameLen,
-      mSamplesPerFrame, mSamplesPerSecond, mChannels, mEOS ? "true" : "false");
+      mOffset, mNumParsedFrames, mFrameIndex, frameHeaderOffset,
+      mMeanFrameLen.empty() ? 0.0 : mMeanFrameLen.mean(), mSamplesPerFrame,
+      mSamplesPerSecond, mChannels, mEOS ? "true" : "false");
 
   return {frameHeaderOffset,
           frameHeaderOffset + mParser.CurrentFrame().Length()};
@@ -609,9 +612,10 @@ bool MP3TrackDemuxer::SkipNextFrame(const MediaByteRange& aRange) {
 
   MP3LOGV(
       "SkipNext() End mOffset={} mNumParsedFrames={} mFrameIndex={} "
-      "mTotalFrameLen={} mSamplesPerFrame={} mSamplesPerSecond={} "
+      "mMeanFrameLen={} mSamplesPerFrame={} mSamplesPerSecond={} "
       "mChannels={}",
-      mOffset, mNumParsedFrames, mFrameIndex, mTotalFrameLen, mSamplesPerFrame,
+      mOffset, mNumParsedFrames, mFrameIndex,
+      mMeanFrameLen.empty() ? 0.0 : mMeanFrameLen.mean(), mSamplesPerFrame,
       mSamplesPerSecond, mChannels);
 
   return true;
@@ -746,9 +750,10 @@ already_AddRefed<MediaRawData> MP3TrackDemuxer::GetNextFrame(
 
   MP3LOGV(
       "GetNext() End mOffset={} mNumParsedFrames={} mFrameIndex={} "
-      "mTotalFrameLen={} mSamplesPerFrame={} mSamplesPerSecond={} "
+      "mMeanFrameLen={} mSamplesPerFrame={} mSamplesPerSecond={} "
       "mChannels={}, mEOS={}",
-      mOffset, mNumParsedFrames, mFrameIndex, mTotalFrameLen, mSamplesPerFrame,
+      mOffset, mNumParsedFrames, mFrameIndex,
+      mMeanFrameLen.empty() ? 0.0 : mMeanFrameLen.mean(), mSamplesPerFrame,
       mSamplesPerSecond, mChannels, mEOS ? "true" : "false");
 
   // It's possible for the duration of a frame to be zero if the frame is to be
@@ -825,18 +830,12 @@ int64_t MP3TrackDemuxer::FrameIndexFromTime(
 }
 
 void MP3TrackDemuxer::UpdateState(const MediaByteRange& aRange) {
-  // Prevent overflow.
-  if (mTotalFrameLen + aRange.Length() < mTotalFrameLen) {
-    // These variables have a linear dependency and are only used to derive the
-    // average frame length.
-    mTotalFrameLen /= 2;
-    mNumParsedFrames /= 2;
-  }
-
   // Full frame parsed, move offset to its end.
   mOffset = aRange.mEnd;
 
-  mTotalFrameLen += aRange.Length();
+  // Keeping the running mean directly avoids overflowing a signed 64-bit sum
+  // of uint32_t frame lengths over a sufficiently long stream.
+  mMeanFrameLen.insert(static_cast<double>(aRange.Length()));
 
   if (!mSamplesPerFrame) {
     mSamplesPerFrame = mParser.CurrentFrame().Header().SamplesPerFrame();
@@ -873,9 +872,8 @@ uint32_t MP3TrackDemuxer::Read(uint8_t* aBuffer, int64_t aOffset,
 }
 
 double MP3TrackDemuxer::AverageFrameLength() const {
-  if (mNumParsedFrames) {
-    return static_cast<double>(mTotalFrameLen) /
-           static_cast<double>(mNumParsedFrames);
+  if (!mMeanFrameLen.empty()) {
+    return mMeanFrameLen.mean();
   }
   const auto& vbr = mParser.VBRInfo();
   if (vbr.IsComplete() && vbr.NumAudioFrames().value() + 1) {

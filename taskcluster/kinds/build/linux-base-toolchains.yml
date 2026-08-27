@@ -9,6 +9,7 @@
 task-defaults:
     worker-type: b-linux-docker-amd
     run:
+        clone-with: hg
         extra-config:
             extra_mozconfig_content:
                 # Builds on automation don't normally build geckodriver,
@@ -31,6 +32,7 @@ linux64-base-toolchains/opt:
             PERFHERDER_EXTRA_OPTIONS: base-toolchains
             FORCE_GCC: '1'
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -71,6 +73,7 @@ linux64-base-toolchains/debug:
             PERFHERDER_EXTRA_OPTIONS: base-toolchains
             FORCE_GCC: '1'
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -112,6 +115,7 @@ linux64-base-toolchains-clang/opt:
             PERFHERDER_EXTRA_OPTIONS: base-toolchains-clang
             DISABLE_CLANG_PLUGIN: '1'
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -151,6 +155,7 @@ linux64-base-toolchains-clang/debug:
             PERFHERDER_EXTRA_OPTIONS: base-toolchains-clang
             DISABLE_CLANG_PLUGIN: '1'
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:

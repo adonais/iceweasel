@@ -121,7 +121,7 @@ add_task(
         }),
         makeSearchResult(context, {
           engineName: engine.name,
-          engineIconUri: UrlbarUtils.ICON.SEARCH_GLASS,
+          engineIconUri: UrlbarShared.ICON.SEARCH_GLASS,
           searchUrlDomainWithoutSuffix: UrlbarUtils.stripPublicSuffixFromHost(
             engine.searchUrlDomain
           ),

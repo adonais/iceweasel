@@ -9,7 +9,7 @@ import org.intellij.markdown.MarkdownElementTypes
 import org.intellij.markdown.MarkdownTokenTypes
 import org.intellij.markdown.ast.ASTNode
 
-internal fun ASTNode.toInlineContent(source: String): List<InlineContent> {
+internal fun ASTNode.toInlineContent(source: CharSequence): List<InlineContent> {
     return when (type) {
         MarkdownElementTypes.STRONG -> listOf(
             InlineContent.Strong(children = children.flatMap { it.toInlineContent(source) }),
@@ -53,7 +53,7 @@ internal fun ASTNode.toInlineContent(source: String): List<InlineContent> {
     }
 }
 
-private fun ASTNode.extractCodeSpanText(source: String): String {
+private fun ASTNode.extractCodeSpanText(source: CharSequence): String {
     val codeSpan = StringBuilder()
 
     fun build(node: ASTNode) {

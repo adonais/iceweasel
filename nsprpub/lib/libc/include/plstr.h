@@ -35,7 +35,7 @@ PR_BEGIN_EXTERN_C
  */
 
 PR_EXTERN(PRUint32)
-PL_strlen(const char *str);
+PL_strlen(const char* str);
 
 /*
  * PL_strnlen
@@ -46,7 +46,7 @@ PL_strlen(const char *str);
  */
 
 PR_EXTERN(PRUint32)
-PL_strnlen(const char *str, PRUint32 max);
+PL_strnlen(const char* str, PRUint32 max);
 
 /*
  * PL_strcpy
@@ -56,8 +56,8 @@ PL_strnlen(const char *str, PRUint32 max);
  * buffer is large enough.  It returns the "dest" argument.
  */
 
-PR_EXTERN(char *)
-PL_strcpy(char *dest, const char *src);
+PR_EXTERN(char*)
+PL_strcpy(char* dest, const char* src);
 
 /*
  * PL_strncpy
@@ -69,8 +69,8 @@ PL_strcpy(char *dest, const char *src);
  * the result will *not* be null-terminated (JLRU).
  */
 
-PR_EXTERN(char *)
-PL_strncpy(char *dest, const char *src, PRUint32 max);
+PR_EXTERN(char*)
+PL_strncpy(char* dest, const char* src, PRUint32 max);
 
 /*
  * PL_strncpyz
@@ -92,8 +92,8 @@ PL_strncpy(char *dest, const char *src, PRUint32 max);
  * and the result will be properly terminated.
  */
 
-PR_EXTERN(char *)
-PL_strncpyz(char *dest, const char *src, PRUint32 max);
+PR_EXTERN(char*)
+PL_strncpyz(char* dest, const char* src, PRUint32 max);
 
 /*
  * PL_strdup
@@ -106,8 +106,8 @@ PL_strncpyz(char *dest, const char *src, PRUint32 max);
  * upon malloc failure.
  */
 
-PR_EXTERN(char *)
-PL_strdup(const char *s);
+PR_EXTERN(char*)
+PL_strdup(const char* s);
 
 /*
  * PL_strfree
@@ -116,7 +116,7 @@ PL_strdup(const char *s);
  */
 
 PR_EXTERN(void)
-PL_strfree(char *s);
+PL_strfree(char* s);
 
 /*
  * PL_strndup
@@ -130,8 +130,8 @@ PL_strfree(char *s);
  * containing the null value.  This routine returns null upon malloc failure.
  */
 
-PR_EXTERN(char *)
-PL_strndup(const char *s, PRUint32 max);
+PR_EXTERN(char*)
+PL_strndup(const char* s, PRUint32 max);
 
 /*
  * PL_strcat
@@ -142,8 +142,8 @@ PL_strndup(const char *s, PRUint32 max);
  * argument returns null; otherwise, the first argument is returned.
  */
 
-PR_EXTERN(char *)
-PL_strcat(char *dst, const char *src);
+PR_EXTERN(char*)
+PL_strcat(char* dst, const char* src);
 
 /*
  * PL_strncat
@@ -157,8 +157,8 @@ PL_strcat(char *dst, const char *src);
  * returns null; otherwise, the destination argument is returned.
  */
 
-PR_EXTERN(char *)
-PL_strncat(char *dst, const char *src, PRUint32 max);
+PR_EXTERN(char*)
+PL_strncat(char* dst, const char* src, PRUint32 max);
 
 /*
  * PL_strcatn
@@ -171,8 +171,8 @@ PL_strncat(char *dst, const char *src, PRUint32 max);
  * null; otherwise, the destination argument is returned.
  */
 
-PR_EXTERN(char *)
-PL_strcatn(char *dst, PRUint32 max, const char *src);
+PR_EXTERN(char*)
+PL_strcatn(char* dst, PRUint32 max, const char* src);
 
 /*
  * PL_strcmp
@@ -184,7 +184,7 @@ PL_strcatn(char *dst, PRUint32 max, const char *src);
  */
 
 PR_EXTERN(PRIntn)
-PL_strcmp(const char *a, const char *b);
+PL_strcmp(const char* a, const char* b);
 
 /*
  * PL_strncmp
@@ -198,7 +198,7 @@ PL_strcmp(const char *a, const char *b);
  */
 
 PR_EXTERN(PRIntn)
-PL_strncmp(const char *a, const char *b, PRUint32 max);
+PL_strncmp(const char* a, const char* b, PRUint32 max);
 
 /*
  * PL_strcasecmp
@@ -210,19 +210,19 @@ PL_strncmp(const char *a, const char *b, PRUint32 max);
  */
 
 PR_EXTERN(PRIntn)
-PL_strcasecmp(const char *a, const char *b);
+PL_strcasecmp(const char* a, const char* b);
 
 /*
  * PL_strncasecmp
  *
  * Returns an integer, the sign of which -- positive, zero or negative --
  * reflects the case-insensitive lexical sorting order of the first n characters
- * of the two strings indicated.  The result is positive if the first string comes
- * after the second.  The NSPR implementation is not i18n.
+ * of the two strings indicated.  The result is positive if the first string
+ * comes after the second.  The NSPR implementation is not i18n.
  */
 
 PR_EXTERN(PRIntn)
-PL_strncasecmp(const char *a, const char *b, PRUint32 max);
+PL_strncasecmp(const char* a, const char* b, PRUint32 max);
 
 /*
  * PL_strchr
@@ -232,8 +232,8 @@ PL_strncasecmp(const char *a, const char *b, PRUint32 max);
  * provided string is null.  The character may be the null character.
  */
 
-PR_EXTERN(char *)
-PL_strchr(const char *s, char c);
+PR_EXTERN(char*)
+PL_strchr(const char* s, char c);
 
 /*
  * PL_strrchr
@@ -243,8 +243,8 @@ PL_strchr(const char *s, char c);
  * provided string is null.  The character may be the null character.
  */
 
-PR_EXTERN(char *)
-PL_strrchr(const char *s, char c);
+PR_EXTERN(char*)
+PL_strrchr(const char* s, char c);
 
 /*
  * PL_strnchr
@@ -255,20 +255,20 @@ PL_strrchr(const char *s, char c);
  * null character.
  */
 
-PR_EXTERN(char *)
-PL_strnchr(const char *s, char c, PRUint32 n);
+PR_EXTERN(char*)
+PL_strnchr(const char* s, char c, PRUint32 n);
 
 /*
  * PL_strnrchr
  *
  * Returns a pointer to the last instance of the specified character within the
- * first n characters of the provided string.  It returns null if the character is
- * not found, or if the provided string is null.  The character may be the null
- * character.
+ * first n characters of the provided string.  It returns null if the character
+ * is not found, or if the provided string is null.  The character may be the
+ * null character.
  */
 
-PR_EXTERN(char *)
-PL_strnrchr(const char *s, char c, PRUint32 n);
+PR_EXTERN(char*)
+PL_strnrchr(const char* s, char c, PRUint32 n);
 
 /*
  * NOTE: Looking for strcasechr, strcaserchr, strncasechr, or strncaserchr?
@@ -279,45 +279,45 @@ PL_strnrchr(const char *s, char c, PRUint32 n);
  * PL_strpbrk
  *
  * Returns a pointer to the first instance in the first string of any character
- * (not including the terminating null character) of the second string.  It returns
- * null if either string is null.
+ * (not including the terminating null character) of the second string.  It
+ * returns null if either string is null.
  */
 
-PR_EXTERN(char *)
-PL_strpbrk(const char *s, const char *list);
+PR_EXTERN(char*)
+PL_strpbrk(const char* s, const char* list);
 
 /*
  * PL_strprbrk
  *
  * Returns a pointer to the last instance in the first string of any character
- * (not including the terminating null character) of the second string.  It returns
- * null if either string is null.
+ * (not including the terminating null character) of the second string.  It
+ * returns null if either string is null.
  */
 
-PR_EXTERN(char *)
-PL_strprbrk(const char *s, const char *list);
+PR_EXTERN(char*)
+PL_strprbrk(const char* s, const char* list);
 
 /*
  * PL_strnpbrk
  *
- * Returns a pointer to the first instance (within the first n characters) of any
- * character (not including the terminating null character) of the second string.
- * It returns null if either string is null.
+ * Returns a pointer to the first instance (within the first n characters) of
+ * any character (not including the terminating null character) of the second
+ * string. It returns null if either string is null.
  */
 
-PR_EXTERN(char *)
-PL_strnpbrk(const char *s, const char *list, PRUint32 n);
+PR_EXTERN(char*)
+PL_strnpbrk(const char* s, const char* list, PRUint32 n);
 
 /*
  * PL_strnprbrk
  *
  * Returns a pointer to the last instance (within the first n characters) of any
- * character (not including the terminating null character) of the second string.
- * It returns null if either string is null.
+ * character (not including the terminating null character) of the second
+ * string. It returns null if either string is null.
  */
 
-PR_EXTERN(char *)
-PL_strnprbrk(const char *s, const char *list, PRUint32 n);
+PR_EXTERN(char*)
+PL_strnprbrk(const char* s, const char* list, PRUint32 n);
 
 /*
  * PL_strstr
@@ -326,18 +326,18 @@ PL_strnprbrk(const char *s, const char *list, PRUint32 n);
  * big one.  It returns null if either string is null.
  */
 
-PR_EXTERN(char *)
-PL_strstr(const char *big, const char *little);
+PR_EXTERN(char*)
+PL_strstr(const char* big, const char* little);
 
 /*
  * PL_strrstr
  *
- * Returns a pointer to the last instance of the little string within the big one.
- * It returns null if either string is null.
+ * Returns a pointer to the last instance of the little string within the big
+ * one. It returns null if either string is null.
  */
 
-PR_EXTERN(char *)
-PL_strrstr(const char *big, const char *little);
+PR_EXTERN(char*)
+PL_strrstr(const char* big, const char* little);
 
 /*
  * PL_strnstr
@@ -347,8 +347,8 @@ PL_strrstr(const char *big, const char *little);
  * returns null if the length of the little string is greater than n.
  */
 
-PR_EXTERN(char *)
-PL_strnstr(const char *big, const char *little, PRUint32 n);
+PR_EXTERN(char*)
+PL_strnstr(const char* big, const char* little, PRUint32 n);
 
 /*
  * PL_strnrstr
@@ -358,50 +358,52 @@ PL_strnstr(const char *big, const char *little, PRUint32 n);
  * returns null if the length of the little string is greater than n.
  */
 
-PR_EXTERN(char *)
-PL_strnrstr(const char *big, const char *little, PRUint32 max);
+PR_EXTERN(char*)
+PL_strnrstr(const char* big, const char* little, PRUint32 max);
 
 /*
  * PL_strcasestr
  *
- * Returns a pointer to the first instance of the little string within the big one,
- * ignoring case.  It returns null if either string is null.
+ * Returns a pointer to the first instance of the little string within the big
+ * one, ignoring case.  It returns null if either string is null.
  */
 
-PR_EXTERN(char *)
-PL_strcasestr(const char *big, const char *little);
+PR_EXTERN(char*)
+PL_strcasestr(const char* big, const char* little);
 
 /*
  * PL_strcaserstr
  *
- * Returns a pointer to the last instance of the little string within the big one,
- * ignoring case.  It returns null if either string is null.
+ * Returns a pointer to the last instance of the little string within the big
+ * one, ignoring case.  It returns null if either string is null.
  */
 
-PR_EXTERN(char *)
-PL_strcaserstr(const char *big, const char *little);
+PR_EXTERN(char*)
+PL_strcaserstr(const char* big, const char* little);
 
 /*
  * PL_strncasestr
  *
  * Returns a pointer to the first instance of the little string within the first
- * n characters of the big one, ignoring case.  It returns null if either string is
- * null.  It returns null if the length of the little string is greater than n.
+ * n characters of the big one, ignoring case.  It returns null if either string
+ * is null.  It returns null if the length of the little string is greater than
+ * n.
  */
 
-PR_EXTERN(char *)
-PL_strncasestr(const char *big, const char *little, PRUint32 max);
+PR_EXTERN(char*)
+PL_strncasestr(const char* big, const char* little, PRUint32 max);
 
 /*
  * PL_strncaserstr
  *
  * Returns a pointer to the last instance of the little string within the first
- * n characters of the big one, ignoring case.  It returns null if either string is
- * null.  It returns null if the length of the little string is greater than n.
+ * n characters of the big one, ignoring case.  It returns null if either string
+ * is null.  It returns null if the length of the little string is greater than
+ * n.
  */
 
-PR_EXTERN(char *)
-PL_strncaserstr(const char *big, const char *little, PRUint32 max);
+PR_EXTERN(char*)
+PL_strncaserstr(const char* big, const char* little, PRUint32 max);
 
 /*
  * PL_strtok_r
@@ -422,8 +424,8 @@ PL_strncaserstr(const char *big, const char *little, PRUint32 max);
  * token remains in s1, PL_strtok_r returns null.
  */
 
-PR_EXTERN(char *)
-PL_strtok_r(char *s1, const char *s2, char **lasts);
+PR_EXTERN(char*)
+PL_strtok_r(char* s1, const char* s2, char** lasts);
 
 /*
  * Things not (yet?) included: strspn/strcspn, strsep.

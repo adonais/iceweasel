@@ -226,6 +226,16 @@ export class StocksFeed {
       case at.PREF_CHANGED:
         await this.onPrefChangedAction(action);
         break;
+      case at.DISCOVERY_STREAM_DEV_EXPIRE_CACHE:
+        // Dev-tools "Expire Cache": clear the saved snapshot and fetch again,
+        // so a failing Merino request shows the error instead of old tickers.
+        await this.cache.set("stocks", {});
+        this.tickers = [];
+        this.lastUpdated = null;
+        if (this.isEnabled()) {
+          await this.fetch();
+        }
+        break;
     }
   }
 }

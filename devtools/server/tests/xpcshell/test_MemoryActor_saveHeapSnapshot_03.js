@@ -6,6 +6,11 @@
 // Test that we can save full runtime heap snapshots when attached to the
 // ParentProcessTargetActor or a ContentProcessTargetActor.
 
+Services.prefs.setBoolPref("devtools.chrome.enabled", true);
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("devtools.chrome.enabled");
+});
+
 add_task(async () => {
   const { memoryFront } = await createMainProcessMemoryFront();
 

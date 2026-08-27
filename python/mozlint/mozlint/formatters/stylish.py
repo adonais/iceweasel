@@ -29,7 +29,7 @@ class StylishFormatter:
 
     fmt = """
   {c1}{lineno}{column}  {c2}{level}{normal}  {message}  {c1}{rule}({linter}){source}{normal}
-{diff}""".lstrip("\n")
+{diff}{hint}""".lstrip("\n")
     fmt_summary = (
         "{t.bold}{c}\u2716 {problem} ({error}, {warning}{failure}, {fixed}){t.normal}"
     )
@@ -94,6 +94,13 @@ class StylishFormatter:
             new_source += line[divpos:] + "\n"
         return new_source.rstrip("\n")
 
+    def _get_hint(self, hint):
+        if not hint:
+            return ""
+        return (
+            f"{self._indent_}{self.color('darkgrey')}Hint: {hint}{self.term.normal}\n"
+        )
+
     def __call__(self, result):
         message = []
         failed = result.failed
@@ -101,6 +108,9 @@ class StylishFormatter:
         num_errors = 0
         num_warnings = 0
         num_fixed = result.fixed
+        # Repeating the same hint on every issue that shares it is noisy, so
+        # only show each distinct hint text the first time it's seen.
+        seen_hints = set()
         for path, errors in sorted(result.issues.items()):
             self._reset_max()
 
@@ -122,6 +132,11 @@ class StylishFormatter:
                 else:
                     col = "".ljust(self.max_column + 1)
 
+                hint = None
+                if err.hint and err.hint not in seen_hints:
+                    hint = err.hint
+                    seen_hints.add(hint)
+
                 args = {
                     "normal": self.term.normal,
                     "c1": self.color("darkgrey"),
@@ -138,6 +153,7 @@ class StylishFormatter:
                     "message": err.message.ljust(self.max_message),
                     "diff": self._get_colored_diff(err.diff),
                     "source": self._get_colored_source(err.source),
+                    "hint": self._get_hint(hint),
                 }
                 message.append(self.fmt.format(**args).rstrip().rstrip("\n"))
 

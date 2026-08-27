@@ -601,6 +601,7 @@ support-files = [
   "referer.sjs",
   "resolution-change.webm",
   "resolution-change.webm^headers^",
+  "rms-utils.js",
   "sample.3gp",
   "sample.3g2",
   "sample-encrypted-sgpdstbl-sbgptraf.mp4",

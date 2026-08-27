@@ -1,4 +1,4 @@
-# Architecture Overview
+# Places architecture overview
 
 Because Mozilla used to ship a framework called XULRunner, Places is split into a Toolkit and a Browser part. The toolkit part is usually made up of product-agnostic APIs, those can be used by any kind of project, not just Web Browsers. The browser part is the one containing code specific to the Firefox browser.
 

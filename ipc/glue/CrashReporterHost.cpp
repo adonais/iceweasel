@@ -10,6 +10,7 @@
 #include "mozilla/glean/IpcMetrics.h"
 #include "nsServiceManagerUtils.h"
 #include "nsICrashService.h"
+#include "nsIDUtils.h"
 #include "nsXULAppAPI.h"
 #include "nsIFile.h"
 
@@ -90,6 +91,13 @@ void CrashReporterHost::FinalizeCrashReport() {
   MOZ_ASSERT(HasMinidump());
 
   mExtraAnnotations[CrashReporter::Annotation::ProcessType] = ProcessType();
+
+  // Add a CrashEventID in case we haven't added one yet (every crash should
+  // have one).
+  if (mExtraAnnotations[CrashReporter::Annotation::CrashEventID].IsEmpty()) {
+    NSID_TrimBracketsASCII uuidString(nsID::GenerateUUID());
+    mExtraAnnotations[CrashReporter::Annotation::CrashEventID] = uuidString;
+  }
 
   char startTime[32];
   SprintfLiteral(startTime, "%lld", static_cast<long long>(mStartTime));

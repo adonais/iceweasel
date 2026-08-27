@@ -4,7 +4,6 @@
 
 package mozilla.components.concept.engine.prompt
 
-import android.annotation.SuppressLint
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
@@ -15,7 +14,6 @@ import kotlinx.parcelize.Parcelize
  * @property text Text for the share request.
  * @property url URL for the share request.
  */
-@SuppressLint("ParcelCreator")
 @Parcelize
 data class ShareData(
     val title: String? = null,

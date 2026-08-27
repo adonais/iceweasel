@@ -11,6 +11,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
 const NEW_PROFILE_NAME = "This is a new profile name";
 
 const setup = async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.nova.enabled", false]],
+  });
   await initGroupDatabase();
   let profile = SelectableProfileService.currentProfile;
   Assert.ok(profile, "Should have a profile now");

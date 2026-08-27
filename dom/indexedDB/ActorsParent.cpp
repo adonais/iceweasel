@@ -9216,17 +9216,16 @@ Factory::AllocPBackgroundIDBFactoryRequestParent(
     return nullptr;
   }
 
-  if (NS_AUUF_OR_WARN_IF(
-          principalInfo.type() == PrincipalInfo::TSystemPrincipalInfo &&
-          metadata.persistenceType() != PERSISTENCE_TYPE_PERSISTENT)) {
-    return nullptr;
-  }
-
-  if (NS_AUUF_OR_WARN_IF(
-          principalInfo.type() == PrincipalInfo::TContentPrincipalInfo &&
-          QuotaManager::IsOriginInternal(
-              principalInfo.get_ContentPrincipalInfo().originNoSuffix()) &&
-          metadata.persistenceType() != PERSISTENCE_TYPE_PERSISTENT)) {
+  /* GetPersistenceType returns PERSISTENT for system principals and internal
+  content principals, PRIVATE for private-browsing content principals, and
+  DEFAULT for everything else. The sent value is technically redundant and
+  always deducible from the principal but we validate it here so that an
+  incorrect metadata value cannot reach other parts of the code.
+  TODO: Stop sending persistenceType from the content process and just derive it
+  on the parent side. */
+  if (metadata.persistenceType() !=
+      IDBFactory::GetPersistenceType(principalInfo)) {
+    IPC_FAIL(this, "Persistence type does not match principal!");
     return nullptr;
   }
 
@@ -12187,9 +12186,12 @@ nsresult DatabaseFileManager::InitDirectory(nsIFile& aDirectory,
               QM_TRY_INSPECT(const auto& file,
                              CloneFileAndAppend(aDirectory, name));
 
-              if (NS_FAILED(file->Remove(false))) {
-                NS_WARNING("Failed to remove orphaned file!");
-              }
+              QM_SCOPED_CONTEXT("IDBFileManager::OrphanedFileCleanupFailed"_ns);
+
+              QM_WARNONLY_TRY(MOZ_TO_RESULT(file->Remove(false)),
+                              [](const auto&) {
+                                NS_WARNING("Failed to remove orphaned file!");
+                              });
             }
 
             QM_TRY_INSPECT(const auto& journalFile,
@@ -14047,15 +14049,10 @@ nsresult DatabaseMaintenance::CheckIntegrity(mozIStorageConnection& aConnection,
   // First do a full integrity_check. Scope statements tightly here because
   // later operations require zero live statements.
   {
-    QM_TRY_INSPECT(const auto& stmt,
-                   CreateAndExecuteSingleStepStatement(
-                       aConnection, "PRAGMA integrity_check(1);"_ns));
+    QM_TRY_INSPECT(const bool& ok, DatabasePassesIntegrityCheck(
+                                       aConnection, IntegrityCheckMode::Full));
 
-    QM_TRY_INSPECT(const auto& result, MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
-                                           nsString, *stmt, GetString, 0));
-
-    QM_TRY(OkIf(result.EqualsLiteral("ok")), NS_OK,
-           [&aOk](const auto) { *aOk = false; });
+    QM_TRY(OkIf(ok), NS_OK, [&aOk](const auto) { *aOk = false; });
   }
 
   // Now enable and check for foreign key constraints.
@@ -15875,12 +15872,9 @@ nsresult OpenDatabaseOp::LoadDatabaseInformation(
               QM_TRY_INSPECT(const IndexOrObjectStoreId& objectStoreId,
                              MOZ_TO_RESULT_INVOKE_MEMBER(stmt, GetInt64, 1));
 
-              // XXX Why does this return NS_ERROR_OUT_OF_MEMORY if we don't
-              // know the object store id?
-
               auto objectStoreMetadata = objectStores.Lookup(objectStoreId);
               QM_TRY(OkIf(static_cast<bool>(objectStoreMetadata)),
-                     Err(NS_ERROR_OUT_OF_MEMORY));
+                     Err(NS_ERROR_FILE_CORRUPTED));
 
               MOZ_ASSERT((*objectStoreMetadata)->mCommonMetadata.id() ==
                          objectStoreId);

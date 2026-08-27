@@ -26,6 +26,7 @@ const NAMES = new Set(["Mozilla", "Nightly", "Firefox", "AI"]);
 const PHRASES = new Set([
   "Extensions and Themes",
   "Find in Page…",
+  "Help and Report",
   "Troubleshoot Mode…",
   "Create a New Profile",
 ]);

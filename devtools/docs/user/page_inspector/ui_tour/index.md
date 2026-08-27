@@ -1,4 +1,4 @@
-# UI Tour
+# Page Inspector UI tour
 
 This article is a quick tour of the main sections of the Page Inspector's user interface.
 

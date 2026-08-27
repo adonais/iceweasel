@@ -16,6 +16,10 @@ import { useCallback, useState } from "react";
  *    Returns `false` if the animation was skipped (reduced motion or no
  *    widget ref) so the caller can run its completion handler inline.
  *
+ * For effects that decorate one element rather than the whole card (e.g. the
+ * Privacy count-up sparkles), render <CelebrationSparkles> inside that element
+ * instead — it positions itself in CSS, with no measured rect to go stale.
+ *
  * Example:
  * const widgetRef = useRef(null);
  * const {

@@ -122,6 +122,7 @@ class SourceSurface;
 namespace layers {
 class LayerManager;
 struct LayersId;
+struct KeyboardScrollAction;
 enum class ScrollOffsetUpdateType : uint8_t;
 }  // namespace layers
 
@@ -508,6 +509,39 @@ class PresShell final : public nsStubDocumentObserver,
    */
   ScrollContainerFrame* GetScrollContainerFrameToScroll(
       layers::ScrollDirections aDirections);
+
+  /**
+   * Perform a main-thread keyboard scroll for aAction, searching for the scroll
+   * container to scroll starting from the current focused content or DOM
+   * selection.
+   */
+  void ScrollByKeyboard(const layers::KeyboardScrollAction& aAction);
+
+  /**
+   * Perform a main-thread keyboard scroll for aAction, searching for the scroll
+   * container to scroll starting from aStartFrame and walking outward toward
+   * aAction's direction. Used by the cross-process keyboard scroll handoff,
+   * which seeds the search from this document's frame for the embedded
+   * subframe.
+   */
+  void ScrollByKeyboard(const layers::KeyboardScrollAction& aAction,
+                        nsIFrame* aStartFrame);
+
+  /**
+   * Like GetScrollContainerFrameToScroll, but for keyboard scrolling. It
+   * returns the nearest scroll container from the current focused content or
+   * DOM selection that can still scroll toward aAction's direction.
+   * If none can in this process and we are a subframe embedded in another
+   * process, keyboard scrolling is handed off to the embedder document and
+   * nullptr is returned.
+   *
+   * @return the scroll container frame to scroll, or nullptr if there is
+   *         nothing to scroll locally (scrolling may have been handed off to
+   *         the embedder process).
+   *
+   */
+  ScrollContainerFrame* FindScrollContainerFrameForKeyboardScrollOrHandoff(
+      nsIFrame* aStartFrame, const layers::KeyboardScrollAction& aAction);
 
   /**
    * Returns the page sequence frame associated with the frame hierarchy.
@@ -1835,6 +1869,18 @@ class PresShell final : public nsStubDocumentObserver,
    * this frame via EnsureReflowIfFrameHasHiddenContent().
    */
   bool IsForcingLayoutForHiddenContent(const nsIFrame*) const;
+
+  void IncrementContentVisibilityHiddenCount() {
+    ++mContentVisibilityHiddenCount;
+  }
+  void DecrementContentVisibilityHiddenCount() {
+    MOZ_ASSERT(mContentVisibilityHiddenCount > 0,
+               "Increment/decrement calls should be balanced");
+    --mContentVisibilityHiddenCount;
+  }
+  bool HasContentVisibilityHiddenFrames() const {
+    return mContentVisibilityHiddenCount > 0;
+  }
 
   void RegisterContentVisibilityAutoFrame(nsIFrame* aFrame) {
     mContentVisibilityAutoFrames.Insert(aFrame);
@@ -3400,6 +3446,9 @@ class PresShell final : public nsStubDocumentObserver,
   uint32_t mFontSizeInflationEmPerLine;
   uint32_t mFontSizeInflationMinTwips;
   uint32_t mFontSizeInflationLineThreshold;
+
+  // How many frames in the frame tree have 'content-visibility: hidden'.
+  uint32_t mContentVisibilityHiddenCount = 0;
 
   // Can be multiple of nsISelectionDisplay::DISPLAY_*.
   int16_t mSelectionFlags;

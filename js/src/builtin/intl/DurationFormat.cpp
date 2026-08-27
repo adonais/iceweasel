@@ -226,7 +226,7 @@ struct PackedDurationFormatOptions {
 };
 
 DurationFormatOptions js::intl::DurationFormatObject::getOptions() const {
-  const auto& slot = getFixedSlot(OPTIONS_SLOT);
+  const auto& slot = getFixedSlotTyped(OPTIONS_SLOT);
   if (slot.isUndefined()) {
     // GCC complains when returning `{}` without an explicit type. This happens
     // because DurationFormatOptions contains bit-fields of scoped enum types.
@@ -239,7 +239,7 @@ DurationFormatOptions js::intl::DurationFormatObject::getOptions() const {
 
 void js::intl::DurationFormatObject::setOptions(
     const DurationFormatOptions& options) {
-  setFixedSlot(OPTIONS_SLOT, PackedDurationFormatOptions::pack(options));
+  setFixedSlotTyped(OPTIONS_SLOT, PackedDurationFormatOptions::pack(options));
 }
 
 void js::intl::DurationFormatObject::finalize(JS::GCContext* gcx,

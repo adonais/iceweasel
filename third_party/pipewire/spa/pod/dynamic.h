@@ -5,12 +5,12 @@
 #ifndef SPA_POD_DYNAMIC_H
 #define SPA_POD_DYNAMIC_H
 
+#include <spa/pod/builder.h>
+#include <spa/utils/cleanup.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <spa/pod/builder.h>
-#include <spa/utils/cleanup.h>
 
 #ifndef SPA_API_POD_DYNAMIC
  #ifdef SPA_API_IMPL
@@ -53,15 +53,27 @@ SPA_API_POD_DYNAMIC void spa_pod_dynamic_builder_init(struct spa_pod_dynamic_bui
 		.overflow = spa_pod_dynamic_builder_overflow
 	};
 	builder->b = SPA_POD_BUILDER_INIT(data, size);
-	spa_pod_builder_set_callbacks(&builder->b, &spa_pod_dynamic_builder_callbacks, builder);
+	if (extend > 0)
+		spa_pod_builder_set_callbacks(&builder->b, &spa_pod_dynamic_builder_callbacks, builder);
 	builder->extend = extend;
 	builder->data = data;
 }
 
+SPA_API_POD_DYNAMIC void spa_pod_dynamic_builder_continue(struct spa_pod_dynamic_builder *builder,
+		struct spa_pod_builder *b)
+{
+	uint32_t remain = b->state.offset >= b->size ? 0 : b->size - b->state.offset;
+	spa_pod_dynamic_builder_init(builder,
+			remain ? SPA_PTROFF(b->data, b->state.offset, void) : NULL,
+			remain, b->callbacks.funcs == NULL ? 0 : 4096);
+}
+
 SPA_API_POD_DYNAMIC void spa_pod_dynamic_builder_clean(struct spa_pod_dynamic_builder *builder)
 {
-	if (builder->data != builder->b.data)
+	if (builder->data != builder->b.data) {
 		free(builder->b.data);
+		builder->b.data = NULL;
+	}
 }
 
 SPA_DEFINE_AUTO_CLEANUP(spa_pod_dynamic_builder, struct spa_pod_dynamic_builder, {

@@ -196,7 +196,7 @@ bool HeadlessLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName,
   // Default to san-serif for everything.
   aFontStyle.style = FontSlantStyle::NORMAL;
   aFontStyle.weight = FontWeight::NORMAL;
-  aFontStyle.stretch = FontStretch::NORMAL;
+  aFontStyle.width = FontWidth::NORMAL;
   aFontStyle.size = 14;
   aFontStyle.systemFont = true;
 

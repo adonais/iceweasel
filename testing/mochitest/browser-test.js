@@ -11,10 +11,13 @@ var { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
 
-var { uploadProfileArtifact, installProfilerDumpAndQuit } =
-  ChromeUtils.importESModule(
-    "resource://testing-common/TestProfilerArtifact.sys.mjs"
-  );
+var {
+  uploadProfileArtifact,
+  installProfilerDumpAndQuit,
+  shouldSaveFailureProfile,
+} = ChromeUtils.importESModule(
+  "resource://testing-common/TestProfilerArtifact.sys.mjs"
+);
 
 ChromeUtils.defineESModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
@@ -960,15 +963,10 @@ Tester.prototype = {
   },
 
   async notifyProfilerOfTestEnd() {
-    // See if we should upload a profile of a failing test.
-    // If MOZ_PROFILER_SHUTDOWN is set, the profiler got started from --profiler
-    // and a profile will be shown even if there's no test failure.
-    if (
-      this.currentTest.failCount &&
-      Services.env.exists("MOZ_UPLOAD_DIR") &&
-      !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
-      Services.profiler.IsActive()
-    ) {
+    // Upload a profile of a failing test, when one should be saved (e.g. not
+    // when --profiler already saves a shutdown profile; see
+    // shouldSaveFailureProfile).
+    if (this.currentTest.failCount && shouldSaveFailureProfile()) {
       await uploadProfileArtifact(this.currentTest.path, this.structuredLogger);
     }
   },
@@ -1231,11 +1229,14 @@ Tester.prototype = {
       this.PromiseTestUtils.assertNoUncaughtRejections();
       this.PromiseTestUtils.clearAllowedUncaughtRejections();
 
-      await this.notifyProfilerOfTestEnd();
-
       // Check the window state before logging testEnd so that any cleanup
       // assertions are included in the test result, not logged after test_end.
+      // This has to happen before notifyProfilerOfTestEnd, which only saves a
+      // profile for a failing test: a test whose only failure is a stale tab or
+      // a leaked window would otherwise not have failed yet.
       this.checkWindowsState();
+
+      await this.notifyProfilerOfTestEnd();
 
       let time = Date.now() - this.lastStartTime;
 
@@ -1302,9 +1303,8 @@ Tester.prototype = {
             // a document.
             let sidebar = document.getElementById("sidebar");
             if (sidebar) {
-              sidebar.setAttribute("src", "data:text/html;charset=utf-8,");
-              sidebar.docShell.createAboutBlankDocumentViewer(null, null);
               sidebar.setAttribute("src", "about:blank");
+              sidebar.docShell?.createAboutBlankDocumentViewer(null, null);
             }
           }
 

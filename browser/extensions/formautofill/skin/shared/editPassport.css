@@ -1,0 +1,76 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+.editPassportForm {
+  display: grid;
+  grid-template-areas:
+    "passport-name                passport-name                passport-name"
+    "passport-country             passport-country             passport-country"
+    "passport-number              passport-number              passport-number"
+    "passport-issue-date-label    passport-issue-date-label    passport-issue-date-label"
+    "passport-issue-date-month    passport-issue-date-day      passport-issue-date-year"
+    "passport-expiry-date-label   passport-expiry-date-label   passport-expiry-date-label"
+    "passport-expiry-date-month   passport-expiry-date-day     passport-expiry-date-year";
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-row-gap: var(--space-small);
+  grid-column-gap: var(--space-small);
+}
+
+.editPassportForm .container {
+  display: flex;
+  flex-direction: column;
+}
+
+.editPassportForm moz-input-text,
+.editPassportForm moz-select {
+  width: 100%;
+}
+
+.date-group-heading {
+  color: var(--text-color-deemphasized);
+}
+
+#passport-name-container {
+  grid-area: passport-name;
+}
+
+#passport-country-container {
+  grid-area: passport-country;
+}
+
+#passport-number-container {
+  grid-area: passport-number;
+}
+
+#passport-issue-date-label {
+  grid-area: passport-issue-date-label;
+}
+
+#passport-expiry-date-label {
+  grid-area: passport-expiry-date-label;
+}
+
+#passport-issue-date-month-container {
+  grid-area: passport-issue-date-month;
+}
+
+#passport-issue-date-day-container {
+  grid-area: passport-issue-date-day;
+}
+
+#passport-issue-date-year-container {
+  grid-area: passport-issue-date-year;
+}
+
+#passport-expiry-date-month-container {
+  grid-area: passport-expiry-date-month;
+}
+
+#passport-expiry-date-day-container {
+  grid-area: passport-expiry-date-day;
+}
+
+#passport-expiry-date-year-container {
+  grid-area: passport-expiry-date-year;
+}

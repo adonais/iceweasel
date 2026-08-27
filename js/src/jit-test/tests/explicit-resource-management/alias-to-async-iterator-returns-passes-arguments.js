@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !getBuildConfiguration("explicit-resource-management"); --enable-explicit-resource-management
-
 async function* generator() {}
 const AsyncIteratorPrototype = Object.getPrototypeOf(
   Object.getPrototypeOf(generator.prototype)

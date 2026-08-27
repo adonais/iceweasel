@@ -18,17 +18,17 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
   void auipc(Register rd, int32_t imm20);
 
   // Jumps
-  CodeOffset jal(Register rd, int32_t imm20, LabelDoc doc);
+  BufferOffset jal(Register rd, int32_t imm20, LabelDoc doc);
   BufferOffset jalr(Register rd, Register rs1, int16_t imm12,
                     LabelDoc doc = {});
 
   // Branches
-  void beq(Register rs1, Register rs2, int16_t imm12, LabelDoc doc);
-  void bne(Register rs1, Register rs2, int16_t imm12, LabelDoc doc);
-  void blt(Register rs1, Register rs2, int16_t imm12, LabelDoc doc);
-  void bge(Register rs1, Register rs2, int16_t imm12, LabelDoc doc);
-  void bltu(Register rs1, Register rs2, int16_t imm12, LabelDoc doc);
-  void bgeu(Register rs1, Register rs2, int16_t imm12, LabelDoc doc);
+  BufferOffset beq(Register rs1, Register rs2, int16_t imm12, LabelDoc doc);
+  BufferOffset bne(Register rs1, Register rs2, int16_t imm12, LabelDoc doc);
+  BufferOffset blt(Register rs1, Register rs2, int16_t imm12, LabelDoc doc);
+  BufferOffset bge(Register rs1, Register rs2, int16_t imm12, LabelDoc doc);
+  BufferOffset bltu(Register rs1, Register rs2, int16_t imm12, LabelDoc doc);
+  BufferOffset bgeu(Register rs1, Register rs2, int16_t imm12, LabelDoc doc);
   // Loads
   void lb(Register rd, Register rs1, int16_t imm12);
   void lh(Register rd, Register rs1, int16_t imm12);
@@ -88,50 +88,50 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
   void unimp();
 
   // Branches
-  void beqz(Register rs, int16_t imm13, LabelDoc doc) {
-    beq(rs, zero_reg, imm13, doc);
+  BufferOffset beqz(Register rs, int16_t imm13, LabelDoc doc) {
+    return beq(rs, zero_reg, imm13, doc);
   }
-  void bnez(Register rs, int16_t imm13, LabelDoc doc) {
-    bne(rs, zero_reg, imm13, doc);
+  BufferOffset bnez(Register rs, int16_t imm13, LabelDoc doc) {
+    return bne(rs, zero_reg, imm13, doc);
   }
-  void blez(Register rs, int16_t imm13, LabelDoc doc) {
-    bge(zero_reg, rs, imm13, doc);
+  BufferOffset blez(Register rs, int16_t imm13, LabelDoc doc) {
+    return bge(zero_reg, rs, imm13, doc);
   }
-  void bgez(Register rs, int16_t imm13, LabelDoc doc) {
-    bge(rs, zero_reg, imm13, doc);
+  BufferOffset bgez(Register rs, int16_t imm13, LabelDoc doc) {
+    return bge(rs, zero_reg, imm13, doc);
   }
-  void bltz(Register rs, int16_t imm13, LabelDoc doc) {
-    blt(rs, zero_reg, imm13, doc);
+  BufferOffset bltz(Register rs, int16_t imm13, LabelDoc doc) {
+    return blt(rs, zero_reg, imm13, doc);
   }
-  void bgtz(Register rs, int16_t imm13, LabelDoc doc) {
-    blt(zero_reg, rs, imm13, doc);
-  }
-
-  void bgt(Register rs1, Register rs2, int16_t imm13, LabelDoc doc) {
-    blt(rs2, rs1, imm13, doc);
-  }
-  void ble(Register rs1, Register rs2, int16_t imm13, LabelDoc doc) {
-    bge(rs2, rs1, imm13, doc);
-  }
-  void bgtu(Register rs1, Register rs2, int16_t imm13, LabelDoc doc) {
-    bltu(rs2, rs1, imm13, doc);
-  }
-  void bleu(Register rs1, Register rs2, int16_t imm13, LabelDoc doc) {
-    bgeu(rs2, rs1, imm13, doc);
+  BufferOffset bgtz(Register rs, int16_t imm13, LabelDoc doc) {
+    return blt(zero_reg, rs, imm13, doc);
   }
 
-  CodeOffset j(int32_t imm21, LabelDoc doc) {
+  BufferOffset bgt(Register rs1, Register rs2, int16_t imm13, LabelDoc doc) {
+    return blt(rs2, rs1, imm13, doc);
+  }
+  BufferOffset ble(Register rs1, Register rs2, int16_t imm13, LabelDoc doc) {
+    return bge(rs2, rs1, imm13, doc);
+  }
+  BufferOffset bgtu(Register rs1, Register rs2, int16_t imm13, LabelDoc doc) {
+    return bltu(rs2, rs1, imm13, doc);
+  }
+  BufferOffset bleu(Register rs1, Register rs2, int16_t imm13, LabelDoc doc) {
+    return bgeu(rs2, rs1, imm13, doc);
+  }
+
+  BufferOffset j(int32_t imm21, LabelDoc doc) {
     return jal(zero_reg, imm21, doc);
   }
-  CodeOffset jal(int32_t imm21, LabelDoc doc) { return jal(ra, imm21, doc); }
-  void jr(Register rs) { jalr(zero_reg, rs, 0); }
-  void jr(Register rs, int32_t imm12, LabelDoc doc) {
-    jalr(zero_reg, rs, imm12, doc);
+  BufferOffset jal(int32_t imm21, LabelDoc doc) { return jal(ra, imm21, doc); }
+  BufferOffset jr(Register rs) { return jalr(zero_reg, rs, 0); }
+  BufferOffset jr(Register rs, int32_t imm12, LabelDoc doc) {
+    return jalr(zero_reg, rs, imm12, doc);
   }
-  void jalr(Register rs, int32_t imm12, LabelDoc doc) {
-    jalr(ra, rs, imm12, doc);
+  BufferOffset jalr(Register rs, int32_t imm12, LabelDoc doc) {
+    return jalr(ra, rs, imm12, doc);
   }
-  void jalr(Register rs) { jalr(ra, rs, 0); }
+  BufferOffset jalr(Register rs) { return jalr(ra, rs, 0); }
   void call(int32_t offset) {
     auto [high20, low12] = ToHigh20Low12(offset);
     auipc(ra, high20);
@@ -160,6 +160,7 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
   void sraw(Register rd, Register rs1, Register rs2);
   void negw(Register rd, Register rs) { subw(rd, zero_reg, rs); }
   void sext_w(Register rd, Register rs) { addiw(rd, rs, 0); }
+  void zext_b(Register rd, Register rs) { andi(rd, rs, 255); }
 };
 
 }  // namespace jit

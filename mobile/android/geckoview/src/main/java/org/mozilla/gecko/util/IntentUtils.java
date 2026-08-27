@@ -233,7 +233,8 @@ public class IntentUtils {
         @NonNull final Uri uri,
         @NonNull final String displayName,
         @NonNull final String mimeType,
-        final long lastModified) {
+        final long lastModified,
+        final long size) {
       if (filePath == null) {
         this.filePath = "";
       } else {
@@ -244,6 +245,7 @@ public class IntentUtils {
       this.displayName = displayName;
       this.mimeType = mimeType;
       this.lastModified = lastModified;
+      this.size = size;
     }
 
     /** Serializer for JavaScript. */
@@ -259,6 +261,7 @@ public class IntentUtils {
       bundle.putString("name", this.displayName);
       bundle.putString("type", this.mimeType);
       bundle.putLong("lastModified", this.lastModified);
+      bundle.putLong("size", this.size);
 
       return bundle;
     }
@@ -278,7 +281,9 @@ public class IntentUtils {
           .append(", mimeType=")
           .append(this.mimeType)
           .append(", lastModified=")
-          .append(this.lastModified);
+          .append(this.lastModified)
+          .append(", size=")
+          .append(this.size);
       return sb.toString();
     }
 
@@ -299,6 +304,9 @@ public class IntentUtils {
 
     /** Last modified time. */
     public final long lastModified;
+
+    /** File size. -1 if unknown. */
+    public final long size;
   }
 
   private static void queryTreeDocumentUri(
@@ -320,6 +328,7 @@ public class IntentUtils {
           DocumentsContract.Document.COLUMN_DISPLAY_NAME,
           DocumentsContract.Document.COLUMN_MIME_TYPE,
           DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+          DocumentsContract.Document.COLUMN_SIZE,
         };
     try (Cursor cursor =
         cr.query(uri, columns, /* selection */ null, /* args */ null, /* sort */ null)) {
@@ -329,7 +338,10 @@ public class IntentUtils {
         }
 
         final String docId = cursor.getString(0);
+        // https://developer.android.com/reference/android/provider/DocumentsContract.Document#COLUMN_MIME_TYPE
+        // If this URI is directory, the mime type will be MIME_TYPE_DIR.
         final String mimeType = cursor.isNull(2) ? "" : cursor.getString(2);
+        // https://developer.android.com/reference/android/provider/DocumentsContract.Document#COLUMN_DISPLAY_NAME
         final String displayName = cursor.isNull(1) ? "" : cursor.getString(1);
         final boolean isDirectory = DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType);
         if (isDirectory) {
@@ -341,12 +353,15 @@ public class IntentUtils {
         }
 
         final Uri docUri = DocumentsContract.buildDocumentUriUsingTree(uri, docId);
+        // https://developer.android.com/reference/android/provider/DocumentsContract.Document#LAST_MODIFIED
         final long lastModified = cursor.isNull(3) ? 0 : cursor.getLong(3);
+        // https://developer.android.com/reference/android/provider/DocumentsContract.Document#COLUMN_SIZE
+        final long size = cursor.isNull(4) ? -1 : cursor.getLong(4);
 
         final String filePath = resolveDocumentUri(context, docUri);
         children.add(
             new ContentMetaData(
-                filePath, relativePath, docUri, displayName, mimeType, lastModified));
+                filePath, relativePath, docUri, displayName, mimeType, lastModified, size));
       }
     } catch (final UnsupportedOperationException e) {
       Log.e(LOGTAG, "Failed to query child documents", e);

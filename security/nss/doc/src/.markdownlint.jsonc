@@ -1,0 +1,25 @@
+{
+  // markdownlint configuration for the NSS documentation.
+  //
+  // These docs are MyST-flavored Markdown built with Sphinx (see conf.py).
+  // A few default rules do not fit MyST/Sphinx content and are disabled:
+  "default": true,
+
+  // Line length: release notes carry long bug descriptions and URLs that
+  // must not be reflowed.
+  "MD013": false,
+
+  // Every page opens with a MyST target anchor "(label)=" before the H1,
+  // so the first line is legitimately not a heading.
+  "MD041": false,
+
+  // In-page links point at MyST/Sphinx heading anchors (e.g. "#introduction")
+  // that markdownlint cannot resolve.
+  "MD051": false,
+
+  // MyST directives and roles legitimately rely on raw/inline HTML-like syntax.
+  "MD033": false,
+
+  // Only flag duplicate headings under the same parent.
+  "MD024": { "siblings_only": true }
+}

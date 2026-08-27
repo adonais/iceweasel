@@ -64,12 +64,13 @@
 #ifndef mozilla_EndianUtils_h
 #define mozilla_EndianUtils_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/DebugOnly.h"
-
-#include <bit>
 #include <stdint.h>
 #include <string.h>
+
+#include <bit>
+
+#include "mozilla/Assertions.h"
+#include "mozilla/DebugOnly.h"
 
 namespace mozilla {
 

@@ -398,17 +398,6 @@ CERT_DestroyUserNotice(CERTUserNotice *userNotice)
     return;
 }
 
-static CERTPolicyStringCallback policyStringCB = NULL;
-static void *policyStringCBArg = NULL;
-
-void
-CERT_SetCAPolicyStringCallback(CERTPolicyStringCallback cb, void *cbarg)
-{
-    policyStringCB = cb;
-    policyStringCBArg = cbarg;
-    return;
-}
-
 char *
 CERT_GetCertCommentString(CERTCertificate *cert)
 {

@@ -1,6 +1,6 @@
 (inference-architecture)=
 
-# Architecture
+# Inference Architecture
 
 The Firefox AI Runtime supports multiple inference backends, including the ONNX runtime
 with the Transformers.js library, a native llama.cpp backend for Llama-based models,

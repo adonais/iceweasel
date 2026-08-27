@@ -302,7 +302,7 @@ PowerCounters::PowerCounters() {
 
 // This default destructor can not be defined in the header file as it depends
 // on the full definition of PowerMeterDevice which lives in this file.
-PowerCounters::~PowerCounters() {}
+PowerCounters::~PowerCounters() = default;
 
 void PowerCounters::Sample() {
   for (auto& device : mPowerMeterDevices) {

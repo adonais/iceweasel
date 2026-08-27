@@ -41,6 +41,7 @@ def build_command(config, jobs):
 
         job.setdefault("run", {}).update({
             "using": "mach",
+            "clone-with": "hg",
             "mach": " ".join(map(shell_quote, command)),
         })
         job.setdefault("routes", []).extend([

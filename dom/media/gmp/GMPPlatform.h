@@ -24,6 +24,18 @@ class GMPChild;
 
 void InitPlatformAPI(GMPPlatformAPI& aPlatformAPI, GMPChild* aChild);
 
+enum class PlatformShutdownResult {
+  ReadyToUnload,
+  PluginExecutionOutstanding,
+};
+
+PlatformShutdownResult ShutdownPlatformAPI();
+
+// Count of live plugin-implemented objects (e.g. codec instances) held by GMP
+// child actors.
+void AddPluginObject();
+void RemovePluginObject();
+
 GMPErr RunOnMainThread(GMPTask* aTask);
 
 GMPTask* NewGMPTask(std::function<void()>&& aFunction);

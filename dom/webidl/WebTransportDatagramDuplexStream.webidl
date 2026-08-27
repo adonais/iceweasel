@@ -6,6 +6,9 @@
 
 [Exposed=(Window,Worker), SecureContext]
 interface WebTransportDatagramDuplexStream {
+  [NewObject, Throws]
+  WebTransportDatagramsWritable createWritable(
+    optional WebTransportSendOptions options = {});
   readonly attribute ReadableStream readable;
   readonly attribute WritableStream writable;
 

@@ -29,8 +29,8 @@ async function runTest() {
   is(menulist2.value, "", "menulist2 should not be selected to the first item's value");
   is(menulist2.label, "None", "menulist2 should not be selected to the first item's value");
 
-  is(menulist1.menupopup.querySelectorAll('menuitem[selected="true"]').length, 1, "menulist1 should have only one selected item.");
-  is(menulist2.menupopup.querySelectorAll('menuitem[selected="true"]').length, 0, "menulist2 should have no selected items.");
+  is(menulist1.menupopup.querySelectorAll('menuitem[selected]').length, 1, "menulist1 should have only one selected item.");
+  is(menulist2.menupopup.querySelectorAll('menuitem[selected]').length, 0, "menulist2 should have no selected items.");
 
   SimpleTest.finish();
 }

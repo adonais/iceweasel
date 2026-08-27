@@ -22,6 +22,7 @@ task-defaults:
         tier: 1
     run-on-projects: []
     run:
+        clone-with: hg
         using: toolchain-script
 
 tasks-from:

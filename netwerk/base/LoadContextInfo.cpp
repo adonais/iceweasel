@@ -123,7 +123,7 @@ already_AddRefed<LoadContextInfo> GetLoadContextInfo(nsIChannel* aChannel) {
   StoragePrincipalHelper::GetOriginAttributesForNetworkState(aChannel, oa);
   MOZ_ASSERT(pb == (oa.IsPrivateBrowsing()));
 
-  return MakeAndAddRef<LoadContextInfo>(anon, oa);
+  return MakeAndAddRef<LoadContextInfo>(anon, std::move(oa));
 }
 
 already_AddRefed<LoadContextInfo> GetLoadContextInfo(
@@ -143,7 +143,7 @@ already_AddRefed<LoadContextInfo> GetLoadContextInfo(
   }
 #endif
 
-  return MakeAndAddRef<LoadContextInfo>(aIsAnonymous, oa);
+  return MakeAndAddRef<LoadContextInfo>(aIsAnonymous, std::move(oa));
 }
 
 already_AddRefed<LoadContextInfo> GetLoadContextInfo(nsIDOMWindow* aWindow,

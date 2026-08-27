@@ -145,7 +145,7 @@ struct CDMResolvedMarker : public BaseMarkerType<CDMResolvedMarker> {
 };
 
 struct LoadErrorMarker : public BaseMarkerType<LoadErrorMarker> {
-  static constexpr const char* Name = "HTMLMediaElement:Error";
+  static constexpr const char* Name = "HTMLMediaElement:LoadError";
   static constexpr const char* Description =
       "A marker shows the detail of the load error";
 

@@ -42,7 +42,7 @@ def test_browsertime_profiling(mock_log_info, mock_log_critical):
         profile = GeckoProfile(upload_dir, raptor_config, test_config)
         profile.symbolicate()
         profile.clean()
-        arcname = os.environ["RAPTOR_LATEST_GECKO_PROFILE_ARCHIVE"]
+        arcname = os.environ["RAPTOR_LATEST_PROFILE"]
         assert os.stat(arcname).st_size > 1000000, "We got a 1mb+ zip"
     except Exception:
         assert False, "Symbolication failed!"

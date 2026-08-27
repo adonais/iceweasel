@@ -14,6 +14,14 @@ namespace X86Encoding {
 
 class BaseAssemblerX86 : public BaseAssembler {
  public:
+  // So the buffer can be read, for verification
+  uint8_t getByteAtOffset(size_t offset) const {
+    MOZ_ASSERT(offset < m_formatter.size());
+    const uint8_t* code =
+        const_cast<X86InstructionFormatter&>(m_formatter).data();
+    return code[offset];
+  }
+
   // Arithmetic operations:
 
   void adcl_ir(int32_t imm, RegisterID dst) {

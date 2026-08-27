@@ -11,8 +11,8 @@ use crate::ellipse::Ellipse;
 use crate::renderer::GpuBufferBuilderF;
 use crate::scene_building::SceneBuilder;
 use crate::spatial_tree::SpatialNodeIndex;
-use crate::gpu_types::{BorderInstance, BorderInstanceGpuData, BorderSegment, BrushFlags};
-use crate::prim_store::{BrushSegment, NinePatchDescriptor};
+use crate::gpu_types::{BorderInstance, BorderInstanceGpuData, BorderSegment};
+use crate::prim_store::NinePatchDescriptor;
 use crate::prim_store::borders::NormalBorderPrim;
 use crate::util::{lerp, RectHelpers};
 use crate::internal_types::LayoutPrimitiveInfo;
@@ -55,6 +55,8 @@ pub struct BorderSegmentCacheKey {
     pub size: LayoutSizeAu,
     pub radius: LayoutSizeAu,
     pub shape: u32,
+    pub shape_offset: LayoutSizeAu,
+    pub inset: LayoutSizeAu,
     pub side0: BorderSideAu,
     pub side1: BorderSideAu,
     pub segment: BorderSegment,
@@ -528,8 +530,8 @@ pub struct NormalBorderSegment {
     /// For corners this is the full corner image rect, which may extend past
     /// the visible area when an adjacent corner overlaps it; for edges it is
     /// the edge rect.
-    pub local_rect: LayoutRect,
-    /// Sub-rect of `local_rect` the drawn texture is clipped to. `Some` for
+    pub pattern_rect: LayoutRect,
+    /// Sub-rect of `pattern_rect` the drawn texture is clipped to. `Some` for
     /// corners (the visible, non-overlapping part); `None` for edges, which
     /// need no per-segment clip.
     pub clip_rect: Option<LayoutRect>,
@@ -560,22 +562,79 @@ pub fn create_border_segments(
         widths.left - overlap.width / 2.0,
     );
 
+    let inset_tl = LayoutSize::new(border.inset.left, border.inset.top);
+    let inset_tr = LayoutSize::new(border.inset.right, border.inset.top);
+    let inset_br = LayoutSize::new(border.inset.right, border.inset.bottom);
+    let inset_bl = LayoutSize::new(border.inset.left, border.inset.bottom);
+
+    let max_shape_offsets = LayoutSideOffsets::new(
+        rect.width() - border.radius.top_left.width - border.radius.top_right.width,
+        rect.height() - border.radius.top_right.height - border.radius.bottom_right.height,
+        rect.width() - border.radius.bottom_left.width - border.radius.bottom_right.width,
+        rect.height() - border.radius.top_left.height - border.radius.bottom_left.height,
+    );
+
+    let shape_offset_tl = if border.radius.shape_top_left < 1.0 {
+        LayoutSize::new(
+            non_overlapping_widths.top + inset_tl.height.max(0.0),
+            non_overlapping_widths.left + inset_tl.width.max(0.0),
+        ).min(LayoutSize::new(
+            max_shape_offsets.top,
+            max_shape_offsets.left,
+        ))
+    } else {
+        LayoutSize::zero()
+    };
+    let shape_offset_tr = if border.radius.shape_top_right < 1.0 {
+        LayoutSize::new(
+            non_overlapping_widths.top + inset_tr.height.max(0.0),
+           non_overlapping_widths.right + inset_tr.width.max(0.0),
+        ).min(LayoutSize::new(
+            max_shape_offsets.top,
+            max_shape_offsets.right,
+        ))
+    } else {
+        LayoutSize::zero()
+    };
+    let shape_offset_br = if border.radius.shape_bottom_right < 1.0 {
+        LayoutSize::new(
+            non_overlapping_widths.bottom + inset_br.height.max(0.0),
+           non_overlapping_widths.right + inset_br.width.max(0.0),
+        ).min(LayoutSize::new(
+            max_shape_offsets.bottom,
+            max_shape_offsets.right,
+        ))
+    } else {
+        LayoutSize::zero()
+    };
+    let shape_offset_bl = if border.radius.shape_bottom_left < 1.0 {
+        LayoutSize::new(
+            non_overlapping_widths.bottom + inset_bl.height.max(0.0),
+           non_overlapping_widths.left + inset_bl.width.max(0.0),
+        ).min(LayoutSize::new(
+            max_shape_offsets.bottom,
+            max_shape_offsets.left,
+        ))
+    } else {
+        LayoutSize::zero()
+    };
+
     let local_size_tl = LayoutSize::new(
         border.radius.top_left.width.max(widths.left),
         border.radius.top_left.height.max(widths.top),
-    );
+    ) + shape_offset_tl;
     let local_size_tr = LayoutSize::new(
         border.radius.top_right.width.max(widths.right),
         border.radius.top_right.height.max(widths.top),
-    );
+    ) + shape_offset_tr;
     let local_size_br = LayoutSize::new(
         border.radius.bottom_right.width.max(widths.right),
         border.radius.bottom_right.height.max(widths.bottom),
-    );
+    ) + shape_offset_br;
     let local_size_bl = LayoutSize::new(
         border.radius.bottom_left.width.max(widths.left),
         border.radius.bottom_left.height.max(widths.bottom),
-    );
+    ) + shape_offset_bl;
 
     let top_edge_info = get_edge_info(
         border.top.style,
@@ -678,6 +737,8 @@ pub fn create_border_segments(
         LayoutSize::new(widths.left, widths.top),
         border.radius.top_left,
         border.radius.shape_top_left,
+        shape_offset_tl,
+        inset_tl,
         BorderSegment::TopLeft,
         EdgeMask::TOP | EdgeMask::LEFT,
         rect.top_right(),
@@ -705,6 +766,8 @@ pub fn create_border_segments(
         LayoutSize::new(widths.right, widths.top),
         border.radius.top_right,
         border.radius.shape_top_right,
+        shape_offset_tr,
+        inset_tr,
         BorderSegment::TopRight,
         EdgeMask::TOP | EdgeMask::RIGHT,
         rect.min,
@@ -732,6 +795,8 @@ pub fn create_border_segments(
         LayoutSize::new(widths.right, widths.bottom),
         border.radius.bottom_right,
         border.radius.shape_bottom_right,
+        shape_offset_br,
+        inset_br,
         BorderSegment::BottomRight,
         EdgeMask::BOTTOM | EdgeMask::RIGHT,
         rect.bottom_left(),
@@ -759,6 +824,8 @@ pub fn create_border_segments(
         LayoutSize::new(widths.left, widths.bottom),
         border.radius.bottom_left,
         border.radius.shape_bottom_left,
+        shape_offset_bl,
+        inset_bl,
         BorderSegment::BottomLeft,
         EdgeMask::BOTTOM | EdgeMask::LEFT,
         rect.max,
@@ -781,6 +848,8 @@ fn add_segment(
     widths: DeviceSize,
     radius: DeviceSize,
     shape: f32,
+    shape_offset: DeviceSize,
+    inset: DeviceSize,
     do_aa: bool,
     h_adjacent_corner_outer: DevicePoint,
     h_adjacent_corner_radius: DeviceSize,
@@ -799,7 +868,9 @@ fn add_segment(
         color1: color1.premultiplied(),
         widths,
         radius,
-        shape
+        shape,
+        shape_offset,
+        inset,
     };
 
     let base_instance = BorderInstance {
@@ -925,6 +996,8 @@ fn add_corner_segment(
     widths: LayoutSize,
     radius: LayoutSize,
     shape: f32,
+    shape_offset: LayoutSize,
+    inset: LayoutSize,
     segment: BorderSegment,
     edge_flags: EdgeMask,
     h_adjacent_corner_outer: LayoutPoint,
@@ -1022,7 +1095,7 @@ fn add_corner_segment(
     };
 
     segment_cb(&NormalBorderSegment {
-        local_rect: image_rect,
+        pattern_rect: image_rect,
         clip_rect: Some(segment_rect),
         repeat_x: RepeatMode::Stretch,
         repeat_y: RepeatMode::Stretch,
@@ -1035,6 +1108,8 @@ fn add_corner_segment(
             segment,
             radius: radius.to_au(),
             shape: shape.to_bits(),
+            shape_offset: shape_offset.to_au(),
+            inset: inset.to_au(),
             size: widths.to_au(),
             h_adjacent_corner_outer: (h_corner_outer - image_rect.min).to_point().to_au(),
             h_adjacent_corner_radius: h_corner_radius.to_au(),
@@ -1094,7 +1169,7 @@ fn add_edge_segment(
     };
 
     segment_cb(&NormalBorderSegment {
-        local_rect: image_rect,
+        pattern_rect: image_rect,
         clip_rect: None,
         repeat_x,
         repeat_y,
@@ -1105,7 +1180,9 @@ fn add_edge_segment(
             side0: side.into(),
             side1: side.into(),
             radius: LayoutSizeAu::zero(),
-            shape: 0,
+            shape: 1.0f32.to_bits(),
+            shape_offset: LayoutSizeAu::zero(),
+            inset: LayoutSizeAu::zero(),
             size: size.to_au(),
             segment,
             h_adjacent_corner_outer: LayoutPointAu::zero(),
@@ -1156,11 +1233,19 @@ pub fn build_border_instances(
     let widths = (LayoutSize::from_au(cache_key.size) * scale).ceil();
     let radius = (LayoutSize::from_au(cache_key.radius) * scale).ceil();
     let shape = f32::from_bits(cache_key.shape);
+    let shape_offset = (LayoutSize::from_au(cache_key.shape_offset) * scale).ceil();
+    let inset = (LayoutSize::from_au(cache_key.inset) * scale).ceil();
 
     let h_corner_outer = (LayoutPoint::from_au(cache_key.h_adjacent_corner_outer) * scale).round();
     let h_corner_radius = (LayoutSize::from_au(cache_key.h_adjacent_corner_radius) * scale).ceil();
     let v_corner_outer = (LayoutPoint::from_au(cache_key.v_adjacent_corner_outer) * scale).round();
     let v_corner_radius = (LayoutSize::from_au(cache_key.v_adjacent_corner_radius) * scale).ceil();
+
+    let shape_offset = if shape < 1.0 {
+        radius.max(widths) + shape_offset
+    } else {
+        DeviceSize::zero()
+    };
 
     add_segment(
         DeviceRect::from_size(cache_size.to_f32()),
@@ -1173,6 +1258,8 @@ pub fn build_border_instances(
         widths,
         radius,
         shape,
+        shape_offset,
+        inset,
         border.do_aa,
         h_corner_outer,
         h_corner_radius,
@@ -1193,7 +1280,6 @@ pub trait NinePatchDescriptorExt {
         rect: &LayoutRect,
         add_segment: &mut dyn FnMut(&LayoutRect, &TexelRect, EdgeMask, RepeatMode, RepeatMode),
     );
-    fn create_brush_segments(&self, size: LayoutSize) -> Vec<BrushSegment>;
 }
 
 impl NinePatchDescriptorExt for NinePatchDescriptor {
@@ -1341,49 +1427,6 @@ impl NinePatchDescriptorExt for NinePatchDescriptor {
                 self.repeat_vertical,
             );
         }
-    }
-
-    fn create_brush_segments(&self, size: LayoutSize) -> Vec<BrushSegment> {
-        // Build the list of image segments
-        let mut segments = Vec::new();
-
-        let r = LayoutRect::from_size(size);
-        self.for_each_segment(&r, &mut |rect, uv_rect, side, repeat_horizontal, repeat_vertical| {
-            // Use segment relative interpolation for all
-            // instances in this primitive.
-            let mut brush_flags =
-                BrushFlags::SEGMENT_RELATIVE |
-                BrushFlags::SEGMENT_TEXEL_RECT;
-
-            if side == EdgeMask::empty() {
-                brush_flags |= BrushFlags::SEGMENT_NINEPATCH_MIDDLE;
-            }
-
-            // Enable repeat modes on the segment.
-            if repeat_horizontal == RepeatMode::Repeat {
-                brush_flags |= BrushFlags::SEGMENT_REPEAT_X | BrushFlags::SEGMENT_REPEAT_X_CENTERED;
-            } else if repeat_horizontal == RepeatMode::Round {
-                brush_flags |= BrushFlags::SEGMENT_REPEAT_X | BrushFlags::SEGMENT_REPEAT_X_ROUND;
-            }
-
-            if repeat_vertical == RepeatMode::Repeat {
-                brush_flags |= BrushFlags::SEGMENT_REPEAT_Y | BrushFlags::SEGMENT_REPEAT_Y_CENTERED;
-            } else if repeat_vertical == RepeatMode::Round {
-                brush_flags |= BrushFlags::SEGMENT_REPEAT_Y | BrushFlags::SEGMENT_REPEAT_Y_ROUND;
-            }
-
-            let segment = BrushSegment::new(
-                *rect,
-                true,
-                EdgeMask::empty(),
-                uv_rect.to_array(),
-                brush_flags,
-            );
-
-            segments.push(segment);
-        });
-
-        segments
     }
 }
 

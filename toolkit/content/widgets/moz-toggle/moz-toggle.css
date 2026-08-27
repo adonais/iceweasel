@@ -25,12 +25,12 @@
 
   &:enabled:hover {
     background-color: var(--toggle-background-color-hover);
-    border-color: var(--toggle-border-color);
+    border-color: var(--toggle-border-color-hover);
   }
 
   &:enabled:hover:active {
     background-color: var(--toggle-background-color-active);
-    border-color: var(--toggle-border-color);
+    border-color: var(--toggle-border-color-active);
   }
 
   &::before {
@@ -42,6 +42,14 @@
     margin: var(--toggle-dot-margin);
     border-radius: var(--toggle-border-radius);
     translate: 0;
+  }
+
+  &:enabled:hover::before {
+    background-color: var(--toggle-dot-background-color-hover);
+  }
+
+  &:enabled:hover:active::before {
+    background-color: var(--toggle-dot-background-color-active);
   }
 }
 
@@ -82,14 +90,6 @@
 }
 
 @media (prefers-contrast) {
-  .toggle-button:enabled:hover {
-    border-color: var(--toggle-border-color-hover);
-  }
-
-  .toggle-button:enabled:hover:active {
-    border-color: var(--toggle-border-color-active);
-  }
-
   .toggle-button[aria-pressed="true"]:enabled {
     border-color: var(--toggle-border-color);
     position: relative;
@@ -102,11 +102,6 @@
         border-color: var(--toggle-border-color);
       }
     }
-  }
-
-  .toggle-button:enabled:hover::before,
-  .toggle-button:enabled:hover:active::before {
-    background-color: var(--toggle-dot-background-color-hover);
   }
 }
 

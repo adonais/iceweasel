@@ -90,10 +90,10 @@ StatusBarEntry::StatusBarEntry(Element* aMenu) : mMenu(aMenu), mInitted(false) {
 }
 
 StatusBarEntry::~StatusBarEntry() {
+  Destroy();
   if (!mInitted) {
     return;
   }
-  Destroy();
   ::Shell_NotifyIconW(NIM_DELETE, &mIconData);
   VERIFY(::DestroyWindow(mIconData.hWnd));
 }

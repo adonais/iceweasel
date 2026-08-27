@@ -185,3 +185,50 @@ add_task(async function test_closeButtonFocus() {
   await UrlbarTestUtils.promiseSearchComplete(window);
   Assert.ok(gURLBar.view.isOpen, "Urlbar view was opened");
 });
+
+add_task(async function test_form_history() {
+  info("Shift-click the engine to open the SERP directly");
+  let promiseAdded = UrlbarTestUtils.formHistory.promiseChanged("add");
+  await openSerpFromSwitcher(window, "form history term");
+  await promiseAdded;
+
+  let entries = await UrlbarTestUtils.formHistory.search({
+    value: "form history term",
+    source: "engine",
+  });
+  Assert.equal(
+    entries.length,
+    1,
+    "Search string was added to form history with the engine name as source"
+  );
+
+  gURLBar.querySelector(".searchmode-switcher-close").click();
+  await UrlbarTestUtils.assertSearchMode(window, null);
+
+  info("Repeat in a private window");
+  let privateWin = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+  await openSerpFromSwitcher(privateWin, "private term");
+  entries = await UrlbarTestUtils.formHistory.search({
+    value: "private term",
+  });
+  Assert.equal(entries.length, 0, "Nothing added from a private window");
+  await BrowserTestUtils.closeWindow(privateWin);
+});
+
+async function openSerpFromSwitcher(win, value) {
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({ window: win, value });
+  let popup = await UrlbarTestUtils.openSearchModeSwitcher(win);
+
+  let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(win);
+  let browserLoaded = BrowserTestUtils.browserLoaded(
+    win.gBrowser.selectedBrowser
+  );
+  EventUtils.synthesizeMouseAtCenter(
+    popup.querySelector(`panel-item[data-engine-id=engine]`),
+    { shiftKey: true },
+    win
+  );
+  await Promise.all([popupHidden, browserLoaded]);
+}

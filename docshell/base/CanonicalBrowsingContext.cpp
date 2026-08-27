@@ -218,6 +218,19 @@ already_AddRefed<CanonicalBrowsingContext> CanonicalBrowsingContext::Cast(
   return aContext.downcast<CanonicalBrowsingContext>();
 }
 
+bool CanonicalBrowsingContext::IsKnownInSubTree(uint64_t aProcessId) {
+  bool isKnownInTree = false;
+  PreOrderWalk([&](BrowsingContext* aContext) {
+    if (aContext->Canonical()->IsOwnedByProcess(aProcessId)) {
+      isKnownInTree = true;
+      return WalkFlag::Stop;
+    }
+    return WalkFlag::Next;
+  });
+
+  return isKnownInTree;
+}
+
 ContentParent* CanonicalBrowsingContext::GetContentParent() const {
   if (mProcessId == 0) {
     return nullptr;
@@ -1439,7 +1452,9 @@ void CanonicalBrowsingContext::SetActiveSessionHistoryEntry(
   }
   mActiveEntry = MakeRefPtr<SessionHistoryEntry>(aInfo);
   mActiveEntry->SetDocshellID(GetHistoryID());
-  mActiveEntry->AdoptBFCacheEntry(oldActiveEntry);
+  if (oldActiveEntry) {
+    mActiveEntry->AdoptBFCacheEntry(oldActiveEntry);
+  }
   if (aUpdatedCacheKey != 0) {
     mActiveEntry->SharedInfo()->mCacheKey = aUpdatedCacheKey;
   }

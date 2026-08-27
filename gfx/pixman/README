@@ -1,0 +1,55 @@
+Snapshots of Pixman for mozilla usage.
+
+We only include the relevant parts of each release (generally, src/*.[ch]), as
+we have moz.build files used by the Mozilla build system. For documentation and
+similar, please see the official tarballs at http://www.cairographics.org/.
+
+The paths of the actual source files look a little silly:
+
+    gfx/pixman/pixman/pixman/pixman-arm.c
+
+That's a lot of pixman. But this is deliberate:
+
+- `gfx/pixman`: When we vendor libraries into Mozilla Central, we generally
+  parent them with a directory holding Mozilla-specific metadata like
+  `moz.build`, `moz.yaml`, and a `README` explaining the vendoring, like this
+  very file. `gfx/cairo` is another example.
+
+- `gfx/pixman/pixman`: It seems best to have the actual vendored sources look
+  like a normal Git checkout. When you clone the upstream Pixman repository, by
+  default you get a directory named `pixman`.
+
+- `gfx/pixman/pixman/pixman`: The Pixman repository itself has a metadata parent
+  directory, and places the actual sources in a subdirectory named `pixman`.
+
+- `gfx/pixman/pixman/pixman/pixman-foo.c`: It is the Pixman project's convention
+  to give its source files names starting with `pixman-`.
+
+The road to absurdity is paved with good intentions.
+
+VERSIONS:
+
+  pixman (0.46.4)
+
+==== Updating and Patching Pixman ====
+
+To change Pixman in Mozilla Central:
+
+- Make your changes to `gfx/pixman/pixman`, and test as necessary.
+
+- Add an appropriate patch to `gfx/pixman/patches`, with filenames relative to
+  `gfx/pixman/pixman`. Edit the `patches` list in `gfx/pixman/moz.yaml` to apply
+  it at the appropriate point in the list --- typically the end.
+
+- Test that UpdateBot can actually reconstruct the vendored Pixman sources with
+  the following command:
+
+      mach vendor gfx/pixman/moz.yaml -r $REVISION --patch-mode check --force
+
+  where `$REVISION` is the `revision` currently listed in `moz.yaml`. UpdateBot
+  should say that the "upstream hasn't modified files locally", and `git status`
+  should be clean.
+
+- Submit a patch for review that includes both the changes to
+  `gfx/pixman/pixman` as well as the changes to `moz.yaml` and the new
+  patch file in `gfx/pixman/patches`.

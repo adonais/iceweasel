@@ -25,13 +25,13 @@ add_task(async function test_usingTabContextMenu() {
   is(menuItemReloadTab.hidden, false, "Reload Tab is visible");
   is(menuItemReloadSelectedTabs.hidden, true, "Reload Tabs is hidden");
 
-  updateTabContextMenu(tab2);
+  await openTabContextMenu(tab2);
   is(menuItemReloadTab.hidden, true, "Reload Tab is hidden");
   is(menuItemReloadSelectedTabs.hidden, false, "Reload Tabs is visible");
 
   let tab1Loaded = tabLoaded(tab1);
   let tab2Loaded = tabLoaded(tab2);
-  menuItemReloadSelectedTabs.click();
+  await BrowserTestUtils.activateMenuItem(menuItemReloadSelectedTabs);
   await tab1Loaded;
   await tab2Loaded;
 

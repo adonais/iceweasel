@@ -148,8 +148,6 @@ nsClipboard::nsClipboard()
 //-------------------------------------------------------------------------
 // nsClipboard destructor
 //-------------------------------------------------------------------------
-nsClipboard::~nsClipboard() {}
-
 NS_IMPL_ISUPPORTS_INHERITED(nsClipboard, nsBaseClipboard, nsIObserver)
 
 NS_IMETHODIMP

@@ -235,7 +235,10 @@ Preferences.addSetting({
 
     let defaults = Services.prefs.getDefaultBranch(null);
     let distroId = defaults.getCharPref("distribution.id", "");
-    if (distroId) {
+    let distroAbout = defaults.getStringPref("distribution.about", "");
+    // Only show distribution info when there is about text. An id-only
+    // distribution is used for attribution and is shown in about:support.
+    if (distroId && distroAbout) {
       let distroString = distroId;
 
       let distroVersion = defaults.getCharPref("distribution.version", "");
@@ -244,8 +247,6 @@ Preferences.addSetting({
       }
 
       distributionId = distroString;
-
-      let distroAbout = defaults.getStringPref("distribution.about", "");
       distribution = distroAbout;
     }
 
@@ -269,7 +270,7 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "showUpdateHistory",
   deps: ["disableShowUpdateHistory"],
-  disabled: deps => deps.disableShowUpdateHistory.value,
+  disabled: deps => deps.disableShowUpdateHistory.locked,
   onUserClick: () => UpdatesHelpers.showUpdates(),
 });
 

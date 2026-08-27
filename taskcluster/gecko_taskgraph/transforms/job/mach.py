@@ -29,6 +29,9 @@ class MachSchema(Schema, kw_only=True):
     workdir: Optional[str] = None
     # Use the specified caches.
     use_caches: Optional[Union[bool, list[str]]] = None
+    # How to clone the upstream repo for the checkout, either "hg" or "git"
+    # (default: "git")
+    clone_with: Optional[Literal["hg", "git"]] = "git"
 
 
 defaults = {

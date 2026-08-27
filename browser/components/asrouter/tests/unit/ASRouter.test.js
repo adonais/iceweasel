@@ -51,6 +51,7 @@ describe("ASRouter", () => {
   let FakeToolbarBadgeHub;
   let FakeMomentsPageHub;
   let FakeSpecialMessageActions;
+  let FakeMessagingSystemAllowlists;
   let ASRouterTargeting;
   let gBrowser;
   let screenImpressions;
@@ -303,6 +304,10 @@ describe("ASRouter", () => {
       },
       SpecialMessageActions: (FakeSpecialMessageActions = {
         handleAction: sandbox.stub(),
+      }),
+      MessagingSystemAllowlists: (FakeMessagingSystemAllowlists = {
+        ensureInit: sandbox.stub().resolves(),
+        getActionOnlyActions: sandbox.stub().returns([]),
       }),
       TargetingContext: class {
         static combineContexts(...args) {
@@ -990,6 +995,34 @@ describe("ASRouter", () => {
         assert.notCalled(FakeSpecialMessageActions.handleAction);
         assert.notCalled(addImpressionStub);
       });
+      it("rejects a nested MULTI_ACTION even if MULTI_ACTION is allowlisted", () => {
+        // MULTI_ACTION is not blocklisted, so Remote Settings can grant it. It
+        // is still only valid as the top level action.
+        FakeMessagingSystemAllowlists.getActionOnlyActions.returns([
+          "MULTI_ACTION",
+        ]);
+        const nestedMulti = {
+          id: "NESTED_MULTI",
+          template: "action_only",
+          content: {
+            action: {
+              type: "MULTI_ACTION",
+              data: {
+                actions: [
+                  {
+                    type: "MULTI_ACTION",
+                    data: { actions: [{ type: "OPEN_URL" }] },
+                  },
+                ],
+              },
+            },
+          },
+        };
+        Router.routeCFRMessage(nestedMulti, browser, {});
+
+        assert.notCalled(FakeSpecialMessageActions.handleAction);
+        assert.notCalled(addImpressionStub);
+      });
       it("rejects a MULTI_ACTION with no nested actions", () => {
         const emptyMulti = {
           id: "EMPTY_MULTI",
@@ -1014,6 +1047,76 @@ describe("ASRouter", () => {
         assert.notCalled(FakeSpecialMessageActions.handleAction);
         assert.notCalled(addImpressionStub);
         assert.notCalled(blockMessageByIdStub);
+      });
+      it("allows an action supplied only by the Remote Settings allowlist", async () => {
+        FakeMessagingSystemAllowlists.getActionOnlyActions.returns([
+          "FOO_ACTION",
+        ]);
+        const rsMessage = {
+          id: "RS_ACTION",
+          template: "action_only",
+          content: { action: { type: "FOO_ACTION" } },
+        };
+        Router.routeCFRMessage(rsMessage, browser, {});
+        await Promise.resolve(); // let dispatchCFRAction's async wrapper resolve
+
+        assert.calledOnceWithExactly(
+          FakeSpecialMessageActions.handleAction,
+          rsMessage.content.action,
+          browser
+        );
+        assert.notCalled(addImpressionStub);
+        assert.calledWithMatch(initParams.dispatchCFRAction, {
+          type: "IMPRESSION",
+          data: rsMessage,
+        });
+      });
+      it("rejects an action absent from both baseline and Remote Settings", () => {
+        FakeMessagingSystemAllowlists.getActionOnlyActions.returns([
+          "FOO_ACTION",
+        ]);
+        const badMessage = {
+          id: "BAR",
+          template: "action_only",
+          content: { action: { type: "BAR_ACTION" } },
+        };
+        Router.routeCFRMessage(badMessage, browser, {});
+
+        assert.notCalled(FakeSpecialMessageActions.handleAction);
+        assert.notCalled(addImpressionStub);
+      });
+      it("allows MULTI_ACTION mixing baseline and Remote Settings actions", async () => {
+        FakeMessagingSystemAllowlists.getActionOnlyActions.returns([
+          "FOO_ACTION",
+        ]);
+        const multiMessage = {
+          id: "MIXED_MULTI",
+          template: "action_only",
+          content: {
+            action: {
+              type: "MULTI_ACTION",
+              data: {
+                actions: [
+                  { type: "CONFIRM_LAUNCH_ON_LOGIN" },
+                  { type: "FOO_ACTION" },
+                ],
+              },
+            },
+          },
+        };
+        Router.routeCFRMessage(multiMessage, browser, {});
+        await Promise.resolve(); // let dispatchCFRAction's async wrapper resolve
+
+        assert.calledOnceWithExactly(
+          FakeSpecialMessageActions.handleAction,
+          multiMessage.content.action,
+          browser
+        );
+        assert.notCalled(addImpressionStub);
+        assert.calledWithMatch(initParams.dispatchCFRAction, {
+          type: "IMPRESSION",
+          data: multiMessage,
+        });
       });
     });
   });

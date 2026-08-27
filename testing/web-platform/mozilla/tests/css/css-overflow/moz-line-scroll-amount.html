@@ -1,0 +1,99 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>-moz-line-scroll-amount sets how far one line scrolls a scroll container</title>
+<link rel="help" href="https://bugzilla.mozilla.org/show_bug.cgi?id=2062743">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<link rel="stylesheet" href="/fonts/ahem.css">
+<style>
+  #scroller {
+    overflow: auto;
+    height: 200px;
+    width: 200px;
+    font: 16px/normal Ahem;
+  }
+  #content {
+    height: 4000px;
+    width: 4000px;
+  }
+</style>
+<div id="scroller"><div id="content"></div></div>
+<script>
+// Distinct from what Ahem gives either axis (1em square glyphs), and small
+// enough that one line stays well under the one-page cap that a single wheel
+// event is subject to.
+const AMOUNT = 37;
+
+const utils = SpecialPowers.DOMWindowUtils;
+const scroller = document.getElementById("scroller");
+
+// -moz-line-scroll-amount is chrome-only, so it is only parsed in UA/User/chrome
+// sheets. Declare it once in a user sheet, reading a custom property that the
+// test can set from here.
+function setAmount(value) {
+  scroller.style.setProperty("--amount", value);
+}
+
+// Returns how far one line scrolled the given axis.
+async function scrollOneLine(axis) {
+  const horizontal = axis == "x";
+  const position = () => (horizontal ? scroller.scrollLeft : scroller.scrollTop);
+  const before = position();
+  const scrolled =
+    new Promise(r => scroller.addEventListener("scroll", r, { once: true }));
+
+  const rect = scroller.getBoundingClientRect();
+  utils.sendWheelEvent(
+    rect.left + 10, rect.top + 10,
+    /* deltaX */ horizontal ? 1 : 0,
+    /* deltaY */ horizontal ? 0 : 1,
+    /* deltaZ */ 0,
+    WheelEvent.DOM_DELTA_LINE,
+    /* modifiers */ 0,
+    /* lineOrPageDeltaX */ horizontal ? 1 : 0,
+    /* lineOrPageDeltaY */ horizontal ? 0 : 1,
+    /* options */ 0
+  );
+
+  await scrolled;
+  return position() - before;
+}
+
+promise_setup(async () => {
+  await document.fonts.ready;
+  utils.loadSheetUsingURIString(
+    `data:text/css,${encodeURIComponent(
+      "#scroller { -moz-line-scroll-amount: var(--amount, auto); }"
+    )}`,
+    utils.USER_SHEET
+  );
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      // Scroll instantly, so a settled position is the whole distance.
+      ["general.smoothScroll", false],
+      // On Windows and GTK, a line delta is scaled by
+      // mousewheel.system_scroll_override.vertical.factor, which would make how
+      // far one line scrolls platform-dependent.
+      ["mousewheel.system_scroll_override.enabled", false],
+    ],
+  });
+});
+
+promise_test(async t => {
+  const fontDerivedY = await scrollOneLine("y");
+  const fontDerivedX = await scrollOneLine("x");
+  assert_greater_than(fontDerivedY, 0, "a line scrolls with auto");
+  assert_not_equals(fontDerivedY, AMOUNT, "the font wouldn't give the test amount");
+  assert_not_equals(fontDerivedX, AMOUNT, "the font wouldn't give the test amount");
+
+  setAmount(`${AMOUNT}px`);
+  assert_equals(await scrollOneLine("y"), AMOUNT, "vertical takes the given amount");
+  assert_equals(await scrollOneLine("x"), AMOUNT, "horizontal takes the given amount");
+
+  setAmount(`${AMOUNT * 2}px`);
+  assert_equals(await scrollOneLine("y"), AMOUNT * 2, "twice the amount scrolls twice as far");
+
+  setAmount("auto");
+  assert_equals(await scrollOneLine("y"), fontDerivedY, "auto is the font-derived amount");
+}, "a length applies to both axes, auto keeps the font-derived amount");
+</script>

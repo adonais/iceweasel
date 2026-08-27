@@ -47,6 +47,7 @@ EXPECTED = {
 
 /fake/root/d/e/f.txt
   4:2  warning  oh no bar  bar-not-allowed (bar)
+  Hint: try baz instead
 
 \u2716 4 problems (3 errors, 1 warning, 0 fixed)
 """.strip(),
@@ -140,6 +141,36 @@ def test_json_formatter(result):
     for errors in formatted.values():
         for err in errors:
             assert all(a.name in err for a in attrs)
+
+
+def test_stylish_hint_shown_once_per_distinct_text():
+    # "fix it" is repeated on issues in both a.txt and b.txt: dedup must hold
+    # across files, not just within a single one, since seen hints are
+    # tracked for the whole formatter run.
+    result = ResultSummary("/fake/root")
+    containers = (
+        Issue(linter="foo", path="a.txt", message="oh no foo", lineno=1, hint="fix it"),
+        Issue(linter="bar", path="a.txt", message="oh no bar", lineno=2, hint="fix it"),
+        Issue(
+            linter="baz",
+            path="a.txt",
+            message="oh no baz",
+            lineno=3,
+            hint="fix it differently",
+        ),
+        Issue(linter="qux", path="b.txt", message="oh no qux", lineno=1, hint="fix it"),
+        Issue(linter="norf", path="b.txt", message="oh no norf", lineno=2),
+    )
+    for c in containers:
+        result.issues[c.path].append(c)
+
+    fmt = formatters.get("stylish", disable_colors=True)
+    output = fmt(result)
+
+    assert output.count("Hint: fix it\n") == 1
+    assert "Hint: fix it differently" in output
+    assert "oh no qux" in output
+    assert "oh no norf" in output
 
 
 if __name__ == "__main__":

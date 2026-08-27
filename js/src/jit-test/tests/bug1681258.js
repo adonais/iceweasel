@@ -3,6 +3,6 @@ ignoreUnhandledRejections();
 
 oomTest(async function() {
     let m = parseModule(``);
-    moduleLink(m);
+    moduleLoadAndLink(m);
     await moduleEvaluate(m);
 });

@@ -203,6 +203,7 @@ class ManifestTokens:
         _mda_gpu: Token = self.add(Token(t_type=t_variant, value="mda_gpu"))
         _msix: Token = self.add(Token(t_type=t_variant, value="msix"))
         _nogpu: Token = self.add(Token(t_type=t_variant, value="nogpu"))
+        _nova: Token = self.add(Token(t_type=t_variant, value="nova"))
         _private_browsing: Token = self.add(
             Token(t_type=t_variant, value="privateBrowsing")
         )

@@ -5,7 +5,6 @@
 #include "IPv4Parser.h"
 
 #include "mozilla/EndianUtils.h"
-#include "nsPrintfCString.h"
 #include "nsTArray.h"
 
 namespace mozilla::net::IPv4Parser {
@@ -198,8 +197,14 @@ nsresult NormalizeIPv4(const nsACString& host, nsCString& result) {
 
   uint8_t ipSegments[4];
   NetworkEndian::writeUint32(ipSegments, ipv4);
-  result = nsPrintfCString("%d.%d.%d.%d", ipSegments[0], ipSegments[1],
-                           ipSegments[2], ipSegments[3]);
+  result.Truncate();
+  result.AppendInt(ipSegments[0]);
+  result.Append('.');
+  result.AppendInt(ipSegments[1]);
+  result.Append('.');
+  result.AppendInt(ipSegments[2]);
+  result.Append('.');
+  result.AppendInt(ipSegments[3]);
   return NS_OK;
 }
 

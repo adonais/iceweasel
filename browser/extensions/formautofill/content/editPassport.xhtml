@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title data-l10n-id="autofill-add-passport-title"></title>
+    <meta http-equiv="Content-Security-Policy" content="default-src chrome:" />
+    <link rel="localization" href="browser/preferences/formAutofill.ftl" />
+    <link rel="localization" href="toolkit/formautofill/formAutofill.ftl" />
+    <link
+      rel="stylesheet"
+      href="chrome://formautofill/content/skin/editDialog-shared.css"
+    />
+    <link
+      rel="stylesheet"
+      href="chrome://formautofill/content/skin/editPassport.css"
+    />
+    <script
+      type="module"
+      src="chrome://formautofill/content/editPassport.mjs"
+    ></script>
+  </head>
+  <body>
+    <form id="form" class="editPassportForm contentPane" autocomplete="off">
+      <div id="passport-name-container" class="container">
+        <moz-input-text
+          id="passport-name"
+          data-l10n-id="autofill-passport-name"
+        ></moz-input-text>
+      </div>
+      <div id="passport-country-container" class="container">
+        <moz-select
+          id="passport-country"
+          data-l10n-id="autofill-passport-country"
+        >
+          <moz-option value=""></moz-option>
+        </moz-select>
+      </div>
+      <div id="passport-number-container" class="container">
+        <moz-input-text
+          id="passport-number"
+          data-l10n-id="autofill-passport-number"
+        ></moz-input-text>
+      </div>
+      <span
+        id="passport-issue-date-label"
+        class="date-group-heading"
+        data-l10n-id="autofill-passport-issue-date"
+      ></span>
+      <div id="passport-issue-date-month-container" class="container">
+        <moz-select
+          id="passport-issue-date-month"
+          data-l10n-id="autofill-passport-date-month"
+        >
+          <moz-option value=""></moz-option>
+        </moz-select>
+      </div>
+      <div id="passport-issue-date-day-container" class="container">
+        <moz-select
+          id="passport-issue-date-day"
+          data-l10n-id="autofill-passport-date-day"
+        >
+          <moz-option value=""></moz-option>
+        </moz-select>
+      </div>
+      <div id="passport-issue-date-year-container" class="container">
+        <moz-select
+          id="passport-issue-date-year"
+          data-l10n-id="autofill-passport-date-year"
+        >
+          <moz-option value=""></moz-option>
+        </moz-select>
+      </div>
+      <span
+        id="passport-expiry-date-label"
+        class="date-group-heading"
+        data-l10n-id="autofill-passport-expiry-date"
+      ></span>
+      <div id="passport-expiry-date-month-container" class="container">
+        <moz-select
+          id="passport-expiry-date-month"
+          data-l10n-id="autofill-passport-date-month"
+        >
+          <moz-option value=""></moz-option>
+        </moz-select>
+      </div>
+      <div id="passport-expiry-date-day-container" class="container">
+        <moz-select
+          id="passport-expiry-date-day"
+          data-l10n-id="autofill-passport-date-day"
+        >
+          <moz-option value=""></moz-option>
+        </moz-select>
+      </div>
+      <div id="passport-expiry-date-year-container" class="container">
+        <moz-select
+          id="passport-expiry-date-year"
+          data-l10n-id="autofill-passport-date-year"
+        >
+          <moz-option value=""></moz-option>
+        </moz-select>
+      </div>
+    </form>
+    <div id="controls-container">
+      <moz-button-group>
+        <moz-button
+          id="cancel"
+          data-l10n-id="autofill-cancel-button"
+        ></moz-button>
+        <moz-button
+          id="save"
+          type="primary"
+          data-l10n-id="autofill-save-button"
+        ></moz-button>
+      </moz-button-group>
+    </div>
+  </body>
+</html>

@@ -406,12 +406,14 @@ mozilla::ipc::IPCResult SerialManagerParent::DispatchTestOperation(
     return IPC_OK();
   }
 
-  mPlatformService->IOThread()->Dispatch(
-      NS_NewRunnableFunction(aName, [testService, aWork, aResolver]() {
+  mPlatformService->IOThread()->Dispatch(NS_NewRunnableFunction(
+      aName,
+      [testService = std::move(testService), aWork = std::forward<TWork>(aWork),
+       aResolver = std::forward<TResolver>(aResolver)]() mutable {
         aWork(testService);
         NS_DispatchToMainThread(NS_NewRunnableFunction(
             "SerialManagerParent::DispatchTestOperation::Resolve",
-            [aResolver]() { aResolver(NS_OK); }));
+            [aResolver = std::move(aResolver)]() { aResolver(NS_OK); }));
       }));
 
   return IPC_OK();

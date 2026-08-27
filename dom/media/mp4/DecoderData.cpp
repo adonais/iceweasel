@@ -362,7 +362,10 @@ MediaResult MP4VideoInfo::Update(const Mp4parseTrackInfo* track,
     mColorRange =
         si.full_range_flag ? gfx::ColorRange::FULL : gfx::ColorRange::LIMITED;
   }
-  if (si.has_mastering_display || si.has_content_light_level) {
+  bool isHDR = mTransferFunction.isSome() &&
+               (*mTransferFunction == gfx::TransferFunction::PQ ||
+                *mTransferFunction == gfx::TransferFunction::HLG);
+  if (isHDR || si.has_mastering_display || si.has_content_light_level) {
     gfx::HDRMetadata hdr;
     if (si.has_mastering_display) {
       const auto& md = si.mastering_display;
@@ -380,11 +383,24 @@ MediaResult MP4VideoInfo::Update(const Mp4parseTrackInfo* track,
       smpte.maxLuminance = md.max_display_mastering_luminance / 10000.0f;
       smpte.minLuminance = md.min_display_mastering_luminance / 10000.0f;
       hdr.mSmpte2086 = Some(smpte);
+    } else {
+      // Provide BT2020 defaults.
+      gfx::Smpte2086Metadata smpte;
+      smpte.displayPrimaryRed = {0.708, 0.292};
+      smpte.displayPrimaryGreen = {0.170, 0.797};
+      smpte.displayPrimaryBlue = {0.131, 0.046};
+      smpte.whitePoint = {0.3127, 0.3290};
+      smpte.maxLuminance = 1000.0f;
+      smpte.minLuminance = 0.001f;
+      hdr.mSmpte2086 = Some(smpte);
     }
     if (si.has_content_light_level) {
       const auto& cll = si.content_light_level;
       hdr.mContentLightLevel = Some(gfx::ContentLightLevel{
           cll.max_content_light_level, cll.max_pic_average_light_level});
+    } else {
+      // Provide defaults.
+      hdr.mContentLightLevel = Some(gfx::ContentLightLevel{1000, 400});
     }
     mHDRMetadata = Some(hdr);
   }

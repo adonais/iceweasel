@@ -37,6 +37,9 @@ run-if = [
 run-if = [
   "os == 'mac'", # Mac only feature
 ]
+
+["browser_menu_referrals_page.js"]
+
 ["browser_search_bookmarks.js"]
 
 ["browser_search_history.js"]

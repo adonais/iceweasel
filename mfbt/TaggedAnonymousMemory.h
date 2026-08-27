@@ -34,8 +34,8 @@
 #  ifdef __wasi__
 #    include <stdlib.h>
 #  else
-#    include <sys/types.h>
 #    include <sys/mman.h>
+#    include <sys/types.h>
 #  endif  // __wasi__
 
 #  include "mozilla/Types.h"  // IWYU pragma: keep(MFBT_API)

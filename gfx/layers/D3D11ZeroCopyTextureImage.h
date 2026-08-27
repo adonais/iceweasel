@@ -112,7 +112,7 @@ class IMFSampleWrapper : public SupportsThreadSafeWeakPtr<IMFSampleWrapper> {
   MOZ_DECLARE_REFCOUNTED_TYPENAME(IMFSampleWrapper)
 
   static RefPtr<IMFSampleWrapper> Create(IMFSample* aVideoSample);
-  virtual ~IMFSampleWrapper();
+  virtual ~IMFSampleWrapper() = default;
   void ClearVideoSample();
 
  protected:

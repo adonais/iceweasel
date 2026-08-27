@@ -5,9 +5,11 @@
 #include "SharedSurfaceIO.h"
 
 #include "GLContextCGL.h"
+#include "GLContextEGL.h"
 #include "MozFramebuffer.h"
 #include "ScopedGLHelpers.h"
 #include "mozilla/gfx/MacIOSurface.h"
+#include "mozilla/layers/GpuFenceMTLSharedEvent.h"
 #include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor, etc
 #include "mozilla/layers/LayersTypes.h"
 
@@ -68,7 +70,7 @@ UniquePtr<SharedSurface_IOSurface> SharedSurface_IOSurface::Create(
   }
 
   auto fb = MozFramebuffer::CreateForBacking(desc.gl, desc.size, 0, false,
-                                             *target, tex->name);
+                                             false, *target, tex->name);
   if (!fb) return nullptr;
 
   return AsUnique(
@@ -88,6 +90,49 @@ void SharedSurface_IOSurface::ProducerReleaseImpl() {
   const auto& gl = mDesc.gl;
   if (!gl) return;
   gl->MakeCurrent();
+
+  MOZ_ASSERT(!mGpuFence);
+  if (gl->GetContextType() == GLContextType::EGL) {
+    const auto& gle = GLContextEGL::Cast(gl);
+    const auto& egl = gle->mEgl;
+
+    if (egl->IsExtensionSupported(
+            EGLExtension::ANGLE_metal_shared_event_sync)) {
+      const uint64_t signalValue = 1;
+      const EGLAttrib attribs[] = {
+          LOCAL_EGL_SYNC_METAL_SHARED_EVENT_SIGNAL_VALUE_LO_ANGLE,
+          static_cast<EGLAttrib>(signalValue & 0xFFFFFFFF),
+          LOCAL_EGL_SYNC_METAL_SHARED_EVENT_SIGNAL_VALUE_HI_ANGLE,
+          static_cast<EGLAttrib>(signalValue >> 32), LOCAL_EGL_NONE};
+      const EGLSync sync = egl->fCreateSyncEGL15(
+          LOCAL_EGL_SYNC_METAL_SHARED_EVENT_ANGLE, attribs);
+      if (!sync) {
+        gfxCriticalNote << "Creating EGL_SYNC_METAL_SHARED_EVENT sync failed";
+        gl->fFinish();
+        return;
+      }
+      void* const sharedEvent = egl->fCopyMetalSharedEventANGLE(sync);
+      egl->fDestroySync(sync);
+
+      if (!sharedEvent) {
+        gfxCriticalNote << "eglCopyMetalSharedEventANGLE failed";
+        gl->fFinish();
+        return;
+      }
+      mGpuFence =
+          layers::GpuFenceMTLSharedEvent::Create(sharedEvent, signalValue);
+      if (!mGpuFence) {
+        gfxCriticalNote << "GpuFenceMTLSharedEvent::Create failed";
+        gl->fFinish();
+        return;
+      }
+
+      // We must flush here else the shared event may never be signalled.
+      gl->fFlush();
+      return;
+    }
+  }
+
   gl->fFlush();
 }
 

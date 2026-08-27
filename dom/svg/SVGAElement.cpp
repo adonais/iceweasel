@@ -126,17 +126,6 @@ void SVGAElement::SetType(const nsAString& aType, mozilla::ErrorResult& rv) {
   SetAttr(nsGkAtoms::type, aType, rv);
 }
 
-void SVGAElement::GetText(nsAString& aText, mozilla::ErrorResult& rv) const {
-  if (NS_WARN_IF(
-          !nsContentUtils::GetNodeTextContent(this, true, aText, fallible))) {
-    rv.Throw(NS_ERROR_OUT_OF_MEMORY);
-  }
-}
-
-void SVGAElement::SetText(const nsAString& aText, mozilla::ErrorResult& rv) {
-  rv = nsContentUtils::SetNodeTextContent(this, aText, false);
-}
-
 //----------------------------------------------------------------------
 // nsIContent methods
 
@@ -156,34 +145,13 @@ void SVGAElement::UnbindFromTree(UnbindContext& aContext) {
 
 int32_t SVGAElement::TabIndexDefault() { return 0; }
 
-Focusable SVGAElement::IsFocusableWithoutStyle(IsFocusableFlags) {
+Focusable SVGAElement::IsFocusableWithoutStyle(IsFocusableFlags aFlags) {
   Focusable result;
   if (IsSVGFocusable(&result.mFocusable, &result.mTabIndex)) {
     return result;
   }
 
-  if (!OwnerDoc()->LinkHandlingEnabled()) {
-    return {};
-  }
-
-  // Links that are in an editable region should never be focusable, even if
-  // they are in a contenteditable="false" region.
-  if (nsContentUtils::IsNodeInEditableRegion(this)) {
-    return {};
-  }
-
-  if (GetTabIndexAttrValue().isNothing()) {
-    // check whether we're actually a link
-    if (!IsLink()) {
-      // Not tabbable or focusable without href (bug 17605), unless
-      // forced to be via presence of nonnegative tabindex attribute
-      return {};
-    }
-  }
-  if (!FocusModel::IsTabFocusable(TabFocusableType::Links)) {
-    result.mTabIndex = -1;
-  }
-  return result;
+  return Link::IsLinkFocusableWithoutStyle(aFlags);
 }
 
 bool SVGAElement::HasHref() const {

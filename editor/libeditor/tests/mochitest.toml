@@ -506,6 +506,8 @@ skip-if = [
 
 ["test_inline_style_cache.html"]
 
+["test_insertHTML_caret_position_after_replaced_element.html"]
+
 ["test_insertHTML_starting_with_multiple_comment_nodes.html"]
 
 ["test_insertParagraph_in_h2_and_li.html"]
@@ -665,6 +667,8 @@ skip-if = [
 ]
 
 ["test_pasting_text_longer_than_maxlength.html"]
+
+["test_plaintext_mail_in_design_mode.html"]
 
 ["test_replace_text.html"]
 

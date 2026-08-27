@@ -29,6 +29,11 @@ pub(crate) struct Metrics {
     conn_infos: HashMap<happy_eyeballs::Id, ConnInfo>,
     attempt_count: u32,
     cancelled_count: u32,
+    // Arrival time of the first and last positive DNS answer (A, AAAA or
+    // HTTPS) seen before the first connection attempt, used to record the
+    // spread between them at the end of the run.
+    first_positive_response: Option<Instant>,
+    last_positive_response: Option<Instant>,
     alt_svc_h3: bool,
     https_record_received: bool,
     https_rr_h3: bool,
@@ -52,6 +57,8 @@ impl Metrics {
             conn_infos: HashMap::new(),
             attempt_count: 0,
             cancelled_count: 0,
+            first_positive_response: None,
+            last_positive_response: None,
             alt_svc_h3,
             https_record_received: false,
             https_rr_h3: false,
@@ -77,15 +84,30 @@ impl Metrics {
         );
     }
 
-    pub(crate) fn dns_response(&mut self, id: happy_eyeballs::Id) {
+    pub(crate) fn dns_response(&mut self, id: happy_eyeballs::Id, positive: bool, is_trr: bool) {
+        // Any record resolved via TRR marks the connection as DoH-resolved. The
+        // resolver is consistent across a connection's lookups, so OR-ing is
+        // order-independent and robust to failed responses that carry no
+        // resolver signal.
+        self.is_trr |= is_trr;
         let Some(info) = self.dns_infos.remove(&id) else {
             return;
         };
-        let elapsed_ms = info.start.elapsed().as_millis() as i64;
+        let now = Instant::now();
+        let elapsed_ms = now.duration_since(info.start).as_millis() as i64;
         let label = dns_record_type_label(info.record_type);
         glean::happy_eyeballs_dns_resolution_time
             .get(label)
             .accumulate_single_sample_signed(elapsed_ms);
+
+        // Only answers that arrive before the first connection attempt inform
+        // the resolution delay; once racing begins the delay no longer applies,
+        // so later answers (including ones from queries a failed attempt
+        // triggers) are left out of the spread.
+        if positive && !self.first_attempt_dispatched {
+            self.first_positive_response.get_or_insert(now);
+            self.last_positive_response = Some(now);
+        }
     }
 
     pub(crate) fn dns_response_https(
@@ -106,8 +128,7 @@ impl Metrics {
         });
         self.https_rr_ipv4hint |= infos.iter().any(|i| !i.ipv4_hints.is_empty());
         self.https_rr_ipv6hint |= infos.iter().any(|i| !i.ipv6_hints.is_empty());
-        self.is_trr = is_trr;
-        self.dns_response(id);
+        self.dns_response(id, !infos.is_empty(), is_trr);
     }
 
     pub(crate) fn connection_attempt_started(&mut self, id: happy_eyeballs::Id) {
@@ -163,6 +184,12 @@ impl Drop for Metrics {
         let elapsed = match outcome {
             Outcome::Succeeded { elapsed, .. } | Outcome::Failed { elapsed } => *elapsed,
         };
+        if let Some(first) = self.first_positive_response {
+            let last = self.last_positive_response.unwrap_or(first);
+            let spread_ms = last.duration_since(first).as_millis() as i64;
+            glean::happy_eyeballs_dns_answer_spread.accumulate_single_sample_signed(spread_ms);
+        }
+
         let elapsed_ms = elapsed.as_millis() as i64;
         match outcome {
             Outcome::Succeeded { .. } => glean::happy_eyeballs_end_to_end_time_succeeded
@@ -189,8 +216,9 @@ impl Drop for Metrics {
             (false, true) => "https_rr_only",
             (true, true) => "both",
         };
-        glean::happy_eyeballs_h3_discovery
-            .get(h3_discovery_label)
+        let resolver = if self.is_trr { "doh" } else { "native" };
+        glean::happy_eyeballs_h3_discovery_by_resolver
+            .get(resolver, h3_discovery_label)
             .add(1);
 
         if self.https_record_received {

@@ -142,6 +142,14 @@ aboutaddons-themes-mode {
   }
 }
 
+aboutaddons-themes-picker {
+  display: block;
+
+  @media not -moz-pref("browser.nova.enabled") {
+    display: none;
+  }
+}
+
 #main {
   margin-inline-start: var(--main-margin-start);
   margin-bottom: 28px;
@@ -217,6 +225,14 @@ addon-list addon-card > .addon.card {
   user-select: none;
 }
 
+.native-theme-checkbox-list {
+  margin-top: var(--space-small);
+}
+
+.native-theme-checkbox-detail {
+  margin-bottom: var(--space-small);
+}
+
 .addon-card-message,
 .update-postponed-bar {
   border-top-left-radius: 0;
@@ -224,6 +240,8 @@ addon-list addon-card > .addon.card {
   margin: 8px calc(var(--card-padding) * -1) calc(var(--card-padding) * -1);
 }
 
+/* Small-ish subtree */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 addon-card[expanded] .addon-card-message,
 addon-card[expanded] .update-postponed-bar,
 .update-postponed-bar:has(+ .addon-card-message:not([hidden])) {
@@ -231,6 +249,8 @@ addon-card[expanded] .update-postponed-bar,
   margin-bottom: 0;
 }
 
+/* Small-ish subtree */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .update-postponed-bar:has(+ .addon-card-message:not([hidden])) {
   border-bottom: none;
 }
@@ -256,6 +276,12 @@ theme-preview {
    * For details, see https://bugzilla.mozilla.org/show_bug.cgi?id=1546123 */
   height: calc(var(--page-main-content-width) * 92 / 680);
   object-fit: cover;
+
+  /* Border bottom box to show more clearly where the preview image ends
+   * as shown in the UX specs (especially needed for Nova themes for which
+   * the toolbar color is exactly the same as the theme card background
+   * color). */
+  border-bottom: var(--border-width) solid var(--border-color-deemphasized);
 }
 
 .card-heading-icon {
@@ -757,11 +783,23 @@ section:not(:empty) ~ :is(#empty-addons-message, #empty-addons-promo) {
 
 @media -moz-pref("browser.nova.enabled") {
   [is="recommended-footer"] > .amo-link-container,
+  [is="recommended-extensions-footer"] > .amo-link-container,
+  [is="recommended-themes-footer"] > .amo-link-container,
+  [is="recommended-themes-footer"] > .theme-recommendation,
   #empty-addons-message {
     display: none;
   }
 
   addon-list:not([type="extension"]) #empty-addons-promo {
     display: none;
+  }
+
+  [is="recommended-themes-footer"] > addons-promo {
+    /* themes cards in the themes listview have a card-wide theme preview
+     * instead of a left aligned icon as the extensions cards in the
+     * extensions listview, and so we set the addons-promo inline text
+     * padding variable to 0 to align the addons-promo text with the theme
+     * name in the theme cards right above it. */
+    --addons-promo-text-padding-inline: 0;
   }
 }

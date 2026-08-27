@@ -2569,8 +2569,9 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
       window->UpdateCommands(u"focus"_ns);
     }
 
-    SendFocusOrBlurEvent(eBlur, presShell, element->GetComposedDoc(), element,
-                         false, false, aElementToFocus);
+    RefPtr<Document> doc = element->GetComposedDoc();
+    SendFocusOrBlurEvent(eBlur, presShell, doc, element, false, false,
+                         aElementToFocus);
   }
 
   // if we are leaving the document or the window was lowered, make the caret

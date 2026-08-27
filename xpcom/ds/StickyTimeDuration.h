@@ -7,6 +7,7 @@
 
 #include <cmath>
 
+#include "mozilla/CheckedInt.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/TimeStamp.h"
 
@@ -18,12 +19,10 @@ namespace mozilla {
  * negative equivalent) the result remains Forever (or the negative equivalent
  * as appropriate).
  *
- * Currently this only checks if either argument to each operation is
- * Forever/-Forever. However, it is possible that, for example,
- * aA + aB > INT64_MAX (or < INT64_MIN).
- *
- * We currently don't check for that case since we don't expect that to
- * happen often except under test conditions in which case the wrapping
+ * In addition to the Forever/-Forever operands, Multiply also saturates to
+ * Forever/-Forever when the product would overflow the range of int64_t.
+ * Add and Subtract don't check for that case since we don't expect that to
+ * happen often except under test conditions, in which case the wrapping
  * behavior is probably acceptable.
  */
 class StickyTimeDurationValueCalculator {
@@ -148,7 +147,14 @@ inline int64_t StickyTimeDurationValueCalculator::Multiply<int64_t>(
     return (aA >= 0) ^ (aB >= 0) ? INT64_MIN : INT64_MAX;
   }
 
-  return aA * aB;
+  // The same applies when the product of two finite operands would overflow
+  // the range of int64_t.
+  const CheckedInt<int64_t> result = CheckedInt<int64_t>(aA) * aB;
+  if (!result.isValid()) {
+    return (aA >= 0) ^ (aB >= 0) ? INT64_MIN : INT64_MAX;
+  }
+
+  return result.value();
 }
 
 template <>
@@ -165,7 +171,19 @@ inline int64_t StickyTimeDurationValueCalculator::Multiply<double>(int64_t aA,
     return (aA >= 0) ^ (aB >= 0.0) ? INT64_MIN : INT64_MAX;
   }
 
-  return aA * aB;
+  // The product of two finite operands can still fall outside the range of
+  // int64_t, and converting an out-of-range double to int64_t is undefined
+  // behavior, so the range must be checked before the implicit conversion
+  // below. Note that static_cast<double>(INT64_MAX) rounds up to 2^63, which
+  // is not representable as an int64_t, so that boundary counts as overflow
+  // too.
+  const double result = static_cast<double>(aA) * aB;
+  if (result >= static_cast<double>(INT64_MAX) ||
+      result <= static_cast<double>(INT64_MIN)) {
+    return (aA >= 0) ^ (aB >= 0.0) ? INT64_MIN : INT64_MAX;
+  }
+
+  return result;
 }
 
 template <>

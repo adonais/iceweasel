@@ -53,8 +53,6 @@ extern LazyLogModule gPIPNSSLog;
 
 NS_IMPL_ISUPPORTS(nsNSSCertificate, nsIX509Cert, nsISerializable, nsIClassInfo)
 
-nsNSSCertificate::nsNSSCertificate() : mCert("nsNSSCertificate::mCert") {}
-
 nsNSSCertificate::nsNSSCertificate(CERTCertificate* cert)
     : mCert("nsNSSCertificate::mCert") {
   if (cert) {

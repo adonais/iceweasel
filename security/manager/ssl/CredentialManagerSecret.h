@@ -11,7 +11,7 @@
 
 class CredentialManagerSecret final : public AbstractOSKeyStore {
  public:
-  CredentialManagerSecret();
+  CredentialManagerSecret() = default;
 
   virtual nsresult RetrieveSecret(const nsACString& label,
                                   /* out */ nsACString& secret) override;
@@ -19,7 +19,7 @@ class CredentialManagerSecret final : public AbstractOSKeyStore {
                                const nsACString& label) override;
   virtual nsresult DeleteSecret(const nsACString& label) override;
 
-  virtual ~CredentialManagerSecret();
+  virtual ~CredentialManagerSecret() = default;
 };
 
 #endif  // CredentialManagerSecret_h

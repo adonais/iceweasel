@@ -22,7 +22,7 @@ struct IDataObject;
  */
 
 class nsClipboard final : public nsBaseClipboard, public nsIObserver {
-  virtual ~nsClipboard();
+  virtual ~nsClipboard() = default;
 
  public:
   nsClipboard();

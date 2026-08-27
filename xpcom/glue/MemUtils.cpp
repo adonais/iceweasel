@@ -37,20 +37,21 @@ bool mozilla::CanPrefetchMemory() {
 #endif
 }
 
-void mozilla::PrefetchMemory(uint8_t* aStart, size_t aNumBytes) {
+void mozilla::PrefetchMemory(const uint8_t* aStart, size_t aNumBytes) {
   if (aNumBytes == 0) {
     return;
   }
 
+  uint8_t* ptr = const_cast<uint8_t*>(aStart);
 #if defined(XP_SOLARIS)
-  posix_madvise(aStart, aNumBytes, POSIX_MADV_WILLNEED);
+  posix_madvise(ptr, aNumBytes, POSIX_MADV_WILLNEED);
 #elif defined(XP_UNIX)
-  madvise(aStart, aNumBytes, MADV_WILLNEED);
+  madvise(ptr, aNumBytes, MADV_WILLNEED);
 #elif defined(XP_WIN)
   MaybeInitPrefetchVirtualMemory();
   if (*sPrefetchVirtualMemory) {
     WIN32_MEMORY_RANGE_ENTRY entry;
-    entry.VirtualAddress = aStart;
+    entry.VirtualAddress = ptr;
     entry.NumberOfBytes = aNumBytes;
     (*sPrefetchVirtualMemory)(GetCurrentProcess(), 1, &entry, 0);
     return;

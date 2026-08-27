@@ -56,12 +56,12 @@ add_task(async function test_About_Welcome_Location_Change() {
   );
   BrowserTestUtils.startLoadingURIString(
     gBrowser.selectedBrowser,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/#foo"
   );
   await BrowserTestUtils.waitForLocationChange(
     gBrowser,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/#foo"
   );
 

@@ -1290,8 +1290,6 @@ security.ui.protectionspopup:
       "settings",
       "full_report",
       "milestone_message",
-      "cookieb_toggle_on",
-      "cookieb_toggle_off",
       "protectionspopup_cfr",
     ]
     extra_keys:
@@ -1388,127 +1386,6 @@ intl.ui.browserLanguage:
       - 1911321
       - 1928262
       - 1999880
-
-security:
-  prefUsage:
-    objects: ["contentProcess"]
-    bug_numbers:
-      - 1782544
-      - 1708798
-    description: >
-      We block certain preferences from being sent to the content process because they contain sensitive
-      user data. Some preferences are blocked by name, others by heuristic. If one of the preferences so
-      blocked is accidently accessed we want to know about it so we can allowlist it or refactor the access.
-    notification_emails:
-      - tom@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - firefox
-    expiry_version: "never"
-    record_in_processes:
-      - all_children
-  fissionPrincipals:
-    objects: ["contentParent"]
-    bug_numbers:
-      - 1687891
-    description: >
-      When running with Fission, we received an unexpected principal from the content process.
-      Expected values for this telemetry event are the method names in ContentParent that
-      received the unexpected principal.
-    notification_emails:
-      - tom@mozilla.com
-      - ckerschb@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - firefox
-    expiry_version: "never"
-    record_in_processes:
-      - main
-    extra_keys:
-      principalType: >
-        The type of principal that was received. Expected values for this field are
-          NullPtr
-          SystemPrincipal
-          ExpandedPrincipal
-          ContentPrincipal
-          Unknown
-      scheme: If the principal is a ContentPrincipal, we also collect the scheme
-  evalUsage:
-    objects: ["systemContext", "parentProcess"]
-    bug_numbers:
-      - 1567623
-    description: >
-      eval() (or an eval()-like method) was called while running in the System Principal
-      context or the Parent Process.
-      Expected values are:
-        chromeuri - chrome:// file
-        resourceuri - resource:// file
-        datauri - a data URI
-        bloburi - a blob URI
-        abouturi - an about URI
-        singlestring - A single file or string with no slashes
-        mozillaextension - An extension claiming to be from *mozilla.org (Deprecated)
-        otherextension - Another extension not from Mozilla (Deprecated)
-        mozillaextension_file - An extension claiming to be from *mozilla.org, loaded from a file://
-        otherextension_file - Another extension not from Mozilla, loaded from a file://
-        extension_uri - A URI with the moz-extension:// scheme
-        suspectedUserChromeJS - A filepath ending in .uc.js
-        sanitizedWindowsPath - A filepath, on Windows, sanitized by WinUtils::PreparePathForTelemetry
-                               which is a bare filename or a subpath of %ProgramFiles%, %SystemRoot%,
-                               or %TEMP%
-        sanitizedWindowsURL - A partial URL, on Windows, consisting of either file://../ followed by
-                              the value prepared as for sanitizedWindowsPath, or the bare scheme of
-                              the original url
-        other - Unknown
-        other-on-worker - We cannot do a regex; it is not a chrome, resource, data, or blob uri, but
-                          could be any other.
-        regexfailure - Our Regex Matching code threw an error
-      The fileinfo key may contain additional information about the file that caused the eval()
-      depending on the above value. Resource, Chrome, About, and SingleString will contain the full value.
-      (About URIs will remove any querystring values.)
-      Extensions-from-file will contain the full value; however .xpi! will be shortened to !,
-      shield.mozilla.org! to s! and mozilla.org! to m!.  Data, Blob, UserChromeJS, Other, and
-      Regexfailure should have no value.
-    notification_emails:
-      - tom@mozilla.com
-      - ckerschb@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - firefox
-    expiry_version: "never"
-    record_in_processes:
-      - all
-    extra_keys:
-      fileinfo: Information about the file that triggered eval
-  unexpectedload:
-    objects: ["systemprincipal"]
-    bug_numbers:
-      - 1644671
-    description: >
-      Long term want to block all loads from the system principal that cause us to parse non-trivial data.
-      We don't look to break existing functionality and will allow exceptions, for this we are collecting
-      information about unexpected requests triggered by the system principal
-      Our measurement *excludes* acceptable requests. Those are:
-      - annotated using the 'AllowedDeprecatedSystemRequests' loadinfo flag
-      - using a nsContentPolicyType of FETCH, XMLHTTPREQUEST, WEBSOCKET, SAVEAS_DOWNLOAD or IMAGE
-      - with a requested URI object has the flag URI_IS_UI_RESOURCE
-      - if the URL scheme is 'view-source'
-      - if the URL scheme is 'file' and the Content-Type is STYLESHEET or OTHER
-      - if the scheme is 'jar', 'about' or 'moz-extension'
-    notification_emails:
-      - fbraun@mozilla.com
-      - ckerschb@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - firefox
-    expiry_version: "never"
-    record_in_processes:
-      - all
-    extra_keys:
-      contenttype: Information about the content-type we expect to receive
-      remotetype: Information about the remoteType in which we triggered the load
-      filedetails: Information about the file that triggered the load
-      redirects: Comma-separated string listing schemes for URLs that we redirected from
 
 launch_on_login:
   last_profile_disable:
@@ -2033,6 +1910,24 @@ profiles:
       - "nbaumgardner@mozilla.com"
     bug_numbers:
       - 1927608
+    expiry_version: never
+    products:
+      - "firefox"
+  error:
+    objects: ["avatar"]
+    release_channel_collection: opt-out
+    record_in_processes:
+      - main
+    description: >
+      Recorded when the profile system attempts to load a custom avatar
+      image, but the file is not found on disk. See Glean probe
+      definition for details.
+    notification_emails:
+      - "dtownsend@mozilla.com"
+      - "jhirsch@mozilla.com"
+      - "nbaumgardner@mozilla.com"
+    bug_numbers:
+      - 2028725
     expiry_version: never
     products:
       - "firefox"

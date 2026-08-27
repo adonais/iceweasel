@@ -10,5 +10,7 @@ loadScript("dom/quota/test/xpcshell/common/head.js");
 
 function loadScript(path) {
   let uri = Services.io.newFileURI(do_get_file(depth + path));
-  Services.scriptloader.loadSubScript(uri.spec);
+  Services.scriptloader.loadSubScriptWithOptions(uri.spec, {
+    allowUnsafeURL: true,
+  });
 }

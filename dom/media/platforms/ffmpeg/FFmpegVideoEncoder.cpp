@@ -28,7 +28,7 @@
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/gfx/gfxVars.h"
 #endif
-#include "nsPrintfCString.h"
+#include "nsStringFwd.h"
 
 // The ffmpeg namespace is introduced to avoid the PixelFormat's name conflicts
 // with MediaDataEncoder::PixelFormat in MediaDataEncoder class scope.
@@ -156,7 +156,7 @@ static Maybe<H264Setting> GetH264Profile(const H264_PROFILE& aProfile) {
 
 static Maybe<H264Setting> GetH264Level(const H264_LEVEL& aLevel) {
   int val = static_cast<int>(aLevel);
-  nsPrintfCString str("%d", val);
+  nsFmtCString str("{}", val);
   str.Insert('.', 1);
   return Some(H264Setting{val, std::move(str)});
 }
@@ -312,7 +312,7 @@ nsCString FFmpegVideoEncoder<LIBAV_VER>::GetDescriptionName() const {
 #  else
       "no library: ffmpeg disabled during build";
 #  endif
-  return nsPrintfCString("ffmpeg video encoder (%s)", lib);
+  return nsFmtCString("ffmpeg video encoder ({})", lib);
 #endif
 }
 
@@ -577,13 +577,13 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoderInternal(bool aHardware) {
       const char* levelStr = s.mSettingKeyValuePairs.Length() == 3
                                  ? s.mSettingKeyValuePairs[1].second.get()
                                  : s.mSettingKeyValuePairs[0].second.get();
-      h264Log.AppendPrintf(", H264: profile - %d (%s), level %d (%s), %s",
-                           mCodecContext->profile, profileStr,
-                           mCodecContext->level, levelStr, formatStr);
+      h264Log.AppendFmt(", H264: profile - {} ({}), level {} ({}), {}",
+                        mCodecContext->profile, profileStr,
+                        mCodecContext->level, levelStr, formatStr);
     } else {
-      h264Log.AppendPrintf(", H264: profile - %d, level %d, %s",
-                           mCodecContext->profile, mCodecContext->level,
-                           formatStr);
+      h264Log.AppendFmt(", H264: profile - {}, level {}, {}",
+                        mCodecContext->profile, mCodecContext->level,
+                        formatStr);
     }
   }
 
@@ -725,7 +725,7 @@ Result<MediaDataEncoder::EncodedData, MediaResult> FFmpegVideoEncoder<
       FFMPEGV_LOG("Key frame requested, reseting temporal layer id");
       mSVCInfo->ResetTemporalLayerId();
     }
-    nsPrintfCString str("%d", mSVCInfo->CurrentTemporalLayerId());
+    nsFmtCString str("{}", mSVCInfo->CurrentTemporalLayerId());
     mLib->av_dict_set(&dict, "temporal_id", str.get(), 0);
     mFrame->metadata = dict;
   }
@@ -973,33 +973,32 @@ FFmpegVideoEncoder<LIBAV_VER>::GetSVCSettings() {
       if (i > 0) {
         parameters.Append(",");
       }
-      parameters.AppendPrintf("%d", svc.mTargetBitrates[i]);
+      parameters.AppendFmt("{}", svc.mTargetBitrates[i]);
     }
-    parameters.AppendPrintf(
-        ":ts_layering_mode=%u",
+    parameters.AppendFmt(
+        ":ts_layering_mode={}",
         svc.mCodecAppendix->as<VPXSVCAppendix>().mLayeringMode);
   }
 
   if (codecType == CodecType::AV1) {
     // Form an SVC setting string for libaom.
     name = "svc-parameters"_ns;
-    parameters.AppendPrintf("number_spatial_layers=%zu",
-                            svc.mNumberSpatialLayers);
-    parameters.AppendPrintf(":number_temporal_layers=%zu",
-                            svc.mNumberTemporalLayers);
+    parameters.AppendFmt("number_spatial_layers={}", svc.mNumberSpatialLayers);
+    parameters.AppendFmt(":number_temporal_layers={}",
+                         svc.mNumberTemporalLayers);
     parameters.Append(":framerate_factor=");
     for (size_t i = 0; i < svc.mRateDecimators.Length(); ++i) {
       if (i > 0) {
         parameters.Append(",");
       }
-      parameters.AppendPrintf("%d", svc.mRateDecimators[i]);
+      parameters.AppendFmt("{}", svc.mRateDecimators[i]);
     }
     parameters.Append(":layer_target_bitrate=");
     for (size_t i = 0; i < svc.mTargetBitrates.Length(); ++i) {
       if (i > 0) {
         parameters.Append(",");
       }
-      parameters.AppendPrintf("%d", svc.mTargetBitrates[i]);
+      parameters.AppendFmt("{}", svc.mTargetBitrates[i]);
     }
   }
 

@@ -32,6 +32,7 @@ web-platform-tests:
     - web-platform-tests-webcodecs
     - web-platform-tests-eme
     - web-platform-tests-aam
+    - web-platform-tests-webrtc
 
 web-platform-tests-2404-tsan:
     - web-platform-tests
@@ -43,6 +44,7 @@ web-platform-tests-2404-tsan:
     - web-platform-tests-webcodecs
     - web-platform-tests-eme
     - web-platform-tests-aam
+    - web-platform-tests-webrtc
 
 web-platform-tests-backlog:
     - web-platform-tests-backlog
@@ -148,6 +150,11 @@ browsertime-ref-hw:
     - browsertime-benchmark
     - browsertime-nav-bench
 
+devtools-compat:
+    - devtools-compat-same-version
+    - devtools-compat-beta
+    - devtools-compat-release
+
 awsy:
     - awsy
     - awsy-base
@@ -172,6 +179,11 @@ artifact-tests:
     - mochitest-plain
     - xpcshell
 
+### Developer Edition (DevEdition)
+devedition-tests:
+    - mochitest-browser-chrome
+    - mochitest-devtools-chrome
+
 ### Specific platform test sets
 
 # Linux
@@ -187,6 +199,7 @@ linux-tests:
     - mochitest-a11y
     - mochitest-browser-a11y
     - mochitest-browser-chrome
+    - mochitest-browser-chrome-ml-models
     - mochitest-browser-media
     - mochitest-browser-translations
     - mochitest-chrome
@@ -324,6 +337,7 @@ windows11-64-2009-ccov-tests:
     - web-platform-tests-wdspec
     - web-platform-tests-webcodecs
     - web-platform-tests-eme
+    - web-platform-tests-webrtc
 
 windows11-24h2-tests:
     - crashtest
@@ -462,9 +476,11 @@ macosx1500-64-tests:
     - web-platform-tests-canvas
     - web-platform-tests-webcodecs
     - web-platform-tests-eme
+    - web-platform-tests-webrtc
 
 macosx1500-aarch64-tests:
     - cppunittest
+    - gtest
     - firefox-ui-functional
     - jsreftest
     - marionette-integration
@@ -473,6 +489,7 @@ macosx1500-aarch64-tests:
     - jittest
     - mochitest-a11y
     - mochitest-browser-a11y
+    - mochitest-browser-chrome
     - mochitest-browser-media
     - mochitest-browser-translations
     - mochitest-chrome
@@ -495,6 +512,7 @@ macosx1500-aarch64-tests:
     - web-platform-tests-canvas
     - web-platform-tests-crashtest
     - web-platform-tests-eme
+    - web-platform-tests-webrtc
     - web-platform-tests-print-reftest
     - web-platform-tests-reftest
     - web-platform-tests-wdspec
@@ -529,13 +547,11 @@ macosx1500-aarch64-vms-tests:
 
 macosx1470-64-tests:
     - cppunittest
-    - gtest
 
 macosx1015-64-qr-tests:
     - cppunittest
     - crashtest
     - jittest
-    - mochitest-browser-chrome
     - mochitest-media
     - mochitest-webgl1-core
     - mochitest-webgl1-ext
@@ -592,6 +608,7 @@ android14-x86_64-tests:
     - web-platform-tests-wdspec
     - web-platform-tests-webcodecs
     - web-platform-tests-eme
+    - web-platform-tests-webrtc
     - xpcshell
 
 android-hw-aarch64-opt-unittests:
@@ -639,6 +656,9 @@ android-hw-browsertime-profiling:
 
 android-hw-speedometer-tests:
     - browsertime-benchmark-speedometer2-mobile
+    - browsertime-benchmark-speedometer3-mobile
+
+android-em-arm64-speedometer-tests:
     - browsertime-benchmark-speedometer3-mobile
 
 android-hw-power-tests:

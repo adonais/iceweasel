@@ -281,7 +281,7 @@ bool DataChannelConnection::ConnectToTransport(const std::string& aTransportId,
         // We don't support firing errors right now, and we probabaly want the
         // closed check anyway, and we don't really have something equivalent
         // to the [[DataChannels]] slot, so just use AnnounceClosed for now.
-        channel->AnnounceClosed();
+        channel->AnnounceClosed(Nothing());
       }
     }
 
@@ -404,7 +404,7 @@ uint16_t DataChannelConnection::FindFreeStream() const {
 
   // Find the lowest odd/even id that is not present in mStreamIds
   for (auto id : mStreamIds) {
-    if (i >= MAX_NUM_STREAMS) {
+    if (i >= GetStreamIdCeiling()) {
       return INVALID_STREAM;
     }
 
@@ -1023,9 +1023,10 @@ void DataChannelConnection::SetState(DataChannelConnectionState aState) {
   if (mState == DataChannelConnectionState::Open) {
     Dispatch(NS_NewCancelableRunnableFunction(
                  __func__,
-                 [this, self = RefPtr<DataChannelConnection>(this)]() {
+                 [this, self = RefPtr<DataChannelConnection>(this),
+                  maxChannels = Some(mNegotiatedIdLimit)]() {
                    if (mListener) {
-                     mListener->NotifySctpConnected();
+                     mListener->NotifySctpConnected(maxChannels);
                    }
                  }),
              NS_DISPATCH_FALLIBLE);
@@ -1153,7 +1154,8 @@ RefPtr<dom::RTCDataChannel> DataChannel::GetDomDataChannel() const {
   return mWorkerDomDataChannel;
 }
 
-void DataChannelConnection::FinishClose_s(const RefPtr<DataChannel>& aChannel) {
+void DataChannelConnection::FinishClose_s(const RefPtr<DataChannel>& aChannel,
+                                          Maybe<dom::RTCErrorParams> aError) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
 
   // We're removing this from all containers, make sure the passed pointer
@@ -1166,10 +1168,10 @@ void DataChannelConnection::FinishClose_s(const RefPtr<DataChannel>& aChannel) {
 
   // Close the channel's data transport by following the associated
   // procedure.
-  aChannel->AnnounceClosed();
+  aChannel->AnnounceClosed(std::move(aError));
 }
 
-void DataChannelConnection::CloseAll_s() {
+void DataChannelConnection::CloseAll_s(Maybe<dom::RTCErrorParams> aError) {
   // Make sure no more channels will be opened
   SetState(DataChannelConnectionState::Closed);
 
@@ -1187,7 +1189,7 @@ void DataChannelConnection::CloseAll_s() {
     }
     // We do not wait for the reset to finish in this case; we won't be around
     // to see the response.
-    FinishClose_s(channel);
+    FinishClose_s(channel, aError);
   }
 
   // Clean up any pending opens for channels
@@ -1452,7 +1454,7 @@ void DataChannel::AnnounceOpen() {
       NS_DISPATCH_FALLIBLE);
 }
 
-void DataChannel::AnnounceClosed() {
+void DataChannel::AnnounceClosed(Maybe<dom::RTCErrorParams> aError) {
   // When an RTCDataChannel object's underlying data transport has been closed,
   // the user agent MUST queue a task to run the following steps:
   DC_INFO(
@@ -1463,7 +1465,8 @@ void DataChannel::AnnounceClosed() {
   GetMainThreadSerialEventTarget()->Dispatch(
       NS_NewCancelableRunnableFunction(
           "DataChannel::AnnounceClosed",
-          [this, self = RefPtr<DataChannel>(this), connection = mConnection]() {
+          [this, self = RefPtr<DataChannel>(this), connection = mConnection,
+           aError = std::move(aError)]() mutable {
             if (mAnnouncedClosed) {
               return;
             }
@@ -1484,13 +1487,14 @@ void DataChannel::AnnounceClosed() {
             mDomEventTarget->Dispatch(
                 NS_NewCancelableRunnableFunction(
                     "DataChannel::AnnounceClosed",
-                    [this, self = RefPtr<DataChannel>(this)] {
+                    [this, self = RefPtr<DataChannel>(this),
+                     aError = std::move(aError)] {
                       DC_INFO(("%p: Attempting to call AnnounceClosed.", this));
                       if (GetDomDataChannel()) {
                         DC_INFO(
                             ("%p: Calling AnnounceClosed on RTCDataChannel.",
                              this));
-                        GetDomDataChannel()->AnnounceClosed();
+                        GetDomDataChannel()->AnnounceClosed(std::move(aError));
                       }
                     }),
                 NS_DISPATCH_FALLIBLE);

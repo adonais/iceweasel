@@ -58,7 +58,7 @@ which will help to get the type definitions set up correctly.
   * Additionally, the way that TypeScript works means that it will run across
     the whole project regardless, so we report all the issues that it reports.
 * Will my patches get backed out due to TypeScript failures?
-  * Currently no. Whilst we have a [TypeScript Linter on CI](../lint/linters/typescript.rst)
+  * Currently no. Whilst we have a [TypeScript Linter on CI](../lint/linters/typescript.md)
     it is currently tier-3 which is hidden from the sheriffs view.
   * Failures will however, be reported on reviews on Phabricator.
   * We will promote the linter to tier-2 and tier-1 once we have more automation
@@ -91,3 +91,11 @@ The Lint & Formatting channel (#lint:mozilla.org) on Matrix is the best place
   useful in understanding how TypeScript works and how types may be set up.
   * The [JavaScript section starting here](https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html),
     is especially useful for firefox-main development.
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+bestPractices
+updatingTypes
+```

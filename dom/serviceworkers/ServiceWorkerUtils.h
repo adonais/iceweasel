@@ -53,6 +53,12 @@ using NavigationPreloadGetStateCallback =
 bool ServiceWorkerRegistrationDataIsValid(
     const ServiceWorkerRegistrationData& aData);
 
+// Performs scope validation steps of
+// https://w3c.github.io/ServiceWorker/#start-register-algorithm and
+// https://w3c.github.io/ServiceWorker/#register-algorithm.
+void ServiceWorkerScopeIsValid(nsIPrincipal* aPrincipal, nsIURI* aScopeURI,
+                               ErrorResult& aRv);
+
 // Performs key spec validation steps of
 // https://w3c.github.io/ServiceWorker/#start-register-algorithm and
 // https://w3c.github.io/ServiceWorker/#register-algorithm as well as CSP

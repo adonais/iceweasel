@@ -1143,3 +1143,38 @@ add_task(function test_jog_dual_labeled_counter_works() {
       .testGetValue()
   );
 });
+
+add_task(async function test_jog_ping_works_across_registration() {
+  const kReason = "reason-1";
+  let pingArgs = [
+    "twice-ping",
+    true,
+    true,
+    true,
+    true,
+    true,
+    [],
+    [kReason],
+    true,
+    [],
+  ];
+  Services.fog.testRegisterRuntimePing(...pingArgs);
+  await GleanPings.twicePing.testSubmission(
+    reason => {
+      Assert.equal(kReason, reason);
+    },
+    () => {
+      GleanPings.twicePing.submit(kReason);
+    }
+  );
+  // Ensure that a re-registered ping with the same name (but different id)
+  // will still call the callback from the first ping.
+  let submitted = false;
+  GleanPings.twicePing.testBeforeNextSubmit(reason => {
+    submitted = true;
+    Assert.equal(kReason, reason);
+  });
+  Services.fog.testRegisterRuntimePing(...pingArgs);
+  GleanPings.twicePing.submit(kReason);
+  Assert.ok(submitted, "Ping was submitted!");
+});

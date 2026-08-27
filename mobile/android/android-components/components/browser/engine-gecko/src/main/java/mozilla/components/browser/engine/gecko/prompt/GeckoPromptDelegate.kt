@@ -269,7 +269,12 @@ internal class GeckoPromptDelegate(private val geckoEngineSession: GeckoEngineSe
                     creditCards = request.options.map { it.value.toCreditCardEntry() },
                     onDismiss = onDismiss,
                     onConfirm = onConfirm,
-                ),
+                ).also {
+                    request.delegate = PromptInstanceDismissDelegate(
+                        geckoEngineSession,
+                        it,
+                    )
+                },
             )
         }
 
@@ -371,7 +376,12 @@ internal class GeckoPromptDelegate(private val geckoEngineSession: GeckoEngineSe
                     generatedPassword = generatedPassword,
                     onConfirm = onConfirmSelect,
                     onDismiss = onDismiss,
-                ),
+                ).also {
+                    prompt.delegate = PromptInstanceDismissDelegate(
+                        geckoEngineSession,
+                        it,
+                    )
+                },
             )
         }
         return geckoResult
@@ -500,7 +510,12 @@ internal class GeckoPromptDelegate(private val geckoEngineSession: GeckoEngineSe
                     addresses = request.options.map { it.value.toAddress() },
                     onConfirm = onConfirm,
                     onDismiss = onDismiss,
-                ),
+                ).also {
+                    request.delegate = PromptInstanceDismissDelegate(
+                        geckoEngineSession,
+                        it,
+                    )
+                },
             )
         }
 

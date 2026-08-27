@@ -35,6 +35,7 @@ ml-perf:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -62,6 +63,7 @@ ml-summarizer-perf:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -86,6 +88,7 @@ ml-llama-summarizer-perf:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -109,6 +112,7 @@ ml-security-perf:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -136,6 +140,7 @@ ml-multi-perf:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -157,6 +162,7 @@ ml-perf-semantic-ft:
         tier: 2
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -184,6 +190,7 @@ ml-perf-suggest-ft:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -209,6 +216,7 @@ ml-perf-suggest-inf:
         cron: false
     run-on-projects: []
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -224,6 +232,8 @@ ml-perf-autofill:
         fetch:
             - ort.jsep.wasm
             - mozilla-autofill
+            - mozilla-autofill-embed
+            - mozilla-autofill-head
     description: Run ML Autofill Model
     treeherder:
         symbol: perftest(ml-perf-autofill)
@@ -233,6 +243,7 @@ ml-perf-autofill:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -258,6 +269,7 @@ ml-perf-smart-tab:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -285,6 +297,7 @@ ml-perf-smart-tab-cluster:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -314,6 +327,7 @@ ml-perf-speecht5-tts:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -336,6 +350,7 @@ perftest-accessibility:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&

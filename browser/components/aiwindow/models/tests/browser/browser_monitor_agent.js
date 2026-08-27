@@ -17,7 +17,7 @@ const { MockEngineManager } = ChromeUtils.importESModule(
   "resource://testing-common/AIWindowTestUtils.sys.mjs"
 );
 
-const { MonitorAgent } = ChromeUtils.importESModule(
+const { MonitorAgent, NOTIFICATION_ACTIONS } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/agents/MonitorAgent.sys.mjs"
 );
 
@@ -37,6 +37,49 @@ const {
 const { IntervalSchedule } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/agents/Schedule.sys.mjs"
 );
+
+const { MockRegistrar } = ChromeUtils.importESModule(
+  "resource://testing-common/MockRegistrar.sys.mjs"
+);
+
+/**
+ * Replaces the platform alerts service with a mock that records shown alerts
+ * and their observers, so tests can simulate action-button clicks.
+ *
+ * @returns {{ alerts: object[], observers: object[], cleanup: () => void }}
+ */
+function mockAlertsService() {
+  const alerts = [];
+  const observers = [];
+  const service = {
+    QueryInterface: ChromeUtils.generateQI(["nsIAlertsService"]),
+    showAlert(alert, observer) {
+      alerts.push(alert);
+      observers.push(observer);
+    },
+    closeAlert() {},
+  };
+  const cid = MockRegistrar.register("@mozilla.org/alerts-service;1", service);
+  return {
+    alerts,
+    observers,
+    cleanup: () => MockRegistrar.unregister(cid),
+  };
+}
+
+/**
+ * Builds a fake nsIAlertAction that the notification observer can query, used
+ * to simulate the user clicking one of the notification's action buttons.
+ *
+ * @param {string} action
+ * @returns {object}
+ */
+function fakeAlertAction(action) {
+  return {
+    action,
+    QueryInterface: ChromeUtils.generateQI(["nsIAlertAction"]),
+  };
+}
 
 const MONITOR_STORE_REMOVE_DATABASE_ON_STARTUP_PREF =
   "browser.smartwindow.monitorStore.removeDatabaseOnStartup";
@@ -68,6 +111,7 @@ async function createMonitorWatching(urls, prompt) {
     prompt,
     watchUrls: urls,
     schedule: { type: "interval", hours: 1 },
+    source: "test",
   });
   const monitors = await MonitorAgent.listMonitors();
   return monitors.at(-1);
@@ -602,6 +646,129 @@ add_task(function test_Monitor_fromJSON_normalizes_loaded_history() {
   );
 });
 
+add_task(function test_categorizeError() {
+  const { categorizeError } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs"
+  );
+
+  // Test network errors
+  Assert.equal(
+    categorizeError(new Error("Network request failed")),
+    "network_error",
+    "Network errors are categorized correctly"
+  );
+  Assert.equal(
+    categorizeError("Fetch failed: connection refused"),
+    "network_error",
+    "Fetch failed errors are categorized as network errors"
+  );
+
+  // Test timeout errors
+  Assert.equal(
+    categorizeError(new Error("Request timeout after 30 seconds")),
+    "timeout",
+    "Timeout errors are categorized correctly"
+  );
+
+  // Test rate limit errors
+  Assert.equal(
+    categorizeError("Rate limit exceeded, please try again later"),
+    "rate_limit",
+    "Rate limit errors are categorized correctly"
+  );
+  Assert.equal(
+    categorizeError(new Error("Quota exceeded for API calls")),
+    "rate_limit",
+    "Quota errors are categorized as rate limit"
+  );
+
+  // Test auth errors
+  Assert.equal(
+    categorizeError(new Error("Authentication failed")),
+    "auth_error",
+    "Authentication errors are categorized correctly"
+  );
+  Assert.equal(
+    categorizeError("Unauthorized: Invalid API key"),
+    "auth_error",
+    "Unauthorized errors are categorized as auth errors"
+  );
+
+  // Test content extraction errors
+  Assert.equal(
+    categorizeError(new Error("Failed to extract page content")),
+    "content_extraction_error",
+    "Content extraction errors are categorized correctly"
+  );
+  Assert.equal(
+    categorizeError("Unable to parse HTML response"),
+    "content_extraction_error",
+    "Parse errors are categorized as content extraction errors"
+  );
+
+  // Test interrupted errors
+  Assert.equal(
+    categorizeError(new Error("Monitor check was interrupted")),
+    "interrupted",
+    "Interrupted errors are categorized correctly"
+  );
+  Assert.equal(
+    categorizeError("Request aborted by user"),
+    "interrupted",
+    "Abort errors are categorized as interrupted"
+  );
+
+  // Test model/API errors
+  Assert.equal(
+    categorizeError(new Error("Model API returned error 500")),
+    "model_error",
+    "Model API errors are categorized correctly"
+  );
+  Assert.equal(
+    categorizeError("API endpoint not found"),
+    "model_error",
+    "API errors are categorized as model errors"
+  );
+
+  // Test unknown errors
+  Assert.equal(
+    categorizeError(new Error("Something unexpected happened")),
+    "unknown_error",
+    "Unrecognized errors are categorized as unknown"
+  );
+  Assert.equal(
+    categorizeError("Random error message"),
+    "unknown_error",
+    "Generic errors are categorized as unknown"
+  );
+
+  // Test that sensitive info would be categorized, not returned
+  const sensitiveError =
+    "Failed to connect to https://internal.api.com/v1/secret-key-12345";
+  Assert.equal(
+    categorizeError(sensitiveError),
+    "network_error",
+    "Sensitive URL info is not returned, just the category"
+  );
+
+  // Verify the result is always one of the predefined codes
+  const validCodes = [
+    "network_error",
+    "timeout",
+    "rate_limit",
+    "auth_error",
+    "content_extraction_error",
+    "interrupted",
+    "model_error",
+    "unknown_error",
+  ];
+  const result = categorizeError("any random error");
+  Assert.ok(
+    validCodes.includes(result),
+    "Result is always one of the predefined safe codes"
+  );
+});
+
 add_task(async function test_monitor_limits_watch_urls() {
   try {
     // create a monitor that watches more than the allowed number of URLs
@@ -615,11 +782,50 @@ add_task(async function test_monitor_limits_watch_urls() {
         prompt: "Check if any product price is below $300.",
         watchUrls,
         schedule: { type: "interval", hours: 1 },
+        source: "test",
       }),
       /Cannot watch more than \d+ URLs in a monitor\./,
       `The monitor should limit the number of watch URLs to ${TOTAL_NUM_URLS_IN_MONITOR}`
     );
     Assert.deepEqual(await MonitorAgent.listMonitors(), []);
+  } finally {
+    await resetMonitorAgentForTesting();
+  }
+});
+
+add_task(async function test_createMonitor_returns_id() {
+  try {
+    await resetMonitorAgentForTesting();
+    Services.fog.testResetFOG(); // Reset telemetry for testing
+
+    const id = await MonitorAgent.createMonitor({
+      prompt: "Check if any product price is below $300.",
+      watchUrls: ["https://example.com/product"],
+      schedule: { type: "interval", hours: 1 },
+      source: "test",
+    });
+    Assert.equal(typeof id, "string", "createMonitor resolves to a string id");
+    const monitors = await MonitorAgent.listMonitors();
+    Assert.equal(
+      monitors.at(-1).id,
+      id,
+      "returned id matches the created monitor"
+    );
+
+    // Test telemetry was recorded
+    const events = Glean.smartWindow.monitorCreate.testGetValue();
+    Assert.ok(events, "monitor_create event was recorded");
+    Assert.equal(events.length, 1, "One monitor_create event was recorded");
+    Assert.equal(
+      events[0].extra.source,
+      "test",
+      "monitor_create event has correct source"
+    );
+    Assert.equal(
+      events[0].extra.urls,
+      "1",
+      "monitor_create event has correct url count"
+    );
   } finally {
     await resetMonitorAgentForTesting();
   }
@@ -638,6 +844,7 @@ add_task(async function test_limit_number_of_monitors() {
         prompt: "Check if any product price is below $300.",
         watchUrls,
         schedule: { type: "interval", hours: 1 },
+        source: "test",
       });
     }
     await Assert.rejects(
@@ -645,6 +852,7 @@ add_task(async function test_limit_number_of_monitors() {
         prompt: "Check if any product price is below $300.",
         watchUrls,
         schedule: { type: "interval", hours: 1 },
+        source: "test",
       }),
       /Cannot create more than \d+ monitors\./,
       `The monitor should limit the number of monitors to ${TOTAL_NUM_MONITORS}`
@@ -683,6 +891,7 @@ add_task(async function test_monitor_only_watches_http_urls() {
         "javascript:alert(1)",
       ],
       schedule: { type: "interval", hours: 10 },
+      source: "test",
     });
     const [monitor] = await MonitorAgent.listMonitors();
 
@@ -720,6 +929,507 @@ add_task(async function test_monitor_only_watches_http_urls() {
   } finally {
     await stopServing();
     mockEngineManager.cleanupMocks();
+    await MonitorAgent._resetForTesting();
+  }
+});
+
+add_task(async function test_pauseMonitor() {
+  try {
+    await resetMonitorAgentForTesting();
+
+    // Create a monitor that starts enabled by default
+    const id = await MonitorAgent.createMonitor({
+      prompt: "Check if the product price is below $300.",
+      watchUrls: ["https://example.com/product"],
+      schedule: { type: "interval", hours: 1 },
+      source: "test",
+    });
+
+    let monitors = await MonitorAgent.listMonitors();
+    Assert.equal(
+      monitors[0].enabled,
+      true,
+      "Monitor starts enabled by default"
+    );
+
+    // Test pausing the monitor (pause=true should set enabled=false)
+    await MonitorAgent.pauseMonitor(id, true);
+    monitors = await MonitorAgent.listMonitors();
+    Assert.equal(
+      monitors[0].enabled,
+      false,
+      "Monitor is paused when pause=true"
+    );
+
+    // Test resuming the monitor (pause=false should set enabled=true)
+    await MonitorAgent.pauseMonitor(id, false);
+    monitors = await MonitorAgent.listMonitors();
+    Assert.equal(
+      monitors[0].enabled,
+      true,
+      "Monitor is resumed when pause=false"
+    );
+
+    // Test toggling without explicit pause parameter
+    await MonitorAgent.pauseMonitor(id);
+    monitors = await MonitorAgent.listMonitors();
+    Assert.equal(
+      monitors[0].enabled,
+      false,
+      "Monitor toggles to paused when no pause parameter"
+    );
+
+    await MonitorAgent.pauseMonitor(id);
+    monitors = await MonitorAgent.listMonitors();
+    Assert.equal(
+      monitors[0].enabled,
+      true,
+      "Monitor toggles back to enabled when no pause parameter"
+    );
+
+    // Test that pausing with the same state doesn't break
+    await MonitorAgent.pauseMonitor(id, false);
+    monitors = await MonitorAgent.listMonitors();
+    Assert.equal(
+      monitors[0].enabled,
+      true,
+      "Setting enabled when already enabled works"
+    );
+
+    await MonitorAgent.pauseMonitor(id, true);
+    await MonitorAgent.pauseMonitor(id, true);
+    monitors = await MonitorAgent.listMonitors();
+    Assert.equal(
+      monitors[0].enabled,
+      false,
+      "Setting paused when already paused works"
+    );
+
+    // Test error handling for non-existent monitor
+    await Assert.rejects(
+      MonitorAgent.pauseMonitor("non-existent-id", true),
+      /Monitor with id non-existent-id not found/,
+      "pauseMonitor rejects with error for non-existent monitor"
+    );
+  } finally {
+    await resetMonitorAgentForTesting();
+  }
+});
+
+/**
+ * @param {string} id - The monitor id
+ * @param {object} [options]
+ * @param {boolean} [options.conditionMet]
+ * @param {string} [options.resultExplanation]
+ */
+async function notifyMonitor(
+  id,
+  { conditionMet = true, resultExplanation = "Matched" } = {}
+) {
+  const monitor = (await MonitorAgent.listMonitors()).find(m => m.id === id);
+  MonitorAgent._notifyIfConditionMet({
+    ...monitor,
+    history: [
+      ...monitor.history,
+      {
+        id: crypto.randomUUID(),
+        checkedAt: new Date().toISOString(),
+        status: "success",
+        resultExplanation,
+        conditionMet,
+      },
+    ],
+  });
+}
+
+add_task(async function test_notification_shown_when_condition_met() {
+  const alertsMock = mockAlertsService();
+
+  try {
+    await resetMonitorAgentForTesting();
+    Services.fog.testResetFOG(); // Reset telemetry for testing
+
+    await MonitorAgent.createMonitor({
+      prompt: "Check if the product price is below $300.",
+      watchUrls: ["https://example.com/product"],
+      pageTitle: "Sneaker deal",
+      schedule: { type: "interval", hours: 1 },
+      source: "test",
+    });
+    const { id } = (await MonitorAgent.listMonitors()).at(-1);
+
+    await notifyMonitor(id, {
+      conditionMet: true,
+      resultExplanation: "The price dropped to $250.",
+    });
+
+    Assert.equal(
+      alertsMock.alerts.length,
+      1,
+      "A desktop notification is shown when the condition is met"
+    );
+
+    // Test notification send telemetry was recorded
+    const notificationEvents =
+      Glean.smartWindow.monitorNotificationSend.testGetValue();
+    Assert.ok(
+      notificationEvents,
+      "monitor_notification_send event was recorded"
+    );
+    Assert.equal(
+      notificationEvents.length,
+      1,
+      "One notification send event was recorded"
+    );
+    const alert = alertsMock.alerts[0];
+    Assert.equal(
+      alert.title,
+      "Sneaker deal",
+      "Alert title is the monitor name"
+    );
+    Assert.equal(
+      alert.text,
+      "The price dropped to $250.",
+      "Alert text is the run's result explanation"
+    );
+  } finally {
+    alertsMock.cleanup();
+    await MonitorAgent._resetForTesting();
+  }
+});
+
+add_task(async function test_no_notification_when_condition_not_met() {
+  const alertsMock = mockAlertsService();
+
+  try {
+    await resetMonitorAgentForTesting();
+    await MonitorAgent.createMonitor({
+      prompt: "Check if the product price is below $300.",
+      watchUrls: ["https://example.com/product"],
+      pageTitle: "Sneaker deal",
+      schedule: { type: "interval", hours: 1 },
+      source: "test",
+    });
+    const { id } = (await MonitorAgent.listMonitors()).at(-1);
+
+    await notifyMonitor(id, { conditionMet: false });
+
+    Assert.equal(
+      alertsMock.alerts.length,
+      0,
+      "No notification is shown when the condition is not met"
+    );
+  } finally {
+    alertsMock.cleanup();
+    await MonitorAgent._resetForTesting();
+  }
+});
+
+add_task(async function test_notification_shown_every_matching_run() {
+  const alertsMock = mockAlertsService();
+
+  try {
+    await resetMonitorAgentForTesting();
+    await MonitorAgent.createMonitor({
+      prompt: "Check if the product price is below $300.",
+      watchUrls: ["https://example.com/product"],
+      pageTitle: "Sneaker deal",
+      schedule: { type: "interval", hours: 1 },
+      source: "test",
+    });
+    const { id } = (await MonitorAgent.listMonitors()).at(-1);
+
+    await notifyMonitor(id, { conditionMet: true });
+    Assert.equal(alertsMock.alerts.length, 1, "First matching run notifies");
+
+    await notifyMonitor(id, { conditionMet: true });
+    Assert.equal(
+      alertsMock.alerts.length,
+      2,
+      "A still-matching condition notifies again on the next run"
+    );
+
+    await notifyMonitor(id, { conditionMet: false });
+    Assert.equal(
+      alertsMock.alerts.length,
+      2,
+      "A non-matching run does not notify"
+    );
+
+    await notifyMonitor(id, { conditionMet: true });
+    Assert.equal(
+      alertsMock.alerts.length,
+      3,
+      "Re-matching after the condition lapsed notifies again"
+    );
+  } finally {
+    alertsMock.cleanup();
+    await MonitorAgent._resetForTesting();
+  }
+});
+
+add_task(async function test_notification_has_snooze_and_dismiss_actions() {
+  const alertsMock = mockAlertsService();
+
+  try {
+    await resetMonitorAgentForTesting();
+    await MonitorAgent.createMonitor({
+      prompt: "Check if the product price is below $300.",
+      watchUrls: ["https://example.com/product"],
+      pageTitle: "Sneaker deal",
+      schedule: { type: "interval", hours: 1 },
+      source: "test",
+    });
+    const { id } = (await MonitorAgent.listMonitors()).at(-1);
+
+    await notifyMonitor(id, { conditionMet: true });
+
+    const alert = alertsMock.alerts[0];
+    Assert.deepEqual(
+      alert.actions.map(a => a.action),
+      [NOTIFICATION_ACTIONS.SNOOZE, NOTIFICATION_ACTIONS.DISMISS],
+      "Notification carries snooze and dismiss actions"
+    );
+    Assert.ok(
+      alert.actions.every(a => a.title),
+      "Action titles are populated from localized strings"
+    );
+  } finally {
+    alertsMock.cleanup();
+    await MonitorAgent._resetForTesting();
+  }
+});
+
+add_task(async function test_notification_uses_localized_fallbacks() {
+  const alertsMock = mockAlertsService();
+
+  try {
+    await resetMonitorAgentForTesting();
+    await MonitorAgent.createMonitor({
+      prompt: "Check if the product price is below $300.",
+      watchUrls: ["https://example.com/product"],
+      schedule: { type: "interval", hours: 1 },
+      source: "test",
+    });
+    const { id } = (await MonitorAgent.listMonitors()).at(-1);
+
+    await notifyMonitor(id, { conditionMet: true, resultExplanation: "" });
+
+    const alert = alertsMock.alerts[0];
+    Assert.ok(
+      alert.title,
+      "Notification title falls back to a resolved localized string"
+    );
+    Assert.ok(
+      alert.text,
+      "Notification body falls back to a resolved localized string"
+    );
+  } finally {
+    alertsMock.cleanup();
+    await MonitorAgent._resetForTesting();
+  }
+});
+
+add_task(async function test_notification_body_click_opens_watched_url() {
+  Services.fog.testResetFOG();
+  const alertsMock = mockAlertsService();
+
+  // Capture where a body click would navigate
+  const openedUrls = [];
+  const originalOpen = MonitorAgent._openWatchedUrl;
+  MonitorAgent._openWatchedUrl = u => openedUrls.push(u);
+
+  try {
+    await resetMonitorAgentForTesting();
+    await MonitorAgent.createMonitor({
+      prompt: "Check if the product price is below $300.",
+      watchUrls: ["https://example.com/product"],
+      pageTitle: "Sneaker deal",
+      schedule: { type: "interval", hours: 1 },
+      source: "test",
+    });
+    const { id } = (await MonitorAgent.listMonitors()).at(-1);
+
+    await notifyMonitor(id, { conditionMet: true });
+
+    // A body click is delivered with a null action subject
+    const observer = alertsMock.observers[0];
+    observer.observe(null, "alertclickcallback", "");
+
+    Assert.deepEqual(
+      openedUrls,
+      ["https://example.com/product"],
+      "Clicking the notification body opens the watched URL"
+    );
+
+    // Test notification click telemetry was recorded
+    const clickEvents =
+      Glean.smartWindow.monitorNotificationClick.testGetValue();
+    Assert.ok(clickEvents, "Notification click events were recorded");
+    Assert.equal(clickEvents.length, 1, "One click event was recorded");
+    Assert.equal(
+      clickEvents[0].extra.click_type,
+      "open_url",
+      "Click type is open_url"
+    );
+  } finally {
+    MonitorAgent._openWatchedUrl = originalOpen;
+    alertsMock.cleanup();
+    await MonitorAgent._resetForTesting();
+  }
+});
+
+add_task(async function test_notification_snooze_action_defers_next_run() {
+  Services.fog.testResetFOG();
+  const alertsMock = mockAlertsService();
+
+  try {
+    await resetMonitorAgentForTesting();
+    await MonitorAgent.createMonitor({
+      prompt: "Check if the product price is below $300.",
+      watchUrls: ["https://example.com/product"],
+      pageTitle: "Sneaker deal",
+      schedule: { type: "interval", hours: 1 },
+      source: "test",
+    });
+    const { id } = (await MonitorAgent.listMonitors()).at(-1);
+
+    await notifyMonitor(id, { conditionMet: true });
+
+    const observer = alertsMock.observers[0];
+    observer.observe(
+      fakeAlertAction(NOTIFICATION_ACTIONS.SNOOZE),
+      "alertclickcallback",
+      ""
+    );
+    await TestUtils.waitForCondition(async () => {
+      const monitor = (await MonitorAgent.listMonitors()).find(
+        m => m.id === id
+      );
+      return (
+        new Date(monitor.nextRunTime).getTime() - Date.now() > 12 * 3600000
+      );
+    }, "Snoozing pushes the next run roughly a day out");
+
+    const monitor = (await MonitorAgent.listMonitors()).find(m => m.id === id);
+    Assert.ok(monitor.enabled, "Snoozed monitor stays enabled");
+
+    // Test notification click telemetry was recorded for snooze
+    const clickEvents =
+      Glean.smartWindow.monitorNotificationClick.testGetValue();
+    Assert.ok(clickEvents, "Notification click events were recorded");
+    Assert.equal(clickEvents.length, 1, "One click event was recorded");
+    Assert.equal(
+      clickEvents[0].extra.click_type,
+      "snooze",
+      "Click type is snooze"
+    );
+  } finally {
+    alertsMock.cleanup();
+    await MonitorAgent._resetForTesting();
+  }
+});
+
+add_task(async function test_notification_snooze_resumes_on_schedule() {
+  const alertsMock = mockAlertsService();
+
+  try {
+    await resetMonitorAgentForTesting();
+    // A daily schedule so snoozing must resume at the scheduled clock
+    await MonitorAgent.createMonitor({
+      prompt: "Check if the product price is below $300.",
+      watchUrls: ["https://example.com/product"],
+      pageTitle: "Sneaker deal",
+      schedule: { type: "daily", hour: 9, minute: 30 },
+      source: "test",
+    });
+    const { id } = (await MonitorAgent.listMonitors()).at(-1);
+
+    await notifyMonitor(id, { conditionMet: true });
+
+    const observer = alertsMock.observers[0];
+    observer.observe(
+      fakeAlertAction(NOTIFICATION_ACTIONS.SNOOZE),
+      "alertclickcallback",
+      ""
+    );
+
+    await TestUtils.waitForCondition(async () => {
+      const m = (await MonitorAgent.listMonitors()).find(x => x.id === id);
+      return new Date(m.nextRunTime).getTime() - Date.now() > 12 * 3600000;
+    }, "Snoozing pushes the next run past the blackout window");
+
+    const m = (await MonitorAgent.listMonitors()).find(x => x.id === id);
+    const nextRun = new Date(m.nextRunTime);
+    Assert.equal(
+      nextRun.getHours(),
+      9,
+      "Snoozed run resumes at the scheduled hour"
+    );
+    Assert.equal(
+      nextRun.getMinutes(),
+      30,
+      "Snoozed run resumes at the scheduled minute"
+    );
+  } finally {
+    alertsMock.cleanup();
+    await MonitorAgent._resetForTesting();
+  }
+});
+
+add_task(async function test_notification_dismiss_action_mutes_notifications() {
+  Services.fog.testResetFOG();
+  const alertsMock = mockAlertsService();
+
+  try {
+    await resetMonitorAgentForTesting();
+    await MonitorAgent.createMonitor({
+      prompt: "Check if the product price is below $300.",
+      watchUrls: ["https://example.com/product"],
+      pageTitle: "Sneaker deal",
+      schedule: { type: "interval", hours: 1 },
+      source: "test",
+    });
+    const { id } = (await MonitorAgent.listMonitors()).at(-1);
+
+    await notifyMonitor(id, { conditionMet: true });
+    Assert.equal(alertsMock.alerts.length, 1, "First matching run notifies");
+
+    const observer = alertsMock.observers[0];
+    observer.observe(
+      fakeAlertAction(NOTIFICATION_ACTIONS.DISMISS),
+      "alertclickcallback",
+      ""
+    );
+    await TestUtils.waitForCondition(async () => {
+      const monitor = (await MonitorAgent.listMonitors()).find(
+        m => m.id === id
+      );
+      return monitor.notificationsMuted;
+    }, "Dismissing mutes the monitor's notifications");
+
+    const monitor = (await MonitorAgent.listMonitors()).find(m => m.id === id);
+    Assert.ok(monitor.enabled, "Dismissed monitor keeps running");
+
+    // Test notification click telemetry was recorded for dismiss
+    const clickEvents =
+      Glean.smartWindow.monitorNotificationClick.testGetValue();
+    Assert.ok(clickEvents, "Notification click events were recorded");
+    Assert.equal(clickEvents.length, 1, "One click event was recorded");
+    Assert.equal(
+      clickEvents[0].extra.click_type,
+      "dismiss",
+      "Click type is dismiss"
+    );
+
+    await notifyMonitor(id, { conditionMet: true });
+    Assert.equal(
+      alertsMock.alerts.length,
+      1,
+      "A matching run after dismiss does not notify again"
+    );
+  } finally {
+    alertsMock.cleanup();
     await MonitorAgent._resetForTesting();
   }
 });

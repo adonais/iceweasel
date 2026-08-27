@@ -7,7 +7,7 @@ const { PermissionTestUtils } = ChromeUtils.importESModule(
 );
 const testPath = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   "http://example.com"
 );
 const CANONICAL_URI = Services.io.newURI(testPath);

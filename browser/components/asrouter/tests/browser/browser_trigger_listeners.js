@@ -1,4 +1,4 @@
-/* eslint-disable @microsoft/sdl/no-insecure-url */
+/* eslint-disable sdl/no-insecure-url */
 const { ASRouterTriggerListeners } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/ASRouterTriggerListeners.sys.mjs"
 );
@@ -361,70 +361,6 @@ add_task(async function test_nthTabClosed_with_actionSource_marker() {
   );
 
   tabClosedTrigger.uninit();
-});
-
-add_task(async function test_cookieBannerDetected() {
-  const handlerStub = sinon.stub();
-  const bannerDetectedTrigger = ASRouterTriggerListeners.get(
-    "cookieBannerDetected"
-  );
-  bannerDetectedTrigger.uninit();
-  bannerDetectedTrigger.init(handlerStub);
-
-  const win = await BrowserTestUtils.openNewBrowserWindow();
-  let eventWait = BrowserTestUtils.waitForEvent(win, "cookiebannerdetected");
-  win.dispatchEvent(new Event("cookiebannerdetected"));
-  await eventWait;
-  let closeWindow = BrowserTestUtils.closeWindow(win);
-
-  Assert.ok(
-    handlerStub.called,
-    "Called after `cookiebannerdetected` event fires"
-  );
-
-  handlerStub.resetHistory();
-  bannerDetectedTrigger.uninit();
-
-  Assert.ok(handlerStub.notCalled, "Not called after uninit");
-  await closeWindow;
-});
-
-add_task(async function test_cookieBannerHandled() {
-  const handlerStub = sinon.stub();
-  const bannerHandledTrigger = ASRouterTriggerListeners.get(
-    "cookieBannerHandled"
-  );
-  bannerHandledTrigger.uninit();
-  bannerHandledTrigger.init(handlerStub);
-
-  const win = await BrowserTestUtils.openNewBrowserWindow();
-  win.focus();
-  let eventWait = BrowserTestUtils.waitForEvent(win, "cookiebannerhandled");
-  win.windowUtils.dispatchEventToChromeOnly(
-    win,
-    new CustomEvent("cookiebannerhandled", {
-      bubbles: true,
-      cancelable: false,
-      detail: {
-        windowContext: {
-          rootFrameLoader: { ownerElement: win.gBrowser.selectedBrowser },
-        },
-      },
-    })
-  );
-  await eventWait;
-  let closeWindow = BrowserTestUtils.closeWindow(win);
-
-  Assert.ok(
-    handlerStub.called,
-    "Called after `cookiebannerhandled` event fires"
-  );
-
-  handlerStub.resetHistory();
-  bannerHandledTrigger.uninit();
-
-  Assert.ok(handlerStub.notCalled, "Not called after uninit");
-  await closeWindow;
 });
 
 function getIdleTriggerMock() {

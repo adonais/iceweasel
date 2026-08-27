@@ -21,6 +21,26 @@ const USER_ACTION_TYPES = {
   PROVIDER_LINK_CLICK: "provider_link_click",
 };
 
+const WEATHER_PROVIDER = "AccuWeather®";
+
+function SponsoredText({ size }) {
+  if (size === "small") {
+    return (
+      <span className="sponsored-text" aria-hidden="true">
+        {WEATHER_PROVIDER}
+      </span>
+    );
+  }
+  return (
+    <span
+      className="sponsored-text"
+      aria-hidden="true"
+      data-l10n-id="newtab-weather-sponsored"
+      data-l10n-args={JSON.stringify({ provider: WEATHER_PROVIDER })}
+    />
+  );
+}
+
 function Weather({ dispatch, size, widgetEnabledMap }) {
   const prefs = useSelector(state => state.Prefs.values);
   const weatherData = useSelector(state => state.Weather);
@@ -141,9 +161,13 @@ function Weather({ dispatch, size, widgetEnabledMap }) {
   const nimbusWeatherOptInEnabled =
     prefs.trainhopConfig?.weather?.weatherOptInEnabled;
   const isOptInEnabled = weatherOptIn || nimbusWeatherOptInEnabled;
-  const optInDisplayed = prefs["weather.optInDisplayed"];
   const optInUserChoice = prefs["weather.optInAccepted"];
-  const showOptInState = isOptInEnabled && optInDisplayed && !optInUserChoice;
+  // Show the opt-in prompt whenever opt-in is required and the user has not yet
+  // accepted, independent of weather.optInDisplayed. The Nova widget has no
+  // reject button, so the only path to optInDisplayed=false is acceptance (which
+  // sets optInAccepted=true); gating on optInDisplayed previously let real
+  // location weather render for users migrated from a legacy reject (Bug 2046143).
+  const showOptInState = isOptInEnabled && !optInUserChoice;
 
   const { searchActive } = weatherData;
 
@@ -466,7 +490,9 @@ function Weather({ dispatch, size, widgetEnabledMap }) {
               <div className="weather-conditions-view">
                 <a
                   data-l10n-id="newtab-weather-see-forecast-description"
-                  data-l10n-args='{"provider": "AccuWeather®"}'
+                  data-l10n-args={JSON.stringify({
+                    provider: WEATHER_PROVIDER,
+                  })}
                   data-l10n-attrs="aria-description"
                   href={WEATHER_SUGGESTION.forecast.url}
                   className="weather-info-link"
@@ -520,6 +546,7 @@ function Weather({ dispatch, size, widgetEnabledMap }) {
                     </div>
                   </div>
                 </a>
+                {size === "medium" && <SponsoredText size={size} />}
               </div>
             )}
             {!hasError && showForecast && (
@@ -553,14 +580,9 @@ function Weather({ dispatch, size, widgetEnabledMap }) {
               </div>
             )}
           </div>
-          {!hasError && (
+          {!hasError && size !== "medium" && (
             <div className="forecast-footer">
-              <span
-                className="sponsored-text"
-                aria-hidden="true"
-                data-l10n-id="newtab-weather-sponsored"
-                data-l10n-args='{"provider": "AccuWeather®"}'
-              ></span>
+              <SponsoredText size={size} />
               {showForecast && (
                 <a
                   className="full-forecast"

@@ -36,20 +36,22 @@ inline double NumberMod(double a, double b) {
     return JS::GenericNaN();
   }
 
-  // Fast path: both operands are integer-valued and fit in Int32.
-  int32_t ai, bi;
-  if (mozilla::NumberEqualsInt32(a, &ai) &&
-      mozilla::NumberEqualsInt32(b, &bi)) {
-    // N % -1 == 0
+  // Fast path: both operands are integer-valued and fit in Int64. The exact
+  // remainder of two integer-valued doubles is itself always representable as
+  // a double, so converting |m| back below never rounds.
+  int64_t ai, bi;
+  if (mozilla::NumberEqualsInt64(a, &ai) &&
+      mozilla::NumberEqualsInt64(b, &bi)) {
+    // N % -1 == 0. Special-casing this also avoids INT64_MIN % -1.
     if (bi != -1) {
-      int32_t m = ai % bi;
+      int64_t m = ai % bi;
       if (m != 0) {
         return double(m);
       }
     }
 
     // Zero remainder takes the sign of a
-    return mozilla::IsNegative(a) ? -0.0 : 0.0;
+    return std::copysign(0.0, a);
   }
 
   double r = fmod(a, b);

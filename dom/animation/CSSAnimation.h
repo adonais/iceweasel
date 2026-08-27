@@ -12,24 +12,6 @@
 #include "mozilla/dom/MutationObservers.h"
 
 namespace mozilla {
-// Properties of CSS Animations that can be overridden by the Web Animations API
-// in a manner that means we should ignore subsequent changes to markup for that
-// property.
-enum class CSSAnimationProperties {
-  None = 0,
-  Keyframes = 1 << 0,
-  Duration = 1 << 1,
-  IterationCount = 1 << 2,
-  Direction = 1 << 3,
-  Delay = 1 << 4,
-  FillMode = 1 << 5,
-  Composition = 1 << 6,
-  Effect = Keyframes | Duration | IterationCount | Direction | Delay |
-           FillMode | Composition,
-  PlayState = 1 << 7,
-  Timeline = 1 << 8,
-};
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CSSAnimationProperties)
 
 namespace dom {
 
@@ -140,20 +122,11 @@ class CSSAnimation final : public Animation {
     QueueEvents(aActiveTime);
   }
 
-  CSSAnimationProperties GetOverriddenProperties() const {
-    return mOverriddenProperties;
-  }
-  void AddOverriddenProperties(CSSAnimationProperties aProperties) {
+  void PropertiesWillSetFromJS(CSSAnimationProperties aProperties) override {
     mOverriddenProperties |= aProperties;
   }
-
-  void TimelineWillSetFromJS() override {
-    AddOverriddenProperties(CSSAnimationProperties::Timeline);
-  }
-
-  bool TimelineOverridenByJS() const override {
-    return static_cast<bool>(GetOverriddenProperties() &
-                             CSSAnimationProperties::Timeline);
+  CSSAnimationProperties PropertiesOverridenByJS() const override {
+    return mOverriddenProperties;
   }
 
  protected:
@@ -225,6 +198,10 @@ class CSSAnimationKeyframeEffect : public KeyframeEffect {
       : KeyframeEffect(aDocument, std::move(aTarget), std::move(aTiming),
                        aOptions) {}
 
+  CSSAnimationKeyframeEffect* AsCSSAnimationKeyframeEffect() override {
+    return this;
+  }
+
   void GetTiming(EffectTiming& aRetVal) const override;
   void GetComputedTimingAsDict(ComputedEffectTiming& aRetVal) const override;
   void UpdateTiming(const OptionalEffectTiming& aTiming,
@@ -232,6 +209,14 @@ class CSSAnimationKeyframeEffect : public KeyframeEffect {
   void SetKeyframes(JSContext* aContext, JS::Handle<JSObject*> aKeyframes,
                     ErrorResult& aRv) override;
   void SetComposite(const CompositeOperation& aComposite) override;
+  void SetDefaultTimingFunction(
+      const StyleComputedTimingFunction& aTimingFunction) {
+    mDefaultTimingFunction = aTimingFunction;
+  }
+  void SetDefaultComposite(const CompositeOperation& aComposite) {
+    mDefaultComposite = aComposite;
+  }
+  bool GetComputedKeyframes(nsTArray<Keyframe>& aKeyframes) const override;
 
  private:
   CSSAnimation* GetOwningCSSAnimation() {
@@ -243,6 +228,26 @@ class CSSAnimationKeyframeEffect : public KeyframeEffect {
 
   // Flushes styles if our owning animation is a CSSAnimation
   void MaybeFlushUnanimatedStyle() const;
+
+  // The default timing function is the corresponding computed value of
+  // animation-timing-function on element.
+  // Note: We shouldn't reuse |mTiming.mFunction| because it has other usages,
+  // e.g. it should still be "linear" when calling getTiming() and computing the
+  // progress.
+  // https://drafts.csswg.org/css-animations-2/#keyframe-processing
+  StyleComputedTimingFunction mDefaultTimingFunction =
+      StyleComputedTimingFunction::Keyword(StyleTimingKeyword::Ease);
+  // The default composite is the corresponding computed value of
+  // animation-composition on element.
+  // Note: We cannot reuse |mEffectOptions.mComposite| which may be updated by
+  // Web Animations. We should always use the animation-composition from style.
+  CompositeOperation mDefaultComposite = CompositeOperation::Replace;
+
+  // True if we should ignore keyframes generation (for 0% and 100%) because the
+  // new keyframes are from JS. It's unfortunate we cannot reuse
+  // |CSSAnimation::mOverriddenProperties| because this keyframe effect may not
+  // be associated with an animation.
+  bool mIgnoreKeyframesGeneration = false;
 };
 
 }  // namespace dom

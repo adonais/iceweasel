@@ -115,7 +115,7 @@
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_malformed_uri_title_alternative">アドレスの書式が正しくありません</string>
   <!-- This string contains markup. The URL should not be localized. -->
-  <string name="mozac_browser_errorpages_malformed_uri_message_alternative"><![CDATA[<ul>\n<li>ウェブのアドレスは通常 <strong>http://www.example.com/</strong></li> のようなものになります。\n<li>スラッシュ (<strong>/</strong>) </li>が使われているか確認してください。\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_malformed_uri_message_alternative"><![CDATA[<ul>\n<li>ウェブのアドレスは通常 <strong>http://www.example.com/</strong> のようなものになります。</li>\n<li>スラッシュ (<strong>/</strong>) が使われているか確認してください。</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_unknown_protocol_title">プロトコルが不明です</string>
   <string name="mozac_browser_errorpages_unknown_protocol_message"><![CDATA[<p>指定されたプロトコル (例えば <q>wxyz://</q>) を認識できないため、サイトに正常に接続できませんでした。</p>\n<ul>\n<li>マルチメディアファイルなど非テキストデータにアクセスしようとしている場合、サイトによる特別な動作要件がないか確認してください。</li>\n<li>一部のプロトコルを使用するにはサードパーティのソフトウェアやプラグインが必要になります。</li>\n</ul>]]></string>

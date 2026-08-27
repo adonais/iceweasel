@@ -12,8 +12,10 @@
 #define MOZ_GTEST_NUM_ITERATIONS 5
 
 namespace mozilla {
-void GTestBench(const char* aSuite, const char* aName,
-                const std::function<void()>& aTest) {
+
+template <typename ReturnVal>
+void GTestBenchInternal(const char* aSuite, const char* aName,
+                        const std::function<ReturnVal()>& aTest) {
 #if defined(DEBUG) || defined(MOZ_ASAN)
   // Run the test to make sure that it doesn't fail but don't log
   // any measurements since it's not an optimized build.
@@ -30,7 +32,14 @@ void GTestBench(const char* aSuite, const char* aName,
   for (int i = 0; i < iterations; i++) {
     mozilla::TimeStamp start = TimeStamp::Now();
 
-    aTest();
+    if constexpr (std::is_same_v<ReturnVal, bool>) {
+      if (!aTest()) {
+        // The test has indicated we should not report any results.
+        return;
+      }
+    } else {
+      aTest();
+    }
 
     durations.push_back((TimeStamp::Now() - start).ToMicroseconds());
   }
@@ -56,6 +65,16 @@ void GTestBench(const char* aSuite, const char* aName,
       MOZ_GTEST_BENCH_FRAMEWORK, aSuite, aName, durations[medianIndex],
       replicatesStr.c_str(), shouldAlert ? "true" : "false");
 #endif
+}
+
+void GTestBench(const char* aSuite, const char* aName,
+                const std::function<void()>& aTest) {
+  GTestBenchInternal<void>(aSuite, aName, aTest);
+}
+
+void GTestBench(const char* aSuite, const char* aName,
+                const std::function<bool()>& aTest) {
+  GTestBenchInternal<bool>(aSuite, aName, aTest);
 }
 
 }  // namespace mozilla

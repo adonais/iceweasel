@@ -16,7 +16,7 @@
     --toggle-background-color-pressed: var(--color-accent-primary);
     --toggle-background-color-pressed-hover: var(--color-accent-primary-hover);
     --toggle-background-color-pressed-active: var(--color-accent-primary-active);
-    --toggle-border-color: var(--border-color-interactive);
+    --toggle-border-color: light-dark(var(--color-gray-70), var(--border-color-interactive));
     --toggle-border-color-hover: var(--toggle-border-color);
     --toggle-border-color-active: var(--toggle-border-color);
     --toggle-border-radius: var(--border-radius-circle);
@@ -38,10 +38,22 @@
 
 /* Bug 1879900: Can't nest media queries inside of :host, :root selector
    until Bug 1879349 lands */
+@layer tokens-prefers-contrast {
+  @media (prefers-contrast) {
+    :root,
+    :host {
+      --toggle-border-color: var(--border-color-interactive);
+    }
+  }
+}
+
+/* Bug 1879900: Can't nest media queries inside of :host, :root selector
+   until Bug 1879349 lands */
 @layer tokens-forced-colors {
   @media (forced-colors) {
     :root,
     :host {
+      --toggle-border-color: var(--border-color-interactive);
       --toggle-border-color-hover: var(--border-color-interactive-hover);
       --toggle-border-color-active: var(--border-color-interactive-active);
       --toggle-dot-background-color: var(--color-accent-primary);
@@ -59,6 +71,12 @@
       --toggle-background-color-pressed: var(--button-background-color-primary);
       --toggle-background-color-pressed-hover: var(--button-background-color-primary-hover);
       --toggle-background-color-pressed-active: var(--button-background-color-primary-active);
+      --toggle-border-color: var(--border-color-interactive);
+      --toggle-border-color-hover: var(--border-color-interactive-hover);
+      --toggle-border-color-active: var(--border-color-interactive-active);
+      --toggle-dot-background-color: var(--toggle-border-color);
+      --toggle-dot-background-color-hover: var(--toggle-border-color-hover);
+      --toggle-dot-background-color-active: var(--toggle-border-color-active);
       --toggle-dot-background-color-on-pressed: var(--background-color-box);
     }
   }

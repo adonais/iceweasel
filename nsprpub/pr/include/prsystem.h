@@ -18,14 +18,16 @@ PR_BEGIN_EXTERN_C
 **      [<sep><root_component><sep>]*(<component><sep>)<leaf_name>
 */
 
-NSPR_API(char) PR_GetDirectorySeparator(void);
+NSPR_API(char)
+PR_GetDirectorySeparator(void);
 
 /*
 ** OBSOLETE -- the function name is misspelled.
 ** Use PR_GetDirectorySeparator instead.
 */
 
-NSPR_API(char) PR_GetDirectorySepartor(void);
+NSPR_API(char)
+PR_GetDirectorySepartor(void);
 
 /*
 ** Get the host' path separator.
@@ -33,12 +35,13 @@ NSPR_API(char) PR_GetDirectorySepartor(void);
 **      <directory>[<sep><directory>]*
 */
 
-NSPR_API(char) PR_GetPathSeparator(void);
+NSPR_API(char)
+PR_GetPathSeparator(void);
 
 /* Types of information available via PR_GetSystemInfo(...) */
 typedef enum {
-    PR_SI_HOSTNAME,  /* the hostname with the domain name (if any)
-                      * removed */
+    PR_SI_HOSTNAME, /* the hostname with the domain name (if any)
+                     * removed */
     PR_SI_SYSNAME,
     PR_SI_RELEASE,
     PR_SI_ARCHITECTURE,
@@ -46,7 +49,6 @@ typedef enum {
                                  * on the system */
     PR_SI_RELEASE_BUILD
 } PRSysInfo;
-
 
 /*
 ** If successful returns a null termintated string in 'buf' for
@@ -59,17 +61,20 @@ typedef enum {
 
 #define SYS_INFO_BUFFER_LENGTH 256
 
-NSPR_API(PRStatus) PR_GetSystemInfo(PRSysInfo cmd, char *buf, PRUint32 buflen);
+NSPR_API(PRStatus)
+PR_GetSystemInfo(PRSysInfo cmd, char* buf, PRUint32 buflen);
 
 /*
 ** Return the number of bytes in a page
 */
-NSPR_API(PRInt32) PR_GetPageSize(void);
+NSPR_API(PRInt32)
+PR_GetPageSize(void);
 
 /*
 ** Return log2 of the size of a page
 */
-NSPR_API(PRInt32) PR_GetPageShift(void);
+NSPR_API(PRInt32)
+PR_GetPageShift(void);
 
 /*
 ** PR_GetNumberOfProcessors() -- returns the number of CPUs
@@ -85,7 +90,8 @@ NSPR_API(PRInt32) PR_GetPageShift(void);
 **   The number of available processors or -1 on error
 **
 */
-NSPR_API(PRInt32) PR_GetNumberOfProcessors( void );
+NSPR_API(PRInt32)
+PR_GetNumberOfProcessors(void);
 
 /*
 ** PR_GetPhysicalMemorySize() -- returns the amount of system RAM
@@ -101,7 +107,8 @@ NSPR_API(PRInt32) PR_GetNumberOfProcessors( void );
 **   The amount of system RAM, or 0 on failure.
 **
 */
-NSPR_API(PRUint64) PR_GetPhysicalMemorySize(void);
+NSPR_API(PRUint64)
+PR_GetPhysicalMemorySize(void);
 
 PR_END_EXTERN_C
 

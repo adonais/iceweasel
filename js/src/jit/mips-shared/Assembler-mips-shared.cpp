@@ -187,8 +187,12 @@ bool AssemblerMIPSShared::oom() const {
          dataRelocations_.oom();
 }
 
-// Size of the instruction stream, in bytes.
+// Size of the instruction stream, in bytes. Note this doesn't take
+// into account the size of any un-flushed constant pools.
 size_t AssemblerMIPSShared::size() const { return m_buffer.size(); }
+// Returns the size of the buffer we can currently read, hence ignoring any
+// un-flushed data in currently-under-construction constant pool(s).
+size_t AssemblerMIPSShared::readableSize() const { return m_buffer.size(); }
 
 // Size of the relocation table, in bytes.
 size_t AssemblerMIPSShared::jumpRelocationTableBytes() const {

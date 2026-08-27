@@ -31,6 +31,25 @@ enum JsepSignalingState {
   kJsepStateClosed
 };
 
+inline const char* format_as(JsepSignalingState aState) {
+  switch (aState) {
+    case kJsepStateStable:
+      return "stable";
+    case kJsepStateHaveLocalOffer:
+      return "have-local-offer";
+    case kJsepStateHaveRemoteOffer:
+      return "have-remote-offer";
+    case kJsepStateHaveLocalPranswer:
+      return "have-local-pranswer";
+    case kJsepStateHaveRemotePranswer:
+      return "have-remote-pranswer";
+    case kJsepStateClosed:
+      return "closed";
+  }
+  MOZ_CRASH(
+      "Garbage JsepSignalingState, this is likely a memory error. Crashing.");
+}
+
 enum JsepSdpType {
   kJsepSdpOffer,
   kJsepSdpAnswer,

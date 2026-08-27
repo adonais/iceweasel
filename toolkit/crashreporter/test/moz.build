@@ -27,12 +27,24 @@ UNIFIED_SOURCES += [
     "../google-breakpad/src/processor/pathname_stripper.cc",
     "../google-breakpad/src/processor/proc_maps_linux.cc",
     "dumputils.cpp",
-    "nsTestCrasher.cpp",
 ]
 
 SOURCES += [
     "ExceptionThrower.cpp",
 ]
+
+if CONFIG["CC_TYPE"] == "gcc":
+    SOURCES += [
+        "nsTestCrasher.cpp",
+    ]
+    SOURCES["nsTestCrasher.cpp"].flags += [
+        "-Wno-array-bounds",
+        "-Wno-use-after-free",
+    ]
+else:
+    UNIFIED_SOURCES += [
+        "nsTestCrasher.cpp",
+    ]
 
 if CONFIG["OS_TARGET"] == "WINNT" and CONFIG["TARGET_CPU"] == "x86_64":
     if CONFIG["CC_TYPE"] not in ("gcc", "clang"):

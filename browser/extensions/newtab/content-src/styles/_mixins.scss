@@ -181,11 +181,17 @@ $side-col-width-px: $col-width-px * 2;
   }
 }
 
-// Baseline styles for all widgets
-@mixin widget-base-style {
+// Shared size-change transition tokens. Included by widget-base-style (each
+// widget card) and by the Nova widgets-container so the row-height animation
+// stays in sync with per-widget resize timing.
+@mixin widget-size-transition-tokens {
   --widget-size-transition-duration: 180ms;
   --widget-size-transition-easing: ease;
+}
 
+// Baseline styles for all widgets
+@mixin widget-base-style {
+  @include widget-size-transition-tokens;
   @include newtab-card-style;
 
   padding: var(--space-medium);

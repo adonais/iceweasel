@@ -11,6 +11,7 @@ import mozilla.components.browser.state.selector.allTabs
 import mozilla.components.browser.state.selector.findCustomTabOrSelectedTab
 import mozilla.components.browser.state.selector.privateTabs
 import mozilla.components.browser.state.state.SessionState
+import mozilla.components.concept.engine.EngineSession
 import mozilla.components.feature.search.widget.BaseVoiceSearchActivity
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.telemetry.glean.testing.GleanTestRule
@@ -137,7 +138,7 @@ internal class ExternalIntentNavigationTest {
     }
 
     @Test
-    fun `GIVEN a voice search WHEN handling widget interactions THEN create and open a new tab and return true`() {
+    fun `GIVEN a voice search WHEN handling widget interactions THEN create and open a new tab with LoadUrlFlags EXTERNAL and return true`() {
         val browserStore = activity.components.store
         val searchArgument = "test"
         val bundle = Bundle().apply {
@@ -155,6 +156,8 @@ internal class ExternalIntentNavigationTest {
         assertEquals(SessionState.Source.External.ActionSend(null), voiceSearchTab.source)
         assertEquals(searchArgument, voiceSearchTab.content.searchTerms)
         assertEquals(Screen.Browser(voiceSearchTab.id, false), appStore.state.screen)
+
+        assertEquals(EngineSession.LoadUrlFlags.external().value, voiceSearchTab.engineState.initialLoadFlags.value)
     }
 
     @Test

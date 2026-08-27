@@ -3,8 +3,6 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-const TOPIC_BROWSERGLUE_TEST = "browser-glue-test";
-const TOPICDATA_BROWSERGLUE_TEST = "force-ui-migration";
 const UI_VERSION = 120;
 
 const { AppConstants } = ChromeUtils.importESModule(
@@ -13,15 +11,14 @@ const { AppConstants } = ChromeUtils.importESModule(
 const { PlacesUIUtils } = ChromeUtils.importESModule(
   "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs"
 );
+const { ProfileDataUpgrader } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/ProfileDataUpgrader.sys.mjs"
+);
 
 add_task(async function has_not_used_ctrl_tab_and_its_off() {
-  const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"].getService(
-    Ci.nsIObserver
-  );
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("browser.migration.version");
   });
-  Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
 
   Services.xulStore.setValue(
     AppConstants.BROWSER_CHROME_URL,
@@ -31,11 +28,7 @@ add_task(async function has_not_used_ctrl_tab_and_its_off() {
   );
 
   // Simulate a migration.
-  gBrowserGlue.observe(
-    null,
-    TOPIC_BROWSERGLUE_TEST,
-    TOPICDATA_BROWSERGLUE_TEST
-  );
+  ProfileDataUpgrader.upgrade(UI_VERSION, UI_VERSION + 1);
 
   Assert.equal(
     Services.xulStore.getValue(

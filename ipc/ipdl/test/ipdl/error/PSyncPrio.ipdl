@@ -1,0 +1,8 @@
+//error: non-async message `NormalPrio' cannot specify [ReplyPriority]
+
+[ChildProc=any]
+sync protocol PSyncPrio
+{
+child:
+  [ReplyPriority=normal] sync NormalPrio() returns (bool aValue);
+};

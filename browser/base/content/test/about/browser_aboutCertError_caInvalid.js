@@ -43,8 +43,8 @@ add_task(async function checkCACertInvalidCopy() {
     const info = Cu.cloneInto(mockErrorInfo, netErrorCard);
     netErrorCard.errorInfo = info;
     netErrorCard.resolvedErrorId = "SEC_ERROR_CA_CERT_INVALID";
-    netErrorCard.hideExceptionButton = netErrorCard.shouldHideExceptionButton();
     netErrorCard.errorConfig = netErrorCard.getErrorConfig();
+    netErrorCard.hideExceptionButton = netErrorCard.shouldHideExceptionButton();
     await netErrorCard.getUpdateComplete();
 
     Assert.equal(

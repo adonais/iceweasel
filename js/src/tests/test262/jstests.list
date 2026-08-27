@@ -69,6 +69,11 @@ skip script language/expressions/dynamic-import/import-defer/sync/dep_FIXTURE.js
 skip script language/expressions/dynamic-import/import-defer/sync/setup_FIXTURE.js # not a test file
 skip script language/expressions/dynamic-import/import-defer/sync/sync_FIXTURE.js # not a test file
 skip script language/expressions/dynamic-import/import-errored-module_FIXTURE.js # not a test file
+skip script language/expressions/dynamic-import/import-fulfilled-member-of-errored-cycle-a_FIXTURE.js # not a test file
+skip script language/expressions/dynamic-import/import-fulfilled-member-of-errored-cycle-b_FIXTURE.js # not a test file
+skip script language/expressions/dynamic-import/import-fulfilled-member-of-errored-cycle-c_FIXTURE.js # not a test file
+skip script language/expressions/dynamic-import/import-fulfilled-member-of-errored-cycle-main_FIXTURE.js # not a test file
+skip script language/expressions/dynamic-import/import-fulfilled-member-of-errored-cycle-x_FIXTURE.js # not a test file
 skip script language/expressions/dynamic-import/indirect-resolution-1_FIXTURE.js # not a test file
 skip script language/expressions/dynamic-import/indirect-resolution-2_FIXTURE.js # not a test file
 skip script language/expressions/dynamic-import/module-code_FIXTURE.js # not a test file
@@ -122,6 +127,13 @@ skip script language/import/import-defer/evaluation-sync/dep-1.2_FIXTURE.js # no
 skip script language/import/import-defer/evaluation-sync/dep-1_FIXTURE.js # not a test file
 skip script language/import/import-defer/evaluation-sync/dep-2_FIXTURE.js # not a test file
 skip script language/import/import-defer/evaluation-sync/setup_FIXTURE.js # not a test file
+skip script language/import/import-defer/evaluation-top-level-await/async-cycle-dependency-of-deferred-module/a-tla_FIXTURE.js # not a test file
+skip script language/import/import-defer/evaluation-top-level-await/async-cycle-dependency-of-deferred-module/b_FIXTURE.js # not a test file
+skip script language/import/import-defer/evaluation-top-level-await/async-cycle-dependency-of-deferred-module/c_FIXTURE.js # not a test file
+skip script language/import/import-defer/evaluation-top-level-await/async-cycle-dependency-of-deferred-module/d_FIXTURE.js # not a test file
+skip script language/import/import-defer/evaluation-top-level-await/async-cycle-dependency-of-deferred-module/middle_FIXTURE.js # not a test file
+skip script language/import/import-defer/evaluation-top-level-await/async-cycle-dependency-of-deferred-module/resolve-blocker_FIXTURE.js # not a test file
+skip script language/import/import-defer/evaluation-top-level-await/async-cycle-dependency-of-deferred-module/setup_FIXTURE.js # not a test file
 skip script language/import/import-defer/evaluation-top-level-await/flattening-order/dep-1_FIXTURE.js # not a test file
 skip script language/import/import-defer/evaluation-top-level-await/flattening-order/dep-2.1.1-tla_FIXTURE.js # not a test file
 skip script language/import/import-defer/evaluation-top-level-await/flattening-order/dep-2.1_FIXTURE.js # not a test file
@@ -303,6 +315,9 @@ skip script language/module-code/top-level-await/unobservable-global-async-evalu
 skip script language/module-code/top-level-await/unobservable-global-async-evaluation-count-reset-setup_FIXTURE.js # not a test file
 skip script language/module-code/verify-dfs-a_FIXTURE.js # not a test file
 skip script language/module-code/verify-dfs-b_FIXTURE.js # not a test file
+skip script language/statements/await-using/initializer-Symbol.asyncDispose-disposed-at-end-of-imported-module_FIXTURE.js # not a test file
+skip script language/statements/await-using/initializer-Symbol.dispose-disposed-at-end-of-imported-module_FIXTURE.js # not a test file
+skip script language/statements/using/initializer-disposed-at-end-of-imported-module_FIXTURE.js # not a test file
 skip script staging/sm/expressions/optional-chain-first-expression-module_FIXTURE.js # not a test file
 skip script staging/sm/module/bug1488117-empty_FIXTURE.js # not a test file
 skip script staging/sm/module/bug1488117-import-namespace_FIXTURE.js # not a test file

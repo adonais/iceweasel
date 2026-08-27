@@ -249,7 +249,7 @@ function makeExpectedExposureResult(rsSuggestionType) {
     type: UrlbarShared.RESULT_TYPE.DYNAMIC,
     source: UrlbarShared.RESULT_SOURCE.SEARCH,
     heuristic: false,
-    exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
+    exposureTelemetry: UrlbarShared.EXPOSURE_TELEMETRY.HIDDEN,
     payload: {
       rsSuggestionType,
       source: "rust",

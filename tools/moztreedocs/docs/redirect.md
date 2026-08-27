@@ -7,4 +7,4 @@ about stale external URLs. To set up a redirect simply add a line to this file u
 {searchfox}`docs/config.yml`
 
 Any request starting with the prefix on the left, will be rewritten to the prefix on the right by the server. So for example a request to
-`/testing/marionette/marionette/index.html` will be re-written to `/testing/marionette/index.html`. Amazon's API only supports prefix redirects, so anything more complex isn't supported.
+`/testing/marionette/index.html` will be re-written to `/remote/marionette/index.html`. Amazon's API only supports prefix redirects, so anything more complex isn't supported.

@@ -228,7 +228,7 @@ void PerformanceObserver::Observe(const PerformanceObserverInit& aOptions,
     }
 
     if (!invalidTypesJoined.IsEmpty()) {
-      AutoTArray<nsString, 1> params = {invalidTypesJoined};
+      AutoTArray<nsString, 1> params = {std::move(invalidTypesJoined)};
       mGlobal->ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
                                PropertiesFile::DOM_PROPERTIES,
                                "UnsupportedEntryTypesIgnored"_ns, params);
@@ -278,7 +278,7 @@ void PerformanceObserver::Observe(const PerformanceObserverInit& aOptions,
     }
 
     if (!typeValid) {
-      AutoTArray<nsString, 1> params = {type};
+      AutoTArray<nsString, 1> params = {std::move(type)};
       mGlobal->ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
                                PropertiesFile::DOM_PROPERTIES,
                                "UnsupportedEntryTypesIgnored"_ns, params);

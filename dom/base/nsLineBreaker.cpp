@@ -17,6 +17,7 @@
 #include "nsHyphenator.h"
 
 using mozilla::AutoRestore;
+using mozilla::Span;
 using mozilla::intl::LineBreaker;
 using mozilla::intl::LineBreakRule;
 using mozilla::intl::Locale;
@@ -158,9 +159,8 @@ nsresult nsLineBreaker::FlushCurrentWord() {
            gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_NONE,
            length * sizeof(uint8_t));
   } else {
-    LineBreaker::ComputeBreakPositions(
-        mCurrentWord.Elements(), length, mWordBreak, mLineBreak,
-        mScriptIsChineseOrJapanese, breakState.Elements());
+    LineBreaker::ComputeBreakPositions(mCurrentWord, mWordBreak, mLineBreak,
+                                       mScriptIsChineseOrJapanese, breakState);
   }
 
   bool autoHyphenate = mCurrentWordLanguage && !mCurrentWordContainsMixedLang;
@@ -341,8 +341,10 @@ nsresult nsLineBreaker::AppendText(nsAtom* aHyphenationLanguage,
             // will set it to false.
             AutoRestore<uint8_t> saveWordStartBreakState(breakState[wordStart]);
             LineBreaker::ComputeBreakPositions(
-                aText + wordStart, offset - wordStart, mWordBreak, mLineBreak,
-                mScriptIsChineseOrJapanese, breakState.Elements() + wordStart);
+                Span<const char16_t>(aText + wordStart, offset - wordStart),
+                mWordBreak, mLineBreak, mScriptIsChineseOrJapanese,
+                Span<uint8_t>(breakState.Elements() + wordStart,
+                              offset - wordStart));
           }
           if (hyphenator) {
             FindHyphenationPoints(hyphenator, aText + wordStart, aText + offset,
@@ -601,8 +603,10 @@ nsresult nsLineBreaker::AppendText(nsAtom* aHyphenationLanguage,
           // will set it to false.
           AutoRestore<uint8_t> saveWordStartBreakState(breakState[wordStart]);
           LineBreaker::ComputeBreakPositions(
-              aText + wordStart, offset - wordStart, mWordBreak, mLineBreak,
-              mScriptIsChineseOrJapanese, breakState.Elements() + wordStart);
+              Span<const uint8_t>(aText + wordStart, offset - wordStart),
+              mWordBreak, mLineBreak, mScriptIsChineseOrJapanese,
+              Span<uint8_t>(breakState.Elements() + wordStart,
+                            offset - wordStart));
         }
       }
 

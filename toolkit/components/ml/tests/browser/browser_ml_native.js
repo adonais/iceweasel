@@ -16,7 +16,6 @@ const LLAMA_SMOKE_OPTIONS = {
   modelId: "Mozilla/test-llama",
   modelFile: "TinyStories-656K.Q8_0.gguf",
   modelRevision: "main",
-  kvCacheDtype: "q8_0",
   numContext: 256,
 };
 
@@ -134,7 +133,6 @@ async function llama_crash() {
       modelId: "Mozilla/test-llama",
       taskName: "text-classification",
       modelFile: "crash-me.gguf",
-      kvCacheDtype: "q8_0",
       modelRevision: "main",
       backend: "llama.cpp",
       logLevel: "Debug",
@@ -147,6 +145,7 @@ async function llama_crash() {
       },
     ];
     info("Calling runWithGenerator");
+    let sawCrash = false;
     try {
       for await (const val of engine.runWithGenerator({
         prompt,
@@ -154,7 +153,8 @@ async function llama_crash() {
         info(val.text);
       }
     } catch (err) {
-      Assert.ok(true, `failed with error ${err.message}`);
+      sawCrash = true;
+      info(`failed with error ${err.message}`);
 
       let [subject, data] = await contentShutdown;
 
@@ -188,6 +188,7 @@ async function llama_crash() {
         info(`cleaning up ${subject} ${data}`);
       }
     }
+    Assert.ok(sawCrash, "the crash model must crash the serving process");
   } finally {
     await EngineProcess.destroyMLEngine();
     await cleanup();
@@ -211,7 +212,6 @@ async function llama_works({
       taskName: "text-classification",
       modelId: "Mozilla/test-llama",
       modelFile: "TinyStories-656K.Q8_0.gguf",
-      kvCacheDtype: "q8_0",
       modelRevision: "main",
       backend: "llama.cpp",
       logLevel: "Debug",
@@ -316,7 +316,6 @@ async function llama_fails_with_wrong_samplers() {
       taskName: "text-classification",
       modelId: "Mozilla/test-llama",
       modelFile: "TinyStories-656K.Q8_0.gguf",
-      kvCacheDtype: "q8_0",
       modelRevision: "main",
       backend: "llama.cpp",
       logLevel: "Debug",
@@ -385,7 +384,6 @@ add_task(async function test_ml_smoke_test_llama_sequential_runs() {
       taskName: "text-generation",
       modelId: "Mozilla/test-llama",
       modelFile: "TinyStories-656K.Q8_0.gguf",
-      kvCacheDtype: "q8_0",
       modelRevision: "main",
       backend: "llama.cpp",
       numContext: 128,
@@ -415,7 +413,6 @@ add_task(async function test_ml_smoke_test_llama_overlap_guard() {
       taskName: "text-generation",
       modelId: "Mozilla/test-llama",
       modelFile: "TinyStories-656K.Q8_0.gguf",
-      kvCacheDtype: "q8_0",
       modelRevision: "main",
       backend: "llama.cpp",
       numContext: 128,
@@ -554,25 +551,31 @@ add_task(async function test_ml_smoke_test_llama_prompt_sensitive() {
 // (quantization drift, attention bug, upstream llama.cpp roll).
 //
 // Greedy outputs diverge by CPU architecture: different SIMD vector
-// widths in llama.cpp's matmul/attention kernels (NEON on aarch64 vs
-// AVX on x86_64) shift logits enough to flip argmax on a handful of
-// tokens, so the constants dispatch on AppConstants.platform. macOS
-// Intel 10.15 is a third bucket and exhibits within-engine
-// non-determinism for TinyStories, so the golden assertion
-// runtime-skips there. Re-pin both text and hash from a try push
-// when a llama.cpp roll legitimately changes outputs.
-const LLAMA_SMOKE_IS_AARCH64 = AppConstants.platform === "macosx";
-const LLAMA_SMOKE_EXPECTED_TEXT = LLAMA_SMOKE_IS_AARCH64
-  ? "Suddenly, the mouse stopped! \nThe little mouse was scared, but he was scared. He had been so brave. He was scared, but he was still wearing his "
-  : "Suddenly, the mouse stopped! \nThe old lady was surprised to see a beautiful song. The old lady was so surprised. She had never seen a little mouse and ";
-const LLAMA_SMOKE_EXPECTED_HASH = LLAMA_SMOKE_IS_AARCH64
-  ? "a59803f3d1c9d983f14c54fadbe9de3b73a1053780f01bc7768fa2bc498f6005"
-  : "67b4cf2e37139e20795938ab3dedbdd040ffc2143e2ded210b0838de37581fa9";
+// widths in llama.cpp's matmul/attention kernels (NEON on aarch64, AVX
+// on x86-64, SSE on x86) shift logits enough to flip argmax on a
+// handful of tokens, so the constants are keyed on the architecture
+// Services.sysinfo reports. macOS Intel 10.15 exhibits within-engine
+// non-determinism for TinyStories, so the golden assertion runtime-skips
+// there. Re-pin both text and hash from a try push when a llama.cpp roll
+// legitimately changes outputs.
+const LLAMA_SMOKE_GOLDEN = {
+  aarch64: {
+    text: "Suddenly, the mouse stopped! \nThe little mouse was scared, but he was scared. He had been so brave. He was scared, but he was still wearing his ",
+    hash: "a59803f3d1c9d983f14c54fadbe9de3b73a1053780f01bc7768fa2bc498f6005",
+  },
+  "x86-64": {
+    text: "Suddenly, the mouse stopped! \nThe old lady was surprised to see a beautiful song. The old lady was so surprised. She had never seen a little mouse and ",
+    hash: "67b4cf2e37139e20795938ab3dedbdd040ffc2143e2ded210b0838de37581fa9",
+  },
+  x86: {
+    text: "Suddenly, the mouse stopped! \nThe old lady was surprised to see a beautiful song. The old lady was so surprised. She had never seen anything else ",
+    hash: "afc7fdbad9f3b10f7e68a23c3ef34f7118a23a17d3b8d5185636de3c8c8e2989",
+  },
+};
 
 add_task(async function test_ml_smoke_test_llama_golden_text() {
-  const isMacIntel =
-    AppConstants.platform === "macosx" &&
-    Services.sysinfo.getProperty("arch") !== "aarch64";
+  const arch = Services.sysinfo.getProperty("arch");
+  const isMacIntel = AppConstants.platform === "macosx" && arch !== "aarch64";
   if (isMacIntel) {
     ok(
       true,
@@ -580,6 +583,12 @@ add_task(async function test_ml_smoke_test_llama_golden_text() {
         "output is in a third arch bucket and within-engine determinism " +
         "is unreliable there (Bug 2047025)."
     );
+    return;
+  }
+
+  const golden = LLAMA_SMOKE_GOLDEN[arch];
+  if (!golden) {
+    ok(true, `Skipping golden-text: no output pinned for arch ${arch}.`);
     return;
   }
 
@@ -593,12 +602,12 @@ add_task(async function test_ml_smoke_test_llama_golden_text() {
       info(`Greedy SHA-256: ${hash}`);
       Assert.equal(
         text,
-        LLAMA_SMOKE_EXPECTED_TEXT,
+        golden.text,
         "Greedy output matches the pinned golden text"
       );
       Assert.equal(
         hash,
-        LLAMA_SMOKE_EXPECTED_HASH,
+        golden.hash,
         "Greedy output hash matches the pinned golden hash"
       );
     } finally {

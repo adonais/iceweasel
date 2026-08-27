@@ -228,11 +228,8 @@ class DebugAPI {
    * There is no separate user-visible Debugger.onResumeFrame hook; this
    * fires .onEnterFrame (again, since we're re-entering the frame).
    *
-   * Unfortunately, the interpreter and the baseline JIT arrange for this to
-   * be called in different ways. The interpreter calls it from JSOp::Resume,
-   * immediately after pushing the resumed frame; the JIT calls it from
-   * JSOp::AfterYield, just after the generator resumes. The difference
-   * should not be user-visible.
+   * This is called from JSOp::AfterYield, just after the generator resumes, so
+   * this also handles breakpoints/stepping for the JSOp::AfterYield op.
    */
   [[nodiscard]] static inline bool onResumeFrame(JSContext* cx,
                                                  AbstractFramePtr frame);

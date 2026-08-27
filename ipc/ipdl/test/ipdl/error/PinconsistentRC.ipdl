@@ -1,0 +1,10 @@
+//error: inconsistent refcounted status of type `::mozilla::ipc::SomeRefcountedType`
+
+[RefCounted] using class mozilla::ipc::SomeRefcountedType from "SomeFile.h";
+using class mozilla::ipc::SomeRefcountedType from "SomeFile.h";
+
+[ChildProc=any]
+protocol PinconsistentRC {
+child:
+  async SomeMessage();
+};

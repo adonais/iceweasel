@@ -684,10 +684,6 @@
   .urlbarView-row:not([has-action], [has-url], [restyled-search]) & {
     display: none;
   }
-
-  #searchbar-new & {
-    display: none;
-  }
 }
 
 /* Action labels */
@@ -718,7 +714,9 @@
     opacity: 0.6;
   }
 
-  .urlbarView-row:not([has-action], [has-url], [restyled-search]) > .urlbarView-row-inner > .urlbarView-no-wrap > & {
+  /* A dynamic row's action element comes from the provider's view template, so
+     it isn't wrapped in .urlbarView-no-wrap; match it as a descendant. */
+  .urlbarView-row:not([has-action], [has-url], [restyled-search]) & {
     display: none;
   }
 
@@ -736,10 +734,6 @@
        visible even when the chiclet is hidden due to action-override. */
     padding-inline: 0 !important;
     border-inline: 0;
-  }
-
-  #searchbar-new & {
-    display: none;
   }
 }
 
@@ -796,7 +790,7 @@
 
       &.urlbarView-switchToTab {
         padding-inline-start: calc(var(--urlbarview-favicon-size) + 8px);
-        background-image: url("chrome://browser/content/firefoxview/view-opentabs.svg");
+        background-image: url("chrome://browser/skin/open-tabs.svg");
         background-repeat: no-repeat;
         background-position: 4px center;
         background-size: var(--urlbarview-favicon-size);
@@ -1426,7 +1420,8 @@
           display: inline;
         }
 
-        /* stylelint-disable-next-line max-nesting-depth */
+        /* Small subtree */
+        /* stylelint-disable-next-line max-nesting-depth, stylelint-plugin-mozilla/no-has-selector */
         &:has(+ span:empty) {
           display: none;
         }
@@ -1860,7 +1855,7 @@
 
 .urlbarView-row[source="actions"] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-favicon,
 #urlbar-engine-one-off-item-actions {
-  list-style-image: url("chrome://browser/skin/quickactions.svg");
+  list-style-image: url("chrome://browser/skin/lightning-bolt.svg");
   -moz-context-properties: fill, fill-opacity;
   fill: currentColor;
   fill-opacity: var(--urlbar-icon-fill-opacity);
@@ -1935,6 +1930,20 @@
   --panel-text-color: var(--toolbar-field-text-color-focus);
   --panel-background-color: var(--toolbar-field-background-color-focus);
   --panel-border-color: inherit;
+
+  > richlistbox > richlistitem {
+    width: 100%;
+
+    &[selected] {
+      border-radius: var(--border-radius-large);
+      background-color: var(--urlbarview-background-color-selected);
+      color: var(--urlbarview-text-color-selected);
+    }
+
+    > autocomplete-row-item {
+      width: 100%;
+    }
+  }
 }
 
 #PopupSearchAutoComplete::part(content) {

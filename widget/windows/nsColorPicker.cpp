@@ -182,10 +182,6 @@ void AsyncColorChooser::Update(COLORREF aColor) {
 ///////////////////////////////////////////////////////////////////////////////
 // nsIColorPicker
 
-nsColorPicker::nsColorPicker() {}
-
-nsColorPicker::~nsColorPicker() {}
-
 NS_IMPL_ISUPPORTS(nsColorPicker, nsIColorPicker)
 
 nsresult nsColorPicker::InitNative(const nsTArray<nsString>& aDefaultColors) {

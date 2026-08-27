@@ -36,6 +36,7 @@ else:
 CXXFLAGS += [SRCDIR + "/Freestanding.h"]
 
 OS_LIBS += [
+    "advapi32",
     "ntdll",
     "ntdll_freestanding",
 ]

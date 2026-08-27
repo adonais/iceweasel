@@ -95,6 +95,9 @@ struct InitData {
   bool mIsDragPopup = false;  // true for drag feedback panels
   // true if window creation animation is suppressed, e.g. for session restore
   bool mIsAnimationSuppressed = false;
+  // true if the window should not auto-enter native fullscreen on its initial
+  // show, e.g. a window created by detaching a tab from a fullscreen window
+  bool mIsInitialFullscreenSuppressed = false;
   // true if the window should support an alpha channel, if available.
   bool mHasRemoteContent = false;
   bool mAlwaysOnTop = false;

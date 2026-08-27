@@ -13,3 +13,60 @@ else:
 updater_rel_path = "../"
 DEFINES["TEST_UPDATER"] = True
 include("../updater-common.build")
+
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+    GeneratedFile(
+        "InfoPlist.strings",
+        script="/python/mozbuild/mozbuild/action/preprocessor.py",
+        entry_point="generate",
+        inputs=[
+            "/toolkit/mozapps/update/updater/macbuild/Contents/Resources/English.lproj/InfoPlist.strings.in"
+        ],
+        flags=[
+            "-Fsubstitution",
+            "--output-encoding",
+            "utf-16",
+            f"-DAPP_NAME={CONFIG['MOZ_APP_DISPLAYNAME']}",
+        ],
+    )
+
+    if CONFIG["COMPILE_ENVIRONMENT"] or CONFIG["MOZ_ARTIFACT_BUILDS"]:
+        bundle_extra_files = [
+            (
+                f"!/{FINAL_TARGET}/UpdateSettings-xpcshell",
+                "Frameworks/UpdateSettings.framework/UpdateSettings",
+            ),
+            (
+                "../macos-frameworks/UpdateSettings/Info.plist",
+                "Frameworks/UpdateSettings.framework/Resources/Info.plist",
+            ),
+        ]
+        copies = []
+        if not CONFIG["MOZ_SUITE"] and not CONFIG["MOZ_THUNDERBIRD"]:
+            copies.append(
+                "!/_tests/testing/mochitest/browser/toolkit/mozapps/update/tests/browser/updater.app"
+            )
+        MacOSBundle(
+            f"!/{FINAL_TARGET}/data/updater.app",
+            skeleton="../macbuild/Contents",
+            info_plist="!/dist/bin/Info.plist",
+            strings="!InfoPlist.strings",
+            binaries=[
+                (
+                    f"!/{FINAL_TARGET}/updater-xpcshell",
+                    "org.mozilla.updater",
+                )
+            ],
+            extra_files=bundle_extra_files,
+            copies=copies,
+        )
+elif CONFIG["COMPILE_ENVIRONMENT"] or CONFIG["MOZ_ARTIFACT_BUILDS"]:
+    bin_suffix = CONFIG["BIN_SUFFIX"]
+    updater_bin = f"!/{FINAL_TARGET}/updater-xpcshell{bin_suffix}"
+    OBJDIR_FILES._tests.xpcshell.toolkit.mozapps.update.tests.data += [
+        (updater_bin, "updater" + bin_suffix)
+    ]
+    if not CONFIG["MOZ_SUITE"] and not CONFIG["MOZ_THUNDERBIRD"]:
+        OBJDIR_FILES._tests.testing.mochitest.browser.toolkit.mozapps.update.tests.browser += [
+            (updater_bin, "updater" + bin_suffix)
+        ]

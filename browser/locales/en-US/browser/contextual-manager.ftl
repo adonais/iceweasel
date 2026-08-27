@@ -247,9 +247,19 @@ contextual-manager-passwords-update-label =
   .label = Update password
 contextual-manager-passwords-remove-label =
   .title = Remove password
-contextual-manager-passwords-origin-tooltip = Enter the exact address where you’ll sign in to this site.
-contextual-manager-passwords-username-tooltip = Enter the username, email address, or account number you use to sign in.
-contextual-manager-passwords-password-tooltip-2 = Enter the password to sign in to this account.
+
+contextual-manager-passwords-origin-field =
+  .label = Website address
+  .placeholder = https://www.example.com
+contextual-manager-passwords-origin-field-description = Enter the exact address where you’ll sign in to this site.
+
+contextual-manager-passwords-username-field =
+  .label = Username
+contextual-manager-passwords-username-field-description = Enter the username, email address, or account number you use to sign in.
+
+contextual-manager-passwords-password-field =
+  .label = Password
+contextual-manager-passwords-password-field-description = Enter the password to sign in to this account.
 
 ## Password Card
 

@@ -1,0 +1,54 @@
+<!-- Any copyright is dedicated to the Public Domain.
+   - http://creativecommons.org/publicdomain/zero/1.0/ -->
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Test that gamepad interaction grants user activation</title>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<script type="text/javascript" src="mock_gamepad.js"></script>
+<script class="testbody" type="text/javascript">
+
+let ok = window.parent.ok;
+let SimpleTest = window.parent.SimpleTest;
+
+let index;
+
+runGamepadTest(main);
+
+async function main() {
+  ok(!navigator.userActivation.hasBeenActive,
+     "must not have user activation before any gamepad interaction");
+
+  window.addEventListener("gamepadconnected", onConnected);
+
+  index = await GamepadService.addGamepad("test gamepad",
+                            GamepadService.standardMapping,
+                            GamepadService.noHand,
+                            4,
+                            2,
+                            0,
+                            0,
+                            0);
+
+  // The first button press both connects the gamepad and should grant
+  // user activation.
+  await GamepadService.newButtonEvent(index, 0, true, true);
+}
+
+async function onConnected(e) {
+  window.removeEventListener("gamepadconnected", onConnected);
+
+  ok(navigator.userActivation.hasBeenActive,
+     "pressing a gamepad button should grant sticky activation");
+  ok(navigator.userActivation.isActive,
+     "pressing a gamepad button should grant transient activation");
+
+  await GamepadService.removeGamepad(index);
+  SimpleTest.finish();
+}
+
+</script>
+</body>
+</html>

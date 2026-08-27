@@ -19,6 +19,7 @@
 #    define MOZ_USE_CHAR16_WRAPPER
 #    include <cstddef>
 #    include <cstdint>
+
 #    include "mozilla/Attributes.h"
 /**
  * Win32 API extensively uses wchar_t, which is represented by a separated

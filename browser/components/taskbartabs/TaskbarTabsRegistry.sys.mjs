@@ -51,7 +51,9 @@ class TaskbarTab {
   // Human-readable name of this Taskbar Tab.
   #name;
   // The path to the shortcut associated with this Taskbar Tab, *relative
-  // to the `Start Menu\Programs` folder.*
+  // to the `Start Menu\Programs` folder.* Note that this shortcut might not
+  // necessarily be pinned, or even exist (although it should have existed when
+  // this property was initially set).
   #shortcutRelativePath;
 
   constructor({

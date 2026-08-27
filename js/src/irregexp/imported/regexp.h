@@ -118,7 +118,7 @@ class RegExp final : public AllStatic {
   // See ECMA-262 section 15.10.6.2.
   // This function calls the garbage collector if necessary.
   V8_EXPORT_PRIVATE V8_WARN_UNUSED_RESULT static std::optional<int> Exec(
-      Isolate* isolate, DirectHandle<JSRegExp> regexp,
+      Isolate* isolate, DirectHandle<RegExpData> regexp_data,
       DirectHandle<String> subject, int index, int32_t* result_offsets_vector,
       uint32_t result_offsets_vector_length);
   // As above, but passes the result through the old-style RegExpMatchInfo|Null
@@ -129,7 +129,8 @@ class RegExp final : public AllStatic {
               DirectHandle<RegExpMatchInfo> last_match_info);
 
   V8_EXPORT_PRIVATE V8_WARN_UNUSED_RESULT static std::optional<int>
-  ExperimentalOneshotExec(Isolate* isolate, DirectHandle<JSRegExp> regexp,
+  ExperimentalOneshotExec(Isolate* isolate,
+                          DirectHandle<RegExpData> regexp_data,
                           DirectHandle<String> subject, int index,
                           int32_t* result_offsets_vector,
                           uint32_t result_offsets_vector_length);

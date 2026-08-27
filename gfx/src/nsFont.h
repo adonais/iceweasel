@@ -17,7 +17,7 @@ struct gfxFontStyle;
 
 // Font structure.
 struct nsFont final {
-  typedef mozilla::FontStretch FontStretch;
+  typedef mozilla::FontWidth FontWidth;
   typedef mozilla::FontSlantStyle FontSlantStyle;
   typedef mozilla::FontWeight FontWeight;
 
@@ -45,10 +45,10 @@ struct nsFont final {
   mozilla::StyleFontLanguageOverride languageOverride{0};
 
   // Font-selection/rendering properties corresponding to CSS font-style,
-  // font-weight, font-stretch. These are all 16-bit types.
+  // font-weight, font-width. These are all 16-bit types.
   FontSlantStyle style = FontSlantStyle::NORMAL;
   FontWeight weight = FontWeight::NORMAL;
-  FontStretch stretch = FontStretch::NORMAL;
+  FontWidth width = FontWidth::NORMAL;
 
   // Some font-variant-alternates property values require
   // font-specific settings defined via @font-feature-values rules.

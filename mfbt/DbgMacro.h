@@ -7,12 +7,13 @@
 
 /* a MOZ_DBG macro that outputs a wrapped value to stderr then returns it */
 
-#include "mozilla/MacroForEach.h"
-#include "mozilla/Span.h"
-
 #include <fmt/format.h>
+
 #include <cstdio>
 #include <sstream>
+
+#include "mozilla/MacroForEach.h"
+#include "mozilla/Span.h"
 
 template <typename T>
 class nsTSubstring;

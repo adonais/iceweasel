@@ -3,6 +3,10 @@ subsuite = "mozbase"
 
 ["test_basic.py"]
 
+["test_crash_signature_override.py"]
+
+["test_intentional_crash.py"]
+
 ["test_java_exception.py"]
 
 ["test_save_path.py"]

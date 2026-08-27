@@ -33,7 +33,31 @@ class BaseTimeDurationPlatformUtils {
  public:
   static MFBT_API double ToSeconds(int64_t aTicks);
   static MFBT_API int64_t TicksFromMilliseconds(double aMilliseconds);
+  // Convert a platform tick count to an integer count of aRate ticks, rounded
+  // to the nearest tick, using integer/rational arithmetic (no floating point).
+  static MFBT_API int64_t ToTicksAtRate(int64_t aTicks, uint32_t aRate);
 };
+
+/**
+ * Convert a tick count held in a double to the integer tick count used
+ * internally by BaseTimeDuration, saturating at the ends of the int64_t range.
+ * Converting an out-of-range double to int64_t is undefined behavior, so the
+ * range must be checked before the conversion rather than after.
+ */
+inline int64_t SaturatingTicksFromDouble(double aTicks) {
+  // NOTE: this MUST be a >= test, because int64_t(double(INT64_MAX))
+  // overflows and gives INT64_MIN.
+  if (aTicks >= double(INT64_MAX)) {
+    return INT64_MAX;
+  }
+
+  // This MUST be a <= test.
+  if (aTicks <= double(INT64_MIN)) {
+    return INT64_MIN;
+  }
+
+  return int64_t(aTicks);
+}
 
 /**
  * Instances of this class represent the length of an interval of time.
@@ -85,6 +109,22 @@ class BaseTimeDuration {
   // ToMicroseconds returns the (fractional) number of microseconds of the
   // duration with the maximum representable precision.
   double ToMicroseconds() const { return ToMilliseconds() * 1000.0; }
+
+  // ToTicksAtRate returns the duration as an integer count of aRate ticks,
+  // rounded to the nearest tick. The conversion is done with integer/rational
+  // arithmetic directly from the platform tick count to avoid floating-point
+  // representation error. Saturated to INT64_MAX/INT64_MIN if result does not
+  // fit in int64_t.
+  int64_t ToTicksAtRate(uint32_t aRate) const {
+    MOZ_ASSERT(aRate > 0, "aRate must be a positive tick rate");
+    if (mValue == INT64_MAX) {
+      return INT64_MAX;
+    }
+    if (mValue == INT64_MIN) {
+      return INT64_MIN;
+    }
+    return BaseTimeDurationPlatformUtils::ToTicksAtRate(mValue, aRate);
+  }
 
   // Using a double here is safe enough; with 53 bits we can represent
   // durations up to over 280,000 years exactly.  If the units of
@@ -243,18 +283,7 @@ class BaseTimeDuration {
   }
 
   static BaseTimeDuration FromTicks(double aTicks) {
-    // NOTE: this MUST be a >= test, because int64_t(double(INT64_MAX))
-    // overflows and gives INT64_MIN.
-    if (aTicks >= double(INT64_MAX)) {
-      return FromTicks(INT64_MAX);
-    }
-
-    // This MUST be a <= test.
-    if (aTicks <= double(INT64_MIN)) {
-      return FromTicks(INT64_MIN);
-    }
-
-    return FromTicks(int64_t(aTicks));
+    return FromTicks(SaturatingTicksFromDouble(aTicks));
   }
 
   // Duration, result is implementation-specific difference of two TimeStamps
@@ -288,7 +317,7 @@ class TimeDurationValueCalculator {
 template <>
 inline int64_t TimeDurationValueCalculator::Multiply<double>(int64_t aA,
                                                              double aB) {
-  return static_cast<int64_t>(aA * aB);
+  return SaturatingTicksFromDouble(static_cast<double>(aA) * aB);
 }
 
 /**

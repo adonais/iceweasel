@@ -211,6 +211,7 @@ def handle_keyed_by(config, tests):
         "raptor.network-conditions",
         "limit-platforms",
         "fetches.fetch",
+        "fetches.toolchain",
         "max-run-time",
         "run-on-projects",
         "target",
@@ -615,9 +616,6 @@ def select_tasks_to_lambda(config, tasks):
 
 @transforms.add
 def add_simpleperf(config, tests):
-    is_native_profiling = config.params.get("try_task_config", {}).get(
-        "native-profiling", False
-    )
     app_packages = {
         "fenix": "org.mozilla.fenix",
         "geckoview": "org.mozilla.geckoview_example",
@@ -651,47 +649,47 @@ def add_simpleperf(config, tests):
             "linux64-android-simpleperf-linux-repack",
             "linux64-samply",
         ]
-        by_app = fetches.setdefault("toolchain", {}).setdefault("by-app", {})
-        default_toolchains = by_app.setdefault("default", [])
+        toolchain_fetches = fetches.setdefault("toolchain", [])
         for toolchain in toolchains:
-            if toolchain not in default_toolchains:
-                default_toolchains.append(toolchain)
+            if toolchain not in toolchain_fetches:
+                toolchain_fetches.append(toolchain)
 
     for test in tests:
         app = test.get("app")
-        if app in app_packages and "speedometer3-mobile" in test.get("test-name", None):
+        if (
+            app in app_packages
+            and "speedometer3-mobile" in test.get("test-name", "")
+            and (
+                "no-fission"
+                not in (test.get("attributes", {}).get("unittest_variant") or "")
+            )
+        ):
+            np_test = deepcopy(test)
+            np_test["test-name"] += "-native-profiling"
+            np_test["try-name"] += "-native-profiling"
+            _setup_simpleperf_profiling(np_test)
+
             # On autoland, run a copy of the Speedometer 3 a55 Fenix task
             # with native (Simpleperf) profiling
 
             is_autoland_job = (
-                config.params["project"] == "autoland"
-                and app == "fenix"
+                app == "fenix"
                 and "a55" in test.get("test-platform", "")
                 and test["attributes"].get("shippable", False)
-                and "no-fission"
-                not in (test.get("attributes", {}).get("unittest_variant") or "")
             )
 
             if is_autoland_job:
-                # Modify a duplicate test
-                autoland_test = deepcopy(test)
-                autoland_test["run-on-projects"] = ["autoland-only"]
-                autoland_test["test-name"] += "-native-profiling"
-                autoland_test["try-name"] += "-native-profiling"
-                _setup_simpleperf_profiling(autoland_test)
-                yield autoland_test
-            elif is_native_profiling:
-                # Modify the test in-place
-                _setup_simpleperf_profiling(test)
+                np_test["run-on-projects"] = ["autoland-only"]
+            else:
+                np_test["run-on-projects"] = []
+
+            yield np_test
 
         yield test
 
 
 @transforms.add
 def add_etw_profile(config, tests):
-    is_native_profiling = config.params.get("try_task_config", {}).get(
-        "native-profiling", False
-    )
 
     def _setup_etw_profiling(test):
 
@@ -718,26 +716,17 @@ def add_etw_profile(config, tests):
                 "--browsertime-arg=chrome.args=--js-flags=--no-compact-code-space",
             ])
 
-        if "speedometer3" in test.get("test-name", None):
+        if "speedometer3" in test.get("test-name", ""):
             test["max-run-time"] = 4200  # seconds
             if "--extra-profiler-run" in extra_options:
                 extra_options.remove("--extra-profiler-run")
 
         fetches = test.setdefault("fetches", {})
 
-        by_apps = fetches.setdefault("toolchain", {}).setdefault("by-app", {})
-        for by_app in by_apps.values():
-            test_platforms = by_app.get("by-test-platform")
-
-            if not test_platforms:
-                continue
-
-            for test_platform, test_platform_config in test_platforms.items():
-                if "win" in test_platform:
-                    if "win64-samply" not in test_platform_config:
-                        test_platform_config.append("win64-samply")
-                    if "profiler-node-tools" not in test_platform_config:
-                        test_platform_config.append("profiler-node-tools")
+        toolchain_fetches = fetches.setdefault("toolchain", [])
+        for toolchain in ("win64-samply", "profiler-node-tools"):
+            if toolchain not in toolchain_fetches:
+                toolchain_fetches.append(toolchain)
 
         if not is_external_browser(test["app"]):
             fetches.setdefault("build", []).append({
@@ -747,25 +736,149 @@ def add_etw_profile(config, tests):
 
     for test in tests:
         if "win" in test.get("test-platform", "") and "speedometer3" in test.get(
-            "test-name", None
+            "test-name", ""
         ):
-            # On Autoland, run duplicates of the following Windows tasks with native profiling:
-            # - Sp3 on Firefox Windows 11 24H2 Shippable (trunk)
-            # - Sp3 on Firefox Windows 11 24H2 Ref HW Shippable (trunk)
-            # - Sp3 on Firefox Windows 11 24H2 NightlyAsRelease (autoland)
+            np_test = deepcopy(test)
+            np_test["test-name"] += "-native-profiling"
+            np_test["try-name"] += "-native-profiling"
+            _setup_etw_profiling(np_test)
 
             run_on_projects = test.get("run-on-projects", [])
-            if config.params["project"] == "autoland" and (
-                "autoland" in run_on_projects or "trunk" in run_on_projects
-            ):
-                autoland_test = deepcopy(test)
-                autoland_test["run-on-projects"] = ["autoland-only"]
-                autoland_test["test-name"] += "-native-profiling"
-                autoland_test["try-name"] += "-native-profiling"
-                _setup_etw_profiling(autoland_test)
-                yield autoland_test
-            elif is_native_profiling:
-                _setup_etw_profiling(test)
+            if "autoland" in run_on_projects or "trunk" in run_on_projects:
+                # On Autoland, run duplicates of the following Windows tasks with native profiling:
+                # - Sp3 on Firefox Windows 11 24H2 Shippable (trunk)
+                # - Sp3 on Firefox Windows 11 24H2 Ref HW Shippable (trunk)
+                # - Sp3 on Firefox Windows 11 24H2 NightlyAsRelease (autoland)
+                np_test["run-on-projects"] = ["autoland-only"]
+            else:
+                np_test["run-on-projects"] = []
+
+            yield np_test
+
+        yield test
+
+
+@transforms.add
+def add_samply_profile(config, tests):
+    def _setup_samply_profiling(test):
+        extra_options = test.setdefault("mozharness", {}).setdefault(
+            "extra-options", []
+        )
+
+        if "speedometer3" in test.get("test-name", ""):
+            test["max-run-time"] = 4200  # seconds
+            if "--extra-profiler-run" in extra_options:
+                extra_options.remove("--extra-profiler-run")
+
+        extra_options.extend([
+            "--samply-profile",
+        ])
+
+        fetches = test.setdefault("fetches", {})
+        toolchain = fetches.setdefault("toolchain", [])
+
+        if "macos" in test.get("test-platform", ""):
+            if "aarch64" in test.get("test-platform", ""):
+                toolchains = [
+                    "macosx64-aarch64-clang",
+                    "macosx64-sdk-toolchain",
+                    "macosx64-aarch64-samply",
+                    "profiler-node-tools",
+                ]
+            else:
+                toolchains = [
+                    "macosx64-clang",
+                    "macosx64-sdk-toolchain",
+                    "macosx64-samply",
+                    "profiler-node-tools",
+                ]
+
+            for tool in toolchains:
+                if tool not in toolchain:
+                    toolchain.append(tool)
+
+        fetches.setdefault("build", []).append({
+            "artifact": "target.crashreporter-symbols.zip",
+            "extract": False,
+        })
+
+    for test in tests:
+        if (
+            "speedometer3" in test.get("test-name", "")
+            and "macos" in test.get("test-platform", "")
+            and test.get("app") in ["firefox"]
+        ):
+            np_test = deepcopy(test)
+            np_test["test-name"] += "-native-profiling"
+            np_test["try-name"] += "-native-profiling"
+            _setup_samply_profiling(np_test)
+
+            run_on_projects = test.get("run-on-projects", [])
+            if "autoland" in run_on_projects or "trunk" in run_on_projects:
+                # On Autoland, run duplicates of the following macOS tasks with native profiling:
+                # - Sp3 on Firefox macOS x86_64 Shippable base variant (trunk)
+                # - Sp3 on Firefox macOS AArch64 Shippable  base variant (trunk)
+                # - Sp3 on Firefox macOS x86_64 NightlyAsRelease base variant (autoland)
+                np_test["run-on-projects"] = ["autoland-only"]
+            else:
+                np_test["run-on-projects"] = []
+
+            yield np_test
+
+        yield test
+
+
+@transforms.add
+def add_perf_profile(config, tests):
+    def _setup_perf_profiling(test):
+        extra_options = test.setdefault("mozharness", {}).setdefault(
+            "extra-options", []
+        )
+
+        if "speedometer3" in test.get("test-name", ""):
+            test["max-run-time"] = 4200  # seconds
+            if "--extra-profiler-run" in extra_options:
+                extra_options.remove("--extra-profiler-run")
+
+        extra_options.extend([
+            "--perf-profile",
+        ])
+
+        fetches = test.setdefault("fetches", {})
+        toolchain = fetches.setdefault("toolchain", [])
+
+        if "linux" in test.get("test-platform", ""):
+            toolchains = ["linux64-samply", "profiler-node-tools"]
+            for tool in toolchains:
+                if tool not in toolchain:
+                    toolchain.append(tool)
+
+        fetches.setdefault("build", []).append({
+            "artifact": "target.crashreporter-symbols.zip",
+            "extract": False,
+        })
+
+    for test in tests:
+        if (
+            "speedometer3" in test.get("test-name", "")
+            and "linux" in test.get("test-platform", "")
+            and test.get("app") == "firefox"
+        ):
+            np_test = deepcopy(test)
+            np_test["test-name"] += "-native-profiling"
+            np_test["try-name"] += "-native-profiling"
+            _setup_perf_profiling(np_test)
+
+            run_on_projects = test.get("run-on-projects", [])
+            if "autoland" in run_on_projects or "trunk" in run_on_projects:
+                # On Autoland, run duplicates of the following Linux tasks with native profiling:
+                # - Sp3 on Firefox Linux Shippable base variant (trunk)
+                # - Sp3 on Firefox Linux NightlyAsRelease base variant (autoland)
+                np_test["run-on-projects"] = ["autoland-only"]
+            else:
+                np_test["run-on-projects"] = []
+
+            yield np_test
 
         yield test
 
@@ -778,6 +891,8 @@ def handle_native_profiling_symbol(config, tests):
         native_profiling_args = [
             "--simpleperf",
             "--etw-profile",
+            "--samply-profile",
+            "--perf-profile",
         ]
 
         if any(arg in extra_options for arg in native_profiling_args):

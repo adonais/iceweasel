@@ -383,7 +383,6 @@ class ServoStyleSet {
   bool GetKeyframesForName(const dom::Element&, const ComputedStyle&,
                            nsAtom* aName,
                            const StyleComputedTimingFunction& aTimingFunction,
-                           const StyleAnimationComposition aComposition,
                            nsTArray<Keyframe>& aKeyframes);
 
   nsTArray<ComputedKeyframeValues> GetComputedKeyframeValuesFor(

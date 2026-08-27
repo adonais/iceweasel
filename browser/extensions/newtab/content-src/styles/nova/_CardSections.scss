@@ -2,7 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-// @nova-cleanup(merge-styles): Move to components/DiscoveryStreamComponents/CardSections/_CardSections.scss
+// @nova-cleanup(merge-styles): Move to components/DiscoveryStreamComponents/CardSections/_CardSections.scss,
+// dropping the .nova-enabled scope from every selector.
+// These rules are imported last, so they beat the component SCSS on source
+// order alone. Folding them into a component file moves them earlier: any
+// classic declaration they were overriding at equal specificity must be deleted
+// outright, not just moved. Verify by diffing the compiled css/activity-stream.css
+// before and after -- the only rules that should disappear are classic ones.
 
 .nova-enabled .section-title-wrapper {
   display: flex;
@@ -17,6 +23,10 @@
   .section-subtitle {
     flex-basis: 100%;
   }
+}
+
+.nova-enabled .ds-section-wrapper .ds-section {
+  padding-block-end: 0;
 }
 
 .nova-enabled .ds-section .section-follow,

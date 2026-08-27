@@ -20,6 +20,27 @@ function closeEnough(actual, expected) {
   return Math.abs(expected - actual) <= 1;
 }
 
+/**
+ * Mirror the CSS clamp() on `.dialogBox[sizeto="available"]` in
+ * tabbrowser/content-area.css against the dialog's containing block.
+ *
+ * @param {SubDialog} dialog The tab-modal print dialog.
+ * @returns {{width: number, height: number}}
+ */
+function expectedDialogSize(dialog) {
+  let { clientWidth, clientHeight } = dialog._box.parentElement;
+  return {
+    width: Math.min(
+      clientWidth,
+      Math.max(clientWidth * 0.8, (clientWidth + 600) / 2)
+    ),
+    height: Math.min(
+      clientHeight,
+      Math.max(clientHeight * 0.9, (clientHeight + 600) / 2)
+    ),
+  };
+}
+
 async function resizeWindow(x, y) {
   let resizePromise = BrowserTestUtils.waitForEvent(window, "resize");
   window.resizeTo(
@@ -129,15 +150,9 @@ add_task(async function testResizing() {
 
     await helper.startPrint();
 
-    let chromeHeight = window.windowUtils.getBoundsWithoutFlushing(
-      document.getElementById("browser")
-    ).top;
-
-    let initialWidth = 500;
-    let initialHeight = 400 - chromeHeight;
-
     // Size should be 100% when small
-    await waitForExpectedSize(helper, initialWidth, initialHeight);
+    let expected = expectedDialogSize(helper.dialog);
+    await waitForExpectedSize(helper, expected.width, expected.height);
 
     // check the preview pagination state for this window size
     await checkPreviewNavigationVisibility({
@@ -148,7 +163,7 @@ add_task(async function testResizing() {
       sheetIndicator: true,
     });
 
-    await resizeWindow(700, 650 + chromeHeight);
+    await resizeWindow(700, 750);
 
     await checkPreviewNavigationVisibility({
       navigateHome: true,
@@ -159,16 +174,14 @@ add_task(async function testResizing() {
     });
 
     // The middle case between 100% and 80/90%
-    let updatedWidth = 650;
-    let updatedHeight = 625;
-    await waitForExpectedSize(helper, updatedWidth, updatedHeight);
+    expected = expectedDialogSize(helper.dialog);
+    await waitForExpectedSize(helper, expected.width, expected.height);
 
-    await resizeWindow(1100, 900 + chromeHeight);
+    await resizeWindow(1100, 1000);
 
     // Max size limit by percent (80% width, 90% height)
-    updatedWidth = 880;
-    updatedHeight = 810;
-    await waitForExpectedSize(helper, updatedWidth, updatedHeight);
+    expected = expectedDialogSize(helper.dialog);
+    await waitForExpectedSize(helper, expected.width, expected.height);
 
     await checkPreviewNavigationVisibility({
       navigateHome: true,

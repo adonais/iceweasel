@@ -2244,7 +2244,8 @@
      */ \
     MACRO(CheckResumeKind, check_resume_kind, NULL, 1, 3, 1, JOF_BYTE) \
     /*
-     * Resume execution of a generator, async function, or async generator.
+     * Resume execution of a generator function. Async functions and modules are
+     * resumed without going through this op.
      *
      * This behaves something like a call instruction. It pushes a stack frame
      * (the one saved when `gen` was suspended, rather than a fresh one) and
@@ -2568,7 +2569,7 @@
      *   Operands:
      *   Stack: error, suppressed => suppressedError
      */ \
-    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(CreateSuppressedError, create_suppressed_error, NULL, 1, 2, 1, JOF_BYTE)) \
+    MACRO(CreateSuppressedError, create_suppressed_error, NULL, 1, 2, 1, JOF_BYTE) \
     /*
      * Create and throw an Error object.
      *
@@ -3346,7 +3347,7 @@
      *   Operands: UsingHint hint
      *   Stack: v, method, needsClosure =>
      */ \
-    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(AddDisposable, add_disposable, NULL, 2, 3, 0, JOF_UINT8|JOF_USES_ENV)) \
+    MACRO(AddDisposable, add_disposable, NULL, 2, 3, 0, JOF_UINT8|JOF_USES_ENV) \
     /*
      * Get the dispose capability of the present environment object.
      * In case the dispose capability of the environment
@@ -3361,7 +3362,7 @@
      *   Operands:
      *   Stack: => disposeCapability
      */ \
-    IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO(TakeDisposeCapability, take_dispose_capability, NULL, 1, 0, 1, JOF_BYTE|JOF_USES_ENV)) \
+    MACRO(TakeDisposeCapability, take_dispose_capability, NULL, 1, 0, 1, JOF_BYTE|JOF_USES_ENV) \
     /*
      * Push the current VariableEnvironment (the environment on the environment
      * chain designated to receive new variables).
@@ -3582,16 +3583,6 @@
      */ \
     MACRO(NopDestructuring, nop_destructuring, NULL, 1, 0, 0, JOF_BYTE) \
     /*
-     * No-op instruction only emitted in some self-hosted functions. Not
-     * handled by the JITs or Baseline Interpreter so the script always runs in
-     * the C++ interpreter.
-     *
-     *   Category: Other
-     *   Operands:
-     *   Stack: =>
-     */ \
-    MACRO(ForceInterpreter, force_interpreter, NULL, 1, 0, 0, JOF_BYTE) \
-    /*
      * Examine the top stack value, asserting that it's either a self-hosted
      * function or a self-hosted intrinsic. This does nothing in a non-debug
      * build.
@@ -3624,42 +3615,22 @@
  * a power of two.  Use this macro to do so.
  */
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-#  define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-    MACRO(242)                                   \
-    MACRO(243)                                   \
-    MACRO(244)                                   \
-    MACRO(245)                                   \
-    MACRO(246)                                   \
-    MACRO(247)                                   \
-    MACRO(248)                                   \
-    MACRO(249)                                   \
-    MACRO(250)                                   \
-    MACRO(251)                                   \
-    MACRO(252)                                   \
-    MACRO(253)                                   \
-    MACRO(254)                                   \
-    MACRO(255)
-#else
-#  define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-    MACRO(239)                                   \
-    MACRO(240)                                   \
-    MACRO(241)                                   \
-    MACRO(242)                                   \
-    MACRO(243)                                   \
-    MACRO(244)                                   \
-    MACRO(245)                                   \
-    MACRO(246)                                   \
-    MACRO(247)                                   \
-    MACRO(248)                                   \
-    MACRO(249)                                   \
-    MACRO(250)                                   \
-    MACRO(251)                                   \
-    MACRO(252)                                   \
-    MACRO(253)                                   \
-    MACRO(254)                                   \
-    MACRO(255)
-#endif
+#define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(241)                                   \
+  MACRO(242)                                   \
+  MACRO(243)                                   \
+  MACRO(244)                                   \
+  MACRO(245)                                   \
+  MACRO(246)                                   \
+  MACRO(247)                                   \
+  MACRO(248)                                   \
+  MACRO(249)                                   \
+  MACRO(250)                                   \
+  MACRO(251)                                   \
+  MACRO(252)                                   \
+  MACRO(253)                                   \
+  MACRO(254)                                   \
+  MACRO(255)
 
 namespace js {
 

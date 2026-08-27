@@ -88,14 +88,11 @@ var gFxaPairDeviceDialog = {
     // document in this level and need to go up one
     let dialogParent = window.parent.document;
 
-    // To allow the firefox icon to go over the dialog
     let dialogBox = dialogParent.querySelector(".dialogBox");
-    dialogBox.style.overflow = "visible";
     dialogBox.style.borderRadius = "12px";
 
     let dialogTitle = dialogParent.querySelector(".dialogTitleBar");
     dialogTitle.style.borderBottom = "none";
-    dialogTitle.classList.add("fxaPairDeviceIcon");
   },
 
   _resetBackgroundQR() {

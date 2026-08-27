@@ -103,6 +103,23 @@ SingleGroup.args = {
   placeholderL10nId: "",
 };
 
+export const SingleGroupWithDescription = Template.bind({});
+SingleGroupWithDescription.args = {
+  groups: [
+    {
+      header: "Suggestions",
+      items: [
+        {
+          id: "watch",
+          label: "Create a task",
+          description: "Watch a page for changes",
+        },
+      ],
+    },
+  ],
+  placeholderL10nId: "",
+};
+
 export const MultipleGroups = Template.bind({});
 MultipleGroups.args = {
   groups: [

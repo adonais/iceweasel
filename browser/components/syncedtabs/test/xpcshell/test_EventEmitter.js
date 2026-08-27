@@ -1,7 +1,7 @@
 "use strict";
 
 let { EventEmitter } = ChromeUtils.importESModule(
-  "resource:///modules/syncedtabs/EventEmitter.sys.mjs"
+  "moz-src:///browser/components/syncedtabs/EventEmitter.sys.mjs"
 );
 
 add_task(async function testSingleListener() {

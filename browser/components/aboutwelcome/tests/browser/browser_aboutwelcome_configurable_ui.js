@@ -472,17 +472,17 @@ add_task(async function test_aboutwelcome_with_text_color_override() {
   );
 
   // Ensure title inherits light text color
+  const novaEnabled = Services.prefs.getBoolPref("browser.nova.enabled", false);
   await test_element_styles(
     browser,
     "#mainContentHeader",
     // Expected styles:
     {
-      color: "rgb(21, 20, 26)",
+      color: novaEnabled ? "rgb(24, 14, 48)" : "rgb(21, 20, 26)",
     }
   );
 
   // Ensure next step indicator inherits light color
-  const novaEnabled = Services.prefs.getBoolPref("browser.nova.enabled", false);
   await test_element_styles(
     browser,
     ".indicator:not(.current)",
@@ -1028,7 +1028,7 @@ add_task(async function test_secondary_button_top_configuration() {
     // Expected styles:
     {
       display: "flex",
-      "flex-direction": "row-reverse",
+      "flex-direction": "row",
       position: "fixed",
       top: "10px",
     }

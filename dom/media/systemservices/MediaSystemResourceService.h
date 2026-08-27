@@ -38,7 +38,7 @@ class MediaSystemResourceService {
 
  private:
   MediaSystemResourceService();
-  ~MediaSystemResourceService();
+  ~MediaSystemResourceService() = default;
 
   struct MediaSystemResourceRequest {
     MediaSystemResourceRequest() : mParent(nullptr), mId(-1) {}

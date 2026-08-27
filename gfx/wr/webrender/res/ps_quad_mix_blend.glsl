@@ -39,7 +39,7 @@ void pattern_vertex(PrimitiveInfo info) {
     v_op.x = info.pattern_input.y;
 
     // Normalized position within the primitive rect.
-    RectWithEndpoint rect = info.local_prim_rect;
+    RectWithEndpoint rect = info.pattern_rect;
     vec2 f = (info.local_pos - rect.p0) / rect_size(rect);
 
     write_uv(f, info.segment.uv_rect, vec2(TEX_SIZE(sColor0)), v_backdrop_uv, v_backdrop_uv_bounds);
@@ -211,6 +211,12 @@ vec4 pattern_fragment(vec4 base_color) {
     if (cs.a != 0.0) {
         cs.rgb /= cs.a;
     }
+
+    // The source and backdrop are not guaranteed to hold rgb <= a, so
+    // un-premultiplying can push components above 1.0, which the blend
+    // functions below are not defined for.
+    cb.rgb = clamp(cb.rgb, 0.0, 1.0);
+    cs.rgb = clamp(cs.rgb, 0.0, 1.0);
 
     // Return yellow if none of the branches match (shouldn't happen).
     vec4 result = vec4(1.0, 1.0, 0.0, 1.0);

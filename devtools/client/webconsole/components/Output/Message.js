@@ -435,14 +435,19 @@ class Message extends Component {
 
     let learnMore;
     if (exceptionDocURL) {
+      const isMdnUrl = exceptionDocURL.startsWith(
+        "https://developer.mozilla.org"
+      );
       learnMore = dom.a(
         {
-          className: "learn-more-link webconsole-learn-more-link",
+          className: `webconsole-learn-more-link${
+            isMdnUrl ? " learn-more-link mdn-link" : ""
+          }`,
           href: exceptionDocURL,
           title: exceptionDocURL.split("?")[0],
           onClick: this.onLearnMoreClick,
         },
-        `[${l10n.getStr("webConsoleMoreInfoLabel")}]`
+        l10n.getStr("webConsoleMoreInfoLabel")
       );
     }
 
@@ -480,6 +485,7 @@ class Message extends Component {
           dom.span(
             { className: "message-body devtools-monospace" },
             ...bodyElements,
+            learnMore ? " " : null,
             learnMore
           ),
           repeat ? " " : null,

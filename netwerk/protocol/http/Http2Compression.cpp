@@ -805,7 +805,7 @@ nsresult Http2Decompressor::CopyHuffmanStringFromInput(uint32_t bytes,
     }
   }
 
-  val = buf;
+  val = std::move(buf);
   LOG(("CopyHuffmanStringFromInput decoded a full string!"));
   return NS_OK;
 }

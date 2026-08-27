@@ -115,6 +115,33 @@ async function assertSourceTreeNode(dbg, text) {
 }
 
 /**
+ * Assert the source tree has the expected nodes and levels.
+ *
+ * @param {object} dbg
+ * @param {Array<Array<string, number>>} expected
+ *        An array of arrays where each inner array contains the node label and its level.
+ */
+function checkSourceTree(dbg, expected) {
+  const treeNodes = getDisplayedSourceTree(dbg);
+  is(
+    expected.length,
+    treeNodes.length,
+    "The source tree has the expected number of nodes"
+  );
+
+  for (let i = 0; i < expected.length; i++) {
+    const node = treeNodes[i];
+    const [label, level] = expected[i];
+    is(
+      node.querySelector(".label").textContent,
+      label,
+      `The node has the expected label`
+    );
+    is(Number(node.ariaLevel), level, `The node has the expected level`);
+  }
+}
+
+/**
  * Assert precisely the list of all breakable line for a given source
  *
  * @param {object} dbg

@@ -85,6 +85,7 @@ def add_payload_config(config, tasks):
             "to-branch",
             "fetch-version-from",
             "lando-repo",
+            "update-clobber-file",
         ]:
             if merge_config.get(field):
                 worker["actions"][0][action_name][field] = merge_config[field]

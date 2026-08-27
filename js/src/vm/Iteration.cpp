@@ -7,6 +7,7 @@
 #include "vm/Iteration.h"
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
@@ -98,6 +99,9 @@ class PropertyEnumerator {
   bool enumeratingProtoChain_ = false;
   bool forObjectKeys_ = false;
 
+  bool hasOwnDenseElements_ = false;
+  mozilla::DebugOnly<bool> hasDenseElementsFromProto_ = false;
+
   enum class IndicesState {
     // Every property that has been enumerated so far can be represented as a
     // PropertyIndex, but we are not currently producing a list of indices. If
@@ -143,6 +147,15 @@ class PropertyEnumerator {
   uint32_t ownPropertyCount() const { return ownPropertyCount_; }
 
   void setForObjectKeys(bool value) { forObjectKeys_ = value; }
+
+  bool hasOwnDenseElements() const { return hasOwnDenseElements_; }
+  bool hasDenseElementsFromProto() const {
+#ifdef DEBUG
+    return hasDenseElementsFromProto_;
+#else
+    return false;
+#endif
+  }
 
  private:
   template <bool CheckForDuplicates>
@@ -317,6 +330,11 @@ bool PropertyEnumerator::enumerateNativeProperties(JSContext* cx) {
         if (!enumerate<CheckForDuplicates>(cx, PropertyKey::Int(i),
                                            /* enumerable = */ true, index)) {
           return false;
+        }
+        if (enumeratingProtoChain_) {
+          hasDenseElementsFromProto_ = true;
+        } else {
+          hasOwnDenseElements_ = true;
         }
       }
     }
@@ -639,6 +657,13 @@ bool PropertyEnumerator::snapshot(JSContext* cx) {
   bool checkForDuplicates = !(flags_ & JSITER_OWNONLY);
 
   do {
+#ifdef DEBUG
+    if (enumeratingProtoChain_ &&
+        ObjectMayHaveExtraIndexedOwnProperties(obj_)) {
+      hasDenseElementsFromProto_ = true;
+    }
+#endif
+
     if (obj_->getClass()->getNewEnumerate()) {
       markIndicesUnsupported();
 
@@ -1248,6 +1273,7 @@ static PropertyIteratorObject* GetIteratorImpl(JSContext* cx, HandleObject obj,
   bool supportsIndices = false;
   uint32_t ownPropertyCount = 0;
 
+  mozilla::DebugOnly<bool> hasIndexedPropertiesFromProto = false;
   if (MOZ_UNLIKELY(obj->is<ProxyObject>())) {
     if (!Proxy::enumerate(cx, obj, &keys)) {
       return nullptr;
@@ -1262,27 +1288,31 @@ static PropertyIteratorObject* GetIteratorImpl(JSContext* cx, HandleObject obj,
     ownPropertyCount = enumerator.ownPropertyCount();
     MOZ_ASSERT_IF(wantIndices && supportsIndices,
                   keys.length() == indices.length());
-  }
 
-  // If the object has dense elements, mark the dense elements as
-  // maybe-in-iteration. However if this is for Object.keys, we're not able to
-  // do the appropriate invalidations on deletion etc. anyway. Accordingly,
-  // we're forced to just disable the indices optimization for this iterator
-  // entirely.
-  //
-  // The iterator is a snapshot so if indexed properties are added after this
-  // point we don't need to do anything. However, the object might have sparse
-  // elements now that can be densified later. To account for this, we set the
-  // maybe-in-iteration flag also in NativeObject::maybeDensifySparseElements.
-  //
-  // In debug builds, AssertDenseElementsNotIterated is used to check the flag
-  // is set correctly.
-  if (obj->is<NativeObject>() &&
-      obj->as<NativeObject>().getDenseInitializedLength() > 0) {
-    if (forObjectKeys) {
-      supportsIndices = false;
-    } else {
-      obj->as<NativeObject>().markDenseElementsMaybeInIteration();
+    // If the object has own dense elements, mark its dense elements as
+    // maybe-in-iteration. However, if this is for Object.keys, we're not able
+    // to do the appropriate invalidations on deletion etc. anyway. Accordingly,
+    // we're forced to just disable the indices optimization for this iterator
+    // entirely.
+    //
+    // The iterator is a snapshot so if indexed properties are added after this
+    // point we don't need to do anything. However, the object might have sparse
+    // elements now that can be densified later. To account for this, we set the
+    // maybe-in-iteration flag also in NativeObject::maybeDensifySparseElements.
+    //
+    // In debug builds, AssertDenseElementsNotIterated is used to check the flag
+    // is set correctly.
+    if (obj->is<NativeObject>()) {
+      if (enumerator.hasOwnDenseElements()) {
+        if (forObjectKeys) {
+          supportsIndices = false;
+        } else {
+          obj->as<NativeObject>().markDenseElementsMaybeInIteration();
+        }
+      }
+      if (enumerator.hasDenseElementsFromProto()) {
+        hasIndexedPropertiesFromProto = true;
+      }
     }
   }
 
@@ -1304,10 +1334,8 @@ static PropertyIteratorObject* GetIteratorImpl(JSContext* cx, HandleObject obj,
       IndicesAreValid(&obj->as<NativeObject>(), iterobj->getNativeIterator()));
 
 #ifdef DEBUG
-  if (obj->is<NativeObject>()) {
-    if (PrototypeMayHaveIndexedProperties(&obj->as<NativeObject>())) {
-      iterobj->getNativeIterator()->setMaybeHasIndexedPropertiesFromProto();
-    }
+  if (hasIndexedPropertiesFromProto) {
+    iterobj->getNativeIterator()->setMaybeHasIndexedPropertiesFromProto();
   }
 #endif
 
@@ -1453,7 +1481,7 @@ const JSClassOps PropertyIteratorObject::classOps_ = {
 
 const JSClass PropertyIteratorObject::class_ = {
     "Iterator",
-    JSCLASS_HAS_RESERVED_SLOTS(SlotCount) | JSCLASS_BACKGROUND_FINALIZE,
+    JSCLASS_HAS_RESERVED_SLOTS(SLOT_COUNT) | JSCLASS_BACKGROUND_FINALIZE,
     &PropertyIteratorObject::classOps_,
 };
 
@@ -1973,9 +2001,7 @@ static const JSFunctionSpec iterator_methods[] = {
     JS_SELF_HOSTED_FN("chunks", "IteratorChunks", 1, 0),
     JS_SELF_HOSTED_FN("windows", "IteratorWindows", 2, 0),
     JS_SELF_HOSTED_SYM_FN(iterator, "IteratorIdentity", 0, 0),
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     JS_SELF_HOSTED_SYM_FN(dispose, "IteratorDispose", 0, 0),
-#endif
     JS_FS_END,
 };
 

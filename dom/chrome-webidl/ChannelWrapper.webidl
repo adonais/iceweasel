@@ -331,8 +331,8 @@ interface ChannelWrapper : EventTarget {
 
 
   /**
-   * The BrowsingContext ID of the frame that the request belongs to, or 0 if it
-   * is a top-level load or does not belong to a document.
+   * The BrowsingContext ID of the frame that the request belongs to, 0 if it
+   * is a top-level load, or -1 if the request does not belong to a frame.
    */
   [Cached, Constant]
   readonly attribute long long frameId;

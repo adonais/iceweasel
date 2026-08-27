@@ -19,16 +19,12 @@ namespace mozilla {
 NS_IMPL_ISUPPORTS(WebBrowserPersistRemoteDocument, nsIWebBrowserPersistDocument)
 
 WebBrowserPersistRemoteDocument ::WebBrowserPersistRemoteDocument(
-    WebBrowserPersistDocumentParent* aActor, const Attrs& aAttrs,
-    nsIInputStream* aPostData)
-    : mActor(aActor), mAttrs(aAttrs), mPostData(aPostData) {
-  auto principalOrErr = ipc::PrincipalInfoToPrincipal(mAttrs.principal());
-  if (principalOrErr.isOk()) {
-    mPrincipal = principalOrErr.unwrap();
-  } else {
-    NS_WARNING("Failed to obtain principal!");
-  }
-
+    WebBrowserPersistDocumentParent* aActor, Attrs&& aAttrs,
+    nsIPrincipal* aPrincipal, nsIInputStream* aPostData)
+    : mActor(aActor),
+      mAttrs(std::move(aAttrs)),
+      mPrincipal(aPrincipal),
+      mPostData(aPostData) {
   net::CookieJarSettings::Deserialize(mAttrs.cookieJarSettings(),
                                       getter_AddRefs(mCookieJarSettings));
 }

@@ -14,14 +14,14 @@ stencil = compileToStencilXDR(s, {module: true});
 m = instantiateModuleStencilXDR(stencil);
 let b = registerModule('b', m);
 
-moduleLink(b);
+moduleLoadAndLink(b);
 moduleEvaluate(b);
 
 
 stencil = compileToStencilXDR("import * as nsa from 'a'; import * as nsb from 'b';", {module: true});
 m = instantiateModuleStencilXDR(stencil);
 
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);
 
 // A named import spelled like the internal "*namespace*" sentinel is a String
@@ -34,7 +34,7 @@ registerModule('c', m);
 
 stencil = compileToStencilXDR('import * as ns from "c"; import { "*namespace*" as sentinelName } from "c";', {module: true});
 m = instantiateModuleStencilXDR(stencil);
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);
 assertEq(getModuleEnvironmentValue(m, "sentinelName"), 7);
 let cns = getModuleEnvironmentValue(m, "ns");

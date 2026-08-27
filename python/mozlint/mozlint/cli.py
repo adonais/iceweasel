@@ -517,20 +517,15 @@ def run(
             out = "{}"
 
         if out:
-            fh = open(path, "w") if path else sys.stdout
+            fh = open(path, "w", encoding="utf-8") if path else sys.stdout
 
-            if not path and fh.encoding in ("ascii", "iso8859-1"):
-                # If sys.stdout.encoding is ascii, printing output will fail
-                # due to the stylish formatter's use of unicode characters.
-                # Ideally the user should fix their environment by setting
-                # `LC_ALL=C.UTF-8` or similar. But this is a common enough
-                # problem that we help them out a little here by manually
-                # encoding and writing to the stdout buffer directly.
-                out += "\n"
-                fh.buffer.write(out.encode("utf-8", errors="replace"))
-                fh.buffer.flush()
-            else:
-                print(out, file=fh)
+            if not path:
+                import io
+
+                if isinstance(fh, io.TextIOWrapper):
+                    fh.reconfigure(encoding="utf-8", errors="replace")
+
+            print(out, file=fh)
 
             if path:
                 fh.close()

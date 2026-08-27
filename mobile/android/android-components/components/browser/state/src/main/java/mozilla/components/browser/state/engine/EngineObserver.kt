@@ -9,7 +9,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.ContentAction
-import mozilla.components.browser.state.action.CookieBannerAction
 import mozilla.components.browser.state.action.CrashAction
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.action.MediaSessionAction
@@ -184,10 +183,6 @@ internal class EngineObserver(
 
     override fun onTrackerBlockingEnabledChange(enabled: Boolean) {
         dispatchAsync(TrackingProtectionAction.ToggleAction(tabId, enabled))
-    }
-
-    override fun onCookieBannerChange(status: EngineSession.CookieBannerHandlingStatus) {
-        dispatchAsync(CookieBannerAction.UpdateStatusAction(tabId, status))
     }
 
     override fun onTranslatePageChange() {

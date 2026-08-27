@@ -116,6 +116,9 @@
 @media -moz-pref("browser.nova.enabled") {
   [class*="identity-color-"] {
     --identity-fill-tint: color-mix(in srgb, var(--identity-fill-color) 15%, transparent);
+    /* Inset around the container icon inside its tinted circle. Rounded up to
+       the nearest half-pixel so the icon stays centered at both 1x and 2x. */
+    --identity-icon-inset: round(up, var(--space-xsmall), 0.5px);
   }
 }
 
@@ -214,51 +217,6 @@
   }
 }
 
-.tabbrowser-tab[usercontextid] > .tab-stack > .tab-background > .tab-context-line {
-  background-color: var(--identity-icon-color);
-  height: 2px;
-  border-radius: 2px;
-  margin: 0 calc(var(--tab-border-radius) / 2);
-  position: relative;
-
-  @media -moz-pref("browser.nova.enabled") {
-    background-color: var(--identity-stroke-color);
-    height: 4px;
-    border-radius: 4px;
-    /* From the favicon center to the close button center. */
-    margin-inline: calc(var(--tab-inline-padding) + 8px) calc(var(--tab-inline-padding) / 2 + 12px);
-    inset-block-start: -6px;
-  }
-
-  #tabbrowser-tabs[orient="vertical"] & {
-    height: auto;
-    width: 2px;
-    margin: calc(var(--tab-border-radius) / 2) 0;
-
-    @media -moz-pref("browser.nova.enabled") {
-      width: 4px;
-      height: 16px;
-      margin: 0;
-      inset-inline-end: -9px;
-      inset-block-start: 50%;
-      transform: translateY(-50%);
-    }
-  }
-}
-
-@media -moz-pref("browser.nova.enabled") {
-  /* Pinned tabs have no label or close button, so center the stroke. */
-  .tabbrowser-tab[usercontextid][pinned] > .tab-stack > .tab-background > .tab-context-line {
-    width: 16px;
-    margin-inline: auto;
-  }
-
-  /* Extend the clip region so the trailing-gap stroke isn't clipped. */
-  #tabbrowser-tabs[orient="vertical"] .tabbrowser-tab[usercontextid][pinned] {
-    overflow-clip-margin: content-box 12px;
-  }
-}
-
 .userContext-icon,
 .subviewbutton[usercontextid] > .toolbarbutton-icon,
 #userContext-indicator {
@@ -277,6 +235,17 @@
     margin-inline-start: 0;
     fill: var(--identity-fill-color);
   }
+
+  /* Match the container context-menu items: fill-color icon inside a round
+     15% tinted background. */
+  .subviewbutton[usercontextid] > .toolbarbutton-icon {
+    box-sizing: content-box;
+    padding: var(--identity-icon-inset);
+    border-radius: var(--border-radius-circle);
+    background-color: var(--identity-fill-tint);
+    background-origin: content-box;
+    fill: var(--identity-fill-color);
+  }
 }
 
 .menuitem-iconic[data-usercontextid] {
@@ -291,8 +260,9 @@
     > .menu-icon {
       width: var(--icon-size-large);
       height: var(--icon-size-large);
-      padding: var(--space-xsmall);
+      padding: var(--identity-icon-inset);
       border-radius: var(--border-radius-circle);
+      overflow-clip-margin: border-box;
       background-color: var(--identity-fill-tint);
     }
   }

@@ -61,7 +61,7 @@ const hasSelectTranslations =
   Services.prefs.getBoolPref("browser.translations.select.enable");
 
 const example_base =
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   "http://example.com/browser/browser/base/content/test/contextMenu/";
 const about_preferences_base = "about:preferences";
 const chrome_base =
@@ -1730,7 +1730,7 @@ add_task(async function test_copylinkcommand() {
           let input = doc.getElementById("test-input");
           Assert.equal(
             input.value,
-            // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+            // eslint-disable-next-line sdl/no-insecure-url
             "http://mozilla.com/",
             "paste for command cmd_paste"
           );

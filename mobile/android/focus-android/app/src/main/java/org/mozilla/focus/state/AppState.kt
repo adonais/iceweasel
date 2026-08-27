@@ -12,7 +12,6 @@ import org.mozilla.focus.autocomplete.AutocompleteAddFragment
 import org.mozilla.focus.autocomplete.AutocompleteListFragment
 import org.mozilla.focus.autocomplete.AutocompleteRemoveFragment
 import org.mozilla.focus.autocomplete.AutocompleteSettingsFragment
-import org.mozilla.focus.cookiebanner.CookieBannerFragment
 import org.mozilla.focus.exceptions.ExceptionsListFragment
 import org.mozilla.focus.exceptions.ExceptionsRemoveFragment
 import org.mozilla.focus.fragment.CrashListFragment
@@ -46,7 +45,6 @@ import java.util.UUID
  * @property showTrackingProtectionCfrForTab A map where keys are tab IDs and values indicate whether
  * to show the Tracking Protection CFR for that tab.
  * @property showStartBrowsingTabsCfr A flag which reflects the state of start browsing CFR
- * @property showCookieBannerCfr A flag witch reflects the state of cookie banner CFR
  * @property isPinningSupported A nullable flag indicating whether pinning shortcuts to the home screen is supported.
  */
 data class AppState(
@@ -58,7 +56,6 @@ data class AppState(
     val showSearchWidgetSnackbar: Boolean = false,
     val showTrackingProtectionCfrForTab: Map<String, Boolean> = emptyMap(),
     val showStartBrowsingTabsCfr: Boolean = false,
-    val showCookieBannerCfr: Boolean = false,
     val isPinningSupported: Boolean? = null,
 ) : State
 
@@ -148,7 +145,6 @@ sealed class Screen {
 
             PrivacyExceptions(ExceptionsListFragment::class.java),
             PrivacyExceptionsRemove(ExceptionsRemoveFragment::class.java),
-            CookieBanner(CookieBannerFragment::class.java),
             SitePermissions(SitePermissionsFragment::class.java),
             SecretSettings(SecretSettingsFragment::class.java),
 

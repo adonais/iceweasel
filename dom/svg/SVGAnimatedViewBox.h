@@ -49,9 +49,19 @@ struct SVGViewBox {
            std::isfinite(height);
   }
 
-  bool IsEmpty() const { return !none && (width <= .0f || height <= .0f); }
+  bool IsNone() const { return none; }
 
-  bool IsValid() const { return IsFinite() && !IsEmpty(); }
+  /*
+   * A viewBox that is empty causes the element not to be rendered.
+   */
+  bool IsEmpty() const { return !none && (width <= 0.f || height <= 0.f); }
+
+  /*
+   * A viewBox that is invalid is ignored.
+   */
+  bool IsValid() const {
+    return !none && IsFinite() && width >= 0.f && height >= 0.f;
+  }
 
   friend std::ostream& operator<<(std::ostream& stream,
                                   const SVGViewBox& aViewBox) {
@@ -89,7 +99,9 @@ class SVGAnimatedViewBox {
    * string, or if any of the four rect values were too big to store in a
    * float, or the width/height are negative.
    */
-  bool HasRect() const;
+  bool HasRect() const {
+    return (mAnimVal || mHasBaseVal) && GetAnimValue().IsValid();
+  }
 
   /**
    * Returns true if the corresponding "viewBox" attribute either defined a
@@ -97,9 +109,18 @@ class SVGAnimatedViewBox {
    */
   bool IsExplicitlySet() const {
     if (mAnimVal || mHasBaseVal) {
-      return GetAnimValue().IsValid();
+      const SVGViewBox& viewBox = GetAnimValue();
+      return viewBox.IsNone() || viewBox.IsValid();
     }
     return false;
+  }
+
+  /**
+   * Returns true if the corresponding the viewBox width or height
+   * are <= 0.
+   */
+  bool IsEmpty() const {
+    return (mAnimVal || mHasBaseVal) && GetAnimValue().IsEmpty();
   }
 
   const SVGViewBox& GetBaseValue() const { return mBaseVal; }

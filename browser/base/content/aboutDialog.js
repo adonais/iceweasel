@@ -27,26 +27,22 @@ if (AppConstants.MOZ_UPDATER) {
 function init() {
   let defaults = Services.prefs.getDefaultBranch(null);
   let distroId = defaults.getCharPref("distribution.id", "");
-  if (distroId) {
-    let distroAbout = defaults.getStringPref("distribution.about", "");
-    // If there is about text, we always show it.
-    if (distroAbout) {
-      let distroField = document.getElementById("distribution");
-      distroField.value = distroAbout;
-      distroField.style.display = "block";
-    }
-    // If it's not a mozilla distribution, show the rest,
-    // unless about text exists, then we always show.
-    if (!distroId.startsWith("mozilla-") || distroAbout) {
-      let distroVersion = defaults.getCharPref("distribution.version", "");
-      if (distroVersion) {
-        distroId += " - " + distroVersion;
-      }
+  let distroAbout = defaults.getStringPref("distribution.about", "");
+  // Only show distribution info when there is about text. An id-only
+  // distribution is used for attribution and is shown in about:support.
+  if (distroId && distroAbout) {
+    let distroField = document.getElementById("distribution");
+    distroField.value = distroAbout;
+    distroField.style.display = "block";
 
-      let distroIdField = document.getElementById("distributionId");
-      distroIdField.value = distroId;
-      distroIdField.style.display = "block";
+    let distroVersion = defaults.getCharPref("distribution.version", "");
+    if (distroVersion) {
+      distroId += " - " + distroVersion;
     }
+
+    let distroIdField = document.getElementById("distributionId");
+    distroIdField.value = distroId;
+    distroIdField.style.display = "block";
   }
 
   // Include the build ID and display warning if this is an "a#" (nightly or aurora) build
@@ -141,7 +137,7 @@ function init() {
           event.target.closest('[data-l10n-name="helpus-shareFirefoxLink"]')
         ) {
           event.preventDefault();
-          lazy.Referrals.openReferralsTab(window);
+          lazy.Referrals.openReferralsTab(window, "about_dialog");
         }
       },
       true

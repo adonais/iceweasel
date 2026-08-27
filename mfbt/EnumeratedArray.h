@@ -9,8 +9,8 @@
 
 #include <utility>
 
-#include "mozilla/Array.h"
 #include "EnumTypeTraits.h"
+#include "mozilla/Array.h"
 
 namespace mozilla {
 

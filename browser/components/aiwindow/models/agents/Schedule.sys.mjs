@@ -3,6 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /**
+ * Schedule types available for monitors.
+ */
+export const SCHEDULE_TYPES = {
+  INTERVAL: "interval",
+  DAILY: "daily",
+  WEEKLY: "weekly",
+};
+
+/**
  * Base monitor schedule.
  */
 export class Schedule {

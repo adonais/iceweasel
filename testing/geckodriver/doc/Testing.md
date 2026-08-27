@@ -64,6 +64,6 @@ flag to geckodriver through WPT:
 [Web Platform Tests]: http://web-platform-tests.org/
 [cargo]: http://doc.crates.io/guide.html
 [headless mode]: https://developer.mozilla.org/en-US/Firefox/Headless_mode
-[mozconfig]: /setup/configuring_build_options.rst
+[mozconfig]: /setup/configuring_build_options.md
 [trace-level logs]: TraceLogs.md
-[Marionette protocol]: /testing/marionette/Protocol.md
+[Marionette protocol]: /remote/marionette/Protocol.md

@@ -33,9 +33,13 @@ skip-if = [
 
 ["test_distribution_cachedexistence.js"]
 
+["test_distribution_idonly.js"]
+
 ["test_distribution_mozillaonline.js"]
 
 ["test_distribution_observer.js"]
+
+["test_profileDataUpgrade_cookieBannerData.js"]
 
 ["test_profileDataUpgrade_duplicateCookiePerms.js"]
 

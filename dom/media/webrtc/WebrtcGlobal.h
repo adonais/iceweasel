@@ -234,7 +234,7 @@ DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS_AND_FIELDS(
     mPacketsReceived, mBytesSent, mBytesReceived, mIceRole,
     mIceLocalUsernameFragment, mDtlsState, mIceState, mSelectedCandidatePairId,
     mLocalCertificateId, mRemoteCertificateId, mTlsVersion, mDtlsCipher,
-    mDtlsRole, mSrtpCipher)
+    mDtlsRole, mSrtpCipher, mSelectedCandidatePairChanges)
 
 DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS_AND_FIELDS(
     mozilla::dom::RTCCertificateStats, mozilla::dom::RTCStats, mFingerprint,

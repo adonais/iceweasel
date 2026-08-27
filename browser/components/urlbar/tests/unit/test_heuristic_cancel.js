@@ -24,7 +24,7 @@ class SlowHeuristicProvider extends UrlbarTestUtils.TestProvider {
     );
     super({
       name: "MyProvider",
-      type: UrlbarUtils.PROVIDER_TYPE.HEURISTIC,
+      type: UrlbarShared.PROVIDER_TYPE.HEURISTIC,
       results,
       delayResultsPromise,
     });
@@ -36,7 +36,7 @@ class SlowHeuristicProvider extends UrlbarTestUtils.TestProvider {
  */
 class FastHeuristicProvider extends UrlbarTestUtils.TestProvider {
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
+    return UrlbarShared.PROVIDER_TYPE.HEURISTIC;
   }
 
   async startQuery(context, add) {

@@ -78,6 +78,7 @@ export function SectionFollowButton({
       <moz-button
         key={remountKey}
         type={buttonType}
+        size="small"
         iconsrc={icon}
         onClick={following ? onUnfollowClick : handleFollowClick}
         data-l10n-id={isHovered ? followButtonL10nId : labelL10nId}

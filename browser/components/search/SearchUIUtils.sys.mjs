@@ -45,6 +45,10 @@ export var SearchUIUtils = {
     if (!this.initialized) {
       Services.obs.addObserver(this, "browser-search-engine-modified");
       this.initialized = true;
+
+      // On startup, cache urlbar placeholder for regular and private windows.
+      this.updatePlaceholderNamePreference(false);
+      this.updatePlaceholderNamePreference(true);
     }
   },
 
@@ -56,10 +60,10 @@ export var SearchUIUtils = {
   observe(subject, topic, data) {
     switch (data) {
       case "engine-default":
-        this.updatePlaceholderNamePreference(subject.wrappedJSObject, false);
+        this.updatePlaceholderNamePreference(false);
         break;
       case "engine-default-private":
-        this.updatePlaceholderNamePreference(subject.wrappedJSObject, true);
+        this.updatePlaceholderNamePreference(true);
         break;
     }
   },
@@ -105,49 +109,39 @@ export var SearchUIUtils = {
       allowFromInactiveWorkspace: true,
     });
 
-    let buttons = [
-      {
-        "l10n-id": "remove-search-engine-button",
-        primary: true,
-        callback() {
-          const notificationBox = win.gNotificationBox.getNotificationWithValue(
-            "search-engine-removal"
-          );
-          win.gNotificationBox.removeNotification(notificationBox);
+    if (win) {
+      let buttons = [
+        {
+          "l10n-id": "remove-search-engine-button",
+          primary: true,
+          callback() {
+            const notificationBox =
+              win.gNotificationBox.getNotificationWithValue(
+                "search-engine-removal"
+              );
+            win.gNotificationBox.removeNotification(notificationBox);
+          },
         },
-      },
-      {
-        supportPage: "search-engine-removal",
-      },
-    ];
-
-    await win.gNotificationBox.appendNotification(
-      "search-engine-removal",
-      {
-        label: {
-          "l10n-id": "removed-search-engine-message2",
-          "l10n-args": { oldEngine, newEngine },
+        {
+          supportPage: "search-engine-removal",
         },
-        priority: win.gNotificationBox.PRIORITY_SYSTEM,
-      },
-      buttons
-    );
+      ];
 
-    // _updatePlaceholderFromDefaultEngine only updates the pref if the search service
-    // hasn't finished initializing, so we explicitly update it here to be sure.
-    SearchUIUtils.updatePlaceholderNamePreference(
-      await lazy.SearchService.getDefault(),
-      false
-    );
-    SearchUIUtils.updatePlaceholderNamePreference(
-      await lazy.SearchService.getDefaultPrivate(),
-      true
-    );
+      await win.gNotificationBox.appendNotification(
+        "search-engine-removal",
+        {
+          label: {
+            "l10n-id": "removed-search-engine-message2",
+            "l10n-args": { oldEngine, newEngine },
+          },
+          priority: win.gNotificationBox.PRIORITY_SYSTEM,
+        },
+        buttons
+      );
+    }
 
     for (let openWin of lazy.BrowserWindowTracker.orderedWindows) {
-      openWin.gURLBar
-        ?._updatePlaceholderFromDefaultEngine()
-        .catch(console.error);
+      openWin.gURLBar?.updatePlaceholder();
     }
   },
 
@@ -269,14 +263,24 @@ export var SearchUIUtils = {
   },
 
   /**
-   * Update the placeholderName preference for the default search engine.
+   * Update the placeholderName preference for the urlbar's placeholder.
    *
-   * @param {SearchEngine} engine The new default search engine.
    * @param {boolean} isPrivate Whether this change applies to private windows.
    */
-  updatePlaceholderNamePreference(engine, isPrivate) {
-    const prefName =
+  async updatePlaceholderNamePreference(isPrivate) {
+    let prefName =
       "browser.urlbar.placeholderName" + (isPrivate ? ".private" : "");
+    try {
+      await lazy.SearchService.init();
+    } catch {
+      // Search service failed.
+      Services.prefs.clearUserPref(prefName);
+      return;
+    }
+
+    let engine = isPrivate
+      ? lazy.SearchService.defaultPrivateEngine
+      : lazy.SearchService.defaultEngine;
     if (engine instanceof lazy.ConfigSearchEngine) {
       Services.prefs.setStringPref(prefName, engine.name);
     } else {

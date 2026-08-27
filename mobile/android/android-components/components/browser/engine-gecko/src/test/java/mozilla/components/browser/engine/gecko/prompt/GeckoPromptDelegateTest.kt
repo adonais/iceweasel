@@ -962,6 +962,26 @@ class GeckoPromptDelegateTest {
     }
 
     @Test
+    fun `Calling onLoginSelect must set a PromptInstanceDismissDelegate`() {
+        val mockSession = GeckoEngineSession(runtime)
+        val promptDelegate = GeckoPromptDelegate(mockSession)
+        mockSession.register(
+            object : EngineSession.Observer {
+                override fun onPromptRequest(promptRequest: PromptRequest) = Unit
+            },
+        )
+        val login = createLogin()
+        val loginSelectOption = Autocomplete.LoginSelectOption(login.toLoginEntry())
+        val loginSelectPrompt = geckoLoginSelectPrompt(arrayOf(loginSelectOption))
+
+        promptDelegate.onLoginSelect(mock(), loginSelectPrompt)
+
+        val delegateCaptor = argumentCaptor<GeckoSession.PromptDelegate.PromptInstanceDelegate>()
+        verify(loginSelectPrompt).delegate = delegateCaptor.capture()
+        assertIs<PromptInstanceDismissDelegate>(delegateCaptor.value)
+    }
+
+    @Test
     fun `onLoginSelect with both httpRealm and formActionOrigin provided uses original values`() {
         val mockSession = GeckoEngineSession(runtime).also {
             it.currentUrl = testUrl
@@ -1441,6 +1461,34 @@ class GeckoPromptDelegateTest {
         selectCreditCardPrompt.onConfirm(creditCard1)
 
         assertFalse(onConfirmWasCalled)
+    }
+
+    @Test
+    fun `Calling onCreditCardSelect must set a PromptInstanceDismissDelegate`() {
+        val mockSession = GeckoEngineSession(runtime)
+        val promptDelegate = GeckoPromptDelegate(mockSession)
+        mockSession.register(
+            object : EngineSession.Observer {
+                override fun onPromptRequest(promptRequest: PromptRequest) = Unit
+            },
+        )
+        val creditCard = CreditCardEntry(
+            guid = "1",
+            name = "Banana Apple",
+            number = "4111111111111110",
+            expiryMonth = "5",
+            expiryYear = "2030",
+            cardType = "amex",
+        )
+        val creditCardSelectOption =
+            Autocomplete.CreditCardSelectOption(creditCard.toAutocompleteCreditCard())
+        val creditCardSelectPrompt = geckoSelectCreditCardPrompt(arrayOf(creditCardSelectOption))
+
+        promptDelegate.onCreditCardSelect(mock(), creditCardSelectPrompt)
+
+        val delegateCaptor = argumentCaptor<GeckoSession.PromptDelegate.PromptInstanceDelegate>()
+        verify(creditCardSelectPrompt).delegate = delegateCaptor.capture()
+        assertIs<PromptInstanceDismissDelegate>(delegateCaptor.value)
     }
 
     @Test
@@ -2285,6 +2333,38 @@ class GeckoPromptDelegateTest {
         selectAddressPrompt.onConfirm(selectAddressPrompt.addresses.first())
         shadowOf(getMainLooper()).idle()
         assertFalse(isOnConfirmCalled)
+    }
+
+    @Test
+    fun `Calling onAddressSelect must set a PromptInstanceDismissDelegate`() {
+        val mockSession = GeckoEngineSession(runtime)
+        val promptDelegate = GeckoPromptDelegate(mockSession)
+        mockSession.register(
+            object : EngineSession.Observer {
+                override fun onPromptRequest(promptRequest: PromptRequest) = Unit
+            },
+        )
+        val address = Address(
+            guid = "1",
+            name = "Firefox",
+            organization = "-",
+            streetAddress = "street",
+            addressLevel3 = "address3",
+            addressLevel2 = "address2",
+            addressLevel1 = "address1",
+            postalCode = "1",
+            country = "Country",
+            tel = "1",
+            email = "@",
+        )
+        val addressSelectOption = Autocomplete.AddressSelectOption(address.toAutocompleteAddress())
+        val addressSelectPrompt = geckoSelectAddressPrompt(arrayOf(addressSelectOption))
+
+        promptDelegate.onAddressSelect(mock(), addressSelectPrompt)
+
+        val delegateCaptor = argumentCaptor<GeckoSession.PromptDelegate.PromptInstanceDelegate>()
+        verify(addressSelectPrompt).delegate = delegateCaptor.capture()
+        assertIs<PromptInstanceDismissDelegate>(delegateCaptor.value)
     }
 
     @Test

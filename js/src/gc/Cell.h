@@ -119,6 +119,20 @@ class HeaderWord {
     setAtomic(value);
   }
 
+  // Bitwise operations. Like set() these are atomic.
+  void setBit(uintptr_t flag) {
+    MOZ_ASSERT((flag & RESERVED_MASK) == 0);
+    __atomic_fetch_or(&value_, flag, __ATOMIC_RELAXED);
+  }
+  void clearBit(uintptr_t flag) {
+    MOZ_ASSERT((flag & RESERVED_MASK) == 0);
+    __atomic_fetch_and(&value_, ~flag, __ATOMIC_RELAXED);
+  }
+  void toggleBit(uintptr_t flag) {
+    MOZ_ASSERT((flag & RESERVED_MASK) == 0);
+    __atomic_fetch_xor(&value_, flag, __ATOMIC_RELAXED);
+  }
+
   // Accessors for GC data.
   uintptr_t flags() const { return getAtomic() & RESERVED_MASK; }
   bool isForwarded() const { return flags() & FORWARD_BIT; }
@@ -698,15 +712,9 @@ class alignas(gc::CellAlignBytes) CellWithLengthAndFlags : public Cell {
   uintptr_t headerFlagsFieldForTracing() const { return headerFlagsField(); }
 #endif
 
-  void setHeaderFlagBit(uint32_t flag) {
-    header_.set(header_.get() | uintptr_t(flag));
-  }
-  void clearHeaderFlagBit(uint32_t flag) {
-    header_.set(header_.get() & ~uintptr_t(flag));
-  }
-  void toggleHeaderFlagBit(uint32_t flag) {
-    header_.set(header_.get() ^ uintptr_t(flag));
-  }
+  void setHeaderFlagBit(uint32_t flag) { header_.setBit(flag); }
+  void clearHeaderFlagBit(uint32_t flag) { header_.clearBit(flag); }
+  void toggleHeaderFlagBit(uint32_t flag) { header_.toggleBit(flag); }
 
   void setHeaderLengthAndFlags(uint32_t len, uint32_t flags) {
 #if JS_BITS_PER_WORD == 32

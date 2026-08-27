@@ -46,8 +46,7 @@ void LIRGenerator::visitBox(MBox* box) {
   if (IsFloatingPointType(inner->type())) {
     LDefinition spectreTemp =
         JitOptions.spectreValueMasking ? temp() : LDefinition::BogusTemp();
-    defineBox(new (alloc()) LBoxFloatingPoint(useRegisterAtStart(inner),
-                                              tempCopy(inner, 0), spectreTemp,
+    defineBox(new (alloc()) LBoxFloatingPoint(useRegister(inner), spectreTemp,
                                               inner->type()),
               box);
     return;

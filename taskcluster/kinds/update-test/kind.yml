@@ -43,6 +43,7 @@ task-defaults:
     index:
         product: firefox
     run:
+        clone-with: hg
         using: run-task
         command: >-
             ./mach update-test
@@ -76,6 +77,7 @@ tasks:
                 UPLOAD_DIR: /builds/worker/artifacts
                 VERSION_LOG_FILENAME: update-test-version-info.log
         run:
+            clone-with: hg
             command: >-
                 . $HOME/scripts/xvfb.sh && start_xvfb '1600x1200x24' 0 && ./mach update-test
         test-platforms:
@@ -101,6 +103,7 @@ tasks:
                 UPLOAD_DIR: /builds/worker/artifacts
                 VERSION_LOG_FILENAME: update-test-version-info.log
         run:
+            clone-with: hg
             command: >-
                 . $HOME/scripts/xvfb.sh && start_xvfb '1600x1200x24' 0 && ./mach update-test
         test-platforms:
@@ -109,6 +112,7 @@ tasks:
     update-test-fx-bkg:
         shipping-phase: promote
         run:
+            clone-with: hg
             command: >-
                 ./mach update-test --test-type Background
         test-platforms:
@@ -129,6 +133,7 @@ tasks:
                 UPLOAD_DIR: /builds/worker/artifacts
                 VERSION_LOG_FILENAME: update-test-version-info.log
         run:
+            clone-with: hg
             command: >-
                 . $HOME/scripts/xvfb.sh && start_xvfb '1600x1200x24' 0 && ./mach update-test --test-type Background
         test-platforms:
@@ -154,6 +159,7 @@ tasks:
                 UPLOAD_DIR: /builds/worker/artifacts
                 VERSION_LOG_FILENAME: update-test-version-info.log
         run:
+            clone-with: hg
             command: >-
                 . $HOME/scripts/xvfb.sh && start_xvfb '1600x1200x24' 0 && ./mach update-test
         test-platforms:

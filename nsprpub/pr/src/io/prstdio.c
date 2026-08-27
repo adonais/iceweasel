@@ -9,26 +9,29 @@
 /*
 ** fprintf to a PRFileDesc
 */
-PR_IMPLEMENT(PRUint32) PR_fprintf(PRFileDesc* fd, const char* fmt, ...) {
-  va_list ap;
-  PRUint32 rv;
+PR_IMPLEMENT(PRUint32)
+PR_fprintf(PRFileDesc* fd, const char* fmt, ...)
+{
+    va_list ap;
+    PRUint32 rv;
 
-  va_start(ap, fmt);
-  rv = PR_vfprintf(fd, fmt, ap);
-  va_end(ap);
-  return rv;
+    va_start(ap, fmt);
+    rv = PR_vfprintf(fd, fmt, ap);
+    va_end(ap);
+    return rv;
 }
 
 PR_IMPLEMENT(PRUint32)
-PR_vfprintf(PRFileDesc* fd, const char* fmt, va_list ap) {
-  /* XXX this could be better */
-  PRUint32 rv, len;
-  char* msg = PR_vsmprintf(fmt, ap);
-  if (NULL == msg) {
-    return -1;
-  }
-  len = strlen(msg);
-  rv = PR_Write(fd, msg, len);
-  PR_DELETE(msg);
-  return rv;
+PR_vfprintf(PRFileDesc* fd, const char* fmt, va_list ap)
+{
+    /* XXX this could be better */
+    PRUint32 rv, len;
+    char* msg = PR_vsmprintf(fmt, ap);
+    if (NULL == msg) {
+        return -1;
+    }
+    len = strlen(msg);
+    rv = PR_Write(fd, msg, len);
+    PR_DELETE(msg);
+    return rv;
 }

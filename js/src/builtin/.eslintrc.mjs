@@ -146,7 +146,6 @@ export default [
         callFunction: "readonly",
         constructContentFunction: "readonly",
         DefineDataProperty: "readonly",
-        forceInterpreter: "readonly",
         GetArgument: "readonly",
         GetBuiltinConstructor: "readonly",
         GetBuiltinPrototype: "readonly",

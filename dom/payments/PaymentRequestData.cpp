@@ -40,7 +40,7 @@ PaymentMethodData::GetSupportedMethods(nsAString& aSupportedMethods) {
 NS_IMETHODIMP
 PaymentMethodData::GetData(JSContext* aCx, JS::MutableHandle<JS::Value> aData) {
   if (mData.IsEmpty()) {
-    aData.set(JS::NullValue());
+    aData.setNull();
     return NS_OK;
   }
   nsresult rv = DeserializeToJSValue(mData, aCx, aData);
@@ -207,7 +207,7 @@ NS_IMETHODIMP
 PaymentDetailsModifier::GetData(JSContext* aCx,
                                 JS::MutableHandle<JS::Value> aData) {
   if (mData.IsEmpty()) {
-    aData.set(JS::NullValue());
+    aData.setNull();
     return NS_OK;
   }
   nsresult rv = DeserializeToJSValue(mData, aCx, aData);
@@ -439,7 +439,7 @@ NS_IMETHODIMP
 PaymentDetails::GetPaymentMethodErrors(JSContext* aCx,
                                        JS::MutableHandle<JS::Value> aErrors) {
   if (mPaymentMethodErrors.IsEmpty()) {
-    aErrors.set(JS::NullValue());
+    aErrors.setNull();
     return NS_OK;
   }
   nsresult rv = DeserializeToJSValue(mPaymentMethodErrors, aCx, aErrors);

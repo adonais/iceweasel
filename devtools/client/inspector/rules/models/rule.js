@@ -127,7 +127,15 @@ class Rule {
       if (this.inherited.id) {
         eltText += "#" + this.inherited.id;
       }
-      if (CssLogic.ELEMENT_BACKED_PSEUDO_ELEMENTS.has(this.pseudoElement)) {
+      let pseudo = this.pseudoElement;
+      // In some cases, the pseudo element is a function (e.g. `::picker(select)`),
+      // but in ELEMENT_BACKED_PSEUDO_ELEMENTS, we store the "short" version (e.g. `::picker`).
+      // So drop anything after the opening parenthesis to check if the pseudo element
+      // is a backed pseudo element.
+      if (pseudo.includes("(")) {
+        pseudo = pseudo.substring(0, pseudo.indexOf("("));
+      }
+      if (CssLogic.ELEMENT_BACKED_PSEUDO_ELEMENTS.has(pseudo)) {
         eltText += this.pseudoElement;
       }
       this.#inheritedSectionLabel = STYLE_INSPECTOR_L10N.getFormatStr(

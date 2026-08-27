@@ -18,7 +18,8 @@ support-files = [
   "doc_keyframeanimation.html",
   "doc_keyframeLineNumbers.html",
   "doc_media_queries.html",
-  "doc_print_media_simulation.html",
+  "doc_prefers_reduced_motion_emulation.html",
+  "doc_print_media_emulation.html",
   "doc_pseudoelement.html",
   "doc_ruleLineNumbers.html",
   "doc_rules_imported_stylesheet_edit.html",
@@ -71,6 +72,8 @@ tags = "devtools-compat-data"
 tags = "devtools-compat-data"
 
 ["browser_rules_element_specific_pseudo_classes.js"]
+
+["browser_rules_emulation_panel_mdn_links.js"]
 
 ["browser_rules_filtereditor-appears-on-swatch-click.js"]
 fail-if = [
@@ -258,9 +261,11 @@ fail-if = [
 
 ["browser_rules_position-try.js"]
 
+["browser_rules_prefers_reduced_motion_emulation.js"]
+
 ["browser_rules_preview-tooltips-sizes.js"]
 
-["browser_rules_print_media_simulation.js"]
+["browser_rules_print_media_emulation.js"]
 
 ["browser_rules_pseudo-element_01.js"]
 

@@ -958,7 +958,7 @@ void XULTreeItemAccessible::RowInvalidated(int32_t aStartColIdx,
 
   if (name != mCachedName) {
     nsEventShell::FireEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, this);
-    mCachedName = name;
+    mCachedName = std::move(name);
   }
 }
 

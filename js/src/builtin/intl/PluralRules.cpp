@@ -92,7 +92,7 @@ const ClassSpec PluralRulesObject::classSpec_ = {
 };
 
 PluralRulesOptions js::intl::PluralRulesObject::getOptions() const {
-  const auto& slot = getFixedSlot(OPTIONS_SLOT);
+  const auto& slot = getFixedSlotTyped(OPTIONS_SLOT);
   if (slot.isUndefined()) {
     return {};
   }
@@ -101,7 +101,7 @@ PluralRulesOptions js::intl::PluralRulesObject::getOptions() const {
 
 void js::intl::PluralRulesObject::setOptions(
     const PluralRulesOptions& options) {
-  setFixedSlot(OPTIONS_SLOT, PackedPluralRulesOptions::pack(options));
+  setFixedSlotTyped(OPTIONS_SLOT, PackedPluralRulesOptions::pack(options));
 }
 
 static constexpr std::string_view PluralRulesTypeToString(

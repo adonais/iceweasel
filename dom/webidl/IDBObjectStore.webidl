@@ -37,12 +37,13 @@ interface IDBObjectStore {
     IDBRequest getKey (any key);
 
     // Success fires IDBTransactionEvent, result == array of values for given keys
-    // If we decide to add use a counter for the mozGetAll function, we'll need
-    // to pull it out into a sepatate operation with a BinaryName mapping to the
-    // same underlying implementation.
-    [NewObject, Throws, Alias="mozGetAll"]
+    [NewObject, Throws]
     IDBRequest getAll(optional any queryOrOptions,
                       optional [EnforceRange] unsigned long count);
+    // Deprecated alias for getAll(), kept for compat. See bug 1577227.
+    [NewObject, Throws, BinaryName="GetAll", Deprecated="IDBObjectStoreMozGetAll"]
+    IDBRequest mozGetAll(optional any queryOrOptions,
+                         optional [EnforceRange] unsigned long count);
     [NewObject, Throws]
     IDBRequest getAllKeys(optional any queryOrOptions,
                           optional [EnforceRange] unsigned long count);

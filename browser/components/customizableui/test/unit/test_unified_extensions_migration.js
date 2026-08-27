@@ -109,6 +109,7 @@ add_task(async function test_no_extensions() {
       TabsToolbar: [
         "tabbrowser-tabs",
         "new-tab-button",
+        "customizableui-special-spring1",
         "alltabs-button",
         "developer-button",
       ],
@@ -155,6 +156,7 @@ add_task(async function test_existing_browser_actions_no_movement() {
       TabsToolbar: [
         "tabbrowser-tabs",
         "new-tab-button",
+        "customizableui-special-spring1",
         "alltabs-button",
         "developer-button",
       ],
@@ -197,6 +199,7 @@ add_task(async function test_migrate_extension_buttons() {
       TabsToolbar: [
         "tabbrowser-tabs",
         "new-tab-button",
+        "customizableui-special-spring1",
         "alltabs-button",
         "developer-button",
       ],
@@ -255,6 +258,7 @@ add_task(async function test_migrate_extension_buttons_no_overwrite() {
       TabsToolbar: [
         "tabbrowser-tabs",
         "new-tab-button",
+        "customizableui-special-spring1",
         "alltabs-button",
         "developer-button",
       ],
@@ -327,6 +331,7 @@ add_task(async function test_migrate_extension_buttons_elsewhere() {
         "ext10-browser-action",
         "new-tab-button",
         "ext11-browser-action",
+        "customizableui-special-spring1",
         "alltabs-button",
         "ext12-browser-action",
         "developer-button",

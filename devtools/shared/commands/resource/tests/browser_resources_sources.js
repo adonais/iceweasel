@@ -342,6 +342,9 @@ add_task(async function testGarbagedCollectedSources() {
  * and toolbox use.
  */
 add_task(async function testParentProcessPrivilegedSources() {
+  // We use a commands object for the main process
+  await pushPref("devtools.chrome.enabled", true);
+
   // Use a custom loader + server + client in order to spawn the server
   // in a distinct system compartment, so that it can see the system compartment
   // sandbox we are about to create in this test

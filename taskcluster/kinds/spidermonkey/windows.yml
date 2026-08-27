@@ -9,6 +9,7 @@ task-defaults:
         env:
             MOZ_JS_UPLOAD_BINARIES_DEFAULT: "0"
     run:
+        clone-with: hg
         tooltool-downloads: public
 
 sm-plain-win64/debug:
@@ -19,6 +20,7 @@ sm-plain-win64/debug:
         platform: windows2012-64/debug
         symbol: SM(p)
     run:
+        clone-with: hg
         spidermonkey-variant: plaindebug
         spidermonkey-platform: win64
     fetches:
@@ -38,6 +40,7 @@ sm-plain-win32/debug:
         symbol: SM(p)
         tier: 2
     run:
+        clone-with: hg
         spidermonkey-variant: plaindebug
         spidermonkey-platform: win32
     run-on-projects: ['mozilla-central']
@@ -57,6 +60,7 @@ sm-plain-win64/opt:
         platform: windows2012-64/opt
         symbol: SM(p)
     run:
+        clone-with: hg
         spidermonkey-variant: plain
         spidermonkey-platform: win64
     fetches:
@@ -76,6 +80,7 @@ sm-plain-win32/opt:
         symbol: SM(p)
         tier: 2
     run:
+        clone-with: hg
         spidermonkey-variant: plain
         spidermonkey-platform: win32
     run-on-projects: ['mozilla-central']
@@ -95,6 +100,7 @@ sm-compacting-win64/debug:
         platform: windows2012-64/debug
         symbol: SM(cgc)
     run:
+        clone-with: hg
         spidermonkey-variant: compacting
         spidermonkey-platform: win64
     fetches:
@@ -114,6 +120,7 @@ sm-compacting-win32/debug:
         symbol: SM(cgc)
         tier: 2
     run:
+        clone-with: hg
         spidermonkey-variant: compacting
         spidermonkey-platform: win32
     run-on-projects: []

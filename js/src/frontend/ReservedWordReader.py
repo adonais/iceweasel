@@ -8,13 +8,10 @@ import re
 def read_reserved_word_list(filename, *args):
 
     enable_decorators = False
-    enable_explicit_resource_management = False
 
     for arg in args:
         if arg == "--enable-decorators":
             enable_decorators = True
-        elif arg == "--enable-explicit-resource-management":
-            enable_explicit_resource_management = True
         else:
             raise ValueError("Unknown argument: " + arg)
 
@@ -28,8 +25,6 @@ def read_reserved_word_list(filename, *args):
             if m:
                 reserved_word = m.group(1)
                 if reserved_word == "accessor" and not enable_decorators:
-                    continue
-                if reserved_word == "using" and not enable_explicit_resource_management:
                     continue
                 reserved_word_list.append((index, reserved_word))
                 index += 1

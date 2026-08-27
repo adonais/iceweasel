@@ -20,10 +20,10 @@ class WindowsTestDebug final : public nsIWindowsTestDebug {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIWINDOWSTESTDEBUG
-  WindowsTestDebug();
+  WindowsTestDebug() = default;
 
  private:
-  ~WindowsTestDebug();
+  ~WindowsTestDebug() = default;
 };
 
 }  // namespace mozilla::widget

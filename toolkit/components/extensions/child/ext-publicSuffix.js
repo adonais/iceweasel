@@ -40,7 +40,7 @@ this.publicSuffix = class extends ExtensionAPI {
           try {
             const suffix = Services.eTLD.getKnownPublicSuffixFromHost(hostname);
             if (suffix) {
-              return suffix === idn.convertUTF8toACE(hostname);
+              return suffix === ensureValidHostname(hostname);
             }
           } catch {}
           return false;

@@ -189,6 +189,7 @@ for (const type of [
   "NEW_TAB_STATE_REQUEST_STARTUPCACHE",
   "NEW_TAB_STATE_REQUEST_WITHOUT_STARTUPCACHE",
   "NEW_TAB_UNLOAD",
+  "OPEN_ABOUT_ADDONS_THEMES",
   "OPEN_DOWNLOAD_FILE",
   "OPEN_LINK",
   "OPEN_NEW_WINDOW",
@@ -300,7 +301,12 @@ for (const type of [
   "WEATHER_USER_OPT_IN_LOCATION",
   "WEBEXT_CLICK",
   "WEBEXT_DISMISS",
+  "WEB_NOTIFICATIONS_ADDED",
+  "WEB_NOTIFICATIONS_CLICK",
+  "WEB_NOTIFICATIONS_DISMISS",
+  "WEB_NOTIFICATIONS_DISMISS_ALL",
   "WEB_NOTIFICATIONS_ERROR",
+  "WEB_NOTIFICATIONS_REMOVED",
   "WEB_NOTIFICATIONS_REQUEST",
   "WEB_NOTIFICATIONS_UPDATED",
   "WIDGETS_CONTAINER_ACTION",
@@ -316,6 +322,8 @@ for (const type of [
   "WIDGETS_LISTS_USER_IMPRESSION",
   "WIDGETS_OPT_IN",
   "WIDGETS_PICTURE_SET_WALLPAPER",
+  "WIDGETS_PRIVACY_CTA",
+  "WIDGETS_PRIVACY_MARK_CELEBRATED",
   "WIDGETS_PRIVACY_UPDATE",
   "WIDGETS_SPORTS_CHANGE_FOLLOWED_ONLY",
   "WIDGETS_SPORTS_CHANGE_LIVE_INDEX",
@@ -764,6 +772,18 @@ const PREF_WIDGETS_PRIVACY_ENABLED = "widgets.privacy.enabled";
 const PREF_PRIVACY_SIZE = "widgets.privacy.size";
 const PREF_WIDGETS_SYSTEM_PRIVACY_ENABLED =
   "widgets.system.privacy.enabled";
+const PREF_PRIVACY_MAX_COUNT = "widgets.privacy.maxCount";
+const PREF_PRIVACY_MAX_DISPLAY_COUNT = "widgets.privacy.maxDisplayCount";
+const PREF_PRIVACY_BLANK_CHANCE = "widgets.privacy.blankChance";
+const PREF_PRIVACY_SHOW_VPN_MESSAGES = "widgets.privacy.showVpnMessages";
+const PREF_PRIVACY_FORCE_MESSAGE_ID = "widgets.privacy.forceMessageId";
+const PREF_PRIVACY_MESSAGE_STATE = "widgets.privacy.messageState";
+const PREF_PRIVACY_CELEBRATION_THRESHOLD =
+  "widgets.privacy.celebrationThreshold";
+const PREF_PRIVACY_CELEBRATION_STATE =
+  "widgets.privacy.celebrationState";
+const PREF_PRIVACY_FORCE_CELEBRATION =
+  "widgets.privacy.forceCelebration";
 const PREF_WIDGETS_CROSSWORD_ENABLED = "widgets.crossword.enabled";
 const PREF_CROSSWORD_SIZE = "widgets.crossword.size";
 const PREF_WIDGETS_SYSTEM_CROSSWORD_ENABLED =
@@ -795,7 +815,7 @@ const PREF_WIDGETS_SYSTEM_PICTURE_OF_THE_DAY_ENABLED =
  * @property {string|null} trainhopSidebarKey - Key in trainhopConfig.widgets.* for the hasSidebar override.
  * @property {string} widgetsSettingsVisibleKey - Key in trainhopConfig.widgetsSettings.* that additively reveals this widget's toggle in the settings UIs (does not enable the widget).
  * @property {string} widgetsSettingsEnabledKey - Key in trainhopConfig.widgetsSettings.* that overrides this widget's default enabled value (written to the pref default branch; an explicit user toggle still wins).
- * @property {string|null} [trainhopNamespace] - When set, the widget ships its whole config in one dedicated object at trainhopConfig.<namespace>. Its `enabled` overrides the default value of enabledPref on the default branch (user toggle still wins, like widgetsSettings.*Enabled); `visible` reveals the widget (isWidgetAddable) without writing a pref; `size` is read by resolveWidgetSize. Picture of the Day and Crossword use this today.
+ * @property {string|null} [trainhopNamespace] - When set, the widget ships its whole config in one dedicated object at trainhopConfig.<namespace>. Its `enabled` overrides the default value of enabledPref on the default branch (user toggle still wins, like widgetsSettings.*Enabled); `visible` reveals the widget (isWidgetAddable) without writing a pref; `size` is read by resolveWidgetSize. Picture of the Day, Crossword and Privacy use this today.
  */
 
 /** @type {WidgetRegistryEntry[]} */
@@ -912,6 +932,7 @@ const WIDGET_REGISTRY = [
     trainhopSidebarKey: null,
     widgetsSettingsVisibleKey: "privacyVisible",
     widgetsSettingsEnabledKey: "privacyEnabled",
+    trainhopNamespace: "widgetPrivacy",
   },
   {
     id: "crossword",
@@ -1126,6 +1147,173 @@ function resolveCrosswordEndpoint(prefs) {
 }
 
 /**
+ * Picks the dedicated trainhopConfig.widgetPrivacy value when it has the
+ * expected type, otherwise falls through to the shared trainhopConfig.widgets
+ * key. A present-but-wrong-typed dedicated value is a recipe misconfig (e.g.
+ * the string "0.4" where a number is required — the string form is only correct
+ * for the pref, which cannot hold a float), so warn rather than silently
+ * masking the shared key with a value that is about to be discarded.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @param {string} key - key in trainhopConfig.widgetPrivacy
+ * @param {string} sharedKey - fallback key in trainhopConfig.widgets
+ * @param {string} type - expected typeof result
+ * @returns {*} the dedicated value, else the shared value, else undefined
+ */
+function resolvePrivacyTrainhopValue(prefs, key, sharedKey, type) {
+  const dedicated = prefs.trainhopConfig?.widgetPrivacy?.[key];
+  if (typeof dedicated === type) {
+    return dedicated;
+  }
+  if (dedicated !== undefined) {
+    console.warn(
+      `trainhopConfig.widgetPrivacy.${key} is ${JSON.stringify(
+        dedicated
+      )}; expected a ${type}. Ignoring it.`
+    );
+  }
+  return prefs.trainhopConfig?.widgets?.[sharedKey];
+}
+
+/**
+ * Resolves the today-count at which the Privacy widget fires its "daily cap"
+ * celebration message. This is NOT the display ceiling — the readout keeps
+ * showing the real number past this point (see resolvePrivacyDisplayCount).
+ * Priority: widgetPrivacy > widgets > pref > 100. Routed through this helper
+ * (never the raw pref) per the trainhop-gate convention.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {number}
+ */
+function resolvePrivacyMaxCount(prefs) {
+  return (
+    resolvePrivacyTrainhopValue(
+      prefs,
+      "maxCount",
+      "privacyMaxCount",
+      "number"
+    ) ||
+    prefs[PREF_PRIVACY_MAX_COUNT] ||
+    100
+  );
+}
+
+/**
+ * Resolves the ceiling for the tracker-count readout: above it the number
+ * shows as "{cap}+" so it stays a tidy few characters. Default 999 (three
+ * digits). Distinct from resolvePrivacyMaxCount (the daily-cap celebration
+ * threshold). Priority: widgetPrivacy > widgets > pref > 999.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {number}
+ */
+function resolvePrivacyDisplayCount(prefs) {
+  return (
+    resolvePrivacyTrainhopValue(
+      prefs,
+      "maxDisplayCount",
+      "privacyMaxDisplayCount",
+      "number"
+    ) ||
+    prefs[PREF_PRIVACY_MAX_DISPLAY_COUNT] ||
+    999
+  );
+}
+
+/**
+ * Resolves the Privacy widget "blank chance" — the probability (0..1) that an
+ * eligible info message is suppressed to keep the experience calm. It's compared
+ * against Math.random(), so it MUST be a 0–1 fraction (0.4 = 40%), not a percent.
+ * A value > 1 (e.g. 40) would blank every message; guard against that by warning
+ * and falling back to the default. Priority: widgetPrivacy > widgets > pref > 0.4.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {number}
+ */
+function resolvePrivacyBlankChance(prefs) {
+  const DEFAULT = 0.4;
+  const trainhop = resolvePrivacyTrainhopValue(
+    prefs,
+    "blankChance",
+    "privacyBlankChance",
+    "number"
+  );
+  // The pref is stored as a string ("0.4") because Firefox prefs have no float
+  // type — a numeric default would land as 0 and silently disable blanks.
+  // trainhopConfig comes from JSON, so it's already a number.
+  const rawPref = prefs[PREF_PRIVACY_BLANK_CHANCE];
+  const raw = typeof trainhop === "number" ? trainhop : parseFloat(rawPref);
+  if (Number.isNaN(raw)) {
+    // Warn on a present-but-unparseable value (a misconfig); stay quiet when
+    // the pref is simply unset.
+    if (rawPref !== undefined && rawPref !== "") {
+      console.warn(
+        `widgets.privacy.blankChance is ${JSON.stringify(
+          rawPref
+        )}; expected a 0-1 number. Using ${DEFAULT}.`
+      );
+    }
+    return DEFAULT;
+  }
+  if (raw < 0 || raw > 1) {
+    console.warn(
+      `widgets.privacy.blankChance is ${raw}; expected a 0-1 fraction (0.4 = 40%). Using ${DEFAULT}.`
+    );
+    return DEFAULT;
+  }
+  return raw;
+}
+
+/**
+ * Resolves whether the Privacy widget may show VPN promotional messages. Off by
+ * default: not all users are eligible for the built-in VPN (unsupported region,
+ * enterprise-managed, removed from the toolbar), and promoting an unavailable
+ * feature erodes trust. An experiment can enable them for eligible cohorts — or
+ * force them off. Priority: widgetPrivacy > widgets > pref > false.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+function resolvePrivacyShowVpnMessages(prefs) {
+  const trainhop = resolvePrivacyTrainhopValue(
+    prefs,
+    "showVpnMessages",
+    "privacyShowVpnMessages",
+    "boolean"
+  );
+  if (typeof trainhop === "boolean") {
+    return trainhop;
+  }
+  return !!prefs[PREF_PRIVACY_SHOW_VPN_MESSAGES];
+}
+
+/**
+ * Resolves how far the blocked-tracker count must climb before the count-up
+ * celebration fires. Priority: widgetPrivacy > widgets > pref > 10 (HNT-2845).
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {number}
+ */
+function resolvePrivacyCelebrationThreshold(prefs) {
+  const DEFAULT = 10;
+  const trainhop = resolvePrivacyTrainhopValue(
+    prefs,
+    "celebrationThreshold",
+    "privacyCelebrationThreshold",
+    "number"
+  );
+  const raw =
+    typeof trainhop === "number"
+      ? trainhop
+      : prefs[PREF_PRIVACY_CELEBRATION_THRESHOLD];
+  // A zero or negative threshold would fire on every refresh.
+  if (typeof raw !== "number" || !Number.isFinite(raw) || raw < 1) {
+    return DEFAULT;
+  }
+  return raw;
+}
+
+/**
  * Returns the list of widgets to disable when "hide all" is triggered.
  * A widget is included if it has no sidebar variant OR if it is currently
  * in the row (not the sidebar). Each entry carries the pref to disable,
@@ -1193,6 +1381,10 @@ const WIDGET_EXTRA_FEATURES = {
   pictureOfTheDay: [{
     pref: "widgets.pictureOfTheDay.setAsWallpaper.enabled",
     label: "Set as wallpaper"
+  }],
+  privacy: [{
+    pref: "widgets.privacy.showVpnMessages",
+    label: "VPN messages"
   }],
   sportsWidget: [{
     pref: "widgets.sportsWidget.live.enabled",
@@ -1740,6 +1932,32 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     const feed = feeds.data[url].data;
     return /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("h4", null, "Feed url: ", url), /*#__PURE__*/external_React_default().createElement("table", null, /*#__PURE__*/external_React_default().createElement("tbody", null, feed.recommendations?.map(story => this.renderStoryData(story)))));
   }
+  renderTrainhop() {
+    const {
+      trainhopConfig = {},
+      trainhopVersion,
+      nimbusDebug
+    } = this.props.otherPrefs;
+    return /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("table", {
+      className: "minimal-table trainhop-info"
+    }, /*#__PURE__*/external_React_default().createElement("tbody", null, /*#__PURE__*/external_React_default().createElement(Row, null, /*#__PURE__*/external_React_default().createElement("td", {
+      className: "min"
+    }, "Installed version"), /*#__PURE__*/external_React_default().createElement("td", null, trainhopVersion ?? "unknown")), /*#__PURE__*/external_React_default().createElement(Row, null, /*#__PURE__*/external_React_default().createElement("td", {
+      className: "min"
+    }, "nimbus.debug"), /*#__PURE__*/external_React_default().createElement("td", null, nimbusDebug ? "true" : "false")))), /*#__PURE__*/external_React_default().createElement("p", null, "Manage the experiments and rollouts that populate this config in", " ", /*#__PURE__*/external_React_default().createElement("a", {
+      target: "_blank",
+      rel: "noopener noreferrer",
+      href: "about:studies"
+    }, "about:studies"), ", or install the", " ", /*#__PURE__*/external_React_default().createElement("a", {
+      target: "_blank",
+      rel: "noopener noreferrer",
+      href: "https://github.com/mozilla-extensions/nimbus-devtools/releases"
+    }, "Nimbus devtools extension"), "."), Object.keys(trainhopConfig || {}).length ? /*#__PURE__*/external_React_default().createElement("pre", {
+      className: "trainhop-config"
+    }, JSON.stringify(trainhopConfig, null, 2)) : /*#__PURE__*/external_React_default().createElement("p", {
+      className: "trainhop-empty"
+    }, "No train-hop config. This build isn't enrolled in any newtabTrainhop experiment or rollout."));
+  }
   renderFeedsData() {
     const {
       feeds
@@ -1926,6 +2144,8 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       label: "Toggle DS Sections"
     })), /*#__PURE__*/external_React_default().createElement("details", {
       className: "details-section"
+    }, /*#__PURE__*/external_React_default().createElement("summary", null, "Train Hop"), this.renderTrainhop()), /*#__PURE__*/external_React_default().createElement("details", {
+      className: "details-section"
     }, /*#__PURE__*/external_React_default().createElement("summary", null, "IAB Banner Ad Sizes"), /*#__PURE__*/external_React_default().createElement("div", {
       className: "toggle-wrapper"
     }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
@@ -2072,7 +2292,7 @@ function CollapseToggle(props) {
     globalThis.location.hash = devtoolsCollapsed ? "#devtools" : "";
   };
   return /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, novaEnabled ? /*#__PURE__*/external_React_default().createElement("moz-button", {
-    type: "icon",
+    type: "primary",
     className: className,
     title: label,
     "aria-label": label,
@@ -4231,6 +4451,9 @@ const SponsorLabel = ({
   sponsor,
   context,
   newSponsoredLabel,
+  // @nova-cleanup(remove-conditional): Delete this prop and keep only the
+  // source-wrapper branch below; the classic FluentOrText label goes away, along
+  // with the now-unused FluentOrText import and the classList variable.
   novaEnabled
 }) => {
   const classList = `story-sponsored-label ${newSponsoredLabel || ""} clamp`;
@@ -4853,6 +5076,8 @@ class _DSCard extends (external_React_default()).PureComponent {
       readTime: displayReadTime
     } = DiscoveryStream;
     const sectionsEnabled = Prefs.values[DSCard_PREF_SECTIONS_ENABLED];
+    // @nova-cleanup(remove-pref): Delete this read and the two novaEnabled props
+    // passed to DSContextFooter below; that component drops the prop entirely.
     const novaEnabled = Prefs.values["nova.enabled"];
     // We can ignore hideDescriptions if we are in sections.
     const excerpt = !hideDescriptions || sectionsEnabled ? this.props.excerpt : "";
@@ -5612,6 +5837,7 @@ const AdBanner = ({
 
 
 
+// @nova-cleanup(remove-pref): Delete this const; see the showNovaHeader read below.
 const CardGrid_PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
 const CardGrid_PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
@@ -5898,6 +6124,9 @@ class _CardGrid extends (external_React_default()).PureComponent {
     // Handle the case where a user has dismissed all recommendations
     const isEmpty = data.recommendations.length === 0;
     const prefs = this.props.Prefs.values;
+    // @nova-cleanup(remove-conditional): Delete novaEnabled and replace
+    // showNovaHeader with `const showHeader = !sectionsEnabled;`, renaming the
+    // two showNovaHeader uses in the JSX below.
     const novaEnabled = prefs[CardGrid_PREF_NOVA_ENABLED];
     const sectionsEnabled = prefs[CardGrid_PREF_SECTIONS_ENABLED];
     const showNovaHeader = novaEnabled && !sectionsEnabled;
@@ -7443,17 +7672,6 @@ const INITIAL_STATE = {
     // For can be a queue in the future, but for now is one item
     toastQueue: [],
   },
-  // Snapshot of the platform NotificationDB (persisted web notifications).
-  // Distinct from `Notifications` above, which is in-newtab toast UI state.
-  // Normalized: `notifications` is the canonical id-keyed table; `byOrigin`
-  // is an id-only index. Fed by WebNotificationsFeed.
-  WebNotifications: {
-    initialized: false,
-    lastUpdated: null,
-    notifications: {},
-    byOrigin: {},
-    error: null,
-  },
   InferredPersonalization: {
     initialized: false,
     lastUpdated: null,
@@ -7480,6 +7698,17 @@ const INITIAL_STATE = {
   },
   SectionsLayout: {
     configs: {},
+    orderings: {},
+  },
+  // Web notifications surfaced on newtab. Distinct from `Notifications` above,
+  // which is in-newtab toast UI state. `notifications` is the canonical
+  // id-keyed table; `byOrigin` is an id-only index. Fed by WebNotificationsFeed.
+  WebNotifications: {
+    initialized: false,
+    lastUpdated: null,
+    notifications: {},
+    byOrigin: {},
+    error: null,
   },
   Weather: {
     initialized: false,
@@ -7594,6 +7823,24 @@ const INITIAL_STATE = {
     // "sites where we blocked something"; see PrivacyFeed).
     sitesToday: 0,
     lastUpdated: null,
+    // Secondary-message decision chosen by PrivacyFeed's selector
+    // (Bug 2050954). variant: empty | blank | streak | tip. `category` is the
+    // message family (CATEGORY) so the UI can tell a celebration from an
+    // ordinary tip; `icon` is an icon key (see Privacy.jsx); `countArg` is the
+    // l10n plural/var arg.
+    variant: null,
+    messageId: null,
+    category: null,
+    icon: null,
+    countArg: null,
+    // SpecialMessageAction for the message's CTA button (null → no button).
+    cta: null,
+    // When set, the count readout shows "{countCeiling}+" (the daily-cap render).
+    countCeiling: null,
+    // Pending count-up celebration awarded by PrivacyFeed, or null. Shaped
+    // { awardedAt, fromCount, toCount }, plus `forcedTier` when the debug
+    // pref made it; `awardedAt` doubles as its id.
+    celebration: null,
   },
 };
 
@@ -8403,7 +8650,11 @@ function Wallpapers(prevState = INITIAL_STATE.Wallpapers, action) {
 function SectionsLayout(prevState = INITIAL_STATE.SectionsLayout, action) {
   switch (action.type) {
     case actionTypes.SECTIONS_LAYOUT_UPDATE:
-      return { ...prevState, configs: action.data.configs };
+      return {
+        ...prevState,
+        configs: action.data.configs,
+        orderings: action.data.orderings ?? prevState.orderings,
+      };
     default:
       return prevState;
   }
@@ -8438,6 +8689,39 @@ function Notifications(prevState = INITIAL_STATE.Notifications, action) {
   }
 }
 
+/** Merges one notification into the id table and origin index. */
+function addWebNotification(prevState, notification) {
+  const { id, origin } = notification;
+  const originIds = prevState.byOrigin[origin] || [];
+  return {
+    ...prevState,
+    initialized: true,
+    notifications: { ...prevState.notifications, [id]: notification },
+    byOrigin: {
+      ...prevState.byOrigin,
+      [origin]: originIds.includes(id) ? originIds : [...originIds, id],
+    },
+  };
+}
+
+/** Drops a list of `{origin, id}` pairs from the id table and origin index. */
+function removeWebNotifications(prevState, removed) {
+  const notifications = { ...prevState.notifications };
+  const byOrigin = { ...prevState.byOrigin };
+  for (const { origin, id } of removed) {
+    delete notifications[id];
+    const remaining = (byOrigin[origin] || []).filter(
+      existing => existing !== id
+    );
+    if (remaining.length) {
+      byOrigin[origin] = remaining;
+    } else {
+      delete byOrigin[origin];
+    }
+  }
+  return { ...prevState, notifications, byOrigin };
+}
+
 function WebNotifications(prevState = INITIAL_STATE.WebNotifications, action) {
   switch (action.type) {
     case actionTypes.WEB_NOTIFICATIONS_UPDATED:
@@ -8449,11 +8733,12 @@ function WebNotifications(prevState = INITIAL_STATE.WebNotifications, action) {
         byOrigin: action.data.byOrigin,
         error: null,
       };
+    case actionTypes.WEB_NOTIFICATIONS_ADDED:
+      return addWebNotification(prevState, action.data.notification);
+    case actionTypes.WEB_NOTIFICATIONS_REMOVED:
+      return removeWebNotifications(prevState, action.data.removed);
     case actionTypes.WEB_NOTIFICATIONS_ERROR:
-      return {
-        ...prevState,
-        error: action.data,
-      };
+      return { ...prevState, error: action.data };
     default:
       return prevState;
   }
@@ -8509,11 +8794,12 @@ const PictureOfTheDay = (prevState = INITIAL_STATE.PictureOfTheDay, action) => {
 function PrivacyWidget(prevState = INITIAL_STATE.PrivacyWidget, action) {
   switch (action.type) {
     case actionTypes.WIDGETS_PRIVACY_UPDATE:
+      // Merge whatever the feed sent: SYSTEM_TICK/INIT broadcast counts only
+      // (message fields absent → kept); NEW_TAB_INIT also carries the
+      // selector's message decision.
       return {
         ...prevState,
-        trackersToday: action.data.trackersToday,
-        sitesToday: action.data.sitesToday,
-        lastUpdated: action.data.lastUpdated,
+        ...action.data,
         initialized: true,
       };
     default:
@@ -8779,7 +9065,6 @@ const reducers = {
   Sections,
   Messages,
   Notifications,
-  WebNotifications,
   Pocket,
   InferredPersonalization,
   DiscoveryStream,
@@ -8788,6 +9073,7 @@ const reducers = {
   ListsWidget,
   Wallpapers,
   SectionsLayout,
+  WebNotifications,
   Weather,
   Stocks,
   ExternalComponents,
@@ -8978,6 +9264,498 @@ function PinnedAreaOverlay({
     "data-l10n-id": "newtab-shortcuts-pinned-area"
   })))));
 }
+;// CONCATENATED MODULE: ./content-src/lib/web-notification-match.mjs
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+// Some apps serve their app (and register their notification service worker)
+// on a subdomain, but users pin the apex. A tile at the apex would never match
+// the origin its notifications are stored under. These aliases redirect the
+// apex (and www) to that app origin. Kept explicit rather than collapsing to a
+// registrable domain, which would wrongly merge unrelated siblings such as
+// Google's mail/calendar/docs onto a single tile.
+const ORIGIN_ALIASES = new Map([
+  ["https://gmail.com", "https://mail.google.com"],
+  ["https://www.gmail.com", "https://mail.google.com"],
+  ["https://slack.com", "https://app.slack.com"],
+  ["https://www.slack.com", "https://app.slack.com"],
+]);
+
+// Stable reference so selectors don't return a fresh array on every store
+// update for sites with no notifications.
+const EMPTY_IDS = Object.freeze([]);
+
+/**
+ * @param {string} url
+ * @returns {?string} The http(s) origin, or null for other schemes / bad input.
+ */
+function originFromUrl(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return null;
+    }
+    return parsed.origin;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * The origin a tile's notifications are stored under, resolving known apex
+ * aliases. Unknown origins pass through unchanged, so the worst case is an
+ * exact-match miss, never a wrong-app match.
+ *
+ * @param {string} url
+ * @returns {?string}
+ */
+function notificationKeyForUrl(url) {
+  const siteOrigin = originFromUrl(url);
+  if (!siteOrigin) {
+    return null;
+  }
+  return ORIGIN_ALIASES.get(siteOrigin) ?? siteOrigin;
+}
+
+/**
+ * The stored notification ids for the site a tile points at.
+ *
+ * @param {object} state Newtab Redux state.
+ * @param {string} url The tile's url.
+ * @returns {string[]}
+ */
+function getNotificationIdsForUrl(state, url) {
+  const key = notificationKeyForUrl(url);
+  return (key && state.WebNotifications.byOrigin[key]) || EMPTY_IDS;
+}
+
+/**
+ * Whether to render any web notifications surface. The feature has to exist for
+ * this profile (`system.showWebNotifications`, or a trainhop enrollment via
+ * `trainhopConfig.webNotifications.enabled`, which is also what decides whether
+ * the customize toggle is offered at all) and the user has to want it
+ * (`showWebNotifications`, what that toggle writes).
+ *
+ * @param {object} state Newtab Redux state.
+ * @returns {boolean}
+ */
+function isWebNotificationsEnabled(state) {
+  const prefs = state.Prefs.values;
+  const systemEnabled =
+    prefs["system.showWebNotifications"] ||
+    prefs.trainhopConfig?.webNotifications?.enabled;
+  return Boolean(systemEnabled && prefs.showWebNotifications);
+}
+
+;// CONCATENATED MODULE: ./content-src/lib/web-notification-icon.mjs
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+// Notification icons are third-party URLs chosen by the notifying site. Loading
+// one directly would tell that site the user's IP and when their New Tab
+// rendered, so icons go through the same image proxy the stories use: the fetch
+// is made by the CDN rather than by the user. Resizing comes along for free.
+const IMAGE_PROXY_ORIGIN = "https://img-getpocket.cdn.mozilla.net";
+
+// Icons render at --size-item-large (32px); request 2x so they stay sharp on
+// HiDPI. `no_upscale()` leaves a smaller source alone rather than blowing it up.
+const ICON_SIZE = 64;
+
+const PROXY_FILTERS =
+  "filters:format(webp):quality(75):no_upscale():strip_exif()";
+
+/**
+ * The proxied URL for a notification icon.
+ *
+ * Returns null for anything that cannot be proxied, and callers then render no
+ * icon at all rather than falling back to the origin URL — a fallback would
+ * reintroduce the direct third-party load this exists to prevent.
+ *
+ * @param {string} [url] The icon URL the notification carried.
+ * @returns {?string}
+ */
+function proxiedIconUrl(url) {
+  if (!url) {
+    return null;
+  }
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch (e) {
+    return null;
+  }
+  if (parsed.protocol !== "https:") {
+    return null;
+  }
+  return `${IMAGE_PROXY_ORIGIN}/${ICON_SIZE}x${ICON_SIZE}/${PROXY_FILTERS}/${encodeURIComponent(
+    url
+  )}`;
+}
+
+;// CONCATENATED MODULE: ./content-src/components/TopSitesHoverCard/CardWebNotifications/CardWebNotifications.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
+
+// Origins whose notification icon just repeats the site's own shortcut icon, so
+// listing it is visual noise. Hand-curated; grown as needed.
+const ICON_SUPPRESS_ORIGINS = new Set(["https://apnews.com"]);
+
+// Biggest units first, so the loop returns the coarsest one that fits.
+// Anything under a minute falls through to the "just now" string.
+const RELATIVE_TIME_UNITS = [["year", 365 * 24 * 60 * 60 * 1000], ["month", 30 * 24 * 60 * 60 * 1000], ["week", 7 * 24 * 60 * 60 * 1000], ["day", 24 * 60 * 60 * 1000], ["hour", 60 * 60 * 1000], ["minute", 60 * 1000]];
+
+/**
+ * Picks the largest relative-time unit that fits ("2 hours ago", "5 days ago").
+ * Returns null when the delta is under a minute, so the caller can show
+ * "just now" instead.
+ *
+ * @param {number} timestamp ms epoch the notification was posted.
+ * @param {string} [locale] BCP-47 locale; falls back to the runtime default.
+ * @param {number} now ms epoch to measure against.
+ * @returns {?string}
+ */
+function formatRelativeTime(timestamp, locale, now) {
+  const delta = timestamp - now;
+  const abs = Math.abs(delta);
+  for (const [unit, ms] of RELATIVE_TIME_UNITS) {
+    if (abs >= ms) {
+      return new Intl.RelativeTimeFormat(locale || undefined, {
+        numeric: "auto"
+      }).format(Math.round(delta / ms), unit);
+    }
+  }
+  return null;
+}
+function NotificationTime({
+  timestamp,
+  locale,
+  now
+}) {
+  if (!timestamp) {
+    return null;
+  }
+  const relative = formatRelativeTime(timestamp, locale, now);
+  const dateTime = new Date(timestamp).toISOString();
+  // A null relative string means it's under a minute, so show "just now".
+  if (relative === null) {
+    return /*#__PURE__*/external_React_default().createElement("time", {
+      className: "top-sites-hover-card-notification-time",
+      dateTime: dateTime,
+      "data-l10n-id": "newtab-topsites-hover-card-just-now"
+    });
+  }
+  return /*#__PURE__*/external_React_default().createElement("time", {
+    className: "top-sites-hover-card-notification-time",
+    dateTime: dateTime
+  }, relative);
+}
+
+/**
+ * A notification's icon, proxied. Renders nothing when the icon cannot be
+ * proxied or the proxy fails to serve it — there is deliberately no fallback to
+ * the origin URL, which is the load the proxy exists to avoid.
+ */
+function NotificationIcon({
+  notification
+}) {
+  const [failed, setFailed] = external_React_default().useState(false);
+  if (ICON_SUPPRESS_ORIGINS.has(notification.origin)) {
+    return null;
+  }
+  const src = proxiedIconUrl(notification.icon);
+  if (!src || failed) {
+    return null;
+  }
+  return /*#__PURE__*/external_React_default().createElement("img", {
+    src: src,
+    alt: "",
+    className: "top-sites-hover-card-notification-icon",
+    onError: () => setFailed(true)
+  });
+}
+function NotificationList({
+  notifications,
+  locale,
+  now,
+  onActivate,
+  onDismiss
+}) {
+  return /*#__PURE__*/external_React_default().createElement("ul", {
+    className: "top-sites-hover-card-notifications"
+  }, notifications.map(notification => {
+    return /*#__PURE__*/external_React_default().createElement("li", {
+      className: "top-sites-hover-card-notification",
+      key: notification.id,
+      dir: notification.dir || "auto"
+    }, /*#__PURE__*/external_React_default().createElement("button", {
+      type: "button",
+      className: "top-sites-hover-card-notification-activate",
+      onClick: () => onActivate(notification)
+    }, /*#__PURE__*/external_React_default().createElement(NotificationIcon, {
+      notification: notification
+    }), /*#__PURE__*/external_React_default().createElement("div", {
+      className: "top-sites-hover-card-notification-text"
+    }, /*#__PURE__*/external_React_default().createElement("span", {
+      className: "top-sites-hover-card-notification-title"
+    }, notification.title), notification.body ? /*#__PURE__*/external_React_default().createElement("span", {
+      className: "top-sites-hover-card-notification-body"
+    }, notification.body) : null, /*#__PURE__*/external_React_default().createElement(NotificationTime, {
+      timestamp: notification.timestamp,
+      locale: locale,
+      now: now
+    }))), /*#__PURE__*/external_React_default().createElement("button", {
+      type: "button",
+      className: "top-sites-hover-card-notification-dismiss",
+      "data-l10n-id": "newtab-topsites-hover-card-dismiss",
+      onClick: () => onDismiss(notification)
+    }));
+  }));
+}
+
+/**
+ * Web notifications variant of the top-sites hover card. Lists the hovered
+ * site's web notifications, most recent first, and renders nothing when the
+ * site has no notifications. The list scrolls in place past roughly three
+ * entries rather than spilling into a separate surface.
+ *
+ * This is one discrete content card behind the TopSitesHoverCard shell, which
+ * renders exactly one variant per tile (see hover-card-content.jsx). Clicking a
+ * service-worker notification fires its origin and dismisses it; the dismiss and
+ * mark-all controls remove entries durably via WebNotificationsFeed.
+ *
+ * @param link The top site link object for the hovered tile.
+ */
+function CardWebNotifications({
+  link
+}) {
+  const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
+  const locale = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.App.locale);
+  const byId = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.WebNotifications.notifications);
+  const ids = (0,external_ReactRedux_namespaceObject.useSelector)(state => getNotificationIdsForUrl(state, link?.url));
+  const notifications = ids.map(id => byId[id]).filter(Boolean).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  if (!notifications.length) {
+    return null;
+  }
+  const site = link?.label || link?.hostname || originFromUrl(link?.url) || "";
+  const now = Date.now();
+  const openSettings = () => {
+    dispatch({
+      type: actionTypes.SHOW_PERSONALIZE
+    });
+    dispatch(actionCreators.UserEvent({
+      event: "SHOW_PERSONALIZE"
+    }));
+  };
+  const activate = notification => dispatch(actionCreators.AlsoToMain({
+    type: actionTypes.WEB_NOTIFICATIONS_CLICK,
+    data: {
+      origin: notification.origin,
+      id: notification.id
+    }
+  }));
+  const dismiss = notification => dispatch(actionCreators.AlsoToMain({
+    type: actionTypes.WEB_NOTIFICATIONS_DISMISS,
+    data: {
+      origin: notification.origin,
+      id: notification.id
+    }
+  }));
+  const dismissAll = () => dispatch(actionCreators.AlsoToMain({
+    type: actionTypes.WEB_NOTIFICATIONS_DISMISS_ALL,
+    data: {
+      origin: notifications[0].origin
+    }
+  }));
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    className: "top-sites-hover-card",
+    role: "group"
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "top-sites-hover-card-inner"
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "top-sites-hover-card-header"
+  }, /*#__PURE__*/external_React_default().createElement("span", {
+    className: "top-sites-hover-card-header-title",
+    "data-l10n-id": "newtab-topsites-hover-card-header",
+    "data-l10n-args": JSON.stringify({
+      site
+    })
+  }), /*#__PURE__*/external_React_default().createElement("div", {
+    className: "top-sites-hover-card-header-actions"
+  }, /*#__PURE__*/external_React_default().createElement("button", {
+    type: "button",
+    className: "top-sites-hover-card-mark-read",
+    "data-l10n-id": "newtab-topsites-hover-card-mark-all-read",
+    onClick: dismissAll
+  }), /*#__PURE__*/external_React_default().createElement("button", {
+    type: "button",
+    className: "top-sites-hover-card-settings",
+    "data-l10n-id": "newtab-topsites-hover-card-settings",
+    onClick: openSettings
+  }))), /*#__PURE__*/external_React_default().createElement(NotificationList, {
+    notifications: notifications,
+    locale: locale,
+    now: now,
+    onActivate: activate,
+    onDismiss: dismiss
+  })));
+}
+
+;// CONCATENATED MODULE: ./content-src/components/TopSitesHoverCard/CardAd/CardAd.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/**
+ * Sponsored-tile variant of the top-sites hover card. A placeholder today: it
+ * renders nothing, but its presence in the content registry routes sponsored
+ * tiles here (ad-wins precedence) so notifications never appear on an ad tile.
+ * A real sponsored hover card can grow in here without touching the shell.
+ *
+ * @returns {null}
+ */
+function CardAd() {
+  return null;
+}
+
+;// CONCATENATED MODULE: ./content-src/components/TopSitesHoverCard/hover-card-content.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+/**
+ * Ordered content registry for the top-sites hover card. The shell renders
+ * exactly one variant — the first whose `match` accepts the tile — so content
+ * types never mix in a single card. Order is precedence: a sponsored tile
+ * matches the ad variant first, keeping notifications off ad tiles.
+ *
+ * Each variant component takes `{ link }` and is responsible for rendering
+ * nothing when it has nothing to show, so an unmatched-but-empty variant never
+ * paints an empty card.
+ *
+ * @type {Array<{key: string, match: (link: object) => boolean, Component: Function}>}
+ */
+const HOVER_CARD_CONTENT = [{
+  key: "ad",
+  match: link => Boolean(link?.isSponsored || link?.sponsored_tile_id || link?.show_sponsored_label || link?.sponsored_position),
+  Component: CardAd
+}, {
+  key: "notifications",
+  match: () => true,
+  Component: CardWebNotifications
+}];
+;// CONCATENATED MODULE: ./content-src/components/TopSitesHoverCard/TopSitesHoverCard.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
+/**
+ * Applies the web notifications feature gate, then routes the tile to exactly
+ * one content variant from the registry (see hover-card-content.jsx). The
+ * chosen variant owns the full card chrome and decides whether it has anything
+ * to paint.
+ *
+ * @param link The top site link object for the hovered tile.
+ */
+function HoverCardContent({
+  link
+}) {
+  const enabled = (0,external_ReactRedux_namespaceObject.useSelector)(isWebNotificationsEnabled);
+  if (!enabled) {
+    return null;
+  }
+  const variant = HOVER_CARD_CONTENT.find(entry => entry.match(link));
+  if (!variant) {
+    return null;
+  }
+  const {
+    Component
+  } = variant;
+  return /*#__PURE__*/external_React_default().createElement(Component, {
+    link: link
+  });
+}
+
+/**
+ * Floating card shown on hover over a top site tile, rendered as a descendant
+ * of the tile's `.top-site-inner`, which owns the positioning context and CSS
+ * hover visibility.
+ *
+ * Every tile renders this, including bare tile mounts in unit tests that have
+ * no redux Provider. Bail before any store access in that case; the running
+ * app always has a Provider, so the content renders normally there.
+ *
+ * @param link The top site link object for the hovered tile.
+ */
+function TopSitesHoverCard({
+  link
+}) {
+  const store = external_React_default().useContext(external_ReactRedux_namespaceObject.ReactReduxContext);
+  if (!store) {
+    return null;
+  }
+  return /*#__PURE__*/external_React_default().createElement(HoverCardContent, {
+    link: link
+  });
+}
+
+;// CONCATENATED MODULE: ./content-src/components/TopSiteWebNotification/TopSiteWebNotification.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+function Badge({
+  link
+}) {
+  const enabled = (0,external_ReactRedux_namespaceObject.useSelector)(isWebNotificationsEnabled);
+  const count = (0,external_ReactRedux_namespaceObject.useSelector)(state => getNotificationIdsForUrl(state, link?.url).length);
+  if (!enabled || !count) {
+    return null;
+  }
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    className: "top-site-web-notification"
+  }, count);
+}
+
+/**
+ * Count badge on a top site tile for the site's web notifications. Rendered on
+ * every tile (including bare tile mounts in tests with no redux Provider), so it
+ * bails before any store access when there is no store; the running app always
+ * has one.
+ *
+ * @param link The top site link object for the tile.
+ */
+function TopSiteWebNotification({
+  link
+}) {
+  const store = external_React_default().useContext(external_ReactRedux_namespaceObject.ReactReduxContext);
+  if (!store) {
+    return null;
+  }
+  return /*#__PURE__*/external_React_default().createElement(Badge, {
+    link: link
+  });
+}
+
 ;// CONCATENATED MODULE: ./content-src/components/TopSites/TopSiteImpressionWrapper.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -9106,6 +9884,8 @@ function TopSite_extends() { return TopSite_extends = Object.assign ? Object.ass
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
 
 
 
@@ -9457,6 +10237,8 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       className: "tile",
       "aria-hidden": true
     }, /*#__PURE__*/external_React_default().createElement("div", {
+      className: "icon-stack"
+    }, /*#__PURE__*/external_React_default().createElement("div", {
       className: selectedColor ? "icon-wrapper letter-fallback" : "icon-wrapper",
       "data-fallback": letterFallback,
       style: selectedColor ? {
@@ -9469,6 +10251,8 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       className: "top-site-icon default-icon",
       "data-fallback": smallFaviconStyle ? "" : letterFallback,
       style: smallFaviconStyle
+    })), /*#__PURE__*/external_React_default().createElement(TopSiteWebNotification, {
+      link: link
     }))), link.isPinned && /*#__PURE__*/external_React_default().createElement("div", {
       className: "icon icon-pin-small"
     }), /*#__PURE__*/external_React_default().createElement("div", {
@@ -9481,7 +10265,9 @@ class TopSiteLink extends (external_React_default()).PureComponent {
     }), title), /*#__PURE__*/external_React_default().createElement("span", {
       className: "sponsored-label",
       "data-l10n-id": "newtab-topsite-sponsored"
-    }))), children, impressionStats), this.props.addButton);
+    }))), children, impressionStats, /*#__PURE__*/external_React_default().createElement(TopSitesHoverCard, {
+      link: link
+    })), this.props.addButton);
   }
 }
 TopSiteLink.defaultProps = {
@@ -12179,6 +12965,7 @@ function SectionFollowButton({
   }, hoverHandlers), /*#__PURE__*/external_React_default().createElement("moz-button", {
     key: remountKey,
     type: buttonType,
+    size: "small",
     iconsrc: icon,
     onClick: following ? onUnfollowClick : handleFollowClick,
     "data-l10n-id": isHovered ? followButtonL10nId : labelL10nId,
@@ -12764,7 +13551,7 @@ function MessageWrapper({
     }));
     onDismiss?.();
   }, [dispatch, message, onDismiss]);
-  function handleDismiss() {
+  const handleDismiss = (0,external_React_namespaceObject.useCallback)(() => {
     const {
       id
     } = message.messageData;
@@ -12777,8 +13564,8 @@ function MessageWrapper({
       }));
     }
     handleClose();
-  }
-  function handleBlock() {
+  }, [dispatch, message, handleClose]);
+  const handleBlock = (0,external_React_namespaceObject.useCallback)(() => {
     const {
       id
     } = message.messageData;
@@ -12788,8 +13575,8 @@ function MessageWrapper({
         data: id
       }));
     }
-  }
-  function handleClick(elementId) {
+  }, [dispatch, message]);
+  const handleClick = (0,external_React_namespaceObject.useCallback)(elementId => {
     const {
       id
     } = message.messageData;
@@ -12802,7 +13589,7 @@ function MessageWrapper({
         }
       }));
     }
-  }
+  }, [dispatch, message]);
   if (!message || !hiddenOverride && !message.isVisible) {
     return null;
   }
@@ -13844,6 +14631,56 @@ const buildFireworks = (run, colors, count) => Array.from({
     sparks
   };
 });
+const SPARKLE_SIZES = ["lg", "md", "sm"];
+const buildSparkles = (run, count, staggerMs) => Array.from({
+  length: count
+}, (_, i) => {
+  const base = (run + 1) * 500 + i * 13;
+  // Fan across the anchor by index (with jitter) rather than clustering at
+  // its edges, so they read as sparkling ON the number, not beside it. The
+  // slight overhang lets some sit just outside the glyphs.
+  const left = -8 + (i + celebrationRandom(base + 7)) / count * 116;
+  return {
+    id: i,
+    size: SPARKLE_SIZES[i % SPARKLE_SIZES.length],
+    left: `${left.toFixed(1)}%`,
+    top: `${(-28 + celebrationRandom(base + 1) * 112).toFixed(1)}%`,
+    delay: `${i * staggerMs}ms`
+  };
+});
+
+/**
+ * Sparkle burst, rendered *inside* the element it should decorate (give that
+ * element `position: relative`). Positioning is pure CSS inset, so it tracks
+ * the element through icon swaps, count-up digit changes and font loads — a
+ * measured rect captured once at trigger time does not.
+ */
+const CelebrationSparkles = ({
+  classNamePrefix = "widget-celebration",
+  celebrationId,
+  count,
+  staggerMs = 50
+}) => {
+  if (!count) {
+    return null;
+  }
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    className: `${classNamePrefix}-sparkles`,
+    "aria-hidden": "true"
+  }, buildSparkles(celebrationId, count, staggerMs).map(sparkle => /*#__PURE__*/external_React_default().createElement("span", {
+    key: sparkle.id,
+    className: `${classNamePrefix}-sparkle ${classNamePrefix}-sparkle--${sparkle.size}`,
+    style: {
+      "--sparkle-delay": sparkle.delay,
+      left: sparkle.left,
+      top: sparkle.top
+    }
+  }, /*#__PURE__*/external_React_default().createElement("svg", {
+    viewBox: "0 0 16 16"
+  }, /*#__PURE__*/external_React_default().createElement("path", {
+    d: "M7 0h2v5.2h5.2v1.6H9v5.2H7v-5.2H1.8V5.2H7V0z"
+  })))));
+};
 const confettiPieceStyle = piece => ({
   "--confetti-x": piece.left,
   "--confetti-w": piece.width,
@@ -13868,6 +14705,8 @@ const WidgetCelebration = ({
   headlineL10nId,
   illustrationSrc,
   onComplete,
+  showBorder = true,
+  showRing = false,
   subheadL10nId
 }) => {
   const className = suffix => suffix ? `${classNamePrefix}-${suffix}` : classNamePrefix;
@@ -13890,7 +14729,10 @@ const WidgetCelebration = ({
         onComplete?.();
       }
     }
-  }, /*#__PURE__*/external_React_default().createElement("div", {
+  }, showRing ? /*#__PURE__*/external_React_default().createElement("div", {
+    className: className("ring"),
+    "aria-hidden": "true"
+  }) : null, showBorder ? /*#__PURE__*/external_React_default().createElement("div", {
     className: className("effects"),
     "aria-hidden": "true"
   }, /*#__PURE__*/external_React_default().createElement("svg", {
@@ -13937,7 +14779,7 @@ const WidgetCelebration = ({
     rx: celebrationFrame.radius,
     ry: celebrationFrame.radius,
     pathLength: "100"
-  }))), confettiPieces.length ? /*#__PURE__*/external_React_default().createElement("div", {
+  }))) : null, confettiPieces.length ? /*#__PURE__*/external_React_default().createElement("div", {
     className: className("confetti"),
     "aria-hidden": "true"
   }, /*#__PURE__*/external_React_default().createElement("svg", {
@@ -14034,6 +14876,10 @@ const WidgetCelebration = ({
  * 3. Call `triggerCelebration()` when the widget reaches its completion state.
  *    Returns `false` if the animation was skipped (reduced motion or no
  *    widget ref) so the caller can run its completion handler inline.
+ *
+ * For effects that decorate one element rather than the whole card (e.g. the
+ * Privacy count-up sparkles), render <CelebrationSparkles> inside that element
+ * instead — it positions itself in CSS, with no measured rect to go stale.
  *
  * Example:
  * const widgetRef = useRef(null);
@@ -14346,13 +15192,19 @@ const IMPRESSION_THRESHOLD = 0.3;
  * legacy events still exist alongside the unified events, FocusTimer and
  * Lists pass the matching legacy action types so the hook emits both. Both
  * co-dispatches fire legacy first, unified second.
+ *
+ * `onImpression` (optional) runs once, right after the widget impression fires
+ * (from the IntersectionObserver, or a manual recordImpression). Use it to hang
+ * extra, view-gated telemetry off the same trigger so it lines up with the
+ * impression and never fires on a preloaded tab that was never seen.
  */
 const useWidgetTelemetry = ({
   dispatch,
   widget,
   widgetSize,
   legacyImpressionTypes,
-  legacyUserEventType
+  legacyUserEventType,
+  onImpression
 }) => {
   const {
     telemetryName
@@ -14366,6 +15218,13 @@ const useWidgetTelemetry = ({
   // refs keep them out of the recorder callbacks' dependency arrays.
   const legacyImpressionTypesRef = (0,external_React_namespaceObject.useRef)(legacyImpressionTypes);
   const legacyUserEventTypeRef = (0,external_React_namespaceObject.useRef)(legacyUserEventType);
+
+  // Kept in a ref so an inline callback from the caller doesn't rebuild
+  // fireImpression (and re-run the observer effect) every render.
+  const onImpressionRef = (0,external_React_namespaceObject.useRef)(onImpression);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    onImpressionRef.current = onImpression;
+  }, [onImpression]);
   const buildPayload = (0,external_React_namespaceObject.useCallback)(({
     size,
     rest
@@ -14404,6 +15263,9 @@ const useWidgetTelemetry = ({
         data
       }));
     }
+    // View-gated hook for extra telemetry that must line up with the
+    // impression (see the doc comment). Fires once, with the impression.
+    onImpressionRef.current?.();
   }, [dispatch, buildPayload]);
 
   // The observer owns observation directly so the callback ref can attach to
@@ -14566,6 +15428,7 @@ const PREF_WIDGETS_LISTS_MAX_LISTITEMS = "widgets.lists.maxListItems";
 const PREF_WIDGETS_LISTS_BADGE_ENABLED = "widgets.lists.badge.enabled";
 const PREF_WIDGETS_LISTS_BADGE_LABEL = "widgets.lists.badge.label";
 const PREF_WIDGETS_LISTS_SIZE = "widgets.lists.size";
+// @nova-cleanup(remove-pref): Delete this const; see getListsWidgetSize below.
 const Lists_PREF_NOVA_ENABLED = "nova.enabled";
 const LISTS_EMPTY_STATE_ILLUSTRATION = "chrome://newtab/content/data/content/assets/lists-empty-state-comet.svg";
 const LISTS_CELEBRATION = {
@@ -14658,6 +15521,11 @@ function Lists({
   const [isCreatingNewList, setIsCreatingNewList] = (0,external_React_namespaceObject.useState)(false);
   const [showCompactCompleted, setShowCompactCompleted] = (0,external_React_namespaceObject.useState)(false);
   const selectedList = (0,external_React_namespaceObject.useMemo)(() => lists[selected], [lists, selected]);
+
+  // @nova-cleanup(remove-pref): Delete novaEnabled and collapse
+  // getListsWidgetSize to just the Nova branch, deleting everything after it
+  // (the PREF_WIDGETS_LISTS_SIZE fallback chain) and the now-unused
+  // PREF_WIDGETS_LISTS_SIZE const.
   const novaEnabled = prefs[Lists_PREF_NOVA_ENABLED];
   const listsWidget = WIDGET_REGISTRY.find(w => w.id === "lists");
   const getListsWidgetSize = () => {
@@ -15143,6 +16011,7 @@ function Lists({
     }));
   }
   return /*#__PURE__*/external_React_default().createElement("article", {
+    // @nova-cleanup(remove-conditional): Always apply col-4.
     className: `lists widget ${novaEnabled ? "col-4" : ""} ${listsSizeClass} ${isMaximized ? "is-maximized" : ""}${showEmptyState ? " is-empty" : ""}${hasVisibleTasks ? " has-visible-tasks" : ""}${isAddingTask ? " is-adding-task" : ""}${isCelebrating ? " is-celebrating" : ""}`,
     ref: el => {
       widgetRef.current = el;
@@ -15232,7 +16101,10 @@ function Lists({
     widgetSize: widgetsMayBeMaximized ? widgetSize : "medium",
     learnMoreL10nId: "newtab-widget-lists-menu-learn-more",
     onLearnMore: handleListInteraction,
-    sizeSubmenu: novaEnabled && widgetsMayBeMaximized && /*#__PURE__*/external_React_default().createElement(SizeSubmenu, {
+    sizeSubmenu:
+    // @nova-cleanup(remove-conditional): Drop the novaEnabled check,
+    // keep widgetsMayBeMaximized.
+    novaEnabled && widgetsMayBeMaximized && /*#__PURE__*/external_React_default().createElement(SizeSubmenu, {
       submenuId: "lists-size-submenu",
       sizes: ["medium", "large"],
       checkedSize: widgetSize,
@@ -15620,7 +16492,7 @@ const isAtMaxLength = currentValue => {
   return currentValue.length >= 2;
 };
 
-// @nova-cleanup(remove): Drop after Nova ships
+// Drop this if the spinbutton is ever replaced with a native control.
 /**
  * Validates whether the next state of the Nova spinbutton is acceptable.
  * Allows up to 2 digits, an optional single colon, and up to 2 more digits.
@@ -16218,7 +17090,8 @@ const FocusTimer = ({
     });
   }, [dispatch]);
 
-  // @nova-cleanup(remove-conditional): Drop the legacy callers and inline this for Nova
+  // @nova-cleanup(remove-conditional): Keep this function. Its only classic
+  // caller is the legacy body removed below; no change needed here.
   const setTimerMinutes = (0,external_React_namespaceObject.useCallback)(nextMinutes => {
     const clamped = Math.max(1, Math.min(99, nextMinutes));
     const totalSeconds = clamped * 60;
@@ -16252,7 +17125,8 @@ const FocusTimer = ({
     handleTimerInteraction();
   }, [dispatch, duration, timerType, widgetSize, handleTimerInteraction]);
 
-  // @nova-cleanup(remove-conditional): Inline this once the Nova spinbutton is the only path
+  // @nova-cleanup(remove-conditional): Keep this function; it drives the Nova
+  // spinbutton. No change needed here.
   const commitSpinbuttonDuration = (0,external_React_namespaceObject.useCallback)(() => {
     const el = activeMinutesRef.current;
     if (!el) {
@@ -16302,7 +17176,7 @@ const FocusTimer = ({
     handleTimerInteraction();
   }, [dispatch, duration, timerType, widgetSize, handleTimerInteraction, timeLeft]);
 
-  // @nova-cleanup(remove-conditional): Remove if the Nova spinbutton is replaced
+  // Drop this if the spinbutton is ever replaced with a native control.
   const handleSpinBeforeInput = e => {
     const input = e.data;
     if (input === null || input === undefined) {
@@ -16317,7 +17191,7 @@ const FocusTimer = ({
     }
   };
 
-  // @nova-cleanup(remove-conditional): Remove if the Nova spinbutton is replaced
+  // Drop this if the spinbutton is ever replaced with a native control.
   const handleSpinKeyDown = e => {
     let next = minutesValue;
     switch (e.key) {
@@ -16351,7 +17225,7 @@ const FocusTimer = ({
     setTimerMinutes(next);
   };
 
-  // @nova-cleanup(remove-conditional): Remove with the Nova radiogroup
+  // Drop this if the Focus/Break radiogroup is ever replaced.
   const handleRadiogroupKeyDown = e => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") {
       return;
@@ -16422,7 +17296,7 @@ const FocusTimer = ({
     // @nova-cleanup(remove-conditional): Remove the `novaEnabled &&` check; keep widgetsMayBeMaximized
     novaEnabled && widgetsMayBeMaximized && /*#__PURE__*/external_React_default().createElement(SizeSubmenu, {
       submenuId: "focus-timer-size-submenu",
-      sizes: ["medium", "large"],
+      sizes: ["small", "medium", "large"],
       checkedSize: widgetSize,
       onChangeSize: handleChangeSize
     })
@@ -16641,6 +17515,8 @@ function LocationSearch({
   const [selectedLocation, setSelectedLocation] = (0,external_React_namespaceObject.useState)("");
   const suggestedLocations = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Weather.suggestedLocations);
   const locationSearchString = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Weather.locationSearchString);
+  // @nova-cleanup(remove-pref): Delete this read and the novaEnabled guard on
+  // the use-current-location button below; keep showCurrentLocation.
   const novaEnabled = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values["nova.enabled"]);
   const weatherOptIn = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values["system.showWeatherOptIn"]);
   const optInAccepted = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values["weather.optInAccepted"]);
@@ -17199,6 +18075,25 @@ const Weather_USER_ACTION_TYPES = {
   OPT_IN_ACCEPTED: "opt_in_accepted",
   PROVIDER_LINK_CLICK: "provider_link_click"
 };
+const WEATHER_PROVIDER = "AccuWeather®";
+function SponsoredText({
+  size
+}) {
+  if (size === "small") {
+    return /*#__PURE__*/external_React_default().createElement("span", {
+      className: "sponsored-text",
+      "aria-hidden": "true"
+    }, WEATHER_PROVIDER);
+  }
+  return /*#__PURE__*/external_React_default().createElement("span", {
+    className: "sponsored-text",
+    "aria-hidden": "true",
+    "data-l10n-id": "newtab-weather-sponsored",
+    "data-l10n-args": JSON.stringify({
+      provider: WEATHER_PROVIDER
+    })
+  });
+}
 function Weather_Weather({
   dispatch,
   size,
@@ -17290,9 +18185,13 @@ function Weather_Weather({
   const weatherOptIn = prefs["system.showWeatherOptIn"];
   const nimbusWeatherOptInEnabled = prefs.trainhopConfig?.weather?.weatherOptInEnabled;
   const isOptInEnabled = weatherOptIn || nimbusWeatherOptInEnabled;
-  const optInDisplayed = prefs["weather.optInDisplayed"];
   const optInUserChoice = prefs["weather.optInAccepted"];
-  const showOptInState = isOptInEnabled && optInDisplayed && !optInUserChoice;
+  // Show the opt-in prompt whenever opt-in is required and the user has not yet
+  // accepted, independent of weather.optInDisplayed. The Nova widget has no
+  // reject button, so the only path to optInDisplayed=false is acceptance (which
+  // sets optInAccepted=true); gating on optInDisplayed previously let real
+  // location weather render for users migrated from a legacy reject (Bug 2046143).
+  const showOptInState = isOptInEnabled && !optInUserChoice;
   const {
     searchActive
   } = weatherData;
@@ -17527,7 +18426,9 @@ function Weather_Weather({
     className: "weather-conditions-view"
   }, /*#__PURE__*/external_React_default().createElement("a", {
     "data-l10n-id": "newtab-weather-see-forecast-description",
-    "data-l10n-args": "{\"provider\": \"AccuWeather\xAE\"}",
+    "data-l10n-args": JSON.stringify({
+      provider: WEATHER_PROVIDER
+    }),
     "data-l10n-attrs": "aria-description",
     href: WEATHER_SUGGESTION.forecast.url,
     className: "weather-info-link",
@@ -17556,7 +18457,9 @@ function Weather_Weather({
     "data-l10n-id": "newtab-weather-low"
   }), WEATHER_SUGGESTION.forecast.low[prefs["weather.temperatureUnits"]], "\xB0"))), /*#__PURE__*/external_React_default().createElement("div", {
     className: "weather-info-description"
-  }, WEATHER_SUGGESTION.current_conditions.summary)))), !hasError && showForecast && /*#__PURE__*/external_React_default().createElement("div", {
+  }, WEATHER_SUGGESTION.current_conditions.summary))), size === "medium" && /*#__PURE__*/external_React_default().createElement(SponsoredText, {
+    size: size
+  })), !hasError && showForecast && /*#__PURE__*/external_React_default().createElement("div", {
     className: "forecast-row"
   }, /*#__PURE__*/external_React_default().createElement("p", {
     className: "today-forecast",
@@ -17573,13 +18476,10 @@ function Weather_Weather({
     const date = new Date(slot.date_time);
     const hours = date.getHours() % 12 || 12;
     return `${hours}:${String(date.getMinutes()).padStart(2, "0")}`;
-  })())))))), !hasError && /*#__PURE__*/external_React_default().createElement("div", {
+  })())))))), !hasError && size !== "medium" && /*#__PURE__*/external_React_default().createElement("div", {
     className: "forecast-footer"
-  }, /*#__PURE__*/external_React_default().createElement("span", {
-    className: "sponsored-text",
-    "aria-hidden": "true",
-    "data-l10n-id": "newtab-weather-sponsored",
-    "data-l10n-args": "{\"provider\": \"AccuWeather\xAE\"}"
+  }, /*#__PURE__*/external_React_default().createElement(SponsoredText, {
+    size: size
   }), showForecast && /*#__PURE__*/external_React_default().createElement("a", {
     className: "full-forecast",
     href: HOURLY_FORECASTS[0]?.url || "#",
@@ -21746,13 +22646,14 @@ function getClockWidgetDisplayState({
  *
  * @param {object} props
  * @param {Function} props.dispatch
- * @param {"small"|"medium"|"large"} [props.size] Defaults to "medium".
+ * @param {Function} props.handleUserInteraction
  */
 function Clocks({
   dispatch,
-  size,
+  handleUserInteraction,
   widgetEnabledMap
 }) {
+  const size = (0,external_ReactRedux_namespaceObject.useSelector)(state => resolveWidgetSize(CLOCKS_WIDGET, state.Prefs.values));
   const clocksZonesPref = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values[PREF_CLOCKS_ZONES]);
   const hourFormatPref = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values[PREF_CLOCKS_HOUR_FORMAT]);
   const [now, setNow] = (0,external_React_namespaceObject.useState)(null);
@@ -21809,6 +22710,7 @@ function Clocks({
     tick();
     return () => clearTimeout(timeoutId);
   }, []);
+  const handleClocksInteraction = (0,external_React_namespaceObject.useCallback)(() => handleUserInteraction("clocks"), [handleUserInteraction]);
   const handleChangeSize = (0,external_React_namespaceObject.useCallback)(newSize => {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
@@ -21824,8 +22726,9 @@ function Clocks({
         size: newSize
       });
     });
+    handleClocksInteraction();
     closeContextMenu();
-  }, [dispatch, recordUserAction, closeContextMenu]);
+  }, [dispatch, recordUserAction, handleClocksInteraction, closeContextMenu]);
   const handleToggleHourFormat = (0,external_React_namespaceObject.useCallback)(() => {
     const nextFormat = use12HourFormat ? "24" : "12";
     (0,external_ReactRedux_namespaceObject.batch)(() => {
@@ -21841,14 +22744,16 @@ function Clocks({
         value: nextFormat
       });
     });
+    handleClocksInteraction();
     closeContextMenu();
-  }, [use12HourFormat, dispatch, recordUserAction, closeContextMenu]);
+  }, [use12HourFormat, dispatch, recordUserAction, closeContextMenu, handleClocksInteraction]);
   const handleLearnMore = (0,external_React_namespaceObject.useCallback)(() => {
     recordUserAction(Clocks_USER_ACTION_TYPES.LEARN_MORE, {
       source: CLOCK_WIDGET_SOURCE.CONTEXT_MENU
     });
+    handleClocksInteraction();
     closeContextMenu();
-  }, [recordUserAction, closeContextMenu]);
+  }, [recordUserAction, closeContextMenu, handleClocksInteraction]);
   const clockZones = (0,external_React_namespaceObject.useMemo)(() => parseClockZonesPref(clocksZonesPref) || buildDefaultZones(), [clocksZonesPref]);
   (0,external_React_namespaceObject.useEffect)(() => {
     if (!clockZones.some(clock => clock.label && !clock.labelColor)) {
@@ -21872,7 +22777,8 @@ function Clocks({
     setFormSource(source);
     setEditingClockIndex(null);
     setIsDismissed(false);
-  }, []);
+    handleClocksInteraction();
+  }, [handleClocksInteraction]);
   const handleShowEditClocks = (0,external_React_namespaceObject.useCallback)(source => {
     setActivePanel(CLOCKS_PANEL.EDIT);
     setPanelOpenSource(source);
@@ -21880,7 +22786,8 @@ function Clocks({
     recordUserAction(Clocks_USER_ACTION_TYPES.EXPAND, {
       source
     });
-  }, [recordUserAction]);
+    handleClocksInteraction();
+  }, [recordUserAction, handleClocksInteraction]);
   const handleCloseDisplayPanel = (0,external_React_namespaceObject.useCallback)(() => {
     if (activePanel === CLOCKS_PANEL.EDIT) {
       recordUserAction(Clocks_USER_ACTION_TYPES.COLLAPSE, {
@@ -21931,8 +22838,9 @@ function Clocks({
       resetAddClockForm();
       return;
     }
+    handleClocksInteraction();
     handleCloseDisplayPanel();
-  }, [clockZones, formSource, editingClockIndex, handleCloseDisplayPanel, resetAddClockForm, dispatch, recordUserAction]);
+  }, [clockZones, formSource, editingClockIndex, handleCloseDisplayPanel, resetAddClockForm, dispatch, recordUserAction, handleClocksInteraction]);
   const handleRemoveClock = (0,external_React_namespaceObject.useCallback)((index, source = CLOCK_WIDGET_SOURCE.ROW) => {
     if (clockZones.length <= 1) {
       return;
@@ -21949,7 +22857,8 @@ function Clocks({
         source
       });
     });
-  }, [clockZones, dispatch, recordUserAction]);
+    handleClocksInteraction();
+  }, [clockZones, dispatch, recordUserAction, handleClocksInteraction]);
   const isClockFormOpen = activePanel === CLOCKS_PANEL.FORM;
   const isEditingClocks = activePanel === CLOCKS_PANEL.EDIT;
   const hasAnyLabel = clockZones.some(c => !!c.label);
@@ -22046,6 +22955,108 @@ function Clocks({
   })));
 }
 
+;// CONCATENATED MODULE: ./content-src/components/Widgets/useCountUp.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+const DEFAULT_DURATION_MS = 750;
+const easeOutQuint = t => 1 - (1 - t) ** 5;
+
+/**
+ * Animates a number from one value to another on demand.
+ *
+ * Returns `displayValue` (the resting value unless an animation is running),
+ * `countUp(from, to)` to start one, `hold(at)` to pin the readout without
+ * animating, and `release()` to undo a hold. Callers keep rendering their own
+ * value; this only takes over for the duration of a run.
+ *
+ * @param {number} value Resting value shown when no animation is running.
+ * @param {number} durationMs Length of the count, in ms.
+ */
+const useCountUp = (value, durationMs = DEFAULT_DURATION_MS) => {
+  const [animatedValue, setAnimatedValue] = (0,external_React_namespaceObject.useState)(null);
+  const frameRef = (0,external_React_namespaceObject.useRef)(null);
+  // Read by the running animation so a feed update mid-flight can retarget it.
+  const valueRef = (0,external_React_namespaceObject.useRef)(value);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    valueRef.current = value;
+  }, [value]);
+  const cancel = (0,external_React_namespaceObject.useCallback)(() => {
+    if (frameRef.current !== null) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+  }, []);
+  (0,external_React_namespaceObject.useEffect)(() => cancel, [cancel]);
+  const countUp = (0,external_React_namespaceObject.useCallback)((from, to) => {
+    if (from >= to) {
+      return;
+    }
+    cancel();
+    let startTime = null;
+    const tick = now => {
+      if (startTime === null) {
+        startTime = now;
+      }
+      const linearT = Math.min(1, (now - startTime) / durationMs);
+      // Track the live value: the readout drops back to it when the run
+      // ends, so a fixed target would land short and then snap.
+      const target = Math.max(to, valueRef.current);
+      if (linearT < 1) {
+        setAnimatedValue(Math.round(from + (target - from) * easeOutQuint(linearT)));
+        frameRef.current = requestAnimationFrame(tick);
+        return;
+      }
+      // Hand the number back to the caller's own value rather than pinning
+      // it at `to`, which would go stale on the next feed update.
+      frameRef.current = null;
+      setAnimatedValue(null);
+    };
+    setAnimatedValue(from);
+    frameRef.current = requestAnimationFrame(tick);
+  }, [cancel, durationMs]);
+
+  // Pins the readout at `at` with no animation, for a run that is deferred and
+  // must not show the resting value in the meantime.
+  const hold = (0,external_React_namespaceObject.useCallback)(at => {
+    cancel();
+    setAnimatedValue(at);
+  }, [cancel]);
+
+  // Drops a hold when the deferred run turns out never to happen. Leaves a
+  // running count alone, which would otherwise flicker to the resting value.
+  const release = (0,external_React_namespaceObject.useCallback)(() => {
+    if (frameRef.current === null) {
+      setAnimatedValue(null);
+    }
+  }, []);
+  return {
+    countUp,
+    displayValue: animatedValue ?? value,
+    hold,
+    release
+  };
+};
+;// CONCATENATED MODULE: ./content-src/components/Widgets/usePageVisible.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+// Tracks page visibility. New tabs are preloaded and render while hidden, so a
+// one-shot effect on mount would spend itself before the user could see it.
+const usePageVisible = () => {
+  const [isPageVisible, setIsPageVisible] = (0,external_React_namespaceObject.useState)(typeof document === "undefined" || document.visibilityState === "visible");
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const onVisibility = () => setIsPageVisible(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+  return isPageVisible;
+};
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/Privacy/Privacy.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -22058,32 +23069,103 @@ function Clocks({
 
 
 
+
+
+
+
+
 const Privacy_USER_ACTION_TYPES = {
-  CHANGE_SIZE: "change_size"
+  CHANGE_SIZE: "change_size",
+  LEARN_MORE: "learn_more",
+  MESSAGE_CTA_CLICK: "message_cta_click",
+  MESSAGE_IMPRESSION: "message_impression",
+  TRACKERS_BLOCKED_IMPRESSION: "trackers_blocked_impression",
+  TRACKING_MESSAGE_CLICK: "tracking_message_click"
 };
+
+// action_value for the trackers-blocked impression: whether the widget was
+// shown with any tracking activity blocked today.
+const TRACKERS_BLOCKED_VALUE = {
+  BLOCKED: "blocked",
+  NONE: "none"
+};
+
+// Per design: the brief sparkle rides ordinary +10 count-ups and the smaller
+// earned moments; the longer, denser one is reserved for the count milestones
+// and the daily cap. Durations are tiered in _Privacy.scss.
+const CELEBRATION_TIERS = {
+  brief: {
+    sparkleCount: 5,
+    sparkleStaggerMs: 65
+  },
+  major: {
+    sparkleCount: 12,
+    sparkleStaggerMs: 60
+  }
+};
+
+// Count-up duration. Slower than the 750ms prototype so the number is
+// readable while it climbs.
+const COUNT_UP_DURATION_MS = 1100;
 const PRIVACY_ENTRY = WIDGET_REGISTRY.find(w => w.id === "privacy");
 const ICON_BASE_URL = "chrome://newtab/content/data/content/assets/";
 
-// Renders a widget icon by asset filename. The wrapper div is the alignment
-// hook. TEMP (Bug 2049390): callers pass a static filename for now; the
-// per-message icon mapping (shield/planet/star/bolt/kit) is a follow-up commit.
-const privacyImage = filename => /*#__PURE__*/external_React_default().createElement("div", {
-  className: "privacy-image"
-}, /*#__PURE__*/external_React_default().createElement("img", {
-  className: "privacy-image-icon",
-  src: `${ICON_BASE_URL}${filename}`,
-  alt: ""
-}));
-const PREF_PRIVACY_MAX_COUNT = "widgets.privacy.maxCount";
-const DEFAULT_PRIVACY_MAX_COUNT = 100;
+// Icon key (from the message decision / PrivacyMessages.sys.mjs) -> asset.
+const ICON_ASSETS = {
+  shield: "widget-privacy-shield.svg",
+  shieldCheck: "widget-privacy-shield-check.svg",
+  planet: "widget-privacy-planet.svg",
+  bolt: "widget-privacy-bolt.svg",
+  star: "widget-privacy-star.svg",
+  kit: "widget-privacy-kit.svg"
+};
 
-// Resolves the count at which the readout caps to "N+". trainhopConfig wins so
-// an experiment can override the pref's default; then the pref
-// (widgets.privacy.maxCount, default 100); then a defensive fallback. Routed
-// through a helper (never the raw pref) per the trainhop-gate convention.
-function resolvePrivacyMaxCount(prefs) {
-  return prefs.trainhopConfig?.widgets?.privacyMaxCount || prefs[PREF_PRIVACY_MAX_COUNT] || DEFAULT_PRIVACY_MAX_COUNT;
+// The kit head-tilt loops on its own (CSS animation inside the SVG), so it is
+// swapped in only during an earned moment. Its reduced-motion guard lives in
+// the asset: loaded via <img>, the page's JS check can't reach it.
+const KIT_ANIMATED_ASSET = "kit-circle-animated.svg";
+
+// The longer, denser sparkle is reserved for the count milestones — the
+// "100+ type" moments.
+const MAJOR_CELEBRATION_CATEGORIES = new Set(["dailyCap", "milestoneWeek", "milestoneMonth", "milestoneYear", "milestoneTotal"]);
+
+// Every scheduler "earned moment" fires a celebration and tilts the kit. A
+// first block happens minutes into a new profile and a streak is a days count,
+// so those two get the brief sparkle rather than the loud one above.
+const CELEBRATION_CATEGORIES = new Set([...MAJOR_CELEBRATION_CATEGORIES, "firstProtection", "streak"]);
+
+// Renders a widget icon by icon key. The wrapper div is the alignment hook.
+// `animated` swaps the kit for its head-tilt variant during a celebration.
+const privacyImage = (iconKey, animated = false) => {
+  const asset = animated && iconKey === "kit" ? KIT_ANIMATED_ASSET : ICON_ASSETS[iconKey] || ICON_ASSETS.shieldCheck;
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    className: "privacy-image"
+  }, /*#__PURE__*/external_React_default().createElement("img", {
+    className: "privacy-image-icon",
+    src: `${ICON_BASE_URL}${asset}`,
+    alt: ""
+  }));
+};
+
+// Destination for a CTA's SpecialMessageAction, used as the message_cta_click
+// action_value: the URL it opens (Monitor/Relay URLs carry UTM params from
+// Bug 2061524, whose utm_content identifies the message), an about: page, or
+// the action type when there's no navigable target.
+function ctaDestination(action) {
+  if (!action) {
+    return undefined;
+  }
+  switch (action.type) {
+    case "OPEN_URL":
+      return action.data?.args;
+    case "OPEN_ABOUT_PAGE":
+      return action.data?.args ? `about:${action.data.args}` : action.type;
+    default:
+      return action.type;
+  }
 }
+
+// eslint-disable-next-line max-statements
 function Privacy({
   dispatch,
   widgetsMayBeMaximized,
@@ -22095,33 +23177,219 @@ function Privacy({
   // Size comes from the registry helper: user-set pref > trainhop suggestion
   // > registry defaultSize. Never read the size pref directly.
   const widgetSize = resolveWidgetSize(PRIVACY_ENTRY, prefs);
-  const impressionFired = (0,external_React_namespaceObject.useRef)(false);
+
+  // Flipped when the widget is actually scrolled into view (same trigger as
+  // widgets_impression), so the impression-time signals below line up with it
+  // and skip preloaded tabs that were never seen.
+  const [hasBeenSeen, setHasBeenSeen] = (0,external_React_namespaceObject.useState)(false);
+  const {
+    impressionRef,
+    recordUserAction,
+    recordEnabled
+  } = useWidgetTelemetry({
+    dispatch,
+    widget: PRIVACY_ENTRY,
+    widgetSize,
+    onImpression: () => setHasBeenSeen(true)
+  });
   const trackersToday = privacyData?.trackersToday ?? 0;
   const sitesToday = privacyData?.sitesToday ?? 0;
   // Gate the metric UI on a real feed update. Before the first broadcast — or
   // when it's skipped (e.g. the backward-compat guard in PrivacyFeed on older
   // platforms) — show no metric state rather than a misleading empty/zero one.
   const initialized = privacyData?.initialized ?? false;
-  // Ceiling the readout at "{maxCount}+" so the number stays a tidy single line.
-  const maxCount = resolvePrivacyMaxCount(prefs);
-  const displayCount = trackersToday > maxCount ? `${maxCount}+` : `${trackersToday}`;
-  const isEmptyState = trackersToday === 0;
-  const showTip = !isEmptyState;
+
+  // Message decision chosen by PrivacyFeed's selector (Bug 2050954).
+  const {
+    variant,
+    messageId,
+    category,
+    icon,
+    countArg,
+    cta,
+    countCeiling
+  } = privacyData ?? {};
   const isLarge = widgetSize === "large";
-  const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
-    if (impressionFired.current) {
+
+  // impressionRef (from useWidgetTelemetry) is a callback ref for the impression
+  // observer, so the celebration keeps its own element ref for measurements.
+  const celebrationRef = (0,external_React_namespaceObject.useRef)(null);
+  const {
+    celebrationFrame,
+    celebrationId,
+    completeCelebration,
+    isCelebrating,
+    triggerCelebration
+  } = useWidgetCelebration(celebrationRef);
+  // displayValue is the resting count except while a celebration counts up.
+  const {
+    countUp,
+    displayValue,
+    hold,
+    release
+  } = useCountUp(trackersToday, COUNT_UP_DURATION_MS);
+
+  // A celebration is one-shot, so playing it on a preloaded tab would spend it
+  // before the user could see it. Hold until the tab is actually shown.
+  const isPageVisible = usePageVisible();
+
+  // Normally show the real count, only ceiling the readout at "{cap}+"
+  // (default 999) so it stays a tidy few characters. On the daily-cap render
+  // the selector sets countCeiling (100), so that one load shows "100+"; the
+  // next load clears it and the real number returns.
+  const displayCap = resolvePrivacyDisplayCount(prefs);
+  const formatCount = value => {
+    if (typeof countCeiling === "number") {
+      return `${countCeiling}+`;
+    }
+    return value > displayCap ? `${displayCap}+` : `${value}`;
+  };
+  const displayCount = formatCount(displayValue);
+  // Same readout without the animation, for the screen-reader copy.
+  const stableCount = formatCount(trackersToday);
+
+  // trackersToday === 0 is the sole trigger for the empty layout. It must not
+  // also key off `variant === "empty"`: a SYSTEM_TICK refreshes the count
+  // without touching `variant`, so a tab opened at zero would stay empty even
+  // after its count climbs, until the next tab re-runs the selector.
+  const isEmptyState = trackersToday === 0;
+  // Streak and tip both use the count + divider + message layout; "blank"
+  // shows the count only (plus a CTA).
+  const isStreak = !isEmptyState && variant === "streak";
+  const isTip = !isEmptyState && variant === "tip";
+  const isBlank = !isEmptyState && variant === "blank";
+  const hasMessage = (isStreak || isTip) && messageId;
+  // Telemetry id for a CTA click. The blank state has no messageId, so give it
+  // a stable, distinguishable id — otherwise its clicks report null and the
+  // most-shown state can't be attributed (Dré).
+  const ctaMessageId = isBlank ? "newtab-privacy-blank" : messageId;
+  // The single icon sits beside the count, except in the large tip layout where
+  // it sits inside the tip.
+  const iconBesideCount = !isEmptyState && !(isTip && isLarge);
+  const iconInTip = isTip && isLarge;
+
+  // Count-up celebration (HNT-2845), awarded by PrivacyFeed once the count has
+  // climbed by the threshold. Independent of the message decision: it animates
+  // whatever number is on screen. The border ring is reserved for the
+  // daily-cap render, which is the one the design gives a gradient border.
+  const celebration = privacyData?.celebration ?? null;
+  const playedCelebrationRef = (0,external_React_namespaceObject.useRef)(null);
+  const playedMomentRef = (0,external_React_namespaceObject.useRef)(null);
+  // Debug override (widgets.privacy.forceCelebration) wins when set, so QA can
+  // see each tier without engineering the scheduler state that produces it.
+  const forcedTier = celebration?.forcedTier ?? null;
+  const isEarnedMoment = CELEBRATION_CATEGORIES.has(category);
+  // Count milestones get the longer sparkle; everything else the brief one.
+  const isMajorMoment = forcedTier ? forcedTier !== "brief" : MAJOR_CELEBRATION_CATEGORIES.has(category);
+  const celebrationTier = isMajorMoment ? CELEBRATION_TIERS.major : CELEBRATION_TIERS.brief;
+  // The gradient ring is narrower still: only the design's 100+ card has one.
+  const showRing = forcedTier ? forcedTier === "cap" : typeof countCeiling === "number";
+  // Every earned moment tilts the kit. A plain +10 lands on an info message,
+  // whose icon is never the kit, so `isCelebrating` alone can't swap it.
+  const tiltKit = isEarnedMoment;
+
+  // Snapshot taken when the animation starts: `category` and `countCeiling`
+  // can move under it and swap the tier or pull the ring mid-flight.
+  const [playingCelebration, setPlayingCelebration] = (0,external_React_namespaceObject.useState)(null);
+  const activeCelebration = playingCelebration ?? {
+    isMajor: isMajorMoment,
+    showRing,
+    tier: celebrationTier
+  };
+
+  // Two things can start a celebration, and either alone is enough:
+  //   1. a +10 count-up award from PrivacyFeed (HNT-2845), and
+  //   2. an earned moment from the scheduler, which the design celebrates in
+  //      its own right (streak, milestones, daily cap, first block).
+  // Each earned moment carries its own messageId, so that's the dedupe key.
+  // Layout effect, not a passive one: the resting value is the *final* count,
+  // so starting after paint shows one frame of it before the count-up resets
+  // to `fromCount` and climbs back — a visible backward jump.
+  (0,external_React_namespaceObject.useLayoutEffect)(() => {
+    const awardedAt = celebration?.awardedAt ?? null;
+    const isNewAward = awardedAt && playedCelebrationRef.current !== awardedAt;
+    const isNewMoment = isEarnedMoment && playedMomentRef.current !== messageId;
+    if (!isNewAward && !isNewMoment) {
       return;
     }
-    impressionFired.current = true;
-    dispatch(actionCreators.AlsoToMain({
-      type: actionTypes.WIDGETS_IMPRESSION,
-      data: {
-        widget_name: "privacy",
-        widget_size: widgetSize
+
+    // Preloaded tab: leave the award and the moment unplayed, and hold the
+    // pre-award number so revealing the tab doesn't flash the final count.
+    if (!isPageVisible) {
+      if (isNewAward) {
+        hold(celebration.fromCount);
       }
-    }));
-  }, [dispatch, widgetSize]);
-  const widgetRef = useIntersectionObserver(handleIntersection);
+      return;
+    }
+    if (isEarnedMoment) {
+      playedMomentRef.current = messageId;
+    }
+    if (isNewAward) {
+      playedCelebrationRef.current = awardedAt;
+      // Acknowledge even when the animation is skipped (reduced motion), so
+      // the award doesn't stay pending and replay on the next tab.
+      dispatch(actionCreators.AlsoToMain({
+        type: actionTypes.WIDGETS_PRIVACY_MARK_CELEBRATED,
+        data: awardedAt
+      }));
+    }
+    const isPlaying = triggerCelebration();
+    if (isPlaying) {
+      setPlayingCelebration({
+        isMajor: isMajorMoment,
+        showRing,
+        tier: celebrationTier
+      });
+    }
+    if (isPlaying && isNewAward) {
+      countUp(celebration.fromCount, celebration.toCount);
+    } else {
+      // Nothing will animate the readout — reduced motion, or a moment with no
+      // award — so drop any hold taken while the tab was hidden.
+      release();
+    }
+  }, [celebration, celebrationTier, countUp, dispatch, hold, isEarnedMoment, isMajorMoment, isPageVisible, messageId, release, showRing, triggerCelebration]);
+
+  // Drop the snapshot with the animation, so the next run can't paint a frame
+  // of the previous one's tier.
+  const handleCelebrationComplete = (0,external_React_namespaceObject.useCallback)(() => {
+    setPlayingCelebration(null);
+    completeCelebration();
+  }, [completeCelebration]);
+
+  // Impression-time signals, logged once per mount. Gated on two things:
+  //   - hasBeenSeen: the widget actually scrolled into view, so these line up
+  //     with widgets_impression and don't fire on never-seen preloaded tabs.
+  //   - variant != null: the feed has picked a message. A counts-only refresh
+  //     flips `initialized` before the decision is made, so gating on
+  //     `initialized` alone could burn the one-shot before the message renders,
+  //     losing its impression.
+  const impressionsLoggedRef = (0,external_React_namespaceObject.useRef)(false);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!hasBeenSeen || !variant || impressionsLoggedRef.current) {
+      return;
+    }
+    impressionsLoggedRef.current = true;
+    // A separate impression per view reporting whether the widget was shown
+    // with any tracking activity blocked today. The state rides action_value
+    // ("blocked" vs "none"). No count is recorded.
+    recordUserAction(Privacy_USER_ACTION_TYPES.TRACKERS_BLOCKED_IMPRESSION, {
+      source: "widget",
+      value: trackersToday > 0 ? TRACKERS_BLOCKED_VALUE.BLOCKED : TRACKERS_BLOCKED_VALUE.NONE
+    });
+    // Impression of the secondary message, keyed by ctaMessageId (blank ->
+    // "newtab-privacy-blank"). Gated on !isEmptyState: the selector sets
+    // messageId to "newtab-privacy-empty" in the empty state, so a bare
+    // ctaMessageId check would log a spurious impression for a state that shows
+    // no message/CTA. The blank state still logs, keeping its URL-valued CTA
+    // click attributable by joining to this impression on newtab_visit_id.
+    if (!isEmptyState && ctaMessageId) {
+      recordUserAction(Privacy_USER_ACTION_TYPES.MESSAGE_IMPRESSION, {
+        source: "message",
+        value: ctaMessageId
+      });
+    }
+  }, [hasBeenSeen, variant, trackersToday, isEmptyState, ctaMessageId, recordUserAction]);
   function handlePrivacyHide() {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
@@ -22131,15 +23399,9 @@ function Privacy({
           value: false
         }
       }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_ENABLED,
-        data: {
-          widget_name: "privacy",
-          widget_source: "context_menu",
-          enabled: false,
-          widget_size: widgetSize
-        }
-      }));
+      recordEnabled(false, {
+        source: "context_menu"
+      });
     });
   }
   const handleChangeSize = (0,external_React_namespaceObject.useCallback)(size => {
@@ -22151,18 +23413,13 @@ function Privacy({
           value: size
         }
       }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "privacy",
-          widget_source: "context_menu",
-          user_action: Privacy_USER_ACTION_TYPES.CHANGE_SIZE,
-          action_value: size,
-          widget_size: size
-        }
-      }));
+      recordUserAction(Privacy_USER_ACTION_TYPES.CHANGE_SIZE, {
+        source: "context_menu",
+        value: size,
+        size
+      });
     });
-  }, [dispatch]);
+  }, [dispatch, recordUserAction]);
   const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
   function handleLearnMore() {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
@@ -22172,21 +23429,86 @@ function Privacy({
           url: "https://support.mozilla.org/kb/firefox-new-tab-widgets"
         }
       }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "privacy",
-          widget_source: "context_menu",
-          user_action: "learn_more",
-          widget_size: widgetSize
-        }
-      }));
+      recordUserAction(Privacy_USER_ACTION_TYPES.LEARN_MORE, {
+        source: "context_menu"
+      });
     });
   }
+
+  // Runs the message's CTA. The SpecialMessageAction descriptor lives on the
+  // decision (`cta`); the parent (PrivacyFeed) executes it — content only
+  // forwards it and logs the interaction.
+  function handleCtaClick() {
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_PRIVACY_CTA,
+        data: {
+          action: cta,
+          message_id: ctaMessageId
+        }
+      }));
+      // action_value is the CTA destination (the click's endpoint, incl. the
+      // Bug 2061524 UTM params). Which message drove the click is recovered by
+      // joining to this visit's message_impression on newtab_visit_id.
+      recordUserAction(Privacy_USER_ACTION_TYPES.MESSAGE_CTA_CLICK, {
+        source: "message",
+        value: ctaDestination(cta)
+      });
+    });
+  }
+  function handleViewProtections(event) {
+    event.preventDefault();
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_PRIVACY_CTA,
+        data: {
+          action: {
+            type: "OPEN_ABOUT_PAGE",
+            data: {
+              args: "protections",
+              where: "tab"
+            }
+          }
+        }
+      }));
+      recordUserAction(Privacy_USER_ACTION_TYPES.TRACKING_MESSAGE_CLICK, {
+        source: "widget"
+      });
+    });
+  }
+
+  // The message resolves via its Fluent `messageId` (Bug 2048389); `countArg`
+  // feeds the plural/variable l10n args.
+  const messageEl = className => /*#__PURE__*/external_React_default().createElement("p", {
+    className: className,
+    "data-l10n-id": messageId,
+    "data-l10n-args": countArg ? JSON.stringify(countArg) : undefined
+  });
+
+  // CTA button for messages that carry one (`cta`); its label is the message's
+  // `-cta` companion Fluent id. Value-only messages render as moz-button text.
+  const ctaButton = cta && messageId ? /*#__PURE__*/external_React_default().createElement("moz-button", {
+    className: "privacy-cta",
+    "data-l10n-id": `${messageId}-cta`,
+    onClick: handleCtaClick,
+    size: "small",
+    type: "primary"
+  }) : null;
+
+  // The blank state has no tip copy (messageId is null) but still shows a
+  // "View protections" CTA, borrowing info-1's companion label for now.
+  const blankCta = isBlank && cta ? /*#__PURE__*/external_React_default().createElement("moz-button", {
+    className: "privacy-cta",
+    "data-l10n-id": "newtab-privacy-message-info-1-cta",
+    onClick: handleCtaClick,
+    size: "small",
+    type: "primary"
+  }) : null;
   return /*#__PURE__*/external_React_default().createElement("article", {
-    className: `privacy widget col-4 ${widgetSize}-widget${initialized && isEmptyState ? " is-empty" : ""}${initialized && showTip ? " has-tip-msg" : ""}`,
+    className: `privacy widget col-4 ${widgetSize}-widget${initialized && isEmptyState ? " is-empty" : ""}${initialized && isTip ? " has-tip-msg" : ""}${initialized && isStreak ? " has-streak" : ""}${isCelebrating && activeCelebration.isMajor ? " is-major-celebration" : ""}`,
     ref: el => {
-      widgetRef.current = [el];
+      impressionRef(el);
+      celebrationRef.current = el;
     }
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "privacy-title-wrapper"
@@ -22226,16 +23548,32 @@ function Privacy({
     className: "privacy-body"
   }, initialized && (isEmptyState ? /*#__PURE__*/external_React_default().createElement("div", {
     className: "privacy-empty"
-  }, privacyImage("widget-privacy-shield.svg"), /*#__PURE__*/external_React_default().createElement("p", {
+  }, privacyImage("shield"), /*#__PURE__*/external_React_default().createElement("a", {
+    className: "privacy-empty-details",
+    href: "about:protections",
+    onClick: handleViewProtections
+  }, /*#__PURE__*/external_React_default().createElement("p", {
     className: "privacy-empty-message",
     "data-l10n-id": "newtab-privacy-empty"
-  })) : /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
-    className: "privacy-count"
+  }))) : /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("a", {
+    className: "privacy-count",
+    href: "about:protections",
+    onClick: handleViewProtections
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "privacy-count-number-wrapper"
-  }, !isLarge && privacyImage("widget-privacy-shield-check.svg"), /*#__PURE__*/external_React_default().createElement("span", {
-    className: "privacy-count-number"
-  }, displayCount)), /*#__PURE__*/external_React_default().createElement("span", {
+  }, iconBesideCount && privacyImage(icon || "shieldCheck", tiltKit), /*#__PURE__*/external_React_default().createElement("span", {
+    className: "privacy-count-number",
+    "aria-hidden": "true"
+  }, displayCount), /*#__PURE__*/external_React_default().createElement("span", {
+    className: "privacy-count-number-a11y"
+  }, stableCount), isCelebrating ? /*#__PURE__*/external_React_default().createElement(CelebrationSparkles, {
+    classNamePrefix: "privacy-celebration",
+    celebrationId: celebrationId,
+    count: activeCelebration.tier.sparkleCount,
+    staggerMs: activeCelebration.tier.sparkleStaggerMs
+  }) : null), /*#__PURE__*/external_React_default().createElement("div", {
+    className: "privacy-count-text"
+  }, /*#__PURE__*/external_React_default().createElement("span", {
     className: "privacy-count-label",
     "data-l10n-id": "newtab-privacy-trackers-blocked-today",
     "data-l10n-args": JSON.stringify({
@@ -22247,14 +23585,24 @@ function Privacy({
     "data-l10n-args": JSON.stringify({
       count: sitesToday
     })
-  })), showTip && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("hr", {
+  }))), isStreak && hasMessage && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("hr", {
+    className: "privacy-divider"
+  }), /*#__PURE__*/external_React_default().createElement("div", {
+    className: "privacy-streak"
+  }, messageEl("privacy-tip-message"), ctaButton)), isTip && hasMessage && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("hr", {
     className: "privacy-divider"
   }), /*#__PURE__*/external_React_default().createElement("div", {
     className: "privacy-tip"
-  }, isLarge && privacyImage("widget-privacy-shield-check.svg"), /*#__PURE__*/external_React_default().createElement("p", {
-    className: "privacy-tip-message",
-    "data-l10n-id": "newtab-privacy-message-informed-5"
-  })))))));
+  }, iconInTip && privacyImage(icon || "shieldCheck", tiltKit), /*#__PURE__*/external_React_default().createElement("div", {
+    className: "privacy-tip-content"
+  }, messageEl("privacy-tip-message"), ctaButton))), blankCta))), isCelebrating && celebrationFrame ? /*#__PURE__*/external_React_default().createElement(WidgetCelebration, {
+    classNamePrefix: "privacy-celebration",
+    celebrationFrame: celebrationFrame,
+    celebrationId: celebrationId,
+    onComplete: handleCelebrationComplete,
+    showBorder: false,
+    showRing: activeCelebration.showRing
+  }) : null);
 }
 
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/Crossword/Crossword.jsx
@@ -22263,6 +23611,7 @@ function Privacy({
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 // eslint-disable-next-line no-unused-vars
+
 
 
 
@@ -22331,6 +23680,11 @@ const MENU_ACTION_ITEMS = [{
   action: "reveal_grid",
   hideWhenCompleted: true
 }];
+
+// This allow list allows us to filter out the echos coming from context-menu interactions,
+// as well as per-cell/per-keystroke actions which were creating noisy telemetry event dispatches.
+// This way, only the necessary events are sent to Glean.
+const INTERACTION_TELEMETRY_ALLOWLIST = new Set(["play_started", "hint_revealed", "related_article_clicked", "admire_crossword_clicked", "endgame_reveal_incorrect"]);
 const CROSSWORD_ENTRY = WIDGET_REGISTRY.find(w => w.id === "crossword");
 
 // Flipped to true the first time the user interacts with the crossword. Used to
@@ -22346,8 +23700,16 @@ function Crossword({
   const widgetSize = resolveWidgetSize(CROSSWORD_ENTRY, prefs);
   const hasInteracted = prefs[PREF_CROSSWORD_INTERACTION];
   const crosswordEndpoint = resolveCrosswordEndpoint(prefs);
-  const impressionFired = (0,external_React_namespaceObject.useRef)(false);
   const iframeRef = (0,external_React_namespaceObject.useRef)(null);
+  const {
+    impressionRef,
+    recordUserAction,
+    recordEnabled
+  } = useWidgetTelemetry({
+    dispatch,
+    widget: CROSSWORD_ENTRY,
+    widgetSize
+  });
 
   // Set once the widget reports the puzzle is finished, so menu actions that
   // only apply to an in-progress game (Solve puzzle) can be hidden.
@@ -22428,16 +23790,11 @@ function Crossword({
         break;
       case EVENT_TYPES.PUZZLE_COMPLETED:
         setPuzzleCompleted(true);
-        dispatch(actionCreators.AlsoToMain({
-          type: actionTypes.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "crossword",
-            widget_source: "iframe",
-            user_action: "puzzle_completed",
-            action_value: payload.hintsTaken,
-            widget_size: widgetSize
-          }
-        }));
+        recordUserAction("puzzle_completed", {
+          source: "iframe",
+          value: payload.hintsTaken,
+          alsoToMain: true
+        });
         break;
       case EVENT_TYPES.INTERACTION:
         // Viewing the completed grid or opening the all-clues panel both need
@@ -22445,22 +23802,20 @@ function Crossword({
         if (LARGE_LAYOUT_INTERACTIONS.has(payload.action)) {
           setShowLarge(true);
         }
+        // Flip the "New" badge pref for every real interaction, but only
+        // forward the curated allowlist to Glean (see the allowlist comment).
         handleInteraction();
-        dispatch(actionCreators.AlsoToMain({
-          type: actionTypes.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "crossword",
-            widget_source: "iframe",
-            user_action: "interaction",
-            action_value: payload.action,
-            widget_size: widgetSize
-          }
-        }));
+        if (INTERACTION_TELEMETRY_ALLOWLIST.has(payload.action)) {
+          recordUserAction(payload.action, {
+            source: "iframe",
+            alsoToMain: true
+          });
+        }
         break;
       default:
         break;
     }
-  }, [dispatch, handleInteraction, widgetSize]);
+  }, [recordUserAction, handleInteraction]);
 
   // Listen for events from the widget, discarding anything that fails origin,
   // source, channel, or payload validation before it can touch Redux/telemetry.
@@ -22492,31 +23847,10 @@ function Crossword({
   const handleMenuAction = (0,external_React_namespaceObject.useCallback)(action => {
     handleInteraction();
     postMenuAction(action);
-    dispatch(actionCreators.OnlyToMain({
-      type: actionTypes.WIDGETS_USER_EVENT,
-      data: {
-        widget_name: "crossword",
-        widget_source: "context_menu",
-        user_action: "menu_action",
-        action_value: action,
-        widget_size: widgetSize
-      }
-    }));
-  }, [handleInteraction, postMenuAction, dispatch, widgetSize]);
-  const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
-    if (impressionFired.current) {
-      return;
-    }
-    impressionFired.current = true;
-    dispatch(actionCreators.AlsoToMain({
-      type: actionTypes.WIDGETS_IMPRESSION,
-      data: {
-        widget_name: "crossword",
-        widget_size: widgetSize
-      }
-    }));
-  }, [dispatch, widgetSize]);
-  const widgetRef = useIntersectionObserver(handleIntersection);
+    recordUserAction(action, {
+      source: "context_menu"
+    });
+  }, [handleInteraction, postMenuAction, recordUserAction]);
   function handleCrosswordHide() {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
@@ -22526,15 +23860,9 @@ function Crossword({
           value: false
         }
       }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_ENABLED,
-        data: {
-          widget_name: "crossword",
-          widget_source: "context_menu",
-          enabled: false,
-          widget_size: widgetSize
-        }
-      }));
+      recordEnabled(false, {
+        source: "context_menu"
+      });
     });
   }
   const handleChangeSize = (0,external_React_namespaceObject.useCallback)(size => {
@@ -22547,18 +23875,13 @@ function Crossword({
           value: size
         }
       }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "crossword",
-          widget_source: "context_menu",
-          user_action: Crossword_USER_ACTION_TYPES.CHANGE_SIZE,
-          action_value: size,
-          widget_size: size
-        }
-      }));
+      recordUserAction(Crossword_USER_ACTION_TYPES.CHANGE_SIZE, {
+        source: "context_menu",
+        value: size,
+        size
+      });
     });
-  }, [dispatch, handleInteraction]);
+  }, [dispatch, handleInteraction, recordUserAction]);
   const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
   function handleLearnMore() {
     handleInteraction();
@@ -22569,15 +23892,9 @@ function Crossword({
           url: "https://support.mozilla.org/kb/firefox-new-tab-widgets"
         }
       }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "crossword",
-          widget_source: "context_menu",
-          user_action: "learn_more",
-          widget_size: widgetSize
-        }
-      }));
+      recordUserAction("learn_more", {
+        source: "context_menu"
+      });
     });
   }
   function handlePoweredByParticle() {
@@ -22589,22 +23906,14 @@ function Crossword({
           url: "https://particle.news"
         }
       }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "crossword",
-          widget_source: "context_menu",
-          user_action: "powered_by_particle",
-          widget_size: widgetSize
-        }
-      }));
+      recordUserAction("powered_by_particle", {
+        source: "context_menu"
+      });
     });
   }
   return /*#__PURE__*/external_React_default().createElement("article", {
     className: `crossword widget col-4 ${displaySize}-widget`,
-    ref: el => {
-      widgetRef.current = [el];
-    }
+    ref: impressionRef
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "crossword-title-wrapper"
   }, /*#__PURE__*/external_React_default().createElement("div", {
@@ -22807,13 +24116,11 @@ function StockTicker({
 
 
 
-
 // The Stocks widget's error box. It only mounts while there's an error, so the
-// intersection observer set up on mount reports WIDGETS_ERROR the first time the
-// message is actually on screen.
+// intersection observer set up on mount reports the load error the first time
+// the message is actually on screen.
 function StocksError({
-  widgetSize,
-  dispatch
+  recordError
 }) {
   const errorFired = (0,external_React_namespaceObject.useRef)(false);
   const handleErrorIntersection = (0,external_React_namespaceObject.useCallback)(() => {
@@ -22821,17 +24128,8 @@ function StocksError({
       return;
     }
     errorFired.current = true;
-    // Fire from content so the event ties to this tab's session, matching the
-    // other widgets' error telemetry.
-    dispatch(actionCreators.AlsoToMain({
-      type: actionTypes.WIDGETS_ERROR,
-      data: {
-        widget_name: "stocks",
-        widget_size: widgetSize,
-        error_type: "load_error"
-      }
-    }));
-  }, [dispatch, widgetSize]);
+    recordError("load_error");
+  }, [recordError]);
   const errorRef = useIntersectionObserver(handleErrorIntersection);
   return (
     /*#__PURE__*/
@@ -22868,15 +24166,11 @@ function StocksError({
 
 
 
-const Stocks_USER_ACTION_TYPES = {
-  CHANGE_SIZE: "change_size",
-  SEARCH_TICKERS: "search_tickers",
-  LEARN_MORE: "learn_more"
-};
 const STOCKS_ENTRY = WIDGET_REGISTRY.find(w => w.id === "stocks");
 const STOCKS_PLACEHOLDER_COUNT = 4;
 function Stocks_Stocks({
   dispatch,
+  handleUserInteraction,
   widgetsMayBeMaximized,
   widgetEnabledMap
 }) {
@@ -22890,21 +24184,23 @@ function Stocks_Stocks({
   // default can apply.
   const widgetSize = resolveWidgetSize(STOCKS_ENTRY, prefs);
   const showError = error && !tickers.length;
-  const impressionFired = (0,external_React_namespaceObject.useRef)(false);
-  const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
-    if (impressionFired.current) {
-      return;
-    }
-    impressionFired.current = true;
-    dispatch(actionCreators.AlsoToMain({
-      type: actionTypes.WIDGETS_IMPRESSION,
-      data: {
-        widget_name: "stocks",
-        widget_size: widgetSize
-      }
-    }));
-  }, [dispatch, widgetSize]);
-  const widgetRef = useIntersectionObserver(handleIntersection);
+
+  // Show the "New" badge until the user first interacts with the widget;
+  // handleInteraction flips widgets.stocks.interaction, which removes it.
+  const hasInteracted = prefs["widgets.stocks.interaction"];
+  const {
+    impressionRef,
+    recordUserAction,
+    recordError
+  } = useWidgetTelemetry({
+    dispatch,
+    widget: STOCKS_ENTRY,
+    widgetSize
+  });
+
+  // Any user action flips widgets.stocks.interaction (idempotent, one-way),
+  // matching the other widgets. Hiding the widget is not an interaction.
+  const handleInteraction = (0,external_React_namespaceObject.useCallback)(() => handleUserInteraction("stocks"), [handleUserInteraction]);
   const handleChangeSize = (0,external_React_namespaceObject.useCallback)(size => {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
@@ -22914,56 +24210,45 @@ function Stocks_Stocks({
           value: size
         }
       }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "stocks",
-          widget_source: "context_menu",
-          user_action: Stocks_USER_ACTION_TYPES.CHANGE_SIZE,
-          action_value: size,
-          widget_size: size
-        }
-      }));
+      recordUserAction("change_size", {
+        source: "context_menu",
+        value: size,
+        size
+      });
+      handleInteraction();
     });
-  }, [dispatch]);
+  }, [dispatch, recordUserAction, handleInteraction]);
 
   // Placeholder: a real ticker search will replace this telemetry-only stub in
   // a follow-up.
   function handleSearchTickers() {
-    dispatch(actionCreators.OnlyToMain({
-      type: actionTypes.WIDGETS_USER_EVENT,
-      data: {
-        widget_name: "stocks",
-        widget_source: "context_menu",
-        user_action: Stocks_USER_ACTION_TYPES.SEARCH_TICKERS,
-        widget_size: widgetSize
-      }
-    }));
+    recordUserAction("search_tickers", {
+      source: "context_menu"
+    });
+    handleInteraction();
   }
 
   // The shared footer opens the support link; here we only record the click.
   function handleLearnMore() {
-    dispatch(actionCreators.OnlyToMain({
-      type: actionTypes.WIDGETS_USER_EVENT,
-      data: {
-        widget_name: "stocks",
-        widget_source: "context_menu",
-        user_action: Stocks_USER_ACTION_TYPES.LEARN_MORE,
-        widget_size: widgetSize
-      }
-    }));
+    recordUserAction("learn_more", {
+      source: "context_menu"
+    });
+    handleInteraction();
   }
   return /*#__PURE__*/external_React_default().createElement("article", {
     className: `stocks widget col-4 ${widgetSize}-widget`,
-    ref: el => {
-      widgetRef.current = [el];
-    }
+    ref: impressionRef
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "stocks-title-wrapper"
-  }, /*#__PURE__*/external_React_default().createElement("span", {
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "stocks-badge-title-wrapper"
+  }, !hasInteracted && !!tickers.length && /*#__PURE__*/external_React_default().createElement("moz-badge", {
+    className: "stocks-new-badge",
+    "data-l10n-id": "newtab-widget-lists-label-new"
+  }), /*#__PURE__*/external_React_default().createElement("span", {
     className: "stocks-title",
     "data-l10n-id": "newtab-stocks-widget-title"
-  }), /*#__PURE__*/external_React_default().createElement("div", {
+  })), /*#__PURE__*/external_React_default().createElement("div", {
     className: "stocks-context-menu-wrapper"
   }, /*#__PURE__*/external_React_default().createElement("moz-button", {
     className: "stocks-context-menu-button",
@@ -22995,8 +24280,7 @@ function Stocks_Stocks({
   })))), /*#__PURE__*/external_React_default().createElement("div", {
     className: "stocks-body"
   }, showError && /*#__PURE__*/external_React_default().createElement(StocksError, {
-    widgetSize: widgetSize,
-    dispatch: dispatch
+    recordError: recordError
   }), !showError && widgetSize === "medium" && /*#__PURE__*/external_React_default().createElement("ul", {
     className: `stocks-grid${tickers.length ? "" : " stocks-grid--loading"}`
   }, tickers.length ? tickers.map(t => /*#__PURE__*/external_React_default().createElement(StockTicker, {
@@ -23090,7 +24374,7 @@ const PictureOfTheDay_PictureOfTheDay = ({
   const [imageFailed, setImageFailed] = (0,external_React_namespaceObject.useState)(false);
   (0,external_React_namespaceObject.useEffect)(() => {
     setImageFailed(false);
-  }, [pictureData.imageUrl]);
+  }, [pictureData.thumbnailUrl]);
 
   // Dismissal is keyed to the picture's date so a new day's picture shows again
   // automatically (Bug 2050972). Edge case: Merino may omit published_date, and
@@ -23105,7 +24389,7 @@ const PictureOfTheDay_PictureOfTheDay = ({
   // on. Toggling wallpapers off in the Content section keeps the picture selected
   // but hidden, so the checkmark hides while off and returns when toggled back on.
   const isSetAsWallpaper = Boolean(prefs["newtabWallpapers.user.enabled"]) && pictureDate === prefs["widgets.pictureOfTheDay.wallpaperActive"];
-  const hasPicture = Boolean(pictureData.imageUrl) && !dismissed && !imageFailed;
+  const hasPicture = Boolean(pictureData.thumbnailUrl) && !dismissed && !imageFailed;
 
   // Show the "New" badge until the user first interacts with the widget;
   // handleInteraction flips widgets.pictureOfTheDay.interaction on any action,
@@ -23338,7 +24622,7 @@ const PictureOfTheDay_PictureOfTheDay = ({
   };
   const pictureImage = /*#__PURE__*/external_React_default().createElement("img", {
     className: "picture-of-the-day-image",
-    src: pictureData.imageUrl,
+    src: pictureData.thumbnailUrl,
     alt: imageAlt,
     onError: () => setImageFailed(true)
   });
@@ -23454,7 +24738,6 @@ const PictureOfTheDay_PictureOfTheDay = ({
 
 
 const weatherEntry = WIDGET_REGISTRY.find(w => w.id === "weather");
-const clocksEntry = WIDGET_REGISTRY.find(w => w.id === "clocks");
 function WeatherRowWidget({
   dispatch,
   widgetEnabledMap
@@ -23479,24 +24762,12 @@ function WeatherSidebarWidget({
     size: "small"
   });
 }
-function ClocksRowWidget({
-  dispatch,
-  widgetEnabledMap
-}) {
-  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
-  const clocksSize = resolveWidgetSize(clocksEntry, prefs);
-  return /*#__PURE__*/external_React_default().createElement(Clocks, {
-    dispatch: dispatch,
-    size: clocksSize,
-    widgetEnabledMap: widgetEnabledMap
-  });
-}
 const WIDGET_ROW_COMPONENTS = {
   lists: Lists,
   focusTimer: FocusTimer,
   weather: WeatherRowWidget,
   sportsWidget: SportsWidget_SportsWidget,
-  clocks: ClocksRowWidget,
+  clocks: Clocks,
   privacy: Privacy,
   crossword: Crossword,
   stocks: Stocks_Stocks,
@@ -23741,6 +25012,7 @@ function useWidgetDnD({
   return {
     effectiveOrder,
     draggedId: mouse.draggedId,
+    previewOrder: mouse.previewOrder,
     previewOrderMap,
     handleDragStart: mouse.handleDragStart,
     handleDragOver: mouse.handleDragOver,
@@ -23748,6 +25020,149 @@ function useWidgetDnD({
     handleDragEnd: mouse.handleDragEnd,
     handleMouseDown: mouse.handleMouseDown
   };
+}
+;// CONCATENATED MODULE: ./content-src/lib/useReorderFlip.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+const REORDER_FLIP_MS = 160;
+
+/**
+ * Framework-agnostic FLIP (First-Last-Invert-Play) reorder animator for a grid
+ * whose tiles are repositioned by something CSS can't transition (a changed
+ * `order`, grid placement, or DOM reordering). After the layout has changed,
+ * `sync()` measures every `childSelector` element, snaps each back to where it
+ * was with an instant inverse transform, then releases it so it transitions to
+ * its new cell.
+ *
+ * Rects are keyed by the DOM node itself, so any consumer that preserves its
+ * nodes across a reorder (stable React keys, or a stable CSS `order`) works
+ * with no per-item id attribute. `skipSelector` matches tiles to leave
+ * untransformed — the one being dragged, which should track the cursor
+ * instantly rather than be flung by its own (largest) inverse transform.
+ *
+ * A sliding tile's transform also moves its hit-testing box, so with
+ * dragenter-based drop detection (TopSites) a tile sliding under a still cursor
+ * re-triggers the reorder and oscillates. The engine exposes `isAnimating()`;
+ * such a consumer should ignore reorder events while it returns true, which
+ * fully decouples detection from the animation.
+ *
+ * The caller drives intent via `sync(container, { enabled, reset })`:
+ * - `reset: true` only refreshes the baseline (measure, no animation). Used at
+ *   a drag's start so the first move animates from the tiles' current on-screen
+ *   positions rather than a stale snapshot — e.g. one captured while newtab was
+ *   preloaded offscreen, where getBoundingClientRect reports the origin.
+ * - otherwise tiles that moved animate from the previous baseline.
+ *
+ * getBoundingClientRect includes transforms, so in-flight transforms are
+ * cleared before measuring — this keeps deltas correct when a drag reorders
+ * faster than an animation can finish. The "Play" step forces a synchronous
+ * reflow to commit the inverted state instead of waiting for rAF: a native
+ * HTML5 drag runs a nested event loop where rAF callbacks are throttled, so an
+ * rAF-driven release intermittently skips the transition (most visibly on slow
+ * drags).
+ */
+function createReorderFlip({
+  childSelector,
+  skipSelector = null,
+  durationMs = REORDER_FLIP_MS
+} = {}) {
+  let prevRects = new Map();
+  let slideUntil = 0;
+  return {
+    // True while a slide is in flight. Hit-test-based consumers gate their
+    // reorder detection on this so moving tiles can't feed back into it.
+    isAnimating() {
+      return performance.now() < slideUntil;
+    },
+    sync(container, {
+      enabled = true,
+      reset = false
+    } = {}) {
+      if (!container) {
+        return;
+      }
+      const items = [...container.querySelectorAll(childSelector)];
+
+      // Clear any in-flight transform so we measure true layout positions.
+      for (const el of items) {
+        el.style.transition = "none";
+        el.style.transform = "";
+      }
+      const newRects = new Map(items.map(el => [el, el.getBoundingClientRect()]));
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (enabled && !reset && !reduceMotion) {
+        const moved = [];
+        for (const el of items) {
+          if (skipSelector && el.matches(skipSelector)) {
+            continue;
+          }
+          const prev = prevRects.get(el);
+          if (!prev) {
+            continue;
+          }
+          const next = newRects.get(el);
+          const dx = prev.left - next.left;
+          const dy = prev.top - next.top;
+          if (!dx && !dy) {
+            continue;
+          }
+          // Invert: snap back to where it was, with no transition.
+          el.style.transform = `translate(${dx}px, ${dy}px)`;
+          moved.push(el);
+        }
+        if (moved.length) {
+          // Commit the inverted state as the transition's starting point, then
+          // release. The reflow read makes this synchronous and drag-loop-proof.
+          void container.offsetWidth;
+          for (const el of moved) {
+            el.style.transition = `transform ${durationMs}ms ease`;
+            el.style.transform = "";
+          }
+          slideUntil = performance.now() + durationMs;
+        }
+      }
+      prevRects = newRects;
+    }
+  };
+}
+
+/**
+ * React hook wrapper around createReorderFlip for function components. Returns a
+ * ref to put on the grid container. `orderKey` must change whenever the visual
+ * order changes; `resetKey` should change at each drag boundary (e.g. the
+ * dragged id) so the baseline is refreshed before the first move. A render
+ * where only `resetKey` changed refreshes the baseline without animating.
+ */
+function useReorderFlip({
+  orderKey,
+  resetKey = null,
+  enabled = true,
+  childSelector,
+  skipSelector = null
+} = {}) {
+  const containerRef = (0,external_React_namespaceObject.useRef)(null);
+  const engineRef = (0,external_React_namespaceObject.useRef)(null);
+  const orderRef = (0,external_React_namespaceObject.useRef)(orderKey);
+  if (!engineRef.current) {
+    engineRef.current = createReorderFlip({
+      childSelector,
+      skipSelector
+    });
+  }
+  (0,external_React_namespaceObject.useLayoutEffect)(() => {
+    const orderChanged = orderKey !== orderRef.current;
+    orderRef.current = orderKey;
+    engineRef.current.sync(containerRef.current, {
+      enabled,
+      reset: !orderChanged
+    });
+    // resetKey is a dep so a drag-start refresh fires even when orderKey is
+    // unchanged; it intentionally has no other use in the body.
+  }, [orderKey, enabled, resetKey]);
+  return containerRef;
 }
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/Widgets.jsx
 function Widgets_extends() { return Widgets_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, Widgets_extends.apply(null, arguments); }
@@ -23760,6 +25175,7 @@ function Widgets_extends() { return Widgets_extends = Object.assign ? Object.ass
 
 // Bug 2034542: these per-widget imports can be removed once the non-Nova render
 // path (@nova-cleanup) is gone and all widgets render via WIDGET_ROW_COMPONENTS.
+
 
 
 
@@ -23790,6 +25206,9 @@ const PREF_WIDGETS_ROW_EXPANDED = "widgets.row.expanded";
 const PREF_WIDGETS_FEEDBACK_ENABLED = "widgets.feedback.enabled";
 const PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED = "widgets.hideAllToast.enabled";
 const WIDGETS_FEEDBACK_URL = "https://support.mozilla.org/kb/firefox-new-tab-widgets";
+// Safety net in case transitionend never fires. Keep this above the CSS
+// height transition duration (--widget-size-transition-duration, 180ms).
+const ROW_TOGGLE_HEIGHT_ANIMATION_FALLBACK_MS = 300;
 
 // resets timer to default values (exported for testing)
 // In practice, this logic runs inside a useEffect when
@@ -23919,6 +25338,7 @@ function Widgets() {
   const {
     effectiveOrder,
     draggedId,
+    previewOrder,
     previewOrderMap,
     handleDragStart,
     handleDragOver,
@@ -23929,6 +25349,21 @@ function Widgets() {
     widgetOrder,
     prefs,
     dispatch
+  });
+
+  // Drives the FLIP reorder animation off the actual visual id sequence: the
+  // live preview order while dragging, otherwise the committed order. Keying
+  // off the sequence keeps the key stable across the drop/dragend re-renders so
+  // the last move's animation isn't cancelled. The dragged tile is excluded so
+  // it tracks the cursor instantly instead of being flung by its own (largest)
+  // inverse transform.
+  const flipKey = (previewOrder || effectiveOrder).join(",");
+  const widgetsContainerRef = useReorderFlip({
+    orderKey: flipKey,
+    resetKey: draggedId,
+    enabled: novaEnabled,
+    childSelector: "[data-widget-id]",
+    skipSelector: ".is-dragging"
   });
   const anyWidgetInRow = WIDGET_REGISTRY.some(w => widgetEnabledMap[w.id]) || !novaEnabled && weatherForecastEnabled;
   const allWidgetsAdded = WIDGET_REGISTRY.filter(w => isWidgetAddable(w, prefs)).every(w => prefs[w.enabledPref]);
@@ -23948,6 +25383,45 @@ function Widgets() {
 
   // track previous timerEnabled state to detect when it becomes disabled
   const prevTimerEnabledRef = (0,external_React_namespaceObject.useRef)(timerEnabled);
+  const rowToggleFromHeightRef = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useLayoutEffect)(() => {
+    const fromHeight = rowToggleFromHeightRef.current;
+    rowToggleFromHeightRef.current = null;
+    const container = widgetsContainerRef.current;
+    if (fromHeight === null || !container) {
+      return undefined;
+    }
+    const toHeight = container.getBoundingClientRect().height;
+    if (fromHeight === toHeight) {
+      return undefined;
+    }
+    container.style.height = `${fromHeight}px`;
+    container.classList.add("is-animating-height");
+    // Commit the start height before transitioning to the target.
+    void container.offsetHeight;
+    container.style.height = `${toHeight}px`;
+    let fallbackTimer;
+    // Invoked from transitionend/transitioncancel (with an event), from the
+    // fallback timer, or as the effect cleanup (no event). Ignore events
+    // bubbling up from child widgets; the container only transitions height,
+    // so its own events need no propertyName check.
+    const finishRowHeightAnimation = e => {
+      if (e && e.target !== container) {
+        return;
+      }
+      globalThis.clearTimeout(fallbackTimer);
+      container.style.height = "";
+      container.classList.remove("is-animating-height");
+      container.removeEventListener("transitionend", finishRowHeightAnimation);
+      container.removeEventListener("transitioncancel", finishRowHeightAnimation);
+    };
+    container.addEventListener("transitionend", finishRowHeightAnimation);
+    container.addEventListener("transitioncancel", finishRowHeightAnimation);
+    fallbackTimer = globalThis.setTimeout(finishRowHeightAnimation, ROW_TOGGLE_HEIGHT_ANIMATION_FALLBACK_MS);
+    return finishRowHeightAnimation;
+    // widgetsContainerRef is a stable ref from useReorderFlip; listed to satisfy
+    // exhaustive-deps, its identity never changes so only rowExpanded reruns this.
+  }, [rowExpanded, widgetsContainerRef]);
 
   // Reset timer when it becomes disabled
   (0,external_React_namespaceObject.useEffect)(() => {
@@ -24072,6 +25546,11 @@ function Widgets() {
   }
   function toggleRowExpanded() {
     const next = !rowExpanded;
+    const container = widgetsContainerRef.current;
+    const prefersReducedMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    if (container && !prefersReducedMotion) {
+      rowToggleFromHeightRef.current = container.getBoundingClientRect().height;
+    }
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.SetPref(PREF_WIDGETS_ROW_EXPANDED, next));
       dispatch(actionCreators.OnlyToMain({
@@ -24130,6 +25609,7 @@ function Widgets() {
     }), showWidgetsSizeToggle ? /*#__PURE__*/external_React_default().createElement("moz-button", {
       id: "toggle-widgets-size-button",
       className: `widgets-expand-button${isMaximized ? " is-maximized" : ""}`,
+      size: "small",
       "data-l10n-id": isMaximized ? "newtab-widget-section-minimize" : "newtab-widget-section-maximize",
       iconsrc: "chrome://global/skin/icons/arrow-down.svg",
       onClick: handleToggleMaximizeClick,
@@ -24242,6 +25722,7 @@ function Widgets() {
     dispatch: dispatch
   }), /*#__PURE__*/external_React_default().createElement("div", {
     id: "widgets-container",
+    ref: widgetsContainerRef,
     className: `widgets-container${isMaximized ? " is-maximized" : ""}`,
     "data-row-collapsed": isCollapsed ? "" : undefined
   }, effectiveOrder.map(id => {
@@ -24332,7 +25813,8 @@ function Widgets() {
     className: "widgets-add-button-icon"
   }))), novaEnabled && /*#__PURE__*/external_React_default().createElement("moz-button", {
     className: "widgets-row-toggle",
-    type: "default",
+    type: "muted",
+    size: "small",
     "aria-expanded": rowExpanded,
     "aria-controls": "widgets-container",
     onClick: handleToggleRowExpandedClick,
@@ -24392,6 +25874,20 @@ function Widgets() {
  */
 // eslint-disable-next-line no-unsanitized/method
 const defaultImportModule = url => import(/* webpackIgnore: true */url);
+
+/**
+ * Assigns each prop as a property on the custom element. Lit-based elements
+ * already skip re-rendering when a reactive property is assigned an unchanged
+ * value, so we don't guard against that here.
+ *
+ * @param {Element} element The custom element to update.
+ * @param {object} props Properties to assign, keyed by property name.
+ */
+function applyProps(element, props) {
+  for (const [propName, propValue] of Object.entries(props)) {
+    element[propName] = propValue;
+  }
+}
 function ExternalComponentWrapper({
   type,
   className,
@@ -24406,6 +25902,10 @@ function ExternalComponentWrapper({
   const styleRef = external_React_default().useRef(null);
   const shadowRootRef = external_React_default().useRef(null);
   const l10nLinksRef = external_React_default().useRef([]);
+  // Holds the latest props so the custom element can be created with current
+  // values even though loadComponent runs asynchronously (kept updated by the
+  // sync effect below).
+  const latestPropsRef = external_React_default().useRef(props);
   const [error, setError] = external_React_default().useState(null);
   const {
     components
@@ -24472,11 +25972,7 @@ function ExternalComponentWrapper({
               element.style.setProperty(variable, style);
             }
           }
-          if (props) {
-            for (let [propName, propValue] of Object.entries(props)) {
-              element[propName] = propValue;
-            }
-          }
+          applyProps(element, latestPropsRef.current);
           customElementRef.current = element;
           containerRef.current.appendChild(element);
         }
@@ -24516,6 +26012,17 @@ function ExternalComponentWrapper({
     // which is guarded by the !customElementRef.current check.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, components, importModule]);
+
+  // Keep the latest props tracked (for asynchronous element creation above) and
+  // forward prop updates to the already-created custom element. The creation
+  // effect only assigns props once, so without this, later changes to props
+  // like `isIntersecting` would never reach the element.
+  external_React_default().useEffect(() => {
+    latestPropsRef.current = props;
+    if (customElementRef.current) {
+      applyProps(customElementRef.current, props);
+    }
+  });
   if (error) {
     return null;
   }
@@ -24809,7 +26316,7 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       type: "ASROUTER_NEWTAB_MESSAGE",
       messageData: this.props.Messages.messageData,
       className: "asrouter-newtab-message-wrapper"
-    }))), !!layoutRender.length && /*#__PURE__*/external_React_default().createElement(CollapsibleSection, {
+    }))), this.props.aboveContentFeed, !!layoutRender.length && /*#__PURE__*/external_React_default().createElement(CollapsibleSection, {
       className: "ds-layout",
       collapsed: topStories.pref.collapsed,
       dispatch: this.props.dispatch,
@@ -25144,6 +26651,85 @@ function SectionsMgmtPanel({
   }, /*#__PURE__*/external_React_default().createElement("h1", {
     "data-l10n-id": "newtab-section-mangage-topics-title"
   })), panelBody))));
+}
+
+;// CONCATENATED MODULE: ./content-src/components/CustomizeMenu/ThemesManagementPanel/ThemesManagementPanel.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+// eslint-disable-next-line no-shadow
+
+
+// Full browser theme selection sub-panel. The compact `theme-picker` lives in
+// the customize panel row; the "See more themes" box-button opens this sliding
+// panel, which shows the full `theme-picker` (appearance chooser + all themes)
+// and a link out to the about:addons themes list.
+function ThemesManagementPanel({
+  onSubpanelToggle,
+  togglePanel,
+  showPanel
+}) {
+  const arrowButtonRef = (0,external_React_namespaceObject.useRef)(null);
+  const panelRef = (0,external_React_namespaceObject.useRef)(null);
+  const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
+
+  // Notify parent menu when subpanel opens/closes
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (onSubpanelToggle) {
+      onSubpanelToggle(showPanel);
+    }
+  }, [showPanel, onSubpanelToggle]);
+  const handlePanelEntered = () => {
+    arrowButtonRef.current?.focus();
+  };
+  const openAboutAddonsThemes = () => {
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.OPEN_ABOUT_ADDONS_THEMES
+    }));
+  };
+  const isRTL = typeof document !== "undefined" && document.dir === "rtl";
+  const arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    id: "themes-management-panel",
+    className: "themes-mgmt-panel-container"
+  }, /*#__PURE__*/external_React_default().createElement("moz-box-button", {
+    onClick: togglePanel,
+    "data-l10n-id": "newtab-appearance-more-themes-button"
+  }), /*#__PURE__*/external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
+    nodeRef: panelRef,
+    in: showPanel,
+    timeout: 300,
+    classNames: "themes-mgmt-panel",
+    unmountOnExit: true,
+    onEntered: handlePanelEntered
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    ref: panelRef,
+    className: "themes-mgmt-panel"
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "panel-content"
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "arrow-wrapper"
+  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
+    ref: arrowButtonRef,
+    type: "ghost",
+    className: "arrow-button",
+    iconSrc: arrowIconSrc,
+    onClick: togglePanel
+  }), /*#__PURE__*/external_React_default().createElement("h2", {
+    "data-l10n-id": "newtab-appearance-manage-title"
+  })), /*#__PURE__*/external_React_default().createElement("theme-picker", {
+    layout: "full",
+    showLabels: false,
+    installsource: "about:newtab"
+  }), /*#__PURE__*/external_React_default().createElement("button", {
+    className: "external-link",
+    onClick: openAboutAddonsThemes,
+    "data-l10n-id": "newtab-appearance-explore-more-themes-button"
+  })))));
 }
 
 ;// CONCATENATED MODULE: ./lib/Wallpapers/WallpaperThemeUtils.mjs
@@ -26217,8 +27803,19 @@ function ContentSection_extends() { return ContentSection_extends = Object.assig
 
 
 
+
 // @nova-cleanup(move-directory): Update import path after WidgetsManagementPanel moves to components/CustomizeMenu/
 
+
+// `theme-picker` is imported lazily, so it may still be an undefined custom element
+// when React renders it. In that state React sets props as attributes, and the lit
+// `showLabels` boolean (default true) can't be turned off via an attribute — so set the
+// property directly via a ref; lit preserves it across element upgrade.
+function hideThemePickerLabels(el) {
+  if (el) {
+    el.showLabels = false;
+  }
+}
 class ContentSection extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -26365,6 +27962,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       pocketRegion,
       mayHaveInferredPersonalization,
       mayHaveWeather,
+      mayHaveWebNotifications,
       mayHaveWidgets,
       mayHaveTimerWidget,
       mayHaveListsWidget,
@@ -26387,6 +27985,9 @@ class ContentSection extends (external_React_default()).PureComponent {
       showSectionsMgmtPanel,
       // @nova-cleanup(remove-conditional): Remove novaEnabled
       novaEnabled,
+      browserNovaEnabled,
+      toggleThemesPanel,
+      showThemesPanel,
       wallpapersEnabled,
       toggleWidgetsManagementPanel,
       showWidgetsManagementPanel,
@@ -26397,7 +27998,8 @@ class ContentSection extends (external_React_default()).PureComponent {
       pocketEnabled,
       weatherEnabled,
       showInferredPersonalizationEnabled,
-      topSitesRowsCount
+      topSitesRowsCount,
+      webNotificationsEnabled
     } = enabledSections;
     const {
       timerEnabled,
@@ -26422,7 +28024,19 @@ class ContentSection extends (external_React_default()).PureComponent {
     // @nova-cleanup(remove-conditional): This conditional adds the toggle for wallpaper visibility.
     return /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
       className: "home-section"
-    }, wallpapersEnabled && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
+    }, browserNovaEnabled && /*#__PURE__*/external_React_default().createElement("div", {
+      className: "appearance-section section"
+    }, /*#__PURE__*/external_React_default().createElement("h2", {
+      "data-l10n-id": "newtab-custom-appearance-section-title"
+    }), /*#__PURE__*/external_React_default().createElement("theme-picker", {
+      ref: hideThemePickerLabels,
+      layout: "compact",
+      installsource: "about:newtab"
+    }), /*#__PURE__*/external_React_default().createElement(ThemesManagementPanel, {
+      onSubpanelToggle: onSubpanelToggle,
+      togglePanel: toggleThemesPanel,
+      showPanel: showThemesPanel
+    })), wallpapersEnabled && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
       className: "wallpapers-section"
     }, novaEnabled && /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "wallpapers-toggle",
@@ -26581,7 +28195,15 @@ class ContentSection extends (external_React_default()).PureComponent {
       value: String(num),
       "data-l10n-id": "newtab-custom-row-selector2",
       "data-l10n-args": `{"num": ${num}}`
-    })))))))),
+    })))), mayHaveWebNotifications && /*#__PURE__*/external_React_default().createElement("div", {
+      className: "more-information"
+    }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
+      id: "web-notifications-toggle",
+      pressed: webNotificationsEnabled || null,
+      ontoggle: this.onPreferenceSelect,
+      "data-preference": "showWebNotifications",
+      "data-l10n-id": "newtab-custom-web-notifications-toggle"
+    })))))),
     // @nova-cleanup(remove-conditional): Remove novaEnabled check, keep divider
     novaEnabled && mayHaveWidgets && /*#__PURE__*/external_React_default().createElement("span", {
       className: "divider",
@@ -26697,6 +28319,33 @@ class ContentSection extends (external_React_default()).PureComponent {
 const CustomizeMenu_PREF_NOVA_ENABLED = "nova.enabled";
 // eslint-disable-next-line no-shadow
 
+const THEME_PICKER_ELEMENTS = ["chrome://global/content/elements/moz-visual-picker.mjs", "chrome://global/content/elements/moz-segmented-control.mjs", "chrome://global/content/elements/theme-picker.mjs"];
+const THEME_PICKER_FTL = "toolkit/global/theme-picker.ftl";
+let themePickerElementsLoaded = false;
+
+/**
+ * @backward-compat { version 155 }
+ * The `theme-picker` element, its `moz-visual-picker` / `moz-segmented-control`
+ * dependencies, and its `theme-picker.ftl` only exist in Firefox 155+. Load them lazily
+ * and only on a supported host (callers gate on `browserNovaEnabled`, which encodes the
+ * 155+ check) so their `chrome://` URLs / l10n resources are never referenced when
+ * newtab train-hops onto an older host — there a missing chrome URL is a fatal
+ * `CheckForBrokenChromeURL` process crash, not a catchable load error. The element's own
+ * `insertFTLIfNeeded` does not run in the newtab content context (no `MozXULElement`), so
+ * the ftl is registered here instead of via a static `<link>`. Remove once 155 reaches
+ * Release.
+ */
+function loadThemePickerElements() {
+  if (themePickerElementsLoaded) {
+    return;
+  }
+  themePickerElementsLoaded = true;
+  document.l10n?.addResourceIds([THEME_PICKER_FTL]);
+  for (const url of THEME_PICKER_ELEMENTS) {
+    // eslint-disable-next-line no-unsanitized/method
+    import(/* webpackIgnore: true */url).catch(() => {});
+  }
+}
 class _CustomizeMenu extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -26717,8 +28366,16 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       subpanelOpen: isOpen
     });
   }
+  componentDidMount() {
+    if (this.props.showing && this.props.Prefs.values.browserNovaEnabled) {
+      loadThemePickerElements();
+    }
+  }
   componentDidUpdate(prevProps) {
     if (this.props.showing && !prevProps.showing) {
+      if (this.props.Prefs.values.browserNovaEnabled) {
+        loadThemePickerElements();
+      }
       if (!this.dialogRef.current?.open) {
         this.dialogRef.current?.showModal();
       }
@@ -26757,6 +28414,10 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
     const activationWindowClass = activationWindowVariant ? `activation-window-variant-${activationWindowVariant}` : "";
     // @nova-cleanup(remove-pref): remove nova pref
     const novaEnabled = this.props.Prefs.values[CustomizeMenu_PREF_NOVA_ENABLED];
+    // Browser-wide Nova gate for the theme picker (distinct from novaEnabled).
+    const {
+      browserNovaEnabled
+    } = this.props.Prefs.values;
     return /*#__PURE__*/external_React_default().createElement("span", null, /*#__PURE__*/external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
       nodeRef: this.personalizeButtonRef,
       timeout: 300,
@@ -26774,7 +28435,7 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       onClick: () => this.props.onOpen(),
       iconsrc: "chrome://global/skin/icons/edit-outline.svg",
       iconposition: "end",
-      type: "default"
+      type: "primary"
     }) : /*#__PURE__*/external_React_default().createElement("button", {
       ref: this.personalizeButtonRef,
       className: `${activationWindowClass} personalize-button`,
@@ -26826,6 +28487,7 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       mayHaveTopicSections: this.props.mayHaveTopicSections,
       mayHaveInferredPersonalization: this.props.mayHaveInferredPersonalization,
       mayHaveWeather: this.props.mayHaveWeather,
+      mayHaveWebNotifications: this.props.mayHaveWebNotifications,
       mayHaveWidgets: this.props.mayHaveWidgets,
       mayHaveWeatherForecast: this.props.mayHaveWeatherForecast,
       weatherDisplay: this.props.weatherDisplay,
@@ -26842,6 +28504,9 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       toggleSectionsMgmtPanel: this.props.toggleSectionsMgmtPanel,
       showSectionsMgmtPanel: this.props.showSectionsMgmtPanel,
       novaEnabled: novaEnabled,
+      browserNovaEnabled: browserNovaEnabled,
+      toggleThemesPanel: this.props.toggleThemesPanel,
+      showThemesPanel: this.props.showThemesPanel,
       toggleWidgetsManagementPanel: this.props.toggleWidgetsManagementPanel,
       showWidgetsManagementPanel: this.props.showWidgetsManagementPanel,
       widgetsEnabled: this.props.widgetsEnabled
@@ -26852,1047 +28517,20 @@ const CustomizeMenu = (0,external_ReactRedux_namespaceObject.connect)(state => (
   DiscoveryStream: state.DiscoveryStream,
   Prefs: state.Prefs
 }))(_CustomizeMenu);
-;// CONCATENATED MODULE: ./content-src/components/Logo/variants/FootballBounce.jsx
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-/**
- * @backward-compat { version 153 }
- * The entire logo-variation feature can be removed after Firefox 153 hits
- * Release, when the 2026 World Cup is over. Delete this file, the
- * `football-bounce` entry in `LOGO_VARIATIONS` (in `Logo.jsx`), the
- * `football-bounce.webp` asset under `data/content/assets/`, and the
- * `logo.variation` pref entry in `ActivityStream.sys.mjs`.
- */
-
-
-const SPRITE_URL = "chrome://newtab/content/data/content/assets/football-bounce.webp";
-
-// 56 frames laid out as an 8-column x 7-row grid of 480x270 cells inside a
-// 3840x1890 sprite sheet. Each value is "<x> <y>" in source-image pixels.
-// Read in scanline order: top-left across to top-right, then row by row down
-// to bottom-right.
-const TRANSFORM_VALUES = "0 0;-480 0;-960 0;-1440 0;-1920 0;-2400 0;-2880 0;-3360 0;0 -270;-480 -270;-960 -270;-1440 -270;-1920 -270;-2400 -270;-2880 -270;-3360 -270;0 -540;-480 -540;-960 -540;-1440 -540;-1920 -540;-2400 -540;-2880 -540;-3360 -540;0 -810;-480 -810;-960 -810;-1440 -810;-1920 -810;-2400 -810;-2880 -810;-3360 -810;0 -1080;-480 -1080;-960 -1080;-1440 -1080;-1920 -1080;-2400 -1080;-2880 -1080;-3360 -1080;0 -1350;-480 -1350;-960 -1350;-1440 -1350;-1920 -1350;-2400 -1350;-2880 -1350;-3360 -1350;0 -1620;-480 -1620;-960 -1620;-1440 -1620;-1920 -1620;-2400 -1620;-2880 -1620;-3360 -1620";
-
-/**
- * The "football bounce" logo variation. Windows onto a 3840x1890 WebP
- * sprite sheet (56 frames, 8 columns x 7 rows of 480x270 cells). Unlike
- * the square logo variations, each cell is 16:9 — the animation is
- * deliberately wider and taller than the logo slot. To avoid disturbing
- * the surrounding layout the outer element is a fixed-size container
- * matching the standard logo slot, and the SVG inside it renders at the
- * sprite's natural cell size (480x270) and overflows the container so
- * the football's bounce trajectory can extend beyond the standard logo
- * bounds. The container's `overflow: visible` plus the SVG's absolute
- * positioning are defined in `_FootballBounce.scss`; aligning the
- * sprite's "rest" cell to the standard logo position is a job for those
- * CSS offsets.
- *
- * LTR only: the football bounces left-to-right, which would read
- * incorrectly when mirrored for RTL. The variation registry sets
- * `requiresLTR: true` and falls back to `spin-smooth` in RTL locales.
- *
- * The WebP is served from
- * `chrome://newtab/content/data/content/assets/football-bounce.webp` —
- * `chrome:` is permitted by the newtab CSP's `img-src` list. A single
- * SMIL `<animateTransform>` element pans the image through all 56 cells
- * in 3.752 seconds. `fill="freeze"` keeps the final cell (bottom-right
- * of the sprite — the "rest" pose) visible after the animation ends,
- * unlike the other variations which return to frame 0 via the default
- * `fill="remove"`.
- *
- * Click semantics match the other click-triggered variations:
- *  - First click plays the animation.
- *  - Clicks while the animation is in flight are ignored.
- *  - Clicks after the animation finishes replay it cleanly (SMIL
- *    `restart="always"` default means `beginElement()` rewinds to t=0).
- *  - Clicks under `prefers-reduced-motion: reduce` are a no-op.
- *
- * The click target is the 64x64 container, not the wider SVG — so only
- * the logo-slot area triggers replay, not the airborne football itself.
- *
- * @returns {React.ReactElement} The container div wrapping the
- *   sprite-window SVG and its indefinitely-begun SMIL animation.
- */
-function FootballBounce() {
-  const animRef = (0,external_React_namespaceObject.useRef)(null);
-  const isRunningRef = (0,external_React_namespaceObject.useRef)(false);
-  const [isAnimating, setIsAnimating] = (0,external_React_namespaceObject.useState)(false);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    const anim = animRef.current;
-    if (!anim) {
-      return undefined;
-    }
-    const onBegin = () => {
-      isRunningRef.current = true;
-      setIsAnimating(true);
-    };
-    const onEnd = () => {
-      isRunningRef.current = false;
-      setIsAnimating(false);
-    };
-    anim.addEventListener("beginEvent", onBegin);
-    anim.addEventListener("endEvent", onEnd);
-    return () => {
-      anim.removeEventListener("beginEvent", onBegin);
-      anim.removeEventListener("endEvent", onEnd);
-    };
-  }, []);
-
-  /**
-   * Plays the SMIL animation once, unless the user has reduced motion
-   * enabled or the animation is already running.
-   */
-  const handleClick = () => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-    if (!animRef.current || isRunningRef.current) {
-      return;
-    }
-    animRef.current.beginElement();
-  };
-  return /*#__PURE__*/external_React_default().createElement("div", {
-    className: `logo-variation-small football-bounce${isAnimating ? " is-animating" : ""}`,
-    onClick: handleClick
-  }, /*#__PURE__*/external_React_default().createElement("svg", {
-    xmlns: "http://www.w3.org/2000/svg",
-    viewBox: "0 0 480 270",
-    width: "480",
-    height: "270",
-    className: "football-bounce__sprite",
-    "aria-hidden": "true"
-  }, /*#__PURE__*/external_React_default().createElement("g", {
-    transform: "translate(-3360 -1620)"
-  }, /*#__PURE__*/external_React_default().createElement("image", {
-    width: "3840",
-    height: "1890",
-    x: "0",
-    y: "0",
-    imageRendering: "optimizeQuality",
-    href: SPRITE_URL
-  }), /*#__PURE__*/external_React_default().createElement("animateTransform", {
-    ref: animRef,
-    attributeName: "transform",
-    type: "translate",
-    calcMode: "discrete",
-    dur: "3.752s",
-    begin: "indefinite",
-    fill: "freeze",
-    values: TRANSFORM_VALUES
-  }))));
-}
-
-;// CONCATENATED MODULE: ./content-src/components/Logo/variants/RotatingBall.jsx
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-/**
- * @backward-compat { version 153 }
- * The entire logo-variation feature can be removed after Firefox 153 hits
- * Release, when the 2026 World Cup is over. Delete this file, the
- * `rotating-ball` entry in `LOGO_VARIATIONS` (in `Logo.jsx`), the
- * `rotating-ball.webp` asset under `data/content/assets/`, and the
- * `logo.variation` pref entry in `ActivityStream.sys.mjs`.
- */
-
-
-const RotatingBall_SPRITE_URL = "chrome://newtab/content/data/content/assets/rotating-ball.webp";
-
-// 30 frames (one entry per sprite cell).
-const RotatingBall_TRANSFORM_VALUES = "0,0;-200,0;-400,0;-600,0;-800,0;-1000,0;-1200,0;-1400,0;-1600,0;-1800,0;-2000,0;-2200,0;-2400,0;-2600,0;-2800,0;-3000,0;-3200,0;-3400,0;-3600,0;-3800,0;-4000,0;-4200,0;-4400,0;-4600,0;-4800,0;-5000,0;-5200,0;-5400,0;-5600,0;-5800,0";
-
-/**
- * The "rotating ball" logo variation. Renders a 200x200 SVG that windows
- * onto a 6000x200 WebP sprite sheet (30 frames in a single row, each
- * 200x200 to match `spin-smooth.webp`). The WebP is served from
- * `chrome://newtab/content/data/content/assets/rotating-ball.webp` —
- * `chrome:` is permitted by the newtab CSP's `img-src` list. A SMIL
- * `<animateTransform>` element pans the image through all 30 frames in
- * 2.9333 seconds. The animation runs **on click**, not automatically —
- * it's authored with `begin="indefinite"` and triggered via
- * `beginElement()` from the click handler. Default `fill="remove"` means
- * the sprite snaps back to frame 0 once the animation completes, ready
- * for the next click.
- *
- * Click semantics match the other click-triggered variations:
- *  - First click plays the animation.
- *  - Clicks while the animation is in flight are ignored (so the sprite
- *    doesn't jump back mid-spin).
- *  - Clicks after the animation finishes replay it cleanly.
- *  - Clicks under `prefers-reduced-motion: reduce` are a no-op; the SVG
- *    stays at frame 0 (left-most cell of the sprite). This preserves the
- *    visual presence and click affordance for reduced-motion users
- *    without forcing them through the spin.
- *
- * @returns {React.ReactElement} The SVG element wrapping the sprite +
- *   the indefinitely-begun SMIL animation.
- */
-function RotatingBall() {
-  const animRef = (0,external_React_namespaceObject.useRef)(null);
-  const isRunningRef = (0,external_React_namespaceObject.useRef)(false);
-  const [isAnimating, setIsAnimating] = (0,external_React_namespaceObject.useState)(false);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    const anim = animRef.current;
-    if (!anim) {
-      return undefined;
-    }
-    const onBegin = () => {
-      isRunningRef.current = true;
-      setIsAnimating(true);
-    };
-    const onEnd = () => {
-      isRunningRef.current = false;
-      setIsAnimating(false);
-    };
-    anim.addEventListener("beginEvent", onBegin);
-    anim.addEventListener("endEvent", onEnd);
-    return () => {
-      anim.removeEventListener("beginEvent", onBegin);
-      anim.removeEventListener("endEvent", onEnd);
-    };
-  }, []);
-
-  /**
-   * Plays the SMIL animation once, unless the user has reduced motion
-   * enabled or the animation is already running. `beginElement()` is the
-   * SMIL equivalent of `Animation.play()` for the Web Animations API.
-   */
-  const handleClick = () => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-    if (!animRef.current || isRunningRef.current) {
-      return;
-    }
-    animRef.current.beginElement();
-  };
-  return /*#__PURE__*/external_React_default().createElement("svg", {
-    xmlns: "http://www.w3.org/2000/svg",
-    viewBox: "0 0 200 200",
-    className: `logo-variation-small rotating-ball${isAnimating ? " is-animating" : ""}`,
-    "aria-hidden": "true",
-    onClick: handleClick
-  }, /*#__PURE__*/external_React_default().createElement("defs", null, /*#__PURE__*/external_React_default().createElement("clipPath", {
-    id: "rotating-ball-clip"
-  }, /*#__PURE__*/external_React_default().createElement("rect", {
-    x: "0",
-    y: "0",
-    width: "200",
-    height: "200"
-  }))), /*#__PURE__*/external_React_default().createElement("g", {
-    clipPath: "url(#rotating-ball-clip)"
-  }, /*#__PURE__*/external_React_default().createElement("g", null, /*#__PURE__*/external_React_default().createElement("image", {
-    width: "6000",
-    height: "200",
-    imageRendering: "smooth",
-    href: RotatingBall_SPRITE_URL
-  }), /*#__PURE__*/external_React_default().createElement("animateTransform", {
-    ref: animRef,
-    attributeName: "transform",
-    type: "translate",
-    calcMode: "discrete",
-    dur: "2.9333s",
-    begin: "indefinite",
-    values: RotatingBall_TRANSFORM_VALUES
-  }))));
-}
-
-;// CONCATENATED MODULE: ./content-src/components/Logo/variants/SpinBallSmall.jsx
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-/**
- * @backward-compat { version 153 }
- * The entire logo-variation feature can be removed after Firefox 153 hits
- * Release, when the 2026 World Cup is over. Delete this file, the
- * `logo-variation-small`/`spin-ball-small` SCSS blocks plus their
- * `@keyframes`, the `logo.variation` pref entry in
- * `ActivityStream.sys.mjs`, and the logo-variation selection logic in
- * `Logo.jsx` (Logo reverts to its original default-only rendering).
- */
-
-
-
-/**
- * The "spin ball, small" logo variation. Renders the supplied animated
- * Firefox SVG (inline JSX) into the newtab logo slot. The SVG is purely
- * decorative — it's `aria-hidden`, has no interactive ARIA role, and is not
- * keyboard-focusable. Mouse users discover the click affordance via
- * `cursor: pointer` (defined in `_Logo.scss`).
- *
- * All animations declared on the SVG's children load `paused` (per the
- * `animation-play-state: paused` rule in `_Logo.scss`). They begin running
- * on the first click and re-run on each subsequent click (see the click
- * handler below).
- *
- * @returns {React.ReactElement} The animated SVG element.
- */
-function SpinBallSmall() {
-  const svgRef = (0,external_React_namespaceObject.useRef)(null);
-  const [isAnimating, setIsAnimating] = (0,external_React_namespaceObject.useState)(false);
-
-  // Track whether any of the SVG's CSS animations are in flight. The SVG
-  // contains four parallel animations (spin, blur, classic-fade, nova-fade);
-  // count starts and ends so we only clear `isAnimating` once they're all
-  // done. CSS `animationstart`/`animationend` events bubble from the
-  // animated children up to the SVG ref.
-  (0,external_React_namespaceObject.useEffect)(() => {
-    const svg = svgRef.current;
-    if (!svg) {
-      return undefined;
-    }
-    let inflight = 0;
-    const onStart = () => {
-      inflight += 1;
-      setIsAnimating(true);
-    };
-    const onEnd = () => {
-      inflight = Math.max(0, inflight - 1);
-      if (inflight === 0) {
-        setIsAnimating(false);
-      }
-    };
-    svg.addEventListener("animationstart", onStart);
-    svg.addEventListener("animationend", onEnd);
-    return () => {
-      svg.removeEventListener("animationstart", onStart);
-      svg.removeEventListener("animationend", onEnd);
-    };
-  }, []);
-
-  /**
-   * Plays every CSS animation declared on the SVG (and its descendants),
-   * resetting them to t=0 first so the cross-fade between the classic and
-   * "nova" Firefox icons stays synchronised across replays.
-   *
-   * Two guards:
-   *  - `prefers-reduced-motion: reduce` short-circuits without invoking
-   *    `play()`. The SVG remains visible at its frame-0 keyframe state
-   *    (effectively the static Firefox logo), preserving the click
-   *    affordance for users who have reduced motion enabled while
-   *    honouring their preference.
-   *  - `playState !== "running"` makes the variation one-shot per click.
-   *    Clicking again while the animation is in flight does nothing;
-   *    clicking after it finishes restarts cleanly thanks to the
-   *    explicit `currentTime = 0` reset.
-   */
-  const handleClick = () => {
-    const svg = svgRef.current;
-    if (!svg) {
-      return;
-    }
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-    const animations = svg.getAnimations({
-      subtree: true
-    });
-    if (animations.length && animations[0].playState !== "running") {
-      animations.forEach(a => {
-        a.currentTime = 0;
-        a.play();
-      });
-    }
-  };
-  return /*#__PURE__*/external_React_default().createElement("svg", {
-    ref: svgRef,
-    xmlns: "http://www.w3.org/2000/svg",
-    viewBox: "0 0 1000 1000",
-    className: `logo-variation-small spin-ball-small${isAnimating ? " is-animating" : ""}`,
-    "aria-hidden": "true",
-    onClick: handleClick
-  }, /*#__PURE__*/external_React_default().createElement("defs", null, /*#__PURE__*/external_React_default().createElement("linearGradient", {
-    id: "spin-ball-small-gradient-0",
-    x1: "309.4",
-    y1: "12.5",
-    x2: "368.1",
-    y2: "337.9",
-    gradientUnits: "userSpaceOnUse"
-  }, /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: "0",
-    stopColor: "#fff44f"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".3",
-    stopColor: "#ffd94d"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".7",
-    stopColor: "#ffb04b"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: "1",
-    stopColor: "#ff980e"
-  })), /*#__PURE__*/external_React_default().createElement("linearGradient", {
-    id: "spin-ball-small-gradient-1",
-    x1: ".4",
-    y1: "397.2",
-    x2: "55.6",
-    y2: "397.2",
-    gradientUnits: "userSpaceOnUse",
-    gradientTransform: "matrix(1 0 0 -1 0 523.6)"
-  }, /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".2",
-    stopColor: "#af16c0"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".9",
-    stopColor: "#00053d"
-  })), /*#__PURE__*/external_React_default().createElement("linearGradient", {
-    id: "spin-ball-small-gradient-2",
-    x1: "283.1",
-    y1: "397.1",
-    x2: "338.1",
-    y2: "397.1",
-    gradientUnits: "userSpaceOnUse"
-  }, /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".2",
-    stopColor: "#af16c0"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".9",
-    stopColor: "#00053d"
-  })), /*#__PURE__*/external_React_default().createElement("linearGradient", {
-    id: "spin-ball-small-gradient-3",
-    x1: "112.2",
-    y1: "498.8",
-    x2: "226.6",
-    y2: "498.8",
-    gradientUnits: "userSpaceOnUse"
-  }, /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".2",
-    stopColor: "#af16c0"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".9",
-    stopColor: "#00053d"
-  })), /*#__PURE__*/external_React_default().createElement("linearGradient", {
-    id: "spin-ball-small-gradient-4",
-    x1: "39.6",
-    y1: "236.6",
-    x2: "134.2",
-    y2: "236.6",
-    gradientUnits: "userSpaceOnUse"
-  }, /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".2",
-    stopColor: "#af16c0"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".9",
-    stopColor: "#00053d"
-  })), /*#__PURE__*/external_React_default().createElement("linearGradient", {
-    id: "spin-ball-small-gradient-5",
-    x1: "204.5",
-    y1: "236.8",
-    x2: "299.2",
-    y2: "236.8",
-    gradientUnits: "userSpaceOnUse"
-  }, /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".2",
-    stopColor: "#af16c0"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".9",
-    stopColor: "#00053d"
-  })), /*#__PURE__*/external_React_default().createElement("linearGradient", {
-    id: "spin-ball-small-gradient-6",
-    x1: "112.6",
-    y1: "359.2",
-    x2: "226.1",
-    y2: "359.2",
-    gradientUnits: "userSpaceOnUse"
-  }, /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".2",
-    stopColor: "#af16c0"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".9",
-    stopColor: "#00053d"
-  })), /*#__PURE__*/external_React_default().createElement("linearGradient", {
-    id: "spin-ball-small-gradient-7",
-    x1: "-137.6",
-    y1: "457.7",
-    x2: "-0.8",
-    y2: "320.9",
-    gradientUnits: "userSpaceOnUse",
-    gradientTransform: "matrix(.7 .7 .7 -0.7 -226.3 307.5)"
-  }, /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: "0",
-    stopColor: "#929497"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: "1",
-    stopColor: "#929497"
-  })), /*#__PURE__*/external_React_default().createElement("linearGradient", {
-    id: "spin-ball-small-gradient-8",
-    x1: "-49.2",
-    y1: "116.8",
-    x2: "47",
-    y2: "-111.8",
-    gradientUnits: "userSpaceOnUse"
-  }, /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".3",
-    stopColor: "#3a8ee6"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".7",
-    stopColor: "#9059ff"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: "1",
-    stopColor: "#c139e6"
-  })), /*#__PURE__*/external_React_default().createElement("radialGradient", {
-    id: "spin-ball-small-gradient-9",
-    cx: "1.8",
-    cy: "-36.9",
-    r: "137.5",
-    fx: "1.8",
-    fy: "-36.9",
-    gradientUnits: "userSpaceOnUse"
-  }, /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".2",
-    stopColor: "#9059ff",
-    stopOpacity: "0"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: "1",
-    stopColor: "#6e008b",
-    stopOpacity: ".6"
-  })), /*#__PURE__*/external_React_default().createElement("radialGradient", {
-    id: "spin-ball-small-gradient-10",
-    cx: "-1767.7",
-    cy: "2465",
-    r: "2.9",
-    fx: "-1767.7",
-    fy: "2465",
-    gradientUnits: "userSpaceOnUse",
-    gradientTransform: "matrix(58.5 0 0 -58.7 103677 144814)"
-  }, /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".1",
-    stopColor: "#ffe226"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".8",
-    stopColor: "#ff7139"
-  })), /*#__PURE__*/external_React_default().createElement("radialGradient", {
-    id: "spin-ball-small-gradient-11",
-    cx: "-1788.7",
-    cy: "2446.5",
-    r: "3.1",
-    fx: "-1788.7",
-    fy: "2446.5",
-    gradientUnits: "userSpaceOnUse",
-    gradientTransform: "matrix(178.6 0 0 -159.8 319794 391016)"
-  }, /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".1",
-    stopColor: "#fff44f"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".6",
-    stopColor: "#ff980e"
-  })), /*#__PURE__*/external_React_default().createElement("linearGradient", {
-    id: "spin-ball-small-gradient-12",
-    x1: "420.4",
-    y1: "80.8",
-    x2: "71.7",
-    y2: "389",
-    gradientUnits: "userSpaceOnUse"
-  }, /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".1",
-    stopColor: "#fff44f"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".6",
-    stopColor: "#ff980e"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".9",
-    stopColor: "#ff3647"
-  })), /*#__PURE__*/external_React_default().createElement("linearGradient", {
-    id: "spin-ball-small-gradient-13",
-    x1: "475.9",
-    y1: "184.4",
-    x2: "50.9",
-    y2: "413.4",
-    gradientUnits: "userSpaceOnUse"
-  }, /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: "0",
-    stopColor: "#ffe743"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".3",
-    stopColor: "#ff980e"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".5",
-    stopColor: "#ff3750"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".8",
-    stopColor: "#eb0878"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: "1",
-    stopColor: "#e50080"
-  })), /*#__PURE__*/external_React_default().createElement("radialGradient", {
-    id: "spin-ball-small-gradient-14",
-    cx: "291.4",
-    cy: "184",
-    r: "311.4",
-    fx: "291.4",
-    fy: "184",
-    gradientUnits: "userSpaceOnUse"
-  }, /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".1",
-    stopColor: "#fff44f"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".6",
-    stopColor: "#ff980e"
-  }), /*#__PURE__*/external_React_default().createElement("stop", {
-    offset: ".8",
-    stopColor: "#ff3647"
-  }))), /*#__PURE__*/external_React_default().createElement("g", {
-    className: "spin-ball-small__spin"
-  }, /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M438.4 180.4c-27.2-67.7-73.2-95-110.9-154.5c-1.9-3-3.8-6-5.6-9.2c-1-1.6-1.9-3.3-2.7-4.9c-1.5-3.1-2.8-6.3-3.6-9.6c0-0.3-0.2-0.6-0.5-0.6c-0.2 0-0.3 0-0.4 0c.2-0.1 .4-0.3 .6-0.4c0 0 .1-0.1 .1-0.1c-60.4 35.4-80.9 100.8-82.7 133.5c2.8-0.2 5.5-0.4 8.4-0.4c30.7 0 58.7 11.5 80 30.4c1.2 1.2 2.3 2.4 3.5 3.6c8.8 8.6 16.3 18.4 22.3 29.1c1.3 1 2.6 2 3.6 2.9c54.5 50.2 26 121.2 23.8 126.3c44.3-36.5 72.6-90.4 64.1-146.1Z",
-    fill: "url(#spin-ball-small-gradient-0)"
-  }), /*#__PURE__*/external_React_default().createElement("g", {
-    className: "spin-ball-small__classic",
-    transform: "translate(241.1,255.7) scale(.739424,.739424) translate(-169.3,-169.3)"
-  }, /*#__PURE__*/external_React_default().createElement("g", {
-    "data-name": "Layer 1"
-  }, /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M55.6 132.2l-0.2-60c0 0-9.6 1.5-15.6 3.1c-5.4 1.4-14.1 4.3-14.1 4.3c-14.2 22.8-23.2 49.2-25.3 77.5c0 0 5.4 7.6 8.3 11.1c4 4.9 11.5 12.4 11.5 12.4l35.4-48.4Z",
-    fill: "url(#spin-ball-small-gradient-1)"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M283.1 132.1l35.4 48.5c0 0 7.2-7.7 11.4-13.3c4.4-5.9 8.2-12.2 8.2-12.2c-2.3-27.4-11.1-53-24.9-75.2c0 0-6.5-2.4-14.6-4.6c-7.5-2-15.3-3.1-15.3-3.1l-0.2 59.9Z",
-    fill: "url(#spin-ball-small-gradient-2)"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M169.3 49.5l57.3-18.6c0 0-4.5-8.7-8.5-14.6c-4.6-6.9-8.5-11.5-8.5-11.5c-12.9-3.1-26.4-4.8-40.3-4.8c-13.9 0-27.8 1.7-40.9 5c0 0-5.5 7.5-8.4 11.9c-3.3 5.3-7.8 14-7.8 14l57.1 18.6Z",
-    fill: "url(#spin-ball-small-gradient-3)"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M99 265.9l-57.1-18.5c0 0-1.5 10-1.9 15.2c-0.4 5.6-0.4 15.5-0.4 15.5c17.8 21.3 40.7 38.1 66.9 48.5c0 0 7.9-2.5 13.9-5.1c7-3.1 13.8-6.9 13.8-6.9l-35.2-48.7Z",
-    fill: "url(#spin-ball-small-gradient-4)"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M239.7 265.9l-35.2 48.7c0 0 7.8 4 13.8 6.5c7.3 2.9 14.8 5.1 14.8 5.1c25.8-10.5 48.4-27.1 66.1-48.1c-0.1 0 .2-8.1-0.3-14.6c-0.6-7.3-2.1-16.1-2.1-16.1l-57.1 18.6Z",
-    fill: "url(#spin-ball-small-gradient-5)"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M204.5 314.6c0-0.1 11.4-10.5 20.2-22.8c9.5-13.3 15-25.9 15-25.9l-35.3-48.5h-70.1l-35.3 48.5c0 0 6.3 14.3 14.9 25.9c9.1 12.4 20.3 22.8 20.3 22.8c0 0 15.2 4.3 35.2 4.3c18.5 0 35.1-4.4 35.1-4.4Z",
-    fill: "#dcdddd"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M318.5 180.6c0 0-6.1-13.6-15.9-27c-8.6-11.8-19.5-21.5-19.5-21.5l-57 18.6l-21.7 66.7l35.3 48.5c0 0 15.5-1.7 29.6-6.3c15.1-5 27.5-12.2 27.5-12.2c0 0 9-13.9 14.9-31.9c5.9-18 6.8-34.9 6.8-34.9Z",
-    fill: "#d4d5d5"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M20.2 180.6c0 0 5.9-13.6 15.2-26.2c9.2-12.5 20.1-22.2 20.1-22.2l57 18.5l21.7 66.7l-35.2 48.5c0 0-14.6-1.5-29.9-6.3c-14.9-4.7-27.3-12.2-27.3-12.2c0 0-9.1-12.9-14.9-31.7c-6.1-19.6-6.7-35.1-6.7-35.1Z",
-    fill: "#eeefef"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M55.4 72.2c0 0-3 14.5-3 28.3c0 16.9 3.2 31.7 3.2 31.7l57 18.5l56.7-41.3v-59.9c0 0-12.7-7.4-28.8-12.6c-15-4.9-28.3-6-28.3-6c0 0-14 5-30.5 16.9c-16.2 11.6-26.3 24.4-26.3 24.4Z",
-    fill: "#f9f9f9"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M169.3 109.4v-59.9c0 0 13.4-7.7 28.2-12.5c15.4-4.9 29.1-6.2 29.1-6.2c0 0 13.3 5 30.2 16.9c15.5 11 26.5 24.5 26.5 24.5c0 0 3 12.6 3 29.6c0 17-3.2 30.3-3.2 30.3l-57 18.6l-56.8-41.3Z",
-    fill: "#ececec"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M134.2 217.4c.1 0-9.8-24.1-13-34c-3.3-10-8.6-32.7-8.6-32.7c0 0 17.7-15.2 27.3-22.3c9.3-6.8 29.4-19 29.4-19c0 0 20.6 12.8 30 19.6c8.7 6.2 26.8 21.7 26.8 21.7c0 0-5.5 22.4-9 33.4c-3.4 11-12.7 33.3-12.7 33.3c0 0-23.3 1.9-35.8 1.9c-11.7 0-34.3-1.9-34.3-1.9Z",
-    fill: "url(#spin-ball-small-gradient-6)"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M204.5 314.6v-0.1l-0.1 .1c0-0.1-16.5 4.3-35.1 4.3c-19.9 0-35-4.3-35.1-4.3c0 0-6.8 3.8-13.8 6.9c-6 2.6-13.9 5.1-13.9 5.1c-1.6-0.6 26.4 12.1 62.8 12.1c22.6 0 44.1-4.5 63.8-12.5c0 0-7.6-2.2-14.8-5.1c-6.1-2.4-13.8-6.5-13.8-6.5h-0.1Z",
-    fill: "#cacbcb"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M318.5 180.6c0 0-0.9 16.9-6.8 34.9c-5.9 18-14.9 31.9-14.9 31.9c0 0 1.6 8.8 2.1 16.1c.5 6.4 .3 14.5 .3 14.6c24.6-29.5 39.5-67.4 39.5-108.8c0-4.8-0.2-9.5-0.6-14.2c-0.1 .1-3.9 6.4-8.2 12.2c-4.2 5.6-11.4 13.3-11.4 13.3Z",
-    fill: "#cacbcb"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M39.6 278.1c0 0 0-9.9 .4-15.5c.3-5.1 1.8-15.1 1.8-15.2c0 0-9.1-12.9-14.9-31.8c-6.1-19.6-6.7-35-6.7-35c0 0-7.5-7.6-11.5-12.4c-2.7-3.3-7.5-10.1-8.3-11.1c-0.2 4.1-0.4 8.1-0.4 12.2c0 62 33.3 116.2 82.9 145.7c-16.4-9.8-31.1-22.3-43.3-36.9Z",
-    fill: "#f3f4f4"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M55.4 72.2c0 0 10.1-12.8 26.3-24.4c16.5-11.9 30.5-16.9 30.5-16.9c0 0 4.4-8.8 7.8-14c2.9-4.4 8.4-11.9 8.4-11.9c1.6-0.4 3.3-0.8 4.9-1.2c-45.3 9.8-83.8 37.8-107.6 75.8c1.4-0.4 9.2-3.1 14.1-4.3c5.9-1.6 15.5-3.1 15.6-3.1Z",
-    fill: "#f6f6f6"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M226.6 30.9c0 0 13.3 4.9 30.2 16.9c15.5 10.9 26.5 24.4 26.5 24.4c0 0 7.8 1.1 15.3 3.1c8.1 2.2 14.5 4.6 14.6 4.6c-23.1-37-60-64.4-103.6-75.1c.1 .1 3.9 4.6 8.5 11.5c4 5.9 8.4 14.6 8.4 14.6Z",
-    fill: "#f1f1f1"
-  }), /*#__PURE__*/external_React_default().createElement("ellipse", {
-    rx: "123.4",
-    ry: "115.8",
-    fill: "url(#spin-ball-small-gradient-7)",
-    transform: "translate(-57.4,146.1) rotate(-45) translate(147.7,142.3)",
-    style: {
-      isolation: "isolate",
-      mixBlendMode: "hard-light"
-    }
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M338.7 169.3c0 93.5-75.9 169.4-169.4 169.4c-64.5-0.1-120.6-36.2-149.2-89.3c28.8 24.7 66.3 39.7 107.3 39.7c90.8 0 164.4-73.2 164.4-163.4c-0.1-38.6-13.5-74-35.9-101.9c49.5 29.5 82.7 83.7 82.7 145.5h.1Z",
-    opacity: ".6",
-    fill: "#696969",
-    style: {
-      isolation: "isolate",
-      mixBlendMode: "hard-light"
-    }
-  }))), /*#__PURE__*/external_React_default().createElement("g", {
-    className: "spin-ball-small__nova"
-  }, /*#__PURE__*/external_React_default().createElement("ellipse", {
-    rx: "130",
-    ry: "130",
-    fill: "url(#spin-ball-small-gradient-8)",
-    transform: "translate(240,263.6)"
-  }), /*#__PURE__*/external_React_default().createElement("ellipse", {
-    rx: "130",
-    ry: "130",
-    fill: "url(#spin-ball-small-gradient-9)",
-    transform: "translate(240,263.6)"
-  })), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M153.6 151.7c1.7 1.1 3.3 2.2 5 3.3c-5.5-19.1-5.7-39.4-0.7-58.7c-24.7 11.2-43.9 29-57.9 44.7c1.2 0 36.1-0.7 53.6 10.7Z",
-    fill: "url(#spin-ball-small-gradient-10)"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M132.7 278.5c0 0 11.1-41.4 79.4-41.4c7.4 0 28.5-20.6 28.9-26.6c.4-5.9-43.7 18.4-90.2-3.5c-50.3-23.6-88.4 3.5-88.4 3.5c0 0 14.5 35.9 56.9 35.9c-4.4 39.2 16.4 85 66.6 109.1c1.2 .5 2.2 1.1 3.4 1.6c-29.4-15.2-53.6-43.8-56.6-78.6Z",
-    fill: "url(#spin-ball-small-gradient-11)"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M2.2 262.7c18.5 109.6 117.8 193.2 230.6 196.4c104.4 3 171-57.6 198.6-116.7c17.8-38.2 30.1-100.7 7.5-162.2c0 0-0.1-0.2-0.1-0.2c0-0.2 0-0.3 0-0.3c0 .1 0 .2 0 .4c8.6 55.7-19.8 109.6-64 146.1l-0.1 .3c-86.3 70.2-168.8 42.4-185.5 31c-1.2-0.6-2.4-1.2-3.5-1.8c-50.3-24-71.1-69.8-66.6-109.1c-42.5 0-57-35.8-57-35.8c0 0 38.2-27.2 88.4-3.6c46.5 21.9 90.2 3.6 90.2 3.6c-0.1-2-41.9-18.6-58.2-34.7c-8.7-8.6-12.8-12.7-16.5-15.8c-2-1.7-4.1-3.3-6.2-4.7c-1.7-1.1-3.3-2.2-5-3.3c-17.5-11.4-52.4-10.8-53.5-10.7h-0.2c-9.5-12.1-8.8-51.9-8.3-60.2c-0.1-0.5-7.1 3.6-8 4.2c-8.4 6-16.3 12.8-23.5 20.1c-8.2 8.4-15.7 17.4-22.4 27c0 0 0 0 0 0c0 0 0 0 0 0c-15.5 21.9-26.4 46.6-32.3 72.8c-0.1 .5-8.6 37.8-4.4 57.2Z",
-    fill: "url(#spin-ball-small-gradient-12)"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M462.7 166.4c-10.4-25.2-31.6-52.3-48.2-60.9c13.5 26.5 21.4 53.1 24.3 73c0-0.1 0 0 .1 .2c0 .1 0 .2 0 .3c22.7 61.4 10.3 123.9-7.5 162.1c-27.5 59.1-94.2 119.7-198.6 116.8c-112.7-3.2-212-86.9-230.6-196.5c-3.4-17.3 0-26 1.7-40.1c-2.1 10.9-2.8 14-3.9 33.2c0 .4 0 .8 0 1.2c0 132.7 107.6 240.3 240.3 240.3c118.9 0 217.6-86.3 236.9-199.6c.4-3.1 .7-6.2 1.1-9.3c4.8-41.2-0.5-84.5-15.6-120.7Z",
-    fill: "url(#spin-ball-small-gradient-13)"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M350 200.4c-1-1-2.3-2-3.6-2.9c-0.5-0.4-0.9-0.8-1.5-1.1c-12.8-9.1-35.8-18-57.9-14.1c86.4 43.2 63.2 192-56.6 186.4c-10.6-0.5-21.2-2.5-31.2-6c-2.4-0.9-4.8-1.9-7.1-2.9c-1.4-0.7-2.7-1.3-4-2c0 .1 .1 .1 .1 .1c16.7 11.4 99.3 39.3 185.5-30.9l.1-0.3c2.2-5.1 30.7-76.1-23.8-126.3Z",
-    fill: "url(#spin-ball-small-gradient-14)"
-  }), /*#__PURE__*/external_React_default().createElement("path", {
-    d: "M438 180.2c-27.2-67.7-73.3-95-110.9-154.5c-1.9-3-3.8-6-5.7-9.2c-0.9-1.6-1.8-3.3-2.6-5c-1.6-3-2.8-6.2-3.6-9.5c0-0.3-0.2-0.6-0.5-0.6c-0.2-0.1-0.3-0.1-0.5 0c0 0-0.1 0-0.1 0c-0.1 .1-0.1 .1-0.2 .1c-9.3 4.5-64.4 91.7 10.3 166.4c8.8 8.6 16.3 18.4 22.3 29.1c1.3 1 2.6 2 3.6 3c54.5 50.2 26 121.2 23.8 126.2c44.3-36.4 72.6-90.3 64.1-146Z",
-    opacity: ".05",
-    fill: "#060605"
-  })));
-}
-
-;// CONCATENATED MODULE: ./content-src/components/Logo/variants/SpinSmooth.jsx
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-/**
- * @backward-compat { version 153 }
- * The entire logo-variation feature can be removed after Firefox 153 hits
- * Release, when the 2026 World Cup is over. Delete this file, the
- * `spin-smooth` entry in `LOGO_VARIATIONS` (in `Logo.jsx`), the
- * `spin-smooth.webp` asset under `data/content/assets/`, and the
- * `logo.variation` pref entry in `ActivityStream.sys.mjs`.
- */
-
-
-const SpinSmooth_SPRITE_URL = "chrome://newtab/content/data/content/assets/spin-smooth.webp";
-const SpinSmooth_TRANSFORM_VALUES = "0 0;-200 0;-400 0;-600 0;-800 0;-1000 0;0 -200;-200 -200;-400 -200;-600 -200;-800 -200;-1000 -200;0 -400;-200 -400;-400 -400;-600 -400;-800 -400;-1000 -400;0 -600;-200 -600;-400 -600;-600 -600;-800 -600;-1000 -600;0 -800;-200 -800;-400 -800;-600 -800;-800 -800;-1000 -800;0 -1000;-200 -1000;-400 -1000;-600 -1000;-800 -1000;-1000 -1000;0 -1200;-200 -1200;-400 -1200;-600 -1200;-800 -1200;-1000 -1200;0 -1400;-200 -1400;-400 -1400;-600 -1400;-800 -1400;-1000 -1400;0 -1600;-200 -1600;-400 -1600;-600 -1600;-800 -1600;-1000 -1600;0 -1800;-200 -1800;-400 -1800;-600 -1800;-800 -1800;-1000 -1800";
-
-/**
- * The "logo spin smooth" logo variation. Renders a 200x200 SVG that
- * windows onto a 1200x2000 WebP sprite sheet (60 frames, 6 columns x
- * 10 rows). The WebP is served from
- * `chrome://newtab/content/data/content/assets/spin-smooth.webp` —
- * `chrome:` is permitted by the newtab CSP's `img-src` list. A SMIL
- * `<animateTransform>` element pans the image through all 60 cells in
- * 6.67 seconds. The animation runs **on click**, not automatically — it's
- * authored with `begin="indefinite"` and triggered via `beginElement()`
- * from the click handler below. Default `fill="remove"` means the sprite
- * snaps back to frame 0 once the animation completes, ready for the next
- * click.
- *
- * Click semantics match `<SpinBallSmall>`:
- *  - First click plays the animation.
- *  - Clicks while the animation is in flight are ignored (so the sprite
- *    doesn't jump back mid-spin).
- *  - Clicks after the animation finishes replay it cleanly.
- *  - Clicks under `prefers-reduced-motion: reduce` are a no-op; the SVG
- *    stays at frame 0 (top-left cell of the sprite). This preserves the
- *    visual presence and click affordance for reduced-motion users
- *    without forcing them through the spin.
- *
- * The variation has no script: the only JS involvement is in the React
- * click handler. The animation itself is SMIL-declarative.
- *
- * @returns {React.ReactElement} The SVG element wrapping the sprite +
- *   the indefinitely-begun SMIL animation.
- */
-function SpinSmooth() {
-  const animRef = (0,external_React_namespaceObject.useRef)(null);
-  const isRunningRef = (0,external_React_namespaceObject.useRef)(false);
-  const [isAnimating, setIsAnimating] = (0,external_React_namespaceObject.useState)(false);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    const anim = animRef.current;
-    if (!anim) {
-      return undefined;
-    }
-    const onBegin = () => {
-      isRunningRef.current = true;
-      setIsAnimating(true);
-    };
-    const onEnd = () => {
-      isRunningRef.current = false;
-      setIsAnimating(false);
-    };
-    anim.addEventListener("beginEvent", onBegin);
-    anim.addEventListener("endEvent", onEnd);
-    return () => {
-      anim.removeEventListener("beginEvent", onBegin);
-      anim.removeEventListener("endEvent", onEnd);
-    };
-  }, []);
-
-  /**
-   * Plays the SMIL animation once, unless the user has reduced motion
-   * enabled or the animation is already running. `beginElement()` is the
-   * SMIL equivalent of `Animation.play()` for the Web Animations API.
-   */
-  const handleClick = () => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-    if (!animRef.current || isRunningRef.current) {
-      return;
-    }
-    animRef.current.beginElement();
-  };
-  return /*#__PURE__*/external_React_default().createElement("svg", {
-    xmlns: "http://www.w3.org/2000/svg",
-    viewBox: "0 0 200 200",
-    className: `logo-variation-small spin-smooth${isAnimating ? " is-animating" : ""}`,
-    "aria-hidden": "true",
-    onClick: handleClick
-  }, /*#__PURE__*/external_React_default().createElement("defs", null, /*#__PURE__*/external_React_default().createElement("clipPath", {
-    id: "spin-smooth-clip"
-  }, /*#__PURE__*/external_React_default().createElement("rect", {
-    x: "0",
-    y: "0",
-    width: "200",
-    height: "200"
-  }))), /*#__PURE__*/external_React_default().createElement("g", {
-    clipPath: "url(#spin-smooth-clip)"
-  }, /*#__PURE__*/external_React_default().createElement("g", null, /*#__PURE__*/external_React_default().createElement("image", {
-    width: "1200",
-    height: "2000",
-    x: "0",
-    y: "0",
-    href: SpinSmooth_SPRITE_URL
-  }), /*#__PURE__*/external_React_default().createElement("animateTransform", {
-    ref: animRef,
-    attributeName: "transform",
-    type: "translate",
-    calcMode: "discrete",
-    dur: "6.67s",
-    begin: "indefinite",
-    values: SpinSmooth_TRANSFORM_VALUES
-  }))));
-}
-
 ;// CONCATENATED MODULE: ./content-src/components/Logo/Logo.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/**
- * @backward-compat { version 153 }
- * Everything below tagged with the same marker — the logo-variation
- * registry, `pickVariant`, the hook, and the variation-selection block
- * inside `Logo()` — can be removed after Firefox 153 hits Release, when
- * the 2026 World Cup is over. After cleanup, `Logo()` reverts to its
- * original shape: just the wrapper + `.logo` div + `.wordmark`.
- */
 
-
-
-
-
-
-
-
-/**
- * @backward-compat { version 153 }
- * Pref consulted (after `trainhopConfig.logo.variation`) to choose a logo
- * variation. Empty string disables. Useful for local QA — set it via
- * `about:config` to preview a variation without an experiment.
- */
-const PREF_LOGO_VARIATION = "logo.variation";
-const Logo_PREF_WIDGETS_ENABLED = "widgets.enabled";
-
-/**
- * @backward-compat { version 153 }
- * Registry of all available logo variations.
- *
- * The key is the variant's string ID — the value that
- * `trainhopConfig.logo.variation` or the pref must equal for this variant
- * to be selected. Adding a new variant means:
- *   1. Implementing a `<Variant />` component under `./variants/`.
- *   2. Adding an entry here with its constraints and fallback target.
- *
- * Each entry has:
- *  - `component`: the React component to render.
- *  - `minViewportWidth`: minimum viewport width in CSS pixels for this
- *      variant to be considered usable. `0` means no width restriction.
- *  - `requiresLTR`: when `true`, this variant is skipped in RTL locales.
- *  - `fallback`: another variant ID to try when this variant's constraints
- *      aren't met, or `null` to fall through to the default newtab logo.
- *
- * Universal constraints that apply to every variant (e.g.
- * `prefers-reduced-motion: reduce` handling) are NOT encoded here; they
- * are handled at the call site or inside the variation component instead.
- */
-const LOGO_VARIATIONS = {
-  "spin-ball-small": {
-    component: SpinBallSmall,
-    minViewportWidth: 0,
-    requiresLTR: false,
-    fallback: null
-  },
-  "spin-smooth": {
-    component: SpinSmooth,
-    minViewportWidth: 0,
-    requiresLTR: false,
-    fallback: null
-  },
-  "rotating-ball": {
-    component: RotatingBall,
-    minViewportWidth: 0,
-    requiresLTR: false,
-    fallback: null
-  },
-  "football-bounce": {
-    component: FootballBounce,
-    minViewportWidth: 0,
-    requiresLTR: true,
-    fallback: "spin-smooth"
-  }
-};
-const VARIANT_THRESHOLDS = Object.values(LOGO_VARIATIONS).map(v => v.minViewportWidth);
-
-/**
- * @backward-compat { version 153 }
- * Walk the fallback chain starting at `variantId`, returning the first
- * variant whose per-variant constraints are satisfied by the supplied
- * environment, or `null` if none are.
- *
- * Cycle-safe: a fallback chain that loops back on itself terminates as soon
- * as a previously-seen ID is encountered.
- *
- * @param {string|null|undefined} variantId
- *   The variant ID to start walking from (typically the value of the
- *   trainhopConfig or pref). Falsy values short-circuit to `null`.
- * @param {object} env
- *   The current rendering environment.
- * @param {number} env.viewportWidth
- *   The largest `min-width` breakpoint the viewport currently satisfies, in
- *   CSS pixels. A variant passes the width gate when its `minViewportWidth`
- *   is at or below this number.
- * @param {boolean} env.isLTR
- *   `true` if the document direction is LTR. A variant whose `requiresLTR`
- *   is `true` is skipped when this is `false`.
- * @returns {object|null}
- *   The selected variant entry from `LOGO_VARIATIONS`, or `null` when no
- *   variant in the chain is usable (callers should render the default logo).
- */
-function pickVariant(variantId, {
-  viewportWidth,
-  isLTR
-}) {
-  let id = variantId;
-  const seen = new Set();
-  while (id && !seen.has(id)) {
-    seen.add(id);
-    const v = LOGO_VARIATIONS[id];
-    if (!v) {
-      return null;
-    }
-    const widthOk = viewportWidth >= v.minViewportWidth;
-    const dirOk = !v.requiresLTR || isLTR;
-    if (widthOk && dirOk) {
-      return v;
-    }
-    id = v.fallback;
-  }
-  return null;
-}
-
-/**
- * @backward-compat { version 153 }
- * Subscribe to a set of `(min-width: Npx)` media queries and return the
- * largest threshold currently matched. Useful for picking a behaviour based
- * on the current viewport size while only re-rendering on breakpoint
- * crossings (not on every `resize` tick).
- *
- * @param {number[]} thresholds
- *   The breakpoints to observe, in CSS pixels. Duplicates are deduplicated.
- *   Pass a stable array reference (e.g. a module-level constant) so the
- *   underlying `MediaQueryList` instances aren't recreated on every render.
- * @returns {number}
- *   The largest threshold in `thresholds` whose query currently matches, or
- *   `0` if none of them do.
- */
-function useMaxMatchedMinWidth(thresholds) {
-  const queries = (0,external_React_namespaceObject.useMemo)(() => {
-    const unique = [...new Set(thresholds)].sort((a, b) => a - b);
-    return unique.map(px => ({
-      px,
-      mql: window.matchMedia(`(min-width: ${px}px)`)
-    }));
-  }, [thresholds]);
-  const computeMax = () => {
-    let max = 0;
-    for (const {
-      px,
-      mql
-    } of queries) {
-      if (mql.matches) {
-        max = px;
-      }
-    }
-    return max;
-  };
-  const [max, setMax] = (0,external_React_namespaceObject.useState)(computeMax);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    const onChange = () => setMax(computeMax());
-    for (const {
-      mql
-    } of queries) {
-      mql.addEventListener("change", onChange);
-    }
-    setMax(computeMax());
-    return () => {
-      for (const {
-        mql
-      } of queries) {
-        mql.removeEventListener("change", onChange);
-      }
-    };
-    // computeMax is recreated each render but closes over the stable
-    // `queries` array, so depending on `queries` alone is correct.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queries]);
-  return max;
-}
-
-/**
- * The newtab logo. Renders either the default Firefox logo + wordmark, or a
- * registered logo variation when one is selected and its environmental
- * constraints are met.
- *
- * Variant selection priority (first non-empty wins):
- *   1. `prefs.trainhopConfig.logo.variation` (experiment-driven).
- *   2. `prefs[PREF_LOGO_VARIATION]` (user pref — for local testing).
- *   3. None → default logo.
- *
- * Reduced-motion users still get the variant rendered (statically, at its
- * frame-0 keyframe state); the variant's click handler is responsible for
- * not invoking `play()` when motion is suppressed. This keeps the visual
- * presence consistent across users without forcing animation on anyone.
- */
 function Logo() {
-  // @backward-compat { version 153 }
-  // The four lines below (useSelector + useMaxMatchedMinWidth + isLTR +
-  // the pickVariant/VariantComponent block) can be removed after Firefox
-  // 153 hits Release. Logo() reverts to a plain render of the default
-  // logo + wordmark.
-  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
-  const viewportWidth = useMaxMatchedMinWidth(VARIANT_THRESHOLDS);
-  const isLTR = document.dir === "ltr";
-  const trainhopVariant = prefs.trainhopConfig?.logo?.variation;
-  const prefVariant = prefs[PREF_LOGO_VARIATION];
-  const variantId = trainhopVariant || prefVariant || null;
-
-  // All logo variations are gated on the Sports Widget being enabled —
-  // when the widget is off, the variations are conceptually
-  // inapplicable and the standard logo is shown regardless of any
-  // trainhopConfig/pref selection.
-  const widgetsEnabled = prefs[Logo_PREF_WIDGETS_ENABLED];
-  const sportsWidget = WIDGET_REGISTRY.find(w => w.id === "sportsWidget");
-  const sportsWidgetEnabled = isWidgetEnabled(sportsWidget, prefs, widgetsEnabled);
-  const variant = sportsWidgetEnabled && variantId ? pickVariant(variantId, {
-    viewportWidth,
-    isLTR
-  }) : null;
-  const VariantComponent = variant?.component;
   return /*#__PURE__*/external_React_default().createElement("h1", {
     className: "logo-and-wordmark-wrapper"
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "logo-and-wordmark",
     role: "img",
     "data-l10n-id": "newtab-logo-and-wordmark"
-  }, VariantComponent ? /*#__PURE__*/external_React_default().createElement(VariantComponent, null) : /*#__PURE__*/external_React_default().createElement("div", {
+  }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "logo"
   }), /*#__PURE__*/external_React_default().createElement("div", {
     className: "wordmark"
@@ -28641,6 +29279,10 @@ function WidgetsSidebar({
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const widgetsEnabled = prefs[WidgetsSidebar_PREF_WIDGETS_ENABLED];
   const novaEnabled = prefs[WidgetsSidebar_PREF_NOVA_ENABLED];
+
+  // Only one widget is supported here going forward: .sidebar-inline-end
+  // subgrids two rows of the outer grid, and anything past that overflows into
+  // the .content-full-width band below it.
   const sidebarWidgets = WIDGET_REGISTRY.filter(w => resolveWidgetHasSidebar(w, prefs) && isWidgetEnabled(w, prefs, widgetsEnabled) && resolveWidgetSize(w, prefs) === "small");
   if (!sidebarWidgets.length) {
     return null;
@@ -29517,6 +30159,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     this.applyBodyClasses = this.applyBodyClasses.bind(this);
     this.toggleSectionsMgmtPanel = this.toggleSectionsMgmtPanel.bind(this);
     this.toggleWidgetsManagementPanel = this.toggleWidgetsManagementPanel.bind(this);
+    this.toggleThemesPanel = this.toggleThemesPanel.bind(this);
     this.openWidgetsPanel = this.openWidgetsPanel.bind(this);
     this.attachSearchSentinel = this.attachSearchSentinel.bind(this);
     this.onSearchSentinelIntersect = this.onSearchSentinelIntersect.bind(this);
@@ -29530,7 +30173,8 @@ class BaseContent extends (external_React_default()).PureComponent {
       showDownloadHighlightOverride: null,
       visible: false,
       showSectionsMgmtPanel: false,
-      showWidgetsManagementPanel: false
+      showWidgetsManagementPanel: false,
+      showThemesPanel: false
     };
     this.spocPlaceholderStartTime = null;
   }
@@ -29945,6 +30589,8 @@ class BaseContent extends (external_React_default()).PureComponent {
   }
   async updateWallpaper() {
     const prefs = this.props.Prefs.values;
+    // Bump every call so a newer selection supersedes an in-flight decode.
+    const applyToken = this.nextWallpaperToken();
     const novaEnabled = prefs[Base_PREF_NOVA_ENABLED];
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
     const wallpapersUserEnabled = prefs["newtabWallpapers.user.enabled"];
@@ -29968,6 +30614,11 @@ class BaseContent extends (external_React_default()).PureComponent {
       __webpack_require__.g.document?.body.style.removeProperty("--newtab-wallpaper-color");
       __webpack_require__.g.document?.body.style.removeProperty("--newtab-wallpaper-backgroundPosition");
       __webpack_require__.g.document?.body.classList.remove("lightWallpaper", "darkWallpaper");
+      return;
+    }
+
+    // Keep the current background until the custom wallpaper's URL hydrates.
+    if (selectedWallpaper === "custom" && !uploadedWallpaperUrl) {
       return;
     }
 
@@ -30002,11 +30653,36 @@ class BaseContent extends (external_React_default()).PureComponent {
         }
       }
     }
+
+    // Decode a replacement before swapping so the current wallpaper stays up
+    // until it's ready; initial renders (nothing painted) apply synchronously.
+    if (selectedWallpaper === "custom" && url && __webpack_require__.g.document?.body.style.getPropertyValue("--newtab-wallpaper") && !(await this.decodeWallpaper(url, applyToken))) {
+      return;
+    }
     __webpack_require__.g.document?.body.style.setProperty("--newtab-wallpaper", `url(${url})`);
     __webpack_require__.g.document?.body.style.setProperty("--newtab-wallpaper-backgroundPosition", backgroundPosition);
     __webpack_require__.g.document?.body.style.setProperty("--newtab-wallpaper-color", color || "transparent");
     __webpack_require__.g.document?.body.classList.remove("lightWallpaper", "darkWallpaper");
     __webpack_require__.g.document?.body.classList.add(newTheme === "dark" ? "darkWallpaper" : "lightWallpaper");
+  }
+
+  // Monotonic token to detect if a newer updateWallpaper ran mid-decode.
+  nextWallpaperToken() {
+    this._wallpaperApplyToken = (this._wallpaperApplyToken ?? 0) + 1;
+    return this._wallpaperApplyToken;
+  }
+
+  // Returns false if decode fails or a newer update supersedes this one, so the
+  // current wallpaper stays painted.
+  async decodeWallpaper(url, applyToken) {
+    try {
+      const image = new __webpack_require__.g.Image();
+      image.src = url;
+      await image.decode();
+    } catch {
+      return false;
+    }
+    return applyToken === this._wallpaperApplyToken;
   }
   toggleDownloadHighlight() {
     this.setState(prevState => {
@@ -30051,6 +30727,11 @@ class BaseContent extends (external_React_default()).PureComponent {
   toggleWidgetsManagementPanel() {
     this.setState(prevState => ({
       showWidgetsManagementPanel: !prevState.showWidgetsManagementPanel
+    }));
+  }
+  toggleThemesPanel() {
+    this.setState(prevState => ({
+      showThemesPanel: !prevState.showThemesPanel
     }));
   }
   openWidgetsPanel() {
@@ -30125,6 +30806,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       pocketEnabled: prefs["feeds.section.topstories"],
       showInferredPersonalizationEnabled: prefs[Base_PREF_INFERRED_PERSONALIZATION_USER],
       topSitesRowsCount: prefs.topSitesRows,
+      webNotificationsEnabled: prefs.showWebNotifications,
       weatherEnabled: novaEnabled ? prefs["widgets.weather.enabled"] : prefs.showWeather
     };
     const pocketRegion = prefs["feeds.system.topstories"];
@@ -30133,6 +30815,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     // system.showWeather / trainhopConfig.weather), so it keeps its own check
     // plus the additive widgetsSettings.weatherVisible override.
     const mayHaveWeather = prefs["system.showWeather"] || prefs.trainhopConfig?.weather?.enabled || prefs.trainhopConfig?.widgetsSettings?.weatherVisible;
+    const mayHaveWebNotifications = prefs["system.showWebNotifications"] || prefs.trainhopConfig?.webNotifications?.enabled;
     const supportUrl = prefs["support.url"];
 
     // Widget toggle visibility is resolved by the shared registry helpers, which
@@ -30224,6 +30907,36 @@ class BaseContent extends (external_React_default()).PureComponent {
       const isPageEmpty = noContentSectionsEnabled && !prefs.showSearch && !hasAnyEnabledWidget;
       const hasManyTopSitesRows = topSitesEnabled && prefs.topSitesRows > 2;
       const logoShouldBeCentered = !pocketEnabled && !hasContentWidgets && !hasManyTopSitesRows;
+      // Rendered as a direct child of .container unless the logo is centered,
+      // so position: sticky is bounded by .container (which spans the whole
+      // page) rather than .content (which now ends above the content band).
+      // With a centered logo the search has to stay under it inside .content.
+      const searchArea = prefs.showSearch && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
+        ref: this.attachSearchSentinel,
+        className: "sticky-search-sentinel",
+        "aria-hidden": "true"
+      }), /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Search_Search, Base_extends({
+        showLogo: false
+      }, props.Search))));
+      // Slotted into DiscoveryStreamBase between the widgets and the feed,
+      // which is the only place that boundary exists now that both live in the
+      // .content-full-width band.
+      const aboveContentFeedMessage = shouldShowASRouterNewTabMessage(this.props.Messages, "ASRouterNewTabMessage", ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_CONTENT_FEED) && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
+        dispatch: this.props.dispatch
+      }, /*#__PURE__*/external_React_default().createElement(ExternalComponentWrapper, {
+        type: "ASROUTER_NEWTAB_MESSAGE",
+        messageData: this.props.Messages.messageData,
+        className: "asrouter-newtab-message-wrapper"
+      })));
+      // Widgets (injected via DiscoveryStreamBase) + content feed. Always render
+      // in the .content-full-width band below the grid.
+      const contentFeed = isDiscoveryStream && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, {
+        className: "borderless-error"
+      }, /*#__PURE__*/external_React_default().createElement(DiscoveryStreamBase, {
+        locale: props.App.locale,
+        spocsLoading: this.isSpocsOnDemandExpired,
+        aboveContentFeed: aboveContentFeedMessage
+      }));
       return /*#__PURE__*/external_React_default().createElement(BaseContext.Provider, {
         value: baseContextValue
       }, /*#__PURE__*/external_React_default().createElement("div", {
@@ -30236,15 +30949,11 @@ class BaseContent extends (external_React_default()).PureComponent {
         className: "sidebar-inline-end"
       }, novaEnabled && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(WidgetsSidebar, {
         dispatch: props.dispatch
-      }))), /*#__PURE__*/external_React_default().createElement("main", {
+      }))), !logoShouldBeCentered && searchArea, /*#__PURE__*/external_React_default().createElement("main", {
+        className: "content-main"
+      }, /*#__PURE__*/external_React_default().createElement("div", {
         className: "content"
-      }, !prefs.hideLogo && logoShouldBeCentered && !isPageEmpty && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Logo, null)), prefs.showSearch && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
-        ref: this.attachSearchSentinel,
-        className: "sticky-search-sentinel",
-        "aria-hidden": "true"
-      }), /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Search_Search, Base_extends({
-        showLogo: false
-      }, props.Search)))), shouldShowASRouterNewTabMessage(this.props.Messages, "ASRouterNewTabMessage", ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_TOPSITES) && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
+      }, !prefs.hideLogo && logoShouldBeCentered && !isPageEmpty && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Logo, null)), logoShouldBeCentered && searchArea, shouldShowASRouterNewTabMessage(this.props.Messages, "ASRouterNewTabMessage", ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_TOPSITES) && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
         dispatch: this.props.dispatch
       }, /*#__PURE__*/external_React_default().createElement(ExternalComponentWrapper, {
         type: "ASROUTER_NEWTAB_MESSAGE",
@@ -30261,18 +30970,9 @@ class BaseContent extends (external_React_default()).PureComponent {
         type: "ASROUTER_NEWTAB_MESSAGE",
         messageData: this.props.Messages.messageData,
         className: "asrouter-newtab-message-wrapper"
-      }))), shouldShowASRouterNewTabMessage(this.props.Messages, "ASRouterNewTabMessage", ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_CONTENT_FEED) && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
-        dispatch: this.props.dispatch
-      }, /*#__PURE__*/external_React_default().createElement(ExternalComponentWrapper, {
-        type: "ASROUTER_NEWTAB_MESSAGE",
-        messageData: this.props.Messages.messageData,
-        className: "asrouter-newtab-message-wrapper"
-      }))), isDiscoveryStream && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, {
-        className: "borderless-error"
-      }, /*#__PURE__*/external_React_default().createElement(DiscoveryStreamBase, {
-        locale: props.App.locale,
-        spocsLoading: this.isSpocsOnDemandExpired
-      })), !pocketEnabled && multistageMessageFeed)), /*#__PURE__*/external_React_default().createElement(ConfirmDialog, null), /*#__PURE__*/external_React_default().createElement("menu", {
+      }))), !pocketEnabled && multistageMessageFeed), contentFeed && /*#__PURE__*/external_React_default().createElement("div", {
+        className: "content-full-width"
+      }, contentFeed))), /*#__PURE__*/external_React_default().createElement(ConfirmDialog, null), /*#__PURE__*/external_React_default().createElement("menu", {
         className: "personalizeButtonWrapper nova-enabled"
       }, /*#__PURE__*/external_React_default().createElement(CustomizeMenu, {
         onClose: this.closeCustomizationMenu,
@@ -30288,6 +30988,7 @@ class BaseContent extends (external_React_default()).PureComponent {
         mayHaveTopicSections: mayHavePersonalizedTopicSections,
         mayHaveInferredPersonalization: mayHaveInferredPersonalization,
         mayHaveWeather: mayHaveWeather,
+        mayHaveWebNotifications: mayHaveWebNotifications,
         mayHaveWidgets: mayHaveWidgets,
         mayHaveTimerWidget: mayHaveTimerWidget,
         mayHaveListsWidget: mayHaveListsWidget,
@@ -30304,6 +31005,8 @@ class BaseContent extends (external_React_default()).PureComponent {
         showSectionsMgmtPanel: this.state.showSectionsMgmtPanel,
         showWidgetsManagementPanel: this.state.showWidgetsManagementPanel,
         toggleWidgetsManagementPanel: this.toggleWidgetsManagementPanel,
+        toggleThemesPanel: this.toggleThemesPanel,
+        showThemesPanel: this.state.showThemesPanel,
         widgetsEnabled: prefs["widgets.enabled"],
         dispatch: this.props.dispatch
       }), (shouldShowOMCHighlight(this.props.Messages, "CustomWallpaperHighlight") || shouldShowOMCHighlight(this.props.Messages, "WorldCupWallpaperHighlight") || shouldShowOMCHighlight(this.props.Messages, "WorldCupSemiFinalWallpaperHighlight")) && /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
@@ -30382,6 +31085,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       mayHaveTopicSections: mayHavePersonalizedTopicSections,
       mayHaveInferredPersonalization: mayHaveInferredPersonalization,
       mayHaveWeather: mayHaveWeather,
+      mayHaveWebNotifications: mayHaveWebNotifications,
       mayHaveWidgets: mayHaveWidgets,
       mayHaveTimerWidget: mayHaveTimerWidget,
       mayHaveListsWidget: mayHaveListsWidget,
@@ -30395,7 +31099,9 @@ class BaseContent extends (external_React_default()).PureComponent {
       weatherDisplay: prefs["weather.display"],
       showing: customizeMenuVisible,
       toggleSectionsMgmtPanel: this.toggleSectionsMgmtPanel,
-      showSectionsMgmtPanel: this.state.showSectionsMgmtPanel
+      showSectionsMgmtPanel: this.state.showSectionsMgmtPanel,
+      toggleThemesPanel: this.toggleThemesPanel,
+      showThemesPanel: this.state.showThemesPanel
     }), shouldShowOMCHighlight(this.props.Messages, "CustomWallpaperHighlight") && /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
       dispatch: this.props.dispatch
     }, /*#__PURE__*/external_React_default().createElement(WallpaperFeatureHighlight, {

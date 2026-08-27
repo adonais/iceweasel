@@ -8,6 +8,8 @@ const CHROME_WORKER_URL =
   "chrome://mochitests/content/browser/devtools/shared/commands/resource/tests/parent_worker_debugger_statement.js";
 
 add_task(async function test_parent_worker_interactive_pause() {
+  // We use a commands object for the main process
+  await pushPref("devtools.chrome.enabled", true);
   await pushPref("dom.worker.remoteDebugger.enabled", true);
   await pushPref("devtools.debugger.threads-visible", true);
 

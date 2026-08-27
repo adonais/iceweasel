@@ -55,6 +55,22 @@ const TEST_URI = `
     details#vip::details-content {
       color: red;
     }
+
+    select {
+      appearance: base-select;
+      color: teal;
+    }
+
+    ::picker(select) {
+      outline: 5px solid;
+      color: hotpink;
+    }
+
+    option {
+      padding-inline: 1em;
+    }
+}
+
   </style>
   <details open>
     <summary>
@@ -81,9 +97,13 @@ const TEST_URI = `
     <summary>s</summary>
     <article>hello</hello>
   </details>
+  <select>
+    <option>Option</option>
+  </select>
 `;
 
 add_task(async function () {
+  await pushPref("dom.select.customizable_select.enabled", true);
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   const { inspector, view } = await openRuleView();
 
@@ -612,6 +632,76 @@ add_task(async function () {
           overridden: true,
         },
       ],
+    },
+  ]);
+
+  info(
+    "Check that there's no inherited ::picker header when top-level <select> is selected"
+  );
+  await selectNode("select", inspector);
+  await checkRuleViewContent(view, [
+    {
+      header: "Pseudo-elements",
+    },
+    {
+      selector: `::picker(select)`,
+      ancestorRulesData: null,
+      declarations: [
+        { name: "outline", value: "5px solid" },
+        { name: "color", value: "hotpink" },
+      ],
+    },
+    {
+      header: "This Element",
+    },
+    {
+      selector: `element`,
+      ancestorRulesData: null,
+      selectorEditable: false,
+      declarations: [],
+    },
+    {
+      selector: `select`,
+      ancestorRulesData: null,
+      declarations: [
+        { name: "appearance", value: "base-select" },
+        { name: "color", value: "teal" },
+      ],
+    },
+  ]);
+
+  info(
+    "Check that there are expected inherited headers when <option> is selected"
+  );
+  await selectNode("select > option", inspector);
+
+  await checkRuleViewContent(view, [
+    {
+      selector: `element`,
+      ancestorRulesData: null,
+      selectorEditable: false,
+      declarations: [],
+    },
+    {
+      selector: `option`,
+      ancestorRulesData: null,
+      declarations: [{ name: "padding-inline", value: "1em" }],
+    },
+    {
+      header: "Inherited from select::picker(select)",
+    },
+    {
+      selector: `::picker(select)`,
+      inherited: true,
+      declarations: [{ name: "color", value: "hotpink" }],
+    },
+    {
+      header: "Inherited from select",
+    },
+    {
+      selector: `select`,
+      inherited: true,
+      declarations: [{ name: "color", value: "teal", overridden: true }],
     },
   ]);
 });

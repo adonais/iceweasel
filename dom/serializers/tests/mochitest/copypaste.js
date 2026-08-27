@@ -520,6 +520,13 @@ async function testCopyPaste(isXHTML) {
     setTimeout(resolve, 0);
   });
 
+  // ============ long lines in markup shouldn't be wrapped (bug 1498271)
+  await copyChildrenToClipboard("long");
+  testHtmlClipboardValue(
+    "text/html",
+    document.getElementById("long").textContent
+  );
+
   if (!isXHTML) {
     // ============ copy from ruby
 

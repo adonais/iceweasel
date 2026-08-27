@@ -3,10 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-import {
-  UrlbarProvider,
-  UrlbarUtils,
-} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 
 const lazy = {};
 
@@ -20,39 +18,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarProviderGlobalActions:
     "moz-src:///browser/components/urlbar/UrlbarProviderGlobalActions.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
-  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "appUpdater", () => new lazy.AppUpdater());
-
-// The possible tips to show.
-const TIPS = {
-  NONE: "",
-  CLEAR: "intervention_clear",
-  REFRESH: "intervention_refresh",
-
-  // There's an update available, but the user's pref says we should ask them to
-  // download and apply it.
-  UPDATE_ASK: "intervention_update_ask",
-
-  // The updater is currently checking.  We don't actually show a tip for this,
-  // but we use it to tell whether we should wait for the check to complete in
-  // startQuery.  See startQuery for details.
-  UPDATE_CHECKING: "intervention_update_checking",
-
-  // The user's browser is up to date, but they triggered the update
-  // intervention. We show this special refresh intervention instead.
-  UPDATE_REFRESH: "intervention_update_refresh",
-
-  // There's an update and it's been downloaded and applied. The user needs to
-  // restart to finish.
-  UPDATE_RESTART: "intervention_update_restart",
-
-  // We can't update the browser or possibly even check for updates for some
-  // reason, so the user should download the latest version from the web.
-  UPDATE_WEB: "intervention_update_web",
-};
 
 const EN_LOCALE_MATCH = /^en(-.*)$/;
 
@@ -381,43 +350,43 @@ export class QueryScorer {
 /**
  * Gets appropriate values for each tip's payload.
  *
- * @param {string} tip a value from the TIPS enum
+ * @param {string} tip a value from UrlbarShared.INTERVENTION_TIP_TYPE
  * @returns {object} Properties to include in the payload
  */
 function getPayloadForTip(tip) {
   const baseURL = Services.urlFormatter.formatURLPref("app.support.baseURL");
   switch (tip) {
-    case TIPS.CLEAR:
+    case UrlbarShared.INTERVENTION_TIP_TYPE.CLEAR:
       return {
         titleL10n: { id: "intervention-clear-data" },
         buttons: [{ l10n: { id: "intervention-clear-data-confirm" } }],
         helpUrl: baseURL + "delete-browsing-search-download-history-firefox",
       };
-    case TIPS.REFRESH:
+    case UrlbarShared.INTERVENTION_TIP_TYPE.REFRESH:
       return {
         titleL10n: { id: "intervention-refresh-profile" },
         buttons: [{ l10n: { id: "intervention-refresh-profile-confirm" } }],
         helpUrl: baseURL + "refresh-firefox-reset-add-ons-and-settings",
       };
-    case TIPS.UPDATE_ASK:
+    case UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_ASK:
       return {
         titleL10n: { id: "intervention-update-ask" },
         buttons: [{ l10n: { id: "intervention-update-ask-confirm" } }],
         helpUrl: baseURL + "update-firefox-latest-release",
       };
-    case TIPS.UPDATE_REFRESH:
+    case UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_REFRESH:
       return {
         titleL10n: { id: "intervention-update-refresh" },
         buttons: [{ l10n: { id: "intervention-update-refresh-confirm" } }],
         helpUrl: baseURL + "refresh-firefox-reset-add-ons-and-settings",
       };
-    case TIPS.UPDATE_RESTART:
+    case UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_RESTART:
       return {
         titleL10n: { id: "intervention-update-restart" },
         buttons: [{ l10n: { id: "intervention-update-restart-confirm" } }],
         helpUrl: baseURL + "update-firefox-latest-release",
       };
-    case TIPS.UPDATE_WEB:
+    case UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_WEB:
       return {
         titleL10n: { id: "intervention-update-web" },
         buttons: [{ l10n: { id: "intervention-update-web-confirm" } }],
@@ -456,23 +425,14 @@ export class UrlbarProviderInterventions extends UrlbarProvider {
   constructor() {
     super();
     // The tip we should currently show.
-    this.currentTip = TIPS.NONE;
+    this.currentTip = UrlbarShared.INTERVENTION_TIP_TYPE.NONE;
   }
 
   /**
-   * Enum of the types of intervention tips.
-   *
-   * @returns {typeof TIPS}
-   */
-  static get TIP_TYPE() {
-    return TIPS;
-  }
-
-  /**
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof UrlbarShared.PROVIDER_TYPE>}
    */
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.PROFILE;
+    return UrlbarShared.PROVIDER_TYPE.PROFILE;
   }
 
   /**
@@ -485,7 +445,7 @@ export class UrlbarProviderInterventions extends UrlbarProvider {
   async isActive(queryContext) {
     if (
       !queryContext.searchString ||
-      queryContext.searchString.length > UrlbarUtils.MAX_TEXT_LENGTH ||
+      queryContext.searchString.length > UrlbarShared.MAX_TEXT_LENGTH ||
       lazy.UrlUtils.REGEXP_LIKE_PROTOCOL.test(queryContext.searchString) ||
       !EN_LOCALE_MATCH.test(Services.locale.appLocaleAsBCP47) ||
       !Services.policies.isAllowed("urlbarinterventions") ||
@@ -496,7 +456,7 @@ export class UrlbarProviderInterventions extends UrlbarProvider {
       return false;
     }
 
-    this.currentTip = TIPS.NONE;
+    this.currentTip = UrlbarShared.INTERVENTION_TIP_TYPE.NONE;
 
     // Get the scores and the top score.
     let docScores = UrlbarProviderInterventions.lazy.queryScorer.score(
@@ -522,16 +482,16 @@ export class UrlbarProviderInterventions extends UrlbarProvider {
     } else if (topDocIDs.has("clear")) {
       let window = lazy.BrowserWindowTracker.getTopWindow();
       if (!lazy.PrivateBrowsingUtils.isWindowPrivate(window)) {
-        this.currentTip = TIPS.CLEAR;
+        this.currentTip = UrlbarShared.INTERVENTION_TIP_TYPE.CLEAR;
       }
     } else if (topDocIDs.has("refresh")) {
-      // Note that the "update" case can set currentTip to TIPS.REFRESH too.
-      this.currentTip = TIPS.REFRESH;
+      // Note that the "update" case can set currentTip to UrlbarShared.INTERVENTION_TIP_TYPE.REFRESH too.
+      this.currentTip = UrlbarShared.INTERVENTION_TIP_TYPE.REFRESH;
     }
 
     return (
-      this.currentTip != TIPS.NONE &&
-      (this.currentTip != TIPS.REFRESH ||
+      this.currentTip != UrlbarShared.INTERVENTION_TIP_TYPE.NONE &&
+      (this.currentTip != UrlbarShared.INTERVENTION_TIP_TYPE.REFRESH ||
         Services.policies.isAllowed("profileRefresh"))
     );
   }
@@ -555,34 +515,34 @@ export class UrlbarProviderInterventions extends UrlbarProvider {
     switch (lazy.appUpdater.status) {
       case lazy.AppUpdater.STATUS.READY_FOR_RESTART:
         // Prompt the user to restart.
-        this.currentTip = TIPS.UPDATE_RESTART;
+        this.currentTip = UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_RESTART;
         break;
       case lazy.AppUpdater.STATUS.DOWNLOAD_AND_INSTALL:
         // There's an update available, but the user's pref says we should ask
         // them to download and apply it.
-        this.currentTip = TIPS.UPDATE_ASK;
+        this.currentTip = UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_ASK;
         break;
       case lazy.AppUpdater.STATUS.NO_UPDATES_FOUND:
         // We show a special refresh tip when the browser is up to date.
-        this.currentTip = TIPS.UPDATE_REFRESH;
+        this.currentTip = UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_REFRESH;
         break;
       case lazy.AppUpdater.STATUS.CHECKING:
         // This will be the case the first time we check.  See startQuery for
         // how this special tip is handled.
-        this.currentTip = TIPS.UPDATE_CHECKING;
+        this.currentTip = UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_CHECKING;
         break;
       case lazy.AppUpdater.STATUS.NO_UPDATER:
       case lazy.AppUpdater.STATUS.UPDATE_DISABLED_BY_POLICY:
         // If the updater is disabled at build time or at runtime, either by
         // policy or because we're in a package, do not select any update tips.
-        this.currentTip = TIPS.NONE;
+        this.currentTip = UrlbarShared.INTERVENTION_TIP_TYPE.NONE;
         break;
       default:
         // Give up and ask the user to download the latest version from the
         // web. We default to this case when the update is still downloading
         // because an update doesn't actually occur if the user were to
         // restart the browser. See bug 1625241.
-        this.currentTip = TIPS.UPDATE_WEB;
+        this.currentTip = UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_WEB;
         break;
     }
   }
@@ -597,7 +557,7 @@ export class UrlbarProviderInterventions extends UrlbarProvider {
   async startQuery(queryContext, addCallback) {
     let instance = this.queryInstance;
 
-    // TIPS.UPDATE_CHECKING is special, and we never actually show a tip that
+    // UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_CHECKING is special, and we never actually show a tip that
     // reflects a "checking" status.  Instead it's handled like this.  We call
     // appUpdater.check() to start an update check.  If we haven't called it
     // before, then when it returns, appUpdater.status will be
@@ -610,11 +570,13 @@ export class UrlbarProviderInterventions extends UrlbarProvider {
     // addCallback and add our result.  It doesn't matter how long the check
     // takes because if another query starts, the view is closed, or the user
     // changes the selection, the query will be canceled.
-    if (this.currentTip == TIPS.UPDATE_CHECKING) {
+    if (this.currentTip == UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_CHECKING) {
       // First check the status because it may have changed between the time
       // isActive was called and now.
       this._setCurrentTipFromAppUpdaterStatus();
-      if (this.currentTip == TIPS.UPDATE_CHECKING) {
+      if (
+        this.currentTip == UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_CHECKING
+      ) {
         // The updater is still checking, so wait for it to finish.
         await new Promise(resolve => {
           this._appUpdaterListener = () => {
@@ -632,22 +594,24 @@ export class UrlbarProviderInterventions extends UrlbarProvider {
         // longer be checking, but guard against it just in case by returning
         // early.
         this._setCurrentTipFromAppUpdaterStatus();
-        if (this.currentTip == TIPS.UPDATE_CHECKING) {
+        if (
+          this.currentTip == UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_CHECKING
+        ) {
           return;
         }
       }
     }
-    // At this point, this.currentTip != TIPS.UPDATE_CHECKING because we
+    // At this point, this.currentTip != UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_CHECKING because we
     // returned early above if it was.
 
     let result = new lazy.UrlbarResult({
-      type: lazy.UrlbarShared.RESULT_TYPE.TIP,
-      source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
+      type: UrlbarShared.RESULT_TYPE.TIP,
+      source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       suggestedIndex: 1,
       payload: {
         ...getPayloadForTip(this.currentTip),
         type: this.currentTip,
-        icon: UrlbarUtils.ICON.TIP,
+        icon: UrlbarShared.ICON.TIP,
         helpL10n: {
           id: "urlbar-result-menu-tip-get-help2",
         },
@@ -673,20 +637,20 @@ export class UrlbarProviderInterventions extends UrlbarProvider {
 
     // Do the tip action.
     switch (tip) {
-      case TIPS.CLEAR:
+      case UrlbarShared.INTERVENTION_TIP_TYPE.CLEAR:
         openClearHistoryDialog(window);
         break;
-      case TIPS.REFRESH:
-      case TIPS.UPDATE_REFRESH:
+      case UrlbarShared.INTERVENTION_TIP_TYPE.REFRESH:
+      case UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_REFRESH:
         resetBrowser(window);
         break;
-      case TIPS.UPDATE_ASK:
+      case UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_ASK:
         installBrowserUpdateAndRestart();
         break;
-      case TIPS.UPDATE_RESTART:
+      case UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_RESTART:
         restartBrowser();
         break;
-      case TIPS.UPDATE_WEB:
+      case UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_WEB:
         window.gBrowser.selectedTab = window.gBrowser.addWebTab(
           "https://www.mozilla.org/firefox/new/"
         );

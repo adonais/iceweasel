@@ -39,10 +39,18 @@ tls13_HkdfExtract(PK11SymKey *ikm1, PK11SymKey *ikm2, SSLHashType baseHash,
     PK11SymKey *prk;
     static const PRUint8 zeroKeyBuf[HASH_LENGTH_MAX];
     SECItem zeroKeyItem = { siBuffer, CONST_CAST(PRUint8, zeroKeyBuf), kTlsHkdfInfo[baseHash].hashSize };
+    static const PRUint8 zeroSaltBuf[HASH_LENGTH_MAX];
+    SECItem zeroSaltItem = { siBuffer, CONST_CAST(PRUint8, zeroSaltBuf), kTlsHkdfInfo[baseHash].hashSize };
     PK11SlotInfo *slot = NULL;
     PK11SymKey *newIkm2 = NULL;
-    PK11SymKey *newIkm1 = NULL;
+    PK11SymKey *movedIkm1 = NULL;
+    PK11SymKey *movedIkm2 = NULL;
     SECStatus rv;
+
+    if (!prkp) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
 
     params.bExtract = CK_TRUE;
     params.bExpand = CK_FALSE;
@@ -52,48 +60,99 @@ tls13_HkdfExtract(PK11SymKey *ikm1, PK11SymKey *ikm2, SSLHashType baseHash,
     params.pSalt = NULL;
     params.ulSaltLen = 0UL;
     params.hSaltKey = CK_INVALID_HANDLE;
+    params.ulSaltType = 0;
+
+    CK_OBJECT_CLASS ikm2Class = CKO_DATA; /* in case we don't have it we create one of CKO_DATA type */
+
+    if (ikm2) {
+        /* Get the object class of the key(ikm2) */
+        SECItem classItem = { siBuffer, NULL, 0 };
+        rv = PK11_ReadRawAttribute(PK11_TypeSymKey, ikm2, CKA_CLASS, &classItem);
+        if (rv != SECSuccess || classItem.len != sizeof(CK_OBJECT_CLASS)) {
+            SECITEM_FreeItem(&classItem, PR_FALSE);
+            goto cleanup;
+        }
+        memcpy(&ikm2Class, classItem.data, sizeof(ikm2Class));
+        SECITEM_FreeItem(&classItem, PR_FALSE);
+    } else {
+        /* A zero ikm2 is a key of hash-length 0s. */
+        /* if we have ikm1, put the zero key in the same slot */
+        if (ikm1) {
+            slot = PK11_GetSlotFromKey(ikm1);
+        }
+
+        if (!slot || PK11_DoesMechanism(slot, CKM_HKDF_DERIVE) == PR_FALSE) {
+            /* fallback if ikm1 is not provided or the slot doesn't support the mechanism*/
+            if (slot) {
+                PK11_FreeSlot(slot);
+            }
+            slot = PK11_GetBestSlot(CKM_HKDF_DERIVE, NULL);
+        }
+
+        if (!slot) {
+            rv = SECFailure;
+            goto cleanup;
+        }
+
+        newIkm2 = PK11_ImportDataKey(slot, CKM_HKDF_DERIVE, PK11_OriginUnwrap,
+                                     CKA_DERIVE, &zeroKeyItem, NULL);
+        if (!newIkm2) {
+            rv = SECFailure;
+            goto cleanup;
+        }
+        ikm2 = newIkm2;
+    }
+    PORT_Assert(ikm2);
 
     if (!ikm1) {
-        /* PKCS #11 v3.0 has and explict NULL value, which equates to
-         * a sequence of zeros equal in length to the HMAC. */
-        params.ulSaltType = CKF_HKDF_SALT_NULL;
+        if (ikm2Class == CKO_DATA) {
+            /* since PKCS #11 v3.0 it is mandatory to provide CKF_HKDF_SALT_DATA
+             * if key(ikm2) is of type CKO_DATA. see. Section 6.62.3 */
+            params.pSalt = zeroSaltItem.data;
+            params.ulSaltLen = zeroSaltItem.len;
+            params.ulSaltType = CKF_HKDF_SALT_DATA;
+        } else {
+            /* PKCS #11 v3.0 has and explict NULL value, which equates to
+             * a sequence of zeros equal in length to the HMAC. */
+            params.ulSaltType = CKF_HKDF_SALT_NULL;
+        }
     } else {
         /* PKCS #11 v3.0 can take the salt as a key handle */
-        params.hSaltKey = PK11_GetSymKeyHandle(ikm1);
-        params.ulSaltType = CKF_HKDF_SALT_KEY;
+        rv = PK11_SymKeysToSameSlot(CKM_HKDF_DERIVE,
+                                    CKA_DERIVE, CKA_DERIVE,
+                                    ikm2, ikm1, &movedIkm2, &movedIkm1);
 
-        /* if we have both keys, make sure they are in the same slot */
-        if (ikm2) {
-            rv = PK11_SymKeysToSameSlot(CKM_HKDF_DERIVE,
-                                        CKA_DERIVE, CKA_DERIVE,
-                                        ikm2, ikm1, &newIkm2, &newIkm1);
+        if (rv != SECSuccess) {
+            /* couldn't move the keys, try extracting the salt */
+            SECItem *salt;
+            rv = PK11_ExtractKeyValue(ikm1);
             if (rv != SECSuccess) {
-                SECItem *salt;
-                /* couldn't move the keys, try extracting the salt */
-                rv = PK11_ExtractKeyValue(ikm1);
-                if (rv != SECSuccess)
-                    return rv;
-                salt = PK11_GetKeyData(ikm1);
-                if (!salt)
-                    return SECFailure;
-                PORT_Assert(salt->len > 0);
-                /* Set up for Salt as Data instead of Salt as key */
-                params.pSalt = salt->data;
-                params.ulSaltLen = salt->len;
-                params.ulSaltType = CKF_HKDF_SALT_DATA;
+                goto cleanup;
             }
-            /* use the new keys */
-            if (newIkm1) {
-                /* we've moved the key, get the handle for the new key */
-                params.hSaltKey = PK11_GetSymKeyHandle(newIkm1);
-                /* we don't use ikm1 after this, so don't bother setting it */
+            salt = PK11_GetKeyData(ikm1);
+            if (!salt) {
+                rv = SECFailure;
+                goto cleanup;
             }
-            if (newIkm2) {
-                /* new ikm2 key, use the new key */
-                ikm2 = newIkm2;
+            PORT_Assert(salt->len > 0);
+            /* Set up for Salt as Data instead of Salt as key */
+            params.pSalt = salt->data;
+            params.ulSaltLen = salt->len;
+            params.ulSaltType = CKF_HKDF_SALT_DATA;
+        } else {
+            /* use the moved keys */
+            if (movedIkm1) {
+                ikm1 = movedIkm1;
             }
+            if (movedIkm2) {
+                ikm2 = movedIkm2;
+            }
+
+            params.hSaltKey = PK11_GetSymKeyHandle(ikm1);
+            params.ulSaltType = CKF_HKDF_SALT_KEY;
         }
     }
+
     paramsi.data = (unsigned char *)&params;
     paramsi.len = sizeof(params);
 
@@ -101,40 +160,44 @@ tls13_HkdfExtract(PK11SymKey *ikm1, PK11SymKey *ikm2, SSLHashType baseHash,
     PORT_Assert(kTlsHkdfInfo[baseHash].hashSize);
     PORT_Assert(kTlsHkdfInfo[baseHash].hash == baseHash);
 
-    /* A zero ikm2 is a key of hash-length 0s. */
-    if (!ikm2) {
-        /* if we have ikm1, put the zero key in the same slot */
-        slot = ikm1 ? PK11_GetSlotFromKey(ikm1) : PK11_GetBestSlot(CKM_HKDF_DERIVE, NULL);
-        if (!slot) {
-            return SECFailure;
-        }
-
-        newIkm2 = PK11_ImportDataKey(slot, CKM_HKDF_DERIVE, PK11_OriginUnwrap,
-                                     CKA_DERIVE, &zeroKeyItem, NULL);
-        if (!newIkm2) {
-            return SECFailure;
-        }
-        ikm2 = newIkm2;
+    if (params.ulSaltType == CKF_HKDF_SALT_DATA) {
+        PORT_Assert(params.hSaltKey == CK_INVALID_HANDLE);
+        PORT_Assert(params.pSalt != NULL);
     }
-    PORT_Assert(ikm2);
+    if (params.ulSaltType == CKF_HKDF_SALT_NULL) {
+        PORT_Assert(ikm2Class != CKO_DATA);
+        PORT_Assert(params.hSaltKey == CK_INVALID_HANDLE);
+        PORT_Assert(params.pSalt == NULL);
+        PORT_Assert(params.ulSaltLen == 0UL);
+    }
+    if (params.ulSaltType == CKF_HKDF_SALT_KEY) {
+        PORT_Assert(params.hSaltKey != CK_INVALID_HANDLE);
+        PORT_Assert(params.pSalt == NULL);
+        PORT_Assert(params.ulSaltLen == 0UL);
+    }
 
     PRINT_BUF(50, (NULL, "HKDF Extract: IKM1/Salt", params.pSalt, params.ulSaltLen));
     PRINT_KEY(50, (NULL, "HKDF Extract: IKM2", ikm2));
 
     prk = PK11_Derive(ikm2, CKM_HKDF_DERIVE, &paramsi, CKM_HKDF_DERIVE,
                       CKA_DERIVE, 0);
-    PK11_FreeSymKey(newIkm2);
-    PK11_FreeSymKey(newIkm1);
-    if (slot)
-        PK11_FreeSlot(slot);
+
     if (!prk) {
-        return SECFailure;
+        rv = SECFailure;
+        goto cleanup;
     }
 
     PRINT_KEY(50, (NULL, "HKDF Extract", prk));
     *prkp = prk;
+    rv = SECSuccess;
 
-    return SECSuccess;
+cleanup:
+    PK11_FreeSymKey(movedIkm1);
+    PK11_FreeSymKey(movedIkm2);
+    PK11_FreeSymKey(newIkm2);
+    if (slot)
+        PK11_FreeSlot(slot);
+    return rv;
 }
 
 SECStatus
@@ -160,6 +223,20 @@ tls13_HkdfExpandLabelGeneral(CK_MECHANISM_TYPE deriveMech, PK11SymKey *prk,
         (variant == ssl_variant_stream) ? strlen(kLabelPrefixTls) : strlen(kLabelPrefixDtls);
     const char *kLabelPrefix =
         (variant == ssl_variant_stream) ? kLabelPrefixTls : kLabelPrefixDtls;
+    CK_FLAGS flags = 0;
+    CK_KEY_TYPE targetKeyType = PK11_GetKeyType(algorithm, keySize);
+
+    /* PKCS #11 Mechanisms v3.0 Sec 2.62.4: CKM_HKDF_DATA outputs CKO_DATA.
+     * Sec 4.5.2: CKO_DATA objects cannot hold crypto operation flags */
+    if (deriveMech != CKM_HKDF_DATA) {
+        flags |= CKF_SIGN | CKF_VERIFY;
+
+        /* PKCS #11 v3.0 Sec 2.8.2: CKK_GENERIC_SECRET and CKK_HKDF
+         * explicitly do not support encrypt/decrypt operations. */
+        if (targetKeyType != CKK_GENERIC_SECRET && targetKeyType != CKK_HKDF) {
+            flags |= CKF_ENCRYPT | CKF_DECRYPT;
+        }
+    }
 
     PORT_Assert(prk);
     PORT_Assert(keyp);
@@ -221,7 +298,7 @@ tls13_HkdfExpandLabelGeneral(CK_MECHANISM_TYPE deriveMech, PK11SymKey *prk,
     derived = PK11_DeriveWithFlags(prk, deriveMech,
                                    &paramsi, algorithm,
                                    CKA_DERIVE, keySize,
-                                   CKF_SIGN | CKF_VERIFY);
+                                   flags);
     if (!derived) {
         return SECFailure;
     }

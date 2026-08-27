@@ -829,6 +829,11 @@ class MarkerSchema {
     // Do not use it for time information.
     // "Label: 52.23, 0.0054, 123,456.78"
     Decimal,
+    // The hexadecimal should be used for integers that are more meaningful in
+    // base 16, like bit flags. Values wider than a 32-bit unsigned integer
+    // might get truncated on the frontend side.
+    // "Label: 0x1f, 0xdeadbeef"
+    Hexadecimal,
 
     // A flow is a u64 identifier that's unique across processes. All of
     // the markers with same flow id before a terminating flow id will be

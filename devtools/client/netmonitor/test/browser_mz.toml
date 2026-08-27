@@ -58,6 +58,8 @@ support-files = [
   "html_send-beacon.html",
   "html_send-beacon-late-iframe-request.html",
   "html_sorting-test-page.html",
+  "html_speculation-rules.html",
+  "html_speculation-rules_subpage.html",
   "html_statistics-edge-case-page.html",
   "html_statistics-test-page.html",
   "html_status-codes-test-page.html",
@@ -251,6 +253,8 @@ skip-if = [
 ["browser_net_sort-02.js"]
 
 ["browser_net_sort-reset.js"]
+
+["browser_net_speculation-rules-prefetch-requests.js"]
 
 ["browser_net_sse-basic.js"]
 

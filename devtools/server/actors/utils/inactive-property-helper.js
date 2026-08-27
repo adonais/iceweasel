@@ -123,7 +123,7 @@ class InactivePropertyHelper {
    *     The rule itself, a JS function used to identify the conditions
    *     indicating whether a property is valid or not.
    *   fixId:
-   *     A Fluent id containing a suggested solution to the problem that is
+   *     An optional Fluent id containing a suggested solution to the problem that is
    *     causing a property to be inactive.
    *   msgId:
    *     A Fluent id containing an error message explaining why a property is
@@ -156,14 +156,14 @@ class InactivePropertyHelper {
       {
         invalidProperties: ["flex-direction", "flex-flow", "flex-wrap"],
         when: () => !this.flexContainer,
-        fixId: "inactive-css-not-flex-container-fix",
+        fixId: "inactive-css-not-flex-container-fix-1",
         msgId: "inactive-css-not-flex-container",
       },
       // Flex item property used on non-flex item.
       {
         invalidProperties: ["flex", "flex-basis", "flex-grow", "flex-shrink"],
         when: () => !this.flexItem,
-        fixId: "inactive-css-not-flex-item-fix-2",
+        fixId: "inactive-css-not-flex-item-fix-3",
         msgId: "inactive-css-not-flex-item",
       },
       // Grid container property used on non-grid container.
@@ -179,7 +179,7 @@ class InactivePropertyHelper {
           "justify-items",
         ],
         when: () => !this.gridContainer,
-        fixId: "inactive-css-not-grid-container-fix",
+        fixId: "inactive-css-not-grid-container-fix-1",
         msgId: "inactive-css-not-grid-container",
       },
       // Grid/absolutely positioned item property used on non-grid/non-absolutely positioned item.
@@ -194,14 +194,14 @@ class InactivePropertyHelper {
           "grid-row-start",
         ],
         when: () => !this.gridItem && !this.isAbsPosGridElement(),
-        fixId: "inactive-css-not-grid-item-fix-2",
+        fixId: "inactive-css-not-grid-item-fix-3",
         msgId: "inactive-css-not-grid-item",
       },
       // Grid and flex item properties used on non-grid or non-flex item.
       {
         invalidProperties: ["order"],
         when: () => !this.gridItem && !this.flexItem,
-        fixId: "inactive-css-not-grid-or-flex-item-fix-3",
+        fixId: "inactive-css-not-grid-or-flex-item-fix-4",
         msgId: "inactive-css-not-grid-or-flex-item",
       },
       // Absolutely positioned, grid and flex item properties used on non absolutely positioned,
@@ -211,7 +211,7 @@ class InactivePropertyHelper {
         when: () =>
           !this.gridItem && !this.flexItem && !this.isAbsolutelyPositioned,
         fixId:
-          "inactive-css-not-grid-or-flex-or-absolutely-positioned-item-fix",
+          "inactive-css-not-grid-or-flex-or-absolutely-positioned-item-fix-1",
         msgId: "inactive-css-not-grid-or-flex-or-absolutely-positioned-item",
       },
       // Absolutely positioned and grid item properties used on non absolutely positioned,
@@ -220,7 +220,7 @@ class InactivePropertyHelper {
         invalidProperties: ["justify-self"],
         // This should be updated when justify-self support is added on block level boxes (see Bug 2005203)
         when: () => !this.gridItem && !this.isAbsolutelyPositioned,
-        fixId: "inactive-css-not-grid-or-absolutely-positioned-item-fix",
+        fixId: "inactive-css-not-grid-or-absolutely-positioned-item-fix-1",
         msgId: "inactive-css-not-grid-or-absolutely-positioned-item",
       },
       // Grid and flex container properties used on non-grid or non-flex container.
@@ -236,7 +236,7 @@ class InactivePropertyHelper {
           "grid-row-gap",
         ],
         when: () => !this.gridContainer && !this.flexContainer,
-        fixId: "inactive-css-not-grid-or-flex-container-fix",
+        fixId: "inactive-css-not-grid-or-flex-container-fix-1",
         msgId: "inactive-css-not-grid-or-flex-container",
       },
       // align-content is special as align-content:baseline does have an effect on all
@@ -260,7 +260,7 @@ class InactivePropertyHelper {
           ];
           return !this.checkComputedStyle("display", supportedDisplay);
         },
-        fixId: "inactive-css-not-grid-or-flex-or-block-container-fix",
+        fixId: "inactive-css-not-grid-or-flex-or-block-container-fix-1",
         msgId: "inactive-css-property-because-of-display",
       },
       // column-gap and shorthands used on non-grid or non-flex or non-multi-col container.
@@ -276,7 +276,7 @@ class InactivePropertyHelper {
         when: () =>
           !this.gridContainer && !this.flexContainer && !this.multiColContainer,
         fixId:
-          "inactive-css-not-grid-or-flex-container-or-multicol-container-fix",
+          "inactive-css-not-grid-or-flex-container-or-multicol-container-fix-1",
         msgId: "inactive-css-not-grid-or-flex-container-or-multicol-container",
       },
       // Multi-column related properties used on non-multi-column container.
@@ -289,14 +289,14 @@ class InactivePropertyHelper {
           "column-rule-width",
         ],
         when: () => !this.multiColContainer,
-        fixId: "inactive-css-not-multicol-container-fix",
+        fixId: "inactive-css-not-multicol-container-fix-1",
         msgId: "inactive-css-not-multicol-container",
       },
       // column-span used within non-multi-column container.
       {
         invalidProperties: ["column-span"],
         when: () => !this.inMultiColContainer,
-        fixId: "inactive-css-column-span-fix",
+        fixId: "inactive-css-column-span-fix-1",
         msgId: "inactive-css-column-span",
       },
       // Inline properties used on non-inline-level elements.
@@ -304,14 +304,13 @@ class InactivePropertyHelper {
         invalidProperties: ["vertical-align"],
         when: () =>
           !this.isInlineLevel() && !this.isFirstLetter && !this.isFirstLine,
-        fixId: "inactive-css-not-inline-or-tablecell-fix",
+        fixId: "inactive-css-not-inline-or-tablecell-fix-1",
         msgId: "inactive-css-not-inline-or-tablecell",
       },
       // Writing mode properties used on ::first-line pseudo-element.
       {
         invalidProperties: ["direction", "text-orientation", "writing-mode"],
         when: () => this.isFirstLine,
-        fixId: "learn-more",
         msgId: "inactive-css-first-line-pseudo-element-not-supported",
         learnMoreURL: FIRST_LINE_PSEUDO_ELEMENT_STYLING_SPEC_URL,
       },
@@ -319,7 +318,6 @@ class InactivePropertyHelper {
       {
         invalidProperties: ["content"],
         when: () => this.isFirstLetter,
-        fixId: "learn-more",
         msgId: "inactive-css-first-letter-pseudo-element-not-supported",
         learnMoreURL: FIRST_LETTER_PSEUDO_ELEMENT_STYLING_SPEC_URL,
       },
@@ -343,7 +341,6 @@ class InactivePropertyHelper {
           const { selectorText } = this.cssRule;
           return selectorText && selectorText.includes("::placeholder");
         },
-        fixId: "learn-more",
         msgId: "inactive-css-placeholder-pseudo-element-not-supported",
         learnMoreURL: PLACEHOLDER_PSEUDO_ELEMENT_STYLING_SPEC_URL,
       },
@@ -354,7 +351,8 @@ class InactivePropertyHelper {
           this.nonReplacedInlineBox ||
           this.horizontalTableTrack ||
           this.horizontalTableTrackGroup,
-        fixId: "inactive-css-non-replaced-inline-or-table-row-or-row-group-fix",
+        fixId:
+          "inactive-css-non-replaced-inline-or-table-row-or-row-group-fix-1",
         msgId: "inactive-css-property-because-of-display",
       },
       // (max-|min-)height used on inline elements, table columns, or column groups.
@@ -365,7 +363,7 @@ class InactivePropertyHelper {
           this.verticalTableTrack ||
           this.verticalTableTrackGroup,
         fixId:
-          "inactive-css-non-replaced-inline-or-table-column-or-column-group-fix",
+          "inactive-css-non-replaced-inline-or-table-column-or-column-group-fix-1",
         msgId: "inactive-css-property-because-of-display",
       },
       {
@@ -387,14 +385,14 @@ class InactivePropertyHelper {
             "table-column-group",
             "table-caption",
           ]),
-        fixId: "inactive-css-not-display-block-on-floated-fix",
+        fixId: "inactive-css-not-display-block-on-floated-fix-1",
         msgId: "inactive-css-not-display-block-on-floated-2",
       },
       // float property used on non-floating elements.
       {
         invalidProperties: ["float"],
         when: () => this.gridItem || this.flexItem,
-        fixId: "inactive-css-only-non-grid-or-flex-item-fix",
+        fixId: "inactive-css-only-non-grid-or-flex-item-fix-1",
         msgId: "inactive-css-only-non-grid-or-flex-item",
       },
       // clear property used on non-floating elements.
@@ -405,14 +403,14 @@ class InactivePropertyHelper {
           // The br element is a special case and allows clear for backwards compatibility to make its clear attribute work.
           // https://html.spec.whatwg.org/multipage/rendering.html#phrasing-content-3
           this.localName != "br",
-        fixId: "inactive-css-not-block-fix",
+        fixId: "inactive-css-not-block-fix-1",
         msgId: "inactive-css-not-block",
       },
       // Block container properties used on non-block-container elements.
       {
         invalidProperties: ["text-overflow"],
         when: () => !this.isBlockContainer(),
-        fixId: "inactive-css-not-block-container-fix",
+        fixId: "inactive-css-not-block-container-fix-1",
         msgId: "inactive-css-not-block-container",
       },
       // Block, flex, and grid container properties used on non-block, non-flex or non-grid container elements.
@@ -428,7 +426,7 @@ class InactivePropertyHelper {
           !this.isBlockContainer() &&
           !this.flexContainer &&
           !this.gridContainer,
-        fixId: "inactive-css-not-block-flex-grid-container-fix",
+        fixId: "inactive-css-not-block-flex-grid-container-fix-1",
         msgId: "inactive-css-not-block-flex-grid-container",
       },
       // shape-image-threshold, shape-margin, shape-outside properties used on non-floated elements.
@@ -439,14 +437,13 @@ class InactivePropertyHelper {
           "shape-outside",
         ],
         when: () => !this.isFloated,
-        fixId: "inactive-css-not-floated-fix",
+        fixId: "inactive-css-not-floated-fix-1",
         msgId: "inactive-css-not-floated",
       },
       // The property is impossible to override due to :visited restriction.
       {
         invalidProperties: VISITED_INVALID_PROPERTIES,
         when: () => this.isVisitedRule(),
-        fixId: "learn-more",
         msgId: "inactive-css-property-is-impossible-to-override-in-visited",
         learnMoreURL: VISITED_MDN_LINK,
       },
@@ -454,21 +451,21 @@ class InactivePropertyHelper {
       {
         invalidProperties: ["top", "right", "bottom", "left"],
         when: () => !this.isPositioned,
-        fixId: "inactive-css-position-property-on-unpositioned-box-fix",
+        fixId: "inactive-css-position-property-on-unpositioned-box-fix-1",
         msgId: "inactive-css-position-property-on-unpositioned-box",
       },
       // z-index property used on non positioned boxes that are not grid/flex items.
       {
         invalidProperties: ["z-index"],
         when: () => !this.isPositioned && !this.gridItem && !this.flexItem,
-        fixId: "inactive-css-position-property-on-unpositioned-box-fix",
+        fixId: "inactive-css-position-property-on-unpositioned-box-fix-1",
         msgId: "inactive-css-position-property-on-unpositioned-box",
       },
       // object-fit or object-position property used on non-replaced elements.
       {
         invalidProperties: ["object-fit", "object-position"],
         when: () => !this.replaced,
-        fixId: "inactive-css-only-replaced-elements-fix",
+        fixId: "inactive-css-only-replaced-elements-fix-1",
         msgId: "inactive-css-only-replaced-elements",
       },
       // text-overflow property used on elements for which 'overflow' is set to 'visible'
@@ -484,7 +481,7 @@ class InactivePropertyHelper {
       {
         invalidProperties: ["text-overflow"],
         when: () => this.checkComputedStyle("overflow-inline", ["visible"]),
-        fixId: "inactive-text-overflow-when-no-overflow-fix",
+        fixId: "inactive-text-overflow-when-no-overflow-fix-1",
         msgId: "inactive-text-overflow-when-no-overflow",
       },
       // content-visibility used on elements for which size containment doesn't apply.
@@ -497,7 +494,7 @@ class InactivePropertyHelper {
           this.rubyContainer ||
           this.internalRubyElement ||
           this.nonAtomicInlineBox,
-        fixId: "inactive-css-no-size-containment-fix",
+        fixId: "inactive-css-no-size-containment-fix-1",
         msgId: "inactive-css-no-size-containment",
       },
       // margin properties used on table internal elements.
@@ -516,7 +513,7 @@ class InactivePropertyHelper {
           "margin-top",
         ],
         when: () => this.internalTableElement,
-        fixId: "inactive-css-not-for-internal-table-elements-fix",
+        fixId: "inactive-css-not-for-internal-table-elements-fix-1",
         msgId: "inactive-css-not-for-internal-table-elements",
       },
       // padding properties used on table internal elements except table cells.
@@ -538,7 +535,7 @@ class InactivePropertyHelper {
           this.internalTableElement &&
           !this.checkComputedStyle("display", ["table-cell"]),
         fixId:
-          "inactive-css-not-for-internal-table-elements-except-table-cells-fix",
+          "inactive-css-not-for-internal-table-elements-except-table-cells-fix-1",
         msgId:
           "inactive-css-not-for-internal-table-elements-except-table-cells",
       },
@@ -551,21 +548,21 @@ class InactivePropertyHelper {
         ],
         when: () =>
           !this.checkComputedStyle("display", ["table", "inline-table"]),
-        fixId: "inactive-css-not-table-fix",
+        fixId: "inactive-css-not-table-fix-1",
         msgId: "inactive-css-not-table",
       },
       // border-spacing property used on collapsed table borders.
       {
         invalidProperties: ["border-spacing"],
         when: () => this.checkComputedStyle("border-collapse", ["collapse"]),
-        fixId: "inactive-css-collapsed-table-borders-fix",
+        fixId: "inactive-css-collapsed-table-borders-fix-1",
         msgId: "inactive-css-collapsed-table-borders",
       },
       // empty-cells property used on non-table-cell elements.
       {
         invalidProperties: ["empty-cells"],
         when: () => !this.checkComputedStyle("display", ["table-cell"]),
-        fixId: "inactive-css-not-table-cell-fix",
+        fixId: "inactive-css-not-table-cell-fix-1",
         msgId: "inactive-css-not-table-cell",
       },
       // scroll-padding-* properties used on non-scrollable elements.
@@ -584,7 +581,7 @@ class InactivePropertyHelper {
           "scroll-padding-inline-start",
         ],
         when: () => !this.isScrollContainer,
-        fixId: "inactive-scroll-padding-when-not-scroll-container-fix",
+        fixId: "inactive-scroll-padding-when-not-scroll-container-fix-1",
         msgId: "inactive-scroll-padding-when-not-scroll-container",
       },
       // border-image properties used on internal table with border collapse.
@@ -600,7 +597,7 @@ class InactivePropertyHelper {
         when: () =>
           this.internalTableElement &&
           this.checkTableParentHasBorderCollapsed(),
-        fixId: "inactive-css-border-image-fix",
+        fixId: "inactive-css-border-image-fix-1",
         msgId: "inactive-css-border-image",
       },
       // width & height properties used on ruby elements.
@@ -614,14 +611,14 @@ class InactivePropertyHelper {
           "max-width",
         ],
         when: () => this.checkComputedStyle("display", ["ruby", "ruby-text"]),
-        fixId: "inactive-css-ruby-element-fix",
+        fixId: "inactive-css-ruby-element-fix-1",
         msgId: "inactive-css-ruby-element",
       },
       // resize property used on non-overflowing elements or replaced elements other than textarea.
       {
         invalidProperties: ["resize"],
         when: () => !this.isScrollContainer && !this.isResizableReplacedElement,
-        fixId: "inactive-css-resize-fix",
+        fixId: "inactive-css-resize-fix-1",
         msgId: "inactive-css-resize",
       },
       // text-wrap: balance; used on elements exceeding the threshold line number
@@ -640,7 +637,7 @@ class InactivePropertyHelper {
             blockLineCounts && blockLineCounts[0] > TEXT_WRAP_BALANCE_LIMIT
           );
         },
-        fixId: "inactive-css-text-wrap-balance-lines-exceeded-fix",
+        fixId: "inactive-css-text-wrap-balance-lines-exceeded-fix-1",
         msgId: "inactive-css-text-wrap-balance-lines-exceeded",
         lineCount: TEXT_WRAP_BALANCE_LIMIT,
       },
@@ -655,21 +652,20 @@ class InactivePropertyHelper {
           const isFragmented = blockLineCounts && blockLineCounts.length > 1;
           return isFragmented;
         },
-        fixId: "inactive-css-text-wrap-balance-fragmented-fix",
+        fixId: "inactive-css-text-wrap-balance-fragmented-fix-1",
         msgId: "inactive-css-text-wrap-balance-fragmented",
       },
       // box-sizing used on element ignoring width and height.
       {
         invalidProperties: ["box-sizing"],
         when: () => this.nonReplacedInlineBox,
-        fixId: "learn-more",
         msgId: "inactive-css-no-width-height",
       },
       // anchor-name used on element not creating a principal box.
       {
         invalidProperties: ["anchor-name"],
         when: () => !this.hasPrincipalBox,
-        fixId: "inactive-css-no-principal-box-fix",
+        fixId: "inactive-css-no-principal-box-fix-1",
         msgId: "inactive-css-no-principal-box",
       },
       // position-area used on element which is not absolutely positionned and the
@@ -680,7 +676,7 @@ class InactivePropertyHelper {
           !this.isAbsolutelyPositioned &&
           ChromeUtils.getClassName(this.cssRule) !== "CSSPositionTryRule",
         msgId: "inactive-css-not-absolutely-positioned-item",
-        fixId: "inactive-css-not-absolutely-positioned-item-fix",
+        fixId: "inactive-css-not-absolutely-positioned-item-fix-1",
       },
       // position-area for absolutely positionned element without default anchor element,
       // and the declaration isn't in a @position-try rule.
@@ -691,7 +687,7 @@ class InactivePropertyHelper {
           !this.hasDefaultAnchorElement() &&
           ChromeUtils.getClassName(this.cssRule) !== "CSSPositionTryRule",
         msgId: "inactive-css-no-default-anchor",
-        fixId: "inactive-css-no-default-anchor-fix",
+        fixId: "inactive-css-no-default-anchor-fix-1",
       },
     ];
   }
@@ -755,7 +751,6 @@ class InactivePropertyHelper {
         );
       },
       msgId: "inactive-css-highlight-pseudo-elements-not-supported",
-      fixId: "learn-more",
       learnMoreURL: HIGHLIGHT_PSEUDO_ELEMENTS_STYLING_SPEC_URL,
     },
     // Constrained set of properties on ::cue pseudo-element
@@ -822,7 +817,6 @@ class InactivePropertyHelper {
         return selectorText && selectorText.includes("::cue");
       },
       msgId: "inactive-css-cue-pseudo-element-not-supported",
-      fixId: "learn-more",
       learnMoreURL: CUE_PSEUDO_ELEMENT_STYLING_SPEC_URL,
     },
     // Constrained set of properties on @position-try rules
@@ -839,7 +833,6 @@ class InactivePropertyHelper {
       when: () =>
         ChromeUtils.getClassName(this.cssRule) === "CSSPositionTryRule",
       msgId: "inactive-css-at-position-try-not-supported",
-      fixId: "learn-more",
       learnMoreURL: AT_POSITION_TRY_MDN_URL,
     },
   ];

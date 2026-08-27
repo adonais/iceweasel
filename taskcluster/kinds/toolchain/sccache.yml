@@ -12,6 +12,7 @@ task-defaults:
     worker:
         max-run-time: 1800
     run:
+        clone-with: hg
         using: toolchain-script
         script: build-rust-based-toolchain.sh
         toolchain-artifact: public/build/sccache.tar.zst
@@ -23,6 +24,7 @@ linux64-sccache:
     treeherder:
         symbol: TL(sccache)
     run:
+        clone-with: hg
         arguments:
             - x86_64-unknown-linux-gnu
             - s3
@@ -41,6 +43,7 @@ macosx64-sccache:
     treeherder:
         symbol: TM(sccache)
     run:
+        clone-with: hg
         arguments:
             - x86_64-apple-darwin
             - all
@@ -57,6 +60,7 @@ macosx64-aarch64-sccache:
     worker:
         max-run-time: 1800
     run:
+        clone-with: hg
         arguments:
             - aarch64-apple-darwin
             - all
@@ -75,6 +79,7 @@ win64-sccache:
             # Blake3 assembly can't be cross-compiled. The intrinsics version should be good enough.
             CARGO_FEATURE_PREFER_INTRINSICS: '1'
     run:
+        clone-with: hg
         arguments:
             - x86_64-pc-windows-msvc
             - dist-client

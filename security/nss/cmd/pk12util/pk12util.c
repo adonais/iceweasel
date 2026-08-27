@@ -10,7 +10,6 @@
 #include "nspr.h"
 #include "secutil.h"
 #include "pk11func.h"
-#include "pkcs12.h"
 #include "p12plcy.h"
 #include "pk12util.h"
 #include "nss.h"
@@ -18,6 +17,8 @@
 #include "secpkcs5.h"
 #include "sechash.h"
 #include "certdb.h"
+#include "cert.h"
+#include "p12.h"
 
 #define PKCS12_IN_BUFFER_SIZE 200
 

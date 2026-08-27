@@ -25,6 +25,7 @@ loader.lazyRequireGetter(
  *        - `msg`: String to show in the notification
  *        - `priority`: Priority level for the notification, which affects the icon and
  *                      overall appearance.
+ * @returns {<notification-message>} The created notification
  */
 async function showNotification(
   window,
@@ -45,16 +46,22 @@ async function showNotification(
   }
 
   const value = "devtools-responsive";
-  if (nbox.getNotificationWithValue(value)) {
+  let notificationMessage = nbox.getNotificationWithValue(value);
+  if (notificationMessage) {
     // Notification already displayed
-    return;
+    return notificationMessage;
   }
 
   if (!priority) {
     priority = nbox.PRIORITY_INFO_MEDIUM;
   }
 
-  nbox.appendNotification(value, { label: msg, priority });
+  notificationMessage = await nbox.appendNotification(value, {
+    label: msg,
+    priority,
+  });
+
+  return notificationMessage;
 }
 
 exports.showNotification = showNotification;

@@ -64,7 +64,7 @@ async function addALoginException() {
 
   await TestUtils.waitForCondition(() => richlistbox.itemCount == 2);
 
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   let expectedResult = ["http://www.example.com", "https://www.example.com"];
   for (let website of expectedResult) {
     let elements = richlistbox.getElementsByAttribute("origin", website);

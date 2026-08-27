@@ -8,7 +8,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   EventEmitter: "resource://gre/modules/EventEmitter.sys.mjs",
 
   BulkPacket: "chrome://remote/content/marionette/packets.sys.mjs",
-  executeSoon: "chrome://remote/content/shared/Sync.sys.mjs",
   JSONPacket: "chrome://remote/content/marionette/packets.sys.mjs",
   Packet: "chrome://remote/content/marionette/packets.sys.mjs",
   StreamUtils: "chrome://remote/content/marionette/stream-utils.sys.mjs",
@@ -487,7 +486,7 @@ DebuggerTransport.prototype = {
    * method.  Delivers the packet to this.hooks.onPacket.
    */
   _onJSONObjectReady(object) {
-    lazy.executeSoon(() => {
+    Services.tm.dispatchToMainThread(() => {
       // Ensure the transport is still alive by the time this runs.
       if (this.active) {
         this.emit("packet", object);
@@ -503,7 +502,7 @@ DebuggerTransport.prototype = {
    * comment on the transport at the top of this file for more details.
    */
   _onBulkReadReady(...args) {
-    lazy.executeSoon(() => {
+    Services.tm.dispatchToMainThread(() => {
       // Ensure the transport is still alive by the time this runs.
       if (this.active) {
         this.emit("bulkpacket", ...args);

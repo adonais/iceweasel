@@ -141,7 +141,25 @@ excluded_tests = [
   "^array_new_elem.wast.js",
   "^table_init.wast.js",
 ]
-directive = "; skip-if: !wasmCompactImportsEnabled(); test-also=-P wasm_compact_imports"
+directive = "; skip-if: !wasmCompactImportsEnabled()"
+
+[[repos]]
+name = "wide-arithmetic"
+url = "https://github.com/WebAssembly/wide-arithmetic"
+branch = "main"
+parent = "spec"
+excluded_tests = [
+  # tests that are unrelated and out of date
+  "^memory_init.wast.js",
+  "^memory_init64.wast.js",
+  "^return_call.wast.js",
+  "^return_call_indirect.wast.js",
+  "^simd_lane.wast.js",
+  "^table_init.wast.js",
+  "^table_init64.wast.js",
+  "^type-subtyping.wast.js",
+]
+directive = "; skip-if: !wasmWideArithmeticEnabled()"
 
 [[repos]]
 name = "stack-switching"

@@ -38,7 +38,7 @@
 
 .ac-dropmarker {
   position: absolute;
-  inset-inline-end: var(--space-small);
+  inset-inline-end: var(--space-large);
   top: 50%;
   translate: 0 -50%;
   content: url(chrome://global/skin/icons/arrow-down-12.svg);

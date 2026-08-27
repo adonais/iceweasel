@@ -11,28 +11,10 @@ be filed in the [Core :: Graphics: WebRender](https://bugzilla.mozilla.org/enter
 
 ## WebRender
 
-The WebRender suite has one linting job, `WR(tidy)`, and a
-`WR(wrench)` test job per platform. Generally these test jobs are only
-run if code inside the `gfx/wr` subtree are touched, although they may
-also run if upstream files they depend on (e.g. docker images) are
-modified.
-
-### WR(tidy)
-
-The tidy lint job basically runs the `servo-tidy` tool on the code in
-the `gfx/wr` subtree. This tool checks a number of code style and
-licensing things, and is good at emitting useful error messages if it
-encounters problems. To run this locally, you can do something like
-this:
-
-```shell
-cd gfx/wr
-pip install servo-tidy
-servo-tidy
-```
-
-To run on tryserver, use `./mach try fuzzy` and select the
-`webrender-lint-tidy` job.
+The WebRender suite has a `WR(wrench)` test job per platform. Generally
+these test jobs are only run if code inside the `gfx/wr` subtree are
+touched, although they may also run if upstream files they depend on
+(e.g. docker images) are modified.
 
 ### WR(wrench)
 

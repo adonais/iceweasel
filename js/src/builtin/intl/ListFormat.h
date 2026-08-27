@@ -27,18 +27,18 @@ class ListFormatObject : public NativeObject {
   static const JSClass class_;
   static const JSClass& protoClass_;
 
-  static constexpr uint32_t LOCALE = 0;
-  static constexpr uint32_t OPTIONS = 1;
-  static constexpr uint32_t LIST_FORMAT_SLOT = 2;
+  JS_DEFINE_TYPED_SLOT(0, LOCALE, Object, String, Undefined);
+  JS_DEFINE_TYPED_SLOT(1, OPTIONS, Int32, Undefined);
+  JS_DEFINE_TYPED_SLOT(2, LIST_FORMAT_SLOT, Private, Undefined);
   static constexpr uint32_t SLOT_COUNT = 3;
 
   // Estimated memory use for UListFormatter (see IcuMemoryUsage).
   static constexpr size_t EstimatedMemoryUse = 24;
 
-  bool isLocaleResolved() const { return getFixedSlot(LOCALE).isString(); }
+  bool isLocaleResolved() const { return getFixedSlotTyped(LOCALE).isString(); }
 
   JSObject* getRequestedLocales() const {
-    const auto& slot = getFixedSlot(LOCALE);
+    const auto& slot = getFixedSlotTyped(LOCALE);
     if (slot.isUndefined()) {
       return nullptr;
     }
@@ -46,11 +46,11 @@ class ListFormatObject : public NativeObject {
   }
 
   void setRequestedLocales(JSObject* requestedLocales) {
-    setFixedSlot(LOCALE, JS::ObjectValue(*requestedLocales));
+    setFixedSlotTyped(LOCALE, JS::ObjectValue(*requestedLocales));
   }
 
   JSLinearString* getLocale() const {
-    const auto& slot = getFixedSlot(LOCALE);
+    const auto& slot = getFixedSlotTyped(LOCALE);
     if (slot.isUndefined()) {
       return nullptr;
     }
@@ -58,7 +58,7 @@ class ListFormatObject : public NativeObject {
   }
 
   void setLocale(JSLinearString* locale) {
-    setFixedSlot(LOCALE, JS::StringValue(locale));
+    setFixedSlotTyped(LOCALE, JS::StringValue(locale));
   }
 
   ListFormatOptions getOptions() const;
@@ -66,7 +66,7 @@ class ListFormatObject : public NativeObject {
   void setOptions(const ListFormatOptions& options);
 
   mozilla::intl::ListFormat* getListFormatSlot() const {
-    const auto& slot = getFixedSlot(LIST_FORMAT_SLOT);
+    const auto& slot = getFixedSlotTyped(LIST_FORMAT_SLOT);
     if (slot.isUndefined()) {
       return nullptr;
     }
@@ -74,7 +74,7 @@ class ListFormatObject : public NativeObject {
   }
 
   void setListFormatSlot(mozilla::intl::ListFormat* format) {
-    setFixedSlot(LIST_FORMAT_SLOT, JS::PrivateValue(format));
+    setFixedSlotTyped(LIST_FORMAT_SLOT, JS::PrivateValue(format));
   }
 
  private:

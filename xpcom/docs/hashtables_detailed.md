@@ -27,7 +27,7 @@ and tuned, and hide the inner complexities of hashtable implementations:
   `nsClassHashtable` datatype is a class pointer owned by the
   hashtable.
 
-(plhashtable)=
+(xpcom-plhashtable)=
 
 ### PLHashTable
 

@@ -16,8 +16,8 @@ from mozlog.formatters import TestSummaryFormatter
         ),
         pytest.param(
             {"action": "log", "level": "ERROR", "message": "boom"},
-            True,
-            id="log_error_kept",
+            False,
+            id="log_error_dropped",
         ),
         pytest.param(
             {"action": "log", "level": "CRITICAL", "message": "crit"},
@@ -40,6 +40,32 @@ from mozlog.formatters import TestSummaryFormatter
             id="suite_start_kept",
         ),
         pytest.param({"action": "suite_end"}, True, id="suite_end_kept"),
+        pytest.param(
+            {"action": "assertion_count", "count": 3},
+            False,
+            id="assertion_count_dropped",
+        ),
+        pytest.param(
+            {"action": "lsan_leak", "frames": []}, False, id="lsan_leak_dropped"
+        ),
+        pytest.param(
+            {"action": "lsan_summary", "allocated_bytes": 10},
+            False,
+            id="lsan_summary_dropped",
+        ),
+        pytest.param(
+            {"action": "process_exit", "process": 1234, "exitcode": 0},
+            False,
+            id="process_exit_dropped",
+        ),
+        pytest.param(
+            {"action": "process_start", "process": 1234},
+            False,
+            id="process_start_dropped",
+        ),
+        pytest.param(
+            {"action": "tsan_error", "stack": "race"}, False, id="tsan_error_dropped"
+        ),
         pytest.param(
             {"action": "group_start", "name": "manifestA"}, True, id="group_start_kept"
         ),
@@ -74,8 +100,8 @@ from mozlog.formatters import TestSummaryFormatter
                 "subtest": "subtest1",
                 "status": "PASS",
             },
-            True,
-            id="test_status_no_expected_kept",
+            False,
+            id="test_status_no_expected_dropped",
         ),
         pytest.param(
             {
@@ -85,15 +111,15 @@ from mozlog.formatters import TestSummaryFormatter
                 "status": "PASS",
                 "expected": "PASS",
             },
-            True,
-            id="test_status_matching_expected_kept",
+            False,
+            id="test_status_matching_expected_dropped",
         ),
         pytest.param(
             {"action": "crash", "test": "test_foo", "signature": "sig"},
             True,
             id="crash_kept",
         ),
-        pytest.param({"action": "shutdown"}, True, id="shutdown_kept"),
+        pytest.param({"action": "shutdown"}, False, id="shutdown_dropped"),
         pytest.param(
             {
                 "action": "process_output",
@@ -135,6 +161,10 @@ def test_testsummary_strips_noise_fields():
         "expected": "PASS",
         "message": "[run_test : 25] force fail - false == true",
         "stack": "stack/trace\nlines",
+        "js_source": "head.js",
+        "minidump_path": "/tmp/foo.dmp",
+        "crashing_thread_stack": "frame\nframe",
+        "tests": {"manifestA": ["test_foo"]},
         "stackwalk_stdout": "...",
         "stackwalk_stderr": "...",
         "extra": {"key": "value"},
@@ -146,13 +176,36 @@ def test_testsummary_strips_noise_fields():
         "pid",
         "source",
         "extra",
+        "tests",
+        "stack",
+        "js_source",
+        "minidump_path",
+        "crashing_thread_stack",
         "stackwalk_stdout",
         "stackwalk_stderr",
     ):
         assert stripped not in result
     assert result["action"] == "test_status"
     assert result["test"] == "xpcom/tests/unit/test_bug476919.js"
-    assert result["stack"] == "stack/trace\nlines"
+    assert result["status"] == "FAIL"
+    assert result["expected"] == "PASS"
+
+
+def test_testsummary_crash_keeps_stack():
+    fmt = TestSummaryFormatter()
+    record = {
+        "action": "crash",
+        "test": "test_foo",
+        "signature": "sig",
+        "stack": "frame1\nframe2",
+        "thread": "main",
+        "pid": 1234,
+    }
+    out = fmt(record)
+    result = json.loads(out)
+    assert result["stack"] == "frame1\nframe2"
+    assert "thread" not in result
+    assert "pid" not in result
 
 
 def test_testsummary_emits_test_start_and_end_separately():

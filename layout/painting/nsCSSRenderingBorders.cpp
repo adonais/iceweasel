@@ -142,14 +142,16 @@ nsCSSBorderRenderer::nsCSSBorderRenderer(
     nsPresContext* aPresContext, DrawTarget* aDrawTarget,
     const Rect& aDirtyRect, Rect& aOuterRect,
     const StyleBorderStyle* aBorderStyles, const Margin& aBorderWidths,
-    RectCornerRadii& aBorderRadii, const nscolor* aBorderColors,
-    bool aBackfaceIsVisible, const Maybe<Rect>& aClipRect)
+    RectCornerRadii& aBorderRadii, const Margin& aBorderInset,
+    const nscolor* aBorderColors, bool aBackfaceIsVisible,
+    const Maybe<Rect>& aClipRect)
     : mPresContext(aPresContext),
       mDrawTarget(aDrawTarget),
       mDirtyRect(aDirtyRect),
       mOuterRect(aOuterRect),
       mBorderWidths(aBorderWidths),
       mBorderRadii(aBorderRadii),
+      mBorderInset(aBorderInset),
       mBackfaceIsVisible(aBackfaceIsVisible),
       mLocalClip(aClipRect) {
   PodCopy(mBorderStyles, aBorderStyles, 4);
@@ -3292,7 +3294,9 @@ void nsCSSBorderRenderer::CreateWebRenderCommands(
         wr::ToBorderSide(ToDeviceColor(mBorderColors[i]), mBorderStyles[i]);
   }
 
+  wr::LayoutSideOffsets borderWidths = wr::ToBorderWidths(mBorderWidths);
   wr::BorderRadius borderRadius = wr::ToBorderRadius(mBorderRadii);
+  wr::LayoutSideOffsets borderInset = wr::ToLayoutSideOffsets(mBorderInset);
 
   if (mLocalClip) {
     LayoutDeviceRect localClip =
@@ -3301,8 +3305,8 @@ void nsCSSBorderRenderer::CreateWebRenderCommands(
   }
 
   Range<const wr::BorderSide> wrsides(side, 4);
-  aBuilder.PushBorder(roundedRect, clipRect, mBackfaceIsVisible,
-                      wr::ToBorderWidths(mBorderWidths), wrsides, borderRadius);
+  aBuilder.PushBorder(roundedRect, clipRect, mBackfaceIsVisible, borderWidths,
+                      wrsides, borderRadius, borderInset);
 }
 
 /* static */

@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "IPCTestUtils.h"
+
 #include "chrome/common/ipc_message.h"
 #include "chrome/common/ipc_message_utils.h"
 #include "gtest/gtest.h"
@@ -10,18 +12,6 @@
 #include "mozilla/ipc/BigBuffer.h"
 
 namespace mozilla::ipc {
-
-static bool SerializeAndDeserialize(BigBuffer&& aIn, BigBuffer* aOut) {
-  IPC::Message msg(MSG_ROUTING_NONE, 0);
-  {
-    IPC::MessageWriter writer(msg);
-    IPC::WriteParam(&writer, std::move(aIn));
-  }
-  EXPECT_EQ(aIn.Size(), 0u);
-
-  IPC::MessageReader reader(msg);
-  return IPC::ReadParam(&reader, aOut);
-}
 
 TEST(BigBuffer, Empty)
 {

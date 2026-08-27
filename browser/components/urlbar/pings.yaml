@@ -45,8 +45,10 @@ quick-suggest-deletion-request:
     follows_collection_enabled: false
   bugs:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1941161
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2056936
   data_reviews:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1941161
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2056936
   notification_emails:
     - fx-search-telemetry@mozilla.com
     - disco-team@mozilla.com

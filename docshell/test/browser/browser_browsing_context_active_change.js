@@ -57,13 +57,13 @@ add_task(async function () {
   const TEST_PATH1 =
     getRootDirectory(gTestPath).replace(
       "chrome://mochitests/content",
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       "http://example.com"
     ) + "dummy_page.html";
   const TEST_PATH2 =
     getRootDirectory(gTestPath).replace(
       "chrome://mochitests/content",
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       "http://example.com"
     ) + "dummy_iframe_page.html";
 

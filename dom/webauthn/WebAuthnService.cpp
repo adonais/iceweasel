@@ -94,7 +94,7 @@ WebAuthnService::MakeCredential(uint64_t aTransactionId,
   promise
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [self, origin, aTransactionId, aBrowsingContextId,
+          [self, origin = std::move(origin), aTransactionId, aBrowsingContextId,
            attestationRequested](
               const WebAuthnRegisterPromise::ResolveOrRejectValue& aValue) {
             MOZ_ASSERT(NS_IsMainThread());
@@ -477,6 +477,13 @@ WebAuthnService::AddVirtualAuthenticator(
   return AuthrsService()->AddVirtualAuthenticator(
       aProtocol, aTransport, aHasResidentKey, aHasUserVerification,
       aIsUserConsenting, aIsUserVerified, aRetval);
+}
+
+NS_IMETHODIMP
+WebAuthnService::HasVirtualAuthenticator(const nsACString& aAuthenticatorId,
+                                         bool* aRetval) {
+  MOZ_ASSERT(NS_IsMainThread());
+  return AuthrsService()->HasVirtualAuthenticator(aAuthenticatorId, aRetval);
 }
 
 NS_IMETHODIMP

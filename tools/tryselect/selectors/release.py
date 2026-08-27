@@ -46,7 +46,6 @@ class ReleaseParser(BaseTryParser):
                 "choices": [
                     "main-to-beta",
                     "beta-to-release",
-                    "early-to-late-beta",
                     "release-to-esr",
                 ],
                 "help": "Migration to run for the release (can be specified multiple times).",
@@ -114,9 +113,6 @@ def run(
         "current_weave_version": current_version.major_number + 2,
         "next_weave_version": version.major_number + 2,
     }
-
-    if "beta-to-release" in migrations and "early-to-late-beta" not in migrations:
-        migrations.append("early-to-late-beta")
 
     release_type = version.version_type.name.lower()
     if release_type not in ("beta", "release", "esr"):

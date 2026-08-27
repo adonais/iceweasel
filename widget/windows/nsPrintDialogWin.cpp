@@ -56,10 +56,6 @@ class ParamBlock {
 
 NS_IMPL_ISUPPORTS(nsPrintDialogServiceWin, nsIPrintDialogService)
 
-nsPrintDialogServiceWin::nsPrintDialogServiceWin() {}
-
-nsPrintDialogServiceWin::~nsPrintDialogServiceWin() {}
-
 NS_IMETHODIMP
 nsPrintDialogServiceWin::Init() {
   nsresult rv;

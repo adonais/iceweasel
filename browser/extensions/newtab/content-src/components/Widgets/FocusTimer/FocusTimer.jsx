@@ -80,7 +80,7 @@ export const isAtMaxLength = currentValue => {
   return currentValue.length >= 2;
 };
 
-// @nova-cleanup(remove): Drop after Nova ships
+// Drop this if the spinbutton is ever replaced with a native control.
 /**
  * Validates whether the next state of the Nova spinbutton is acceptable.
  * Allows up to 2 digits, an optional single colon, and up to 2 more digits.
@@ -791,7 +791,8 @@ export const FocusTimer = ({
     [dispatch]
   );
 
-  // @nova-cleanup(remove-conditional): Drop the legacy callers and inline this for Nova
+  // @nova-cleanup(remove-conditional): Keep this function. Its only classic
+  // caller is the legacy body removed below; no change needed here.
   const setTimerMinutes = useCallback(
     nextMinutes => {
       const clamped = Math.max(1, Math.min(99, nextMinutes));
@@ -831,7 +832,8 @@ export const FocusTimer = ({
     [dispatch, duration, timerType, widgetSize, handleTimerInteraction]
   );
 
-  // @nova-cleanup(remove-conditional): Inline this once the Nova spinbutton is the only path
+  // @nova-cleanup(remove-conditional): Keep this function; it drives the Nova
+  // spinbutton. No change needed here.
   const commitSpinbuttonDuration = useCallback(() => {
     const el = activeMinutesRef.current;
     if (!el) {
@@ -891,7 +893,7 @@ export const FocusTimer = ({
     timeLeft,
   ]);
 
-  // @nova-cleanup(remove-conditional): Remove if the Nova spinbutton is replaced
+  // Drop this if the spinbutton is ever replaced with a native control.
   const handleSpinBeforeInput = e => {
     const input = e.data;
     if (input === null || input === undefined) {
@@ -910,7 +912,7 @@ export const FocusTimer = ({
     }
   };
 
-  // @nova-cleanup(remove-conditional): Remove if the Nova spinbutton is replaced
+  // Drop this if the spinbutton is ever replaced with a native control.
   const handleSpinKeyDown = e => {
     let next = minutesValue;
     switch (e.key) {
@@ -944,7 +946,7 @@ export const FocusTimer = ({
     setTimerMinutes(next);
   };
 
-  // @nova-cleanup(remove-conditional): Remove with the Nova radiogroup
+  // Drop this if the Focus/Break radiogroup is ever replaced.
   const handleRadiogroupKeyDown = e => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") {
       return;
@@ -1038,7 +1040,7 @@ export const FocusTimer = ({
                 widgetsMayBeMaximized && (
                   <SizeSubmenu
                     submenuId="focus-timer-size-submenu"
-                    sizes={["medium", "large"]}
+                    sizes={["small", "medium", "large"]}
                     checkedSize={widgetSize}
                     onChangeSize={handleChangeSize}
                   />

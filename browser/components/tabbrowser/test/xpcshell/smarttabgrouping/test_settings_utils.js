@@ -177,16 +177,16 @@ add_task(
       "reset() should uninstall ML engine files via MLUninstallService.uninstall()"
     );
 
+    // Embedding model is shared; only the topic engine is STG-owned.
     const expectedEngineIds = [
       SMART_TAB_GROUPING_CONFIG.topicGeneration.engineId,
-      SMART_TAB_GROUPING_CONFIG.embedding.engineId,
-    ].sort();
+    ];
 
     const uninstallArgs = uninstallStub.getCall(0).args[0];
     Assert.deepEqual(
       (uninstallArgs.engineIds || []).slice().sort(),
       expectedEngineIds,
-      "reset() should uninstall files for both STG engines"
+      "reset() should uninstall only the STG-owned topic engine"
     );
     Assert.equal(
       uninstallArgs.actor,
@@ -266,16 +266,16 @@ add_task(async function test_disable_sets_prefs_false_and_uninstalls_models() {
     "disable() should uninstall ML engine files via MLUninstallService.uninstall()"
   );
 
+  // Embedding model is shared; only the topic engine is STG-owned.
   const expectedEngineIds = [
     SMART_TAB_GROUPING_CONFIG.topicGeneration.engineId,
-    SMART_TAB_GROUPING_CONFIG.embedding.engineId,
-  ].sort();
+  ];
 
   const uninstallArgs = uninstallStub.getCall(0).args[0];
   Assert.deepEqual(
     (uninstallArgs.engineIds || []).slice().sort(),
     expectedEngineIds,
-    "disable() should uninstall files for both STG engines"
+    "disable() should uninstall only the STG-owned topic engine"
   );
   Assert.equal(
     uninstallArgs.actor,

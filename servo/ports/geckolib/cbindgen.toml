@@ -129,7 +129,7 @@ include = [
   "FontVariantLigatures",
   "FontVariantNumeric",
   "ComputedMozPrefFeatureValue",
-  "ComputedFontStretchRange",
+  "ComputedFontWidthRange",
   "ComputedFontStyleRange",
   "ComputedFontWeightRange",
   "ComputedTimingFunction",
@@ -1142,8 +1142,8 @@ renaming_overrides_prefixing = true
                                    // normal/italic as well as explicit oblique
 """
 
-"FontStretch" = """
- SERVO_FIXED_POINT_HELPERS(StyleFontStretch, uint16_t, StyleFONT_STRETCH_FRACTION_BITS);
+"FontWidth" = """
+ SERVO_FIXED_POINT_HELPERS(StyleFontWidth, uint16_t, StyleFONT_WIDTH_FRACTION_BITS);
  bool IsNormal() const { return *this == NORMAL; }
 """
 
@@ -1328,6 +1328,10 @@ renaming_overrides_prefixing = true
   explicit operator bool() const { return IsSome(); }
 
   const T& operator*() const { return AsSome(); }
+
+  const T* operator->() const {
+    return &AsSome();
+  }
 """
 
 "NumericType" = """
@@ -1354,6 +1358,11 @@ renaming_overrides_prefixing = true
   inline static StyleNumericType Flex();
 
   inline int32_t Exponent(StyleNumericBaseType aBaseType) const;
+
+  inline bool MatchesLength() const;
+  inline bool MatchesAngle() const;
+  inline bool MatchesLengthPercentage() const;
+  inline bool MatchesNumber() const;
 
   inline bool operator==(const StyleNumericType& aOther) const;
 """

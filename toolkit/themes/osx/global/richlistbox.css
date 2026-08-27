@@ -17,12 +17,12 @@ richlistbox[disabled] {
   color: GrayText;
 }
 
-richlistitem[selected="true"] {
+richlistitem[selected] {
   background-color: -moz-Dialog;
   color: -moz-DialogText;
 }
 
-richlistbox:where(:focus) > richlistitem[selected="true"] {
+richlistbox:where(:focus) > richlistitem[selected] {
   background-color: SelectedItem;
   color: SelectedItemText;
 }
@@ -31,7 +31,7 @@ richlistbox.theme-listbox > richlistitem {
   border: 1px solid transparent;
 }
 
-richlistbox.theme-listbox:not(:focus) > richlistitem[selected="true"] {
+richlistbox.theme-listbox:not(:focus) > richlistitem[selected] {
   background-color: -moz-cellhighlight;
 }
 

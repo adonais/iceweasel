@@ -15,7 +15,6 @@
 #ifndef mozilla_BoundedMPSCQueue_h
 #define mozilla_BoundedMPSCQueue_h
 
-#include "mozilla/Assertions.h"
 #include <algorithm>
 #include <atomic>
 #include <cinttypes>
@@ -23,6 +22,8 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+
+#include "mozilla/Assertions.h"
 
 namespace mozilla {
 

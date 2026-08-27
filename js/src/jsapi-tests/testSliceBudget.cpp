@@ -12,6 +12,8 @@ using JS::TimeBudget;
 using JS::UnlimitedBudget;
 using JS::WorkBudget;
 
+using mozilla::TimeDuration;
+
 BEGIN_TEST(testSliceBudgetUnlimited) {
   SliceBudget budget = SliceBudget::unlimited();
   CHECK(budget.isUnlimited());
@@ -51,12 +53,12 @@ BEGIN_TEST(testSliceBudgetWork) {
 END_TEST(testSliceBudgetWork)
 
 BEGIN_TEST(testSliceBudgetTime) {
-  SliceBudget budget = SliceBudget(TimeBudget(10000));
+  SliceBudget budget = SliceBudget(TimeDuration::FromMilliseconds(10000));
   CHECK(!budget.isUnlimited());
   CHECK(!budget.isWorkBudget());
   CHECK(budget.isTimeBudget());
 
-  CHECK(budget.timeBudget() == 10000);
+  CHECK(budget.timeBudget() == TimeDuration::FromMilliseconds(10000));
 
   CHECK(!budget.isOverBudget());
 
@@ -71,7 +73,7 @@ BEGIN_TEST(testSliceBudgetTime) {
 END_TEST(testSliceBudgetTime)
 
 BEGIN_TEST(testSliceBudgetTimeZero) {
-  SliceBudget budget = SliceBudget(TimeBudget(0));
+  SliceBudget budget = SliceBudget(TimeDuration::FromMilliseconds(0));
   budget.step(1000);
   CHECK(budget.isOverBudget());
 
@@ -84,13 +86,14 @@ BEGIN_TEST(testSliceBudgetInterruptibleTime) {
 
   // Interruptible 100 second budget. This test will finish in well under that
   // time.
-  static constexpr int64_t LONG_TIME = 100000;
-  SliceBudget budget = SliceBudget(TimeBudget(LONG_TIME), &wantInterrupt);
+  static constexpr int64_t LONG_TIME = 100;
+  SliceBudget budget =
+      SliceBudget(TimeDuration::FromSeconds(LONG_TIME), &wantInterrupt);
   CHECK(!budget.isUnlimited());
   CHECK(!budget.isWorkBudget());
   CHECK(budget.isTimeBudget());
 
-  CHECK(budget.timeBudget() == LONG_TIME);
+  CHECK(budget.timeBudget() == TimeDuration::FromSeconds(LONG_TIME));
 
   CHECK(!budget.isOverBudget());
 

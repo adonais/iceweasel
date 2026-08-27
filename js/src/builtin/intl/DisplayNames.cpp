@@ -178,7 +178,7 @@ struct PackedDisplayNamesOptions {
 };
 
 DisplayNamesOptions js::intl::DisplayNamesObject::getOptions() const {
-  const auto& slot = getFixedSlot(OPTIONS);
+  const auto& slot = getFixedSlotTyped(OPTIONS);
   if (slot.isUndefined()) {
     return {};
   }
@@ -187,7 +187,7 @@ DisplayNamesOptions js::intl::DisplayNamesObject::getOptions() const {
 
 void js::intl::DisplayNamesObject::setOptions(
     const DisplayNamesOptions& options) {
-  setFixedSlot(OPTIONS, PackedDisplayNamesOptions::pack(options));
+  setFixedSlotTyped(OPTIONS, PackedDisplayNamesOptions::pack(options));
 }
 
 static constexpr std::string_view DisplayNamesStyleToString(

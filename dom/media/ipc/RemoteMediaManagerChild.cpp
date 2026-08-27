@@ -901,13 +901,14 @@ TrackSupportSet RemoteMediaManagerChild::GetTrackSupport(
   switch (aLocation) {
     case RemoteMediaIn::GpuProcess:
       s = TrackSupport::DecodeVideo;
-      if (StaticPrefs::media_use_remote_encoder_video()) {
+      if (StaticPrefs::media_use_remote_encoder_video_platform()) {
         s += TrackSupport::EncodeVideo;
       }
       break;
     case RemoteMediaIn::RddProcess:
       s = TrackSupport::DecodeVideo;
-      if (StaticPrefs::media_use_remote_encoder_video()) {
+      if (StaticPrefs::media_use_remote_encoder_video_software() ||
+          StaticPrefs::media_use_remote_encoder_video_platform()) {
         s += TrackSupport::EncodeVideo;
       }
 #ifndef ANDROID
@@ -919,7 +920,7 @@ TrackSupportSet RemoteMediaManagerChild::GetTrackSupport(
 #endif
       {
         s += TrackSupport::DecodeAudio;
-        if (StaticPrefs::media_use_remote_encoder_audio()) {
+        if (StaticPrefs::media_use_remote_encoder_audio_software()) {
           s += TrackSupport::EncodeAudio;
         }
       }
@@ -929,7 +930,7 @@ TrackSupportSet RemoteMediaManagerChild::GetTrackSupport(
     case RemoteMediaIn::UtilityProcess_WMF:
       if (StaticPrefs::media_utility_process_enabled()) {
         s = TrackSupport::DecodeAudio;
-        if (StaticPrefs::media_use_remote_encoder_audio()) {
+        if (StaticPrefs::media_use_remote_encoder_audio_software()) {
           s += TrackSupport::EncodeAudio;
         }
       }

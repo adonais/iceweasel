@@ -8,7 +8,6 @@
 import {
   SkippableTimer,
   UrlbarProvider,
-  UrlbarUtils,
 } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
@@ -69,12 +68,12 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
   static MIN_CHARS_FOR_CHAT = 3;
 
   /**
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof lazy.UrlbarShared.PROVIDER_TYPE>}
    */
   get type() {
     // The behavior depends on the SAP and the user intent, thus we treat this
     // as an immediate heuristic provider and eventually delay later.
-    return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
+    return lazy.UrlbarShared.PROVIDER_TYPE.HEURISTIC;
   }
 
   /**
@@ -173,7 +172,7 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
           icon,
         },
         highlights: {
-          engine: UrlbarUtils.HIGHLIGHT.TYPED,
+          engine: lazy.UrlbarShared.HIGHLIGHT.TYPED,
         },
       });
       addCallback(this, searchResult);
@@ -185,14 +184,25 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
     /** @type {AISmartBarParent} */
     let actor;
     if (queryContext.sapName == "urlbar") {
-      let browser = await this.#getSidebarBrowser(win);
-      if (win.closed) {
-        return;
+      let selectedBrowser = win.gBrowser?.selectedBrowser;
+      if (
+        selectedBrowser &&
+        lazy.AIWindow.isAIWindowNewTabPage(selectedBrowser.currentURI)
+      ) {
+        actor =
+          selectedBrowser.browsingContext?.currentWindowGlobal?.getActor(
+            "AISmartBar"
+          );
+      } else {
+        let browser = await this.#getSidebarBrowser(win);
+        if (win.closed) {
+          return;
+        }
+        actor =
+          browser.browsingContext?.currentWindowGlobal?.getActor("AISmartBar");
       }
-      actor =
-        browser.browsingContext?.currentWindowGlobal.getActor("AISmartBar");
     } else {
-      actor = win.browsingContext?.currentWindowGlobal.getActor("AISmartBar");
+      actor = win.browsingContext?.currentWindowGlobal?.getActor("AISmartBar");
     }
     if (!actor) {
       this.logger.error("AISmartBar actor not found");

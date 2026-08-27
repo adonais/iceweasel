@@ -29,7 +29,7 @@ ChromeUtils.defineESModuleGetters(this, {
   ContentAnalysis:
     "moz-src:///browser/components/contentanalysis/content/ContentAnalysis.sys.mjs",
   ContentSharingUtils:
-    "moz-src:///browser/components/contentsharing/ContentSharingUtils.sys.mjs",
+    "moz-src:///browser/components/sharing/ContentSharingUtils.sys.mjs",
   ContextualIdentityService:
     "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
   CustomizableUI:
@@ -77,6 +77,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs",
   PromptUtils: "resource://gre/modules/PromptUtils.sys.mjs",
   ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
+  Referrals: "resource:///modules/referrals/Referrals.sys.mjs",
   ResetPBMPanel:
     "moz-src:///browser/components/privatebrowsing/ResetPBMPanel.sys.mjs",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.sys.mjs",
@@ -89,7 +90,7 @@ ChromeUtils.defineESModuleGetters(this, {
   SessionStartup: "resource:///modules/sessionstore/SessionStartup.sys.mjs",
   SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
   SessionWindowUI: "resource:///modules/sessionstore/SessionWindowUI.sys.mjs",
-  SharingUtils: "resource:///modules/SharingUtils.sys.mjs",
+  SharingUtils: "moz-src:///browser/components/sharing/SharingUtils.sys.mjs",
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
   SiteDataManager: "resource:///modules/SiteDataManager.sys.mjs",
   SitePermissions: "resource:///modules/SitePermissions.sys.mjs",
@@ -113,6 +114,7 @@ ChromeUtils.defineESModuleGetters(this, {
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarProviderSearchTips:
     "moz-src:///browser/components/urlbar/UrlbarProviderSearchTips.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarTokenizer:
     "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
@@ -624,6 +626,13 @@ customElements.setElementCreationCallback("menu-message", () => {
 customElements.setElementCreationCallback("webrtc-preview", () => {
   ChromeUtils.importESModule(
     "chrome://browser/content/webrtc/webrtc-preview.mjs",
+    { global: "current" }
+  );
+});
+
+customElements.setElementCreationCallback("sync-promo", () => {
+  ChromeUtils.importESModule(
+    "chrome://browser/content/customizableui/sync-promo.mjs",
     { global: "current" }
   );
 });
@@ -1527,96 +1536,6 @@ function CreateContainerTabMenu(event) {
   });
 }
 
-// Shared entry point for the "Add new container" menu items. Shows a panel,
-// hosting the same editor as the about:preferences container dialog, anchored
-// to the URL-bar container indicator (revealing it temporarily when the
-// current tab has no container).
-var gContainerCreation = {
-  _editor: null,
-
-  get _panel() {
-    return document.getElementById("containerCreation-panel");
-  },
-
-  get _anchorEl() {
-    return document.getElementById("userContext-icons");
-  },
-
-  // Honored by updateUserContextUIIndicator() so the temporarily-revealed
-  // indicator isn't hidden again while the panel is open.
-  isPillPinned: false,
-
-  async open() {
-    let panel = this._panel;
-    if (panel.state == "open" || panel.state == "showing") {
-      return;
-    }
-
-    let { ContainerEditor } =
-      await import("chrome://browser/content/usercontext/ContainerEditor.mjs");
-
-    let body = document.getElementById("containerCreation-panel-body");
-    body.replaceChildren();
-    this._editor = new ContainerEditor(body);
-    this._editor.render();
-
-    let createButton = document.getElementById(
-      "containerCreation-create-button"
-    );
-    let cancelButton = document.getElementById(
-      "containerCreation-cancel-button"
-    );
-
-    let updateValidity = () => {
-      createButton.disabled = !this._editor.isValid;
-    };
-    this._editor.form.addEventListener("input", updateValidity);
-    updateValidity();
-
-    let onCreate = () => {
-      this._editor.commit();
-      panel.hidePopup();
-    };
-    let onCancel = () => panel.hidePopup();
-    createButton.addEventListener("click", onCreate);
-    cancelButton.addEventListener("click", onCancel);
-
-    panel.addEventListener("popupshown", () => this._editor?.focus(), {
-      once: true,
-    });
-    panel.addEventListener(
-      "popuphidden",
-      () => {
-        createButton.removeEventListener("click", onCreate);
-        cancelButton.removeEventListener("click", onCancel);
-        body.replaceChildren();
-        this._editor = null;
-        this._unpinAnchor();
-      },
-      { once: true }
-    );
-
-    let anchor = this._anchorEl;
-    if (anchor.hidden) {
-      anchor.classList.add("container-anchor-pinned");
-      anchor.hidden = false;
-      this.isPillPinned = true;
-    }
-
-    panel.openPopup(anchor, "bottomright topright");
-  },
-
-  _unpinAnchor() {
-    if (!this.isPillPinned) {
-      return;
-    }
-    this.isPillPinned = false;
-    let anchor = this._anchorEl;
-    anchor.hidden = true;
-    anchor.classList.remove("container-anchor-pinned");
-  },
-};
-
 function FillHistoryMenu(event) {
   let parent = event.target;
 
@@ -2193,6 +2112,17 @@ var XULBrowserWindow = {
       ) {
         this.busyUI = true;
 
+        // Show the "scanning" shield at load start (the URI lets a same-site
+        // nav keep the icon). Skip unless the trust panel is already loaded, to
+        // avoid forcing its lazy getter to resolve early.
+        if (
+          !Object.getOwnPropertyDescriptor(window, "gTrustPanelHandler").get
+        ) {
+          gTrustPanelHandler.resetIconForNavigation(
+            aRequest instanceof Ci.nsIChannel ? aRequest.URI : null
+          );
+        }
+
         if (this.spinCursorWhileBusy) {
           window.setCursor("progress");
         }
@@ -2264,6 +2194,14 @@ var XULBrowserWindow = {
       if (this.busyUI && aWebProgress.isTopLevel) {
         this.busyUI = false;
 
+        // Top-level load done: resolve the icon if still scanning. Skip unless
+        // the trust panel is already loaded (see STATE_START above).
+        if (
+          !Object.getOwnPropertyDescriptor(window, "gTrustPanelHandler").get
+        ) {
+          gTrustPanelHandler.onNavigationComplete();
+        }
+
         if (this.spinCursorWhileBusy) {
           window.setCursor("auto");
         }
@@ -2316,6 +2254,16 @@ var XULBrowserWindow = {
 
     let isSameDocument =
       aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT;
+
+    // Reset on real location changes if STATE_START didn't fire — but not on
+    // simulated ones (tab switches), which have no load to resolve scanning.
+    if (
+      !isSameDocument &&
+      !aIsSimulated &&
+      !Object.getOwnPropertyDescriptor(window, "gTrustPanelHandler").get
+    ) {
+      gTrustPanelHandler.resetIconForNavigation(aLocationURI);
+    }
     if (
       (location == "about:blank" &&
         BrowserUIUtils.checkEmptyPageOrigin(gBrowser.selectedBrowser)) ||
@@ -3207,16 +3155,29 @@ var gUIDensity = {
   uiDensityPref: "browser.uidensity",
   autoTouchModePref: "browser.touchmode.auto",
   autoCompactThresholdPref: "browser.compactmode.auto.threshold",
+  // Prefs that turn on RFP window-size protections. When any is set the content
+  // area must stay a fixed, deterministic size, so auto-compact must bail (see
+  // _shouldAutoCompact and bug 2054792).
+  rfpWindowSizingPrefs: [
+    "privacy.resistFingerprinting",
+    "privacy.resistFingerprinting.pbmode",
+    "privacy.resistFingerprinting.letterboxing",
+  ],
   knownPrefs: new Set([
     "browser.uidensity",
     "browser.touchmode.auto",
     "browser.compactmode.auto.threshold",
+    "privacy.resistFingerprinting",
+    "privacy.resistFingerprinting.pbmode",
+    "privacy.resistFingerprinting.letterboxing",
   ]),
 
-  // Natural (non-compact) tabstrip height in CSS pixels. Used as the
-  // numerator of the auto-compact ratio so the trigger doesn't flap when
-  // compact mode itself shrinks the tabstrip.
-  AUTO_COMPACT_REFERENCE_TABSTRIP_HEIGHT: 40,
+  // Compact-mode tabstrip height in CSS pixels: compact tab min-height
+  // (--tab-min-height, 28px) plus tab block margin on each side
+  // (--tab-margin-block, 4px). Used as a fixed numerator of the auto-compact
+  // ratio so the trigger doesn't flap as compact mode changes the live
+  // tabstrip height (see tabs.css).
+  AUTO_COMPACT_REFERENCE_TABSTRIP_HEIGHT: 36,
 
   // Natural (non-compact) collapsed sidebar.revamp launcher width in CSS
   // pixels: icon button width (--button-size-icon, 32px) plus outer inline
@@ -3231,6 +3192,9 @@ var gUIDensity = {
     Services.prefs.addObserver(this.uiDensityPref, this);
     Services.prefs.addObserver(this.autoTouchModePref, this);
     Services.prefs.addObserver(this.autoCompactThresholdPref, this);
+    for (let pref of this.rfpWindowSizingPrefs) {
+      Services.prefs.addObserver(pref, this);
+    }
     window.addEventListener("resize", this);
 
     this._sidebarShownHandler = () => this.update();
@@ -3238,11 +3202,13 @@ var gUIDensity = {
 
     // Re-evaluate auto-compact when the sidebar.revamp launcher opens,
     // closes, or toggles between collapsed and expanded, since the
-    // collapsed launcher width feeds into the auto-compact ratio.
-    let sidebarMainContainer = document.getElementById("sidebar-main");
-    if (sidebarMainContainer) {
+    // collapsed launcher width feeds into the auto-compact ratio. Both
+    // attributes are set on #sidebar-container (the parent of the
+    // <sidebar-main> element) by SidebarState.
+    let sidebarContainer = document.getElementById("sidebar-container");
+    if (sidebarContainer) {
       this._sidebarStateObserver = new MutationObserver(() => this.update());
-      this._sidebarStateObserver.observe(sidebarMainContainer, {
+      this._sidebarStateObserver.observe(sidebarContainer, {
         attributes: true,
         attributeFilter: ["hidden", "sidebar-launcher-expanded"],
       });
@@ -3254,6 +3220,9 @@ var gUIDensity = {
     Services.prefs.removeObserver(this.uiDensityPref, this);
     Services.prefs.removeObserver(this.autoTouchModePref, this);
     Services.prefs.removeObserver(this.autoCompactThresholdPref, this);
+    for (let pref of this.rfpWindowSizingPrefs) {
+      Services.prefs.removeObserver(pref, this);
+    }
     window.removeEventListener("resize", this);
     if (this._sidebarShownHandler) {
       window.removeEventListener("SidebarShown", this._sidebarShownHandler);
@@ -3309,6 +3278,19 @@ var gUIDensity = {
     if (!window.toolbar.visible) {
       return false;
     }
+    // RFP window-size protections (letterboxing, and the maxInner* rounding
+    // enabled by resistFingerprinting) quantize the content area to a fixed
+    // size that must be deterministic regardless of the chrome. Auto-compact
+    // reclaims chrome space in response to resizes, which shifts the content
+    // area by a few pixels mid-flight and races with those size updates (bug
+    // 2054792). Bail so the two don't fight.
+    if (
+      this.rfpWindowSizingPrefs.some(pref =>
+        Services.prefs.getBoolPref(pref, false)
+      )
+    ) {
+      return false;
+    }
     const threshold = parseFloat(
       Services.prefs.getCharPref(this.autoCompactThresholdPref, "0.05")
     );
@@ -3334,7 +3316,7 @@ var gUIDensity = {
   },
 
   // Whether the sidebar.revamp launcher is currently visible (sidebar is
-  // "open") but not expanded.
+  // "open") and only reserves its collapsed width in the layout.
   _isSidebarLauncherCollapsed() {
     if (!Services.prefs.getBoolPref("sidebar.revamp", false)) {
       return false;
@@ -3343,16 +3325,45 @@ var gUIDensity = {
       return false;
     }
     const state = SidebarController._state;
-    return Boolean(state && state.launcherVisible && !state.launcherExpanded);
+    if (!state?.launcherVisible) {
+      return false;
+    }
+    // In expand-on-hover mode the expanded launcher is absolutely positioned
+    // and floats over the content area (see sidebar.css), so the width it
+    // reserves in the layout stays collapsed. Treating the hover expansion as
+    // expanded here would flip the density back and forth as the pointer
+    // enters and leaves the launcher.
+    if (SidebarController.sidebarRevampVisibility === "expand-on-hover") {
+      return true;
+    }
+    return !state.launcherExpanded;
+  },
+
+  // Whether the device is currently in a tablet mode that should influence the
+  // UI density. Only Windows (Win10 or Win11) exposes such a signal.
+  _inTabletMode() {
+    if (AppConstants.platform != "win") {
+      return false;
+    }
+    return WindowsUIUtils.inWin10TabletMode || WindowsUIUtils.inWin11TabletMode;
   },
 
   getCurrentDensity() {
-    // Automatically override the uidensity to touch in Windows tablet mode
-    // (either Win10 or Win11).
-    if (AppConstants.platform == "win") {
-      const inTablet =
-        WindowsUIUtils.inWin10TabletMode || WindowsUIUtils.inWin11TabletMode;
-      if (inTablet && Services.prefs.getBoolPref(this.autoTouchModePref)) {
+    // Automatically override the uidensity to touch in tablet mode. This
+    // happens when the density is automatic (the nova "Automatic" option, i.e.
+    // no explicit uidensity value) regardless of the browser.touchmode.auto
+    // pref, or when browser.touchmode.auto is set and the configured density is
+    // normal. The pref is the standard density's "use touch spacing for tablet
+    // mode" checkbox, so it must not override an explicit compact or touch
+    // choice.
+    if (this._inTabletMode()) {
+      const isAutomatic =
+        this.novaEnabled &&
+        !Services.prefs.prefHasUserValue(this.uiDensityPref);
+      const normalWithAutoTouch =
+        Services.prefs.getIntPref(this.uiDensityPref) == this.MODE_NORMAL &&
+        Services.prefs.getBoolPref(this.autoTouchModePref);
+      if (isAutomatic || normalWithAutoTouch) {
         return { mode: this.MODE_TOUCH, overridden: true };
       }
     }
@@ -3369,26 +3380,6 @@ var gUIDensity = {
       mode: Services.prefs.getIntPref(this.uiDensityPref),
       overridden: false,
     };
-  },
-
-  /**
-   * Sets the configured UI density to an explicit mode. If the density is
-   * currently overridden (e.g. forced to touch by tablet mode via the
-   * auto-touch-mode pref), the override is cleared so the explicit choice
-   * takes effect.
-   *
-   * @param {number} mode
-   *   One of the density mode constants - MODE_NORMAL, MODE_COMPACT or
-   *   MODE_TOUCH.
-   */
-  setUIDensity(mode) {
-    let overridden = this.getCurrentDensity().overridden;
-    Services.prefs.setIntPref(this.uiDensityPref, mode);
-    // If the user is choosing a UI density mode while the mode is overridden,
-    // remove the override so their explicit choice isn't ignored.
-    if (overridden) {
-      Services.prefs.setBoolPref(this.autoTouchModePref, false);
-    }
   },
 
   update(mode) {
@@ -3702,7 +3693,7 @@ function middleMousePaste(event) {
   // bar's behavior (stripsurroundingwhitespace)
   clipboard = clipboard.replace(/\s*\n\s*/g, "");
 
-  clipboard = UrlbarUtils.stripUnsafeProtocolOnPaste(clipboard);
+  clipboard = UrlbarShared.stripUnsafeProtocolOnPaste(clipboard);
 
   // if it's not the current tab, we don't need to do anything because the
   // browser doesn't exist.
@@ -5017,16 +5008,23 @@ var ConfirmationHint = {
     // 3s after the text transition (duration=120ms) has finished.
     // If there is a description, we show for 6s after the text transition.
     const DURATION = showDescription ? 6000 : 3000;
-    this._panel.addEventListener(
-      "popupshown",
-      () => {
-        this._animationBox.setAttribute("animate", "true");
-        this._timerID = setTimeout(() => {
-          this._panel.hidePopup(true);
-        }, DURATION + 120);
-      },
-      { once: true }
-    );
+    let startAutoHideTimer = () => {
+      this._animationBox.setAttribute("animate", "true");
+      this._timerID = setTimeout(() => {
+        this._panel.hidePopup(true);
+      }, DURATION + 120);
+    };
+
+    if (this._panel.state == "open") {
+      // A hint is already showing: openPopup below would be a no-op and no
+      // popupshown event would fire to restart the timer _reset just cleared.
+      startAutoHideTimer();
+      return;
+    }
+
+    this._panel.addEventListener("popupshown", startAutoHideTimer, {
+      once: true,
+    });
 
     this._panel.addEventListener(
       "popuphidden",

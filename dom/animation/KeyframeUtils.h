@@ -7,7 +7,7 @@
 
 #include "NonCustomCSSPropertyId.h"
 #include "js/RootingAPI.h"                 // For JS::Handle
-#include "mozilla/Keyframe.h"              // For KeyframesOffsetHasAny
+#include "mozilla/Keyframe.h"              // For Keyframe::OffsetType
 #include "mozilla/KeyframeEffectParams.h"  // For CompositeOperation
 #include "nsTArrayForwardDeclare.h"        // For nsTArray
 
@@ -79,9 +79,9 @@ class KeyframeUtils {
    * @param aTimeline The animation timeline.
    * @param aRange The animation attachment range.
    * @return The preprocess info for quickly checking the keyframes whether they
-   *   use timeline range offsets or percentage offset.
+   *   use timeline range offsets.
    */
-  static KeyframesOffsetHasAny ComputeMissingKeyframeOffsets(
+  static KeyframeOffsetsHasRangeOffset ComputeMissingKeyframeOffsets(
       nsTArray<Keyframe>& aKeframes, const dom::AnimationTimeline* aTimeline,
       const dom::AnimationRange* aRange);
 
@@ -111,8 +111,6 @@ class KeyframeUtils {
    *   For any keyframes in |aKeyframes| that do not specify a composite
    *   operation, this value will be used.
    * @param aTimeline The associated timeline.
-   * @param aOffsetHasAny Whether the keyframes use timeline range offsets or
-   *   percentage offsets.
    * @return The set of animation properties. If an error occurs, the returned
    *   array will be empty.
    */
@@ -120,8 +118,7 @@ class KeyframeUtils {
       const nsTArray<Keyframe>& aKeyframes, dom::Element* aElement,
       const PseudoStyleRequest& aPseudoRequest, const ComputedStyle* aStyle,
       dom::CompositeOperation aEffectComposite,
-      const dom::AnimationTimeline* aTimeline,
-      const KeyframesOffsetHasAny& aOffsetHasAny);
+      const dom::AnimationTimeline* aTimeline);
 
   /**
    * Check if the property or, for shorthands, one or more of
@@ -133,30 +130,6 @@ class KeyframeUtils {
    * @return true if |aProperty| is animatable.
    */
   static bool IsAnimatableProperty(const CSSPropertyId& aProperty);
-
-  /**
-   * Check if we should skip the generated keyframes.
-   * FIXME: Bug 2037642. Update or drop if we generate the missing keyframes
-   * lazily.
-   *
-   * @param aKeyframes The sequence of keyframes.
-   * @param aTimeline The animation timeline.
-   * @param aOffsetHasAny The preprocessed info for the offsets in |aKeyframes|.
-   * @return The skippable status for the generated initial and final keyframes.
-   */
-  struct GeneratedKeyframesStatus {
-    bool mSkipGeneratedInitial = false;
-    bool mSkipGeneratedFinal = false;
-    bool ShouldSkip(const Keyframe& aKeyframe) const {
-      return aKeyframe.mIsGenerated &&
-             ((aKeyframe.mComputedOffset == 0.0 && mSkipGeneratedInitial) ||
-              (aKeyframe.mComputedOffset == 1.0 && mSkipGeneratedFinal));
-    }
-  };
-  static GeneratedKeyframesStatus CheckSkippableGeneratedKeyframes(
-      const nsTArray<Keyframe>& aKeyframes,
-      const dom::AnimationTimeline* aTimeline,
-      const KeyframesOffsetHasAny& aOffsetHasAny);
 };
 
 }  // namespace mozilla

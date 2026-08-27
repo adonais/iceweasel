@@ -448,7 +448,9 @@ export const DoHController = {
         ["policy", "modifiedRoots", "thirdPartyRoots"].includes(heuristicName)
       ) {
         enterprise.push(heuristicName);
-      } else if (["vpn", "proxy", "nrpt"].includes(heuristicName)) {
+      } else if (
+        ["vpn", "proxy", "nrpt", "privateDns"].includes(heuristicName)
+      ) {
         platform.push(heuristicName);
       }
 

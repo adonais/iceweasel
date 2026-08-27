@@ -272,7 +272,7 @@ static PlainTimeObject* CreateTemporalTime(JSContext* cx, const CallArgs& args,
 
   // Step 3.
   auto packedTime = PackedTime::pack(time);
-  object->initFixedSlot(
+  object->initFixedSlotTyped(
       PlainTimeObject::PACKED_TIME_SLOT,
       DoubleValue(mozilla::BitwiseCast<double>(packedTime.value)));
 
@@ -295,7 +295,7 @@ PlainTimeObject* js::temporal::CreateTemporalTime(JSContext* cx,
 
   // Step 3.
   auto packedTime = PackedTime::pack(time);
-  object->initFixedSlot(
+  object->initFixedSlotTyped(
       PlainTimeObject::PACKED_TIME_SLOT,
       DoubleValue(mozilla::BitwiseCast<double>(packedTime.value)));
 

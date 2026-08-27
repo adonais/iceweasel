@@ -760,7 +760,7 @@ static nsresult ReadDir(nsDir* aDir, PRDirFlags aFlags, nsString& aName) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  while (1) {
+  while (true) {
     BOOL rv;
     if (aDir->firstEntry) {
       aDir->firstEntry = false;
@@ -3721,7 +3721,7 @@ NS_IMPL_ISUPPORTS_INHERITED(nsDriveEnumerator, nsSimpleEnumerator,
 nsDriveEnumerator::nsDriveEnumerator(bool aUseDOSDevicePathSyntax)
     : mUseDOSDevicePathSyntax(aUseDOSDevicePathSyntax) {}
 
-nsDriveEnumerator::~nsDriveEnumerator() {}
+nsDriveEnumerator::~nsDriveEnumerator() = default;
 
 nsresult nsDriveEnumerator::Init() {
   /* If the length passed to GetLogicalDriveStrings is smaller

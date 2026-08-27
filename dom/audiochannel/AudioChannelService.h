@@ -156,7 +156,7 @@ class AudioChannelService final : public nsIObserver {
 
  private:
   AudioChannelService();
-  ~AudioChannelService();
+  ~AudioChannelService() = default;
 
   void RefreshAgents(nsPIDOMWindowOuter* aWindow,
                      const std::function<void(AudioChannelAgent*)>& aFunc);

@@ -1,0 +1,53 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+loader: taskgraph.loader.transform:loader
+
+kind-dependencies:
+    - docker-image
+
+transforms:
+    - gecko_taskgraph.transforms.job:transforms
+    - gecko_taskgraph.transforms.task:transforms
+
+task-defaults:
+    run-on-repo-type: [hg]
+    run-on-projects: []
+    worker-type: b-linux-xlarge
+    worker:
+        os: linux
+        docker-image: {in-tree: bhr-aggregate}
+        max-run-time: 7200
+        taskcluster-proxy: true
+        env:
+            BHR_AGGREGATE_BILLING_PROJECT: mozdata
+            BHR_AGGREGATE_DATE_OFFSET_DAYS: "4"
+            BHR_AGGREGATE_SAMPLE_SIZE: "0.5"
+            GOOGLE_APPLICATION_CREDENTIALS: /builds/worker/gcp-credentials.json
+        artifacts:
+            - name: public/bhr
+              path: /builds/worker/artifacts
+              type: directory
+    scopes:
+        - secrets:get:project/bhr/aggregation-gcp-key
+    treeherder:
+        kind: other
+        platform: bhr-aggregate/all
+        symbol: BHR
+        tier: 1
+    index:
+        product: firefox
+        job-name: bhr-aggregate
+    run:
+        using: run-task
+        checkout: true
+        cwd: '{checkout}'
+        sparse-profile: bhr-aggregate
+        command: python3 taskcluster/scripts/bhr-aggregate.py
+
+tasks:
+    cron:
+        description: Generate the daily Background Hang Reporter aggregation artifact
+        attributes:
+            cron: true

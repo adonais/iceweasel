@@ -8,6 +8,7 @@ task-defaults:
     worker:
         max-run-time: 7200
     run:
+        clone-with: hg
         script: repack_rust.py
         toolchain-artifact: public/build/rustc.tar.zst
 
@@ -15,6 +16,7 @@ linux64-rust-1.90:
     treeherder:
         symbol: TL(rust-1.90)
     run:
+        clone-with: hg
         arguments: [
             '--channel', '1.90.0',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -32,6 +34,7 @@ linux64-rust-macos-1.90:
     treeherder:
         symbol: TL(rust-macos-1.90)
     run:
+        clone-with: hg
         arguments: [
             '--channel', '1.90.0',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -46,6 +49,7 @@ linux64-rust-windows-1.90:
     treeherder:
         symbol: TL(rust-win-1.90)
     run:
+        clone-with: hg
         arguments: [
             '--channel', '1.90.0',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -60,6 +64,7 @@ linux64-rust-1.94:
     treeherder:
         symbol: TL(rust)
     run:
+        clone-with: hg
         arguments: [
             '--channel', '1.94.1',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -86,6 +91,7 @@ linux64-rust-1.94-dev:
             RUSTFLAGS_BOOTSTRAP: '-Clink-arg=-Wl,--undefined-version'
             RUSTFLAGS_NOT_BOOTSTRAP: '-Clink-arg=-Wl,--undefined-version'
     run:
+        clone-with: hg
         arguments: [
             '--patch', 'rust-vendor-std.patch',
             '--patch', 'Zprofile.patch',
@@ -113,6 +119,7 @@ win64-rust-1.94-dev:
     treeherder:
         symbol: TW64(rust-dev)
     run:
+        clone-with: hg
         arguments: [
             '--patch', 'rust-vendor-std.patch',
             '--patch', 'Zprofile.patch',
@@ -141,6 +148,7 @@ linux64-rust-cross-1.94:
     treeherder:
         symbol: TL(rust-cross)
     run:
+        clone-with: hg
         arguments: [
             '--channel', '1.94.1',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -167,6 +175,7 @@ linux64-rust-static-1.94:
     treeherder:
         symbol: TL(rust-static)
     run:
+        clone-with: hg
         arguments: [
             '--channel', '1.94.1',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -186,6 +195,7 @@ linux64-rust-macos-1.94:
     treeherder:
         symbol: TL(rust-macos)
     run:
+        clone-with: hg
         arguments: [
             '--channel', '1.94.1',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -203,6 +213,7 @@ linux64-rust-ios-1.94:
     treeherder:
         symbol: TL(rust-ios)
     run:
+        clone-with: hg
         arguments: [
             '--channel', '1.94.1',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -220,6 +231,7 @@ linux64-rust-android-1.94:
     treeherder:
         symbol: TL(rust-android)
     run:
+        clone-with: hg
         arguments: [
             '--channel', '1.94.1',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -240,6 +252,7 @@ linux64-rust-windows-1.94:
     treeherder:
         symbol: TL(rust-win)
     run:
+        clone-with: hg
         arguments: [
             '--channel', '1.94.1',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -257,6 +270,7 @@ win64-rust-1.94:
     treeherder:
         symbol: TW64(rust)
     run:
+        clone-with: hg
         arguments: [
             '--channel', '1.94.1',
             '--host', 'x86_64-pc-windows-msvc',
@@ -273,6 +287,7 @@ macosx64-rust-1.94:
     treeherder:
         symbol: TM(rust)
     run:
+        clone-with: hg
         arguments: [
             '--channel', '1.94.1',
             '--host', 'x86_64-apple-darwin',
@@ -287,6 +302,7 @@ mingw32-rust-1.94:
     treeherder:
         symbol: TMW(rust)
     run:
+        clone-with: hg
         arguments: [
             '--channel', '1.94.1',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -306,6 +322,7 @@ linux64-rust-nightly:
     treeherder:
         symbol: TL(rust-nightly)
     run:
+        clone-with: hg
         arguments: [
             '--channel', 'nightly', '--allow-generic-channel',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -334,6 +351,7 @@ linux64-rust-nightly-dev:
             RUSTFLAGS_BOOTSTRAP: '-Clink-arg=-Wl,--undefined-version'
             RUSTFLAGS_NOT_BOOTSTRAP: '-Clink-arg=-Wl,--undefined-version'
     run:
+        clone-with: hg
         arguments: [
             '--patch', 'rust-vendor-std.patch',
             '--patch', 'Zprofile.patch',
@@ -363,6 +381,7 @@ win64-rust-nightly-dev:
     treeherder:
         symbol: TW64(rust-dev-nightly)
     run:
+        clone-with: hg
         arguments: [
             '--patch', 'rust-vendor-std.patch',
             '--patch', 'Zprofile.patch',
@@ -393,6 +412,7 @@ linux64-rust-cross-nightly:
     treeherder:
         symbol: TL(rust-cross-nightly)
     run:
+        clone-with: hg
         arguments: [
             '--channel', 'nightly', '--allow-generic-channel',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -421,6 +441,7 @@ linux64-rust-static-nightly:
     treeherder:
         symbol: TL(rust-static-nightly)
     run:
+        clone-with: hg
         arguments: [
             '--channel', 'nightly', '--allow-generic-channel',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -442,6 +463,7 @@ linux64-rust-macos-nightly:
     treeherder:
         symbol: TL(rust-macos-nightly)
     run:
+        clone-with: hg
         arguments: [
             '--channel', 'nightly', '--allow-generic-channel',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -461,6 +483,7 @@ linux64-rust-ios-nightly:
     treeherder:
         symbol: TL(rust-ios-nightly)
     run:
+        clone-with: hg
         arguments: [
             '--channel', 'nightly', '--allow-generic-channel',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -480,6 +503,7 @@ linux64-rust-android-nightly:
     treeherder:
         symbol: TL(rust-android-nightly)
     run:
+        clone-with: hg
         arguments: [
             '--channel', 'nightly', '--allow-generic-channel',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -502,6 +526,7 @@ linux64-rust-windows-nightly:
     treeherder:
         symbol: TL(rust-win-nightly)
     run:
+        clone-with: hg
         arguments: [
             '--channel', 'nightly', '--allow-generic-channel',
             '--host', 'x86_64-unknown-linux-gnu',
@@ -521,6 +546,7 @@ win64-rust-nightly:
     treeherder:
         symbol: TW64(rust-nightly)
     run:
+        clone-with: hg
         arguments: [
             '--channel', 'nightly', '--allow-generic-channel',
             '--host', 'x86_64-pc-windows-msvc',
@@ -539,6 +565,7 @@ macosx64-rust-nightly:
     treeherder:
         symbol: TM(rust-nightly)
     run:
+        clone-with: hg
         arguments: [
             '--channel', 'nightly', '--allow-generic-channel',
             '--host', 'x86_64-apple-darwin',
@@ -555,6 +582,7 @@ mingw32-rust-nightly:
     treeherder:
         symbol: TMW(rust-nightly)
     run:
+        clone-with: hg
         arguments: [
             '--channel', 'nightly', '--allow-generic-channel',
             '--host', 'x86_64-unknown-linux-gnu',

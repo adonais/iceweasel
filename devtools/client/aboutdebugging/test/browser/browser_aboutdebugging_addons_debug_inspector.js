@@ -64,12 +64,15 @@ add_task(async function testWebExtensionsToolboxWebConsole() {
     "nodeActor has the expected inlineTextChild value"
   );
 
-  info("Check that the color scheme simulation buttons are hidden");
+  info("Check that the emulation buttons are hidden");
   const lightButtonIsHidden = inspector.panelDoc
-    .querySelector("#color-scheme-simulation-light-toggle")
+    .querySelector("#color-scheme-emulation-light-toggle")
     ?.hasAttribute("hidden");
   const darkButtonIsHidded = inspector.panelDoc
-    .querySelector("#color-scheme-simulation-dark-toggle")
+    .querySelector("#color-scheme-emulation-dark-toggle")
+    ?.hasAttribute("hidden");
+  const emulationPanelToggleIsHidden = inspector.panelDoc
+    .querySelector("#emulation-panel-toggle")
     ?.hasAttribute("hidden");
   ok(
     lightButtonIsHidden,
@@ -78,6 +81,10 @@ add_task(async function testWebExtensionsToolboxWebConsole() {
   ok(
     darkButtonIsHidded,
     "The dark color scheme simulation button exists and is hidden"
+  );
+  ok(
+    emulationPanelToggleIsHidden,
+    "The Emulation panel toggle button exists and is hidden"
   );
 
   await closeWebExtAboutDevtoolsToolbox(devtoolsWindow, window);

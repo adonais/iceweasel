@@ -25,10 +25,6 @@ add_task(function test_isValidLogoUrl_accepts_allowed_schemes() {
     "chrome:// is allowed"
   );
   Assert.ok(isValidLogoUrl("resource://gre/foo.svg"), "resource:// is allowed");
-  Assert.ok(
-    isValidLogoUrl("https://example.com/logo.png"),
-    "https:// is allowed"
-  );
 });
 
 add_task(function test_isValidLogoUrl_rejects_unsafe_schemes() {
@@ -38,9 +34,14 @@ add_task(function test_isValidLogoUrl_rejects_unsafe_schemes() {
     "data: is rejected"
   );
   Assert.ok(!isValidLogoUrl("file:///etc/passwd"), "file:// is rejected");
+
   Assert.ok(
     !isValidLogoUrl("http://example.com/logo.png"),
     "http:// is rejected"
+  );
+  Assert.ok(
+    !isValidLogoUrl("https://example.com/logo.png"),
+    "https:// is rejected (remote images not allowed in the parent process)"
   );
   Assert.ok(
     !isValidLogoUrl("ftp://example.com/logo.png"),

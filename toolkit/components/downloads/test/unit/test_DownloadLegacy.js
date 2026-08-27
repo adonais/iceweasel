@@ -14,7 +14,12 @@
 var gUseLegacySaver = true;
 
 var scriptFile = do_get_file("common_test_Download.js");
-Services.scriptloader.loadSubScript(NetUtil.newURI(scriptFile).spec);
+Services.scriptloader.loadSubScriptWithOptions(
+  NetUtil.newURI(scriptFile).spec,
+  {
+    allowUnsafeURL: true,
+  }
+);
 
 /**
  * Checks the referrer for restart downloads.

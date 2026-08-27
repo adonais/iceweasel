@@ -13,6 +13,9 @@ const REMOTE_IFRAME_URL =
   encodeURIComponent("<script>debugger;</script>");
 
 add_task(async function () {
+  // We use a commands object for the main process
+  await pushPref("devtools.chrome.enabled", true);
+
   // Check hitting the "debugger;" statement before and after calling
   // watchResource(THREAD_TYPES). Both should break. First will
   // be a cached resource and second will be a live one.

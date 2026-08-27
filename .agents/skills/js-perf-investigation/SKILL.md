@@ -296,9 +296,9 @@ import numpy as np
 from scipy import stats
 
 baseline = np.array([...])  # times without patch
-patched = np.array([...])   # times with patch
+patched = np.array([...])  # times with patch
 
-stat, p_value = stats.mannwhitneyu(baseline, patched, alternative='two-sided')
+stat, p_value = stats.mannwhitneyu(baseline, patched, alternative="two-sided")
 effect_size = (np.mean(baseline) - np.mean(patched)) / np.mean(baseline) * 100
 
 print(f"Baseline: {np.mean(baseline):.2f} +/- {np.std(baseline):.2f}")

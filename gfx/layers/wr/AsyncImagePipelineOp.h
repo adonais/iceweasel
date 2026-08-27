@@ -74,7 +74,7 @@ struct AsyncImagePipelineOps {
       : mTransaction(aTransaction) {}
   // Out-of-line so callers don't need the full AsyncImagePipelineManager type
   // to instantiate ~RefPtr<AsyncImagePipelineManager> for queued ops.
-  ~AsyncImagePipelineOps();
+  ~AsyncImagePipelineOps() = default;
 
   void HandleOps(wr::TransactionBuilder& aTxn);
 

@@ -9,14 +9,21 @@
 }
 
 @media (-moz-native-theme) {
-  @media not (prefers-contrast) {
-    :root:not([lwtheme]) {
-      @media (prefers-color-scheme: light) and (not -moz-pref("browser.nova.enabled")) {
-        --urlbar-box-background-color: #fafafa;
-      }
-      @media (prefers-color-scheme: dark) {
-        --tab-background-color-selected: color-mix(in srgb, -moz-dialog 75%, white);
-      }
+  :root:not([lwtheme]) {
+    @media (prefers-color-scheme: light) {
+      --urlbar-box-background-color: #fafafa;
+    }
+    @media (prefers-color-scheme: dark) {
+      --tab-background-color-selected: color-mix(in srgb, -moz-dialog 75%, white);
+    }
+    @media -moz-pref("browser.nova.enabled") {
+      /* Blend against the native window background. The window background
+       * already reflects the activeness. */
+      --toolbox-background-color: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.05));
+      --toolbox-background-color-inactive: var(--toolbox-background-color);
+
+      /* These look a bit better than the native color */
+      --tabs-navbar-separator-color: var(--chrome-content-separator-color);
     }
   }
 }

@@ -698,12 +698,18 @@ bool nsHttpConnectionInfo::HostIsLocalIPLiteral() const {
 }
 
 // static
-HashNumber nsHttpConnectionInfo::BuildOriginFrameHashKey(
+CoalescingKey nsHttpConnectionInfo::BuildOriginFrameHashKey(
     nsHttpConnectionInfo* ci, const nsACString& host, int32_t port) {
-  static const HashNumber kViaOriginFrame = HashString("viaORIGIN.FRAME"_ns);
-  return AddToHash(HashString(host), ci->GetAnonymous(),
-                   ci->GetFallbackConnection(), port,
-                   ci->GetOriginAttributes().Hash(), kViaOriginFrame);
+  nsCString newKey(host);
+  newKey.Append(ci->GetAnonymous() ? "~A:" : "~.:");
+  newKey.Append(ci->GetFallbackConnection() ? "~F:" : "~.:");
+  newKey.AppendInt(port);
+  newKey.AppendLiteral("/[");
+  nsAutoCString suffix;
+  ci->GetOriginAttributes().CreateSuffix(suffix);
+  newKey.Append(suffix);
+  newKey.AppendLiteral("]viaORIGIN.FRAME");
+  return CoalescingKey{HashString(newKey), std::move(newKey)};
 }
 
 }  // namespace net

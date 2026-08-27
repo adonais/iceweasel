@@ -11,6 +11,7 @@ include DOMTypes;
 include PPrintingTypes;
 
 include "mozilla/LayoutMessageUtils.h";
+include "mozilla/layers/LayersMessageUtils.h";
 include "mozilla/dom/BindingIPCUtils.h";
 include "mozilla/dom/DocShellMessageUtils.h";
 include "mozilla/dom/TabMessageUtils.h";
@@ -26,6 +27,7 @@ using mozilla::dom::EmbedderElementEventType from "mozilla/dom/TabMessageTypes.h
 using mozilla::IntrinsicSize from "nsIFrame.h";
 using mozilla::AspectRatio from "mozilla/AspectRatio.h";
 using mozilla::StyleImageRendering from "mozilla/ServoStyleConsts.h";
+using struct mozilla::layers::KeyboardScrollAction from "mozilla/layers/KeyboardScrollAction.h";
 
 namespace mozilla {
 namespace dom {
@@ -63,6 +65,13 @@ child:
   async ScrollRectIntoView(nsRect aRect, AxisScrollParams aVertical,
                            AxisScrollParams aHorizontal, ScrollFlags aScrollFlags,
                            int32_t aAppUnitsPerDevPixel);
+
+  /**
+   * Continue a main-thread keyboard scroll in this embedder document after the
+   * embedded out-of-process subframe could not scroll any further in the
+   * requested direction.
+   */
+  async ScrollForKeyboard(KeyboardScrollAction aAction);
 
   async SubFrameCrashed();
 

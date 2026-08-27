@@ -29,7 +29,7 @@ class nsDirectoryService final : public nsIDirectoryService,
 
   NS_DECL_NSIDIRECTORYSERVICEPROVIDER2
 
-  nsDirectoryService();
+  nsDirectoryService() = default;
 
   static void RealInit();
   void RegisterCategoryProviders();
@@ -45,7 +45,7 @@ class nsDirectoryService final : public nsIDirectoryService,
   ~nsDirectoryService();
   nsCOMPtr<nsIFile> mXCurProcD;
 
-  nsInterfaceHashtable<nsCStringHashKey, nsIFile> mHashtable;
+  nsInterfaceHashtable<nsCStringHashKey, nsIFile> mHashtable{128};
   nsTArray<nsCOMPtr<nsIDirectoryServiceProvider>> mProviders;
 };
 

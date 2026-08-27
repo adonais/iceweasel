@@ -12,7 +12,10 @@
 #include "nsITimer.h"
 #include "nsIURI.h"
 
+#include "mozilla/Maybe.h"
 #include "mozilla/StaticPtr.h"
+
+#include <functional>
 
 class nsIWidget;
 
@@ -47,6 +50,18 @@ class GeckoViewHistory final : public mozilla::BaseHistory {
                          nsTArray<RefPtr<nsIURI>>&& aURIs);
   void HandleVisitedState(const nsTArray<VisitedURI>& aVisitedURIs,
                           ContentParentSet* aInterestedProcesses);
+
+  // Asks the embedding app whether aHost was visited within
+  // [aAfterEpochMillis, aBeforeEpochMillis), invoking aCallback with
+  // Some(true) if it was visited, Some(false) if it was not, and Nothing if the
+  // status could not be determined (no listener, or the query failed). This
+  // distinction matters because callers must not treat an unknown result the
+  // same as a definitive "not visited". aCallback is always invoked exactly
+  // once.
+  void QueryHostVisitedSince(
+      nsIWidget* aWidget, const nsACString& aHost, int64_t aAfterEpochMillis,
+      int64_t aBeforeEpochMillis,
+      std::function<void(mozilla::Maybe<bool>)>&& aCallback);
 
  private:
   virtual ~GeckoViewHistory();

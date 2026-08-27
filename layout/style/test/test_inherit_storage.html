@@ -75,6 +75,10 @@ function test_property(property)
     if ("alias_for" in info) {
       is(gDeclaration.cssText, info.alias_for + ": " + keyword + ";",
         "declaration should serialize to exactly what went in (for " + keyword + ")");
+    } else if (property == "-webkit-line-clamp") {
+      // TODO(Bug 1540681): Remove when shipping line-clamp.
+      is(gDeclaration.cssText, property + ": " + keyword + ";",
+        "declaration should serialize to exactly what went in (for " + keyword + ")");
     } else if (info.type == CSS_TYPE_LEGACY_SHORTHAND) {
       // We can't assert anything more meaningful here, really.
       is(property, "zoom", "Zoom is a bit special because it never " +

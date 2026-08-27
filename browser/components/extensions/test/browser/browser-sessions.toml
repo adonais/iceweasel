@@ -1,8 +1,5 @@
 # Keep the test list here in sync with browser_legacy_recent_tabs.toml.
 [DEFAULT]
-skip-if = [
-	"debug && standalone", # TODO bug 2048260: Drop skip-if = standalone
-]
 tags = "webextensions"
 prefs = [
   "browser.sessionstore.closedTabsFromAllWindows=true",

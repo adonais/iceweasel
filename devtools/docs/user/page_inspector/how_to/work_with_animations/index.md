@@ -196,3 +196,12 @@ The cubic Bézier editor includes a number of presets, grouped under "Ease-in", 
 <br/>
 <br/>
 ```
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+animation_inspector_(firefox_41_and_42)/index
+animation_inspector_example_colon__css_transitions/index
+animation_inspector_example_colon__web_animations_api/index
+```

@@ -109,7 +109,7 @@ const EXPECTATION_INVALID_CHANNEL = {
   originURI: null,
   documentURI: null,
   canModify: false,
-  frameId: 0,
+  frameId: -1, // Not associated with a frame.
   parentFrameId: -1,
   documentInnerWindowId: 0,
   parentDocumentInnerWindowId: 0,
@@ -459,6 +459,7 @@ add_task(async function ChannelWrapper_https_url() {
     documentURL: "", // triggeringPrincipal is null principal in createChannel.
     originURI: null,
     documentURI: null,
+    frameId: -1, // simulated load not associated with a frame.
     documentInnerWindowId: 0, // simulated load not associated with a document.
     parentDocumentInnerWindowId: 0,
     browserElement: null, // simulated load not associated with any <browser>.

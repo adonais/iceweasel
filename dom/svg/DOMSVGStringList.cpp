@@ -106,11 +106,7 @@ JSObject* DOMSVGStringList::WrapObject(JSContext* aCx,
 // ----------------------------------------------------------------------------
 // SVGStringList implementation:
 
-uint32_t DOMSVGStringList::NumberOfItems() const {
-  return InternalList().Length();
-}
-
-uint32_t DOMSVGStringList::Length() const { return NumberOfItems(); }
+uint32_t DOMSVGStringList::Length() const { return InternalList().Length(); }
 
 void DOMSVGStringList::Clear() {
   if (InternalList().IsExplicitlySet()) {
@@ -142,6 +138,13 @@ void DOMSVGStringList::IndexedGetter(uint32_t aIndex, bool& aFound,
   if (aFound) {
     aRetval = InternalList()[aIndex];
   }
+}
+
+void DOMSVGStringList::IndexedSetter(uint32_t aIndex,
+                                     const nsAString& aNewValue,
+                                     ErrorResult& aRv) {
+  nsAutoString ignored;
+  ReplaceItem(aNewValue, aIndex, ignored, aRv);
 }
 
 void DOMSVGStringList::InsertItemBefore(const nsAString& aNewItem,

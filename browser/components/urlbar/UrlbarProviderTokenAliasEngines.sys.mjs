@@ -6,10 +6,7 @@
  * This module exports a provider that offers token alias engines.
  */
 
-import {
-  UrlbarProvider,
-  UrlbarUtils,
-} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -32,10 +29,10 @@ export class UrlbarProviderTokenAliasEngines extends UrlbarProvider {
   }
 
   /**
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof lazy.UrlbarShared.PROVIDER_TYPE>}
    */
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
+    return lazy.UrlbarShared.PROVIDER_TYPE.HEURISTIC;
   }
 
   static get PRIORITY() {
@@ -136,8 +133,8 @@ export class UrlbarProviderTokenAliasEngines extends UrlbarProvider {
             providesSearchMode: true,
           },
           highlights: {
-            engine: UrlbarUtils.HIGHLIGHT.TYPED,
-            keyword: UrlbarUtils.HIGHLIGHT.TYPED,
+            engine: lazy.UrlbarShared.HIGHLIGHT.TYPED,
+            keyword: lazy.UrlbarShared.HIGHLIGHT.TYPED,
           },
         });
         if (instance != this.queryInstance) {
@@ -217,8 +214,8 @@ export class UrlbarProviderTokenAliasEngines extends UrlbarProvider {
               providesSearchMode: true,
             },
             highlights: {
-              engine: UrlbarUtils.HIGHLIGHT.TYPED,
-              keyword: UrlbarUtils.HIGHLIGHT.TYPED,
+              engine: lazy.UrlbarShared.HIGHLIGHT.TYPED,
+              keyword: lazy.UrlbarShared.HIGHLIGHT.TYPED,
             },
           });
         }

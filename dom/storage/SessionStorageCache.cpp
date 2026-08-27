@@ -110,7 +110,7 @@ void SessionStorageCache::GetItem(const nsAString& aKey, nsAString& aResult) {
   if (!mDataSet.mKeys.Get(aKey, &value)) {
     SetDOMStringToNull(value);
   }
-  aResult = value;
+  aResult = std::move(value);
 }
 
 void SessionStorageCache::GetKeys(nsTArray<nsString>& aKeys) {

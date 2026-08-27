@@ -28,7 +28,7 @@ pub struct DirtyRegion {
     /// The overall dirty rect, a combination of dirty_rects
     pub combined: VisRect,
 
-    /// The corrdinate space used to do clipping, visibility, and
+    /// The coordinate space used to do clipping, visibility, and
     /// dirty rect calculations.
     pub visibility_spatial_node: SpatialNodeIndex,
     /// Spatial node of the picture this region represents.
@@ -107,6 +107,8 @@ pub enum InvalidationReason {
     ScaleChanged,
     // The content of the sampling surface changed
     SurfaceContentChanged,
+    // Cancel underlay
+    CancelUnderlay,
 }
 
 /// The result of a primitive dependency comparison. Size is a u8

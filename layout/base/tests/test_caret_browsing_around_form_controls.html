@@ -206,12 +206,12 @@ SimpleTest.waitForFocus(async () => {
     );
     is(
       getSelection().focusNode,
-      button.nextSibling,
-      "test_move_caret_from_before_button: caret should be moved to text node after the <button>"
+      button.firstChild,
+      "test_move_caret_from_before_button: caret should be moved to text node inside the <button>"
     );
     is(
       getSelection().focusOffset,
-      0,
+      1,
       "test_move_caret_from_before_button: caret should be moved to start of the text node"
     );
   })();
@@ -227,13 +227,13 @@ SimpleTest.waitForFocus(async () => {
     );
     is(
       getSelection().focusNode,
-      button.previousSibling,
-      "test_move_caret_from_after_button: caret should be moved to text node before the <button>"
+      button.firstChild,
+      "test_move_caret_from_after_button: caret should be moved to text node inside the <button>"
     );
     is(
       getSelection().focusOffset,
-      button.previousSibling.length,
-      "test_move_caret_from_after_button: caret should be moved to end of the text node"
+      2,
+      "test_move_caret_from_after_button: caret should be moved to the next character of the text node"
     );
   })();
   (function test_move_caret_from_before_double_button() {
@@ -250,13 +250,13 @@ SimpleTest.waitForFocus(async () => {
     );
     is(
       getSelection().focusNode,
-      secondButton.nextSibling,
-      "test_move_caret_from_before_double_button: caret should be moved to text node after the second <button> (container)"
+      firstButton.firstChild,
+      "test_move_caret_from_before_double_button: caret should be moved to text node inside the first <button> (container)"
     );
     is(
       getSelection().focusOffset,
-      0,
-      "test_move_caret_from_before_double_button: caret should be moved to text node after the second <button> (offset)"
+      1,
+      "test_move_caret_from_before_double_button: caret should be moved to text node inside the first <button> (offset)"
     );
   })();
   (function test_move_caret_from_after_double_button() {
@@ -272,13 +272,13 @@ SimpleTest.waitForFocus(async () => {
     );
     is(
       getSelection().focusNode,
-      firstButton.previousSibling,
-      "test_move_caret_from_after_double_button: caret should be moved to text node before the first <button> (container)"
+      secondButton.firstChild,
+      "test_move_caret_from_after_double_button: caret should be moved to text node inside the second <button> (container)"
     );
     is(
       getSelection().focusOffset,
-      firstButton.previousSibling.length,
-      "test_move_caret_from_after_double_button: caret should be moved to text node before the first <button> (offset)"
+      2,
+      "test_move_caret_from_after_double_button: caret should be moved to text node before the second <button> (offset)"
     );
   })();
 

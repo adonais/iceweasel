@@ -12,7 +12,7 @@ Who this guide is for: As the title suggests, the target audience of
 this guide is existing Gecko engineers who need to be able to build and
 (locally) test GeckoView. If you aren’t already familiar with building
 Firefox on a desktop platform, you’ll likely be better served by reading
-[our general introduction](geckoview-quick-start.html). This guide may
+[our general introduction](geckoview-quick-start.md). This guide may
 also be helpful if you find you’ve written a patch that requires
 changing GeckoView’s public API, see [Landing a Patch](#landing-a-patch).
 
@@ -73,7 +73,7 @@ Don’t worry about installing an emulator at the moment, that will be covered
 shortly. It’s worth noting here that other `mozconfig` options will generally
 work as you’d expect. Additionally, if you plan on debugging native code on
 Android, you should include the `mozconfig` changes mentioned [in our native
-debugging guide](native-debugging.html). Now, using that `mozconfig` with
+debugging guide](native-debugging.md). Now, using that `mozconfig` with
 any modifications you’ve made, simply `./mach build`. If all goes well, you
 will have successfully built GeckoView.
 
@@ -107,20 +107,20 @@ by far the simplest way of doing so. It supports remote debugging by
 default — simply open Remote Debugging on your desktop browser and the
 connected device/emulator should show up when the example app is open.
 You can also use the example app for native debugging, follow the
-[native debugging guide](native-debugging.html).
+[native debugging guide](native-debugging.md).
 
 #### GeckoView JUnit Tests
 
 Once you’ve successfully built GV, you can run tests from the GeckoView
 JUnit test suite with `./mach geckoview-junit`. For further examples
 (eg running individual tests, repeating tests, etc.), consult the [quick
-start guide](geckoview-quick-start.html#running-tests-locally).
+start guide](geckoview-quick-start.md#running-tests-locally).
 
 #### Fenix and other GV-based Apps
 
 If you are working on something for which the GeckoView Example app is
 not sufficient for some reason, you may need to [use your local build of
-GeckoView in one of Mozilla’s GV-based apps like Fenix](geckoview-quick-start.html#include-geckoview-as-a-dependency).
+GeckoView in one of Mozilla’s GV-based apps like Fenix](geckoview-quick-start.md#include-geckoview-as-a-dependency).
 
 ### Debugging
 
@@ -136,7 +136,7 @@ Mozilla GV-based browsers have similar options.
 #### Native Debugging
 
 To perform native debugging on any GV app will require you to install
-Android Studio and follow instructions [here](native-debugging.html).
+Android Studio and follow instructions [here](native-debugging.md).
 
 ### Landing a Patch
 
@@ -155,5 +155,5 @@ Phabricator.
 
 #### Recommended Reading
 
-- [Translations: Toolkit to Fenix](translations-toolkit-to-fenix.html): Creating
+- [Translations: Toolkit to Fenix](translations-toolkit-to-fenix.md): Creating
   a new Android feature using existing JavaScript toolkit code

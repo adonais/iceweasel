@@ -6,6 +6,7 @@
 
 #include "../cache2/CacheFileUtils.h"
 #include "AlternateServices.h"
+#include "SSLTokensCache.h"
 #include "mozilla/Components.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/Logging.h"
@@ -116,6 +117,21 @@ class DnsData : public nsISupports {
 };
 
 NS_IMPL_ISUPPORTS0(DnsData)
+
+class SSLTokensCacheData : public nsISupports {
+  virtual ~SSLTokensCacheData() = default;
+
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  SSLTokensCacheData() = default;
+
+  nsTArray<SSLTokensCacheRecordInfo> mData;
+  nsMainThreadPtrHandle<nsINetDashboardCallback> mCallback;
+  nsIEventTarget* mEventTarget{nullptr};
+};
+
+NS_IMPL_ISUPPORTS0(SSLTokensCacheData)
 
 class ConnectionData : public nsITransportEventSink,
                        public nsITimerCallback,
@@ -1327,6 +1343,130 @@ Dashboard::RequestAltSvcCache(nsINetDashboardCallback* aCallback) {
     return NS_ERROR_FAILURE;
   }
   aCallback->OnDashboardDataAvailable(val);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+Dashboard::RequestSSLTokensCache(nsINetDashboardCallback* aCallback) {
+  RefPtr<SSLTokensCacheData> data = new SSLTokensCacheData();
+  data->mCallback = new nsMainThreadPtrHolder<nsINetDashboardCallback>(
+      "nsINetDashboardCallback", aCallback, true);
+  data->mEventTarget = GetCurrentSerialEventTarget();
+
+  if (nsIOService::UseSocketProcess()) {
+    if (!gIOService->SocketProcessReady()) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+
+    RefPtr<Dashboard> self(this);
+    RefPtr<SocketProcessParent> socketParent =
+        SocketProcessParent::GetSingleton();
+    socketParent->SendGetSSLTokensCacheData()->Then(
+        GetMainThreadSerialEventTarget(), __func__,
+        [self{std::move(self)},
+         data](nsTArray<SSLTokensCacheRecordInfo>&& records) {
+          data->mData.Assign(std::move(records));
+          data->mEventTarget->Dispatch(
+              NewRunnableMethod<RefPtr<SSLTokensCacheData>>(
+                  "net::Dashboard::GetSSLTokensCache", self,
+                  &Dashboard::GetSSLTokensCache, data),
+              NS_DISPATCH_NORMAL);
+        },
+        [](const mozilla::ipc::ResponseRejectReason) {});
+    return NS_OK;
+  }
+
+  SSLTokensCache::GetAllRecords(data->mData);
+  return GetSSLTokensCache(data);
+}
+
+nsresult Dashboard::GetSSLTokensCache(SSLTokensCacheData* aData) {
+  RefPtr<SSLTokensCacheData> data = aData;
+  AutoSafeJSContext cx;
+
+  mozilla::dom::SSLTokensCacheDict dict;
+  dict.mEntries.Construct();
+  Sequence<mozilla::dom::SSLTokensCacheElement>& entries =
+      dict.mEntries.Value();
+  if (!entries.SetCapacity(data->mData.Length(), fallible)) {
+    JS_ReportOutOfMemory(cx);
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  for (const auto& rec : data->mData) {
+    mozilla::dom::SSLTokensCacheElement* entry =
+        entries.AppendElement(fallible);
+    if (!entry) {
+      JS_ReportOutOfMemory(cx);
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+    CopyUTF8toUTF16(rec.key, entry->mKey);
+    entry->mRestored = rec.restored;
+    entry->mTokenId = rec.id;
+    entry->mExpirationTime = static_cast<double>(rec.expirationTime);
+    entry->mOverridableErrorCategory = rec.overridableError;
+    // Set regardless of decode success below: the record occupies this many
+    // bytes in the cache either way.
+    entry->mCompressedLength = rec.compressedPayload.Length();
+
+    nsTArray<uint8_t> token;
+    SessionCacheInfo info;
+    uint32_t decompressedLength = 0;
+    if (!SSLTokensCache::DecodeCompressedPayload(rec.compressedPayload, token,
+                                                 info, &decompressedLength)) {
+      continue;
+    }
+
+    entry->mTokenLength = token.Length();
+    entry->mDecompressedLength = decompressedLength;
+    entry->mEvStatus = info.mEVStatus == psm::EVStatus::EV;
+    entry->mCertificateTransparencyStatus = info.mCertificateTransparencyStatus;
+    entry->mBuiltInRoot =
+        info.mIsBuiltCertChainRootBuiltInRoot.isNothing()
+            ? -1
+            : (*info.mIsBuiltCertChainRootBuiltInRoot ? 1 : 0);
+    entry->mServerCertDER.Construct();
+    if (!entry->mServerCertDER.Value().AppendElements(
+            info.mServerCertBytes.Elements(), info.mServerCertBytes.Length(),
+            fallible)) {
+      JS_ReportOutOfMemory(cx);
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+
+    entry->mSucceededCertChainDER.Construct();
+    if (info.mSucceededCertChainBytes) {
+      Sequence<Sequence<uint8_t>>& chain =
+          entry->mSucceededCertChainDER.Value();
+      for (const auto& der : *info.mSucceededCertChainBytes) {
+        Sequence<uint8_t>* certDER = chain.AppendElement(fallible);
+        if (!certDER ||
+            !certDER->AppendElements(der.Elements(), der.Length(), fallible)) {
+          JS_ReportOutOfMemory(cx);
+          return NS_ERROR_OUT_OF_MEMORY;
+        }
+      }
+    }
+
+    entry->mHandshakeCertDER.Construct();
+    if (info.mHandshakeCertificatesBytes) {
+      Sequence<Sequence<uint8_t>>& chain = entry->mHandshakeCertDER.Value();
+      for (const auto& der : *info.mHandshakeCertificatesBytes) {
+        Sequence<uint8_t>* certDER = chain.AppendElement(fallible);
+        if (!certDER ||
+            !certDER->AppendElements(der.Elements(), der.Length(), fallible)) {
+          JS_ReportOutOfMemory(cx);
+          return NS_ERROR_OUT_OF_MEMORY;
+        }
+      }
+    }
+  }
+
+  JS::Rooted<JS::Value> val(cx);
+  if (!ToJSValue(cx, dict, &val)) {
+    return NS_ERROR_FAILURE;
+  }
+  data->mCallback->OnDashboardDataAvailable(val);
 
   return NS_OK;
 }

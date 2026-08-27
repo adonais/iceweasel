@@ -112,8 +112,7 @@ function checkInstances(instances, reference) {
 function RunTest() {
   // Ensure we're running with font-variations enabled
   SpecialPowers.pushPrefEnv(
-    {'set': [['layout.css.font-variations.enabled', true],
-             ['gfx.downloadable_fonts.keep_variation_tables', true],
+    {'set': [['gfx.downloadable_fonts.keep_variation_tables', true],
              ['gfx.downloadable_fonts.otl_validation', false]]},
     function() {
       var rng = document.createRange();

@@ -4,7 +4,6 @@
 
 package mozilla.components.service.pocket
 
-import android.annotation.SuppressLint
 import mozilla.components.service.pocket.mars.SponsoredContentsUseCases
 import mozilla.components.service.pocket.recommendations.ContentRecommendationsUseCases
 
@@ -16,7 +15,6 @@ internal object GlobalDependencyProvider {
         /**
          * Possible actions regarding the list of content recommendations.
          */
-        @SuppressLint("StaticFieldLeak")
         internal var useCases: ContentRecommendationsUseCases? = null
             private set
 
@@ -46,7 +44,6 @@ internal object GlobalDependencyProvider {
         /**
          * Use cases for sponsored contents actions.
          */
-        @SuppressLint("StaticFieldLeak")
         internal var useCases: SponsoredContentsUseCases? = null
             private set
 

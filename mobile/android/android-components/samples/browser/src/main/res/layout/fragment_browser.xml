@@ -42,7 +42,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
             <mozilla.components.concept.engine.EngineView
-                tools:ignore="Instantiatable"
                 android:id="@+id/engineView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
@@ -63,7 +62,8 @@
             android:background="#FFFFFFFF"
             android:elevation="10dp"
             android:paddingBottom="55dp"
-            android:visibility="gone" />
+            android:visibility="gone"
+            tools:ignore="MozMultipleConstraintLayoutsAndCustomViews" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/readerViewAppearanceButton"
@@ -74,8 +74,7 @@
             android:layout_marginRight="16dp"
             android:layout_marginBottom="72dp"
             android:src="@drawable/mozac_ic_reader_view_24"
-            android:visibility="gone"
-            tools:ignore="ContentDescription" />
+            android:visibility="gone" />
 
     </FrameLayout>
 

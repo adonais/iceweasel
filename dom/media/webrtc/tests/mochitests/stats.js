@@ -314,9 +314,10 @@ const statsExpectedByType = {
       "dtlsCipher",
       "dtlsRole",
       "srtpCipher",
+      "selectedCandidatePairChanges",
     ],
     optional: [],
-    unimplemented: ["selectedCandidatePairChanges"],
+    unimplemented: [],
     deprecated: [],
   },
   certificate: { skip: true },
@@ -1879,6 +1880,12 @@ function pedanticChecks(report) {
       ok(
         !!stat.srtpCipher.length,
         `${stat.type}.ѕrtpCipher is not the empty string`
+      );
+
+      // selectedCandidatePairChanges
+      ok(
+        stat.selectedCandidatePairChanges > 0,
+        `${stat.type}.selectedCandidatePairChanges is greater than zero. value=${stat.selectedCandidatePairChanges}`
       );
     } else if (
       stat.type == "local-candidate" ||

@@ -154,7 +154,7 @@ class nsAnonTempFileRemover final : public nsIObserver, public nsINamed {
  public:
   NS_DECL_ISUPPORTS
 
-  nsAnonTempFileRemover() {}
+  nsAnonTempFileRemover() = default;
 
   nsresult Init() {
     // We add the idle observer in a timer, so that the app has enough
@@ -239,7 +239,7 @@ class nsAnonTempFileRemover final : public nsIObserver, public nsINamed {
   }
 
  private:
-  ~nsAnonTempFileRemover() {}
+  ~nsAnonTempFileRemover() = default;
 
   nsCOMPtr<nsITimer> mTimer;
 };

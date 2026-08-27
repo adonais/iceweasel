@@ -1,0 +1,10 @@
+//error: ctor for protocol `PconflictProtocolMsg', which is not managed by protocol `PconflictProtocolMsg'
+
+[ChildProc=any]
+protocol PconflictProtocolMsg {
+
+    // it's an error to re-use the protocol name as a message ID; these
+    // are reserved
+child: async PconflictProtocolMsg();
+
+};

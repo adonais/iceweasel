@@ -9,6 +9,7 @@
       "color": {
         "@base": {
           "value": {
+            "nativeTheme": "{border.color.transparent}",
             "light": "{color.gray.20}",
             "dark": "{color.gray.60}",
             "forcedColors": "ButtonText"
@@ -16,8 +17,9 @@
         },
         "focus": {
           "value": {
-            "default": "#ffffff",
-            "forcedColors": "SelectedItem"
+            "nativeTheme": "color-mix(in srgb, {focus.outline.color} 50%, transparent)",
+            "default": "{focus.outline.color}",
+            "prefersContrast": "{focus.outline.color}"
           }
         }
       }
@@ -25,7 +27,10 @@
     "background": {
       "color": {
         "@base": {
-          "value": "{toolbar.background.color}"
+          "value": {
+            "nativeTheme": "light-dark(rgba(0, 0, 0, 0.05), {color.black.alpha.30})",
+            "default": "{toolbar.background.color}"
+          }
         },
         "focus": {
           "value": {

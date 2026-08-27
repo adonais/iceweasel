@@ -23,7 +23,7 @@ import { memoizeableAction } from "../../utils/memoizableAction";
 
 import { getEditor } from "../../utils/editor/index";
 
-async function loadGeneratedSource(sourceActor, { client }) {
+async function loadGeneratedSource(sourceActor) {
   // If no source actor can be found then the text for the
   // source cannot be loaded.
   if (!sourceActor) {
@@ -32,9 +32,10 @@ async function loadGeneratedSource(sourceActor, { client }) {
 
   let response;
   try {
-    response = await client.sourceContents(sourceActor);
+    response =
+      await sourceActor.targetFront.getSourceContentForResource(sourceActor);
   } catch (e) {
-    throw new Error(`sourceContents failed: ${e}`);
+    throw new Error(`targetFront.getSourceContentForResource failed: ${e}`);
   }
 
   return {
@@ -88,7 +89,7 @@ async function loadGeneratedSourceTextPromise(sourceActor, thunkArgs) {
     type: "LOAD_GENERATED_SOURCE_TEXT",
     sourceActor,
     epoch,
-    [PROMISE]: loadGeneratedSource(sourceActor, thunkArgs),
+    [PROMISE]: loadGeneratedSource(sourceActor),
   });
 
   await onSourceTextContentAvailable(

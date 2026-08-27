@@ -159,7 +159,8 @@ interface nsIEditor  : nsISupports
   /** Returns true if we have a document that is not marked read-only */
   readonly attribute boolean isDocumentEditable;
 
-  /** Returns true if the current selection anchor is editable */
+  /** Returns true if the current selection anchor is editable,
+      or if this is an EditContext editor. */
   readonly attribute boolean isSelectionEditable;
 
   /**

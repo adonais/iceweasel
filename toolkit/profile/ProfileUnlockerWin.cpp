@@ -53,8 +53,6 @@ ProfileUnlockerWin::ProfileUnlockerWin(const nsAString& aFileName)
       mRmEndSession(nullptr),
       mFileName(aFileName) {}
 
-ProfileUnlockerWin::~ProfileUnlockerWin() {}
-
 NS_IMPL_ISUPPORTS(ProfileUnlockerWin, nsIProfileUnlocker)
 
 nsresult ProfileUnlockerWin::Init() {

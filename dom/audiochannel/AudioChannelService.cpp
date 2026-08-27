@@ -162,8 +162,6 @@ AudioChannelService::AudioChannelService() {
   }
 }
 
-AudioChannelService::~AudioChannelService() = default;
-
 void AudioChannelService::RegisterAudioChannelAgent(AudioChannelAgent* aAgent,
                                                     AudibleState aAudible) {
   MOZ_ASSERT(aAgent);

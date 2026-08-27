@@ -29,6 +29,14 @@ DIRS += [
     "skia",
 ]
 
+if CONFIG["MOZ_TREE_PIXMAN"]:
+    DIRS += ["pixman"]
+
+if CONFIG["MOZ_FONTATIONS"]:
+    DIRS += [
+        "fontations_glue",
+    ]
+
 TEST_DIRS += ["tests/gtest"]
 
 if CONFIG["FUZZING_INTERFACES"]:

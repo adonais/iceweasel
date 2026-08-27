@@ -69,6 +69,7 @@ task-defaults:
               path: /builds/worker/workspace/obj-build/gradle/build/reports
               type: directory
     run:
+        clone-with: hg
         using: mozharness
         script: "mozharness/scripts/fx_desktop_build.py"
         secrets: true
@@ -154,6 +155,7 @@ tasks:
                 PERFHERDER_EXTRA_OPTIONS: android-geckoview-fat-aar-nightly
                 MOZ_ARTIFACT_TASK: {task-reference: '<armeabi-v7a>'}
         run:
+            clone-with: hg
             actions: [get-secrets, build, multi-l10n]
             config:
                 - builds/releng_base_android_64_builds.py
@@ -191,6 +193,7 @@ tasks:
                 PERFHERDER_EXTRA_OPTIONS: android-geckoview-fat-aar-nightly-lite
                 MOZ_ARTIFACT_TASK: {task-reference: '<armeabi-v7a>'}
         run:
+            clone-with: hg
             actions: [get-secrets, build, multi-l10n]
             config:
                 - builds/releng_base_android_64_builds.py
@@ -222,6 +225,7 @@ tasks:
                 USE_ARTIFACT: '1'
                 MOZ_ARTIFACT_TASK: {task-reference: '<armeabi-v7a>'}
         run:
+            clone-with: hg
             actions: [get-secrets, build]
             config: ["builds/releng_base_android_64_builds.py"]
             custom-build-variant-cfg: arm

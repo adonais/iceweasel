@@ -22,6 +22,13 @@ ChromeUtils.defineLazyGetter(this, "SidebarTestUtils", () => {
 const ALT_PREF = "browser.tabs.contextmenu.altstructure.enabled";
 
 add_setup(async function () {
+  // Setting a provider fires onChatProviderChange, which auto-opens the GenAI
+  // chat sidebar. That leaves a chat browser around that leaks a window at shutdown.
+  // Disable it first, in its own pushPrefEnv, so the guard is in effect before the
+  // provider change below.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.chat.openSidebarOnProviderChange", false]],
+  });
   await SpecialPowers.pushPrefEnv({
     set: [
       [ALT_PREF, true],

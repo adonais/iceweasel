@@ -32,7 +32,12 @@
   align-items: flex-start;
 }
 
-.message-inner img {
+.message-image {
+  display: block;
+}
+
+.message-image img {
+  display: block;
   width: 80px;
   height: 80px;
   object-fit: contain;
@@ -56,7 +61,7 @@
 }
 
 .message-content p {
-  margin-block: var(--space-medium) 0;
+  margin-block: var(--space-small) 0;
   color: var(--text-color-deemphasized);
 }
 
@@ -72,7 +77,7 @@
     align-items: stretch;
   }
 
-  .message-inner img {
+  .message-image img {
     width: 98px;
     height: 98px;
   }
@@ -80,11 +85,49 @@
   .message-content {
     justify-content: space-between;
   }
+
+  /* The message can opt-in to has-responsive-image, in which case the image
+   * is flush to the card's border. There are three image sizes: square, narrow,
+   * and responsive and two corresponding breakpoints at 724px and 1072px.
+   * Bug 2051660 */
+  .has-responsive-image .message-image {
+    align-self: stretch;
+    width: 99px;
+    margin-block: calc(-1 * var(--space-large));
+    margin-inline-start: calc(-1 * var(--space-large));
+  }
+
+  .has-responsive-image .message-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0;
+  }
+}
+
+@media (min-width: 1072px) {
+  .has-responsive-image .message-image {
+    width: 134px;
+  }
 }
 
 @media (min-width: 1122px) {
-  .message-inner img {
+  .message-image img {
     width: 140px;
     height: 111px;
+  }
+}
+
+@media (max-width: 724px) {
+  .has-responsive-image .message-image {
+    width: calc(100% + 2 * var(--space-large));
+    margin-block-start: calc(-1 * var(--space-large));
+    margin-inline: calc(-1 * var(--space-large));
+  }
+
+  .has-responsive-image .message-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 0;
   }
 }

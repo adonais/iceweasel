@@ -3938,6 +3938,13 @@ class Assembler : public MozBaseAssembler {
     return SizeOfCodeGenerated();
   }
 
+  // Returns the extent of the buffer we can currently read, taking into account
+  // that there may be "uncommitted" data in the currently-under-construction
+  // constant pool.
+  size_t readableSize() const {
+    return armbuffer_.sizeExcludingCurrentPool();
+  }
+
   size_t SizeOfCodeGenerated() const {
     return armbuffer_.size();
   }

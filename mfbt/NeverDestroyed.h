@@ -8,6 +8,7 @@
 #include <new>
 #include <type_traits>
 #include <utility>
+
 #include "mozilla/Attributes.h"
 
 namespace mozilla {

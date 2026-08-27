@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.prompts.dialog
 
-import android.annotation.SuppressLint
 import android.text.method.ScrollingMovementMethod
 import android.view.LayoutInflater
 import android.view.View
@@ -43,7 +42,6 @@ internal abstract class AbstractPromptTextDialogFragment : PromptDialogFragment(
      * Creates custom view that adds a [TextView] + [CheckBox] and attach the corresponding
      * events for handling [hasShownManyDialogs].
      */
-    @SuppressLint("InflateParams")
     internal fun setCustomMessageView(builder: MaterialAlertDialogBuilder): MaterialAlertDialogBuilder {
         val inflater = LayoutInflater.from(requireContext())
         val view = inflater.inflate(R.layout.mozac_feature_prompt_with_check_box, null)

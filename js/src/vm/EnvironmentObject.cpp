@@ -158,7 +158,7 @@ CallObject* CallObject::createForFrame(JSContext* cx, AbstractFramePtr frame,
     return nullptr;
   }
 
-  callobj->initFixedSlot(CALLEE_SLOT, ObjectValue(*callee));
+  callobj->initFixedSlotTyped(CALLEE_SLOT, ObjectValue(*callee));
 
   return callobj;
 }
@@ -217,7 +217,7 @@ CallObject* CallObject::createHollowForDebug(JSContext* cx,
   // enclosing link, which is what Debugger uses to construct the tree of
   // Debugger.Environment objects.
   callobj->initEnclosingEnvironment(&cx->global()->lexicalEnvironment());
-  callobj->initFixedSlot(CALLEE_SLOT, ObjectValue(*callee));
+  callobj->initFixedSlotTyped(CALLEE_SLOT, ObjectValue(*callee));
 
   RootedField<Value> optimizedOut(roots, MagicValue(JS_OPTIMIZED_OUT));
   RootedField<jsid> id(roots);
@@ -392,7 +392,7 @@ ModuleEnvironmentObject* ModuleEnvironmentObject::create(
     return nullptr;
   }
 
-  env->initReservedSlot(MODULE_SLOT, ObjectValue(*module));
+  env->initReservedSlotTyped(MODULE_SLOT, ObjectValue(*module));
 
   // Initialize this early so that we can manipulate the env object without
   // causing assertions.
@@ -418,25 +418,24 @@ ModuleEnvironmentObject* ModuleEnvironmentObject::create(
   MOZ_ASSERT(!env->inDictionaryMode());
 #endif
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-  env->initSlot(ModuleEnvironmentObject::DISPOSABLE_RESOURCE_STACK_SLOT,
-                UndefinedValue());
-#endif
+  env->initFixedSlotTyped(
+      ModuleEnvironmentObject::DISPOSABLE_RESOURCE_STACK_SLOT,
+      UndefinedValue());
 
   return env;
 }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 static ArrayObject* initialiseAndSetDisposeCapabilityHelper(
-    JSContext* cx, JS::Handle<EnvironmentObject*> env, uint32_t slot) {
-  JS::Value slotData = env->getReservedSlot(slot);
+    JSContext* cx, JS::Handle<EnvironmentObject*> env,
+    TypedSlot<ValueType::Object, ValueType::Undefined> slot) {
+  JS::Value slotData = env->getReservedSlotTyped(slot);
   ArrayObject* disposablesList = nullptr;
   if (slotData.isUndefined()) {
     disposablesList = NewDenseEmptyArray(cx);
     if (!disposablesList) {
       return nullptr;
     }
-    env->setReservedSlot(slot, ObjectValue(*disposablesList));
+    env->setReservedSlotTyped(slot, ObjectValue(*disposablesList));
   } else {
     disposablesList = &slotData.toObject().as<ArrayObject>();
   }
@@ -452,13 +451,12 @@ ArrayObject* DisposableEnvironmentObject::getOrCreateDisposeCapability(
 
 // TODO: The get & clear disposables function can be merged. (bug 1907736)
 JS::Value DisposableEnvironmentObject::getDisposables() {
-  return getReservedSlot(DISPOSABLE_RESOURCE_STACK_SLOT);
+  return getReservedSlotTyped(DISPOSABLE_RESOURCE_STACK_SLOT);
 }
 
 void DisposableEnvironmentObject::clearDisposables() {
-  setReservedSlot(DISPOSABLE_RESOURCE_STACK_SLOT, UndefinedValue());
+  setReservedSlotTyped(DISPOSABLE_RESOURCE_STACK_SLOT, UndefinedValue());
 }
-#endif
 
 /* static */
 ModuleEnvironmentObject* ModuleEnvironmentObject::createSynthetic(
@@ -479,7 +477,7 @@ ModuleEnvironmentObject* ModuleEnvironmentObject::createSynthetic(
     return nullptr;
   }
 
-  env->initReservedSlot(MODULE_SLOT, ObjectValue(*module));
+  env->initReservedSlotTyped(MODULE_SLOT, ObjectValue(*module));
 
   // Initialize this early so that we can manipulate the env object without
   // causing assertions.
@@ -523,7 +521,7 @@ ModuleEnvironmentObject* ModuleEnvironmentObject::createForWasmModule(
     return nullptr;
   }
 
-  env->initReservedSlot(MODULE_SLOT, ObjectValue(*module));
+  env->initReservedSlotTyped(MODULE_SLOT, ObjectValue(*module));
   env->initEnclosingEnvironment(&cx->global()->lexicalEnvironment());
   MOZ_ASSERT(env->hasFlag(ObjectFlag::NotExtensible));
   MOZ_ASSERT(!env->inDictionaryMode());
@@ -532,7 +530,7 @@ ModuleEnvironmentObject* ModuleEnvironmentObject::createForWasmModule(
 }
 
 ModuleObject& ModuleEnvironmentObject::module() const {
-  return getReservedSlot(MODULE_SLOT).toObject().as<ModuleObject>();
+  return getReservedSlotTyped(MODULE_SLOT).toObject().as<ModuleObject>();
 }
 
 IndirectBindingMap& ModuleEnvironmentObject::importBindings() const {
@@ -700,7 +698,7 @@ WasmInstanceEnvironmentObject::createHollowForDebug(
   }
 
   env->initEnclosingEnvironment(&cx->global()->lexicalEnvironment());
-  env->initReservedSlot(SCOPE_SLOT, PrivateGCThingValue(scope));
+  env->initReservedSlotTyped(SCOPE_SLOT, PrivateGCThingValue(scope));
 
   return env;
 }
@@ -727,7 +725,7 @@ WasmFunctionCallObject* WasmFunctionCallObject::createHollowForDebug(
   }
 
   callobj->initEnclosingEnvironment(enclosing);
-  callobj->initReservedSlot(SCOPE_SLOT, PrivateGCThingValue(scope));
+  callobj->initReservedSlotTyped(SCOPE_SLOT, PrivateGCThingValue(scope));
 
   return callobj;
 }
@@ -766,16 +764,16 @@ WithEnvironmentObject* WithEnvironmentObject::create(
   JSObject* thisObj = GetThisObject(object);
 
   obj->initEnclosingEnvironment(enclosing);
-  obj->initReservedSlot(OBJECT_SLOT, ObjectValue(*object));
-  obj->initReservedSlot(THIS_SLOT, ObjectValue(*thisObj));
+  obj->initReservedSlotTyped(OBJECT_SLOT, ObjectValue(*object));
+  obj->initReservedSlotTyped(THIS_SLOT, ObjectValue(*thisObj));
   if (scope) {
     MOZ_ASSERT(supportUnscopables == JS::SupportUnscopables::Yes,
                "with-statements must support Symbol.unscopables");
-    obj->initReservedSlot(SCOPE_OR_SUPPORT_UNSCOPABLES_SLOT,
-                          PrivateGCThingValue(scope));
+    obj->initReservedSlotTyped(SCOPE_OR_SUPPORT_UNSCOPABLES_SLOT,
+                               PrivateGCThingValue(scope));
   } else {
     Value v = BooleanValue(supportUnscopables == JS::SupportUnscopables::Yes);
-    obj->initReservedSlot(SCOPE_OR_SUPPORT_UNSCOPABLES_SLOT, v);
+    obj->initReservedSlotTyped(SCOPE_OR_SUPPORT_UNSCOPABLES_SLOT, v);
   }
 
   return obj;
@@ -1042,10 +1040,9 @@ LexicalEnvironmentObject* LexicalEnvironmentObject::create(
     env->initEnclosingEnvironment(enclosing);
   }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-  env->initSlot(LexicalEnvironmentObject::DISPOSABLE_RESOURCE_STACK_SLOT,
-                UndefinedValue());
-#endif
+  env->initFixedSlotTyped(
+      LexicalEnvironmentObject::DISPOSABLE_RESOURCE_STACK_SLOT,
+      UndefinedValue());
 
   return env;
 }
@@ -1276,7 +1273,7 @@ ClassBodyLexicalEnvironmentObject::createWithoutEnclosing(
 }
 
 JSObject* ExtensibleLexicalEnvironmentObject::thisObject() const {
-  JSObject* obj = &getReservedSlot(THIS_VALUE_OR_SCOPE_SLOT).toObject();
+  JSObject* obj = &getReservedSlotTyped(THIS_VALUE_OR_SCOPE_SLOT).toObject();
 
   // Windows must never be exposed to script. initThisObject should have set
   // this to the WindowProxy.
@@ -1332,7 +1329,7 @@ GlobalLexicalEnvironmentObject* GlobalLexicalEnvironmentObject::create(
 
 void GlobalLexicalEnvironmentObject::setWindowProxyThisObject(JSObject* obj) {
   MOZ_ASSERT(IsWindowProxy(obj));
-  setReservedSlot(THIS_VALUE_OR_SCOPE_SLOT, ObjectValue(*obj));
+  setReservedSlotTyped(THIS_VALUE_OR_SCOPE_SLOT, ObjectValue(*obj));
 }
 
 /* static */
@@ -1376,7 +1373,7 @@ RuntimeLexicalErrorObject* RuntimeLexicalErrorObject::create(
     return nullptr;
   }
   obj->initEnclosingEnvironment(enclosing);
-  obj->initReservedSlot(ERROR_SLOT, Int32Value(int32_t(errorNumber)));
+  obj->initReservedSlotTyped(ERROR_SLOT, Int32Value(int32_t(errorNumber)));
 
   return obj;
 }
@@ -2002,8 +1999,8 @@ class DebugEnvironmentProxyHandler : public NurseryAllocableProxyHandler {
       if (action == GET) {
         if (instanceScope->memoriesStart() <= index &&
             index < instanceScope->globalsStart()) {
-          vp.set(ObjectValue(
-              *instance.memory(index - instanceScope->memoriesStart())));
+          vp.setObject(
+              *instance.memory(index - instanceScope->memoriesStart()));
         }
         if (instanceScope->globalsStart() <= index) {
           MOZ_ASSERT(index < instanceScope->namesCount());
@@ -2657,8 +2654,8 @@ DebugEnvironmentProxy* DebugEnvironmentProxy::create(JSContext* cx,
   }
 
   DebugEnvironmentProxy* debugEnv = &obj->as<DebugEnvironmentProxy>();
-  debugEnv->setReservedSlot(ENCLOSING_SLOT, ObjectValue(*enclosing));
-  debugEnv->setReservedSlot(SNAPSHOT_SLOT, NullValue());
+  debugEnv->setReservedSlotTyped(ENCLOSING_SLOT, ObjectValue(*enclosing));
+  debugEnv->setReservedSlotTyped(SNAPSHOT_SLOT, NullValue());
 
   return debugEnv;
 }
@@ -2668,11 +2665,11 @@ EnvironmentObject& DebugEnvironmentProxy::environment() const {
 }
 
 JSObject& DebugEnvironmentProxy::enclosingEnvironment() const {
-  return reservedSlot(ENCLOSING_SLOT).toObject();
+  return reservedSlotTyped(ENCLOSING_SLOT).toObject();
 }
 
 ArrayObject* DebugEnvironmentProxy::maybeSnapshot() const {
-  JSObject* obj = reservedSlot(SNAPSHOT_SLOT).toObjectOrNull();
+  JSObject* obj = reservedSlotTyped(SNAPSHOT_SLOT).toObjectOrNull();
   return obj ? &obj->as<ArrayObject>() : nullptr;
 }
 
@@ -2690,7 +2687,7 @@ void DebugEnvironmentProxy::initSnapshot(ArrayObject& o) {
   }
 #endif
 
-  setReservedSlot(SNAPSHOT_SLOT, ObjectValue(o));
+  setReservedSlotTyped(SNAPSHOT_SLOT, ObjectValue(o));
 }
 
 bool DebugEnvironmentProxy::isForDeclarative() const {
@@ -3653,11 +3650,11 @@ WithEnvironmentObject* js::CreateObjectsForEnvironmentChain(
 }
 
 JSObject& WithEnvironmentObject::object() const {
-  return getReservedSlot(OBJECT_SLOT).toObject();
+  return getReservedSlotTyped(OBJECT_SLOT).toObject();
 }
 
 JSObject* WithEnvironmentObject::withThis() const {
-  JSObject* obj = &getReservedSlot(THIS_SLOT).toObject();
+  JSObject* obj = &getReservedSlotTyped(THIS_SLOT).toObject();
 
   // Windows must never be exposed to script. WithEnvironmentObject::create
   // should have set this to the WindowProxy.
@@ -3667,7 +3664,7 @@ JSObject* WithEnvironmentObject::withThis() const {
 }
 
 bool WithEnvironmentObject::isSyntactic() const {
-  Value v = getReservedSlot(SCOPE_OR_SUPPORT_UNSCOPABLES_SLOT);
+  Value v = getReservedSlotTyped(SCOPE_OR_SUPPORT_UNSCOPABLES_SLOT);
   MOZ_ASSERT(v.isPrivateGCThing() || v.isBoolean());
   return v.isPrivateGCThing();
 }
@@ -3676,14 +3673,14 @@ bool WithEnvironmentObject::supportUnscopables() const {
   if (isSyntactic()) {
     return true;
   }
-  Value v = getReservedSlot(SCOPE_OR_SUPPORT_UNSCOPABLES_SLOT);
+  Value v = getReservedSlotTyped(SCOPE_OR_SUPPORT_UNSCOPABLES_SLOT);
   MOZ_ASSERT(v.isBoolean());
   return v.isTrue();
 }
 
 WithScope& WithEnvironmentObject::scope() const {
   MOZ_ASSERT(isSyntactic());
-  Value v = getReservedSlot(SCOPE_OR_SUPPORT_UNSCOPABLES_SLOT);
+  Value v = getReservedSlotTyped(SCOPE_OR_SUPPORT_UNSCOPABLES_SLOT);
   return *static_cast<WithScope*>(v.toGCThing());
 }
 

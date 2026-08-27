@@ -69,7 +69,7 @@
   }
 
   // @nova-cleanup(remove-conditional): Remove .nova-enabled wrapper, make default
-  .nova-enabled .content & {
+  .nova-enabled :is(.content, .content-full-width) & {
     @include nova-centering-grid(4);
 
     padding-block-end: var(--space-xxlarge);

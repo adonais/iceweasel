@@ -75,6 +75,36 @@ add_task(async function testInvalidPropertyExtension() {
   await removeTab(tab);
 });
 
+// A dismissed error message should be displayed again when a new installation
+// fails, even if the error is identical to the previous one.
+add_task(async function testClosedErrorDisplayedAgain() {
+  const { document, tab, window } = await openAboutDebugging();
+  await selectThisFirefoxPage(document, window.AboutDebugging.store);
+
+  info("Install a bad extension to trigger an install error");
+  await installBadExtension(INVALID_JSON_EXTENSION_PATH, document);
+
+  info("Dismiss the install error message with the close button");
+  const closeButton = document.querySelector(
+    ".qa-tmp-extension-install-error .qa-message-button-close-button"
+  );
+  EventUtils.synthesizeMouseAtCenter(closeButton, {}, document.defaultView);
+
+  info("Wait until the error message disappears");
+  await waitUntil(
+    () => !document.querySelector(".qa-tmp-extension-install-error")
+  );
+
+  info("Install the same bad extension again");
+  await installBadExtension(INVALID_JSON_EXTENSION_PATH, document);
+  ok(
+    document.querySelector(".qa-tmp-extension-install-error"),
+    "The install error message is displayed again after being dismissed"
+  );
+
+  await removeTab(tab);
+});
+
 async function installBadExtension(path, document) {
   info("Install a bad extension at path: " + path);
   // Do not use installTemporaryAddon here since the install will fail.

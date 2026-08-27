@@ -253,24 +253,18 @@ const HistorySyncUtils = (PlacesSyncUtils.history = Object.freeze({
   async determineNonSyncableGuids(guids) {
     // Filter out hidden pages and transitions that we don't sync.
     let db = await lazy.PlacesUtils.promiseDBConnection();
-    let nonSyncableGuids = [];
-    for (let chunk of lazy.PlacesUtils.chunkArray(guids, db.variableLimit)) {
-      let rows = await db.execute(
-        `
+    let rows = await db.executeCached(
+      `
         SELECT DISTINCT p.guid FROM moz_places p
         JOIN moz_historyvisits v ON p.id = v.place_id
-        WHERE p.guid IN (${new Array(chunk.length).fill("?").join(",")}) AND
+        WHERE p.guid IN carray(:guids) AND
             (p.hidden = 1 OR v.visit_type IN (${
               lazy.IGNORED_TRANSITIONS_AS_SQL_LIST
             }))
       `,
-        chunk
-      );
-      nonSyncableGuids = nonSyncableGuids.concat(
-        rows.map(row => row.getResultByName("guid"))
-      );
-    }
-    return nonSyncableGuids;
+      { guids }
+    );
+    return rows.map(row => row.getResultByName("guid"));
   },
 
   /**

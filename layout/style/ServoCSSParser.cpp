@@ -82,12 +82,15 @@ bool ServoCSSParser::ParseEasing(const nsACString& aValue,
 }
 
 /* static */
-bool ServoCSSParser::ParseAndComputeViewTimelineInset(
-    const nsACString& aValue, const Element* aSubject,
-    const ComputedStyle* aStyle, const StylePerDocumentStyleData* aRawData,
-    StyleViewTimelineInset& aResult) {
-  return Servo_ParseAndComputeViewTimelineInset(&aValue, aSubject, aStyle,
-                                                aRawData, &aResult);
+bool ServoCSSParser::ParseViewTimelineInset(const nsACString& aValue,
+                                            StyleViewTimelineInset& aResult) {
+  return Servo_ParseViewTimelineInset(&aValue, &aResult);
+}
+
+/* static */
+bool ServoCSSParser::ParseLengthPercentageForAbsoluteLengths(
+    const nsACString& aValue, StyleLengthPercentage& aResult) {
+  return Servo_ParseLengthPercentageForAbsoluteLengths(&aValue, &aResult);
 }
 
 /* static */
@@ -101,10 +104,10 @@ bool ServoCSSParser::ParseTransformIntoMatrix(const nsACString& aValue,
 /* static */
 bool ServoCSSParser::ParseFontShorthandForMatching(
     const nsACString& aValue, URLExtraData* aUrl, StyleFontFamilyList& aList,
-    StyleFontStyle& aStyle, StyleFontStretch& aStretch,
-    StyleFontWeight& aWeight, float* aSize, bool* aSmallCaps) {
+    StyleFontStyle& aStyle, StyleFontWidth& aWidth, StyleFontWeight& aWeight,
+    float* aSize, bool* aSmallCaps) {
   return Servo_ParseFontShorthandForMatching(
-      &aValue, aUrl, &aList, &aStyle, &aStretch, &aWeight, aSize, aSmallCaps);
+      &aValue, aUrl, &aList, &aStyle, &aWidth, &aWeight, aSize, aSmallCaps);
 }
 
 /* static */

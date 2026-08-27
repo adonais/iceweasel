@@ -12,7 +12,8 @@
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/Try.h"  // for MOZ_TRY
+#include "mozilla/Try.h"                // for MOZ_TRY
+#include "mozilla/dom/WindowContext.h"  // for WindowContext
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/gfx/PrintTarget.h"
@@ -242,21 +243,21 @@ nsresult nsDeviceContext::InitForPrinting(nsIDeviceContextSpec* aDevice) {
 
 nsresult nsDeviceContext::BeginDocument(const nsAString& aTitle,
                                         const nsAString& aPrintToFileName,
-                                        uint64_t aBrowsingContextId,
+                                        dom::WindowContext* aWindowContext,
                                         int32_t aStartPage, int32_t aEndPage) {
   MOZ_DIAGNOSTIC_ASSERT(!mIsCurrentlyPrintingDoc,
                         "Mismatched BeginDocument/EndDocument calls");
   AUTO_PROFILER_MARKER_TEXT("DeviceContext Printing", LAYOUT_Printing, {},
                             "nsDeviceContext::BeginDocument"_ns);
 
-  mBrowsingContextId = aBrowsingContextId;
+  mInnerWindowId = aWindowContext ? aWindowContext->InnerWindowId() : 0;
   nsresult rv = mPrintTarget->BeginPrinting(
-      aTitle, aPrintToFileName, aBrowsingContextId, aStartPage, aEndPage);
+      aTitle, aPrintToFileName, mInnerWindowId, aStartPage, aEndPage);
 
   if (NS_SUCCEEDED(rv)) {
     if (mDeviceContextSpec) {
       rv = mDeviceContextSpec->BeginDocument(
-          aTitle, aPrintToFileName, aBrowsingContextId, aStartPage, aEndPage);
+          aTitle, aPrintToFileName, aWindowContext, aStartPage, aEndPage);
     }
     mIsCurrentlyPrintingDoc = true;
   }
@@ -285,7 +286,7 @@ RefPtr<PrintEndDocumentPromise> nsDeviceContext::EndDocument() {
   // content process before printing begins. However, cleanup is much simpler:
   // we can do it synchronously as soon as we're finished printing and
   // nsDeviceContext will always be notified when we finish printing.
-  mozilla::a11y::PdfStructTreeBuilder::Done(mBrowsingContextId);
+  mozilla::a11y::PdfStructTreeBuilder::Done(mInnerWindowId);
 #endif
 
   if (mPrintTarget) {
@@ -315,7 +316,7 @@ nsresult nsDeviceContext::AbortDocument() {
   mIsCurrentlyPrintingDoc = false;
 #if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
   // See the comment in EndDocument.
-  mozilla::a11y::PdfStructTreeBuilder::Done(mBrowsingContextId);
+  mozilla::a11y::PdfStructTreeBuilder::Done(mInnerWindowId);
 #endif
 
   if (mDeviceContextSpec) {

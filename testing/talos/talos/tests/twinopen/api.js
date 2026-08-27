@@ -42,22 +42,41 @@ function waitForBrowserPaint() {
 }
 
 async function startTest(context) {
-  TalosParentProfiler.subtestStart("twinopen");
+  let gcStart = ChromeUtils.now();
   Cu.forceGC();
   Cu.forceCC();
   Cu.forceShrinkingGC();
+  ChromeUtils.addProfilerMarker(
+    "twinopen setup",
+    { startTime: gcStart, category: "Test" },
+    "forced GC/CC before opening the window"
+  );
+
   let win = context.appWindow;
+  let delayStart = ChromeUtils.now();
   await openDelay(win);
+  ChromeUtils.addProfilerMarker(
+    "twinopen setup",
+    { startTime: delayStart, category: "Test" },
+    "openDelay"
+  );
+
   let mozAfterPaint = waitForBrowserPaint();
+
+  // Only start the subtest marker here: everything above is setup, and
+  // including it makes the marker several times longer than the value we
+  // report.
+  TalosParentProfiler.subtestStart("twinopen");
 
   // We have to compare time measurements across two windows so we must use
   // the absolute time.
   let start = win.performance.timing.fetchStart + win.performance.now();
   let newWin = win.OpenBrowserWindow();
   let end = await mozAfterPaint;
-  TalosParentProfiler.subtestEnd("twinopen");
+  let duration = end - start;
+  TalosParentProfiler.subtestEnd(`twinopen: ${duration.toFixed(1)}ms`);
   newWin.close();
-  return end - start;
+  return duration;
 }
 
 /* globals ExtensionAPI */

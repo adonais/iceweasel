@@ -16,8 +16,10 @@ MOCHITEST_CHROME_MANIFESTS += [
 
 BROWSER_CHROME_MANIFESTS += [
     "content/test/about/browser.toml",
+    "content/test/about/sslkeylogging/browser.toml",
     "content/test/alerts/browser.toml",
     "content/test/backforward/browser.toml",
+    "content/test/browser-confirmationHint/browser.toml",
     "content/test/caps/browser.toml",
     "content/test/captivePortal/browser.toml",
     "content/test/contentTheme/browser.toml",
@@ -32,6 +34,8 @@ BROWSER_CHROME_MANIFESTS += [
     "content/test/keyboard/browser.toml",
     "content/test/keyboard/browserSidebarRevamp.toml",
     "content/test/linkHandling/browser.toml",
+    "content/test/maximized/browser.toml",
+    "content/test/maximized/browserNova.toml",
     "content/test/menubar/browser.toml",
     "content/test/metaTags/browser.toml",
     "content/test/mousepostracker/browser.toml",

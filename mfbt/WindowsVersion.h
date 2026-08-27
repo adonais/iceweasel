@@ -5,10 +5,11 @@
 #ifndef mozilla_WindowsVersion_h
 #define mozilla_WindowsVersion_h
 
-#include "mozilla/Atomics.h"
-#include "mozilla/Attributes.h"
 #include <stdint.h>
 #include <windows.h>
+
+#include "mozilla/Atomics.h"
+#include "mozilla/Attributes.h"
 
 namespace mozilla {
 

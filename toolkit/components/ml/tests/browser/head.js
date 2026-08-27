@@ -98,15 +98,20 @@ async function setup({
 }
 
 function getDefaultWasmRecords(backend) {
+  // A requested backend that isn't itself a wasm runtime (e.g. "best-onnx" or
+  // "onnx-native") can still fall back to the wasm onnx backend at engine
+  // creation time -- on platforms without the native onnxruntime, "best-onnx"
+  // resolves to "onnx". WASM_FILENAME only knows the real wasm backends, so
+  // map anything else to DEFAULT_BACKEND and register the concrete wasm record
+  // that fallback would request.
+  const wasmBackend =
+    backend && MLEngineParent.WASM_FILENAME[backend]
+      ? backend
+      : MLEngineParent.DEFAULT_BACKEND;
   return [
     {
-      name: MLEngineParent.WASM_FILENAME[
-        backend || MLEngineParent.DEFAULT_BACKEND
-      ],
-      version:
-        MLEngineParent.WASM_MAJOR_VERSION[
-          backend || MLEngineParent.DEFAULT_BACKEND
-        ] + ".0",
+      name: MLEngineParent.WASM_FILENAME[wasmBackend],
+      version: MLEngineParent.WASM_MAJOR_VERSION[wasmBackend] + ".0",
     },
   ];
 }
@@ -788,11 +793,23 @@ function readRequestBody(request) {
   });
 }
 
+/**
+ * @param {object} [options]
+ * @param {string} [options.echo] - Text echoed back on the non-streaming path.
+ * @param {Function|null} [options.onRequest] - Called with each raw request.
+ * @param {boolean} [options.holdStreamOpenAfterFinish] - When true, the
+ *   streaming tool-call turn stops talking after finish_reason and never closes
+ *   the connection, so the client is the only thing that can end the turn.
+ */
 function startMockOpenAI({
   echo = "This gets echoed.",
   onRequest = null,
+  holdStreamOpenAfterFinish = false,
 } = {}) {
   const server = new HttpServer();
+
+  // Tracked so a test using holdStreamOpenAfterFinish can still stop the server.
+  const heldResponses = [];
 
   server.registerPathHandler("/v1/chat/completions", (request, response) => {
     info("[openai] GET /v1/chat/completions");
@@ -909,6 +926,26 @@ function startMockOpenAI({
         created: Math.floor(Date.now() / 1000),
         model: "qwen3:0.6b",
         choices: [{ index: 0, delta: {}, finish_reason: "tool_calls" }],
+      });
+
+      if (holdStreamOpenAfterFinish) {
+        heldResponses.push(response);
+        return;
+      }
+
+      // Usage arrives after finish_reason, like the real endpoint.
+      sendSSE({
+        id: "chatcmpl-mock-tools-stream-usage",
+        object: "chat.completion.chunk",
+        created: Math.floor(Date.now() / 1000),
+        model: "qwen3:0.6b",
+        choices: [],
+        usage: {
+          prompt_tokens: 9839,
+          completion_tokens: 12,
+          total_tokens: 9851,
+          prompt_tokens_details: { cached_tokens: 9800 },
+        },
       });
 
       endSSE();
@@ -1137,10 +1174,20 @@ function startMockOpenAI({
     response.write(JSON.stringify(payload));
   });
 
+  function releaseHeldStreams() {
+    while (heldResponses.length) {
+      try {
+        heldResponses.pop().finish();
+      } catch (_) {
+        // Already closed, because the client aborted the request.
+      }
+    }
+  }
+
   // -1 tells it to pick an ephemeral port
   server.start(-1);
   const port = server.identity.primaryPort;
-  return { server, port };
+  return { server, port, releaseHeldStreams };
 }
 
 function stopMockOpenAI(server) {

@@ -38,8 +38,42 @@ class PixelSizeForDetectorTest : LintDetectorTest() {
         """,
     ).indented()
 
+    private val viewStub = TestFiles.java(
+        """
+        package android.view;
+        import android.content.res.Resources;
+        public class View {
+            public Resources getResources() { return null; }
+        }
+        """,
+    ).indented()
+
     @Test
-    fun `getDimensionPixelSize in fenix package reports warning`() {
+    fun `getDimensionPixelSize on a View receiver reports warning`() {
+        lint()
+            .files(
+                resourcesStub,
+                viewStub,
+                TestFiles.kotlin(
+                    """
+                    package mozilla.components.browser.toolbar
+                    import android.view.View
+
+                    class MyView(private val view: View) {
+                        fun foo() {
+                            view.resources.getDimensionPixelSize(42)
+                        }
+                    }
+                    """,
+                ).indented(),
+            )
+            .run()
+            .expectWarningCount(1)
+            .expectContains("Use the pixelSizeFor() extension on Context/View/Fragment")
+    }
+
+    @Test
+    fun `getDimensionPixelSize reports warning`() {
         lint()
             .files(
                 resourcesStub,
@@ -63,7 +97,7 @@ class PixelSizeForDetectorTest : LintDetectorTest() {
     }
 
     @Test
-    fun `getDimensionPixelSize outside fenix package is clean`() {
+    fun `getDimensionPixelSize outside fenix package also reports warning`() {
         lint()
             .files(
                 resourcesStub,
@@ -82,7 +116,8 @@ class PixelSizeForDetectorTest : LintDetectorTest() {
                 ).indented(),
             )
             .run()
-            .expectClean()
+            .expectWarningCount(1)
+            .expectContains("Use the pixelSizeFor() extension on Context/View/Fragment")
     }
 
     @Test

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- Held by the observer in test_bug_2054295.html until the speculatively
+     preloaded bug_2054295_entry.mjs has been compiled off-thread (which blocks
+     onload) and has started fetching its dependency. -->
+<script src="bug_2054295_hold_parser.js"></script>
+<script>
+let map = document.createElement("script");
+map.type = "importmap";
+map.textContent = "{}";
+// Inserting the import map registers it, which cancels the preload.
+document.head.appendChild(map);
+parent.postMessage("import-map-registered", "*");
+</script>
+</head>
+<body>
+<script type="module" src="bug_2054295_entry.mjs"></script>
+</body>
+</html>

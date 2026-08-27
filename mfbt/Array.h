@@ -8,7 +8,6 @@
 #define mozilla_Array_h
 
 #include <cstddef>
-
 #include <iterator>
 #include <ostream>
 #include <utility>

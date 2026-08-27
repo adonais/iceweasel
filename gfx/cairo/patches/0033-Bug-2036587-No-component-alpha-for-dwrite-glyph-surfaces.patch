@@ -9,10 +9,10 @@ Date:   Tue May 5 16:24:23 2026 +0100
     
     Differential Revision: https://phabricator.services.mozilla.com/D298688
 
-diff --git a/gfx/cairo/cairo/src/win32/cairo-dwrite-font.cpp b/gfx/cairo/cairo/src/win32/cairo-dwrite-font.cpp
+diff --git a/src/win32/cairo-dwrite-font.cpp b/src/win32/cairo-dwrite-font.cpp
 index 7f5de8c58824..afda6c36b1a0 100644
---- a/gfx/cairo/cairo/src/win32/cairo-dwrite-font.cpp
-+++ b/gfx/cairo/cairo/src/win32/cairo-dwrite-font.cpp
+--- a/src/win32/cairo-dwrite-font.cpp
++++ b/src/win32/cairo-dwrite-font.cpp
 @@ -1381,10 +1381,6 @@ init_glyph_surface_fallback_a8 (cairo_dwrite_scaled_font_t  *scaled_font,
      if (cairo_surface_status (surface))
          return CAIRO_INT_STATUS_UNSUPPORTED;

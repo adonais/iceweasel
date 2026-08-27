@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from datetime import datetime
 from urllib.parse import urlunsplit
 
 from .versions import MozillaVersion
@@ -38,6 +39,20 @@ def getReleasesDir(product, version=None, protocol=None, server=None):
     if version:
         directory = f"{directory}/{version}"
 
+    if protocol:
+        return urlunsplit((protocol, server, directory, None, None))
+    else:
+        return directory
+
+
+def getNightlyDir(product, buildid, locale, repo, protocol=None, server=None):
+    if protocol:
+        assert server is not None, "server is required with protocol"
+
+    dt = datetime.strptime(buildid, "%Y%m%d%H%M%S")
+    suffix = repo if locale == "en-US" else f"{repo}-l10n"
+
+    directory = f"/{product}/nightly/{dt.year}/{dt.month:02}/{dt.year}-{dt.month:02}-{dt.day:02}-{dt.hour:02}-{dt.minute:02}-{dt.second:02}-{suffix}"
     if protocol:
         return urlunsplit((protocol, server, directory, None, None))
     else:

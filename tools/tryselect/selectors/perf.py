@@ -110,7 +110,6 @@ class PerfParser(CompareParser):
         "env",
         "extensions",
         "gecko-profile",
-        "native-profiling",
         "path",
         "rebuild",
     ]

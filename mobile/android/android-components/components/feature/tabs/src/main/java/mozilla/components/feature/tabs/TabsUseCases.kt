@@ -321,6 +321,7 @@ class TabsUseCases(
         private val selectTab: SelectTabUseCase,
         private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
         private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+        private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
     ) {
         /**
          * Restores the given list of [RecoverableTab]s.
@@ -380,7 +381,7 @@ class TabsUseCases(
             storage: SessionStorage,
             tabTimeoutInMs: Long = Long.MAX_VALUE,
         ) = withContext(ioDispatcher) {
-            val now = System.currentTimeMillis()
+            val now = currentTimeMillis()
             val state = storage.restore {
                 val lastActiveTime = maxOf(it.state.lastAccess, it.state.createdAt)
                 now - lastActiveTime <= tabTimeoutInMs

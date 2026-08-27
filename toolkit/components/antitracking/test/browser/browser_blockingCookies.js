@@ -1,4 +1,4 @@
-requestLongerTimeout(2);
+requestLongerTimeout(7);
 
 // Bug 1617611: Fix all the tests broken by "cookies SameSite=lax by default"
 Services.prefs.setBoolPref("network.cookie.sameSite.laxByDefault", false);

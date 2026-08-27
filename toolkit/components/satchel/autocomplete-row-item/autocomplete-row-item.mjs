@@ -89,6 +89,7 @@ class AutocompleteRowItem extends MozLitElement {
         @mouseup=${stopMouseEvents}
         type="icon ghost"
         aria-label=${ifDefined(label)}
+        title=${ifDefined(label)}
         .iconSrc=${this.getSecondaryActionItemIcon(type)}
         class=${classMap({
           "secondary-action": true,
@@ -105,6 +106,7 @@ class AutocompleteRowItem extends MozLitElement {
         @mouseup=${stopMouseEvents}
         type="icon ghost"
         aria-label=${ifDefined(label)}
+        title=${ifDefined(label)}
         .iconSrc=${this.getSecondaryActionItemIcon(type)}
         class=${classMap({
           "secondary-action": true,

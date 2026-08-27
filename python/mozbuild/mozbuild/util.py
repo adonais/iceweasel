@@ -55,6 +55,14 @@ def sanitize_shell_env(env):
     return env
 
 
+def get_rust_build_kind(substs, megazord=False):
+    # Megazord libraries use custom cargo profiles ("release-megazord",
+    # "dev-megazord") that output to different directories.
+    if megazord:
+        return "dev-megazord" if substs.get("MOZ_DEBUG_RUST") else "release-megazord"
+    return "debug" if substs.get("MOZ_DEBUG_RUST") else "release"
+
+
 LOG_TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
 
 

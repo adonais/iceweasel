@@ -57,7 +57,7 @@
     <script async type="module" src="chrome://global/content/elements/moz-radio-group.mjs"></script>
     <script async type="module" src="chrome://global/content/elements/moz-select.mjs"></script>
     <script async type="module" src="chrome://global/content/elements/moz-reorderable-list.mjs"></script>
-    <script async type="module" src="chrome://global/content/elements/panel-list.js"></script>
+    <script async type="module" src="chrome://global/content/elements/panel-list.mjs"></script>
     <script async type="module" src="chrome://global/content/elements/moz-support-link.mjs"></script>
     <script async type="module" src="chrome://global/content/elements/moz-checkbox.mjs"></script>
   </body>

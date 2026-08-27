@@ -663,6 +663,7 @@ class nsWindow final : public nsIWidget {
    */
   void StopFlashing();
   static HWND WindowAtMouse();
+  static HWND NsWindowAtMouse();
   static bool IsTopLevelMouseExit(HWND aWnd);
   LayoutDeviceIntRegion GetRegionToPaint(const PAINTSTRUCT& ps, HDC aDC) const;
 

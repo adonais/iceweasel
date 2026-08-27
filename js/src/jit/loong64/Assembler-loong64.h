@@ -5,11 +5,8 @@
 #ifndef jit_loong64_Assembler_loong64_h
 #define jit_loong64_Assembler_loong64_h
 
-#include "mozilla/Sprintf.h"
-
 #include "jit/CompactBuffer.h"
 #include "jit/JitCode.h"
-#include "jit/JitSpewer.h"
 #include "jit/loong64/Architecture-loong64.h"
 #include "jit/shared/Assembler-shared.h"
 #include "jit/shared/Disassembler-shared.h"
@@ -18,6 +15,8 @@
 
 namespace js {
 namespace jit {
+
+using LabelDoc = DisassemblerSpew::LabelDoc;
 
 static constexpr Register zero{Registers::zero};
 static constexpr Register ra{Registers::ra};
@@ -532,6 +531,14 @@ enum OpcodeField {
   op_fldx_d = 0x7068U << 15,
   op_fstx_s = 0x7070U << 15,
   op_fstx_d = 0x7078U << 15,
+  op_amswap_b = 0x70b8U << 15,
+  op_amswap_h = 0x70b9U << 15,
+  op_amadd_b = 0x70baU << 15,
+  op_amadd_h = 0x70bbU << 15,
+  op_amswap_db_b = 0x70bcU << 15,
+  op_amswap_db_h = 0x70bdU << 15,
+  op_amadd_db_b = 0x70beU << 15,
+  op_amadd_db_h = 0x70bfU << 15,
   op_amswap_w = 0x70c0U << 15,
   op_amswap_d = 0x70c1U << 15,
   op_amadd_w = 0x70c2U << 15,
@@ -951,19 +958,29 @@ class AssemblerLOONG64 : public AssemblerShared {
 
   LOONGBufferWithExecutableCopy m_buffer;
 
-#ifdef JS_JITSPEW
-  Sprinter* printer;
+#ifdef JS_DISASM_LOONG64
+  static constexpr const char* const LabelIndent = "                 ";
+  static constexpr const char* const TargetIndent = "                    ";
+
+  DisassemblerSpew spew_;
 #endif
 
  public:
   AssemblerLOONG64()
       : m_buffer(),
-#ifdef JS_JITSPEW
-        printer(nullptr),
-#endif
         isFinished(false),
         scratch_register_list_((1 << t6.code()) | (1 << t7.code()) |
                                (1 << t8.code())) {
+#ifdef JS_DISASM_LOONG64
+    spew_.setLabelIndent(LabelIndent);
+    spew_.setTargetIndent(TargetIndent);
+#endif
+  }
+
+  ~AssemblerLOONG64() {
+#ifdef JS_DISASM_LOONG64
+    spew_.spewOrphans();
+#endif
   }
 
   static Condition InvertCondition(Condition cond);
@@ -999,41 +1016,10 @@ class AssemblerLOONG64 : public AssemblerShared {
   bool oom() const;
 
   void setPrinter(Sprinter* sp) {
-#ifdef JS_JITSPEW
-    printer = sp;
+#ifdef JS_DISASM_LOONG64
+    spew_.setPrinter(sp);
 #endif
   }
-
-#ifdef JS_JITSPEW
-  inline void spew(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3) {
-    if (MOZ_UNLIKELY(printer || JitSpewEnabled(JitSpew_Codegen))) {
-      va_list va;
-      va_start(va, fmt);
-      spewVA(fmt, va);
-      va_end(va);
-    }
-  }
-
-  void decodeBranchInstAndSpew(InstImm branch);
-#else
-  MOZ_ALWAYS_INLINE void spew(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3) {}
-#endif
-
-#ifdef JS_JITSPEW
-  MOZ_COLD void spewVA(const char* fmt, va_list va) MOZ_FORMAT_PRINTF(2, 0) {
-    // Buffer to hold the formatted string. Note that this may contain
-    // '%' characters, so do not pass it directly to printf functions.
-    char buf[200];
-
-    int i = VsprintfLiteral(buf, fmt, va);
-    if (i > -1) {
-      if (printer) {
-        printer->printf("%s\n", buf);
-      }
-      js::jit::JitSpew(js::jit::JitSpew_Codegen, "%s", buf);
-    }
-  }
-#endif
 
   Register getStackPointer() const { return StackPointer; }
 
@@ -1051,6 +1037,8 @@ class AssemblerLOONG64 : public AssemblerShared {
 
   // Size of the instruction stream, in bytes.
   size_t size() const;
+  // Returns the size of the buffer we can currently read.
+  size_t readableSize() const;
   // Size of the jump relocation table, in bytes.
   size_t jumpRelocationTableBytes() const;
   size_t dataRelocationTableBytes() const;
@@ -1064,11 +1052,24 @@ class AssemblerLOONG64 : public AssemblerShared {
   // it is interpreted as a pointer to the location that we want the
   // instruction to be written.
   BufferOffset writeInst(uint32_t x, uint32_t* dest = nullptr);
+  BufferOffset emit(uint32_t x);
+  BufferOffset emit(uint32_t x, LabelDoc target);
+
+ protected:
+#ifdef JS_DISASM_LOONG64
+  void spew(BufferOffset offset, Instruction* instruction);
+  void spewBranch(BufferOffset offset, Instruction* instruction,
+                  LabelDoc target);
+  LabelDoc refLabel(Label* label);
+#else
+  LabelDoc refLabel(Label*) { return {}; }
+#endif
+
+ public:
   // A static variant for the cases where we don't want to have an assembler
   // object at all. Normally, you would use the dummy (nullptr) object.
   static void WriteInstStatic(uint32_t x, uint32_t* dest);
 
- public:
   BufferOffset haltingAlign(int alignment);
   BufferOffset nopAlign(int alignment);
   BufferOffset as_nop() { return as_andi(zero, zero, 0); }
@@ -1077,6 +1078,7 @@ class AssemblerLOONG64 : public AssemblerShared {
   BufferOffset as_b(JOffImm26 off);
   BufferOffset as_bl(JOffImm26 off);
   BufferOffset as_jirl(Register rd, Register rj, BOffImm16 off);
+  BufferOffset as_jirl(Register rd, Register rj, BOffImm16 off, LabelDoc doc);
 
   InstImm getBranchCode(JumpOrCall jumpOrCall);  // b, bl
   InstImm getBranchCode(Register rd, Register rj,
@@ -1284,6 +1286,17 @@ class AssemblerLOONG64 : public AssemblerShared {
   BufferOffset as_sc_w(Register rd, Register rj, int32_t si14);
   BufferOffset as_sc_d(Register rd, Register rj, int32_t si14);
 
+  // Atomic instructions from LAM_BH extension
+  BufferOffset as_amswap_b(Register rd, Register rj, Register rk);
+  BufferOffset as_amswap_h(Register rd, Register rj, Register rk);
+  BufferOffset as_amadd_b(Register rd, Register rj, Register rk);
+  BufferOffset as_amadd_h(Register rd, Register rj, Register rk);
+
+  BufferOffset as_amswap_db_b(Register rd, Register rj, Register rk);
+  BufferOffset as_amswap_db_h(Register rd, Register rj, Register rk);
+  BufferOffset as_amadd_db_b(Register rd, Register rj, Register rk);
+  BufferOffset as_amadd_db_h(Register rd, Register rj, Register rk);
+
   // Barrier instructions
   BufferOffset as_dbar(int32_t hint);
   BufferOffset as_ibar(int32_t hint);
@@ -1474,7 +1487,11 @@ class AssemblerLOONG64 : public AssemblerShared {
  public:
   void flushBuffer() {}
 
-  void comment(const char* msg) { spew("; %s", msg); }
+  void comment(const char* msg) {
+#ifdef JS_DISASM_LOONG64
+    spew_.spew("; %s", msg);
+#endif
+  }
 
   static uint32_t NopSize() { return 4; }
 

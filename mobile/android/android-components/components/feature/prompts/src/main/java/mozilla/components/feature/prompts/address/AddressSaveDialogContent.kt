@@ -38,12 +38,15 @@ import mozilla.components.ui.icons.R as iconsR
  * Read-only confirmation dialog content for the address-capture prompt.
  *
  * @param address The candidate [Address] to display.
+ * @param isUpdate Whether the candidate merges into an already saved address, in which case the
+ * prompt asks to update rather than to save.
  * @param onSave Invoked when the user confirms the save.
  * @param onCancel Invoked when the user dismisses without saving.
  */
 @Composable
 internal fun AddressSaveDialogContent(
     address: Address,
+    isUpdate: Boolean,
     onSave: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -64,7 +67,13 @@ internal fun AddressSaveDialogContent(
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = stringResource(R.string.mozac_feature_prompts_save_address_prompt_title),
+                    text = stringResource(
+                        if (isUpdate) {
+                            R.string.mozac_feature_prompts_update_address_prompt_title
+                        } else {
+                            R.string.mozac_feature_prompts_save_address_prompt_title
+                        },
+                    ),
                     style = AcornTheme.typography.headline7,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -94,7 +103,13 @@ internal fun AddressSaveDialogContent(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 FilledButton(
-                    text = stringResource(R.string.mozac_feature_prompt_save_confirmation),
+                    text = stringResource(
+                        if (isUpdate) {
+                            R.string.mozac_feature_prompt_update_confirmation
+                        } else {
+                            R.string.mozac_feature_prompt_save_confirmation
+                        },
+                    ),
                     onClick = onSave,
                 )
             }
@@ -148,6 +163,32 @@ private fun AddressSaveDialogContentPreview() {
                 tel = "+15551234567",
                 email = "john@example.com",
             ),
+            isUpdate = false,
+            onSave = {},
+            onCancel = {},
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun AddressUpdateDialogContentPreview() {
+    AcornTheme {
+        AddressSaveDialogContent(
+            address = Address(
+                guid = "1",
+                name = "John Doe",
+                organization = "Mozilla",
+                streetAddress = "999 Test Street",
+                addressLevel3 = "",
+                addressLevel2 = "Mountain View",
+                addressLevel1 = "CA",
+                postalCode = "94016",
+                country = "US",
+                tel = "+15551234567",
+                email = "john@example.com",
+            ),
+            isUpdate = true,
             onSave = {},
             onCancel = {},
         )
@@ -172,6 +213,7 @@ private fun AddressSaveDialogContentLongAddressPreview() {
                 tel = "+1 (555) 123-4567 ext. 89012",
                 email = "johnathan.maximilian.alexander.doe-fitzgerald@example.com",
             ),
+            isUpdate = false,
             onSave = {},
             onCancel = {},
         )

@@ -7,18 +7,18 @@
 #ifndef mozilla_FloatingPoint_h
 #define mozilla_FloatingPoint_h
 
+#include <algorithm>
+#include <bit>
+#include <cstdint>
+#include <limits>
+#include <type_traits>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Casting.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MemoryChecking.h"
 #include "mozilla/Types.h"
-
-#include <algorithm>
-#include <bit>
-#include <cstdint>
-#include <limits>
-#include <type_traits>
 
 namespace mozilla {
 

@@ -6,6 +6,7 @@ import string
 import textwrap
 
 import buildconfig
+from mozbuild.nss_libs import nss_link_dylibs
 
 
 def generate_bool(name):
@@ -18,6 +19,14 @@ def generate_string_array(name):
     return (
         f"pub const {name}: [&str; {len(value)}] = ["
         + ",".join(map(escape_rust_string, value))
+        + "];\n"
+    )
+
+
+def generate_string_array_literal(name, values):
+    return (
+        f"pub const {name}: [&str; {len(values)}] = ["
+        + ",".join(map(escape_rust_string, values))
         + "];\n"
     )
 
@@ -114,6 +123,7 @@ def generate(output):
 
     # Write out some useful booleans from the buildconfig.
     output.write(generate_bool("MOZ_FOLD_LIBS"))
+    output.write(generate_bool("MOZ_GLUE_IN_PROGRAM"))
     output.write(generate_bool("NIGHTLY_BUILD"))
     output.write(generate_bool("RELEASE_OR_BETA"))
     output.write(generate_bool("EARLY_BETA_OR_EARLIER"))
@@ -136,3 +146,13 @@ def generate(output):
     output.write(generate_string("MOZ_APP_ID"))
     output.write(generate_string("MOZ_CRASHREPORTER_URL"))
     output.write(generate_string("MOZ_UPDATE_CHANNEL"))
+
+    # NSS shared libraries the megazord and rusttests link against. The list lives
+    # in mozbuild.nss_libs so that the libsForTests packaging action can use the
+    # same definition.
+    output.write(
+        generate_string_array_literal(
+            "NSS_LINK_DYLIBS",
+            nss_link_dylibs(buildconfig.substs, buildconfig.defines),
+        )
+    )

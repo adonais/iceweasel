@@ -1055,6 +1055,29 @@ export let ProfileDataUpgrader = {
       Services.prefs.setStringPref("sidebar.visibility", "hide-on-close");
     }
 
+    if (existingDataVersion < 178) {
+      // The settings redesign promo has been removed.
+      Services.prefs.clearUserPref("browser.settings-redesign.promo.dismissed");
+    }
+
+    if (existingDataVersion < 179) {
+      // Bug 2058143: cookie banner handling has been removed. Drop the per-site
+      // exceptions it stored in content prefs. A null nsILoadContext clears
+      // both normal and private browsing data.
+      try {
+        let contentPrefs = Cc["@mozilla.org/content-pref/service;1"].getService(
+          Ci.nsIContentPrefService2
+        );
+        contentPrefs.removeByName("cookiebanner", null, null);
+        contentPrefs.removeByName("cookiebannerprivate", null, null);
+      } catch (e) {
+        console.error("Error removing cookie banner content prefs", e);
+      }
+
+      Services.prefs.clearUserBranch("cookiebanners.");
+      Services.prefs.clearUserBranch("browser.promo.cookiebanners.");
+    }
+
     // Update the migration version.
     Services.prefs.setIntPref("browser.migration.version", newVersion);
   },

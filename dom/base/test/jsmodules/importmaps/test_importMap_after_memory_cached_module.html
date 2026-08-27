@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+  <title>Registering an import map after a memory-cached module load must not crash</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<script>
+SimpleTest.waitForExplicitFinish();
+
+const VICTIM_DOC = `<!DOCTYPE html>
+<script>
+function report(result) {
+  parent.postMessage(JSON.stringify(result), "*");
+}
+
+// Load the module. It is already in the shared script memory cache, so this
+// is a synchronous cache hit.
+const mod = document.createElement("script");
+mod.type = "module";
+mod.src = "./memory_cached_module.mjs";
+mod.onerror = () => report({ ok: false, error: "module load failed" });
+mod.onload = async () => {
+  const importMap = document.createElement("script");
+  importMap.type = "importmap";
+
+  // When multiple import maps are NOT supported, register an import map after
+  // a module load triggers onerror handler.
+  const errored = new Promise(resolve => { importMap.onerror = () => resolve(true); });
+  importMap.textContent =
+    '{ "imports": { "./memory_cached_module.mjs": "./memory_cached_module_mapped.mjs" } }';
+  // Appending the import map is what crashes the content process before the fix.
+  document.head.appendChild(importMap);
+
+  const ns = await import("./memory_cached_module.mjs");
+  report({ ok: true, errored: await errored, value: ns.x });
+};
+document.head.appendChild(mod);
+<\/script>`;
+
+window.addEventListener("message", event => {
+  const result = JSON.parse(event.data);
+  ok(result.ok,
+     "Victim document finished without crashing: " + JSON.stringify(result));
+  ok(result.errored,
+     "Import map registered after a module load should fire an error event.");
+  is(result.value, 42,
+     "The specifier must not be remapped because the import map is rejected.");
+  SimpleTest.finish();
+});
+
+async function runTest() {
+  await SpecialPowers.pushPrefEnv({ set: [
+    ["dom.script_loader.experimental.navigation_cache", true],
+    ["dom.script_loader.experimental.navigation_cache.check_memory_pressure", false],
+    ["dom.multiple_import_maps.enabled", false],
+  ]});
+
+  // Initiate a network request to fetch memory_cached_module.mjs.
+  await new Promise((resolve, reject) => {
+    const scr = document.createElement("script");
+    scr.type = "module";
+    scr.src = "./memory_cached_module.mjs";
+    scr.onload = resolve;
+    scr.onerror = () => reject(new Error("scr module load failed"));
+    document.head.appendChild(scr);
+  });
+
+  // Load the cached module in a fresh document and register an import map.
+  const iframe = document.createElement("iframe");
+  iframe.srcdoc = VICTIM_DOC;
+  document.body.appendChild(iframe);
+}
+
+runTest();
+</script>
+</body>
+</html>

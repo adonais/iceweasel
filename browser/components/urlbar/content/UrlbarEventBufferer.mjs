@@ -80,14 +80,16 @@ export class UrlbarEventBufferer {
     this.input.controller.addListener(this);
   }
 
-  // UrlbarChildController listener methods.
-
   /**
-   * Handles when a query is started.
+   * Arms the bufferer to defer subsequent events until results arrive. Called by
+   * the controller as it starts a query, before the query is dispatched --
+   * unlike the QUERY_STARTED notification, which the bufferer would otherwise
+   * observe a round-trip late over the actor message path, after a just-typed
+   * Enter had already been handled.
    *
    * @param {UrlbarQueryContext} queryContext
    */
-  onQueryStarted(queryContext) {
+  queryStarting(queryContext) {
     this.#lastQuery = {
       startDate: ChromeUtils.now(),
       status: QUERY_STATUS.RUNNING,
@@ -98,6 +100,8 @@ export class UrlbarEventBufferer {
       this.#deferringTimeout = null;
     }
   }
+
+  // UrlbarParentController listener methods.
 
   onQueryCancelled() {
     this.#lastQuery.status = QUERY_STATUS.COMPLETE;
@@ -117,6 +121,10 @@ export class UrlbarEventBufferer {
       return;
     }
     this.#lastQuery.status = QUERY_STATUS.RUNNING_GOT_ALL_HEURISTIC_RESULTS;
+    // Refresh the stored context with the results-bearing one: queryStarting
+    // armed the bufferer with the pre-query context, whose results are
+    // populated on the parent's own copy over the message path.
+    this.#lastQuery.context = queryContext;
     // Ensure this runs after other results handling code.
     Services.tm.dispatchToMainThread(() => {
       this.replayDeferredEvents(true);

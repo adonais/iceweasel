@@ -446,7 +446,7 @@ void CookieParser::FixPath(CookieStruct& aCookieData, nsIURI* aHostURI) {
   if (aCookieData.path().IsEmpty() || aCookieData.path().First() != '/') {
     nsAutoCString path = GetPathFromURI(aHostURI);
     if (CheckAttributeSize(aCookieData.path(), ATTRIBUTE_PATH, path)) {
-      aCookieData.path() = path;
+      aCookieData.path() = std::move(path);
     }
   }
 }
@@ -586,7 +586,7 @@ void CookieParser::FixDomain(CookieStruct& aCookieData, nsIURI* aHostURI,
 
   // no domain specified, use hostFromURI
   if (aCookieData.host().IsEmpty()) {
-    aCookieData.host() = hostFromURI;
+    aCookieData.host() = std::move(hostFromURI);
     return;
   }
 
@@ -621,7 +621,7 @@ void CookieParser::FixDomain(CookieStruct& aCookieData, nsIURI* aHostURI,
       CookieCommons::IsSubdomainOf(hostFromURI, cookieHost)) {
     // prepend a dot to indicate a domain cookie
     cookieHost.InsertLiteral(".", 0);
-    aCookieData.host() = cookieHost;
+    aCookieData.host() = std::move(cookieHost);
   }
 
   /*

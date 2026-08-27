@@ -37,7 +37,7 @@ add_task(async function () {
   await updateSelectedTab(gBrowser, tab, window.AboutDebugging.store);
 
   info("Check whether the menu item which opens devtools is enabled");
-  await assertContextMenu(rootDocument, devtoolsBrowser, "#mount", true);
+  await assertContextMenu(rootDocument, tab.linkedBrowser, "#mount", true);
 
   await closeAboutDevtoolsToolbox(document, devtoolsTab, window);
   await removeTab(tab);

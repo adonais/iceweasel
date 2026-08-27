@@ -319,14 +319,14 @@ DistributionCustomizer.prototype = {
 
     let sections = enumToObject(this._ini.getSections());
 
-    // The global section, and several of its fields, is required
+    // The global section, and its id field, is required
     // (we also check here to be consistent with applyPrefDefaults below)
     if (!sections.Global) {
       return;
     }
 
     let globalPrefs = enumToObject(this._ini.getKeys("Global"));
-    if (!(globalPrefs.id && globalPrefs.version && globalPrefs.about)) {
+    if (!globalPrefs.id) {
       return;
     }
 
@@ -380,19 +380,17 @@ DistributionCustomizer.prototype = {
 
     let sections = enumToObject(this._ini.getSections());
 
-    // The global section, and several of its fields, is required
+    // The global section, and its id field, is required
     if (!sections.Global) {
       return this._checkCustomizationComplete();
     }
     let globalPrefs = enumToObject(this._ini.getKeys("Global"));
-    if (!(globalPrefs.id && globalPrefs.version)) {
+    // Only the id is required. version and about are optional, which allows
+    // a distribution to be identified by id alone.
+    if (!globalPrefs.id) {
       return this._checkCustomizationComplete();
     }
     let distroID = this._ini.getString("Global", "id");
-    if (!globalPrefs.about && !distroID.startsWith("mozilla-")) {
-      // About is required unless it is a mozilla distro.
-      return this._checkCustomizationComplete();
-    }
 
     if (
       distroID == "MozillaOnline" &&
@@ -420,10 +418,12 @@ DistributionCustomizer.prototype = {
       return this._checkCustomizationComplete();
     }
 
-    defaults.setStringPref(
-      "distribution.version",
-      this._ini.getString("Global", "version")
-    );
+    if (globalPrefs.version) {
+      defaults.setStringPref(
+        "distribution.version",
+        this._ini.getString("Global", "version")
+      );
+    }
 
     let partnerAbout;
     try {

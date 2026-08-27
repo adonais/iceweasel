@@ -5196,15 +5196,24 @@ bool ScrollContainerFrame::ScrollSnap(const nsPoint& aDestination,
 }
 
 nsSize ScrollContainerFrame::GetLineScrollAmount() const {
-  RefPtr<nsFontMetrics> fm =
-      nsLayoutUtils::GetInflatedFontMetricsForFrame(this);
-  NS_ASSERTION(fm, "FontMetrics is null, assuming fontHeight == 1 appunit");
   int32_t appUnitsPerDevPixel = PresContext()->AppUnitsPerDevPixel();
   nscoord minScrollAmountInAppUnits =
       std::max(1, StaticPrefs::mousewheel_min_line_scroll_amount()) *
       appUnitsPerDevPixel;
-  nscoord horizontalAmount = fm ? fm->AveCharWidth() : 0;
-  nscoord verticalAmount = fm ? fm->MaxHeight() : 0;
+
+  nscoord horizontalAmount, verticalAmount;
+  const auto& lineScrollAmount = StyleUIReset()->mMozLineScrollAmount;
+  if (lineScrollAmount.IsLength()) {
+    // A list of items can call an item a line, on whichever axis it scrolls.
+    horizontalAmount = verticalAmount =
+        lineScrollAmount.AsLength().ToAppUnits();
+  } else {
+    RefPtr<nsFontMetrics> fm =
+        nsLayoutUtils::GetInflatedFontMetricsForFrame(this);
+    NS_ASSERTION(fm, "FontMetrics is null, assuming fontHeight == 1 appunit");
+    horizontalAmount = fm ? fm->AveCharWidth() : 0;
+    verticalAmount = fm ? fm->MaxHeight() : 0;
+  }
   return nsSize(std::max(horizontalAmount, minScrollAmountInAppUnits),
                 std::max(verticalAmount, minScrollAmountInAppUnits));
 }
@@ -5886,6 +5895,19 @@ void ScrollContainerFrame::DidSetComputedStyle(
 
   const bool disableOverlayScrollbars =
       [&](const RefPtr<ComputedStyle>& style) {
+        if (mIsRoot) {
+#ifdef MOZ_WIDGET_ANDROID
+          const bool isOnMobileOrRDMPane = true;
+#else
+          const bool isOnMobileOrRDMPane = PresShell()->InRDMPane();
+#endif
+          // On mobile overlay scrollbars on the top level root scroll
+          // container are never disabled, that's what Chrome does.
+          if (isOnMobileOrRDMPane &&
+              PresContext()->IsRootContentDocumentCrossProcess()) {
+            return false;
+          }
+        }
         // If there's any ::webkit-scrollbar for this container, then check
         // whether there exits non-zero width or height value.
         if (!style) {
@@ -7154,30 +7176,6 @@ StyleDirection ScrollContainerFrame::GetScrolledFrameDir() const {
 
 StyleDirection ScrollContainerFrame::GetScrolledFrameDir(
     const nsIFrame* aScrolledFrame, bool aForTextInput) {
-  // If the scrolled frame has unicode-bidi: plaintext, the paragraph
-  // direction set by the text content overrides the direction of the frame
-  if (aScrolledFrame->StyleTextReset()->mUnicodeBidi ==
-      StyleUnicodeBidi::Plaintext) {
-    if (aForTextInput) {
-      // HACK: We rely on inputs only overflowing in one direction, so we scroll
-      // in whichever direction the input overflows. To be a bit resilient we
-      // just use whichever scroll direction would be larger.
-      // TODO(emilio): Remove once the check below is subtler.
-      auto sr = aScrolledFrame->ScrollableOverflowRectRelativeToSelf();
-      auto leftOverflow = -sr.x;
-      auto rightOverflow = sr.XMost() - aScrolledFrame->GetRect().Width();
-      return leftOverflow > rightOverflow ? StyleDirection::Rtl
-                                          : StyleDirection::Ltr;
-    }
-    // TODO(emilio): This check is rather simplistic, see
-    // https://github.com/w3c/csswg-drafts/issues/13816
-    if (nsIFrame* child = aScrolledFrame->PrincipalChildList().FirstChild()) {
-      return nsBidiPresUtils::ParagraphDirection(child) ==
-                     intl::BidiDirection::LTR
-                 ? StyleDirection::Ltr
-                 : StyleDirection::Rtl;
-    }
-  }
   return aScrolledFrame->GetWritingMode().IsBidiLTR() ? StyleDirection::Ltr
                                                       : StyleDirection::Rtl;
 }
@@ -7562,7 +7560,20 @@ nsRect ScrollContainerFrame::GetScrollRangeForUserInputEvents() const {
 ScrollDirections
 ScrollContainerFrame::GetAvailableScrollingDirectionsForUserInputEvents()
     const {
+  Sides sides = SidesToScrollForUserInputEvents();
+  ScrollDirections directions;
+  if (sides.Intersects(SideBits::eLeft | SideBits::eRight)) {
+    directions += ScrollDirection::eHorizontal;
+  }
+  if (sides.Intersects(SideBits::eTop | SideBits::eBottom)) {
+    directions += ScrollDirection::eVertical;
+  }
+  return directions;
+}
+
+Sides ScrollContainerFrame::SidesToScrollForUserInputEvents() const {
   nsRect scrollRange = GetScrollRangeForUserInputEvents();
+  nsPoint scrollPos = GetScrollPosition();
 
   // We check if there is at least one half of a screen pixel of scroll range to
   // roughly match what apz does when it checks if the change in scroll position
@@ -7573,14 +7584,21 @@ ScrollContainerFrame::GetAvailableScrollingDirectionsForUserInputEvents()
   float halfScreenPixel =
       GetScrolledFrame()->PresContext()->AppUnitsPerDevPixel() /
       (PresShell()->GetCumulativeResolution() * 2.f);
-  ScrollDirections directions;
-  if (scrollRange.width >= halfScreenPixel) {
-    directions += ScrollDirection::eHorizontal;
+
+  Sides ret;
+  if (scrollPos.y - scrollRange.y >= halfScreenPixel) {
+    ret |= SideBits::eTop;
   }
-  if (scrollRange.height >= halfScreenPixel) {
-    directions += ScrollDirection::eVertical;
+  if (scrollRange.YMost() - scrollPos.y >= halfScreenPixel) {
+    ret |= SideBits::eBottom;
   }
-  return directions;
+  if (scrollPos.x - scrollRange.x >= halfScreenPixel) {
+    ret |= SideBits::eLeft;
+  }
+  if (scrollRange.XMost() - scrollPos.x >= halfScreenPixel) {
+    ret |= SideBits::eRight;
+  }
+  return ret;
 }
 
 /**

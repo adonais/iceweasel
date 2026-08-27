@@ -30,16 +30,22 @@ JSObject* nsDOMCSSDeclaration::WrapObject(JSContext* aCx,
 
 NS_IMPL_QUERY_INTERFACE(nsDOMCSSDeclaration, nsICSSDeclaration)
 
+void nsDOMCSSDeclaration::GetPropertyValue(const CSSPropertyId& aPropertyId,
+                                           nsACString& aValue) {
+  MOZ_ASSERT(aPropertyId.IsValid(), "Should pass a valid CSSPropertyId");
+  MOZ_ASSERT(aValue.IsEmpty());
+
+  if (Block* decl = GetOrCreateCSSDeclaration(Operation::Read, nullptr)) {
+    Servo_DeclarationBlock_GetPropertyValueById(decl, &aPropertyId, &aValue);
+  }
+}
+
 void nsDOMCSSDeclaration::GetPropertyValue(const NonCustomCSSPropertyId aPropId,
                                            nsACString& aValue) {
   MOZ_ASSERT(aPropId != eCSSProperty_UNKNOWN,
              "Should never pass eCSSProperty_UNKNOWN around");
-  MOZ_ASSERT(aValue.IsEmpty());
 
-  if (Block* decl = GetOrCreateCSSDeclaration(Operation::Read, nullptr)) {
-    Servo_DeclarationBlock_GetPropertyValueByNonCustomId(decl, aPropId,
-                                                         &aValue);
-  }
+  GetPropertyValue(CSSPropertyId(aPropId), aValue);
 }
 
 void nsDOMCSSDeclaration::SetPropertyValue(const NonCustomCSSPropertyId aPropId,
@@ -53,7 +59,7 @@ void nsDOMCSSDeclaration::SetPropertyValue(const NonCustomCSSPropertyId aPropId,
   if (aValue.IsEmpty()) {
     // If the new value of the property is an empty string we remove the
     // property.
-    return RemovePropertyInternal(aPropId, aRv);
+    return RemoveProperty(CSSPropertyId(aPropId), aRv);
   }
 
   aRv = ParsePropertyValue(aPropId, aValue, false, aSubjectPrincipal);
@@ -186,17 +192,17 @@ void nsDOMCSSDeclaration::SetProperty(const nsACString& aPropertyName,
     return;
   }
 
+  // In the common (and fast) cases we can use the property id
+  CSSPropertyId propertyId = CSSPropertyId::Parse(aPropertyName);
+  if (!propertyId.IsValid()) {
+    return;
+  }
+
   if (aValue.IsEmpty()) {
     // If the new value of the property is an empty string we remove the
     // property.
     // XXX this ignores the priority string, should it?
-    return RemovePropertyInternal(aPropertyName, aRv);
-  }
-
-  // In the common (and fast) cases we can use the property id
-  NonCustomCSSPropertyId propId = nsCSSProps::LookupProperty(aPropertyName);
-  if (propId == eCSSProperty_UNKNOWN) {
-    return;
+    return RemoveProperty(propertyId, aRv);
   }
 
   bool important;
@@ -209,12 +215,13 @@ void nsDOMCSSDeclaration::SetProperty(const nsACString& aPropertyName,
     return;
   }
 
-  if (propId == eCSSPropertyExtra_variable) {
+  if (propertyId.IsCustom()) {
     aRv = ParseCustomPropertyValue(aPropertyName, aValue, important,
                                    aSubjectPrincipal);
     return;
   }
-  aRv = ParsePropertyValue(propId, aValue, important, aSubjectPrincipal);
+  aRv =
+      ParsePropertyValue(propertyId.mId, aValue, important, aSubjectPrincipal);
 }
 
 void nsDOMCSSDeclaration::RemoveProperty(const nsACString& aPropertyName,
@@ -223,8 +230,40 @@ void nsDOMCSSDeclaration::RemoveProperty(const nsACString& aPropertyName,
   if (IsReadOnly()) {
     return;
   }
-  GetPropertyValue(aPropertyName, aReturn);
-  RemovePropertyInternal(aPropertyName, aRv);
+
+  CSSPropertyId propertyId = CSSPropertyId::Parse(aPropertyName);
+  if (!propertyId.IsValid()) {
+    return;
+  }
+
+  GetPropertyValue(propertyId, aReturn);
+
+  RemoveProperty(propertyId, aRv);
+}
+
+void nsDOMCSSDeclaration::RemoveProperty(const CSSPropertyId& aPropertyId,
+                                         mozilla::ErrorResult& aRv) {
+  if (IsReadOnly()) {
+    return;
+  }
+
+  Block* olddecl =
+      GetOrCreateCSSDeclaration(Operation::RemoveProperty, nullptr);
+  if (!olddecl) {
+    return;  // no decl, so nothing to remove
+  }
+
+  mozAutoDocUpdate autoUpdate(DocToUpdate(), true);
+
+  DeclarationBlockMutationClosure closure = {};
+  MutationClosureData closureData;
+  GetPropertyChangeClosure(&closure, &closureData);
+
+  RefPtr<Block> decl = EnsureBlockMutable(olddecl);
+  if (!Servo_DeclarationBlock_RemovePropertyById(decl, &aPropertyId, closure)) {
+    return;
+  }
+  aRv = SetCSSDeclaration(decl, &closureData);
 }
 
 /* static */ nsDOMCSSDeclaration::ParsingEnvironment
@@ -358,70 +397,10 @@ nsresult nsDOMCSSDeclaration::SetPropertyTypedValue(
       });
 }
 
-void nsDOMCSSDeclaration::RemovePropertyInternal(NonCustomCSSPropertyId aPropId,
-                                                 ErrorResult& aRv) {
-  Block* olddecl =
-      GetOrCreateCSSDeclaration(Operation::RemoveProperty, nullptr);
-  if (IsReadOnly()) {
-    return;
-  }
-
-  if (!olddecl) {
-    return;  // no decl, so nothing to remove
-  }
-
-  // For nsDOMCSSAttributeDeclaration, SetCSSDeclaration will lead to
-  // Attribute setting code, which leads in turn to BeginUpdate.  We
-  // need to start the update now so that the old rule doesn't get used
-  // between when we mutate the declaration and when we set the new
-  // rule (see stack in bug 209575).
-  mozAutoDocUpdate autoUpdate(DocToUpdate(), true);
-
-  DeclarationBlockMutationClosure closure = {};
-  MutationClosureData closureData;
-  GetPropertyChangeClosure(&closure, &closureData);
-
-  RefPtr<Block> decl = EnsureBlockMutable(olddecl);
-  if (!Servo_DeclarationBlock_RemovePropertyById(decl, aPropId, closure)) {
-    return;
-  }
-  aRv = SetCSSDeclaration(decl, &closureData);
-}
-
 already_AddRefed<StyleLockedDeclarationBlock>
 nsDOMCSSDeclaration::EnsureBlockMutable(Block* aBlock) {
   if (Servo_DeclarationBlock_IsImmutable(aBlock)) {
     return Servo_DeclarationBlock_Clone(aBlock).Consume();
   }
   return do_AddRef(aBlock);
-}
-
-void nsDOMCSSDeclaration::RemovePropertyInternal(
-    const nsACString& aPropertyName, ErrorResult& aRv) {
-  if (IsReadOnly()) {
-    return;
-  }
-
-  Block* olddecl =
-      GetOrCreateCSSDeclaration(Operation::RemoveProperty, nullptr);
-  if (!olddecl) {
-    return;  // no decl, so nothing to remove
-  }
-
-  // For nsDOMCSSAttributeDeclaration, SetCSSDeclaration will lead to
-  // Attribute setting code, which leads in turn to BeginUpdate.  We
-  // need to start the update now so that the old rule doesn't get used
-  // between when we mutate the declaration and when we set the new
-  // rule (see stack in bug 209575).
-  mozAutoDocUpdate autoUpdate(DocToUpdate(), true);
-
-  DeclarationBlockMutationClosure closure = {};
-  MutationClosureData closureData;
-  GetPropertyChangeClosure(&closure, &closureData);
-
-  RefPtr<Block> decl = EnsureBlockMutable(olddecl);
-  if (!Servo_DeclarationBlock_RemoveProperty(decl, &aPropertyName, closure)) {
-    return;
-  }
-  aRv = SetCSSDeclaration(decl, &closureData);
 }

@@ -10,14 +10,17 @@
  *
  *  1. NORMALIZE: transform source-specific quirks into standard JSON so the
  *     value can be validated by an off-the-shelf validator. Booleans delivered
- *     as 0/1 integers become real booleans; values delivered as a JSON string
- *     (fields marked "contentMediaType": "application/json") are parsed into
- *     objects/arrays. No validity decisions happen here.
+ *     as 0/1 integers or as "true"/"false" strings become real booleans; values
+ *     delivered as a JSON string (fields marked "contentMediaType":
+ *     "application/json") are parsed into objects/arrays. No validity decisions
+ *     happen here.
  *  2. VALIDATE: the compliant validator in JsonSchema.sys.mjs checks the
  *     normalized value using only standard JSON Schema keywords (type, format,
- *     pattern, enum, required). Every list entry is validated individually:
- *     invalid entries are dropped (and logged) so one bad entry never discards
- *     the whole list. A bad non-list value fails its policy.
+ *     pattern, enum, required). Every entry of a list, and every open-ended key
+ *     of an object (one matched by patternProperties, e.g. an extension ID in
+ *     ExtensionSettings), is validated individually: invalid entries are dropped
+ *     (and logged) so one bad entry never discards the whole collection. Any
+ *     other bad value fails its policy.
  *  3. HYDRATE: validated "format": "uri" strings are turned into URL objects,
  *     which the policy implementations consume (.href, .hostname, etc.).
  *
@@ -57,18 +60,26 @@ const JSON_MEDIA_TYPE = "application/json";
  * @param {boolean} [options.allowAdditionalProperties]
  *   When true, object properties not described by the schema are stripped from
  *   the parsed value. When false, they cause validation to fail.
+ * @param {string} [options.policyName]
+ *   Name of the policy being validated, used to root the paths reported when an
+ *   invalid entry is dropped.
  * @returns {{valid: boolean, parsedValue?: any, error?: Error}}
  *   On success, `parsedValue` holds the normalized and hydrated value (URL
  *   objects for uri-formatted fields, parsed objects for JSON-string fields,
- *   booleans for 0/1, and lists with invalid entries removed).
+ *   booleans for 0/1 and "true"/"false", and collections with invalid entries
+ *   removed).
  */
 export function validate(
   value,
   schema,
-  { allowAdditionalProperties = false } = {}
+  { allowAdditionalProperties = false, policyName = "" } = {}
 ) {
   try {
-    const normalized = trimInvalidListItems(normalize(value, schema), schema);
+    const normalized = trimInvalidEntries(
+      normalize(value, schema),
+      schema,
+      policyName
+    );
 
     const { valid, errors } = lazy.JsonSchema.validate(normalized, schema);
     if (!valid) {
@@ -101,6 +112,54 @@ class PolicyParameterError extends Error {
 
 function formatErrors(errors) {
   return errors.map(e => `${e.error} (at ${e.instanceLocation})`).join("; ");
+}
+
+function pointerSegments(instanceLocation) {
+  return instanceLocation
+    .replace(/^#/, "")
+    .split("/")
+    .filter(Boolean)
+    .map(segment => segment.replace(/~1/g, "/").replace(/~0/g, "~"));
+}
+
+function appendSegment(path, segment) {
+  if (/^\d+$/.test(segment)) {
+    return `${path}[${segment}]`;
+  }
+  if (/^[A-Za-z_][\w-]*$/.test(segment)) {
+    return `${path}.${segment}`;
+  }
+  return `${path}["${segment}"]`;
+}
+
+/*
+ * Describe a dropped entry for an administrator: which field was wrong, what
+ * was expected, what arrived, and what happened to the entry. The validator
+ * reports the parent "property does not match schema" wrapper alongside the
+ * specific failure, so the error with the deepest location is the actionable
+ * one.
+ */
+function describeDroppedEntry(errors, path, value) {
+  if (!errors?.length) {
+    return `${path}: ${valueToString(value)} is not valid. The entry was ignored.`;
+  }
+
+  let deepest = errors[0];
+  let deepestSegments = pointerSegments(deepest.instanceLocation);
+  for (const error of errors.slice(1)) {
+    const segments = pointerSegments(error.instanceLocation);
+    if (segments.length > deepestSegments.length) {
+      deepest = error;
+      deepestSegments = segments;
+    }
+  }
+
+  const received = deepestSegments.reduce((entry, key) => entry?.[key], value);
+  const where = deepestSegments.reduce(appendSegment, path);
+  return (
+    `${where}: ${deepest.error} Received ${valueToString(received)}. ` +
+    `The entry was ignored.`
+  );
 }
 
 function valueToString(value) {
@@ -144,6 +203,25 @@ function subschemaForProperty(schema, key) {
     }
   }
   return undefined;
+}
+
+/*
+ * Whether `key` is an open-ended entry of `schema` rather than one of its fixed
+ * properties. Only open-ended entries may be dropped individually: a fixed
+ * property (ExtensionSettings' "*", SecurityDevices' Add/Delete) carries
+ * settings the rest of the policy depends on, so a bad one must fail the policy
+ * instead of silently loosening it.
+ */
+function isPatternProperty(schema, key) {
+  if (schema.properties && Object.hasOwn(schema.properties, key)) {
+    return false;
+  }
+  return (
+    !!schema.patternProperties &&
+    Object.keys(schema.patternProperties).some(pattern =>
+      new RegExp(pattern).test(key)
+    )
+  );
 }
 
 function isUriSchema(schema) {
@@ -192,6 +270,20 @@ function normalize(value, schema) {
     return !!value;
   }
 
+  // A quoted boolean is a common authoring mistake, and a REG_SZ value always
+  // arrives as a string, sometimes padded. Skip fields that also accept a
+  // string, so one that legitimately holds "true" keeps its value.
+  if (
+    types.includes("boolean") &&
+    !types.includes("string") &&
+    typeof value == "string"
+  ) {
+    const text = value.trim().toLowerCase();
+    if (text === "true" || text === "false") {
+      return text === "true";
+    }
+  }
+
   if (value && typeof value == "object" && !Array.isArray(value)) {
     if (schema.properties || schema.patternProperties) {
       const result = {};
@@ -212,11 +304,13 @@ function normalize(value, schema) {
 }
 
 /*
- * Stage 2 helper. Validate each list entry on its own and keep only the valid
- * ones, so a single bad entry is dropped (and logged) rather than failing the
- * whole policy. Recurses through objects and nested lists.
+ * Stage 2 helper. Validate each entry of a collection on its own and keep only
+ * the valid ones, so a single bad entry is dropped (and logged) rather than
+ * failing the whole policy. Entries matched by patternProperties are the
+ * independent ones (an extension ID, a preference name); fixed properties are
+ * recursed into but never dropped.
  */
-function trimInvalidListItems(value, schema) {
+function trimInvalidEntries(value, schema, path = "") {
   if (!schema || typeof schema != "object" || value == null) {
     return value;
   }
@@ -226,9 +320,21 @@ function trimInvalidListItems(value, schema) {
       const result = {};
       for (const key of Object.keys(value)) {
         const subschema = subschemaForProperty(schema, key);
-        result[key] = subschema
-          ? trimInvalidListItems(value[key], subschema)
+        const entryPath = `${path}["${key}"]`;
+        const trimmed = subschema
+          ? trimInvalidEntries(value[key], subschema, entryPath)
           : value[key];
+        if (subschema && isPatternProperty(schema, key)) {
+          const { valid, errors } = lazy.JsonSchema.validate(
+            trimmed,
+            subschema
+          );
+          if (!valid) {
+            lazy.log.error(describeDroppedEntry(errors, entryPath, value[key]));
+            continue;
+          }
+        }
+        result[key] = trimmed;
       }
       return result;
     }
@@ -237,12 +343,17 @@ function trimInvalidListItems(value, schema) {
 
   if (Array.isArray(value) && schema.items) {
     const result = [];
-    for (const item of value) {
-      const trimmedItem = trimInvalidListItems(item, schema.items);
-      if (lazy.JsonSchema.validate(trimmedItem, schema.items).valid) {
+    for (const [index, item] of value.entries()) {
+      const itemPath = `${path}[${index}]`;
+      const trimmedItem = trimInvalidEntries(item, schema.items, itemPath);
+      const { valid, errors } = lazy.JsonSchema.validate(
+        trimmedItem,
+        schema.items
+      );
+      if (valid) {
         result.push(trimmedItem);
       } else {
-        lazy.log.error(`Ignoring invalid list entry ${valueToString(item)}.`);
+        lazy.log.error(describeDroppedEntry(errors, itemPath, item));
       }
     }
     return result;

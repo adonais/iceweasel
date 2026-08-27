@@ -144,20 +144,6 @@
             <image id="protections-popup-milestones-illustration"/>
           </toolbarbutton>
         </hbox>
-
-        <toolbarseparator id="protections-popup-cookie-banner-section-separator"></toolbarseparator>
-        <hbox id="protections-popup-cookie-banner-section" class="protections-popup-section" uiDisabled="true" enabled="true" flex="1">
-          <toolbarbutton id="protections-popup-cookie-banner-switch"
-                         class="subviewbutton subviewbutton-nav"
-                         flex="1">
-            <vbox flex="1">
-              <label role="heading" class="protections-popup-switch-header" aria-level="2" data-l10n-id="protections-panel-cookie-banner-blocker-header"></label>
-              <description id="protections-popup-cookie-banner-undetected" data-l10n-id="protections-panel-cookie-banner-handling-undetected"></description>
-              <description id="protections-popup-cookie-banner-site-disabled" data-l10n-id="protections-panel-cookie-banner-handling-disabled"></description>
-              <description id="protections-popup-cookie-banner-detected" data-l10n-id="protections-panel-cookie-banner-handling-enabled"></description>
-            </vbox>
-          </toolbarbutton>
-        </hbox>
       </vbox>
     </panelview>
 
@@ -291,33 +277,6 @@
         <toolbarbutton id="protections-popup-cryptominersView-settings-button"
                   data-l10n-id="protections-panel-content-blocking-manage-settings"
                   class="subviewbutton panel-subview-footer-button"/>
-    </panelview>
-
-    <!-- Cookie Banner SubView -->
-    <panelview id="protections-popup-cookieBannerView"
-               class="PanelUI-subView"
-               role="document"
-               data-l10n-id="protections-panel-cookie-banner-blocker-view-title">
-        <vbox id="protections-popup-cookieBannerView-heading"
-              class="protections-popup-description protections-popup-cookiesView-list-section">
-          <description id="cookieBannerView-disable-site" data-l10n-id="protections-panel-cookie-banner-blocker-view-turn-off-for-site" data-l10n-args='{"host":""}'></description>
-          <description id="cookieBannerView-enable-site" data-l10n-id="protections-panel-cookie-banner-blocker-view-turn-on-for-site" data-l10n-args='{"host":""}'></description>
-          <description id="cookieBannerView-disable-site-warning" data-l10n-id="protections-panel-cookie-banner-view-cookie-clear-warning"></description>
-          <description id="cookieBannerView-enable-site-description" data-l10n-id="protections-panel-cookie-banner-blocker-view-turn-on-description"></description>
-        </vbox>
-        <html:moz-button-group class="panel-footer protections-popup-cookieBannerView-footer">
-          <button id="protections-popup-cookieBannerView-cancel"
-                    data-l10n-id="protections-panel-cookie-banner-view-cancel-label"
-                    class="footer-button" />
-          <button id="protections-popup-cookieBannerView-enable-button"
-                    data-l10n-id="protections-panel-cookie-banner-view-turn-on-label"
-                    default="true"
-                    class="footer-button" />
-          <button id="protections-popup-cookieBannerView-disable-button"
-                    data-l10n-id="protections-panel-cookie-banner-view-turn-off-label"
-                    default="true"
-                    class="footer-button" />
-        </html:moz-button-group>
     </panelview>
   </panelmultiview>
 </panel>

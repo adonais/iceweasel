@@ -26,4 +26,17 @@
   font-size: var(--caption-20-font-size);
   font-weight: var(--caption-20-font-weight, normal);
   text-align: end;
+
+  /* When this has the .ellipsis-text, the focus-visible outline on the child <a> is
+     clipped. Move the focus from the link to its parent to get correct outline */
+  &.ellipsis-text > a:focus-visible {
+    outline: unset;
+  }
+
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+  &.ellipsis-text:has(> a:focus-visible) {
+    outline: var(--focus-outline);
+    outline-offset: var(--link-focus-outline-offset);
+    border-radius: var(--border-radius-small);
+  }
 }

@@ -299,7 +299,7 @@ class BackgroundFileSaverOutputStream : public BackgroundFileSaver,
   NS_DECL_NSIASYNCOUTPUTSTREAM
   NS_DECL_NSIOUTPUTSTREAMCALLBACK
 
-  BackgroundFileSaverOutputStream();
+  BackgroundFileSaverOutputStream() = default;
 
  protected:
   virtual bool HasInfiniteBuffer() override;
@@ -311,7 +311,7 @@ class BackgroundFileSaverOutputStream : public BackgroundFileSaver,
   /**
    * Original callback provided to our AsyncWait wrapper.
    */
-  nsCOMPtr<nsIOutputStreamCallback> mAsyncWaitCallback;
+  nsCOMPtr<nsIOutputStreamCallback> mAsyncWaitCallback{nullptr};
 };
 
 ////////////////////////////////////////////////////////////////////////////////

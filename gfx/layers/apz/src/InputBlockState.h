@@ -7,6 +7,7 @@
 
 #include "InputData.h"  // for MultiTouchInput
 #include "Units.h"
+#include "apz/src/OverscrollHandoffState.h"
 #include "mozilla/RefCounted.h"  // for RefCounted
 #include "mozilla/RefPtr.h"      // for RefPtr
 #include "mozilla/StaticPrefs_apz.h"
@@ -77,7 +78,8 @@ class InputBlockState : public RefCounted<InputBlockState> {
 
   virtual bool ShouldDropEvents() const;
 
-  void SetScrolledApzc(AsyncPanZoomController* aApzc);
+  void SetScrolledApzc(AsyncPanZoomController* aApzc,
+                       const OverscrollHandoffState& aOverscrollHandoffState);
   AsyncPanZoomController* GetScrolledApzc() const;
   bool IsDownchainOfScrolledApzc(AsyncPanZoomController* aApzc) const;
 

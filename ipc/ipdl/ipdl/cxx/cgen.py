@@ -5,7 +5,7 @@
 import sys
 
 from ipdl.cgen import CodePrinter
-from ipdl.cxx.ast import MethodSpec, TypeArray, Visitor, DestructorDecl
+from ipdl.cxx.ast import DestructorDecl, MethodSpec, TypeArray, Visitor
 
 
 class CxxCodeGen(CodePrinter, Visitor):
@@ -224,7 +224,7 @@ class CxxCodeGen(CodePrinter, Visitor):
 
         if md.methodspec == MethodSpec.STATIC:
             self.write("static ")
-        elif md.methodspec == MethodSpec.VIRTUAL or md.methodspec == MethodSpec.PURE:
+        elif md.methodspec in (MethodSpec.VIRTUAL, MethodSpec.PURE):
             self.write("virtual ")
 
         if md.ret:

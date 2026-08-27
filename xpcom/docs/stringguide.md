@@ -355,8 +355,7 @@ readables.
 
 ```cpp
 bool FindInReadable(const nsAString& pattern,
-                    nsAString::const_iterator start, nsAString::const_iterator end,
-                    nsStringComparator& aComparator = nsDefaultStringComparator());
+                    nsAString::const_iterator start, nsAString::const_iterator end);
 ```
 
 To use this, `start` and `end` should point to the beginning and end of a
@@ -364,6 +363,13 @@ string that you would like to search. If the search string is found,
 `start` and `end` will be adjusted to point to the beginning and end of
 the found pattern. The return value is `true` or `false`, indicating
 whether or not the string was found.
+
+`FindInReadable` performs a case-sensitive search. For case-insensitive
+searches use `CaseInsensitiveFindInReadable` (Unicode case folding) or
+`AsciiCaseInsensitiveFindInReadable` (ASCII-only case folding). When you
+only care whether the pattern is present, there are simpler overloads that
+take the string to search directly instead of iterators (and
+`nsTStringRepr::Contains` for the case-sensitive case).
 
 An example:
 

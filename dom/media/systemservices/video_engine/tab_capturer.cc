@@ -315,8 +315,8 @@ auto TabCapturerWebrtc::CaptureFrameNow() -> RefPtr<CapturePromise> {
 
   // XXX This would be more efficient if we used CrossProcessPaint directly and
   // returned a surface.
-  RefPtr<Promise> promise =
-      wgp->DrawSnapshot(nullptr, 1.0, "white"_ns, false, IgnoreErrors());
+  RefPtr<Promise> promise = wgp->DrawSnapshot(
+      nullptr, 1.0, "white"_ns, DrawSnapshotOptions(), IgnoreErrors());
   if (!promise) {
     return CapturePromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }

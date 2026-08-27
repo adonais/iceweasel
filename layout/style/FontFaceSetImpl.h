@@ -243,7 +243,7 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
 
   void ParseFontShorthandForMatching(const nsACString& aFont,
                                      StyleFontFamilyList& aFamilyList,
-                                     FontWeight& aWeight, FontStretch& aStretch,
+                                     FontWeight& aWeight, FontWidth& aWidth,
                                      FontSlantStyle& aStyle, ErrorResult& aRv);
 
   virtual TimeStamp GetNavigationStartTimeStamp() = 0;

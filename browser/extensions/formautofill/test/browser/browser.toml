@@ -97,6 +97,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug && socketprocess_networking && verify-standalone",
 ]
 
+["browser_editPassportDialog.js"]
+
 ["browser_email_dropdown.js"]
 
 ["browser_fathom_cc.js"]
@@ -130,6 +132,8 @@ skip-if = [
 
 ["browser_manageAddressesDialog.js"]
 
+["browser_managePersonalInfoSubpage.js"]
+
 ["browser_ml_heuristics.js"]
 
 ["browser_ml_native_onnx_availability.js"]
@@ -140,6 +144,13 @@ skip-if = [
 skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1924248
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1924248
+]
+
+["browser_passport_capture_doorhanger.js"]
+
+["browser_passport_telemetry.js"]
+skip-if = [
+  "true", # Bug 2056496: enables passports, which opens the Application Services autofill store and crashes at LateWriteChecks on shutdown until the store's shutdown() lands
 ]
 
 ["browser_previewFormFields.js"]

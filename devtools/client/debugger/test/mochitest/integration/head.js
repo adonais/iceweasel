@@ -46,7 +46,10 @@ function _loadAllIntegrationTests() {
   urls.sort();
 
   for (const url of urls) {
-    Services.scriptloader.loadSubScript(url, this);
+    Services.scriptloader.loadSubScriptWithOptions(url, {
+      target: this,
+      allowUnsafeURL: true,
+    });
   }
   return integrationTasks;
 }

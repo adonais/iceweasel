@@ -1877,35 +1877,17 @@ class nsContentUtils {
                                         EventMessage* aEventMessage);
 
   /**
-   * Used only during traversal of the XPCOM graph by the cycle
-   * collector: push a pointer to the listener manager onto the
-   * children deque, if it exists. Do nothing if there is no listener
-   * manager.
-   *
-   * Crucially: does not perform any refcounting operations.
-   *
-   * @param aNode The node to traverse.
-   * @param children The buffer to push a listener manager pointer into.
+   * Adds aManager to the list of the managers nodes own, which is used for
+   * unmarking gray JS listeners during cycle collection.
    */
-  static void TraverseListenerManager(nsINode* aNode,
-                                      nsCycleCollectionTraversalCallback& cb);
+  static void AddNodeListenerManager(mozilla::EventListenerManager* aManager);
 
   /**
-   * Get the eventlistener manager for aNode, creating it if it does not
-   * already exist.
-   *
-   * @param aNode The node for which to get the eventlistener manager.
+   * Removes aManager from that list, if it's in it.  Only for
+   * ~EventListenerManager.
    */
-  static mozilla::EventListenerManager* GetListenerManagerForNode(
-      nsINode* aNode);
-  /**
-   * Get the eventlistener manager for aNode, returning null if it does not
-   * already exist.
-   *
-   * @param aNode The node for which to get the eventlistener manager.
-   */
-  static mozilla::EventListenerManager* GetExistingListenerManagerForNode(
-      const nsINode* aNode);
+  static void RemoveNodeListenerManager(
+      mozilla::EventListenerManager* aManager);
 
   static void AddEntryToDOMArenaTable(nsINode* aNode,
                                       mozilla::dom::DOMArena* aDOMArena);
@@ -1917,13 +1899,6 @@ class nsContentUtils {
       const nsINode* aNode);
 
   static void UnmarkGrayJSListenersInCCGenerationDocuments();
-
-  /**
-   * Remove the eventlistener manager for aNode.
-   *
-   * @param aNode The node for which to remove the eventlistener manager.
-   */
-  static void RemoveListenerManager(nsINode* aNode);
 
   static bool IsInitialized() { return sInitialized; }
 
@@ -1956,11 +1931,16 @@ class nsContentUtils {
    * @param aFragment the string which is parsed to a DocumentFragment
    * @param aReturn the resulting fragment
    * @param aPreventScriptExecution whether to mark scripts as already started
+   * @param aCustomElementRegistry passed to the HTML parser for scoped
+   * registries.
    */
   static already_AddRefed<mozilla::dom::DocumentFragment>
-  CreateContextualFragment(nsINode* aContextNode, const nsAString& aFragment,
-                           bool aPreventScriptExecution,
-                           mozilla::ErrorResult& aRv);
+  CreateContextualFragment(
+      nsINode* aContextNode, const nsAString& aFragment,
+      bool aPreventScriptExecution,
+      mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+          aCustomElementRegistry,
+      mozilla::ErrorResult& aRv);
 
   static void SetHTML(mozilla::dom::FragmentOrElement* aTarget,
                       Element* aContext, const nsAString& aHTML,
@@ -2005,6 +1985,8 @@ class nsContentUtils {
    * pass explicit aFlags use any of the sanitization flags listed in
    * nsIParserUtils.idl. kParseFragmentHTMLNoSanitization should only be used
    * for setHTML(), which already does its own sanitization.
+   * @param aCustomElementRegistry the (scoped) registry to use for custom
+   * element definitions.
    * @return NS_ERROR_DOM_INVALID_STATE_ERR if a re-entrant attempt to parse
    *         fragments is made, NS_ERROR_OUT_OF_MEMORY if aSourceBuffer is too
    *         long and NS_OK otherwise.
@@ -2012,8 +1994,9 @@ class nsContentUtils {
   static nsresult ParseFragmentHTML(
       const nsAString& aSourceBuffer, nsIContent* aTargetNode,
       nsAtom* aContextLocalName, int32_t aContextNamespace, bool aQuirks,
-      bool aPreventScriptExecution,
-      int32_t aFlags = kParseFragmentPrivilegedDefaultSanitization);
+      bool aPreventScriptExecution, int32_t aFlags,
+      mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+          aCustomElementRegistry);
 
   /**
    * Invoke the fragment parsing algorithm (innerHTML) using the XML parser.
@@ -3172,6 +3155,13 @@ class nsContentUtils {
   static mozilla::dom::ReferrerPolicy GetReferrerPolicyFromChannel(
       nsIChannel* aChannel);
 
+  /*
+   * Returns true if aElement's rel attribute contains the noreferrer
+   * keyword. rel=noreferrer is only supported on <a>, <area>, <form>, and
+   * SVG <a> elements.
+   */
+  static bool HasRelNoReferrer(const mozilla::dom::Element& aElement);
+
   static bool IsNonSubresourceRequest(nsIChannel* aChannel);
 
   static bool IsNonSubresourceInternalPolicyType(nsContentPolicyType aType);
@@ -3256,9 +3246,16 @@ class nsContentUtils {
 
   /*
    * https://html.spec.whatwg.org/#look-up-a-custom-element-registry
+   *
+   * Maybe<RefPtr> maps to the following states:
+   *  - Nothing() - The node has no customised registry, and uses the
+   *  "traditional" global custom element registry, aka `window.customElements`.
+   *  - Maybe<nullptr> - The node has expressed that the custom registry must
+   *  remain null, aka "SetKeepCustomElementRegistryNull".
+   *  - Maybe<CER> - The node is using a defined, scoped registry.
    */
-  static mozilla::dom::CustomElementRegistry* GetCustomElementRegistry(
-      nsINode*);
+  static mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+  GetCustomElementRegistry(nsINode*);
 
   /**
    * Looking up a custom element definition.

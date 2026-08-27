@@ -5,6 +5,7 @@
 #include "OpenVRSession.h"
 
 #include <fstream>
+#include <numbers>
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/JSONStringWriteFuncs.h"
@@ -822,10 +823,14 @@ void OpenVRSession::UpdateEyeParameters(VRSystemState& aState) {
     float left, right, up, down;
     mVRSystem->GetProjectionRaw(static_cast<::vr::Hmd_Eye>(eye), &left, &right,
                                 &up, &down);
-    aState.displayState.eyeFOV[eye].upDegrees = atan(-up) * 180.0 / M_PI;
-    aState.displayState.eyeFOV[eye].rightDegrees = atan(right) * 180.0 / M_PI;
-    aState.displayState.eyeFOV[eye].downDegrees = atan(down) * 180.0 / M_PI;
-    aState.displayState.eyeFOV[eye].leftDegrees = atan(-left) * 180.0 / M_PI;
+    aState.displayState.eyeFOV[eye].upDegrees =
+        atan(-up) * 180.0 / std::numbers::pi;
+    aState.displayState.eyeFOV[eye].rightDegrees =
+        atan(right) * 180.0 / std::numbers::pi;
+    aState.displayState.eyeFOV[eye].downDegrees =
+        atan(down) * 180.0 / std::numbers::pi;
+    aState.displayState.eyeFOV[eye].leftDegrees =
+        atan(-left) * 180.0 / std::numbers::pi;
 
     Matrix4x4 pose;
     // NOTE! eyeToHead.m is a 3x4 matrix, not 4x4.  But

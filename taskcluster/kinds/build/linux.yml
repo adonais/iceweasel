@@ -25,6 +25,7 @@ linux64/opt:
             # `enable-full-crashsymbols`.
             MOZ_ENABLE_FULL_SYMBOLS: "1"
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -65,6 +66,7 @@ linux64-x11/opt:
         env:
             PERFHERDER_EXTRA_OPTIONS: x11
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -103,6 +105,7 @@ linux64-plain/opt:
         env:
             PERFHERDER_EXTRA_OPTIONS: plain
     run:
+        clone-with: hg
         using: mozharness
         actions: [build]
         config:
@@ -145,6 +148,7 @@ linux64-non-unified/plain:
             MOZ_AUTOMATION_BUILD_SYMBOLS: '0'
             PERFHERDER_EXTRA_OPTIONS: non-unified
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -190,6 +194,7 @@ linux64-gcc/opt:
             PERFHERDER_EXTRA_OPTIONS: gcc
             FORCE_GCC: '1'
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -231,6 +236,7 @@ linux64-plain-clang-trunk/opt:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
             PERFHERDER_EXTRA_OPTIONS: plain-clang-trunk
     run:
+        clone-with: hg
         using: mozharness
         actions: [build]
         config:
@@ -275,6 +281,7 @@ linux64-fuzzing/debug:
             PERFHERDER_EXTRA_OPTIONS: fuzzing
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -321,6 +328,7 @@ linux64-fuzzing-noopt/debug:
             PERFHERDER_EXTRA_OPTIONS: fuzzing-noopt-debug
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -369,6 +377,7 @@ linux64/debug:
             # `enable-full-crashsymbols`.
             MOZ_ENABLE_FULL_SYMBOLS: "1"
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -412,6 +421,7 @@ linux64-non-unified/debug:
             MOZ_AUTOMATION_BUILD_SYMBOLS: '0'
             PERFHERDER_EXTRA_OPTIONS: non-unified
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -456,6 +466,7 @@ linux64-plain/debug:
         env:
             PERFHERDER_EXTRA_OPTIONS: plain
     run:
+        clone-with: hg
         using: mozharness
         actions: [build]
         config:
@@ -507,6 +518,7 @@ linux64-devedition/opt:
             # `enable-full-crashsymbols`.
             MOZ_ENABLE_FULL_SYMBOLS: "1"
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -552,6 +564,7 @@ linux64-reproduced/opt:
         env:
             PERFHERDER_EXTRA_OPTIONS: repr
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -597,6 +610,7 @@ linux64-asan/opt:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
         max-run-time: 5400
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -641,6 +655,7 @@ linux64-tsan/opt:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
         max-run-time: 5400
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -685,6 +700,7 @@ linux64-tsan-fuzzing/opt:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
         max-run-time: 5400
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -731,6 +747,7 @@ linux64-asan-fuzzing/noopt:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
         max-run-time: 5400
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -777,6 +794,7 @@ linux64-asan-fuzzing-afl/opt:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
         max-run-time: 7200
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -824,6 +842,7 @@ linux64-fuzzing-afl/debug:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
         max-run-time: 7200
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -872,6 +891,7 @@ linux64-fuzzing-afl-ccov/opt:
         max-run-time: 7200
     run-on-projects: ['mozilla-central']
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -918,6 +938,7 @@ linux64-asan-fuzzing-nyx/opt:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
         max-run-time: 7200
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -965,6 +986,7 @@ linux64-asan-fuzzing-nyx-ccov/opt:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
         max-run-time: 7200
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -1014,6 +1036,7 @@ linux64-asan-fuzzing/opt:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
         max-run-time: 5400
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -1061,6 +1084,7 @@ linux64-asan-fuzzing-ccov/opt:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
         max-run-time: 5400
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -1102,6 +1126,7 @@ linux64-fuzzing-ccov/opt:
             PERFHERDER_EXTRA_OPTIONS: fuzzing-ccov
             RUSTC_BOOTSTRAP: '1'
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -1143,6 +1168,7 @@ linux64-asan/debug:
             PERFHERDER_EXTRA_OPTIONS: "debug asan"
         max-run-time: 5400
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -1198,6 +1224,7 @@ linux64-shippable/opt:
             # `enable-full-crashsymbols`.
             MOZ_ENABLE_FULL_SYMBOLS: "1"
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -1246,6 +1273,7 @@ linux64-nightlyasrelease/opt:
             MOZ_ENABLE_FULL_SYMBOLS: "1"
             PERFHERDER_EXTRA_OPTIONS: nightly-as-release
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -1286,6 +1314,7 @@ linux64-noopt/debug:
     worker:
         max-run-time: 5400
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -1328,6 +1357,7 @@ linux64-rusttests/opt:
         env:
             PERFHERDER_EXTRA_OPTIONS: rusttests
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -1369,6 +1399,7 @@ linux64-rusttests/debug:
         env:
             PERFHERDER_EXTRA_OPTIONS: rusttests
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -1416,6 +1447,7 @@ linux64-ccov/opt:
             RUSTC_BOOTSTRAP: '1'
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -1457,6 +1489,7 @@ linux64-ccov/debug:
         env:
             RUSTC_BOOTSTRAP: '1'
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -1495,6 +1528,7 @@ linux64-add-on-devel/opt:
     worker:
         max-run-time: 3600
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -1536,6 +1570,7 @@ linux64-aarch64/opt:
     worker:
         max-run-time: 7200
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -1579,6 +1614,7 @@ linux64-aarch64/debug:
         env:
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -1634,6 +1670,7 @@ linux64-aarch64-shippable/opt:
             # `enable-full-crashsymbols`.
             MOZ_ENABLE_FULL_SYMBOLS: "1"
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:
@@ -1686,6 +1723,7 @@ linux64-aarch64-devedition/opt:
             # `enable-full-crashsymbols`.
             MOZ_ENABLE_FULL_SYMBOLS: "1"
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:

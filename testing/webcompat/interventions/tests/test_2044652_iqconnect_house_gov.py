@@ -20,6 +20,7 @@ async def test_enabled(client):
 @pytest.mark.without_interventions
 async def test_disabled(client):
     await client.navigate(URL)
+    await client.stall(3)
     btn = client.await_css(SUBMIT_CSS, is_displayed=True)
     client.scroll_into_view(btn)
     client.execute_script(

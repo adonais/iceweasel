@@ -3,7 +3,7 @@
 
 function parseAndEvaluate(source) {
     let m = parseModule(source);
-    moduleLink(m);
+    moduleLoadAndLink(m);
     return moduleEvaluate(m);
 }
 
@@ -15,7 +15,7 @@ parseAndEvaluate("this")
   });
 
 let m = parseModule("export function getThis() { return this; }");
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m)
   .then(() => {
     let f = getModuleEnvironmentValue(m, "getThis");

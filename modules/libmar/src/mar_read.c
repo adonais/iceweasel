@@ -136,6 +136,9 @@ static int mar_read_index(MarFile* mar) {
   }
   size_of_index = ntohl(size_of_index);
 
+  if (size_of_index > mar->data_len) {
+    return -1;
+  }
   buf = (char*)malloc(size_of_index);
   if (!buf) {
     return -1;

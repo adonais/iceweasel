@@ -24,7 +24,7 @@ class nsNSSCertificate final : public nsIX509Cert,
   NS_DECL_NSISERIALIZABLE
   NS_DECL_NSICLASSINFO
 
-  nsNSSCertificate();
+  nsNSSCertificate() = default;
   explicit nsNSSCertificate(CERTCertificate* cert);
   explicit nsNSSCertificate(nsTArray<uint8_t>&& der);
 
@@ -36,7 +36,8 @@ class nsNSSCertificate final : public nsIX509Cert,
   nsTArray<uint8_t> mDER;
   // There may be multiple threads running when mCert is actually instantiated,
   // so it must be protected by a mutex.
-  mozilla::DataMutex<mozilla::Maybe<mozilla::UniqueCERTCertificate>> mCert;
+  mozilla::DataMutex<mozilla::Maybe<mozilla::UniqueCERTCertificate>> mCert{
+      "nsNSSCertificate::mCert"};
 };
 
 #define NS_X509CERT_CID                       \

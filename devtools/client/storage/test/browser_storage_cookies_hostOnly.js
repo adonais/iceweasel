@@ -6,10 +6,6 @@
 
 // Test that the HostOnly values displayed in the table are correct.
 
-SpecialPowers.pushPrefEnv({
-  set: [["security.allow_eval_with_system_principal", true]],
-});
-
 add_task(async function () {
   await openTabAndSetupStorage(MAIN_URL + "storage-complex-values.html");
 

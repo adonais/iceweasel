@@ -4,6 +4,7 @@
 
 @import url("chrome://browser/content/firefoxview/fxview-tab-list.css");
 
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .fxview-tab-row-main:has(.fxview-tab-row-snippet) {
   grid-template-rows: auto auto;
   row-gap: var(--space-xsmall);

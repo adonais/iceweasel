@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !getBuildConfiguration("explicit-resource-management"); --enable-explicit-resource-management
-
 load(libdir + "asserts.js");
 
 class CustomError1 extends Error {}

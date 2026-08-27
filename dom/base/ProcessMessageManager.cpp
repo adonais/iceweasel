@@ -38,4 +38,11 @@ JSObject* ProcessMessageManager::WrapObject(JSContext* aCx,
   return ProcessMessageManager_Binding::Wrap(aCx, this, aGivenProto);
 }
 
+nsIDOMProcessParent* ProcessMessageManager::ProcessParent() {
+  if (!mCallback) {
+    return nullptr;
+  }
+  return mCallback->ProcessParent();
+}
+
 }  // namespace mozilla::dom

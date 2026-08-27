@@ -1,4 +1,4 @@
-// |reftest| shell-option(--enable-explicit-resource-management) skip-if(!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('explicit-resource-management'))||!xulRuntime.shell) async -- explicit-resource-management is not enabled unconditionally, requires shell-options
+// |reftest| async
 // Copyright (C) 2023 Ron Buckton. All rights reserved.
 // This code is governed by the BSD license found in the LICENSE file.
 /*---
@@ -14,7 +14,7 @@ info: |
   5. If return is undefined, then
     a. Perform ! Call(promiseCapability.[[Resolve]], undefined, « undefined »).
   6. Else,
-    a. Let result be Call(return, O, « undefined »).
+    a. Let result be Call(return, O, « »).
     b. IfAbruptRejectPromise(result, promiseCapability).
     c. Let resultWrapper be Completion(PromiseResolve(%Promise%, result)).
     d. IfAbruptRejectPromise(resultWrapper, promiseCapability).
@@ -35,11 +35,14 @@ asyncTest(async function () {
 
   const iter = Object.create(AsyncIteratorPrototype);
   var returnCalled = false;
+  var argumentCount = 0;
   iter.return = async function () {
+    argumentCount = arguments.length;
     returnCalled = true;
     return { done: true };
   };
 
   await iter[Symbol.asyncDispose]();
   assert.sameValue(returnCalled, true);
+  assert.sameValue(argumentCount, 0);
 });

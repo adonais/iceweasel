@@ -3291,9 +3291,15 @@ void Selection::ExtendInternal(nsINode& aContainer, uint32_t aOffset,
       nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
           anchorRefInTreeKindDOM, newFocusRefInTreeKindDOM);
 
-  // If the points are disconnected, the range will be collapsed below,
-  // resulting in a range that selects nothing.
-  if (!anchorOldFocusOrder || !oldFocusNewFocusOrder || !anchorNewFocusOrder) {
+  // If the points are disconnected, or if the range would cross a shadow
+  // boundary and this is being called from JS, the range will be collapsed
+  // below, resulting in a range that selects nothing.
+  if (!anchorOldFocusOrder || !oldFocusNewFocusOrder || !anchorNewFocusOrder ||
+      // https://w3c.github.io/selection-api/#dom-selection-extend
+      // 5. If node's root is not the same as the this's range's root, set the
+      //    start newRange's start and end to newFocus.
+      (mCalledByJS && mAnchorFocusRange->GetRoot() !=
+                          RangeUtils::ComputeRootNode(&aContainer))) {
     // Repaint the current range with the selection removed.
     SelectFrames(presContext, *range, false);
 

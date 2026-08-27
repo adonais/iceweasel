@@ -28,7 +28,6 @@
 #include "ScopedNSSTypes.h"
 #include "Helpers.h"
 #include "nsFaviconService.h"
-#include "ConcurrentConnection.h"
 
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
@@ -630,15 +629,10 @@ nsresult Database::EnsureConnection() {
     rv = storage->OpenUnsharedDatabase(databaseFile,
                                        mozIStorageService::CONNECTION_DEFAULT,
                                        getter_AddRefs(mMainConn));
-    if (rv == NS_ERROR_STORAGE_IOERR) {
-      // A ConcurrentConnection may be racing with us: on some filesystems
-      // (e.g. network shares) concurrent WAL-mode opens can return
-      // SQLITE_IOERR instead of SQLITE_BUSY, which busy_timeout cannot handle.
-      // Interrupt any ongoing CC operation and retry once. If CC had an open
-      // connection and was holding a WAL reader lock, the interrupt releases
-      // it. After our retry succeeds, CC will reopen via the
-      // TOPIC_PLACES_INIT_COMPLETE observer once Places finishes initializing.
-      ConcurrentConnection::MaybeInterrupt();
+    if (rv == NS_ERROR_STORAGE_IOERR || rv == NS_ERROR_FILE_IS_LOCKED ||
+        rv == NS_ERROR_STORAGE_BUSY) {
+      // Transient lock or I/O error (e.g. network filesystem, AV software):
+      // retry once before giving up.
       rv = storage->OpenUnsharedDatabase(databaseFile,
                                          mozIStorageService::CONNECTION_DEFAULT,
                                          getter_AddRefs(mMainConn));
@@ -1408,17 +1402,28 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
       // The schema 84 migration was the same as 85, we had to re-run it to
       // correct issues with origin frecency.
 
+      // Firefox 147 uses schema version 84
+
       if (currentSchemaVersion < 85) {
         rv = MigrateV85Up();
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
-      // Firefox 147 uses schema version 84
+      // Firefox 148 uses schema version 85
 
       if (currentSchemaVersion < 86) {
         rv = MigrateV86Up();
         NS_ENSURE_SUCCESS(rv, rv);
       }
+
+      // Firefox 150 uses schema version 86
+
+      if (currentSchemaVersion < 87) {
+        rv = MigrateV87Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      // Firefox 155 uses schema version 87
 
       // Schema Upgrades must add migration code here.
       // >>> IMPORTANT! <<<
@@ -2378,6 +2383,75 @@ nsresult Database::MigrateV86Up() {
         "ADD COLUMN block_pages_until_ms INTEGER"_ns);
     NS_ENSURE_SUCCESS(rv, rv);
   }
+  return NS_OK;
+}
+
+nsresult Database::MigrateV87Up() {
+  // Invert the moz_origins UNIQUE constraint to (host, prefix), so the higher
+  // cardinality column comes first and queries only filtering on host, like the
+  // address bar ones, can use the index.
+
+  {
+    // The statement must be finalized before the table it reads is dropped.
+    nsCOMPtr<mozIStorageStatement> stmt;
+    nsresult rv = mMainConn->CreateStatement(
+        nsLiteralCString("SELECT 1 FROM sqlite_master "
+                         "WHERE type = 'table' AND name = 'moz_origins' "
+                         "AND sql LIKE '%UNIQUE (host, prefix)%'"),
+        getter_AddRefs(stmt));
+    NS_ENSURE_SUCCESS(rv, rv);
+    bool hasResult = false;
+    if (NS_SUCCEEDED(stmt->ExecuteStep(&hasResult)) && hasResult) {
+      // The constraint has already been inverted.
+      return NS_OK;
+    }
+  }
+
+  // The table must be rebuilt, but it can't be dropped while moz_places
+  // references it. Deferring the foreign keys allows the drop: it leaves every
+  // referencing page orphaned until the table is refilled, which resolves them
+  // again before the transaction commits.
+  nsresult rv =
+      mMainConn->ExecuteSimpleSQL("PRAGMA defer_foreign_keys = ON"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = mMainConn->ExecuteSimpleSQL(
+      "CREATE TEMP TABLE moz_origins_stash_temp AS "
+      "SELECT * FROM moz_origins"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = mMainConn->ExecuteSimpleSQL("DROP TABLE moz_origins"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = mMainConn->ExecuteSimpleSQL(
+      "CREATE TABLE moz_origins ( "
+      "id INTEGER PRIMARY KEY, "
+      "prefix TEXT NOT NULL, "
+      "host TEXT NOT NULL, "
+      "frecency INTEGER NOT NULL, "
+      "recalc_frecency INTEGER NOT NULL DEFAULT 0, "
+      "alt_frecency INTEGER, "
+      "recalc_alt_frecency INTEGER NOT NULL DEFAULT 0, "
+      "block_until_ms INTEGER, "
+      "block_pages_until_ms INTEGER, "
+      "UNIQUE (host, prefix) "
+      ")"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  // Inserting the rows into a table with the same name as the original resolves
+  // the deferred constraint violations accumulated during the DROP.
+  rv = mMainConn->ExecuteSimpleSQL(
+      "INSERT INTO moz_origins "
+      "(id, prefix, host, frecency, recalc_frecency, alt_frecency, "
+      "recalc_alt_frecency, block_until_ms, block_pages_until_ms) "
+      "SELECT id, prefix, host, frecency, recalc_frecency, alt_frecency, "
+      "recalc_alt_frecency, block_until_ms, block_pages_until_ms "
+      "FROM moz_origins_stash_temp"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = mMainConn->ExecuteSimpleSQL("DROP TABLE moz_origins_stash_temp"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   return NS_OK;
 }
 

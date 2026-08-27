@@ -78,33 +78,6 @@ cargo_build_flags += -Zbuild-std=std,panic_abort
 RUSTFLAGS += -Zsanitizer=thread
 endif
 
-rustflags_sancov =
-ifndef MOZ_TSAN
-ifndef FUZZING_JS_FUZZILLI
-ifdef LIBFUZZER
-# These options should match what is implicitly enabled for `clang -fsanitize=fuzzer`
-#   here: https://github.com/llvm/llvm-project/blob/release/13.x/clang/lib/Driver/SanitizerArgs.cpp#L422
-#
-#  -sanitizer-coverage-inline-8bit-counters      Increments 8-bit counter for every edge.
-#  -sanitizer-coverage-level=4                   Enable coverage for all blocks, critical edges, and indirect calls.
-#  -sanitizer-coverage-trace-compares            Tracing of CMP and similar instructions.
-#  -sanitizer-coverage-pc-table                  Create a static PC table.
-#
-# In TSan builds, we must not pass any of these, because sanitizer coverage is incompatible with TSan.
-rustflags_sancov += -Cpasses=sancov-module -Cllvm-args=-sanitizer-coverage-inline-8bit-counters -Cllvm-args=-sanitizer-coverage-level=4 -Cllvm-args=-sanitizer-coverage-trace-compares -Cllvm-args=-sanitizer-coverage-pc-table
-else
-ifdef AFLFUZZ
-# Use the same flags as afl-cc, specified here:
-# https://github.com/AFLplusplus/AFLplusplus/blob/4eaacfb095ac164afaaf9c10b8112f98d8ad7c2a/src/afl-cc.c#L2101
-#  -sanitizer-coverage-level=3                   Enable coverage for all blocks, critical edges. Implied by clang as default.
-#  -sanitizer-coverage-pc-table                  Create a static PC table.
-#  -sanitizer-coverage-trace-pc-guard            Adds guard_variable (uint32_t) to every edge
-rustflags_sancov += -Cpasses=sancov-module -Cllvm-args=-sanitizer-coverage-level=3  -Cllvm-args=-sanitizer-coverage-pc-table -Cllvm-args=-sanitizer-coverage-trace-pc-guard
-endif
-endif
-endif
-endif
-
 # These flags are passed via `cargo rustc` and only apply to the final rustc
 # invocation (i.e., only the top-level crate, not its dependencies).
 cargo_rustc_flags = $(CARGO_RUSTCFLAGS)
@@ -114,7 +87,7 @@ ifndef MOZ_DEBUG_RUST
 # gkrust_gtest. And not when doing cross-language LTO.
 ifndef MOZ_LTO_RUST_CROSS
 # Never enable when sancov is enabled to work around https://github.com/rust-lang/rust/issues/90300.
-ifndef rustflags_sancov
+ifeq (,$(RUST_SANCOV_FLAGS))
 # Never enable when coverage is enabled to work around https://github.com/rust-lang/rust/issues/90045.
 ifndef MOZ_PGO
 ifdef MOZ_LTO
@@ -165,24 +138,6 @@ ifneq (,$(or $(MOZ_USING_SCCACHE),$(MOZ_USING_BUILDCACHE)))
 export RUSTC_WRAPPER=$(CCACHE)
 endif
 
-ifndef CROSS_COMPILE
-ifdef MOZ_TSAN
-PASS_ONLY_BASE_CFLAGS_TO_RUST=1
-else
-ifneq (,$(MOZ_ASAN)$(MOZ_UBSAN))
-ifneq ($(OS_ARCH), Linux)
-PASS_ONLY_BASE_CFLAGS_TO_RUST=1
-endif # !Linux
-endif # MOZ_ASAN || MOZ_UBSAN
-endif # MOZ_TSAN
-endif # !CROSS_COMPILE
-
-ifeq (WINNT,$(HOST_OS_ARCH))
-ifdef MOZ_CODE_COVERAGE
-PASS_ONLY_BASE_CFLAGS_TO_RUST=1
-endif # MOZ_CODE_COVERAGE
-endif # WINNT
-
 ifeq (WINNT,$(HOST_OS_ARCH))
 # //?/ is the long path prefix which seems to confuse make, so we remove it
 # (things should work without it).
@@ -214,6 +169,23 @@ export CC_$(rust_cc_env_name)=$(filter-out $(CC_BASE_FLAGS),$(CC))
 export CXX_$(rust_cc_env_name)=$(filter-out $(CXX_BASE_FLAGS),$(CXX))
 export AR_$(rust_cc_env_name)=$(AR)
 
+# cc-rs may not know whether we are using a compiler wrapper, so explicitly
+# tell it that we do.
+ifdef CC_KNOWN_WRAPPER_CUSTOM
+export CC_KNOWN_WRAPPER_CUSTOM
+endif
+
+# When --with-compiler-wrapper is used, CC/CXX become a space-separated pair of
+# paths (`<wrapper> <compiler>`). On Windows, if the cargo recipe crosses into an
+# msys2 shell, msys2 mistakes that value for a Windows path-list and rewrites it
+# (`D:/a C:/b` -> `D;C:\...\a C;C:\...\b`), which breaks cc-rs with "os error 123".
+# Exclude these exact variable names from msys2's path conversion (it does not
+# support wildcards). Harmless for single-path CC/CXX, so we do it unconditionally
+# on Windows.
+ifeq (WINNT,$(HOST_OS_ARCH))
+export MSYS2_ENV_CONV_EXCL := $(if $(MSYS2_ENV_CONV_EXCL),$(MSYS2_ENV_CONV_EXCL);)CC_$(rust_cc_env_name);CXX_$(rust_cc_env_name);CC_$(rust_host_cc_env_name);CXX_$(rust_host_cc_env_name)
+endif
+
 ifeq (WINNT,$(HOST_OS_ARCH))
 HOST_CC_BASE_FLAGS += -DUNICODE
 HOST_CXX_BASE_FLAGS += -DUNICODE
@@ -236,8 +208,8 @@ export CXXFLAGS_$(rust_host_cc_env_name)=$(HOST_CXX_BASE_FLAGS) $(COMPUTED_HOST_
 ifneq (,$(filter clang%,$(CC_TYPE)))
 RUST_LTO_CFLAGS=$(MOZ_LTO_CFLAGS)
 endif
-export CFLAGS_$(rust_cc_env_name)=$(CC_BASE_FLAGS) $(RUST_LTO_CFLAGS) $(COMPUTED_CFLAGS) $(filter-out -fprofile-generate%,$(PGO_CFLAGS))
-export CXXFLAGS_$(rust_cc_env_name)=$(CXX_BASE_FLAGS) $(RUST_LTO_CFLAGS) $(COMPUTED_CXXFLAGS) $(filter-out -fprofile-generate%,$(PGO_CFLAGS))
+export CFLAGS_$(rust_cc_env_name)=$(CC_BASE_FLAGS) $(RUST_LTO_CFLAGS) $(COMPUTED_CFLAGS) $(RUST_PGO_CFLAGS)
+export CXXFLAGS_$(rust_cc_env_name)=$(CXX_BASE_FLAGS) $(RUST_LTO_CFLAGS) $(COMPUTED_CXXFLAGS) $(RUST_PGO_CFLAGS)
 else
 # Because cargo doesn't allow to distinguish builds happening for build
 # scripts/procedural macros vs. those happening for the rust target,
@@ -292,6 +264,8 @@ endif
 export RUST_BACKTRACE=full
 export MOZ_TOPOBJDIR=$(topobjdir)
 export MOZ_FOLD_LIBS
+GLEAN_PYTHON_VENV_DIR = $(GRADLE_GLEAN_PARSER_VENV)
+export GLEAN_PYTHON_VENV_DIR
 export PYTHON3
 export CARGO_PROFILE_RELEASE_OPT_LEVEL
 export CARGO_PROFILE_DEV_OPT_LEVEL
@@ -323,24 +297,6 @@ endif
 target_rust_ltoable := force-cargo-library-build $(ADD_RUST_LTOABLE)
 target_rust_nonltoable := force-cargo-test-run force-cargo-program-build
 
-ifdef MOZ_PGO_RUST
-ifdef MOZ_PROFILE_GENERATE
-rust_pgo_flags := -C profile-generate=$(topobjdir)
-ifeq (1,$(words $(filter 5.% 6.% 7.% 8.% 9.% 10.% 11.%,$(CC_VERSION) $(RUSTC_LLVM_VERSION))))
-# Disable value profiling when:
-# (RUSTC_LLVM_VERSION < 12 and CC_VERSION >= 12) or (RUSTC_LLVM_VERSION >= 12 and CC_VERSION < 12)
-rust_pgo_flags += -C llvm-args=--disable-vp=true
-endif
-# The C compiler may be passed extra llvm flags for PGO that we also want to pass to rust as well.
-# In PROFILE_GEN_CFLAGS, they look like "-mllvm foo", and we want "-C llvm-args=foo", so first turn
-# "-mllvm foo" into "-mllvm:foo" so that it becomes a unique argument, that we can then filter for,
-# excluding other flags, and then turn into the right string.
-rust_pgo_flags += $(patsubst -mllvm:%,-C llvm-args=%,$(filter -mllvm:%,$(subst -mllvm ,-mllvm:,$(PROFILE_GEN_CFLAGS))))
-else # MOZ_PROFILE_USE
-rust_pgo_flags := -C profile-use=$(PGO_PROFILE_PATH)
-endif
-endif
-
 # Work around https://github.com/rust-lang/rust/issues/112480
 ifdef MOZ_DEBUG_RUST
 ifneq (,$(filter i686-pc-windows-%,$(RUST_TARGET)))
@@ -353,11 +309,11 @@ ifeq (WINNT_clang,$(OS_ARCH)_$(CC_TYPE))
 RUSTFLAGS += -C dlltool=$(LLVM_DLLTOOL)
 endif
 
-$(target_rust_ltoable): RUSTFLAGS:=$(rustflags_override) $(rustflags_sancov) $(RUSTFLAGS) $(rust_pgo_flags) \
+$(target_rust_ltoable): RUSTFLAGS:=$(rustflags_override) $(RUST_SANCOV_FLAGS) $(RUSTFLAGS) $(RUST_PGO_FLAGS) \
 								$(if $(MOZ_LTO_RUST_CROSS),\
 								    -Clinker-plugin-lto \
 									,)
-$(target_rust_nonltoable): RUSTFLAGS:=$(rustflags_override) $(rustflags_sancov) $(RUSTFLAGS)
+$(target_rust_nonltoable): RUSTFLAGS:=$(rustflags_override) $(RUST_SANCOV_FLAGS) $(RUSTFLAGS)
 
 TARGET_RECIPES := $(target_rust_ltoable) $(target_rust_nonltoable)
 
@@ -562,7 +518,7 @@ force-cargo-library-build:
 # Sanitizers and sancov also fail because compiler-rt hooks network functions.
 ifndef MOZ_PROFILE_GENERATE
 ifeq ($(OS_ARCH), Linux)
-ifeq (,$(rustflags_sancov)$(MOZ_ASAN)$(MOZ_TSAN)$(MOZ_UBSAN))
+ifeq (,$(RUST_SANCOV_FLAGS)$(MOZ_ASAN)$(MOZ_TSAN)$(MOZ_UBSAN))
 ifndef MOZ_LTO_RUST_CROSS
 ifneq (,$(filter -Clto,$(cargo_rustc_flags)))
 	$(call py_action,check_binary $(@F),--networking $(RUST_LIBRARY_FILE))
@@ -599,7 +555,27 @@ rust_test_features_flag := --features '$(addsuffix $(COMMA),$(RUST_TEST_FEATURES
 # Don't stop at the first failure. We want to list all failures together.
 rust_test_flag := --no-fail-fast
 
+# Test executables need their shared library dependencies from dist/bin at
+# run time. Linux and macOS set an rpath (run-time search path). Windows has
+# no rpath and searches the exe's own directory, so stage the libraries next
+# to the test binaries instead.
+ifeq ($(OS_TARGET),WINNT)
+# Cargo writes the test binaries under the profile directory selected in
+# cargo_build_flags above.
+ifneq (,$(findstring megazord,$(RUST_LIBRARY_FILE)))
+rust_test_profile_dir := $(if $(MOZ_DEBUG_RUST),dev-megazord,release-megazord)
+else
+rust_test_profile_dir := $(if $(MOZ_DEBUG_RUST),debug,release)
+endif
+rust_test_bindir := $(CARGO_TARGET_DIR)/$(RUST_TARGET)/$(rust_test_profile_dir)/deps
+stage_test_libs = mkdir -p $(rust_test_bindir)$(if $(wildcard $(ABS_DIST)/bin/*$(DLL_SUFFIX)), && cp $(ABS_DIST)/bin/*$(DLL_SUFFIX) $(rust_test_bindir)/)
+else
+force-cargo-test-run: RUSTFLAGS += -C link-arg=-Wl,-rpath,$(ABS_DIST)/bin
+stage_test_libs = :
+endif
+
 force-cargo-test-run:
+	$(stage_test_libs)
 	$(call RUN_CARGO,test $(cargo_target_flag) $(rust_test_flag) $(rust_test_options) $(rust_test_features_flag))
 
 endif # RUST_TESTS

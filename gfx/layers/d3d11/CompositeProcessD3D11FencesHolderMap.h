@@ -28,8 +28,8 @@ class CompositeProcessD3D11FencesHolderMap {
   static void Shutdown();
   static CompositeProcessD3D11FencesHolderMap* Get() { return sInstance; }
 
-  CompositeProcessD3D11FencesHolderMap();
-  ~CompositeProcessD3D11FencesHolderMap();
+  CompositeProcessD3D11FencesHolderMap() = default;
+  ~CompositeProcessD3D11FencesHolderMap() = default;
 
   void Register(CompositeProcessFencesHolderId aHolderId);
   void RegisterReference(CompositeProcessFencesHolderId aHolderId);
@@ -56,7 +56,7 @@ class CompositeProcessD3D11FencesHolderMap {
     uint32_t mOwners = 1;
   };
 
-  mutable Monitor mMonitor;
+  mutable Monitor mMonitor{"CompositeProcessD3D11FencesHolderMap::mMonitor"};
 
   std::unordered_map<CompositeProcessFencesHolderId, UniquePtr<FencesHolder>,
                      CompositeProcessFencesHolderId::HashFn>

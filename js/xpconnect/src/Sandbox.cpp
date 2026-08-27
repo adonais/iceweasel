@@ -2205,7 +2205,7 @@ nsresult xpc::EvalInSandbox(JSContext* cx, HandleObject sandboxArg,
                             int32_t lineNo, bool enforceFilenameRestrictions,
                             MutableHandleValue rval) {
   JS_AbortIfWrongThread(cx);
-  rval.set(UndefinedValue());
+  rval.setUndefined();
 
   bool waiveXray = xpc::WrapperFactory::HasWaiveXrayFlag(sandboxArg);
   // CheckedUnwrapStatic is fine here, since we're checking for "is it a

@@ -14,6 +14,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
+const BASE64_PREFIX = "data:image/png;base64,";
 const STRINGS_URI = "devtools/shared/locales/screenshot.properties";
 const L10N = new LocalizationHelper(STRINGS_URI);
 
@@ -296,7 +297,7 @@ function saveToClipboard(base64URI) {
       Ci.imgITools
     );
 
-    const base64Data = base64URI.replace("data:image/png;base64,", "");
+    const base64Data = base64URI.replace(BASE64_PREFIX, "");
 
     const image = atob(base64Data);
     const img = imageTools.decodeImageFromBuffer(
@@ -343,6 +344,27 @@ async function getOutputDirectory() {
 }
 
 /**
+ * Convert a base64 encoded image/png data to a blob URL.
+ * Makes creating the download much faster than feeding the full data URI.
+ *
+ * @param {string} base64data
+ *     Base 64 encoded data for the image, expected to start with "data:image/png;base64,"
+ * @return {string}
+ *     The URL to use for the download, or null if base64data has an unexpected
+ *     format.
+ */
+function getImageDataAsBlobURL(base64Data) {
+  if (!base64Data.startsWith(BASE64_PREFIX)) {
+    // In case we received an unexpected format, return null explicitly.
+    return null;
+  }
+
+  const data = Uint8Array.fromBase64(base64Data.slice(BASE64_PREFIX.length));
+  const imageBlob = new Blob([data], { type: "image/png" });
+  return URL.createObjectURL(imageBlob);
+}
+
+/**
  * Save the screenshot data to disk, returning a promise which is resolved on
  * completion.
  *
@@ -381,10 +403,14 @@ async function saveToFile(window, image) {
   const targetFile = new lazy.FileUtils.File(filename);
 
   // Create download and track its progress.
+  let blobURL = null;
   try {
+    blobURL = getImageDataAsBlobURL(image.data);
     const download = await lazy.Downloads.createDownload({
       source: {
-        url: image.data,
+        // If blobURL is null, image data could not be converted to a blob url.
+        // Fallback to using the raw image data.
+        url: blobURL !== null ? blobURL : image.data,
         // Here we want to know if the window in which the screenshot is taken is private.
         // We have a ChromeWindow when this is called from Browser Console (:screenshot) and
         // RDM (screenshot button).
@@ -408,6 +434,11 @@ async function saveToFile(window, image) {
       level: "error",
       text: L10N.getFormatStr("screenshotErrorSavingToFile", filename),
     };
+  } finally {
+    if (blobURL) {
+      // If created, revove the blob URL created earlier.
+      URL.revokeObjectURL(blobURL);
+    }
   }
 }
 

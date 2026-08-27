@@ -9,6 +9,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlbarTokenizer:
     "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
@@ -278,7 +279,7 @@ async function checkRowVisibility() {
 
   Assert.equal(
     gTree.view.rowCount,
-    engines.length + UrlbarUtils.LOCAL_SEARCH_MODES.length,
+    engines.length + UrlbarShared.LOCAL_SEARCH_MODES.length,
     "Expected number of tree rows"
   );
 
@@ -302,7 +303,7 @@ async function checkRowVisibility() {
       row,
       gTree.columns.getNamedColumn("engineName")
     );
-    let name = UrlbarUtils.getResultSourceName(shortcut.source);
+    let name = UrlbarShared.getResultSourceName(shortcut.source);
     let l10nName = await gTree.ownerDocument.l10n.formatValue(
       `urlbar-search-mode-${name}`
     );
@@ -319,8 +320,8 @@ async function checkRowVisibility() {
  */
 async function forEachLocalShortcutRow(callback) {
   let engines = await SearchService.getVisibleEngines();
-  for (let i = 0; i < UrlbarUtils.LOCAL_SEARCH_MODES.length; i++) {
-    let shortcut = UrlbarUtils.LOCAL_SEARCH_MODES[i];
+  for (let i = 0; i < UrlbarShared.LOCAL_SEARCH_MODES.length; i++) {
+    let shortcut = UrlbarShared.LOCAL_SEARCH_MODES[i];
     let row = engines.length + i;
     await callback(row, shortcut);
   }

@@ -90,24 +90,18 @@ def test_unsorted_fix(lint, paths, create_temp_file):
     expected = Path(fix).read_text()
     path = create_temp_file(original, f"{basename}.toml")
     results = lint([path], fix=True)
-    assert len(results) == 5
+    assert len(results) == 3
     i: int = 0
-    assert results[i].message == "The manifest sections are not in alphabetical order."
-    assert results[i].level == WARNING
-    i += 1
-    assert (
-        results[i].message == "linux condition requires display == 'x11' or 'wayland'"
+    assert results[i].message == (
+        "The manifest sections are not in alphabetical order; "
+        "[aaa.js] should come before [browser_test_resolution.js]."
     )
     assert results[i].level == WARNING
+    assert results[i].lineno == 14
     i += 1
     assert (
         results[i].message
         == 'instead of "!debug" use three conditions: "asan", "opt", "tsan"'
-    )
-    assert results[i].level == WARNING
-    i += 1
-    assert (
-        results[i].message == "linux condition requires display == 'x11' or 'wayland'"
     )
     assert results[i].level == WARNING
     i += 1
@@ -183,7 +177,7 @@ def test_non_idiomatic_fix(lint, paths, create_temp_file):
     expected = Path(fix).read_text()
     path = create_temp_file(original, f"{basename}.toml")
     results = lint([path], fix=True)
-    assert len(results) == 15
+    assert len(results) == 13
     i: int = 0
     assert (
         results[i].message
@@ -238,18 +232,8 @@ def test_non_idiomatic_fix(lint, paths, create_temp_file):
     assert results[i].level == WARNING
     i += 1
     assert (
-        results[i].message == "linux condition requires display == 'x11' or 'wayland'"
-    )
-    assert results[i].level == WARNING
-    i += 1
-    assert (
         results[i].message
         == 'instead of "!debug" use three conditions: "asan", "opt", "tsan"'
-    )
-    assert results[i].level == WARNING
-    i += 1
-    assert (
-        results[i].message == "linux condition requires display == 'x11' or 'wayland'"
     )
     assert results[i].level == WARNING
     i += 1

@@ -382,7 +382,7 @@ browsertime-benchmark:
         apps: [firefox, chrome, safari, safari-tp, custom-car]
         subtests:
             by-variant:
-                nova:
+                no-nova:
                     - [speedometer3, sp3]
                 default:
                     by-test-platform:
@@ -416,22 +416,20 @@ browsertime-benchmark:
                         default:
                             by-app:
                                 firefox:
-                                    - ares6
                                     - [assorted-dom, dom]
                                     - [jetstream2, js2]
                                     - [jetstream3, js3]
                                     - [matrix-react-bench, mrb]
+                                    - [media-capabilities, mc]
                                     - [motionmark-1-3, mm-1.3]
                                     - [motionmark-htmlsuite-1-3, mm-h-1.3]
                                     - [speedometer2, sp2]
                                     - [speedometer3, sp3]
                                     - [stylebench, sb]
-                                    - [sunspider, ss]
                                     - [twitch-animation, tw-a]
                                     - [unity-webgl, ugl]
                                     - [webaudio, wa]
                                 safari:
-                                    - ares6
                                     - [assorted-dom, dom]
                                     # - [jetstream2, js2] Disable jetstream2 on safari on all mac platforms
                                     - [jetstream3, js3]
@@ -441,7 +439,6 @@ browsertime-benchmark:
                                     - [speedometer2, sp2]
                                     # - [speedometer3, sp3] Perma fails on osx 10.15.x machines (Bug 1809535)
                                     - [stylebench, sb]
-                                    - [sunspider, ss]
                                     # - [unity-webgl, ugl] Almost Perma failing on osx 10.15.x machines (Bug 1888398)
                                     - [webaudio, wa]
                                 custom-car:
@@ -451,7 +448,6 @@ browsertime-benchmark:
                                     - [motionmark-htmlsuite-1-3, mm-h-1.3]
                                     - [jetstream3, js3]
                                 chrome:
-                                    - ares6
                                     - [assorted-dom, dom]
                                     - [jetstream2, js2]
                                     - [jetstream3, js3]
@@ -461,11 +457,9 @@ browsertime-benchmark:
                                     - [speedometer2, sp2]
                                     - [speedometer3, sp3]
                                     - [stylebench, sb]
-                                    - [sunspider, ss]
                                     - [unity-webgl, ugl]
                                     - [webaudio, wa]
                                 default:
-                                    - ares6
                                     - [assorted-dom, dom]
                                     - [jetstream2, js2]
                                     - [jetstream3, js3]
@@ -475,12 +469,11 @@ browsertime-benchmark:
                                     - [speedometer2, sp2]
                                     - [speedometer3, sp3]
                                     - [stylebench, sb]
-                                    - [sunspider, ss]
                                     - [unity-webgl, ugl]
                                     - [webaudio, wa]
     treeherder-symbol: Btime()
     variants:
-        - nova
+        - no-nova
     tier:
         by-app:
             firefox:
@@ -572,7 +565,6 @@ browsertime-benchmark:
                     default: []
     max-run-time:
         by-subtest:
-            ares6: 1500
             assorted-dom:
                 by-test-platform:
                     .*-qr/.*: 2100
@@ -1096,6 +1088,9 @@ browsertime-nav-bench:
                     macosx1500.*shippable.*: [autoland]
                     windows11-64-.*-hw-ref-shippable/opt: [autoland]
                     windows11-64-24h2-shippable/opt: [autoland]
+                    linux.*nightlyasrelease.*: [autoland]
+                    macosx1500.*nightlyasrelease.*: [autoland]
+                    windows11-64-24h2-nightlyasrelease.*: [autoland]
                     default: []
             default: []
     tier: 3
@@ -1166,24 +1161,42 @@ browsertime-webcodecs:
             by-test-platform:
                 # Since x264 isn't built into Ubuntu 18.04 by default, we skip it.
                 linux.*.*:
-                    - ve-av1-rt
-                    - ve-av1-q
-                    - ve-vp8-rt
-                    - ve-vp8-q
-                    - ve-vp9-rt
-                    - ve-vp9-q
-                    - [ve-av1-rt-i420, ve-a1rt420]
-                    - [ve-av1-q-i420, ve-a1q420]
-                    - [ve-vp8-rt-i420, ve-v8rt420]
-                    - [ve-vp8-q-i420, ve-v8q420]
-                    - [ve-vp9-rt-i420, ve-v9rt420]
-                    - [ve-vp9-q-i420, ve-v9q420]
-                    - [ve-av1-rt-cam, ve-a1rtcam]
-                    - [ve-av1-q-cam, ve-a1qcam]
-                    - [ve-vp8-rt-cam, ve-v8rtcam]
-                    - [ve-vp8-q-cam, ve-v8qcam]
-                    - [ve-vp9-rt-cam, ve-v9rtcam]
-                    - [ve-vp9-q-cam, ve-v9qcam]
+                    by-app:
+                        # Camera-source variants rely on Firefox's fake camera device.
+                        # Chrome and custom-car have no equivalent here yet (bug 2044846),
+                        # so they run the non-camera variants only.
+                        firefox:
+                            - ve-av1-rt
+                            - ve-av1-q
+                            - ve-vp8-rt
+                            - ve-vp8-q
+                            - ve-vp9-rt
+                            - ve-vp9-q
+                            - [ve-av1-rt-i420, ve-a1rt420]
+                            - [ve-av1-q-i420, ve-a1q420]
+                            - [ve-vp8-rt-i420, ve-v8rt420]
+                            - [ve-vp8-q-i420, ve-v8q420]
+                            - [ve-vp9-rt-i420, ve-v9rt420]
+                            - [ve-vp9-q-i420, ve-v9q420]
+                            - [ve-av1-rt-cam, ve-a1rtcam]
+                            - [ve-av1-q-cam, ve-a1qcam]
+                            - [ve-vp8-rt-cam, ve-v8rtcam]
+                            - [ve-vp8-q-cam, ve-v8qcam]
+                            - [ve-vp9-rt-cam, ve-v9rtcam]
+                            - [ve-vp9-q-cam, ve-v9qcam]
+                        default:
+                            - ve-av1-rt
+                            - ve-av1-q
+                            - ve-vp8-rt
+                            - ve-vp8-q
+                            - ve-vp9-rt
+                            - ve-vp9-q
+                            - [ve-av1-rt-i420, ve-a1rt420]
+                            - [ve-av1-q-i420, ve-a1q420]
+                            - [ve-vp8-rt-i420, ve-v8rt420]
+                            - [ve-vp8-q-i420, ve-v8q420]
+                            - [ve-vp9-rt-i420, ve-v9rt420]
+                            - [ve-vp9-q-i420, ve-v9q420]
                 default:
                     by-app:
                         # Chrome currently refuses to encode H264 at larger resolutions like 720p and 1080p.
@@ -1270,6 +1283,10 @@ browsertime-speculation-rules:
             - [prefetch-eager, pf-eag]
             - [prefetch-moderate, pf-mod]
             - [prefetch-conservative, pf-con]
+            - [prefetch-list-immediate, pfl-imm]
+            - [prefetch-list-eager, pfl-eag]
+            - [prefetch-list-moderate, pfl-mod]
+            - [prefetch-list-conservative, pfl-con]
     description: Raptor (browsertime) Speculation Rules prefetch pageload test
     limit-platforms:
         by-app:

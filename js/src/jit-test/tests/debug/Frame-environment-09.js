@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !getBuildConfiguration("explicit-resource-management"); --enable-explicit-resource-management
-
 const g = newGlobal({ newCompartment: true });
 const dbg = new Debugger(g);
 

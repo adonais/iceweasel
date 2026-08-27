@@ -552,16 +552,12 @@ void DrawTargetRecording::DrawSurface(SourceSurface* aSurface,
       RecordedDrawSurface(aSurface, aDest, aSource, aSurfOptions, aOptions));
 }
 
-bool DrawTargetRecording::TryToReplaySurface(SourceSurface* aSurface,
-                                             const Rect& aDest,
-                                             const Rect& aSource) {
+bool DrawTarget::TryToReplaySurface(SourceSurface* aSurface, const Rect& aDest,
+                                    const Rect& aSource) {
   if (aSurface->GetType() != SurfaceType::RECORDING) {
     return false;
   }
   auto* recordingSurface = static_cast<SourceSurfaceRecording*>(aSurface);
-  if (recordingSurface->mRecorder == mRecorder) {
-    return false;
-  }
   if (!recordingSurface->mRecorder ||
       recordingSurface->mRecorder->GetRecorderType() != RecorderType::MEMORY) {
     return false;
@@ -575,8 +571,6 @@ bool DrawTargetRecording::TryToReplaySurface(SourceSurface* aSurface,
   if (!memRecorder->mOutputStream.mValid || !memRecorder->mOutputStream.mData) {
     return true;
   }
-
-  MarkChanged();
 
   // Map points in the source surface's content space to our current user
   // space (aSource -> aDest). Pre* methods prepend, so build right-to-left:
@@ -1054,10 +1048,10 @@ void DrawTargetRecording::EnsurePatternDependenciesStored(
   }
 }
 
-void DrawTargetRecording::AccessibleId(uint64_t aBrowsingContextId,
+void DrawTargetRecording::AccessibleId(uint64_t aInnerWindowId,
                                        uint64_t aAccId) {
   MarkChanged();
-  RecordEventSelf(RecordedAccessibleId(aBrowsingContextId, aAccId));
+  RecordEventSelf(RecordedAccessibleId(aInnerWindowId, aAccId));
 }
 
 }  // namespace gfx

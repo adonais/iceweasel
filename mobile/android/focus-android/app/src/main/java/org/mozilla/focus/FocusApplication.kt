@@ -105,6 +105,10 @@ open class FocusApplication : Application(), Provider {
 
                 // Remove stale temporary uploaded files.
                 components.fileUploadsDirCleaner.cleanUploadsDirectory()
+
+                withContext(ioDispatcher) {
+                    components.settings.deleteObsoleteCookieBannerDataIfNeeded()
+                }
             }
         }
     }
@@ -319,12 +323,13 @@ open class FocusApplication : Application(), Provider {
         WebExtensionSupport.initialize(
             components.engine,
             components.store,
-            onNewTabOverride = { _, engineSession, url, selected ->
+            isInPrivateBrowsingMode = { true },
+            onNewTabOverride = { _, engineSession, url, selected, isPrivate ->
                 components.tabsUseCases.addTab(
                     url = url,
                     selectTab = selected,
                     engineSession = engineSession,
-                    private = true,
+                    private = isPrivate,
                 )
             },
         )

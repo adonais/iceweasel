@@ -324,5 +324,7 @@ TEST_DIRS += [
     "test/browser",
 ]
 
+MARIONETTE_MANIFESTS += ["test/marionette/manifest.toml"]
+
 # Add libFuzzer configuration directives
 include("/tools/fuzzing/libfuzzer-config.mozbuild")

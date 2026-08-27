@@ -5,13 +5,14 @@
 #ifndef mozilla_RefPtr_h
 #define mozilla_RefPtr_h
 
+#include <fmt/ostream.h>
+
+#include <type_traits>
+
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DbgMacro.h"  // for mozilla::DebugValue
-
-#include <fmt/ostream.h>
-#include <type_traits>
 
 /*****************************************************************************/
 

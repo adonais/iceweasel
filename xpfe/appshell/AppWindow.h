@@ -102,8 +102,6 @@ class AppWindow final : public nsIBaseWindow,
     MOZ_CAN_RUN_SCRIPT_BOUNDARY
     void OcclusionStateChanged(bool aIsFullyOccluded) override;
     MOZ_CAN_RUN_SCRIPT_BOUNDARY
-    void OSToolbarButtonPressed() override;
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY
     void WindowActivated() override;
     MOZ_CAN_RUN_SCRIPT_BOUNDARY
     void WindowDeactivated() override;
@@ -158,7 +156,6 @@ class AppWindow final : public nsIBaseWindow,
       mozilla::DesktopCoord aOverlapAmount);
   MOZ_CAN_RUN_SCRIPT void OcclusionStateChanged(bool aIsFullyOccluded);
   void RecomputeBrowsingContextVisibility();
-  MOZ_CAN_RUN_SCRIPT void OSToolbarButtonPressed();
   MOZ_CAN_RUN_SCRIPT void WindowActivated();
   MOZ_CAN_RUN_SCRIPT void WindowDeactivated();
 

@@ -8,15 +8,13 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-import {
-  UrlbarProvider,
-  UrlbarUtils,
-} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
+  PartnerLinkAttribution: "resource:///modules/PartnerLinkAttribution.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   TopSites: "resource:///modules/topsites/TopSites.sys.mjs",
   TOP_SITES_DEFAULT_ROWS: "resource:///modules/topsites/constants.mjs",
@@ -64,10 +62,10 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
   }
 
   /**
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof lazy.UrlbarShared.PROVIDER_TYPE>}
    */
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.PROFILE;
+    return lazy.UrlbarShared.PROVIDER_TYPE.PROFILE;
   }
 
   /**
@@ -157,6 +155,7 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
     sites = sites.map(link => {
       let site = {
         type: link.searchTopSite ? "search" : "url",
+        subtype: link.type,
         url: link.url_urlbar || link.url,
         isPinned: !!link.isPinned,
         isSponsored: !!link.sponsored_position,
@@ -206,7 +205,6 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
             icon: site.favicon,
             isPinned: site.isPinned,
             isSponsored: site.isSponsored,
-            lastVisit: site.lastVisitDate,
           };
 
           // Fuzzy match both the URL as-is, and the URL without ref, then
@@ -248,8 +246,36 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
           }
           payload.sendAttributionRequest = site.sendAttributionRequest;
 
+          // The "last visited" result explanation needs a fresh visit date.
+          // Top Sites data is cached and isn't refreshed on every visit, and a
+          // manually added shortcut's URL can differ from the URL recorded in
+          // Places (a trailing slash, an http->https upgrade, or another
+          // redirect).  Look the date up live, following the Places redirect
+          // chain, so the explanation is accurate.
+          if (
+            lazy.UrlbarPrefs.get("resultExplanationsFeatureGate") &&
+            lazy.UrlbarPrefs.get("suggest.history")
+          ) {
+            let lastVisit = await this.#fetchLastVisit(payload.url);
+            if (instance != this.queryInstance) {
+              break;
+            }
+            payload.lastVisit = lastVisit ?? site.lastVisitDate;
+          }
+
+          // Figure out what the source of this result should be. When bookmark
+          // or history results are disabled, we use `RESULT_SOURCE.OTHER_LOCAL`
+          // so that the muxer and providers manager add the result anyway. That
+          // seems wrong but appears to be how this provider has always worked.
+          // See also bug 1631281.
           /** @type {Values<typeof lazy.UrlbarShared.RESULT_SOURCE>} */
           let resultSource = lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL;
+          if (
+            lazy.UrlbarPrefs.get("suggest.history") &&
+            site.subtype == "history"
+          ) {
+            resultSource = lazy.UrlbarShared.RESULT_SOURCE.HISTORY;
+          }
           if (lazy.UrlbarPrefs.get("suggest.bookmark")) {
             let bookmark = await lazy.PlacesUtils.bookmarks.fetch({
               url: new URL(payload.url),
@@ -260,6 +286,7 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
             }
             if (bookmark) {
               resultSource = lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS;
+              payload.bookmarkDateMs = bookmark.dateAdded.getTime();
             }
           }
 
@@ -325,6 +352,62 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
         Glean.contextualServicesTopsites.impression[`urlbar_${index}`].add(1);
       }
     });
+  }
+
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} _controller
+   * @param {object} details
+   * @param {UrlbarResult} details.result
+   */
+  onEngagement(queryContext, _controller, { result }) {
+    if (result.payload.sendAttributionRequest) {
+      lazy.PartnerLinkAttribution.makeRequest({
+        targetURL: result.payload.url,
+        source: queryContext.sapName,
+        campaignID: Services.prefs.getStringPref(
+          "browser.partnerlink.campaign.topsites"
+        ),
+      });
+
+      if (!queryContext.isPrivate) {
+        // The position is 1-based for telemetry
+        const position = result.rowIndex + 1;
+        Glean.contextualServicesTopsites.click[`urlbar_${position}`].add(1);
+      }
+    }
+  }
+
+  async #fetchLastVisit(url) {
+    let canonicalURL;
+    try {
+      canonicalURL = new URL(url).href;
+    } catch (e) {
+      return null;
+    }
+    let db = await lazy.PlacesUtils.promiseDBConnection();
+    let rows = await db.execute(
+      `WITH RECURSIVE redirect_chain(visit_id, visit_date) AS (
+         SELECT v.id, v.visit_date
+         FROM moz_places h
+         JOIN moz_historyvisits v ON v.place_id = h.id
+         WHERE h.url_hash = hash(:url) AND h.url = :url
+         UNION
+         SELECT v.id, v.visit_date
+         FROM moz_historyvisits v
+         JOIN redirect_chain c ON v.from_visit = c.visit_id
+         WHERE v.visit_type IN (:redirectPermanent, :redirectTemporary)
+       )
+       SELECT MAX(visit_date) / 1000 AS lastVisit FROM redirect_chain`,
+      {
+        url: canonicalURL,
+        redirectPermanent:
+          lazy.PlacesUtils.history.TRANSITIONS.REDIRECT_PERMANENT,
+        redirectTemporary:
+          lazy.PlacesUtils.history.TRANSITIONS.REDIRECT_TEMPORARY,
+      }
+    );
+    return rows[0]?.getResultByName("lastVisit");
   }
 
   /**

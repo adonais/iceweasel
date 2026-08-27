@@ -231,10 +231,6 @@ extension RootViewController: ContentDelegate {
     { .halt }
 
     func onShowDynamicToolbar(session: GeckoSession) {}
-
-    func onCookieBannerDetected(session: GeckoSession) {}
-
-    func onCookieBannerHandled(session: GeckoSession) {}
 }
 
 // MARK: - NavigationDelegate

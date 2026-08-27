@@ -26,11 +26,6 @@ void CompositeProcessD3D11FencesHolderMap::Shutdown() {
   sInstance = nullptr;
 }
 
-CompositeProcessD3D11FencesHolderMap::CompositeProcessD3D11FencesHolderMap()
-    : mMonitor("CompositeProcessD3D11FencesHolderMap::mMonitor") {}
-
-CompositeProcessD3D11FencesHolderMap::~CompositeProcessD3D11FencesHolderMap() {}
-
 void CompositeProcessD3D11FencesHolderMap::Register(
     CompositeProcessFencesHolderId aHolderId) {
   MOZ_ASSERT(aHolderId.IsValid());

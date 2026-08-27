@@ -4,7 +4,7 @@
       "@base": {
         "value": {
           "nativeTheme": "Field",
-          "default": "{background.color.box.@base}"
+          "default": "{popup.background.color}"
         }
       }
     }
@@ -13,21 +13,11 @@
     "color": {
       "value": {
         "nativeTheme": "{border.color.deemphasized.@base}",
-        "light": "{color.gray.10}",
-        "dark": "{color.gray.60}",
-        "forcedColors": "{border.color.@base}"
+        "default": "{popup.border.color}"
       }
     },
     "radius": {
-      "value": "{border.radius.large}"
-    }
-  },
-  "padding": {
-    "@base": {
-      "value": "{panel.padding.block}"
-    },
-    "block": {
-      "value": "8px"
+      "value": "{popup.border.radius}"
     }
   },
   "text": {

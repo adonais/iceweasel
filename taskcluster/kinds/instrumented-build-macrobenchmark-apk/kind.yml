@@ -25,6 +25,7 @@ task-defaults:
             - linux64-node
     run-on-projects: []
     run:
+        clone-with: hg
         using: gradlew
     treeherder:
         kind: test
@@ -42,6 +43,7 @@ tasks:
                   dest: baselineProfiles
         source-project-name: "fenix"
         run:
+            clone-with: hg
             gradle-package-command: ":benchmark:assembleBenchmark :app:assembleBenchmark"
             baseline-profile-path: /builds/worker/fetches/baselineProfiles
         treeherder:

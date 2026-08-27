@@ -82,7 +82,7 @@ add_task(async function closeWindowWithMultipleTabsIncludingOneBeforeUnload() {
   let secondTab = BrowserTestUtils.addTab(newWin.gBrowser);
   await BrowserTestUtils.loadURIString({
     browser: secondTab.linkedBrowser,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     uriString: "http://example.com/",
   });
   let windowClosedPromise = BrowserTestUtils.domWindowClosed(newWin);

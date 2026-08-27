@@ -8,10 +8,7 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-import {
-  UrlbarProvider,
-  UrlbarUtils,
-} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -140,10 +137,10 @@ export class UrlbarProviderRemoteTabs extends UrlbarProvider {
   }
 
   /**
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof lazy.UrlbarShared.PROVIDER_TYPE>}
    */
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.NETWORK;
+    return lazy.UrlbarShared.PROVIDER_TYPE.NETWORK;
   }
 
   /**
@@ -194,7 +191,7 @@ export class UrlbarProviderRemoteTabs extends UrlbarProvider {
         // Bug 2017798 - we need to determine how to safely show remote favicons here,
         // but until then, we show a generic favicon for the site if possible.
         let icon = lazy.showRemoteIconsPref
-          ? UrlbarUtils.getIconForUrl(tab.url)
+          ? lazy.UrlbarShared.getIconForUrl(tab.url)
           : "";
         let result = new lazy.UrlbarResult({
           type: lazy.UrlbarShared.RESULT_TYPE.REMOTE_TAB,
@@ -207,8 +204,8 @@ export class UrlbarProviderRemoteTabs extends UrlbarProvider {
             lastUsed: (tab.lastUsed || 0) * 1000,
           },
           highlights: {
-            url: UrlbarUtils.HIGHLIGHT.TYPED,
-            title: UrlbarUtils.HIGHLIGHT.TYPED,
+            url: lazy.UrlbarShared.HIGHLIGHT.TYPED,
+            title: lazy.UrlbarShared.HIGHLIGHT.TYPED,
           },
         });
 

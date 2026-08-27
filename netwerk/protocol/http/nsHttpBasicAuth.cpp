@@ -86,7 +86,7 @@ nsHttpBasicAuth::GenerateCredentials(
   nsresult rv = Base64EncodeAppend(userpass, authString);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  creds = authString;
+  creds = std::move(authString);
   return NS_OK;
 }
 

@@ -98,115 +98,87 @@ wasmValidateText(`(component
 // Test generativity / equality of resource types
 {
   const preamble = `
+    ;; Each block of definitions here is mutually equal, and unequal
+    ;; to all other blocks.
+
     (type $T1 (resource (rep i32)))
     (export $T1E "T1E" (type $T1))
+    (export $T1EE "T1EE" (type $T1E))
+
+    (export $T1S "T1S" (type $T1) (type (sub resource)))
+    (export $T1SE "T1SE" (type $T1S))
+    (export $T1SEE "T1SEE" (type $T1SE))
+
     (type $T2 (resource (rep i32)))
     (export $T2E "T2E" (type $T2))
+    (export $T2EE "T2EE" (type $T2E))
+
+    (export $T2S "T2S" (type $T2) (type (sub resource)))
+    (export $T2SE "T2SE" (type $T2S))
+    (export $T2SEE "T2SEE" (type $T2SE))
+
     (import "T3" (type $T3 (sub resource)))
     (import "T3E" (type $T3E (eq $T3)))
+    (import "T3EE" (type $T3EE (eq $T3E)))
+
+    (export $T3S "T3S" (type $T3) (type (sub resource)))
+    (export $T3SE "T3SE" (type $T3S))
+    (export $T3SEE "T3SEE" (type $T3SE))
+
     (import "T4" (type $T4 (sub resource)))
     (import "T4E" (type $T4E (eq $T4)))
+    (import "T4EE" (type $T4EE (eq $T4E)))
+
+    ;; slight break from pattern; let's re-export an eq
+    (export $T4ES "T4ES" (type $T4E) (type (sub resource)))
+    (export $T4ESE "T4ESE" (type $T4ES))
+    (export $T4ESEE "T4ESEE" (type $T4ESE))
   `;
 
-  const tests = [
-    [true, "$T1", "(type (eq $T1))"],
-    [true, "$T1", "(type (eq $T1E))"],
-    [false, "$T1", "(type (eq $T2))"],
-    [false, "$T1", "(type (eq $T2E))"],
-    [false, "$T1", "(type (eq $T3))"],
-    [false, "$T1", "(type (eq $T3E))"],
-    [false, "$T1", "(type (eq $T4))"],
-    [false, "$T1", "(type (eq $T4E))"],
-    [false, "$T1", "(type (sub resource))"],
-    [false, "$T1", "(func)"],
-
-    [true, "$T1E", "(type (eq $T1))"],
-    [true, "$T1E", "(type (eq $T1E))"],
-    [false, "$T1E", "(type (eq $T2))"],
-    [false, "$T1E", "(type (eq $T2E))"],
-    [false, "$T1E", "(type (eq $T3))"],
-    [false, "$T1E", "(type (eq $T3E))"],
-    [false, "$T1E", "(type (eq $T4))"],
-    [false, "$T1E", "(type (eq $T4E))"],
-    [false, "$T1E", "(type (sub resource))"],
-    [false, "$T1E", "(func)"],
-
-    [false, "$T2", "(type (eq $T1))"],
-    [false, "$T2", "(type (eq $T1E))"],
-    [true, "$T2", "(type (eq $T2))"],
-    [true, "$T2", "(type (eq $T2E))"],
-    [false, "$T2", "(type (eq $T3))"],
-    [false, "$T2", "(type (eq $T3E))"],
-    [false, "$T2", "(type (eq $T4))"],
-    [false, "$T2", "(type (eq $T4E))"],
-    [false, "$T2", "(type (sub resource))"],
-    [false, "$T2", "(func)"],
-
-    [false, "$T2E", "(type (eq $T1))"],
-    [false, "$T2E", "(type (eq $T1E))"],
-    [true, "$T2E", "(type (eq $T2))"],
-    [true, "$T2E", "(type (eq $T2E))"],
-    [false, "$T2E", "(type (eq $T3))"],
-    [false, "$T2E", "(type (eq $T3E))"],
-    [false, "$T2E", "(type (eq $T4))"],
-    [false, "$T2E", "(type (eq $T4E))"],
-    [false, "$T2E", "(type (sub resource))"],
-    [false, "$T2E", "(func)"],
-
-    [false, "$T3", "(type (eq $T1))"],
-    [false, "$T3", "(type (eq $T1E))"],
-    [false, "$T3", "(type (eq $T2))"],
-    [false, "$T3", "(type (eq $T2E))"],
-    [true, "$T3", "(type (eq $T3))"],
-    [true, "$T3", "(type (eq $T3E))"],
-    [false, "$T3", "(type (eq $T4))"],
-    [false, "$T3", "(type (eq $T4E))"],
-    [false, "$T3", "(type (sub resource))"],
-    [false, "$T3", "(func)"],
-
-    [false, "$T3E", "(type (eq $T1))"],
-    [false, "$T3E", "(type (eq $T1E))"],
-    [false, "$T3E", "(type (eq $T2))"],
-    [false, "$T3E", "(type (eq $T2E))"],
-    [true, "$T3E", "(type (eq $T3))"],
-    [true, "$T3E", "(type (eq $T3E))"],
-    [false, "$T3E", "(type (eq $T4))"],
-    [false, "$T3E", "(type (eq $T4E))"],
-    [false, "$T3E", "(type (sub resource))"],
-    [false, "$T3E", "(func)"],
-
-    [false, "$T4", "(type (eq $T1))"],
-    [false, "$T4", "(type (eq $T1E))"],
-    [false, "$T4", "(type (eq $T2))"],
-    [false, "$T4", "(type (eq $T2E))"],
-    [false, "$T4", "(type (eq $T3))"],
-    [false, "$T4", "(type (eq $T3E))"],
-    [true, "$T4", "(type (eq $T4))"],
-    [true, "$T4", "(type (eq $T4E))"],
-    [false, "$T4", "(type (sub resource))"],
-    [false, "$T4", "(func)"],
-
-    [false, "$T4E", "(type (eq $T1))"],
-    [false, "$T4E", "(type (eq $T1E))"],
-    [false, "$T4E", "(type (eq $T2))"],
-    [false, "$T4E", "(type (eq $T2E))"],
-    [false, "$T4E", "(type (eq $T3))"],
-    [false, "$T4E", "(type (eq $T3E))"],
-    [true, "$T4E", "(type (eq $T4))"],
-    [true, "$T4E", "(type (eq $T4E))"],
-    [false, "$T4E", "(type (sub resource))"],
-    [false, "$T4E", "(func)"],
+  const allTypes = [
+    "$T1", "$T1E", "$T1EE", "$T1S", "$T1SE", "$T1SEE",
+    "$T2", "$T2E", "$T2EE", "$T2S", "$T2SE", "$T2SEE",
+    "$T3", "$T3E", "$T3EE", "$T3S", "$T3SE", "$T3SEE",
+    "$T4", "$T4E", "$T4EE", "$T4ES", "$T4ESE", "$T4ESEE",
   ];
-  for (const [ok, t, desc] of tests) {
-    const componentText = `(component
-      ${preamble}
-      (export "test" (type ${t}) ${desc})
-    )`;
-    if (ok) {
-      wasmValidateText(componentText);
-    } else {
-      wasmFailValidateText(componentText, /did not match explicitly-provided type/);
+  const eqSets = [
+    ["$T1", "$T1E", "$T1EE"],
+    ["$T1S", "$T1SE", "$T1SEE"],
+    ["$T2", "$T2E", "$T2EE"],
+    ["$T2S", "$T2SE", "$T2SEE"],
+    ["$T3", "$T3E", "$T3EE"],
+    ["$T3S", "$T3SE", "$T3SEE"],
+    ["$T4", "$T4E", "$T4EE"],
+    ["$T4ES", "$T4ESE", "$T4ESEE",],
+  ]
+  for (const t of allTypes) {
+    const eqSet = eqSets.filter(s => s.includes(t))[0];
+    for (const other of allTypes) {
+      const decl = `(export "test" (type ${t}) (type (eq ${other})))`;
+      const ok = eqSet.includes(other);
+      print(`expect ${ok ? "ok" : "not ok"}: ${decl}`);
+
+      const componentText = `(component
+        ${preamble}
+        ${decl}
+      )`;
+      if (ok) {
+        wasmValidateText(componentText);
+      } else {
+        wasmFailValidateText(componentText, /did not match explicitly-provided type/);
+      }
     }
+
+    // Extra checks: ascribing (sub resource) on export should always
+    // succeed, and ascribing (func) should always fail (bad externtype).
+    wasmValidateText(`(component
+      ${preamble}
+      (export "test" (type ${t}) (type (sub resource)))
+    )`);
+    wasmFailValidateText(`(component
+      ${preamble}
+      (export "test" (type ${t}) (func))
+    )`, /did not match explicitly-provided type/);
   }
 }
 

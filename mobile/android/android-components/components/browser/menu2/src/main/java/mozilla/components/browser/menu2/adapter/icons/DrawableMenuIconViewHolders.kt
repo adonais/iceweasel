@@ -33,6 +33,7 @@ import mozilla.components.concept.menu.candidate.DrawableMenuIcon
 import mozilla.components.concept.menu.candidate.LowPriorityHighlightEffect
 import mozilla.components.concept.menu.candidate.MenuIcon
 import mozilla.components.support.base.log.logger.Logger
+import mozilla.components.support.ktx.android.view.pixelSizeFor
 
 internal abstract class MenuIconWithDrawableViewHolder<T : MenuIcon>(
     parent: ConstraintLayout,
@@ -45,8 +46,7 @@ internal abstract class MenuIconWithDrawableViewHolder<T : MenuIcon>(
         updateConstraints {
             connect(R.id.icon, TOP, PARENT_ID, TOP)
             connect(R.id.icon, BOTTOM, PARENT_ID, BOTTOM)
-            val margin = parent.resources
-                .getDimensionPixelSize(R.dimen.mozac_browser_menu2_icon_padding_start)
+            val margin = parent.pixelSizeFor(R.dimen.mozac_browser_menu2_icon_padding_start)
             when (side) {
                 Side.START -> {
                     connect(imageView.id, START, PARENT_ID, START)

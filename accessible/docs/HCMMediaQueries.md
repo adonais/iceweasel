@@ -149,7 +149,7 @@ When you introduce a custom override for a CSS variable that **already has a `@m
 
 Consider a variable that already has a forced-colors override in the token layer:
 
-```css
+```scss
 :root {
   --page-background: #f0f0f0;
 

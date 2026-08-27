@@ -38,10 +38,11 @@ window.onload = function() {
     ok(!cssProperties.isKnown("--foo bar"),
       "A CSS variable with spaces fails");
 
-    const marginProps = ["auto", ...InspectorUtils.getCSSWideKeywords()];
-    if(SpecialPowers.getBoolPref("layout.css.anchor-positioning.enabled")) {
-      marginProps.push("anchor-size");
-    }
+    const marginProps = [
+      "auto",
+      "anchor-size",
+      ...InspectorUtils.getCSSWideKeywords(),
+    ];
     is(toSortedString(cssProperties.getValues("margin")),
        toSortedString(marginProps),
        "Can get values for the CSS margin.");

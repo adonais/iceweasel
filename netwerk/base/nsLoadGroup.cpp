@@ -621,6 +621,14 @@ nsLoadGroup::GetRequests(nsISimpleEnumerator** aRequests) {
   return NS_NewArrayEnumerator(aRequests, requests, NS_GET_IID(nsIRequest));
 }
 
+void nsLoadGroup::VisitRequests(nsLoadGroupRequestVisitor aVisitor) {
+  for (nsIRequest* request : mRequests) {
+    if (!aVisitor(request)) {
+      return;
+    }
+  }
+}
+
 NS_IMETHODIMP
 nsLoadGroup::GetTotalKeepAliveBytes(uint64_t* aTotalKeepAliveBytes) {
   MOZ_ASSERT(aTotalKeepAliveBytes);

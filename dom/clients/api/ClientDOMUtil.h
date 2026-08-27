@@ -28,11 +28,13 @@ void StartClientManagerOp(Func aFunc, const Arg& aArg, nsIGlobalObject* aGlobal,
   aFunc(aArg, target)
       ->Then(
           target, __func__,
-          [aResolve, holder](const ClientOpResult& aResult) {
+          [aResolve = std::move(aResolve),
+           holder](const ClientOpResult& aResult) {
             holder->Complete();
             aResolve(aResult);
           },
-          [aReject, holder](const CopyableErrorResult& aResult) {
+          [aReject = std::move(aReject),
+           holder](const CopyableErrorResult& aResult) {
             holder->Complete();
             aReject(aResult);
           })

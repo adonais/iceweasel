@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<head>
+<script>
+let container = document.createElement('div');
+let image = null;
+class XImage extends HTMLImageElement {
+  constructor() {
+    super();
+    image = this;
+    let form = document.querySelector('form');
+    let div = form.querySelector('div');
+    container.appendChild(form);
+    this.appendChild(div);
+  }
+}
+customElements.define('x-image', XImage, {extends: 'img'});
+
+onload = () => {
+  container = null;
+
+  setTimeout(() => {
+    // Force GC and CC.
+    SpecialPowers.forceShrinkingGC();
+    SpecialPowers.forceCC();
+    SpecialPowers.forceShrinkingGC();
+    SpecialPowers.forceCC();
+    image.setAttribute('name', 'boom');
+
+    document.documentElement.classList.remove("reftest-wait");
+  }, 0);
+};
+</script>
+</head>
+<body>
+<form>
+<div id="p">
+<img is="x-image">
+</div>
+</form>
+</body>
+</html>

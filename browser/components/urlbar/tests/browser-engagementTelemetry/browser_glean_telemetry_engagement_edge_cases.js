@@ -19,7 +19,7 @@ class NoResponseTestProvider extends UrlbarTestUtils.TestProvider {
   }
 
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
+    return UrlbarShared.PROVIDER_TYPE.HEURISTIC;
   }
 
   async startQuery(_context, _addCallback) {
@@ -44,7 +44,7 @@ class AnotherHeuristicProvider extends UrlbarTestUtils.TestProvider {
   }
 
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
+    return UrlbarShared.PROVIDER_TYPE.HEURISTIC;
   }
 
   async startQuery(context, addCallback) {

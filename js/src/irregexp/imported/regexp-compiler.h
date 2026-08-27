@@ -115,8 +115,10 @@ class QuickCheckDetails {
     DCHECK_GT(characters_, index);
     return positions_ + index;
   }
-  uint32_t mask() { return mask_; }
-  uint32_t value() { return value_; }
+  uint32_t mask() const { return mask_; }
+  uint32_t value() const { return value_; }
+  void set_mask(uint32_t mask) { mask_ = mask; }
+  void set_value(uint32_t value) { value_ = value; }
 
  private:
   static constexpr int kMaxPositions = 4;
@@ -224,7 +226,38 @@ class BoyerMooreLookahead : public ZoneObject {
   void SetRest(int from_map) {
     for (int i = from_map; i < length_; i++) SetAll(i);
   }
-  void EmitSkipInstructions(RegExpMacroAssembler* masm);
+  // Emits a Boyer-Moore skip-scan prelude for the unanchored search, if
+  // profitable. Returns true iff code that owns the search was emitted: either
+  // a skip-scan, or an unconditional Fail() when some lookahead position can
+  // never match. In both cases the caller must not emit a competing scan over
+  // the same loop. Returns false iff nothing was emitted (PC unchanged) and the
+  // caller should fall back to another strategy.
+  bool EmitSkipInstructions(RegExpMacroAssembler* masm);
+
+  // Exposes the BitInTable skip-scan inputs without emitting: picks the most
+  // discriminating lookahead interval and builds the boolean (and SIMD nibble)
+  // table for it. *offset is the lookahead position to test (the SkipUntil*
+  // cp_offset); *advance_by is the per-iteration stride. Returns false if no
+  // worthwhile interval exists. Used by ChoiceNode::EmitOneOfMasked3Search to
+  // build the leading scan of a fused SkipUntilOneOfMasked3.
+  bool BuildSkipTable(RegExpMacroAssembler* masm, int* offset, int* advance_by,
+                      Handle<ByteArray>* table,
+                      Handle<ByteArray>* nibble_table);
+
+  // Fills |boolean_skip_table| (one byte per character, indexed mod kTableSize)
+  // with 1 for every character in the lookahead maps [min_lookahead,
+  // max_lookahead] and 0 elsewhere, and optionally the SIMD |nibble_table|.
+  // Returns the resulting skip stride. With a single map (min == max) this is
+  // just that position's membership table.
+  int GetSkipTable(
+      int min_lookahead, int max_lookahead,
+      DirectHandle<ByteArray> boolean_skip_table,
+      DirectHandle<ByteArray> nibble_table = DirectHandle<ByteArray>{});
+
+  // Transient probes opt out so they don't clobber the shared bm_info_ (see
+  // Node::set_bm_info).
+  bool caches_node_info() const { return caches_node_info_; }
+  void set_caches_node_info(bool value) { caches_node_info_ = value; }
 
  private:
   // This is the value obtained by EatsAtLeast.  If we do not have at least this
@@ -236,11 +269,8 @@ class BoyerMooreLookahead : public ZoneObject {
   // 0xff for Latin1, 0xffff for UTF-16.
   int max_char_;
   ZoneList<BoyerMoorePositionInfo*>* bitmaps_;
+  bool caches_node_info_ = true;
 
-  int GetSkipTable(
-      int min_lookahead, int max_lookahead,
-      DirectHandle<ByteArray> boolean_skip_table,
-      DirectHandle<ByteArray> nibble_table = DirectHandle<ByteArray>{});
   bool FindWorthwhileInterval(int* from, int* to);
   int FindBestInterval(int max_number_of_chars, int old_biggest_points,
                        int* from, int* to);
@@ -267,7 +297,8 @@ class Trace {
       : cp_offset_(0),
         flush_budget_(100),  // Note: this is a 16 bit field.
         flags_(AtStartField::encode(UNKNOWN) |
-               HasAnyActionsField::encode(false)),
+               HasAnyActionsField::encode(false) |
+               ParkedGrantField::encode(ParkedGrant::kNone)),
         action_(nullptr),
         backtrack_(nullptr),
         special_loop_state_(nullptr),
@@ -336,6 +367,19 @@ class Trace {
     flags_ = AtStartField::update(flags_, at_start);
   }
   Label* backtrack() const { return backtrack_; }
+  // What the loop-exit backtrack target tolerates when a drain-omitted loop
+  // unwinds to it with the input position parked at the loop's greedy extent
+  // (see ParkedGrant for the levels, and the terminology block in
+  // regexp-nodes.h for "loop-exit backtrack").  The parked position can be
+  // anywhere in [trace position, subject end] -- including the end itself, so
+  // the search-retry re-entry reloads with a bounds check.
+  //
+  // The grant is issued only at emission sites where the target's behavior is
+  // known by construction, and is revoked automatically whenever the backtrack
+  // target changes (see set_backtrack).  Crossing a choice into an alternative
+  // additionally requires that no sibling can match at a skipped position
+  // (see ChoiceNode::EmitChoices).
+  ParkedGrant parked_grant() const { return ParkedGrantField::decode(flags_); }
   SpecialLoopState* special_loop_state() const { return special_loop_state_; }
   int characters_preloaded() const { return characters_preloaded_; }
   int bound_checked_up_to() const { return bound_checked_up_to_; }
@@ -353,7 +397,22 @@ class Trace {
     action_ = new_action;
     flags_ = HasAnyActionsField::update(flags_, true);
   }
-  void set_backtrack(Label* backtrack) { backtrack_ = backtrack; }
+  // Clears any inherited parked-position grant; see parked_grant() for when
+  // an alternative must do this.
+  void reset_parked_grant() {
+    flags_ = ParkedGrantField::update(flags_, ParkedGrant::kNone);
+  }
+  void set_backtrack(Label* backtrack) {
+    backtrack_ = backtrack;
+    // A parked-position grant is tied to the specific target it was issued
+    // for; a new target must obtain its own.
+    reset_parked_grant();
+  }
+  void set_parked_grant(ParkedGrant grant) {
+    DCHECK_NOT_NULL(backtrack_);
+    DCHECK_NE(grant, ParkedGrant::kNone);
+    flags_ = ParkedGrantField::update(flags_, grant);
+  }
   void set_special_loop_state(SpecialLoopState* state) {
     special_loop_state_ = state;
   }
@@ -420,6 +479,8 @@ class Trace {
   using AtStartField = base::BitField<TriBool, 0, 2>;
   // Whether any trace in the chain has an action.
   using HasAnyActionsField = AtStartField::Next<bool, 1>;
+  // See parked_grant.
+  using ParkedGrantField = HasAnyActionsField::Next<ParkedGrant, 2>;
 
   int cp_offset_;
   uint16_t flush_budget_;
@@ -617,6 +678,7 @@ class V8_EXPORT_PRIVATE Compiler {
   }
   bool read_backward() { return read_backward_; }
   void set_read_backward(bool value) { read_backward_ = value; }
+  bool has_search_prefix() const { return has_search_prefix_; }
   FrequencyCollator* frequency_collator() { return &frequency_collator_; }
 
   int current_expansion_factor() { return current_expansion_factor_; }
@@ -646,6 +708,11 @@ class V8_EXPORT_PRIVATE Compiler {
   static const int kNoRegister = -1;
 
  private:
+  // Computes the filters that let RegExpExecInternal reject a match attempt
+  // without entering the engine. Defined next to the match-set helpers it
+  // shares.
+  void ComputeQuickCheckFilters(Node* start, DirectHandle<RegExpData> re_data);
+
   EndNode* accept_;
   int next_register_;
   int unicode_lookaround_stack_register_;
@@ -660,6 +727,8 @@ class V8_EXPORT_PRIVATE Compiler {
   int to_node_overflow_check_ticks_ = 0;
   bool optimize_;
   bool read_backward_;
+  // Set by PreprocessRegExp when it prepends the `.*?` search loop.
+  bool has_search_prefix_ = false;
   int current_expansion_factor_;
   FrequencyCollator frequency_collator_;
 #ifdef V8_ENABLE_REGEXP_DIAGNOSTICS

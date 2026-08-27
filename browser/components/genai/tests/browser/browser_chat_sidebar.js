@@ -419,3 +419,91 @@ add_task(async function test_webext_content_script_in_chat_sidebar() {
   await SidebarController.hide();
   await extension.unload();
 });
+
+/**
+ * Check that tab-modal prompts requested for the chatbot browser are shown as
+ * tab dialogs owned by the sidebar browser (so that they can be closed
+ * programmatically) instead of falling back to window-modal prompts.
+ */
+add_task(async function test_tab_modal_prompt_in_chat_sidebar() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.chat.provider", TEST_CHAT_PROVIDER_URL]],
+  });
+
+  // Opening a tab dialog on the sidebar browser creates dialog frames that
+  // live as long as the sidebar does, so use a separate window that can be
+  // closed to tear them down instead of leaking them (bug 1513656).
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  const { SidebarController } = win;
+  await SidebarController.show("viewGenaiChatSidebar");
+
+  const chatbotBrowser = await TestUtils.waitForCondition(() => {
+    const sidebarDocument = SidebarController.browser.contentWindow.document;
+    return sidebarDocument
+      .getElementById("browser-container")
+      .querySelector("browser");
+  }, "Chatbot <browser> is loaded in the sidebar");
+  // The prompt has to be requested for a browser that is done loading,
+  // otherwise the navigation closes the tab dialog again right away.
+  await TestUtils.waitForCondition(
+    () =>
+      chatbotBrowser.browsingContext?.currentWindowGlobal &&
+      chatbotBrowser.currentURI?.spec == TEST_CHAT_PROVIDER_URL &&
+      !chatbotBrowser.webProgress?.isLoadingDocument,
+    "Chatbot <browser> loaded the provider page"
+  );
+
+  const promptActor =
+    chatbotBrowser.browsingContext.currentWindowGlobal.getActor("Prompt");
+  const showOnSidebarBrowser =
+    promptActor.shouldShowPromptOnSidebarBrowser(chatbotBrowser);
+  Assert.ok(
+    showOnSidebarBrowser,
+    "Prompts for the chatbot <browser> are shown on the sidebar browser"
+  );
+  if (!showOnSidebarBrowser) {
+    // Continuing would open a blocking window-modal dialog that nothing can
+    // dismiss, hanging the harness rather than failing this test.
+    await BrowserTestUtils.closeWindow(win);
+    return;
+  }
+
+  const dialogManager = win.gBrowser
+    .getTabDialogBox(win.document.getElementById("sidebar"))
+    .getTabDialogManager();
+
+  const promptID = "test-chat-sidebar-tab-prompt";
+  let promptRejected = false;
+  const promptPromise = Services.prompt
+    .asyncConfirmEx(
+      chatbotBrowser.browsingContext,
+      Ci.nsIPromptService.MODAL_TYPE_TAB,
+      "Scan in progress",
+      "Reviewing what you pasted",
+      Ci.nsIPromptService.BUTTON_POS_0 *
+        Ci.nsIPromptService.BUTTON_TITLE_CANCEL,
+      null,
+      null,
+      null,
+      null,
+      false,
+      { promptID }
+    )
+    .catch(() => {
+      promptRejected = true;
+    });
+
+  const dialog = await TestUtils.waitForCondition(
+    () => dialogManager.dialogs.find(d => d.promptID == promptID),
+    "Prompt is shown as a tab dialog managed by the sidebar browser"
+  );
+  // Aborting before the dialog document has loaded would close the dialog
+  // without it marking the prompt as aborted.
+  await dialog._dialogReady;
+
+  dialogManager.abortDialogs(d => d.promptID == promptID);
+  await promptPromise;
+  Assert.ok(promptRejected, "Dialog was closed programmatically");
+
+  await BrowserTestUtils.closeWindow(win);
+});

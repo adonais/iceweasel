@@ -10,9 +10,7 @@
       'target_name': 'pkcs12',
       'type': 'static_library',
       'sources': [
-        'p12creat.c',
         'p12d.c',
-        'p12dec.c',
         'p12e.c',
         'p12local.c',
         'p12plcy.c',

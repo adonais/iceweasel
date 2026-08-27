@@ -23,6 +23,7 @@
 #include "wasm/WasmFrameIter.h"  // js::wasm::{RegisterState,StartUnwinding,UnwindState}
 #include "wasm/WasmInstance.h"  // js::wasm::Instance
 #include "wasm/WasmProcess.h"   // js::wasm::LookupCode
+#include "wasm/WasmSummarizeInsn.h"
 
 #include "vm/Realm-inl.h"  // js::~AutoRealm
 
@@ -260,10 +261,22 @@ void js::jit::JitActivation::startWasmTrap(wasm::Trap trap,
   wasmTrapCode_ = wasm::LookupCode(state.pc);
   MOZ_RELEASE_ASSERT(wasmTrapCode_);
 
+  // Set resumePC.  Unfortunately this is used both as the execution resumption
+  // address, in the case where the trap will resume, and the key for the
+  // stackmap associated with the trap, which may be valid even if the trap
+  // doesn't resume.  These two uses should be split, so we can specify a resume
+  // point that MOZ_CRASHes if we mistakenly resume, while at the same time
+  // specifying a valid stackmap for the trap.
+  wasm::SummarizeResult summary =
+      wasm::SummarizeTrapInstruction((const uint8_t*)state.pc);
+  // SummarizeTrapInstruction must be able to identify the trapping instruction
+  // and compute its length.
+  MOZ_RELEASE_ASSERT(summary.identified());
+  uint8_t* resumePC = ((uint8_t*)state.pc) + summary.length();
+
   setWasmExitFP(fp);
   wasmTrapData_.emplace();
-  wasmTrapData_->resumePC =
-      ((uint8_t*)state.pc) + jit::WasmTrapInstructionLength;
+  wasmTrapData_->resumePC = resumePC;
   wasmTrapData_->unwoundPC = pc;
   wasmTrapData_->trap = trap;
   // If the frame was unwound, the source location must be recovered from the

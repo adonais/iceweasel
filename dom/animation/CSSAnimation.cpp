@@ -22,7 +22,7 @@ JSObject* CSSAnimation::WrapObject(JSContext* aCx,
 void CSSAnimation::SetEffect(AnimationEffect* aEffect) {
   Animation::SetEffect(aEffect);
 
-  AddOverriddenProperties(CSSAnimationProperties::Effect);
+  PropertiesWillSetFromJS(CSSAnimationProperties::Effect);
 }
 
 void CSSAnimation::SetStartTime(const Nullable<CSSNumberish>& aStartTime,
@@ -40,7 +40,7 @@ void CSSAnimation::SetStartTime(const Nullable<CSSNumberish>& aStartTime,
   bool isPaused = PlayState() == AnimationPlayState::Paused;
 
   if (wasPaused != isPaused) {
-    AddOverriddenProperties(CSSAnimationProperties::PlayState);
+    PropertiesWillSetFromJS(CSSAnimationProperties::PlayState);
   }
 }
 
@@ -62,7 +62,7 @@ void CSSAnimation::Reverse(ErrorResult& aRv) {
   bool isPaused = PlayState() == AnimationPlayState::Paused;
 
   if (wasPaused != isPaused) {
-    AddOverriddenProperties(CSSAnimationProperties::PlayState);
+    PropertiesWillSetFromJS(CSSAnimationProperties::PlayState);
   }
 }
 
@@ -89,7 +89,7 @@ void CSSAnimation::PlayFromJS(ErrorResult& aRv) {
     return;
   }
 
-  AddOverriddenProperties(CSSAnimationProperties::PlayState);
+  PropertiesWillSetFromJS(CSSAnimationProperties::PlayState);
 }
 
 void CSSAnimation::PauseFromJS(ErrorResult& aRv) {
@@ -98,7 +98,7 @@ void CSSAnimation::PauseFromJS(ErrorResult& aRv) {
     return;
   }
 
-  AddOverriddenProperties(CSSAnimationProperties::PlayState);
+  PropertiesWillSetFromJS(CSSAnimationProperties::PlayState);
 }
 
 void CSSAnimation::PlayFromStyle() {
@@ -335,21 +335,26 @@ void CSSAnimationKeyframeEffect::UpdateTiming(
       updatedProperties |= CSSAnimationProperties::FillMode;
     }
 
-    cssAnimation->AddOverriddenProperties(updatedProperties);
+    cssAnimation->PropertiesWillSetFromJS(updatedProperties);
   }
 }
 
 void CSSAnimationKeyframeEffect::SetKeyframes(JSContext* aContext,
                                               JS::Handle<JSObject*> aKeyframes,
                                               ErrorResult& aRv) {
+  // SetKeyframes will trigger the keyframe generation (for missing 0% and
+  // 100%), so we set this flag to avoid generating the keyframes if they come
+  // from JS.
+  mIgnoreKeyframesGeneration = true;
   KeyframeEffect::SetKeyframes(aContext, aKeyframes, aRv);
 
   if (aRv.Failed()) {
+    mIgnoreKeyframesGeneration = false;
     return;
   }
 
   if (CSSAnimation* cssAnimation = GetOwningCSSAnimation()) {
-    cssAnimation->AddOverriddenProperties(CSSAnimationProperties::Keyframes);
+    cssAnimation->PropertiesWillSetFromJS(CSSAnimationProperties::Keyframes);
   }
 }
 
@@ -358,8 +363,268 @@ void CSSAnimationKeyframeEffect::SetComposite(
   KeyframeEffect::SetComposite(aComposite);
 
   if (CSSAnimation* cssAnimation = GetOwningCSSAnimation()) {
-    cssAnimation->AddOverriddenProperties(CSSAnimationProperties::Composition);
+    cssAnimation->PropertiesWillSetFromJS(CSSAnimationProperties::Composition);
   }
+}
+
+class ComputedOffsetComparator {
+ public:
+  static bool LessThan(const Keyframe& aLhs, const Keyframe& aRhs) {
+    // Keep the specified order if any of the keyframes have no computed offset.
+    return !std::isnan(aLhs.mComputedOffset) &&
+           !std::isnan(aRhs.mComputedOffset) &&
+           aLhs.mComputedOffset < aRhs.mComputedOffset;
+  }
+};
+
+enum class TargetKeyframe : uint8_t {
+  Initial,
+  Final,
+};
+static Keyframe* GetOrCreateInitialOrFinalComputedKeyframe(
+    nsTArray<Keyframe>& aPercentageKeyframes,
+    nsTArray<Keyframe>& aRangeKeyframes, const TargetKeyframe aTargetKeyframe,
+    const StyleComputedTimingFunction& aDefaultTimingFunction,
+    const CompositeOperationOrAuto aDefaultComposite) {
+  const double targetOffset =
+      aTargetKeyframe == TargetKeyframe::Initial ? 0.0 : 1.0;
+  auto IsKeyframeMatched = [&](const Keyframe& aKeyframe) {
+    return aKeyframe.mComputedOffset == targetOffset &&
+           (aKeyframe.mComposite == CompositeOperationOrAuto::Auto ||
+            aKeyframe.mComposite == aDefaultComposite) &&
+           (aKeyframe.mTimingFunction
+                ? *aKeyframe.mTimingFunction == aDefaultTimingFunction
+                : aDefaultTimingFunction.IsLinearKeyword());
+  };
+
+  // 1. Search the offset in |aRangeKeyframes| first, in the reverse order. We
+  //    search |aRangeKeyframes| first because we perfer the later keyframe in
+  //    the used order, which breaks the tie with the computed order. And range
+  //    offsets are always put after percentage offsets in the computed order.
+  //
+  // Note: We intentionally search in the reverse order because we prefer the
+  // later keyframe if mulitple keyframes have 0% or 100% (with the matched
+  // easing and composite). It should happen only in keyframes with
+  // <timeline-range-offset> offsets because we don't group them when converting
+  // them from Servo |KeyframesStep| into Gecko |Keyframe|, in
+  // Servo_StyleSet_GetKeyframesForName(), and intentionally keep those
+  // keyframes unsorted (i.e. the specified order).
+  // e.g.
+  // cover 0% {...}
+  // entry 0% {...}
+  // Both of them have computed offset 0%. Since we keep |mKeyframes| with
+  // <timeline-range-offset> offsets unsorted, so we can simply choose the last
+  // one when breaking a tie.
+  //
+  // This is spec'ed especially for 100%. For 0%, the spec doesnt' mention that
+  // so we use the same rule for now.
+  // https://github.com/w3c/csswg-drafts/issues/14281
+  for (auto& keyframe : Reversed(aRangeKeyframes)) {
+    MOZ_ASSERT(keyframe.mOffset);
+
+    // Skip the keyframe with unresolved computed offset.
+    if (std::isnan(keyframe.mComputedOffset)) {
+      continue;
+    }
+
+    if (IsKeyframeMatched(keyframe)) {
+      return &keyframe;
+    }
+
+    // |aRangeKeyframes| is sorted by |keyframe.mComputedOffset|, so we can
+    // break early.
+    if (keyframe.mComputedOffset < targetOffset) {
+      break;
+    }
+  }
+
+  // 2. Search the offset in |aPercentageKeyframes|. We group the keyframes with
+  //    <percentage> offsets already so we shouldn't have mulitple matches.
+  //
+  // Note: |insertPosition| is used to find the last 0% or 100% keyframe. We
+  // would like to insert the missing keyframe after it.
+  // e.g.
+  // 0% { animation-timing-function: linear; }
+  // 50% { width: 100px; }
+  // 100% { animation-composition: add; }
+  // We have to generate the keyframes like this:
+  // [0] { offset: 0.0, easing: 'linear', composite: 'auto' }
+  // [1] { offset: 0.0, easing: 'ease', composite: 'replace' } // generated 0%
+  // [2] { offset: 0.5, easing: 'ease', composite: 'auto' }
+  // [3] { offset: 1.0, easing: 'ease', composite: 'add' }
+  // [4] { offset: 1.0, easing: 'ease', composite: 'replace' } // generated 100%
+  // So |insertPosition| for 0% is 1, and for 100% is 4.
+  size_t insertPosition = 0;
+  for (auto& keyframe : aPercentageKeyframes) {
+    MOZ_ASSERT(keyframe.mOffset);
+    MOZ_ASSERT(!std::isnan(keyframe.mComputedOffset));
+
+    if (IsKeyframeMatched(keyframe)) {
+      return &keyframe;
+    }
+
+    if (keyframe.mComputedOffset > targetOffset) {
+      break;
+    }
+    ++insertPosition;
+  }
+
+  // Now this is a missing 0%/100% keyframe. Let's generate it.
+  Keyframe* newKeyframe = aPercentageKeyframes.InsertElementAt(insertPosition);
+  newKeyframe->mOffset.emplace(
+      Keyframe::OffsetType::PercentageOffset(targetOffset));
+  newKeyframe->mComputedOffset = targetOffset;
+  if (!aDefaultTimingFunction.IsLinearKeyword()) {
+    newKeyframe->mTimingFunction.emplace(aDefaultTimingFunction);
+  }
+  newKeyframe->mComposite = aDefaultComposite;
+  return newKeyframe;
+}
+
+// The step 3 (Generate Initial and Final Frames) in
+// https://drafts.csswg.org/css-animations-2/#keyframe-processing
+//
+// Note: we use "computed keyframes" here because we expect those keyframe
+// offsets have been resolved (so we have resolved computed offsets here for the
+// active timeline). The only difference from spec is that we don't compute the
+// property values here since the caller will do that. Perhaps we could merge
+// them together in the future.
+// https://drafts.csswg.org/web-animations-1/#computed-keyframes
+bool CSSAnimationKeyframeEffect::GetComputedKeyframes(
+    nsTArray<Keyframe>& aKeyframes) const {
+  // Check if we do need to do this. If it is overrideen by JS, we should skip
+  // this function and the caller should just use the specified keyframes.
+  if (mIgnoreKeyframesGeneration) {
+    return false;
+  }
+
+  // FIXME: Perhaps we could cache |allProperties| for keyframes with
+  // <percentage> offsets. (The properties of keyframes with
+  // <timeline-range-offset> offsets need to be checked everytime
+  // unfortunately.)
+  AnimatedPropertyIDSet allProperties;
+  AnimatedPropertyIDSet fromProperties;
+  AnimatedPropertyIDSet toProperties;
+
+  // Add 2 more elements for the insertion of 0% and 100% if any.
+  nsTArray<Keyframe> percentageKeyframes(mKeyframes.Length() + 2);
+  nsTArray<Keyframe> rangeKeyframes(mKeyframes.Length());
+
+  // Iterate keyframes and collect properties first. We have to append the
+  // propeties to the 0% or 100% keyframes if needed. We merged keyframes and
+  // converted the properties into physical longhands for the specified
+  // keyframes already, so we can just collect the propertis information here.
+  for (const Keyframe& keyframe : mKeyframes) {
+    MOZ_ASSERT(keyframe.mOffset);
+    if (keyframe.mOffset->IsPercentageOffset()) {
+      percentageKeyframes.AppendElement(keyframe);
+    } else {
+      rangeKeyframes.AppendElement(keyframe);
+    }
+
+    if (std::isnan(keyframe.mComputedOffset)) {
+      continue;
+    }
+
+    AnimatedPropertyIDSet currentProperties;
+    for (const auto& pair : keyframe.mPropertyValues) {
+      currentProperties.AddProperty(pair.mProperty);
+    }
+    allProperties.AddProperties(currentProperties);
+
+    // Note that the automatic from (0%) and to (100%) keyframes are only
+    // generated for properties that don’t have keyframes at or earlier than 0%
+    // or at or after 100% (respectively).
+    // https://drafts.csswg.org/scroll-animations-1/#named-range-keyframes
+    //
+    // So we have to collect the properties with offsets <= 0 and offsets >= 1,
+    // no matter what keyframe-specific timing function and keyframe-specific
+    // composite are used.
+    if (keyframe.mComputedOffset <= 0.0) {
+      fromProperties.AddProperties(currentProperties);
+    } else if (keyframe.mComputedOffset >= 1.0) {
+      toProperties.AddProperties(currentProperties);
+    }
+  }
+
+  // We keep the specified order if all of them are unresolved. Otherwise, sort
+  // them with computed offsets to get the used order. We do this for finding
+  // and generating the initial and final keyframes (since we need the used
+  // order to search the keyframes below).
+  //
+  // Also, in getKeyframes(), other browsers show the keyframes with
+  // <timeline-range-offset> offsets in the order of the computed offsets. This
+  // is vague in the spec after we introduced <timeline-range-offset>, so we
+  // just match the behavior of other browsers here.
+  rangeKeyframes.StableSort(ComputedOffsetComparator());
+
+  // The default composite used to search to 0% and 100% keyframes below.
+  const dom::CompositeOperationOrAuto defaultComposite = [&]() {
+    switch (mDefaultComposite) {
+      case CompositeOperation::Replace:
+        return dom::CompositeOperationOrAuto::Replace;
+      case CompositeOperation::Add:
+        return dom::CompositeOperationOrAuto::Add;
+      case CompositeOperation::Accumulate:
+        return dom::CompositeOperationOrAuto::Accumulate;
+    }
+    // The initial value is replace.
+    return dom::CompositeOperationOrAuto::Replace;
+  }();
+
+  // Generate Initial and Final Frames:
+  // 1. Find or create the initial keyframe, a keyframe with a keyframe offset
+  //    of 0%, default timing function as its keyframe timing function, and
+  //    default composite as its keyframe composite.
+  // 2. For any property in animated properties that is not otherwise present
+  //    in a keyframe with an offset of 0% or one that would be positioned
+  //    earlier in the used keyframe order, add the computed value of that
+  //    property on element to initial keyframe’s keyframe values.
+  // 3. If initial keyframe’s keyframe values is not empty, prepend initial
+  //    keyframe to keyframes. (Note: We add it to keyframes after the last
+  //    keyframe with offset 0%.)
+
+  const bool isEmptyKeyframes =
+      percentageKeyframes.IsEmpty() && rangeKeyframes.IsEmpty();
+  auto appendProperties = [&](Keyframe& aKeyframe,
+                              const AnimatedPropertyIDSet& aCurrentProperties) {
+    auto& propertyValues = aKeyframe.mPropertyValues;
+    for (const auto& property : allProperties) {
+      if (aCurrentProperties.HasProperty(property)) {
+        continue;
+      }
+      // The nullptr of |mServoDeclarationBlock| means we use the base values,
+      // i.e. the value generated for that property by finding the computed
+      // value for that property in the absence of animations.
+      propertyValues.AppendElement(PropertyValuePair{property, nullptr});
+    }
+  };
+  // Check the equality of two property sets. Note that |fromProperties| must be
+  // a subset of |allProperties|.
+  if (!allProperties.IsSubsetOf(fromProperties) && !isEmptyKeyframes) {
+    Keyframe* fromKeyframe = GetOrCreateInitialOrFinalComputedKeyframe(
+        percentageKeyframes, rangeKeyframes, TargetKeyframe::Initial,
+        mDefaultTimingFunction, defaultComposite);
+    MOZ_ASSERT(fromKeyframe);
+    appendProperties(*fromKeyframe, fromProperties);
+  }
+
+  // 4. Repeat for final keyframe, using an offset of 100%, considering
+  // keyframes positioned later in the used keyframe order, and appending to
+  // keyframes. Note that |toProperties| must be a subset of |allProperties|.
+  if (!allProperties.IsSubsetOf(toProperties) && !isEmptyKeyframes) {
+    Keyframe* toKeyframe = GetOrCreateInitialOrFinalComputedKeyframe(
+        percentageKeyframes, rangeKeyframes, TargetKeyframe::Final,
+        mDefaultTimingFunction, defaultComposite);
+    MOZ_ASSERT(toKeyframe);
+    appendProperties(*toKeyframe, toProperties);
+  }
+
+  aKeyframes = std::move(percentageKeyframes);
+  if (!rangeKeyframes.IsEmpty()) {
+    aKeyframes.AppendElements(std::move(rangeKeyframes));
+  }
+  return true;
 }
 
 void CSSAnimationKeyframeEffect::MaybeFlushUnanimatedStyle() const {

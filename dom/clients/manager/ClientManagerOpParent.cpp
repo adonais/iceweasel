@@ -54,8 +54,8 @@ IPCResult ClientManagerOpParent::Init(
     const ClientOpConstructorArgs& aArgs,
     ThreadsafeContentParentHandle* aContentParentHandle) {
   if (!IsValidClientOpConstructorArgs(
-          aArgs, aContentParentHandle ? aContentParentHandle->GetRemoteType()
-                                      : NOT_REMOTE_TYPE)) {
+          aArgs, aContentParentHandle ? aContentParentHandle->LoadedOrigins()
+                                      : nullptr)) {
     return IPC_FAIL(this, "Invalid ClientOpConstructorArgs!");
   }
 

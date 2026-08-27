@@ -8,6 +8,7 @@ task-defaults:
     worker:
         max-run-time: 1800
     run:
+        clone-with: hg
         using: toolchain-script
         script: get-hostutils.sh
         toolchain-artifact: public/build/hostutils.tar.zst
@@ -19,5 +20,6 @@ linux64-hostutils:
         env:
             TOOLTOOL_MANIFEST: testing/config/tooltool-manifests/linux64/hostutils.manifest
     run:
+        clone-with: hg
         resources:
             - testing/config/tooltool-manifests/linux64/hostutils.manifest

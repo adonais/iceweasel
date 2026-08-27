@@ -26,6 +26,7 @@ export const LINKS = Object.freeze({
   },
 
   SUPPORT_SLUG: "built-in-vpn",
+  NO_ACCESS_SUPPORT_SLUG: "unable-find-built-vpn-firefox",
 
   get TERMS_OF_SERVICE_URL() {
     return Services.urlFormatter.formatURL(

@@ -54,7 +54,7 @@ xpcAccessibleDocument::GetTitle(nsAString& aTitle) {
 
   nsAutoString title;
   Intl()->Title(title);
-  aTitle = title;
+  aTitle = std::move(title);
   return NS_OK;
 }
 

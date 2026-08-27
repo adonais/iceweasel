@@ -4,14 +4,15 @@
 
 #define MOZ_PRETEND_NO_JSRUST 1
 
+#include "mozilla/Utf8.h"
+
+#include <stddef.h>
+
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Types.h"
 #include "mozilla/Utf16.h"
-#include "mozilla/Utf8.h"
-
-#include <stddef.h>
 
 namespace mozilla {
 namespace detail {

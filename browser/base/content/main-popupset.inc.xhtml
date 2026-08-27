@@ -184,10 +184,22 @@
     </html:button-group>
   </panel>
 
+  <!-- Hover preview for the open tabs launcher button -->
+  <panel id="sidebar-opentabs-preview"
+       class="panel-no-padding"
+       role="group"
+       type="arrow"
+       noautofocus="true"
+       norolluponanchor="true"
+       consumeoutsideclicks="false">
+    <html:sidebar-opentabs-preview></html:sidebar-opentabs-preview>
+  </panel>
+
   <panel is="autocomplete-richlistbox-popup"
          type="autocomplete-richlistbox"
          id="PopupAutoComplete"
          role="group"
+         level="top"
          noautofocus="true"
          hidden="true"
          overflowpadding="4"
@@ -460,6 +472,34 @@
               id="sidebar-synced-tabs-context-manage-this-device"/>
   </menupopup>
 
+  <menupopup id="sidebar-opentabs-menu">
+    <menucaption data-l10n-id="sidebar-opentabs-sort-by-heading"
+                 id="sidebar-opentabs-sort-by-heading"
+                 role="heading"/>
+    <menuitem data-l10n-id="sidebar-opentabs-sort-option-order"
+              id="sidebar-opentabs-sort-by-order"
+              type="checkbox"/>
+    <menuitem data-l10n-id="sidebar-opentabs-sort-option-recency"
+              id="sidebar-opentabs-sort-by-recency"
+              type="checkbox"/>
+    <menuseparator/>
+    <menuitem data-l10n-id="synced-tabs-context-connect-another-device"
+              id="sidebar-opentabs-connect-another-device"/>
+  </menupopup>
+
+  <menupopup id="sidebar-opentabs-context-menu">
+    <menuitem data-l10n-id="sidebar-context-menu-open-in-window"
+              id="sidebar-opentabs-context-open-in-window"/>
+    <menuitem data-l10n-id="sidebar-context-menu-open-in-private-window"
+              id="sidebar-opentabs-context-open-in-private-window"/>
+    <menuseparator/>
+    <menuitem data-l10n-id="sidebar-context-menu-copy-link"
+              id="sidebar-opentabs-context-copy-link"/>
+    <menuseparator/>
+    <menuitem data-l10n-id="sidebar-opentabs-context-close-tab"
+              id="sidebar-opentabs-context-close-tab"/>
+  </menupopup>
+
   <menupopup id="sidebar-bookmarks-context-menu">
     <menuitem data-l10n-id="places-open-all-bookmarks"
               id="sidebar-bookmarks-context-open-all-bookmarks"/>
@@ -649,6 +689,10 @@
       <html:div class="tab-preview-text-container">
         <html:div class="tab-preview-title"></html:div>
         <html:div class="tab-preview-uri"></html:div>
+        <html:div class="tab-preview-container-indicator" hidden="hidden">
+          <html:span class="tab-preview-container-label"></html:span>
+          <html:image class="tab-preview-container-icon"></html:image>
+        </html:div>
         <html:div class="tab-preview-pid-activeness">
           <html:div class="tab-preview-pid"></html:div>
           <html:div class="tab-preview-activeness"></html:div>
@@ -816,6 +860,7 @@
 #include ../../components/controlcenter/content/trustPanel.inc.xhtml
 #include ../../components/controlcenter/content/protectionsPanel.inc.xhtml
 #include ../../components/downloads/content/downloadsPanel.inc.xhtml
+#include ../../components/sharing/content/sharePanel.inc.xhtml
 #include ../../components/translations/content/selectTranslationsPanel.inc.xhtml
 #include ../../components/translations/content/fullPageTranslationsPanel.inc.xhtml
 #include ../../components/tabbrowser/content/browser-allTabsMenu.inc.xhtml
@@ -975,4 +1020,27 @@
     <menuitem id="select-translations-panel-about-translations-menuitem"
               data-l10n-id="translations-panel-settings-about2"/>
   </menupopup>
+
+  <panel id="private-browsing-info-panel"
+         class="private-browsing-info-panel"
+         type="arrow"
+         orient="vertical"
+         role="dialog"
+         aria-labelledby="private-browsing-info-title"
+         position="bottomright topright">
+    <vbox class="private-browsing-info-body">
+      <hbox class="private-browsing-info-header" align="center">
+        <image class="private-browsing-info-icon"/>
+        <label id="private-browsing-info-title"
+               class="private-browsing-info-title"
+               data-l10n-id="private-browsing-info-panel-title"/>
+      </hbox>
+      <description class="private-browsing-info-description"
+                   data-l10n-id="private-browsing-info-panel-description">
+        <html:a is="moz-support-link"
+                data-l10n-name="learn-more"
+                support-page="private-browsing-myths"/>
+      </description>
+    </vbox>
+  </panel>
 </popupset>

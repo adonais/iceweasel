@@ -126,6 +126,10 @@ ChromeUtils.defineLazyGetter(lazy, "gTextEncoder", function () {
   return new TextEncoder();
 });
 
+ChromeUtils.defineLazyGetter(lazy, "idnService", function () {
+  return Cc["@mozilla.org/network/idn-service;1"].getService(Ci.nsIIDNService);
+});
+
 ChromeUtils.defineESModuleGetters(lazy, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
@@ -162,6 +166,11 @@ function _ContextualIdentityService(path) {
 }
 
 _ContextualIdentityService.prototype = {
+  QueryInterface: ChromeUtils.generateQI([
+    "nsISiteContainerService",
+    "nsIObserver",
+  ]),
+
   LAST_CONTAINERS_JSON_VERSION,
 
   _userIdentities: [
@@ -213,6 +222,9 @@ _ContextualIdentityService.prototype = {
   _identities: null,
   _openedIdentities: new Set(),
   _lastUserContextId: 0,
+
+  // Map<host, userContextId> binding an exact host to a container.
+  _siteAssociations: null,
 
   _path: null,
   _dataReady: false,
@@ -316,6 +328,7 @@ _ContextualIdentityService.prototype = {
       this._identities.push(Object.assign({}, identity));
     }
     this._openedIdentities = new Set();
+    this._siteAssociations = new Map();
 
     this._dataReady = true;
 
@@ -366,6 +379,7 @@ _ContextualIdentityService.prototype = {
       version: LAST_CONTAINERS_JSON_VERSION,
       lastUserContextId: this._lastUserContextId,
       identities: this._identities,
+      siteAssociations: Object.fromEntries(this._siteAssociations),
     };
 
     let bytes = lazy.gTextEncoder.encode(JSON.stringify(object));
@@ -477,6 +491,7 @@ _ContextualIdentityService.prototype = {
       );
       this._identities.splice(position, 0, ...movedIdentities);
       this.saveSoon();
+      Services.obs.notifyObservers(null, "contextual-identity-reordered");
     }
 
     return !!movedIdentities.length;
@@ -499,6 +514,7 @@ _ContextualIdentityService.prototype = {
     );
     this._identities.splice(index, 1);
     this._openedIdentities.delete(userContextId);
+    this._removeSiteAssociationsForContainer(userContextId);
     this.saveSoon();
     Services.obs.notifyObservers(deletedOutput, "contextual-identity-deleted");
 
@@ -507,6 +523,115 @@ _ContextualIdentityService.prototype = {
     });
 
     return true;
+  },
+
+  // Returns the normalized host (lower case, IDN-encoded) for `site`, or null
+  // if `site` cannot be associated to a container.
+  normalizeSite(site) {
+    try {
+      // domainToASCII does not reject "*", but a host never contains one, so a
+      // wildcard site could never match a navigation.
+      let host = lazy.idnService.domainToASCII(site);
+      return host.includes("*") ? null : host;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  _notifySiteAssociationChanged(site, userContextId) {
+    Services.obs.notifyObservers(
+      { wrappedJSObject: { site, userContextId } },
+      "contextual-identity-site-association-changed"
+    );
+  },
+
+  _removeSiteAssociationsForContainer(userContextId) {
+    let removed = [];
+    for (let [site, id] of this._siteAssociations) {
+      if (id === userContextId) {
+        this._siteAssociations.delete(site);
+        removed.push(site);
+      }
+    }
+
+    for (let site of removed) {
+      this._notifySiteAssociationChanged(site, null);
+    }
+  },
+
+  setSiteAssociation(site, userContextId) {
+    this.ensureDataReady();
+
+    if (!Number.isInteger(userContextId)) {
+      throw new Error(
+        `Invalid container id for site association: ${userContextId}`
+      );
+    }
+
+    if (!this.getPublicIdentityFromId(userContextId)) {
+      throw new Error(
+        `Cannot associate a site to unknown container ${userContextId}`
+      );
+    }
+
+    let host = this.normalizeSite(site);
+    if (!host) {
+      throw new Error("Invalid site for container association.");
+    }
+
+    if (this._siteAssociations.get(host) === userContextId) {
+      return;
+    }
+
+    this._siteAssociations.set(host, userContextId);
+    this.saveSoon();
+    this._notifySiteAssociationChanged(host, userContextId);
+  },
+
+  removeSiteAssociation(site) {
+    this.ensureDataReady();
+
+    let host = this.normalizeSite(site);
+    if (!host || !this._siteAssociations.has(host)) {
+      return;
+    }
+
+    this._siteAssociations.delete(host);
+    this.saveSoon();
+    this._notifySiteAssociationChanged(host, null);
+  },
+
+  getSiteAssociation(site) {
+    this.ensureDataReady();
+
+    let host = this.normalizeSite(site);
+    return (host && this._siteAssociations.get(host)) || 0;
+  },
+
+  getSiteAssociations(userContextId = 0) {
+    this.ensureDataReady();
+
+    let result = [];
+    for (let [site, id] of this._siteAssociations) {
+      if (!userContextId || id === userContextId) {
+        result.push({ site, userContextId: id });
+      }
+    }
+    return result;
+  },
+
+  lookup(host) {
+    return this.getSiteAssociation(host);
+  },
+
+  containerForNavigation(uri, baselineUserContextId) {
+    let host;
+    try {
+      host = uri.asciiHost;
+    } catch (e) {
+      return baselineUserContextId;
+    }
+    return this.getSiteAssociation(host) || baselineUserContextId;
   },
 
   getIdentityObserverOutput(identity) {
@@ -561,6 +686,10 @@ _ContextualIdentityService.prototype = {
 
     this._identities = data.identities;
     this._lastUserContextId = data.lastUserContextId;
+
+    this._siteAssociations = new Map(
+      Object.entries(data.siteAssociations ?? {})
+    );
 
     // If we had a migration, let's force the saving of the file.
     if (saveNeeded) {
@@ -934,3 +1063,7 @@ let path = PathUtils.join(
   "containers.json"
 );
 export var ContextualIdentityService = new _ContextualIdentityService(path);
+
+export function SiteContainerService() {
+  return ContextualIdentityService;
+}

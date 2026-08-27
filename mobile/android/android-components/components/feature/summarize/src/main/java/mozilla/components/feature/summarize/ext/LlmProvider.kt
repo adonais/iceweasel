@@ -6,19 +6,28 @@ package mozilla.components.feature.summarize.ext
 
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
+import mozilla.components.concept.llm.AuthenticationRequired
 import mozilla.components.concept.llm.CloudLlmProvider
 import mozilla.components.feature.summarize.LlmProviderAction
 import mozilla.components.feature.summarize.SummarizationFailed
 import mozilla.components.feature.summarize.SummarizationRequested
 
 internal val CloudLlmProvider.fetchLlm get() = flow {
-    emit(SummarizationRequested(info))
-    emitAll(state.map { it.action })
+    // Only announce loading once preparation has resolved to a usable provider, so a sign-in
+    // prompt or error is shown directly instead of flashing a loading state first.
+    if (state.value is CloudLlmProvider.State.Ready) {
+        emit(SummarizationRequested(info))
+    }
+    emitAll(state.mapNotNull { it.action })
 }
 
 internal val CloudLlmProvider.State.action get() = when (this) {
-    CloudLlmProvider.State.Available -> LlmProviderAction.ProviderAvailable
+    CloudLlmProvider.State.Available -> null
     is CloudLlmProvider.State.Ready -> LlmProviderAction.ProviderInitialized(llm)
-    is CloudLlmProvider.State.Unavailable -> SummarizationFailed(exception)
+    is CloudLlmProvider.State.Unavailable -> if (exception is AuthenticationRequired) {
+        LlmProviderAction.SignInRequired(exception)
+    } else {
+        SummarizationFailed(exception)
+    }
 }

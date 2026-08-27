@@ -73,6 +73,27 @@ support-files = [
 
 ["browser_serviceworkers.js"]
 
+["browser_siteContainer_eligibility.js"]
+support-files = ["head_siteContainer.js"]
+
+["browser_siteContainer_redirect.js"]
+support-files = [
+  "head_siteContainer.js",
+  "siteContainer_redirect.sjs",
+]
+
+["browser_siteContainer_retarget.js"]
+support-files = ["head_siteContainer.js"]
+
+["browser_siteContainer_serviceworker.js"]
+support-files = [
+  "head_siteContainer.js",
+  "siteContainer_sw_intercept.js",
+]
+
+["browser_siteContainer_webext.js"]
+support-files = ["head_siteContainer.js"]
+
 ["browser_switchTab_across_user_context.js"]
 
 ["browser_tab_color_update.js"]

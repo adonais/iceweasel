@@ -9,7 +9,7 @@
 
 already_AddRefed<mozIStorageService> getService() {
   nsCOMPtr<mozIStorageService> ss =
-      do_CreateInstance("@mozilla.org/storage/service;1");
+      do_GetService("@mozilla.org/storage/service;1");
   do_check_true(ss);
   return ss.forget();
 }

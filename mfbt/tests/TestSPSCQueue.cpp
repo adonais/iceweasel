@@ -2,15 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/SPSCQueue.h"
-#include "mozilla/PodOperations.h"
-#include <vector>
+#include <chrono>
 #include <cstdint>
 #include <iostream>
-#include <thread>
-#include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
+#include <vector>
+
+#include "mozilla/PodOperations.h"
+#include "mozilla/SPSCQueue.h"
 
 #ifdef _WIN32
 #  include <windows.h>

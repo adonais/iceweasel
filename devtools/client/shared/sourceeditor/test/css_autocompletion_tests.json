@@ -61,6 +61,7 @@
     [
       [21, 9],
       [
+        "anchor-size",
         "auto",
         "inherit",
         "initial",
@@ -68,8 +69,7 @@
         "revert-layer",
         "revert-rule",
         "unset"
-      ],
-      [["layout.css.anchor-positioning.enabled", "anchor-size"]]
+      ]
     ],
     [
       [25, 26],

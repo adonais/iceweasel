@@ -25,9 +25,13 @@ const { SCOPE_APP_SYNC } = ChromeUtils.importESModule(
 const XPCOMUtils = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 ).XPCOMUtils;
+const { Referrals } = ChromeUtils.importESModule(
+  "resource:///modules/referrals/Referrals.sys.mjs"
+);
 const lazy = XPCOMUtils.declareLazy({
   BackupService: "resource:///modules/backup/BackupService.sys.mjs",
   Weave: "resource://services-sync/main.sys.mjs",
+
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
 });
@@ -811,6 +815,20 @@ Preferences.addSetting({
   },
 });
 
+// Referrals section
+Preferences.addSetting({
+  id: "referrals-link",
+  setup() {
+    Referrals.getReferralCode();
+  },
+  visible() {
+    return Referrals.isEnabled;
+  },
+  onUserClick: () => {
+    Referrals.openReferralsTab(window, "preferences");
+  },
+});
+
 let accountsEnabled = Services.prefs.getBoolPref("identity.fxaccounts.enabled");
 
 SettingGroupManager.registerGroups({
@@ -1114,6 +1132,18 @@ SettingGroupManager.registerGroups({
       {
         id: "backupSettings",
         control: "backup-settings",
+      },
+    ],
+  },
+  referrals: {
+    l10nId: "referrals-section-header",
+    headingLevel: 2,
+    hidden: !Referrals.isEnabled,
+    items: [
+      {
+        id: "referrals-link",
+        control: "moz-box-button",
+        l10nId: "referrals-link",
       },
     ],
   },

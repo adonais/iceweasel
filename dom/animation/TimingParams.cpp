@@ -266,12 +266,22 @@ TimingParams TimingParams::Normalize(
   } else {
     // Convert to percentages then multiply by the timeline duration.
     const double endTimeInSec = mEndTime.ToSeconds();
-    normalizedTiming.mDelay =
-        aTimelineDuration.MultDouble(mDelay.ToSeconds() / endTimeInSec);
-    normalizedTiming.mEndDelay =
-        aTimelineDuration.MultDouble(mEndDelay.ToSeconds() / endTimeInSec);
     normalizedTiming.mDuration = Some(StickyTimeDuration(
         aTimelineDuration.MultDouble(mDuration->ToSeconds() / endTimeInSec)));
+
+    if (*normalizedTiming.mDuration == StickyTimeDuration::Forever()) {
+      // The multiplication above overflowed, so the normalized iteration
+      // duration is effectively infinite. As in the mEndTime == Forever() case
+      // above, the start and end delays are strictly finite and so normalize to
+      // zero in this limit.
+      normalizedTiming.mDelay = TimeDuration();
+      normalizedTiming.mEndDelay = TimeDuration();
+    } else {
+      normalizedTiming.mDelay =
+          aTimelineDuration.MultDouble(mDelay.ToSeconds() / endTimeInSec);
+      normalizedTiming.mEndDelay =
+          aTimelineDuration.MultDouble(mEndDelay.ToSeconds() / endTimeInSec);
+    }
   }
 
   normalizedTiming.Update();

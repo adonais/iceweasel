@@ -53,6 +53,7 @@ using mozilla::LayoutDeviceIntMargin from "Units.h";
 using mozilla::ScreenIntCoord from "Units.h";
 using mozilla::ScreenRect from "Units.h";
 using struct mozilla::layers::ScrollableLayerGuid from "mozilla/layers/ScrollableLayerGuid.h";
+using struct mozilla::layers::KeyboardScrollAction from "mozilla/layers/KeyboardScrollAction.h";
 using struct mozilla::layers::ZoomConstraints from "mozilla/layers/ZoomConstraints.h";
 using struct mozilla::layers::DoubleTapToZoomMetrics from "mozilla/layers/DoubleTapToZoom.h";
 using mozilla::layers::LayersId from "mozilla/layers/LayersTypes.h";
@@ -662,6 +663,14 @@ parent:
     async ScrollRectIntoView(nsRect aRect, AxisScrollParams aVertical,
                              AxisScrollParams aHorizontal, ScrollFlags aScrollFlags,
                              int32_t aAppUnitsPerDevPixel);
+
+    /**
+     * Continue a main-thread keyboard scroll in the embedder document when the
+     * embedded subframe could not scroll any further in the requested
+     * direction. The embedder resumes the search for a scroll container from
+     * its frame for this browser, handing off further up if needed.
+     */
+    async ScrollForKeyboard(KeyboardScrollAction aAction);
 
     async ShowDynamicToolbar();
 

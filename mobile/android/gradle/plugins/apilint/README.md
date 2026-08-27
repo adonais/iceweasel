@@ -5,9 +5,9 @@ Tracks the API of an Android library and helps maintain backward compatibility.
 The apilint plugin provides the following tasks.
 
 <code><b>apiLint<i>VariantName</i></b></code> Checks that the current API is
-backward compatible with the API specified in a file, by default located in
-`//api.txt`. This task also checks for various lints as specified in
-[apilint.py](apilint/src/main/resources/apilint.py).
+backward compatible with the API specified in a file, `api.txt` in the
+consuming project's directory by default. This task also checks for various
+lints as specified in [apilint.py](apilint/src/main/resources/apilint.py).
 
 <code><b>apiUpdateFile<i>VariantName</i></b></code> Updates the API file from
 the local state of the project
@@ -17,19 +17,11 @@ the local state of the project
 every time the api.txt file changes.
 
 ## Usage
+The plugin is built from this directory as an included build, so it needs no
+repository or classpath declaration. Apply it by id:
+
 ##### build.gradle
 ```gradle
-buildscript {
-    repositories {
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-    }
-    dependencies {
-        classpath 'org.mozilla.apilint:apilint:$apilintVersion'
-    }
-}
-
 apply plugin: 'org.mozilla.apilint'
 apiLint.packageFilter = 'org.your.package.api'
 ```
@@ -39,7 +31,7 @@ plugin has been applied.
 
 Then run
 <pre>
-$ ./gradlew apiUpdateFile<i>VariantName</i>
+$ ./mach gradle apiUpdateFile<i>VariantName</i>
 </pre>
 
 This will create an API file that contains a description of your library's API,
@@ -48,7 +40,7 @@ by default this file will be called `api.txt`.
 After you make changes to your code, run:
 
 <pre>
-$ ./gradlew apiLint<i>VariantName</i>
+$ ./mach gradle apiLint<i>VariantName</i>
 </pre>
 
 to check that the API of your library did not change. You can always run
@@ -85,10 +77,10 @@ where `<api-txt-sha1>` is the SHA1 of the current api file. You can obtain this
 value by running:
 
 <pre>
-$ ./gradlew apiChangelogCheck<i>VariantName</i>
+$ ./mach gradle apiChangelogCheck<i>VariantName</i>
 </pre>
 
-Now, whenever <code>./gradlew apiLint<i>VariantName</i></code> is invoked, it
+Now, whenever <code>./mach gradle apiLint<i>VariantName</i></code> is invoked, it
 will check that the changelog file version matches the generated api file
 version.
 

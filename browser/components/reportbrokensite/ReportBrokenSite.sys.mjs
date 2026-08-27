@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+
 const DEFAULT_NEW_REPORT_ENDPOINT = "https://webcompat.com/issues/new";
 const MINIMUM_DESCRIPTION_LENGTH = 10;
 
@@ -405,7 +407,8 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
 
   static SCREENSHOTS_ENABLED_PREF =
     "ui.new-webcompat-reporter.screenshots.enabled";
-  static SEND_MORE_INFO_PREF = "ui.new-webcompat-reporter.send-more-info-link";
+  static SHOW_SEND_MORE_INFO_PREF =
+    "ui.new-webcompat-reporter.show-send-more-info-link";
   static NEW_REPORT_ENDPOINT_PREF =
     "ui.new-webcompat-reporter.new-report-endpoint";
 
@@ -449,7 +452,8 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
 
   #OBSERVED_PREFS = {
     [ReportBrokenSite.SCREENSHOTS_ENABLED_PREF]: "onScreenshotsPrefChanged",
-    [ReportBrokenSite.SEND_MORE_INFO_PREF]: "onSendMoreInfoPrefChanged",
+    [ReportBrokenSite.SHOW_SEND_MORE_INFO_PREF]:
+      "onShowSendMoreInfoPrefChanged",
   };
 
   constructor() {
@@ -492,8 +496,23 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
     state.screenshotsDisabled = !prefValue;
   }
 
-  onSendMoreInfoPrefChanged(prefValue, state) {
-    state.sendMoreInfoButton.toggleAttribute("hidden", !prefValue);
+  onShowSendMoreInfoPrefChanged(_, state) {
+    // This pref is unset by default. In that default state, we condition our
+    // behavior here based on release channel (technically update channel)
+    // to exempt release and ESR from seeing this UI.
+    let hidden;
+    if (
+      Services.prefs.prefHasUserValue(ReportBrokenSite.SHOW_SEND_MORE_INFO_PREF)
+    ) {
+      hidden = !Services.prefs.getBoolPref(
+        ReportBrokenSite.SHOW_SEND_MORE_INFO_PREF,
+        false
+      );
+    } else {
+      // enable the send-more-info link on pre-release builds.
+      hidden = ["release", "esr"].includes(AppConstants.MOZ_UPDATE_CHANNEL);
+    }
+    state.sendMoreInfoButton.hidden = hidden;
   }
 
   uninit(win) {
@@ -522,7 +541,6 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
       ReportBrokenSite.REGISTER_CUSTOM_ELEMENTS_SCRIPT,
       {
         target: window,
-        async: true,
       }
     );
     ReportBrokenSite.#hasCustomElements.add(window);
@@ -668,21 +686,15 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
     const cmd = document.getElementById("cmd_reportBrokenSite");
     const allowedByPolicy = Services.policies.isAllowed("feedbackCommands");
     cmd.toggleAttribute("hidden", !allowedByPolicy);
-    const app = document.documentGlobal.PanelMultiView.getViewNode(
-      document,
-      "appMenu-report-broken-site-button"
-    );
     // Note that this element does not exist until the protections popup is actually opened.
     const prot = document.getElementById(
       "protections-popup-report-broken-site-button"
     );
     if (canReportUrl) {
       cmd.removeAttribute("disabled");
-      app.removeAttribute("disabled");
       prot?.removeAttribute("disabled");
     } else {
       cmd.setAttribute("disabled", "true");
-      app.setAttribute("disabled", "true");
       prot?.setAttribute("disabled", "true");
     }
 
@@ -733,6 +745,13 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
           state.reset();
         });
     }
+  }
+
+  handleParentMenuButtonCommand(button) {
+    this.#onReportBrokenSiteHandler({
+      target: button,
+      sourceEvent: { target: button },
+    });
   }
 
   #onURLInputReset(event) {
@@ -833,7 +852,11 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
     this.#recordGleanEvent("send", {
       sent_with_blocked_trackers: state.shouldSendBlockedTrackers,
     });
-    await this.#sendReportAsGleanPing(state);
+
+    const { documentGlobal } = target;
+    const { gBrowser } = documentGlobal;
+    await this.#sendReportAsGleanPing(gBrowser._selectedBrowser, state);
+
     multiview.showSubView("report-broken-site-popup-reportSentView");
     state.reset();
   }
@@ -1092,20 +1115,6 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
     });
   }
 
-  #removeTabSpecificReportData(webcompatInfo) {
-    for (const [categoryName, categoryItems] of Object.entries(webcompatInfo)) {
-      if (categoryItems.isTabSpecific) {
-        delete webcompatInfo[categoryName];
-        continue;
-      }
-      for (let [name, { isTabSpecific }] of Object.entries(categoryItems)) {
-        if (isTabSpecific) {
-          delete webcompatInfo[categoryName][name];
-        }
-      }
-    }
-  }
-
   async #openWebCompatTab(tabbrowser) {
     const { document } = tabbrowser.selectedBrowser.documentGlobal;
     const {
@@ -1114,15 +1123,12 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
       screenshotToggle,
       url,
       currentTabWebcompatDetailsPromise,
+      shouldSendBlockedTrackers,
       wrongTabInfo,
     } = ViewState.get(document);
     const webcompatInfo = await currentTabWebcompatDetailsPromise;
     if (!screenshotToggle.pressed) {
       webcompatInfo.tabInfo.screenshot.value = undefined;
-    }
-
-    if (wrongTabInfo) {
-      this.#removeTabSpecificReportData(webcompatInfo);
     }
 
     const endpointUrl =
@@ -1144,6 +1150,8 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
           endpointUrl,
           reportUrl: url,
           reporterConfig: ReportBrokenSite.WEBCOMPAT_REPORTER_CONFIG,
+          sendTabSpecificInfo: !wrongTabInfo,
+          sendBlockedUrls: shouldSendBlockedTrackers,
           webcompatInfo,
         },
         tab.linkedBrowser
@@ -1156,61 +1164,29 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
       });
   }
 
-  async #sendReportAsGleanPing({
-    currentTabWebcompatDetailsPromise,
-    description,
-    reason,
-    shouldSendBlockedTrackers,
-    url,
-    wrongTabInfo,
-  }) {
-    const gBase = Glean.brokenSiteReport;
-
-    if (reason) {
-      gBase.breakageCategory.set(reason);
+  #sendReportAsGleanPing(
+    browser,
+    {
+      currentTabWebcompatDetailsPromise,
+      description,
+      reason,
+      shouldSendBlockedTrackers,
+      url,
+      wrongTabInfo,
     }
-
-    gBase.description.set(description);
-    gBase.url.set(url);
-
-    const details = await currentTabWebcompatDetailsPromise;
-
-    if (!details) {
-      GleanPings.brokenSiteReport.submit();
-      return;
-    }
-
-    if (!shouldSendBlockedTrackers) {
-      delete details.antitracking.blockedOrigins;
-    }
-
-    if (wrongTabInfo) {
-      this.#removeTabSpecificReportData(details);
-    }
-
-    for (const categoryItems of Object.values(details)) {
-      for (let [name, { glean, json, value }] of Object.entries(
-        categoryItems
-      )) {
-        if (!glean) {
-          continue;
-        }
-        // Transform glean=xx.yy.zz to brokenSiteReportXxYyZz.
-        glean =
-          "brokenSiteReport" +
-          glean
-            .split(".")
-            .map(v => `${v[0].toUpperCase()}${v.substr(1)}`)
-            .join("");
-        if (json) {
-          name = `${name}Json`;
-          value = JSON.stringify(value);
-        }
-        Glean[glean][name].set(value);
-      }
-    }
-
-    GleanPings.brokenSiteReport.submit();
+  ) {
+    return currentTabWebcompatDetailsPromise
+      .catch(() => undefined)
+      .then(details => {
+        return this.#getActor(browser).sendBrokenSiteReport({
+          details,
+          description,
+          reason,
+          sendTabSpecificInfo: !wrongTabInfo,
+          sendBlockedUrls: shouldSendBlockedTrackers,
+          url,
+        });
+      });
   }
 
   open(event) {
@@ -1220,17 +1196,21 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
     const { document } = documentGlobal;
 
     switch (target.id) {
-      case "appMenu-report-broken-site-button":
-        documentGlobal.PanelUI.showSubView(
-          ReportBrokenSite.MAIN_PANELVIEW_ID,
-          target
-        );
-        break;
       case "protections-popup-report-broken-site-button":
         document
           .getElementById("protections-popup-multiView")
           .showSubView(ReportBrokenSite.MAIN_PANELVIEW_ID);
         break;
+      // Open the "Report Broken Site" menu from the "Help and Report" subview.
+      case "appMenu_help_reportBrokenSite":
+        documentGlobal.PanelUI.showSubView(
+          ReportBrokenSite.MAIN_PANELVIEW_ID,
+          target
+        );
+        break;
+      // Open the "Report Broken Site" menu from the top menu bar (Help > Report
+      // Broken Site). This has to be directly anchored to the app menu button
+      // since it is not a subview of any other menu.
       case "help_reportBrokenSite": {
         // hide the hamburger menu first, as we overlap with it.
         const appMenuPopup = document.getElementById("appMenu-popup");

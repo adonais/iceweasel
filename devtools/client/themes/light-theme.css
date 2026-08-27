@@ -82,6 +82,7 @@ body {
   color: var(--theme-highlight-green);
 }
 
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .theme-fg-color1,
 /* ------- cm6 ------- */
 .cm-editor .tok-literal,
@@ -103,6 +104,7 @@ body {
   color: var(--blue-55);
 }
 
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .cm-s-mozilla .cm-variable,
 .cm-editor .tok-keyword:has(+ .tok-punctuation):not(.tok-number ~ .tok-keyword),
 :is(.cm-editor, .cm-highlighted) .tok-variableName2 {

@@ -1,0 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* The login form reveals the
+ * password on focus, so the browser-native reveal button that
+ * <input type="password"> gets in chrome documents is redundant. The
+ * ::-moz-reveal pseudo-element is only selectable from a user-agent sheet,
+ * so override it here. */
+input[type="password"]::-moz-reveal {
+  display: none;
+}

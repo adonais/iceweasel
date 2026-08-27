@@ -400,8 +400,10 @@ export class SuggestProvider extends SuggestFeature {
     controller.view.acknowledgeFeedback(result);
     this.incrementShowLessFrequentlyCount();
     if (!this.canShowLessFrequently) {
-      result.commands = this.getResultCommands(result);
-      controller.view.invalidateResultMenuCommands();
+      controller.view.updateResultMenuCommands(
+        result.id,
+        this.getResultCommands(result)
+      );
     }
   }
 

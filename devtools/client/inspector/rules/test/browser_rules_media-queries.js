@@ -15,6 +15,7 @@ add_task(async function () {
   await selectNode("div", inspector);
 
   const elementStyle = view.elementStyle;
+  const defaultPrefersDark = await getCurrentPrefersDark();
 
   const inline = STYLE_INSPECTOR_L10N.getStr("rule.sourceInline");
   const constructed = STYLE_INSPECTOR_L10N.getStr("rule.sourceConstructed");
@@ -25,8 +26,13 @@ add_task(async function () {
     constructed + ":1",
     "check constructed sheet rule title"
   );
-  is(elementStyle.rules[3].title, inline + ":11", "check rule 3 title");
-  is(elementStyle.rules[4].title, inline + ":4", "check rule 4 title");
+  is(
+    elementStyle.rules[3].title,
+    `${inline}:${defaultPrefersDark ? "24" : "18"}`,
+    "check rule 3 title"
+  );
+  is(elementStyle.rules[4].title, `${inline}:11`, "check rule 4 title");
+  is(elementStyle.rules[5].title, `${inline}:4`, "check rule 5 title");
 
   await checkRuleViewContent(view, [
     {
@@ -44,11 +50,23 @@ add_task(async function () {
       declarations: [{ name: "border", value: "5px solid hotpink" }],
     },
     {
+      ancestorRulesData: [
+        `@media (prefers-color-scheme: ${defaultPrefersDark ? "dark" : "light"}) {`,
+      ],
+      selector: "div",
+      declarations: [
+        {
+          name: "background-color",
+          value: defaultPrefersDark ? "darkblue" : "skyblue",
+        },
+      ],
+    },
+    {
       ancestorRulesData: [`@media screen and (min-width: 1px) {`],
       selector: "div",
       declarations: [
         { name: "width", value: "200px" },
-        { name: "background-color", value: "yellow" },
+        { name: "background-color", value: "yellow", overridden: true },
       ],
     },
     {

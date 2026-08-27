@@ -15,7 +15,6 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.observer.Observable
 import mozilla.components.support.base.observer.ObserverRegistry
 import java.io.Closeable
-import java.lang.Exception
 import java.util.concurrent.TimeUnit
 
 /**

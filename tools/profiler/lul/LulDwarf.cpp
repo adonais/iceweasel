@@ -1150,7 +1150,7 @@ bool CallFrameInfo::State::DoInstruction() {
   // instructions to parse.
   MOZ_ASSERT(cursor_ < entry_->end);
 
-  unsigned opcode = *cursor_++;
+  unsigned opcode = static_cast<unsigned char>(*cursor_++);
   if ((opcode & 0xc0) != 0) {
     switch (opcode & 0xc0) {
       // Advance the address.

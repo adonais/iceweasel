@@ -7,7 +7,8 @@ const BASE_CONTENT = {
       type: "mobile_downloads",
       data: {
         QR_code: {
-          image_url: "chrome://browser/content/assets/focus-qr-code.svg",
+          image_url:
+            "chrome://browser/content/asrouter/assets/desktop-to-mobile-non-eu-QR.svg",
           alt_text: "Test alt",
         },
         email: {

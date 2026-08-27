@@ -303,43 +303,56 @@ MOZ_ALWAYS_INLINE bool InterpreterStack::pushInlineFrame(
   return true;
 }
 
-MOZ_ALWAYS_INLINE bool InterpreterStack::resumeGeneratorCallFrame(
-    JSContext* cx, InterpreterRegs& regs, HandleFunction callee,
-    HandleObject envChain) {
+MOZ_ALWAYS_INLINE InterpreterFrame*
+InterpreterStack::createGeneratorResumeFrame(
+    JSContext* cx, HandleFunction callee, HandleObject envChain,
+    InterpreterFrame* prev, jsbytecode* prevpc, Value* prevsp) {
   MOZ_ASSERT(callee->isGenerator() || callee->isAsync());
   RootedScript script(cx, callee->nonLazyScript());
-  InterpreterFrame* prev = regs.fp();
-  jsbytecode* prevpc = regs.pc;
-  Value* prevsp = regs.sp;
-  MOZ_ASSERT(prev);
 
   LifoAlloc::Mark mark = allocator_.mark();
 
   // (Async) generators and async functions are not constructors.
   MOZ_ASSERT(!callee->isConstructor());
 
-  // Include callee, |this|, and maybe |new.target|
+  // Include callee, |this|, the formals, and the resume args (ResumeFrameArgs,
+  // appended after the formals and filled in by
+  // AbstractGeneratorObject::resumeInto). numActualArgs stays 0 so the resume
+  // args are never counted as arguments.
   unsigned nformal = callee->nargs();
-  unsigned nvals = 2 + nformal + script->nslots();
+  unsigned nvals = 2 + nformal + ResumeFrameArgs::NumSlots + script->nslots();
 
   uint8_t* buffer =
       allocateFrame(cx, sizeof(InterpreterFrame) + nvals * sizeof(Value));
   if (!buffer) {
-    return false;
+    return nullptr;
   }
 
   Value* argv = reinterpret_cast<Value*>(buffer) + 2;
   argv[-2] = ObjectValue(*callee);
   argv[-1] = UndefinedValue();
-  SetValueRangeToUndefined(argv, nformal);
+  SetValueRangeToUndefined(argv, nformal + ResumeFrameArgs::NumSlots);
 
-  InterpreterFrame* fp = reinterpret_cast<InterpreterFrame*>(argv + nformal);
+  InterpreterFrame* fp = reinterpret_cast<InterpreterFrame*>(
+      argv + nformal + ResumeFrameArgs::NumSlots);
   fp->mark_ = mark;
   fp->initCallFrame(prev, prevpc, prevsp, *callee, script, argv, 0,
                     NO_CONSTRUCT);
   fp->resumeGeneratorFrame(envChain);
+  return fp;
+}
 
-  regs.prepareToRun(*fp, script);
+MOZ_ALWAYS_INLINE bool InterpreterStack::pushInlineGeneratorResumeFrame(
+    JSContext* cx, InterpreterRegs& regs, HandleFunction callee,
+    HandleObject envChain) {
+  MOZ_ASSERT(regs.fp());
+  InterpreterFrame* fp = createGeneratorResumeFrame(
+      cx, callee, envChain, regs.fp(), regs.pc, regs.sp);
+  if (!fp) {
+    return false;
+  }
+
+  regs.prepareToRun(*fp, fp->script());
   return true;
 }
 
@@ -847,10 +860,10 @@ inline void InterpreterActivation::popInlineFrame(InterpreterFrame* frame) {
   cx_->interpreterStack().popInlineFrame(regs_);
 }
 
-inline bool InterpreterActivation::resumeGeneratorFrame(HandleFunction callee,
-                                                        HandleObject envChain) {
+inline bool InterpreterActivation::pushInlineGeneratorResumeFrame(
+    HandleFunction callee, HandleObject envChain) {
   InterpreterStack& stack = cx_->interpreterStack();
-  if (!stack.resumeGeneratorCallFrame(cx_, regs_, callee, envChain)) {
+  if (!stack.pushInlineGeneratorResumeFrame(cx_, regs_, callee, envChain)) {
     return false;
   }
 

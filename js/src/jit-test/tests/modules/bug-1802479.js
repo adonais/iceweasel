@@ -2,7 +2,7 @@ function test(lfVarx) {
     try {
         oomTest(function() {
             let m41 = parseModule(lfVarx);
-            moduleLink(m41);
+            moduleLoadAndLink(m41);
             moduleEvaluate(m41);
         });
     } catch (lfVare) {}

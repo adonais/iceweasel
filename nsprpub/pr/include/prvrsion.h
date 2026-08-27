@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
 /* author: jstewart */
 
 #if defined(_PRVERSION_H)
@@ -10,6 +9,12 @@
 #define _PRVERSION_H
 
 #include "prtypes.h"
+
+#if defined(__clang__) || \
+    (defined(__GNUC__) && \
+     (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)))
+#define _PR_HAS_PRAGMA_DIAGNOSTIC
+#endif
 
 PR_BEGIN_EXTERN_C
 
@@ -30,26 +35,26 @@ typedef struct {
      * At this time, only version 2 is specified. If this value is not
      * 2, you must read no further into the structure.
      */
-    PRInt32    version;
+    PRInt32 version;
 
     /* for Version 2, this is the body format. */
-    PRInt64         buildTime;      /* 64 bits - usecs since midnight, 1/1/1970 */
-    char *          buildTimeString;/* a human readable version of the time */
+    PRInt64 buildTime;     /* 64 bits - usecs since midnight, 1/1/1970 */
+    char* buildTimeString; /* a human readable version of the time */
 
-    PRUint8   vMajor;               /* Major version of this component */
-    PRUint8   vMinor;               /* Minor version of this component */
-    PRUint8   vPatch;               /* Patch level of this component */
+    PRUint8 vMajor; /* Major version of this component */
+    PRUint8 vMinor; /* Minor version of this component */
+    PRUint8 vPatch; /* Patch level of this component */
 
-    PRBool          beta;           /* true if this is a beta component */
-    PRBool          debug;          /* true if this is a debug component */
-    PRBool          special;        /* true if this component is a special build */
+    PRBool beta;    /* true if this is a beta component */
+    PRBool debug;   /* true if this is a debug component */
+    PRBool special; /* true if this component is a special build */
 
-    char *          filename;       /* The original filename */
-    char *          description;    /* description of this component */
-    char *          security;       /* level of security in this component */
-    char *          copyright;      /* The copyright for this file */
-    char *          comment;        /* free form field for misc usage */
-    char *          specialString;  /* the special variant for this build */
+    char* filename;      /* The original filename */
+    char* description;   /* description of this component */
+    char* security;      /* level of security in this component */
+    char* copyright;     /* The copyright for this file */
+    char* comment;       /* free form field for misc usage */
+    char* specialString; /* the special variant for this build */
 } PRVersionDescription;
 
 /* on NT, restore the previous packing */
@@ -73,7 +78,7 @@ typedef struct {
  *       return &prVersionDescription_libfoo;
  *   }
  */
-typedef const PRVersionDescription *(*versionEntryPointType)(void);
+typedef const PRVersionDescription* (*versionEntryPointType)(void);
 
 /*
  * Where you declare your libVersionPoint, do it like this:
@@ -98,7 +103,6 @@ typedef const PRVersionDescription *(*versionEntryPointType)(void);
 
 PR_END_EXTERN_C
 
-#endif  /* defined(_PRVERSION_H) */
+#endif /* defined(_PRVERSION_H) */
 
 /* prvrsion.h */
-

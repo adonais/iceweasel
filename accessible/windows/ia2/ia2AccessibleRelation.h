@@ -20,6 +20,9 @@ namespace a11y {
 class ia2AccessibleRelation final : public IAccessibleRelation {
  public:
   ia2AccessibleRelation(RelationType aType, Relation* aRel);
+  ia2AccessibleRelation() = delete;
+  ia2AccessibleRelation(const ia2AccessibleRelation&) = delete;
+  ia2AccessibleRelation& operator=(const ia2AccessibleRelation&) = delete;
 
   // IUnknown
   DECL_IUNKNOWN
@@ -44,11 +47,6 @@ class ia2AccessibleRelation final : public IAccessibleRelation {
       /* [retval][out] */ long* nTargets);
 
   inline bool HasTargets() const { return mTargets.Length(); }
-
- private:
-  ia2AccessibleRelation();
-  ia2AccessibleRelation(const ia2AccessibleRelation&);
-  ia2AccessibleRelation& operator=(const ia2AccessibleRelation&);
 
   RelationType mType;
   nsTArray<RefPtr<IUnknown>> mTargets;

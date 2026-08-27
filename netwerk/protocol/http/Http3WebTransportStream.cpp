@@ -641,11 +641,18 @@ void Http3WebTransportStream::SendStopSending(uint8_t aErrorCode) {
   mSession->StreamHasDataToWrite(this);
 }
 
-void Http3WebTransportStream::SetSendOrder(Maybe<int64_t> aSendOrder) {
+void Http3WebTransportStream::SetSendOrder(int64_t aSendOrder) {
   if (!mSession) {
     return;
   }
   mSession->SetSendOrder(this, aSendOrder);
+}
+
+void Http3WebTransportStream::SetSendGroup(uint64_t aSendGroupId) {
+  if (!mSession) {
+    return;
+  }
+  mSession->SetSendGroup(this, aSendGroupId);
 }
 
 }  // namespace mozilla::net

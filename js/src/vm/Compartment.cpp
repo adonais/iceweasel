@@ -170,7 +170,7 @@ bool Compartment::wrap(JSContext* cx, MutableHandleString strp) {
    * the atom as being in use by the new zone.
    */
   if (str->isAtom()) {
-    cx->markAtom(&str->asAtom());
+    cx->recordRef(&str->asAtom());
     return true;
   }
 

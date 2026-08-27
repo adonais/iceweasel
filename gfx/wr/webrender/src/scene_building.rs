@@ -39,7 +39,7 @@ use api::{AlphaType, BorderDetails, BorderDisplayItem, BuiltDisplayList, BuiltDi
 use api::{ClipId, ColorF, CommonItemProperties, ComplexClipRegion, ComponentTransferFuncType, RasterSpace};
 use api::{DebugFlags, DisplayItem, DisplayItemRef, ExtendMode, ExternalScrollId, FilterData};
 use api::{FilterOp, FontInstanceKey, FontSize, GlyphInstance, GlyphOptions, GlyphShadowMode, GradientStop};
-use api::{IframeDisplayItem, ImageKey, ImageRendering, ItemRange, ColorDepth, QualitySettings};
+use api::{IdNamespace, IframeDisplayItem, ImageKey, ImageRendering, ItemRange, ColorDepth, QualitySettings};
 use api::{LineOrientation, LineStyle, NinePatchBorderSource, PipelineId, MixBlendMode, StackingContextFlags};
 use api::{PropertyBinding, ReferenceFrameKind, ScrollFrameDescriptor};
 use api::{APZScrollGeneration, HasScrollLinkedEffect, SpatialId, StickyFrameDescriptor, ImageMask, ItemTag};
@@ -63,8 +63,9 @@ use crate::hit_test::HitTestingScene;
 use crate::intern::Interner;
 use crate::internal_types::{FastHashMap, LayoutPrimitiveInfo, Filter, PlaneSplitterIndex};
 use crate::svg_filter::{FilterGraphNode, FilterGraphOp, FilterGraphPictureReference};
-use crate::picture::{Picture3DContext, PictureCompositeMode, PictureInstance};
-use crate::picture::{BlitReason, OrderedPictureChild, PrimitiveList, SurfaceInfo, PictureFlags};
+use crate::picture::{Picture3DContext, PictureInstance};
+use crate::picture::{BlitReason, OrderedPictureChild, PrimitiveList, PictureFlags};
+use crate::surface::SurfaceInfo;
 use crate::picture_graph::PictureGraph;
 use crate::prim_store::{PrimitiveInstance, PrimitiveStoreStats};
 use crate::prim_store::{PrimitiveKind, NinePatchDescriptor, PrimitiveStore};
@@ -81,7 +82,7 @@ use crate::prim_store::gradient::{
 use crate::prim_store::image::{Image, StretchSizeKey, YuvImage};
 use crate::prim_store::line_dec::LineDecoration;
 use crate::prim_store::picture::{Picture, PictureKey};
-use crate::picture_composite_mode::PictureCompositeKey;
+use crate::picture_composite_mode::{PictureCompositeKey, PictureCompositeMode};
 use crate::prim_store::text_run::TextRun;
 use crate::render_backend::SceneView;
 use crate::scene::{BuiltScene, Scene, ScenePipeline, SceneStats, StackingContextHelpers};
@@ -502,6 +503,10 @@ pub struct SceneBuilder<'a> {
     /// here and set a boolean on the inner stacking context info to remember to
     /// pop from this stack (see StackingContextInfo::needs_extra_stacking_context)
     extra_stacking_context_stack: Vec<StackingContextInfo>,
+
+    /// Debug flags for the current scene build. Consulted e.g. to optionally
+    /// disable promoting rounded-rect clips to compositor clips.
+    debug_flags: DebugFlags,
 }
 
 impl<'a> SceneBuilder<'a> {
@@ -517,7 +522,7 @@ impl<'a> SceneBuilder<'a> {
         stats: &SceneStats,
         debug_flags: DebugFlags,
     ) -> BuiltScene {
-        profile_scope!("build_scene");
+        tracy_rs::profile_scope!("build_scene");
 
         // We checked that the root pipeline is available on the render backend.
         let root_pipeline_id = root_pipeline.or(scene.root_pipeline_id).unwrap();
@@ -557,6 +562,7 @@ impl<'a> SceneBuilder<'a> {
             surfaces: mem::take(&mut recycler.surfaces),
             clip_tree_builder: recycler.clip_tree_builder.take().unwrap_or_else(|| ClipTreeBuilder::new()),
             extra_stacking_context_stack: Vec::new(),
+            debug_flags,
         };
 
         // Reset
@@ -873,6 +879,9 @@ impl<'a> SceneBuilder<'a> {
         }
         struct BuildContext<'a> {
             pipeline_id: PipelineId,
+            /// Namespace the items traversed in this context are allowed to
+            /// reference resources from. See `ScenePipeline::namespace`.
+            namespace: IdNamespace,
             kind: ContextKind<'a>,
         }
 
@@ -888,6 +897,7 @@ impl<'a> SceneBuilder<'a> {
 
         let mut stack = vec![BuildContext {
             pipeline_id: root_pipeline_id,
+            namespace: root_pipeline.namespace,
             kind: ContextKind::Root,
         }];
         let mut traversal = root_pipeline.display_list.iter();
@@ -901,7 +911,7 @@ impl<'a> SceneBuilder<'a> {
 
                 match item.item() {
                     DisplayItem::PushStackingContext(ref info) => {
-                        profile_scope!("build_stacking_context");
+                        tracy_rs::profile_scope!("build_stacking_context");
                         let spatial_node_index = self.get_space(info.spatial_id);
                         let mut subtraversal = item.sub_iter();
                         // Avoid doing unnecessary work for empty stacking contexts.
@@ -915,7 +925,9 @@ impl<'a> SceneBuilder<'a> {
                             continue;
                         }
 
-                        let snapshot = info.snapshot;
+                        let snapshot = info.snapshot.filter(|snapshot| {
+                            validate_image_key(snapshot.key.as_image(), bc.namespace)
+                        });
 
                         let composition_operations = CompositeOps::new(
                             filter_ops_for_compositing(item.filters()),
@@ -936,6 +948,7 @@ impl<'a> SceneBuilder<'a> {
 
                         let new_context = BuildContext {
                             pipeline_id: bc.pipeline_id,
+                            namespace: bc.namespace,
                             kind: ContextKind::StackingContext {
                                 sc_info,
                             },
@@ -948,11 +961,12 @@ impl<'a> SceneBuilder<'a> {
                         continue 'outer;
                     }
                     DisplayItem::PushReferenceFrame(..) => {
-                        profile_scope!("build_reference_frame");
+                        tracy_rs::profile_scope!("build_reference_frame");
                         let mut subtraversal = item.sub_iter();
 
                         let new_context = BuildContext {
                             pipeline_id: bc.pipeline_id,
+                            namespace: bc.namespace,
                             kind: ContextKind::ReferenceFrame,
                         };
                         stack.push(bc);
@@ -965,16 +979,23 @@ impl<'a> SceneBuilder<'a> {
                     DisplayItem::PopReferenceFrame |
                     DisplayItem::PopStackingContext => break,
                     DisplayItem::Iframe(ref info) => {
-                        profile_scope!("iframe");
+                        tracy_rs::profile_scope!("iframe");
 
                         let space = self.get_space(info.space_and_clip.spatial_id);
-                        let subtraversal = match self.push_iframe(info, space) {
+                        // Note: the referenced pipeline is not checked against the
+                        // parent pipeline's namespace. Nesting pipelines across
+                        // namespaces is legitimate (a content process embeds the
+                        // pipelines of its out-of-process iframes and of its async
+                        // image pipelines), so validating iframe references needs
+                        // ownership information webrender doesn't have.
+                        let (namespace, subtraversal) = match self.push_iframe(info, space) {
                             Some(pair) => pair,
                             None => continue,
                         };
 
                         let new_context = BuildContext {
                             pipeline_id: info.pipeline_id,
+                            namespace,
                             kind: ContextKind::Iframe {
                                 parent_traversal: mem::replace(&mut traversal, subtraversal),
                             },
@@ -984,7 +1005,7 @@ impl<'a> SceneBuilder<'a> {
                         continue 'outer;
                     }
                     _ => {
-                        self.build_item(item);
+                        self.build_item(item, bc.namespace);
                     }
                 };
             }
@@ -1160,7 +1181,7 @@ impl<'a> SceneBuilder<'a> {
         &mut self,
         info: &IframeDisplayItem,
         spatial_node_index: SpatialNodeIndex,
-    ) -> Option<BuiltDisplayListIter<'a>> {
+    ) -> Option<(IdNamespace, BuiltDisplayListIter<'a>)> {
         let iframe_pipeline_id = info.pipeline_id;
         let pipeline = match self.scene.pipelines.get(&iframe_pipeline_id) {
             Some(pipeline) => pipeline,
@@ -1241,7 +1262,7 @@ impl<'a> SceneBuilder<'a> {
             iframe_pipeline_id,
         );
 
-        Some(pipeline.display_list.iter())
+        Some((pipeline.namespace, pipeline.display_list.iter()))
     }
 
     fn get_space(
@@ -1307,13 +1328,21 @@ impl<'a> SceneBuilder<'a> {
         )
     }
 
+    /// `namespace` is the id namespace this display list is allowed to reference
+    /// resources from; items referencing anything else are dropped. See
+    /// `validate_resource_namespace`.
     fn build_item<'b>(
         &'b mut self,
         item: DisplayItemRef,
+        namespace: IdNamespace,
     ) {
         match *item.item() {
             DisplayItem::Image(ref info) => {
-                profile_scope!("image");
+                tracy_rs::profile_scope!("image");
+
+                if !validate_image_key(info.image_key, namespace) {
+                    return;
+                }
 
                 let (layout, _, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
@@ -1333,7 +1362,11 @@ impl<'a> SceneBuilder<'a> {
                 );
             }
             DisplayItem::RepeatingImage(ref info) => {
-                profile_scope!("repeating_image");
+                tracy_rs::profile_scope!("repeating_image");
+
+                if !validate_image_key(info.image_key, namespace) {
+                    return;
+                }
 
                 let (layout, unsnapped_rect, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
@@ -1358,7 +1391,11 @@ impl<'a> SceneBuilder<'a> {
                 );
             }
             DisplayItem::YuvImage(ref info) => {
-                profile_scope!("yuv_image");
+                tracy_rs::profile_scope!("yuv_image");
+
+                if !validate_yuv_data(&info.yuv_data, namespace) {
+                    return;
+                }
 
                 let (layout, _, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
@@ -1377,7 +1414,11 @@ impl<'a> SceneBuilder<'a> {
                 );
             }
             DisplayItem::Text(ref info) => {
-                profile_scope!("text");
+                tracy_rs::profile_scope!("text");
+
+                if !validate_font_instance_key(info.font_key, namespace) {
+                    return;
+                }
 
                 // TODO(aosmond): Snapping text primitives does not make much sense, given the
                 // primitive bounds and clip are supposed to be conservative, not definitive.
@@ -1402,7 +1443,7 @@ impl<'a> SceneBuilder<'a> {
                 );
             }
             DisplayItem::Rectangle(ref info) => {
-                profile_scope!("rect");
+                tracy_rs::profile_scope!("rect");
 
                 let (layout, _, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
@@ -1423,7 +1464,7 @@ impl<'a> SceneBuilder<'a> {
                 }
             }
             DisplayItem::HitTest(ref info) => {
-                profile_scope!("hit_test");
+                tracy_rs::profile_scope!("hit_test");
 
                 let spatial_node_index = self.get_space(info.spatial_id);
 
@@ -1461,7 +1502,7 @@ impl<'a> SceneBuilder<'a> {
                 );
             }
             DisplayItem::Line(ref info) => {
-                profile_scope!("line");
+                tracy_rs::profile_scope!("line");
 
                 let (layout, _, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
@@ -1479,7 +1520,7 @@ impl<'a> SceneBuilder<'a> {
                 );
             }
             DisplayItem::Gradient(ref info) => {
-                profile_scope!("gradient");
+                tracy_rs::profile_scope!("gradient");
 
                 if !info.gradient.is_valid() {
                     return;
@@ -1534,7 +1575,7 @@ impl<'a> SceneBuilder<'a> {
                 }
             }
             DisplayItem::RadialGradient(ref info) => {
-                profile_scope!("radial");
+                tracy_rs::profile_scope!("radial");
 
                 if !info.gradient.is_valid() {
                     return;
@@ -1617,7 +1658,7 @@ impl<'a> SceneBuilder<'a> {
                 }
             }
             DisplayItem::ConicGradient(ref info) => {
-                profile_scope!("conic");
+                tracy_rs::profile_scope!("conic");
 
                 if !info.gradient.is_valid() {
                     return;
@@ -1665,7 +1706,7 @@ impl<'a> SceneBuilder<'a> {
                 }
             }
             DisplayItem::BoxShadow(ref info) => {
-                profile_scope!("box_shadow");
+                tracy_rs::profile_scope!("box_shadow");
 
                 let (layout, _, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
@@ -1686,7 +1727,15 @@ impl<'a> SceneBuilder<'a> {
                 );
             }
             DisplayItem::Border(ref info) => {
-                profile_scope!("border");
+                tracy_rs::profile_scope!("border");
+
+                if let BorderDetails::NinePatch(ref border) = info.details {
+                    if let NinePatchBorderSource::Image(key, _) = border.source {
+                        if !validate_image_key(key, namespace) {
+                            return;
+                        }
+                    }
+                }
 
                 let (layout, _, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
@@ -1702,18 +1751,31 @@ impl<'a> SceneBuilder<'a> {
                 );
             }
             DisplayItem::ImageMaskClip(ref info) => {
-                profile_scope!("image_clip");
+                tracy_rs::profile_scope!("image_clip");
+
+                // The clip node has to be defined either way, since later clip
+                // chain items refer to it by id. Neutralize a foreign mask into
+                // an empty one, which clips everything out, rather than dropping
+                // the clip and letting the masked content draw unclipped.
+                let image_mask = if validate_image_key(info.image_mask.image, namespace) {
+                    info.image_mask
+                } else {
+                    ImageMask {
+                        image: ImageKey::DUMMY,
+                        rect: LayoutRect::zero(),
+                    }
+                };
 
                 self.add_image_mask_clip_node(
                     info.id,
                     info.spatial_id,
-                    &info.image_mask,
+                    &image_mask,
                     info.fill_rule,
                     item.points(),
                 );
             }
             DisplayItem::RoundedRectClip(ref info) => {
-                profile_scope!("rounded_clip");
+                tracy_rs::profile_scope!("rounded_clip");
 
                 self.add_rounded_rect_clip_node(
                     info.id,
@@ -1723,7 +1785,7 @@ impl<'a> SceneBuilder<'a> {
                 );
             }
             DisplayItem::RectClip(ref info) => {
-                profile_scope!("rect_clip");
+                tracy_rs::profile_scope!("rect_clip");
 
                 self.add_rect_clip_node(
                     info.id,
@@ -1732,7 +1794,7 @@ impl<'a> SceneBuilder<'a> {
                 );
             }
             DisplayItem::ClipChain(ref info) => {
-                profile_scope!("clip_chain");
+                tracy_rs::profile_scope!("clip_chain");
 
                 self.clip_tree_builder.define_clip_chain(
                     info.id,
@@ -1741,7 +1803,7 @@ impl<'a> SceneBuilder<'a> {
                 );
             },
             DisplayItem::BackdropFilter(ref info) => {
-                profile_scope!("backdrop");
+                tracy_rs::profile_scope!("backdrop");
 
                 let (layout, _, spatial_node_index, clip_node_id) = self.process_common_properties(
                     &info.common,
@@ -1966,7 +2028,7 @@ impl<'a> SceneBuilder<'a> {
         requested_raster_space: RasterSpace,
         flags: StackingContextFlags,
     ) -> StackingContextInfo {
-        profile_scope!("push_stacking_context");
+        tracy_rs::profile_scope!("push_stacking_context");
 
         // Filters have to be baked into the snapshot. Most filters are applied
         // when rendering the picture into its parent, so if the stacking context
@@ -2133,7 +2195,12 @@ impl<'a> SceneBuilder<'a> {
                 // surface — equivalent to the intermediate surface approach.
                 // This allows tile cache barriers to fire normally, enabling
                 // proper picture caching with multiple slices.
-                if !self.sc_stack.is_empty() ||
+                //
+                // When DISABLE_COMPOSITOR_CLIPS is set, we never take this fast
+                // path, so the clip is always applied via an intermediate
+                // surface and the quad-shader clip path (useful for testing).
+                if self.debug_flags.contains(DebugFlags::DISABLE_COMPOSITOR_CLIPS) ||
+                   !self.sc_stack.is_empty() ||
                    !self.clip_tree_builder.clip_chain_complex_clips_are_promotable(
                        clip_chain_id,
                        &self.interners,
@@ -2235,7 +2302,7 @@ impl<'a> SceneBuilder<'a> {
         &mut self,
         info: StackingContextInfo,
     ) {
-        profile_scope!("pop_stacking_context");
+        tracy_rs::profile_scope!("pop_stacking_context");
 
         self.clip_tree_builder.pop_clip();
 
@@ -2710,6 +2777,7 @@ impl<'a> SceneBuilder<'a> {
         let item = ClipItemKey {
             kind: ClipItemKeyKind::rounded_rect(
                 clip.radii,
+                clip.inset,
                 clip.mode,
             ),
         };
@@ -2728,7 +2796,7 @@ impl<'a> SceneBuilder<'a> {
             handle,
             spatial_node_index,
             region_rect,
-            Au::from_f32_px(snap_outset),
+            snap_outset,
         );
     }
 
@@ -3169,14 +3237,7 @@ impl<'a> SceneBuilder<'a> {
         image_rendering: ImageRendering,
     ) {
         let format = yuv_data.get_format();
-        let yuv_key = match yuv_data {
-            YuvData::NV12(plane_0, plane_1)
-            | YuvData::P010(plane_0, plane_1)
-            | YuvData::NV16(plane_0, plane_1)
-            | YuvData::P210(plane_0, plane_1) => [plane_0, plane_1, ImageKey::DUMMY],
-            YuvData::PlanarYCbCr(plane_0, plane_1, plane_2) => [plane_0, plane_1, plane_2],
-            YuvData::InterleavedYCbCr(plane_0) => [plane_0, ImageKey::DUMMY, ImageKey::DUMMY],
-        };
+        let yuv_key = yuv_planes(&yuv_data);
 
         self.add_primitive(
             spatial_node_index,
@@ -4204,6 +4265,61 @@ fn read_gradient_stops(stops: ItemRange<GradientStop>) -> Vec<GradientStopKey> {
             color: stop.color.into(),
         }
     }).collect()
+}
+
+/// Resource keys embedded in display items are only unique within the id
+/// namespace that minted them, and all namespaces of a window share a single
+/// `ResourceCache`. A key read out of a display item must be checked against
+/// the namespace the display list was submitted with before it can be used
+/// to look a resource up.
+fn resource_namespace_matches(key_namespace: IdNamespace, namespace: IdNamespace) -> bool {
+    // Namespace 0 is never handed out, so it is only ever the "no resource"
+    // sentinel (`ImageKey::DUMMY` and friends) and cannot name a resource.
+    key_namespace == namespace || key_namespace.0 == 0
+}
+
+fn validate_resource_namespace(
+    key_namespace: IdNamespace,
+    namespace: IdNamespace,
+    kind: &'static str,
+) -> bool {
+    if resource_namespace_matches(key_namespace, namespace) {
+        return true;
+    }
+
+    warn!(
+        "Ignoring {} referencing id namespace {:?} from a display list owned by {:?}",
+        kind, key_namespace, namespace,
+    );
+    debug_assert!(false, "display list references a resource of a foreign id namespace");
+
+    false
+}
+
+fn validate_image_key(key: ImageKey, namespace: IdNamespace) -> bool {
+    validate_resource_namespace(key.0, namespace, "image key")
+}
+
+/// The planes a `YuvData` actually references, padded with `ImageKey::DUMMY`.
+/// Shared by validation and `add_yuv_image` so that the set of keys checked is
+/// by construction the set of keys used.
+fn yuv_planes(yuv_data: &YuvData) -> [ImageKey; 3] {
+    match *yuv_data {
+        YuvData::NV12(p0, p1)
+        | YuvData::P010(p0, p1)
+        | YuvData::NV16(p0, p1)
+        | YuvData::P210(p0, p1) => [p0, p1, ImageKey::DUMMY],
+        YuvData::PlanarYCbCr(p0, p1, p2) => [p0, p1, p2],
+        YuvData::InterleavedYCbCr(p0) => [p0, ImageKey::DUMMY, ImageKey::DUMMY],
+    }
+}
+
+fn validate_yuv_data(yuv_data: &YuvData, namespace: IdNamespace) -> bool {
+    yuv_planes(yuv_data).iter().all(|key| validate_image_key(*key, namespace))
+}
+
+fn validate_font_instance_key(key: FontInstanceKey, namespace: IdNamespace) -> bool {
+    validate_resource_namespace(key.0, namespace, "font instance key")
 }
 
 /// A helper for reusing the scene builder's memory allocations and dropping

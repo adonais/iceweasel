@@ -1,107 +1,72 @@
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
-<svg xmlns="http://www.w3.org/2000/svg" width="304" height="14" fill="context-fill" fill-opacity="context-fill-opacity">
-  <defs>
-    <path id="a" d="m6.023 13-4.84-4.839a.626.626 0 0 1 .885-.885l4.307 4.308 7.559-7.561a.628.628 0 0 1 .885 0 .628.628 0 0 1 0 .885l-8.09 8.09-.706.002z"/>
-  </defs>
-  <svg x="16">
-    <defs>
-      <clipPath id="b">
-        <path d="M0 0H2.5V14H0z"/>
-      </clipPath>
-    </defs>
-    <use href="#a" clip-path="url(#b)"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="304" height="16">
+  <svg width="16" height="16" viewBox="0 0 16 16" />
+  <svg width="16" height="16" x="16" viewBox="0 0 16 16" />
+  <svg width="16" height="16" x="32" viewBox="0 0 16 16" />
+  <svg width="16" height="16" x="48" viewBox="0 0 16 16">
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="m2.419 8.83-.668-.668" />
   </svg>
-  <svg x="32">
-    <defs>
-      <clipPath id="c">
-        <path d="M0 0H3.5V14H0z"/>
-      </clipPath>
-    </defs>
-    <use href="#a" clip-path="url(#c)" transform="translate(-.938 -.938)"/>
+  <svg width="16" height="16" x="64" viewBox="0 0 16 16">
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M2.957 9.368 1.751 8.162" />
   </svg>
-  <svg x="48">
-    <defs>
-      <clipPath id="d">
-        <path d="M0 0H4.5V14H0z"/>
-      </clipPath>
-    </defs>
-    <use href="#a" clip-path="url(#d)" transform="translate(-.938 -.938)"/>
+  <svg width="16" height="16" x="80" viewBox="0 0 16 16">
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M3.657 10.068 1.751 8.162" />
   </svg>
-  <svg x="64">
-    <defs>
-      <clipPath id="e">
-        <path d="M0 0H5.5V14H0z"/>
-      </clipPath>
-    </defs>
-    <use href="#a" clip-path="url(#e)" transform="translate(-.938 -.938)"/>
+  <svg width="16" height="16" x="96" viewBox="0 0 16 16">
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M4.507 10.918 1.751 8.162" />
   </svg>
-  <svg x="80">
-    <defs>
-      <clipPath id="f">
-        <path d="M0 0H6V14H0z"/>
-      </clipPath>
-    </defs>
-    <use href="#a" clip-path="url(#f)" transform="translate(-.938 -.938)"/>
+  <svg width="16" height="16" x="112" viewBox="0 0 16 16">
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M5.565 11.804a2 2 0 0 1-.573-.401L1.751 8.162" />
   </svg>
-  <svg x="96">
-    <defs>
-      <clipPath id="g">
-        <path d="M0 0H6V14H0z"/>
-      </clipPath>
-    </defs>
-    <use href="#a" clip-path="url(#g)" transform="translate(-.938 -.938)"/>
+  <svg width="16" height="16" x="128" viewBox="0 0 16 16">
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M7.051 11.882a2 2 0 0 1-2.059-.479L1.751 8.162" />
   </svg>
-  <svg x="112">
-    <defs>
-      <clipPath id="h">
-        <path d="M0 0H8.25V14H0z"/>
-      </clipPath>
-    </defs>
-    <use href="#a" clip-path="url(#h)" transform="translate(-1.19 -1.19) scale(1.03134)"/>
+  <svg width="16" height="16" x="144" viewBox="0 0 16 16">
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="m8.304 10.919-.484.484a2 2 0 0 1-2.828 0L1.751 8.162" />
   </svg>
-  <svg x="128">
-    <defs>
-      <clipPath id="i">
-        <path d="M0 0H10.5V14H0z"/>
-      </clipPath>
-    </defs>
-    <use href="#a" clip-path="url(#i)" transform="translate(-1.455 -1.455) scale(1.0646)"/>
+  <svg width="16" height="16" x="160" viewBox="0 0 16 16">
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M9.434 9.789 7.82 11.403a2 2 0 0 1-2.828 0L1.751 8.162" />
   </svg>
-  <svg x="144">
-    <defs>
-      <clipPath id="j">
-        <path d="M0 0H12.5V14H0z"/>
-      </clipPath>
-    </defs>
-    <use href="#a" clip-path="url(#j)" transform="translate(-1.702 -1.702) scale(1.09553)"/>
+  <svg width="16" height="16" x="176" viewBox="0 0 16 16">
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M10.512 8.711 7.82 11.403a2 2 0 0 1-2.828 0L1.751 8.162" />
   </svg>
-  <svg x="160">
-    <use href="#a" transform="translate(-1.914 -1.914) scale(1.12205)"/>
+  <svg width="16" height="16" x="192" viewBox="0 0 16 16">
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M11.494 7.729 7.82 11.403a2 2 0 0 1-2.828 0L1.751 8.162" />
   </svg>
-  <svg x="176">
-    <use href="#a" transform="translate(-2.07 -2.07) scale(1.14168)"/>
+  <svg width="16" height="16" x="208" viewBox="0 0 16 16">
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M12.344 6.879 7.82 11.403a2 2 0 0 1-2.828 0L1.751 8.162" />
   </svg>
-  <svg x="192">
-    <use href="#a" transform="matrix(1.15 0 0 1.15 -2.14 -2.14)"/>
+  <svg width="16" height="16" x="224" viewBox="0 0 16 16">
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M13.044 6.179 7.82 11.403a2 2 0 0 1-2.828 0L1.751 8.162" />
   </svg>
-  <svg x="208">
-    <use href="#a" transform="matrix(1.12 0 0 1.12 -1.89 -1.89)"/>
+  <svg width="16" height="16" x="240" viewBox="0 0 16 16">
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M13.582 5.641 7.82 11.403a2 2 0 0 1-2.828 0L1.751 8.162" />
   </svg>
-  <svg x="224">
-    <use href="#a" transform="matrix(1.1 0 0 1.1 -1.62 -1.62)"/>
+  <svg width="16" height="16" x="256" viewBox="0 0 16 16">
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M13.959 5.264 7.82 11.403a2 2 0 0 1-2.828 0L1.751 8.162" />
   </svg>
-  <svg x="240">
-    <use href="#a" transform="matrix(1.05 0 0 1.05 -1.37 -1.37)"/>
+  <svg width="16" height="16" x="272" viewBox="0 0 16 16">
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M14.179 5.044 7.82 11.403a2 2 0 0 1-2.828 0L1.751 8.162" />
   </svg>
-  <svg x="256">
-    <use href="#a" transform="matrix(1.03 0 0 1.03 -1.16 -1.16)"/>
-  </svg>
-  <svg x="272">
-    <use href="#a" transform="matrix(1 0 0 1 -1 -1)"/>
-  </svg>
-  <svg x="288">
-    <use href="#a" transform="translate(-.94 -.94)"/>
+  <svg width="16" height="16" x="288" viewBox="0 0 16 16">
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="m14.25 4.973-6.43 6.43a2 2 0 0 1-2.828 0L1.751 8.162" />
   </svg>
 </svg>

@@ -86,6 +86,24 @@ profiles.delete:
     send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_Delete_Displayed
 
+profiles.error:
+  avatar:
+    type: event
+    description: >
+      Recorded when the profile is loaded but the custom avatar file is
+      missing.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2028725
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2028725
+    notification_emails:
+      - dtownsend@mozilla.com
+      - jhirsch@mozilla.com
+      - nbaumgardner@mozilla.com
+    expires: never
+    send_in_pings: ['events', 'profiles']
+    telemetry_mirror: Profiles_Error_Avatar
+
 profiles.existing:
   alert:
     type: event

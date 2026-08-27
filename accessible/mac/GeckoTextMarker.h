@@ -80,7 +80,7 @@ class GeckoTextMarkerRange final {
   GeckoTextMarkerRange(const TextLeafPoint& aStart, const TextLeafPoint& aEnd)
       : mRange(aStart, aEnd) {}
 
-  GeckoTextMarkerRange() {}
+  GeckoTextMarkerRange() = default;
 
   explicit GeckoTextMarkerRange(Accessible* aAccessible);
 

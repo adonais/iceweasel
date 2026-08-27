@@ -8,6 +8,7 @@
 #include "Adts.h"
 #include "MediaDataDemuxer.h"
 #include "MediaResource.h"
+#include "mozilla/CumulativeAverage.h"
 
 namespace mozilla {
 
@@ -112,14 +113,11 @@ class ADTSTrackDemuxer : public MediaTrackDemuxer,
   // Current byte offset in the source stream.
   uint64_t mOffset;
 
-  // Total parsed frames.
-  uint64_t mNumParsedFrames;
-
   // Current frame index.
   int64_t mFrameIndex;
 
-  // Sum of parsed frames' lengths in bytes.
-  uint64_t mTotalFrameLen;
+  // Running average of parsed frame lengths in bytes.
+  mozilla::CumulativeAverage<double> mMeanFrameLen;
 
   // Samples per frame metric derived from frame headers or 0 if none available.
   uint32_t mSamplesPerFrame;

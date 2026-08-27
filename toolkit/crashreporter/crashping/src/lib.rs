@@ -152,18 +152,24 @@ pub fn test_get_metric_values() -> serde_json::Value {
 
 /// Set Glean metrics from the given annotations.
 fn set_metrics_from_annotations(annotations: &serde_json::Value) -> anyhow::Result<()> {
+    let mut meta_annotations = serde_json::Map::default();
     for annotation in ANNOTATIONS {
         if let Some(value) = annotations.get(annotation.key) {
             (annotation.set_glean_metric)(value)?;
+            meta_annotations.insert(annotation.key.to_owned(), value.clone());
         }
     }
+    glean_metrics::meta::annotations.set(glean_metrics::meta::AnnotationsObject {
+        source: Some(serde_json::Value::Object(meta_annotations).to_string()),
+    });
 
     Ok(())
 }
 
 #[cfg(test)]
 mod test {
-    use super::{send, test_before_next_send, ANNOTATIONS};
+    use super::{glean_metrics, send, test_before_next_send, ANNOTATIONS};
+    use glean::TestGetValue;
     use std::sync::{
         atomic::{AtomicBool, Ordering::Relaxed},
         Arc, Mutex,
@@ -242,6 +248,7 @@ mod test {
                 "AsyncShutdownTimeout": "{\"phase\":\"abcd\",\"conditions\":[{\"foo\":\"bar\"}],\"brokenAddBlockers\":[\"foo\"]}",
                 "BlockedDllList": "Foo.dll;bar.dll;rawr.dll",
                 "CrashTime": "1234",
+                "InstallTime": "1784641473",
                 "LastInteractionDuration": "100",
                 "NimbusEnrollments": "a,b,c,d,e",
                 "QuotaManagerShutdownTimeout": "line1\nline2\nline3",
@@ -355,6 +362,44 @@ mod test {
                         );
                     }
                     metrics_tested.clear();
+                });
+            }
+
+            send(&annotations, Some("crash")).expect("failed to set metrics");
+        });
+    }
+
+    #[test]
+    fn meta_annotations() {
+        glean_test(|| {
+            let mut annotations = serde_json::json!({
+                "AsyncShutdownTimeout": "{\"phase\":\"abcd\",\"conditions\":[{\"foo\":\"bar\"}],\"brokenAddBlockers\":[\"foo\"]}",
+                "BlockedDllList": "Foo.dll;bar.dll;rawr.dll",
+                "CrashEventID": "2ce9f2ba-1801-4661-8045-c48d8a3456c7",
+                "CrashTime": "1234",
+                "CrashType": "test",
+                "LastInteractionDuration": "100",
+                "MozCrashReason": "testing",
+            });
+
+            let expected_string = annotations.to_string();
+
+            annotations["NonExistentAnnotation"] = "should not be there".into();
+            annotations["TestKey"] = "should only be in reports".into();
+
+            // Check that the metric has the expected value.
+            let success = SoftAssert::new(false, "one or more failures occurred");
+            let metric_tested = SoftAssert::new(true, "test_before_next_send did not run");
+            {
+                let success = success.clone();
+                let metric_tested = metric_tested.clone();
+                test_before_next_send(move |_| {
+                    success.assert(
+                        glean_metrics::meta::annotations.test_get_value(Some("crash".into()))
+                            == Some(serde_json::json!({"source": expected_string})),
+                        "incorrect meta annotation content",
+                    );
+                    metric_tested.clear();
                 });
             }
 

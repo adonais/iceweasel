@@ -23,12 +23,14 @@ namespace mozilla {
 void DisplayItemClip::SetTo(const nsRect& aRect) { SetTo(aRect, nullptr); }
 
 void DisplayItemClip::SetTo(const nsRect& aRect,
-                            const nsRectCornerRadii* aRadii) {
+                            const nsRectCornerRadii* aRadii,
+                            const nsMargin* aInset) {
   mHaveClipRect = true;
   mClipRect = aRect;
   if (aRadii) {
     mRoundedClipRects.Clear();
-    mRoundedClipRects.AppendElement(RoundedRect{aRect, *aRadii});
+    mRoundedClipRects.AppendElement(
+        RoundedRect{aRect, *aRadii, aInset ? *aInset : nsMargin()});
   } else {
     mRoundedClipRects.Clear();
   }
@@ -480,8 +482,9 @@ void DisplayItemClip::ToComplexClipRegions(
     int32_t aAppUnitsPerDevPixel,
     nsTArray<wr::ComplexClipRegion>& aOutArray) const {
   for (const auto& clipRect : mRoundedClipRects) {
-    aOutArray.AppendElement(wr::ToComplexClipRegion(
-        clipRect.mRect, clipRect.mRadii, aAppUnitsPerDevPixel));
+    aOutArray.AppendElement(
+        wr::ToComplexClipRegion(clipRect.mRect, clipRect.mRadii,
+                                clipRect.mInset, aAppUnitsPerDevPixel));
   }
 }
 

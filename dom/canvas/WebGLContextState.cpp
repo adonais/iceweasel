@@ -136,7 +136,9 @@ Maybe<double> WebGLContext::GetParameter(const GLenum pname) {
         if (Has64BitTimestamps()) {
           gl->fGetInteger64v(pname, (GLint64*)&val);
         } else {
-          gl->fGetIntegerv(pname, (GLint*)&val);
+          GLint val32 = 0;
+          gl->fGetIntegerv(pname, &val32);
+          val = val32;
         }
         // TODO: JS doesn't support 64-bit integers. Be lossy and
         // cast to double (53 bits)

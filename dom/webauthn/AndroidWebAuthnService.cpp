@@ -397,6 +397,13 @@ AndroidWebAuthnService::AddVirtualAuthenticator(
 }
 
 NS_IMETHODIMP
+AndroidWebAuthnService::HasVirtualAuthenticator(
+    const nsACString& aAuthenticatorId, bool* aRetval) {
+  MOZ_ASSERT(NS_IsMainThread());
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
 AndroidWebAuthnService::RemoveVirtualAuthenticator(
     const nsACString& aAuthenticatorId) {
   MOZ_ASSERT(NS_IsMainThread());

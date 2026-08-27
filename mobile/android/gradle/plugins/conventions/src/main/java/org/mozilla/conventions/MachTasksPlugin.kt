@@ -87,6 +87,11 @@ class MachTasksPlugin : Plugin<Project> {
                         put(key, value.joinToString(","))
                     }
                 }
+                // Bug 2040992: Override PATH with the captured value from substs so any
+                // reentrant ./mach invocation (notably :machConfigure) sees the same PATH
+                // as the original ./mach configure, regardless of what the gradle daemon's
+                // cached env happens to hold.
+                (substsForEnv["PATH"] as? String)?.let { put("PATH", it) }
             }
         }
 

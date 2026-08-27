@@ -381,6 +381,11 @@ void LIRGeneratorShared::redefine(MDefinition* def, MDefinition* as) {
       }
       def->block()->insertBefore(def->toInstruction(), replacement);
       emitAtUses(replacement->toInstruction());
+    } else if (as->isWasmNullConstant() && as->wasmRefType().hierarchy() !=
+                                               def->wasmRefType().hierarchy()) {
+      replacement = MWasmNullConstant::New(alloc(), def->wasmRefType());
+      def->block()->insertBefore(def->toInstruction(), replacement);
+      emitAtUses(replacement->toInstruction());
     } else {
       replacement = as->toInstruction();
     }

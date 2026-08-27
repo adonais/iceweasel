@@ -37,4 +37,7 @@ common_build_errors
 
 ```{toctree}
 contributing_code
+building_with_debug_symbols
+configuring_build_options
+editing_moz_configure
 ```

@@ -661,12 +661,28 @@ urlbar:
         branch: user
         pref: places.semanticHistory.embeddingType
       description: >-
-        Embedding family used by Places semantic history: "static" (default,
-        lightweight) or "contextual" (transformer-based, larger). Changing
-        this on a live profile drops the embedding tables and rebuilds them
-        on next startup. Contextual model details (dimension, modelId,
-        wasm fallback) are controlled by the browser.ml.embedGen.* prefs and
-        are intentionally not exposed via Nimbus.
+        Embedding family used by Places semantic history: "static"
+        (lightweight) or "contextual" (transformer-based, larger). When unset
+        or empty, the family is derived from the home region, the app locale
+        and the OS: contextual in the markets listed in
+        `semanticHistoryMultilingualEmbeddingRegions` on Mac/Windows, static
+        everywhere else. Changing this on a live profile drops the embedding
+        tables and rebuilds them on next startup. Contextual model details
+        (dimension, modelId) are controlled by the browser.ml.embedGen.* prefs
+        and are intentionally not exposed via Nimbus.
+    semanticHistoryMultilingualEmbeddingRegions:
+      type: string
+      setPref:
+        branch: user
+        pref: places.semanticHistory.multilingualEmbeddingRegions
+      description: >-
+        map-like JSON of regions and locales that get multilingual (contextual)
+        embeddings, used when `semanticHistoryEmbeddingType` is unset or empty.
+        Same format as `semanticHistorySupportedRegions`, except that a "*"
+        region matches any region. The entries are OR-ed, so
+        '[["FR",["en-*","fr-*"]],["*",["fr-*"]]]' means France in English or
+        French, or a French locale anywhere. An empty value disables
+        multilingual embeddings everywhere.
     semanticHistoryInSeparateGroup:
       type: boolean
       setPref:
@@ -705,6 +721,13 @@ urlbar:
       description: >-
         Whether or not to show calculator results when a user types a valid
         calculation string into the urlbar.
+    trackerCountFeatureGate:
+      type: boolean
+      fallbackPref: browser.urlbar.trackerCount.featureGate
+      description: >-
+        Boolean used to determine if the "x trackers blocked" pill should be
+        shown in the urlbar. Should be false for Control branch of an
+        experiment.
     unitConversionEnabled:
       type: boolean
       setPref:
@@ -1695,6 +1718,33 @@ newtabTrainhopAddon:
         branch: user
         pref: browser.newtabpage.trainhopAddon.version
 
+newtabTrainhopAddonDeployment:
+  description: |
+    Co-enrollment version of newtabTrainhopAddon used to deploy updated newtab
+    resources packaged as an xpi. Multiple overlapping enrollments are allowed and
+    the enrollment with the highest addon_version wins.
+  owner: mconley@mozilla.com
+  hasExposure: true
+  allowCoenrollment: true
+  exposureDescription: |
+    Exposure is sent when the trainhop addon version from a co-enrolled deployment is in use
+    (starting from the browser startup right after it has been downloaded and installed).
+  variables:
+    xpi_download_path:
+      type: string
+      description: |
+        Provide the path (relative to the base URL set in the `browser.newtabpage.trainhopAddon.xpiBaseURL`
+        about:config pref) from which the xpi should be downloaded.
+    addon_version:
+      type: string
+      description: |
+        Expected addon version (installing the xpi is cancelled if it mismatches the one set here).
+        The trainhop add-on version is also stored in an about:config pref, managed manually by
+        AboutNewTabResourceMapping to reflect the highest version across all active enrollments
+        (across both this feature and newtabTrainhopAddon). It is used on early application startup
+        to determine if the trainhop add-on version should be uninstalled (and not be used for the
+        newtab resources mapping to safely uninstall it later in the same application session).
+
 newtabTrainhopFirstStartup:
   description: |
     Controls startup behaviours if and when a train-hop is available for a
@@ -2397,6 +2447,14 @@ pdfjs:
       setPref:
         branch: default
         pref: pdfjs.enableSignatureEditor
+    enableSignatureVerification:
+      description: >-
+        Set to true to enable digital signature verification, which validates a
+        PDF's signatures against NSS and exposes the certificate viewer.
+      type: boolean
+      setPref:
+        branch: default
+        pref: pdfjs.enableSignatureVerification
 
 fxms-message:
   description: A messaging channel that supports multiple simultaneous enrollments
@@ -4675,66 +4733,6 @@ bookmarks:
         pref: browser.toolbars.bookmarks.showOtherBookmarks
       description: Display state of the "Other Bookmarks" toolbar button.
 
-cookieBannerHandling:
-  description: Automatically handle cookie banners on the user's behalf.
-  owner: emz@mozilla.com
-  hasExposure: false
-  variables:
-    modeNormalBrowsing:
-      type: int
-      setPref:
-        branch: default
-        pref: cookiebanners.service.mode
-      description: >-
-        Controls the cookie banner handling mode in normal browsing.
-        Values: 0 - disabled, 1 - reject all, 2 - reject all with accept all fallback.
-    modePrivateBrowsing:
-      type: int
-      setPref:
-        branch: default
-        pref: cookiebanners.service.mode.privateBrowsing
-      description: >-
-        Controls the cookie banner handling mode in private browsing.
-        Values: 0 - disabled, 1 - reject all, 2 - reject all with accept all fallback.
-    enableGlobalRules:
-      type: boolean
-      setPref:
-        branch: default
-        pref: cookiebanners.service.enableGlobalRules
-      description: >-
-        Enables use of global CookieBannerRules, which apply to all sites.
-        This enables handling of CMPs across sites without the use of site-specific rules.
-    enableGlobalRulesSubFrames:
-      type: boolean
-      setPref:
-        branch: default
-        pref: cookiebanners.service.enableGlobalRules.subFrames
-      description: >-
-        Whether global rules are allowed to run in sub-frames. Running query
-        selectors in every sub-frame may negatively impact performance, but is
-        required for some CMPs.
-    enableDetectOnly:
-      type: boolean
-      setPref:
-        branch: default
-        pref: cookiebanners.service.detectOnly
-      description: >-
-        When set to true, cookie banners are detected and detection events are
-        dispatched, but they will not be handled.
-        This pref applies to both normal and private browsing windows.
-    enablePromo:
-      type: boolean
-      setPref:
-        branch: default
-        pref: browser.promo.cookiebanners.enabled
-      description: Enables the cookie banner promo in about:privatebrowsing.
-    enableDesktopFeatureCallout:
-      type: boolean
-      setPref:
-        branch: default
-        pref: cookiebanners.ui.desktop.showCallout
-      description: Enables the cookie banner feature callout on desktop.
-
 backgroundThreads:
   description: Prefs to control MacOS thread priorities for power savings.
   owner: kwright@mozilla.com
@@ -4755,36 +4753,6 @@ backgroundThreads:
       setPref:
         branch: user
         pref: threads.lower_mainthread_priority_in_background.enabled
-
-reportBrokenSite:
-  description: The Report Broken Site feature
-  owner: twisniewski@mozilla.com
-  hasExposure: false
-  variables:
-    enabled:
-      type: boolean
-      setPref:
-        branch: user
-        pref: ui.new-webcompat-reporter.enabled
-      description: >-
-        Whether Report Broken Site is enabled
-    sendMoreInfo:
-      type: boolean
-      setPref:
-        branch: user
-        pref: ui.new-webcompat-reporter.send-more-info-link
-      description: >-
-        Whether Report Broken Site shows the send more info link directing
-        users to webcompat.com (defaults to true for prerelease channels)
-    reasonDropdown:
-      type: int
-      setPref:
-        branch: user
-        pref: ui.new-webcompat-reporter.reason-dropdown
-      description: >-
-        0 = do not show the "reason" dropdown
-        1 = show an optional "reason" dropdown
-        2 = show a required "reason" dropdown
 
 phc:
   description: Prefs to control the Probabalistic Heap Checker (PHC)
@@ -5431,15 +5399,6 @@ smartblockEmbeds:
       description: >-
         Controls whether smartblock embed placeholders and protections panel toggles will be shown to the user.
 
-selectableProfiles:
-  description: "Multiple profile management using selectableProfileService"
-  owner: jhirsch@mozilla.com
-  hasExposure: false
-  variables:
-    enabled:
-      type: boolean
-      description: Enables the multiple profiles feature when true. Turning off this variable will not disable the feature.
-
 storageAccessHeuristics:
   description: Heuristics that grant cookie access automatically for foreign resources
   owner: bvandersloot@mozilla.com
@@ -6051,6 +6010,32 @@ smartWindow:
         Comma-separated list of screen ids that should be hidden in the Smart
         Window first run onboarding.
 
+smartWindowAgentWatch:
+  description: >-
+    Controls the Smart Window agent watch feature - whether users can create a
+    watch task (a task that monitors a page for changes). This gates the capability
+    itself, including its "/watch" command palette entry. Existing Smart Window
+    eligibility checks still apply.
+  owner: yjamora@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      type: boolean
+      setPref:
+        branch: default
+        pref: browser.smartwindow.agent.enabled
+      description: >-
+        Enables the Smart Window Agent Watch feature when true. Set to false
+        to disable the rollout.
+    supportedRegions:
+      type: string
+      setPref:
+        branch: default
+        pref: browser.smartwindow.agent.supportedRegions
+      description: >-
+        Comma-separated list of region codes where the agent watch command is
+        available, for example "US,CA".
+
 contentSharing:
   description: Controls the content sharing feature, which allows users to share browser content.
   owner: nbarrett@mozilla.com
@@ -6068,6 +6053,30 @@ contentSharing:
         branch: default
         pref: browser.contentsharing.server.url
       description: The URL of the content sharing server.
+
+urlbarShareButton:
+  description: Controls the share button in the url bar.
+  owner: nbaumgardner@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      type: boolean
+      setPref:
+        branch: default
+        pref: browser.urlbar.share-button.enabled
+      description: Whether the share button in the url bar is visible.
+
+referrals:
+  description: Controls the Firefox referral program.
+  owner: nbarrett@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      type: boolean
+      setPref:
+        branch: default
+        pref: browser.referrals.enabled
+      description: Whether the referral program is enabled.
 
 webNotificationsPermissionUi:
   description: >-
@@ -6111,9 +6120,17 @@ webNotificationsPermissionUi:
     logoUrl:
       type: string
       description: >-
-        Optional logo URL used as the prompt's icon. Must be a chrome://,
-        resource:// or https:// URL; any other scheme is rejected and the
-        default icon is shown.
+        Optional logo URL used as the prompt's icon. Must be a chrome:// or
+        resource:// URL; any other scheme is rejected and the default icon is
+        shown.
+    useSiteFavicon:
+      type: boolean
+      description: >-
+        When true, use the requesting site's own favicon as the prompt icon
+        (no logoUrl needed). Prefers the site's cached favicon and falls back to
+        the tab's currently loaded icon (so it still shows on a first-time
+        private-browsing visit), or the default favicon if neither is available.
+        Ignored when a valid logoUrl is set.
     activationTargeting:
       type: string
       description: >-

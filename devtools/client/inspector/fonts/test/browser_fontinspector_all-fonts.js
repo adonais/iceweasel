@@ -30,7 +30,7 @@ add_task(async function () {
     {
       name: "Designer:",
       value: "Tyler Finck",
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       href: "http://www.sursly.com/",
     },
     {
@@ -39,9 +39,9 @@ add_task(async function () {
     },
     {
       name: "Vendor:",
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       value: "http://www.sursly.com",
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       href: "http://www.sursly.com/",
     },
     {
@@ -54,9 +54,9 @@ add_task(async function () {
     },
     {
       name: "License Info URL:",
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       value: "http://www.sursly.com",
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       href: "http://www.sursly.com/",
     },
   ];

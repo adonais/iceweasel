@@ -2,35 +2,28 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use api::{ColorF, NormalBorder, PremultipliedColorF, RepeatMode};
+use api::{ColorF, NormalBorder, RepeatMode};
 use api::units::*;
 use smallvec::SmallVec;
 use crate::border::{build_border_instances, NormalBorderSegment, MAX_BORDER_RESOLUTION};
-use crate::border::NinePatchDescriptorExt;
 use crate::clip::{ClipChainInstance, ClipIntern};
 use crate::command_buffer::CommandBufferIndex;
-use crate::gpu_types::ImageBrushPrimitiveData;
 use crate::pattern::image::ImagePattern;
-use crate::quad::{self, QuadTransformState};
-use crate::render_backend::DataStores;
+use crate::quad::{self, QuadDescriptor, QuadTransformState};
+use crate::visibility::PrimitiveDrawIndex;
 use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent, to_cache_size};
-use crate::renderer::{GpuBufferAddress, GpuBufferWriterF};
 use crate::scene_building::{IsVisible};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext};
 use crate::intern::{self, DataStore};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
-    BrushSegment, InternablePrimitive, NinePatchDescriptor, PrimKey, PrimTemplate, PrimTemplateCommonData, PrimitiveInstanceIndex, PrimitiveKind, PrimitiveScratchBuffer, PrimitiveStore, VECS_PER_SEGMENT
+    InternablePrimitive, NinePatchDescriptor, PrimKey, PrimTemplate, PrimTemplateCommonData, PrimitiveKind, PrimitiveScratchBuffer, PrimitiveStore
 };
 use crate::resource_cache::ImageRequest;
 use crate::render_task::{RenderTask, RenderTaskKind};
 use crate::render_task_graph::RenderTaskId;
-use crate::segment::EdgeMask;
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::util::clamp_to_scale_factor;
-use crate::visibility::KindScratchHandle;
-
-use crate::prim_store::storage;
 
 // `NormalBorderPrim` now lives in `webrender_api::interned_prims` so content-process
 // interning can hold it. Re-exported to keep existing references working.
@@ -51,13 +44,11 @@ pub struct NormalBorderData {
 impl NormalBorderData {
     pub fn update(
         &self,
-        local_rect: &LayoutRect,
+        desc: &QuadDescriptor,
         clip_chain: &ClipChainInstance,
         prim_spatial_node_index: SpatialNodeIndex,
         device_pixel_scale: DevicePixelScale,
-        aligned_aa_edges: EdgeMask,
-        transformed_aa_edges: EdgeMask,
-        prim_instance_index: PrimitiveInstanceIndex,
+        draw_index: PrimitiveDrawIndex,
         quad_transform: &mut QuadTransformState,
         frame_context: &FrameBuildingContext,
         pic_context: &PictureContext,
@@ -119,7 +110,7 @@ impl NormalBorderData {
         // lower resolution and stretches them: the right shape, but blurrier.
         let mut segments: SmallVec<[NormalBorderSegment; 8]> = SmallVec::new();
         crate::border::create_border_segments(
-            *local_rect,
+            desc.pattern_rect,
             &self.border,
             &widths,
             &mut |segment| segments.push(segment.clone()),
@@ -135,21 +126,24 @@ impl NormalBorderData {
         scale.0 = scale.0.min(max_scale.0);
 
         for segment in &segments {
-            let local_clip_rect = match segment.clip_rect {
-                Some(clip_rect) => clip_chain.local_clip_rect
-                    .intersection(&clip_rect)
-                    .unwrap_or(LayoutRect::zero()),
-                None => clip_chain.local_clip_rect,
+            let segment_bounds = |extent: &LayoutRect| {
+                let mut bounds = desc.bounds.intersection_unchecked(extent);
+                if let Some(clip_rect) = segment.clip_rect {
+                    bounds = bounds.intersection_unchecked(&clip_rect);
+                }
+                bounds
             };
 
             if let Some(color) = &segment.is_solid {
                 quad::prepare_quad(
                     color,
-                    &segment.local_rect,
-                    &local_clip_rect,
-                    segment.edge_flags & aligned_aa_edges,
-                    segment.edge_flags & transformed_aa_edges,
-                    prim_instance_index,
+                    &QuadDescriptor {
+                        pattern_rect: segment.pattern_rect,
+                        bounds: segment_bounds(&segment.pattern_rect),
+                        aligned_aa_edges: desc.aligned_aa_edges & segment.edge_flags,
+                        transformed_aa_edges: desc.transformed_aa_edges & segment.edge_flags,
+                    },
+                    draw_index,
                     &None,
                     clip_chain,
                     quad_transform,
@@ -210,13 +204,13 @@ impl NormalBorderData {
             // corners that is the natural corner-image size, which may
             // extend past the visible area). `clip_rect` crops it back to
             // the visible part for corners whose adjacent corner overlaps.
-            let segment_local_rect = segment.local_rect;
+            let segment_pattern_rect = segment.pattern_rect;
 
-            let mut stretch_size = segment_local_rect.size();
+            let mut stretch_size = segment_pattern_rect.size();
             let mut spacing = LayoutSize::zero();
             let mut _repeat_offset = LayoutVector2D::zero();
             crate::border::compute_border_repetition(
-                segment_local_rect.size(),
+                segment_pattern_rect.size(),
                 cache_size.to_f32(),
                 segment.repeat_x,
                 segment.repeat_y,
@@ -233,7 +227,7 @@ impl NormalBorderData {
             // an integer number of repetitions fills the space.
 
             if segment.repeat_x == RepeatMode::Repeat {
-                let w = segment_local_rect.width();
+                let w = segment_pattern_rect.width();
                 let sw = stretch_size.width;
                 let scale = w / ((w / sw).round() * sw);
 
@@ -241,7 +235,7 @@ impl NormalBorderData {
             }
 
             if segment.repeat_y == RepeatMode::Repeat {
-                let h = segment_local_rect.height();
+                let h = segment_pattern_rect.height();
                 let sh = stretch_size.height;
                 let scale = h / ((h / sh).round() * sh);
 
@@ -250,13 +244,15 @@ impl NormalBorderData {
 
             quad::prepare_repeatable_quad(
                 &pattern,
-                &segment_local_rect,
-                &local_clip_rect,
+                &QuadDescriptor {
+                    pattern_rect: segment_pattern_rect,
+                    bounds: segment_bounds(&segment_pattern_rect),
+                    aligned_aa_edges: desc.aligned_aa_edges & segment.edge_flags,
+                    transformed_aa_edges: desc.transformed_aa_edges & segment.edge_flags,
+                },
                 stretch_size,
                 spacing,
-                segment.edge_flags & aligned_aa_edges,
-                segment.edge_flags & transformed_aa_edges,
-                prim_instance_index,
+                draw_index,
                 &None,
                 clip_chain,
                 quad_transform,
@@ -342,64 +338,6 @@ pub type ImageBorderKey = PrimKey<ImageBorder>;
 
 impl intern::InternDebug for ImageBorderKey {}
 
-/// Per-frame scratch data for an ImageBorder primitive.
-#[derive(Copy, Clone, Debug)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-pub struct ImageBorderScratch {
-    /// Range into `PrimitiveFrameScratch::segments` holding the per-
-    /// frame nine-patch brush segments for this border. Built fresh
-    /// each frame against the prim's current size in
-    /// `prepare_prim_for_render`.
-    pub brush_segments_range: storage::Range<BrushSegment>,
-    /// Per-instance GPU buffer address for the brush + segment blocks
-    /// written by `ImageBorderData::write_brush_gpu_blocks`. Per-instance
-    /// because the block contents (stretch_size and segments) depend on
-    /// the prim's per-instance size.
-    pub gpu_address: GpuBufferAddress,
-    /// Per-instance source image render task, recomputed each frame in
-    /// `ImageBorderData::update`. Lives here rather than on the now-
-    /// immutable template.
-    pub src_color: Option<RenderTaskId>,
-    /// Whether the source image is opaque. Derived each frame from the
-    /// resource-cache image properties.
-    pub is_opaque: bool,
-}
-
-impl ImageBorderScratch {
-    /// Build the per-frame nine-patch brush segments for an ImageBorder
-    /// prim, push the resulting `ImageBorderScratch` entry, and wire it
-    /// up to the prim's `PrimitiveDrawHeader.kind_scratch`.
-    ///
-    /// Called from the prep early pass before `update_clip_task` runs,
-    /// since `update_clip_task_for_brush` reads the brush segments via
-    /// the scratch entry allocated here.
-    pub fn build_for_prim(
-        data_handle: ImageBorderDataHandle,
-        prim_instance_index: PrimitiveInstanceIndex,
-        prim_size: LayoutSize,
-        data_stores: &DataStores,
-        scratch: &mut PrimitiveScratchBuffer,
-    ) {
-        let prim_data = &data_stores.image_border[data_handle];
-        let nine_patch = &prim_data.kind.nine_patch;
-
-        let brush_open = scratch.frame.segments.open_range();
-        scratch.frame.segments.data_mut().extend(
-            nine_patch.create_brush_segments(prim_size),
-        );
-        let brush_segments_range = scratch.frame.segments.close_range(brush_open);
-
-        let handle = scratch.frame.image_border.push(ImageBorderScratch {
-            brush_segments_range,
-            gpu_address: GpuBufferAddress::INVALID,
-            src_color: None,
-            is_opaque: false,
-        });
-        scratch.frame.draws[prim_instance_index.0 as usize].kind_scratch =
-            KindScratchHandle::ImageBorder(handle);
-    }
-}
-
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(MallocSizeOf)]
@@ -410,23 +348,6 @@ pub struct ImageBorderData {
 }
 
 impl ImageBorderData {
-    /// Update the GPU cache for a given primitive template. This may be called multiple
-    /// times per frame, by each primitive reference that refers to this interned
-    /// template. The initial request call to the GPU cache ensures that work is only
-    /// done if the cache entry is invalid (due to first use or eviction).
-    pub fn write_brush_gpu_blocks(
-        &self,
-        prim_size: LayoutSize,
-        brush_segments: &[BrushSegment],
-        frame_state: &mut FrameBuildingState,
-    ) -> GpuBufferAddress {
-        let mut writer = frame_state.frame_gpu_data.f32.write_blocks(3 + brush_segments.len() * VECS_PER_SEGMENT);
-        self.write_prim_gpu_blocks(&mut writer, &prim_size);
-        Self::write_segment_gpu_blocks(&mut writer, brush_segments);
-        writer.finish()
-    }
-
-
     pub fn update(
         &self,
         frame_state: &mut FrameBuildingState,
@@ -447,30 +368,6 @@ impl ImageBorderData {
             .unwrap_or(true);
 
         (task_id, size, is_opaque)
-    }
-
-    fn write_prim_gpu_blocks(
-        &self,
-        writer: &mut GpuBufferWriterF,
-        prim_size: &LayoutSize,
-    ) {
-        // Border primitives currently used for
-        // image borders, and run through the
-        // normal brush_image shader.
-        writer.push(&ImageBrushPrimitiveData {
-            color: PremultipliedColorF::WHITE,
-            background_color: PremultipliedColorF::WHITE,
-            stretch_size: *prim_size,
-        });
-    }
-
-    fn write_segment_gpu_blocks(
-        writer: &mut GpuBufferWriterF,
-        brush_segments: &[BrushSegment],
-    ) {
-        for segment in brush_segments {
-            segment.write_gpu_blocks(writer);
-        }
     }
 }
 
@@ -541,9 +438,9 @@ fn test_struct_sizes() {
     //     test expectations and move on.
     // (b) You made a structure larger. This is not necessarily a problem, but should only
     //     be done with care, and after checking if talos performance regresses badly.
-    assert_eq!(mem::size_of::<NormalBorderPrim>(), 100, "NormalBorderPrim size changed");
-    assert_eq!(mem::size_of::<NormalBorderTemplate>(), 152, "NormalBorderTemplate size changed");
-    assert_eq!(mem::size_of::<NormalBorderKey>(), 104, "NormalBorderKey size changed");
+    assert_eq!(mem::size_of::<NormalBorderPrim>(), 116, "NormalBorderPrim size changed");
+    assert_eq!(mem::size_of::<NormalBorderTemplate>(), 168, "NormalBorderTemplate size changed");
+    assert_eq!(mem::size_of::<NormalBorderKey>(), 120, "NormalBorderKey size changed");
     assert_eq!(mem::size_of::<ImageBorder>(), 68, "ImageBorder size changed");
     assert_eq!(mem::size_of::<ImageBorderTemplate>(), 72, "ImageBorderTemplate size changed");
     assert_eq!(mem::size_of::<ImageBorderKey>(), 72, "ImageBorderKey size changed");

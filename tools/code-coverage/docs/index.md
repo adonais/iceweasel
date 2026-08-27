@@ -132,13 +132,13 @@ coverage data, open the file
 and add the following line,
 
 ```python
-test['mozharness'].setdefault('extra-options', []).append('--disable-ccov-upload')
+test["mozharness"].setdefault("extra-options", []).append("--disable-ccov-upload")
 ```
 
 right after this line of code:
 
 ```python
-test['mozharness'].setdefault('extra-options', []).append('--code-coverage')
+test["mozharness"].setdefault("extra-options", []).append("--code-coverage")
 ```
 
 Now when you push to try to debug some failing tests, or anything else,

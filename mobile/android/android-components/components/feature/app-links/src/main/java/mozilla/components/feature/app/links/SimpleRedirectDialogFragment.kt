@@ -17,6 +17,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.support.ktx.util.PromptAbuserDetector
+import mozilla.components.support.utils.ext.pixelSizeFor
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 
 /**
@@ -71,7 +72,7 @@ class SimpleRedirectDialogFragment(
                 id = VIEW_ID
                 setText(checkboxText)
                 val verticalPadding =
-                    resources.getDimensionPixelSize(
+                    pixelSizeFor(
                         R.dimen.mozac_feature_applinks_confirm_dialog_checkbox_vertical_padding,
                     )
                 setPadding(0, verticalPadding, 0, verticalPadding)

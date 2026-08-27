@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<head>
+<script>
+let form = document.createElement('form');
+
+let input = null;
+class XInput extends HTMLInputElement {
+  constructor() {
+    super();
+    input = this;
+    form.appendChild(this);
+  }
+}
+customElements.define('x-input', XInput, {extends: 'input'});
+
+let image = null;
+class XImage extends HTMLImageElement {
+  constructor() {
+    super();
+    image = this;
+    form.appendChild(this);
+  }
+}
+customElements.define('x-image', XImage, {extends: 'img'});
+
+onload = () => {
+  input.remove();
+  input = null;
+
+  image.remove();
+  image = null;
+
+  setTimeout(() => {
+    // Force GC and CC.
+    SpecialPowers.forceShrinkingGC();
+    SpecialPowers.forceCC();
+    SpecialPowers.forceShrinkingGC();
+    SpecialPowers.forceCC();
+    form.reset();
+
+    document.documentElement.classList.remove("reftest-wait");
+  }, 0);
+};
+</script>
+</head>
+<body>
+<form>
+<input is="x-input">
+<img is="x-image">
+</form>
+</body>
+</html>

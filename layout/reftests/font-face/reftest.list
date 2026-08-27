@@ -163,9 +163,6 @@ fuzzy(0-192,0-174) == color-1b.html color-1-ref.html
 # COLRv1 (enhanced color font) format
 # Comparing COLRv1 glyph rendering to CSS backgrounds we can expect "fuzz" in lots of gradients
 # and along antialiased diagonals, etc., but the differences are barely perceptible to the eye.
-# These are skipped on Win7 because lack of font-variation support means the COLR table
-# in the test font CAhem.ttf will be dropped.
-defaults pref(gfx.font_rendering.colr_v1.enabled,true)
 fuzzy(0-64,0-3700) == colrv1-01.html#A colrv1-01-ref.html#A
 fuzzy(0-32,0-200) == colrv1-01.html#B colrv1-01-ref.html#B
 fuzzy(0-8,0-10100) == colrv1-01.html#C colrv1-01-ref.html#C
@@ -194,13 +191,6 @@ fuzzy(0-1,0-325) == colrv1-06.html colrv1-06-ref.html
 fuzzy(0-128,0-264) == colrv1-07.html colrv1-07-ref.html
 == colrv1-08.html colrv1-08-ref.html
 == colrv1-09.html colrv1-09-ref.html
-defaults
-
-# Check that the tech(color-COLRv1) function responds to whether COLRv1 support is enabled.
-defaults pref(layout.css.font-tech.enabled,true)
-pref(gfx.font_rendering.colr_v1.enabled,true) == colrv1-02.html colrv1-02a-ref.html
-pref(gfx.font_rendering.colr_v1.enabled,false) == colrv1-02.html colrv1-02b-ref.html
-defaults
 
 == woff2-1.html woff2-1-ref.html
 == woff2-totalsfntsize.html woff2-totalsfntsize-ref.html
@@ -233,12 +223,10 @@ HTTP(..) == font-display-2.html font-display-2-ref.html # font load takes 4500ms
 != meiryo-en-bolditalic.html meiryo-en-bold.html
 
 # test support of variation-font format hints
-defaults pref(layout.css.font-variations.enabled,false)
-== variation-format-hint-1a.html variation-format-hint-1A-ref.html
-== variation-format-hint-1b.html variation-format-hint-1A-ref.html
-== variation-format-hint-1c.html variation-format-hint-1A-ref.html
-== variation-format-hint-1d.html variation-format-hint-1A-ref.html
-defaults pref(layout.css.font-variations.enabled,true)
+!= variation-format-hint-1a.html variation-format-hint-1A-ref.html
+!= variation-format-hint-1b.html variation-format-hint-1A-ref.html
+!= variation-format-hint-1c.html variation-format-hint-1A-ref.html
+!= variation-format-hint-1d.html variation-format-hint-1A-ref.html
 == variation-format-hint-1a.html variation-format-hint-1B-ttf-ref.html
 == variation-format-hint-1b.html variation-format-hint-1B-otf-ref.html
 == variation-format-hint-1c.html variation-format-hint-1B-woff-ref.html

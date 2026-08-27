@@ -48,7 +48,43 @@ If `content.position` is not defined, it defaults to the `ABOVE_WIDGETS` behavio
 
 ### `content.imageSrc` (String)
 
-This is an optional square image that can be displayed at the start of the message surface. If `imageSrc` is not defined, the image element is not rendered.
+This is an optional image displayed at the start of the message surface. If `imageSrc` is not defined, the image element is not rendered. On its own, `imageSrc` renders as a fixed-size inset thumbnail.
+
+#### Image variants
+
+`imageSrc` may be accompanied by optional variants that let the image adapt to color scheme and viewport width. Supplying any of the narrow/responsive variants opts the message into a "flush" image treatment that bleeds to the card edges, with three layout tiers:
+
+- **Below 724px** (vertical layout): a full-width banner, using `imageSrcResponsive` (and `imageSrcDarkResponsive` in dark mode).
+- **724px–1072px** (horizontal layout): a full-height flush column, using `imageSrcNarrow` (and `imageSrcDarkNarrow` in dark mode). The 1072px breakpoint matches the newtab discovery-stream section switch.
+- **At/above 1072px** (horizontal layout): a full-height flush column, using `imageSrc` (and `imageSrcDark` in dark mode).
+
+Any variant that is not provided falls back to `imageSrc`. Dark-mode variants are selected via `prefers-color-scheme`. Each tier's art is chosen to match that tier's column proportions to minimize cropping.
+
+### `content.primaryButton` / `content.secondaryButton` (Object)
+
+Optional buttons rendered below the body. Each has a `label` (string or `{ string_id }` for a Fluent id) and an `action` (a SpecialMessageAction; see [`specialMessageAction`](#specialmessageactionaction)). The primary button additionally accepts an optional `iconSrc` (String) — a chrome:// URL to an icon shown before the label.
+
+### `content.primaryButton` / `content.secondaryButton` (Object)
+
+The optional call-to-action buttons rendered at the bottom of the message. Each button object supports:
+
+- `label` (string, or `{ string_id }` for a localized string): the button text.
+- `action` (object): the `SpecialMessageAction` to run on click (see [`specialMessageAction`](#specialmessageactionaction)). May also carry `dismiss: true` to dismiss the message after acting.
+- `type` (string, optional): overrides the underlying `moz-button` visual style. It defaults to `"primary"` for the primary button and `"default"` for the secondary button. Set both to `"default"` when neither button should be visually emphasized (for example, a step-style message that asks the user to complete two equally-weighted actions).
+
+### `content.states` (Array)
+
+An optional, ordered list of conditional content overlays that let a single message reformulate itself as the user's targeting environment changes. This is useful for messages whose UI should track live device state - for example, a message that guides the user to set Firefox as their default browser and pin it to the taskbar, and then shows a "you're all set" confirmation once both are true.
+
+Each entry supports:
+
+- `targeting` (string): a [JEXL targeting expression](./targeting-attributes.md) evaluated against the live ASRouter targeting environment - the same environment used for message targeting. When you need the *current* value rather than one cached for hours, prefer the "uncached" attributes (e.g. `isDefaultBrowserUncached`, `doesAppNeedPinUncached`). An expression that fails to evaluate is treated as non-matching.
+- `content` (object): a partial content object that is shallow-merged over the base `content` when this state matches. Only the keys you set are overridden; everything else falls back to the base `content`.
+- `final` (boolean, optional): when `true`, reaching this state stops all further re-evaluation - both the poll and the visibility re-check are torn down. Use it for terminal states (e.g. a "completed" state) so a finished message doesn't keep polling (and doesn't bounce back out of the final state).
+
+States are evaluated in declaration order, and the first entry whose `targeting` currently matches wins - so list them most-to least-specific. If no state matches, the base `content` is shown.
+
+Evaluation happens once the message first scrolls into view, again whenever the tab becomes visible, and on a recurring poll while the message is visible. The poll is deliberate: some targeted changes have no event to hang off of - a taskbar pin that doesn't move window focus, or the default browser changing out from under us - and there is no OS signal that fires exactly when they happen.
 
 ### Handler Functions
 

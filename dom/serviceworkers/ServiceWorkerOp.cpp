@@ -1724,7 +1724,7 @@ void FetchEventOp::RejectedCallback(JSContext* aCx,
   GetRequestURL(requestURL);
 
   AsyncLog(sourceSpec, line, column, "InterceptionRejectedResponseWithURL"_ns,
-           {std::move(requestURL), valueString});
+           {std::move(requestURL), std::move(valueString)});
 
   // https://w3c.github.io/ServiceWorker/#on-fetch-request-algorithm Step 25.1:
   // If eventHandled is not null, then reject eventHandled with a "NetworkError"

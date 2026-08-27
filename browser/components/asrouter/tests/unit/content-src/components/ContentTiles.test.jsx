@@ -5,6 +5,7 @@ import { ActionChecklist } from "content-src/components/ActionChecklist";
 import { MobileDownloads } from "content-src/components/MobileDownloads";
 import { EmbeddedBackupRestore } from "content-src/components/EmbeddedBackupRestore";
 import { EmbeddedMigrationWizard } from "content-src/components/EmbeddedMigrationWizard";
+import { EmbeddedThemePicker } from "content-src/components/EmbeddedThemePicker";
 import { TextBoxTile } from "content-src/components/TextBoxTile";
 import { ContentToggle } from "content-src/components/ContentToggle";
 import { MultiStageUtils } from "content-src/lib/multistage-utils.mjs";
@@ -299,6 +300,32 @@ describe("ContentTiles component", () => {
     );
 
     backupWrapper.unmount();
+  });
+
+  it("should render EmbeddedThemePicker for 'theme-picker' tile type", () => {
+    const TEST_CONTENT_WITH_THEME_PICKER = {
+      tiles: [{ type: "theme-picker" }],
+    };
+
+    const themePickerWrapper = mount(
+      <ContentTiles
+        content={TEST_CONTENT_WITH_THEME_PICKER}
+        handleAction={handleAction}
+        activeMultiSelect={null}
+        setActiveMultiSelect={setActiveMultiSelect}
+      />
+    );
+
+    const embeddedThemePicker = themePickerWrapper.find(EmbeddedThemePicker);
+    assert.ok(
+      embeddedThemePicker.exists(),
+      "EmbeddedThemePicker component should be rendered"
+    );
+
+    const themePickerEl = themePickerWrapper.find("theme-picker");
+    assert.ok(themePickerEl.exists(), "theme-picker element rendered");
+
+    themePickerWrapper.unmount();
   });
 
   it("should handle a single tile object", () => {

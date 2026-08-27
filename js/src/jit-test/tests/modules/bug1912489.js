@@ -8,7 +8,7 @@ function f() {
   const mod = registerModule("module1", parseModule(import_str));
   registerModule("module2", parseModule(await_str));
   registerModule("module3", parseModule(import_str + await_str));
-  moduleLink(mod);
+  moduleLoadAndLink(mod);
   moduleEvaluate(mod);
   function recurse(a, b) {
     try {

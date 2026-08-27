@@ -532,8 +532,11 @@ nsresult BlobURLProtocolHandler::AddDataEntry(mozilla::dom::BlobImpl* aBlobImpl,
 
   Init();
 
-  nsresult rv = GenerateURIString(aPrincipal, aUri);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (XRE_IsContentProcess() && aPrincipal->IsSystemPrincipal()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  MOZ_TRY(GenerateURIString(aPrincipal, aUri));
 
   AddDataEntryInternal(aUri, aBlobImpl, aPrincipal, aPartitionKey);
 

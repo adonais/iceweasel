@@ -17,6 +17,8 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   IntentClassifier:
     "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
+  MemoriesManager:
+    "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
   MENTION_TYPE:
     "moz-src:///browser/components/urlbar/SmartbarMentionsPanelSearch.sys.mjs",
   openAIEngine: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
@@ -38,6 +40,16 @@ const { _setRemoteClientForTesting, _clearRemoteClientForTesting } =
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
   );
 
+// Aliased to avoid colliding with ChatConversation.sys.mjs's own _setLoadPromptForTesting above.
+const {
+  _setLoadPromptForTesting: _setConversationSuggestionsLoadPromptForTesting,
+  _setBuildConversationForTesting,
+  _setGetConversationsByIdForTesting,
+  _clearResumeActivityCacheForTesting,
+} = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs"
+);
+
 /**
  * @import { SmartbarAction } from "chrome://browser/content/aiwindow/components/input-cta/input-cta.mjs"
  */
@@ -54,8 +66,9 @@ let gIntentEngineStub;
 // Minimal RS records returned by the global getRemoteClient stub.
 // Version numbers must match FEATURE_MAJOR_VERSIONS in models/Utils.sys.mjs.
 const MOCK_RS_RECORDS = [
-  ["chat", 8],
+  ["chat", 11],
   ["title-generation", 1],
+  ["tab-group-naming", 1],
   ["conversation-starters-sidebar-system", 1],
   ["conversation-suggestions-sidebar-starter", 3],
   ["conversation-suggestions-followup", 1],
@@ -63,8 +76,6 @@ const MOCK_RS_RECORDS = [
   ["conversation-suggestions-memories", 1],
   ["memories-initial-generation-system", 2],
   ["memories-initial-generation-user", 2],
-  ["memories-deduplication-system", 1],
-  ["memories-deduplication-user", 1],
   ["memories-sensitivity-filter-system", 1],
   ["memories-sensitivity-filter-user", 1],
   ["memories-quality-filter-system", 1],
@@ -88,9 +99,33 @@ const MOCK_RS_RECORDS = [
     version: `v${major}.0`,
     is_default: true,
   }))
-  // Per-choice records for chat so resolveChatModelChoice returns correct model names.
+  // The memories relevant context prompt renders the retrieved memory list, so
+  // it needs the placeholder the real prompt has.
+  .map(record =>
+    record.feature === "memories-relevant-context"
+      ? {
+          ...record,
+          prompts:
+            "# Existing Memories\n\n## Existing Memories\n{relevantMemoriesList}",
+        }
+      : record
+  )
+  // Chat resolves model+params from v2 kind:"params" records (one generic
+  // fallback + one per model choice).
   .concat([
     {
+      kind: "params",
+      feature: "chat",
+      model: "generic",
+      model_choice_id: "0",
+      service_type: "ai",
+      purpose: "chat",
+      parameters: {},
+      is_default: true,
+      version: "v10.0",
+    },
+    {
+      kind: "params",
       feature: "chat",
       model: "gemini-3.1-flash-lite",
       model_choice_id: "1",
@@ -105,9 +140,10 @@ const MOCK_RS_RECORDS = [
       purpose: "chat",
       parameters: {},
       prompts: "Test system prompt.",
-      version: "v8.0",
+      version: "v10.0",
     },
     {
+      kind: "params",
       feature: "chat",
       model: "qwen3-235b-a22b-instruct-2507-maas",
       model_choice_id: "2",
@@ -122,9 +158,10 @@ const MOCK_RS_RECORDS = [
       purpose: "chat",
       parameters: {},
       prompts: "Test system prompt.",
-      version: "v8.0",
+      version: "v10.0",
     },
     {
+      kind: "params",
       feature: "chat",
       model: "gpt-oss-120b",
       model_choice_id: "3",
@@ -139,20 +176,41 @@ const MOCK_RS_RECORDS = [
       purpose: "chat",
       parameters: {},
       prompts: "Test system prompt.",
-      version: "v8.0",
+      version: "v10.0",
     },
     // TODO 2053495
-    // v9 records for mistral release (browser.smartwindow.mistralRelease pref)
+    // v11 records for mistral release (browser.smartwindow.mistralRelease pref)
     {
+      kind: "params",
       feature: "chat",
       model: "generic",
+      model_choice_id: "0",
       service_type: "ai",
+      purpose: "chat",
       parameters: {},
       prompts: "Test system prompt.",
-      version: "v9.0",
+      version: "v11.0",
       is_default: true,
     },
     {
+      kind: "params",
+      feature: "chat",
+      model: "mistral-small-2603",
+      model_choice_id: "3",
+      model_details: {
+        model: "mistral-small-2603",
+        ownerName: "Mistral",
+        labelId: "personal",
+        shortName: "Mistral Small 4",
+        brandName: "Mistral",
+      },
+      service_type: "ai",
+      purpose: "chat",
+      parameters: {},
+      version: "v11.0",
+    },
+    {
+      kind: "params",
       feature: "chat",
       model: "gemini-3.1-flash-lite",
       model_choice_id: "1",
@@ -167,9 +225,10 @@ const MOCK_RS_RECORDS = [
       purpose: "chat",
       parameters: {},
       prompts: "Test system prompt.",
-      version: "v9.0",
+      version: "v11.0",
     },
     {
+      kind: "params",
       feature: "chat",
       model: "qwen3-235b-a22b-instruct-2507-maas",
       model_choice_id: "2",
@@ -183,25 +242,39 @@ const MOCK_RS_RECORDS = [
       service_type: "ai",
       purpose: "chat",
       parameters: {},
-      prompts: "Test system prompt.",
-      version: "v9.0",
+      version: "v11.0",
+    },
+    // tab-group-naming resolves through the v2 modular path: a params manifest
+    // plus one module record per prompt module (system-instructions, user-data).
+    {
+      kind: "params",
+      feature: "tab-group-naming",
+      model: "test-model",
+      service_type: "ai",
+      purpose: "auto-tab-grouping",
+      parameters: {},
+      modules: [
+        { name: "system-instructions", version: "v1.0" },
+        { name: "user-data", version: "v1.0" },
+      ],
+      version: "v1.0",
+      is_default: true,
     },
     {
-      feature: "chat",
-      model: "mistral-small-2603",
-      model_choice_id: "3",
-      model_details: {
-        model: "mistral-small-2603",
-        ownerName: "Mistral",
-        labelId: "personal",
-        shortName: "Mistral Small 4",
-        brandName: "Mistral",
-      },
-      service_type: "ai",
-      purpose: "chat",
-      parameters: {},
-      prompts: "Test system prompt.",
-      version: "v9.0",
+      kind: "module",
+      feature: "tab-group-naming",
+      module: "system-instructions",
+      model: "test-model",
+      prompts: "Name this group of tabs.",
+      version: "v1.0",
+    },
+    {
+      kind: "module",
+      feature: "tab-group-naming",
+      module: "user-data",
+      model: "test-model",
+      prompts: "Tabs:\n{titles}",
+      version: "v1.0",
     },
   ]);
 
@@ -383,6 +456,133 @@ async function getConversationId(browser) {
     "Wait for ai-window element"
   );
   return aiWindow.conversationId.toString();
+}
+
+async function stubResumeActivityGeneration(sb) {
+  const urls = [1, 2, 3, 4, 5].map(id => ({
+    url: `https://example.com/${id}`,
+    title: `Example ${id}`,
+  }));
+  for (const [index, page] of urls.entries()) {
+    await PlacesUtils.history.insert({
+      ...page,
+      visits: [
+        {
+          date: new Date(Date.now() - (urls.length - index) * 60_000),
+          transition: PlacesUtils.history.TRANSITIONS.LINK,
+        },
+      ],
+    });
+  }
+
+  const memories = [
+    {
+      id: "memory-1",
+      memory_summary: "Research project",
+      source_ids: {
+        history_source_ids: urls
+          .slice(0, 4)
+          .map(({ url }) => PlacesUtils.history.hashURL(url)),
+      },
+    },
+    {
+      id: "memory-2",
+      memory_summary: "Trip planning",
+      source_ids: {
+        history_source_ids: [PlacesUtils.history.hashURL(urls[4].url)],
+      },
+    },
+  ];
+
+  const getMemoriesStub = sb
+    .stub(MemoriesManager, "getMemoriesByAttribute")
+    .resolves(memories);
+  // Keep cached results from being filtered as deleted.
+  sb.stub(MemoriesManager, "getAllMemories").resolves(memories);
+  // Prevent cached results from leaking between tests.
+  _clearResumeActivityCacheForTesting();
+  _setGetConversationsByIdForTesting(async () => []);
+  _setConversationSuggestionsLoadPromptForTesting(async () => ({
+    prompt: "Test prompt",
+  }));
+  _setBuildConversationForTesting(async () => ({
+    setSystemMessage() {},
+    addUserMessage() {},
+    securityProperties: {
+      setPrivateData() {},
+      setUntrustedInput() {},
+      commit() {},
+    },
+    run: sb.stub().resolves({
+      finalOutput: JSON.stringify([
+        {
+          id: 0,
+          headline: "Pick up your research",
+          status: "Continue reading",
+        },
+      ]),
+    }),
+  }));
+  sb.stub(openAIEngine, "getFxAccountToken").resolves(null);
+
+  const originalAvailableLocales = Services.locale.availableLocales;
+  const originalRequestedLocales = Services.locale.requestedLocales;
+  Services.locale.availableLocales = ["en-US"];
+  Services.locale.requestedLocales = ["en-US"];
+
+  return {
+    getMemoriesStub,
+    memories,
+    async cleanup() {
+      _setGetConversationsByIdForTesting(null);
+      _setConversationSuggestionsLoadPromptForTesting(null);
+      _setBuildConversationForTesting(null);
+      _clearResumeActivityCacheForTesting();
+      for (const { url } of urls) {
+        await PlacesUtils.history.remove(url);
+      }
+      Services.locale.availableLocales = originalAvailableLocales;
+      Services.locale.requestedLocales = originalRequestedLocales;
+    },
+  };
+}
+
+/**
+ * Shared setup/teardown for tests that click a resume pill: enables the
+ * memories prefs, stubs resume-activity generation so a real pill renders,
+ * opens the AI Window, and hands the caller its buttons to click. `run`
+ * supplies whatever additional stubs it needs (engine build, fetchWithHistory,
+ * etc.) via its own sandbox before calling this.
+ *
+ * @param {object} sb - Sinon sandbox, owned and restored by the caller
+ * @param {Function} run - Async callback invoked with
+ *   {win, browser, aiWindow, buttons}
+ */
+async function testResumeActivityClick(sb, run) {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.memories.generateFromConversation", true],
+      ["browser.smartwindow.memories.generateFromHistory", true],
+    ],
+  });
+  const resumeActivityStubs = await stubResumeActivityGeneration(sb);
+  let win;
+  try {
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+    const aiWindow = browser.contentDocument.querySelector("ai-window");
+    const buttons = await TestUtils.waitForCondition(async () => {
+      const found = await getPromptButtons(browser);
+      return found.length ? found : false;
+    }, "Wait for prompt buttons to replace loading skeletons");
+    await run({ win, browser, aiWindow, buttons });
+  } finally {
+    if (win) {
+      await BrowserTestUtils.closeWindow(win);
+    }
+    await resumeActivityStubs.cleanup();
+    await SpecialPowers.popPrefEnv();
+  }
 }
 
 /**
@@ -759,7 +959,8 @@ async function waitForSmartbarAction(browser, expectedAction) {
 }
 
 /**
- * Stub the smartbar method _loadURL to prevent navigation.
+ * Stub the smartbar's load path to prevent navigation. The load funnels through
+ * the private #loadURL into controller.loadURL, so the controller is the seam.
  *
  * @param {MozBrowser} browser - The browser element
  * @param {object} [options] - Options for the stub
@@ -777,12 +978,13 @@ async function stubLoadURL(browser, { captureURL = false } = {}) {
     if (capture) {
       content._stubLoadURLCalled = false;
       content._stubLoadedURL = null;
-      smartbar._loadURL = url => {
+      smartbar.controller.loadURL = ({ url }) => {
         content._stubLoadURLCalled = true;
         content._stubLoadedURL = url;
+        return {};
       };
     } else {
-      smartbar._loadURL = () => {};
+      smartbar.controller.loadURL = () => ({});
     }
   });
 }
@@ -798,6 +1000,45 @@ async function getStubLoadURLResult(browser) {
     return {
       called: content._stubLoadURLCalled,
       url: content._stubLoadedURL,
+    };
+  });
+}
+
+/**
+ * Stub the controller's openSERP method to capture the search terms instead of
+ * running a real search.
+ *
+ * @param {MozBrowser} browser - The browser element
+ */
+async function stubOpenSERP(browser) {
+  await SpecialPowers.spawn(browser, [], async () => {
+    const aiWindow = content.document.querySelector("ai-window");
+    const smartbar = await ContentTaskUtils.waitForCondition(() =>
+      ContentTaskUtils.querySelectorDeep(aiWindow, "#ai-window-smartbar")
+    );
+    content._stubOpenSERPCalled = false;
+    content._stubOpenSERPTerms = null;
+    content._stubOpenSERPEngine = null;
+    smartbar.controller.openSERP = (engineId, searchTerms) => {
+      content._stubOpenSERPCalled = true;
+      content._stubOpenSERPTerms = searchTerms;
+      content._stubOpenSERPEngine = engineId;
+    };
+  });
+}
+
+/**
+ * Get the result of a stubbed openSERP call.
+ *
+ * @param {MozBrowser} browser - The browser element
+ * @returns {Promise<{called: boolean, terms: ?string, engineId: ?string}>}
+ */
+async function getStubOpenSERPResult(browser) {
+  return SpecialPowers.spawn(browser, [], async () => {
+    return {
+      called: content._stubOpenSERPCalled,
+      terms: content._stubOpenSERPTerms,
+      engineId: content._stubOpenSERPEngine,
     };
   });
 }
@@ -1715,4 +1956,43 @@ async function withServer(serverOptions, task) {
     await SpecialPowers.popPrefEnv();
     await stopMockOpenAI(server);
   }
+}
+
+/**
+ * Waits for ai-window, then its shadowRoot, then the loaded #aichat-browser.
+ *
+ * @param {object} browser - The chrome browser element hosting ai-window
+ * @returns {Promise<object>} The aichat browser element
+ */
+async function getAichatBrowser(browser) {
+  const aiWindowEl = await TestUtils.waitForCondition(
+    () => browser.contentDocument?.querySelector("ai-window"),
+    "Wait for ai-window element to exist"
+  );
+
+  await TestUtils.waitForCondition(
+    () => aiWindowEl.shadowRoot,
+    "Wait for ai-window shadowRoot to be ready"
+  );
+
+  const aichatBrowser = await TestUtils.waitForCondition(
+    () => aiWindowEl.shadowRoot.querySelector("#aichat-browser"),
+    "Wait for aichat-browser element"
+  );
+
+  if (aichatBrowser.currentURI?.spec !== "about:aichatcontent") {
+    await BrowserTestUtils.browserLoaded(
+      aichatBrowser,
+      false,
+      "about:aichatcontent"
+    );
+  }
+
+  Assert.equal(
+    aichatBrowser.currentURI.spec,
+    "about:aichatcontent",
+    "aichat-browser should be loaded with about:aichatcontent"
+  );
+
+  return aichatBrowser;
 }

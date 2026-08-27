@@ -26,21 +26,23 @@ class CollatorObject : public NativeObject {
   static const JSClass class_;
   static const JSClass& protoClass_;
 
-  static constexpr uint32_t LOCALE_SLOT = 0;
-  static constexpr uint32_t COLLATION_SLOT = 1;
-  static constexpr uint32_t OPTIONS_SLOT = 2;
-  static constexpr uint32_t INTL_COLLATOR_SLOT = 3;
-  static constexpr uint32_t BOUND_COMPARE_SLOT = 4;
+  JS_DEFINE_TYPED_SLOT(0, LOCALE_SLOT, Object, String, Undefined);
+  JS_DEFINE_TYPED_SLOT(1, COLLATION_SLOT, String, Undefined);
+  JS_DEFINE_TYPED_SLOT(2, OPTIONS_SLOT, Int32, Undefined);
+  JS_DEFINE_TYPED_SLOT(3, INTL_COLLATOR_SLOT, Private, Undefined);
+  JS_DEFINE_TYPED_SLOT(4, BOUND_COMPARE_SLOT, Object, Undefined);
   static constexpr uint32_t SLOT_COUNT = 5;
 
   // Box<CollatorBorrowed> causes a request for an allocation of 72,
   // which is rounded up to 80 inside the allocator.
   static constexpr size_t EstimatedMemoryUse = 80;
 
-  bool isLocaleResolved() const { return getFixedSlot(LOCALE_SLOT).isString(); }
+  bool isLocaleResolved() const {
+    return getFixedSlotTyped(LOCALE_SLOT).isString();
+  }
 
   JSObject* getRequestedLocales() const {
-    const auto& slot = getFixedSlot(LOCALE_SLOT);
+    const auto& slot = getFixedSlotTyped(LOCALE_SLOT);
     if (slot.isUndefined()) {
       return nullptr;
     }
@@ -48,11 +50,11 @@ class CollatorObject : public NativeObject {
   }
 
   void setRequestedLocales(JSObject* requestedLocales) {
-    setFixedSlot(LOCALE_SLOT, JS::ObjectValue(*requestedLocales));
+    setFixedSlotTyped(LOCALE_SLOT, JS::ObjectValue(*requestedLocales));
   }
 
   JSLinearString* getLocale() const {
-    const auto& slot = getFixedSlot(LOCALE_SLOT);
+    const auto& slot = getFixedSlotTyped(LOCALE_SLOT);
     if (slot.isUndefined()) {
       return nullptr;
     }
@@ -60,11 +62,11 @@ class CollatorObject : public NativeObject {
   }
 
   void setLocale(JSLinearString* locale) {
-    setFixedSlot(LOCALE_SLOT, JS::StringValue(locale));
+    setFixedSlotTyped(LOCALE_SLOT, JS::StringValue(locale));
   }
 
   JSLinearString* getCollation() const {
-    const auto& slot = getFixedSlot(COLLATION_SLOT);
+    const auto& slot = getFixedSlotTyped(COLLATION_SLOT);
     if (slot.isUndefined()) {
       return nullptr;
     }
@@ -72,7 +74,7 @@ class CollatorObject : public NativeObject {
   }
 
   void setCollation(JSLinearString* collation) {
-    setFixedSlot(COLLATION_SLOT, JS::StringValue(collation));
+    setFixedSlotTyped(COLLATION_SLOT, JS::StringValue(collation));
   }
 
   CollatorOptions getOptions() const;
@@ -80,7 +82,7 @@ class CollatorObject : public NativeObject {
   void setOptions(const CollatorOptions& options);
 
   mozilla::intl::Collator* getCollator() const {
-    const auto& slot = getFixedSlot(INTL_COLLATOR_SLOT);
+    const auto& slot = getFixedSlotTyped(INTL_COLLATOR_SLOT);
     if (slot.isUndefined()) {
       return nullptr;
     }
@@ -88,11 +90,11 @@ class CollatorObject : public NativeObject {
   }
 
   void setCollator(mozilla::intl::Collator* collator) {
-    setFixedSlot(INTL_COLLATOR_SLOT, JS::PrivateValue(collator));
+    setFixedSlotTyped(INTL_COLLATOR_SLOT, JS::PrivateValue(collator));
   }
 
   JSObject* getBoundCompare() const {
-    const auto& slot = getFixedSlot(BOUND_COMPARE_SLOT);
+    const auto& slot = getFixedSlotTyped(BOUND_COMPARE_SLOT);
     if (slot.isUndefined()) {
       return nullptr;
     }
@@ -100,7 +102,7 @@ class CollatorObject : public NativeObject {
   }
 
   void setBoundCompare(JSObject* boundCompare) {
-    setFixedSlot(BOUND_COMPARE_SLOT, JS::ObjectValue(*boundCompare));
+    setFixedSlotTyped(BOUND_COMPARE_SLOT, JS::ObjectValue(*boundCompare));
   }
 
  private:

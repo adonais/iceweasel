@@ -349,6 +349,20 @@ bool FFmpegVideoDecoder<LIBAV_VER>::CreateVAAPIDeviceContext() {
 }
 
 #  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+static uint32_t VulkanTransferQueueFamily(const AVVulkanDeviceContext* aVkCtx) {
+#    if LIBAVCODEC_VERSION_MAJOR >= 63
+  // FFmpeg 63 replaced queue_family_tx_index with the qf array.
+  for (int i = 0; i < aVkCtx->nb_qf; i++) {
+    if (aVkCtx->qf[i].flags & VK_QUEUE_TRANSFER_BIT) {
+      return (uint32_t)std::max(aVkCtx->qf[i].idx, 0);
+    }
+  }
+  return 0;
+#    else
+  return (uint32_t)std::max<int>(aVkCtx->queue_family_tx_index, 0);
+#    endif
+}
+
 bool FFmpegVideoDecoder<LIBAV_VER>::CreateVulkanDeviceContext(
     const StaticMutexAutoLock& aProofOfLock) {
   nsAutoCString rendererNode(gfx::gfxVars::DrmRenderDevice());
@@ -391,7 +405,25 @@ bool FFmpegVideoDecoder<LIBAV_VER>::CreateVulkanDeviceContext(
   AVHWDeviceContext* devCtx = (AVHWDeviceContext*)mVulkanDeviceContext->data;
   AVVulkanDeviceContext* vkCtx = (AVVulkanDeviceContext*)devCtx->hwctx;
   mVulkanDecoder.LoadInstanceFunctions(vkCtx->get_proc_addr, vkCtx->inst,
-                                       vkCtx->phys_dev);
+                                       vkCtx->phys_dev,
+                                       mVulkanDeviceHolder->Generation());
+
+  // Some drivers (e.g. experimental RADV video decode) fail to load Vulkan
+  // device functions. Check that up front, so a failure is a normal Init()
+  // failure the PDM can fall back from instead of a fatal error later.
+  // Pass queue_flags here (same as CreateImageVulkan): InitCtx only fetches
+  // queues when the device changes, so a first call with flags=0 would stick.
+  VkDeviceQueueCreateFlags queueCreateFlags = 0;
+#    if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(60, 32, 100)
+  queueCreateFlags = vkCtx->queue_flags;
+#    endif
+  if (!mVulkanDecoder.InitCtx(
+          vkCtx->act_dev, vkCtx->phys_dev, vkCtx->get_proc_addr, vkCtx->inst,
+          mVulkanDeviceHolder->Generation(), VulkanTransferQueueFamily(vkCtx),
+          queueCreateFlags)) {
+    FFMPEG_LOG("Failed to init Vulkan Context structure");
+    return false;
+  }
 
   return true;
 }
@@ -434,7 +466,18 @@ int FFmpegVideoDecoder<LIBAV_VER>::ChooseVulkanPixelFormatFromContext(
           (mVulkanDecoder.mDrmModifiers[0] == DRM_FORMAT_MOD_LINEAR) &&
           (mVulkanDecoder.mDrmModifiers.size() == 1);
     }
-    if (VulkanDirectDecodeExportEnabled() && !drmModsAreLinearOrEmpty) {
+    // Forced BL means ImageFormatProperties2 rejected YCbCr tiled modifiers, so
+    // the decode image cannot reliably use DRM-modifier tiling. Keep BL only
+    // for the copy-path export buffers; skip direct export (avoids GL import
+    // hangs and a useless LINEAR decode path that would double-copy).
+    if (VulkanDirectDecodeExportEnabled() &&
+        mVulkanDecoder.mForcedNvidiaBlockLinear) {
+      FFMPEGV_LOG(
+          "[VULKAN] Direct export disabled: forced NVIDIA BL after "
+          "ImageFormatProperties2 left only LINEAR");
+    }
+    if (VulkanDirectDecodeExportEnabled() &&
+        !mVulkanDecoder.mForcedNvidiaBlockLinear && !drmModsAreLinearOrEmpty) {
       AVVulkanFramesContext* hwfc = (AVVulkanFramesContext*)frames_ctx->hwctx;
       void* const originalCreatePnext = hwfc->create_pnext;
       int formatCount = 0;
@@ -614,6 +657,27 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitVulkanDecoder() {
     FFMPEG_LOG("Vulkan FFmpeg decoder disabled by pref");
     return NS_ERROR_NOT_AVAILABLE;
   }
+
+#    if LIBAVCODEC_VERSION_MAJOR == 60
+  // libavcodec 60 only supports the experimental VK_MESA_video_decode_av1,
+  // but RADV replaced it with stable VK_KHR_video_decode_av1 in Mesa 24.1.
+  // Skip Vulkan AV1 decoding so VA-API can take over.
+  if (mCodecID == AV_CODEC_ID_AV1) {
+    FFMPEG_LOG(
+        "Vulkan AV1 decode KHR extension is unavailable with libavcodec 60; "
+        "falling back");
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+#    endif
+
+#    if LIBAVCODEC_VERSION_MAJOR < 62
+  if (mCodecID == AV_CODEC_ID_VP9) {
+    FFMPEG_LOG(
+        "Vulkan VP9 decoding requires libavcodec 62 or newer; trying another "
+        "hardware decoder");
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+#    endif
 
   FFMPEG_LOG("Initialising Vulkan FFmpeg decoder");
 
@@ -1429,73 +1493,6 @@ static bool IsKeyFrame(const AVFrame* aFrame) {
 #endif
 }
 
-#if LIBAVCODEC_VERSION_MAJOR >= 58
-void FFmpegVideoDecoder<LIBAV_VER>::DecodeStats::DecodeStart() {
-  mDecodeStart = TimeStamp::Now();
-}
-
-bool FFmpegVideoDecoder<LIBAV_VER>::DecodeStats::IsDecodingSlow() const {
-  return mDecodedFramesLate > mMaxLateDecodedFrames;
-}
-
-void FFmpegVideoDecoder<LIBAV_VER>::DecodeStats::UpdateDecodeTimes(
-    int64_t aDuration) {
-  TimeStamp now = TimeStamp::Now();
-  double decodeTime = (now - mDecodeStart).ToMilliseconds();
-  mDecodeStart = now;
-
-  const double frameDuration = AssertedCast<double>(aDuration) / 1000.0;
-  if (frameDuration <= 0.0) {
-    FFMPEGV_LOG("Incorrect frame duration, skipping decode stats.");
-    return;
-  }
-
-  mDecodedFrames++;
-  mAverageFrameDuration =
-      (mAverageFrameDuration * AssertedCast<double>(mDecodedFrames - 1) +
-       frameDuration) /
-      AssertedCast<double>(mDecodedFrames);
-  mAverageFrameDecodeTime =
-      (mAverageFrameDecodeTime * AssertedCast<double>(mDecodedFrames - 1) +
-       decodeTime) /
-      AssertedCast<double>(mDecodedFrames);
-
-  FFMPEGV_LOG(
-      "Frame decode takes {:.2f} ms average decode time {:.2f} ms frame "
-      "duration "
-      "{:.2f} average frame duration {:.2f} decoded {} frames\n",
-      decodeTime, mAverageFrameDecodeTime, frameDuration, mAverageFrameDuration,
-      mDecodedFrames);
-
-  // Frame duration and frame decode times may vary and may not
-  // neccessarily lead to video playback failure.
-  //
-  // Checks frame decode time and recent frame duration and also
-  // frame decode time and average frame duration (video fps).
-  //
-  // Log a problem only if both indicators fails.
-  if (decodeTime > frameDuration && decodeTime > mAverageFrameDuration) {
-    PROFILER_MARKER_TEXT("FFmpegVideoDecoder::DoDecode", MEDIA_PLAYBACK, {},
-                         "frame decode takes too long");
-    mDecodedFramesLate++;
-    mLastDelayedFrameNum = mDecodedFrames;
-    FFMPEGV_LOG("  slow decode: failed to decode in time (decoded late {})",
-                mDecodedFramesLate);
-  } else if (mLastDelayedFrameNum) {
-    // Reset mDecodedFramesLate in case of correct decode during
-    // mDelayedFrameReset period.
-    double correctPlaybackTime =
-        AssertedCast<double>(mDecodedFrames - mLastDelayedFrameNum) *
-        mAverageFrameDuration;
-    if (correctPlaybackTime > mDelayedFrameReset) {
-      FFMPEGV_LOG("  mLastFramePts reset due to seamless decode period");
-      mDecodedFramesLate = 0;
-      mLastDelayedFrameNum = 0;
-    }
-  }
-}
-#endif
-
 MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
     MediaRawData* aSample, uint8_t* aData, int aSize, bool* aGotFrame,
     MediaDataDecoder::DecodedData& aResults) {
@@ -2047,6 +2044,9 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
         if (mInfo.mTransferFunction) {
           surface->SetTransferFunction(mInfo.mTransferFunction.value());
         }
+        if (mInfo.mHDRMetadata) {
+          surface->SetHDRMetadata(mInfo.mHDRMetadata.value());
+        }
         surface->SetWPChromaLocation(
             AVChromaLocationToWPChromaLocation(mFrame->chroma_location));
         FFMPEG_LOGV(
@@ -2150,6 +2150,11 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageVAAPI(
   if (mInfo.mTransferFunction) {
     surface->SetTransferFunction(mInfo.mTransferFunction.value());
   }
+  surface->SetWPChromaLocation(
+      AVChromaLocationToWPChromaLocation(mFrame->chroma_location));
+  if (mInfo.mHDRMetadata) {
+    surface->SetHDRMetadata(mInfo.mHDRMetadata.value());
+  }
 
   FFMPEG_LOG(
       "VA-API frame pts={} dts={} duration={} color space {}/{} transfer {}",
@@ -2221,21 +2226,21 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageVulkan(
 
   auto* devCtx = (AVHWDeviceContext*)mVulkanDeviceContext->data;
   auto* vkDevCtx = (AVVulkanDeviceContext*)devCtx->hwctx;
-  uint32_t txQueueFamily = 0;
-#    if LIBAVCODEC_VERSION_MAJOR >= 63
-  // FFmpeg 63 replaced queue_family_tx_index with the qf array.
-  for (int i = 0; i < vkDevCtx->nb_qf; i++) {
-    if (vkDevCtx->qf[i].flags & VK_QUEUE_TRANSFER_BIT) {
-      txQueueFamily = (uint32_t)std::max(vkDevCtx->qf[i].idx, 0);
-      break;
-    }
-  }
-#    else
-  txQueueFamily = (uint32_t)std::max<int>(vkDevCtx->queue_family_tx_index, 0);
+  // Match FFmpeg's vkCreateDevice queue flags on every driver. Non-zero flags
+  // (e.g. INTERNALLY_SYNCHRONIZED when that extension is enabled) require
+  // GetDeviceQueue2 with the same value; flags=0 is equivalent to the old
+  // GetDeviceQueue path. queue_flags is lavu 60.32.100+ (9fe5758da5); older
+  // public lavu exposes no queue_flags field, so Firefox must use 0 there.
+  // FFmpeg applies this one global value to every created queue family. If
+  // vkGetDeviceQueue2 fails to load, InitCtx fails via IsLoaded().
+  VkDeviceQueueCreateFlags queueCreateFlags = 0;
+#    if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(60, 32, 100)
+  queueCreateFlags = vkDevCtx->queue_flags;
 #    endif
-  if (!mVulkanDecoder.InitCtx(vkDevCtx->act_dev, vkDevCtx->phys_dev,
-                              vkDevCtx->get_proc_addr, vkDevCtx->inst,
-                              txQueueFamily)) {
+  if (!mVulkanDecoder.InitCtx(
+          vkDevCtx->act_dev, vkDevCtx->phys_dev, vkDevCtx->get_proc_addr,
+          vkDevCtx->inst, mVulkanDeviceHolder->Generation(),
+          VulkanTransferQueueFamily(vkDevCtx), queueCreateFlags)) {
     return MediaResult(
         NS_ERROR_DOM_MEDIA_FATAL_ERR,
         RESULT_DETAIL("Failed to init Vulkan Context structure"));
@@ -2368,6 +2373,11 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageVulkan(
   }
   if (mInfo.mTransferFunction) {
     surface->SetTransferFunction(mInfo.mTransferFunction.value());
+  }
+  surface->SetWPChromaLocation(
+      AVChromaLocationToWPChromaLocation(mFrame->chroma_location));
+  if (mInfo.mHDRMetadata) {
+    surface->SetHDRMetadata(mInfo.mHDRMetadata.value());
   }
 
   RefPtr<VideoData> vp = VideoData::CreateFromImage(

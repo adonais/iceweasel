@@ -12,6 +12,10 @@ support-files = [
   "bug_1894631_module_4.mjs",
   "bug_2009204_module_a.mjs",
   "bug_2009204_module_b.mjs",
+  "bug_2054295_dep.mjs",
+  "bug_2054295_entry.mjs",
+  "bug_2054295_hold_parser.js",
+  "file_bug_2054295.html",
   "classic_script.js",
   "bug_1820594_module1.mjs",
   "bug_1820594_module2-1.mjs",
@@ -41,6 +45,9 @@ support-files = [
   "good/module_4.mjs",
   "good/module_7.mjs",
   "circular_dependency.mjs",
+  "memory_cached_module.mjs",
+  "memory_cached_module.mjs^headers^",
+  "memory_cached_module_mapped.mjs",
 ]
 
 ["test_bug_1820594.html"]
@@ -51,11 +58,15 @@ support-files = [
 
 ["test_bug_1893164.html"]
 
+["test_bug_2054295.html"]
+
 ["test_duplicate_modulepreload_bad_uri.html"]
 
 ["test_dynamic_importMap_load_completes.html"]
 
 ["test_dynamic_importMap_with_external_script.html"]
+
+["test_importMap_after_memory_cached_module.html"]
 
 ["test_importMap_with_external_script.html"]
 

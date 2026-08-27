@@ -244,7 +244,6 @@ ffi::RawNumberFormatter* FluentBuiltInNumberFormatterCreate(
     case ffi::FluentNumberStyleRaw::Currency: {
       options.mStyle = NumberFormatOptions::Style::Currency;
 
-      std::string currency = aOptions->currency.get();
       NumberFormatOptions::CurrencyDisplay display;
       switch (aOptions->currency_display) {
         case ffi::FluentNumberCurrencyDisplayStyleRaw::Symbol:
@@ -261,8 +260,9 @@ ffi::RawNumberFormatter* FluentBuiltInNumberFormatterCreate(
           break;
       }
 
-      options.mCurrency = Some(std::make_tuple(
-          currency, display, NumberFormatOptions::CurrencySign::Standard));
+      options.mCurrency =
+          Some(std::make_tuple(aOptions->currency.View(), display,
+                               NumberFormatOptions::CurrencySign::Standard));
     } break;
     case ffi::FluentNumberStyleRaw::Percent:
       options.mStyle = NumberFormatOptions::Style::Percent;

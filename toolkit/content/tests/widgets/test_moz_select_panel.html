@@ -58,6 +58,47 @@
         await hidden;
       });
 
+      add_task(async function testPanelListMousedownClosesOpenPanel() {
+        let target = await testHelpers.renderTemplate();
+        let select = target.querySelector("moz-select");
+        await select.updateComplete;
+
+        let panelButton = select.shadowRoot.querySelector(".panel-trigger");
+
+        let shown = BrowserTestUtils.waitForEvent(select.panelList, "shown");
+        synthesizeMouseAtCenter(panelButton, {});
+        await shown;
+
+        ok(select.panelList.open, "Panel should be open");
+        is(
+          panelButton.getAttribute("aria-expanded"),
+          "true",
+          "Trigger should be marked expanded while the panel is open"
+        );
+
+        let valueBeforeSecondClick = select.value;
+        let hidden = BrowserTestUtils.waitForEvent(select.panelList, "hidden");
+        synthesizeMouseAtCenter(panelButton, {});
+        await hidden;
+
+        ok(
+          !select.panelList.open,
+          "Panel should close when the trigger is clicked a second time"
+        );
+        is(
+          panelButton.getAttribute("aria-expanded"),
+          "false",
+          "Trigger should be marked collapsed after the panel closes"
+        );
+        // If the open panel covered the trigger, the second click would land on
+        // a panel-item and select an option, which also hides the panel.
+        is(
+          select.value,
+          valueBeforeSecondClick,
+          "Second click should have toggled the panel, not selected an option"
+        );
+      });
+
       add_task(async function testPanelAnchoredToTriggerButton() {
         let target = await testHelpers.renderTemplate();
         let select = target.querySelector("moz-select");

@@ -10,7 +10,7 @@ const { PermissionTestUtils } = ChromeUtils.importESModule(
 
 const baseURL = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   "http://example.com"
 );
 const URL = baseURL + "popup_blocker2.html";
@@ -162,9 +162,9 @@ add_task(async function check_permission_state_change() {
   // Open identity popup and change permission state to allow.
   await openPermissionPopup();
   let menulist = document.getElementById("permission-popup-menulist");
-  menulist.menupopup.openPopup(); // Open the allow/block menu
+  // Open the allow/block menu and click the item.
   let menuitem = menulist.getElementsByTagName("menuitem")[0];
-  menuitem.click();
+  await BrowserTestUtils.selectMenulistItem(menuitem);
   await closePermissionPopup();
 
   state = SitePermissions.getForPrincipal(PRINCIPAL, "popup", gBrowser).state;
@@ -201,9 +201,9 @@ add_task(async function check_permission_state_change() {
   // Open identity popup and change permission state to block.
   await openPermissionPopup();
   menulist = document.getElementById("permission-popup-menulist");
-  menulist.menupopup.openPopup(); // Open the allow/block menu
+  // Open the allow/block menu and click the item.
   menuitem = menulist.getElementsByTagName("menuitem")[1];
-  menuitem.click();
+  await BrowserTestUtils.selectMenulistItem(menuitem);
   await closePermissionPopup();
 
   // Clicking on the "Block" menuitem should remove the permission object(same behavior as UNKNOWN state).

@@ -11,6 +11,7 @@
 #include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSTranslateBinding.h"
 #include "mozilla/dom/CSSUnitValue.h"
+#include "mozilla/dom/DOMMatrix.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 
@@ -56,13 +57,27 @@ JSObject* CSSTranslate::WrapObject(JSContext* aCx,
 
 // https://drafts.css-houdini.org/css-typed-om-1/#dom-csstranslate-csstranslate
 //
-// XXX This is not yet fully implemented!
-//
 // static
 already_AddRefed<CSSTranslate> CSSTranslate::Constructor(
     const GlobalObject& aGlobal, CSSNumericValue& aX, CSSNumericValue& aY,
     const Optional<NonNull<CSSNumericValue>>& aZ, ErrorResult& aRv) {
   nsCOMPtr<nsISupports> global = aGlobal.GetAsSupports();
+
+  // Step 1.
+  if (!aX.GetNumericType().MatchesLengthPercentage()) {
+    aRv.ThrowTypeError("X must match <length-percentage>");
+    return nullptr;
+  }
+  if (!aY.GetNumericType().MatchesLengthPercentage()) {
+    aRv.ThrowTypeError("Y must match <length-percentage>");
+    return nullptr;
+  }
+
+  // Step 2.
+  if (aZ.WasPassed() && !aZ.Value().GetNumericType().MatchesLength()) {
+    aRv.ThrowTypeError("Z must match <length>");
+    return nullptr;
+  }
 
   // TODO: The spec step ordering could be adjusted to better match typical
   // implementations, which usually initialize all slots at once.
@@ -83,22 +98,64 @@ already_AddRefed<CSSTranslate> CSSTranslate::Constructor(
 CSSNumericValue* CSSTranslate::X() const { return mX; }
 
 void CSSTranslate::SetX(CSSNumericValue& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  if (!aArg.GetNumericType().MatchesLengthPercentage()) {
+    aRv.ThrowTypeError("X must match <length-percentage>");
+    return;
+  }
+
+  mX = &aArg;
 }
 
 CSSNumericValue* CSSTranslate::Y() const { return mY; }
 
 void CSSTranslate::SetY(CSSNumericValue& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  if (!aArg.GetNumericType().MatchesLengthPercentage()) {
+    aRv.ThrowTypeError("Y must match <length-percentage>");
+    return;
+  }
+
+  mY = &aArg;
 }
 
 CSSNumericValue* CSSTranslate::Z() const { return mZ; }
 
 void CSSTranslate::SetZ(CSSNumericValue& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  if (!aArg.GetNumericType().MatchesLength()) {
+    aRv.ThrowTypeError("Z must match <length>");
+    return;
+  }
+
+  mZ = &aArg;
 }
 
 // end of CSSTranslate Web IDL implementation
+
+already_AddRefed<DOMMatrix> CSSTranslate::ToMatrix(ErrorResult& aRv) {
+  auto matrix = MakeRefPtr<DOMMatrix>(mParent);
+
+  auto x = mX->ToStyleUnitValue("px"_ns, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  auto y = mY->ToStyleUnitValue("px"_ns, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  if (Is2D()) {
+    matrix->TranslateSelf(x->value, y->value);
+  } else {
+    auto z = mZ->ToStyleUnitValue("px"_ns, aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+
+    matrix->TranslateSelf(x->value, y->value, z->value);
+  }
+
+  return matrix.forget();
+}
 
 void CSSTranslate::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                          nsACString& aDest) const {

@@ -313,45 +313,47 @@ void SyncNotifyInternal(const T& aObservers, bool aHasImage, Progress aProgress,
   typedef imgINotificationObserver I;
   ImageObserverNotifier<T> notify(aObservers);
 
-  if (aProgress & FLAG_SIZE_AVAILABLE) {
-    notify([](IProgressObserver* aObs) { aObs->Notify(I::SIZE_AVAILABLE); });
-  }
+  // Iterate over the observers only once, delivering every notification implied
+  // by aProgress to each observer before moving on to the next one. This keeps
+  // the observer (and its listener) hot in cache for the whole batch and
+  // resolves each observer's (weak) reference a single time, rather than
+  // re-walking the observer list once per progress flag.
+  notify([&](IProgressObserver* aObs) {
+    if (aProgress & FLAG_SIZE_AVAILABLE) {
+      aObs->Notify(I::SIZE_AVAILABLE);
+    }
 
-  if (aHasImage) {
-    // OnFrameUpdate
-    // If there's any content in this frame at all (always true for
-    // vector images, true for raster images that have decoded at
-    // least one frame) then send OnFrameUpdate.
-    if (!aDirtyRect.IsEmpty()) {
-      notify([&](IProgressObserver* aObs) {
+    if (aHasImage) {
+      // OnFrameUpdate
+      // If there's any content in this frame at all (always true for vector
+      // images, true for raster images that have decoded at least one frame)
+      // then send OnFrameUpdate.
+      if (!aDirtyRect.IsEmpty()) {
         aObs->Notify(I::FRAME_UPDATE, &aDirtyRect);
-      });
+      }
+
+      if (aProgress & FLAG_FRAME_COMPLETE) {
+        aObs->Notify(I::FRAME_COMPLETE);
+      }
+
+      if (aProgress & FLAG_HAS_TRANSPARENCY) {
+        aObs->Notify(I::HAS_TRANSPARENCY);
+      }
+
+      if (aProgress & FLAG_IS_ANIMATED) {
+        aObs->Notify(I::IS_ANIMATED);
+      }
     }
 
-    if (aProgress & FLAG_FRAME_COMPLETE) {
-      notify([](IProgressObserver* aObs) { aObs->Notify(I::FRAME_COMPLETE); });
+    if (aProgress & FLAG_DECODE_COMPLETE) {
+      MOZ_ASSERT(aHasImage, "Stopped decoding without ever having an image?");
+      aObs->Notify(I::DECODE_COMPLETE);
     }
 
-    if (aProgress & FLAG_HAS_TRANSPARENCY) {
-      notify(
-          [](IProgressObserver* aObs) { aObs->Notify(I::HAS_TRANSPARENCY); });
-    }
-
-    if (aProgress & FLAG_IS_ANIMATED) {
-      notify([](IProgressObserver* aObs) { aObs->Notify(I::IS_ANIMATED); });
-    }
-  }
-
-  if (aProgress & FLAG_DECODE_COMPLETE) {
-    MOZ_ASSERT(aHasImage, "Stopped decoding without ever having an image?");
-    notify([](IProgressObserver* aObs) { aObs->Notify(I::DECODE_COMPLETE); });
-  }
-
-  if (aProgress & FLAG_LOAD_COMPLETE) {
-    notify([=](IProgressObserver* aObs) {
+    if (aProgress & FLAG_LOAD_COMPLETE) {
       aObs->OnLoadComplete(aProgress & FLAG_LAST_PART_COMPLETE);
-    });
-  }
+    }
+  });
 }
 
 void ProgressTracker::SyncNotifyProgress(Progress aProgress,

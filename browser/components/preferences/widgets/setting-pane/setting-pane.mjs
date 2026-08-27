@@ -44,7 +44,6 @@ function shouldGoBackToParent(win, parentCategory) {
  * @property {"beta" | "new"} [badge] Badge type to display in the page header.
  * @property {() => boolean} [visible] If this pane is visible.
  * @property {string} [replaces] ID of legacy pane getting replaced by new pane.
- * @property {boolean} [showRedesignPromo] Whether the settings redesign promo should show.
  *
  * @typedef {string} SettingPaneId
  * @typedef {SettingPaneConfig & { id: SettingPaneId }} SettingPaneFullConfig
@@ -55,7 +54,6 @@ export class SettingPane extends MozLitElement {
     name: { type: String },
     isSubPane: { type: Boolean },
     config: { type: Object },
-    showRedesignPromo: { type: Boolean, attribute: false },
     onSearchPane: { type: Boolean, reflect: true },
     initialized: { type: Boolean, state: true },
   };
@@ -77,8 +75,6 @@ export class SettingPane extends MozLitElement {
     this.isSubPane = false;
     /** @type {SettingPaneFullConfig} */
     this.config = undefined;
-    /** @type {boolean} */
-    this.showRedesignPromo = false;
     /**
      * True while this pane is rendered as part of a search result. When set,
      * the pane's heading is rendered one level deeper so the "Search results"
@@ -126,24 +122,12 @@ export class SettingPane extends MozLitElement {
     }
   }
 
-  /**
-   * When any of the setting redesign promos (across all setting panes) is dismissed.
-   */
-  #onAnySettingsRedesignPromoDismissClick = () => {
-    this.showRedesignPromo = false;
-  };
-
   connectedCallback() {
     super.connectedCallback();
 
     this.handleVisibility();
 
     document.addEventListener("paneshown", this.handlePaneShown);
-
-    document.addEventListener(
-      "settings-redesign-promo-dismiss",
-      this.#onAnySettingsRedesignPromoDismissClick
-    );
 
     this.setAttribute("data-category", this.name);
     this.hidden = true;
@@ -157,10 +141,6 @@ export class SettingPane extends MozLitElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     document.removeEventListener("paneshown", this.handlePaneShown);
-    document.removeEventListener(
-      "settings-redesign-promo-dismiss",
-      this.#onAnySettingsRedesignPromoDismissClick
-    );
   }
 
   /**
@@ -241,43 +221,11 @@ export class SettingPane extends MozLitElement {
     </moz-breadcrumb-group>`;
   }
 
-  onDismiss() {
-    const event = new CustomEvent("settings-redesign-promo-dismiss", {
-      bubbles: true,
-      composed: true,
-    });
-    this.dispatchEvent(event);
-  }
-
-  /**
-   * Shows the settings redesign promo if user hasn't dismissed it.
-   * Suppressed while the pane is displayed as a search result so the
-   * promo doesn't repeat above every matching pane.
-   */
-  settingsRedesignPromoTemplate() {
-    if (!this.showRedesignPromo || this.onSearchPane) {
-      return "";
-    }
-
-    return html`<moz-promo
-      data-l10n-id="settings-redesign-promo"
-      class="settings-redesign-promo"
-    >
-      <moz-button
-        slot="actions"
-        data-l10n-id="settings-redesign-promo-dismiss-button"
-        type="primary"
-        @click=${this.onDismiss}
-      ></moz-button>
-    </moz-promo>`;
-  }
-
   render() {
     if (!this.initialized) {
       return "";
     }
     return html`
-      ${this.settingsRedesignPromoTemplate()}
       <section>
         <moz-page-header
           data-l10n-id=${this.config.l10nId}

@@ -26,10 +26,8 @@ describe("Multistage AboutWelcome MobileDownloads module", () => {
       data: {
         QR_code: {
           image_url:
-            "chrome://browser/components/privatebrowsing/content/assets/focus-qr-code.svg",
-          alt_text: {
-            string_id: "spotlight-focus-promo-qr-code",
-          },
+            "chrome://browser/content/asrouter/assets/desktop-to-mobile-non-eu-QR.svg",
+          alt_text: "Scan the QR code",
         },
         email: {
           link_text: "Email yourself a link",

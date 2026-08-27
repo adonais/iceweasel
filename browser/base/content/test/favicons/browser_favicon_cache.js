@@ -1,9 +1,9 @@
 add_task(async () => {
   const testPath =
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/browser/browser/base/content/test/favicons/cookie_favicon.html";
   const resetPath =
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/browser/browser/base/content/test/favicons/cookie_favicon.sjs?reset";
 
   let tab = BrowserTestUtils.addTab(gBrowser, testPath);

@@ -22,7 +22,7 @@ namespace windowsDHCPClient {
 class WindowsNetworkFunctionsWrapper : nsISupports {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
-  WindowsNetworkFunctionsWrapper() {};
+  WindowsNetworkFunctionsWrapper() = default;
 
   virtual ULONG GetAdaptersAddressesWrapped(
       _In_ ULONG aFamily, _In_ ULONG aFlags, _In_ PVOID aReserved,
@@ -36,7 +36,7 @@ class WindowsNetworkFunctionsWrapper : nsISupports {
       _Inout_ LPDWORD apSize, _In_ LPWSTR aRequestIdStr);
 
  protected:
-  virtual ~WindowsNetworkFunctionsWrapper() {};
+  virtual ~WindowsNetworkFunctionsWrapper() = default;
 };
 
 }  // namespace windowsDHCPClient

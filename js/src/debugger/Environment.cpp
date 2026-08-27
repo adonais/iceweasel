@@ -509,7 +509,7 @@ bool DebuggerEnvironment::getNames(JSContext* cx,
   });
 
   for (size_t i = 0; i < result.length(); ++i) {
-    cx->markAtom(result[i].toAtom());
+    cx->recordRef(result[i].toAtom());
   }
 
   return true;
@@ -529,7 +529,7 @@ bool DebuggerEnvironment::find(JSContext* cx,
     Maybe<AutoRealm> ar;
     ar.emplace(cx, env);
 
-    cx->markId(id);
+    cx->recordRefToId(id);
 
     // This can trigger resolve hooks.
     ErrorCopier ec(ar);
@@ -565,7 +565,7 @@ bool DebuggerEnvironment::getVariable(JSContext* cx,
     Maybe<AutoRealm> ar;
     ar.emplace(cx, referent);
 
-    cx->markId(id);
+    cx->recordRefToId(id);
 
     // This can trigger getters.
     ErrorCopier ec(ar);
@@ -629,7 +629,7 @@ bool DebuggerEnvironment::setVariable(JSContext* cx,
     if (!cx->compartment()->wrap(cx, &value)) {
       return false;
     }
-    cx->markId(id);
+    cx->recordRefToId(id);
 
     // This can trigger setters.
     ErrorCopier ec(ar);

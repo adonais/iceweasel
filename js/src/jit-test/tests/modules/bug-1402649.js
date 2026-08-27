@@ -1,7 +1,7 @@
 loadFile(`
 function parseAndEvaluate(source) {
     let m = parseModule(source);
-    moduleLink(m);
+    moduleLoadAndLink(m);
 }
 parseAndEvaluate("async function a() { await 2 + 3; }")
 `);

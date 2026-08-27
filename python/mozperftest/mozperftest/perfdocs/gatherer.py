@@ -25,7 +25,7 @@ frameworks = {
 }
 
 # List of file types allowed to be used as static files
-ALLOWED_STATIC_FILETYPES = ("rst", "png")
+ALLOWED_STATIC_FILETYPES = ("md", "png")
 
 
 class Gatherer:
@@ -91,16 +91,16 @@ class Gatherer:
             files = [f for f in os.listdir(path)]
 
             # Metrics are optional so it's only added to the matched if we
-            # find the `metrics.rst` file in the perfdocs folder
+            # find the `metrics.md` file in the perfdocs folder
             matched = {"path": str(path), "yml": "", "rst": "", "static": []}
 
             for file in files:
-                # Add the yml/rst/static file to its key if re finds the searched file
+                # Add the yml/md/static file to its key if re finds the searched file
                 if file in {"config.yml", "config.yaml"}:
                     matched["yml"] = file
-                elif file == "index.rst":
+                elif file == "index.md":
                     matched["rst"] = file
-                elif file == "metrics.rst":
+                elif file == "metrics.md":
                     matched["metrics"] = file
                 elif file.split(".")[-1] in ALLOWED_STATIC_FILETYPES:
                     matched["static"].append(file)

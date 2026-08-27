@@ -63,8 +63,8 @@
 
   #infoIcon {
     display: block;
-    max-width: var(--size-item-xlarge);
-    max-height: var(--size-item-xlarge);
+    max-width: var(--icon-size-xxlarge);
+    max-height: var(--icon-size-xxlarge);
     margin: 3px auto 0;
   }
 }

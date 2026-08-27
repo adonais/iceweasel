@@ -2,7 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-:is(.network-monitor, .app, .accessibility-check-annotation, .spectrum-color-contrast) .learn-more-link {
+:is(
+    .network-monitor,
+    .app,
+    .accessibility-check-annotation,
+    .spectrum-color-contrast,
+    .devtools-tooltip-inactive-css,
+    .devtools-tooltip-css-compatibility,
+    .webconsole-app
+  )
+  .learn-more-link {
   display: inline-flex;
   align-items: center;
   gap: 4px;

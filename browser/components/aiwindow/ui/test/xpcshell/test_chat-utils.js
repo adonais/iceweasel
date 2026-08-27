@@ -14,6 +14,7 @@ const {
   parseJSONOrNull,
   getRoleLabel,
   getKeepSidebarOpenState,
+  normalizeChatLog,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ChatUtils.sys.mjs"
 );
@@ -40,6 +41,28 @@ class RowStub {
     throw new Error(`NS_ERROR_NOT_AVAILABLE: could not find key: ${key}`);
   }
 }
+
+const MESSAGE_ROW_FIELDS = {
+  message_id: "123456789012",
+  created_date: 0,
+  parent_message_id: "123456",
+  revision_root_message_id: "1234",
+  ordinal: 0,
+  is_active_branch: true,
+  role: 0,
+  model_id: "a model id",
+  params: null,
+  usage: null,
+  content: '{ "some": "content data" }',
+  conv_id: "123456789012",
+  page_url: "https://www.firefox.com",
+  turn_index: 0,
+  memories_enabled: false,
+  memories_flag_source: 0,
+  memories_applied: null,
+  web_search_queries: null,
+  page_history_deleted: false,
+};
 
 add_task(function test_parseConversationRow() {
   const now = Date.now();
@@ -121,6 +144,7 @@ add_task(function test_parseConversationRow() {
   const tool_results = JSON.stringify({
     0: [{ toolCallId: "t1", uiType: "ai-action-result" }], // 0 == TOOL_RESULT_TYPE.TOOL_UI
     1: [{ url: "history url 1" }, { url: "history url 2" }], // 1 == TOOL_RESULT_TYPE.HISTORY_RESULTS
+    2: [{ url: "citation url 1", title: "C1" }], // 2 == TOOL_RESULT_TYPE.CITATIONS
   });
 
   const testRow = new RowStub({
@@ -179,7 +203,23 @@ add_task(function test_parseConversationRow() {
       { url: "history url 1" },
       { url: "history url 2" },
     ]);
+    soft.deepEqual(message.citations, [{ url: "citation url 1", title: "C1" }]);
   });
+});
+
+add_task(function test_parseConversationRow_withoutCitations() {
+  const testRow = new RowStub({
+    ...MESSAGE_ROW_FIELDS,
+    tool_results: JSON.stringify({ 1: [{ url: "history url 1" }] }),
+  });
+
+  const message = parseMessageRows([testRow])[0];
+
+  Assert.deepEqual(
+    message.citations,
+    [],
+    "citations parses as an empty array when no citation rows exist"
+  );
 });
 
 add_task(function test_missingField_parseConversationRow() {
@@ -352,5 +392,94 @@ const keepSidebarPermutations = [
 keepSidebarPermutations.forEach(([state, pref, expected, message]) => {
   add_task(function () {
     Assert.equal(getKeepSidebarOpenState(state, pref), expected, message);
+  });
+});
+
+add_task(function test_normalizeChatLog_only_includes_allowlisted_fields() {
+  // These fields pass through normalizeChatLog unchanged, so the same
+  // values apply to both the input message and the expected output.
+  const passthroughFields = {
+    id: "msg1",
+    createdDate: 1700000000000,
+    parentMessageId: "msg0",
+    revisionRootMessageId: "msg1",
+    ordinal: 0,
+    isActiveBranch: true,
+    role: 1,
+    modelId: "test-model",
+    pageUrl: "https://example.com",
+    turnIndex: 0,
+    memoriesEnabled: true,
+    memoriesFlagSource: 1,
+    memoriesApplied: ["memory1"],
+    webSearchQueries: ["query1"],
+    followUpSuggestions: ["suggestion1"],
+    pageHistoryDeleted: false,
+    tokens: { search: ["s1"], existing_memory: ["m1"], followup: ["f1"] },
+    toolUIData: {
+      uiType: "ui1",
+      toolCallId: "tc1",
+      properties: {
+        originalUserPrompt: "prompt",
+        tabs: [
+          {
+            linkedPanel: "p1",
+            url: "u1",
+            title: "t1",
+            iconSrc: "i1",
+            checked: true,
+          },
+        ],
+      },
+    },
+  };
+
+  const normalized = normalizeChatLog({
+    log: [
+      {
+        ...passthroughFields,
+        content: {
+          type: "text",
+          body: "hello",
+          tool_call_id: "tc1",
+          name: "someName",
+          userContext: { realTimeContext: "some context" },
+          contextMentions: [
+            {
+              type: "currentTab",
+              url: "https://example.com",
+              label: "Example",
+              iconSrc: "icon.png",
+            },
+          ],
+          contextPageUrl: "https://example.com",
+        },
+        // convId, params, and usage are real ChatMessage fields that are
+        // not in normalizeChatLog's allowlist, so all three should be dropped.
+        convId: "conv-1",
+        params: { some: "data" },
+        usage: { some: "usage data" },
+      },
+    ],
+  });
+
+  Assert.deepEqual(normalized.log[0], {
+    ...passthroughFields,
+    content: {
+      content_type: "text",
+      tool_call_id: "tc1",
+      body: { text: "hello" },
+      name: "someName",
+      userContext: { realTimeContext: "some context" },
+      contextMentions: [
+        {
+          mention_type: "currentTab",
+          url: "https://example.com",
+          label: "Example",
+          iconSrc: "icon.png",
+        },
+      ],
+      contextPageUrl: "https://example.com",
+    },
   });
 });

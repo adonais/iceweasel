@@ -36,7 +36,7 @@ add_task(async function test() {
   // Picking the tip should open the download page in a new tab.
   let downloadTab = await doUpdateTest({
     searchString: SEARCH_STRINGS.UPDATE,
-    tip: UrlbarProviderInterventions.TIP_TYPE.UPDATE_WEB,
+    tip: UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_WEB,
     title: /^Get the latest .+ browser\.$/,
     button: "Download Now",
     awaitCallback() {

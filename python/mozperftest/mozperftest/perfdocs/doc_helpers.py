@@ -57,9 +57,9 @@ class TableBuilder:
             )
         widths = " ".join(map(str, self.widths))
         self.table += (
-            f"{self.indent}.. list-table:: **{self.title}**\n"
-            f"{self.indent}   :widths: {widths}\n"
-            f"{self.indent}   :header-rows: {self.header_rows}\n\n"
+            f"{self.indent}:::{{list-table}} **{self.title}**\n"
+            f"{self.indent}:widths: {widths}\n"
+            f"{self.indent}:header-rows: {self.header_rows}\n\n"
         )
         self.add_rows(self.headers)
 
@@ -80,10 +80,10 @@ class TableBuilder:
             )
         for i, val in enumerate(values):
             if i == 0:
-                self.table += f"{self.indent}   * - **{val}**\n"
+                self.table += f"{self.indent}* - **{val}**\n"
             else:
-                self.table += f"{self.indent}     - {val}\n"
+                self.table += f"{self.indent}  - {val}\n"
 
     def finish_table(self):
-        self.table += "\n"
+        self.table += f"{self.indent}:::\n\n"
         return self.table

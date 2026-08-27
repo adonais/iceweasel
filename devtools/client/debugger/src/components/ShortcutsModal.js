@@ -64,6 +64,10 @@ export class ShortcutsModal extends Component {
         stringifyFromElectronKey(L10N.getStr("toggleCondPanel.breakpoint.key"))
       ),
       this.renderShorcutItem(
+        L10N.getStr("shortcuts.toggleAllBreakpoints"),
+        stringifyFromElectronKey(L10N.getStr("toggleAllBreakpoints.key"))
+      ),
+      this.renderShorcutItem(
         L10N.getStr("shortcuts.toggleCondPanel.logPoint"),
         stringifyFromElectronKey(L10N.getStr("toggleCondPanel.logPoint.key"))
       )

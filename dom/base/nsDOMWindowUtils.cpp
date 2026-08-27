@@ -2385,6 +2385,8 @@ nsDOMWindowUtils::SendSelectionSetEvent(uint32_t aOffset, uint32_t aLength,
   selectionEvent.mOffset = aOffset;
   selectionEvent.mLength = aLength;
   selectionEvent.mReversed = (aAdditionalFlags & SELECTION_SET_FLAG_REVERSE);
+  selectionEvent.mExpandToClusterBoundary =
+      (aAdditionalFlags & SELECTION_EXPAND_TO_CLUSTER_BOUNDARY);
 
   widget->DispatchEvent(&selectionEvent);
 

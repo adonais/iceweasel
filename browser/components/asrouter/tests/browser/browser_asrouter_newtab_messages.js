@@ -16,8 +16,10 @@ const { SpecialMessageActions } = ChromeUtils.importESModule(
 );
 
 const TEST_MESSAGE_ID = "TEST_ASROUTER_NEWTAB_MESSAGE";
-
 let gTestNewTabMessage;
+
+const TEST_POLLING_MESSAGE_ID = "TEST_ASROUTER_NEWTAB_MESSAGE_POLL_DEFAULT";
+let gTestPollingNewTabMessage;
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
@@ -38,6 +40,108 @@ add_setup(async function () {
     msgs.find(msg => msg.id === TEST_MESSAGE_ID)
   );
   Assert.ok(gTestNewTabMessage, "Found a test fxa_cta message to use.");
+
+  /**
+   * @backward-compat { version 155 }
+   *
+   * This test message was added to PanelTestProvider in version 155. This test,
+   * however, runs in the newtab train-hop CI jobs, which means that we have
+   * to shim the test message until the PanelTestProvider change reaches 155.
+   */
+  if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "155.0a1") < 0) {
+    gTestPollingNewTabMessage = {
+      id: "TEST_ASROUTER_NEWTAB_MESSAGE_POLL_DEFAULT",
+      template: "newtab_message",
+      content: {
+        messageType: "ASRouterNewTabMessage",
+        imageSrc:
+          // eslint-disable-next-line mozilla/no-newtab-refs-outside-newtab
+          "chrome://newtab/content/data/content/assets/kit-in-circle.svg",
+        heading: "Make Firefox your own",
+        body: "Set Firefox as your default browser and pin it so it's always a click away.",
+        hideDismissButton: false,
+        // Declarative variants: each entry's `targeting` is re-evaluated against
+        // the live ASRouter environment (the "uncached" attributes read live
+        // shell state), and the first match's content overlays the base content.
+        // A `final` entry stops the re-evaluation poll once reached. Here, each
+        // state drops whichever step is already satisfied, so only the still-
+        // relevant button(s) show: both when neither is done (base content), only
+        // "Pin to taskbar" once we're the default, only "Set as default" once
+        // we're pinned, and the completed state once both are true.
+        states: [
+          {
+            // Already the default but not pinned: drop the "Set as default" step
+            // and only ask to pin.
+            targeting: "isDefaultBrowserUncached && doesAppNeedPinUncached",
+            content: {
+              primaryButton: null,
+            },
+          },
+          {
+            // Already pinned but not the default: drop the "Pin to taskbar" step
+            // and only ask to set as default.
+            targeting: "!isDefaultBrowserUncached && !doesAppNeedPinUncached",
+            content: {
+              secondaryButton: null,
+            },
+          },
+          {
+            // Default and pinned: everything's done. Show the completed state
+            // and stop polling.
+            targeting: "isDefaultBrowserUncached && !doesAppNeedPinUncached",
+            final: true,
+            content: {
+              heading: "You're all set",
+              body: "Firefox is now your default browser and pinned. Thanks!",
+              // No `type`, so this renders in the primary style.
+              primaryButton: {
+                label: "Go to settings to try it out!",
+                action: {
+                  type: "OPEN_ABOUT_PAGE",
+                  data: { args: "settings#browserIcon", where: "tab" },
+                },
+              },
+              secondaryButton: null,
+            },
+          },
+        ],
+        // The base content (neither step done) shows both steps, rendered non-
+        // primary (`type: "default"`) since neither is the single call-to-action.
+        // The states above swap in narrower content as each step is satisfied.
+        primaryButton: {
+          label: "Set as default",
+          type: "default",
+          action: {
+            type: "SET_DEFAULT_BROWSER",
+          },
+        },
+        secondaryButton: {
+          label: "Pin to taskbar",
+          type: "default",
+          action: {
+            type: "PIN_FIREFOX_TO_TASKBAR",
+          },
+        },
+        position: "ABOVE_TOPSITES",
+      },
+      frequency: {
+        lifetime: 3,
+      },
+      trigger: {
+        id: "newtabMessageCheck",
+      },
+      targeting: "true",
+      groups: ["cfr"],
+    };
+  } else {
+    gTestPollingNewTabMessage = await PanelTestProvider.getMessages().then(
+      msgs => msgs.find(msg => msg.id === TEST_POLLING_MESSAGE_ID)
+    );
+  }
+  Assert.ok(
+    gTestPollingNewTabMessage,
+    "Found a test polling newtab message to use."
+  );
 });
 
 /**
@@ -362,6 +466,73 @@ add_task(async function test_primary_button_click() {
   sandbox.restore();
 });
 
+/**
+ * Tests that a button's moz-button `type` can be overridden from content, so a
+ * message can render its primary button non-primary (and its secondary button
+ * primary).
+ */
+add_task(async function test_button_type_override() {
+  let sandbox = sinon.createSandbox();
+
+  const testMessage = {
+    ...gTestNewTabMessage,
+    content: {
+      ...gTestNewTabMessage.content,
+      primaryButton: {
+        label: "Not emphasized",
+        type: "default",
+        action: { type: "CANCEL" },
+      },
+      secondaryButton: {
+        label: "Emphasized",
+        type: "primary",
+        action: { type: "CANCEL" },
+      },
+    },
+  };
+
+  await withTestMessage(sandbox, testMessage, async () => {
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+      await ContentTaskUtils.waitForCondition(() => {
+        return content.document.querySelector("asrouter-newtab-message");
+      }, "Found asrouter-newtab-message");
+
+      let msgEl = content.document.querySelector("asrouter-newtab-message");
+      let shadow = Cu.waiveXrays(msgEl).shadowRoot;
+
+      let primaryBtn = shadow.querySelector(
+        ".button-group moz-button[type='default']"
+      );
+      Assert.ok(
+        primaryBtn,
+        "Primary button honored its overridden type='default'."
+      );
+      Assert.equal(
+        primaryBtn.textContent.trim(),
+        "Not emphasized",
+        "The default-styled button is the primary button."
+      );
+
+      let secondaryBtn = shadow.querySelector(
+        ".button-group moz-button[type='primary']"
+      );
+      Assert.ok(
+        secondaryBtn,
+        "Secondary button honored its overridden type='primary'."
+      );
+      Assert.equal(
+        secondaryBtn.textContent.trim(),
+        "Emphasized",
+        "The primary-styled button is the secondary button."
+      );
+    });
+  });
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  sandbox.restore();
+});
+
 add_task(async function test_hidden_dismiss_button() {
   let sandbox = sinon.createSandbox();
   const testMessage = {
@@ -617,5 +788,290 @@ add_task(async function test_image_is_optional() {
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   });
 
+  sandbox.restore();
+});
+
+/**
+ * Tests that a message with declarative `content.states` re-evaluates each
+ * state's targeting against the live environment and recomposes into the first
+ * matching state's content - here, the completed state once Firefox is both
+ * default and pinned.
+ */
+add_task(async function test_states_targeting_recompose() {
+  let sandbox = sinon.createSandbox();
+
+  // Start out neither default nor pinned. The state targeting uses the
+  // "uncached" attributes, which read these live.
+  let isDefaultStub = sandbox.stub(ShellService, "isDefaultBrowser");
+  isDefaultStub.returns(false);
+  let needsPinStub = sandbox.stub(ShellService, "doesAppNeedPin");
+  needsPinStub.resolves(true);
+
+  let targetings = gTestPollingNewTabMessage.content.states.map(
+    state => state.targeting
+  );
+
+  await withTestMessage(sandbox, gTestPollingNewTabMessage, async () => {
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+      await ContentTaskUtils.waitForCondition(() => {
+        return content.document.querySelector("asrouter-newtab-message");
+      }, "Found asrouter-newtab-message");
+
+      let msgEl = content.document.querySelector("asrouter-newtab-message");
+      let shadow = Cu.waiveXrays(msgEl).shadowRoot;
+      let heading = shadow.querySelector("#asrouter-newtab-message-heading");
+      Assert.equal(
+        heading.textContent,
+        "Make Firefox your own",
+        "Base content is shown while not default/pinned."
+      );
+
+      // Both steps render as non-primary buttons: the content-specified
+      // `type: "default"` is honored, and there is no primary button.
+      let buttons = shadow.querySelectorAll(".button-group moz-button");
+      Assert.equal(buttons.length, 2, "Base state renders two buttons.");
+      Assert.equal(
+        shadow.querySelectorAll(".button-group moz-button[type='default']")
+          .length,
+        2,
+        "Both base-state buttons are non-primary (type='default')."
+      );
+      Assert.ok(
+        !shadow.querySelector(".button-group moz-button[type='primary']"),
+        "Base state renders no primary button."
+      );
+    });
+
+    // Become default and pinned, then trigger a re-evaluation.
+    isDefaultStub.returns(true);
+    needsPinStub.resolves(false);
+
+    await SpecialPowers.spawn(
+      gBrowser.selectedBrowser,
+      [targetings],
+      async targetingExpressions => {
+        let msgEl = content.document.querySelector("asrouter-newtab-message");
+        // Dispatch the evaluate event directly to exercise the actor -> parent
+        // -> setMatchedState path without relying on the visibility-gated poll
+        // timing.
+        msgEl.dispatchEvent(
+          new content.CustomEvent("ASRouterNewTabMessage:EvaluateTargeting", {
+            bubbles: true,
+            detail: { targetings: targetingExpressions },
+          })
+        );
+
+        let shadow = Cu.waiveXrays(msgEl).shadowRoot;
+        await ContentTaskUtils.waitForCondition(() => {
+          let heading = shadow.querySelector(
+            "#asrouter-newtab-message-heading"
+          );
+          return heading?.textContent === "You're all set";
+        }, "Message recomposed into the completed state once default and pinned.");
+
+        // The completed state's button sets no `type`, so it defaults to the
+        // primary style.
+        Assert.equal(
+          shadow.querySelectorAll(".button-group moz-button").length,
+          1,
+          "Completed state renders a single button."
+        );
+        Assert.ok(
+          shadow.querySelector(".button-group moz-button[type='primary']"),
+          "Completed-state button renders in the primary style."
+        );
+      }
+    );
+  });
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  sandbox.restore();
+});
+
+/**
+ * Tests that when more than one `content.states` entry matches, the first
+ * matching entry (in declaration order) is the one that gets applied.
+ */
+add_task(async function test_states_first_match_wins() {
+  let sandbox = sinon.createSandbox();
+
+  const testMessage = {
+    ...gTestNewTabMessage,
+    targeting: "true",
+    content: {
+      ...gTestNewTabMessage.content,
+      states: [
+        { targeting: "true", content: { heading: "First match" } },
+        { targeting: "true", content: { heading: "Second match" } },
+      ],
+    },
+  };
+  let targetings = testMessage.content.states.map(state => state.targeting);
+
+  await withTestMessage(sandbox, testMessage, async () => {
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+    await SpecialPowers.spawn(
+      gBrowser.selectedBrowser,
+      [targetings],
+      async targetingExpressions => {
+        await ContentTaskUtils.waitForCondition(() => {
+          return content.document.querySelector("asrouter-newtab-message");
+        }, "Found asrouter-newtab-message");
+
+        let msgEl = content.document.querySelector("asrouter-newtab-message");
+        // Both states match; dispatch the evaluate event directly so we don't
+        // depend on the visibility-gated poll timing.
+        msgEl.dispatchEvent(
+          new content.CustomEvent("ASRouterNewTabMessage:EvaluateTargeting", {
+            bubbles: true,
+            detail: { targetings: targetingExpressions },
+          })
+        );
+
+        let shadow = Cu.waiveXrays(msgEl).shadowRoot;
+        await ContentTaskUtils.waitForCondition(() => {
+          let heading = shadow.querySelector(
+            "#asrouter-newtab-message-heading"
+          );
+          return heading?.textContent === "First match";
+        }, "The first matching state wins when several match.");
+      }
+    );
+  });
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  sandbox.restore();
+});
+
+/**
+ * Tests that the intermediate `content.states` drop whichever step is already
+ * satisfied: only "Pin to taskbar" shows once Firefox is the default, and only
+ * "Set as default" shows once Firefox is pinned.
+ */
+add_task(async function test_states_partial_progress() {
+  let sandbox = sinon.createSandbox();
+
+  let isDefaultStub = sandbox.stub(ShellService, "isDefaultBrowser");
+  let needsPinStub = sandbox.stub(ShellService, "doesAppNeedPin");
+
+  let targetings = gTestPollingNewTabMessage.content.states.map(
+    state => state.targeting
+  );
+
+  async function assertSingleButton(expectedLabel, message) {
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+    await SpecialPowers.spawn(
+      gBrowser.selectedBrowser,
+      [targetings, expectedLabel, message],
+      async (targetingExpressions, label, description) => {
+        await ContentTaskUtils.waitForCondition(() => {
+          return content.document.querySelector("asrouter-newtab-message");
+        }, "Found asrouter-newtab-message");
+
+        let msgEl = content.document.querySelector("asrouter-newtab-message");
+        // Dispatch the evaluate event directly so we don't depend on the
+        // visibility-gated poll timing.
+        msgEl.dispatchEvent(
+          new content.CustomEvent("ASRouterNewTabMessage:EvaluateTargeting", {
+            bubbles: true,
+            detail: { targetings: targetingExpressions },
+          })
+        );
+
+        let shadow = Cu.waiveXrays(msgEl).shadowRoot;
+        await ContentTaskUtils.waitForCondition(() => {
+          let buttons = shadow.querySelectorAll(".button-group moz-button");
+          return (
+            buttons.length === 1 && buttons[0].textContent.trim() === label
+          );
+        }, description);
+      }
+    );
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  }
+
+  // Already the default, but still needs pinning: only "Pin to taskbar" shows.
+  isDefaultStub.returns(true);
+  needsPinStub.resolves(true);
+  await withTestMessage(sandbox, gTestPollingNewTabMessage, async () => {
+    await assertSingleButton(
+      "Pin to taskbar",
+      "Only the Pin to taskbar step shows once Firefox is the default."
+    );
+  });
+
+  // Already pinned, but not the default: only "Set as default" shows.
+  isDefaultStub.returns(false);
+  needsPinStub.resolves(false);
+  await withTestMessage(sandbox, gTestPollingNewTabMessage, async () => {
+    await assertSingleButton(
+      "Set as default",
+      "Only the Set as default step shows once Firefox is pinned."
+    );
+  });
+
+  sandbox.restore();
+});
+
+/**
+ * Tests that a state whose `targeting` fails to evaluate is treated as
+ * non-matching (fails closed) rather than matching, so a broken expression
+ * can't lock the message into the wrong state.
+ */
+add_task(async function test_states_targeting_fails_closed() {
+  let sandbox = sinon.createSandbox();
+
+  const testMessage = {
+    ...gTestNewTabMessage,
+    targeting: "true",
+    content: {
+      ...gTestNewTabMessage.content,
+      heading: "Base heading",
+      states: [
+        {
+          // An unknown JEXL transform throws during evaluation.
+          targeting: "'x'|thisTransformDoesNotExist",
+          content: { heading: "Errored state" },
+        },
+        {
+          targeting: "true",
+          content: { heading: "Matched state" },
+        },
+      ],
+    },
+  };
+  let targetings = testMessage.content.states.map(state => state.targeting);
+
+  await withTestMessage(sandbox, testMessage, async () => {
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+    await SpecialPowers.spawn(
+      gBrowser.selectedBrowser,
+      [targetings],
+      async targetingExpressions => {
+        await ContentTaskUtils.waitForCondition(() => {
+          return content.document.querySelector("asrouter-newtab-message");
+        }, "Found asrouter-newtab-message");
+
+        let msgEl = content.document.querySelector("asrouter-newtab-message");
+        msgEl.dispatchEvent(
+          new content.CustomEvent("ASRouterNewTabMessage:EvaluateTargeting", {
+            bubbles: true,
+            detail: { targetings: targetingExpressions },
+          })
+        );
+
+        let shadow = Cu.waiveXrays(msgEl).shadowRoot;
+        await ContentTaskUtils.waitForCondition(() => {
+          let heading = shadow.querySelector(
+            "#asrouter-newtab-message-heading"
+          );
+          return heading?.textContent === "Matched state";
+        }, "The erroring state was skipped and the later matching state won.");
+      }
+    );
+  });
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
   sandbox.restore();
 });

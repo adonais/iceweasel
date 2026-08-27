@@ -353,6 +353,8 @@ Span<const char> MarkerSchema::FormatToStringSpan(
       return mozilla::MakeStringSpan("integer");
     case Format::Decimal:
       return mozilla::MakeStringSpan("decimal");
+    case Format::Hexadecimal:
+      return mozilla::MakeStringSpan("hexadecimal");
     case Format::Flow:
       return mozilla::MakeStringSpan("flow-id");
     case Format::TerminatingFlow:

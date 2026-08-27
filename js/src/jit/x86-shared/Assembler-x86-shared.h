@@ -467,6 +467,9 @@ class AssemblerX86Shared : public AssemblerShared {
 
   // Size of the instruction stream, in bytes.
   size_t size() const { return masm.size(); }
+  // Size of the instruction stream that we can read during construction.
+  // Since there are no constant pools, this is the same as `size()`.
+  size_t readableSize() const { return masm.size(); }
   // Size of the jump relocation table, in bytes.
   size_t jumpRelocationTableBytes() const { return jumpRelocations_.length(); }
   size_t dataRelocationTableBytes() const { return dataRelocations_.length(); }

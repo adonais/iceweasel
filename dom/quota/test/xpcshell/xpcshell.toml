@@ -77,6 +77,12 @@ run-if = [
 
 ["test_clientDirectoryOpeningStarted.js"]
 
+["test_corruptStorageSqlite.js"]
+prefs = [
+  "dom.storage.testing=true",
+  "dom.storage.client_validation=false",
+]
+
 ["test_createLocalStorage.js"]
 
 ["test_estimateOrigin.js"]

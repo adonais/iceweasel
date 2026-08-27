@@ -20,6 +20,7 @@
 namespace mozilla {
 
 class ProfileBufferChunkManagerWithLocalLimit;
+class ProfileChunkedBuffer;
 
 // Centrally defines the version of the gecko profiler JSON format.
 // NOTE: when this value is updated, the revision of the Firefox Profiler
@@ -29,7 +30,7 @@ class ProfileBufferChunkManagerWithLocalLimit;
 // be updated with a stable commit from Firefox Profiler's production branch
 // (https://github.com/firefox-devtools/profiler/tree/production) that contains
 // the version bump.
-const int GECKO_PROFILER_FORMAT_VERSION = 34;
+const int GECKO_PROFILER_FORMAT_VERSION = 36;
 
 namespace baseprofiler::detail {
 
@@ -64,6 +65,14 @@ namespace profiler::detail {
     Span<const char* const> aFilters,
     baseprofiler::BaseProfilerProcessId aPid =
         baseprofiler::profiler_current_process_id());
+
+// Copy aSource into a new buffer whose only chunk is just big enough to hold
+// its contents, and return it (null if aSource is empty, or on failure).
+// Stacks are captured into a buffer that can hold the deepest possible stack,
+// but a captured backtrace may be kept alive for a long time, so it should not
+// retain much more memory than the stack actually needs.
+[[nodiscard]] MFBT_API UniquePtr<ProfileChunkedBuffer> CopyToRightSizedBuffer(
+    const ProfileChunkedBuffer& aSource);
 
 }  // namespace profiler::detail
 

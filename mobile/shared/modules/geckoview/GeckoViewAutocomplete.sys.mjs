@@ -3,6 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -11,7 +12,26 @@ ChromeUtils.defineESModuleGetters(lazy, {
   GeckoViewPrompter: "resource://gre/modules/GeckoViewPrompter.sys.mjs",
   AddressRecord: "resource://gre/modules/shared/AddressRecord.sys.mjs",
   CreditCardRecord: "resource://gre/modules/shared/CreditCardRecord.sys.mjs",
+  clearTimeout: "resource://gre/modules/Timer.sys.mjs",
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
+
+// How long to keep an autocomplete selection prompt open after its field loses
+// focus. If focus moves to another field of the same form within this window
+// (e.g. tabbing through it), we keep the existing prompt alive instead of
+// dismissing and reopening it, which would otherwise flicker. The default was
+// determined by testing on a Samsung Galaxy A51 (our low-end benchmark at time
+// of implementation) to be long enough to bridge a focus change, while staying
+// short enough that dismissals feel instant; it is pref-tunable for slower
+// devices and tests.
+const DEFAULT_DISMISS_COALESCE_DELAY_MS = 150;
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "dismissCoalesceDelayMs",
+  "geckoview.autocomplete.selection_dismiss_delay_ms",
+  DEFAULT_DISMISS_COALESCE_DELAY_MS
+);
 
 ChromeUtils.defineLazyGetter(lazy, "LoginInfo", () =>
   Components.Constructor(
@@ -307,6 +327,27 @@ export const GeckoViewAutocomplete = {
   _prompt: null,
 
   /**
+   * Fill context for the in-flight selection (browsingContext, browser,
+   * inputElementIdentifier, formOrigin, selectionType, loginStyle). This is
+   * re-pointed when focus moves between same-type fields so the eventual fill
+   * targets the currently focused field rather than the one that first opened
+   * the prompt.
+   */
+  _activeSelection: null,
+
+  /**
+   * Monotonically increasing id identifying the current selection. Each new
+   * (non-coalesced) selection bumps it; a delegateSelection invocation only
+   * touches shared state if it still owns the current generation. This keeps a
+   * superseded or abandoned selection (e.g. a prompt torn down by navigation)
+   * from clobbering or blocking a later one.
+   */
+  _selectionGeneration: 0,
+
+  /** Timer id for a deferred prompt dismissal, or null if none is pending. */
+  _pendingDismissTimer: null,
+
+  /**
    * Delegates login entry fetching for the given domain to the attached
    * LoginStorage GeckoView delegate.
    *
@@ -431,8 +472,6 @@ export const GeckoViewAutocomplete = {
       }
     );
   },
-
-  _numActiveSelections: 0,
 
   /**
    * Delegates login entry selection.
@@ -569,6 +608,105 @@ export const GeckoViewAutocomplete = {
       return;
     }
 
+    const { selectOptions, selectionType, loginStyle } =
+      this._parseSelectOptions(options);
+
+    if (selectOptions.length < 1) {
+      debug`Abort delegateSelection - no valid options provided`;
+      return;
+    }
+
+    const browser = browsingContext.top.embedderElement;
+    const context = {
+      browsingContext,
+      browser,
+      inputElementIdentifier,
+      formOrigin,
+      selectionType,
+      loginStyle,
+      // Identifies the specific document the selection belongs to. It changes
+      // on navigation, so it lets us tell a still-live selection from a stale
+      // one left over from a torn-down document.
+      innerWindowId: browsingContext.currentWindowContext?.innerWindowId,
+    };
+
+    // If a live prompt of the same type is showing for the same document, keep
+    // it and just re-point the fill target instead of dismissing and reopening
+    // it (which would flicker). This covers both focus moving between same-type
+    // fields and results being re-searched while the prompt is open. The option
+    // set is identical across fields of the same form, so there is no need to
+    // refresh the displayed options. We require a live prompt and a matching
+    // document so a stale selection left over from a torn-down document is
+    // never coalesced into.
+    if (
+      this._prompt &&
+      this._activeSelection?.selectionType === selectionType &&
+      this._activeSelection.innerWindowId === context.innerWindowId
+    ) {
+      debug`delegateSelection - coalescing into the active prompt`;
+      this._cancelPendingDismiss();
+      this._activeSelection = context;
+      return;
+    }
+
+    // Otherwise this is a new, independent selection. Tear down whatever is
+    // showing (a different type, or a stale prompt) and start fresh. We do not
+    // wait for the previous selection to unwind; the generation check below
+    // ensures it can neither clobber nor block this one.
+    this._cancelPendingDismiss();
+    try {
+      this._prompt?.dismiss();
+    } catch (e) {
+      debug`delegateSelection - error dismissing previous prompt: ${e}`;
+    }
+    this._prompt = null;
+
+    const generation = ++this._selectionGeneration;
+    this._activeSelection = context;
+
+    try {
+      const selectedOption = await this._requestSelection(
+        selectionType,
+        browser,
+        selectOptions
+      );
+
+      // A newer selection superseded us while the prompt was open; let it own
+      // the shared state.
+      if (generation !== this._selectionGeneration) {
+        return;
+      }
+
+      // prompt is closed now.
+      this._prompt = null;
+
+      debug`delegateSelection selected option: ${selectedOption}`;
+
+      if (!selectedOption) {
+        debug`Abort delegateSelection - no option selected`;
+        return;
+      }
+
+      // Read the fill context, which may have been re-pointed to a different
+      // field while the prompt was open.
+      await this._fillSelection(this._activeSelection, selectedOption);
+    } finally {
+      if (generation === this._selectionGeneration) {
+        this._cancelPendingDismiss();
+        this._prompt = null;
+        this._activeSelection = null;
+      }
+    }
+  },
+
+  /**
+   * Parses the raw autocomplete options into {SelectOption}s and determines the
+   * selection type and login style.
+   *
+   * @param aOptions The raw autocomplete options from the content process.
+   * @returns {object} { selectOptions, selectionType, loginStyle }
+   */
+  _parseSelectOptions(aOptions) {
     let insecureHint = SelectOption.Hint.NONE;
     let loginStyle = null;
 
@@ -576,7 +714,7 @@ export const GeckoViewAutocomplete = {
     let selectionType = null;
     const selectOptions = [];
 
-    for (const option of options) {
+    for (const option of aOptions) {
       switch (option.style) {
         case "insecureWarning": {
           // We depend on the insecure warning to be the first option.
@@ -666,53 +804,42 @@ export const GeckoViewAutocomplete = {
       }
     }
 
-    if (selectOptions.length < 1) {
-      debug`Abort delegateSelection - no valid options provided`;
-      return;
+    return { selectOptions, selectionType, loginStyle };
+  },
+
+  /**
+   * Shows the selection prompt for the given type and resolves with the option
+   * the user selected, or null if the prompt was dismissed or no delegate is
+   * attached.
+   */
+  _requestSelection(aSelectionType, aBrowser, aSelectOptions) {
+    const onError = _ => {
+      debug`No GV delegate attached`;
+    };
+    if (aSelectionType === "login") {
+      return this.onLoginSelect(aBrowser, aSelectOptions).catch(onError);
+    } else if (aSelectionType === "creditCard") {
+      return this.onCreditCardSelect(aBrowser, aSelectOptions).catch(onError);
+    } else if (aSelectionType === "address") {
+      return this.onAddressSelect(aBrowser, aSelectOptions).catch(onError);
     }
+    return Promise.resolve(null);
+  },
 
-    if (this._numActiveSelections > 0) {
-      debug`Abort delegateSelection - there is already one delegation active`;
-      return;
-    }
-
-    ++this._numActiveSelections;
-
-    let selectedOption = null;
-    const browser = browsingContext.top.embedderElement;
-    if (selectionType === "login") {
-      selectedOption = await this.onLoginSelect(browser, selectOptions).catch(
-        _ => {
-          debug`No GV delegate attached`;
-        }
-      );
-    } else if (selectionType === "creditCard") {
-      selectedOption = await this.onCreditCardSelect(
-        browser,
-        selectOptions
-      ).catch(_ => {
-        debug`No GV delegate attached`;
-      });
-    } else if (selectionType === "address") {
-      selectedOption = await this.onAddressSelect(browser, selectOptions).catch(
-        _ => {
-          debug`No GV delegate attached`;
-        }
-      );
-    }
-
-    // prompt is closed now.
-    this._prompt = null;
-
-    --this._numActiveSelections;
-
-    debug`delegateSelection selected option: ${selectedOption}`;
-
+  /**
+   * Fills the form for the selected option using the given fill context.
+   *
+   * @param aSession The fill context (browsingContext, browser,
+   *                 inputElementIdentifier, formOrigin, selectionType,
+   *                 loginStyle).
+   * @param aSelectedOption The {SelectOption} the user selected.
+   */
+  async _fillSelection(aSession, aSelectedOption) {
     if (
-      selectionType === "login" ||
-      SelectOption.Hint.FIREFOX_RELAY & selectedOption.hint
+      aSession.selectionType === "login" ||
+      SelectOption.Hint.FIREFOX_RELAY & aSelectedOption.hint
     ) {
-      const selectedLogin = selectedOption?.value?.toLoginInfo();
+      const selectedLogin = aSelectedOption?.value?.toLoginInfo();
 
       if (!selectedLogin) {
         debug`Abort delegateSelection - no login entry selected`;
@@ -721,35 +848,35 @@ export const GeckoViewAutocomplete = {
 
       debug`delegateSelection - filling form`;
 
-      if (selectedOption.hint & SelectOption.Hint.GENERATED) {
+      if (aSelectedOption.hint & SelectOption.Hint.GENERATED) {
         this.onLoginSave(selectedLogin);
       }
 
       const actor =
-        browsingContext.currentWindowGlobal.getActor("LoginManager");
+        aSession.browsingContext.currentWindowGlobal.getActor("LoginManager");
 
       await actor.fillForm({
-        browser,
-        inputElementIdentifier,
-        loginFormOrigin: formOrigin,
+        browser: aSession.browser,
+        inputElementIdentifier: aSession.inputElementIdentifier,
+        loginFormOrigin: aSession.formOrigin,
         login: selectedLogin,
         style:
-          selectedOption.hint & SelectOption.Hint.GENERATED
+          aSelectedOption.hint & SelectOption.Hint.GENERATED
             ? "generatedPassword"
-            : loginStyle,
+            : aSession.loginStyle,
       });
-    } else if (selectionType === "creditCard") {
+    } else if (aSession.selectionType === "creditCard") {
       const actor =
-        browsingContext.currentWindowGlobal.getActor("FormAutofill");
-      const elementId = JSON.stringify(inputElementIdentifier);
-      const selectedCreditCard = selectedOption?.value?.toGecko();
+        aSession.browsingContext.currentWindowGlobal.getActor("FormAutofill");
+      const elementId = JSON.stringify(aSession.inputElementIdentifier);
+      const selectedCreditCard = aSelectedOption?.value?.toGecko();
 
       actor.autofillFields(elementId, selectedCreditCard);
-    } else if (selectionType === "address") {
+    } else if (aSession.selectionType === "address") {
       const actor =
-        browsingContext.currentWindowGlobal.getActor("FormAutofill");
-      const elementId = JSON.stringify(inputElementIdentifier);
-      const selectedAddress = selectedOption?.value?.toGecko();
+        aSession.browsingContext.currentWindowGlobal.getActor("FormAutofill");
+      const elementId = JSON.stringify(aSession.inputElementIdentifier);
+      const selectedAddress = aSelectedOption?.value?.toGecko();
 
       actor.autofillFields(elementId, selectedAddress);
     }
@@ -757,10 +884,68 @@ export const GeckoViewAutocomplete = {
     debug`delegateSelection - form filled`;
   },
 
+  _cancelPendingDismiss() {
+    if (this._pendingDismissTimer) {
+      lazy.clearTimeout(this._pendingDismissTimer);
+      this._pendingDismissTimer = null;
+    }
+  },
+
+  /**
+   * Tears down any in-flight selection whose document is going away, so a
+   * prompt can't outlive its page. Called when a browsing context is destroyed
+   * (e.g. navigation). Scoped by the destroyed document's inner window id so we
+   * never dismiss a prompt owned by another, still-live context.
+   *
+   * @param aInnerWindowId The inner window id of the document being destroyed.
+   */
+  reset(aInnerWindowId) {
+    if (
+      !this._activeSelection ||
+      this._activeSelection.innerWindowId !== aInnerWindowId
+    ) {
+      return;
+    }
+
+    debug`reset - tearing down selection for destroyed document`;
+    this._cancelPendingDismiss();
+    try {
+      this._prompt?.dismiss();
+    } catch (e) {
+      debug`reset - error dismissing prompt: ${e}`;
+    }
+    this._prompt = null;
+    this._activeSelection = null;
+    // Bump the generation so the orphaned in-flight selection, if it ever
+    // resumes, no-ops instead of clobbering later state.
+    this._selectionGeneration++;
+  },
+
   delegateDismiss() {
     debug`delegateDismiss`;
 
-    this._prompt?.dismiss();
+    if (!this._prompt) {
+      return;
+    }
+
+    // Defer the dismissal briefly. If focus moves to another field of the same
+    // type, the follow-up delegateSelection will cancel this and keep the
+    // prompt alive, avoiding a dismiss/reopen flicker. If nothing follows
+    // (focus left all fields), the prompt is dismissed for real. We capture the
+    // prompt so a deferred dismissal only ever closes the prompt it was
+    // scheduled for, never one that replaced it in the meantime.
+    this._cancelPendingDismiss();
+    const promptToDismiss = this._prompt;
+    this._pendingDismissTimer = lazy.setTimeout(() => {
+      this._pendingDismissTimer = null;
+      if (this._prompt === promptToDismiss) {
+        try {
+          this._prompt.dismiss();
+        } catch (e) {
+          debug`delegateDismiss - error dismissing prompt: ${e}`;
+        }
+      }
+    }, lazy.dismissCoalesceDelayMs);
   },
 };
 

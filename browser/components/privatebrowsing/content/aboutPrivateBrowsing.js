@@ -55,12 +55,6 @@ async function renderPromo({
     return false;
   }
 
-  // The dismiss handler and link click/telemetry/action dispatch are shared
-  // across both layouts; only the elements they bind to differ.
-  const dismissBtn = container.querySelector(
-    ".promo-dismiss, #nova-dismiss-btn"
-  );
-
   const onLinkClick = async event => {
     event.preventDefault();
 
@@ -78,7 +72,7 @@ async function renderPromo({
     await RPMSendQuery("SpecialMessageActionDispatch", promoButton.action);
   };
 
-  const onDismissBtnClick = () => {
+  const onDismiss = () => {
     window.ASRouterMessage({
       type: "BLOCK_MESSAGE_BY_ID",
       data: { id: messageId },
@@ -87,8 +81,10 @@ async function renderPromo({
     container.remove();
   };
 
-  if (dismissBtn && messageId) {
-    dismissBtn.addEventListener("click", onDismissBtnClick, { once: true });
+  if (!novaEnabled && messageId) {
+    container
+      .querySelector(".promo-dismiss")
+      ?.addEventListener("click", onDismiss, { once: true });
   }
 
   // Without an action the promo link does nothing, so don't show the promo.
@@ -107,6 +103,8 @@ async function renderPromo({
       promoHeader,
       promoImageLarge,
       onLinkClick,
+      onDismiss,
+      dismissable: !!messageId,
     });
   } else {
     renderLegacyPromo({
@@ -130,6 +128,11 @@ async function renderPromo({
  * Resolves a promo text value to a plain string. Values may either be a
  * "fluent:"-prefixed localization id or already-localized plain text.
  *
+ * A missing Fluent message resolves to an empty string rather than throwing,
+ * matching the legacy layout (which uses data-l10n-id and simply renders
+ * nothing for a missing message). Throwing here would abort promo rendering
+ * before the call-to-action click handler is attached.
+ *
  * @param {string} value The "fluent:"-prefixed id or plain text.
  * @returns {Promise<string>} The localized string.
  */
@@ -139,7 +142,14 @@ async function resolvePromoText(value) {
   }
   const fluentId = value.replace(/^fluent:/, "");
   if (fluentId !== value) {
-    return document.l10n.formatValue(fluentId);
+    try {
+      return (await document.l10n.formatValue(fluentId)) ?? "";
+    } catch (e) {
+      // formatValue throws for a missing message under automation; fall back to
+      // empty text so the promo still renders and stays interactive.
+      console.error(e);
+      return "";
+    }
   }
   return value;
 }
@@ -162,6 +172,8 @@ async function renderNovaPromo({
   promoHeader,
   promoImageLarge,
   onLinkClick,
+  onDismiss,
+  dismissable,
 }) {
   const promoEl = container.querySelector("#nova-promo");
   const linkEl = container.querySelector("#nova-promo-link");
@@ -171,6 +183,18 @@ async function renderNovaPromo({
   // it may not be upgraded yet. Wait for it before setting reactive properties.
   await customElements.whenDefined("moz-promo");
   await customElements.whenDefined("moz-button");
+
+  promoEl.dismissable = dismissable;
+  if (dismissable) {
+    promoEl.addEventListener(
+      "promo:user-dismissed",
+      event => {
+        event.preventDefault();
+        onDismiss();
+      },
+      { once: true }
+    );
+  }
 
   if (promoHeader) {
     promoEl.heading = await resolvePromoText(promoHeader);

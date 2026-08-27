@@ -168,6 +168,12 @@
     .personalized-card-link {
       color: var(--link-color);
       font-size: var(--font-size-small);
+      border-radius: var(--border-radius-small);
+
+      &:focus-visible {
+        outline: var(--focus-outline);
+        outline-offset: var(--link-focus-outline-offset);
+      }
     }
   }
 

@@ -2129,6 +2129,8 @@ files_changed:
 - browser/components/enterprisepolicies/tests/xpcshell/test_simple_pref_policies.js
 filters:
 - target_tasks_method
+head_git_repository: https://github.com/mozilla-firefox/firefox
+head_git_rev: f18a08cd59a4c299c1f9bd6ed0d735647ca58d5b
 head_ref: c3bba5162c988aa7e1791df8827c1a1575eddcc1
 head_repository: https://hg.mozilla.org/releases/mozilla-release
 head_rev: c3bba5162c988aa7e1791df8827c1a1575eddcc1

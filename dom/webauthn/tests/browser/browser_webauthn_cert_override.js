@@ -59,23 +59,16 @@ async function test_webauthn_with_cert_override({
         const netErrorCard =
           doc.querySelector("net-error-card").wrappedJSObject;
         await netErrorCard.getUpdateComplete();
-        EventUtils.synthesizeMouseAtCenter(
-          netErrorCard.advancedButton,
-          {},
-          content
+        netErrorCard.advancedButton.click();
+        await ContentTaskUtils.waitForCondition(
+          () => netErrorCard.advancedShowing && netErrorCard.exceptionButton,
+          "Waiting for advanced panel"
         );
-        await ContentTaskUtils.waitForCondition(() => {
-          return (
-            netErrorCard.exceptionButton &&
-            !netErrorCard.exceptionButton.disabled
-          );
-        }, "Waiting for exception button");
-        netErrorCard.exceptionButton.scrollIntoView();
-        EventUtils.synthesizeMouseAtCenter(
-          netErrorCard.exceptionButton,
-          {},
-          content
+        await ContentTaskUtils.waitForCondition(
+          () => !netErrorCard.exceptionButton.disabled,
+          "Waiting for exception button"
         );
+        netErrorCard.exceptionButton.click();
       }
     }
   );

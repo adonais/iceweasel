@@ -12,6 +12,7 @@ const lazy = XPCOMUtils.declareLazy({
   SearchSERPTelemetry:
     "moz-src:///browser/components/search/SearchSERPTelemetry.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
 });
@@ -148,8 +149,8 @@ class BrowserSearchTelemetryHandler {
    *
    * @param {MozBrowser} browser
    *        The browser where the search originated.
-   * @param {SearchEngine} engine
-   *        The engine handling the search.
+   * @param {SearchEngine|string} engine
+   *        The engine handling the search or its id.
    * @param {keyof typeof BrowserSearchTelemetry.KNOWN_SEARCH_SOURCES} source
    *        Where the search originated from.
    * @param {object} [details] Options object.
@@ -169,6 +170,9 @@ class BrowserSearchTelemetryHandler {
    * @throws if source is not in the known sources list.
    */
   recordSearch(browser, engine, source, details = {}) {
+    if (typeof engine == "string") {
+      engine = lazy.SearchService.getEngineById(engine);
+    }
     if (engine.clickUrl) {
       this.#reportSearchInGlean(engine.clickUrl);
     }

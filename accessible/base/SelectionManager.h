@@ -111,7 +111,7 @@ class SelectionManager : public nsISelectionListener {
   static bool SelectionRangeChanged(SelectionType aType,
                                     const dom::AbstractRange& aRange);
 
-  ~SelectionManager();
+  ~SelectionManager() = default;
 
  protected:
   SelectionManager();

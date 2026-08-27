@@ -37,9 +37,6 @@ class TryTaskConfig(Schema, kw_only=True):
     gecko_profile_entries: Optional[int] = None
     gecko_profile_features: Optional[str] = None
     gecko_profile_threads: Optional[str] = None
-    # Use OS-native profilers (Simpleperf for Android and xperf for Windows)
-    # when running tests. Only available in raptor-browsertime tests at the moment.
-    native_profiling: Optional[bool] = None
     # Github pull request triggering a code-review analysis
     github: Optional[GitHubConfig] = None
     # adjust parameters, chunks, etc. to speed up the process of greening up a new test config.

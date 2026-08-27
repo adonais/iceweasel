@@ -102,13 +102,13 @@ void GleanDatetime::TestGetValue(JSContext* aCx, const nsACString& aPingName,
                                  ErrorResult& aRv) {
   auto result = mDatetime.TestGetValue(aPingName);
   if (result.isErr()) {
-    aResult.set(JS::UndefinedValue());
+    aResult.setUndefined();
     aRv.ThrowDataError(result.unwrapErr());
     return;
   }
   auto optresult = result.unwrap();
   if (optresult.isNothing()) {
-    aResult.set(JS::UndefinedValue());
+    aResult.setUndefined();
   } else {
     double millis =
         static_cast<double>(PR_ImplodeTime(optresult.ptr())) / PR_USEC_PER_MSEC;

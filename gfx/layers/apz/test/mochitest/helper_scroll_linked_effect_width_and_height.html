@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<script src="/tests/SimpleTest/paint_listener.js"></script>
+<script src="apz_test_utils.js"></script>
+<script src="apz_test_native_event_utils.js"></script>
+<title>width/height changes as scroll-linked effects</title>
+<style>
+html, body { margin: 0; }
+body {
+  height: 1000vh;
+}
+#target {
+  height: 100px;
+  background-color: #cc00cc;
+  overflow-anchor: none;
+}
+</style>
+<div id="target"></div>
+<script>
+async function test() {
+  let intervalId = setInterval(async () => {
+    await synthesizeNativeWheel(window, 50, 50, 0, -10);
+  }, 0);
+
+  ok(!SpecialPowers.DOMWindowUtils.hasScrollLinkedEffect,
+     "No scroll-linked effect found yet");
+
+  // Height change in a scroll event listener.
+  let scrollEventPromise = new Promise(resolve => {
+    window.addEventListener("scroll", () => {
+      let newHeight = parseFloat(getComputedStyle(target).height) + 1;
+      target.style.height = newHeight + "px";
+      resolve();
+    }, { once: true });
+  });
+  await scrollEventPromise;
+  await promiseFrame();
+  ok(SpecialPowers.DOMWindowUtils.hasScrollLinkedEffect,
+     "Height change scroll-linked effect found");
+
+  await promiseFrame();
+
+  ok(!SpecialPowers.DOMWindowUtils.hasScrollLinkedEffect,
+     "No scroll-linked effect found");
+
+  // Width change in a scroll event listener.
+  scrollEventPromise = new Promise(resolve => {
+    window.addEventListener("scroll", () => {
+      let newWidth = parseFloat(getComputedStyle(target).width) + 1;
+      target.style.width = newWidth + "px";
+      resolve();
+    }, { once: true });
+  });
+  await scrollEventPromise;
+  await promiseFrame();
+
+  ok(SpecialPowers.DOMWindowUtils.hasScrollLinkedEffect,
+     "Width change scroll-linked effect found");
+
+  await promiseFrame();
+
+  ok(!SpecialPowers.DOMWindowUtils.hasScrollLinkedEffect,
+     "No scroll-linked effect found");
+  clearInterval(intervalId);
+}
+
+waitUntilApzStable()
+.then(test)
+.then(subtestDone, subtestFailed);
+</script>

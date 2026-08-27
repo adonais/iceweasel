@@ -115,6 +115,8 @@ class MutationObservers {
    * @see nsIMutationObserver::ParentChainChanged
    */
   static inline void NotifyParentChainChanged(nsIContent* aContent) {
+    // The only way a chain changes without a child list changing.
+    nsINode::ForgetObserverChainIfCached(aContent);
     mozilla::SafeDoublyLinkedList<nsIMutationObserver>* observers =
         aContent->GetMutationObservers();
     if (observers) {

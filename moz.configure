@@ -101,6 +101,16 @@ set_config("ENABLE_TESTS", enable_tests)
 set_define("ENABLE_TESTS", enable_tests)
 
 
+option(
+    "--disable-legacy-l10n",
+    env="MOZ_USE_LEGACY_L10N",
+    help="Disable the legacy (recursive-make) l10n driver",
+)
+
+
+set_config("MOZ_USE_LEGACY_L10N", True, when="--enable-legacy-l10n")
+
+
 @depends(enable_tests)
 def gtest_has_rtti(value):
     if value:
@@ -143,15 +153,28 @@ set_config("MOZ_DEBUG", moz_debug)
 set_define("MOZ_DEBUG", moz_debug)
 
 
+confvar(
+    "MOZ_DEV_EDITION",
+    nargs=1,
+    set_as_define=True,
+    help="Whether this a dev edition build",
+)
+
+
+@depends("MOZ_DEV_EDITION")
+def moz_dev_edition(dev_edition):
+    return bool(dev_edition) or None
+
+
 set_config(
     "MOZ_DIAGNOSTIC_ASSERT_ENABLED",
     True,
-    when=moz_debug | milestone.is_early_beta_or_earlier,
+    when=moz_debug | milestone.is_nightly | moz_dev_edition,
 )
 set_define(
     "MOZ_DIAGNOSTIC_ASSERT_ENABLED",
     True,
-    when=moz_debug | milestone.is_early_beta_or_earlier,
+    when=moz_debug | milestone.is_nightly | moz_dev_edition,
 )
 
 option(
@@ -204,7 +227,7 @@ option(
     help="Enable building modules in non unified context",
 )
 
-set_config("ENABLE_UNIFIED_BUILD", True, when="--disable-unified-build")
+set_config("ENABLE_UNIFIED_BUILD", True, when="--enable-unified-build")
 
 
 include("build/moz.configure/bootstrap.configure")
@@ -430,6 +453,68 @@ dmd = dependable(False)
 # Only available when toolkit/moz.configure is included
 pack_relative_relocs_flags = dependable(False)
 real_branding_directory = dependable(None)
+
+
+nsis = check_prog(
+    "MAKENSISU",
+    ("makensis",),
+    bootstrap="nsis/bin",
+    allow_missing=True,
+    when=target_is_windows,
+)
+
+# Make sure the version of makensis is up to date.
+
+
+@depends_if(nsis)
+@checking("for NSIS version")
+@imports("re")
+def nsis_version(nsis):
+    nsis_min_version = "3.0b1"
+
+    def onerror():
+        return die("Failed to get nsis version.")
+
+    out = check_cmd_output(nsis, "-version", onerror=onerror)
+
+    m = re.search(r"(?<=v)[0-9]+\.[0-9]+((a|b|rc)[0-9]+)?", out)
+
+    if not m:
+        raise FatalCheckError("Unknown version of makensis")
+    ver = Version(m.group(0))
+
+    # Versions comparisons don't quite work well with beta versions, so ensure
+    # it works for the non-beta version.
+    if ver < nsis_min_version and (ver >= "3.0a" or ver < "3"):
+        raise FatalCheckError(
+            "To build the installer you must have NSIS"
+            f" version {nsis_min_version} or greater in your path"
+        )
+
+    return ver
+
+
+# And that makensis is 32-bit (but only on Windows).
+@depends_if(nsis, when=depends(host)(lambda h: h.kernel == "WINNT"))
+@checking("for 32-bit NSIS")
+def nsis_binary_type(nsis):
+    bin_type = windows_binary_type(nsis)
+    if bin_type != "win32":
+        raise FatalCheckError(f"{nsis} is not a 32-bit Windows application")
+
+    return "yes"
+
+
+# And any flags we have to give to makensis
+@depends(host)
+def nsis_flags(host):
+    if host.kernel != "WINNT":
+        return "-nocd"
+    return ""
+
+
+set_config("MAKENSISU_FLAGS", nsis_flags)
+
 
 include(include_project_configure)
 
@@ -721,87 +806,6 @@ def extra_programs(target):
 
 check_prog("MKFSHFS", extra_programs.MKFSHFS, allow_missing=True)
 check_prog("HFS_TOOL", extra_programs.HFS_TOOL, allow_missing=True)
-
-@depends(target)
-@imports("os")
-def makensis_progs(target):
-    if target.kernel != "WINNT":
-        return
-
-    candidates = [
-        "makensis-3.01",
-        "makensis-3.0b3",
-        "makensis-3.0b1",
-        "makensis",
-    ]
-
-    # Look for nsis installed by msys environment. But only the 32-bit version.
-    # We use an absolute path and insert as the first entry so it is preferred
-    # over a 64-bit exe that may be in PATH.
-    if "MSYSTEM_PREFIX" in os.environ:
-        prefix = os.path.dirname(os.environ["MSYSTEM_PREFIX"])
-        candidates.insert(0, os.path.join(prefix, "mingw32", "bin", "makensis.exe"))
-
-    return tuple(candidates)
-
-nsis = check_prog(
-    "MAKENSISU",
-    makensis_progs,
-    allow_missing=True,
-    when=target_is_windows,
-)
-
-# Make sure the version of makensis is up to date.
-
-
-@depends_if(nsis)
-@checking("for NSIS version")
-@imports("re")
-def nsis_version(nsis):
-    nsis_min_version = "3.0b1"
-
-    def onerror():
-        return die("Failed to get nsis version.")
-
-    out = check_cmd_output(nsis, "-version", onerror=onerror)
-
-    m = re.search(r"(?<=v)[0-9]+\.[0-9]+((a|b|rc)[0-9]+)?", out)
-
-    if not m:
-        raise FatalCheckError("Unknown version of makensis")
-    ver = Version(m.group(0))
-
-    # Versions comparisons don't quite work well with beta versions, so ensure
-    # it works for the non-beta version.
-    if ver < nsis_min_version and (ver >= "3.0a" or ver < "3"):
-        raise FatalCheckError(
-            "To build the installer you must have NSIS"
-            " version %s or greater in your path" % nsis_min_version
-        )
-
-    return ver
-
-
-# And that makensis is 32-bit (but only on Windows).
-@depends_if(nsis, when=depends(host)(lambda h: h.kernel == "WINNT"))
-@checking("for 32-bit NSIS")
-def nsis_binary_type(nsis):
-    bin_type = windows_binary_type(nsis)
-    if bin_type != "win32":
-        raise FatalCheckError("%s is not a 32-bit Windows application" % nsis)
-
-    return "yes"
-
-
-# And any flags we have to give to makensis
-@depends(host)
-def nsis_flags(host):
-    if host.kernel != "WINNT":
-        return "-nocd"
-    return ""
-
-
-set_config("MAKENSISU_FLAGS", nsis_flags)
 
 upcheck = check_prog("UPCHECK_PATH", ("upcheck",), paths=clang_search_path, when=target_has_linux_kernel)
 

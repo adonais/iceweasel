@@ -134,8 +134,6 @@ class SettingsTest {
         assertFalse(settings.emailTrackerBlockingPrivateBrowsing)
         assertEquals("", settings.queryParameterStrippingAllowList)
         assertEquals("", settings.queryParameterStrippingStripList)
-        assertEquals(EngineSession.CookieBannerHandlingMode.DISABLED, settings.cookieBannerHandlingMode)
-        assertEquals(EngineSession.CookieBannerHandlingMode.DISABLED, settings.cookieBannerHandlingModePrivateBrowsing)
 
         val interceptor: RequestInterceptor = mock()
         val historyTrackingDelegate: HistoryTrackingDelegate = mock()
@@ -176,10 +174,6 @@ class SettingsTest {
             queryParameterStrippingPrivateBrowsing = true,
             queryParameterStrippingAllowList = "AllowList",
             queryParameterStrippingStripList = "StripList",
-            cookieBannerHandlingModePrivateBrowsing = EngineSession.CookieBannerHandlingMode.REJECT_ALL,
-            cookieBannerHandlingDetectOnlyMode = true,
-            cookieBannerHandlingGlobalRules = true,
-            cookieBannerHandlingGlobalRulesSubFrames = true,
             emailTrackerBlockingPrivateBrowsing = true,
         )
 
@@ -217,11 +211,6 @@ class SettingsTest {
         assertTrue(defaultSettings.queryParameterStrippingPrivateBrowsing)
         assertEquals("AllowList", defaultSettings.queryParameterStrippingAllowList)
         assertEquals("StripList", defaultSettings.queryParameterStrippingStripList)
-        assertEquals(EngineSession.CookieBannerHandlingMode.DISABLED, defaultSettings.cookieBannerHandlingMode)
-        assertEquals(EngineSession.CookieBannerHandlingMode.REJECT_ALL, defaultSettings.cookieBannerHandlingModePrivateBrowsing)
-        assertTrue(defaultSettings.cookieBannerHandlingDetectOnlyMode)
-        assertTrue(defaultSettings.cookieBannerHandlingGlobalRules)
-        assertTrue(defaultSettings.cookieBannerHandlingGlobalRulesSubFrames)
         assertTrue(defaultSettings.emailTrackerBlockingPrivateBrowsing)
     }
 }

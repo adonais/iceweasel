@@ -19,12 +19,14 @@ PR_BEGIN_EXTERN_C
 /*
 ** Print the messages to "syserr" prepending 'msg' if not NULL.
 */
-PR_EXTERN(void) PL_PrintError(const char *msg);
+PR_EXTERN(void)
+PL_PrintError(const char* msg);
 
 /*
 ** Print the messages to specified output file prepending 'msg' if not NULL.
 */
-PR_EXTERN(void) PL_FPrintError(PRFileDesc *output, const char *msg);
+PR_EXTERN(void)
+PL_FPrintError(PRFileDesc* output, const char* msg);
 
 PR_END_EXTERN_C
 

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<style>
+/* Sets HasSlowSelectorLaterSiblings on the <select>, so that each removal
+ * restyles the later siblings. */
+option + option { color: red; }
+/* Same rule count as the test page, but with a selector that doesn't depend on
+ * the child index. */
+option.last { color: blue; }
+</style>
+<script src="util.js"></script>
+<script>
+window.onload = function() {
+  let select = document.createElement("select");
+  select.multiple = true;
+  for (let i = 0; i < 5000; i++) {
+    let option = document.createElement("option");
+    option.textContent = "option " + i;
+    select.appendChild(option);
+  }
+  document.body.appendChild(select);
+  flush_layout(select);
+  perf_start();
+  // Remove the second option each time: keeping a previous sibling around
+  // avoids the restyle-the-whole-container path, so each removal goes through
+  // the later-sibling invalidation code.
+  for (let i = 0; i < 800; i++) {
+    select.firstElementChild.nextElementSibling.remove();
+  }
+  flush_style(select);
+  perf_finish();
+};
+</script>
+<body></body>

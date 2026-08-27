@@ -69,6 +69,8 @@ release-promotion
 versioncontrol
 config
 reference
+platforms
+using-the-mozilla-source-server
 ```
 
 [continuous integration]: https://en.wikipedia.org/wiki/Continuous_integration

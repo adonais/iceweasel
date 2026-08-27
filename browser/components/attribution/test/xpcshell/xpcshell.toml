@@ -14,3 +14,5 @@ run-if = [
 ]
 
 ["test_attribution_parsing.js"]
+
+["test_referralAttribution.js"]

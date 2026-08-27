@@ -117,21 +117,6 @@ void SVGAnimatedViewBox::Init() {
   mAnimVal = nullptr;
 }
 
-bool SVGAnimatedViewBox::HasRect() const {
-  // Check mAnimVal if we have one; otherwise, check mBaseVal if we have one;
-  // otherwise, just return false (we clearly do not have a rect).
-  const SVGViewBox* rect = mAnimVal.get();
-  if (!rect) {
-    if (!mHasBaseVal) {
-      // no anim val, no base val --> no viewbox rect
-      return false;
-    }
-    rect = &mBaseVal;
-  }
-
-  return !rect->none && rect->width >= 0 && rect->height >= 0;
-}
-
 void SVGAnimatedViewBox::SetAnimValue(const SVGViewBox& aRect,
                                       SVGElement* aSVGElement) {
   if (!mAnimVal) {
@@ -182,6 +167,12 @@ nsresult SVGAnimatedViewBox::SetBaseValueString(const nsAString& aValue,
   nsresult rv = SVGViewBox::FromString(aValue, &viewBox);
   if (NS_FAILED(rv)) {
     return rv;
+  }
+  // Normally we treat "none" as an invalid value (because it's the same
+  // as not having a viewBox), but we don't want none to be a syntax
+  // error here.
+  if (!viewBox.IsNone() && !viewBox.IsValid()) {
+    return NS_ERROR_DOM_SYNTAX_ERR;
   }
   SetBaseValue(viewBox, aSVGElement, aDoSetAttr);
   return NS_OK;

@@ -399,10 +399,10 @@ index 6ba3292fca..5d3a731864 100644
    RTPHeader();
    RTPHeader(const RTPHeader& other);
 diff --git a/api/rtp_parameters.cc b/api/rtp_parameters.cc
-index df4673b02a..fcf3d0e72f 100644
+index 8df7d67d83..a49b033e8d 100644
 --- a/api/rtp_parameters.cc
 +++ b/api/rtp_parameters.cc
-@@ -232,7 +232,8 @@ bool RtpExtension::IsSupportedForAudio(absl::string_view uri) {
+@@ -250,7 +250,8 @@ bool RtpExtension::IsSupportedForAudio(absl::string_view uri) {
           uri == RtpExtension::kTransportSequenceNumberUri ||
           uri == RtpExtension::kTransportSequenceNumberV2Uri ||
           uri == RtpExtension::kMidUri || uri == RtpExtension::kRidUri ||
@@ -413,7 +413,7 @@ index df4673b02a..fcf3d0e72f 100644
  
  bool RtpExtension::IsSupportedForVideo(absl::string_view uri) {
 diff --git a/call/BUILD.gn b/call/BUILD.gn
-index 69eff3f733..99530d85a3 100644
+index 7c65219249..23e66960f4 100644
 --- a/call/BUILD.gn
 +++ b/call/BUILD.gn
 @@ -20,6 +20,7 @@ rtc_library("call_interfaces") {
@@ -521,7 +521,7 @@ index 72f2716e03..dc96455f99 100644
      x_display_->AddEventHandler(xfixes_event_base_ + XFixesCursorNotify, this);
  
 diff --git a/modules/desktop_capture/linux/x11/screen_capturer_x11.cc b/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
-index fb11c91342..c1a22e4049 100644
+index 6088a3286b..089164ed65 100644
 --- a/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
 +++ b/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
 @@ -311,7 +311,7 @@ bool ScreenCapturerX11::GetSourceList(SourceList* sources) {
@@ -534,7 +534,7 @@ index fb11c91342..c1a22e4049 100644
    }
  
 diff --git a/modules/desktop_capture/linux/x11/window_capturer_x11.cc b/modules/desktop_capture/linux/x11/window_capturer_x11.cc
-index 1cd97d2158..1f488f1979 100644
+index c31aa8068d..b70d47fd42 100644
 --- a/modules/desktop_capture/linux/x11/window_capturer_x11.cc
 +++ b/modules/desktop_capture/linux/x11/window_capturer_x11.cc
 @@ -71,6 +71,7 @@ bool WindowCapturerX11::GetSourceList(SourceList* sources) {
@@ -686,7 +686,7 @@ index 03f846a905..12405e1646 100644
  // Subclasses must defined kId and kUri static constexpr members.
  class BaseRtpStringExtension {
 diff --git a/modules/rtp_rtcp/source/rtp_packet.cc b/modules/rtp_rtcp/source/rtp_packet.cc
-index 0c5d25a06e..234b8e9c59 100644
+index a003a9df74..3fc8044d55 100644
 --- a/modules/rtp_rtcp/source/rtp_packet.cc
 +++ b/modules/rtp_rtcp/source/rtp_packet.cc
 @@ -213,6 +213,10 @@ void RtpPacket::ZeroMutableExtensions() {
@@ -701,10 +701,10 @@ index 0c5d25a06e..234b8e9c59 100644
    }
  }
 diff --git a/modules/rtp_rtcp/source/rtp_packet_unittest.cc b/modules/rtp_rtcp/source/rtp_packet_unittest.cc
-index 1343d0a7b4..970795e7e2 100644
+index 0e713dcd52..f625dbe0c5 100644
 --- a/modules/rtp_rtcp/source/rtp_packet_unittest.cc
 +++ b/modules/rtp_rtcp/source/rtp_packet_unittest.cc
-@@ -142,6 +142,18 @@ constexpr uint8_t kPacketWithMid[] = {
+@@ -143,6 +143,18 @@ constexpr uint8_t kPacketWithMid[] = {
      0xbe, 0xde, 0x00, 0x01,
      0xb2, 'm', 'i', 'd'};
  
@@ -723,7 +723,7 @@ index 1343d0a7b4..970795e7e2 100644
  constexpr uint32_t kCsrcs[] = {0x34567890, 0x32435465};
  constexpr uint8_t kPayload[] = {'p', 'a', 'y', 'l', 'o', 'a', 'd'};
  constexpr uint8_t kPacketPaddingSize = 8;
-@@ -421,6 +433,24 @@ TEST(RtpPacketTest, FailsToSetUnregisteredExtension) {
+@@ -423,6 +435,24 @@ TEST(RtpPacketTest, FailsToSetUnregisteredExtension) {
    EXPECT_EQ(packet.GetExtension<TransportSequenceNumber>(), std::nullopt);
  }
  
@@ -1392,7 +1392,7 @@ index c3326509ce..293ccd7089 100644
    const bool enable_svc_for_simulcast_;
    std::optional<SimulcastToSvcConverter> simulcast_to_svc_converter_;
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 5a306a6bb5..ca1869da2a 100644
+index bd076c34f5..36b301f6eb 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -549,6 +549,12 @@ rtc_library("logging") {
@@ -1482,10 +1482,10 @@ index 5721ba6054..bf58f612fa 100644
  
  //////////////////////////////////////////////////////////////////////
 diff --git a/test/fuzzers/rtp_packet_fuzzer.cc b/test/fuzzers/rtp_packet_fuzzer.cc
-index aa2f819934..a49bf15938 100644
+index 166376659c..21479a54ae 100644
 --- a/test/fuzzers/rtp_packet_fuzzer.cc
 +++ b/test/fuzzers/rtp_packet_fuzzer.cc
-@@ -182,6 +182,10 @@ void FuzzOneInput(FuzzDataHelper fuzz_data) {
+@@ -183,6 +183,10 @@ void FuzzOneInput(FuzzDataHelper fuzz_data) {
          CorruptionDetectionMessage message;
          packet.GetExtension<CorruptionDetectionExtension>(&message);
          break;
@@ -1510,10 +1510,10 @@ index b7933130bd..428fc9615d 100644
    vcm_ = nullptr;
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index 39d9346811..3f3b9314a3 100644
+index 6c4b961be7..b827f10b6b 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
-@@ -106,7 +106,7 @@ declare_args() {
+@@ -110,7 +110,7 @@ declare_args() {
  
    # Selects whether debug dumps for the audio processing module
    # should be generated.

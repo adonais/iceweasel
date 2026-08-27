@@ -1030,7 +1030,43 @@ networking:
   http_3_ecn_ce_ect0_ratio_received:
     <<: *http_3_ecn_ce_ect0_ratio_sent
     description: >
-      HTTP3: ECN CE to ECT0 ratio (multiply by 10000) received.
+      HTTP3: ECN CE to ECT0 ratio (multiply by 10000) received. As of
+      https://bugzilla.mozilla.org/show_bug.cgi?id=2056075, only recorded for
+      connections that observed ECT(0) without ever observing ECT(1), since a
+      CE mark on a connection that saw both cannot be attributed to either
+      type.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902065
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2056075
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902065
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2056075
+
+  http_3_ecn_ect_received:
+    type: labeled_counter
+    description: >
+      HTTP3: Which ECN codepoints were observed on received (server->browser)
+      packets, recorded once per connection that completed its handshake. Used
+      to measure how many servers mark ECN on the traffic they send us and,
+      among those, the adoption of ECT(1) (L4S) versus ECT(0) (classic ECN).
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2056075
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2056075
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - omansfeld@mozilla.com
+    expires: never
+    labels:
+      - none            # no ECT(0)/ECT(1)/CE received (server not marking)
+      - ect0            # ECT(0) present, ECT(1) absent
+      - ect1            # ECT(1) present, ECT(0) absent
+      - ect0-and-ce     # ECT(0) present, CE present
+      - ect1-and-ce     # ECT(1) present, CE present
+      - ect0-and-ect1   # both ECT(0) and ECT(1) observed
+      - ce-only         # CE present but no ECT(0)/ECT(1) (origin ambiguous)
 
   http_3_ecn_path_capability:
     type: labeled_counter
@@ -1873,11 +1909,13 @@ networking:
       at shutdown by a background task process.
     bugs:
       - https://bugzilla.mozilla.org/1848542
+      - https://bugzilla.mozilla.org/2057073
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1848542
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2057073
     notification_emails:
       - vgosu@mozilla.com
-    expires: 156
+    expires: 168
 
   residual_cache_folder_removal:
     type: labeled_counter
@@ -1887,12 +1925,14 @@ networking:
     bugs:
       - https://bugzilla.mozilla.org/1848542
       - https://bugzilla.mozilla.org/1989190
+      - https://bugzilla.mozilla.org/2057073
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1848542
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1989190
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2057073
     notification_emails:
       - vgosu@mozilla.com
-    expires: 156
+    expires: 168
     labels:
       - success
       - failure

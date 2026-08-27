@@ -1,0 +1,8 @@
+//error: struct `X' is only partially defined
+
+struct X { X x; };
+
+[ChildProc=any]
+protocol PundefSelfRecStruct {
+child: async __delete__(X x);
+};

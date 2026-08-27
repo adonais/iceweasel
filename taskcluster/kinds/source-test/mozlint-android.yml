@@ -56,6 +56,7 @@ task-defaults:
               path: /builds/worker/checkouts/gecko/obj-firefox/gradle/build/reports
               type: directory
     run:
+        clone-with: hg
         using: run-task
         tooltool-downloads: internal  # For internal toolchains.
     fetches:
@@ -73,6 +74,7 @@ lints:
     treeherder:
         symbol: android(lints)
     run:
+        clone-with: hg
         command: >
             ln -s $MOZ_FETCHES_DIR/android-gradle-dependencies $GECKO_PATH &&
             ln -s $MOZ_FETCHES_DIR/android-sdk-linux $GECKO_PATH &&
@@ -113,6 +115,7 @@ fenix:
     treeherder:
         symbol: android(fenix-lints)
     run:
+        clone-with: hg
         command: >
             ln -s $MOZ_FETCHES_DIR/android-gradle-dependencies $GECKO_PATH &&
             ln -s $MOZ_FETCHES_DIR/android-sdk-linux $GECKO_PATH &&
@@ -131,6 +134,7 @@ fenix:
             - 'mobile/android/config/**'
             - 'mobile/android/gradle.configure'
             - 'mobile/android/**/moz.build'
+            - 'mobile/android/shared-lint.xml'
             - '**/*.gradle'
             # Other misc lint related files.
             - 'python/mozlint/**'
@@ -140,6 +144,7 @@ focus:
     treeherder:
         symbol: android(focus-lints)
     run:
+        clone-with: hg
         command: >
             ln -s $MOZ_FETCHES_DIR/android-gradle-dependencies $GECKO_PATH &&
             ln -s $MOZ_FETCHES_DIR/android-sdk-linux $GECKO_PATH &&
@@ -158,6 +163,7 @@ focus:
             - 'mobile/android/config/**'
             - 'mobile/android/gradle.configure'
             - 'mobile/android/**/moz.build'
+            - 'mobile/android/shared-lint.xml'
             - '**/*.gradle'
             # Other misc lint related files.
             - 'python/mozlint/**'
@@ -167,6 +173,7 @@ android-components:
     treeherder:
         symbol: android(ac-lints)
     run:
+        clone-with: hg
         command: >
             ln -s $MOZ_FETCHES_DIR/android-gradle-dependencies $GECKO_PATH &&
             ln -s $MOZ_FETCHES_DIR/android-sdk-linux $GECKO_PATH &&

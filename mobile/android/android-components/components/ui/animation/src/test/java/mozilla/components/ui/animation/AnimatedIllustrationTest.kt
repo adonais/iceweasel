@@ -16,11 +16,11 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.airbnb.lottie.LottieCompositionFactory
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 
 private const val MINIMAL_LOTTIE_JSON =

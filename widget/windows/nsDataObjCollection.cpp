@@ -23,8 +23,6 @@ const IID IID_IDataObjCollection = {
  * Class nsDataObjCollection
  */
 
-nsDataObjCollection::nsDataObjCollection() {}
-
 nsDataObjCollection::~nsDataObjCollection() { mDataObjects.Clear(); }
 
 // IUnknown interface methods - see iunknown.h for documentation

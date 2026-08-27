@@ -24,6 +24,7 @@ GMPVideoEncoderChild::~GMPVideoEncoderChild() {
   // the worker thread.
   if (mVideoEncoder) {
     mVideoEncoder->EncodingComplete();
+    RemovePluginObject();
   }
 }
 
@@ -35,6 +36,7 @@ void GMPVideoEncoderChild::Init(GMPVideoEncoder* aEncoder) {
   MOZ_ASSERT(aEncoder,
              "Cannot initialize video encoder child without a video encoder!");
   mVideoEncoder = aEncoder;
+  AddPluginObject();
 }
 
 void GMPVideoEncoderChild::Encoded(GMPVideoEncodedFrame* aEncodedFrame,

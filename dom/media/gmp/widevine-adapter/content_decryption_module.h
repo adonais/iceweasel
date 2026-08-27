@@ -666,6 +666,8 @@ class CDM_CLASS_API FileIOClient {
 // function. To add a new metric, please add it to the end of this enum list
 // without changing any existing enum values.
 // Metric names that use generic naming like `Time1` are key system specific.
+// The Widevine documentation and UKM privacy approval related to these metrics
+// can be found here http://shortn/_pX9Q6zEcX8.
 // Note: For forward compatibility, Host implementations must gracefully handle
 // unexpected (new) enum values, e.g. no-op.
 enum MetricName : uint32_t {
@@ -679,6 +681,7 @@ enum MetricName : uint32_t {
   kKeySystemDataTime2,
   kKeySystemDataTime3,
   kKeySystemDataBool1,
+  kSessionInitDataType,
 };
 CHECK_TYPE(MetricName, 4, 4);
 

@@ -50,8 +50,6 @@ SourceSurfaceD3D11::SourceSurfaceD3D11(
       mTransferFunction(aTransferFunction),
       mFencesHolderId(aFencesHolderId) {}
 
-SourceSurfaceD3D11::~SourceSurfaceD3D11() {}
-
 bool SourceSurfaceD3D11::IsValid() const { return true; }
 
 already_AddRefed<DataSourceSurface> SourceSurfaceD3D11::GetDataSurface() {

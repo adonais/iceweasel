@@ -132,7 +132,7 @@ sidebar-genai-survey-productive-question =
 # Split View Onboarding Strings
 
 splitview-onboarding-callout-title-1 = Split view: a better way to multitask
-splitview-onboarding-callout-subtitle-1 = Right click this tab and choose “Add Split View” to see two tabs at once.
+splitview-onboarding-callout-subtitle-1 = Right-click this tab and choose “Add Split View” to see two tabs at once.
 splitview-onboarding-callout-cta-1 = Try it now
 
 splitview-onboarding-callout-title-2 = See two tabs at once with split view
@@ -248,6 +248,31 @@ taskbar-tabs-media-callout-subtitle = Launch your streaming sites like an app in
 
 taskbar-tabs-value-prop-callout-title = Add this site to your taskbar
 taskbar-tabs-value-prop-callout-subtitle = Launch it in its own window and a simplified interface with a single click.
+
+## Taskbar Tabs callout strings (treatment B copy variants)
+##
+## In the subtitles below, a "streamlined window" is a taskbar tab: the site
+## opens in its own dedicated window with a simplified interface, without the
+## usual browser tabs and toolbars.
+
+# Treatment B changes only the title for chat; the subtitle is unchanged from
+# treatment A, so this variant reuses taskbar-tabs-chat-callout-subtitle.
+taskbar-tabs-chat-callout-title-v3 = Stay connected from your taskbar
+
+taskbar-tabs-email-callout-title-v3 = Keep your inbox in your taskbar
+taskbar-tabs-email-callout-subtitle-v3 = Launch your email sites like an app in a streamlined window protected by { -brand-short-name }.
+
+taskbar-tabs-media-callout-title-v3 = Keep your streaming in your taskbar
+taskbar-tabs-media-callout-subtitle-v3 = Launch your media sites like an app in a streamlined window protected by { -brand-short-name }.
+
+taskbar-tabs-value-prop-callout-title-v3 = Pin your favorite sites to your taskbar
+taskbar-tabs-value-prop-callout-subtitle-v3 = Launch any site like an app in a streamlined window protected by { -brand-short-name }.
+
+taskbar-tabs-gaming-callout-title-v3 = Get back to gaming from your taskbar
+taskbar-tabs-gaming-callout-subtitle-v3 = Launch your gaming sites like an app in a streamlined window protected by { -brand-short-name }.
+
+# Button that pins the current site to the taskbar as a taskbar tab
+taskbar-tabs-callout-primary-button-v3 = Pin to taskbar
 
 ## Windows 10 EoS Sync messages group 1 callouts
 

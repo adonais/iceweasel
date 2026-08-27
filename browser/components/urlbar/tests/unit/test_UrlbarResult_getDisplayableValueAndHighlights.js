@@ -383,7 +383,7 @@ add_task(function highlight_typed() {
       url: "https://test.example.com/",
     },
     highlights: {
-      url: UrlbarUtils.HIGHLIGHT.TYPED,
+      url: UrlbarShared.HIGHLIGHT.TYPED,
     },
   });
 
@@ -407,7 +407,7 @@ add_task(function highlight_suggested() {
       suggestion: "test search test",
     },
     highlights: {
-      suggestion: UrlbarUtils.HIGHLIGHT.SUGGESTED,
+      suggestion: UrlbarShared.HIGHLIGHT.SUGGESTED,
     },
   });
 
@@ -431,7 +431,7 @@ add_task(function highlight_all() {
       url: "https://test.example.com/",
     },
     highlights: {
-      url: UrlbarUtils.HIGHLIGHT.ALL,
+      url: UrlbarShared.HIGHLIGHT.ALL,
     },
   });
 
@@ -455,7 +455,7 @@ add_task(function option_isURL() {
       url: "https://test.example.com/",
     },
     highlights: {
-      url: UrlbarUtils.HIGHLIGHT.TYPED,
+      url: UrlbarShared.HIGHLIGHT.TYPED,
     },
   });
 
@@ -479,7 +479,7 @@ add_task(function option_no_tokens() {
       url: "https://test.example.com/",
     },
     highlights: {
-      url: UrlbarUtils.HIGHLIGHT.TYPED,
+      url: UrlbarShared.HIGHLIGHT.TYPED,
     },
   });
 
@@ -502,7 +502,7 @@ add_task(function option_nothing() {
       url: "https://test.example.com/",
     },
     highlights: {
-      url: UrlbarUtils.HIGHLIGHT.TYPED,
+      url: UrlbarShared.HIGHLIGHT.TYPED,
     },
   });
 
@@ -525,7 +525,7 @@ add_task(function invalid_target() {
       url: "https://test.example.com/",
     },
     highlights: {
-      url: UrlbarUtils.HIGHLIGHT.TYPED,
+      url: UrlbarShared.HIGHLIGHT.TYPED,
     },
   });
 
@@ -549,7 +549,7 @@ add_task(function cache() {
       url: "https://test.example.com/",
     },
     highlights: {
-      url: UrlbarUtils.HIGHLIGHT.TYPED,
+      url: UrlbarShared.HIGHLIGHT.TYPED,
     },
   });
 

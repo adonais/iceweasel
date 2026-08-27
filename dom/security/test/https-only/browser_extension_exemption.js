@@ -14,7 +14,7 @@ add_task(async function test_extension_exemption() {
     {
       type: "https-only-load-insecure",
       allow: true,
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       context: "http://example.com",
     },
   ]);
@@ -23,11 +23,11 @@ add_task(async function test_extension_exemption() {
     manifest: {},
     async background() {
       let r1 = await fetch(
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         "http://example.org/browser/dom/security/test/https-only/file_cors.sjs"
       );
       let r2 = await fetch(
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         "http://example.com/browser/dom/security/test/https-only/file_cors.sjs"
       );
       browser.test.sendMessage("results", [r1.url, r2.url]);
@@ -42,7 +42,7 @@ add_task(async function test_extension_exemption() {
     `Without exception, request should be upgraded (got: ${urlWithoutException})`
   );
   ok(
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     urlWithException.startsWith("http://"),
     `With exception, request should not be upgraded (got: ${urlWithException})`
   );
@@ -61,7 +61,7 @@ add_task(async function test_content_script_not_exempted() {
     {
       type: "https-only-load-insecure",
       allow: true,
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       context: "http://example.org",
     },
   ]);
@@ -87,7 +87,7 @@ add_task(async function test_content_script_not_exempted() {
         // automatically apply to content scripts, so we expect https-only to
         // still apply here.
         let r1 = await fetch(
-          // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+          // eslint-disable-next-line sdl/no-insecure-url
           "http://example.org/browser/dom/security/test/https-only/file_cors.sjs"
         );
         browser.test.assertTrue(
@@ -98,7 +98,7 @@ add_task(async function test_content_script_not_exempted() {
         // content.fetch uses the web page's principal.
         // This is also the default behavior for MV3 extensions.
         let r2 = await content.fetch(
-          // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+          // eslint-disable-next-line sdl/no-insecure-url
           "http://example.org/browser/dom/security/test/https-only/file_cors.sjs"
         );
         browser.test.assertTrue(
@@ -138,7 +138,7 @@ add_task(async function test_content_script_http_page() {
     {
       type: "https-only-load-insecure",
       allow: true,
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       context: "http://example.com",
     },
   ]);
@@ -148,7 +148,7 @@ add_task(async function test_content_script_http_page() {
       host_permissions: ["<all_urls>"],
       content_scripts: [
         {
-          // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+          // eslint-disable-next-line sdl/no-insecure-url
           matches: ["http://example.com/*"],
           js: ["cs.js"],
         },
@@ -158,11 +158,11 @@ add_task(async function test_content_script_http_page() {
       "cs.js": async function () {
         // The page exemption propagates to all subresource fetches.
         let r1 = await fetch(
-          // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+          // eslint-disable-next-line sdl/no-insecure-url
           "http://example.org/browser/dom/security/test/https-only/file_cors.sjs"
         );
         browser.test.assertTrue(
-          // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+          // eslint-disable-next-line sdl/no-insecure-url
           r1.url.startsWith("http:"),
           `page exception must propagate to subresource fetches (got: ${r1.url})`
         );
@@ -170,11 +170,11 @@ add_task(async function test_content_script_http_page() {
         // content.fetch uses the web page's principal.
         // This is also the default behavior for MV3 extensions.
         let r2 = await content.fetch(
-          // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+          // eslint-disable-next-line sdl/no-insecure-url
           "http://example.org/browser/dom/security/test/https-only/file_cors.sjs"
         );
         browser.test.assertTrue(
-          // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+          // eslint-disable-next-line sdl/no-insecure-url
           r2.url.startsWith("http:"),
           `page exception must propagate to subresource fetches (got: ${r2.url})`
         );
@@ -188,7 +188,7 @@ add_task(async function test_content_script_http_page() {
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/"
   );
 

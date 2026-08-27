@@ -639,6 +639,21 @@ export class ProtonScreen extends React.PureComponent {
   }
 
   getEffectiveBackground(content) {
+    if (content.position !== "split") {
+      const combinedBackground =
+        content.background && content.zap_border
+          ? `linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(${content.background}) padding-box`
+          : content.background;
+
+      const combinedBackgroundStatic =
+        content.background_static && content.zap_border
+          ? `linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(${content.background_static}) padding-box`
+          : content.background_static;
+
+      return this.props.animationsPaused && content.background_static
+        ? combinedBackgroundStatic
+        : combinedBackground;
+    }
     return this.props.animationsPaused && content.background_static
       ? content.background_static
       : content.background;

@@ -7,6 +7,10 @@ const { PolicySchemaValidator } = ChromeUtils.importESModule(
   "resource://gre/modules/policies/PolicySchemaValidator.sys.mjs"
 );
 
+const { TestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TestUtils.sys.mjs"
+);
+
 function assertValid(value, schema, options) {
   const result = PolicySchemaValidator.validate(value, schema, options);
   Assert.ok(result.valid, `Expected ${JSON.stringify(value)} to validate`);
@@ -39,7 +43,27 @@ add_task(function test_boolean_coercion_from_gpo_dword() {
   Assert.strictEqual(assertValid(0, schema), false, "0 coerces to false");
   Assert.strictEqual(assertValid(true, schema), true, "true stays true");
   assertInvalid(2, schema);
-  assertInvalid("true", schema);
+});
+
+add_task(function test_boolean_coercion_from_string() {
+  const schema = { type: "boolean" };
+
+  Assert.strictEqual(assertValid("true", schema), true, '"true" coerces');
+  Assert.strictEqual(assertValid("false", schema), false, '"false" coerces');
+  Assert.strictEqual(
+    assertValid("True", schema),
+    true,
+    "the match is case insensitive"
+  );
+  assertInvalid("yes", schema);
+  assertInvalid("", schema);
+});
+
+add_task(function test_string_field_keeps_its_quoted_boolean() {
+  // A field that accepts a string must not have "true" turned into a boolean.
+  const schema = { type: ["string", "boolean"] };
+
+  Assert.strictEqual(assertValid("true", schema), "true", '"true" stays text');
 });
 
 add_task(function test_numeric_field_keeps_its_integer() {
@@ -167,4 +191,102 @@ add_task(function test_additional_properties_rejected_by_default() {
   };
 
   assertInvalid({ known: "value", extra: "x" }, schema);
+});
+
+// ExtensionSettings shape: a "*" entry holding the defaults, plus open-ended
+// per-extension-ID entries.
+const EXTENSION_SETTINGS_SHAPE = {
+  type: "object",
+  properties: {
+    "*": {
+      type: "object",
+      properties: {
+        installation_mode: { type: "string" },
+      },
+    },
+  },
+  patternProperties: {
+    "^(?!\\*$).*$": {
+      type: "object",
+      properties: {
+        installation_mode: { type: "string" },
+        updates_disabled: { type: "boolean" },
+      },
+    },
+  },
+};
+
+add_task(function test_map_drops_invalid_entries_and_keeps_the_rest() {
+  // One malformed entry must not discard every other extension's settings.
+  Assert.deepEqual(
+    assertValid(
+      {
+        "*": { installation_mode: "blocked" },
+        "good@example.com": { installation_mode: "force_installed" },
+        "bad@example.com": { updates_disabled: 42 },
+      },
+      EXTENSION_SETTINGS_SHAPE
+    ),
+    {
+      "*": { installation_mode: "blocked" },
+      "good@example.com": { installation_mode: "force_installed" },
+    },
+    "the invalid entry is dropped and the rest of the policy applies"
+  );
+});
+
+add_task(function test_map_never_drops_a_fixed_property() {
+  // "*" is not an independently droppable entry: dropping it would turn a
+  // global block into a policy that looks healthy and installs everything.
+  assertInvalid(
+    {
+      "*": { installation_mode: 42 },
+      "ok@example.com": { installation_mode: "force_installed" },
+    },
+    EXTENSION_SETTINGS_SHAPE
+  );
+});
+
+add_task(function test_fixed_properties_are_not_dropped_individually() {
+  // An object with only fixed properties is one value, not a collection: a bad
+  // property fails the policy rather than being silently discarded.
+  const schema = {
+    type: "object",
+    properties: { host: { type: "string" }, port: { type: "number" } },
+  };
+
+  assertInvalid({ host: "example.com", port: "not a number" }, schema);
+});
+
+add_task(async function test_dropped_entry_names_the_failing_field() {
+  // The log line is the only signal an admin gets that an entry went missing,
+  // so it must name the field that failed, including when that field's name
+  // needs unescaping out of the JSON pointer the validator reports.
+  const schema = {
+    type: "object",
+    patternProperties: {
+      "^.*$": {
+        type: "object",
+        properties: { "application/pdf": { type: "string" } },
+      },
+    },
+  };
+
+  const stopListening = TestUtils.listenForConsoleMessages();
+  assertValid({ mimeTypes: { "application/pdf": 3 } }, schema, {
+    policyName: "Handlers",
+  });
+  const messages = await stopListening();
+
+  Assert.ok(
+    messages.some(
+      msg =>
+        msg.level == "error" &&
+        msg.arguments[0].includes(
+          'Handlers["mimeTypes"]["application/pdf"]: Instance type "number"'
+        ) &&
+        msg.arguments[0].includes("Received 3")
+    ),
+    "the dropped entry names the failing field and the value received"
+  );
 });

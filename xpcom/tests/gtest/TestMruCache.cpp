@@ -39,6 +39,15 @@ struct StringStructMap
   }
 };
 
+// All keys map to the same slot, so any two distinct keys collide. Used to
+// exercise eviction/overwrite behaviour independently of hash distribution.
+struct CollideMap : public MruCache<int, int, CollideMap> {
+  static HashNumber Hash(const KeyType&) { return 0; }
+  static bool Match(const KeyType& aKey, const ValueType& aVal) {
+    return aKey == aVal;
+  }
+};
+
 // Helper for emulating convertable holders such as RefPtr.
 template <typename T>
 struct Convertable {
@@ -100,16 +109,12 @@ TEST(MruCache, TestPut)
 {
   IntMap mru;
 
-  // Fill it up.
+  // Each entry is present immediately after being inserted. (We can't assert
+  // that all entries coexist: with a hashed index some keys share a slot.)
   for (int i = 1; i < 32; i++) {
     mru.Put(i, i);
-  }
 
-  // Now check each value.
-  for (int i = 1; i < 32; i++) {
     auto p = mru.Lookup(i);
-
-    // Should be found.
     EXPECT_TRUE(p);
     EXPECT_EQ(p.Data(), i);
   }
@@ -119,17 +124,11 @@ TEST(MruCache, TestPutConvertable)
 {
   UintPtrMap mru;
 
-  // Fill it up.
   for (uintptr_t i = 1; i < 32; i++) {
     Convertable<int*> val{(int*)i};
     mru.Put(i, val);
-  }
 
-  // Now check each value.
-  for (uintptr_t i = 1; i < 32; i++) {
     auto p = mru.Lookup(i);
-
-    // Should be found.
     EXPECT_TRUE(p);
     EXPECT_EQ(p.Data(), (int*)i);
   }
@@ -137,22 +136,17 @@ TEST(MruCache, TestPutConvertable)
 
 TEST(MruCache, TestOverwriting)
 {
-  // Test overwrting
-  IntMap mru;
+  // Distinct keys that map to the same slot evict each other.
+  CollideMap mru;
 
-  // 1-31 should be overwritten by 32-63
-  for (int i = 1; i < 63; i++) {
-    mru.Put(i, i);
-  }
+  mru.Put(1, 1);
+  mru.Put(2, 2);  // Evicts 1.
 
-  // Look them up.
-  for (int i = 32; i < 63; i++) {
-    auto p = mru.Lookup(i);
+  EXPECT_FALSE(mru.Lookup(1));
 
-    // Should be found.
-    EXPECT_TRUE(p);
-    EXPECT_EQ(p.Data(), i);
-  }
+  auto p = mru.Lookup(2);
+  EXPECT_TRUE(p);
+  EXPECT_EQ(p.Data(), 2);
 }
 
 TEST(MruCache, TestRemove)
@@ -160,13 +154,11 @@ TEST(MruCache, TestRemove)
   {
     IntMap mru;
 
-    // Fill it up.
+    // Insert, confirm present, remove, confirm gone -- one key at a time so a
+    // hashed slot collision between two keys can't perturb the result.
     for (int i = 1; i < 32; i++) {
       mru.Put(i, i);
-    }
 
-    // Now remove each value.
-    for (int i = 1; i < 32; i++) {
       // Should be present.
       auto p = mru.Lookup(i);
       EXPECT_TRUE(p);
@@ -182,13 +174,9 @@ TEST(MruCache, TestRemove)
   {
     UintPtrMap mru;
 
-    // Fill it up.
     for (uintptr_t i = 1; i < 32; i++) {
       mru.Put(i, (int*)i);
-    }
 
-    // Now remove each value.
-    for (uintptr_t i = 1; i < 32; i++) {
       // Should be present.
       auto p = mru.Lookup(i);
       EXPECT_TRUE(p);
@@ -204,15 +192,9 @@ TEST(MruCache, TestRemove)
   {
     StringStructMap mru;
 
-    // Fill it up.
     for (char i = 1; i < 32; i++) {
       const nsCString key = MakeStringKey(i);
       mru.Put(key, StringStruct{key, "foo"_ns});
-    }
-
-    // Now remove each value.
-    for (char i = 1; i < 32; i++) {
-      const nsCString key = MakeStringKey(i);
 
       // Should be present.
       auto p = mru.Lookup(key);
@@ -284,28 +266,29 @@ TEST(MruCache, TestLookupMissingAndSet)
 
 TEST(MruCache, TestLookupAndOverwrite)
 {
-  IntMap mru;
+  // Two distinct keys that map to the same slot.
+  CollideMap mru;
 
   // Set 1.
   mru.Put(1, 1);
 
-  // Lookup a key that maps the 1's entry.
-  auto p = mru.Lookup(32);
+  // Lookup a different key that maps to 1's entry.
+  auto p = mru.Lookup(2);
   EXPECT_FALSE(p);  // not a match
 
   // Now overwrite the entry.
-  p.Set(32);
+  p.Set(2);
   EXPECT_TRUE(p);
-  EXPECT_EQ(p.Data(), 32);
+  EXPECT_EQ(p.Data(), 2);
 
   // 1 should be gone now.
   p = mru.Lookup(1);
   EXPECT_FALSE(p);
 
-  // 32 should be found.
-  p = mru.Lookup(32);
+  // 2 should be found.
+  p = mru.Lookup(2);
   EXPECT_TRUE(p);
-  EXPECT_EQ(p.Data(), 32);
+  EXPECT_EQ(p.Data(), 2);
 }
 
 TEST(MruCache, TestLookupAndRemove)

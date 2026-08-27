@@ -127,20 +127,51 @@ void AddHighValuePermission(const nsACString& aOrigin,
 bool IsIsolateHighValueSiteEnabled();
 
 /**
+ * Options for ValidatePrincipal methods. By default:
+ *
+ * 1. The principal must not be `nullptr`.
+ * 2. The principal must be a null or content principal
+ * 3. The principal must be in the target process' LoadedOriginSet.
+ *   - There are some exceptions to this (e.g. extension, null principals).
+ *   - Principals are added to the set by `ContentParent::AboutToLoadOrigin`.
+ * 4. The principal must be "generally loadable" by the target remote type.
+ *   - See the implementation of ValidatePrincipalCouldPotentiallyBeLoadedBy.
+ *
+ * These options allow disabling parts of these checks.
+ */
+enum class ValidatePrincipalOptions {
+  // Allow the principal to be `nullptr` (i.e. not present)
+  AllowNullPtr,
+
+  // Allow the principal to be an expanded principal.
+  // Sub-principals will each be validated.
+  AllowExpanded,
+
+  // Allow the system principal if it is in the process' LoadedOriginSet.
+  //
+  // This should only occur in the inference process, or when a legacy system
+  // principal chrome:// document has been forcibly loaded within this process.
+  AllowSystemIfLoaded,
+
+  // Don't check the LoadedOriginSet during this ValidatePrincipal call.
+  // This is used for checks before `ContentParent::AboutToLoadOrigin`.
+  AllowNotLoadedOrigin,
+
+  // Allow the system principal unconditionally, ignoring the LoadedOriginSet.
+  AlwaysAllowSystem,
+};
+
+/**
  * Perform a lax check that a process with the given RemoteType could
  * potentially load a Document or run script with the given principal.
  *
  * WARNING: This is intentionally a lax check, to avoid false positives in
  * assertions, and should NOT be used for process isolation decisions.
  */
-enum class ValidatePrincipalOptions {
-  AllowNullPtr,  // Not a NullPrincipal but a nullptr as Principal.
-  AllowSystem,
-  AllowExpanded,
-};
 bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     nsIPrincipal* aPrincipal, const nsACString& aRemoteType,
-    const EnumSet<ValidatePrincipalOptions>& aOptions = {});
+    const EnumSet<ValidatePrincipalOptions>& aOptions,
+    FunctionRef<bool(nsIPrincipal*)> aIsPrincipalLoaded = nullptr);
 
 }  // namespace mozilla::dom
 

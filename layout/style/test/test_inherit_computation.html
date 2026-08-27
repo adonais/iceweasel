@@ -48,6 +48,9 @@ function get_computed_value_node(node, property)
 function test_property(property)
 {
   var info = gCSSProperties[property];
+  if ("subproperties" in info && info.subproperties.length == 0) {
+    return;
+  }
   if (property == "text-box") {
     // text-box has mismatched inherited and non-inherited sub-properties,
     // which this test doesn't really deal with.

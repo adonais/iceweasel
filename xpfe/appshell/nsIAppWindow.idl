@@ -102,13 +102,7 @@ interface nsIAppWindow : nsISupports
    */
   void lockAspectRatio(in boolean aShouldLock);
 
-  attribute uint32_t chromeFlags;
-
-  /**
-   * Begin assuming |chromeFlags| don't change hereafter, and assert
-   * if they do change.  The state change is one-way and idempotent.
-   */
-  void assumeChromeFlagsAreFrozen();
+  readonly attribute uint32_t chromeFlags;
 
   /**
    * Create a new window.

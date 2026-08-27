@@ -13,8 +13,9 @@
       "use strict";
       // Intermediate page: the frame navigates here to enter bfcache, then the
       // test asks us to go back, restoring (thawing) the frame and its worker.
+      const token = new URLSearchParams(location.search).get("token");
       const bc = SpecialPowers.wrap(BroadcastChannel).unpartitionedTestingChannel(
-        "remoteDebugger_freeze_syncloop_nav"
+        "remoteDebugger_freeze_syncloop_nav_" + token
       );
       bc.onmessage = event => {
         if (event.data.command == "thaw") {

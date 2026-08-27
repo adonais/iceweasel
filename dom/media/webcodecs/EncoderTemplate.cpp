@@ -1230,8 +1230,8 @@ void EncoderTemplate<EncoderType>::PushEncodeRequest(
 
   // TODO(Bug 1984936): Enable batch encoding for selected encoders now.
   const size_t batchSize =
-      (StaticPrefs::media_use_remote_encoder_video() && mActiveConfig &&
-       IsH264CodecString(mActiveConfig->mCodec))
+      (StaticPrefs::media_use_remote_encoder_video_platform() &&
+       mActiveConfig && IsH264CodecString(mActiveConfig->mCodec))
           ? std::max<size_t>(
                 StaticPrefs::dom_media_webcodecs_batch_encoding_size(), 1)
           : 1;

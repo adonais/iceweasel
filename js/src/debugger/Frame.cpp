@@ -386,7 +386,7 @@ bool DebuggerFrame::setGeneratorInfo(JSContext* cx,
   //
   // 2) The generator's script's observer count must be bumped.
 
-  RootedScript script(cx, genObj->callee().nonLazyScript());
+  RootedScript script(cx, genObj->script());
   Rooted<UniquePtr<GeneratorInfo>> info(
       cx, cx->make_unique<GeneratorInfo>(genObj, script));
   if (!info) {
@@ -504,8 +504,10 @@ bool DebuggerFrame::getCallee(JSContext* cx, Handle<DebuggerFrame*> frame,
     }
   } else {
     MOZ_ASSERT(frame->isSuspendedGeneratorFrame());
-
-    callee = &frame->generatorInfo()->unwrappedGenerator().callee();
+    AbstractGeneratorObject& gen = frame->generatorInfo()->unwrappedGenerator();
+    if (!gen.isModuleGenerator()) {
+      callee = &gen.callee();
+    }
   }
 
   return frame->owner()->wrapNullableDebuggeeObject(cx, callee, result);
@@ -990,7 +992,7 @@ static WithEnvironmentObject* CreateBindingsEnv(
   JS::Rooted<JS::Value> val(cx);
   for (size_t i = 0; i < bindingKeys.length(); i++) {
     id = bindingKeys[i];
-    cx->markId(id);
+    cx->recordRefToId(id);
     val = bindingValues[i];
     if (!cx->compartment()->wrap(cx, &val) ||
         !NativeDefineDataProperty(cx, bindingsObj, id, val, 0)) {

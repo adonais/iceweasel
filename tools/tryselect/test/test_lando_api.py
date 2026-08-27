@@ -1,10 +1,70 @@
+import json
 from textwrap import dedent
 from typing import Optional
 from unittest import mock
 
 import mozunit
 import pytest
-from tryselect.lando import LandoAPI
+from tryselect.lando import LandoAPI, LandoAPIException
+
+
+def _make_api() -> LandoAPI:
+    return LandoAPI(
+        access_token="token",
+        api_url="lando.example.net",
+        instance_id="test",
+    )
+
+
+def _make_response(status_code: int, reason: str, json_valid: bool) -> mock.Mock:
+    response = mock.Mock()
+    response.status_code = status_code
+    response.reason = reason
+    if json_valid:
+        response.json.return_value = {"detail": "boom"}
+    else:
+        response.json.side_effect = json.JSONDecodeError("Expecting value", "", 0)
+    return response
+
+
+@mock.patch("tryselect.lando.requests.post")
+@pytest.mark.parametrize(
+    "status_code,reason,expected,unexpected",
+    (
+        # A 5xx non-JSON response reports the status and hints it is transient.
+        (
+            503,
+            "Service Unavailable",
+            ["HTTP 503", "Service Unavailable", "transient"],
+            [],
+        ),
+        # A 4xx non-JSON response reports the status but gives no transient hint.
+        (400, "Bad Request", ["HTTP 400"], ["transient"]),
+        # A non-JSON body with a success status still raises a clear error.
+        (200, "OK", ["not valid JSON"], []),
+    ),
+)
+def test_post_non_json_raises_readable_error(
+    post: mock.Mock, status_code, reason, expected, unexpected
+):
+    post.return_value = _make_response(status_code, reason, json_valid=False)
+
+    with pytest.raises(LandoAPIException) as excinfo:
+        _make_api().post("https://lando.example.net/try/patches", {})
+
+    message = str(excinfo.value)
+    for substring in expected:
+        assert substring in message
+    for substring in unexpected:
+        assert substring not in message
+
+
+@mock.patch("tryselect.lando.requests.post")
+def test_post_json_error_status_raises_detail(post: mock.Mock):
+    post.return_value = _make_response(400, "Bad Request", json_valid=True)
+
+    with pytest.raises(LandoAPIException, match="boom"):
+        _make_api().post("https://lando.example.net/try/patches", {})
 
 
 @mock.patch("tryselect.lando.Auth0Config")

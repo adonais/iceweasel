@@ -126,38 +126,38 @@ class MacroAssemblerRiscv64 : public Assembler {
                                               UseScratchRegisterScope& temps);
 
   // load
-  FaultingCodeOffset ma_load(Register dest, Address address,
-                             LoadStoreSize size = SizeWord,
-                             LoadStoreExtension extension = SignExtend);
-  FaultingCodeOffset ma_load(Register dest, const BaseIndex& src,
-                             LoadStoreSize size = SizeWord,
-                             LoadStoreExtension extension = SignExtend);
-  FaultingCodeOffset ma_loadDouble(FloatRegister dest, Address address);
-  FaultingCodeOffset ma_loadDouble(FloatRegister dest, const BaseIndex& src);
-  FaultingCodeOffset ma_loadFloat(FloatRegister dest, Address address);
-  FaultingCodeOffset ma_loadFloat(FloatRegister dest, const BaseIndex& src);
-  FaultingCodeOffset ma_loadFloat16(FloatRegister dest, Address address);
-  FaultingCodeOffset ma_loadFloat16(FloatRegister dest, const BaseIndex& src);
+  FaultingCodeRange ma_load(Register dest, Address address,
+                            LoadStoreSize size = SizeWord,
+                            LoadStoreExtension extension = SignExtend);
+  FaultingCodeRange ma_load(Register dest, const BaseIndex& src,
+                            LoadStoreSize size = SizeWord,
+                            LoadStoreExtension extension = SignExtend);
+  FaultingCodeRange ma_loadDouble(FloatRegister dest, Address address);
+  FaultingCodeRange ma_loadDouble(FloatRegister dest, const BaseIndex& src);
+  FaultingCodeRange ma_loadFloat(FloatRegister dest, Address address);
+  FaultingCodeRange ma_loadFloat(FloatRegister dest, const BaseIndex& src);
+  FaultingCodeRange ma_loadFloat16(FloatRegister dest, Address address);
+  FaultingCodeRange ma_loadFloat16(FloatRegister dest, const BaseIndex& src);
 
   // store
-  FaultingCodeOffset ma_store(Register data, Address address,
-                              LoadStoreSize size = SizeWord,
-                              LoadStoreExtension extension = SignExtend);
-  FaultingCodeOffset ma_store(Register data, const BaseIndex& dest,
-                              LoadStoreSize size = SizeWord,
-                              LoadStoreExtension extension = SignExtend);
-  FaultingCodeOffset ma_store(Imm32 imm, const BaseIndex& dest,
-                              LoadStoreSize size = SizeWord,
-                              LoadStoreExtension extension = SignExtend);
-  FaultingCodeOffset ma_store(Imm32 imm, Address address,
-                              LoadStoreSize size = SizeWord,
-                              LoadStoreExtension extension = SignExtend);
-  FaultingCodeOffset ma_storeDouble(FloatRegister src, Address address);
-  FaultingCodeOffset ma_storeDouble(FloatRegister src, const BaseIndex& dest);
-  FaultingCodeOffset ma_storeFloat(FloatRegister src, Address address);
-  FaultingCodeOffset ma_storeFloat(FloatRegister src, const BaseIndex& dest);
-  FaultingCodeOffset ma_storeFloat16(FloatRegister src, Address address);
-  FaultingCodeOffset ma_storeFloat16(FloatRegister src, const BaseIndex& dest);
+  FaultingCodeRange ma_store(Register data, Address address,
+                             LoadStoreSize size = SizeWord,
+                             LoadStoreExtension extension = SignExtend);
+  FaultingCodeRange ma_store(Register data, const BaseIndex& dest,
+                             LoadStoreSize size = SizeWord,
+                             LoadStoreExtension extension = SignExtend);
+  FaultingCodeRange ma_store(Imm32 imm, const BaseIndex& dest,
+                             LoadStoreSize size = SizeWord,
+                             LoadStoreExtension extension = SignExtend);
+  FaultingCodeRange ma_store(Imm32 imm, Address address,
+                             LoadStoreSize size = SizeWord,
+                             LoadStoreExtension extension = SignExtend);
+  FaultingCodeRange ma_storeDouble(FloatRegister src, Address address);
+  FaultingCodeRange ma_storeDouble(FloatRegister src, const BaseIndex& dest);
+  FaultingCodeRange ma_storeFloat(FloatRegister src, Address address);
+  FaultingCodeRange ma_storeFloat(FloatRegister src, const BaseIndex& dest);
+  FaultingCodeRange ma_storeFloat16(FloatRegister src, Address address);
+  FaultingCodeRange ma_storeFloat16(FloatRegister src, const BaseIndex& dest);
 
   // immediates
   BufferOffset ma_liPatchable(Register dest, Imm32 imm);
@@ -337,11 +337,14 @@ class MacroAssemblerRiscv64 : public Assembler {
   void ma_cselnz(Register rd, Register rs1, Register rs2, Register rc,
                  Register rtmp);
 
-  void computeScaledAddress(const BaseIndex& address, Register dest);
+  void computeScaledAddress(
+      const BaseIndex& address, Register dest,
+      wasm::ZeroExtendIndex zeroExtend = wasm::ZeroExtendIndex::No);
   void computeScaledAddress32(const BaseIndex& address, Register dest);
 
-  Address computeScaledAddress(const BaseIndex& address,
-                               UseScratchRegisterScope& temps);
+  Address computeScaledAddress(
+      const BaseIndex& address, UseScratchRegisterScope& temps,
+      wasm::ZeroExtendIndex zeroExtend = wasm::ZeroExtendIndex::No);
 
  private:
   bool UseShortBranch(Label* L, JumpKind jumpKind, OffsetSize bits,
@@ -501,14 +504,18 @@ class MacroAssemblerRiscv64 : public Assembler {
   void Dror(Register rd, Register rs, Imm32 rt);
   void Dror(Register rd, Register rs, Register rt);
 
-  void Float32Max(FPURegister dst, FPURegister src1, FPURegister src2);
-  void Float32Min(FPURegister dst, FPURegister src1, FPURegister src2);
-  void Float64Max(FPURegister dst, FPURegister src1, FPURegister src2);
-  void Float64Min(FPURegister dst, FPURegister src1, FPURegister src2);
+  void Float32Max(FPURegister dst, FPURegister src1, FPURegister src2,
+                  bool handleNaN);
+  void Float32Min(FPURegister dst, FPURegister src1, FPURegister src2,
+                  bool handleNaN);
+  void Float64Max(FPURegister dst, FPURegister src1, FPURegister src2,
+                  bool handleNaN);
+  void Float64Min(FPURegister dst, FPURegister src1, FPURegister src2,
+                  bool handleNaN);
 
   template <typename F>
   void FloatMinMaxHelper(FPURegister dst, FPURegister src1, FPURegister src2,
-                         MaxMinKind kind);
+                         MaxMinKind kind, bool handleNaN);
 
   inline void NegateBool(Register rd, Register rs) { xori(rd, rs, 1); }
 
@@ -547,14 +554,18 @@ class MacroAssemblerRiscv64 : public Assembler {
                              uint64_t offset);
 
   void wasmLoadImpl(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                    Register ptr, AnyRegister output);
+                    Register ptr, AnyRegister output,
+                    wasm::ZeroExtendIndex zeroExtend);
   void wasmStoreImpl(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                     Register memoryBase, Register ptr);
+                     Register memoryBase, Register ptr,
+                     wasm::ZeroExtendIndex zeroExtend);
 
   void wasmLoadImpl(const wasm::MemoryAccessDesc& access,
-                    const BaseIndex& address, AnyRegister output);
+                    const BaseIndex& address, AnyRegister output,
+                    wasm::ZeroExtendIndex zeroExtend);
   void wasmStoreImpl(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                     const BaseIndex& address);
+                     const BaseIndex& address,
+                     wasm::ZeroExtendIndex zeroExtend);
 };
 
 class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
@@ -563,9 +574,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
 
   MacroAssemblerRiscv64Compat() {}
 
-  void convertBoolToInt32(Register src, Register dest) {
-    andi(dest, src, 0xff);
-  };
+  void convertBoolToInt32(Register src, Register dest) { zext_b(dest, src); };
   void convertInt32ToDouble(Register src, FloatRegister dest) {
     fcvt_d_w(dest, src);
   };
@@ -624,8 +633,10 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
     ma_add64(dest, address.base, Imm32(address.offset));
   }
 
-  void computeEffectiveAddress(const BaseIndex& address, Register dest) {
-    computeScaledAddress(address, dest);
+  void computeEffectiveAddress(
+      const BaseIndex& address, Register dest,
+      wasm::ZeroExtendIndex zeroExtend = wasm::ZeroExtendIndex::No) {
+    computeScaledAddress(address, dest, zeroExtend);
     if (address.offset) {
       ma_add64(dest, dest, Imm32(address.offset));
     }
@@ -1045,100 +1056,100 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   void movePtr(wasm::SymbolicAddress imm, Register dest);
   void movePtr(ImmGCPtr imm, Register dest);
 
-  FaultingCodeOffset load8SignExtend(const Address& address, Register dest);
-  FaultingCodeOffset load8SignExtend(const BaseIndex& src, Register dest);
+  FaultingCodeRange load8SignExtend(const Address& address, Register dest);
+  FaultingCodeRange load8SignExtend(const BaseIndex& src, Register dest);
 
-  FaultingCodeOffset load8ZeroExtend(const Address& address, Register dest);
-  FaultingCodeOffset load8ZeroExtend(const BaseIndex& src, Register dest);
+  FaultingCodeRange load8ZeroExtend(const Address& address, Register dest);
+  FaultingCodeRange load8ZeroExtend(const BaseIndex& src, Register dest);
 
-  FaultingCodeOffset load16SignExtend(const Address& address, Register dest);
-  FaultingCodeOffset load16SignExtend(const BaseIndex& src, Register dest);
+  FaultingCodeRange load16SignExtend(const Address& address, Register dest);
+  FaultingCodeRange load16SignExtend(const BaseIndex& src, Register dest);
 
   template <typename S>
   void load16UnalignedSignExtend(const S& src, Register dest) {
     load16SignExtend(src, dest);
   }
 
-  FaultingCodeOffset load16ZeroExtend(const Address& address, Register dest);
-  FaultingCodeOffset load16ZeroExtend(const BaseIndex& src, Register dest);
+  FaultingCodeRange load16ZeroExtend(const Address& address, Register dest);
+  FaultingCodeRange load16ZeroExtend(const BaseIndex& src, Register dest);
 
   template <typename S>
   void load16UnalignedZeroExtend(const S& src, Register dest) {
     load16ZeroExtend(src, dest);
   }
 
-  FaultingCodeOffset load32(const Address& address, Register dest);
-  FaultingCodeOffset load32(const BaseIndex& address, Register dest);
-  FaultingCodeOffset load32(AbsoluteAddress address, Register dest);
-  FaultingCodeOffset load32(wasm::SymbolicAddress address, Register dest);
+  FaultingCodeRange load32(const Address& address, Register dest);
+  FaultingCodeRange load32(const BaseIndex& address, Register dest);
+  FaultingCodeRange load32(AbsoluteAddress address, Register dest);
+  FaultingCodeRange load32(wasm::SymbolicAddress address, Register dest);
 
   template <typename S>
   void load32Unaligned(const S& src, Register dest) {
     load32(src, dest);
   }
 
-  FaultingCodeOffset load64(const Address& address, Register64 dest) {
+  FaultingCodeRange load64(const Address& address, Register64 dest) {
     return loadPtr(address, dest.reg);
   }
-  FaultingCodeOffset load64(const BaseIndex& address, Register64 dest) {
+  FaultingCodeRange load64(const BaseIndex& address, Register64 dest) {
     return loadPtr(address, dest.reg);
   }
 
-  FaultingCodeOffset loadDouble(const Address& addr, FloatRegister dest) {
+  FaultingCodeRange loadDouble(const Address& addr, FloatRegister dest) {
     return ma_loadDouble(dest, addr);
   }
-  FaultingCodeOffset loadDouble(const BaseIndex& src, FloatRegister dest) {
+  FaultingCodeRange loadDouble(const BaseIndex& src, FloatRegister dest) {
     return ma_loadDouble(dest, src);
   }
 
-  FaultingCodeOffset loadFloat32(const Address& addr, FloatRegister dest) {
+  FaultingCodeRange loadFloat32(const Address& addr, FloatRegister dest) {
     return ma_loadFloat(dest, addr);
   }
-  FaultingCodeOffset loadFloat32(const BaseIndex& src, FloatRegister dest) {
+  FaultingCodeRange loadFloat32(const BaseIndex& src, FloatRegister dest) {
     return ma_loadFloat(dest, src);
   }
 
-  FaultingCodeOffset loadFloat16(const Address& addr, FloatRegister dest,
-                                 Register) {
+  FaultingCodeRange loadFloat16(const Address& addr, FloatRegister dest,
+                                Register) {
     return ma_loadFloat16(dest, addr);
   }
-  FaultingCodeOffset loadFloat16(const BaseIndex& src, FloatRegister dest,
-                                 Register) {
+  FaultingCodeRange loadFloat16(const BaseIndex& src, FloatRegister dest,
+                                Register) {
     return ma_loadFloat16(dest, src);
   }
 
   template <typename S>
-  FaultingCodeOffset load64Unaligned(const S& src, Register64 dest) {
+  FaultingCodeRange load64Unaligned(const S& src, Register64 dest) {
     return load64(src, dest);
   }
 
-  FaultingCodeOffset loadPtr(const Address& address, Register dest);
-  FaultingCodeOffset loadPtr(const BaseIndex& src, Register dest);
-  FaultingCodeOffset loadPtr(AbsoluteAddress address, Register dest);
-  FaultingCodeOffset loadPtr(wasm::SymbolicAddress address, Register dest);
+  FaultingCodeRange loadPtr(const Address& address, Register dest);
+  FaultingCodeRange loadPtr(const BaseIndex& src, Register dest);
+  FaultingCodeRange loadPtr(AbsoluteAddress address, Register dest);
+  FaultingCodeRange loadPtr(wasm::SymbolicAddress address, Register dest);
 
-  FaultingCodeOffset loadPrivate(const Address& address, Register dest);
+  FaultingCodeRange loadPrivate(const Address& address, Register dest);
 
-  FaultingCodeOffset store8(Register src, const Address& address);
-  FaultingCodeOffset store8(Imm32 imm, const Address& address);
-  FaultingCodeOffset store8(Register src, const BaseIndex& address);
-  FaultingCodeOffset store8(Imm32 imm, const BaseIndex& address);
+  FaultingCodeRange store8(Register src, const Address& address);
+  FaultingCodeRange store8(Imm32 imm, const Address& address);
+  FaultingCodeRange store8(Register src, const BaseIndex& address);
+  FaultingCodeRange store8(Imm32 imm, const BaseIndex& address);
 
-  FaultingCodeOffset store16(Register src, const Address& address);
-  FaultingCodeOffset store16(Imm32 imm, const Address& address);
-  FaultingCodeOffset store16(Register src, const BaseIndex& address);
-  FaultingCodeOffset store16(Imm32 imm, const BaseIndex& address);
+  FaultingCodeRange store16(Register src, const Address& address);
+  FaultingCodeRange store16(Imm32 imm, const Address& address);
+  FaultingCodeRange store16(Register src, const BaseIndex& address);
+  FaultingCodeRange store16(Imm32 imm, const BaseIndex& address);
 
   template <typename T>
-  FaultingCodeOffset store16Unaligned(Register src, const T& dest) {
+  FaultingCodeRange store16Unaligned(Register src, const T& dest) {
     return store16(src, dest);
   }
 
-  FaultingCodeOffset store32(Register src, AbsoluteAddress address);
-  FaultingCodeOffset store32(Register src, const Address& address);
-  FaultingCodeOffset store32(Register src, const BaseIndex& address);
-  FaultingCodeOffset store32(Imm32 src, const Address& address);
-  FaultingCodeOffset store32(Imm32 src, const BaseIndex& address);
+  FaultingCodeRange store32(Register src, AbsoluteAddress address);
+  FaultingCodeRange store32(Register src, const Address& address);
+  FaultingCodeRange store32(Register src, const BaseIndex& address);
+  FaultingCodeRange store32(Imm32 src, const Address& address);
+  FaultingCodeRange store32(Imm32 src, const BaseIndex& address);
 
   // NOTE: This will use second scratch on LOONG64. Only ARM needs the
   // implementation without second scratch.
@@ -1151,34 +1162,34 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
     store32(src, dest);
   }
 
-  FaultingCodeOffset store64(Imm64 imm, Address address) {
+  FaultingCodeRange store64(Imm64 imm, Address address) {
     return storePtr(ImmWord(imm.value), address);
   }
-  FaultingCodeOffset store64(Imm64 imm, const BaseIndex& address) {
+  FaultingCodeRange store64(Imm64 imm, const BaseIndex& address) {
     return storePtr(ImmWord(imm.value), address);
   }
 
-  FaultingCodeOffset store64(Register64 src, Address address) {
+  FaultingCodeRange store64(Register64 src, Address address) {
     return storePtr(src.reg, address);
   }
-  FaultingCodeOffset store64(Register64 src, const BaseIndex& address) {
+  FaultingCodeRange store64(Register64 src, const BaseIndex& address) {
     return storePtr(src.reg, address);
   }
 
   template <typename T>
-  FaultingCodeOffset store64Unaligned(Register64 src, const T& dest) {
+  FaultingCodeRange store64Unaligned(Register64 src, const T& dest) {
     return store64(src, dest);
   }
 
   template <typename T>
-  FaultingCodeOffset storePtr(ImmWord imm, T address);
+  FaultingCodeRange storePtr(ImmWord imm, T address);
   template <typename T>
-  FaultingCodeOffset storePtr(ImmPtr imm, T address);
+  FaultingCodeRange storePtr(ImmPtr imm, T address);
   template <typename T>
-  FaultingCodeOffset storePtr(ImmGCPtr imm, T address);
-  FaultingCodeOffset storePtr(Register src, const Address& address);
-  FaultingCodeOffset storePtr(Register src, const BaseIndex& address);
-  FaultingCodeOffset storePtr(Register src, AbsoluteAddress dest);
+  FaultingCodeRange storePtr(ImmGCPtr imm, T address);
+  FaultingCodeRange storePtr(Register src, const Address& address);
+  FaultingCodeRange storePtr(Register src, const BaseIndex& address);
+  FaultingCodeRange storePtr(Register src, AbsoluteAddress dest);
 
   void moveDouble(FloatRegister src, FloatRegister dest) { fmv_d(dest, src); }
 

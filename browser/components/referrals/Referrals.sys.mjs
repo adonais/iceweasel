@@ -13,7 +13,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 const REFERRAL_CODE_PREF = "browser.referrals.code";
-const REFERRAL_CODE_LENGTH = 10;
+const REFERRAL_CODE_LENGTH = 16;
 // Crockford base32
 const REFERRAL_CODE_CHARSET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
@@ -21,6 +21,21 @@ const REFERRAL_CODE_CHARSET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
  * Manages the Firefox Referral program's per-profile referral code.
  */
 class ReferralsClass {
+  maybeLockPref() {
+    if (Services.prefs.prefIsLocked(REFERRAL_CODE_PREF)) {
+      return;
+    }
+
+    // Lock the pref if it exists so that it can't be changed. Locking the pref
+    // will reset the value to the default. If the pref doesn't exist yet,
+    // locking the pref will cause the default pref value to be an empty string
+    // meaning a new code will be generated every time.
+    let code = Services.prefs.getStringPref(REFERRAL_CODE_PREF, "");
+    if (code.length) {
+      Services.prefs.lockPref(REFERRAL_CODE_PREF);
+    }
+  }
+
   get isEnabled() {
     return lazy.REFERRALS_ENABLED;
   }
@@ -55,13 +70,21 @@ class ReferralsClass {
    * Opens about:referrals in a new tab. No-op when referrals are disabled.
    *
    * @param {Window} window The browser window to open the tab in.
+   * @param {string} entrypoint
+   *   The UI surface the tab was opened from. One of: app_menu,
+   *   accounts_menu, preferences, help_menu, about_dialog.
    */
-  openReferralsTab(window) {
+  openReferralsTab(window, entrypoint) {
     if (!this.isEnabled) {
       return;
     }
-    this.getReferralCode();
-    window.openTrustedLinkIn("about:referrals", "tab");
+    Glean.referrals.entrypointClicked.record({ entrypoint });
+    let referralCode = this.getReferralCode();
+    let aboutPageURL = new URL(`about:referrals`);
+
+    aboutPageURL.searchParams.set("ref_key", referralCode);
+
+    window.openTrustedLinkIn(aboutPageURL.toString(), "tab");
   }
 
   /**

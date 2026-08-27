@@ -729,7 +729,7 @@ class DomainToCategoriesMap {
     }
     lazy.gCryptoHash.init(lazy.gCryptoHash.SHA256);
     let bytes = new TextEncoder().encode(domain);
-    lazy.gCryptoHash.update(bytes, domain.length);
+    lazy.gCryptoHash.update(bytes, bytes.length);
     let hash = lazy.gCryptoHash.finish(true);
     let rawValues = await this.#store.getCategories(hash);
     if (rawValues?.length) {

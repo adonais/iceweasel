@@ -180,6 +180,8 @@ static const char* RetAddrEntryKindToString(RetAddrEntry::Kind kind) {
       return "callVM";
     case RetAddrEntry::Kind::StackCheck:
       return "stack check";
+    case RetAddrEntry::Kind::ResumeStackCheck:
+      return "resume stack check";
     case RetAddrEntry::Kind::InterruptCheck:
       return "interrupt check";
     case RetAddrEntry::Kind::DebugTrap:
@@ -349,6 +351,10 @@ static void PatchBaselineFramesForDebugMode(
                                    pc);
             break;
           }
+          case RetAddrEntry::Kind::ResumeStackCheck:
+            // The generator-resume prologue's overrecursion check can't run
+            // script, so it can't trigger debug mode OSR.
+            MOZ_CRASH("Unexpected ResumeStackCheck");
           case RetAddrEntry::Kind::NonOpCallVM:
           case RetAddrEntry::Kind::Invalid:
             // These cannot trigger BaselineDebugModeOSR.

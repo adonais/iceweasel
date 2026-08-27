@@ -244,6 +244,8 @@ def set_worker_type(config, tasks):
                 task["worker-type"] = "t-lambda-perf-a55"
             else:
                 task["worker-type"] = "t-bitbar-gw-perf-a55"
+        elif test_platform.startswith("android-em-14-arm64"):
+            task["worker-type"] = MACOSX_WORKER_TYPES["macosx1500-aarch64"]
         elif test_platform.startswith("android-em-"):
             task["worker-type"] = "t-linux-kvm"
         elif test_platform.startswith("linux") or test_platform.startswith("android"):

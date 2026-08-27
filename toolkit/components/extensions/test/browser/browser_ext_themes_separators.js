@@ -1,5 +1,13 @@
 "use strict";
 
+// Nova being enabled changes some of the styling that is being tested here.
+const novaEnabled = Services.prefs.getBoolPref(
+  "browser.nova.enabled",
+  true // If the pref isn't set to false, assume Nova styles are enabled by default.
+);
+
+info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
+
 // This test checks whether applied WebExtension themes that attempt to change
 // the separator colors are applied properly.
 
@@ -64,12 +72,21 @@ add_task(async function test_support_separator_properties() {
     "No vertical separator on app menu"
   );
 
-  let separatorColor = Services.prefs.getBoolPref("sidebar.revamp", false)
-    ? window.getComputedStyle(
-        document.querySelector("#tabbrowser-tabbox .browserContainer")
-      ).outlineColor
-    : window.getComputedStyle(document.querySelector("#navigator-toolbox"))
-        .borderBottomColor;
+  let separatorColor;
+
+  if (novaEnabled) {
+    // only the top border will be shown if the window is maximized.
+    separatorColor = window.getComputedStyle(
+      document.querySelector("#tabbrowser-tabbox .browserContainer")
+    ).borderTopColor;
+  } else {
+    separatorColor = Services.prefs.getBoolPref("sidebar.revamp", false)
+      ? window.getComputedStyle(
+          document.querySelector("#tabbrowser-tabbox .browserContainer")
+        ).outlineColor
+      : window.getComputedStyle(document.querySelector("#navigator-toolbox"))
+          .borderBottomColor;
+  }
   Assert.equal(
     separatorColor,
     `rgb(${hexToRGB(SEPARATOR_BOTTOM_COLOR).join(", ")})`,

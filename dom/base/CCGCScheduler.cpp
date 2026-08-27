@@ -219,12 +219,12 @@ void CCGCScheduler::NoteGCSliceEnd(TimeStamp aStart, TimeStamp aEnd) {
   PerfStats::RecordMeasurement(PerfStats::Metric::NonIdleMajorGC,
                                nonIdleDuration);
 
-  // Note the GC_SLICE_DURING_IDLE previously had a different definition: it was
-  // a histogram of percentages of externally-triggered slices. It is now a
-  // histogram of percentages of all slices. That means that now you might have
-  // a 4ms internal slice (0% during idle) followed by a 16ms external slice
-  // (15ms during idle), whereas before this would show up as a single record of
-  // a single slice with 75% of its time during idle (15 of 20ms).
+  // Note the dom.gc_slice_during_idle previously had a different definition:
+  // it was a histogram of percentages of externally-triggered slices. It is now
+  // a histogram of percentages of all slices. That means that now you might
+  // have a 4ms internal slice (0% during idle) followed by a 16ms external
+  // slice (15ms during idle), whereas before this would show up as a single
+  // record of a single slice with 75% of its time during idle (15 of 20ms).
   TimeDuration idleDuration = sliceDuration - nonIdleDuration;
   uint32_t percent =
       uint32_t(idleDuration.ToSeconds() / sliceDuration.ToSeconds() * 100);
@@ -699,7 +699,7 @@ JS::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
 
   if (aPrevSliceEndTime.IsNull()) {
     // The first slice gets the standard slice time.
-    return JS::SliceBudget(JS::TimeBudget(baseBudget));
+    return JS::SliceBudget(baseBudget);
   }
 
   // Only run a limited slice if we're within the max running time.
@@ -728,8 +728,8 @@ JS::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
   // Note: We may have already overshot the deadline, in which case
   // baseBudget will be negative and we will end up returning
   // laterSliceBudget.
-  return JS::SliceBudget(JS::TimeBudget(
-      std::max({delaySliceBudget, laterSliceBudget, baseBudget})));
+  return JS::SliceBudget(
+      std::max({delaySliceBudget, laterSliceBudget, baseBudget}));
 }
 
 JS::SliceBudget CCGCScheduler::ComputeInterSliceGCBudget(TimeStamp aDeadline,
@@ -755,7 +755,7 @@ JS::SliceBudget CCGCScheduler::ComputeInterSliceGCBudget(TimeStamp aDeadline,
   }
 
   // If the budget is being extended, do not allow it to be interrupted.
-  auto result = JS::SliceBudget(JS::TimeBudget(extendedBudget), nullptr);
+  auto result = JS::SliceBudget(extendedBudget, nullptr);
   result.idle = !aDeadline.IsNull();
   result.extended = true;
   return result;

@@ -82,7 +82,7 @@ class nsLocalFile final : public nsILocalFileWin {
   };
 
   nsLocalFile(const nsLocalFile& aOther);
-  ~nsLocalFile() {}
+  ~nsLocalFile() = default;
 
   bool mDirty;  // cached information can only be used when this is false
   bool mResolveDirty;

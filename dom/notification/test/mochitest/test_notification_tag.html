@@ -46,8 +46,8 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=782211
     };
 
     const mockAlertsService = {
-      async showAlert(alert, observer) {
-        observer.observe(null, "alertshow", alert.cookie);
+      async showAlertWithCallbacks(alert, callbacks) {
+        callbacks.onAlertShow();
 
         notificationsCreated.push(alert.name);
         if (notificationsCreated.length == 3) {

@@ -10,14 +10,14 @@
 
 class nsLocalHandlerAppWin : public nsLocalHandlerApp {
  public:
-  nsLocalHandlerAppWin() {}
+  nsLocalHandlerAppWin() = default;
 
   nsLocalHandlerAppWin(const char16_t* aName, nsIFile* aExecutable)
       : nsLocalHandlerApp(aName, aExecutable) {}
 
   nsLocalHandlerAppWin(const nsAString& aName, nsIFile* aExecutable)
       : nsLocalHandlerApp(aName, aExecutable) {}
-  virtual ~nsLocalHandlerAppWin() {}
+  virtual ~nsLocalHandlerAppWin() = default;
 
   void SetAppIdOrName(const nsString& appIdOrName) {
     mAppIdOrName = appIdOrName;

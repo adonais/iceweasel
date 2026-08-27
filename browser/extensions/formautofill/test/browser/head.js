@@ -29,6 +29,10 @@ const { VALID_ADDRESS_FIELDS, VALID_CREDIT_CARD_FIELDS } =
     "resource://autofill/FormAutofillStorageBase.sys.mjs"
   );
 
+const { formAutofillStorage } = ChromeUtils.importESModule(
+  "resource://autofill/FormAutofillStorage.sys.mjs"
+);
+
 const { FormAutofillUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/shared/FormAutofillUtils.sys.mjs"
 );
@@ -422,6 +426,14 @@ async function waitForStorageChangedEvents(...eventTypes) {
       )
     )
   );
+}
+
+// Run a UI action that mutates storage and wait for the matching
+// `formautofill-storage-changed` notification, so assertions see the result.
+async function withStorageChange(eventType, action) {
+  const observed = waitForStorageChangedEvents(eventType);
+  await action();
+  await observed;
 }
 
 /**
@@ -835,6 +847,10 @@ function getCreditCards() {
   return getRecords({ collectionName: "creditCards" });
 }
 
+function getPassports() {
+  return getRecords({ collectionName: "passports" });
+}
+
 async function saveAddress(address) {
   info("expecting address saved");
   let observePromise = TestUtils.topicObserved("formautofill-storage-changed");
@@ -910,7 +926,8 @@ async function clickDoorhangerButton(buttonType, index = 0) {
     info("expecting notification popup show up");
     await dropdownPromise;
 
-    button = notification.querySelectorAll("menuitem")[index];
+    // Only look in the dropmarker popup; some doorhangers have other menus too.
+    button = notification.menupopup.querySelectorAll("menuitem")[index];
     if (notification.menupopup.isNativeMenu) {
       notification.menupopup.activateItem(button);
     } else {
@@ -947,6 +964,10 @@ async function clickAddressDoorhangerButton(buttonType, subType) {
     return;
   }
 
+  // The doorhanger's strings are applied asynchronously. An untranslated label
+  // has an empty rect, so the synthesized click would land on its container.
+  await notification.ownerDocument.l10n.translateFragment(notification);
+
   EventUtils.synthesizeMouseAtCenter(button, {});
 }
 
@@ -977,6 +998,17 @@ async function removeAllRecords() {
   let creditCards = await getCreditCards();
   if (creditCards.length) {
     await removeCreditCards(creditCards.map(cc => cc.guid));
+  }
+  // Passports have no "FormAutofill:RemovePassports" actor message, so clear
+  // them straight from storage. Guarded on the feature pref so tests that never
+  // enabled passports don't touch the Rust-backed passport store.
+  if (
+    Services.prefs.getCharPref(
+      "extensions.formautofill.passports.supported",
+      "off"
+    ) != "off"
+  ) {
+    await formAutofillStorage.passports.removeAll();
   }
 }
 

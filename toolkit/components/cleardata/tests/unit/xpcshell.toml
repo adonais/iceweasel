@@ -27,8 +27,6 @@ skip-if = [
 ["test_content_preferences.js"]
 requesttimeoutfactor = 4  # Slow on Linux condprof
 
-["test_cookie_banner_handling.js"]
-
 ["test_cookies.js"]
 
 ["test_downloads.js"]

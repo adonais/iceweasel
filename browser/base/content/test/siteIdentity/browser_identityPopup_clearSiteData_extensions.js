@@ -73,6 +73,13 @@ add_task(async function testClearSiteDataFooterHiddenForExtensions() {
     "The clear site data footer is hidden on a WebExtension page."
   );
 
+  let promisePanelHidden = BrowserTestUtils.waitForPopupEvent(
+    gIdentityHandler._identityPopup,
+    "hidden"
+  );
+  gIdentityHandler._identityPopup.hidePopup();
+  await promisePanelHidden;
+
   // Unload the extension
   await extension.unload();
 });

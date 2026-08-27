@@ -263,7 +263,7 @@
       this.mSelectedInternal = val;
       let attributeFilter = ["value", "label", "image", "description"];
       if (val) {
-        val.setAttribute("selected", "true");
+        val.toggleAttribute("selected", true);
         for (let attr of attributeFilter) {
           if (val.hasAttribute(attr)) {
             this.setAttribute(attr, val.getAttribute(attr));
@@ -306,7 +306,7 @@
 
       var popup = this.menupopup;
       if (popup) {
-        var arr = popup.getElementsByAttribute("selected", "true");
+        var arr = popup.getElementsByAttribute("selected", "*");
 
         var editable = this.editable;
         var value = this.value;

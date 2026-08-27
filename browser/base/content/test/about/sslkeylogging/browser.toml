@@ -1,0 +1,8 @@
+# This test needs SSLKEYLOGFILE set for the whole browser session, including
+# every content process. Mutating the environment at runtime races with content
+# process creation and leaks the variable into later tests (bug 2057299), so the
+# harness sets it at launch and this manifest gets its own browser instance.
+[DEFAULT]
+environment = ["SSLKEYLOGFILE=sslkeylog-test.log"]
+
+["browser_aboutNetError_sslKeyLogging.js"]

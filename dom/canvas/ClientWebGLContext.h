@@ -12,11 +12,13 @@
 #include <vector>
 
 #include "GLConsts.h"
+#include "WebGLChild.h"
 #include "WebGLCommandQueue.h"
 #include "WebGLStrongTypes.h"
 #include "WebGLTypes.h"
 #include "js/GCAPI.h"
 #include "mozilla/Logging.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/Range.h"
 #include "mozilla/RefCounted.h"
 #include "mozilla/StaticPrefs_webgl.h"
@@ -1016,6 +1018,11 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   already_AddRefed<mozilla::gfx::SourceSurface> GetSurfaceSnapshot(
       gfxAlphaType* out_alphaType) override;
 
+  bool SupportAsyncSnapshot() override;
+
+  RefPtr<dom::HTMLCanvasElement::SurfaceSnapshotPromise>
+  GetSurfaceSnapshotAsync() override;
+
   mozilla::ipc::IProtocol* SupportsSnapshotExternalCanvas() const override;
 
   void SetOpaqueValueFromOpaqueAttr(bool) override {};
@@ -1114,6 +1121,13 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   RefPtr<gfx::DataSourceSurface> BackBufferSnapshot();
   [[nodiscard]] bool DoReadPixels(const webgl::ReadPixelsDesc&,
                                   Span<uint8_t>) const;
+
+  RefPtr<dom::HTMLCanvasElement::SurfaceSnapshotPromise>
+  BackBufferSnapshotAsync();
+
+  [[nodiscard]]
+  RefPtr<dom::HTMLCanvasElement::SurfaceSnapshotPromise> DoReadPixelsAsync();
+
   uvec2 DrawingBufferSize();
 
   // -

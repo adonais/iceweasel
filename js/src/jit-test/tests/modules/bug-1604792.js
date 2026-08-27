@@ -3,5 +3,5 @@ var lfLogBuffer = `
 `;
 
 let lfMod = parseModule(lfLogBuffer);
-moduleLink(lfMod);
+moduleLoadAndLink(lfMod);
 moduleEvaluate(lfMod);

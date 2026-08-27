@@ -4835,7 +4835,7 @@ gfxFontStyle::gfxFontStyle()
       baselineOffset(0.0f),
       languageOverride{0},
       weight(FontWeight::NORMAL),
-      stretch(FontStretch::NORMAL),
+      width(FontWidth::NORMAL),
       style(FontSlantStyle::NORMAL),
       variantCaps(NS_FONT_VARIANT_CAPS_NORMAL),
       variantSubSuper(NS_FONT_VARIANT_POSITION_NORMAL),
@@ -4853,23 +4853,20 @@ gfxFontStyle::gfxFontStyle()
       noFallbackVariantFeatures(true) {
 }
 
-gfxFontStyle::gfxFontStyle(FontSlantStyle aStyle, FontWeight aWeight,
-                           FontStretch aStretch, gfxFloat aSize,
-                           const FontSizeAdjust& aSizeAdjust, bool aSystemFont,
-                           bool aPrinterFont,
+gfxFontStyle::gfxFontStyle(
+    FontSlantStyle aStyle, FontWeight aWeight, FontWidth aWidth, gfxFloat aSize,
+    const FontSizeAdjust& aSizeAdjust, bool aSystemFont, bool aPrinterFont,
 #ifdef XP_WIN
-                           bool aAllowForceGDIClassic,
+    bool aAllowForceGDIClassic,
 #endif
-                           bool aAllowWeightSynthesis,
-                           StyleFontSynthesisStyle aStyleSynthesis,
-                           bool aAllowSmallCapsSynthesis,
-                           bool aUsePositionSynthesis,
-                           StyleFontLanguageOverride aLanguageOverride)
+    bool aAllowWeightSynthesis, StyleFontSynthesisStyle aStyleSynthesis,
+    bool aAllowSmallCapsSynthesis, bool aUsePositionSynthesis,
+    StyleFontLanguageOverride aLanguageOverride)
     : size(aSize),
       baselineOffset(0.0f),
       languageOverride(aLanguageOverride),
       weight(aWeight),
-      stretch(aStretch),
+      width(aWidth),
       style(aStyle),
       variantCaps(NS_FONT_VARIANT_CAPS_NORMAL),
       variantSubSuper(NS_FONT_VARIANT_POSITION_NORMAL),
@@ -4935,7 +4932,7 @@ PLDHashNumber gfxFontStyle::Hash() const {
                       : mozilla::HashBytes(variationSettings.Elements(),
                                            variationSettings.Length() *
                                                sizeof(gfxFontVariation));
-  return mozilla::AddToHash(hash, systemFont, style.Raw(), stretch.Raw(),
+  return mozilla::AddToHash(hash, systemFont, style.Raw(), width.Raw(),
                             weight.Raw(), size, int32_t(sizeAdjust * 1000.0f));
 }
 

@@ -148,11 +148,11 @@ struct CompiledCode {
 
 struct CompileTaskState {
   HelperThreadLockData<CompileTaskPtrVector> finished_;
-  HelperThreadLockData<uint32_t> numFailed_;
+  HelperThreadLockData<uint32_t> numFailed_{0};
   HelperThreadLockData<UniqueChars> errorMessage_;
   HelperThreadLockData<ConditionVariable> condVar_;
 
-  CompileTaskState() : numFailed_(0) {}
+  CompileTaskState() = default;
   ~CompileTaskState() {
     MOZ_ASSERT(finished_.refNoCheck().empty());
     MOZ_ASSERT(!numFailed_.refNoCheck());

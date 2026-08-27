@@ -23,6 +23,10 @@
         <panel-item>one</panel-item>
         <panel-item submenu="sub-panel-list" id="submenu-host">
           two
+          <panel-list slot="submenu" id="sub-panel-list">
+            <panel-item>sub one</panel-item>
+            <panel-item>sub two</panel-item>
+          </panel-list>
         </panel-item>
         <panel-item>three</panel-item>
       </panel-list>
@@ -36,12 +40,58 @@
       );
       let anchorButton, panelList, outsideScroller;
 
-      add_setup(function setup() {
+      add_setup(async function setup() {
+        await customElements.whenDefined("panel-list");
+        await customElements.whenDefined("panel-item");
         panelList = document.getElementById("panel-list");
         anchorButton = document.getElementById("anchor-button");
         outsideScroller = document.getElementById("outside-scroller");
         anchorButton.addEventListener("click", e => panelList.toggle(e));
       });
+
+      function waitForSubmenuShown(subPanelList) {
+        return new Promise(resolve => {
+          subPanelList.addEventListener("shown", resolve, { once: true });
+        });
+      }
+
+      async function openParentPanel() {
+        let shown = BrowserTestUtils.waitForEvent(panelList, "shown");
+        anchorButton.click();
+        await shown;
+      }
+
+      async function closePanels() {
+        let subPanelList = document.getElementById("submenu-host").submenuPanel;
+        if (subPanelList?.open) {
+          let hidden = BrowserTestUtils.waitForEvent(subPanelList, "hidden");
+          subPanelList.hide(undefined, { force: true });
+          await hidden;
+        }
+        if (panelList.open) {
+          let hidden = BrowserTestUtils.waitForEvent(panelList, "hidden");
+          panelList.hide(undefined, { force: true });
+          await hidden;
+        }
+      }
+
+      // Install a new submenu on the host, replacing any existing submenu.
+      // A reused submenu would carry a cached width that hides the measurement bug.
+      function installSubmenu(host) {
+        if (host.submenuPanel) {
+          host.submenuPanel.remove();
+        }
+        let submenu = document.createElement("panel-list");
+        submenu.setAttribute("slot", "submenu");
+        let one = document.createElement("panel-item");
+        one.textContent = "sub one";
+        let two = document.createElement("panel-item");
+        two.textContent = "sub two";
+        submenu.append(one, two);
+        host.append(submenu);
+        host.setSubmenuContents();
+        return host.submenuPanel;
+      }
 
       add_task(async function testPopoverAttributeSetOnConnect() {
         is(
@@ -59,25 +109,9 @@
       });
 
       add_task(async function testSubmenuDoesNotSupportPopover() {
-        await customElements.whenDefined("panel-list");
-        await customElements.whenDefined("panel-item");
+        let subPanelList = document.getElementById("submenu-host").submenuPanel;
 
-        let submenuHost = document.getElementById("submenu-host");
-        let subPanelList = document.createElement("panel-list");
-        subPanelList.setAttribute("slot", "submenu");
-        subPanelList.setAttribute("id", "sub-panel-list");
-
-        let subItem1 = document.createElement("panel-item");
-        subItem1.textContent = "sub one";
-        let subItem2 = document.createElement("panel-item");
-        subItem2.textContent = "sub two";
-
-        subPanelList.appendChild(subItem1);
-        subPanelList.appendChild(subItem2);
-        submenuHost.appendChild(subPanelList);
-
-        await customElements.whenDefined("panel-list");
-
+        ok(subPanelList, "Submenu panel list should be wired up from markup");
         ok(
           !subPanelList.supportsPopover(),
           "Submenu panel list should not support popover"
@@ -295,8 +329,6 @@
         document.getElementById("content").appendChild(secondPanelList);
         secondAnchor.addEventListener("click", e => secondPanelList.toggle(e));
 
-        await customElements.whenDefined("panel-list");
-
         let firstShown = BrowserTestUtils.waitForEvent(panelList, "shown");
         panelList.show();
         await firstShown;
@@ -382,6 +414,156 @@
         let rehidden = BrowserTestUtils.waitForEvent(panelList, "hidden");
         panelList.hide(undefined, { force: true });
         await rehidden;
+      });
+
+      // Bug 2050478: a submenu that would overflow the right
+      // edge of the viewport must open to the left instead.
+      add_task(async function testSubmenuOpensOnCorrectSideViaKeyboard() {
+        let submenuHost = document.getElementById("submenu-host");
+        let subPanelList = installSubmenu(submenuHost);
+
+        try {
+          // Submenu width decides the open side only when the parent panel is
+          // align="left", so anchor at the horizontal center to keep it there.
+          let cw = document.scrollingElement.clientWidth;
+          anchorButton.style.position = "fixed";
+          anchorButton.style.top = "32px";
+          anchorButton.style.left = `${Math.round(cw * 0.5)}px`;
+          anchorButton.style.right = "unset";
+          anchorButton.style.bottom = "unset";
+
+          await openParentPanel();
+
+          // Size the submenu from the real layout so it overflows if opened right but
+          // fits if opened left. A fixed width could exceed the harness viewport and
+          // fit nowhere. Setting it before show() does not lay it out, so without the
+          // fix it still measures 0.
+          let hostLeft = submenuHost.getBoundingClientRect().left;
+          subPanelList.style.width = `${Math.round(hostLeft - 20)}px`;
+
+          let keyEvent = new KeyboardEvent("keydown", { key: "ArrowRight" });
+          let submenuShown = waitForSubmenuShown(subPanelList);
+          subPanelList.show(keyEvent, submenuHost);
+          await submenuShown;
+
+          let submenuBounds = subPanelList.getBoundingClientRect();
+          let clientWidth = document.scrollingElement.clientWidth;
+
+          ok(
+            submenuBounds.width > 0,
+            "Submenu should have a non-zero width after opening"
+          );
+          ok(
+            Math.round(submenuBounds.right) <= clientWidth,
+            `Submenu right edge (${Math.round(submenuBounds.right)}) should ` +
+              `not exceed viewport width (${clientWidth})`
+          );
+          ok(
+            Math.round(submenuBounds.left) >= 0,
+            `Submenu left edge (${Math.round(submenuBounds.left)}) should ` +
+              `not be negative`
+          );
+        } finally {
+          await closePanels();
+          anchorButton.style.cssText = "";
+        }
+      });
+
+      // Bug 2050478 in RTL. setSubmenuAlign is not RTL-aware,
+      // so this can only check the submenu opens on-screen, not reproduce the
+      // LTR overflow.
+      add_task(async function testSubmenuOpensOnCorrectSideViaKeyboardRTL() {
+        await SpecialPowers.pushPrefEnv({
+          set: [["intl.l10n.pseudo", "bidi"]],
+        });
+        ok(panelList.isDocumentRTL(), "Document should be RTL for this test");
+
+        let submenuHost = document.getElementById("submenu-host");
+        let subPanelList = installSubmenu(submenuHost);
+
+        try {
+          anchorButton.style.position = "fixed";
+          anchorButton.style.top = "32px";
+          anchorButton.style.left = "32px";
+          anchorButton.style.right = "unset";
+          anchorButton.style.bottom = "unset";
+
+          await openParentPanel();
+
+          let keyEvent = new KeyboardEvent("keydown", { key: "ArrowLeft" });
+          let submenuShown = waitForSubmenuShown(subPanelList);
+          subPanelList.show(keyEvent, submenuHost);
+          await submenuShown;
+
+          let submenuBounds = subPanelList.getBoundingClientRect();
+          let clientWidth = document.scrollingElement.clientWidth;
+
+          ok(
+            submenuBounds.width > 0,
+            "Submenu should have a non-zero width after opening in RTL"
+          );
+          ok(
+            Math.round(submenuBounds.right) <= clientWidth,
+            `Submenu right edge (${Math.round(submenuBounds.right)}) should ` +
+              `not exceed viewport width (${clientWidth}) in RTL`
+          );
+          ok(
+            Math.round(submenuBounds.left) >= 0,
+            `Submenu left edge (${Math.round(submenuBounds.left)}) should ` +
+              `not be negative in RTL`
+          );
+        } finally {
+          await closePanels();
+          anchorButton.style.cssText = "";
+          // pushPrefEnv only restores at file end, so pop the bidi pref now to keep
+          // it out of later tasks.
+          await SpecialPowers.popPrefEnv();
+        }
+      });
+
+      // Bug 2050478: opening the submenu by keyboard must not
+      // scroll the page sideways and trip the parent's scroll-hide listener.
+      add_task(async function testSubmenuKeyboardOpenDoesNotScroll() {
+        let submenuHost = document.getElementById("submenu-host");
+        let subPanelList = installSubmenu(submenuHost);
+
+        // Give the page room to scroll horizontally, or an arrow key has nothing
+        // to scroll and the test passes trivially.
+        let wideSpacer = document.createElement("div");
+        wideSpacer.style.width = "5000px";
+        wideSpacer.style.height = "1px";
+        document.getElementById("content").appendChild(wideSpacer);
+        document.scrollingElement.scrollLeft = 0;
+
+        try {
+          // Open by click, not keyboard. A keyboard open focuses the first item on a
+          // later rAF, so focus leaves submenuHost before the ArrowRight below.
+          await openParentPanel();
+          submenuHost.focus();
+
+          let scrollBefore = document.scrollingElement.scrollLeft;
+          // Race "shown" against a deadline so the task can't hang if a scroll
+          // dismisses the submenu before "shown" fires.
+          let submenuShown = waitForSubmenuShown(subPanelList);
+          synthesizeKey("KEY_ArrowRight", {});
+          await Promise.race([
+            submenuShown,
+            new Promise(resolve => setTimeout(resolve, 2000)),
+          ]);
+
+          is(
+            document.scrollingElement.scrollLeft,
+            scrollBefore,
+            "Page should not have scrolled horizontally"
+          );
+          ok(panelList.open, "Parent panel should stay open");
+          ok(subPanelList.open, "Submenu should be open after ArrowRight");
+        } finally {
+          await closePanels();
+          wideSpacer.remove();
+          document.scrollingElement.scrollLeft = 0;
+          anchorButton.style.cssText = "";
+        }
       });
     </script>
   </body>

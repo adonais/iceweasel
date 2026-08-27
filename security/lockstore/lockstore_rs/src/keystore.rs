@@ -13,7 +13,7 @@
 //!   ```text
 //!   {
 //!     "wrapped_deks": [
-//!       { "kek_type": "...", "kek_ref": "...", "dek": [<bytes>...] },
+//!       { "kek_type": "...", "kek_ref": "...", "wrapped_dek": [<bytes>...] },
 //!       ...
 //!     ],
 //!     "cipher_suite": "...",
@@ -30,7 +30,7 @@
 //!
 //! # Threat model for the on-disk layout
 //!
-//! The `dek` bytes are the only piece encrypted at rest (under
+//! The `wrapped_dek` bytes are the only piece encrypted at rest (under
 //! the KEK named by `kek_ref`). Every structural field — including the
 //! `kek_ref` strings — is plaintext on disk, so a plain `sqlite3` dump
 //! of `lockstore.keys.sqlite` is enough to enumerate which KEKs wrap
@@ -93,6 +93,7 @@ fn unlock_deadline(timeout: Duration) -> Instant {
 struct WrappedDek {
     kek_type: KekType,
     kek_ref: String,
+    #[serde(rename = "wrapped_dek")]
     dek: Vec<u8>,
 }
 

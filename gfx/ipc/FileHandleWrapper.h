@@ -35,7 +35,7 @@ class FileHandleWrapper {
   mozilla::UniqueFileHandle ClonePlatformHandle();
 
  protected:
-  ~FileHandleWrapper();
+  ~FileHandleWrapper() = default;
 
   const mozilla::UniqueFileHandle mHandle;
 };

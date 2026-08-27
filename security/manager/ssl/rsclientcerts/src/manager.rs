@@ -37,7 +37,12 @@ pub trait ClientCertsBackend {
     fn get_slot_info(&self) -> CK_SLOT_INFO;
     fn get_token_info(&self) -> CK_TOKEN_INFO;
     fn get_mechanism_list(&self) -> Vec<CK_MECHANISM_TYPE>;
-    fn login(&mut self) {}
+    fn change_password(&mut self, _from: &[u8], _to: &[u8]) -> Result<(), Error> {
+        Err(error_here!(ErrorType::LibraryFailure))
+    }
+    fn login(&mut self, _password: &[u8]) -> Result<(), Error> {
+        Err(error_here!(ErrorType::LibraryFailure))
+    }
     fn logout(&mut self) {}
     fn is_logged_in(&self) -> bool {
         false
@@ -249,13 +254,25 @@ impl<B: ClientCertsBackend, S: IsSearchingForClientCerts> Manager<B, S> {
         Ok(())
     }
 
-    pub fn login(&mut self, session: CK_SESSION_HANDLE) -> Result<(), Error> {
+    pub fn change_password(
+        &mut self,
+        session: CK_SESSION_HANDLE,
+        from: &[u8],
+        to: &[u8],
+    ) -> Result<(), Error> {
         let Some(slot_id) = self.sessions.get(&session) else {
             return Err(error_here!(ErrorType::InvalidArgument));
         };
         let slot = self.slot_id_to_slot_mut(*slot_id)?;
-        slot.backend.login();
-        Ok(())
+        slot.backend.change_password(from, to)
+    }
+
+    pub fn login(&mut self, session: CK_SESSION_HANDLE, password: &[u8]) -> Result<(), Error> {
+        let Some(slot_id) = self.sessions.get(&session) else {
+            return Err(error_here!(ErrorType::InvalidArgument));
+        };
+        let slot = self.slot_id_to_slot_mut(*slot_id)?;
+        slot.backend.login(password)
     }
 
     pub fn logout(&mut self, session: CK_SESSION_HANDLE) -> Result<(), Error> {

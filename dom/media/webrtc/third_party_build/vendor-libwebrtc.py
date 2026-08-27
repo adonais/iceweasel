@@ -6,20 +6,18 @@ import datetime
 import os
 import shutil
 import stat
-import subprocess
 import sys
 import tarfile
 
 import dateutil
 import requests
+from run_operations import run_git
 
 THIRDPARTY_USED_IN_FIREFOX = [
     "crc32c",
     "pffft",
     "rnnoise",
 ]
-
-LIBWEBRTC_DIR = os.path.normpath("third_party/libwebrtc")
 
 
 # Files in this list are excluded.
@@ -225,7 +223,7 @@ def make_googlesource_url(target, commit):
         )
 
 
-def fetch(target, url):
+def fetch(target, url, destination_dir):
     print(f"Fetching commit from {url}")
     req = requests.get(url)
     if req.status_code == 200:
@@ -237,7 +235,7 @@ def fetch(target, url):
             file=sys.stderr,
         )
         sys.exit(1)
-    with open(os.path.join(LIBWEBRTC_DIR, "README.mozilla.last-vendor"), "w") as f:
+    with open(os.path.join(destination_dir, "README.mozilla.last-vendor"), "w") as f:
         # write the the command line used
         f.write(f"# ./mach python {' '.join(sys.argv[0:])}\n")
         f.write(
@@ -245,25 +243,25 @@ def fetch(target, url):
         )
 
 
-def fetch_local(target, path, commit):
-    target_archive = target + ".tar.gz"
-    cp = subprocess.run(
-        ["git", "archive", "-o", target_archive, commit], cwd=path, check=False
-    )
-    if cp.returncode != 0:
-        print(
-            f"Hit return code {cp.returncode} fetching commit. Aborting.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+def reset_local_repo(path, commit):
+    # Reset the local working tree to an exact copy of commit, discarding any
+    # local modifications and removing untracked/ignored files.  This lets the
+    # working tree be consumed directly as the vendoring source (and restored
+    # afterward) instead of paying for a git-archive/tar round trip.  Note that
+    # 'git restore' does not move HEAD.
+    run_git(f"git restore --source {commit} --staged --worktree -- .", path)
+    run_git("git clean -xffd", path)
 
-    with open(os.path.join(LIBWEBRTC_DIR, "README.mozilla.last-vendor"), "w") as f:
+
+def fetch_local(target, path, commit, destination_dir):
+    reset_local_repo(path, commit)
+
+    with open(os.path.join(destination_dir, "README.mozilla.last-vendor"), "w") as f:
         # write the the command line used
         f.write(f"# ./mach python {' '.join(sys.argv[0:])}\n")
         f.write(
             f"{target} updated from {path} commit {commit} on {datetime.datetime.now(dateutil.tz.tzutc()).isoformat()}.\n"
         )
-    shutil.move(os.path.join(path, target_archive), target_archive)
 
 
 def validate_tar_member(member, path):
@@ -305,23 +303,37 @@ def safe_extract(tar, path=".", *, numeric_owner=False):
     )
 
 
-def unpack(target):
+def source_listdir(target_path, from_local):
+    # When consuming a local git working tree as the source, its '.git'
+    # directory is not part of the vendored content (and is absent from a
+    # 'git archive' tarball), so exclude it from top level listings.
+    entries = os.listdir(target_path)
+    if from_local:
+        entries = [e for e in entries if e != ".git"]
+    return entries
+
+
+def unpack(target, destination_dir, from_local=None, commit=None):
     target_archive = target + ".tar.gz"
-    target_path = "tmp-" + target
-    try:
-        shutil.rmtree(target_path)
-    except FileNotFoundError:
-        pass
-    with tarfile.open(target_archive) as t:
-        safe_extract(t, path=target_path)
+    if from_local:
+        # Consume the local repo working tree directly, avoiding tar/untar.
+        target_path = from_local
+    else:
+        target_path = "tmp-" + target
+        try:
+            shutil.rmtree(target_path)
+        except FileNotFoundError:
+            pass
+        with tarfile.open(target_archive) as t:
+            safe_extract(t, path=target_path)
 
     if target == "libwebrtc":
         # use the top level directories from the tarfile and
-        # delete those directories in LIBWEBRTC_DIR
-        libwebrtc_used_in_firefox = os.listdir(target_path)
+        # delete those directories in destination_dir
+        libwebrtc_used_in_firefox = source_listdir(target_path, from_local)
         for path in libwebrtc_used_in_firefox:
             try:
-                shutil.rmtree(os.path.join(LIBWEBRTC_DIR, path))
+                shutil.rmtree(os.path.join(destination_dir, path))
             except FileNotFoundError:
                 pass
             except NotADirectoryError:
@@ -343,18 +355,25 @@ def unpack(target):
             else:
                 os.remove(os.path.join(target_path, path))
 
-        # move remaining top level entries from the tarfile to LIBWEBRTC_DIR
-        for path in os.listdir(target_path):
+        # move remaining top level entries from the tarfile to destination_dir
+        for path in source_listdir(target_path, from_local):
             shutil.move(
-                os.path.join(target_path, path), os.path.join(LIBWEBRTC_DIR, path)
+                os.path.join(target_path, path), os.path.join(destination_dir, path)
             )
 
-        # An easy, but inefficient way to accomplish including specific
-        # files from directories otherwise removed.  Re-extract the tar
-        # file, and only copy over the exact files requested.
-        shutil.rmtree(target_path)
-        with tarfile.open(target_archive) as t:
-            safe_extract(t, path=target_path)
+        if from_local:
+            # The force included files were removed above along with their
+            # parent (excluded) directories.  Restore the full working tree so
+            # those files can be moved into place below; any leftover files are
+            # reset when the local repo is restored after unpacking.
+            run_git(f"git restore --source {commit} --worktree -- .", target_path)
+        else:
+            # An easy, but inefficient way to accomplish including specific
+            # files from directories otherwise removed.  Re-extract the tar
+            # file, and only copy over the exact files requested.
+            shutil.rmtree(target_path)
+            with tarfile.open(target_archive) as t:
+                safe_extract(t, path=target_path)
 
         # Copy the force included files.  Note: the instinctual action
         # is to do this prior to removing the excluded paths to avoid
@@ -363,7 +382,7 @@ def unpack(target):
         # tar file in the "move all the top level entries from the
         # tarfile" phase above.
         for path in forced_used_in_firefox:
-            dest_path = os.path.join(LIBWEBRTC_DIR, path)
+            dest_path = os.path.join(destination_dir, path)
             dir_path = os.path.dirname(dest_path)
             if not os.path.exists(dir_path):
                 os.makedirs(dir_path)
@@ -375,28 +394,28 @@ def unpack(target):
             # GitHub packs everything inside a separate directory
             target_path = os.path.join(target_path, os.listdir(target_path)[0])
 
-        build_used_in_firefox = os.listdir(target_path)
+        build_used_in_firefox = source_listdir(target_path, from_local)
         for path in build_used_in_firefox:
             try:
-                shutil.rmtree(os.path.join(LIBWEBRTC_DIR, path))
+                shutil.rmtree(os.path.join(destination_dir, path))
             except FileNotFoundError:
                 pass
             except NotADirectoryError:
                 pass
 
-        for path in os.listdir(target_path):
+        for path in source_listdir(target_path, from_local):
             shutil.move(
                 os.path.join(target_path, path),
-                os.path.join(LIBWEBRTC_DIR, path),
+                os.path.join(destination_dir, path),
             )
 
     elif target == "third_party":
         # Only delete the THIRDPARTY_USED_IN_FIREFOX paths from
-        # LIBWEBRTC_DIR/third_party to avoid deleting directories that
+        # destination_dir/third_party to avoid deleting directories that
         # we use to trampoline to libraries already in mozilla's tree.
         for path in THIRDPARTY_USED_IN_FIREFOX:
             try:
-                shutil.rmtree(os.path.join(LIBWEBRTC_DIR, path))
+                shutil.rmtree(os.path.join(destination_dir, path))
             except FileNotFoundError:
                 pass
             except NotADirectoryError:
@@ -410,7 +429,7 @@ def unpack(target):
         for path in THIRDPARTY_USED_IN_FIREFOX:
             shutil.move(
                 os.path.join(target_path, path),
-                os.path.join(LIBWEBRTC_DIR, path),
+                os.path.join(destination_dir, path),
             )
 
     elif target == "abseil-cpp":
@@ -424,7 +443,7 @@ def unpack(target):
         abseil_used_in_firefox = os.listdir(abseil_path)
         for path in abseil_used_in_firefox:
             try:
-                shutil.rmtree(os.path.join(LIBWEBRTC_DIR, path))
+                shutil.rmtree(os.path.join(destination_dir, path))
             except FileNotFoundError:
                 pass
             except NotADirectoryError:
@@ -433,7 +452,7 @@ def unpack(target):
         for path in os.listdir(abseil_path):
             shutil.move(
                 os.path.join(target_path, target, path),
-                os.path.join(LIBWEBRTC_DIR, path),
+                os.path.join(destination_dir, path),
             )
 
 
@@ -442,7 +461,49 @@ def cleanup(target):
     shutil.rmtree("tmp-" + target)
 
 
-if __name__ == "__main__":
+# The destination directory within the tree depends on which target is being
+# vendored.
+def get_destination_dir(target):
+    if target == "build":
+        return os.path.normpath("third_party/chromium/build")
+    elif target == "third_party":
+        return os.path.join(os.path.normpath("third_party/libwebrtc"), "third_party")
+    elif target == "abseil-cpp":
+        return os.path.normpath("third_party/abseil-cpp")
+    return os.path.normpath("third_party/libwebrtc")
+
+
+def vendor(
+    target,
+    from_github=None,
+    from_googlesource=False,
+    from_local=None,
+    commit="master",
+    skip_fetch=False,
+    skip_cleanup=False,
+):
+    destination_dir = get_destination_dir(target)
+
+    os.makedirs(destination_dir, exist_ok=True)
+
+    if not skip_fetch:
+        if from_github:
+            fetch(target, make_github_url(from_github, commit), destination_dir)
+        elif from_googlesource:
+            fetch(target, make_googlesource_url(target, commit), destination_dir)
+        elif from_local:
+            fetch_local(target, from_local, commit, destination_dir)
+    unpack(target, destination_dir, from_local=from_local, commit=commit)
+    if from_local:
+        # Moving files out of the local working tree above leaves it in a
+        # partially gutted state, so always restore it (independent of
+        # skip_cleanup, which only concerns temporary tar artifacts).
+        reset_local_repo(from_local, commit)
+    elif not skip_cleanup:
+        cleanup(target)
+
+
+def main(argv=None):
     parser = argparse.ArgumentParser(description="Update libwebrtc")
     parser.add_argument(
         "target", choices=("libwebrtc", "build", "third_party", "abseil-cpp")
@@ -454,25 +515,17 @@ if __name__ == "__main__":
     parser.add_argument("--commit", type=str, default="master")
     parser.add_argument("--skip-fetch", action="store_true", default=False)
     parser.add_argument("--skip-cleanup", action="store_true", default=False)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    vendor(
+        args.target,
+        from_github=args.from_github,
+        from_googlesource=args.from_googlesource,
+        from_local=args.from_local,
+        commit=args.commit,
+        skip_fetch=args.skip_fetch,
+        skip_cleanup=args.skip_cleanup,
+    )
 
-    # the default for LIBWEBRTC_DIR is set for target libwebrtc
-    if args.target == "build":
-        LIBWEBRTC_DIR = os.path.normpath("third_party/chromium/build")
-    elif args.target == "third_party":
-        LIBWEBRTC_DIR = os.path.join(LIBWEBRTC_DIR, "third_party")
-    elif args.target == "abseil-cpp":
-        LIBWEBRTC_DIR = os.path.normpath("third_party/abseil-cpp")
 
-    os.makedirs(LIBWEBRTC_DIR, exist_ok=True)
-
-    if not args.skip_fetch:
-        if args.from_github:
-            fetch(args.target, make_github_url(args.from_github, args.commit))
-        elif args.from_googlesource:
-            fetch(args.target, make_googlesource_url(args.target, args.commit))
-        elif args.from_local:
-            fetch_local(args.target, args.from_local, args.commit)
-    unpack(args.target)
-    if not args.skip_cleanup:
-        cleanup(args.target)
+if __name__ == "__main__":
+    main()

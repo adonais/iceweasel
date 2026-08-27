@@ -1031,7 +1031,19 @@ TEST_F(ImageDecoders, JXLLargeMultiChunkPipeWriteCount) {
                        });
 }
 #  endif /* DEBUG */
-#endif   /* MOZ_JXL */
+
+// Regression test for bug 2054317: feeding a progressive (multi-pass) lossy
+// RGBA JXL that spans more than one coded group in small chunks must not
+// panic. FlushPartialFrame's re-render pass could re-flush a group's modular
+// alpha buffer that a previous flush had already fully consumed. The exact
+// chunk boundaries that trigger this depend on decoder-internal timing, so
+// this sweeps several chunk sizes rather than relying on a single guess.
+TEST_F(ImageDecoders, JXLProgressiveAlphaMultiGroupMultiChunk) {
+  for (uint64_t chunkSize : {8, 16, 32, 64, 128, 256}) {
+    CheckDecoderMultiChunk(ProgressiveAlphaMultiGroupJXLTestCase(), chunkSize);
+  }
+}
+#endif /* MOZ_JXL */
 
 TEST_F(ImageDecoders, AnimatedGIFSingleChunk) {
   CheckDecoderSingleChunk(GreenFirstFrameAnimatedGIFTestCase());

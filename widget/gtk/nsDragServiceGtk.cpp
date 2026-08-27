@@ -65,8 +65,10 @@ void nsDragSessionGtk::ReplyToDragMotion() {
 
 void nsDragSessionGtk::ReplyToDragMotion(GdkDragContext* aDragContext,
                                          guint aTime) {
-  LOGDRAGSERVICE("nsDragSessionGtk::ReplyToDragMotion(%p) can drop %d",
-                 aDragContext, mCanDrop);
+  LOGDRAGSERVICE(
+      "nsDragSessionGtk::ReplyToDragMotion(%p) can drop %d"
+      " mDragAction %d",
+      aDragContext, mCanDrop, mDragAction);
 
   // gdk_drag_status() is a kind of red herring here.
   // It does not control final D&D operation type (copy/move) but controls
@@ -408,11 +410,13 @@ void nsDragSessionGtk::DropFinish(bool aSucceed) {
   // action is move, but we don't know whether the data was successfully
   // transferred.
   DragTaskGtk* task = static_cast<DragTaskGtk*>(mRecentTask.get());
-  if (task->mDragContext) {
-    LOGDRAGSERVICE("  drag finished (gtk_drag_finish)");
-    gtk_drag_finish(task->mDragContext, aSucceed,
-                    /* del = */ FALSE, task->mTime);
+  if (!task->mDragContext) {
+    return;
   }
+  LOGDRAGSERVICE("nsDragSessionGtk::DropFinish() (gtk_drag_finish) aSucceed %d",
+                 aSucceed);
+  gtk_drag_finish(task->mDragContext, aSucceed,
+                  /* del = */ FALSE, task->mTime);
 }
 
 nsWindow* nsDragSessionGtk::GetMostRecentDestWindow() {

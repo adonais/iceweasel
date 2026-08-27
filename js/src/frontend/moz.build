@@ -16,8 +16,6 @@ include("../js-cxxflags.mozbuild")
 flags = []
 if CONFIG["ENABLE_DECORATORS"]:
     flags.append("--enable-decorators")
-if CONFIG["ENABLE_EXPLICIT_RESOURCE_MANAGEMENT"]:
-    flags.append("--enable-explicit-resource-management")
 if flags:
     GeneratedFile(
         "ReservedWordsGenerated.h",
@@ -75,17 +73,13 @@ UNIFIED_SOURCES += [
     "TDZCheckCache.cpp",
     "TokenStream.cpp",
     "TryEmitter.cpp",
+    "UsingEmitter.cpp",
     "WhileEmitter.cpp",
 ]
 
 if CONFIG["ENABLE_DECORATORS"]:
     UNIFIED_SOURCES += [
         "DecoratorEmitter.cpp",
-    ]
-
-if CONFIG["ENABLE_EXPLICIT_RESOURCE_MANAGEMENT"]:
-    UNIFIED_SOURCES += [
-        "UsingEmitter.cpp",
     ]
 
 # Parser.cpp cannot be built in unified mode because of explicit

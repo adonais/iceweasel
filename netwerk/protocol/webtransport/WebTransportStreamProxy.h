@@ -36,7 +36,8 @@ class WebTransportStreamProxy final
   NS_IMETHOD GetOutputStream(nsIAsyncOutputStream** aOut) override;
 
   NS_IMETHOD GetStreamId(uint64_t* aId) override;
-  NS_IMETHOD SetSendOrder(Maybe<int64_t> aSendOrder) override;
+  NS_IMETHOD SetSendOrder(int64_t aSendOrder) override;
+  NS_IMETHOD SetSendGroup(uint64_t aSendGroupId) override;
 
  private:
   virtual ~WebTransportStreamProxy();

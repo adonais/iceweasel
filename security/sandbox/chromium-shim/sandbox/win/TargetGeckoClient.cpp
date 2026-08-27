@@ -6,6 +6,7 @@
 
 #include "base/win/win_util.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/NativeNt.h"
 
 namespace mozilla::sandboxing {
 
@@ -15,13 +16,25 @@ void SetTargetGeckoServices(const TargetGeckoServices& aServices) {
   sTargetGeckoServices = aServices;
 }
 
+namespace {
+
+// TLS is not allocated on some OS-owned threads; the Gecko marker callbacks
+// use thread_local and would crash there. See bug 1705579; see also bug
+// 2057023, where an intercepted syscall ran on a thread-pool worker doing
+// heap maintenance.
+bool CurrentThreadHasWorkingTLS() {
+  return ::mozilla::nt::RtlGetThreadLocalStoragePointer() != nullptr;
+}
+
+}  // namespace
+
 SyscallBrokering::SyscallBrokering(std::string_view aFunctionName,
                                    const UNICODE_STRING* aContext)
     : mFunctionName(aFunctionName),
       mContext(aContext ? base::win::UnicodeStringToView(*aContext)
                         : std::wstring_view{}),
       mBrokered(false) {
-  if (!sTargetGeckoServices.markIntervalStart) {
+  if (!sTargetGeckoServices.markIntervalStart || !CurrentThreadHasWorkingTLS()) {
     return;
   }
 
@@ -33,7 +46,8 @@ SyscallBrokering::SyscallBrokering(std::string_view aFunctionName,
 }
 
 SyscallBrokering::~SyscallBrokering() {
-  if (!sTargetGeckoServices.markSyscallBrokeringIntervalEnd) {
+  if (!sTargetGeckoServices.markSyscallBrokeringIntervalEnd ||
+      !CurrentThreadHasWorkingTLS()) {
     return;
   }
 
@@ -45,7 +59,7 @@ SyscallBrokering::~SyscallBrokering() {
 }
 
 AutoProfileMarker::AutoProfileMarker(std::string_view aName) : mName(aName) {
-  if (!sTargetGeckoServices.markIntervalStart) {
+  if (!sTargetGeckoServices.markIntervalStart || !CurrentThreadHasWorkingTLS()) {
     return;
   }
 
@@ -56,7 +70,7 @@ AutoProfileMarker::AutoProfileMarker(std::string_view aName) : mName(aName) {
 }
 
 AutoProfileMarker::~AutoProfileMarker() {
-  if (!sTargetGeckoServices.markIntervalEnd) {
+  if (!sTargetGeckoServices.markIntervalEnd || !CurrentThreadHasWorkingTLS()) {
     return;
   }
 

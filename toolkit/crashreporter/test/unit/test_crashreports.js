@@ -240,6 +240,78 @@ add_task(async function test_getReports_nohttp() {
   }
 });
 
+// Mock directory object allowing us to inject custom IFile-like objects,
+// through the `files` argument representing the directory contents.
+function fake_dir(files) {
+  return {
+    exists: () => true,
+    isDirectory: () => true,
+    get directoryEntries() {
+      let index = 0;
+      return {
+        hasMoreElements: () => index < files.length,
+        get nextFile() {
+          return files[index++];
+        },
+      };
+    },
+  };
+}
+
+// A fake file that only has `leafName` and `mtime` properties, the latter
+// being either a value or a callable (to throw exceptions)
+function fake_file(leafName, mtime) {
+  return {
+    leafName,
+    get lastModifiedTime() {
+      return typeof mtime === "function" ? mtime() : mtime;
+    },
+  };
+}
+
+// A report whose file vanished mid-scan is skipped without aborting the scan.
+add_task(function test_getReports_deletedMidScan() {
+  clear_crash_dirs();
+  const now = Date.now();
+  const savedPendingDir = CrashReports.pendingDir;
+  CrashReports.pendingDir = fake_dir([
+    fake_file("00000001-1111-2222-3333-444444444444.dmp", now),
+    fake_file("00000002-1111-2222-3333-444444444444.dmp", () => {
+      throw Components.Exception("", Cr.NS_ERROR_FILE_NOT_FOUND);
+    }),
+    fake_file("00000003-1111-2222-3333-444444444444.dmp", now - 1000),
+  ]);
+  try {
+    let reports = CrashReports.getReports();
+
+    Assert.deepEqual(
+      reports.map(r => r.id),
+      [
+        "00000001-1111-2222-3333-444444444444",
+        "00000003-1111-2222-3333-444444444444",
+      ]
+    );
+  } finally {
+    CrashReports.pendingDir = savedPendingDir;
+  }
+});
+
+// Errors other than NS_ERROR_FILE_NOT_FOUND are not swallowed.
+add_task(function test_getReports_otherErrorPropagates() {
+  clear_crash_dirs();
+  const savedPendingDir = CrashReports.pendingDir;
+  CrashReports.pendingDir = fake_dir([
+    fake_file("00000001-1111-2222-3333-444444444444.dmp", () => {
+      throw Components.Exception("", Cr.NS_ERROR_FAILURE);
+    }),
+  ]);
+  try {
+    Assert.throws(() => CrashReports.getReports(), /NS_ERROR_FAILURE/);
+  } finally {
+    CrashReports.pendingDir = savedPendingDir;
+  }
+});
+
 // `pruneInstallTimeFiles` only deletes `InstallTime*` files older than the
 // supplied threshold and ignores everything else in the directory.
 add_task(async function test_pruneInstallTimeFiles() {

@@ -2,6 +2,12 @@
 
 This section lists and documents the available task kinds.
 
+## bhr-aggregate
+
+Runs the daily Background Hang Reporter aggregation: reads the day's BHR pings
+from BigQuery, symbolicates and aggregates the hangs, and publishes the
+dashboard JSON as a public artifact. Scheduled via cron on mozilla-central.
+
 ## build
 
 Builds are tasks that produce an installer or other output that can be run by

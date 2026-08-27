@@ -33,10 +33,10 @@ class ToastNotificationHandler final : public nsISupports {
 
   ToastNotificationHandler(
       ToastNotification* backend, const nsAString& aAumid,
-      nsIAlertNotification* aAlertNotification, nsIObserver* aAlertListener,
-      const nsAString& aName, const nsAString& aCookie, const nsAString& aTitle,
-      const nsAString& aMsg, const nsAString& aHostPort, bool aClickable,
-      bool aRequireInteraction,
+      nsIAlertNotification* aAlertNotification,
+      nsIAlertCallbacks* aAlertCallbacks, const nsAString& aName,
+      const nsAString& aCookie, const nsAString& aTitle, const nsAString& aMsg,
+      const nsAString& aHostPort, bool aClickable, bool aRequireInteraction,
       const nsTArray<RefPtr<nsIAlertAction>>& aActions, bool aIsSystemPrincipal,
       const nsAString& aOpaqueRelaunchData, bool aInPrivateBrowsing,
       bool aIsSilent, ImagePlacement aImagePlacement = ImagePlacement::eInline,
@@ -46,7 +46,7 @@ class ToastNotificationHandler final : public nsISupports {
         mImageUri(aImagePathUnchecked),
         mHasImage(!aImagePathUnchecked.IsEmpty()),
         mAlertNotification(aAlertNotification),
-        mAlertListener(aAlertListener),
+        mAlertCallbacks(aAlertCallbacks),
         mName(aName),
         mCookie(aCookie),
         mTitle(aTitle),
@@ -59,7 +59,7 @@ class ToastNotificationHandler final : public nsISupports {
         mIsSystemPrincipal(aIsSystemPrincipal),
         mOpaqueRelaunchData(aOpaqueRelaunchData),
         mIsSilent(aIsSilent),
-        mSentFinished(!aAlertListener),
+        mSentFinished(!aAlertCallbacks),
         mImagePlacement(aImagePlacement) {}
 
   nsresult InitAlertAsync();
@@ -124,7 +124,7 @@ class ToastNotificationHandler final : public nsISupports {
   EventRegistrationToken mFailedToken{};
 
   nsCOMPtr<nsIAlertNotification> mAlertNotification;
-  nsCOMPtr<nsIObserver> mAlertListener;
+  nsCOMPtr<nsIAlertCallbacks> mAlertCallbacks;
   nsString mName;
   nsString mCookie;
   nsString mTitle;

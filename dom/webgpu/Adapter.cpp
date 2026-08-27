@@ -234,9 +234,7 @@ struct FeatureImplementationStatus {
             "https://bugzilla.mozilla.org/show_bug.cgi?id=1931629");
 
       case dom::GPUFeatureName::Dual_source_blending:
-        // return implemented(WGPUWEBGPU_FEATURE_DUAL_SOURCE_BLENDING);
-        return unimplemented(
-            "https://bugzilla.mozilla.org/show_bug.cgi?id=1924328");
+        return implemented(WGPUWEBGPU_FEATURE_DUAL_SOURCE_BLENDING);
 
       case dom::GPUFeatureName::Subgroups:
         // return implemented(WGPUWEBGPU_FEATURE_SUBGROUPS);

@@ -2,22 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* Notes for manifest.in.json — do NOT set these theme keys:
+ * They are resolved by the design system and should not be set in the theme manifest.
+ *   tab_selected: --tab-background-color-selected
+ *   ntp_background:  --newtab-background-color
+ *   ntp_card_background:  --newtab-background-color-secondary
+ *   ntp_text:  --newtab-text-primary-color
+ *   sidebar_highlight: --lwt-sidebar-highlight
+ *   sidebar_highlight_text: --lwt-sidebar-highlight-text
+ */
+
 body {
   --tabpanel-background-color: transparent;
-
-  /* TODO Bug 2050935 - Confirm if we need to update more than this div */
-  /* Toolbox Panel Menu Overrides from tokens-shared */
-  #mainPopupSet {
-    --panel-separator-color: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));
-    --button-background-color-ghost-active: light-dark(
-      color-mix(in srgb, var(--color-violet-60) 30%, transparent),
-      color-mix(in srgb, var(--color-violet-30) 36%, transparent)
-    );
-    --button-background-color-ghost-hover: light-dark(
-      color-mix(in srgb, var(--color-violet-60) 15%, transparent),
-      color-mix(in srgb, var(--color-violet-30) 24%, transparent)
-    );
-  }
 }
 
 #navigator-toolbox {

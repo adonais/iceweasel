@@ -141,6 +141,15 @@ browser {
   grid-template-areas: "audio audio-scrubber closedcaption fullscreen";
   justify-self: end;
   gap: 8px;
+
+  /* Only reserve a column for the playback speed button when it is shown
+   * (it stays hidden unless the playback-speed pref is enabled). */
+  /* Small-ish subtree */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+  &:has(#playbackRate:not([hidden])) {
+    grid-template-columns: 1fr 2fr 1fr 1fr 1fr;
+    grid-template-areas: "audio audio-scrubber playbackrate closedcaption fullscreen";
+  }
 }
 
 .control-item {
@@ -417,6 +426,11 @@ body:not(:fullscreen) #fullscreen {
   grid-area: closedcaption;
 }
 
+#playbackRate {
+  background-image: url("chrome://global/skin/media/playback-speed-button.svg");
+  grid-area: playbackrate;
+}
+
 .box {
   -moz-window-dragging: no-drag;
   background-color: #2b2a33;
@@ -470,7 +484,7 @@ body:not(:fullscreen) #fullscreen {
 .panel-fieldset {
   border: none;
   margin-top: 8px;
-  padding-inline-start: 0;
+  padding-inline: 0;
 }
 
 .panel-legend {
@@ -485,13 +499,14 @@ body:not(:fullscreen) #fullscreen {
   border-top-color: #2b2a33;
   width: 0;
   height: 0;
-  inset-inline-start: 136px;
+  /* Positioned by alignPanelArrow in player.js, which sets a physical `left`
+   * offset (inset-inline-start would flip in RTL). */
   position: relative;
 }
 
 .grey-line {
-  width: 100%;
   height: 1px;
+  margin-inline: var(--space-small);
   background: #8f8f9d;
 }
 
@@ -580,6 +595,75 @@ input:checked + .slider::before {
   transform: translateX(-16px);
 }
 
+.playback-rate-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 8px 0;
+  font-family: sans-serif;
+  color: white;
+}
+
+#playback-rate-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-semibold);
+  color: #00ddff;
+}
+
+#playback-rate-slider {
+  appearance: none;
+  background: transparent;
+  width: calc(100% - 16px);
+  margin: 12px 8px 4px;
+  cursor: pointer;
+
+  &::-moz-range-track {
+    background-color: #55545f;
+    height: 4px;
+    border-radius: var(--border-radius-medium);
+  }
+
+  &::-moz-range-progress {
+    background-color: #00ddff;
+    height: 4px;
+    border-radius: var(--border-radius-medium);
+  }
+
+  &::-moz-range-thumb {
+    background-color: #ffffff;
+    border: none;
+    width: 12px;
+    height: 12px;
+    border-radius: var(--border-radius-circle);
+  }
+}
+
+.playback-rate-presets {
+  display: flex;
+  gap: var(--space-small);
+  padding: 6px 8px 12px;
+}
+
+.playback-rate-preset {
+  flex: 1;
+  background-color: #55545f;
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-small);
+  font-variant-numeric: tabular-nums;
+  padding: var(--space-small);
+  cursor: pointer;
+
+  &:hover {
+    background-color: #6b6a78;
+  }
+
+  &[aria-pressed="true"] {
+    background-color: #00ddff;
+    color: #2b2a33;
+  }
+}
+
 .font-size-overlay {
   opacity: 0.4;
   pointer-events: none;
@@ -657,26 +741,41 @@ input:checked + .slider::before {
   .end-controls {
     grid-template-columns: repeat(3, 1fr);
     grid-template-areas: "audio closedcaption fullscreen";
+
+    /* Small-ish subtree */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+    &:has(#playbackRate:not([hidden])) {
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-areas: "audio playbackrate closedcaption fullscreen";
+    }
   }
 }
 
 @media (width <= 475px) {
-  #closed-caption {
+  #closed-caption,
+  #playbackRate {
     display: none;
   }
 
-  .end-controls {
+  /* Small-ish subtree */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+  .end-controls,
+  .end-controls:has(#playbackRate:not([hidden])) {
     grid-template-columns: repeat(2, 1fr);
     grid-template-areas: "audio fullscreen";
   }
 }
 
 @media (height <= 325px) and (width > 630px) {
-  #closed-caption {
+  #closed-caption,
+  #playbackRate {
     display: none;
   }
 
-  .end-controls {
+  /* Small-ish subtree */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+  .end-controls,
+  .end-controls:has(#playbackRate:not([hidden])) {
     grid-template-columns: 1fr 2fr 1fr;
     grid-template-areas: "audio audio-scrubber fullscreen";
   }
@@ -684,11 +783,15 @@ input:checked + .slider::before {
 
 @media (height <= 325px) and (width <= 630px) {
   #closed-caption,
-  #audio-scrubber {
+  #audio-scrubber,
+  #playbackRate {
     display: none;
   }
 
-  .end-controls {
+  /* Small-ish subtree */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+  .end-controls,
+  .end-controls:has(#playbackRate:not([hidden])) {
     grid-template-columns: repeat(2, 1fr);
     grid-template-areas: "audio fullscreen";
   }
@@ -701,11 +804,15 @@ input:checked + .slider::before {
 }
 
 @media (width <= 350px) {
-  #fullscreen {
+  #fullscreen,
+  #playbackRate {
     display: none;
   }
 
-  .end-controls {
+  /* Small-ish subtree */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+  .end-controls,
+  .end-controls:has(#playbackRate:not([hidden])) {
     grid-template-columns: repeat(1, 1fr);
     grid-template-areas: "audio";
   }

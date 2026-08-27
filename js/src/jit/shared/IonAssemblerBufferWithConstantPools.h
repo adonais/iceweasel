@@ -653,14 +653,12 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
         branchDeadlines_(this->lifoAlloc_),
         nopFill_(nopFill) {}
 
- private:
   size_t sizeExcludingCurrentPool() const {
     // Return the actual size of the buffer, excluding the current pending
     // pool.
     return this->nextOffset().getOffset();
   }
 
- public:
   size_t size() const {
     // Return the current actual size of the buffer. This is only accurate
     // if there are no pending pool entries to dump, check.

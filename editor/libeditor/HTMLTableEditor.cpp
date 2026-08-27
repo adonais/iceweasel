@@ -723,7 +723,7 @@ nsresult HTMLEditor::InsertTableColumnsWithTransaction(
     }
 
     // Otherwise, insert columns immediately after the previous column.
-    Element* previousCellElement =
+    RefPtr<Element> previousCellElement =
         aPointToInsert.IsEndOfContainer()
             ? HTMLEditUtils::GetLastTableCellElementChild(
                   *aPointToInsert.ContainerAs<Element>())

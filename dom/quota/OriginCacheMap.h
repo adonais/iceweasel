@@ -43,7 +43,7 @@ class OriginCacheMap {
   }
 
   void InsertOrUpdate(PersistenceType aPersistenceType,
-                      const nsACString& aOrigin, FullOriginMetadata aValue) {
+                      const nsACString& aOrigin, FullOriginMetadata&& aValue) {
     AssertIsOnIOThread();
     if (!mActive) {
       return;

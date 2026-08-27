@@ -1,4 +1,4 @@
-# TypeScript
+# TypeScript linter
 
 [TypeScript](https://www.typescriptlang.org/) is being used as a type checker for JavaScript.
 
@@ -58,5 +58,5 @@ possible. If uncertain check with the appropriate team.
 
 For test harness issues, file bugs in Developer Infrastructure :: Lint and Formatting.
 
-[this page]: ../../typescript/index.html
-[usage guide]: ../usage.html
+[this page]: ../../typescript/index.md
+[usage guide]: ../usage.md

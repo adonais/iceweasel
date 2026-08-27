@@ -249,7 +249,7 @@ class TextInputProcessor final : public nsITextInputProcessor,
 // nsITextInputProcessorCallback.idl.
 class TextInputProcessorListener final : public nsITextInputProcessorListener {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_NSITEXTINPUTPROCESSORCALLBACK
   NS_DECL_NSITEXTINPUTPROCESSORLISTENER
   NS_DECL_CYCLE_COLLECTION_CLASS(TextInputProcessorListener)

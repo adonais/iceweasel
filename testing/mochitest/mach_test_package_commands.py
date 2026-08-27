@@ -69,6 +69,7 @@ def run_test(context, is_junit, **kwargs):
         "mochitest-browser-a11y": "a11y",
         "mochitest-remote": "remote",
         "mochitest-browser-media": "media-bc",
+        "mochitest-browser-chrome-ml-models": "ml-models",
     }
     args.subsuite = subsuites.get(suite)
     if args.subsuite == "devtools":
@@ -76,6 +77,8 @@ def run_test(context, is_junit, **kwargs):
     if args.subsuite == "a11y":
         args.flavor = "browser"
     if args.subsuite == "media-bc":
+        args.flavor = "browser"
+    if args.subsuite == "ml-models":
         args.flavor = "browser"
 
     if not args.test_paths:

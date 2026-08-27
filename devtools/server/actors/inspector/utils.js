@@ -74,7 +74,8 @@ const getNodeDisplayName = function (rawNode) {
   const { implementedPseudoElement } = rawNode;
   if (implementedPseudoElement) {
     if (
-      implementedPseudoElement.startsWith("::view-transition") &&
+      (implementedPseudoElement.startsWith("::view-transition") ||
+        implementedPseudoElement === "::picker") &&
       rawNode.hasAttribute("name")
     ) {
       return `${implementedPseudoElement}(${rawNode.getAttribute("name")})`;
@@ -169,14 +170,16 @@ function getTreeWalkerFilter(options) {
 
     // There are a few native anonymous content pseudo-elements that we want to show in markup
     // if pseudo-elements should be included.
+    const { implementedPseudoElement } = node;
     if (
       options.includePseudoElements &&
       (options.includeNativeAnonymousContent ||
-        node.nodeName === "_moz_generated_content_marker" ||
-        node.nodeName === "_moz_generated_content_before" ||
-        node.nodeName === "_moz_generated_content_after" ||
-        node.nodeName === "_moz_generated_content_backdrop" ||
-        node.nodeName === "_moz_generated_content_picker_icon")
+        implementedPseudoElement === "::after" ||
+        implementedPseudoElement === "::backdrop" ||
+        implementedPseudoElement === "::before" ||
+        implementedPseudoElement === "::checkmark" ||
+        implementedPseudoElement === "::marker" ||
+        implementedPseudoElement === "::picker-icon")
     ) {
       return nodeFilterConstants.FILTER_ACCEPT;
     }

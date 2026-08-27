@@ -34,6 +34,67 @@ struct AndroidNotificationTuple {
 using NotificationMap = nsTHashMap<nsStringHashKey, AndroidNotificationTuple>;
 static StaticAutoPtr<NotificationMap> sNotificationMap;
 
+class AlertCallbacksToObserver : public nsIObserver {
+ public:
+  NS_DECL_ISUPPORTS
+
+  AlertCallbacksToObserver(nsIAlertNotification* aAlertNotification,
+                           nsIAlertCallbacks* aAlertCallbacks)
+      : mAlertCallbacks(aAlertCallbacks) {
+    MOZ_ASSERT(aAlertCallbacks);
+  }
+
+  NS_IMETHODIMP Observe(nsISupports* aSubject, const char* aTopic,
+                        const char16_t* aData) override {
+    if (!strcmp("alertdisablecallback", aTopic)) {
+      mAlertCallbacks->OnAlertDisable();
+      return NS_OK;
+    }
+    if (!strcmp("alertsettingscallback", aTopic)) {
+      mAlertCallbacks->OnAlertSettings();
+      return NS_OK;
+    }
+    if (!strcmp("alertclickcallback", aTopic)) {
+      nsCOMPtr<nsIAlertAction> action = do_QueryInterface(aSubject);
+      nsAutoString actionName;
+      if (action) {
+        MOZ_TRY(action->GetAction(actionName));
+      }
+      mAlertCallbacks->OnAlertClick(action);
+      return NS_OK;
+    }
+    if (!strcmp("alertshow", aTopic)) {
+      mAlertCallbacks->OnAlertShow();
+      return NS_OK;
+    }
+    if (!strcmp("alertfinished", aTopic)) {
+      if (aData && nsDependentString(aData) == u"close"_ns) {
+        mAlertCallbacks->OnAlertClosed();
+        return NS_OK;
+      }
+      mAlertCallbacks->OnAlertFinished();
+      return NS_OK;
+    }
+    MOZ_ASSERT_UNREACHABLE("Unknown alert topic");
+    return NS_ERROR_UNEXPECTED;
+  }
+
+ private:
+  virtual ~AlertCallbacksToObserver() = default;
+
+  nsCOMPtr<nsIAlertCallbacks> mAlertCallbacks;
+};
+
+NS_IMPL_ISUPPORTS(AlertCallbacksToObserver, nsIObserver)
+
+NS_IMETHODIMP AndroidAlerts::ShowAlertWithCallbacks(
+    nsIAlertNotification* aAlert, nsIAlertCallbacks* aAlertCallbacks) {
+  // TODO(krosylight): Migrate GeckoView to ShowAlertWithCallbacks
+  RefPtr<nsIObserver> observer =
+      new AlertCallbacksToObserver(aAlert, aAlertCallbacks);
+  return ShowAlert(aAlert, observer);
+}
+
 NS_IMETHODIMP
 AndroidAlerts::ShowAlert(nsIAlertNotification* aAlert,
                          nsIObserver* aAlertListener) {

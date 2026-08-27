@@ -16,6 +16,7 @@ task-defaults:
             GRADLE_USER_HOME: "/builds/worker/checkouts/gecko/mobile/android/gradle/dotgradle-offline"
     run-on-repo-type: [hg]
     run:
+        clone-with: hg
         using: mozharness
         script: "mozharness/scripts/fx_desktop_build.py"
         secrets: true
@@ -56,6 +57,7 @@ android-aarch64-fenix/debug:
               path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/fenix/app/outputs/apk/debug/app-arm64-v8a-debug.apk
               type: file
     run:
+        clone-with: hg
         custom-build-variant-cfg: aarch64-fenix-debug
     use-sccache: true
     fetches:

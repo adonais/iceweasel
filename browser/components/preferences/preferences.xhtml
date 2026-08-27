@@ -265,8 +265,11 @@
           aria-labelledby="dialogTitle">
       <hbox class="dialogTitleBar" align="center">
         <label class="dialogTitle" flex="1"/>
-        <button class="dialogClose close-icon"
-                data-l10n-id="close-button"/>
+        <html:moz-button class="dialogClose"
+                         type="icon ghost"
+                         size="small"
+                         iconsrc="chrome://global/skin/icons/close.svg"
+                         data-l10n-id="close-button"/>
       </hbox>
       <browser class="dialogFrame"
                autoscroll="false"

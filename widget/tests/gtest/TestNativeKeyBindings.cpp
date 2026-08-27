@@ -195,7 +195,7 @@ TEST(NativeKeyBindings, AltShiftArrowUpParagraphSelection)
       MODIFIER_ALT | MODIFIER_SHIFT,
       0,
       NativeKeyBindingsType::MultiLineEditor,
-      {Command::SelectBeginParagraph},
+      {Command::SelectCharPrevious, Command::SelectBeginParagraph},
       "Alt+Shift+ArrowUp should select to beginning of paragraph"};
   CheckCommands(test);
 }
@@ -208,8 +208,67 @@ TEST(NativeKeyBindings, AltShiftArrowDownParagraphSelection)
       MODIFIER_ALT | MODIFIER_SHIFT,
       0,
       NativeKeyBindingsType::MultiLineEditor,
-      {Command::SelectEndParagraph},
+      {Command::SelectCharNext, Command::SelectEndParagraph},
       "Alt+Shift+ArrowDown should select to end of paragraph"};
+  CheckCommands(test);
+}
+
+// The paragraph selection selectors are expanded in
+// AppendEditCommandsForSelector rather than mapped in the per-editor-type
+// table, so check that every editor type gets the same expansion.
+TEST(NativeKeyBindings, AltShiftArrowUpParagraphSelectionRichTextEditor)
+{
+  NativeKeyBindingsTestCase test{
+      NS_VK_UP,
+      KEY_NAME_INDEX_ArrowUp,
+      MODIFIER_ALT | MODIFIER_SHIFT,
+      0,
+      NativeKeyBindingsType::RichTextEditor,
+      {Command::SelectCharPrevious, Command::SelectBeginParagraph},
+      "Alt+Shift+ArrowUp should select to beginning of paragraph in a rich "
+      "text editor"};
+  CheckCommands(test);
+}
+
+TEST(NativeKeyBindings, AltShiftArrowDownParagraphSelectionRichTextEditor)
+{
+  NativeKeyBindingsTestCase test{
+      NS_VK_DOWN,
+      KEY_NAME_INDEX_ArrowDown,
+      MODIFIER_ALT | MODIFIER_SHIFT,
+      0,
+      NativeKeyBindingsType::RichTextEditor,
+      {Command::SelectCharNext, Command::SelectEndParagraph},
+      "Alt+Shift+ArrowDown should select to end of paragraph in a rich text "
+      "editor"};
+  CheckCommands(test);
+}
+
+TEST(NativeKeyBindings, AltShiftArrowUpParagraphSelectionSingleLineEditor)
+{
+  NativeKeyBindingsTestCase test{
+      NS_VK_UP,
+      KEY_NAME_INDEX_ArrowUp,
+      MODIFIER_ALT | MODIFIER_SHIFT,
+      0,
+      NativeKeyBindingsType::SingleLineEditor,
+      {Command::SelectCharPrevious, Command::SelectBeginParagraph},
+      "Alt+Shift+ArrowUp should select to beginning of paragraph in a single "
+      "line editor"};
+  CheckCommands(test);
+}
+
+TEST(NativeKeyBindings, AltShiftArrowDownParagraphSelectionSingleLineEditor)
+{
+  NativeKeyBindingsTestCase test{
+      NS_VK_DOWN,
+      KEY_NAME_INDEX_ArrowDown,
+      MODIFIER_ALT | MODIFIER_SHIFT,
+      0,
+      NativeKeyBindingsType::SingleLineEditor,
+      {Command::SelectCharNext, Command::SelectEndParagraph},
+      "Alt+Shift+ArrowDown should select to end of paragraph in a single line "
+      "editor"};
   CheckCommands(test);
 }
 

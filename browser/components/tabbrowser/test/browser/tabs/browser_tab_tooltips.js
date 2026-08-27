@@ -17,7 +17,6 @@ function openTooltip(node) {
   EventUtils.synthesizeMouse(node, MOUSE_OFFSET, MOUSE_OFFSET, {
     type: "mousemove",
   });
-  EventUtils.synthesizeMouse(node, 2, 2, { type: "mouseout" });
   window.windowUtils.disableNonTestMouseEvents(false);
   return tooltipShownPromise;
 }

@@ -333,7 +333,6 @@ void EmitterScope::dump(BytecodeEmitter* bce) {
   fprintf(stdout, "\n");
 }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 bool EmitterScope::prepareForDisposableScopeBody(BytecodeEmitter* bce) {
   if (hasDisposables()) {
     if (!usingEmitter_->prepareForDisposableScopeBody(blockKind_)) {
@@ -368,15 +367,10 @@ bool EmitterScope::emitDisposableScopeBodyEnd(BytecodeEmitter* bce) {
 bool EmitterScope::emitModuleDisposableScopeBodyEnd(BytecodeEmitter* bce) {
   return emitDisposableScopeBodyEnd(bce);
 }
-#endif
 
 bool EmitterScope::enterLexical(BytecodeEmitter* bce, ScopeKind kind,
-                                LexicalScope::ParserData* bindings
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-                                ,
-                                BlockKind blockKind
-#endif
-) {
+                                LexicalScope::ParserData* bindings,
+                                BlockKind blockKind) {
   MOZ_ASSERT(kind != ScopeKind::NamedLambda &&
              kind != ScopeKind::StrictNamedLambda);
   MOZ_ASSERT(this == bce->innermostEmitterScopeNoCheck());
@@ -402,11 +396,9 @@ bool EmitterScope::enterLexical(BytecodeEmitter* bce, ScopeKind kind,
     if (!tdzCache->noteTDZCheck(bce, bi.name(), CheckTDZ)) {
       return false;
     }
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     if (bi.kind() == BindingKind::Using) {
       setHasDisposables(bce);
     }
-#endif
   }
 
   updateFrameFixedSlots(bce, bi);
@@ -442,7 +434,6 @@ bool EmitterScope::enterLexical(BytecodeEmitter* bce, ScopeKind kind,
     return false;
   }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   MOZ_ASSERT_IF(blockKind_ != BlockKind::Other, kind == ScopeKind::Lexical);
   MOZ_ASSERT_IF(kind != ScopeKind::Lexical, blockKind_ == BlockKind::Other);
 
@@ -451,7 +442,6 @@ bool EmitterScope::enterLexical(BytecodeEmitter* bce, ScopeKind kind,
   if (!prepareForDisposableScopeBody(bce)) {
     return false;
   }
-#endif
 
   return checkEnvironmentChainLength(bce);
 }
@@ -905,11 +895,9 @@ bool EmitterScope::enterModule(BytecodeEmitter* bce,
         }
       }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
       if (bi.kind() == BindingKind::Using) {
         setHasDisposables(bce);
       }
-#endif
     }
 
     updateFrameFixedSlots(bce, bi);
@@ -991,13 +979,11 @@ bool EmitterScope::leave(BytecodeEmitter* bce, bool nonLocal) {
     case ScopeKind::FunctionLexical:
     case ScopeKind::ClassBody:
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
       if (!nonLocal) {
         if (!emitDisposableScopeBodyEnd(bce)) {
           return false;
         }
       }
-#endif
 
       if (bce->sc->isFunctionBox() &&
           bce->sc->asFunctionBox()->needsClearSlotsOnExit()) {

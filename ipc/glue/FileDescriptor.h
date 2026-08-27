@@ -44,7 +44,7 @@ class FileDescriptor {
 
   explicit FileDescriptor(UniquePlatformHandle&& aHandle);
 
-  ~FileDescriptor();
+  ~FileDescriptor() = default;
 
   FileDescriptor& operator=(const FileDescriptor& aOther);
 

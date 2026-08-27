@@ -87,10 +87,6 @@ static const char kGOOGLE_PIN_WE3_GoogleTrustServicesFingerprint[] =
 static const char kGOOGLE_PIN_WE4_GoogleTrustServicesFingerprint[] =
   "O5TQDB/wa4SkRjBrQL2Aq9CG317H9MDDgpTVcrpJDa4=";
 
-/* GOOGLE_PIN_WE5_GoogleTrustServices */
-static const char kGOOGLE_PIN_WE5_GoogleTrustServicesFingerprint[] =
-  "8yZxLgpR8EbO8ANRrWKAzIzz9XdlSUgtYPkXKYUlGSY=";
-
 /* GOOGLE_PIN_WR1_GoogleTrustServices */
 static const char kGOOGLE_PIN_WR1_GoogleTrustServicesFingerprint[] =
   "yDu9og255NN5GEf+Bwa9rTrqFQ0EydZ0r1FCh9TdAW4=";
@@ -106,10 +102,6 @@ static const char kGOOGLE_PIN_WR3_GoogleTrustServicesFingerprint[] =
 /* GOOGLE_PIN_WR4_GoogleTrustServices */
 static const char kGOOGLE_PIN_WR4_GoogleTrustServicesFingerprint[] =
   "hZe1OerqJ1Pnq6F4N0gVjjpHqm037Ndf4aLLVpZZdAE=";
-
-/* GOOGLE_PIN_WR5_GoogleTrustServices */
-static const char kGOOGLE_PIN_WR5_GoogleTrustServicesFingerprint[] =
-  "/RoweMyX8j8/fAaaeAIwzhWXigZDrh/J2BBJaHrjX90=";
 
 /* GTS Root R1 */
 static const char kGTS_Root_R1Fingerprint[] =
@@ -256,15 +248,11 @@ static const StaticFingerprints kPinset_test = {
 };
 
 static const char* const kPinset_google_Data[] = {
-  kGOOGLE_PIN_WR5_GoogleTrustServicesFingerprint,
-  kGOOGLE_PIN_WE5_GoogleTrustServicesFingerprint,
   kGlobalSign_ECC_Root_CA___R4Fingerprint,
   kGOOGLE_PIN_AE1_GoogleTrustServicesFingerprint,
   kGoogleBackup2048Fingerprint,
   kGOOGLE_PIN_WE4_GoogleTrustServicesFingerprint,
   kGOOGLE_PIN_WR3_GoogleTrustServicesFingerprint,
-  kGTS_Root_R3Fingerprint,
-  kGTS_Root_R2Fingerprint,
   kGOOGLE_PIN_WR2_GoogleTrustServicesFingerprint,
   kGOOGLE_PIN_WE3_GoogleTrustServicesFingerprint,
   kGOOGLE_PIN_WR4_GoogleTrustServicesFingerprint,
@@ -353,6 +341,7 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "g4w.co", true, false, false, -1, &kPinset_google_root_pems },
   { "ggpht.com", true, false, false, -1, &kPinset_google_root_pems },
   { "glass.google.com", true, false, false, -1, &kPinset_google_root_pems },
+  { "gmail.co.ug", true, false, false, -1, &kPinset_google_root_pems },
   { "gmail.com", false, false, false, -1, &kPinset_google_root_pems },
   { "goo.gl", true, false, false, -1, &kPinset_google_root_pems },
   { "google", true, false, false, -1, &kPinset_google_root_pems },
@@ -576,6 +565,7 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "google.to", true, false, false, -1, &kPinset_google_root_pems },
   { "google.tt", true, false, false, -1, &kPinset_google_root_pems },
   { "google.ua", true, false, false, -1, &kPinset_google_root_pems },
+  { "google.ug", true, false, false, -1, &kPinset_google_root_pems },
   { "google.us", true, false, false, -1, &kPinset_google_root_pems },
   { "google.uz", true, false, false, -1, &kPinset_google_root_pems },
   { "google.vg", true, false, false, -1, &kPinset_google_root_pems },
@@ -673,12 +663,14 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "xn--7xa.google.com", true, false, false, -1, &kPinset_google_root_pems },
   { "youtu.be", true, false, false, -1, &kPinset_google_root_pems },
   { "youtube-nocookie.com", true, false, false, -1, &kPinset_google_root_pems },
+  { "youtube.co.ug", true, false, false, -1, &kPinset_google_root_pems },
   { "youtube.com", true, false, false, -1, &kPinset_google_root_pems },
+  { "youtube.ug", true, false, false, -1, &kPinset_google_root_pems },
   { "ytimg.com", true, false, false, -1, &kPinset_google_root_pems },
 };
 
-// Pinning Preload List Length = 383;
+// Pinning Preload List Length = 387;
 
 static const int32_t kUnknownId = -1;
 
-static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1794599306739000);
+static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1795816482311000);

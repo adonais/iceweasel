@@ -43,9 +43,12 @@ class BounceTrackingRecord final : public nsIBounceTrackingRecord {
   const nsTHashSet<nsCStringHashKey>& GetUserActivationHosts() const;
 
  private:
-  ~BounceTrackingRecord();
+  ~BounceTrackingRecord() = default;
 
-  // A site's host. The initiator site of the current extended navigation.
+  // A site's host. The site this context was on when the current extended
+  // navigation started, deliberately not the navigation's initiator: this host
+  // is exempt from classification, so a frame must not be able to nominate
+  // itself.
   nsAutoCString mInitialHost;
 
   // A site's host or null. The destination of the current extended navigation.

@@ -8,6 +8,7 @@
  */
 
 interface nsIFile;
+interface nsIInputStream;
 
 [Exposed=(Window,Worker)]
 interface File : Blob {
@@ -59,4 +60,18 @@ partial interface File {
   [ChromeOnly, NewObject, NeedsCallerType]
   static Promise<File> createFromFileName(USVString fileName,
                                           optional ChromeFilePropertyBag options = {});
+
+  /**
+   * Create a File object from a nsIInputStream.
+   *
+   * @param inputStream a nsIInputStream that contains the file data.
+   * @param size The size of the file in bytes. -1 if unknown size.
+   * @param options An optional ChromeFilePropertyBag object that can be used
+   *                to specify additional properties for the File object.
+   * @return A File object.
+   */
+  [ChromeOnly, NewObject, NeedsCallerType, Throws]
+  static File createFromNsIInputStream(nsIInputStream inputStream,
+                                       unsigned long long size,
+                                       optional ChromeFilePropertyBag options = {});
 };

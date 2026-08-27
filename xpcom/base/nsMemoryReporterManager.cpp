@@ -756,7 +756,7 @@ struct SegmentStats {
 };
 
 class WindowsAddressSpaceReporter final : public nsIMemoryReporter {
-  ~WindowsAddressSpaceReporter() {}
+  ~WindowsAddressSpaceReporter() = default;
 
  public:
   NS_DECL_ISUPPORTS
@@ -926,7 +926,7 @@ NS_IMPL_ISUPPORTS(WindowsAddressSpaceReporter, nsIMemoryReporter)
 
 #ifdef HAVE_VSIZE_MAX_CONTIGUOUS_REPORTER
 class VsizeMaxContiguousReporter final : public nsIMemoryReporter {
-  ~VsizeMaxContiguousReporter() {}
+  ~VsizeMaxContiguousReporter() = default;
 
  public:
   NS_DECL_ISUPPORTS
@@ -947,7 +947,7 @@ NS_IMPL_ISUPPORTS(VsizeMaxContiguousReporter, nsIMemoryReporter)
 
 #ifdef HAVE_PRIVATE_REPORTER
 class PrivateReporter final : public nsIMemoryReporter {
-  ~PrivateReporter() {}
+  ~PrivateReporter() = default;
 
  public:
   NS_DECL_ISUPPORTS

@@ -70,7 +70,7 @@ BEGIN_TEST(testMemoryAssociation_BackgroundFinalized) {
   JS::AddAssociatedMemory(obj, 1024, TestUse1);
 
   JS::PrepareForFullGC(cx);
-  JS::SliceBudget budget{JS::TimeBudget{1000000}};
+  JS::SliceBudget budget(mozilla::TimeDuration::FromMilliseconds(1000000));
   JS::StartIncrementalGC(cx, JS::GCOptions::Normal, JS::GCReason::API, budget);
   while (JS::IsIncrementalGCInProgress(cx)) {
     JS::IncrementalGCSlice(cx, JS::GCReason::API, budget);

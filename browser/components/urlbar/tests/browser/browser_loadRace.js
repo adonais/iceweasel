@@ -7,6 +7,10 @@
 // a page load whilst we're getting the search url, then we don't handle the
 // original search query.
 
+const { UrlbarParentController } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs"
+);
+
 add_setup(async function () {
   sandbox = sinon.createSandbox();
 
@@ -22,14 +26,18 @@ async function checkShortcutLoading(modifierKeys) {
     opening: "about:robots",
   });
 
-  // We stub getHeuristicResultFor to guarentee it doesn't resolve until after
-  // we've loaded a new page.
-  let original = UrlbarUtils.getHeuristicResultFor;
+  // We stub getHeuristicResult to guarantee it doesn't resolve until after
+  // we've loaded a new page, so the fallback's staleness guard is exercised.
+  // Stubbing the prototype covers the parent controller on both the direct and
+  // message paths.
+  let entered = Promise.withResolvers();
+  let original = UrlbarParentController.prototype.getHeuristicResult;
   sandbox
-    .stub(UrlbarUtils, "getHeuristicResultFor")
-    .callsFake(async searchString => {
+    .stub(UrlbarParentController.prototype, "getHeuristicResult")
+    .callsFake(async function (queryContext) {
+      entered.resolve();
       await deferred.promise;
-      return original.call(this, searchString);
+      return original.call(this, queryContext);
     });
 
   // This load will be blocked until the deferred is resolved.
@@ -40,9 +48,11 @@ async function checkShortcutLoading(modifierKeys) {
   gURLBar.userTypedValue = true;
   EventUtils.synthesizeKey("KEY_Enter", modifierKeys);
 
+  // The message path round-trips the fallback, so wait for the query to start.
+  await entered.promise;
   Assert.ok(
-    UrlbarUtils.getHeuristicResultFor.calledOnce,
-    "should have called getHeuristicResultFor"
+    UrlbarParentController.prototype.getHeuristicResult.calledOnce,
+    "should have called getHeuristicResult"
   );
 
   // Now load a different page.

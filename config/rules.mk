@@ -77,18 +77,6 @@ endif # ENABLE_TESTS
 #
 # Library rules
 #
-# If FORCE_STATIC_LIB is set, build a static library.
-# Otherwise, build a shared library.
-#
-
-ifndef LIBRARY
-ifdef REAL_LIBRARY
-ifdef NO_EXPAND_LIBS
-# Only build actual library if it is requested.
-LIBRARY			:= $(REAL_LIBRARY)
-endif
-endif
-endif
 
 ifdef FORCE_SHARED_LIB
 ifdef MKSHLIB

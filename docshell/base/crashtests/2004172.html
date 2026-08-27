@@ -1,0 +1,12 @@
+<iframe id="ifr" src="/foo"></iframe>
+<script>
+if (!location.hash) {
+  setTimeout(() => {
+    try {
+      ifr.contentWindow.history.pushState(null, "");
+    } catch(e) {}
+    location.hash = "reloaded";
+    location.reload();
+  }, 0);
+}
+</script>

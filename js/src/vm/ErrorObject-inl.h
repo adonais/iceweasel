@@ -17,7 +17,7 @@ inline JSString* js::ErrorObject::fileName(JSContext* cx) const {
 }
 
 inline uint32_t js::ErrorObject::sourceId() const {
-  Value val = getReservedSlot(SOURCEID_SLOT);
+  Value val = getReservedSlotTyped(SOURCEID_SLOT);
   return val.isInt32() ? val.toInt32() : 0;
 }
 
@@ -38,7 +38,7 @@ inline JS::ColumnNumberOneOrigin js::ErrorObject::columnNumber() const {
 inline JSObject* js::ErrorObject::stack() const {
   // If the stack was a CCW, it might have been turned into a dead object proxy
   // by NukeCrossCompartmentWrapper. Return nullptr in this case.
-  JSObject* obj = getReservedSlot(STACK_SLOT).toObjectOrNull();
+  JSObject* obj = getReservedSlotTyped(STACK_SLOT).toObjectOrNull();
   if (obj && obj->canUnwrapAs<SavedFrame>()) {
     return obj;
   }

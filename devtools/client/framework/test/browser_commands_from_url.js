@@ -20,6 +20,9 @@ function assertTarget(target, url) {
 }
 
 add_task(async function () {
+  // We use a commands object for the main process
+  await pushPref("devtools.chrome.enabled", true);
+
   const tab = await addTab(TEST_URI);
   const browser = tab.linkedBrowser;
   let commands, target;

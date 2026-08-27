@@ -1,31 +1,23 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Fri, 30 Jan 2026 18:55:00 +0000
-Subject: Bug 2005262 - better logging in
- ModuleRtpRtcpImpl2::RegisterRtpHeaderExtension. r=ng
+Date: Mon, 6 Apr 2026 14:37:00 -0500
+Subject: Bug 2029247 - (fix-0fc5aeecfb) base-toolchains build fix
 
-Differential Revision: https://phabricator.services.mozilla.com/D281051
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b44955c4c033ebaf31b40701f12f7cb0dc035ba8
+Upstream was assigning a -2 to a uint16_t.
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/f5dfd2e6901c9d79ee528bf3801ded81b6dd65c9
 ---
- modules/rtp_rtcp/source/rtp_rtcp_impl2.cc | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ rtc_base/network_constants.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-index 53b0edca26..8d56ca17fb 100644
---- a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-+++ b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-@@ -593,9 +593,14 @@ void ModuleRtpRtcpImpl2::SetExtmapAllowMixed(bool extmap_allow_mixed) {
- void ModuleRtpRtcpImpl2::RegisterRtpHeaderExtension(absl::string_view uri,
-                                                     RtpHeaderExtensionId id) {
-   RTC_CHECK(rtp_sender_ != nullptr);
-+  RTC_LOG(LS_INFO) << "RegisterRtpHeaderExtension uri:'" << uri
-+                   << "' id: " << id;
-   bool registered =
-       rtp_sender_->packet_generator.RegisterRtpHeaderExtension(uri, id);
--  RTC_CHECK(registered);
-+  if (!registered) {
-+    RTC_LOG(LS_WARNING) << "RegisterRtpHeaderExtension failed to register uri:'" << uri << "' id: " << id;
-+  }
-+  RTC_DCHECK(registered);
- }
+diff --git a/rtc_base/network_constants.h b/rtc_base/network_constants.h
+index 0b7ae9d567..8df31b683b 100644
+--- a/rtc_base/network_constants.h
++++ b/rtc_base/network_constants.h
+@@ -40,7 +40,7 @@ constexpr uint16_t kNetworkCostVpn = 1;
  
- void ModuleRtpRtcpImpl2::DeregisterSendRtpHeaderExtension(
+ // Add -2 to the network cost when using network slicing so that e.g. premium 5G
+ // slice is preferred over regular 5G, everything else being equal.
+-constexpr uint16_t kNetworkCostSlice = -2;
++constexpr int16_t kNetworkCostSlice = -2;
+ 
+ // Aliases for correct wrap-around with network slice cost.
+ constexpr uint16_t kNetworkCostCellular5GSlice =  // 248

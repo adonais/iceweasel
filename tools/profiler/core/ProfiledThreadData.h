@@ -192,16 +192,64 @@ class ProcessStreamingContext final : public mozilla::FailureLatch {
       const nsTHashMap<SourceId, IndexIntoSourceTable>* aSourceIdToIndexMap =
           nullptr);
 
-  // Retrieve the ThreadStreamingContext for a given thread id.
-  // Returns null if that thread id doesn't correspond to any profiled thread.
+  // A thread id together with the buffer position at which that thread was
+  // unregistered (Nothing() if it is still registered). Kept in a compact array
+  // so the per-sample thread lookup scans small entries rather than the full
+  // ThreadStreamingContext objects.
+  struct ThreadStreamingId {
+    ProfilerThreadId mThreadId;
+    mozilla::Maybe<uint64_t> mUnregisteredPosition;
+  };
+
+  // Retrieve the ThreadStreamingContext owning the sample at buffer position
+  // `aEntryPosition` for `aThreadId`. Because OS thread ids are recycled, more
+  // than one context can share a thread id; see SelectStreamingContextIndex.
+  // Returns null if no context owns the sample.
   ThreadStreamingContext* GetThreadStreamingContext(
-      const ProfilerThreadId& aThreadId) {
-    for (size_t i = 0; i < mTIDList.length(); ++i) {
-      if (mTIDList[i] == aThreadId) {
-        return &mThreadStreamingContextList[i];
+      const ProfilerThreadId& aThreadId, uint64_t aEntryPosition) {
+    mozilla::Maybe<size_t> index =
+        SelectStreamingContextIndex(mThreadIds, aThreadId, aEntryPosition);
+    return index ? &mThreadStreamingContextList[*index] : nullptr;
+  }
+
+  // Choose, among the contexts sharing `aThreadId`, the one whose lifetime
+  // window covers the sample at `aEntryPosition`, and return its index into
+  // `aThreadIds` (Nothing() if none).
+  //
+  // OS thread ids are reused across short-lived threads (e.g. web workers), so
+  // several contexts can share a thread id. Because a thread id is unique among
+  // live threads, those contexts have disjoint, buffer-position-ordered
+  // lifetime windows, and a real sample never falls in the gap between two
+  // windows. So the sample belongs to the context with the smallest
+  // unregistration position that is still >= aEntryPosition, or to the still-
+  // registered context (no unregistration position, i.e. the latest window) if
+  // no unregistered one qualifies. Exposed static for unit testing.
+  static mozilla::Maybe<size_t> SelectStreamingContextIndex(
+      const mozilla::Vector<ThreadStreamingId>& aThreadIds,
+      const ProfilerThreadId& aThreadId, uint64_t aEntryPosition) {
+    mozilla::Maybe<size_t> best;
+    for (size_t i = 0; i < aThreadIds.length(); ++i) {
+      if (aThreadIds[i].mThreadId != aThreadId) {
+        continue;
+      }
+      const mozilla::Maybe<uint64_t>& end = aThreadIds[i].mUnregisteredPosition;
+      if (end && *end < aEntryPosition) {
+        // This thread was unregistered before the sample; it can't own it.
+        continue;
+      }
+      if (!best) {
+        best = mozilla::Some(i);
+        continue;
+      }
+      // Prefer the narrowest qualifying window; Nothing() (still registered)
+      // is treated as the widest (+infinity).
+      const mozilla::Maybe<uint64_t>& bestEnd =
+          aThreadIds[*best].mUnregisteredPosition;
+      if (end && (!bestEnd || *end < *bestEnd)) {
+        best = mozilla::Some(i);
       }
     }
-    return nullptr;
+    return best;
   }
 
   const mozilla::TimeStamp& ProcessStartTime() const {
@@ -218,9 +266,10 @@ class ProcessStreamingContext final : public mozilla::FailureLatch {
   FAILURELATCH_IMPL_PROXY(mFailureLatch)
 
  private:
-  // Separate list of thread ids, it's much faster to do a linear search
-  // here than a vector of bigger items like mThreadStreamingContextList.
-  mozilla::Vector<ProfilerThreadId> mTIDList;
+  // Thread ids and their unregistration positions; it's much faster to do a
+  // linear search here than in a vector of bigger items like
+  // mThreadStreamingContextList.
+  mozilla::Vector<ThreadStreamingId> mThreadIds;
   // Contexts corresponding to the thread id at the same indexes.
   mozilla::Vector<ThreadStreamingContext> mThreadStreamingContextList;
 

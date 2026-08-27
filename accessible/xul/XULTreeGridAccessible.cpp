@@ -590,7 +590,7 @@ bool XULTreeGridCellAccessible::CellInvalidated() {
           MakeRefPtr<AccStateChangeEvent>(this, states::CHECKED, isEnabled);
       nsEventShell::FireEvent(accEvent);
 
-      mCachedTextEquiv = textEquiv;
+      mCachedTextEquiv = std::move(textEquiv);
       return true;
     }
 
@@ -600,7 +600,7 @@ bool XULTreeGridCellAccessible::CellInvalidated() {
   mTreeView->GetCellText(mRow, mColumn, textEquiv);
   if (mCachedTextEquiv != textEquiv) {
     nsEventShell::FireEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, this);
-    mCachedTextEquiv = textEquiv;
+    mCachedTextEquiv = std::move(textEquiv);
     return true;
   }
 

@@ -6256,6 +6256,8 @@ class MBinaryCache : public MBinaryInstruction,
  public:
   INSTRUCTION_HEADER(BinaryCache)
   TRIVIAL_NEW_WRAPPERS
+
+  JSOp jsop() const;
 };
 
 // Checks if a value is JS_UNINITIALIZED_LEXICAL, bailout out if so, leaving

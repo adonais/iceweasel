@@ -131,14 +131,14 @@ class nsTreeColumn final : public nsISupports, public nsWrapperCache {
 
   int32_t mIndex;
 
-  bool mIsPrimary;
-  bool mIsCycler;
-  bool mIsEditable;
-  bool mOverflow;
+  bool mIsPrimary = false;
+  bool mIsCycler = false;
+  bool mIsEditable = false;
+  bool mOverflow = false;
 
-  int16_t mType;
+  int16_t mType = 0;
 
-  int8_t mCropStyle;
+  int8_t mCropStyle = 0;
   mozilla::StyleTextAlign mTextAlignment;
 
   RefPtr<nsTreeColumn> mNext;

@@ -9,7 +9,6 @@
 import {
   SkippableTimer,
   UrlbarProvider,
-  UrlbarUtils,
 } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
@@ -31,10 +30,10 @@ export class UrlbarProviderPrivateSearch extends UrlbarProvider {
   }
 
   /**
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof lazy.UrlbarShared.PROVIDER_TYPE>}
    */
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.PROFILE;
+    return lazy.UrlbarShared.PROVIDER_TYPE.PROFILE;
   }
 
   /**
@@ -115,7 +114,7 @@ export class UrlbarProviderPrivateSearch extends UrlbarProvider {
         isPrivateEngine,
       },
       highlights: {
-        engine: UrlbarUtils.HIGHLIGHT.TYPED,
+        engine: lazy.UrlbarShared.HIGHLIGHT.TYPED,
       },
     });
     addCallback(this, result);

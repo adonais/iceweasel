@@ -9,7 +9,7 @@
 
 class nsOSPermissionRequest : public nsOSPermissionRequestBase {
  public:
-  nsOSPermissionRequest() {};
+  nsOSPermissionRequest() = default;
 
   NS_IMETHOD GetAudioCapturePermissionState(uint16_t* aAudio) override;
 

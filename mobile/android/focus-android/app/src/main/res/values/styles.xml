@@ -2,7 +2,7 @@
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <!-- This is the default color for activated controls(buttons) -->
@@ -139,12 +139,14 @@
         <item name="overlapAnchor">true</item>
     </style>
 
-    <style name="Mozac.Browser.Menu" parent="">
+    <!-- These override AC styles and are only referenced from there, so the UnusedResources check,
+         which cannot see those references, reports them as unused. -->
+    <style name="Mozac.Browser.Menu" parent="" tools:ignore="UnusedResources">
       <item name="cardBackgroundColor">@color/menuBackground</item>
     </style>
 
     <!-- Add new style to be able to use the same menu item style for both themes until light theme it will be implemented -->
-    <style name="Mozac.Browser.Menu.Item.Text" parent="@android:style/TextAppearance.Material.Menu">
+    <style name="Mozac.Browser.Menu.Item.Text" parent="@android:style/TextAppearance.Material.Menu" tools:ignore="UnusedResources">
       <item name="android:background">?android:attr/selectableItemBackground</item>
       <item name="android:textSize">@dimen/mozac_browser_menu_item_text_size</item>
       <item name="android:ellipsize">end</item>

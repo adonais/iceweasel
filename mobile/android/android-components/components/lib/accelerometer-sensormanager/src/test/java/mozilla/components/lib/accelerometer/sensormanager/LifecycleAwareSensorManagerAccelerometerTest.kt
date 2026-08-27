@@ -80,7 +80,7 @@ class LifecycleAwareSensorManagerAccelerometerTest {
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
 
         val samples = mutableListOf<Accelerometer.Sample>()
-        val samplesJob = launch(testDispatcher) {
+        backgroundScope.launch {
             accelerometer.samples()
                 .collect { samples.add(it) }
         }
@@ -89,7 +89,7 @@ class LifecycleAwareSensorManagerAccelerometerTest {
         emitLinearAccelerationSensorEvent(floatArrayOf(1f, 2f, 3f))
         emitLinearAccelerationSensorEvent(floatArrayOf(4f, 5f, 6f))
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         assertEquals("Two sensor events are observed", 2, samples.size)
         assertEquals(1f, samples[0].xAccel, 0.001f)
@@ -98,13 +98,12 @@ class LifecycleAwareSensorManagerAccelerometerTest {
         assertEquals(4f, samples[1].xAccel, 0.001f)
         assertEquals(5f, samples[1].yAccel, 0.001f)
         assertEquals(6f, samples[1].zAccel, 0.001f)
-        samplesJob.cancel()
     }
 
     @Test
     fun `when lifecycle is paused, no sensor events are emitted`() = runTest(testDispatcher) {
         val samples = mutableListOf<Accelerometer.Sample>()
-        val samplesJob = launch(testDispatcher) {
+        backgroundScope.launch {
             accelerometer.samples()
                 .collect { samples.add(it) }
         }
@@ -126,7 +125,7 @@ class LifecycleAwareSensorManagerAccelerometerTest {
             ),
         )
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
 
@@ -138,9 +137,8 @@ class LifecycleAwareSensorManagerAccelerometerTest {
             ),
         )
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
-        samplesJob.cancel()
         assertEquals("Expected that only the two prior sensor events were emitted", 2, samples.size)
     }
 
@@ -149,7 +147,7 @@ class LifecycleAwareSensorManagerAccelerometerTest {
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
 
         val samples = mutableListOf<Accelerometer.Sample>()
-        val samplesJob = launch(testDispatcher) {
+        backgroundScope.launch {
             accelerometer.samples()
                 .collect { samples.add(it) }
         }
@@ -157,13 +155,12 @@ class LifecycleAwareSensorManagerAccelerometerTest {
 
         emitLinearAccelerationSensorEvent(floatArrayOf(2.0f, -1.5f, 0.25f))
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         assertEquals(1, samples.size)
         assertEquals(2.0f, samples[0].xAccel, 0.001f)
         assertEquals(-1.5f, samples[0].yAccel, 0.001f)
         assertEquals(0.25f, samples[0].zAccel, 0.001f)
-        samplesJob.cancel()
     }
 
     @Test
@@ -171,7 +168,7 @@ class LifecycleAwareSensorManagerAccelerometerTest {
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
 
         val samples = mutableListOf<Accelerometer.Sample>()
-        val samplesJob = launch(testDispatcher) {
+        backgroundScope.launch {
             accelerometer.samples()
                 .collect { samples.add(it) }
         }
@@ -180,7 +177,7 @@ class LifecycleAwareSensorManagerAccelerometerTest {
         emitLinearAccelerationSensorEvent(floatArrayOf(0.5f, 1.0f, 0.0f))
         emitLinearAccelerationSensorEvent(floatArrayOf(1.5f, -0.5f, 2.0f))
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         assertEquals(2, samples.size)
         assertEquals(0.5f, samples[0].xAccel, 0.001f)
@@ -190,7 +187,6 @@ class LifecycleAwareSensorManagerAccelerometerTest {
         assertEquals(1.5f, samples[1].xAccel, 0.001f)
         assertEquals(-0.5f, samples[1].yAccel, 0.001f)
         assertEquals(2.0f, samples[1].zAccel, 0.001f)
-        samplesJob.cancel()
     }
 
     @Test
@@ -198,7 +194,7 @@ class LifecycleAwareSensorManagerAccelerometerTest {
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
 
         val samples = mutableListOf<Accelerometer.Sample>()
-        val samplesJob = launch(testDispatcher) {
+        backgroundScope.launch {
             accelerometer.samples()
                 .collect { samples.add(it) }
         }
@@ -206,13 +202,12 @@ class LifecycleAwareSensorManagerAccelerometerTest {
 
         emitLinearAccelerationSensorEvent(floatArrayOf(0.0f, 0.0f, 0.0f))
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         assertEquals(1, samples.size)
         assertEquals(0.0f, samples[0].xAccel, 0.001f)
         assertEquals(0.0f, samples[0].yAccel, 0.001f)
         assertEquals(0.0f, samples[0].zAccel, 0.001f)
-        samplesJob.cancel()
     }
 
     @Test
@@ -220,7 +215,7 @@ class LifecycleAwareSensorManagerAccelerometerTest {
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
 
         val samples = mutableListOf<Accelerometer.Sample>()
-        val samplesJob = launch(testDispatcher) {
+        backgroundScope.launch {
             accelerometer.samples()
                 .collect { samples.add(it) }
         }
@@ -228,13 +223,12 @@ class LifecycleAwareSensorManagerAccelerometerTest {
 
         emitLinearAccelerationSensorEvent(floatArrayOf(-1f, -2.0f, -0.5f))
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         assertEquals(1, samples.size)
         assertEquals(-1.0f, samples[0].xAccel, 0.001f)
         assertEquals(-2.0f, samples[0].yAccel, 0.001f)
         assertEquals(-0.5f, samples[0].zAccel, 0.001f)
-        samplesJob.cancel()
     }
 
     @Test
@@ -242,7 +236,7 @@ class LifecycleAwareSensorManagerAccelerometerTest {
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
 
         val samples = mutableListOf<Accelerometer.Sample>()
-        val samplesJob = launch(testDispatcher) {
+        backgroundScope.launch {
             accelerometer.samples()
                 .collect { samples.add(it) }
         }
@@ -250,7 +244,7 @@ class LifecycleAwareSensorManagerAccelerometerTest {
 
         emitAccelerometerSensorEvent(floatArrayOf(-1f, -2.0f, -0.5f))
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         assertEquals(1, samples.size)
 
@@ -268,7 +262,6 @@ class LifecycleAwareSensorManagerAccelerometerTest {
 
         // z -> (-0.5) - (1 - 0.8) * -0.5 => -1 - (-0.2) => -0.4
         assertEquals(-0.4f, samples[0].zAccel, 0.001f)
-        samplesJob.cancel()
     }
 
     private fun emitAccelerometerSensorEvent(values: FloatArray) {

@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Optional, Union
 
-from mach.util import to_optional_path
+from mach.util import batch_paths, to_optional_path
 from mozfile import which
 
 from mozversioncontrol.errors import MissingVCSInfo, MissingVCSTool
@@ -95,6 +95,10 @@ class Repository(abc.ABC):
             if e.returncode in return_codes:
                 return ""
             raise
+
+    def _run_batched(self, *args, paths: list[Union[str, Path]], **runargs):
+        for batch in batch_paths(paths):
+            self._run(*args, *batch, **runargs)
 
     def _pipefrom(self, *args, encoding="utf-8"):
         cmd = (str(self._tool),) + args

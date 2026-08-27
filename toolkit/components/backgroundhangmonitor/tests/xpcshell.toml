@@ -8,7 +8,6 @@ run-sequentially = [
 ]
 support-files = ["child_cause_hang.js"]
 skip-if = [
-  "artifact", # Bug 2040417 - known limitation of FOG ping testing APIs
   "debug",
   "os == 'android' && arch == 'armeabi-v7a'", # Bug 1969481
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1417723

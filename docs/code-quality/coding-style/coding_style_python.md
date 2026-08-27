@@ -39,8 +39,8 @@ Four spaces in Python code.
 
   ```python
   var += [
-      'foo',
-      'bar'
+      "foo",
+      "bar",
   ]
   ```
 

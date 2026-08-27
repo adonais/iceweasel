@@ -255,6 +255,17 @@ screenshots:
     expires: never
     telemetry_mirror: Screenshots_Started_OverlayRetry
 
+  started_share_panel:
+    type: event
+    description: >
+      Recorded when a user opens the screenshots ui via the share panel.
+    bugs:
+      - https://bugzil.la/2052264
+    data_reviews:
+      - https://bugzil.la/2052264
+    notification_emails: *screenshots_started_emails
+    expires: never
+
   canceled_toolbar_button:
     type: event
     description: >
@@ -369,6 +380,17 @@ screenshots:
     notification_emails: *screenshots_canceled_emails
     expires: never
     telemetry_mirror: Screenshots_Canceled_Navigation
+
+  canceled_share_panel:
+    type: event
+    description: >
+      Recorded when a user closes the screenshots ui via the share panel.
+    bugs:
+      - https://bugzil.la/2052264
+    data_reviews:
+      - https://bugzil.la/2052264
+    notification_emails: *screenshots_canceled_emails
+    expires: never
 
   failed_screenshot_too_large:
     type: event

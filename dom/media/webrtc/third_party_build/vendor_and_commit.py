@@ -3,11 +3,14 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import argparse
 import atexit
+import importlib
 import os
 import re
 import sys
 
 from filter_git_changes import filter_git_changes
+
+vendor_libwebrtc = importlib.import_module("vendor-libwebrtc")
 from run_operations import (
     ErrorHelp,
     RepoType,
@@ -45,22 +48,15 @@ def log_output_lines(lines, log_dir, filename):
             ofile.write("\n")
 
 
-def vendor_current_stack(github_branch, github_path, script_dir):
+def vendor_current_stack(github_branch, github_path):
     print("-------")
     print(f"------- Vendor {github_branch} from {github_path}")
     print("-------")
-    cmd = [
-        "./mach",
-        "python",
-        f"{script_dir}/vendor-libwebrtc.py",
-        "--from-local",
-        github_path,
-        "--commit",
-        github_branch,
+    vendor_libwebrtc.vendor(
         "libwebrtc",
-    ]
-    cmd = " ".join(cmd)
-    run_shell(cmd)
+        from_local=github_path,
+        commit=github_branch,
+    )
 
 
 def restore_mozbuild_files(target_dir, log_dir):
@@ -211,7 +207,7 @@ def vendor_and_commit(
             f"Please manually confirm that all changes from git ({github_path})\n"
             "are reflected in the output of 'hg diff'"
         )
-        vendor_current_stack(github_branch, github_path, script_dir)
+        vendor_current_stack(github_branch, github_path)
         error_help.set_help(None)
 
     if len(resume_state) == 0 or resume_state == "resume2":

@@ -698,6 +698,7 @@ class BaseBootstrapper:
     def ensure_cargo_tools(self):
         """Install required developer tools from prebuilt toolchain artifacts."""
         cargo_home, cargo_bin = self.cargo_home()
+        cargo_bin.mkdir(parents=True, exist_ok=True)
 
         print("Installing cargo tools: {}...".format(", ".join(self.CARGO_TOOLS)))
         for tool in self.CARGO_TOOLS:

@@ -159,7 +159,7 @@ add_task(async function test_filter_isActive() {
       return "BadProvider";
     }
     get type() {
-      return UrlbarUtils.PROVIDER_TYPE.PROFILE;
+      return UrlbarShared.PROVIDER_TYPE.PROFILE;
     }
     async isActive(context) {
       info("Acceptable sources: " + context.sources);
@@ -207,7 +207,7 @@ add_task(async function test_filter_queryContext() {
       return "BadProvider";
     }
     get type() {
-      return UrlbarUtils.PROVIDER_TYPE.PROFILE;
+      return UrlbarShared.PROVIDER_TYPE.PROFILE;
     }
     async isActive(_context) {
       return true;
@@ -250,7 +250,7 @@ add_task(async function test_nofilter_heuristic() {
   let provider = registerBasicTestProvider(
     matches,
     undefined,
-    UrlbarUtils.PROVIDER_TYPE.HEURISTIC
+    UrlbarShared.PROVIDER_TYPE.HEURISTIC
   );
 
   let context = createContext(undefined, {

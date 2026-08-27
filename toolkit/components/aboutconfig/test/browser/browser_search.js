@@ -7,6 +7,8 @@ add_setup(async function () {
       ["test.aboutconfig.a", "test value 1"],
       ["test.aboutconfig.ab", "test value 2"],
       ["test.aboutconfig.bc", "test value 3"],
+      ["test2.aboutconfig.dotcheck", "test value 4"],
+      ["test2Xaboutconfig.dotcheck", "test value 5"],
     ],
   });
 });
@@ -117,6 +119,24 @@ add_task(async function test_search_wildcard() {
   });
 });
 
+add_task(async function test_search_multiword() {
+  await AboutConfigTest.withNewTab(async function () {
+    const extra = 1; // "Add" row
+
+    // Two-word search term
+    this.search("test. aboutconfig ");
+    Assert.equal(this.rows.length, 3 + extra);
+
+    // Two-word search term with wildcard
+    this.search("aboutconfig*a  test.");
+    Assert.equal(this.rows.length, 2 + extra);
+
+    // Intersection of multiple wildcard search terms
+    this.search("  test.  aboutconfig*a   aboutconfig*b ");
+    Assert.equal(this.rows.length, 1 + extra);
+  });
+});
+
 add_task(async function test_search_delayed() {
   await AboutConfigTest.withNewTab(async function () {
     // Start with the initial empty page.
@@ -173,5 +193,25 @@ add_task(async function test_search_add_row_color() {
     this.search("test.aboutconfig.b");
     Assert.equal(this.rows.length, 2);
     Assert.ok(this.getRow("test.aboutconfig.b").hasClass("odd"));
+  });
+});
+
+add_task(async function test_regex_escape() {
+  await AboutConfigTest.withNewTab(async function () {
+    const extra = 1; // "Add" row
+    // '.' in 'test.aboutconfig' should be escaped when creating regex pattern
+    this.search("test2.a*outconfig dotcheck");
+    Assert.equal(this.rows.length, 1 + extra);
+    Assert.ok(this.getRow("test2.aboutconfig.dotcheck"));
+    Assert.ok(!this.getRow("test2Xaboutconfig.dotcheck"));
+  });
+});
+
+add_task(async function test_regex_escape_invalid() {
+  await AboutConfigTest.withNewTab(async function () {
+    const extra = 1; // "Add" row
+    // '?' should be escaped instead of throwing due to invalid regex
+    this.search("?*");
+    Assert.equal(this.rows.length, 0 + extra);
   });
 });

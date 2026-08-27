@@ -91,7 +91,10 @@ export const SyncedTabsErrorHandler = {
   },
 
   getFluentStringsForErrorType(type) {
-    return Object.freeze(this._errorStateStringMappings[type]);
+    const mappings = Services.prefs.getBoolPref("browser.nova.enabled", false)
+      ? this._novaErrorStateStringMappings
+      : this._errorStateStringMappings;
+    return Object.freeze(mappings[type]);
   },
 
   get isPrimaryPasswordLocked() {
@@ -181,6 +184,46 @@ export const SyncedTabsErrorHandler = {
     [ErrorType.SIGNED_OUT]: {
       header: "firefoxview-tabpickup-signed-out-header",
       description: "firefoxview-tabpickup-signed-out-description2",
+      buttonLabel: "firefoxview-tabpickup-signed-out-primarybutton",
+    },
+  },
+
+  _novaErrorStateStringMappings: {
+    [ErrorType.SYNC_ERROR]: {
+      header: "firefoxview-tabpickup-sync-error-header-2",
+      description: "firefoxview-tabpickup-generic-sync-error-description-2",
+      buttonLabel: "firefoxview-tabpickup-sync-error-primarybutton",
+    },
+    [ErrorType.FXA_ADMIN_DISABLED]: {
+      header: "firefoxview-tabpickup-fxa-admin-disabled-header-2",
+      description: "firefoxview-tabpickup-fxa-disabled-by-policy-description-2",
+      // The button is hidden for this errorState, so we don't include the
+      // buttonLabel property.
+    },
+    [ErrorType.NETWORK_OFFLINE]: {
+      header: "firefoxview-tabpickup-network-offline-header-2",
+      description: "firefoxview-tabpickup-network-offline-description-2",
+      buttonLabel: "firefoxview-tabpickup-network-offline-primarybutton",
+    },
+    [ErrorType.SYNC_DISCONNECTED]: {
+      header: "firefoxview-tabpickup-sync-error-header-2",
+      description: "firefoxview-tabpickup-generic-sync-error-description-2",
+      buttonLabel: "firefoxview-tabpickup-sync-error-primarybutton",
+    },
+    [ErrorType.PASSWORD_LOCKED]: {
+      header: "firefoxview-tabpickup-password-locked-header-2",
+      description: "firefoxview-tabpickup-password-locked-description-2",
+      buttonLabel: "firefoxview-tabpickup-password-locked-primarybutton",
+      link: {
+        label: "firefoxview-tabpickup-password-locked-link",
+        href:
+          Services.urlFormatter.formatURLPref("app.support.baseURL") +
+          "primary-password-stored-logins",
+      },
+    },
+    [ErrorType.SIGNED_OUT]: {
+      header: "firefoxview-tabpickup-signed-out-header-2",
+      description: "firefoxview-tabpickup-signed-out-description-2",
       buttonLabel: "firefoxview-tabpickup-signed-out-primarybutton",
     },
   },

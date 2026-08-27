@@ -85,6 +85,9 @@ class VideoFrameSurface<LIBAV_VER> {
   void SetVulkanCopySlotIndex(int32_t aSlotIndex) {
     mVulkanCopySlotIndex = aSlotIndex;
   }
+  void SetHDRMetadata(mozilla::gfx::HDRMetadata aHDRMetadata) {
+    mSurface->GetAsDMABufSurfaceYUV()->SetHDRMetadata(aHDRMetadata);
+  }
 
   RefPtr<DMABufSurfaceYUV> GetDMABufSurface() {
     return mSurface->GetAsDMABufSurfaceYUV();

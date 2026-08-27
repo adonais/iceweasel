@@ -553,6 +553,30 @@
   result_type: Boolean
   generate_lir: true
 
+- name: StrictConstantCompareString
+  operands:
+    value: Value
+  arguments:
+    constant: JSOffThreadAtom*
+    jsop: JSOp
+  movable: true
+  alias_set: none
+  folds_to: custom
+  result_type: Boolean
+  generate_lir: true
+  lir_temps: 1
+
+- name: StrictConstantCompareObject
+  operands:
+    value: Value
+  arguments:
+    constant: JSObject*
+    jsop: JSOp
+  movable: true
+  alias_set: none
+  result_type: Boolean
+  generate_lir: true
+
 - name: SameValueDouble
   operands:
     left: Double
@@ -1905,17 +1929,19 @@
   clone: true
   generate_lir: true
 
-# Store to the initialized length in an elements header. Note the input is an
-# *index*, one less than the desired initialized length.
+# Set the initialized length field in an elements header.
 - name: SetInitializedLength
   operands:
     elements: Elements
-    index: Int32
+  arguments:
+    length: uint32_t
+    needsPreBarrier: bool
   type_policy: none
   alias_set:
     store: ObjectFields
   clone: true
   generate_lir: true
+  lir_temps: 1
 
 # Load the array length from an elements header.
 - name: ArrayLength
@@ -1931,12 +1957,12 @@
   clone: true
   generate_lir: true
 
-# Store to the length in an elements header. Note the input is an *index*, one
-# less than the desired length.
+# Set the array length field in an elements header.
 - name: SetArrayLength
   operands:
     elements: Elements
-    index: Int32
+  arguments:
+    length: uint32_t
   type_policy: none
   alias_set:
     store: ObjectFields
@@ -3600,6 +3626,17 @@
   alias_set: none
   generate_lir: true
 
+- name: IsSuspendedGenerator
+  operands:
+    object: Object
+  result_type: Boolean
+  alias_set:
+    load:
+      - ObjectFields
+      - FixedSlot
+  generate_lir: true
+  lir_temps: 1
+
 - name: IsNullOrUndefined
   operands:
     value: any
@@ -3697,6 +3734,17 @@
   possibly_calls: true
   generate_lir: true
 
+- name: GeneratorResume
+  operands:
+    generator: Object
+    value: Value
+  arguments:
+    resumeKind: int32_t
+  result_type: Value
+  possibly_calls: true
+  generate_lir: true
+  lir_temps: 2
+
 - name: CheckThisReinit
   operands:
     thisValue: Value
@@ -3717,6 +3765,7 @@
   result_type: Boolean
   possibly_calls: true
   generate_lir: true
+  lir_temps: 1
 
 - name: MaybeExtractAwaitValue
   gen_boilerplate: false
@@ -4979,7 +5028,6 @@
   gen_boilerplate: false
 #endif
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 - name: AddDisposableResource
   operands:
     environment: Object
@@ -4996,4 +5044,3 @@
     environment: Object
   result_type: Value
   generate_lir: true
-#endif

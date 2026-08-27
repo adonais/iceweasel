@@ -60,17 +60,6 @@ macosx64-aarch64-stmo-cli:
             - linux64-rust-macos-toolchain
             - macosx64-sdk-toolchain
 
-win32-stmo-cli:
-    treeherder:
-        symbol: TW32(stmo-cli)
-    run:
-        arguments: ['i686-pc-windows-msvc']
-    fetches:
-        toolchain:
-            - linux64-clang-toolchain
-            - linux64-rust-windows-toolchain
-            - vs-toolchain
-
 win64-stmo-cli:
     treeherder:
         symbol: TW64(stmo-cli)

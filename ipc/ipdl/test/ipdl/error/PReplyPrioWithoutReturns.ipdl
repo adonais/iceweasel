@@ -1,0 +1,8 @@
+//error: non-returns message `NormalPrio' cannot specify [ReplyPriority]
+
+[ChildProc=any]
+async protocol PReplyPrioWithoutReturns
+{
+child:
+  [ReplyPriority=normal] async NormalPrio();
+};

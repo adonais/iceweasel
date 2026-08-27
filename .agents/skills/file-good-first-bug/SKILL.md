@@ -88,7 +88,7 @@ Filing as a good first bug to learn workflows.
 <optional: warning list / code snippet / current vs. desired>
 
 Link to the code:
-https://searchfox.org/mozilla-central/source/<path>[#<line>]
+https://searchfox.org/firefox-main/rev/<sha>/<path>[#<line>]
 
 To verify the fix:
 

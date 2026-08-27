@@ -4,7 +4,7 @@ let { SyncedTabs } = ChromeUtils.importESModule(
   "resource://services-sync/SyncedTabs.sys.mjs"
 );
 let { SyncedTabsListStore } = ChromeUtils.importESModule(
-  "resource:///modules/syncedtabs/SyncedTabsListStore.sys.mjs"
+  "moz-src:///browser/components/syncedtabs/SyncedTabsListStore.sys.mjs"
 );
 
 const FIXTURE = [

@@ -1477,7 +1477,7 @@ void nsPlainTextSerializer::CurrentLine::CreateQuotesAndIndent(
          with the following one, so the empty line may be lost completely.) */
       quotes.Append(char16_t(' '));
     }
-    aResult = quotes;
+    aResult = std::move(quotes);
   }
 
   // Indent if necessary

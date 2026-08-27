@@ -46,3 +46,41 @@ add_task(async function () {
   await BrowserTestUtils.closeWindow(win);
   SpecialPowers.popPrefEnv();
 });
+
+/**
+ * Tests that the search mode switcher stops observing engine changes while the
+ * searchbar is disconnected, and observes them again once it's reconnected.
+ */
+add_task(async function searchModeSwitcherObservers() {
+  await SearchTestUtils.updateRemoteSettingsConfig([
+    { identifier: "engine1" },
+    { identifier: "engine2" },
+  ]);
+  let engine1 = SearchService.defaultEngine;
+  let engine2 = SearchService.getEngineById("engine2");
+
+  let searchbar = document.getElementById("searchbar-new");
+  let engineStore = searchbar.controller.engineStore;
+
+  gCUITestUtils.removeSearchBar();
+  Assert.ok(!searchbar.isConnected, "Searchbar was disconnected");
+
+  let spy = sinon.spy(searchbar.searchModeSwitcher, "updateSearchIcon");
+  await SearchService.setDefault(engine2, SearchService.CHANGE_REASON.UNKNOWN);
+  await TestUtils.waitForCondition(
+    () => engineStore.default.id == engine2.id,
+    "Waiting for the engine store to pick up the new default engine"
+  );
+  Assert.ok(spy.notCalled, "Search icon wasn't updated while disconnected");
+
+  await gCUITestUtils.addSearchBar();
+  spy.resetHistory();
+
+  await SearchService.setDefault(engine1, SearchService.CHANGE_REASON.UNKNOWN);
+  await TestUtils.waitForCondition(
+    () => spy.called,
+    "Waiting for the search icon to be updated again"
+  );
+
+  sinon.restore();
+});

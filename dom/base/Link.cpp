@@ -5,14 +5,18 @@
 #include "Link.h"
 
 #include "mozilla/Components.h"
+#include "mozilla/FocusModel.h"
 #include "mozilla/IHistory.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLDNSPrefetch.h"
 #include "mozilla/dom/SVGAElement.h"
+#include "mozilla/dom/SpeculationRules.h"
 #include "nsAttrValueInlines.h"
 #include "nsGkAtoms.h"
+#include "nsIContentInlines.h"  // for nsINode::IsInDesignMode()
 #include "nsIURIMutator.h"
 #include "nsIURIWithSizeOf.h"
 #include "nsLayoutUtils.h"
@@ -391,6 +395,39 @@ void Link::BindToTree(const BindContext& aContext) {
   ResetLinkState(false);
 }
 
+Focusable Link::IsLinkFocusableWithoutStyle(IsFocusableFlags aFlags) const {
+  Element* element = GetElement();
+  MOZ_ASSERT(element);
+
+  // Links/Elements cannot be focused if:
+  // 1. Not in a composed document.
+  // 2. In designMode (where only the document itself is focusable).
+  // 3. Document link handling is disabled.
+  // 4. Node is inside an editable region (Links in an editable region should
+  //    never be focusable, even if in a contenteditable="false" region).
+  if (!element->IsInComposedDoc() || element->IsInDesignMode() ||
+      !element->OwnerDoc()->LinkHandlingEnabled() ||
+      nsContentUtils::IsNodeInEditableRegion(element)) {
+    return {};
+  }
+
+  int32_t tabIndex = element->TabIndex();
+
+  // If the element is not actually a link (e.g. <a> without href):
+  // Not tabbable or focusable unless forced to be via the presence of a
+  // tabindex attribute (Bug 17605).
+  if (!element->IsLink()) {
+    return element->GetTabIndexAttrValue().isSome() ? Focusable{true, tabIndex}
+                                                    : Focusable{};
+  }
+
+  if (!FocusModel::IsTabFocusable(TabFocusableType::Links)) {
+    tabIndex = -1;
+  }
+
+  return {true, tabIndex};
+}
+
 void Link::ResetLinkState(bool aNotify, bool aHasHref) {
   // If we have an href, we should register with the history.
   mNeedsRegistration = aHasHref;
@@ -403,6 +440,30 @@ void Link::ResetLinkState(bool aNotify, bool aHasHref) {
   // href is unvisited.
   SetLinkState(aHasHref ? State::Unvisited : State::NotLink, aNotify);
   TriggerLinkUpdate(aNotify);
+
+  UpdateSpeculationRulesLink(aHasHref);
+}
+
+void Link::UpdateSpeculationRulesLink(bool aHasHref) {
+  // "find matching links" only considers HTML <a> and <area> elements; SVG <a>
+  // elements are excluded.
+  if (!mElement->IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area)) {
+    return;
+  }
+
+  // A link is a candidate while it has an href and is connected to a document.
+  // The remaining "find matching links" conditions (being rendered, having an
+  // HTTP(S) URL) are evaluated when the candidates are fetched, since they can
+  // change without the link being reset.
+  if (StaticPrefs::dom_speculation_rules_enabled() && aHasHref &&
+      mElement->IsInComposedDoc()) {
+    mElement->OwnerDoc()->SpeculationRules().AddLink(mElement);
+  } else if (auto* speculationRules =
+                 mElement->OwnerDoc()->GetSpeculationRules()) {
+    // Always stop tracking, even if the pref was disabled after this link
+    // was added, so that we never leave a dangling pointer in the set.
+    speculationRules->RemoveLink(mElement);
+  }
 }
 
 void Link::Unregister() {

@@ -646,22 +646,23 @@ struct NativeIterator : public NativeIteratorListNode {
 class PropertyIteratorObject : public NativeObject {
   static const JSClassOps classOps_;
 
-  enum { IteratorSlot, SlotCount };
+  JS_DEFINE_TYPED_SLOT(0, ITERATOR_SLOT, Private, Undefined);
+  static constexpr uint32_t SLOT_COUNT = 1;
 
  public:
   static const JSClass class_;
 
   NativeIterator* getNativeIterator() const {
-    return maybePtrFromReservedSlot<NativeIterator>(IteratorSlot);
+    return maybePtrFromReservedSlotTyped<NativeIterator>(ITERATOR_SLOT);
   }
   void initNativeIterator(js::NativeIterator* ni) {
-    initReservedSlot(IteratorSlot, PrivateValue(ni));
+    initReservedSlotTyped(ITERATOR_SLOT, PrivateValue(ni));
   }
 
   size_t sizeOfMisc(mozilla::MallocSizeOf mallocSizeOf) const;
 
   static size_t offsetOfIteratorSlot() {
-    return getFixedSlotOffset(IteratorSlot);
+    return getFixedSlotOffsetTyped(ITERATOR_SLOT);
   }
 
  private:

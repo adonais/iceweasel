@@ -656,7 +656,7 @@ async function doShowLessFrequentlyTest({
           result: expectedResult,
           expectedCountsByCall: {
             acknowledgeFeedback: 1,
-            invalidateResultMenuCommands:
+            updateResultMenuCommands:
               count == showLessFrequentlyCap - 1 ? 1 : 0,
           },
         });

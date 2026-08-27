@@ -7,11 +7,12 @@
 #ifndef mozilla_RollingMean_h_
 #define mozilla_RollingMean_h_
 
+#include <stddef.h>
+
+#include <type_traits>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Vector.h"
-
-#include <stddef.h>
-#include <type_traits>
 
 namespace mozilla {
 

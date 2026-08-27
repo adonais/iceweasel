@@ -230,6 +230,12 @@ ARCHIVE_FILES = {
             "pattern": "**",
             "dest": "certs",
         },
+        # Harness used by testing/mozharness/scripts/devtools_compat.py.
+        {
+            "source": buildconfig.topobjdir,
+            "base": "_tests/testing",
+            "pattern": "devtools_compat/**",
+        },
     ],
     "cppunittest": [
         {"source": STAGE, "base": "", "pattern": "cppunittest/**"},

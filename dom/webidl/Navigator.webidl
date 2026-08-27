@@ -405,12 +405,6 @@ partial interface Navigator {
   readonly attribute WakeLock wakeLock;
 };
 
-[SecureContext]
-partial interface Navigator {
-  [SameObject, Trial="PrivateAttributionV2"]
-  readonly attribute PrivateAttribution privateAttribution;
-};
-
 // https://w3c-fedid.github.io/login-status/#login-status-javascript
 [SecureContext]
 partial interface Navigator {

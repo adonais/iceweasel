@@ -10,6 +10,10 @@
  */
 [scriptable, builtinclass, uuid(C4298AB7-C0C0-4FC7-977B-8C8F9B6B7206)]
 interface nsIBounceTrackingRecord : nsISupports {
+    /**
+     * The site the top level context was on when the extended navigation
+     * started, not the site which initiated it. Exempt from classification.
+     */
     readonly attribute ACString initialHost;
     readonly attribute ACString finalHost;
     readonly attribute Array<ACString> bounceHosts;

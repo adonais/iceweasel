@@ -1609,7 +1609,7 @@ add_autofill_task(async function suggestBookmarkFalse_visit_1() {
       makeVisitResult(context, {
         source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: prefixedUrl,
-        title: UrlbarUtils.stripPrefixAndTrim(prefixedUrl, {
+        title: UrlbarShared.stripPrefixAndTrim(prefixedUrl, {
           stripHttp: true,
           stripHttps: true,
         })[0],

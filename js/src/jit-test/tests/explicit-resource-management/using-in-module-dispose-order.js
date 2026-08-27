@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !getBuildConfiguration("explicit-resource-management"); --enable-explicit-resource-management
-
 load(libdir + "asserts.js");
 
 globalThis.callOrder = [];
@@ -18,7 +16,7 @@ using y = {
 }
 `);
 
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);
 
 assertArrayEq(globalThis.callOrder, ["y", "x"]);

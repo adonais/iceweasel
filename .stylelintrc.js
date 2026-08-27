@@ -280,6 +280,7 @@ module.exports = {
     "media-query-no-invalid": null,
     "stylelint-plugin-mozilla/media-query-no-invalid": true,
     "stylelint-plugin-mozilla/no-base-design-tokens": true,
+    "stylelint-plugin-mozilla/no-has-selector": true,
     "stylelint-plugin-mozilla/use-design-tokens": true,
   },
 
@@ -467,6 +468,19 @@ module.exports = {
       files: ["toolkit/**/*.css", "toolkit/**/*.scss"],
       rules: {
         "stylelint-plugin-mozilla/no-browser-refs-in-toolkit": true,
+      },
+    },
+    {
+      // These share a build and a large amount of styles, and use :has() too
+      // extensively to disable it inline for now.
+      name: "has-selector-rule-off",
+      files: [
+        "browser/components/aboutwelcome/**",
+        "browser/components/asrouter/**",
+        "browser/extensions/newtab/**",
+      ],
+      rules: {
+        "stylelint-plugin-mozilla/no-has-selector": null,
       },
     },
     {

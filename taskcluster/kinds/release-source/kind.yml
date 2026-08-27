@@ -23,11 +23,10 @@ task-defaults:
     worker-type: b-linux
     worker:
         max-run-time: 3600
-        env:
-            PKG_SRCPACK_BASENAME: source
     attributes:
         shippable: true
     run:
+        clone-with: hg
         using: mozharness
         actions: [package-source]
         script: "mozharness/scripts/fx_desktop_build.py"

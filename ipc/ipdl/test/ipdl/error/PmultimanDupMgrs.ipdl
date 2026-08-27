@@ -1,0 +1,10 @@
+//error: manager `PmultimanDupMgrsMgr' appears multiple times
+
+include protocol PmultimanDupMgrsMgr;
+
+protocol PmultimanDupMgrs {
+    manager PmultimanDupMgrsMgr or PmultimanDupMgrsMgr;
+
+child:
+    async __delete__();
+};

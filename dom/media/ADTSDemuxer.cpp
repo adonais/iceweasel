@@ -70,9 +70,7 @@ ADTSTrackDemuxer::ADTSTrackDemuxer(MediaResource* aSource)
     : mSource(aSource),
       mParser(new ADTS::FrameParser()),
       mOffset(0),
-      mNumParsedFrames(0),
       mFrameIndex(0),
-      mTotalFrameLen(0),
       mSamplesPerFrame(0),
       mSamplesPerSecond(0),
       mChannels(0) {
@@ -163,7 +161,7 @@ TimeUnit ADTSTrackDemuxer::FastSeek(const TimeUnit& aTime) {
   ADTSLOG(
       "FastSeek({}) avgFrameLen={:f} mNumParsedFrames={} mFrameIndex={} "
       "mOffset={}",
-      aTime.ToMicroseconds(), AverageFrameLength(), mNumParsedFrames,
+      aTime.ToMicroseconds(), AverageFrameLength(), mMeanFrameLen.count(),
       mFrameIndex, mOffset);
 
   const uint64_t firstFrameOffset = mParser->FirstFrame().Offset();
@@ -188,8 +186,8 @@ TimeUnit ADTSTrackDemuxer::FastSeek(const TimeUnit& aTime) {
   ADTSLOG(
       "FastSeek End avgFrameLen={:f} mNumParsedFrames={} mFrameIndex={} "
       "mFirstFrameOffset={} mOffset={} SL={}",
-      AverageFrameLength(), mNumParsedFrames, mFrameIndex, firstFrameOffset,
-      mOffset, streamLength);
+      AverageFrameLength(), mMeanFrameLen.count(), mFrameIndex,
+      firstFrameOffset, mOffset, streamLength);
 
   return Duration(mFrameIndex);
 }
@@ -198,7 +196,7 @@ TimeUnit ADTSTrackDemuxer::ScanUntil(const TimeUnit& aTime) {
   ADTSLOG(
       "ScanUntil({}) avgFrameLen={:f} mNumParsedFrames={} mFrameIndex={} "
       "mOffset={}",
-      aTime.ToMicroseconds(), AverageFrameLength(), mNumParsedFrames,
+      aTime.ToMicroseconds(), AverageFrameLength(), mMeanFrameLen.count(),
       mFrameIndex, mOffset);
 
   if (!aTime.ToMicroseconds()) {
@@ -213,14 +211,14 @@ TimeUnit ADTSTrackDemuxer::ScanUntil(const TimeUnit& aTime) {
     ADTSLOGV(
         "ScanUntil* avgFrameLen={:f} mNumParsedFrames={} mFrameIndex={} "
         "mOffset={} Duration={}",
-        AverageFrameLength(), mNumParsedFrames, mFrameIndex, mOffset,
+        AverageFrameLength(), mMeanFrameLen.count(), mFrameIndex, mOffset,
         Duration(mFrameIndex + 1).ToMicroseconds());
   }
 
   ADTSLOG(
       "ScanUntil End avgFrameLen={:f} mNumParsedFrames={} mFrameIndex={} "
       "mOffset={}",
-      AverageFrameLength(), mNumParsedFrames, mFrameIndex, mOffset);
+      AverageFrameLength(), mMeanFrameLen.count(), mFrameIndex, mOffset);
 
   return Duration(mFrameIndex);
 }
@@ -229,10 +227,11 @@ RefPtr<ADTSTrackDemuxer::SamplesPromise> ADTSTrackDemuxer::GetSamples(
     int32_t aNumSamples) {
   ADTSLOGV(
       "GetSamples({}) Begin mOffset={} mNumParsedFrames={} mFrameIndex={} "
-      "mTotalFrameLen={} mSamplesPerFrame={} mSamplesPerSecond={} "
+      "mMeanFrameLen={} mSamplesPerFrame={} mSamplesPerSecond={} "
       "mChannels={}",
-      aNumSamples, mOffset, mNumParsedFrames, mFrameIndex, mTotalFrameLen,
-      mSamplesPerFrame, mSamplesPerSecond, mChannels);
+      aNumSamples, mOffset, mMeanFrameLen.count(), mFrameIndex,
+      mMeanFrameLen.empty() ? 0.0 : mMeanFrameLen.mean(), mSamplesPerFrame,
+      mSamplesPerSecond, mChannels);
 
   MOZ_ASSERT(aNumSamples);
 
@@ -246,11 +245,12 @@ RefPtr<ADTSTrackDemuxer::SamplesPromise> ADTSTrackDemuxer::GetSamples(
 
   ADTSLOGV(
       "GetSamples() End mSamples.Size()={} aNumSamples={} mOffset={} "
-      "mNumParsedFrames={} mFrameIndex={} mTotalFrameLen={} "
+      "mNumParsedFrames={} mFrameIndex={} mMeanFrameLen={} "
       "mSamplesPerFrame={} mSamplesPerSecond={} mChannels={}",
-      frames->GetSamples().Length(), aNumSamples, mOffset, mNumParsedFrames,
-      mFrameIndex, mTotalFrameLen, mSamplesPerFrame, mSamplesPerSecond,
-      mChannels);
+      frames->GetSamples().Length(), aNumSamples, mOffset,
+      mMeanFrameLen.count(), mFrameIndex,
+      mMeanFrameLen.empty() ? 0.0 : mMeanFrameLen.mean(), mSamplesPerFrame,
+      mSamplesPerSecond, mChannels);
 
   if (frames->GetSamples().IsEmpty()) {
     return SamplesPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_END_OF_STREAM,
@@ -294,7 +294,7 @@ media::TimeIntervals ADTSTrackDemuxer::GetBuffered() {
 int64_t ADTSTrackDemuxer::StreamLength() const { return mSource.GetLength(); }
 
 TimeUnit ADTSTrackDemuxer::Duration() const {
-  if (!mNumParsedFrames) {
+  if (mMeanFrameLen.empty()) {
     return TimeUnit::Invalid();
   }
 
@@ -328,9 +328,10 @@ const ADTS::Frame& ADTSTrackDemuxer::FindNextFrame(
 
   ADTSLOGV(
       "FindNext() Begin mOffset={} mNumParsedFrames={} mFrameIndex={} "
-      "mTotalFrameLen={} mSamplesPerFrame={} mSamplesPerSecond={} "
+      "mMeanFrameLen={} mSamplesPerFrame={} mSamplesPerSecond={} "
       "mChannels={}",
-      mOffset, mNumParsedFrames, mFrameIndex, mTotalFrameLen, mSamplesPerFrame,
+      mOffset, mMeanFrameLen.count(), mFrameIndex,
+      mMeanFrameLen.empty() ? 0.0 : mMeanFrameLen.mean(), mSamplesPerFrame,
       mSamplesPerSecond, mChannels);
 
   uint8_t buffer[BUFFER_SIZE];
@@ -399,16 +400,17 @@ const ADTS::Frame& ADTSTrackDemuxer::FindNextFrame(
 
   ADTSLOGV(
       "FindNext() End mOffset={} mNumParsedFrames={} mFrameIndex={} "
-      "frameHeaderOffset={} mTotalFrameLen={} mSamplesPerFrame={} "
+      "frameHeaderOffset={} mMeanFrameLen={} mSamplesPerFrame={} "
       "mSamplesPerSecond={} mChannels={}",
-      mOffset, mNumParsedFrames, mFrameIndex, frameHeaderOffset, mTotalFrameLen,
-      mSamplesPerFrame, mSamplesPerSecond, mChannels);
+      mOffset, mMeanFrameLen.count(), mFrameIndex, frameHeaderOffset,
+      mMeanFrameLen.empty() ? 0.0 : mMeanFrameLen.mean(), mSamplesPerFrame,
+      mSamplesPerSecond, mChannels);
 
   return mParser->CurrentFrame();
 }
 
 bool ADTSTrackDemuxer::SkipNextFrame(const ADTS::Frame& aFrame) {
-  if (!mNumParsedFrames || !aFrame.Length()) {
+  if (mMeanFrameLen.empty() || !aFrame.Length()) {
     RefPtr<MediaRawData> frame(GetNextFrame(aFrame));
     return frame;
   }
@@ -417,9 +419,10 @@ bool ADTSTrackDemuxer::SkipNextFrame(const ADTS::Frame& aFrame) {
 
   ADTSLOGV(
       "SkipNext() End mOffset={} mNumParsedFrames={} mFrameIndex={} "
-      "mTotalFrameLen={} mSamplesPerFrame={} mSamplesPerSecond={} "
+      "mMeanFrameLen={} mSamplesPerFrame={} mSamplesPerSecond={} "
       "mChannels={}",
-      mOffset, mNumParsedFrames, mFrameIndex, mTotalFrameLen, mSamplesPerFrame,
+      mOffset, mMeanFrameLen.count(), mFrameIndex,
+      mMeanFrameLen.empty() ? 0.0 : mMeanFrameLen.mean(), mSamplesPerFrame,
       mSamplesPerSecond, mChannels);
 
   return true;
@@ -486,9 +489,10 @@ already_AddRefed<MediaRawData> ADTSTrackDemuxer::GetNextFrame(
 
   ADTSLOGV(
       "GetNext() End mOffset={} mNumParsedFrames={} mFrameIndex={} "
-      "mTotalFrameLen={} mSamplesPerFrame={} mSamplesPerSecond={} "
+      "mMeanFrameLen={} mSamplesPerFrame={} mSamplesPerSecond={} "
       "mChannels={}",
-      mOffset, mNumParsedFrames, mFrameIndex, mTotalFrameLen, mSamplesPerFrame,
+      mOffset, mMeanFrameLen.count(), mFrameIndex,
+      mMeanFrameLen.empty() ? 0.0 : mMeanFrameLen.mean(), mSamplesPerFrame,
       mSamplesPerSecond, mChannels);
 
   return frame.forget();
@@ -522,17 +526,10 @@ int64_t ADTSTrackDemuxer::FrameIndexFromTime(const TimeUnit& aTime) const {
 
 void ADTSTrackDemuxer::UpdateState(const ADTS::Frame& aFrame) {
   uint32_t frameLength = aFrame.Length();
-  // Prevent overflow.
-  if (mTotalFrameLen + frameLength < mTotalFrameLen) {
-    // These variables have a linear dependency and are only used to derive the
-    // average frame length.
-    mTotalFrameLen /= 2;
-    mNumParsedFrames /= 2;
-  }
 
   // Full frame parsed, move offset to its end.
   mOffset = aFrame.Offset() + frameLength;
-  mTotalFrameLen += frameLength;
+  mMeanFrameLen.insert(static_cast<double>(frameLength));
 
   if (!mSamplesPerFrame) {
     const ADTS::FrameHeader& header = aFrame.Header();
@@ -541,7 +538,6 @@ void ADTSTrackDemuxer::UpdateState(const ADTS::Frame& aFrame) {
     mChannels = header.mChannels;
   }
 
-  ++mNumParsedFrames;
   ++mFrameIndex;
   MOZ_ASSERT(mFrameIndex > 0);
 }
@@ -567,12 +563,7 @@ uint32_t ADTSTrackDemuxer::Read(uint8_t* aBuffer, int64_t aOffset,
 }
 
 double ADTSTrackDemuxer::AverageFrameLength() const {
-  if (mNumParsedFrames) {
-    return AssertedCast<double>(mTotalFrameLen) /
-           AssertedCast<double>(mNumParsedFrames);
-  }
-
-  return 0.0;
+  return mMeanFrameLen.empty() ? 0.0 : mMeanFrameLen.mean();
 }
 
 /* static */

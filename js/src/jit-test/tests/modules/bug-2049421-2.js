@@ -1,6 +1,6 @@
 function importModule(source) {
     let m = parseModule(source);
-    moduleLink(m);
+    moduleLoadAndLink(m);
     moduleEvaluate(m);
     return m;
 }

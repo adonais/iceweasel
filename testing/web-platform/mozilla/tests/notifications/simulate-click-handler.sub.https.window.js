@@ -98,3 +98,27 @@ promise_test(async (t) => {
   assert_true(!entry, "The entry should not be there");
 }, "Fire notificationclick via NotificationHandler with autoClosed: true");
 
+const scopeTests = {
+  [`view-source:${location.origin}`]: "Scope URL's scheme is not 'http' or 'https'",
+  [`${location.origin}/%2f/foo`]: "contains %2f or %5c",
+  [`${location.origin}/%5c/foo`]: "contains %2f or %5c",
+  "https://example.com": "Non-same-origin scope URL",
+  [`${location.origin}/#foo`]: "Non-empty fragment on scope URL",
+}
+for (const [scope, expect] of Object.entries(scopeTests)) {
+  promise_test(async (t) => {
+    const error = await SpecialPowers.spawnChrome([origin, storageEntry, scope], async (origin, storageEntry, scope) => {
+      const svc = Cc["@mozilla.org/notificationStorage;1"].getService(Ci.nsINotificationStorage);
+      svc.put(origin, storageEntry, scope);
+
+      const uri = Services.io.newURI(origin);
+      const principal = Services.scriptSecurityManager.createContentPrincipal(uri, {});
+
+      // Now simulate a click
+      const handler = Cc["@mozilla.org/notification-handler;1"].getService(Ci.nsINotificationHandler);
+      await handler.respondOnClick(principal, storageEntry.id, "basilisk", false);
+    }).then(() => { throw new Error("No error") }, err => SpecialPowers.wrap(err));
+    console.log(error.message);
+    assert_true(error.message.includes(expect), "Invalid scope should fail");
+  }, `With ${scope}`);
+}

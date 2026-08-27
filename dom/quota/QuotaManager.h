@@ -1280,8 +1280,16 @@ class QuotaManager final : public BackgroundThreadObject {
 
   MozPromiseHolder<BoolPromise> mInitializeAllTemporaryOriginsPromiseHolder;
 
-  uint64_t mTemporaryStorageLimit;
-  uint64_t mTemporaryStorageUsage;
+  // Technically the limits should be unsigned, but mTemporaryStorageUsage can
+  // go below zero sometimes. We suppose this could either be of because a race
+  // condition in the order of completion of the quota operations, leading a
+  // temporary negative value until everything completes; or because of bugs
+  // elsewhere in our implementation leading to underflow in our usage values.
+  // In any case having signed integers ensures comparisons between numbers make
+  // sense. See bug 1585978 for details.
+  int64_t mTemporaryStorageLimit;
+  int64_t mTemporaryStorageUsage;
+
   int64_t mNextDirectoryLockId;
   bool mStorageInitialized;
   bool mPersistentStorageInitialized;
@@ -1291,6 +1299,7 @@ class QuotaManager final : public BackgroundThreadObject {
   bool mInitializingAllTemporaryOrigins;
   bool mAllTemporaryOriginsInitialized;
   bool mCacheUsable;
+  bool mCacheRequiresFullScan;
   std::atomic<bool> mUsageModificationDisabled{false};
 };
 

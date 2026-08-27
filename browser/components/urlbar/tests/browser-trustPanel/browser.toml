@@ -1,0 +1,34 @@
+[DEFAULT]
+tags = "urlbar"
+support-files = [
+  "../browser/head-common.js",
+  "head.js",
+]
+prefs = [
+  "browser.urlbar.trending.featureGate=false",
+  # trackerCount ships disabled by default (enabled via Nimbus, bug 2065206);
+  # turn it on here so the trust-panel tests keep exercising it.
+  "browser.urlbar.trackerCount.featureGate=true",
+  "browser.urlbar.trackerCount.enabled=true",
+]
+
+["browser_trust_panel.js"]
+https_first_disabled = true
+support-files = ["!/browser/base/content/test/protectionsUI/trackingPage.html"]
+
+["browser_trust_panel_cert_exception.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 2062455
+]
+
+["browser_trust_panel_focus.js"]
+
+["browser_trust_panel_icon.js"]
+https_first_disabled = true
+support-files = ["!/browser/base/content/test/protectionsUI/trackingPage.html"]
+
+["browser_trust_panel_pages.js"]
+https_first_disabled = true
+
+["browser_trust_panel_security_view.js"]
+https_first_disabled = true

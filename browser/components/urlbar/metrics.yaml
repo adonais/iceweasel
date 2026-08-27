@@ -1302,15 +1302,18 @@ quick_suggest:
       - quick-suggest
 
   context_id:
+    disabled: true
     type: uuid
     description: >
       An identifier to identify users for Contextual Services user interaction pings.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1836283
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1941161
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2056936
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1836283
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1941161
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2056936
     data_sensitivity:
       - technical
     notification_emails:
@@ -1632,6 +1635,32 @@ urlbar.unifiedsearchbutton:
       - fx-search-telemetry@mozilla.com
     expires: never
     telemetry_mirror: URLBAR_UNIFIEDSEARCHBUTTON_PICKED
+
+urlbar.searchmode:
+  url_like_query:
+    type: rate
+    description: >
+      A rate recording the fraction of search-mode engagements whose typed
+      string parses as a URL (per nsIURIFixup, the same check the heuristic
+      providers use to decide whether a string should navigate). The
+      denominator is search-mode engagements whose heuristic result is a
+      search result (i.e. cases where changing the behavior to navigate
+      instead of search could actually take effect); the numerator is those
+      whose query is URL-like. Local search modes (bookmarks, history, tabs,
+      actions) have no heuristic result and are therefore excluded. Used to
+      evaluate whether the address bar should navigate to such strings
+      instead of searching them while in search mode (bug 1930861).
+      Temporary decision-making probe.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2042945
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2042945
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - dong@mozilla.com
+    expires: 160
+    data_sensitivity:
+      - interaction
 
 urlbar.autofill:
   reintegration:

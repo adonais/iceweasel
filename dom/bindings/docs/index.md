@@ -1,5 +1,3 @@
-(webidl)=
-
 # WebIDL
 
 WebIDL describes interfaces web browsers are supposed to implement.

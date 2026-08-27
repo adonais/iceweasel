@@ -12,13 +12,23 @@ try {
   ));
 } catch {}
 
+const lazy = {};
+
+ChromeUtils.defineLazyGetter(
+  lazy,
+  "l10n",
+  () => new Localization(["toolkit/about/aboutPDF.ftl"])
+);
+
 export class AboutPDFParent extends JSWindowActorParent {
+  #filePickerOpenPromise = null;
+
   receiveMessage(message) {
     switch (message.name) {
       case "AboutPDF:CanSetDefaultPDFHandler":
         return this.#canSetDefaultPDFHandler();
-      case "AboutPDF:OpenFile":
-        return this.#openFile(message.data?.fileURL);
+      case "AboutPDF:PickFile":
+        return this.#pickFile();
       case "AboutPDF:SetDefaultPDFHandler":
         return this.#setDefaultPDFHandler();
     }
@@ -43,31 +53,54 @@ export class AboutPDFParent extends JSWindowActorParent {
     }
   }
 
-  async #openFile(fileURL) {
-    if (typeof fileURL !== "string") {
-      throw new Error("Expected a file URL");
+  // Never accept a path from content: this load uses the system principal.
+  // Native drop handling separately verifies dropped links against the drag
+  // session.
+  // Returns "opened", "canceled", or "invalid".
+  async #pickFile() {
+    if (this.#filePickerOpenPromise) {
+      return "canceled";
     }
 
-    let uri = Services.io.newURI(fileURL);
-    if (!uri.schemeIs("file")) {
-      throw new Error("Expected a file URL");
+    let browsingContext = this.browsingContext.top;
+    let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+    fp.init(
+      this.browsingContext,
+      await lazy.l10n.formatValue("about-pdf-file-picker-title"),
+      Ci.nsIFilePicker.modeOpen
+    );
+    fp.appendFilters(Ci.nsIFilePicker.filterPDF);
+    fp.appendFilters(Ci.nsIFilePicker.filterAll);
+
+    let result;
+    const { promise, resolve } = Promise.withResolvers();
+    this.#filePickerOpenPromise = promise;
+    try {
+      fp.open(resolve);
+      result = await this.#filePickerOpenPromise;
+    } finally {
+      this.#filePickerOpenPromise = null;
     }
 
-    let nsFile = uri.QueryInterface(Ci.nsIFileURL).file;
-    if (!nsFile.leafName.toLowerCase().endsWith(".pdf")) {
-      throw new Error("Expected a PDF file URL");
-    }
-    if (!nsFile.exists() || !nsFile.isFile()) {
-      throw new Error("Expected an existing PDF file");
-    }
-    let file = await File.createFromNsIFile(nsFile);
-    if (!(await this.#looksLikePDF(file))) {
-      throw new Error("Expected PDF content");
+    if (result !== Ci.nsIFilePicker.returnOK) {
+      return "canceled";
     }
 
-    this.browsingContext.top.loadURI(uri, {
+    let file = fp.file;
+    if (
+      !file?.leafName.toLowerCase().endsWith(".pdf") ||
+      !(await this.#looksLikePDF(file))
+    ) {
+      return "invalid";
+    }
+
+    if (browsingContext.isDiscarded) {
+      return "canceled";
+    }
+    browsingContext.loadURI(fp.fileURL, {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     });
+    return "opened";
   }
 
   async #setDefaultPDFHandler() {
@@ -83,6 +116,13 @@ export class AboutPDFParent extends JSWindowActorParent {
   }
 
   async #looksLikePDF(file) {
-    return (await file.slice(0, PDF_HEADER.length).text()) === PDF_HEADER;
+    try {
+      let bytes = await IOUtils.read(file.path, {
+        maxBytes: PDF_HEADER.length,
+      });
+      return new TextDecoder().decode(bytes) === PDF_HEADER;
+    } catch {
+      return false;
+    }
   }
 }

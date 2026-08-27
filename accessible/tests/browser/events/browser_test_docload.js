@@ -90,7 +90,7 @@ async function runTests(browser) {
   await onLoadEvents;
 
   onLoadEvents = waitForEvents([
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     [EVENT_DOCUMENT_LOAD_COMPLETE, urlChecker("http://www.wronguri.wronguri/")],
     [EVENT_STATE_CHANGE, busyChecker(false)],
     [EVENT_REORDER, getAccessible(browser)],
@@ -98,7 +98,7 @@ async function runTests(browser) {
 
   BrowserTestUtils.startLoadingURIString(
     browser,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://www.wronguri.wronguri/"
   );
 

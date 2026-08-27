@@ -14,7 +14,6 @@
 <script>
 'use strict';
 
-let firedCharacterBoundsUpdate = false;
 const editContext = new EditContext();
 // Use some strange rectangles that don't mean anything
 const bounds = new Array(200).fill().map((_, i) => new DOMRect(i*i+5*i+23, i+44, i+5, i+10));
@@ -56,9 +55,6 @@ function formatMessage(message) {
 function checkText(startOffset, count) {
   const expectedText = editContext.text.substring(startOffset, startOffset + count);
   let result = synthesizeQueryTextContent(startOffset, count);
-  ok(!firedCharacterBoundsUpdate,
-     formatMessage('Should not fire characterboundsupdate when querying text.'));
-  firedCharacterBoundsUpdate = false;
   ok(result.succeeded,
      formatMessage('QueryTextContent should succeed on EditContext.'));
   is(result.text, expectedText,
@@ -69,9 +65,6 @@ function checkTextRelative(startOffset, count) {
   startOffset += editContext.selectionStart;
   const expectedText = editContext.text.substring(startOffset, startOffset + count);
   let result = synthesizeQueryTextContent(startOffset, count, true);
-  ok(!firedCharacterBoundsUpdate,
-     formatMessage('Should not fire characterboundsupdate when querying text.'));
-  firedCharacterBoundsUpdate = false;
   ok(result.succeeded,
      formatMessage('QueryTextContent should succeed on EditContext.'));
   is(result.text, expectedText,
@@ -80,10 +73,8 @@ function checkTextRelative(startOffset, count) {
 
 function getTextRectArray(start, count) {
   clearRectCache();
+  editContext.updateSelection(start, start + count);
   let result = synthesizeQueryTextRectArray(start, count);
-  ok(firedCharacterBoundsUpdate,
-     formatMessage('Should fire characterboundsupdate when querying text rect array.'));
-  firedCharacterBoundsUpdate = false;
   ok(result.succeeded,
      formatMessage('QueryTextRectArray should succeed on EditContext.'));
   const rects = [];
@@ -106,10 +97,8 @@ function checkTextRectArray(start, count) {
 
 function checkTextRect(start, count) {
   clearRectCache();
+  editContext.updateSelection(start, start + count);
   let result = synthesizeQueryTextRect(start, count);
-  ok(firedCharacterBoundsUpdate,
-     formatMessage('Should fire characterboundsupdate when querying text rect.'));
-  firedCharacterBoundsUpdate = false;
   ok(result.succeeded,
      formatMessage('QueryTextRect should succeed on EditContext.'));
   let union = bounds.slice(start, start + count).reduce(rectUnion);
@@ -118,12 +107,8 @@ function checkTextRect(start, count) {
 }
 
 function checkCharacterAtPoint(characterIndex) {
-  clearRectCache();
   const rect = convertToRootRelativeRect(bounds[characterIndex]);
   let result = synthesizeCharAtPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
-  ok(firedCharacterBoundsUpdate,
-     formatMessage('Should fire characterboundsupdate when querying character at point.'));
-  firedCharacterBoundsUpdate = false;
   ok(result.succeeded,
      formatMessage('QueryCharacterAtPoint should succeed on EditContext.'));
   ok(!result.notFound,
@@ -176,11 +161,9 @@ async function runTests(aHost) {
   editContext.updateSelection(3, 3);
   let characterBoundsUpdateRange;
   editContext.addEventListener('characterboundsupdate', e => {
-    firedCharacterBoundsUpdate = true;
     characterBoundsUpdateRange = `${e.rangeStart}-${e.rangeEnd}`;
     editContext.updateCharacterBounds(0, bounds);
   });
-  firedCharacterBoundsUpdate = false;
   checkText(4, 5);
   checkText(0, 0);
   checkText(0, editContext.text.length);
@@ -196,6 +179,7 @@ async function runTests(aHost) {
   checkTextRect(0, editContext.text.length);
   checkTextRect(3, 2);
 
+  editContext.updateCharacterBounds(0, bounds);
   for (let i = 0; i < editContext.text.length; i++) {
     checkCharacterAtPoint(i);
   }

@@ -1255,7 +1255,8 @@ add_task(async function test_bug1957723_addTabsByIndex() {
   );
   gBrowser.removeTab(tab3);
 
-  gBrowser.removeAllTabsBut(initialTab);
+  // animate: false ensures tabs are synchronously removed from the DOM before the next test runs:
+  gBrowser.removeAllTabsBut(initialTab, { animate: false });
 });
 
 add_task(async function test_bug1959438_duplicateTabJustBeforeGroup() {
@@ -1285,7 +1286,8 @@ add_task(async function test_bug1959438_duplicateTabJustBeforeGroup() {
   // This will fail if the tab ends up merged with the tab label.
   Assert.equal(gBrowser.tabs.length, 5, "A new tab was added to the tab strip");
 
-  gBrowser.removeAllTabsBut(initialTab);
+  // animate: false ensures tabs are synchronously removed from the DOM before the next test runs:
+  gBrowser.removeAllTabsBut(initialTab, { animate: false });
 });
 
 add_task(async function test_bug1969925_adoptLastTabGroupFromWindow() {
@@ -1338,12 +1340,21 @@ add_task(async function test_bug1997096_autoUncollapseOnRightClick() {
 
   let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, null, true);
 
+  let contextMenu = document.getElementById("contentAreaContextMenu");
+  let contextMenuShown = BrowserTestUtils.waitForPopupEvent(
+    contextMenu,
+    "shown"
+  );
   await BrowserTestUtils.synthesizeMouseAtCenter(
     "a",
     { type: "contextmenu", button: 2 },
     groupedTab.linkedBrowser
   );
-  document.getElementById("context-openlinkintab").click();
+  await contextMenuShown;
+
+  await BrowserTestUtils.activateMenuItem(
+    document.getElementById("context-openlinkintab")
+  );
 
   let newTab = await newTabPromise;
 
@@ -1353,7 +1364,6 @@ add_task(async function test_bug1997096_autoUncollapseOnRightClick() {
     "Group is automatically uncollapsed when opening tab via right click"
   );
 
-  document.querySelector("#contentAreaContextMenu").hidePopup();
   BrowserTestUtils.removeTab(newTab);
   BrowserTestUtils.removeTab(groupedTab);
 });

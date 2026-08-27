@@ -9,18 +9,13 @@ use url::Url;
 use urlpattern::{UrlPattern, UrlPatternInit};
 
 use crate::{
-    Eagerness, Predicate, ReferrerPolicy, Selector, SpeculationRule, SpeculationRuleParseError,
-    SpeculationRuleSet, UrlSearchVariance,
+    Eagerness, Predicate, ReferrerPolicy, Selector, Source, SpeculationRule,
+    SpeculationRuleParseError, SpeculationRuleSet, UrlSearchVariance,
 };
 
 fn log_to_console(msg: &str) {
     // TODO(avandolder): Log to developer console as well.
     info!("speculation rules: {}", msg);
-}
-
-enum Source {
-    List,
-    Document,
 }
 
 fn parse_url_pattern(value: Value, base_url: &Url) -> Option<urlpattern::UrlPattern> {
@@ -427,6 +422,7 @@ impl SpeculationRule {
         Some(SpeculationRule {
             urls,
             predicate,
+            source,
             eagerness,
             referrer_policy,
             tags,

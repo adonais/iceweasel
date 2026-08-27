@@ -1222,40 +1222,12 @@ FxAccountsInternal.prototype = {
     Services.obs.notifyObservers(null, topic, data);
   },
 
-  /**
-   * Does the actual fetch of an oauth token for getOAuthToken()
-   * using the account session token.
-   *
-   * It's split out into a separate method so that we can easily
-   * stash in-flight calls in a cache.
-   *
-   * @param {string} sessionToken
-   * @param {string} scopeString
-   * @param {number} ttl
-   * @returns {Promise<{token: string, expiresAt: number|null}>}
-   * @private
-   */
-  async _doTokenFetchWithSessionToken(sessionToken, scopeString, ttl) {
-    const result = await this.fxAccountsClient.accessTokenWithSessionToken(
-      sessionToken,
-      OAUTH_CLIENT_ID,
-      scopeString,
-      ttl
-    );
-    return {
-      token: result.access_token,
-      expiresAt: result.expires_in
-        ? Math.floor(Date.now() / 1000) + result.expires_in
-        : null,
-    };
-  },
-
   getOAuthToken(options = {}) {
-    log.debug("getOAuthToken enter");
     let scope = options.scope;
     if (typeof scope === "string") {
       scope = [scope];
     }
+    log.debug(`getOAuthToken enter for scope '${scope}'`);
 
     if (!scope || !scope.length) {
       return Promise.reject(
@@ -1266,39 +1238,38 @@ FxAccountsInternal.prototype = {
       );
     }
 
-    return this.withSessionToken(async (sessionToken, currentState) => {
+    return this.withVerifiedAccountState(async currentState => {
       // Early exit for a cached token.
       let cached = currentState.getCachedToken(scope);
       if (cached) {
-        log.debug("getOAuthToken returning a cached token");
+        log.debug(
+          `getOAuthToken returning a cached token with scope '${scope}'`
+        );
         return cached.token;
       }
 
-      // Build the string we use in our "inflight" map and that we send to the
-      // server. Because it's used as a key in the map we sort the scopes.
-      let scopeString = scope.sort().join(" ");
-
       // We keep a map of in-flight requests to avoid multiple promise-based
       // consumers concurrently requesting the same token.
+      let scopeString = scope.sort().join(" "); // the map key.
+
       let maybeInFlight = currentState.inFlightTokenRequests.get(scopeString);
       if (maybeInFlight) {
-        log.debug("getOAuthToken has an in-flight request for this scope");
+        log.debug(
+          `getOAuthToken has an in-flight request for scope '${scope}'`
+        );
         return maybeInFlight;
       }
 
       // We need to start a new fetch and stick the promise in our in-flight map
       // and remove it when it resolves.
-      let promise = this._doTokenFetchWithSessionToken(
-        sessionToken,
-        scopeString,
-        options.ttl
-      )
+      let promise = this.oauth
+        .getAccessToken(currentState, scope, options.ttl)
         .then(tokenInfo => {
           // As a sanity check, ensure something else hasn't raced getting a token
           // of the same scope. If something has we just make noise rather than
           // taking any concrete action because it should never actually happen.
           if (currentState.getCachedToken(scope)) {
-            log.error(`detected a race for oauth token with scope ${scope}`);
+            log.error(`detected a race for oauth token with scope '${scope}'`);
           }
           // If we got one, cache it.
           if (tokenInfo.token) {
@@ -1309,6 +1280,13 @@ FxAccountsInternal.prototype = {
             currentState.setCachedToken(scope, entry);
           }
           return tokenInfo.token;
+        })
+        .catch(err => {
+          // Route auth errors through the shared handler so an invalid token
+          // triggers a reauthentication check (withVerifiedAccountState, unlike
+          // withSessionToken, doesn't do this for us). Non-auth errors (eg, a
+          // scope-upgrade-required error) are simply re-thrown.
+          return this._handleTokenError(err);
         })
         .finally(() => {
           // Remove ourself from the in-flight map. There's no need to check the

@@ -9,6 +9,7 @@
  *          openBrowserActionPanel
  *          closeBrowserAction closePageAction
  *          promisePopupShown promisePopupHidden promisePopupNotificationShown
+ *          dismissTabHideDoorhanger
  *          toggleBookmarksToolbar
  *          openContextMenu closeContextMenu promiseContextMenuClosed
  *          openContextMenuInSidebar openContextMenuInPopup
@@ -231,6 +232,22 @@ function promisePopupHidden(popup) {
     };
     popup.addEventListener("popuphidden", onPopupHidden);
   });
+}
+
+/**
+ * Waits for the doorhanger that tabs.hide() shows to inform the user that an
+ * extension is hiding tabs, and dismisses it. Tests that hide tabs need to do
+ * this, otherwise the doorhanger stays open for the rest of the test file.
+ */
+async function dismissTabHideDoorhanger() {
+  const { ExtensionControlledPopup } = ChromeUtils.importESModule(
+    "resource:///modules/ExtensionControlledPopup.sys.mjs"
+  );
+  let panel = ExtensionControlledPopup._getAndMaybeCreatePanel(document);
+  await promisePopupShown(panel);
+  let hidden = promisePopupHidden(panel);
+  panel.hidePopup();
+  await hidden;
 }
 
 /**

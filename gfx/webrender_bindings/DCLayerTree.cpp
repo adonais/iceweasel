@@ -1424,7 +1424,7 @@ void DCLayerTree::SetUsedOverlayTypeInFrame(DCompOverlayTypes aTypes) {
 DCSurface::DCSurface(bool aIsOpaque, DCLayerTree* aDCLayerTree)
     : mDCLayerTree(aDCLayerTree), mIsOpaque(aIsOpaque) {}
 
-DCSurface::~DCSurface() {}
+DCSurface::~DCSurface() = default;
 
 bool DCSurface::IsUpdated(const wr::CompositorSurfaceTransform& aTransform,
                           const wr::DeviceIntRect& aClipRect,
@@ -2122,7 +2122,8 @@ DCSurfaceDCompositionTextureOverlay::DCSurfaceDCompositionTextureOverlay(
     bool aIsOpaque, DCLayerTree* aDCLayerTree)
     : DCSurface(aIsOpaque, aDCLayerTree) {}
 
-DCSurfaceDCompositionTextureOverlay::~DCSurfaceDCompositionTextureOverlay() {}
+DCSurfaceDCompositionTextureOverlay::~DCSurfaceDCompositionTextureOverlay() =
+    default;
 
 void DCSurfaceDCompositionTextureOverlay::AttachExternalImage(
     wr::ExternalImageId aExternalImage) {

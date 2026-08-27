@@ -14,9 +14,14 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1498769
 
   SimpleTest.waitForExplicitFinish();
 
-  function isDisplayNone(option) {
-    return option.style.display == "none" ||
-           option.parentElement.style.display == "none";
+  function isInteractivelySelectable(select, option) {
+    for (let e = option; e != select; e = e.parentElement) {
+      if (getComputedStyle(e).display == "none") {
+        return false;
+      }
+    }
+    // Rough proxy for "is rendered".
+    return select.size == 1 || option.getBoundingClientRect().width > 0;
   }
 
   function test() {
@@ -35,8 +40,8 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1498769
         synthesizeKey("VK_DOWN", {});
         is(e.selectedIndex, 2, "VK_DOWN selected the first option below" + description);
         synthesizeKey("VK_UP", {});
-        let expected = (e.size != "1" || isDisplayNone(e.options[1])) ? 0 : 1;
-        is(e.selectedIndex, expected, "VK_UP skips the display:none option but not contents" + description);
+        let expected = isInteractivelySelectable(e, e.options[1]) ? 1 : 0;
+        is(e.selectedIndex, expected, "VK_UP lands on the option only if it's interactively selectable" + description);
         synthesizeKey("VK_DOWN", {});
         is(e.selectedIndex, 2, "VK_DOWN skips the display:none/contents option again if needed" + description);
       });

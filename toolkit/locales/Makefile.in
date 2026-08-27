@@ -6,20 +6,28 @@ include $(topsrcdir)/config/rules.mk
 
 l10n-%: AB_CD=$*
 l10n-%:
+ifdef MOZ_USE_LEGACY_L10N
 	@$(MAKE) -C ../../netwerk/locales/ l10n AB_CD=$* XPI_NAME=locale-$*
 	@$(MAKE) -C ../../dom/locales/ l10n AB_CD=$* XPI_NAME=locale-$*
 	@$(MAKE) -C ../../security/manager/locales/ l10n AB_CD=$* XPI_NAME=locale-$*
 	@$(MAKE) -C ../../devtools/shared/locales/ l10n AB_CD=$* XPI_NAME=locale-$*
 	@$(MAKE) l10n AB_CD=$* XPI_NAME=locale-$*
 	$(call INSTALL_L10N_COVERAGE,$(DIST)/xpi-stage/locale-$*)
+else
+	$(call py_action,l10n_stage,--locale=$* --manifest=$(DEPTH)/l10n-manifest.json --merge-tree=$(BASE_MERGE)/$* --dest=$(DIST)/xpi-stage/locale-$* --topsrcdir=$(topsrcdir) --topobjdir=$(DEPTH))
+endif
 
 # target to be used by multi-locale l10n builds, just add this locale
 # like regular chrome code
 chrome-%: AB_CD=$*
 chrome-%:
+ifdef MOZ_USE_LEGACY_L10N
 	@$(MAKE) -C $(DEPTH)/netwerk/locales/ chrome AB_CD=$*
 	@$(MAKE) -C $(DEPTH)/dom/locales/ chrome AB_CD=$*
 	@$(MAKE) -C $(DEPTH)/security/manager/locales/ chrome AB_CD=$*
 	@$(MAKE) -C $(DEPTH)/devtools/shared/locales/ chrome AB_CD=$*
 	@$(MAKE) chrome AB_CD=$*
 	$(call INSTALL_L10N_COVERAGE,$(FINAL_TARGET))
+else
+	$(call py_action,l10n_stage,--locale=$* --manifest=$(DEPTH)/l10n-manifest.json --merge-tree=$(BASE_MERGE)/$* --dest=$(DIST)/bin --topsrcdir=$(topsrcdir) --topobjdir=$(DEPTH) --mode=chrome)
+endif

@@ -778,11 +778,6 @@ class AssemblerMIPSShared : public AssemblerShared {
 
   enum FloatTestKind { TestForTrue, TestForFalse };
 
-  // :( this should be protected, but since CodeGenerator
-  // wants to use it, It needs to go out here :(
-
-  BufferOffset nextOffset() { return m_buffer.nextOffset(); }
-
  protected:
   Instruction* editSrc(BufferOffset bo) { return m_buffer.getInst(bo); }
 
@@ -805,6 +800,10 @@ class AssemblerMIPSShared : public AssemblerShared {
   CompactBufferWriter dataRelocations_;
 
   MIPSBufferWithExecutableCopy m_buffer;
+
+  // Get the next usable buffer offset. Note that a constant pool may be placed
+  // here before the next instruction is emitted.
+  BufferOffset nextOffset() { return m_buffer.nextOffset(); }
 
 #ifdef JS_JITSPEW
   Sprinter* printer;
@@ -900,8 +899,13 @@ class AssemblerMIPSShared : public AssemblerShared {
   void copyJumpRelocationTable(uint8_t* dest);
   void copyDataRelocationTable(uint8_t* dest);
 
-  // Size of the instruction stream, in bytes.
+  // Size of the instruction stream, in bytes.  Note this doesn't take
+  // into account the size of any un-flushed constant pools.
   size_t size() const;
+  // Returns the size of the buffer we can currently read, hence ignoring any
+  // un-flushed data in currently-under-construction constant pool(s).
+  size_t readableSize() const;
+
   // Size of the jump relocation table, in bytes.
   size_t jumpRelocationTableBytes() const;
   size_t dataRelocationTableBytes() const;

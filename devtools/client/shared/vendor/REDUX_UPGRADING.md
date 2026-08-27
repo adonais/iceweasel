@@ -7,9 +7,9 @@
 ## Getting the Source
 
 ```bash
-git clone https://github.com/reactjs/redux
+git clone https://github.com/reduxjs/redux
 cd redux
-git checkout v4.0.5 # checkout the right version tag
+git checkout v4.2.1 # checkout the right version tag
 ```
 
 ## Building
@@ -20,13 +20,12 @@ npm run build
 cp dist/redux.js <gecko-dev>/devtools/client/shared/vendor/redux.js
 ```
 
-## Patching react-redux
+## Patching redux
 
 - open `redux.js`
 - Add the version number to the top of the file:
   ```
   /**
-   * react-redux v4.0.5
+   * redux v4.2.1
    */
   ```
-- Replace all instances of `Function('return this')()` with `globalThis`. See Bug 1473549.

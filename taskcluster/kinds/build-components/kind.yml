@@ -61,6 +61,7 @@ tasks:
                 nightly: false
                 default: true
         run:
+            clone-with: hg
             gradlew:
                 by-build-type:
                     release:

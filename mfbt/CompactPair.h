@@ -7,12 +7,12 @@
 #ifndef mozilla_CompactPair_h
 #define mozilla_CompactPair_h
 
-#include "mozilla/Attributes.h"
-
 #include <cstddef>
 #include <tuple>
 #include <type_traits>
 #include <utility>
+
+#include "mozilla/Attributes.h"
 
 namespace mozilla {
 

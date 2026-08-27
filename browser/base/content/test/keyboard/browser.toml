@@ -2,6 +2,9 @@
 support-files = ["head.js"]
 prefs = [
   "sidebar.revamp=false",
+  # Keep browser_gfxDebugShortcuts.js deterministic in builds configured with
+  # --enable-webrender-debugger, which enable captures by default.
+  "gfx.webrender.debug.enable-capture=false",
 ]
 
 ["browser_bookmarks_shortcut.js"]
@@ -9,6 +12,8 @@ https_first_disabled = true
 
 ["browser_cancel_caret_browsing_in_content.js"]
 support-files = ["file_empty.html"]
+
+["browser_gfxDebugShortcuts.js"]
 
 ["browser_popup_keyNav.js"]
 https_first_disabled = true

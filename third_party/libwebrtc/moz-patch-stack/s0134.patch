@@ -1,33 +1,23 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Wed, 8 Apr 2026 10:58:00 -0500
-Subject: Bug 2030139 - (fix-bb3693c382) fix linux builds for constexpr
- containing std::string
+From: Byron Campen <docfaraday@gmail.com>
+Date: Tue, 19 May 2026 16:37:00 -0500
+Subject: Bug 2040478 - (fix-de183fb028) Remove this include of override code
+ that is gone. r?mjf
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/cab51cf0d4e9e67e9f5b053128d05e859d47b7c2
+It appears that this override code is no longer necessary.
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/dbd090975384251d83d3554677efcbb0e133feab
 ---
- modules/portal/pipewire_utils.cc | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ call/call.h | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/modules/portal/pipewire_utils.cc b/modules/portal/pipewire_utils.cc
-index 850726cc58..7008696b7d 100644
---- a/modules/portal/pipewire_utils.cc
-+++ b/modules/portal/pipewire_utils.cc
-@@ -28,9 +28,18 @@
- 
- namespace webrtc {
- 
-+#if defined(__GNUC__) && defined(WEBRTC_MOZILLA_BUILD)
-+// Mozilla linux builds are using -std=gnu++20, which doesn't approve
-+// of using std::string in a constexpr.  PipewireVersion now contains
-+// std::string as of libwebrtc commit d167fe9296.
-+static const PipeWireVersion kReentrantDeinitMinVersion = {.major = 0,
-+                                                           .minor = 3,
-+                                                           .micro = 49};
-+#else
- constexpr PipeWireVersion kReentrantDeinitMinVersion = {.major = 0,
-                                                         .minor = 3,
-                                                         .micro = 49};
-+#endif
- 
- PipeWireVersion PipeWireVersion::Parse(const std::string_view& version) {
-   std::vector<std::string_view> parsed_version = split(version, '.');
+diff --git a/call/call.h b/call/call.h
+index 3cfdc40f05..973c28734f 100644
+--- a/call/call.h
++++ b/call/call.h
+@@ -27,7 +27,6 @@
+ #include "api/video/video_stream_encoder_settings.h"
+ #include "call/audio_receive_stream.h"
+ #include "call/audio_send_stream.h"
+-#include "call/call_basic_stats.h"
+ #include "call/call_config.h"
+ #include "call/flexfec_receive_stream.h"
+ #include "call/packet_receiver.h"

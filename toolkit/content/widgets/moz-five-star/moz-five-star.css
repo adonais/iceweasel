@@ -44,6 +44,8 @@
 .rating-star[fill="half"] {
   background-image: url("chrome://global/skin/icons/rating-star.svg#half");
 }
+/* Small subtree */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .rating-star[fill="full"],
 .rating-star.selectable:has(~ .rating-star.selectable:hover),
 .rating-star.selectable:hover {

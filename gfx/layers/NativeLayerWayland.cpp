@@ -1073,16 +1073,18 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock& aParentWaylandSurfaceLock) {
   if (mIsHDR) {
     gfx::YUVColorSpace yuvColorSpace = gfx::YUVColorSpace::BT709;
     gfx::TransferFunction transferFunction = gfx::TransferFunction::BT709;
+    mozilla::gfx::HDRMetadata hdrMetadata{};
     if (auto* external = AsNativeLayerWaylandExternal()) {
       if (RefPtr surface = external->GetSurface()) {
         if (auto* surfaceYUV = surface->GetAsDMABufSurfaceYUV()) {
           yuvColorSpace = surfaceYUV->GetYUVColorSpace();
           transferFunction = surfaceYUV->GetTransferFunction();
+          hdrMetadata = surfaceYUV->GetHDRMetadata();
         }
       }
     }
     mSurface->EnableColorManagementLocked(surfaceLock, yuvColorSpace,
-                                          transferFunction);
+                                          transferFunction, hdrMetadata);
   }
 
   if (auto* external = AsNativeLayerWaylandExternal()) {
@@ -1326,26 +1328,32 @@ void NativeLayerWaylandRender::ReadBackFrontBuffer(
   if (!copyRegion.IsEmpty()) {
     if (mSurfacePoolHandle->gl()) {
       mSurfacePoolHandle->gl()->MakeCurrent();
+      Maybe<GLuint> sourceFB =
+          mSurfacePoolHandle->GetFramebufferForBuffer(mFrontBuffer, false);
+      MOZ_DIAGNOSTIC_ASSERT(sourceFB,
+                            "NativeLayerWaylandRender: Failed to get "
+                            "mFrontBuffer framebuffer!");
+      if (!sourceFB) {
+        return;
+      }
+      Maybe<GLuint> destFB =
+          mSurfacePoolHandle->GetFramebufferForBuffer(mInProgressBuffer, false);
+      MOZ_DIAGNOSTIC_ASSERT(destFB,
+                            "NativeLayerWaylandRender: Failed to get "
+                            "mInProgressBuffer framebuffer!");
+      if (!destFB) {
+        return;
+      }
+
+      mSurfacePoolHandle->gl()->fBindFramebuffer(LOCAL_GL_READ_FRAMEBUFFER,
+                                                 sourceFB.value());
+      mSurfacePoolHandle->gl()->fBindFramebuffer(LOCAL_GL_DRAW_FRAMEBUFFER,
+                                                 destFB.value());
+
       for (auto iter = copyRegion.RectIter(); !iter.Done(); iter.Next()) {
         gfx::IntRect r = iter.Get();
-        Maybe<GLuint> sourceFB =
-            mSurfacePoolHandle->GetFramebufferForBuffer(mFrontBuffer, false);
-        MOZ_DIAGNOSTIC_ASSERT(sourceFB,
-                              "NativeLayerWaylandRender: Failed to get "
-                              "mFrontBuffer framebuffer!");
-        if (!sourceFB) {
-          return;
-        }
-        Maybe<GLuint> destFB = mSurfacePoolHandle->GetFramebufferForBuffer(
-            mInProgressBuffer, false);
-        MOZ_DIAGNOSTIC_ASSERT(destFB,
-                              "NativeLayerWaylandRender: Failed to get "
-                              "mInProgressBuffer framebuffer!");
-        if (!destFB) {
-          return;
-        }
-        mSurfacePoolHandle->gl()->BlitHelper()->BlitFramebufferToFramebuffer(
-            sourceFB.value(), destFB.value(), r, r, LOCAL_GL_NEAREST);
+        mSurfacePoolHandle->gl()->BlitHelper()->BlitFramebuffer(
+            r, r, LOCAL_GL_NEAREST);
       }
     } else {
       RefPtr<gfx::DataSourceSurface> dataSourceSurface =
@@ -1591,7 +1599,7 @@ void NativeLayerRootSnapshotterWayland::UpdateSnapshot(
 
   if (!mSnapshot || mSnapshot->Size() != aSize) {
     mSnapshot = nullptr;
-    auto fb = gl::MozFramebuffer::Create(mGL, aSize, 0, false);
+    auto fb = gl::MozFramebuffer::Create(mGL, aSize, 0, false, false);
     if (!fb) {
       return;
     }
@@ -1626,7 +1634,7 @@ already_AddRefed<profiler_screenshots::DownscaleTarget>
 NativeLayerRootSnapshotterWayland::CreateDownscaleTarget(
     const gfx::IntSize& aSize) {
   LOG("NativeLayerRootSnapshotterWayland::CreateDownscaleTarget()");
-  auto fb = gl::MozFramebuffer::Create(mGL, aSize, 0, false);
+  auto fb = gl::MozFramebuffer::Create(mGL, aSize, 0, false, false);
   if (!fb) {
     return nullptr;
   }

@@ -24,7 +24,6 @@
 -mozilla-vpn-brand-name = Mozilla VPN
 -profiler-brand-name = Iceweasel Profiler
 -translations-brand-name = Iceweasel Translations
--focus-brand-name = Mozilla Focus
 -relay-brand-name = Mozilla Relay
 -relay-brand-short-name = Relay
 -fakespot-brand-name = Fakespot

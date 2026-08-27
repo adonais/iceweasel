@@ -167,6 +167,8 @@ val privateAcornGradientScheme = AcornGradientScheme(
     privacyMask = privacyMask,
 )
 
+val oledAcornGradientScheme = darkAcornGradientScheme
+
 internal val localAcornGradients = staticCompositionLocalOf {
     lightAcornGradientScheme
 }

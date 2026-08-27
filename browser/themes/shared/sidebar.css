@@ -349,8 +349,10 @@ sidebar-main,
     }
 
     :root[lwtheme] & {
-      border-radius: unset;
-      border-inline: unset;
+      @media not -moz-pref("browser.nova.enabled") {
+        border-radius: unset;
+        border-inline: unset;
+      }
       color: var(--toolbox-text-color);
       background-color: var(--toolbox-background-color);
 
@@ -370,8 +372,10 @@ sidebar-main,
         --chrome-window-gap: 2px;
         margin-block-start: var(--chrome-window-gap);
       }
+      :root:not([lwtheme]) & {
+        background-color: var(--toolbar-background-color);
+      }
       border-radius: var(--chrome-block-radius);
-      background-color: var(--toolbar-background-color);
       position: absolute;
       inset-block-end: var(--chrome-window-gap);
       inset-inline-start: var(--chrome-window-gap);
@@ -380,7 +384,6 @@ sidebar-main,
       &[sidebar-launcher-expanded],
       &[sidebar-ongoing-animations]:not([sidebar-launcher-expanded]) {
         background-image: none;
-        background-color: var(--toolbar-background-color);
 
         &:not([sidebar-positionend]) {
           border-inline-end: 1px solid var(--chrome-content-separator-color);
@@ -437,6 +440,16 @@ sidebar-main,
       &[sidebar-positionend]:not([sidebar-panel-open]) {
         margin-inline-end: calc(var(--sidebar-launcher-collapsed-width) + var(--chrome-window-gap));
       }
+    }
+  }
+
+  /*
+   * If we're in fullscreen and the sidebar is closed, there should be no
+   * margins around #tabbrowser-tabbox.
+   */
+  @media -moz-pref("browser.nova.enabled") {
+    &[fullscreenNavToolboxHidden] #tabbrowser-tabbox:not([sidebar-panel-open]) {
+      margin-inline: 0;
     }
   }
 
@@ -497,6 +510,7 @@ sidebar-main,
     color: var(--sidebar-text-color);
     padding-block-end: 0;
     border-inline-start: none;
+    outline: 0.5px solid var(--sidebar-border-color);
   }
 
   #sidebar {
@@ -510,7 +524,8 @@ sidebar-main,
    * margin-inline absorbs 3px of that gap on each side, leaving 1px of empty
    * space + 4px splitter + 1px of empty space = 6px total. When the closest
    * split-view panel is selected, the content-side margin is widened to 3px
-   * (2px for the panel's outline + 1px clear) — see the :has() rules below. */
+   * (2px for the panel's outline + 1px clear) — see the
+   * [splitview-selected-column] rules below. */
   #sidebar-splitter {
     width: var(--chrome-window-gap);
     border-inline: none;
@@ -539,17 +554,13 @@ sidebar-main,
    * + 1px clear) so the splitter never touches the outline. The "closest"
    * panel is column-0 when the sidebar is on the inline-start side, and
    * column-1 when the sidebar is on the inline-end side. */
-  :root:has(#tabbrowser-tabpanels[splitview] .split-view-panel[column="0"].deck-selected) #sidebar-box:not([sidebar-positionend]) + #sidebar-splitter,
-  :root:has(#tabbrowser-tabpanels[splitview] .split-view-panel[column="0"].deck-selected)
-    #sidebar-container:not([sidebar-panel-open]):not([sidebar-positionend])
-    + #sidebar-launcher-splitter {
+  :root[splitview-selected-column="0"] #sidebar-box:not([sidebar-positionend]) + #sidebar-splitter,
+  :root[splitview-selected-column="0"] #sidebar-container:not([sidebar-panel-open]):not([sidebar-positionend]) + #sidebar-launcher-splitter {
     margin-inline-end: calc(-1 * var(--chrome-window-gap) + 3px);
   }
 
-  :root:has(#tabbrowser-tabpanels[splitview] .split-view-panel[column="1"].deck-selected) #sidebar-box[sidebar-positionend] + #sidebar-splitter,
-  :root:has(#tabbrowser-tabpanels[splitview] .split-view-panel[column="1"].deck-selected)
-    #sidebar-container[sidebar-positionend]:not([sidebar-panel-open])
-    + #sidebar-launcher-splitter {
+  :root[splitview-selected-column="1"] #sidebar-box[sidebar-positionend] + #sidebar-splitter,
+  :root[splitview-selected-column="1"] #sidebar-container[sidebar-positionend]:not([sidebar-panel-open]) + #sidebar-launcher-splitter {
     margin-inline-start: calc(-1 * var(--chrome-window-gap) + 3px);
   }
 

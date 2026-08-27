@@ -38,18 +38,18 @@ add_task(async function () {
   Assert.equal(result.searchParams.engine, "Test", "Sanity check engine");
   Assert.equal(
     result.displayed.title.length,
-    UrlbarUtils.MAX_TEXT_LENGTH,
+    UrlbarShared.MAX_TEXT_LENGTH,
     "Result title should be limited"
   );
   result = await UrlbarTestUtils.getDetailsOfResultAt(window, 2);
   Assert.equal(
     result.displayed.title.length,
-    UrlbarUtils.MAX_TEXT_LENGTH,
+    UrlbarShared.MAX_TEXT_LENGTH,
     "Result title should be limited"
   );
   Assert.equal(
     result.displayed.url.length,
-    UrlbarUtils.MAX_TEXT_LENGTH,
+    UrlbarShared.MAX_TEXT_LENGTH,
     "Result url should be limited"
   );
 });

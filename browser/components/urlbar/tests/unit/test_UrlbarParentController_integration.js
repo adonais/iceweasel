@@ -88,7 +88,7 @@ add_task(async function test_cancel_search() {
   let delayedProvider = new UrlbarTestUtils.TestProvider({
     delayResultsPromise,
     results: [result],
-    type: UrlbarUtils.PROVIDER_TYPE.PROFILE,
+    type: UrlbarShared.PROVIDER_TYPE.PROFILE,
   });
 
   let providersManager = ProvidersManager.getInstanceForSap("urlbar");

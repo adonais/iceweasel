@@ -60,7 +60,7 @@ class TextToolbar extends Component {
         },
         JSONView.Locale["jsonViewer.Copy"]
       ),
-      this.props.isValidJson
+      this.props.isValidJson && !JSONView.isJsonlines
         ? ToolbarButton(
             {
               className: "btn prettyprint",

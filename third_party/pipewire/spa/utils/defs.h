@@ -5,6 +5,13 @@
 #ifndef SPA_UTILS_DEFS_H
 #define SPA_UTILS_DEFS_H
 
+#include <inttypes.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stddef.h>
+#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C" {
 # if __cplusplus >= 201103L
@@ -33,13 +40,6 @@ extern "C" {
 
 #define SPA_CONCAT_NOEXPAND(a, b) a ## b
 #define SPA_CONCAT(a, b) SPA_CONCAT_NOEXPAND(a, b)
-
-#include <inttypes.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stddef.h>
-#include <stdio.h>
 
 /**
  * \defgroup spa_utils_defs Miscellaneous
@@ -242,6 +242,7 @@ struct spa_fraction {
 #define SPA_UNUSED __attribute__ ((unused))
 #define SPA_NORETURN __attribute__ ((noreturn))
 #define SPA_WARN_UNUSED_RESULT __attribute__ ((warn_unused_result))
+#define SPA_BARRIER __asm__ __volatile__("": : :"memory")
 #else
 #define SPA_PRINTF_FUNC(fmt, arg1)
 #define SPA_FORMAT_ARG_FUNC(arg1)
@@ -252,6 +253,7 @@ struct spa_fraction {
 #define SPA_UNUSED
 #define SPA_NORETURN
 #define SPA_WARN_UNUSED_RESULT
+#define SPA_BARRIER
 #endif
 
 #ifndef SPA_API_IMPL

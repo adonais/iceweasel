@@ -24,6 +24,16 @@ export class AutoCompleteChild extends JSWindowActorChild {
     this._secondaryActionFocused = false;
   }
 
+  handleEvent(event) {
+    // Only registered on GeckoView (see ActorManagerParent). The document is
+    // being hidden (navigation, including into bfcache); tell the parent so it
+    // can tear down any delegated selection prompt tied to this document
+    // before it outlives the page.
+    if (event.type == "pagehide" && event.target == this.document) {
+      this.sendAsyncMessage("AutoComplete:DocumentHidden", {});
+    }
+  }
+
   receiveMessage(message) {
     switch (message.name) {
       case "AutoComplete:HandleEnter": {

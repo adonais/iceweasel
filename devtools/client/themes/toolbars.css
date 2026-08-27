@@ -62,8 +62,8 @@
  */
 .devtools-separator {
   border-inline-start: 1px solid var(--theme-toolbar-separator);
-  height: calc(100% - 8px);
-  margin: 4px 1px;
+  height: calc(var(--theme-toolbar-height) - 8px);
+  margin: auto 1px;
 }
 
 /* In-tools sidebar */

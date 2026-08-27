@@ -33,6 +33,38 @@ addAccessibleTask(
 );
 
 /**
+ * Test that we announce a changed description
+ */
+addAccessibleTask(
+  `<input id="input"><div id="error" hidden>This is an error</div>`,
+  async (browser, accDoc) => {
+    let input = getNativeInterface(accDoc, "input");
+    ok(!input.getAttributeValue("AXCustomContent"), "Input has no description");
+
+    let announced = waitForMacEventWithInfo("AXAnnouncementRequested", "input");
+    await SpecialPowers.spawn(browser, [], () => {
+      let error = content.document.getElementById("error");
+      error.hidden = false;
+      content.document.getElementById("input").ariaDescribedByElements = [
+        error,
+      ];
+    });
+    let evt = await announced;
+    is(
+      evt.data.AXAnnouncementKey,
+      "This is an error",
+      "Announced the new description"
+    );
+
+    is(
+      input.getAttributeValue("AXCustomContent")[0].description,
+      "This is an error",
+      "Input description updated"
+    );
+  }
+);
+
+/**
  * Test link title
  */
 addAccessibleTask(

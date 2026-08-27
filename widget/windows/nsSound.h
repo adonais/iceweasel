@@ -19,7 +19,7 @@ class nsSound : public nsISound,
 
 {
  public:
-  nsSound();
+  nsSound() = default;
   static already_AddRefed<nsISound> GetInstance();
 
   NS_DECL_ISUPPORTS
@@ -27,7 +27,7 @@ class nsSound : public nsISound,
   NS_DECL_NSIOBSERVER
 
  private:
-  virtual ~nsSound();
+  virtual ~nsSound() = default;
   void PurgeLastSound();
 
  private:
@@ -35,7 +35,7 @@ class nsSound : public nsISound,
 
   nsCOMPtr<nsIThread> mPlayerThread;
   nsCOMPtr<nsIRunnable> mSoundPlayer;
-  bool mInited;
+  bool mInited{false};
 
   static mozilla::StaticRefPtr<nsISound> sInstance;
 };

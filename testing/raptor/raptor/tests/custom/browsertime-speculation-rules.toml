@@ -28,3 +28,15 @@ browsertime_args = "--browsertime.eagerness=moderate"
 
 ["prefetch-conservative"]
 browsertime_args = "--browsertime.eagerness=conservative"
+
+["prefetch-list-immediate"]
+browsertime_args = "--browsertime.source=list --browsertime.eagerness=immediate"
+
+["prefetch-list-eager"]
+browsertime_args = "--browsertime.source=list --browsertime.eagerness=eager"
+
+["prefetch-list-moderate"]
+browsertime_args = "--browsertime.source=list --browsertime.eagerness=moderate"
+
+["prefetch-list-conservative"]
+browsertime_args = "--browsertime.source=list --browsertime.eagerness=conservative"

@@ -5,6 +5,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AppInfo: "chrome://remote/content/shared/AppInfo.sys.mjs",
   Deferred: "chrome://remote/content/shared/Sync.sys.mjs",
   HttpServer: "chrome://remote/content/server/httpd.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
@@ -24,6 +25,10 @@ const DEFAULT_PORT = 9222;
 const ENV_ALLOW_SYSTEM_ACCESS = "MOZ_REMOTE_ALLOW_SYSTEM_ACCESS";
 
 const SHARED_DATA_ACTIVE_KEY = "RemoteAgent:Active";
+const SHARED_DATA_IS_BROWSER_AUTOMATION_KEY =
+  "RemoteAgent:IsBrowserAutomationRunning";
+
+const PREF_DYNAMIC_START_ENABLED = "remote.experimental.dynamicstart.enabled";
 
 const isRemote =
   Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT;
@@ -35,6 +40,7 @@ class RemoteAgentParentProcess {
   #browserStartupFinished;
   #enabled;
   #host;
+  #isBrowserAutomation;
   #port;
   #server;
 
@@ -47,6 +53,10 @@ class RemoteAgentParentProcess {
 
     this.#browserStartupFinished = lazy.Deferred();
     this.#enabled = false;
+
+    // Whether the running instance belongs to a browser automation session.
+    // True for command line startup. Optional for startAtRuntime.
+    this.#isBrowserAutomation = true;
 
     // Configuration for httpd.js
     this.#host = DEFAULT_HOST;
@@ -131,6 +141,10 @@ class RemoteAgentParentProcess {
     return !!this.#server && !this.#server.isStopped();
   }
 
+  get isBrowserAutomationRunning() {
+    return this.running && this.#isBrowserAutomation;
+  }
+
   get scheme() {
     return this.#server?.identity.primaryScheme;
   }
@@ -146,11 +160,27 @@ class RemoteAgentParentProcess {
    */
   updateWebdriverActiveFlag(value) {
     Services.ppmm.sharedData.set(SHARED_DATA_ACTIVE_KEY, value);
+    Services.ppmm.sharedData.set(
+      SHARED_DATA_IS_BROWSER_AUTOMATION_KEY,
+      value && this.#isBrowserAutomation
+    );
     Services.ppmm.sharedData.flush();
   }
 
   get webDriverBiDi() {
     return this.#webDriverBiDi;
+  }
+
+  #addShutdownObservers() {
+    Services.obs.addObserver(this, "quit-application");
+    Services.obs.addObserver(this, "xpcom-shutdown");
+    Services.obs.addObserver(this, "xpcom-shutdown-threads");
+  }
+
+  #removeShutdownObservers() {
+    Services.obs.removeObserver(this, "quit-application");
+    Services.obs.removeObserver(this, "xpcom-shutdown");
+    Services.obs.removeObserver(this, "xpcom-shutdown-threads");
   }
 
   /**
@@ -443,10 +473,8 @@ class RemoteAgentParentProcess {
           Services.obs.addObserver(this, "before-cancel-download-prompt");
           Services.obs.addObserver(this, "browser-idle-startup-tasks-finished");
           Services.obs.addObserver(this, "mail-idle-startup-tasks-finished");
-          Services.obs.addObserver(this, "quit-application");
 
-          Services.obs.addObserver(this, "xpcom-shutdown");
-          Services.obs.addObserver(this, "xpcom-shutdown-threads");
+          this.#addShutdownObservers();
 
           // Apply the common set of preferences for all supported protocols
           lazy.RecommendedPreferences.applyPreferences();
@@ -519,6 +547,88 @@ class RemoteAgentParentProcess {
     }
   }
 
+  /**
+   * Start RemoteAgent at runtime, unless already running via command line
+   * arguments.
+   *
+   * @param {object=} options
+   * @param {boolean=} options.isBrowserAutomation
+   *     True if the server is started for regular browser automation (as
+   *     opposed to tooling, agentic assisted browsing etc.). Defaults to true.
+   *
+   * @returns {number}
+   *     The port on which RemoteAgent started.
+   */
+  async startAtRuntime(options = {}) {
+    const { isBrowserAutomation = true } = options;
+
+    if (!Services.prefs.getBoolPref(PREF_DYNAMIC_START_ENABLED, false)) {
+      lazy.logger.debug(
+        `Start aborted, ${PREF_DYNAMIC_START_ENABLED} is disabled`
+      );
+      return -1;
+    }
+
+    if (this.running) {
+      lazy.logger.debug(
+        `Start aborted, RemoteAgent already running (running=${this.running})`
+      );
+      return -1;
+    }
+
+    if (!lazy.AppInfo.isFirefox) {
+      throw new Error(
+        "RemoteAgent start is only supported for Firefox Desktop"
+      );
+    }
+
+    // Make sure the application window is ready.
+    const win = Services.wm.getMostRecentBrowserWindow();
+    if (win && win.gBrowserInit.idleTasksFinished) {
+      await win.gBrowserInit.idleTasksFinished;
+    } else {
+      throw new Error(
+        "Could not start remote agent dynamically with no window available"
+      );
+    }
+
+    if (Services.startup.startingUp) {
+      throw new Error(
+        "Could not start remote agent dynamically, application window still starting up"
+      );
+    }
+
+    // Explicitly resolve() browserStartupFinished because in most cases the
+    // startup should already be done at this point and we can't monitor the
+    // observer notification.
+    this.#browserStartupFinished.resolve();
+
+    this.#isBrowserAutomation = isBrowserAutomation;
+
+    // Start the RemoteAgent server.
+    this.#enabled = true;
+    this.#addShutdownObservers();
+    this.#webDriverBiDi = new lazy.WebDriverBiDi(this);
+
+    try {
+      await this.#listen(this.#port);
+    } catch (e) {
+      throw Error(`Unable to start remote agent: ${e}`);
+    }
+
+    return this.#port;
+  }
+
+  /**
+   * Stop remote agent during runtime. This entry point is only meant to be
+   * called if RemoteAgent was started via startAtRuntime.
+   */
+  async stopAtRuntime() {
+    await this.#stop();
+    this.#removeShutdownObservers();
+    this.#enabled = false;
+  }
+
   // XPCOM
 
   helpInfo = `  --remote-debugging-port [<port>] Start the Firefox Remote Agent,
@@ -540,6 +650,13 @@ class RemoteAgentParentProcess {
 class RemoteAgentContentProcess {
   get running() {
     return Services.cpmm.sharedData.get(SHARED_DATA_ACTIVE_KEY) ?? false;
+  }
+
+  get isBrowserAutomationRunning() {
+    return (
+      Services.cpmm.sharedData.get(SHARED_DATA_IS_BROWSER_AUTOMATION_KEY) ??
+      false
+    );
   }
 
   // XPCOM

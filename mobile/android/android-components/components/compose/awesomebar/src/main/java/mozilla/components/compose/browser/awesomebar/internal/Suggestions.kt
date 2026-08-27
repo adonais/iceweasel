@@ -27,7 +27,10 @@ import mozilla.components.compose.browser.awesomebar.internal.optimizedsuggestio
 import mozilla.components.compose.browser.awesomebar.internal.optimizedsuggestions.SportSuggestion
 import mozilla.components.compose.browser.awesomebar.internal.optimizedsuggestions.StockSuggestion
 import mozilla.components.concept.awesomebar.AwesomeBar
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionState
+import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightSuggestion
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestion
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionState
+import mozilla.components.feature.awesomebar.optimizedsuggestions.StockSuggestion
 
 @Suppress("LongParameterList")
 @Composable
@@ -137,7 +140,7 @@ private fun SuggestionItem(
             )
         }
 
-        is AwesomeBar.StockSuggestion -> {
+        is StockSuggestion -> {
             StockSuggestion(
                 onClick = { onSuggestionClicked(group, suggestion) },
                 ticker = suggestion.ticker,
@@ -148,7 +151,7 @@ private fun SuggestionItem(
             )
         }
 
-        is AwesomeBar.SportSuggestion -> {
+        is SportSuggestion -> {
             SportSuggestion(
                 onClick = { onSuggestionClicked(group, suggestion) },
                 state = SportSuggestionState(
@@ -163,7 +166,7 @@ private fun SuggestionItem(
             )
         }
 
-        is AwesomeBar.FlightSuggestion -> {
+        is FlightSuggestion -> {
             FlightSuggestion(
                 onClick = { onSuggestionClicked(group, suggestion) },
                 flightNumber = suggestion.flightNumber,

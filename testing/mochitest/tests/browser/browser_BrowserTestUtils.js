@@ -278,6 +278,64 @@ add_task(async function () {
   );
 });
 
+add_task(async function testWaitForMutationCondition() {
+  let target = document.createXULElement("box");
+  document.documentElement.appendChild(target);
+
+  is(
+    await BrowserTestUtils.waitForMutationCondition(
+      target,
+      { attributes: true },
+      () => "no mutation needed"
+    ),
+    "no mutation needed",
+    "Resolves with the value returned by checkFn when the condition already passes"
+  );
+
+  let mutated = BrowserTestUtils.waitForMutationCondition(
+    target,
+    { attributes: true },
+    () => target.hasAttribute("mutated") && "mutated"
+  );
+  target.toggleAttribute("mutated", true);
+  is(await mutated, "mutated", "Resolves once a mutation passes the condition");
+
+  await Assert.rejects(
+    BrowserTestUtils.waitForMutationCondition(
+      target,
+      { attributes: true },
+      () => false,
+      { msg: "Condition that never passes", timeout: 100 }
+    ),
+    /^waitForMutationCondition - Condition that never passes - timed out after 100ms$/,
+    "Rejects with the given message once the timeout elapses"
+  );
+
+  await Assert.rejects(
+    BrowserTestUtils.waitForMutationCondition(
+      target,
+      { attributes: true },
+      () => false,
+      { msg: "Zero is a bound", timeout: 0 }
+    ),
+    /^waitForMutationCondition - Zero is a bound - timed out after 0ms$/,
+    "Treats a zero timeout as an immediate bound, not as an opt-out"
+  );
+
+  await Assert.rejects(
+    BrowserTestUtils.waitForMutationCondition(
+      target,
+      { attributes: true },
+      () => target.hasAttribute("never set"),
+      { timeout: 100 }
+    ),
+    /^waitForMutationCondition - browser_BrowserTestUtils\.js:\d+ - \(\) => target\.hasAttribute\("never set"\) - timed out after 100ms$/,
+    "Names the call site and the condition when given no message"
+  );
+
+  target.remove();
+});
+
 add_task(async function testWaitForEvent() {
   // A promise returned by BrowserTestUtils.waitForEvent should not be resolved
   // in the same event tick as the event listener is called.

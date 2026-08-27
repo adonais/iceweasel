@@ -19,13 +19,13 @@ async function doNCharsTest({ trigger, assert }) {
 async function doNCharsWithOverMaxTextLengthCharsTest({ trigger, assert }) {
   await doTest(async () => {
     let input = "";
-    for (let i = 0; i < UrlbarUtils.MAX_TEXT_LENGTH * 2; i++) {
+    for (let i = 0; i < UrlbarShared.MAX_TEXT_LENGTH * 2; i++) {
       input += "x";
     }
     await openPopup(input);
 
     await trigger();
-    await assert(UrlbarUtils.MAX_TEXT_LENGTH * 2);
+    await assert(UrlbarShared.MAX_TEXT_LENGTH * 2);
   });
 }
 
@@ -45,12 +45,12 @@ async function doNWordsWithOverMaxTextLengthCharsTest({ trigger, assert }) {
   await doTest(async () => {
     const word = "1234 ";
     let input = "";
-    while (input.length < UrlbarUtils.MAX_TEXT_LENGTH * 2) {
+    while (input.length < UrlbarShared.MAX_TEXT_LENGTH * 2) {
       input += word;
     }
     await openPopup(input);
 
     await trigger();
-    await assert(UrlbarUtils.MAX_TEXT_LENGTH / word.length);
+    await assert(UrlbarShared.MAX_TEXT_LENGTH / word.length);
   });
 }

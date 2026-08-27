@@ -2990,6 +2990,12 @@ export class MozAdsClientInterface {
         options = null) {
       throw Error("requestTileAds not implemented");
     }
+    /**
+     * shutdown
+     */
+    async shutdown() {
+      throw Error("shutdown not implemented");
+    }
 
 }
 
@@ -3178,6 +3184,22 @@ export class MozAdsClient extends MozAdsClientInterface {
         )
     }
 
+    /**
+     * shutdown
+     */
+    async shutdown() {
+       
+        const result = await UniFFIScaffolding.callAsyncWrapper(
+            8, // uniffi_ads_client_fn_method_mozadsclient_shutdown
+            FfiConverterTypeMozAdsClient.lowerReceiver(this),
+        )
+        return handleRustResult(
+            result,
+            (result) => undefined,
+            FfiConverterTypeMozAdsClientApiError.lift.bind(FfiConverterTypeMozAdsClientApiError),
+        )
+    }
+
 }
 
 // Export the FFIConverter object to make external types work.
@@ -3254,7 +3276,7 @@ export class MozAdsContextIdProviderImpl extends MozAdsContextIdProvider {
     contextId() {
        
         const result = UniFFIScaffolding.callSync(
-            8, // uniffi_ads_client_fn_method_mozadscontextidprovider_context_id
+            9, // uniffi_ads_client_fn_method_mozadscontextidprovider_context_id
             FfiConverterTypeMozAdsContextIdProvider.lowerReceiver(this),
         )
         return handleRustResult(
@@ -3562,7 +3584,7 @@ export class MozAdsClientBuilder extends MozAdsClientBuilderInterface {
     static init() {
        
         const result = UniFFIScaffolding.callSync(
-            9, // uniffi_ads_client_fn_constructor_mozadsclientbuilder_new
+            10, // uniffi_ads_client_fn_constructor_mozadsclientbuilder_new
         )
         return handleRustResult(
             result,
@@ -3578,7 +3600,7 @@ export class MozAdsClientBuilder extends MozAdsClientBuilderInterface {
     build() {
        
         const result = UniFFIScaffolding.callSync(
-            10, // uniffi_ads_client_fn_method_mozadsclientbuilder_build
+            11, // uniffi_ads_client_fn_method_mozadsclientbuilder_build
             FfiConverterTypeMozAdsClientBuilder.lowerReceiver(this),
         )
         return handleRustResult(
@@ -3598,7 +3620,7 @@ export class MozAdsClientBuilder extends MozAdsClientBuilderInterface {
        
         FfiConverterTypeMozAdsCacheConfig.checkType(cacheConfig);
         const result = UniFFIScaffolding.callSync(
-            11, // uniffi_ads_client_fn_method_mozadsclientbuilder_cache_config
+            12, // uniffi_ads_client_fn_method_mozadsclientbuilder_cache_config
             FfiConverterTypeMozAdsClientBuilder.lowerReceiver(this),
             FfiConverterTypeMozAdsCacheConfig.lower(cacheConfig),
         )
@@ -3619,7 +3641,7 @@ export class MozAdsClientBuilder extends MozAdsClientBuilderInterface {
        
         FfiConverterTypeMozAdsContextIdProvider.checkType(provider);
         const result = UniFFIScaffolding.callSync(
-            12, // uniffi_ads_client_fn_method_mozadsclientbuilder_context_id_provider
+            13, // uniffi_ads_client_fn_method_mozadsclientbuilder_context_id_provider
             FfiConverterTypeMozAdsClientBuilder.lowerReceiver(this),
             FfiConverterTypeMozAdsContextIdProvider.lower(provider),
         )
@@ -3640,7 +3662,7 @@ export class MozAdsClientBuilder extends MozAdsClientBuilderInterface {
        
         FfiConverterTypeMozAdsEnvironment.checkType(environment);
         const result = UniFFIScaffolding.callSync(
-            13, // uniffi_ads_client_fn_method_mozadsclientbuilder_environment
+            14, // uniffi_ads_client_fn_method_mozadsclientbuilder_environment
             FfiConverterTypeMozAdsClientBuilder.lowerReceiver(this),
             FfiConverterTypeMozAdsEnvironment.lower(environment),
         )
@@ -3661,7 +3683,7 @@ export class MozAdsClientBuilder extends MozAdsClientBuilderInterface {
        
         FfiConverterTypeMozAdsTelemetry.checkType(telemetry);
         const result = UniFFIScaffolding.callSync(
-            14, // uniffi_ads_client_fn_method_mozadsclientbuilder_telemetry
+            15, // uniffi_ads_client_fn_method_mozadsclientbuilder_telemetry
             FfiConverterTypeMozAdsClientBuilder.lowerReceiver(this),
             FfiConverterTypeMozAdsTelemetry.lower(telemetry),
         )

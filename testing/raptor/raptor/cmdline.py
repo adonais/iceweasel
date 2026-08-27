@@ -67,6 +67,10 @@ TRACE_APPS = (CHROME, CHROMIUM_RELEASE)
 
 SIMPLEPERF_APPS = (FENIX, GECKOVIEW)
 
+SAMPLY_PROFILE_APPS = (FIREFOX,)
+
+PERF_PROFILE_APPS = (FIREFOX,)
+
 APP_BINARIES = {
     "fenix": "org.mozilla.fenix",
     "focus": "org.mozilla.focus",
@@ -244,8 +248,21 @@ def create_parser(mach_interface=False):
         action="store_true",
         dest="etw_profile",
         default=False,
-        help="Enable system-wide ETW profiling on Windows (captures all system activity). "
-        "Profile will be saved to $MOZ_UPLOAD_DIR and automatically symbolicated.",
+        help="Enable system-wide ETW profiling via Xperf (Windows only). ",
+    )
+    add_arg(
+        "--samply-profile",
+        action="store_true",
+        dest="samply_profile",
+        default=False,
+        help="Enable system-wide profiling via Samply (macOS only).",
+    )
+    add_arg(
+        "--perf-profile",
+        action="store_true",
+        dest="perf_profile",
+        default=False,
+        help="Enable system-wide profiling via perf (Linux only).",
     )
     add_arg(
         "--symbolsPath",

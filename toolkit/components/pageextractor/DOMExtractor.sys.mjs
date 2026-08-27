@@ -17,6 +17,8 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = XPCOMUtils.declareLazy({
   SearchStaticData:
     "moz-src:///toolkit/components/search/SearchStaticData.sys.mjs",
+  shouldExtractYouTube:
+    "moz-src:///toolkit/components/pageextractor/YouTubeExtraction.sys.mjs",
 });
 
 const WHITESPACE_REGEX = /\s+/g;
@@ -24,17 +26,33 @@ const MARKDOWN_TEXT_ESCAPE_REGEX = /[\[\]()]/g;
 const OPEN_PAREN_REGEX = /\(/g;
 const CLOSE_PAREN_REGEX = /\)/g;
 
-const DEFAULT_STRATEGY = Object.freeze({
+const DEFAULT_STRATEGY = {
   filterSelector: null,
   formatBlockAnchorsAsMarkdown: false,
   formatBlockAnchorSelector: null,
-});
+};
 
-const GOOGLE_SEARCH_STRATEGY = Object.freeze({
+const GOOGLE_SEARCH_STRATEGY = {
   filterSelector: "cite",
   formatBlockAnchorsAsMarkdown: true,
   formatBlockAnchorSelector: "cite",
-});
+};
+
+const YOUTUBE_STRATEGY = {
+  filterSelector: [
+    "transcript-segment-view-model",
+    "ytd-transcript-segment-renderer",
+    "ytd-video-description-transcript-section-renderer",
+    'button[aria-label="Show transcript"]',
+    'button[aria-label="Transcript"]',
+    "ytd-masthead",
+    "ytd-watch-next-secondary-results-renderer",
+    "ytd-comments",
+    "ytd-merch-shelf-renderer",
+  ].join(", "),
+  formatBlockAnchorsAsMarkdown: false,
+  formatBlockAnchorSelector: null,
+};
 
 /**
  * The context for extracting text content from the DOM.
@@ -768,6 +786,10 @@ function getStrategyForUrl(url) {
 
   if (isGoogleSearch) {
     return GOOGLE_SEARCH_STRATEGY;
+  }
+
+  if (lazy.shouldExtractYouTube(url)) {
+    return YOUTUBE_STRATEGY;
   }
 
   return DEFAULT_STRATEGY;

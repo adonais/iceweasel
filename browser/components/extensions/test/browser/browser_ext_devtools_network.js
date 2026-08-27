@@ -256,7 +256,18 @@ add_task(async function test_devtools_network_on_request_finished() {
   await extension.awaitMessage("devtools-page-loaded");
 
   // Wait the extension to subscribe the onRequestFinished listener.
-  await extension.sendMessage("addOnRequestFinishedListener");
+  // Registering it is asynchronous on the parent side: Toolbox
+  // addRequestFinishedListener has to lazily create and connect a
+  // NetMonitorAPI first, and requests whose payload becomes ready before that
+  // is done are silently dropped by NetMonitorAPI.onPayloadReady. So poll the
+  // netmonitor API until the listener is actually registered, instead of
+  // navigating right away.
+  extension.sendMessage("addOnRequestFinishedListener");
+  const netMonitorAPI = await toolbox.getNetMonitorAPI();
+  await TestUtils.waitForCondition(
+    () => netMonitorAPI.hasRequestFinishedListeners(),
+    "Wait for the extension onRequestFinished listener to be registered"
+  );
 
   // Reload the page
   await navigateToolboxTarget(extension, toolbox);

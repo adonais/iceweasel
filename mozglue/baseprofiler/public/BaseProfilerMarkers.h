@@ -141,7 +141,7 @@ struct TextMarker : public BaseMarkerType<TextMarker> {
           "name",
           MS::InputType::CString,
           "Details",
-          MS::Format::String,
+          MS::Format::UniqueString,
       }};
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
@@ -153,7 +153,7 @@ struct TextMarker : public BaseMarkerType<TextMarker> {
 
   static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
                                    const ProfilerString8View& aText) {
-    aWriter.StringProperty("name", aText);
+    aWriter.UniqueStringProperty("name", aText);
   }
 };
 
@@ -172,7 +172,7 @@ struct TextStackMarker : public BaseMarkerType<TextStackMarker> {
           "name",
           MS::InputType::CString,
           "Details",
-          MS::Format::String,
+          MS::Format::UniqueString,
       }};
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
@@ -186,7 +186,7 @@ struct TextStackMarker : public BaseMarkerType<TextStackMarker> {
 
   static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
                                    const ProfilerString8View& aText) {
-    aWriter.StringProperty("name", aText);
+    aWriter.UniqueStringProperty("name", aText);
   }
 };
 

@@ -20,7 +20,7 @@ export class SmartwindowHeading extends MozLitElement {
       <div class="heading-container">
         <img
           class="heading-logo"
-          src="chrome://browser/skin/smart-window.svg"
+          src="chrome://browser/content/aiwindow/assets/smart-window.svg"
           alt=""
           role="presentation"
         />

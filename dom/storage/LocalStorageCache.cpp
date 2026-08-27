@@ -316,7 +316,7 @@ nsresult LocalStorageCache::GetItem(const LocalStorage* aStorage,
     SetDOMStringToNull(value);
   }
 
-  aRetval = value;
+  aRetval = std::move(value);
 
   return NS_OK;
 }

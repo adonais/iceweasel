@@ -162,14 +162,13 @@ add_task(async function testPseudo() {
     inspector
   );
   is(
-    ulContainer.expander.style.visibility,
+    selectContainer.expander.style.visibility,
     "visible",
     "Expander button is visible for <select>"
   );
 
   info("Click on the <select> parent expander and wait for children");
   await toggleContainerByClick(inspector, selectContainer);
-
   tree = `
     html
       head!ignore-children
@@ -181,6 +180,46 @@ add_task(async function testPseudo() {
           option
           option
           option
+          ::picker-icon
+      `.trim();
+  await assertMarkupViewAsTree(tree, "html", inspector);
+
+  info("Test ::checkmark pseudo element");
+
+  // The ::checkmark pseudo element only exists when the select is opened, so show the
+  // picker so we can see them
+  await showCustomizableSelectPicker(inspector, "select");
+
+  const optionNodeFront = await getNodeFront("option", inspector);
+  await selectNode(optionNodeFront, inspector);
+
+  const optionContainer = await getContainerForNodeFront(
+    optionNodeFront,
+    inspector
+  );
+  is(
+    optionContainer.expander.style.visibility,
+    "visible",
+    "Expander button is visible for <option>"
+  );
+
+  tree = `
+    html
+      head!ignore-children
+      body
+        article!ignore-children
+        ul!ignore-children
+        dialog!ignore-children
+        select
+          option
+            ::checkmark
+            Apricot
+          option
+            ::checkmark
+            Banana
+          option
+            ::checkmark
+            Cherry
           ::picker-icon
       `.trim();
   await assertMarkupViewAsTree(tree, "html", inspector);

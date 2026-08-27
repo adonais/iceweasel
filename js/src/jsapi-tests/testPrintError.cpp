@@ -3,9 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <cstdio>  // fclose, fflush, open_memstream
+#include <string>
 
 #include "js/ErrorReport.h"  // JS::PrintError
-#include "js/Warnings.h"     // JS::SetWarningReporter, JS::WarnUTF8
+#include "js/Exception.h"  // JS::ExceptionStack, JS::StealPendingExceptionStack
+#include "js/Warnings.h"   // JS::SetWarningReporter, JS::WarnUTF8
 #include "jsapi-tests/tests.h"
 
 class AutoStreamBuffer {
@@ -119,3 +121,56 @@ BEGIN_TEST(testPrintError_UTF16CodeUnits) {
 END_TEST(testPrintError_UTF16CodeUnits)
 
 #undef BURRITO
+
+// Steal the pending exception and return the string an uncaught-exception
+// report would produce for it, using the given side-effect-free reporting mode.
+static std::string StealUncaughtToString(
+    JSContext* cx, JS::ErrorReportBuilder::SniffingBehavior behavior) {
+  JS::ExceptionStack exnStack(cx);
+  MOZ_RELEASE_ASSERT(JS::StealPendingExceptionStack(cx, &exnStack));
+
+  JS::ErrorReportBuilder builder(cx);
+  MOZ_RELEASE_ASSERT(builder.init(cx, exnStack, behavior));
+  return std::string(builder.toStringResult().c_str());
+}
+
+BEGIN_TEST(testPrintError_UncaughtObjectPreview) {
+  static constexpr auto ListNames =
+      JS::ErrorReportBuilder::NoSideEffectsListPropertyNames;
+  static constexpr auto NoSideEffects = JS::ErrorReportBuilder::NoSideEffects;
+
+  // With NoSideEffectsListPropertyNames, a thrown non-Error object is described
+  // by its own string-keyed property names instead of the unhelpful bare
+  // "uncaught exception: Object".
+  CHECK(!execDontReport("throw {reason: 'boom'};", __FILE__, __LINE__));
+  CHECK(StealUncaughtToString(cx, ListNames) ==
+        "uncaught exception: Object { reason }");
+
+  CHECK(!execDontReport("throw {name: 'foo', message: 'bar'};", __FILE__,
+                        __LINE__));
+  CHECK(StealUncaughtToString(cx, ListNames) ==
+        "uncaught exception: Object { message, name }");
+
+  // An object with no own string-keyed properties falls back to the bare name.
+  CHECK(!execDontReport("throw {};", __FILE__, __LINE__));
+  CHECK(StealUncaughtToString(cx, ListNames) == "uncaught exception: Object");
+
+  // Accessor properties are listed by key, without ever invoking the getter.
+  CHECK(!execDontReport("throw {get reason() { return 'boom'; }};", __FILE__,
+                        __LINE__));
+  CHECK(StealUncaughtToString(cx, ListNames) ==
+        "uncaught exception: Object { reason }");
+
+  // Uses object's ClassName when there are no properties.
+  CHECK(!execDontReport("throw new Map();", __FILE__, __LINE__));
+  CHECK(StealUncaughtToString(cx, ListNames) == "uncaught exception: Map");
+
+  // NoSideEffects keeps reporting the bare class name: that string is exposed
+  // to web content through window.onerror.
+  CHECK(!execDontReport("throw {reason: 'boom'};", __FILE__, __LINE__));
+  CHECK(StealUncaughtToString(cx, NoSideEffects) ==
+        "uncaught exception: Object");
+
+  return true;
+}
+END_TEST(testPrintError_UncaughtObjectPreview)

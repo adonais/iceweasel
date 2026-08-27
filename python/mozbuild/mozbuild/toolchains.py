@@ -61,13 +61,16 @@ def toolchain_task_definitions():
             check=False,
             cwd=root_dir,
             env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            errors="replace",
         )
 
         if result.returncode != 0:
             raise RuntimeError(
-                f"mach taskgraph failed in toolchain.py (exit {result.returncode})"
+                f"mach taskgraph failed in toolchain.py (exit {result.returncode}):\n"
+                f"{result.stdout}"
             )
 
         with open(output_file) as f:

@@ -1,0 +1,35 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# Bug 2059104: New Tab packages localized Fluent files into its train-hop XPI.
+# en-US always comes from the in-tree copy; every other locale is packaged only
+# for shipped builds, which enable this option. The locale set is read from
+# browser/locales/shipped-locales and iterated over by webext-glue/moz.build.
+# This file is only pulled in by the browser/extensions project configure, so
+# local browser builds leave NEWTAB_XPI_LOCALES unset and package only en-US.
+option(
+    "--enable-newtab-all-locales",
+    env="MOZ_BROWSER_NEWTAB_LOCALES_ALL",
+    help="Package all New Tab locales into the train-hop XPI",
+)
+
+
+@depends("--enable-newtab-all-locales", build_environment)
+@imports(_from="__builtin__", _import="open")
+@imports("os")
+def newtab_xpi_locales(enabled, build_env):
+    if not enabled:
+        return []
+    shipped_locales = os.path.join(
+        build_env.topsrcdir, "browser", "locales", "shipped-locales"
+    )
+    if not os.path.exists(shipped_locales):
+        return []
+    with open(shipped_locales, encoding="utf-8") as fh:
+        locales = [line.strip() for line in fh if line.strip()]
+    # en-US is packaged from the in-tree copy, not from the l10n clone.
+    return [locale for locale in locales if locale != "en-US"]
+
+
+set_config("NEWTAB_XPI_LOCALES", newtab_xpi_locales)

@@ -13,9 +13,11 @@
 }
 
 :host([type="split"]) {
+  --button-split-separator-height: 50%;
+
   display: flex;
   justify-content: flex-start;
-  gap: var(--space-xxsmall);
+  gap: var(--button-gap-split);
 
   button {
     min-width: fit-content;
@@ -36,12 +38,49 @@
   #main-button .button-background {
     border-start-end-radius: 0;
     border-end-end-radius: 0;
+    border-inline-end-width: var(--button-border-width-split);
   }
 
   #chevron-button .button-background {
     border-start-start-radius: 0;
     border-end-start-radius: 0;
+    border-inline-start-width: var(--button-border-width-split);
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset-block-start: 50%;
+      inset-inline-start: 0;
+      transform: translateY(-50%);
+      background-color: var(--button-split-separator-background-color);
+      /* This element is stylized like a border, so border tokens are appropriate. */
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      width: var(--border-width);
+      height: var(--button-split-separator-height);
+    }
   }
+}
+
+:host([type="split"][size="small"]) {
+  --button-split-separator-height: 64%;
+}
+
+:host([type="split"][size="small"]) .button-background img {
+  width: var(--icon-size-xsmall);
+  height: var(--icon-size-xsmall);
+}
+
+:host([type="split"]:hover) #chevron-button,
+:host([type="split"]) #chevron-button:focus-visible,
+:host([type="split"]) :focus-visible ~ #chevron-button,
+:host([type="split"]) button:is([aria-expanded="true"], [aria-pressed="true"]) {
+  .button-background::before {
+    background-color: transparent;
+  }
+}
+
+:host([type="split"]) button:focus-visible {
+  z-index: 1;
 }
 
 button {
@@ -346,6 +385,8 @@ button {
     background-repeat: no-repeat;
   }
 
+  /* Small subtree */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   &[type~="icon"]:not(.labelled),
   &:not(.labelled):has(img) {
     width: var(--button-size-icon);

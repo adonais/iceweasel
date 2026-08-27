@@ -11,3 +11,7 @@ prefs = [
 ]
 
 ["browser_pivot.js"]
+support-files = [
+  "doc_pivot.html",
+  "doc_pivot_embedded.html",
+]

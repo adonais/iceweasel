@@ -104,6 +104,65 @@ add_task(async function test_set_orientation_override_in_different_contexts() {
   BrowserTestUtils.removeTab(tab2);
 });
 
+add_task(async function test_set_orientation_override_in_discarded_frame() {
+  const tab = BrowserTestUtils.addTab(gBrowser, PAGE_URL);
+  const browser = gBrowser.getBrowserForTab(tab);
+
+  await BrowserTestUtils.browserLoaded(browser);
+
+  info("Set orientation override before the frame is created");
+  browser.browsingContext.setOrientationOverride("landscape-primary", 90);
+
+  const FRAME_URL =
+    "https://example.com/document-builder.sjs?html=<h1>Frame</h1>";
+
+  const orientation = await SpecialPowers.spawn(
+    browser,
+    [FRAME_URL],
+    async url => {
+      const iframe = content.document.createElement("iframe");
+      const loaded = new Promise(resolve =>
+        iframe.addEventListener("load", resolve, { once: true })
+      );
+      iframe.src = url;
+      content.document.body.appendChild(iframe);
+      await loaded;
+
+      const frameWindow = iframe.contentWindow;
+      iframe.remove();
+
+      // Let the frame loader be destroyed and the browsing context be discarded
+      // before the frame's screen is created below.
+      await new Promise(resolve => content.setTimeout(resolve, 0));
+
+      const orientation = frameWindow.screen.orientation;
+
+      return {
+        angle: orientation.angle,
+        type: orientation.type,
+      };
+    }
+  );
+
+  ok(
+    [
+      "portrait-primary",
+      "portrait-secondary",
+      "landscape-primary",
+      "landscape-secondary",
+    ].includes(orientation.type),
+    `screen.orientation.type in the discarded frame is a valid value, got ${orientation.type}`
+  );
+  is(
+    typeof orientation.angle,
+    "number",
+    "screen.orientation.angle in the discarded frame is a number"
+  );
+
+  browser.browsingContext.resetOrientationOverride();
+  BrowserTestUtils.removeTab(tab);
+});
+
 async function assertOrientationOverride(
   browser,
   expectedAngleValue,

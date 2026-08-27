@@ -383,6 +383,15 @@ CrashType:
   type: string
   scope: ping
 
+CrashSignatureOverrideForTesting:
+  description: >
+    Holds a fixed crash signature that overrides the one test automation would
+    otherwise derive from the crashing stack. When present, test automation
+    reports the crash under this signature. This only affects test automation;
+    production crash reporting (e.g. Socorro) ignores it.
+  type: string
+  scope: report
+
 ContentSandboxCapabilities:
   description: >
     List of capabilities of the content process sandbox.
@@ -649,6 +658,22 @@ InstallTime:
   description: >
     The time when Firefox was installed expressed as seconds since the Epoch
   type: u64
+  scope: ping
+  glean:
+    type: timespan
+    time_unit: second
+    custom_convert: duration_seconds
+  bugs:
+    - 2049748
+
+IntentionalCrashForTesting:
+  description: >
+    Set by test automation when it deliberately crashes a process and expects
+    that crash to happen. When present, mozcrash does not treat the crash as a
+    test failure. This must only ever be set under test-specific configuration;
+    production crashes must never carry it, otherwise real failures would be
+    silently ignored.
+  type: boolean
   scope: report
 
 ipc_channel_error:

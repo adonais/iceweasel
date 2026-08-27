@@ -4,6 +4,7 @@
 
 #include "TextFormat.h"
 
+#include "mozilla/dom/BindingUtils.h"
 #include "nsIGlobalObject.h"
 
 namespace mozilla::dom {
@@ -33,6 +34,22 @@ already_AddRefed<TextFormat> TextFormat::Constructor(
     const GlobalObject& aGlobal, const TextFormatInit& aOptions) {
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
   return MakeAndAddRef<TextFormat>(global, aOptions);
+}
+
+std::ostream& operator<<(std::ostream& aStream, const TextFormat& aFormat) {
+  return aStream << "{ range=" << aFormat.RangeStart() << "-"
+                 << aFormat.RangeEnd()
+                 << ", underlineStyle=" << aFormat.UnderlineStyle()
+                 << ", underlineThickness=" << aFormat.UnderlineThickness()
+                 << " }";
+}
+
+std::ostream& operator<<(std::ostream& aStream, UnderlineStyle aStyle) {
+  return aStream << GetEnumString(aStyle);
+}
+
+std::ostream& operator<<(std::ostream& aStream, UnderlineThickness aThickness) {
+  return aStream << GetEnumString(aThickness);
 }
 
 }  // namespace mozilla::dom

@@ -1,0 +1,8 @@
+# Any copyright is dedicated to the Public Domain.
+# http://creativecommons.org/publicdomain/zero/1.0/
+
+# Cargo does the linking, so the USE_LIBS is only for build ordering: the
+# archive has to exist before cargo runs.
+USE_LIBS += ["frob"]
+
+RustLibrary("test-library", output_category="uniffi-target")

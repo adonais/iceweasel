@@ -49,7 +49,7 @@ class DrawTargetRecording final : public DrawTarget {
   virtual void Destination(const char* aDestination,
                            const Point& aPoint) override;
 
-  virtual void AccessibleId(uint64_t aBrowsingContextId, uint64_t aAccId) final;
+  virtual void AccessibleId(uint64_t aInnerWindowId, uint64_t aAccId) final;
 
   virtual already_AddRefed<SourceSurface> Snapshot() override;
   virtual already_AddRefed<SourceSurface> IntoLuminanceSource(
@@ -464,9 +464,6 @@ class DrawTargetRecording final : public DrawTarget {
                   const Pattern& aPattern,
                   const DrawOptions& aOptions = DrawOptions(),
                   const StrokeOptions* aStrokeOptions = nullptr);
-
-  bool TryToReplaySurface(SourceSurface* aSurface, const Rect& aDest,
-                          const Rect& aSource) override;
 
   void MarkChanged();
 

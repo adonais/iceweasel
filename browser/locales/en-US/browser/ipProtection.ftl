@@ -119,6 +119,12 @@ ipprotection-location-selection-callout-description-1 = <a data-l10n-name="learn
 ipprotection-location-selection-callout-primary-button = Try it
 ipprotection-location-selection-callout-secondary-button = Dismiss
 
+## VPN for Android promo callout
+
+ipprotection-android-promo-callout-title = Take built-in VPN with you on Android
+ipprotection-android-promo-callout-description = Scan the QR code to get { -brand-product-name } for Android and turn on built-in VPN for more privacy on the go. Coming soon to iOS.
+ipprotection-android-promo-callout-primary-button = Got it
+
 ## Panel
 
 # Also used for the callout shown in private browsing

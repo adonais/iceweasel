@@ -27,6 +27,7 @@ GMPVideoDecoderChild::~GMPVideoDecoderChild() {
   // the worker thread.
   if (mVideoDecoder) {
     mVideoDecoder->DecodingComplete();
+    RemovePluginObject();
   }
 }
 
@@ -38,6 +39,7 @@ void GMPVideoDecoderChild::Init(GMPVideoDecoder* aDecoder) {
   MOZ_ASSERT(aDecoder,
              "Cannot initialize video decoder child without a video decoder!");
   mVideoDecoder = aDecoder;
+  AddPluginObject();
 }
 
 void GMPVideoDecoderChild::Decoded(GMPVideoi420Frame* aDecodedFrame) {

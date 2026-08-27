@@ -48,9 +48,7 @@ else:
     # Common source files.
     SOURCES += [
         "/js/src/ctypes/libffi/src/closures.c",
-        "/js/src/ctypes/libffi/src/java_raw_api.c",
         "/js/src/ctypes/libffi/src/prep_cif.c",
-        "/js/src/ctypes/libffi/src/raw_api.c",
         "/js/src/ctypes/libffi/src/tramp.c",
         "/js/src/ctypes/libffi/src/types.c",
     ]

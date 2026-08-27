@@ -727,3 +727,235 @@ add_task(async function test_pinned_tab_selected_marker() {
   SidebarTestUtils.closePanel(window);
   await SpecialPowers.popPrefEnv();
 });
+
+add_task(async function test_inactive_window_deemphasizes_selected_border() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.nova.enabled", true]],
+  });
+
+  const component = await showOpenTabsPanel();
+  await BrowserTestUtils.waitForMutationCondition(
+    component.shadowRoot,
+    { childList: true, subtree: true },
+    () => component.shadowRoot.querySelectorAll("moz-card").length === 1
+  );
+
+  const secondWindow = await BrowserTestUtils.openNewBrowserWindow();
+  await BrowserTestUtils.openNewForegroundTab(
+    secondWindow.gBrowser,
+    "data:text/html,<title>Inactive</title>"
+  );
+  const pinnedTab = secondWindow.gBrowser.tabs[0];
+  secondWindow.gBrowser.pinTab(pinnedTab);
+  secondWindow.gBrowser.selectedTab = pinnedTab;
+
+  await BrowserTestUtils.waitForMutationCondition(
+    component.shadowRoot,
+    { childList: true, subtree: true },
+    () => component.shadowRoot.querySelectorAll("moz-card").length === 2
+  );
+
+  const cards = component.shadowRoot.querySelectorAll("moz-card");
+  const currentList = cards[0].querySelector("sidebar-tab-list");
+  const inactiveList = cards[1].querySelector("sidebar-tab-list");
+
+  await TestUtils.waitForCondition(
+    () => inactiveList.hasAttribute("inactive-window"),
+    "The non-current window's tab list is marked inactive."
+  );
+  Assert.ok(
+    !currentList.hasAttribute("inactive-window"),
+    "The current window's tab list is not marked inactive."
+  );
+
+  await BrowserTestUtils.waitForMutationCondition(
+    inactiveList.shadowRoot,
+    { childList: true, subtree: true, attributes: true },
+    () =>
+      !![...inactiveList.rowEls].length &&
+      [...inactiveList.rowEls].every(row => row.hasAttribute("inactive-window"))
+  );
+  Assert.ok(
+    [...currentList.rowEls].every(row => !row.hasAttribute("inactive-window")),
+    "Rows in the current window are not marked inactive."
+  );
+
+  const inactivePinnedButton = await TestUtils.waitForCondition(() =>
+    cards[1].querySelector(".pinned-tabs moz-button.selected")
+  );
+  Assert.ok(
+    inactivePinnedButton.classList.contains("inactive"),
+    "The selected pinned tab in a non-current window is marked inactive."
+  );
+
+  await BrowserTestUtils.closeWindow(secondWindow);
+  SidebarTestUtils.closePanel(window);
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_context_menu_close_tab() {
+  const url = "data:text/html,CloseMe";
+  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+
+  const component = await showOpenTabsPanel();
+  const tabList = getTabList(component);
+  await waitForRowCount(tabList, getVisibleTabCount());
+
+  const row = [...tabList.rowEls].find(r => r.url === url);
+  Assert.ok(row, "Found the row for the opened tab.");
+
+  await activateContextMenuItem(
+    row.mainEl,
+    "sidebar-opentabs-context-close-tab"
+  );
+  await BrowserTestUtils.waitForMutationCondition(
+    gBrowser.tabContainer,
+    { childList: true, subtree: true },
+    () => !gBrowser.tabs.includes(tab)
+  );
+  Assert.ok(!gBrowser.tabs.includes(tab), "The context menu closed the tab.");
+
+  SidebarTestUtils.closePanel(window);
+});
+
+add_task(async function test_context_menu_copy_link() {
+  const url = "data:text/html,CopyMe";
+  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+
+  const component = await showOpenTabsPanel();
+  const tabList = getTabList(component);
+  await waitForRowCount(tabList, getVisibleTabCount());
+
+  const row = [...tabList.rowEls].find(r => r.url === url);
+  Assert.ok(row, "Found the row for the opened tab.");
+
+  await activateContextMenuItem(
+    row.mainEl,
+    "sidebar-opentabs-context-copy-link"
+  );
+  await TestUtils.waitForCondition(
+    () => SpecialPowers.getClipboardData("text/plain") === url,
+    "The context menu copied the tab's URL to the clipboard."
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  SidebarTestUtils.closePanel(window);
+});
+
+async function selectSortOption(component, sortItemProp) {
+  const content = SidebarController.browser.contentWindow;
+  const menu = component._menu;
+  const menuShown = BrowserTestUtils.waitForEvent(menu, "popupshown");
+  EventUtils.synthesizeMouseAtCenter(component.menuButton, {}, content);
+  await menuShown;
+
+  const menuHidden = BrowserTestUtils.waitForEvent(menu, "popuphidden");
+  menu.activateItem(component[sortItemProp]);
+  await menuHidden;
+  await component.updateComplete;
+}
+
+add_task(async function test_opentabs_sort_menu() {
+  const urlB = "data:text/html,sortb";
+  const urlA = "data:text/html,sorta";
+  // Open B first, then A, so tab-strip order is [B, A] and A is most recent.
+  const tabB = await BrowserTestUtils.openNewForegroundTab(gBrowser, urlB);
+  const tabA = await BrowserTestUtils.openNewForegroundTab(gBrowser, urlA);
+
+  const component = await showOpenTabsPanel();
+  const tabList = getTabList(component);
+  await waitForRowCount(tabList, getVisibleTabCount());
+
+  const rowUrls = () => [...tabList.rowEls].map(row => row.url);
+  const orderedByUrl = (first, second) => {
+    const urls = rowUrls();
+    const a = urls.indexOf(first);
+    const b = urls.indexOf(second);
+    return a !== -1 && b !== -1 && a < b;
+  };
+
+  Assert.equal(
+    component.sortOption,
+    "tabStripOrder",
+    "The panel defaults to tab-strip order."
+  );
+  Assert.ok(
+    orderedByUrl(urlB, urlA),
+    "Tab order lists the earlier-opened tab first."
+  );
+
+  info("Sort by most recent.");
+  await selectSortOption(component, "_menuSortByRecency");
+  Assert.equal(component.sortOption, "recency", "Sort option is recency.");
+  Assert.equal(
+    Services.prefs.getStringPref("sidebar.openTabsPanel.sortOption"),
+    "recency",
+    "The recency choice is persisted to the pref."
+  );
+  Assert.ok(
+    component._menuSortByRecency.hasAttribute("checked"),
+    "The Most recent menu item is checked."
+  );
+  Assert.ok(
+    !component._menuSortByOrder.hasAttribute("checked"),
+    "The Tab order menu item is not checked."
+  );
+  await BrowserTestUtils.waitForMutationCondition(
+    tabList.shadowRoot,
+    { childList: true, subtree: true },
+    () => orderedByUrl(urlA, urlB)
+  );
+
+  info("Sort by tab order.");
+  await selectSortOption(component, "_menuSortByOrder");
+  Assert.equal(
+    component.sortOption,
+    "tabStripOrder",
+    "Sort option is tab-strip order."
+  );
+  Assert.equal(
+    Services.prefs.getStringPref("sidebar.openTabsPanel.sortOption"),
+    "tabStripOrder",
+    "The tab-order choice is persisted to the pref."
+  );
+  Assert.ok(
+    component._menuSortByOrder.hasAttribute("checked"),
+    "The Tab order menu item is checked."
+  );
+  await BrowserTestUtils.waitForMutationCondition(
+    tabList.shadowRoot,
+    { childList: true, subtree: true },
+    () => orderedByUrl(urlB, urlA)
+  );
+
+  BrowserTestUtils.removeTab(tabA);
+  BrowserTestUtils.removeTab(tabB);
+  SidebarTestUtils.closePanel(window);
+  Services.prefs.clearUserPref("sidebar.openTabsPanel.sortOption");
+});
+
+add_task(async function test_opentabs_sort_persists() {
+  let component = await showOpenTabsPanel();
+
+  info("Choose most recent, then close the sidebar.");
+  await selectSortOption(component, "_menuSortByRecency");
+  await SidebarController.waitUntilStable();
+  SidebarController.hide();
+
+  info("Reopen the panel and verify the sort option was restored.");
+  component = await showOpenTabsPanel();
+  const recencyItem = component._menuSortByRecency;
+  await BrowserTestUtils.waitForMutationCondition(
+    recencyItem,
+    { attributes: true, attributeFilter: ["checked"] },
+    () => recencyItem.hasAttribute("checked")
+  );
+  Assert.equal(
+    component.sortOption,
+    "recency",
+    "The panel restored the persisted sort option on open."
+  );
+
+  SidebarController.hide();
+  Services.prefs.clearUserPref("sidebar.openTabsPanel.sortOption");
+});

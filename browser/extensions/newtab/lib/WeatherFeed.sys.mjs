@@ -337,6 +337,22 @@ export class WeatherFeed {
         let country;
         let region;
         if (!locationName) {
+          const { values: prefValues } = this.store.getState().Prefs;
+          const optInRequired =
+            prefValues["system.showWeatherOptIn"] ||
+            prefValues.trainhopConfig?.weather?.weatherOptInEnabled;
+          // @nova-cleanup(remove-conditional): Remove the PREF_NOVA_ENABLED guard
+          // once the legacy widget is gone; the opt-in fetch gate should then apply
+          // unconditionally. The guard exists because the legacy widget renders its
+          // opt-in dialog only over a fetched suggestion, so gating its fetch would
+          // suppress the dialog.
+          if (
+            prefValues[PREF_NOVA_ENABLED] &&
+            optInRequired &&
+            !prefValues["weather.optInAccepted"]
+          ) {
+            return { suggestions: [], hourlyForecasts: [] };
+          }
           const geolocation = await lazy.GeolocationUtils.geolocation();
           if (!geolocation) {
             return { suggestions: [], hourlyForecasts: [] };

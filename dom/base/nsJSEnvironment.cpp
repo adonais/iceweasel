@@ -8,6 +8,7 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "nsAtom.h"
 #include "nsCOMPtr.h"
+#include "nsCRT.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollector.h"
 #include "nsDOMCID.h"
@@ -66,6 +67,7 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/TaskController.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanvasRenderingContext2DBinding.h"
@@ -89,7 +91,6 @@
 #include "prthread.h"
 #include "xpcpublic.h"
 #if defined(MOZ_MEMORY)
-#  include "mozilla/TaskController.h"
 #  include "mozmemory.h"
 #endif
 
@@ -1789,8 +1790,10 @@ static bool ConsumeStream(JSContext* aCx, JS::Handle<JSObject*> aObj,
 
 static JS::SliceBudget CreateGCSliceBudget(JS::GCReason aReason,
                                            int64_t aMillis) {
+  IdleTaskManager* manager = TaskController::Get()->GetIdleTaskManager();
+  bool isIdle = bool(manager->State().GetCachedIdleDeadline());
   return sScheduler->CreateGCSliceBudget(
-      mozilla::TimeDuration::FromMilliseconds(aMillis), false, false);
+      mozilla::TimeDuration::FromMilliseconds(aMillis), isIdle, false);
 }
 
 void nsJSContext::EnsureStatics() {

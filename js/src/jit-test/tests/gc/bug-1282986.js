@@ -8,7 +8,7 @@ loadFile(lfLogBuffer);
 function loadFile(lfVarx) {
     oomTest(function() {
         let m = parseModule(lfVarx);
-        moduleLink(m);
+        moduleLoadAndLink(m);
         moduleEvaluate(m);
     });
 }

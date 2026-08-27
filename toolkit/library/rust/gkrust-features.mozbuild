@@ -80,6 +80,9 @@ if CONFIG["MOZ_ICU4X"]:
 if CONFIG["USE_LIBZ_RS"]:
     gkrust_features += ["libz-rs-sys"]
 
+if CONFIG["MOZ_FONTATIONS"]:
+    gkrust_features += ["fontations"]
+
 if CONFIG["MOZ_JXL"]:
     gkrust_features += ["jxl_decoder"]
 

@@ -212,10 +212,6 @@ nsresult LoadInfoArgsToLoadInfo(const mozilla::net::LoadInfoArgs& aLoadInfoArgs,
          originTrialCoepCredentiallessEnabledForTopLevel, false)               \
   SETTER(bool, IsOriginTrialCoepCredentiallessEnabledForTopLevel)              \
                                                                                \
-  GETTER(bool, HasInjectedCookieForCookieBannerHandling,                       \
-         hasInjectedCookieForCookieBannerHandling, false)                      \
-  SETTER(bool, HasInjectedCookieForCookieBannerHandling)                       \
-                                                                               \
   GETTER(nsILoadInfo::HTTPSUpgradeTelemetryType, HttpsUpgradeTelemetry,        \
          httpsUpgradeTelemetry, nsILoadInfo::NOT_INITIALIZED)                  \
   SETTER(nsILoadInfo::HTTPSUpgradeTelemetryType, HttpsUpgradeTelemetry)        \

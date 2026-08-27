@@ -11,6 +11,7 @@
 #include "imgIEncoder.h"
 #include "imgITools.h"
 #include "mozilla/Logging.h"
+#include "mozilla/dom/AudioSessionBinding.h"
 #include "mozilla/dom/ChromeUtilsBinding.h"
 #include "mozilla/dom/MediaControllerBinding.h"
 #include "nsReadableUtils.h"
@@ -19,6 +20,24 @@
 extern mozilla::LazyLogModule gMediaControlLog;
 
 namespace mozilla::dom {
+
+inline nsLiteralCString AudioSessionTypeToGleanLabel(AudioSessionType aType) {
+  switch (aType) {
+    case AudioSessionType::Auto:
+      return "auto"_ns;
+    case AudioSessionType::Ambient:
+      return "ambient"_ns;
+    case AudioSessionType::Transient:
+      return "transient"_ns;
+    case AudioSessionType::Transient_solo:
+      return "transient_solo"_ns;
+    case AudioSessionType::Playback:
+      return "playback"_ns;
+    case AudioSessionType::Play_and_record:
+      return "play_and_record"_ns;
+  }
+  return "auto"_ns;
+}
 
 inline const char* ToMediaControlKeyStr(const Maybe<MediaControlKey>& aKey) {
   if (aKey.isNothing()) {

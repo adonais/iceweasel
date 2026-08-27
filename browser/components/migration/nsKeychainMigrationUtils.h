@@ -14,10 +14,10 @@ class nsKeychainMigrationUtils : public nsIKeychainMigrationUtils {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIKEYCHAINMIGRATIONUTILS
 
-  nsKeychainMigrationUtils() {};
+  nsKeychainMigrationUtils() = default;
 
  protected:
-  virtual ~nsKeychainMigrationUtils() {};
+  virtual ~nsKeychainMigrationUtils() = default;
 };
 
 #endif

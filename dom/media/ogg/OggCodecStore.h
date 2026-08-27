@@ -16,7 +16,7 @@ namespace mozilla {
 // streams.
 class OggCodecStore {
  public:
-  OggCodecStore();
+  OggCodecStore() = default;
   OggCodecState* Add(uint32_t serial, UniquePtr<OggCodecState> codecState);
   bool Contains(uint32_t serial);
   OggCodecState* Get(uint32_t serial);
@@ -27,7 +27,7 @@ class OggCodecStore {
   nsClassHashtable<nsUint32HashKey, OggCodecState> mCodecStates;
 
   // Protects the |mCodecStates| and the |mKnownStreams| members.
-  Monitor mMonitor MOZ_UNANNOTATED;
+  Monitor mMonitor MOZ_UNANNOTATED{"CodecStore"};
 };
 
 }  // namespace mozilla

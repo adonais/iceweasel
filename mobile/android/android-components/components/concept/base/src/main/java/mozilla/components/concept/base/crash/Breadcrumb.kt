@@ -4,7 +4,6 @@
 
 package mozilla.components.concept.base.crash
 
-import android.annotation.SuppressLint
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 import org.json.JSONObject
@@ -16,7 +15,6 @@ import java.util.TimeZone
 /**
  * Represents a single crash breadcrumb.
  */
-@SuppressLint("ParcelCreator")
 @Parcelize
 data class Breadcrumb(
     /**

@@ -65,7 +65,6 @@ class Ping {
    * @param aCallback - The callback to call on the next submit.
    */
   void TestBeforeNextSubmit(PingTestCallback&& aCallback) const;
-  void TestBeforeNextSubmitFallible(FalliblePingTestCallback&& aCallback) const;
 
   /**
    * **Test-only API**
@@ -94,7 +93,11 @@ class Ping {
   void SetEnabled(bool aValue) const;
 
  private:
-  nsresult SubmitInternal(const nsACString& aReason = nsCString()) const;
+  nsresult SubmitInternal(const nsACString& aReason,
+                          const nsACString& aPingName) const;
+
+  void TestBeforeNextSubmitFallible(FalliblePingTestCallback&& aCallback,
+                                    const nsACString& aPingName) const;
 
   const uint32_t mId;
 };
@@ -106,12 +109,14 @@ class GleanPing final : public nsIGleanPing {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIGLEANPING
 
-  explicit GleanPing(uint32_t aId) : mPing(aId) {}
+  explicit GleanPing(uint32_t aId, const nsCString aName)
+      : mPing(aId), mName(aName) {}
 
  private:
   virtual ~GleanPing() = default;
 
   const impl::Ping mPing;
+  const nsCString mName;
 };
 
 }  // namespace mozilla::glean

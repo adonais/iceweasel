@@ -11,7 +11,10 @@
 
 [Exposed=Window]
 interface SVGPointList {
+  readonly attribute unsigned long length;
+  [BinaryName="Length"]
   readonly attribute unsigned long numberOfItems;
+
   [Throws]
   undefined clear();
   [Throws]
@@ -26,7 +29,6 @@ interface SVGPointList {
   SVGPoint removeItem(unsigned long index);
   [Throws]
   SVGPoint appendItem(SVGPoint newItem);
-
-  // Mozilla-specific stuff
-  readonly attribute unsigned long length; // synonym for numberOfItems
+  [Throws]
+  setter undefined (unsigned long index, SVGPoint newItem);
 };

@@ -88,26 +88,40 @@ export function isParentProcess(browsingContext) {
 }
 
 /**
- * Check if the browsing context is running in a web content process,
- * ie. a process that exclusively hosts regular web pages (http, https,
- * etc.). This excludes the parent process, extension processes,
- * privileged about: content processes, and file content processes.
+ * Check if the browsing context has elevated privileges, i.e., it is running
+ * in the parent process, an extension process, or a privileged about: process.
+ * Regular web (http, https) and file content processes are not considered
+ * privileged for WebDriver.
+ *
+ * A context in a privileged process with a null principal (e.g. about:blank
+ * loaded as a placeholder before session restore completes) is not considered
+ * privileged because the null principal has no elevated API access.
  *
  * @param {BrowsingContext} browsingContext
  *     Browsing context to check.
  *
  * @returns {boolean}
- *     True if the browsing context is in a web content process.
+ *     True if the browsing context has elevated privileges.
  */
-export function isWebContentProcess(browsingContext) {
+export function isPrivilegedContext(browsingContext) {
   if (CanonicalBrowsingContext.isInstance(browsingContext)) {
     const remoteType = browsingContext.currentWindowGlobal?.remoteType;
-    return remoteType !== null && lazy.E10SUtils.isWebRemoteType(remoteType);
+
+    if (
+      remoteType &&
+      (lazy.E10SUtils.isWebRemoteType(remoteType) ||
+        remoteType === lazy.E10SUtils.FILE_REMOTE_TYPE)
+    ) {
+      return false;
+    }
+
+    const principal = browsingContext.currentWindowGlobal?.documentPrincipal;
+    return principal != null && !principal.isNullPrincipal;
   }
 
   // If `browsingContext` is not a `CanonicalBrowsingContext`, then we are
   // necessarily in a content process page.
-  return true;
+  return false;
 }
 
 /**
@@ -132,14 +146,14 @@ export function isWebdriverSafeNavigationURL(uri, browsingContext) {
 
   // For other protocols, check for the URI_INHERITS_SECURITY_CONTEXT flag.
   // Protocols like "data:" and "javascript:" inherit the loading document’s
-  // security context and are only safe when the browsing context is in a
-  // web content process and the current document does not have the system
+  // security context and are only safe when the browsing context is not in a
+  // privileged process and the current document does not have the system
   // principal.
   const flags = Services.io.getDynamicProtocolFlags(uri);
   if (flags & Ci.nsIProtocolHandler.URI_INHERITS_SECURITY_CONTEXT) {
     const principal = browsingContext.currentWindowGlobal?.documentPrincipal;
     return (
-      isWebContentProcess(browsingContext) && !principal?.isSystemPrincipal
+      !isPrivilegedContext(browsingContext) && !principal?.isSystemPrincipal
     );
   }
 

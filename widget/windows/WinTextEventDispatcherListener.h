@@ -36,8 +36,8 @@ class WinTextEventDispatcherListener final
                             uint32_t aIndexOfKeypress, void* aData) override;
 
  private:
-  WinTextEventDispatcherListener();
-  virtual ~WinTextEventDispatcherListener();
+  WinTextEventDispatcherListener() = default;
+  virtual ~WinTextEventDispatcherListener() = default;
 
   static StaticRefPtr<WinTextEventDispatcherListener> sInstance;
 };

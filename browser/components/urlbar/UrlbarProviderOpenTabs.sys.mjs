@@ -7,10 +7,7 @@
  * It is also used to register and unregister open tabs.
  */
 
-import {
-  UrlbarProvider,
-  UrlbarUtils,
-} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -25,8 +22,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 ChromeUtils.defineLazyGetter(lazy, "logger", () =>
   lazy.UrlbarShared.getLogger({ prefix: "Provider.OpenTabs" })
 );
-
-const PRIVATE_USER_CONTEXT_ID = -1;
 
 /**
  * Maps the open tabs by userContextId, then by groupId.
@@ -44,10 +39,10 @@ export class UrlbarProviderOpenTabs extends UrlbarProvider {
   }
 
   /**
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof lazy.UrlbarShared.PROVIDER_TYPE>}
    */
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.PROFILE;
+    return lazy.UrlbarShared.PROVIDER_TYPE.PROFILE;
   }
 
   /**
@@ -83,9 +78,11 @@ export class UrlbarProviderOpenTabs extends UrlbarProvider {
     // means we're getting sometimes a string, sometimes an integer. As we're
     // using this as key of a Map, we must treat it consistently.
     userContextId = parseInt(`${userContextId}`);
-    userContextId = UrlbarProviderOpenTabs.getUserContextIdForOpenPagesTable(
-      userContextId,
-      isInPrivateWindow
+    userContextId = Number(
+      lazy.UrlbarShared.getUserContextIdForOpenPagesTable(
+        userContextId,
+        isInPrivateWindow
+      )
     );
 
     let groupEntries = gOpenTabUrls.get(userContextId);
@@ -112,7 +109,7 @@ export class UrlbarProviderOpenTabs extends UrlbarProvider {
     let uniqueUrls = new Map();
     if (isInPrivateWindow) {
       let urlInfo = UrlbarProviderOpenTabs.getOpenTabUrlsForUserContextId(
-        PRIVATE_USER_CONTEXT_ID,
+        lazy.UrlbarShared.PRIVATE_USER_CONTEXT_ID,
         true
       );
       for (let [url, contextId, groupId] of urlInfo) {
@@ -120,7 +117,7 @@ export class UrlbarProviderOpenTabs extends UrlbarProvider {
       }
     } else {
       gOpenTabUrls.forEach((groups, userContextId) => {
-        if (userContextId == PRIVATE_USER_CONTEXT_ID) {
+        if (userContextId == lazy.UrlbarShared.PRIVATE_USER_CONTEXT_ID) {
           return;
         }
 
@@ -157,38 +154,6 @@ export class UrlbarProviderOpenTabs extends UrlbarProvider {
       tabGroup: r.getResultByName("groupId"),
       count: r.getResultByName("open_count"),
     }));
-  }
-
-  /**
-   * Return userContextId that is used in the moz_openpages_temp table and
-   * returned as part of the payload. It differs only for private windows.
-   *
-   * @param {number} userContextId Containers user context id
-   * @param {boolean} isInPrivateWindow In private browsing window or not
-   * @returns {number} userContextId
-   */
-  static getUserContextIdForOpenPagesTable(userContextId, isInPrivateWindow) {
-    return isInPrivateWindow ? PRIVATE_USER_CONTEXT_ID : userContextId;
-  }
-
-  /**
-   * Return whether the provided userContextId is for a non-private tab.
-   *
-   * @param {number} userContextId the userContextId to evaluate
-   * @returns {boolean}
-   */
-  static isNonPrivateUserContextId(userContextId) {
-    return userContextId != PRIVATE_USER_CONTEXT_ID;
-  }
-
-  /**
-   * Return whether the provided userContextId is for a container.
-   *
-   * @param {number} userContextId the userContextId to evaluate
-   * @returns {boolean}
-   */
-  static isContainerUserContextId(userContextId) {
-    return userContextId > 0;
   }
 
   /**
@@ -239,9 +204,11 @@ export class UrlbarProviderOpenTabs extends UrlbarProvider {
       groupId,
       isInPrivateWindow,
     });
-    userContextId = UrlbarProviderOpenTabs.getUserContextIdForOpenPagesTable(
-      userContextId,
-      isInPrivateWindow
+    userContextId = Number(
+      lazy.UrlbarShared.getUserContextIdForOpenPagesTable(
+        userContextId,
+        isInPrivateWindow
+      )
     );
 
     let contextEntries = gOpenTabUrls.get(userContextId);
@@ -285,9 +252,11 @@ export class UrlbarProviderOpenTabs extends UrlbarProvider {
       groupId,
       isInPrivateWindow,
     });
-    userContextId = UrlbarProviderOpenTabs.getUserContextIdForOpenPagesTable(
-      userContextId,
-      isInPrivateWindow
+    userContextId = Number(
+      lazy.UrlbarShared.getUserContextIdForOpenPagesTable(
+        userContextId,
+        isInPrivateWindow
+      )
     );
 
     let contextEntries = gOpenTabUrls.get(userContextId);

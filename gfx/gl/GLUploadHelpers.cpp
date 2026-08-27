@@ -467,8 +467,12 @@ SurfaceFormat UploadImageDataToTexture(
         return SurfaceFormat::UNKNOWN;
       }
 
-      const unsigned char* rectData =
-          aData + DataOffset(rect.TopLeft(), aStride, aFormat);
+      // Compute the offset in uintptr_t space: aData may be nullptr when
+      // a PBO is bound (GL reinterprets the pointer as a byte offset into
+      // the buffer), and `nullptr + non-zero` is undefined behavior.
+      uintptr_t dataUint = reinterpret_cast<uintptr_t>(aData) +
+                           DataOffset(rect.TopLeft(), aStride, aFormat);
+      unsigned char* rectData = reinterpret_cast<unsigned char*>(dataUint);
 
       rect += aDstOffset;
       TexSubImage2DHelper(gl, aTextureTarget, 0, rect.X(), rect.Y(),
@@ -498,7 +502,9 @@ SurfaceFormat UploadSurfaceToTexture(GLContext* gl, DataSourceSurface* aSurface,
     return SurfaceFormat::UNKNOWN;
   }
 
-  unsigned char* data = map.GetData() + DataOffset(aSrcOffset, stride, format);
+  uintptr_t dataUint = reinterpret_cast<uintptr_t>(map.GetData()) +
+                       DataOffset(aSrcOffset, stride, format);
+  unsigned char* data = reinterpret_cast<unsigned char*>(dataUint);
   size.width -= aSrcOffset.x;
   size.height -= aSrcOffset.y;
 

@@ -584,6 +584,12 @@ void GMPChild::ActorDestroy(ActorDestroyReason aWhy) {
     mGMPContentChildren[i - 1]->Close();
   }
 
+  if (ShutdownPlatformAPI() ==
+      PlatformShutdownResult::PluginExecutionOutstanding) {
+    ProcessChild::QuickExit();
+    return;
+  }
+
   if (mGMPLoader) {
     mGMPLoader->Shutdown();
   }

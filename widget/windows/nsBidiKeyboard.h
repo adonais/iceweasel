@@ -10,7 +10,7 @@
 #include "nsIBidiKeyboard.h"
 
 class nsBidiKeyboard : public nsIBidiKeyboard {
-  virtual ~nsBidiKeyboard();
+  virtual ~nsBidiKeyboard() = default;
 
  public:
   NS_DECL_ISUPPORTS

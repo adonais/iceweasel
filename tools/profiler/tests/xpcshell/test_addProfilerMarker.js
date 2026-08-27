@@ -59,15 +59,17 @@ function expectNoData(marker) {
   );
 }
 
-function expectText(marker) {
+function expectText(marker, thread) {
   Assert.equal(
     typeof marker.data,
     "object",
     "The data property should be an object"
   );
   Assert.equal(marker.data.type, "Text", "Should be a Text marker");
+  // The Text marker's "name" field is a unique string, so the payload holds
+  // an index into the thread's string table.
   Assert.equal(
-    marker.data.name,
+    thread.stringTable[marker.data.name],
     markerText,
     "The payload should contain the expected text"
   );
@@ -151,13 +153,13 @@ add_task(async () => {
     expectDuration(m);
     expectNoData(m);
   });
-  testMarker([undefined, markerText], m => {
+  testMarker([undefined, markerText], (m, thread) => {
     expectNoDuration(m);
-    expectText(m);
+    expectText(m, thread);
   });
-  testMarker([startTime, markerText], m => {
+  testMarker([startTime, markerText], (m, thread) => {
     expectDuration(m);
-    expectText(m);
+    expectText(m, thread);
   });
 
   info("Record markers providing the duration as the startTime property.");
@@ -165,13 +167,13 @@ add_task(async () => {
     expectDuration(m);
     expectNoData(m);
   });
-  testMarker([{}, markerText], m => {
+  testMarker([{}, markerText], (m, thread) => {
     expectNoDuration(m);
-    expectText(m);
+    expectText(m, thread);
   });
-  testMarker([{ startTime }, markerText], m => {
+  testMarker([{ startTime }, markerText], (m, thread) => {
     expectDuration(m);
-    expectText(m);
+    expectText(m, thread);
   });
 
   info("Record markers to test the captureStack property.");
@@ -326,7 +328,7 @@ add_task(async function test_addMarkerWithNonPlainObject() {
   Assert.ok(errMarker, "Marker with Error data was recorded");
   Assert.equal(errMarker.data.type, "Text", "Should fall back to Text marker");
   Assert.equal(
-    errMarker.data.name,
+    mainThread.stringTable[errMarker.data.name],
     String(err),
     "Text payload should be the Error's string form"
   );
@@ -335,7 +337,7 @@ add_task(async function test_addMarkerWithNonPlainObject() {
   Assert.ok(arrMarker, "Marker with Array data was recorded");
   Assert.equal(arrMarker.data.type, "Text", "Should fall back to Text marker");
   Assert.equal(
-    arrMarker.data.name,
+    mainThread.stringTable[arrMarker.data.name],
     "1,2,3",
     "Text payload should be the Array's string form"
   );

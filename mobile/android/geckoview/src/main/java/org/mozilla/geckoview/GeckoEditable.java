@@ -139,7 +139,16 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
       if (mCancelled) {
         return;
       }
-      mSession.getTextInput().getDelegate().hideSoftInput(mSession);
+
+      // If View has no focus, keyboard will be handled by other focused View.
+      // So we shouldn't show/dismiss keyboard now.
+      final SessionTextInput textInput = mSession.getTextInput();
+      final View view = textInput.getView();
+      if (view != null && !view.hasFocus()) {
+        return;
+      }
+
+      textInput.getDelegate().hideSoftInput(mSession);
     }
 
     public void cancel() {

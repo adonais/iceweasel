@@ -234,7 +234,7 @@ nsresult NS_DispatchToMainThread(already_AddRefed<nsIRunnable> aEvent,
                                      aDispatchFlags & NS_DISPATCH_FALLIBLE);
   nsCOMPtr<nsIThread> thread;
   nsresult rv = NS_GetMainThread(getter_AddRefs(thread));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
+  if (NS_FAILED(rv)) {
     NS_ASSERTION(aDispatchFlags & NS_DISPATCH_FALLIBLE,
                  "Failed NS_DispatchToMainThread() in shutdown; leaking");
     return rv;

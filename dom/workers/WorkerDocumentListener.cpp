@@ -13,11 +13,6 @@
 
 namespace mozilla::dom {
 
-WorkerDocumentListener::WorkerDocumentListener()
-    : mMutex("mozilla::dom::WorkerDocumentListener::mMutex") {}
-
-WorkerDocumentListener::~WorkerDocumentListener() = default;
-
 RefPtr<WorkerDocumentListener> WorkerDocumentListener::Create(
     WorkerPrivate* aWorkerPrivate) {
   MOZ_ASSERT(aWorkerPrivate);

@@ -16,9 +16,9 @@ const sharedHead = do_get_file("shared-head.js", false);
 if (!sharedHead) {
   throw new Error("Could not load the shared head.");
 }
-Services.scriptloader.loadSubScript(
+Services.scriptloader.loadSubScriptWithOptions(
   Services.io.newFileURI(sharedHead).spec,
-  this
+  { target: this, allowUnsafeURL: true }
 );
 
 add_setup(ProfilerTestUtils.assertProfilerInactive);

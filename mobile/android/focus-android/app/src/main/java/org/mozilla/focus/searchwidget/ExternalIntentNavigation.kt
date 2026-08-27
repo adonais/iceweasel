@@ -8,6 +8,7 @@ import android.content.Context
 import android.os.Bundle
 import androidx.annotation.VisibleForTesting
 import mozilla.components.browser.state.state.SessionState
+import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.feature.search.widget.BaseVoiceSearchActivity
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.focus.GleanMetrics.SearchWidget
@@ -115,6 +116,7 @@ object ExternalIntentNavigation {
                     searchTerms = voiceSearchText,
                     selectTab = true,
                     private = true,
+                    flags = LoadUrlFlags.external(),
                 )
                 context.components.appStore.dispatch(AppAction.OpenTab(tabId))
                 true

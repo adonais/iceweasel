@@ -8,6 +8,7 @@
 
 dialog[insecureauth] {
   --icon-url: url("chrome://global/skin/icons/security-broken.svg");
+  --icon-stroke: var(--icon-color-critical);
 }
 
 #dialogGrid {

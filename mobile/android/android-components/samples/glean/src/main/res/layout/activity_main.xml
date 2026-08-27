@@ -33,8 +33,7 @@
         android:ems="10"
         android:hint="@string/string_list_input_hint"
         android:inputType="textPersonName"
-        android:autofillHints=""
-        tools:ignore="UnusedAttribute" />
+        android:autofillHints="" />
 
     <Button
         style="@style/Mozac.Widgets.NeutralButton"

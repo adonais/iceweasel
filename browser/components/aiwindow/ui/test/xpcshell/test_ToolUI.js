@@ -13,8 +13,15 @@ const { ChatConversation } = ChromeUtils.importESModule(
 const { tabManagementService } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/TabManagementService.sys.mjs"
 );
+const { BrowserWindowTracker } = ChromeUtils.importESModule(
+  "resource:///modules/BrowserWindowTracker.sys.mjs"
+);
+const { ToolUITelemetry } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/ToolUITelemetry.sys.mjs"
+);
 
 let gPermanentKeySeq = 0;
+let gMockWindows = [];
 
 // Build a mock tab with a unique permanentKey (the identity the resolver uses).
 function makeTab(url, { userContextId = 0, label = "Tab" } = {}) {
@@ -29,8 +36,39 @@ function makeTab(url, { userContextId = 0, label = "Tab" } = {}) {
 }
 
 function makeWindow(tabs, selectedTab = null) {
-  return { closed: false, gBrowser: { tabs, selectedTab } };
+  const win = {
+    closed: false,
+    gBrowser: { tabs, selectedTab },
+    // AIWindow.isAIWindowActive() checks for the ai-window attribute.
+    document: {
+      documentElement: { hasAttribute: name => name === "ai-window" },
+    },
+  };
+  gMockWindows.push(win);
+  return win;
 }
+
+// Reset mock windows before each task.
+const _addTask = add_task;
+add_task = (task, fn = task) =>
+  _addTask(task, async (...args) => {
+    gMockWindows = [];
+    return fn(...args);
+  });
+
+add_setup(function () {
+  const descriptor = Object.getOwnPropertyDescriptor(
+    BrowserWindowTracker,
+    "orderedWindows"
+  );
+  Object.defineProperty(BrowserWindowTracker, "orderedWindows", {
+    configurable: true,
+    get: () => gMockWindows,
+  });
+  registerCleanupFunction(() => {
+    Object.defineProperty(BrowserWindowTracker, "orderedWindows", descriptor);
+  });
+});
 
 // Build a token-bearing selection for the given mock tabs and register the
 // token -> permanentKey map under toolCallId
@@ -48,6 +86,22 @@ function registerSelection(toolCallId, tabs) {
   });
   ToolUI.registerTabKeys(toolCallId, tokenToKey);
   return { selectedTabs, tokenToKey };
+}
+
+// Build a conversation with a single assistant message carrying an
+// open_tabs tab-group-confirmation, ready to be updated via handleUpdate.
+function makeOpenTabsConfirmation(toolCallId) {
+  const conversation = new ChatConversation({});
+  conversation.addAssistantMessage("text", "Confirm?");
+  const assistantMessage = conversation.messages.find(
+    m => m.role === 1 && m.content?.type === "text"
+  );
+  assistantMessage.toolUIData = {
+    toolCallId,
+    uiType: "tab-group-confirmation",
+    properties: { actionType: "open_tabs" },
+  };
+  return { conversation, assistantMessage };
 }
 
 /**
@@ -194,7 +248,11 @@ add_task(async function test_handleUpdate_confirmation_success() {
   // Mock the tabManagementService for this test
   const originalCloseTabs = tabManagementService.closeTabs;
   tabManagementService.closeTabs = async function () {
-    return { operationId: "mock-operation-123" };
+    return {
+      operationId: "mock-operation-123",
+      requestedCount: 1,
+      failedTabs: [],
+    };
   };
 
   // Create a mock tab and register its token -> permanentKey selection.
@@ -229,13 +287,13 @@ add_task(async function test_handleUpdate_confirmation_success() {
   Assert.deepEqual(
     {
       selectedTabs: confirmedData.selectedTabs,
-      operationId: confirmedData.operationId,
+      operationIds: confirmedData.operationIds,
     },
     {
       ...updateData,
-      operationId: "mock-operation-123",
+      operationIds: ["mock-operation-123"],
     },
-    "Should add confirmedData to properties with operationId"
+    "Should add confirmedData to properties with operationIds"
   );
   Assert.ok(
     typeof confirmedData.actionTimestamp === "number" &&
@@ -276,7 +334,11 @@ add_task(async function test_handleUpdate_confirmation_resolves_tool_action() {
 
   const originalCloseTabs = tabManagementService.closeTabs;
   tabManagementService.closeTabs = async function () {
-    return { operationId: "mock-operation-789" };
+    return {
+      operationId: "mock-operation-789",
+      requestedCount: 1,
+      failedTabs: [],
+    };
   };
 
   const mockTab = makeTab("https://example.com", { label: "Test Tab" });
@@ -432,7 +494,7 @@ add_task(async function test_handleUpdate_undo_tab_close_success() {
             title: "Test Tab",
           },
         ],
-        operationId: "test-operation-123",
+        operationIds: ["test-operation-123"],
       },
     },
   };
@@ -443,6 +505,7 @@ add_task(async function test_handleUpdate_undo_tab_close_success() {
     return {
       restoredCount: 1,
       requestedCount: 1,
+      failedTabs: [],
     };
   };
 
@@ -459,7 +522,7 @@ add_task(async function test_handleUpdate_undo_tab_close_success() {
       toolCallId: "test-tool-123",
       updateType: "undo-tab-close",
       updateData: {
-        operationId: "test-operation-123",
+        operationIds: ["test-operation-123"],
         selectedTabs: [
           {
             linkedPanel: "panel-1",
@@ -587,7 +650,11 @@ add_task(async function test_closeSelectedTabs_partial_match() {
   let closedTabs = null;
   tabManagementService.closeTabs = async function ({ tabs }) {
     closedTabs = tabs;
-    return { operationId: "mock-operation-123" };
+    return {
+      operationId: "mock-operation-123",
+      requestedCount: tabs.length,
+      failedTabs: [],
+    };
   };
 
   // One selection resolves to a live tab
@@ -663,7 +730,11 @@ add_task(async function test_closeSelectedTabs_unloaded_tabs() {
   let closedTabs = null;
   tabManagementService.closeTabs = async function ({ tabs }) {
     closedTabs = tabs;
-    return { operationId: "mock-operation-123" };
+    return {
+      operationId: "mock-operation-123",
+      requestedCount: tabs.length,
+      failedTabs: [],
+    };
   };
 
   // Unloaded/lazy tabs still retain a linkedBrowser with a permanentKey.
@@ -720,7 +791,11 @@ add_task(async function test_closeSelectedTabs_duplicate_unloaded_tabs() {
   let closedTabs = null;
   tabManagementService.closeTabs = async function ({ tabs }) {
     closedTabs = tabs;
-    return { operationId: "mock-operation-123" };
+    return {
+      operationId: "mock-operation-123",
+      requestedCount: tabs.length,
+      failedTabs: [],
+    };
   };
 
   // Two tabs at the same URL and container, distinguished only by permanentKey.
@@ -778,7 +853,11 @@ add_task(
     let closedTabs = null;
     tabManagementService.closeTabs = async function ({ tabs }) {
       closedTabs = tabs;
-      return { operationId: "mock-operation-123" };
+      return {
+        operationId: "mock-operation-123",
+        requestedCount: tabs.length,
+        failedTabs: [],
+      };
     };
 
     // Two tabs share the same URL.
@@ -836,7 +915,11 @@ add_task(async function test_closeSelectedTabs_no_matches() {
   let closeTabsCalled = false;
   tabManagementService.closeTabs = async function () {
     closeTabsCalled = true;
-    return { operationId: "mock-operation-123" };
+    return {
+      operationId: "mock-operation-123",
+      requestedCount: 1,
+      failedTabs: [],
+    };
   };
 
   const mockWindow = {
@@ -896,7 +979,7 @@ add_task(async function test_undo_with_failed_restoration() {
     properties: {
       confirmedData: {
         selectedTabs: [],
-        operationId: "test-operation-123",
+        operationIds: ["test-operation-123"],
       },
     },
   };
@@ -919,7 +1002,7 @@ add_task(async function test_undo_with_failed_restoration() {
       toolCallId: "test-tool-123",
       updateType: "undo-tab-close",
       updateData: {
-        operationId: "test-operation-123",
+        operationIds: ["test-operation-123"],
         selectedTabs: [],
       },
     },
@@ -946,6 +1029,7 @@ add_task(async function test_closeSelectedTabs_public_method() {
     return {
       operationId: "test-operation-456",
       closedTabs: tabs,
+      requestedCount: tabs.length,
       failedTabs: [],
     };
   };
@@ -973,10 +1057,10 @@ add_task(async function test_closeSelectedTabs_public_method() {
 
   // Verify the method returns the tabManagementService result
   Assert.ok(result, "Should return a result object");
-  Assert.equal(
-    result.operationId,
-    "test-operation-456",
-    "Should return correct operationId"
+  Assert.deepEqual(
+    result.operationIds,
+    ["test-operation-456"],
+    "Should return the operationIds from each closed window"
   );
   // Verify that only resolved tabs were passed to the service
   Assert.equal(
@@ -1059,7 +1143,7 @@ add_task(async function test_undo_updates_ui_correctly() {
     properties: {
       confirmedData: {
         selectedTabs: originalSelectedTabs,
-        operationId: "test-operation-123",
+        operationIds: ["test-operation-123"],
       },
     },
   };
@@ -1069,6 +1153,7 @@ add_task(async function test_undo_updates_ui_correctly() {
     return {
       restoredCount: 2,
       requestedCount: 2,
+      failedTabs: [],
     };
   };
 
@@ -1085,7 +1170,7 @@ add_task(async function test_undo_updates_ui_correctly() {
       toolCallId: "test-tool-123",
       updateType: "undo-tab-close",
       updateData: {
-        operationId: "test-operation-123",
+        operationIds: ["test-operation-123"],
         selectedTabs: originalSelectedTabs,
       },
     },
@@ -1620,7 +1705,7 @@ add_task(async function test_isRestored_flag_preserved() {
 add_task(async function test_closeSelectedTabs_tags_active_tab_source() {
   const originalCloseTabs = tabManagementService.closeTabs;
   tabManagementService.closeTabs = async function () {
-    return { operationId: "op-active" };
+    return { operationId: "op-active", requestedCount: 2, failedTabs: [] };
   };
 
   const activeTab = makeTab("https://example.com", { label: "Active" });
@@ -1647,5 +1732,694 @@ add_task(async function test_closeSelectedTabs_tags_active_tab_source() {
     otherTab.smartWindowActionSource,
     undefined,
     "Non-active tabs are not tagged"
+  );
+});
+
+/**
+ * Test a selection spanning multiple windows closing each tab in the owning window.
+ */
+add_task(async function test_closeSelectedTabs_spans_multiple_windows() {
+  const tabA = makeTab("https://example.com", { label: "Example" });
+  const windowA = makeWindow([tabA]);
+  const tabB = makeTab("https://mozilla.org", { label: "Mozilla" });
+  const windowB = makeWindow([tabB]);
+  const tabC = makeTab("https://example.org", { label: "Example Org" });
+  const windowC = makeWindow([tabC]);
+
+  // Record each closeTabs call so we can assert per-window dispatches
+  const originalCloseTabs = tabManagementService.closeTabs;
+  const closeCalls = [];
+  tabManagementService.closeTabs = async function ({ tabs, window }) {
+    closeCalls.push({ tabs, window });
+    return {
+      operationId: `op-${closeCalls.length}`,
+      requestedCount: tabs.length,
+      failedTabs: [],
+    };
+  };
+
+  const { selectedTabs, tokenToKey } = registerSelection("multiple-tabs", [
+    tabA,
+    tabB,
+    tabC,
+  ]);
+
+  let result;
+  try {
+    result = await ToolUI.closeSelectedTabs(selectedTabs, tokenToKey, windowA);
+  } finally {
+    tabManagementService.closeTabs = originalCloseTabs;
+  }
+
+  Assert.ok(result, "Should return a result for a cross-window selection");
+  Assert.equal(result.requestedCount, 3, "Should account for all three tabs");
+  Assert.equal(closeCalls.length, 3, "Should issue one close call per window");
+
+  const byWindow = new Map(closeCalls.map(call => [call.window, call.tabs]));
+  for (const [window, tab] of [
+    [windowA, tabA],
+    [windowB, tabB],
+    [windowC, tabC],
+  ]) {
+    Assert.deepEqual(
+      byWindow.get(window),
+      [tab],
+      `${tab.label} close call receives its own tab in its owning window`
+    );
+  }
+});
+
+/**
+ * When the interacting window holds none of the selected tabs, createTabGroup
+ * targets the window owning the most of them.
+ */
+add_task(async function test_createTabGroup_selects_owning_window() {
+  const interactingWindow = makeWindow([]);
+  const tabA = makeTab("https://example.com", { label: "Example" });
+  const tabB = makeTab("https://mozilla.org", { label: "Mozilla" });
+  const ownerWindow = makeWindow([tabA, tabB]);
+  const tabC = makeTab("https://example.org", { label: "Example Org" });
+  // A competing window owns a selected tab
+  makeWindow([tabC]);
+
+  const originalCreateTabGroup = tabManagementService.createTabGroup;
+  let createCall = null;
+  tabManagementService.createTabGroup = async function ({ tabs, window }) {
+    createCall = { tabs, window };
+    return { success: true, group: { id: "group-1" }, failedTabs: [] };
+  };
+
+  const { selectedTabs, tokenToKey } = registerSelection("group-tabs", [
+    tabA,
+    tabB,
+    tabC,
+  ]);
+
+  let result;
+  try {
+    result = await ToolUI.createTabGroup({
+      tabs: selectedTabs,
+      tokenToKey,
+      window: interactingWindow,
+      label: "My group",
+    });
+  } finally {
+    tabManagementService.createTabGroup = originalCreateTabGroup;
+  }
+
+  Assert.ok(result?.success, "Should create a group across windows");
+  Assert.equal(
+    createCall.window,
+    ownerWindow,
+    "Should target the window owning the most selected tabs"
+  );
+  Assert.deepEqual(
+    createCall.tabs,
+    [tabA, tabB],
+    "Should only group the owning window's tabs"
+  );
+  Assert.deepEqual(
+    result.failedTabs,
+    [{ tab: tabC, reason: "other-window" }],
+    "Tabs in other windows are reported as failed"
+  );
+});
+
+/**
+ * Undo restores each operationId per window and aggregates the results into
+ * a telemetry record.
+ */
+add_task(async function test_undo_tab_close_multiple_operation_ids() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("Test prompt", {});
+  const assistantMessage = conversation.addAssistantMessage(
+    "text",
+    "Test response"
+  );
+  assistantMessage.toolUIData = {
+    toolCallId: "multi-undo",
+    uiType: "ai-action-result",
+    properties: {
+      confirmedData: {
+        selectedTabs: [],
+        operationIds: ["op-1", "op-2"],
+        actionType: "close_tabs",
+      },
+    },
+  };
+
+  const originalRestoreTabs = tabManagementService.restoreTabs;
+  const restoredIds = [];
+  tabManagementService.restoreTabs = async function ({ operationId }) {
+    restoredIds.push(operationId);
+    return { restoredCount: 1, requestedCount: 1, failedTabs: [] };
+  };
+
+  const result = await ToolUI.handleUpdate(
+    {
+      messageId: assistantMessage.id,
+      toolCallId: "multi-undo",
+      updateType: "undo-tab-close",
+      updateData: { operationIds: ["op-1", "op-2"], selectedTabs: [] },
+    },
+    conversation,
+    makeWindow([])
+  );
+
+  tabManagementService.restoreTabs = originalRestoreTabs;
+
+  Assert.equal(result, true, "Should return true on multi-window undo");
+  Assert.deepEqual(
+    restoredIds,
+    ["op-1", "op-2"],
+    "Should restore each operation"
+  );
+  Assert.equal(
+    assistantMessage.toolUIData.properties.confirmedData.restoredCount,
+    2,
+    "Should aggregate restoredCount across operations"
+  );
+});
+
+/**
+ * Test close tab undo where one operation restores and another fails.
+ */
+add_task(async function test_undo_tab_close_partial_success() {
+  const operationIds = ["op-ok", "op-fail"];
+  const message = {
+    id: "msg-1",
+    toolUIData: {
+      toolCallId: "undo",
+      uiType: "ai-action-result",
+      properties: { confirmedData: { operationIds } },
+    },
+  };
+  const conversation = {
+    id: "chat-1",
+    messages: [message],
+    updateToolUI: (m, data) => (m.toolUIData = data),
+  };
+
+  const originalRestoreTabs = tabManagementService.restoreTabs;
+  const originalRecordUndo = ToolUITelemetry.recordBrowserActionUndo;
+  tabManagementService.restoreTabs = async ({ operationId }) =>
+    operationId === "op-ok"
+      ? { restoredCount: 1, requestedCount: 1, failedTabs: [] }
+      : { restoredCount: 0, requestedCount: 1, failedTabs: [{ tab: {} }] };
+  let undo;
+  ToolUITelemetry.recordBrowserActionUndo = data => (undo = data);
+
+  const result = await ToolUI.handleUpdate(
+    {
+      messageId: message.id,
+      toolCallId: "undo",
+      updateType: "undo-tab-close",
+      updateData: { operationIds },
+    },
+    conversation,
+    makeWindow([])
+  );
+
+  tabManagementService.restoreTabs = originalRestoreTabs;
+  ToolUITelemetry.recordBrowserActionUndo = originalRecordUndo;
+
+  Assert.equal(result, true, "Should return true when some tabs restored");
+  Assert.equal(undo.result, "partial_success", "Reports partial success");
+  Assert.equal(undo.tabs_restored, 1, "Aggregates the restored count");
+  Assert.equal(
+    undo.error,
+    "one_or_more_tabs_failed_to_restore",
+    "Flags that some tabs failed to restore"
+  );
+});
+
+/**
+ * Undo for group_tabs ungroups each operationId and marks the card as restored.
+ */
+add_task(async function test_undo_tab_group_uses_operation_ids() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("Group my tabs", {});
+  const assistantMessage = conversation.addAssistantMessage(
+    "text",
+    "Grouped tabs"
+  );
+  assistantMessage.toolUIData = {
+    toolCallId: "group-undo",
+    uiType: "ai-action-result",
+    properties: {
+      confirmedData: {
+        selectedTabs: [],
+        operationIds: ["group-1"],
+        actionType: "group_tabs",
+      },
+    },
+  };
+
+  const originalUngroupTabs = tabManagementService.ungroupTabs;
+  const ungroupedIds = [];
+  tabManagementService.ungroupTabs = async function ({ groupId }) {
+    ungroupedIds.push(groupId);
+    return { success: true, ungroupedTabs: [{ url: "https://example.com" }] };
+  };
+
+  const result = await ToolUI.handleUpdate(
+    {
+      messageId: assistantMessage.id,
+      toolCallId: "group-undo",
+      updateType: "undo-tab-group",
+      updateData: { operationIds: ["group-1"] },
+    },
+    conversation,
+    makeWindow([])
+  );
+
+  tabManagementService.ungroupTabs = originalUngroupTabs;
+
+  Assert.equal(result, true, "Should return true on group undo");
+  Assert.deepEqual(
+    ungroupedIds,
+    ["group-1"],
+    "Should ungroup each operationId"
+  );
+  Assert.equal(
+    assistantMessage.toolUIData.properties.confirmedData.wasRestored,
+    true,
+    "Should mark the group card as restored"
+  );
+});
+
+/**
+ * Test failed ungroup records error telemetry.
+ */
+add_task(async function test_undo_tab_group_error_telemetry() {
+  const operationIds = ["group-1", "group-2"];
+  const message = {
+    id: "msg-1",
+    toolUIData: {
+      toolCallId: "undo",
+      uiType: "ai-action-result",
+      properties: { confirmedData: { operationIds } },
+    },
+  };
+  const conversation = {
+    id: "chat-1",
+    messages: [message],
+    updateToolUI: (m, data) => (m.toolUIData = data),
+  };
+
+  const originalUngroupTabs = tabManagementService.ungroupTabs;
+  const originalRecordUndo = ToolUITelemetry.recordBrowserActionUndo;
+  tabManagementService.ungroupTabs = async ({ groupId }) =>
+    groupId === "group-1"
+      ? { success: true, ungroupedTabs: [{}, {}, {}] }
+      : { success: false, error: "group_not_found" };
+  let undo;
+  ToolUITelemetry.recordBrowserActionUndo = data => (undo = data);
+
+  const result = await ToolUI.handleUpdate(
+    {
+      messageId: message.id,
+      toolCallId: "undo",
+      updateType: "undo-tab-group",
+      updateData: { operationIds, actionTimestamp: 1 },
+    },
+    conversation,
+    makeWindow([])
+  );
+
+  tabManagementService.ungroupTabs = originalUngroupTabs;
+  ToolUITelemetry.recordBrowserActionUndo = originalRecordUndo;
+
+  Assert.equal(result, false, "Should return false when an operation fails");
+  Assert.equal(undo.action_type, "group_tabs", "Records the group action type");
+  Assert.equal(undo.result, "error", "Records an error result");
+  Assert.equal(undo.error, "group_not_found", "Propagates the failure reason");
+  Assert.equal(
+    undo.tabs_restored,
+    0,
+    "Does not count tabs from earlier successful operations"
+  );
+  Assert.equal(undo.chat_id, conversation.id, "Records the conversation id");
+  Assert.equal(
+    undo.message_seq,
+    conversation.messages.length,
+    "Records the message sequence"
+  );
+  Assert.greaterOrEqual(
+    undo.time_delta,
+    0,
+    "Records a non-negative time delta"
+  );
+});
+
+/**
+ * Test ToolUI.openAndGroupTabs returns null for an empty tabs array
+ */
+add_task(async function test_openAndGroupTabs_no_tabs_returns_null() {
+  const result = await ToolUI.openAndGroupTabs({
+    tabs: [],
+    window: makeWindow([]),
+  });
+
+  Assert.equal(result, null, "Should return null for an empty tabs array");
+});
+
+/**
+ * Test ToolUI.openAndGroupTabs carries mergedCount through from
+ * resolveOrOpenTabs into the final result
+ */
+add_task(async function test_openAndGroupTabs_merges_mergedCount() {
+  const mockWindow = makeWindow([]);
+
+  const originalResolve = tabManagementService.resolveOrOpenTabs;
+  const originalCreateGroup = tabManagementService.createTabGroup;
+  tabManagementService.resolveOrOpenTabs = async () => ({
+    resolvedTabs: [makeTab("https://example.com")],
+    mergedCount: 1,
+    failedUrls: [],
+  });
+  tabManagementService.createTabGroup = async () => ({
+    success: true,
+    group: { id: "g1", label: "L", color: "blue", tabCount: 1 },
+    failedTabs: [],
+  });
+
+  let result;
+  try {
+    result = await ToolUI.openAndGroupTabs({
+      tabs: [{ url: "https://example.com" }],
+      window: mockWindow,
+      label: "L",
+    });
+  } finally {
+    tabManagementService.resolveOrOpenTabs = originalResolve;
+    tabManagementService.createTabGroup = originalCreateGroup;
+  }
+
+  Assert.ok(result.success, "Should succeed");
+  Assert.equal(
+    result.mergedCount,
+    1,
+    "Should carry mergedCount through from resolveOrOpenTabs"
+  );
+});
+
+/**
+ * Test ToolUI.openOrSwitchToTab switches to an already-open tab without
+ * navigating
+ */
+add_task(async function test_openOrSwitchToTab_switches_when_open() {
+  const existingTab = makeTab("https://example.com");
+  const mockWindow = makeWindow([existingTab]);
+
+  const originalFind = tabManagementService.findOpenTab;
+  const originalSwitch = tabManagementService.switchToTab;
+  let switchedTo = null;
+  tabManagementService.findOpenTab = () => existingTab;
+  tabManagementService.switchToTab = ({ tab }) => {
+    switchedTo = tab;
+  };
+
+  let result;
+  try {
+    result = await ToolUI.openOrSwitchToTab({
+      tab: { url: "https://example.com" },
+      window: mockWindow,
+    });
+  } finally {
+    tabManagementService.findOpenTab = originalFind;
+    tabManagementService.switchToTab = originalSwitch;
+  }
+
+  Assert.deepEqual(
+    result,
+    { success: true, switched: true },
+    "Should report success and switched"
+  );
+  Assert.equal(switchedTo, existingTab, "Should switch to the found tab");
+});
+
+/**
+ * Test ToolUI.openOrSwitchToTab when the tab isn't already open: it should
+ * open a new tab and switch to it, without navigating the current tab.
+ */
+add_task(
+  async function test_openOrSwitchToTab_opens_and_switches_when_not_open() {
+    const mockWindow = makeWindow([]);
+    const newTab = makeTab("https://example.com");
+
+    const originalFind = tabManagementService.findOpenTab;
+    const originalOpen = tabManagementService.openTabs;
+    const originalSwitch = tabManagementService.switchToTab;
+    let switchedTo = null;
+    tabManagementService.findOpenTab = () => null;
+    tabManagementService.openTabs = ({ urls }) => {
+      Assert.deepEqual(
+        urls,
+        ["https://example.com"],
+        "Should open the tab's URL"
+      );
+      return { openedTabs: [newTab], failedUrls: [] };
+    };
+    tabManagementService.switchToTab = ({ tab }) => {
+      switchedTo = tab;
+    };
+
+    let result;
+    try {
+      result = await ToolUI.openOrSwitchToTab({
+        tab: { url: "https://example.com" },
+        window: mockWindow,
+      });
+    } finally {
+      tabManagementService.findOpenTab = originalFind;
+      tabManagementService.openTabs = originalOpen;
+      tabManagementService.switchToTab = originalSwitch;
+    }
+
+    Assert.deepEqual(
+      result,
+      { success: true, switched: false },
+      "Should report success without being marked as switched"
+    );
+    Assert.equal(switchedTo, newTab, "Should switch to the newly-opened tab");
+  }
+);
+
+/**
+ * Test ToolUI.openOrSwitchToTab when opening the new tab fails
+ */
+add_task(
+  async function test_openOrSwitchToTab_reports_failure_when_open_fails() {
+    const mockWindow = makeWindow([]);
+
+    const originalFind = tabManagementService.findOpenTab;
+    const originalOpen = tabManagementService.openTabs;
+    tabManagementService.findOpenTab = () => null;
+    tabManagementService.openTabs = () => ({
+      openedTabs: [],
+      failedUrls: [{ url: "https://example.com", reason: "boom" }],
+    });
+
+    let result;
+    try {
+      result = await ToolUI.openOrSwitchToTab({
+        tab: { url: "https://example.com" },
+        window: mockWindow,
+      });
+    } finally {
+      tabManagementService.findOpenTab = originalFind;
+      tabManagementService.openTabs = originalOpen;
+    }
+
+    Assert.deepEqual(
+      result,
+      { success: false, switched: false },
+      "Should report failure when the tab could not be opened"
+    );
+  }
+);
+
+/**
+ * Test the full CONFIRM_OPEN_AND_GROUP_TABS_SELECTION flow for multiple
+ * tabs: creates a group and carries the result through to confirmedData
+ */
+add_task(async function test_handleUpdate_open_tabs_multi_success() {
+  const toolCallId = "test-open-tabs-multi";
+  const { conversation, assistantMessage } =
+    makeOpenTabsConfirmation(toolCallId);
+
+  const mockWindow = makeWindow([]);
+  const selectedTabs = [
+    { url: "https://example.com", title: "Example" },
+    { url: "https://mozilla.org", title: "Mozilla" },
+  ];
+
+  const originalResolve = tabManagementService.resolveOrOpenTabs;
+  const originalCreateGroup = tabManagementService.createTabGroup;
+  tabManagementService.resolveOrOpenTabs = async () => ({
+    resolvedTabs: [makeTab(selectedTabs[0].url), makeTab(selectedTabs[1].url)],
+    mergedCount: 1,
+    failedUrls: [],
+  });
+  tabManagementService.createTabGroup = async () => ({
+    success: true,
+    group: { id: "group-1", label: "Trip", color: "blue", tabCount: 2 },
+    failedTabs: [],
+  });
+
+  let result;
+  try {
+    result = await ToolUI.handleUpdate(
+      {
+        messageId: assistantMessage.id,
+        toolCallId,
+        updateType: "confirm-open-and-group-tabs-selection",
+        updateData: { selectedTabs, tabGroupLabel: "Trip" },
+      },
+      conversation,
+      mockWindow
+    );
+  } finally {
+    tabManagementService.resolveOrOpenTabs = originalResolve;
+    tabManagementService.createTabGroup = originalCreateGroup;
+  }
+
+  Assert.equal(result, true, "Should return true on success");
+
+  const confirmedData = assistantMessage.toolUIData.properties.confirmedData;
+  Assert.equal(
+    confirmedData.actionType,
+    "open_tabs",
+    "Should record actionType"
+  );
+  Assert.deepEqual(
+    confirmedData.operationIds,
+    ["group-1"],
+    "Should record the created group's id as operationIds"
+  );
+  Assert.equal(
+    confirmedData.mergedCount,
+    1,
+    "Should carry mergedCount through"
+  );
+  Assert.equal(
+    confirmedData.switched,
+    false,
+    "Should not be marked as switched for a multi-tab action"
+  );
+});
+
+/**
+ * Test the full CONFIRM_OPEN_AND_GROUP_TABS_SELECTION flow for a single
+ * already-open tab: switches instead of grouping or navigating
+ */
+add_task(async function test_handleUpdate_open_tabs_single_switches() {
+  const toolCallId = "test-open-tabs-switch";
+  const { conversation, assistantMessage } =
+    makeOpenTabsConfirmation(toolCallId);
+
+  const existingTab = makeTab("https://example.com", { label: "Example" });
+  const mockWindow = makeWindow([existingTab]);
+  const selectedTabs = [{ url: "https://example.com", title: "Example" }];
+
+  const originalFind = tabManagementService.findOpenTab;
+  const originalSwitch = tabManagementService.switchToTab;
+  const originalOpen = tabManagementService.openTabs;
+  let switchCalled = false;
+  let openCalled = false;
+  tabManagementService.findOpenTab = () => existingTab;
+  tabManagementService.switchToTab = () => {
+    switchCalled = true;
+  };
+  tabManagementService.openTabs = () => {
+    openCalled = true;
+    return { openedTabs: [], failedUrls: [] };
+  };
+
+  let result;
+  try {
+    result = await ToolUI.handleUpdate(
+      {
+        messageId: assistantMessage.id,
+        toolCallId,
+        updateType: "confirm-open-and-group-tabs-selection",
+        updateData: { selectedTabs, tabGroupLabel: "Trip" },
+      },
+      conversation,
+      mockWindow
+    );
+  } finally {
+    tabManagementService.findOpenTab = originalFind;
+    tabManagementService.switchToTab = originalSwitch;
+    tabManagementService.openTabs = originalOpen;
+  }
+
+  Assert.equal(result, true, "Should return true on success");
+  Assert.ok(switchCalled, "Should switch to the existing tab");
+  Assert.ok(!openCalled, "Should not open a new tab when switching");
+
+  const confirmedData = assistantMessage.toolUIData.properties.confirmedData;
+  Assert.equal(confirmedData.switched, true, "Should record switched");
+  Assert.equal(
+    confirmedData.group,
+    null,
+    "Should not create a group for a single tab"
+  );
+});
+
+/**
+ * Test the full CONFIRM_OPEN_AND_GROUP_TABS_SELECTION flow for a single
+ * not-yet-open tab: opens a new tab and switches to it, rather than
+ * navigating the tab hosting the conversation itself
+ */
+add_task(async function test_handleUpdate_open_tabs_single_opens_new_tab() {
+  const toolCallId = "test-open-tabs-open";
+  const { conversation, assistantMessage } =
+    makeOpenTabsConfirmation(toolCallId);
+
+  const mockWindow = makeWindow([]);
+  const selectedTabs = [{ url: "https://example.com", title: "Example" }];
+  const newTab = makeTab("https://example.com");
+
+  const originalFind = tabManagementService.findOpenTab;
+  const originalOpen = tabManagementService.openTabs;
+  const originalSwitch = tabManagementService.switchToTab;
+  let switchedTo = null;
+  tabManagementService.findOpenTab = () => null;
+  tabManagementService.openTabs = () => ({
+    openedTabs: [newTab],
+    failedUrls: [],
+  });
+  tabManagementService.switchToTab = ({ tab }) => {
+    switchedTo = tab;
+  };
+
+  let result;
+  try {
+    result = await ToolUI.handleUpdate(
+      {
+        messageId: assistantMessage.id,
+        toolCallId,
+        updateType: "confirm-open-and-group-tabs-selection",
+        updateData: { selectedTabs, tabGroupLabel: "Trip" },
+      },
+      conversation,
+      mockWindow
+    );
+  } finally {
+    tabManagementService.findOpenTab = originalFind;
+    tabManagementService.openTabs = originalOpen;
+    tabManagementService.switchToTab = originalSwitch;
+  }
+
+  Assert.equal(result, true, "Should return true on success");
+  Assert.equal(switchedTo, newTab, "Should switch to the newly-opened tab");
+
+  const confirmedData = assistantMessage.toolUIData.properties.confirmedData;
+  Assert.equal(
+    confirmedData.switched,
+    false,
+    "Should not be marked as switched"
   );
 });

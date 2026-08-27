@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use crate::config::BaseUrl;
-use crate::error::{debug, trace, Error, Result};
+use crate::error::{breadcrumb, debug, trace, Error, Result};
 use crate::jexl_filter::JexlFilter;
 #[cfg(feature = "signatures")]
 use crate::signatures;
@@ -325,26 +325,28 @@ impl<C: ApiClient> RemoteSettingsClient<C> {
 
         let cached_records = inner.storage.get_records(&collection_url)?;
 
-        Ok(match (cached_records, sync_if_empty) {
+        match (cached_records, sync_if_empty) {
             // Case 2: We have cached records
             //
             // Note: we should return these even if it's an empty list and `sync_if_empty=true`.
             // The "if empty" part refers to the cache being empty, not the list.
-            (Some(cached_records), _) => Some(self.filter_records(cached_records, &inner)),
+            (Some(cached_records), _) => Ok(Some(self.filter_records(cached_records, &inner))),
             // Case 3: sync_if_empty=true
             (None, true) => {
-                let changeset = inner.api_client.fetch_changeset(None)?;
-                inner.storage.insert_collection_content(
-                    &collection_url,
-                    &changeset.changes,
-                    changeset.timestamp,
-                    changeset.metadata,
-                )?;
-                Some(self.filter_records(changeset.changes, &inner))
+                // `sync()` takes the lock, release it first.
+                drop(inner);
+                // Sync and verify content signatures.
+                self.sync()?;
+                // Return what was just stored.
+                let mut inner = self.lock_inner()?;
+                Ok(inner
+                    .storage
+                    .get_records(&collection_url)?
+                    .map(|records| self.filter_records(records, &inner)))
             }
             // Case 4: Nothing to return
-            (None, false) => None,
-        })
+            (None, false) => Ok(None),
+        }
     }
 
     /// Returns the last modified timestamp for the collection.
@@ -456,6 +458,12 @@ impl<C: ApiClient> RemoteSettingsClient<C> {
                     "No valid signatures found".into(),
                 ));
                 for signature in &metadata.signatures {
+                    if signature.mode != "p384ecdsa" {
+                        // We currently only support ECDSA P384.
+                        // Change this once `rc_crypto` will support more types (eg. post-quantum algorithms).
+                        continue;
+                    }
+
                     let cert_chain_bytes = inner.api_client.fetch_cert(&signature.x5u)?;
 
                     // The signer name is hard-coded. This would have to be modified in the very (very)
@@ -639,7 +647,7 @@ impl ViaductApiClient {
     }
 
     fn make_request(&mut self, url: Url) -> Result<Response> {
-        trace!("make_request: {url}");
+        breadcrumb!("make_request: {url}");
         self.remote_state.ensure_no_backoff()?;
 
         let req = Request::get(url);
@@ -677,7 +685,7 @@ impl ApiClient for ViaductApiClient {
         url.query_pairs_mut().append_pair("_expected", "0");
         if let Some(timestamp) = timestamp {
             url.query_pairs_mut()
-                .append_pair("_since", &format!("\"{}\"", timestamp));
+                .append_pair("_since", &format!("{}", timestamp));
         }
 
         let resp = self.make_request(url)?;
@@ -756,7 +764,7 @@ struct RemoteSettingsEndpoints {
 impl RemoteSettingsEndpoints {
     /// Construct a new RemoteSettingsEndpoints
     ///
-    /// `base_url` should have the form `https://[domain]/v1` (no trailing slash).
+    /// `base_url` should have the form `https://[domain]/v2` (no trailing slash).
     fn new(base_url: &BaseUrl, bucket_name: &str, collection_name: &str) -> Self {
         let mut root_url = base_url.clone();
         // Push the empty string to add the trailing slash.
@@ -799,6 +807,8 @@ pub struct CollectionSignature {
     pub signature: String,
     /// X.509 certificate chain Url (x5u)
     pub x5u: String,
+    /// Signature type
+    pub mode: String,
 }
 
 /// A parsed Remote Settings record. Records can contain arbitrary fields, so clients
@@ -936,19 +946,53 @@ mod test_new_client {
     #[test]
     fn test_endpoints() {
         let endpoints = RemoteSettingsEndpoints::new(
-            &BaseUrl::parse("http://rs.example.com/v1").unwrap(),
+            &BaseUrl::parse("http://rs.example.com/v2").unwrap(),
             "main",
             "test-collection",
         );
-        assert_eq!(endpoints.root_url.to_string(), "http://rs.example.com/v1/");
+        assert_eq!(endpoints.root_url.to_string(), "http://rs.example.com/v2/");
         assert_eq!(
             endpoints.collection_url.to_string(),
-            "http://rs.example.com/v1/buckets/main/collections/test-collection",
+            "http://rs.example.com/v2/buckets/main/collections/test-collection",
         );
         assert_eq!(
             endpoints.changeset_url.to_string(),
-            "http://rs.example.com/v1/buckets/main/collections/test-collection/changeset",
+            "http://rs.example.com/v2/buckets/main/collections/test-collection/changeset",
         );
+    }
+}
+
+#[cfg(test)]
+mod viaduct_client_tests {
+    use super::*;
+
+    #[test]
+    fn test_fetch_uses_local_timestamp_as_unquoted_since() {
+        viaduct_dev::init_backend_dev();
+        let changeset = mockito::mock(
+            "GET",
+            "/v2/buckets/main/collections/test-collection/changeset",
+        )
+        // The mock only matches if `_since` is sent unquoted.
+        .match_query(mockito::Matcher::AllOf(vec![
+            mockito::Matcher::UrlEncoded("_expected".into(), "0".into()),
+            mockito::Matcher::UrlEncoded("_since".into(), "42".into()),
+        ]))
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(
+            r#"{"changes": [], "timestamp": 42, "metadata": {"bucket": "main", "signatures": []}}"#,
+        )
+        .create();
+
+        let mut api_client = ViaductApiClient::new(
+            BaseUrl::parse(&format!("{}/v2", mockito::server_url())).unwrap(),
+            "main",
+            "test-collection",
+        );
+        api_client.fetch_changeset(Some(42)).unwrap();
+
+        changeset.assert();
     }
 }
 
@@ -978,7 +1022,7 @@ mod jexl_tests {
             metadata: CollectionMetadata::default(),
         };
         api_client.expect_collection_url().returning(|| {
-            "http://rs.example.com/v1/buckets/main/collections/test-collection".into()
+            "http://rs.example.com/v2/buckets/main/collections/test-collection".into()
         });
         api_client.expect_fetch_changeset().returning({
             let changeset = changeset.clone();
@@ -996,7 +1040,7 @@ mod jexl_tests {
 
         let mut storage = Storage::new(":memory:".into());
         let _ = storage.insert_collection_content(
-            "http://rs.example.com/v1/buckets/main/collections/test-collection",
+            "http://rs.example.com/v2/buckets/main/collections/test-collection",
             &records,
             42,
             CollectionMetadata::default(),
@@ -1036,7 +1080,7 @@ mod jexl_tests {
             metadata: CollectionMetadata::default(),
         };
         api_client.expect_collection_url().returning(|| {
-            "http://rs.example.com/v1/buckets/main/collections/test-collection".into()
+            "http://rs.example.com/v2/buckets/main/collections/test-collection".into()
         });
         api_client.expect_fetch_changeset().returning({
             let changeset = changeset.clone();
@@ -1054,7 +1098,7 @@ mod jexl_tests {
 
         let mut storage = Storage::new(":memory:".into());
         let _ = storage.insert_collection_content(
-            "http://rs.example.com/v1/buckets/main/collections/test-collection",
+            "http://rs.example.com/v2/buckets/main/collections/test-collection",
             &records,
             42,
             CollectionMetadata::default(),
@@ -1094,7 +1138,7 @@ mod jexl_tests {
             metadata: CollectionMetadata::default(),
         };
         api_client.expect_collection_url().returning(|| {
-            "http://rs.example.com/v1/buckets/main/collections/test-collection".into()
+            "http://rs.example.com/v2/buckets/main/collections/test-collection".into()
         });
         api_client.expect_fetch_changeset().returning({
             let changeset = changeset.clone();
@@ -1112,7 +1156,7 @@ mod jexl_tests {
 
         let mut storage = Storage::new(":memory:".into());
         let _ = storage.insert_collection_content(
-            "http://rs.example.com/v1/buckets/main/collections/test-collection",
+            "http://rs.example.com/v2/buckets/main/collections/test-collection",
             &records,
             42,
             CollectionMetadata::default(),
@@ -1172,7 +1216,7 @@ mod jexl_tests {
                     "test-collection".to_string(),
                     None,
                 );
-            "http://rs.example.com/v1/buckets/main/collections/test-collection".into()
+            "http://rs.example.com/v2/buckets/main/collections/test-collection".into()
         });
         api_client.expect_is_prod_server().returning(|| Ok(false));
 
@@ -1306,14 +1350,14 @@ IKdcFKAt3fFrpyMhlfIKkLfmm0iDjmfmIXbDGBJw9SE=
     const VALID_SIGNATURE: &str = r#"fJJcOpwdnkjEWFeHXfdOJN6GaGLuDTPGzQOxA2jn6ldIleIk6KqMhZcy2GZv2uYiGwl6DERWwpaoUfQFLyCAOcVjck1qlaaEFZGY1BQba9p99xEc9FNQ3YPPfvSSZqsw"#;
     const VALID_CERT_EPOCH_SECONDS: u64 = 1615559719;
 
-    fn run_client_sync(
+    fn build_client(
         diff_records: &[RemoteSettingsRecord],
         full_records: &[RemoteSettingsRecord],
         certificate: &str,
         signatures: &[CollectionSignature],
         epoch_secs: u64,
         bucket: &str,
-    ) -> Result<()> {
+    ) -> RemoteSettingsClient<MockApiClient> {
         let collection_name = "pioneer-study-addons";
 
         MOCK_TIME.with(|cell| cell.set(Some(epoch_secs)));
@@ -1355,14 +1399,31 @@ IKdcFKAt3fFrpyMhlfIKkLfmm0iDjmfmIXbDGBJw9SE=
 
         let storage = Storage::new(":memory:".into());
         let jexl_filter = JexlFilter::new(Some(RemoteSettingsContext::default()));
-        let rs_client = RemoteSettingsClient::new_from_parts(
+        RemoteSettingsClient::new_from_parts(
             collection_name.to_string(),
             storage,
             jexl_filter,
             api_client,
-        );
+        )
+    }
 
-        rs_client.sync()
+    fn run_client_sync(
+        diff_records: &[RemoteSettingsRecord],
+        full_records: &[RemoteSettingsRecord],
+        certificate: &str,
+        signatures: &[CollectionSignature],
+        epoch_secs: u64,
+        bucket: &str,
+    ) -> Result<()> {
+        build_client(
+            diff_records,
+            full_records,
+            certificate,
+            signatures,
+            epoch_secs,
+            bucket,
+        )
+        .sync()
     }
 
     #[test]
@@ -1375,6 +1436,7 @@ IKdcFKAt3fFrpyMhlfIKkLfmm0iDjmfmIXbDGBJw9SE=
             &[CollectionSignature {
                 signature: VALID_SIGNATURE.to_string(),
                 x5u: "http://mocked".into(),
+                mode: "p384ecdsa".into(),
             }],
             VALID_CERT_EPOCH_SECONDS,
             "main",
@@ -1394,10 +1456,39 @@ IKdcFKAt3fFrpyMhlfIKkLfmm0iDjmfmIXbDGBJw9SE=
                 CollectionSignature {
                     signature: "invalid signature".to_string(),
                     x5u: "http://mocked".into(),
+                    mode: "p384ecdsa".into(),
                 },
                 CollectionSignature {
                     signature: VALID_SIGNATURE.to_string(),
                     x5u: "http://mocked".into(),
+                    mode: "p384ecdsa".into(),
+                },
+            ],
+            VALID_CERT_EPOCH_SECONDS,
+            "main",
+        )
+        .expect("Valid signature");
+        Ok(())
+    }
+
+    #[test]
+    fn test_first_signature_has_unknown_type() -> Result<()> {
+        ensure_initialized();
+        run_client_sync(
+            &[],
+            &[],
+            VALID_CERTIFICATE,
+            &[
+                CollectionSignature {
+                    signature: "unkown signature".to_string(),
+                    x5u: "http://mocked".into(),
+                    // Unknown signature type.
+                    mode: "mldsa".into(),
+                },
+                CollectionSignature {
+                    signature: VALID_SIGNATURE.to_string(),
+                    x5u: "http://mocked".into(),
+                    mode: "p384ecdsa".into(),
                 },
             ],
             VALID_CERT_EPOCH_SECONDS,
@@ -1423,6 +1514,7 @@ IKdcFKAt3fFrpyMhlfIKkLfmm0iDjmfmIXbDGBJw9SE=
             &[CollectionSignature {
                 signature: VALID_SIGNATURE.to_string(),
                 x5u: "http://mocked".into(),
+                mode: "p384ecdsa".into(),
             }],
             VALID_CERT_EPOCH_SECONDS,
             "main",
@@ -1441,6 +1533,7 @@ IKdcFKAt3fFrpyMhlfIKkLfmm0iDjmfmIXbDGBJw9SE=
             &[CollectionSignature {
                 signature: "invalid signature".to_string(),
                 x5u: "http://mocked".into(),
+                mode: "p384ecdsa".into(),
             }],
             VALID_CERT_EPOCH_SECONDS,
             "main",
@@ -1462,6 +1555,7 @@ IKdcFKAt3fFrpyMhlfIKkLfmm0iDjmfmIXbDGBJw9SE=
             &[CollectionSignature {
                 signature: VALID_SIGNATURE.to_string(),
                 x5u: "http://mocked".into(),
+                mode: "p384ecdsa".into(),
             }],
             VALID_CERT_EPOCH_SECONDS,
             "main",
@@ -1489,6 +1583,7 @@ IKdcFKAt3fFrpyMhlfIKkLfmm0iDjmfmIXbDGBJw9SE=
             &[CollectionSignature {
                 signature: VALID_SIGNATURE.to_string(),
                 x5u: "http://mocked".into(),
+                mode: "p384ecdsa".into(),
             }],
             december_20_2024,
             "main",
@@ -1522,6 +1617,7 @@ IKdcFKAt3fFrpyMhlfIKkLfmm0iDjmfmIXbDGBJw9SE=
             &[CollectionSignature {
                 signature: VALID_SIGNATURE.to_string(),
                 x5u: "http://mocked".into(),
+                mode: "p384ecdsa".into(),
             }],
             VALID_CERT_EPOCH_SECONDS,
             "main",
@@ -1544,6 +1640,7 @@ IKdcFKAt3fFrpyMhlfIKkLfmm0iDjmfmIXbDGBJw9SE=
             &[CollectionSignature {
                 signature: VALID_SIGNATURE.to_string(),
                 x5u: "http://mocked".into(),
+                mode: "p384ecdsa".into(),
             }],
             VALID_CERT_EPOCH_SECONDS,
             "security-state",
@@ -1557,6 +1654,57 @@ IKdcFKAt3fFrpyMhlfIKkLfmm0iDjmfmIXbDGBJw9SE=
 
         Ok(())
     }
+
+    #[test]
+    fn test_get_records_sync_if_empty_verifies_signature() -> Result<()> {
+        ensure_initialized();
+        let rs_client = build_client(
+            &[],
+            &[],
+            VALID_CERTIFICATE,
+            &[CollectionSignature {
+                signature: "invalid signature".to_string(),
+                x5u: "http://mocked".into(),
+                mode: "p384ecdsa".into(),
+            }],
+            VALID_CERT_EPOCH_SECONDS,
+            "main",
+        );
+
+        let err = rs_client.get_records(true).unwrap_err();
+
+        assert!(matches!(err, Error::SignatureError(_)));
+        assert_eq!(format!("{}", err), "Signature could not be verified: Signature content error: Encoded text cannot have a 6-bit remainder.");
+
+        // Unverified data was not kept in storage.
+        let mut inner = rs_client.lock_inner()?;
+        let collection_url = inner.api_client.collection_url();
+        assert_eq!(inner.storage.get_records(&collection_url)?, None);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_records_sync_if_empty_with_valid_signature() -> Result<()> {
+        ensure_initialized();
+        let rs_client = build_client(
+            &[],
+            &[],
+            VALID_CERTIFICATE,
+            &[CollectionSignature {
+                signature: VALID_SIGNATURE.to_string(),
+                x5u: "http://mocked".into(),
+                mode: "p384ecdsa".into(),
+            }],
+            VALID_CERT_EPOCH_SECONDS,
+            "main",
+        );
+
+        // The signature is only valid for an empty list of records.
+        assert_eq!(rs_client.get_records(true)?, Some(vec![]));
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -1565,7 +1713,7 @@ mod test_reset_storage {
 
     #[test]
     fn test_reset_storage_deletes_records_and_attachments() {
-        let collection_url = "http://rs.example.com/v1/buckets/main/collections/test-collection";
+        let collection_url = "http://rs.example.com/v2/buckets/main/collections/test-collection";
 
         let mut api_client = MockApiClient::new();
         api_client
@@ -1631,7 +1779,7 @@ mod test_reset_storage {
 
     #[test]
     fn test_reset_storage_reverts_to_packaged_data() {
-        let collection_url = "http://rs.example.com/v1/buckets/main/collections/regions";
+        let collection_url = "http://rs.example.com/v2/buckets/main/collections/regions";
 
         let mut api_client = MockApiClient::new();
         api_client

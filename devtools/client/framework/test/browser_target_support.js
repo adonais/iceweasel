@@ -20,21 +20,21 @@ async function testTarget(client, target) {
     undefined,
     "target.getTrait() returns undefined when trait does not exist"
   );
-
-  close(target, client);
 }
 
 // Ensure target is closed if client is closed directly
-function test() {
-  waitForExplicitFinish();
+add_task(async function test() {
+  // We use a commands object for the main process
+  await pushPref("devtools.chrome.enabled", true);
 
-  getParentProcessActors(testTarget);
-}
-
-function close(target, client) {
-  target.on("target-destroyed", () => {
-    ok(true, "Target was destroyed");
-    finish();
+  await new Promise(resolve => {
+    getParentProcessActors((client, target) => {
+      testTarget(client, target);
+      target.on("target-destroyed", () => {
+        ok(true, "Target was destroyed");
+        resolve();
+      });
+      client.close();
+    });
   });
-  client.close();
-}
+});

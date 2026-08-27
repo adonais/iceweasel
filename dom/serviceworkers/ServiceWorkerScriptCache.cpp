@@ -1055,7 +1055,8 @@ CompareNetwork::OnStreamComplete(nsIStreamLoader* aLoader,
     ServiceWorkerManager::LocalizeAndReportToAllClients(
         mRegistration->Scope(), "ServiceWorkerRegisterNetworkError",
         nsTArray<nsString>{NS_ConvertUTF8toUTF16(mRegistration->Scope()),
-                           statusAsText, NS_ConvertUTF8toUTF16(mURL)});
+                           std::move(statusAsText),
+                           NS_ConvertUTF8toUTF16(mURL)});
 
     rv = NS_ERROR_FAILURE;
     return NS_OK;
@@ -1096,7 +1097,8 @@ CompareNetwork::OnStreamComplete(nsIStreamLoader* aLoader,
       ServiceWorkerManager::LocalizeAndReportToAllClients(
           mRegistration->Scope(), "ServiceWorkerRegisterMimeTypeError2",
           nsTArray<nsString>{NS_ConvertUTF8toUTF16(mRegistration->Scope()),
-                             mimeTypeUTF16, NS_ConvertUTF8toUTF16(mURL)});
+                             std::move(mimeTypeUTF16),
+                             NS_ConvertUTF8toUTF16(mURL)});
       rv = NS_ERROR_DOM_SECURITY_ERR;
       return rv;
     }

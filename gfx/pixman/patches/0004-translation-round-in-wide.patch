@@ -1,0 +1,39 @@
+From: Jim Blandy <jimb@mozilla.com>
+Subject: Round translation distances in 48/16 fixpoint.
+
+diff --git a/pixman/pixman-fast-path.c b/pixman/pixman-fast-path.c
+index d510cacbf803..41f9dca1cbca 100644
+--- a/pixman/pixman-fast-path.c
++++ b/pixman/pixman-fast-path.c
+@@ -1772,10 +1772,15 @@ fast_composite_rotate_90_##suffix (pixman_implementation_t *imp,              \
+                                                                               \
+     PIXMAN_IMAGE_GET_LINE (dest_image, dest_x, dest_y, pix_type,              \
+ 			   dst_stride, dst_line, 1);                          \
++    /* Round in pixman_fixed_48_16_t, to avoid overflows. Since               \
++     * matrix values are pixman_fixed_16_16_t, even if the value rounds       \
++     * up, it will still represent a value < 65537, and fit in an int.  */    \
+     src_x_t = -src_y + pixman_fixed_to_int (                                  \
++                                (pixman_fixed_48_16_t)                        \
+ 				src_image->common.transform->matrix[0][2] +   \
+ 				pixman_fixed_1 / 2 - pixman_fixed_e) - height;\
+     src_y_t = src_x + pixman_fixed_to_int (                                   \
++                                (pixman_fixed_48_16_t)                        \
+ 				src_image->common.transform->matrix[1][2] +   \
+ 				pixman_fixed_1 / 2 - pixman_fixed_e);         \
+     PIXMAN_IMAGE_GET_LINE (src_image, src_x_t, src_y_t, pix_type,             \
+@@ -1796,10 +1801,15 @@ fast_composite_rotate_270_##suffix (pixman_implementation_t *imp,             \
+                                                                               \
+     PIXMAN_IMAGE_GET_LINE (dest_image, dest_x, dest_y, pix_type,              \
+ 			   dst_stride, dst_line, 1);                          \
++    /* Round in pixman_fixed_48_16_t, to avoid overflows. Since               \
++     * matrix values are pixman_fixed_16_16_t, even if the value rounds       \
++     * up, it will still represent a value < 65537, and fit in an int.  */    \
+     src_x_t = src_y + pixman_fixed_to_int (                                   \
++                                (pixman_fixed_48_16_t)                        \
+ 				src_image->common.transform->matrix[0][2] +   \
+ 				pixman_fixed_1 / 2 - pixman_fixed_e);         \
+     src_y_t = -src_x + pixman_fixed_to_int (                                  \
++                                (pixman_fixed_48_16_t)                        \
+ 				src_image->common.transform->matrix[1][2] +   \
+ 				pixman_fixed_1 / 2 - pixman_fixed_e) - width; \
+     PIXMAN_IMAGE_GET_LINE (src_image, src_x_t, src_y_t, pix_type,             \

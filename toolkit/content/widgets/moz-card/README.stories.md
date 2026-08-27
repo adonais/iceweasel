@@ -36,7 +36,6 @@ Provide a heading for the moz-card component for emphasis on what the card is ab
 
 You can also set an icon along with the heading by providing an image path for the `iconSrc` attribute.
 
-
 ```html
 <moz-card heading="The heading" iconSrc="chrome://browser/skin/preferences/category-general.svg">The content under the heading</moz-card>
 ```
@@ -82,3 +81,38 @@ The `data-l10n-attrs` will be set up automatically, so you can just specify `dat
  ```html
  <moz-card data-l10n-id="with-heading"></moz-card>
  ```
+
+### Setting the cover image
+
+To include an image that appears above the heading/content, use the named slot "cover-image".
+
+```html
+<moz-card heading="The heading">
+    <img src="/path/to/image.jpg" alt slot="cover-image">
+    <div>The content under the heading</div>
+</moz-card>
+```
+
+This will render an image with some default styling applied, which can be partially overridden with CSS custom properties.
+
+- `--card-cover-image-height`: `160px` by default
+- `--card-cover-image-object-fit`: `cover` by default
+- `--card-cover-image-object-position`: `center` by default
+
+More complex HTML can be used for the "cover-image" slot, but it needs to be styled separately.
+
+```html
+<style>
+    .custom-cover-image {
+      width: 100%;
+      height: 215px;
+      border-radius: var(--border-radius-small);
+    }
+</style>
+<moz-card heading="The heading">
+    <picture slot="cover-image">
+        <img src="/path/to/image.jpg" alt class="custom-cover-image">
+    </picture>
+    <div>The content under the heading</div>
+</moz-card>
+```

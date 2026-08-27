@@ -559,6 +559,18 @@ bool FrameIter::isFunctionFrame() const {
   MOZ_CRASH("Unexpected state");
 }
 
+bool FrameIter::isResumingGenerator() const {
+  MOZ_ASSERT(!done());
+  if (isInterp()) {
+    return interpFrame()->isResumingGenerator();
+  }
+  if (isPhysicalJitFrame()) {
+    return physicalJitFrame()->isResumingGenerator();
+  }
+  // Wasm frames and inlined Ion frames are never resuming a generator.
+  return false;
+}
+
 JSAtom* FrameIter::maybeFunctionDisplayAtom() const {
   switch (data_.state_) {
     case DONE:

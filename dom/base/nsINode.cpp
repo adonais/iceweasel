@@ -60,6 +60,7 @@
 #include "mozilla/dom/HTMLDialogElement.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/HTMLMediaElement.h"
+#include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
 #include "mozilla/dom/L10nOverlays.h"
 #include "mozilla/dom/LifecycleCallbackArgs.h"
@@ -345,8 +346,7 @@ nsINode::nsINode(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       ,
       mChildCount(0),
       mPreviousOrLastSibling(nullptr),
-      mSubtreeRoot(this),
-      mSlots(nullptr) {
+      mSubtreeRoot(this) {
   SetIsOnMainThread();
 }
 #endif
@@ -585,14 +585,18 @@ class ChildIndexCache {
 nsClassHashtable<nsPtrHashKey<const nsINode>, ChildIndexCache::Entry>
     ChildIndexCache::sCache;
 const nsINode* ChildIndexCache::sLastAccessedParent = nullptr;
+const nsINode* nsINode::sObserverChainStart = nullptr;
+nsINode* nsINode::sObserverChainSkipTo = nullptr;
 ChildIndexCache::Entry* ChildIndexCache::sLastAccessedEntry = nullptr;
 
 nsINode::~nsINode() {
+  ForgetObserverChainIfCached(this);
   MOZ_ASSERT(!ChildIndexCache::Contains(this),
              "Node still in ChildIndexCache at destruction?");
   MOZ_ASSERT(ChildIndexCache::LastAccessedParent() != this,
              "ChildIndexCache still memoizing a node being destroyed?");
-  MOZ_ASSERT(!HasSlots(), "LastRelease was not called?");
+  MOZ_ASSERT(mSlotsOrListenerManager == kListenerManagerBit,
+             "LastRelease was not called?");
   MOZ_ASSERT(mSubtreeRoot == this, "Didn't restore state properly?");
 }
 
@@ -667,6 +671,48 @@ void* nsINode::AllocateSlots(size_t aSize) {
 nsINode::nsSlots* nsINode::CreateSlots() {
   void* mem = AllocateSlots(sizeof(nsSlots));
   return new (mem) nsSlots();
+}
+
+void nsINode::SetSlots(nsSlots* aSlots) {
+  MOZ_ASSERT(aSlots);
+  MOZ_ASSERT(!HasSlots());
+  MOZ_ASSERT(!(reinterpret_cast<uintptr_t>(aSlots) & kListenerManagerBit));
+  aSlots->mListenerManager = dont_AddRef(GetInlineListenerManager());
+  mSlotsOrListenerManager = reinterpret_cast<uintptr_t>(aSlots);
+}
+
+EventListenerManager* nsINode::GetNodeListenerManager() const {
+  EventListenerManager* elm;
+  if (nsSlots* slots = GetExistingSlots()) {
+    elm = slots->mListenerManager;
+  } else {
+    elm = GetInlineListenerManager();
+  }
+  MOZ_ASSERT(!elm || !IsDocument(),
+             "Document keeps its manager in Document::mListenerManager");
+  return elm;
+}
+
+void nsINode::DropNodeListenerManager() {
+  RefPtr<EventListenerManager> elm;
+  if (nsSlots* slots = GetExistingSlots()) {
+    elm = slots->mListenerManager.forget();
+  } else {
+    elm = dont_AddRef(GetInlineListenerManager());
+    mSlotsOrListenerManager = kListenerManagerBit;
+  }
+
+  if (!elm) {
+    // The flag matches the storage, except on documents which keep their
+    // manager in Document::mListenerManager.
+    MOZ_ASSERT_IF(!IsDocument(), !HasFlag(NODE_HAS_LISTENERMANAGER));
+    return;
+  }
+  UnsetFlags(NODE_HAS_LISTENERMANAGER);
+
+  // Disconnect only once out of the node, since it can run code which touches
+  // this node.  See bug 334177.
+  elm->Disconnect();
 }
 
 static const nsINode* GetClosestCommonInclusiveAncestorForRangeInSelection(
@@ -1247,8 +1293,12 @@ void nsINode::LastRelease() {
       }
     }
 
+    // The manager may live in the slots, so drop it before deleting those.
+    DropNodeListenerManager();
+    MOZ_ASSERT(!slots->mListenerManager);
+
     slots->~nsSlots();
-    mSlots = nullptr;
+    mSlotsOrListenerManager = kListenerManagerBit;
     free(slots);
   }
 
@@ -1277,22 +1327,8 @@ void nsINode::LastRelease() {
         imageElem->ClearForm(true);
       }
     }
-    if (HasFlag(NODE_HAS_LISTENERMANAGER)) {
-#ifdef DEBUG
-      if (nsContentUtils::IsInitialized()) {
-        EventListenerManager* manager =
-            nsContentUtils::GetExistingListenerManagerForNode(this);
-        if (!manager) {
-          NS_ERROR(
-              "Huh, our bit says we have a listener manager list, "
-              "but there's nothing in the hash!?!!");
-        }
-      }
-#endif
-
-      nsContentUtils::RemoveListenerManager(this);
-      UnsetFlags(NODE_HAS_LISTENERMANAGER);
-    }
+    // Drops the inline manager; nodes with slots dropped theirs above.
+    DropNodeListenerManager();
 
     if (Element* element = Element::FromNode(this)) {
       element->ClearAttributes();
@@ -1997,11 +2033,41 @@ nsresult nsINode::PostHandleEvent(EventChainPostVisitor& /*aVisitor*/) {
 }
 
 EventListenerManager* nsINode::GetOrCreateListenerManager() {
-  return nsContentUtils::GetListenerManagerForNode(this);
+  MOZ_ASSERT(!IsDocument(),
+             "Document should have created its own manager, see "
+             "Document::GetOrCreateListenerManager");
+  MOZ_ASSERT(GetNodeListenerManager() == GetExistingListenerManager(),
+             "A subclass which overrides GetExistingListenerManager must "
+             "override GetOrCreateListenerManager too");
+
+  if (EventListenerManager* elm = GetNodeListenerManager()) {
+    return elm;
+  }
+
+  if (!nsContentUtils::IsInitialized()) {
+    // We're already shut down, don't bother creating a manager.
+    return nullptr;
+  }
+
+  RefPtr<EventListenerManager> elm = new EventListenerManager(this);
+  nsContentUtils::AddNodeListenerManager(elm);
+
+  EventListenerManager* manager = elm;
+  MOZ_ASSERT(!(reinterpret_cast<uintptr_t>(manager) & kListenerManagerBit));
+  if (nsSlots* slots = GetExistingSlots()) {
+    slots->mListenerManager = std::move(elm);
+  } else {
+    MOZ_ASSERT(mSlotsOrListenerManager == kListenerManagerBit);
+    mSlotsOrListenerManager =
+        reinterpret_cast<uintptr_t>(elm.forget().take()) | kListenerManagerBit;
+  }
+
+  SetFlags(NODE_HAS_LISTENERMANAGER);
+  return manager;
 }
 
 EventListenerManager* nsINode::GetExistingListenerManager() const {
-  return nsContentUtils::GetExistingListenerManagerForNode(this);
+  return GetNodeListenerManager();
 }
 
 Nullable<WindowProxyHolder> nsINode::GetDocumentGlobalForBindings() {
@@ -2091,9 +2157,8 @@ bool nsINode::Traverse(nsINode* tmp, nsCycleCollectionTraversalCallback& cb) {
 #endif
   }
 
-  if (tmp->NodeType() != DOCUMENT_NODE &&
-      tmp->HasFlag(NODE_HAS_LISTENERMANAGER)) {
-    nsContentUtils::TraverseListenerManager(tmp, cb);
+  if (EventListenerManager* elm = tmp->GetNodeListenerManager()) {
+    CycleCollectionNoteChild(cb, elm, "mListenerManager");
   }
 
   return true;
@@ -2107,11 +2172,7 @@ void nsINode::Unlink(nsINode* tmp) {
     slots->Unlink(*tmp);
   }
 
-  if (tmp->NodeType() != DOCUMENT_NODE &&
-      tmp->HasFlag(NODE_HAS_LISTENERMANAGER)) {
-    nsContentUtils::RemoveListenerManager(tmp);
-    tmp->UnsetFlags(NODE_HAS_LISTENERMANAGER);
-  }
+  tmp->DropNodeListenerManager();
 
   if (tmp->HasProperties()) {
     tmp->RemoveProperty(nsGkAtoms::accessiblenode);
@@ -2310,6 +2371,11 @@ void nsINode::DisconnectChild(nsIContent* aKid) {
   MOZ_ASSERT(GetChildCount() > 0);
 
   RemoveFromCache(this);
+  // Clear the cache if there is a chance the start node is in the disconnected
+  // subtree.
+  if (!nsINode::IsObserverChainStart(this) && IsInComposedDoc()) {
+    nsINode::ForgetObserverChain();
+  }
   ChildIndexCache::Invalidate(this, aKid);
 
   nsIContent* previousSibling = aKid->GetPreviousSibling();
@@ -3980,6 +4046,18 @@ Element* nsINode::GetNearestInclusiveTargetPopoverForInvoker() const {
         return popover;
       }
     }
+    if (auto* select = HTMLSelectElement::FromNodeOrNull(el)) {
+      auto* picker = select->GetPickerElement();
+      MOZ_ASSERT(
+          !picker ||
+              (!picker->IsPopoverOpenedInMode(PopoverAttributeState::Hint) &&
+               !picker->IsPopoverOpenedInMode(PopoverAttributeState::Manual)),
+          "Select Picker should only be popover=auto");
+      if (picker &&
+          picker->IsPopoverOpenedInMode(PopoverAttributeState::Auto)) {
+        return picker;
+      }
+    }
   }
   return nullptr;
 }
@@ -4103,7 +4181,8 @@ void nsINode::AddAnimationObserverUnlessExists(
 already_AddRefed<nsINode> nsINode::CloneAndAdopt(
     nsINode* aNode, bool aClone, bool aDeep,
     nsNodeInfoManager* aNewNodeInfoManager, nsIGlobalObject* aNewScope,
-    nsINode* aParent, ErrorResult& aError) {
+    nsINode* aParent, ErrorResult& aError,
+    CustomElementRegistry* aFallbackRegistry) {
   MOZ_ASSERT(!aParent || aNode->IsContent(),
              "Can't insert document or attribute nodes into a parent");
 
@@ -4155,6 +4234,65 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
     if (NS_WARN_IF(NS_FAILED(rv))) {
       aError.Throw(rv);
       return nullptr;
+    }
+
+    // https://dom.spec.whatwg.org/#clone-a-single-node
+    // Step 2: If node is an element:
+    if (elem) {
+      Element* cloneElem = clone->AsElement();
+      CustomElementRegistry* registry = nullptr;
+
+      if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+        // 2.1. Let registry be node's custom element registry.
+        registry = elem->GetCustomElementRegistry();
+        // 2.2. If registry is null, then set registry to fallbackRegistry.
+        if (!registry) {
+          registry = aFallbackRegistry;
+        }
+        // 2.3. If registry is a global custom element registry, then set
+        //      registry to document's effective global custom element registry.
+        if (registry && !registry->IsScoped()) {
+          Document* doc = nodeInfo->GetDocument();
+          registry =
+              doc ? doc->GetEffectiveGlobalCustomElementRegistry() : nullptr;
+        }
+
+        if (registry) {
+          cloneElem->SetCustomElementRegistry(registry);
+        } else if (elem->GetCustomElementRegistryState() ==
+                   CustomElementRegistryState::Null) {
+          cloneElem->SetKeepCustomElementRegistryNull();
+        } else if (cloneElem->OwnerDoc()->HasScopedCustomElementRegistry()) {
+          // Keep the clone from inheriting the destination document's scoped
+          // registry; a global-registry element must not resolve to it.
+          cloneElem->SetKeepCustomElementRegistryNull();
+        }
+      }
+
+      // https://dom.spec.whatwg.org/#clone-a-single-node
+      // Step 2.4 (create an element): Look up definition using the resolved
+      // registry and enqueue upgrade reaction if found.
+      if (CustomElementData* data = elem->GetCustomElementData()) {
+        if (nsAtom* typeAtom = data->GetCustomElementType()) {
+          class NodeInfo* dstNodeInfo = cloneElem->NodeInfo();
+          MOZ_ASSERT(dstNodeInfo->NameAtom()->Equals(dstNodeInfo->LocalName()));
+          CustomElementDefinition* definition = nullptr;
+          if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+            if (registry) {
+              definition = registry->LookupCustomElementDefinition(
+                  dstNodeInfo->NameAtom(), dstNodeInfo->NamespaceID(),
+                  typeAtom);
+            }
+          } else {
+            definition = nsContentUtils::LookupCustomElementDefinition(
+                dstNodeInfo->GetDocument(), dstNodeInfo->NameAtom(),
+                dstNodeInfo->NamespaceID(), typeAtom);
+          }
+          if (definition) {
+            nsContentUtils::EnqueueUpgradeReaction(cloneElem, definition);
+          }
+        }
+      }
     }
 
     if (aParent) {
@@ -4307,11 +4445,14 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
   }
 
   if (aDeep && (!aClone || !aNode->IsAttr())) {
-    // aNode's children.
+    // https://dom.spec.whatwg.org/#concept-node-clone
+    // Step 5: For each child of node's children, in tree order: clone a node
+    // given child with subtree, parent set to copy, and fallbackRegistry.
     for (nsIContent* cloneChild = aNode->GetFirstChild(); cloneChild;
          cloneChild = cloneChild->GetNextSibling()) {
-      nsCOMPtr<nsINode> child = CloneAndAdopt(
-          cloneChild, aClone, true, nodeInfoManager, aNewScope, clone, aError);
+      nsCOMPtr<nsINode> child =
+          CloneAndAdopt(cloneChild, aClone, true, nodeInfoManager, aNewScope,
+                        clone, aError, aFallbackRegistry);
       if (NS_WARN_IF(aError.Failed())) {
         return nullptr;
       }
@@ -4377,10 +4518,20 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
       init.mDelegatesFocus = originalShadowRoot->DelegatesFocus();
       init.mSlotAssignment = originalShadowRoot->SlotAssignment();
       init.mClonable = true;
-      if (StaticPrefs::dom_scoped_custom_element_registries_enabled() &&
-          originalShadowRoot->HasCustomElementRegistry()) {
-        init.mCustomElementRegistry.Construct(
-            originalShadowRoot->GetCustomElementRegistry());
+      if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+        if (originalShadowRoot->HasCustomElementRegistry()) {
+          init.mCustomElementRegistry.Construct(
+              originalShadowRoot->GetCustomElementRegistry());
+        } else {
+          // The original shadow root has the global registry. Explicitly pass
+          // the destination document's global registry so that AttachShadow
+          // doesn't derive it from the host element, which may have a different
+          // registry state after cloning (e.g. null).
+          Document* doc = nodeInfoManager ? nodeInfoManager->GetDocument()
+                                          : nodeInfo->GetDocument();
+          init.mCustomElementRegistry.Construct(
+              doc ? doc->GetEffectiveGlobalCustomElementRegistry() : nullptr);
+        }
       }
 
       RefPtr<ShadowRoot> newShadowRoot =
@@ -4423,7 +4574,7 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
          cloneChild = cloneChild->GetNextSibling()) {
       nsCOMPtr<nsINode> child =
           CloneAndAdopt(cloneChild, aClone, aDeep, ownerNodeInfoManager,
-                        aNewScope, cloneContent, aError);
+                        aNewScope, cloneContent, aError, aFallbackRegistry);
       if (NS_WARN_IF(aError.Failed())) {
         return nullptr;
       }
@@ -4469,11 +4620,11 @@ void nsINode::Adopt(nsNodeInfoManager* aNewNodeInfoManager,
   nsMutationGuard::DidMutate();
 }
 
-already_AddRefed<nsINode> nsINode::Clone(bool aDeep,
-                                         nsNodeInfoManager* aNewNodeInfoManager,
-                                         ErrorResult& aError) {
-  return CloneAndAdopt(this, true, aDeep, aNewNodeInfoManager,
-                       /* aNewScope = */ nullptr, nullptr, aError);
+already_AddRefed<nsINode> nsINode::Clone(
+    bool aDeep, nsNodeInfoManager* aNewNodeInfoManager, ErrorResult& aError,
+    CustomElementRegistry* aFallbackRegistry) {
+  return CloneAndAdopt(this, true, aDeep, aNewNodeInfoManager, nullptr, nullptr,
+                       aError, aFallbackRegistry);
 }
 
 void nsINode::GenerateXPath(nsAString& aResult) {

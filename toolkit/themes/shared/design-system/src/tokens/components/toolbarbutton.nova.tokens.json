@@ -1,13 +1,4 @@
 {
-  "padding": {
-    "inner": {
-      "touch": {
-        "narrow": {
-          "value": "0"
-        }
-      }
-    }
-  },
   "icon": {
     "fill": {
       "@base": {

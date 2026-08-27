@@ -80,8 +80,8 @@ class UiCompositorControllerChild final
   void HandleFatalError(const char* aMsg) override;
   mozilla::ipc::IPCResult RecvToolbarAnimatorMessageFromCompositor(
       const int32_t& aMessage);
-  mozilla::ipc::IPCResult RecvNotifyCompositorScrollUpdate(
-      const CompositorScrollUpdate& aUpdate);
+  mozilla::ipc::IPCResult RecvNotifyCompositorScrollUpdates(
+      const nsTArray<mozilla::layers::CompositorScrollUpdate>& aUpdates);
   mozilla::ipc::IPCResult RecvScreenPixels(
       uint64_t aRequestId, bool aSuccess,
       Maybe<ipc::FileDescriptor>&& aAcquireFence);

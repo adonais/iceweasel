@@ -191,6 +191,19 @@ TEST_SUITES = {
             "test-verify($|.*(-1|[^0-9])$)",
         ],
     },
+    "mochitest-devtools-compat": {
+        "aliases": ("dtbc", "devtools-compat"),
+        "build_flavor": "browser-chrome",
+        "mach_command": "mochitest",
+        "kwargs": {
+            "flavor": "browser-chrome",
+            "subsuite": "devtools-compat",
+            "test_paths": None,
+        },
+        "task_regex": [
+            "devtools-compat($|.*(-1|[^0-9])$)",
+        ],
+    },
     "mochitest-browser-a11y": {
         "aliases": ("ba", "browser-a11y"),
         "build_flavor": "browser-chrome",
@@ -240,6 +253,20 @@ TEST_SUITES = {
         },
         "task_regex": [
             "mochitest-browser-translations($|.*(-1|[^0-9])$)",
+            "test-verify($|.*(-1|[^0-9])$)",
+        ],
+    },
+    "mochitest-browser-chrome-ml-models": {
+        "aliases": ("bc-ml", "browser-ml-models"),
+        "build_flavor": "browser-chrome",
+        "mach_command": "mochitest",
+        "kwargs": {
+            "flavor": "browser-chrome",
+            "subsuite": "ml-models",
+            "test_paths": None,
+        },
+        "task_regex": [
+            "mochitest-browser-chrome-ml-models($|.*(-1|[^0-9])$)",
             "test-verify($|.*(-1|[^0-9])$)",
         ],
     },
@@ -504,7 +531,9 @@ _test_flavors = {
 _test_subsuites = {
     ("browser-chrome", "a11y"): "mochitest-browser-a11y",
     ("browser-chrome", "devtools"): "mochitest-devtools-chrome",
+    ("browser-chrome", "devtools-compat"): "mochitest-devtools-compat",
     ("browser-chrome", "media-bc"): "mochitest-browser-media",
+    ("browser-chrome", "ml-models"): "mochitest-browser-chrome-ml-models",
     ("browser-chrome", "remote"): "mochitest-remote",
     ("browser-chrome", "screenshots"): "mochitest-browser-screenshots",
     ("browser-chrome", "translations"): "mochitest-browser-translations",
@@ -524,6 +553,7 @@ _test_subsuites = {
     ("web-platform-tests", "print-reftest"): "web-platform-tests-print-reftest",
     ("web-platform-tests", "reftest"): "web-platform-tests-reftest",
     ("web-platform-tests", "wdspec"): "web-platform-tests-wdspec",
+    ("web-platform-tests", "aamtest"): "web-platform-tests-aam",
 }
 
 

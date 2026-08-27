@@ -559,23 +559,23 @@ bool TextEventDispatcher::DispatchKeyboardEventInternal(
   // emulates real text input or synthesizing keyboard events for tests,
   // the arrays may be initialized all commands already.  If so, we need to
   // duplicate the arrays here, but we should do this only when we're
-  // dispatching eKeyPress events because BrowserParent::SendRealKeyEvent()
-  // does this only for eKeyPress event.  Note that this is not required if
-  // we're in the main process because in the parent process, the edit commands
-  // will be initialized by `ExecuteEditCommands()` (when the event is handled
-  // by editor event listener) or `InitAllEditCommands()` (when the event is
-  // set to a content process).  We should test whether these pathes work or
-  // not too.
+  // dispatching eKeyPress and eKeyDown events because
+  // BrowserParent::SendRealKeyEvent() does this only for eKeyPress and eKeyDown
+  // event.  Note that this is not required if we're in the main process because
+  // in the parent process, the edit commands will be initialized by
+  // `ExecuteEditCommands()` (when the event is handled by editor event
+  // listener) or `InitAllEditCommands()` (when the event is set to a content
+  // process).  We should test whether these pathes work or not too.
   if (XRE_IsContentProcess() && keyEvent.mIsSynthesizedByTIP) {
-    if (aMessage == eKeyPress) {
+    if (aMessage == eKeyPress || aMessage == eKeyDown) {
       keyEvent.AssignCommands(aKeyboardEvent);
     } else {
       // Prevent retriving native edit commands if we're in a content process
-      // because only `eKeyPress` events coming from the main process have
-      // edit commands (See `BrowserParent::SendRealKeyEvent`).  And also
-      // retriving edit commands from a content process requires synchonous
-      // IPC and that makes running tests slower.  Therefore, we should mark
-      // the `eKeyPress` event does not need to retrieve edit commands anymore.
+      // because only `eKeyPress` and `eKeyDown` events coming from the main
+      // process have edit commands (See `BrowserParent::SendRealKeyEvent`). And
+      // also retriving edit commands from a content process requires synchonous
+      // IPC and that makes running tests slower.  Therefore, we should mark the
+      // other events as no longer needing to retrieve edit commands.
       keyEvent.PreventNativeKeyBindings();
     }
   }

@@ -9,7 +9,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
-import { getChromeWindow } from "resource:///modules/syncedtabs/util.sys.mjs";
+import { getChromeWindow } from "moz-src:///browser/components/syncedtabs/util.sys.mjs";
 
 function getContextMenu(window) {
   return getChromeWindow(window).document.getElementById(

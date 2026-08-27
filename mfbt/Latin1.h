@@ -18,8 +18,8 @@
 #include "mozilla/JsRust.h"
 
 #if MOZ_HAS_JSRUST()
-#  include "mozilla/Span.h"
 #  include "encoding_rs_mem.h"
+#  include "mozilla/Span.h"
 #endif
 
 namespace mozilla {

@@ -8,9 +8,9 @@
 *
 ```
 
-- [Breaking changes](breaking-changes.html)
-- [Login Storage](login-storage-api.html)
-- [Extension Managing](managing-extensions.html)
-- [Priority Hint](priority-hint.html)
-- [Save to PDF](save-to-pdf.html)
-- [Sharing rust libraries across the Firefox stack](sharing-rust-libraries.html)
+- [Breaking changes](breaking-changes.md)
+- [Login Storage](login-storage-api.md)
+- [Extension Managing](managing-extensions.md)
+- [Priority Hint](priority-hint.md)
+- [Save to PDF](save-to-pdf.md)
+- [Sharing rust libraries across the Firefox stack](sharing-rust-libraries.md)

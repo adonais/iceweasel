@@ -46,9 +46,9 @@ add_setup(async function setup() {
 
 // Opens a WebSocket, sends one message and resolves with the echoed reply.
 function echoWebSocket(url, msg) {
-  let chan = Cc["@mozilla.org/network/protocol;1?name=wss"].createInstance(
-    Ci.nsIWebSocketChannel
-  );
+  let chan = Cc["@mozilla.org/network/protocol;1?name=wss"]
+    .getService(Ci.nsIWebSocketProtocolHandler)
+    .newWebSocketChannel();
   // Use a content principal (as a real page-initiated WebSocket would). A
   // system principal on a non-document load disables HTTPS RR in BeginConnect.
   let principal = Services.scriptSecurityManager.createContentPrincipal(

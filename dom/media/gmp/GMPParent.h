@@ -63,7 +63,7 @@ class GMPParent final : public PGMPParent,
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPParent, final)
 
-  GMPParent();
+  explicit GMPParent(nsISerialEventTarget* aGMPEventTarget);
 
 #ifdef MOZ_WIDGET_ANDROID
   void InitForClearkey(GeckoMediaPluginServiceParent* aService);
@@ -244,6 +244,7 @@ class GMPParent final : public PGMPParent,
 #endif
 
   const nsCOMPtr<nsISerialEventTarget> mMainThread;
+  const nsCOMPtr<nsISerialEventTarget> mGMPEventTarget;
 };
 
 }  // namespace mozilla::gmp

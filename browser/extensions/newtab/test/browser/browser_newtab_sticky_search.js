@@ -31,6 +31,7 @@ test_newtab({
     });
 
     await pushPrefs(
+      // @nova-cleanup(remove-pref): Drop this pref push; Nova is the only layout.
       ["browser.newtabpage.activity-stream.nova.enabled", true],
       ["browser.newtabpage.activity-stream.showSearch", true],
       ["browser.newtabpage.activity-stream.feeds.topsites", true],

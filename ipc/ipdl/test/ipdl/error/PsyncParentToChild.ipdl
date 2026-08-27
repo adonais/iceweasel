@@ -1,0 +1,9 @@
+//error: sync parent-to-child messages are verboten (here, message `Msg' in protocol `PsyncParentToChild')
+
+[ChildProc=any]
+sync protocol PsyncParentToChild {
+
+    // can't declare sync parent-to-child messages
+child: sync Msg();
+
+};

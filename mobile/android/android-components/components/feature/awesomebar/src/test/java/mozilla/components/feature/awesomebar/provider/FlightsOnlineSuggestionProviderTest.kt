@@ -9,8 +9,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
-import mozilla.components.concept.awesomebar.AwesomeBar
-import mozilla.components.concept.awesomebar.optimizedsuggestions.FlightSuggestionStatus
+import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightItem
+import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightSuggestionStatus
 import mozilla.components.feature.session.SessionUseCases.LoadUrlUseCase
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
@@ -90,7 +90,7 @@ class FlightsOnlineSuggestionProviderTest {
 
         val suggestion = results.single()
         assertNotNull(suggestion.onSuggestionClicked)
-        suggestion.onSuggestionClicked!!.invoke()
+        suggestion.onSuggestionClicked.invoke()
 
         verify(loadUrlUseCase).invoke(url)
     }
@@ -205,8 +205,8 @@ class FlightsOnlineSuggestionProviderTest {
 
     @Test
     fun `parseFlightData uses estimatedTime when available`() {
-        val airport = AwesomeBar.FlightItem.Airport(code = "LAX", city = "Los Angeles")
-        val timing = AwesomeBar.FlightItem.Timing(
+        val airport = FlightItem.Airport(code = "LAX", city = "Los Angeles")
+        val timing = FlightItem.Timing(
             scheduledTime = "2025-10-05T13:05:00-07:00",
             estimatedTime = "2025-10-05T15:05:00-07:00",
         )
@@ -226,8 +226,8 @@ class FlightsOnlineSuggestionProviderTest {
 
     @Test
     fun `parseFlightData uses scheduledTime when estimatedTime is not available`() {
-        val airport = AwesomeBar.FlightItem.Airport(code = "JFK", city = "New York")
-        val timing = AwesomeBar.FlightItem.Timing(
+        val airport = FlightItem.Airport(code = "JFK", city = "New York")
+        val timing = FlightItem.Timing(
             scheduledTime = "2025-10-05T13:05:00-04:00",
             estimatedTime = null,
         )
@@ -247,8 +247,8 @@ class FlightsOnlineSuggestionProviderTest {
 
     @Test
     fun `parseFlightData returns null for invalid ISO date format`() {
-        val airport = AwesomeBar.FlightItem.Airport(code = "LAX", city = "Los Angeles")
-        val timing = AwesomeBar.FlightItem.Timing(
+        val airport = FlightItem.Airport(code = "LAX", city = "Los Angeles")
+        val timing = FlightItem.Timing(
             scheduledTime = "invalid-date-format",
             estimatedTime = null,
         )
@@ -265,13 +265,13 @@ class FlightsOnlineSuggestionProviderTest {
     fun `parseFlightData shows the time in the airport's local timezone`() {
         // The destination airport is one hour ahead of the departure airport. The arrival time
         // must be shown in the destination's local time, not re-projected onto another zone.
-        val departureAirport = AwesomeBar.FlightItem.Airport(code = "BNA", city = "Nashville")
-        val departureTiming = AwesomeBar.FlightItem.Timing(
+        val departureAirport = FlightItem.Airport(code = "BNA", city = "Nashville")
+        val departureTiming = FlightItem.Timing(
             scheduledTime = "2025-10-05T22:13:00-06:00",
             estimatedTime = null,
         )
-        val arrivalAirport = AwesomeBar.FlightItem.Airport(code = "PHL", city = "Philadelphia")
-        val arrivalTiming = AwesomeBar.FlightItem.Timing(
+        val arrivalAirport = FlightItem.Airport(code = "PHL", city = "Philadelphia")
+        val arrivalTiming = FlightItem.Timing(
             scheduledTime = "2025-10-06T00:13:00-05:00",
             estimatedTime = null,
         )
@@ -298,8 +298,8 @@ class FlightsOnlineSuggestionProviderTest {
 
     @Test
     fun `parseFlightData formats date with different locale`() {
-        val airport = AwesomeBar.FlightItem.Airport(code = "CDG", city = "Paris")
-        val timing = AwesomeBar.FlightItem.Timing(
+        val airport = FlightItem.Airport(code = "CDG", city = "Paris")
+        val timing = FlightItem.Timing(
             scheduledTime = "2025-10-05T13:05:00+02:00",
             estimatedTime = null,
         )
@@ -323,20 +323,20 @@ class FlightsOnlineSuggestionProviderTest {
     }
 }
 
-/** Convenience factory for creating sample [AwesomeBar.FlightItem] objects for tests. */
+/** Convenience factory for creating sample [FlightItem] objects for tests. */
 private fun sampleFlightItem(
     flightNumber: String = "AA123",
-    destination: AwesomeBar.FlightItem.Airport = sampleDestination,
-    origin: AwesomeBar.FlightItem.Airport = sampleOrigin,
-    departure: AwesomeBar.FlightItem.Timing = sampleDeparture,
-    arrival: AwesomeBar.FlightItem.Timing = sampleArrival,
+    destination: FlightItem.Airport = sampleDestination,
+    origin: FlightItem.Airport = sampleOrigin,
+    departure: FlightItem.Timing = sampleDeparture,
+    arrival: FlightItem.Timing = sampleArrival,
     status: String = "En Route",
     progressPercent: Int = 72,
     timeLeftMinutes: Int? = 63,
     delayed: Boolean = false,
     url: String = "https://flightaware.com/live/flight/AAL123",
-    airline: AwesomeBar.FlightItem.Airline = sampleAirline,
-) = AwesomeBar.FlightItem(
+    airline: FlightItem.Airline = sampleAirline,
+) = FlightItem(
     flightNumber = flightNumber,
     destination = destination,
     origin = origin,
@@ -350,23 +350,23 @@ private fun sampleFlightItem(
     airline = airline,
 )
 
-private val sampleDestination = AwesomeBar.FlightItem.Airport(
+private val sampleDestination = FlightItem.Airport(
     code = "JFK",
     city = "New York",
 )
-private val sampleOrigin = AwesomeBar.FlightItem.Airport(
+private val sampleOrigin = FlightItem.Airport(
     code = "LAX",
     city = "Los Angeles",
 )
-private val sampleDeparture = AwesomeBar.FlightItem.Timing(
+private val sampleDeparture = FlightItem.Timing(
     scheduledTime = "2025-10-05T13:05:00-07:00",
     estimatedTime = "2025-10-05T15:05:00-07:00",
 )
-private val sampleArrival = AwesomeBar.FlightItem.Timing(
+private val sampleArrival = FlightItem.Timing(
     scheduledTime = "2025-10-05T18:20:00-04:00",
     estimatedTime = "2025-10-05T18:25:00-04:00",
 )
-private val sampleAirline = AwesomeBar.FlightItem.Airline(
+private val sampleAirline = FlightItem.Airline(
     code = "AAL",
     name = "American Airlines",
     color = "#0078D2",

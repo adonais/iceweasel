@@ -224,8 +224,7 @@ def gen_page_descriptors_webidl(output):
 
 def gen_position_try_descriptors_webidl(output):
     return gen_webidl(output, "position-try", "CSSPositionTryDescriptors",
-                      "CSSPositionTryDescriptor",
-                      "layout.css.anchor-positioning.enabled")
+                      "CSSPositionTryDescriptor")
 
 
 def gen_font_face_descriptors_webidl(output):
@@ -251,6 +250,11 @@ interface CSSFontFaceDescriptors : CSSStyleDeclaration {
             extendedAttrs.append('Pref="%s"' % d.gecko_pref)
         if idl_name != d.name:
             extendedAttrs.append('BindingAlias="%s"' % d.name)
+        for alias in d.aliases:
+            alias_idl_name = data.to_idl_name(alias)
+            if alias_idl_name != alias:
+                 extendedAttrs.append('BindingAlias="%s"' % alias)
+            extendedAttrs.append('BindingAlias="%s"' % alias_idl_name)
         output.write(generateLine(idl_name, extendedAttrs))
     output.write("};\n")
     return deps
@@ -575,6 +579,7 @@ def gen_css_properties_js(output):
         "-moz-top-layer",                     # parsed by UA sheets only
         "-moz-min-font-size-ratio",           # parsed by UA sheets only
         "-moz-box-collapse",                  # chrome-only internal properties
+        "-moz-line-scroll-amount",            # chrome-only internal properties
         "-moz-image-decoding",                # chrome-only internal properties
         "-moz-subtree-hidden-only-visually",  # chrome-only internal properties
         "-moz-user-focus",                    # chrome-only internal properties

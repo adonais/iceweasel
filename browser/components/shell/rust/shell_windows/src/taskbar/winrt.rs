@@ -6,8 +6,8 @@
 //!
 //! This implements functionality to pin an app to the taskbar using the
 //! TaskbarManager WinRT API. This was originally exposed to UWP/MSIX apps, and
-//! later extended to unpackaged Win32 apps while locking down the undocumented
-//! [IPinnedList3 COM API][crate::taskbar::com].
+//! later extended to unpackaged Win32 and packaged (Win32 MSIX) apps while
+//! locking down the undocumented [IPinnedList3 COM API][super::com].
 //!
 //! ## Secondary Pinning
 //!
@@ -31,23 +31,32 @@
 //! ## Requirements
 //!
 //! This API requires a shortcut present in the virtual shell:appsfolder
-//! directory, i.e. a shortcut with unique AUMID in either the User or Common
-//! Start Menu folders. Note that there is a delay between files being created
-//! in the Start Menu folders and becoming accessible in shell:appsfolder.
+//! directory. For MSIX installs this requires an <Application> entry in the
+//! AppxManifest.xml, for non-MSIX installs a shortcut with unique AUMID in
+//! either the User or Common Start Menu folders. Note that there is a delay
+//! between files being created in the Start Menu folders and becoming
+//! accessible in shell:appsfolder.
 //!
-//! Additionally the app must be focused when pinning is requested.
+//! The app must be focused when pinning is requested.
 
 use nserror::{NS_ERROR_NOT_AVAILABLE, NS_ERROR_UNEXPECTED, nsresult};
 use nsstring::nsAString;
 use std::sync::LazyLock;
-use windows::{ApplicationModel::Package, UI::Shell::TaskbarManager, core::Error as WinError};
-
-use super::PinResult;
-use crate::{
-    limited_access_features::LimitedAccessFeatureService,
-    util::{async_timer, thread::MainThreadGuard},
+use windows::{
+    ApplicationModel::Package,
+    UI::Shell::{ITaskbarManagerDesktopAppSupportStatics, TaskbarManager},
+    core::{Error as WinError, factory},
 };
 
+use crate::{
+    limited_access_features::LimitedAccessFeatureService,
+    util::{async_timer, thread_guard::MainThreadGuard},
+};
+
+use super::PinResult;
+
+/// Lazily attempts to unlock the taskbar pin Limited Access Feature, at most
+/// once.
 static LAF_LOCK: LazyLock<Result<(), nsresult>> = LazyLock::new(|| {
     let svc = LimitedAccessFeatureService::new();
     let feature_id = svc.get_taskbar_pin_feature_id()?;
@@ -55,7 +64,22 @@ static LAF_LOCK: LazyLock<Result<(), nsresult>> = LazyLock::new(|| {
     feature.unlock()?.then_some(()).ok_or(NS_ERROR_UNEXPECTED)
 });
 
-pub(super) fn is_pinning_allowed() -> bool {
+/// Context indicating whether the WinRT pinning APIs are supported on the
+/// current OS version and, if so, whether pinning is currently allowed.
+pub(super) enum CanPin {
+    Supported { allowed: bool },
+    Unsupported,
+}
+
+/// Checks whether the taskbar pinning APIs are supported on the current OS
+/// version and, if so, whether pinning is currently allowed.
+///
+/// Note: This is a best-effort check. For Win32 desktop apps, we always report
+/// that pinning is allowed when it is supported. We do this because we cannot
+/// distinguish between cases where pinning is allowed due to conditions we
+/// handle during pinning and cases where pinning will fail for reasons beyond
+/// our control.
+pub(super) fn can_pin() -> Result<CanPin, WinError> {
     if let Err(_e) = *LAF_LOCK {
         // Limited Access Feature no longer necessary for Windows 11 26200 Build
         // 7840, and possibly other channels.
@@ -64,9 +88,26 @@ pub(super) fn is_pinning_allowed() -> bool {
         );
     }
 
-    TaskbarManager::GetDefault()
-        .and_then(|m| m.IsPinningAllowed())
-        .unwrap_or(false)
+    // Verify pinning is supported for Win32 desktop applications - applies to
+    // both packaged (MSIX) and unpackaged installs.
+    if factory::<TaskbarManager, ITaskbarManagerDesktopAppSupportStatics>().is_err() {
+        return Ok(CanPin::Unsupported);
+    }
+
+    match Package::Current() {
+        Ok(_) => Ok(CanPin::Supported {
+            allowed: TaskbarManager::GetDefault()?.IsPinningAllowed()?,
+        }),
+        Err(_) => {
+            // `TaskbarManager::IsPinningAllowed` returns false if no
+            // shell:appsfolder entry exists, which is only ever the case with
+            // unpackaged installs. We can't rely on `IsPinningAllowed` for our
+            // use case because we dynamically generate shell:appsfolder entries
+            // when not present while pinning. For this reason, we assume
+            // pinning is allowed when supported and not packaged.
+            Ok(CanPin::Supported { allowed: true })
+        }
+    }
 }
 
 /// Pins the provided app to the taskbar using the WinRT TaskbarManager API,
@@ -150,6 +191,35 @@ pub(super) async fn pin_to_taskbar(
         log::info!("Pin via WinRT rejected by user or system.");
         Ok(PinResult::Rejected)
     }
+}
+
+/// Checks whether the current app is pinned to the taskbar.
+pub(super) async fn is_current_app_pinned(_: Package) -> Result<bool, IsPinnedError> {
+    // This implementation could be modified to check whether an app with a
+    // matching AUMID has been pinned by swapping in the current process's
+    // AUMID, as we do while pinning. Note that AUMID swapping does not make
+    // sense in an MSIX context because we cannot swap the AUMID to create
+    // additional taskbar shortcuts.
+    //
+    // Such an implementation would be unlikely to work for non-MSIX installs on
+    // versions of Windows predating the taskbar-pinning Limited Access Feature,
+    // though this has not been confirmed. Even if it did work in those
+    // contexts, it would not work on versions of Windows earlier than 1809
+    // because the TaskbarManager API did not yet exist.
+    //
+    // Because we can reliably check pin status for all non-MSIX installs by
+    // inspecting shortcuts in the taskbar folder, we have opted not to support
+    // such installs through WinRT. Calls to this function are therefore gated
+    // on MSIX status through Package.
+
+    let is_pinned = TaskbarManager::GetDefault()
+        .map_err(IsPinnedError::GetTaskbarManager)?
+        .IsCurrentAppPinnedAsync()
+        .map_err(IsPinnedError::ScheduleIsCurrentAppPinned)?
+        .await
+        .map_err(IsPinnedError::IsCurrentAppPinned)?;
+
+    Ok(is_pinned)
 }
 
 mod aumid {
@@ -251,6 +321,7 @@ pub(super) enum WinRtPinError {
 }
 
 impl WinRtPinError {
+    /// Converts Error into Glean metric strings.
     pub fn to_metric_taskbar_pin_winrt(&self) -> &'static str {
         use WinRtPinError::*;
         match self {
@@ -281,6 +352,16 @@ impl From<WinRtPinError> for nsresult {
     }
 }
 
+// `#[warn(dead_code)]` ignores usage of the Debug trait; suppress it to allow
+// `WinError` to be included in logs.
+#[allow(dead_code)]
+#[derive(Debug)]
+pub(super) enum IsPinnedError {
+    GetTaskbarManager(WinError),
+    ScheduleIsCurrentAppPinned(WinError),
+    IsCurrentAppPinned(WinError),
+}
+
 #[cfg(feature = "enable_tests")]
 mod test {
     //! Test-only module to stub WinRT pin results via prefs.
@@ -289,8 +370,10 @@ mod test {
     use windows::core::Error as WinError;
     use xpcom::interfaces::nsIPrefBranch;
 
-    use super::PinResult::{self, *};
-    use super::WinRtPinError::{self, *};
+    use super::{
+        PinResult::{self, *},
+        WinRtPinError::{self, *},
+    };
 
     /// Maps `browser.shell.taskbar.test.pinWinRtStubResult` to the pin Result.
     pub(super) fn pin_result_from_pref() -> Option<Result<PinResult, WinRtPinError>> {
@@ -311,8 +394,7 @@ mod test {
         })
     }
 
-    /// Attempts to retrieve the `browser.shell.taskbar.test.pinWinRtStubResult`
-    /// preference.
+    /// Attempts to retrieve the provided preference.
     fn get_char_pref(name: &std::ffi::CStr) -> Option<nsCString> {
         let mut value = nsCString::new();
         let prefs = xpcom::get_service::<nsIPrefBranch>(c"@mozilla.org/preferences-service;1")?;

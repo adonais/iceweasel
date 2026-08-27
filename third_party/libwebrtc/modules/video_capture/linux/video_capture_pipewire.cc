@@ -52,6 +52,10 @@
 namespace webrtc {
 namespace videocapturemodule {
 
+// A reasonable maximum size so "width * height * kBytesPerPixel" doesn't
+// overflow
+constexpr int32_t kMaxVideoCaptureDimension = 16384;
+
 struct {
   uint32_t spa_format;
   VideoType video_type;
@@ -301,6 +305,15 @@ void VideoCaptureModulePipeWire::OnStreamParamChanged(
     that->OnFormatChanged(format);
 }
 
+static int32_t MaxFPSFromFractions(const spa_fraction& framerate,
+                                   const spa_fraction& max_framerate) {
+  if (framerate.num && framerate.denom)
+    return framerate.num / framerate.denom;
+  if (max_framerate.num && max_framerate.denom)
+    return max_framerate.num / max_framerate.denom;
+  return 30;
+}
+
 RTC_NO_SANITIZE("cfi-icall")
 void VideoCaptureModulePipeWire::OnFormatChanged(const struct spa_pod* format) {
   RTC_CHECK_RUNS_SERIALIZED(&capture_checker_);
@@ -314,21 +327,23 @@ void VideoCaptureModulePipeWire::OnFormatChanged(const struct spa_pod* format) {
 
   switch (media_subtype) {
     case SPA_MEDIA_SUBTYPE_raw: {
-      struct spa_video_info_raw f;
+      struct spa_video_info_raw f = SPA_VIDEO_INFO_RAW_INIT();
       spa_format_video_raw_parse(format, &f);
       configured_capability_.width = f.size.width;
       configured_capability_.height = f.size.height;
       configured_capability_.videoType = PipeWireRawFormatToVideoType(f.format);
-      configured_capability_.maxFPS = f.framerate.num / f.framerate.denom;
+      configured_capability_.maxFPS =
+          MaxFPSFromFractions(f.framerate, f.max_framerate);
       break;
     }
     case SPA_MEDIA_SUBTYPE_mjpg: {
-      struct spa_video_info_mjpg f;
+      struct spa_video_info_mjpg f = {};
       spa_format_video_mjpg_parse(format, &f);
       configured_capability_.width = f.size.width;
       configured_capability_.height = f.size.height;
       configured_capability_.videoType = VideoType::kMJPEG;
-      configured_capability_.maxFPS = f.framerate.num / f.framerate.denom;
+      configured_capability_.maxFPS =
+          MaxFPSFromFractions(f.framerate, f.max_framerate);
       break;
     }
     default:
@@ -337,6 +352,14 @@ void VideoCaptureModulePipeWire::OnFormatChanged(const struct spa_pod* format) {
 
   if (configured_capability_.videoType == VideoType::kUnknown) {
     RTC_LOG(LS_ERROR) << "Unsupported video format.";
+    return;
+  }
+
+  if (configured_capability_.width <= 0 || configured_capability_.height <= 0 ||
+      configured_capability_.width > kMaxVideoCaptureDimension ||
+      configured_capability_.height > kMaxVideoCaptureDimension) {
+    RTC_LOG(LS_ERROR) << "Unsupported video resolution.";
+    configured_capability_.videoType = VideoType::kUnknown;
     return;
   }
 
@@ -471,8 +494,16 @@ void VideoCaptureModulePipeWire::ProcessBuffers() {
       SetApplyRotation(rotation != kVideoRotation_0);
     }
 
-    if (h->flags & SPA_META_HEADER_FLAG_CORRUPTED) {
-      RTC_LOG(LS_INFO) << "Dropping corruped frame.";
+    if (h && (h->flags & SPA_META_HEADER_FLAG_CORRUPTED)) {
+      RTC_LOG(LS_INFO) << "Dropping corrupted frame.";
+      pw_stream_queue_buffer(stream_, buffer);
+      continue;
+    }
+
+    if (static_cast<uint64_t>(spaBuffer->datas[0].chunk->offset) +
+            spaBuffer->datas[0].chunk->size >
+        spaBuffer->datas[0].maxsize) {
+      RTC_LOG(LS_ERROR) << "Dropping frame with invalid size";
       pw_stream_queue_buffer(stream_, buffer);
       continue;
     }

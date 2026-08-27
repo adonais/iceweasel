@@ -50,6 +50,8 @@ static Atomic<size_t> gReportedHeapData;
 static Atomic<size_t> gReportedContextCount;
 static Atomic<size_t> gReportedTargetCount;
 
+constexpr size_t kUploadBufferSize = 1 * 1024 * 1024;
+
 class AcceleratedCanvas2DMemoryReporter final : public nsIMemoryReporter {
   ~AcceleratedCanvas2DMemoryReporter() = default;
 
@@ -240,6 +242,7 @@ SharedContextWebgl::~SharedContextWebgl() {
     mPathVertexBuffer = nullptr;
   }
   ClearZeroBuffer();
+  ClearUploadBuffer();
   ClearAllTextures();
   UnlinkSurfaceTextures(true);
   UnlinkGlyphCaches();
@@ -401,6 +404,14 @@ void SharedContextWebgl::ClearZeroBuffer() {
   }
 }
 
+void SharedContextWebgl::ClearUploadBuffer() {
+  if (mUploadBuffer) {
+    RemoveUntrackedTextureMemory(mUploadBuffer);
+    mUploadBuffer = nullptr;
+  }
+  mUploadBufferOffset = 0;
+}
+
 // If there is a request to clear out the caches because of memory pressure,
 // then first clear out all the texture handles in the texture cache. If there
 // are still empty texture pages being kept around, then clear those too.
@@ -414,6 +425,7 @@ void SharedContextWebgl::ClearCachesIfNecessary() {
     ClearEmptyTextureMemory();
   }
   ClearLastTexture();
+  ClearUploadBuffer();
   ClearSnapshotPBOs();
 }
 
@@ -559,6 +571,15 @@ bool SharedContextWebgl::Initialize() {
   if (mWebgl->IsContextLost()) {
     mWebgl = nullptr;
     return false;
+  }
+
+  // Our shaders are written to be provoking vertex agnostic, therefore if this
+  // extension is available we should request FirstVertex convention,
+  // potentially allowing the driver to avoid expensive emulation.
+  constexpr auto provokingVertexExt = WebGLExtensionID::WEBGL_provoking_vertex;
+  if (mWebgl->IsExtensionSupported(provokingVertexExt)) {
+    mWebgl->RequestExtension(provokingVertexExt);
+    mWebgl->ProvokingVertex(webgl::ProvokingVertex::FirstVertex);
   }
 
   mMaxTextureSize = initResult.limits.maxTex2dSize;
@@ -1114,6 +1135,19 @@ already_AddRefed<TextureHandle> SharedContextWebgl::CopySnapshot(
     return nullptr;
   }
 
+  IntPoint offset(aRect.TopLeft());
+  IntSize size(aRect.Size());
+  if (aHandle) {
+    // If the handle is a sub-rect of its backing texture...
+    offset += aHandle->GetBounds().TopLeft();
+    size = IntRect(IntPoint(0, 0), aHandle->GetBounds().Size())
+               .Intersect(aRect)
+               .Size();
+  }
+  if (size.IsEmpty()) {
+    return nullptr;
+  }
+
   // If the target is going away, then we can just directly reuse the
   // framebuffer texture since it will never change.
   RefPtr<WebGLTexture> tex = mWebgl->CreateTexture();
@@ -1128,15 +1162,16 @@ already_AddRefed<TextureHandle> SharedContextWebgl::CopySnapshot(
   }
 
   // Create a texture to hold the copy
-  BindAndInitRenderTex(tex, SurfaceFormat::B8G8R8A8, aRect.Size());
+  BindAndInitRenderTex(tex, SurfaceFormat::B8G8R8A8, size);
   // Copy the framebuffer into the texture
-  mWebgl->CopyTexImage(LOCAL_GL_TEXTURE_2D, 0, 0, {0, 0, 0}, {aRect.x, aRect.y},
-                       {uint32_t(aRect.width), uint32_t(aRect.height)});
+  mWebgl->CopyTexImage(LOCAL_GL_TEXTURE_2D, 0, 0, {0, 0, 0},
+                       {offset.x, offset.y},
+                       {uint32_t(size.width), uint32_t(size.height)});
 
   SurfaceFormat format =
       aHandle ? aHandle->GetFormat() : mCurrentTarget->GetFormat();
   already_AddRefed<TextureHandle> result =
-      WrapSnapshot(aRect.Size(), format, tex.forget());
+      WrapSnapshot(size, format, tex.forget());
 
   // Restore the actual framebuffer after reading is done.
   if (aHandle) {
@@ -2586,6 +2621,7 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
   webgl::TexUnpackBlobDesc texDesc = {LOCAL_GL_TEXTURE_2D};
   IntRect srcRect(aSrcRect);
   IntPoint dstOffset(aDstOffset);
+  bool usingPBO = false;
   if (srcRect.IsEmpty()) {
     return true;
   }
@@ -2620,7 +2656,46 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
     Span<const uint8_t> range(
         map->GetData() + srcRect.y * size_t(stride) + srcRect.x * bpp,
         std::max(srcRect.height - 1, 0) * size_t(stride) + srcRect.width * bpp);
-    texDesc.cpuData = Some(range);
+    // Use the shared upload PBO if the data can fit within it. We always use a
+    // fixed size to help allocation performance. Avoid on D3D ANGLE where
+    // testing has shown this to be a performance loss.
+    if (range.Length() <= kUploadBufferSize && !mWebgl->GL()->IsD3DANGLE()) {
+      CheckedInt<size_t> uploadOffset =
+          RoundUpToMultipleOf(CheckedInt<size_t>(mUploadBufferOffset), 4);
+      if (!uploadOffset.isValid()) {
+        return false;
+      }
+      CheckedInt<size_t> requiredSize = uploadOffset + range.Length();
+      if (!requiredSize.isValid()) {
+        return false;
+      }
+      // If the existing buffer doesn't have enough room left for this upload
+      // then orphan it and create a new one.
+      if (!mUploadBuffer || requiredSize.value() > kUploadBufferSize) {
+        if (!mUploadBuffer) {
+          mUploadBuffer = mWebgl->CreateBuffer();
+          if (!mUploadBuffer) {
+            return false;
+          }
+          AddUntrackedTextureMemory(mUploadBuffer);
+        }
+        mWebgl->BindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, mUploadBuffer);
+        mWebgl->BufferData(LOCAL_GL_PIXEL_UNPACK_BUFFER, kUploadBufferSize,
+                           nullptr, LOCAL_GL_STREAM_DRAW);
+        uploadOffset = 0;
+        requiredSize = range.Length();
+      } else {
+        mWebgl->BindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, mUploadBuffer);
+      }
+      mUploadBuffer->BufferSubData(LOCAL_GL_PIXEL_UNPACK_BUFFER,
+                                   uploadOffset.value(), range.Length(),
+                                   range.data(), true);
+      mUploadBufferOffset = requiredSize.value();
+      texDesc.pboOffset = Some(uploadOffset.value());
+      usingPBO = true;
+    } else {
+      texDesc.cpuData = Some(range);
+    }
     // If the stride happens to be 4 byte aligned, assume that is the
     // desired alignment regardless of format (even A8). Otherwise, we
     // default to byte alignment.
@@ -2659,6 +2734,7 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
       mWebgl->BindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, mZeroBuffer);
     }
     texDesc.pboOffset = Some(0);
+    usingPBO = true;
   }
   texDesc.size = uvec3(uint32_t(srcRect.width), uint32_t(srcRect.height), 1);
   // Upload as RGBA8 to avoid swizzling during upload. Surfaces provide
@@ -2680,7 +2756,7 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
   if (aTex) {
     mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, mLastTexture);
   }
-  if (!aData && aZero) {
+  if (usingPBO) {
     mWebgl->BindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, nullptr);
   }
   return true;
@@ -3199,9 +3275,11 @@ bool SharedContextWebgl::DrawRectAccel(
         }
         texSize = underlyingSurface->GetSize();
         format = underlyingSurface->GetFormat();
-        if (!surfacePattern.mSamplingRect.IsEmpty()) {
-          texSize = surfacePattern.mSamplingRect.Size();
-          offset = surfacePattern.mSamplingRect.TopLeft();
+        IntRect samplingRect = surfacePattern.mSamplingRect.SafeIntersect(
+            IntRect(IntPoint(0, 0), texSize));
+        if (!samplingRect.IsEmpty()) {
+          texSize = samplingRect.Size();
+          offset = samplingRect.TopLeft();
         }
       }
 
@@ -3240,7 +3318,7 @@ bool SharedContextWebgl::DrawRectAccel(
           mUsedTextureMemory -= handle->UsedBytes();
           handle->UpdateSize(texSize);
           mUsedTextureMemory += handle->UsedBytes();
-          handle->SetSamplingOffset(surfacePattern.mSamplingRect.TopLeft());
+          handle->SetSamplingOffset(offset);
         } else {
           // Count reusing a snapshot texture (no readback) as a cache hit.
           mCurrentTarget->mProfile.OnCacheHit();
@@ -3274,7 +3352,7 @@ bool SharedContextWebgl::DrawRectAccel(
         }
         UploadSurfaceToHandle(data, offset, handle);
         // Link the handle to the surface's user data.
-        handle->SetSamplingOffset(surfacePattern.mSamplingRect.TopLeft());
+        handle->SetSamplingOffset(offset);
         if (aHandle) {
           *aHandle = handle;
         } else {

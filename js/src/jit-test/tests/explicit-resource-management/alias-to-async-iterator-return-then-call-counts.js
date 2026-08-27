@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !getBuildConfiguration("explicit-resource-management"); --enable-explicit-resource-management
-
 let thenGetterCalls = 0;
 const thenVal = Promise.prototype.then;
 Object.defineProperty(Promise.prototype, "then", {

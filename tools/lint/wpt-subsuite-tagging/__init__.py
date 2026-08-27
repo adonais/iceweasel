@@ -8,15 +8,20 @@ import mozpack.path as mozpath
 from mozlint import result
 from mozlint.pathutils import expand_exclusions
 
-# Must stay in sync with WPT_SUBSUITES in taskcluster/gecko_taskgraph/util/chunking.py.
-# The chunking logic routes tests to subsuite CI jobs by checking whether the test's
-# directory path contains one of these strings. Tests in matching directories that lack
-# the corresponding tag will be excluded from all CI jobs.
+# Must stay in sync with WPT_SUBSUITES in
+# taskcluster/gecko_taskgraph/util/chunking.py.  The chunking logic routes
+# tests to subsuite CI jobs by checking whether the test's directory path
+# starts with one of these strings. Tests in matching directories that lack the
+# corresponding tag will be excluded from all CI jobs.
 WPT_SUBSUITE_PATHS = {
     "canvas": ["html/canvas"],
     "webgpu": ["webgpu"],
-    "webcodecs": ["webcodecs"],
+    "webcodecs": [
+        "webcodecs",
+        "media-source/mse-for-webcodecs",
+    ],
     "eme": ["encrypted-media"],
+    "webrtc": ["webrtc"],
 }
 # Must stay in sync with WPT_SUBSUITES in taskcluster/gecko_taskgraph/util/chunking.py.
 
@@ -70,7 +75,7 @@ def lint(paths, config, fix=None, **lintargs):
             url_dir = "/".join(rel_path.split("/")[:-1]) + "/"
 
             for subsuite, subsuite_paths in WPT_SUBSUITE_PATHS.items():
-                if not any(p in url_dir for p in subsuite_paths):
+                if not any(url_dir.startswith(p) for p in subsuite_paths):
                     continue
 
                 tags = _effective_tags(rel_path, mozpath.join(root, meta_root))

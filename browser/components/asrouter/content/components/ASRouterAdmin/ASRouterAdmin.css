@@ -3,6 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 /* stylelint-disable max-nesting-depth */
 @import 'chrome://global/skin/in-content/common.css';
+html {
+  background-color: var(--background-color-canvas);
+}
+
 .asrouter-admin {
   font-family: system-ui;
   max-width: 1300px;
@@ -103,11 +107,17 @@
 .asrouter-admin .icon.icon-info {
   background-image: url("chrome://global/skin/icons/info.svg");
 }
+.asrouter-admin .icon.icon-warning {
+  background-image: url("chrome://global/skin/icons/warning.svg");
+}
 .asrouter-admin .icon.icon-dismiss {
   background-image: url("chrome://global/skin/icons/close.svg");
 }
 .asrouter-admin .icon.icon-undo {
   background-image: url("chrome://global/skin/icons/undo.svg");
+}
+.asrouter-admin .icon.icon-reset {
+  background-image: url("chrome://global/skin/icons/arrow-counterclockwise-16.svg");
 }
 .asrouter-admin .icon.icon-arrowhead-down {
   background-image: url("chrome://global/skin/icons/arrow-down-12.svg");
@@ -118,10 +128,10 @@
 .asrouter-admin .icon.icon-arrowhead-forward:dir(rtl) {
   background-image: url("chrome://global/skin/icons/arrow-left-12.svg");
 }
-.asrouter-admin h1 {
-  font-size: 2rem;
-  font-weight: normal;
+.asrouter-admin h2 {
+  margin-block: var(--space-xlarge) var(--space-small);
 }
+.asrouter-admin h1 button,
 .asrouter-admin h2 button,
 .asrouter-admin p button {
   font-size: 1rem;
@@ -129,6 +139,7 @@
   margin-inline-start: 8px;
   margin-block: 0;
 }
+.asrouter-admin h1 button.small,
 .asrouter-admin h2 button.small,
 .asrouter-admin p button.small {
   display: inline-flex;
@@ -186,13 +197,61 @@
 .asrouter-admin .messages-list {
   display: flex;
   flex-flow: column nowrap;
-  gap: 12px;
-  margin-block: 12px;
+}
+.asrouter-admin .messages-provider-section {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 8px;
+}
+.asrouter-admin .messages-provider-section .messages-provider-heading {
+  margin-block: var(--space-small);
+}
+.asrouter-admin .messages-provider-section .messages-provider-heading .messages-provider-toggle {
+  padding: 4px 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+.asrouter-admin .messages-provider-section .messages-provider-heading .message-stats {
+  margin-inline-start: 6px;
+  color: var(--text-color-deemphasized);
+}
+.asrouter-admin .preview-warning {
+  fill: var(--icon-color-warning);
+}
+.asrouter-admin .reset-button {
+  gap: 6px;
+}
+.asrouter-admin .section-info {
+  margin-block: 8px 12px;
+  font-size: var(--font-size-small);
 }
 .asrouter-admin .message-item {
   display: flex;
   flex-flow: column nowrap;
   gap: 4px;
+  margin-inline-start: var(--space-small);
+  border-radius: var(--card-border-radius);
+  padding: var(--card-padding);
+  border: 1px solid var(--card-border-color);
+  background: var(--card-background-color);
+}
+.asrouter-admin .message-item .message-title-toggle {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: start;
+}
+.asrouter-admin .message-item .message-title-toggle:hover {
+  background: none;
+}
+.asrouter-admin .message-item .message-actions {
+  padding-inline-start: 18px;
 }
 .asrouter-admin .message-item.blocked .message-id,
 .asrouter-admin .message-item.blocked .message-stats,
@@ -228,17 +287,19 @@
   outline-color: var(--dialog-warning-text-color);
 }
 .asrouter-admin .helpLink {
-  padding: 10px;
+  padding: 12px;
   display: flex;
-  background: var(--background-color-box-info);
-  border-radius: 3px;
+  background: var(--background-color-information);
+  border-radius: var(--border-radius-medium);
   align-items: center;
   width: fit-content;
-  max-width: 100%;
 }
 .asrouter-admin .helpLink ul {
-  margin: 0;
+  margin: 6px 0 0;
   padding-inline-start: 1.25em;
+}
+.asrouter-admin .helpLink ul li:not(:last-child) {
+  margin-block-end: 4px;
 }
 .asrouter-admin .helpLink a {
   text-decoration: underline;
@@ -256,6 +317,7 @@
   margin-inline: 0;
 }
 .asrouter-admin .clearButton {
+  background: none;
   border: 0;
   padding: 4px;
   border-radius: 4px;
@@ -265,20 +327,92 @@
   min-height: 0;
   min-width: 0;
 }
-.asrouter-admin .filters {
-  margin-block: 8px;
-}
-.asrouter-admin .filters h3 {
-  margin-block: 8px;
-}
-.asrouter-admin .filters .row {
+.asrouter-admin .filters .filter-controls {
   display: flex;
-  flex-flow: row nowrap;
-  gap: 60px;
+  flex-flow: row wrap;
+  align-items: center;
 }
-.asrouter-admin .filters .col {
+.asrouter-admin .filters .filter-actions {
+  display: flex;
+  align-items: center;
+  margin-inline-start: auto;
+}
+.asrouter-admin .filters .filter-dropdown {
+  position: relative;
+}
+.asrouter-admin .filters .filter-dropdown-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-height: 0;
+  white-space: nowrap;
+}
+.asrouter-admin .filters .filter-dropdown-toggle:hover {
+  background-color: var(--button-background-color-hover);
+}
+.asrouter-admin .filters .filter-dropdown:has(.filter-dropdown-panel:popover-open) .filter-dropdown-toggle {
+  background-color: var(--button-background-color-hover);
+}
+.asrouter-admin .filters .filter-dropdown:has(.filter-dropdown-panel:popover-open) .filter-dropdown-chevron {
+  transform: rotate(180deg);
+}
+.asrouter-admin .filters .filter-dropdown-panel {
+  position: absolute;
+  margin: 0;
+  inset: auto;
+  inset-block-start: anchor(bottom);
+  inset-inline-start: anchor(left);
+  margin-block-start: 4px;
+  min-width: anchor-size(width);
+  padding: var(--space-small);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-medium);
+  background-color: var(--background-color-box);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.asrouter-admin .filters .filter-dropdown-panel:popover-open {
   display: flex;
   flex-flow: column nowrap;
+  gap: 4px;
+}
+.asrouter-admin .filters .filter-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+.asrouter-admin .filters .filter-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 8px;
+  border: none;
+  background: none;
+  color: var(--color-accent-primary);
+  min-height: 0;
+  white-space: nowrap;
+}
+.asrouter-admin .filters .filter-link:hover {
+  text-decoration: underline;
+}
+.asrouter-admin .filters .filter-pills {
+  display: flex;
+  flex-flow: row wrap;
+  margin-block-start: 6px;
+}
+.asrouter-admin .filters .filter-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--border-radius-large);
+  min-height: 0;
+  min-width: fit-content;
+  font-size: var(--font-size-small);
+  color: var(--color-accent-primary);
+}
+.asrouter-admin .filters .filter-pill:hover {
+  background-color: var(--button-background-color-hover);
 }
 .asrouter-admin moz-toggle::part(label) {
   justify-content: revert;

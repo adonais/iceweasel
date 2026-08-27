@@ -10,34 +10,7 @@ export function createSource(name, code) {
   };
 }
 
-const sources = [
-  "a",
-  "b",
-  "foo",
-  "bar",
-  "foo1",
-  "foo2",
-  "a.js",
-  "baz.js",
-  "foobar.js",
-  "barfoo.js",
-  "foo.js",
-  "bar.js",
-  "base.js",
-  "bazz.js",
-  "jquery.js",
-];
-
 export const mockCommandClient = {
-  sourceContents({ source }) {
-    return new Promise((resolve, reject) => {
-      if (sources.includes(source)) {
-        resolve(createSource(source));
-      }
-
-      reject(`unknown source: ${source}`);
-    });
-  },
   setBreakpoint: async () => {},
   removeBreakpoint: _id => Promise.resolve(),
   threadFront: async () => {},

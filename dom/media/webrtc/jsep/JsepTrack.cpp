@@ -4,8 +4,11 @@
 
 #include "jsep/JsepTrack.h"
 
+#include <fmt/format.h>
+
 #include <algorithm>
 
+#include "common/RtpHeaderExtensions.h"
 #include "jsep/JsepCodecDescription.h"
 #include "jsep/JsepTrackEncoding.h"
 #include "transport/logging.h"
@@ -804,6 +807,8 @@ nsresult JsepTrack::Negotiate(const SdpMediaSection& answer,
 
   CreateEncodings(remote, negotiatedCodecs, negotiatedDetails.get());
 
+  const bool extmapAllowMixed =
+      negotiatedDetails->mRtpRtcpConf.GetExtmapAllowMixed();
   if (answer.GetAttributeList().HasAttribute(SdpAttribute::kExtmapAttribute)) {
     for (auto& extmapAttr : answer.GetAttributeList().GetExtmap().mExtmaps) {
       SdpDirectionAttribute::Direction direction = extmapAttr.direction;
@@ -813,6 +818,23 @@ nsresult JsepTrack::Negotiate(const SdpMediaSection& answer,
       }
 
       if (direction & mDirection) {
+        // For historical reasons extamp-allow-mixed gates sending any two-byte
+        // headers, even if zero one byte headers are used.
+        //
+        // The peer must signal extmap-allow-mixed before we may send a two-byte
+        // header. Otherwise we drop extensions that would need two bytes from
+        // send tracks (which would would crash libwebrtc's packetizer, weee).
+        // Receiving two-byte extensions is always safe.
+        if (mDirection == sdp::kSend && !extmapAllowMixed &&
+            RequiresTwoByteForm(extmapAttr.entry, extmapAttr.extensionname)) {
+          MOZ_MTLOG(ML_WARNING,
+                    fmt::format("Sending multibyte RTP Header extention {} "
+                                "with id {} requires that "
+                                "extmap-allow-mixed be negotiated.",
+                                extmapAttr.extensionname, extmapAttr.entry));
+          continue;
+        }
+
         negotiatedDetails->mExtmap[extmapAttr.extensionname] = extmapAttr;
       }
     }

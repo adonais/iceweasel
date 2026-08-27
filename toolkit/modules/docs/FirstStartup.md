@@ -1,5 +1,3 @@
-(firststartup)=
-
 # FirstStartup
 
 `FirstStartup` is a module which is invoked on application startup by the Windows Installer,

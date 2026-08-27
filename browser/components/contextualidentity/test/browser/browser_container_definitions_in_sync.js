@@ -94,14 +94,18 @@ add_task(function container_definitions_match_enterprise_policy_schema() {
   );
   let containerSchema = schema.properties.Containers.properties.Default.items;
 
+  // The schema enumerates allowed values as `oneOf: [{ const, title }, ...]`
+  let allowedValues = property =>
+    property.oneOf.map(({ const: value }) => value);
+
   Assert.deepEqual(
-    containerSchema.properties.color.enum.toSorted(),
+    allowedValues(containerSchema.properties.color).toSorted(),
     ContextualIdentityService.containerColors.toSorted(),
-    "Containers policy color enum must match the canonical color list"
+    "Containers policy color values must match the canonical color list"
   );
   Assert.deepEqual(
-    containerSchema.properties.icon.enum.toSorted(),
+    allowedValues(containerSchema.properties.icon).toSorted(),
     ContextualIdentityService.containerIcons.toSorted(),
-    "Containers policy icon enum must match the canonical icon list"
+    "Containers policy icon values must match the canonical icon list"
   );
 });

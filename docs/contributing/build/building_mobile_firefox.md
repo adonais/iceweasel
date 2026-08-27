@@ -5,7 +5,7 @@ devices, and audiences:
 
 - Building **Firefox for Android** (codename: fenix). Our general-purpose
   mobile browser is split into several different artifact layers:
-- [The fenix Android application](/mobile/android/fenix.html)
+- [The fenix Android application](/mobile/android/fenix.md)
 - {searchfox}`The android-components Android library <mobile/android/android-components>`
 - [The GeckoView platform](/mobile/android/geckoview)
 - [Firefox for iOS](https://github.com/mozilla-mobile/firefox-ios),

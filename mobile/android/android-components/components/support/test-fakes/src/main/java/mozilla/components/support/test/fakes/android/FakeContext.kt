@@ -9,7 +9,6 @@
 
 package mozilla.components.support.test.fakes.android
 
-import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.ContentResolver
@@ -144,17 +143,14 @@ open class FakeContext(
         initialExtras: Bundle?,
     ) = throw NotImplementedError()
 
-    @SuppressLint("MissingPermission")
     override fun sendBroadcastAsUser(intent: Intent?, user: UserHandle?) = throw NotImplementedError()
 
-    @SuppressLint("MissingPermission")
     override fun sendBroadcastAsUser(
         intent: Intent?,
         user: UserHandle?,
         receiverPermission: String?,
     ) = throw NotImplementedError()
 
-    @SuppressLint("MissingPermission")
     override fun sendOrderedBroadcastAsUser(
         intent: Intent?,
         user: UserHandle?,
@@ -166,10 +162,8 @@ open class FakeContext(
         initialExtras: Bundle?,
     ) = throw NotImplementedError()
 
-    @SuppressLint("MissingPermission")
     override fun sendStickyBroadcast(intent: Intent?) = throw NotImplementedError()
 
-    @SuppressLint("MissingPermission")
     override fun sendStickyOrderedBroadcast(
         intent: Intent?,
         resultReceiver: BroadcastReceiver?,
@@ -179,14 +173,11 @@ open class FakeContext(
         initialExtras: Bundle?,
     ) = throw NotImplementedError()
 
-    @SuppressLint("MissingPermission")
     override fun removeStickyBroadcast(intent: Intent?) = throw NotImplementedError()
 
-    @SuppressLint("MissingPermission")
     override fun sendStickyBroadcastAsUser(intent: Intent?, user: UserHandle?) =
         throw NotImplementedError()
 
-    @SuppressLint("MissingPermission")
     override fun sendStickyOrderedBroadcastAsUser(
         intent: Intent?,
         user: UserHandle?,
@@ -197,7 +188,6 @@ open class FakeContext(
         initialExtras: Bundle?,
     ) = throw NotImplementedError()
 
-    @SuppressLint("MissingPermission")
     override fun removeStickyBroadcastAsUser(intent: Intent?, user: UserHandle?) =
         throw NotImplementedError()
     override fun registerReceiver(receiver: BroadcastReceiver?, filter: IntentFilter?): Intent? =

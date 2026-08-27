@@ -66,7 +66,7 @@ class TaskManager {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TaskManager)
 
-  TaskManager() : mTaskCount(0) {}
+  TaskManager() = default;
 
   // Subclasses implementing task manager will have this function called to
   // determine whether their associated tasks are currently suspended. This
@@ -106,7 +106,7 @@ class TaskManager {
   bool mCurrentSuspended = false;
   int32_t mCurrentPriorityModifier = 0;
 
-  std::atomic<uint32_t> mTaskCount;
+  std::atomic<uint32_t> mTaskCount{};
 };
 
 // A Task is the the base class for any unit of work that may be scheduled.

@@ -69,10 +69,15 @@ if CONFIG["ENABLE_MOZSEARCH_PLUGIN"]:
     HOST_SOURCES += [
         "mozsearch-plugin/BindingOperations.cpp",
         "mozsearch-plugin/FileOperations.cpp",
-        "mozsearch-plugin/from-clangd/HeuristicResolver.cpp",
         "mozsearch-plugin/MozsearchIndexer.cpp",
         "mozsearch-plugin/StringOperations.cpp",
     ]
+    # clang 20 and newer provide HeuristicResolver themselves, and
+    # MozsearchIndexer.cpp uses that instead of our copy of the clangd code.
+    if CONFIG["HOST_CC_VERSION"] and int(CONFIG["HOST_CC_VERSION"].split(".")[0]) < 20:
+        HOST_SOURCES += [
+            "mozsearch-plugin/from-clangd/HeuristicResolver.cpp",
+        ]
 
 GeneratedFile(
     "ThirdPartyPaths.cpp",

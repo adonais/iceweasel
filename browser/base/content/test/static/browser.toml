@@ -27,6 +27,9 @@ support-files = ["dummy_page.html"]
 run-if = [
   "!msix", # Permafail on MSIX packages due to it running on files it shouldn't.
 ]
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && opt && nova", # Bug 2057532
+]
 
 ["browser_parsable_script.js"]
 skip-if = [

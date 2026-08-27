@@ -6,25 +6,38 @@
 @namespace html url("http://www.w3.org/1999/xhtml");
 
 xul|findbar {
+  --findbar-border-top-width: 1px;
+  --findbar-container-height: 32px;
+  --findbar-padding-block: 6px;
+  /* prettier-ignore */
+  --findbar-height: calc(
+    var(--findbar-border-top-width) +
+    var(--findbar-container-height) +
+    (var(--findbar-padding-block) * 2)
+  );
+
   min-width: 1px;
+  /* needed so the findbar doesn't shrink when bottom-docked DevTools is resized */
+  min-height: var(--findbar-height);
   transition-property: margin-bottom, visibility;
   transition-duration: 150ms, 0s;
   transition-timing-function: ease-in-out, linear;
-  padding-block: 6px;
-  border-top: 1px solid var(--chrome-content-separator-color);
+  padding-block: var(--findbar-padding-block);
+  border-top: var(--findbar-border-top-width) solid var(--chrome-content-separator-color);
   background-color: var(--toolbar-background-color);
   color: -moz-dialogtext;
 
   @media not -moz-pref("browser.nova.enabled") {
-    border-top: 1px solid ThreeDShadow;
+    border-top-color: ThreeDShadow;
     background-color: -moz-dialog;
+    --findbar-container-height: 28px;
   }
 
   &:where([hidden]) {
     /* Override display:none to make the transition work. `!important` beats the
        global `[hidden] { display: none !important }` rule. */
     display: flex !important;
-    margin-bottom: calc(-1 * (28px + 12px + 1px)); /* findbar-container's height + padding-block + top border */
+    margin-bottom: calc(-1 * var(--findbar-height));
     visibility: collapse;
     transition-delay: 0s, 150ms;
 
@@ -55,12 +68,8 @@ xul|findbar {
   margin-inline-start: 8px;
   overflow-inline: hidden; /* Ensures the close button stays visible. */
   transition: opacity 150ms ease-in-out;
-  height: 32px;
+  height: var(--findbar-container-height);
   padding-inline-start: var(--space-xsmall);
-
-  @media not -moz-pref("browser.nova.enabled") {
-    height: 28px;
-  }
 }
 
 /* Remove start margin when close button is on the left side (on macOS) */
@@ -86,6 +95,7 @@ xul|findbar {
   outline: none;
   margin: 0;
   padding-inline-start: var(--space-medium);
+  padding-block: var(--space-xsmall);
   width: 18em;
   box-sizing: border-box;
 
@@ -101,10 +111,6 @@ xul|findbar {
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.23);
       outline-color: var(--toolbar-field-border-color-focus);
     }
-  }
-
-  &::placeholder {
-    opacity: 0.69;
   }
 
   &:focus {

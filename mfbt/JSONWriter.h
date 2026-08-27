@@ -90,14 +90,14 @@
 #ifndef mozilla_JSONWriter_h
 #define mozilla_JSONWriter_h
 
+#include <utility>
+
 #include "double-conversion/double-conversion.h"  // IWYU pragma: keep(used for double_conversion)
 #include "mozilla/Assertions.h"
 #include "mozilla/Span.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
-
-#include <utility>
 
 namespace mozilla {
 

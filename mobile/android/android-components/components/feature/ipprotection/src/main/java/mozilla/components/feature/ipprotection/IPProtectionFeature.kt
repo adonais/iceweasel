@@ -133,6 +133,7 @@ class IPProtectionFeature(
                         }
 
                         AccountStatus.AwaitingEnrollment -> {
+                            handler?.notifyAccountStatus(true)
                             handler?.enroll { enrollInfo ->
                                 store.dispatch(
                                     InternalAction.FinishingEnrollment(
@@ -163,11 +164,15 @@ class IPProtectionFeature(
         }
     }
 
-    private suspend fun registerAndInit() = withContext(Dispatchers.Main) {
+    private suspend fun registerAndInit() = withContext(mainDispatcher) {
         handler = engine.registerIPProtectionDelegate(
             object : IPProtectionDelegate {
                 override fun onStateChanged(info: IPProtectionHandler.StateInfo) {
                     store.dispatch(IPProtectionAction.EngineStateChanged(info))
+                }
+
+                override fun onCountryListChanged(countries: List<IPProtectionHandler.Country>) {
+                    store.dispatch(IPProtectionAction.CountryListChanged(countries))
                 }
             },
         )
@@ -198,14 +203,16 @@ class IPProtectionFeature(
             // as a side effect, the init call triggers `IPProtectionController#onServiceStateChanged`
             // that can trigger the account manager that leads to `AuthProvider#getToken`.
             init()
+
+            updateCountryList()
         }
     }
 
-    private suspend fun uninit() = withContext(Dispatchers.Main) {
+    private suspend fun uninit() = withContext(mainDispatcher) {
         handler?.uninit()
     }
 
-    private suspend fun observeToggle() = withContext(Dispatchers.Main) {
+    private suspend fun observeToggle() = withContext(mainDispatcher) {
         // Dedupe over the nullable so `true -> null -> true` reads as two edges, not one.
         store.flow()
             .map { it.activate }
@@ -218,7 +225,10 @@ class IPProtectionFeature(
                     }
                 }
                 if (activate) {
-                    handler?.activate(onResult)
+                    handler?.activate(
+                        countryCode = store.state.locationState.selectedLocation.countryCode,
+                        onResult = onResult,
+                    )
                 } else {
                     handler?.deactivate(onResult)
                 }

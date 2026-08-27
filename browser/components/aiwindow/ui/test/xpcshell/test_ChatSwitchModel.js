@@ -18,10 +18,10 @@ add_task(async function test_ChatConversation_loadSystemPrompt() {
   registerCleanupFunction(() => _setLoadPromptForTesting(null));
 
   const conversation = new ChatConversation({});
-  conversation.addSystemMessage(
-    SYSTEM_PROMPT_TYPE.TEXT,
-    "Initial system prompt"
-  );
+  conversation.setSystemMessage({
+    type: SYSTEM_PROMPT_TYPE.TEXT,
+    body: "Initial system prompt",
+  });
 
   await conversation.loadSystemPrompt({ modelChoiceIdOverride: "1" });
 
@@ -48,10 +48,10 @@ add_task(
       { role: MESSAGE_ROLE.USER, body: "How are you?" },
     ];
 
-    conversation.addSystemMessage(
-      SYSTEM_PROMPT_TYPE.TEXT,
-      "Original system prompt"
-    );
+    conversation.setSystemMessage({
+      type: SYSTEM_PROMPT_TYPE.TEXT,
+      body: "Original system prompt",
+    });
     conversation.addUserMessage(mockMessages[0].body, null);
     conversation.addAssistantMessage("text", mockMessages[1].body);
     conversation.addUserMessage(mockMessages[2].body, null);

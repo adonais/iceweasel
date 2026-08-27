@@ -40,12 +40,6 @@ typealias FxaOriginMismatchException = mozilla.appservices.fxaclient.FxaExceptio
 typealias FxaNoExistingAuthFlow = mozilla.appservices.fxaclient.FxaException.NoExistingAuthFlow
 
 /**
- * Thrown when a scoped key was missing in the server response when requesting the OLD_SYNC scope.
- */
-typealias FxaSyncScopedKeyMissingException =
-    mozilla.appservices.fxaclient.FxaException.SyncScopedKeyMissingInServerResponse
-
-/**
  * Thrown when the Rust library hits an unexpected error that isn't a panic.
  * This may indicate library misuse, network errors, etc.
  */
@@ -120,8 +114,3 @@ sealed class SendCommandException : Exception {
      */
     class Other(cause: Throwable) : SendCommandException(cause)
 }
-
-/**
- * Thrown if we saw a keyed access token without a key (e.g. obtained for SCOPE_SYNC).
- */
-internal class AccessTokenUnexpectedlyWithoutKey : Exception()

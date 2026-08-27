@@ -42,6 +42,7 @@ def add_notifications(config, jobs):
         job["scopes"] = [f"notify:email:{address}" for address in emails]
         job["run"] = {
             "using": "mach",
+            "clone-with": "hg",
             "sparse-profile": "mach",
             "mach": {"task-reference": " ".join(map(shell_quote, command))},
         }

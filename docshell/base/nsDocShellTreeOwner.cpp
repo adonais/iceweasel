@@ -468,18 +468,6 @@ nsDocShellTreeOwner::SizeShellTo(nsIDocShellTreeItem* aShellItem, int32_t aCX,
 }
 
 NS_IMETHODIMP
-nsDocShellTreeOwner::SetPersistence(bool aPersistPosition, bool aPersistSize,
-                                    bool aPersistSizeMode) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-nsDocShellTreeOwner::GetPersistence(bool* aPersistPosition, bool* aPersistSize,
-                                    bool* aPersistSizeMode) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
 nsDocShellTreeOwner::GetHasPrimaryContent(bool* aResult) {
   *aResult = mPrimaryRemoteTab || mPrimaryContentShell;
   return NS_OK;

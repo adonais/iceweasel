@@ -133,10 +133,8 @@ enum VarDeclKind {
   VARDECL_VAR = 0,
   VARDECL_CONST,
   VARDECL_LET,
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   VARDECL_USING,
   VARDECL_AWAIT_USING,
-#endif
   VARDECL_LIMIT
 };
 
@@ -1254,14 +1252,12 @@ bool NodeBuilder::variableDeclaration(NodeVector& elts, VarDeclKind kind,
     case VARDECL_LET:
       s = "let";
       break;
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case VARDECL_USING:
       s = "using";
       break;
     case VARDECL_AWAIT_USING:
       s = "await using";
       break;
-#endif
     default:
       s = "var";
   }
@@ -1770,10 +1766,8 @@ bool ASTSerializer::declaration(ParseNode* pn, MutableHandleValue dst) {
   MOZ_ASSERT(pn->isKind(ParseNodeKind::Function) ||
              pn->isKind(ParseNodeKind::VarStmt) ||
              pn->isKind(ParseNodeKind::LetDecl) ||
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
              pn->isKind(ParseNodeKind::UsingDecl) ||
              pn->isKind(ParseNodeKind::AwaitUsingDecl) ||
-#endif
              pn->isKind(ParseNodeKind::ConstDecl));
 
   switch (pn->getKind()) {
@@ -1785,10 +1779,8 @@ bool ASTSerializer::declaration(ParseNode* pn, MutableHandleValue dst) {
 
     default:
       MOZ_ASSERT(pn->isKind(ParseNodeKind::LetDecl) ||
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
                  pn->isKind(ParseNodeKind::UsingDecl) ||
                  pn->isKind(ParseNodeKind::AwaitUsingDecl) ||
-#endif
                  pn->isKind(ParseNodeKind::ConstDecl));
       return variableDeclaration(&pn->as<ListNode>(), true, dst);
   }
@@ -1797,10 +1789,8 @@ bool ASTSerializer::declaration(ParseNode* pn, MutableHandleValue dst) {
 bool ASTSerializer::variableDeclaration(ListNode* declList, bool lexical,
                                         MutableHandleValue dst) {
   MOZ_ASSERT_IF(lexical, declList->isKind(ParseNodeKind::LetDecl) ||
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
                              declList->isKind(ParseNodeKind::UsingDecl) ||
                              declList->isKind(ParseNodeKind::AwaitUsingDecl) ||
-#endif
                              declList->isKind(ParseNodeKind::ConstDecl));
   MOZ_ASSERT_IF(!lexical, declList->isKind(ParseNodeKind::VarStmt));
 
@@ -1810,15 +1800,11 @@ bool ASTSerializer::variableDeclaration(ListNode* declList, bool lexical,
   if (lexical) {
     if (declList->isKind(ParseNodeKind::LetDecl)) {
       kind = VARDECL_LET;
-    }
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-    else if (declList->isKind(ParseNodeKind::UsingDecl)) {
+    } else if (declList->isKind(ParseNodeKind::UsingDecl)) {
       kind = VARDECL_USING;
     } else if (declList->isKind(ParseNodeKind::AwaitUsingDecl)) {
       kind = VARDECL_AWAIT_USING;
-    }
-#endif
-    else {
+    } else {
       kind = VARDECL_CONST;
     }
   } else {
@@ -2225,12 +2211,9 @@ bool ASTSerializer::forInit(ParseNode* pn, MutableHandleValue dst) {
   }
 
   bool lexical = pn->isKind(ParseNodeKind::LetDecl) ||
-                 pn->isKind(ParseNodeKind::ConstDecl)
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-                 || pn->isKind(ParseNodeKind::UsingDecl) ||
-                 pn->isKind(ParseNodeKind::AwaitUsingDecl)
-#endif
-      ;
+                 pn->isKind(ParseNodeKind::ConstDecl) ||
+                 pn->isKind(ParseNodeKind::UsingDecl) ||
+                 pn->isKind(ParseNodeKind::AwaitUsingDecl);
   return (lexical || pn->isKind(ParseNodeKind::VarStmt))
              ? variableDeclaration(&pn->as<ListNode>(), lexical, dst)
              : expression(pn, dst);
@@ -2305,10 +2288,8 @@ bool ASTSerializer::statement(ParseNode* pn, MutableHandleValue dst) {
 
     case ParseNodeKind::LetDecl:
     case ParseNodeKind::ConstDecl:
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case ParseNodeKind::UsingDecl:
     case ParseNodeKind::AwaitUsingDecl:
-#endif
       return declaration(pn, dst);
 
     case ParseNodeKind::ImportDecl:
@@ -2430,10 +2411,8 @@ bool ASTSerializer::statement(ParseNode* pn, MutableHandleValue dst) {
           }
         } else if (!initNode->isKind(ParseNodeKind::VarStmt) &&
                    !initNode->isKind(ParseNodeKind::LetDecl) &&
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
                    !initNode->isKind(ParseNodeKind::UsingDecl) &&
                    !initNode->isKind(ParseNodeKind::AwaitUsingDecl) &&
-#endif
                    !initNode->isKind(ParseNodeKind::ConstDecl)) {
           if (!pattern(initNode, &var)) {
             return false;
@@ -2442,10 +2421,8 @@ bool ASTSerializer::statement(ParseNode* pn, MutableHandleValue dst) {
           if (!variableDeclaration(
                   &initNode->as<ListNode>(),
                   initNode->isKind(ParseNodeKind::LetDecl) ||
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
                       initNode->isKind(ParseNodeKind::UsingDecl) ||
                       initNode->isKind(ParseNodeKind::AwaitUsingDecl) ||
-#endif
                       initNode->isKind(ParseNodeKind::ConstDecl),
                   &var)) {
             return false;

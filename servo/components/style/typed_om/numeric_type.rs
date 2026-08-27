@@ -4,6 +4,8 @@
 
 //! Typed OM Numeric Type.
 
+use crate::derives::*;
+use crate::values::generics::calc::CalcType;
 use crate::values::generics::grid::FlexUnit;
 use crate::values::generics::Optional;
 use crate::values::specified::angle::AngleUnit;
@@ -13,7 +15,18 @@ use crate::values::specified::resolution::ResolutionUnit;
 use crate::values::specified::time::TimeUnit;
 
 /// https://drafts.css-houdini.org/css-typed-om-1/#cssnumericvalue-base-type
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    ToAnimatedZero,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[repr(u8)]
 pub enum NumericBaseType {
     /// A `<length>` unit.
@@ -223,6 +236,18 @@ impl NumericType {
         result.unwrap_or(Self::number())
     }
 
+    /// Consumes the type and constructs a new type, applying the given percent hint.
+    pub fn with_percent_hint(self, hint: NumericBaseType) -> Self {
+        let mut ty = self;
+        ty.apply_percent_hint(hint);
+        ty
+    }
+
+    /// Returns the percent hint for this type.
+    pub fn percent_hint(&self) -> Optional<NumericBaseType> {
+        self.percent_hint
+    }
+
     fn exponent(&self, base_type: NumericBaseType) -> i32 {
         self.exponents[base_type as usize]
     }
@@ -259,8 +284,89 @@ impl NumericType {
         }
     }
 
+    #[inline]
+    fn has_null_percent_hint(&self) -> bool {
+        self.percent_hint.is_none()
+    }
+
+    #[inline]
+    fn only_non_zero_entry_is(&self, base_type: NumericBaseType, exponent: i32) -> bool {
+        self.non_zero_count == 1 && self.exponent(base_type) == exponent
+    }
+
+    #[inline]
+    fn has_no_non_zero_entries(&self) -> bool {
+        self.non_zero_count == 0
+    }
+
+    #[inline]
+    fn matches_length_in_percentage_context(&self) -> bool {
+        self.only_non_zero_entry_is(NumericBaseType::Length, 1)
+            && (self.has_null_percent_hint()
+                || self.percent_hint == Optional::Some(NumericBaseType::Length))
+    }
+
+    // Grammar matching for CSSNumericValue types.
+    //
+    // See <https://drafts.css-houdini.org/css-typed-om-1/#cssnumericvalue-match>.
+    //
+    // The spec defines "matches <length>" (similarly for <angle>, <time>,
+    // <frequency>, <resolution>, <flex>), and separately "matches <number>",
+    // as context-sensitive predicates on numeric types. We generally
+    // implement only the strictest context (percentages disallowed, percent
+    // hint must be null), which is what is currently needed for validating
+    // arguments in some CSSTransformComponent subclasses.
+    //
+    // The only exception is <length-percentage>, whose grammar explicitly
+    // permits percentages resolved against <length>, so it accepts both a null
+    // percent hint and a <length> percent hint.
+    //
+    // StylePropertyMap.set() would use these predicates too if it ever switches
+    // from parser based validation to a FromTyped style path, at which point
+    // the remaining context-sensitive cases would need to be added.
+
+    /// Matches <length>.
+    #[export_name = "Servo_NumericType_MatchesLength"]
+    pub extern "C" fn matches_length(&self) -> bool {
+        self.only_non_zero_entry_is(NumericBaseType::Length, 1) && self.has_null_percent_hint()
+    }
+
+    /// Matches <angle>.
+    #[export_name = "Servo_NumericType_MatchesAngle"]
+    pub extern "C" fn matches_angle(&self) -> bool {
+        self.only_non_zero_entry_is(NumericBaseType::Angle, 1) && self.has_null_percent_hint()
+    }
+
+    /// Matches <percentage>.
+    #[export_name = "Servo_NumericType_MatchesPercentage"]
+    pub extern "C" fn matches_percentage(&self) -> bool {
+        self.only_non_zero_entry_is(NumericBaseType::Percent, 1)
+            && (self.has_null_percent_hint()
+                || self.percent_hint == Optional::Some(NumericBaseType::Percent))
+    }
+
+    /// Matches <length-percentage>.
+    #[export_name = "Servo_NumericType_MatchesLengthPercentage"]
+    pub extern "C" fn matches_length_percentage(&self) -> bool {
+        self.matches_length_in_percentage_context() || self.matches_percentage()
+    }
+
+    /// Matches <number>.
+    #[export_name = "Servo_NumericType_MatchesNumber"]
+    pub extern "C" fn matches_number(&self) -> bool {
+        self.has_no_non_zero_entries() && self.has_null_percent_hint()
+    }
+
+    /// Applies the given percent hint to this type. Note that the spec algorithm
+    /// specifically says "to a type without a percent hint", so this will not
+    /// modify the type if it alreay has a percent hint.
+    ///
     /// <https://drafts.css-houdini.org/css-typed-om-1/#apply-the-percent-hint>
-    fn apply_percent_hint(&mut self, hint: NumericBaseType) {
+    pub fn apply_percent_hint(&mut self, hint: NumericBaseType) {
+        if self.percent_hint.is_some() {
+            return;
+        }
+
         // Step 1.
         self.percent_hint = Optional::Some(hint);
 
@@ -284,7 +390,7 @@ impl NumericType {
     /// numbered sub-steps, so the implementation below quotes spec text
     /// inline. This is more verbose than usual, but should help map each
     /// branch back to the spec when reviewing or debugging.
-    fn add_two_types(type1: &NumericType, type2: &NumericType) -> Result<Self, ()> {
+    pub fn add_two_types(type1: &NumericType, type2: &NumericType) -> Result<Self, ()> {
         // Step 1.
         // "Replace type1 with a fresh copy of type1, and type2 with a fresh
         // copy of type2."
@@ -394,7 +500,7 @@ impl NumericType {
     ///
     /// Spec text is quoted inline to make each step easy to map back to the
     /// algorithm during review.
-    fn multiply_two_types(type1: &NumericType, type2: &NumericType) -> Result<Self, ()> {
+    pub fn multiply_two_types(type1: &NumericType, type2: &NumericType) -> Result<Self, ()> {
         // Step 1.
         // "Replace type1 with a fresh copy of type1, and type2 with a fresh
         // copy of type2."
@@ -491,5 +597,44 @@ impl NumericType {
         I: Iterator<Item = &'a NumericType>,
     {
         Self::combine_types(types, Self::multiply_two_types)
+    }
+
+    /// Returns whether this type is a dimensionless number.
+    pub fn is_number(&self) -> bool {
+        self.non_zero_count == 0
+    }
+
+    /// Returns a `CalcType` if this type represents a single data type,
+    /// like <length> or <number>.
+    pub fn as_calc_type(&self) -> Result<CalcType, ()> {
+        match self.non_zero_count {
+            0 => return Ok(CalcType::Number),
+            1 => {},
+            _ => return Err(()),
+        };
+
+        for base_type in ALL_NUMERIC_BASE_TYPES.iter() {
+            let exponent = self.exponent(*base_type);
+            if exponent == 0 {
+                continue;
+            }
+            if exponent != 1 {
+                return Err(());
+            }
+
+            // We checked before the loop that there is only one numeric
+            // base type with a non-zero exponent.
+            return Ok(match base_type {
+                NumericBaseType::Length => CalcType::Length,
+                NumericBaseType::Angle => CalcType::Angle,
+                NumericBaseType::Time => CalcType::Time,
+                NumericBaseType::Resolution => CalcType::Resolution,
+                NumericBaseType::Percent => CalcType::Percentage,
+                NumericBaseType::Frequency | NumericBaseType::Flex => return Err(()),
+            });
+        }
+
+        debug_assert!(false, "non_zero_count was 1 but all exponents were 0");
+        Ok(CalcType::Number)
     }
 }

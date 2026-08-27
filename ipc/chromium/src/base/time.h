@@ -38,7 +38,7 @@ class PageLoadTrackerUnitTest;
 
 class TimeDelta {
  public:
-  TimeDelta() : delta_(0) {}
+  TimeDelta() = default;
 
   // Converts units of time to TimeDeltas.
   static TimeDelta FromDays(int64_t days);
@@ -124,7 +124,7 @@ class TimeDelta {
   explicit TimeDelta(int64_t delta_us) : delta_(delta_us) {}
 
   // Delta in microseconds.
-  int64_t delta_;
+  int64_t delta_{0};
 };
 
 inline TimeDelta operator*(int64_t a, TimeDelta td) {
@@ -164,7 +164,7 @@ class Time {
   };
 
   // Contains the NULL time. Use Time::Now() to get the current time.
-  explicit Time() : us_(0) {}
+  explicit Time() = default;
 
   // Returns true if the time object has not been initialized.
   bool is_null() const { return us_ == 0; }
@@ -278,7 +278,7 @@ class Time {
   static const int64_t kTimeTToMicrosecondsOffset;
 
   // Time in microseconds in UTC.
-  int64_t us_;
+  int64_t us_{0};
 };
 
 inline Time TimeDelta::operator+(Time t) const { return Time(t.us_ + delta_); }
@@ -319,7 +319,7 @@ inline TimeDelta TimeDelta::FromMicroseconds(int64_t us) {
 
 class TimeTicks {
  public:
-  TimeTicks() : ticks_(0) {}
+  TimeTicks() = default;
   TimeTicks(const TimeTicks&) = default;
 
   // Platform-dependent tick count representing "right now."
@@ -378,7 +378,7 @@ class TimeTicks {
   explicit TimeTicks(int64_t ticks) : ticks_(ticks) {}
 
   // Tick count in microseconds.
-  int64_t ticks_;
+  int64_t ticks_{0};
 };
 
 inline TimeTicks TimeDelta::operator+(TimeTicks t) const {

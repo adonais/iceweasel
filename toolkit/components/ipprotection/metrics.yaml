@@ -141,3 +141,36 @@ ipprotection:
       - amarchesini@mozilla.com
       - vpn-telemetry@mozilla.com
     expires: never
+
+  gpi_enrollment:
+    type: event
+    description: >
+      Recorded when a Google Play Integrity (GPI) enrollment attempt with the
+      Guardian backend completes, capturing the outcome and, on failure, a
+      reason category and HTTP status.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2052845
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2052845
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - vpn-telemetry@mozilla.com
+    expires: never
+    extra_keys:
+      reason:
+        type: string
+        description: >
+          Coarse outcome category. One of: "ok", "no_gpi_token",
+          "network_error", "integrity_api_error", "missing_package_name",
+          "bad_response", "http_error_other".
+      httpStatus:
+        type: quantity
+        description: >
+          HTTP status returned by the Guardian enrollment endpoint, or 0 when no
+          response was received (network error, or no GPI token was obtained).
+      hadPreviousJwt:
+        type: boolean
+        description: >
+          Whether a previous auth JWT was present, i.e. this was a renewal
+          rather than a first enrollment.

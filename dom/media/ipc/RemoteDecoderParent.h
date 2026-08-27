@@ -67,6 +67,7 @@ class RemoteDecoderParent : public ShmemRecycleAllocator<RemoteDecoderParent>,
   // Only be used on Windows when the media engine playback is enabled.
   const Maybe<uint64_t> mMediaEngineId;
 
+  bool mInitAttempted = false;
   bool mShutdown = false;
 
   // Pending IPC resolvers and matching request holders for the in-flight

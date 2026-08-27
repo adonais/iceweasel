@@ -171,12 +171,16 @@ Services.ppmm.addMessageListener("PasswordManager:findRecipes", message => {
  * Lazily create a Map of origins to array of browsers with importable logins.
  *
  * @param {origin} formOrigin
+ * @param {nsILoginInfo[]} existingLogins Logins already saved for the origin.
+ *   When any exist, importing is not suggested.
  * @returns {object?} containing array of migration browsers and experiment state.
  */
-async function getImportableLogins(formOrigin) {
+async function getImportableLogins(formOrigin, existingLogins) {
   // Include the experiment state for data and UI decisions; otherwise skip
-  // importing if not supported or disabled.
+  // importing if not supported or disabled. Only suggest importing when there
+  // are no existing Firefox logins saved for the origin.
   const state =
+    !existingLogins?.length &&
     lazy.LoginHelper.suggestImportCount > 0 &&
     lazy.LoginHelper.showAutoCompleteImport;
   return state
@@ -699,7 +703,7 @@ export class LoginManagerParent extends JSWindowActorParent {
     // doesn't support structured cloning.
     let jsLogins = lazy.LoginHelper.loginsToVanillaObjects(logins);
     return {
-      importable: await getImportableLogins(formOrigin),
+      importable: await getImportableLogins(formOrigin, logins),
       logins: jsLogins,
       recipes,
     };
@@ -841,7 +845,7 @@ export class LoginManagerParent extends JSWindowActorParent {
 
     return {
       generatedPassword,
-      importable: await getImportableLogins(formOrigin),
+      importable: await getImportableLogins(formOrigin, logins),
       autocompleteItems,
       logins: jsLogins,
       willAutoSaveGeneratedPassword,

@@ -11,21 +11,22 @@ const testCasesUserContextId = [
   [
     ["cookies", MAIN_ORIGIN],
     [
-      getCookieId("c1uc1", MAIN_HOST, "/browser"),
-      getCookieId("cs2uc1", "." + MAIN_DOMAIN, "/"),
-      getCookieId("c3uc1", MAIN_HOST, "/"),
-      getCookieId("uc1uc1", "." + MAIN_DOMAIN, "/"),
+      getCookieId("c1uc1", MAIN_HOST, "/browser", { userContextId: 1 }),
+      getCookieId("cs2uc1", "." + MAIN_DOMAIN, "/", { userContextId: 1 }),
+      getCookieId("c3uc1", MAIN_HOST, "/", { userContextId: 1 }),
+      getCookieId("uc1uc1", "." + MAIN_DOMAIN, "/", { userContextId: 1 }),
     ],
   ],
   [
     ["cookies", ALT_ORIGIN_SECURED],
     [
-      getCookieId("uc1uc1", "." + MAIN_DOMAIN, "/"),
-      getCookieId("cs2uc1", "." + MAIN_DOMAIN, "/"),
+      getCookieId("uc1uc1", "." + MAIN_DOMAIN, "/", { userContextId: 1 }),
+      getCookieId("cs2uc1", "." + MAIN_DOMAIN, "/", { userContextId: 1 }),
       getCookieId(
         "sc1uc1",
         "sectest1.example.org",
-        "/browser/devtools/client/storage/test"
+        "/browser/devtools/client/storage/test",
+        { userContextId: 1 }
       ),
     ],
   ],

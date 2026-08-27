@@ -7,8 +7,9 @@
 #ifndef mozilla_Saturate_h
 #define mozilla_Saturate_h
 
-#include <limits>
 #include <stdint.h>
+
+#include <limits>
 #include <type_traits>
 #include <utility>
 

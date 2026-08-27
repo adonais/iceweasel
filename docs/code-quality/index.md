@@ -181,11 +181,6 @@ typescript/index
      -
      -
      - https://www.shellcheck.net/
-   * - rstchecker
-     -
-     -
-     - :ref:`RST Linter`
-     - https://github.com/myint/rstcheck
    * - Typo detection
      - Yes
      -

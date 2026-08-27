@@ -1010,7 +1010,7 @@ addAccessibleTask(
 
     let stateChanged = waitForEvent(EVENT_STATE_CHANGE, "href");
 
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     await PlacesTestUtils.addVisits(["http://www.example.com/"]);
 
     await stateChanged;

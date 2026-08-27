@@ -264,8 +264,11 @@ base64_21 = { package = "base64", path = "build/rust/base64" }
 # Patch wasi 0.11 to 0.14
 wasi_0_11 = { package = "wasi", path = "build/rust/wasi" }
 
-# Patch itertools 0.13 to 0.14
-itertools = { path = "build/rust/itertools" }
+# Patch itertools 0.13 to 0.15
+itertools_0_13 = { package = "itertools", path = "build/rust/itertools-0.13" }
+
+# Patch itertools 0.14 to 0.15
+itertools_0_14 = { package = "itertools", path = "build/rust/itertools" }
 
 # tokio 0.29.0 includes an experimental "tracing" feature which requires
 # backtrace ^0.3.58 and the `tokio_unstable` flag. We don't use it, and nothing
@@ -417,11 +420,18 @@ ohttp = { git = "https://github.com/martinthomson/ohttp", rev = "600931b5a1e9477
 # Patched version of zip 2.4.2 to allow for reading omnijars.
 zip = { path = "third_party/rust/zip" }
 
+# Unpublished change
+cssparser = { git = "https://github.com/servo/rust-cssparser", rev = "eff8704e994dc54e5df2a936b78b51828ee21464" }
+
 # Patch libcrux-traits to avoid unnecessary unused dependencies and conflicts.
 libcrux-traits = { path = "build/rust/libcrux-traits" }
 
 # Redirect jxl_simd to the in-tree vendored copy so we can carry a patch that
 # works around a rust/LLVM issue on macOS/x86_64 that makes jxl-rs decode ~3x
 # slower on PGO builds. See bug 2043090.
-[patch."https://github.com/libjxl/jxl-rs"]
 jxl_simd = { path = "third_party/rust/jxl_simd" }
+
+# gleam 0.15.1 + https://github.com/servo/gleam/pull/235
+gleam = { git = "https://github.com/jamienicol/gleam", rev = "68ca4e5cc31135b843af07ff213a94b9ddce64cf" }
+# gl_generator 0.14.0 + https://github.com/rust-windowing/gl-rs/pull/566
+gl_generator = { git = "https://github.com/jamienicol/gl-rs", rev = "71c792dbfe0ec5caeb242fc90937e19098386342" }

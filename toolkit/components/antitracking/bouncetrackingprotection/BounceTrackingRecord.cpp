@@ -11,8 +11,6 @@ extern LazyLogModule gBounceTrackingProtectionLog;
 
 NS_IMPL_ISUPPORTS(BounceTrackingRecord, nsIBounceTrackingRecord);
 
-BounceTrackingRecord::~BounceTrackingRecord() = default;
-
 void BounceTrackingRecord::SetInitialHost(const nsACString& aHost) {
   mInitialHost = aHost;
 }

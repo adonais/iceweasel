@@ -14,6 +14,7 @@ structure to ensure consistency across all guides.
 :maxdepth: 1
 
 add_preview_strings
+upgrading_profile_data
 ```
 
 More guides will be added here as they are written.

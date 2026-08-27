@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 const DEBUG = false; // set to true to show debug messages
 
 const kCAPTIVEPORTALDETECTOR_CID = Components.ID(
@@ -12,6 +14,25 @@ const kOpenCaptivePortalLoginEvent = "captive-portal-login";
 const kAbortCaptivePortalLoginEvent = "captive-portal-login-abort";
 const kCaptivePortalLoginSuccessEvent = "captive-portal-login-success";
 const kCaptivePortalCheckComplete = "captive-portal-check-complete";
+
+const lazy = {};
+
+// Both of these are read on every check rather than cached, so that a change
+// to either - by a user, an enterprise policy or a Nimbus rollout - takes
+// effect without a restart, and so the two can never be observed out of sync
+// with each other. See bug 2052715.
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "canonicalSiteURL",
+  "captivedetect.canonicalURL",
+  ""
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "canonicalSiteExpectedContent",
+  "captivedetect.canonicalContent",
+  ""
+);
 
 function URLFetcher(url, timeout) {
   let self = this;
@@ -60,8 +81,8 @@ function URLFetcher(url, timeout) {
       if (self._isAborted) {
         return;
       }
-      if (xhr.status === 200) {
-        self.onsuccess(xhr.responseText);
+      if (xhr.status === 200 || xhr.status === 204) {
+        self.onsuccess(xhr.status, xhr.responseText);
       } else if (xhr.status) {
         self.onredirectorerror(xhr.status);
       } else if (
@@ -143,8 +164,8 @@ function LoginObserver(captivePortalDetector) {
     );
     urlFetcher.ontimeout = pageCheckingDone;
     urlFetcher.onerror = pageCheckingDone;
-    urlFetcher.onsuccess = function (content) {
-      if (captivePortalDetector.validateContent(content)) {
+    urlFetcher.onsuccess = function (status, content) {
+      if (captivePortalDetector.validateContent(status, content)) {
         urlFetcher = null;
         captivePortalDetector.executeCallback(true);
       } else {
@@ -239,21 +260,6 @@ function LoginObserver(captivePortalDetector) {
 }
 
 export function CaptivePortalDetector() {
-  // Load preference
-  this._canonicalSiteURL = null;
-  this._canonicalSiteExpectedContent = null;
-
-  try {
-    this._canonicalSiteURL = Services.prefs.getCharPref(
-      "captivedetect.canonicalURL"
-    );
-    this._canonicalSiteExpectedContent = Services.prefs.getCharPref(
-      "captivedetect.canonicalContent"
-    );
-  } catch (e) {
-    debug("canonicalURL or canonicalContent not set.");
-  }
-
   this._maxWaitingTime = Services.prefs.getIntPref(
     "captivedetect.maxWaitingTime"
   );
@@ -289,6 +295,14 @@ export function CaptivePortalDetector() {
 CaptivePortalDetector.prototype = {
   classID: kCAPTIVEPORTALDETECTOR_CID,
   QueryInterface: ChromeUtils.generateQI(["nsICaptivePortalDetector"]),
+
+  get _canonicalSiteURL() {
+    return lazy.canonicalSiteURL;
+  },
+
+  get _canonicalSiteExpectedContent() {
+    return lazy.canonicalSiteExpectedContent;
+  },
 
   // nsICaptivePortalDetector
   checkCaptivePortal: function checkCaptivePortal(aInterfaceName, aCallback) {
@@ -378,13 +392,13 @@ CaptivePortalDetector.prototype = {
 
     urlFetcher.ontimeout = mayRetry;
     urlFetcher.onerror = mayRetry;
-    urlFetcher.onsuccess = function (content) {
+    urlFetcher.onsuccess = function (status, content) {
       if (urlFetcher.usedProxy()) {
         // Don't trigger if channel used proxy.
         self.executeCallback(true);
         return;
       }
-      if (self.validateContent(content)) {
+      if (self.validateContent(status, content)) {
         self.executeCallback(true);
       } else {
         // Content of the canonical website has been overwrite
@@ -397,7 +411,11 @@ CaptivePortalDetector.prototype = {
         self.executeCallback(true);
         return;
       }
-      if (status >= 300 && status <= 399) {
+      // A canonical endpoint only ever answers 200 or 204, both of which are
+      // handled by onsuccess. Any other 2xx is something intercepting us.
+      if (status >= 200 && status <= 299) {
+        self._startLogin();
+      } else if (status >= 300 && status <= 399) {
         // The canonical website has been redirected to an unknown location
         self._startLogin();
       } else if (status === 511) {
@@ -468,9 +486,22 @@ CaptivePortalDetector.prototype = {
     Services.obs.notifyObservers(this, topic, JSON.stringify(details));
   },
 
-  validateContent: function validateContent(content) {
-    debug("received content: " + content);
-    let valid = content === this._canonicalSiteExpectedContent;
+  /**
+   * Decides whether a successful response came from the canonical endpoint
+   * rather than from something intercepting the request.
+   *
+   * Both a 200 and a 204 are accepted, as long as the body is the expected
+   * content. Since a 204 carries no body, it is only ever accepted when no
+   * content is expected - which is how the default endpoint is configured.
+   *
+   * @param {number} status The HTTP status, either 200 or 204.
+   * @param {string} content The response body.
+   */
+  validateContent: function validateContent(status, content) {
+    debug("received status " + status + " content: " + content);
+    let valid =
+      (status === 200 || status === 204) &&
+      content === this._canonicalSiteExpectedContent;
     // We need a way to indicate that a check has been performed, and if we are
     // still in a captive portal.
     this._sendEvent(kCaptivePortalCheckComplete, !valid);

@@ -67,6 +67,9 @@ class GlobalKeyListener : public nsIDOMEventListener {
     bool mReservedHandlerForChromeFound = false;
     // Set to true if found handler is disabled.
     bool mDisabledHandlerFound = false;
+    // Set to a Command that is found but may correspond to a different type
+    // of keyboard event, this is set only for LookForCommand purpose.
+    Maybe<Command> mRelevantCommand;
   };
 
   // walk the handlers, looking for one to handle the event

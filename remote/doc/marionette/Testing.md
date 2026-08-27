@@ -1,4 +1,4 @@
-# Testing
+# Marionette testing
 
 We verify and test Marionette in a couple of different ways, using
 a combination of unit tests and functional tests.  There are three
@@ -36,7 +36,7 @@ chatty, it can sometimes be useful to run the tests sequentially:
 
 These unit tests run as part of the `X` jobs on Treeherder.
 
-[xpcshell]: /testing/xpcshell/index.rst
+[xpcshell]: /testing/xpcshell/index.md
 
 ## Marionette functional tests
 
@@ -153,7 +153,7 @@ Marionette when you connect manually:
 
 You should see output like `{"applicationType":"gecko","marionetteProtocol":3}`
 
-[geckodriver]: /testing/geckodriver/index.rst
+[geckodriver]: /testing/geckodriver/index.md
 
 ## WPT functional tests
 

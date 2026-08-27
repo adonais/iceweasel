@@ -83,6 +83,7 @@ div[hidetabs="true"] .tabs .tabs-navigation {
   background-color: var(--theme-toolbar-hover-active);
 }
 
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .tabs .tabs-menu-item:has(a:focus-visible) {
   z-index: 1;
 }

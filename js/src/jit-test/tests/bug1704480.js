@@ -2,7 +2,7 @@
 m = parseModule(`
     await 0 ? b : c
 `);
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m)
 d = newGlobal();
 d.e = this;

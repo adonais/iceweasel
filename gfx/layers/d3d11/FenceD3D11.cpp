@@ -127,8 +127,6 @@ FenceD3D11::FenceD3D11(const OwnsFence aOwnsFence,
   MOZ_ASSERT_IF(mOwnsFence == OwnsFence::No, !mSignalFence);
 }
 
-FenceD3D11::~FenceD3D11() {}
-
 RefPtr<FenceD3D11> FenceD3D11::CloneFromHandle() {
   RefPtr<FenceD3D11> fence = FenceD3D11::CreateFromHandle(mHandle, mDevice);
   if (fence) {

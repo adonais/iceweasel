@@ -53,6 +53,7 @@ tasks:
             docker-image: {in-tree: system-symbols-mac}
             max-run-time: 28800
         run:
+            clone-with: hg
             using: run-task
             command: >-
                 ./run.sh
@@ -77,6 +78,7 @@ tasks:
             docker-image: {in-tree: system-symbols-win}
             max-run-time: 3600
         run:
+            clone-with: hg
             using: run-task
             command: >-
                 ./run.sh
@@ -98,6 +100,7 @@ tasks:
             docker-image: {in-tree: system-symbols-linux-scraper}
             max-run-time: 14400
         run:
+            clone-with: hg
             using: run-task
             command: >-
                 ./run.sh arch
@@ -122,6 +125,7 @@ tasks:
             docker-image: {in-tree: system-symbols-linux-scraper}
             max-run-time: 14400
         run:
+            clone-with: hg
             using: run-task
             command: >-
                 ./run.sh debian
@@ -146,6 +150,7 @@ tasks:
             docker-image: {in-tree: system-symbols-linux-scraper}
             max-run-time: 14400
         run:
+            clone-with: hg
             using: run-task
             command: >-
                 ./run.sh firefox-snap
@@ -170,6 +175,7 @@ tasks:
             docker-image: {in-tree: system-symbols-linux-scraper}
             max-run-time: 14400
         run:
+            clone-with: hg
             using: run-task
             command: >-
                 ./run.sh firefox-flatpak
@@ -194,6 +200,7 @@ tasks:
             docker-image: {in-tree: system-symbols-linux-scraper}
             max-run-time: 14400
         run:
+            clone-with: hg
             using: run-task
             command: >-
                 ./run.sh gnome-sdk-snap
@@ -218,6 +225,7 @@ tasks:
             docker-image: {in-tree: system-symbols-linux-scraper}
             max-run-time: 14400
         run:
+            clone-with: hg
             using: run-task
             command: >-
                 ./run.sh fedora
@@ -242,6 +250,7 @@ tasks:
             docker-image: {in-tree: system-symbols-linux-scraper}
             max-run-time: 14400
         run:
+            clone-with: hg
             using: run-task
             command: >-
                 ./run.sh opensuse
@@ -266,6 +275,7 @@ tasks:
             docker-image: {in-tree: system-symbols-linux-scraper}
             max-run-time: 18000
         run:
+            clone-with: hg
             using: run-task
             command: >-
                 ./run.sh ubuntu
@@ -290,6 +300,7 @@ tasks:
             docker-image: {in-tree: system-symbols-win-gfx}
             max-run-time: 14400
         run:
+            clone-with: hg
             using: run-task
             command: >-
                 ./run.sh
@@ -316,6 +327,7 @@ tasks:
             docker-image: {in-tree: system-symbols-linux-scraper}
             max-run-time: 14400
         run:
+            clone-with: hg
             using: run-task
             command: >-
                 ./run.sh alpine
@@ -340,6 +352,7 @@ tasks:
             docker-image: {in-tree: system-symbols-linux-scraper}
             max-run-time: 14400
         run:
+            clone-with: hg
             using: run-task
             command: >-
                 ./run.sh thunderbird-snap
@@ -364,6 +377,7 @@ tasks:
             docker-image: {in-tree: system-symbols-linux-scraper}
             max-run-time: 14400
         run:
+            clone-with: hg
             using: run-task
             command: >-
                 ./run.sh nixos
@@ -388,6 +402,7 @@ tasks:
             docker-image: {in-tree: system-symbols-linux-scraper}
             max-run-time: 14400
         run:
+            clone-with: hg
             using: run-task
             command: >-
                 ./run.sh raspberry-pi-os

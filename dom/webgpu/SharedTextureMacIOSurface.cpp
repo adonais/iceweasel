@@ -51,7 +51,7 @@ SharedTextureMacIOSurface::SharedTextureMacIOSurface(
       mDeviceId(aDeviceId),
       mSurface(std::move(aSurface)) {}
 
-SharedTextureMacIOSurface::~SharedTextureMacIOSurface() {}
+SharedTextureMacIOSurface::~SharedTextureMacIOSurface() = default;
 
 uint32_t SharedTextureMacIOSurface::GetIOSurfaceId() {
   return mSurface->GetIOSurfaceID();
@@ -62,12 +62,11 @@ SharedTextureMacIOSurface::ToSurfaceDescriptor() {
   MOZ_ASSERT(mSubmissionIndex > 0);
 
   RefPtr<layers::GpuFence> gpuFence;
-  UniquePtr<ffi::WGPUMetalSharedEventHandle> eventHandle(
-      wgpu_server_get_device_fence_metal_shared_event(mParent->GetContext(),
-                                                      mDeviceId));
+  void* const eventHandle = wgpu_server_get_device_fence_metal_shared_event(
+      mParent->GetContext(), mDeviceId);
   if (eventHandle) {
-    gpuFence = layers::GpuFenceMTLSharedEvent::Create(std::move(eventHandle),
-                                                      mSubmissionIndex);
+    gpuFence =
+        layers::GpuFenceMTLSharedEvent::Create(eventHandle, mSubmissionIndex);
   } else {
     gfxCriticalNoteOnce << "Failed to get MetalSharedEventHandle";
   }

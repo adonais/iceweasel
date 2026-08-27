@@ -165,6 +165,8 @@ const intptr_t kPointerAlignmentMask = kPointerAlignment - 1;
 const intptr_t kDoubleAlignment = 8;
 const intptr_t kDoubleAlignmentMask = kDoubleAlignment - 1;
 
+constexpr uint8_t xlen = (uint8_t(sizeof(void*) * 8));
+
 // -----------------------------------------------------------------------------
 // Utility types and functions for RISCV
 using sreg_t = int64_t;
@@ -891,13 +893,12 @@ class Simulator {
   T ReadMem(sreg_t addr, Instruction* instr);
   template <typename T>
   void WriteMem(sreg_t addr, T value, Instruction* instr);
-  template <typename T, typename OP>
-  T amo(sreg_t addr, OP f, Instruction* instr, TraceType t) {
-    auto lhs = ReadMem<T>(addr, instr);
-    // TODO(RISCV): trace memory read for AMO
-    WriteMem<T>(addr, (T)f(lhs), instr);
-    return lhs;
-  }
+
+  template <typename T>
+  using AMO_OP = T (*)(SharedMem<T*> addr, T val);
+
+  template <typename T>
+  void AtomicMemoryHelper(AMO_OP<T> f, const SimInstruction& instr);
 
   inline int32_t loadLinkedW(uint64_t addr, const SimInstruction& instr);
   inline int storeConditionalW(uint64_t addr, int32_t value,

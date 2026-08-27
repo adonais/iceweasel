@@ -321,7 +321,7 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   // https://dom.spec.whatwg.org/#shadowroot-keep-custom-element-registry-null
   void SetKeepCustomElementRegistryNull();
   // https://dom.spec.whatwg.org/#shadowroot-custom-element-registry
-  CustomElementRegistry* GetCustomElementRegistry();
+  CustomElementRegistry* GetCustomElementRegistry() const;
 
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 

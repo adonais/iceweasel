@@ -1,4 +1,4 @@
-# Submitting patches
+# Submitting Marionette patches
 
 You can submit patches by using [Phabricator]. Walk through its documentation
 in how to set it up, and uploading patches for review. Don't worry about which

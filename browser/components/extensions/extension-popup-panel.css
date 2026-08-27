@@ -4,4 +4,21 @@
 
 body {
   border-radius: 8px;
+
+  @media -moz-pref("browser.nova.enabled") {
+    /* TODO: Look into generating this CSS based on the Design Tokens
+     * to ensure the border radius is automatically kept in sync with
+     * the Design Tokens json data. */
+
+    /* NOTE: keep in sync with --popup-border-radius */
+    border-radius: 24px;
+  }
+
+  @media (-moz-platform: linux) and (not (-moz-gtk-csd-transparency-available)) {
+    /* NOTE: keep in sync with the Linux CSD-transparency exception in
+     * toolkit/themes/shared/popup.css: some linux WMs can't draw
+     * alpha-transparent rounded corners, so the panel itself falls back to
+     * square corners and the popup content must match. */
+    border-radius: 0;
+  }
 }

@@ -11,7 +11,7 @@ namespace mozilla {
 namespace a11y {
 
 class ApplicationAccessibleWrap : public ApplicationAccessible {
-  ~ApplicationAccessibleWrap() {}
+  ~ApplicationAccessibleWrap() = default;
 
  public:
   // nsISupporst

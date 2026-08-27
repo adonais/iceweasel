@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?><!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Link text to learn more about downloading Gemini Nano -->
     <string name="mozac_summarize_learn_more_link">Learn more</string>
 
@@ -133,4 +133,13 @@
 
     <!-- Button text for the Error dismiss button on Shake to Summarize -->
     <string name="mozac_summarize_error_dissmiss">Dismiss</string>
+
+    <!-- Title for the Mozilla account sign-in screen, shown when summarization results in a connection failure. -->
+    <string name="mozac_summarize_fxa_sign_in_title">Sign in to summarize</string>
+
+    <!-- Message on the sign-in screen, inviting the user to continue with an existing Mozilla account or create a new one -->
+    <string name="mozac_summarize_fxa_sign_in_message" tools:ignore="BrandUsage">Use your Mozilla account to continue or create one to get started.</string>
+
+    <!-- Label for the button that starts the sign-in flow -->
+    <string name="mozac_summarize_fxa_sign_in_button_positive">Sign in</string>
 </resources>

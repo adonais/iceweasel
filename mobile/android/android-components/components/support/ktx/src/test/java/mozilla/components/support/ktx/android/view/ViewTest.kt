@@ -197,5 +197,15 @@ class ViewTest {
         assertIs<TestView>(testViewFound)
     }
 
+    @Test
+    fun `pixelSizeFor returns the same as getDimensionPixelSize`() {
+        val view = View(testContext)
+
+        assertEquals(
+            view.resources.getDimensionPixelSize(android.R.dimen.app_icon_size),
+            view.pixelSizeFor(android.R.dimen.app_icon_size),
+        )
+    }
+
     private class TestView(context: Context) : View(context)
 }

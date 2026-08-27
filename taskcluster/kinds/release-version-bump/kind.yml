@@ -5,6 +5,7 @@
 loader: taskgraph.loader.transform:loader
 
 transforms:
+    - taskgraph.transforms.task_context
     - gecko_taskgraph.transforms.release_deps:transforms
     - gecko_taskgraph.transforms.resolve_landoscript_keyed_by:transforms
     - gecko_taskgraph.transforms.task:transforms
@@ -19,6 +20,11 @@ task-defaults:
     description: Release Promotion version bump/tag
     run-on-projects: []
     shipping-phase: ship
+    task-context:
+        from-parameters:
+            head_rev: head_rev
+        substitution-fields:
+            - worker.actions
     worker-type: lando
     worker:
         implementation: scriptworker-lando
@@ -41,6 +47,21 @@ task-defaults:
         actions:
             - tag:
                   types: ["release"]
+                  revision:
+                      by-project:
+                          # until this tag runs natively against a git repository, we don't
+                          # have a concrete revision we can tag. instead, we choose a sensible
+                          # ref based on the release type
+                          try:
+                              by-release-type:
+                                  beta: beta
+                                  release: release
+                                  esr140: esr140
+                                  esr153: esr153
+                                  default: ""
+                          # other projects are hg-based, and we need to use a concrete ref
+                          # when tagging them; task-context will sub this in from parameters
+                          default: "{head_rev}"
                   # used to map hg revisions to the git revisions that landoscript needs
                   hg-repo-url:
                       by-project:
@@ -49,7 +70,8 @@ task-defaults:
                           mozilla-esr115: https://hg.mozilla.org/releases/mozilla-esr115
                           mozilla-esr140: https://hg.mozilla.org/releases/mozilla-esr140
                           mozilla-esr153: https://hg.mozilla.org/releases/mozilla-esr153
-                          try: https://hg.mozilla.org/try
+                          # null means "don't look up revisions in hg"
+                          try: null
                           default: ""
             - version-bump:
                   # We're bumping both desktop and mobile version regardless of which product is getting

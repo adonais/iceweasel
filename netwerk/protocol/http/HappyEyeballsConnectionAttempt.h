@@ -232,6 +232,17 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   // Hand the transaction to a new HappyEyeballsConnectionAttempt that resolves
   // with TRR disabled, and abandon this one without closing the transaction.
   void RetryWithoutTRR();
+  // Shared body of RetryWithoutTRR/RetryForLocalAddress: start a fresh attempt
+  // for the real transaction via the delegate (aRetryWithoutTRR selects the TRR
+  // fallback vs. a plain retry), then detach and abandon this one. aLogTag
+  // names the caller in log messages.
+  void DoRetry(bool aRetryWithoutTRR, const char* aLogTag);
+  // True when every failure was a local-peer refusal while speculative and the
+  // attempt has since been claimed (mAllow1918 became true).
+  bool ShouldRetryForLocalAddress(happy_eyeballs::FailureReason aReason) const;
+  // Hand the transaction to a new HappyEyeballsConnectionAttempt that allows
+  // local addresses, and abandon this one without closing the transaction.
+  void RetryForLocalAddress();
   // Once the origin host's (mHost) A and AAAA lookups have both completed,
   // build the connection entry's coalescing keys from their combined addresses
   // and reprocess the pending queue. Addresses resolved for an HTTPS RR target
@@ -364,6 +375,14 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   // ProcessHappyEyeballsOutput stops polling so no new attempts start.
   bool mPausedForClientAuth = false;
   uint64_t mClientAuthHolderId = 0;
+
+  // Set when a speculative attempt refused a local (RFC1918) peer. If it is
+  // later claimed and every attempt was such a refusal, we retry.
+  bool mLocalAddrRefused = false;
+  // Cleared once any establisher does something other than refuse a local peer
+  // (i.e. actually attempts a connection). With mLocalAddrRefused, means "every
+  // attempt refused a local peer".
+  bool mAllAttemptsRefusedLocal = true;
 };
 
 }  // namespace net

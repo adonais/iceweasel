@@ -89,4 +89,4 @@ attention to that may not be tested by a feature's test262 tests_
   happens when your feature interacts with the very exotic objects on the web
   platform, such as `WindowProxy`, `Location` (cross-origin objects).
 -  ☐ What happens when your feature interacts with
-  [X-rays](/dom/scriptSecurity/xray_vision.rst)?
+  [X-rays](/dom/scriptSecurity/xray_vision.md)?

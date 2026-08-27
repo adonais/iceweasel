@@ -49,7 +49,7 @@ Note: This has not been updated since the addition of `./mach update serve` in
 [Bug 1655128](https://bugzilla.mozilla.org/show_bug.cgi?id=1655128). It could
 probably be simplified by using that.
 
-See the main documentation for this, [here](SettingUpAnUpdateServer.rst).
+See the main documentation for this, [here](SettingUpAnUpdateServer.md).
 
 This script is meant to automate this process but is currently not designed to
 be very portable and thus will require some setup:

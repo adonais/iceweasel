@@ -142,5 +142,5 @@ addAccessibleTask(
     info("Focusing outerButton");
     await takeFocusWithRetry(outerButton);
   },
-  { chrome: true, topLevel: true, iframe: true, remoteIframe: true }
+  { topLevel: true, iframe: true, remoteIframe: true }
 );

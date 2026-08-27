@@ -20,6 +20,8 @@ support-files = [
   "doc_markup_pseudo.html",
   "doc_markup_search.css",
   "doc_markup_search.html",
+  "doc_markup_speculationrules.html",
+  "doc_markup_speculationrules_subpage.html",
   "doc_markup_subgrid.html",
   "doc_markup_svg_attributes.html",
   "doc_markup_toggle.html",
@@ -230,6 +232,8 @@ skip-if = [
 ["browser_markup_search_01.js"]
 
 ["browser_markup_search_html.js"]
+
+["browser_markup_speculationrules.js"]
 
 ["browser_markup_subgrid_display_badge.js"]
 

@@ -94,10 +94,10 @@ index 771a19c88a..4ec4174b51 100644
    // A snapshot of the most recent Report Block with additional data of
    // interest to statistics. Used to implement RTCRemoteInboundRtpStreamStats.
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_interface.h b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-index baeb704155..6bb4a3ac6e 100644
+index 47419e80db..05f4885e26 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_interface.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-@@ -410,9 +410,10 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
+@@ -411,9 +411,10 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
        StreamDataCounters* rtx_counters) const = 0;
  
  

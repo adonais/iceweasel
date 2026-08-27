@@ -376,7 +376,13 @@ class TestDescriptionSchema(Schema, kw_only=True):
     # Define if a given task supports artifact builds or not, see bug 1695325.
     supports_artifact_builds: TOptional[bool] = None
     # Version of python used to run the task
-    use_python: TOptional[JobDescriptionSchema.__annotations__["use_python"]] = None  # type: ignore
+    use_python: TOptional[  # type: ignore
+        optionally_keyed_by(
+            "test-platform",
+            JobDescriptionSchema.__annotations__["use_python"],
+            use_msgspec=True,
+        )
+    ] = None
     # Fetch uv binary and add it to PATH
     use_uv: TOptional[bool] = None
     # Cache mounts / volumes to set up
@@ -501,6 +507,7 @@ def resolve_keys(config, tasks):
         "test-manifest-loader",
         "timeoutfactor",
         "use-caches",
+        "use-python",
     )
     for task in tasks:
         for key in keys:
@@ -679,6 +686,7 @@ def make_job_description(config, tasks):
 
         run = jobdesc["run"] = {}
         run["using"] = "mozharness-test"
+        run["clone-with"] = "hg"
         run["test"] = task
 
         if "workdir" in task:
@@ -691,6 +699,9 @@ def make_job_description(config, tasks):
 
         if task.get("fetches"):
             jobdesc["fetches"] = task.pop("fetches")
+
+        jobdesc["use-python"] = task.pop("use-python")
+        jobdesc["use-uv"] = task.pop("use-uv")
 
         yield jobdesc
 

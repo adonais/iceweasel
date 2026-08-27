@@ -47,6 +47,9 @@ export default {
       options: ["cover", "padded"],
       control: { type: "radio" },
     },
+    dismissable: {
+      control: { type: "boolean" },
+    },
   },
   parameters: {
     status: "in-development",
@@ -74,6 +77,7 @@ const Template = ({
   imageDisplay,
   hasActionButton,
   hasSupportLink,
+  dismissable,
 }) => html`
   <div style="width: 500px">
     <moz-promo
@@ -85,6 +89,7 @@ const Template = ({
       imageAlignment=${ifDefined(imageAlignment)}
       imageWidth=${ifDefined(imageWidth)}
       imageDisplay=${ifDefined(imageDisplay)}
+      ?dismissable=${dismissable}
     >
       ${hasActionButton
         ? html` <moz-button slot="actions">Actions button</moz-button>`
@@ -102,6 +107,7 @@ Default.args = {
   l10nId: "moz-promo-message",
   hasActionButton: false,
   hasSupportLink: false,
+  dismissable: false,
 };
 
 export const Vibrant = Template.bind({});
@@ -172,4 +178,30 @@ export const SlottedSupportLink = Template.bind({});
 SlottedSupportLink.args = {
   ...Default.args,
   hasSupportLink: true,
+};
+
+export const Dismissable = Template.bind({});
+Dismissable.args = {
+  ...WithHeading.args,
+  dismissable: true,
+};
+
+export const DismissableOverCoverImage = Template.bind({});
+DismissableOverCoverImage.args = {
+  ...WithLargeImage.args,
+  dismissable: true,
+  imageAlignment: "end",
+};
+
+// A padded end-aligned image is inset from the edge, so the close button gets
+// its own space rather than sitting on the illustration.
+export const DismissableWithPaddedEndImage = Template.bind({});
+DismissableWithPaddedEndImage.args = {
+  ...Default.args,
+  imageSrc: "chrome://global/skin/illustrations/kit-happy.svg",
+  imageAlignment: "end",
+  imageWidth: "large",
+  imageDisplay: "padded",
+  l10nId: "moz-promo-message-heading-long",
+  dismissable: true,
 };

@@ -21,6 +21,9 @@ fun interface StartTimeProvider {
 }
 
 private object DefaultStartTimeProvider : StartTimeProvider {
+    // The process start time is captured once for the lifetime of the app, so there is no
+    // per-instance clock to inject here.
+    @Suppress("NoSystemCurrentTimeMillis")
     private val startTime = System.currentTimeMillis()
 
     override fun getStartTime() = startTime

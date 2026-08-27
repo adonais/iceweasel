@@ -256,25 +256,24 @@ nsresult nsAlertsIconListener::ShowAlert(imgIContainer* aImage) {
     return NS_ERROR_FAILURE;
   }
 
-  if (mAlertListener) {
-    mAlertListener->Observe(nullptr, "alertshow", mAlertCookie.get());
+  if (mAlertCallbacks) {
+    mAlertCallbacks->OnAlertShow();
   }
 
   return NS_OK;
 }
 
 void nsAlertsIconListener::SendCallback() {
-  if (mAlertListener) {
-    mAlertListener->Observe(nullptr, "alertclickcallback", mAlertCookie.get());
+  if (mAlertCallbacks) {
+    mAlertCallbacks->OnAlertClick(nullptr);
   }
 }
 
 void nsAlertsIconListener::SendActionCallback(const nsAString& aActionName) {
-  if (mAlertListener) {
+  if (mAlertCallbacks) {
     nsCOMPtr<nsIAlertAction> alertAction;
     mAlertNotification->GetAction(aActionName, getter_AddRefs(alertAction));
-    mAlertListener->Observe(alertAction, "alertclickcallback",
-                            mAlertCookie.get());
+    mAlertCallbacks->OnAlertClick(alertAction);
   }
 }
 
@@ -322,7 +321,7 @@ nsresult nsAlertsIconListener::Close() {
 }
 
 nsresult nsAlertsIconListener::InitAlert(nsIAlertNotification* aAlert,
-                                         nsIObserver* aAlertListener) {
+                                         nsIAlertCallbacks* aAlertCallbacks) {
   if (!libNotifyHandle) return NS_ERROR_FAILURE;
 
   if (!notify_is_initted()) {
@@ -419,10 +418,7 @@ nsresult nsAlertsIconListener::InitAlert(nsIAlertNotification* aAlert,
         NS_ERROR_FAILURE);
   }
 
-  mAlertListener = aAlertListener;
-
-  rv = aAlert->GetCookie(mAlertCookie);
-  NS_ENSURE_SUCCESS(rv, rv);
+  mAlertCallbacks = aAlertCallbacks;
 
   nsCOMPtr<imgIContainer> image;
   MOZ_TRY(aAlert->GetImage(getter_AddRefs(image)));
@@ -431,7 +427,7 @@ nsresult nsAlertsIconListener::InitAlert(nsIAlertNotification* aAlert,
 }
 
 void nsAlertsIconListener::NotifyFinished() {
-  if (nsCOMPtr<nsIObserver> alertListener = mAlertListener.forget()) {
-    alertListener->Observe(nullptr, "alertfinished", mAlertCookie.get());
+  if (nsCOMPtr<nsIAlertCallbacks> alertCallbacks = mAlertCallbacks.forget()) {
+    alertCallbacks->OnAlertFinished();
   }
 }

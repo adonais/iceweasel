@@ -6,3 +6,23 @@ RustProgram("crashreporter")
 
 COMPILE_FLAGS["BASE_INCLUDES"] = []
 HOST_COMPILE_FLAGS["BASE_INCLUDES"] = []
+
+if CONFIG["OS_ARCH"] == "Darwin":
+    GeneratedFile(
+        "InfoPlist.strings",
+        script="/python/mozbuild/mozbuild/action/preprocessor.py",
+        entry_point="generate",
+        inputs=["macos_app_bundle/Resources/English.lproj/InfoPlist.strings.in"],
+        flags=[
+            "-Fsubstitution",
+            "--output-encoding",
+            "utf-16",
+            f"-DAPP_NAME={CONFIG['MOZ_APP_DISPLAYNAME']}",
+        ],
+    )
+    MacOSBundle(
+        f"!/{FINAL_TARGET}/crashreporter.app",
+        skeleton="macos_app_bundle",
+        strings="!InfoPlist.strings",
+        binaries=[(f"!/{FINAL_TARGET}/crashreporter", "crashreporter")],
+    )

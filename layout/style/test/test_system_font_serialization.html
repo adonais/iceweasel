@@ -12,7 +12,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=475214
 <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=475214">Mozilla Bug 475214</a>
 <p id="display"></p>
 <div id="content">
-  
+
 </div>
 <pre id="test">
 <script type="application/javascript">
@@ -61,18 +61,16 @@ EXPECTED_DECLS = [
   "font-feature-settings: inherit;",
   "font-kerning: inherit;",
   "font-language-override: inherit;",
+  "font-optical-sizing: inherit;",
   "font-size-adjust: inherit;",
   "font-size: inherit;",
-  "font-stretch: inherit;",
+  "font-width: inherit;",
   "font-style: inherit;",
   "font-variant: inherit;",
+  "font-variation-settings: inherit;",
   "font-weight: inherit;",
   "line-height: inherit;",
 ];
-if (IsCSSPropertyPrefEnabled("layout.css.font-variations.enabled")) {
-  EXPECTED_DECLS.push("font-optical-sizing: inherit;");
-  EXPECTED_DECLS.push("font-variation-settings: inherit;");
-}
 EXPECTED_DECLS = EXPECTED_DECLS.sort().join(" ");
 let sortedDecls = e.style.cssText.split(/ (?=font-|line-)/).sort().join(" ");
 is(sortedDecls, EXPECTED_DECLS, "don't serialize system font for font:inherit");

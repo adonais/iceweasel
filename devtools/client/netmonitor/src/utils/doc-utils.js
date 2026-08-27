@@ -71,6 +71,7 @@ const SUPPORTED_HEADERS = [
   "Last-Modified",
   "Link",
   "Location",
+  "No-Vary-Search",
   "Origin",
   "Origin-Agent-Cluster",
   "Permissions-Policy",

@@ -13,12 +13,12 @@
 #ifndef mozilla_PodOperations_h
 #define mozilla_PodOperations_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
-
 #include <cstring>
 #include <limits>
 #include <type_traits>
+
+#include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 
 namespace mozilla {
 

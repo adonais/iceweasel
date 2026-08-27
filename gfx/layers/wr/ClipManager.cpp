@@ -611,18 +611,12 @@ Maybe<wr::WrSpatialId> ClipManager::DefineSpatialNodes(
 
   // The external scroll offset is accumulated into the local space positions of
   // display items inside WR, so that the elements hash (intern) to the same
-  // content ID for quick comparisons. To avoid invalidations when the
-  // auPerDevPixel is not a round value, round here directly from app units.
-  // This guarantees we won't introduce any inaccuracy in the external scroll
-  // offset passed to WR.
-  const bool useRoundedOffset =
-      StaticPrefs::apz_rounded_external_scroll_offset();
-  LayoutDevicePoint scrollOffset =
-      useRoundedOffset
-          ? LayoutDevicePoint::FromAppUnitsRounded(
-                scrollContainerFrame->GetScrollPosition(), auPerDevPixel)
-          : LayoutDevicePoint::FromAppUnits(
-                scrollContainerFrame->GetScrollPosition(), auPerDevPixel);
+  // content ID for quick comparisons. WR does that accumulation in whole app
+  // units, which is exact, so the offset must be passed through unrounded:
+  // rounding it here desynchronises it from the position the items were painted
+  // at, turning sub-pixel drift into real motion (bug 2059570).
+  LayoutDevicePoint scrollOffset = LayoutDevicePoint::FromAppUnits(
+      scrollContainerFrame->GetScrollPosition(), auPerDevPixel);
 
   // Currently we track scroll-linked effects at the granularity of documents,
   // not scroll frames, so we consider a scroll frame to have a scroll-linked

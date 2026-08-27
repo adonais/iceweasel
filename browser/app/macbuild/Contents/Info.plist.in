@@ -260,6 +260,8 @@
   <true/>
   <key>NSRequiresAquaSystemAppearance</key>
   <false/>
+  <key>NSPrefersDisplaySafeAreaCompatibilityMode</key>
+  <false/>
   <key>NSPrincipalClass</key>
   <string>GeckoNSApplication</string>
 	<key>SMPrivilegedExecutables</key>

@@ -12,7 +12,11 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-const { FX_RELAY_OAUTH_CLIENT_ID } = ChromeUtils.importESModule(
+const {
+  FX_MONITOR_OAUTH_CLIENT_ID,
+  FX_RELAY_OAUTH_CLIENT_ID,
+  VPN_OAUTH_CLIENT_ID,
+} = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccountsCommon.sys.mjs"
 );
 const { SyncedTabs, SyncedTabsManagement } = ChromeUtils.importESModule(
@@ -224,12 +228,7 @@ add_task(async function test_ui_state_signedin() {
 
   checkMenuBarItem("sync-syncnowitem");
   checkPanelHeader();
-  ok(
-    BrowserTestUtils.isVisible(
-      document.getElementById("fxa-menu-header-title")
-    ),
-    "expected toolbar to be visible after opening"
-  );
+  checkManageAccountButton(state.displayName || state.email);
   checkFxaToolbarButtonPanel({
     headerTitle: "Manage account",
     headerDescription: state.displayName,
@@ -238,13 +237,45 @@ add_task(async function test_ui_state_signedin() {
       "PanelUI-fxa-menu-account-signout-button",
     ],
     disabledItems: [],
-    hiddenItems: ["PanelUI-fxa-menu-setup-sync-container"],
+    hiddenItems: [
+      "PanelUI-fxa-menu-setup-sync-container",
+      // "Get Firefox for mobile" is only offered while sync is off.
+      "PanelUI-fxa-menu-get-firefox-mobile",
+    ],
     visibleItems: [],
   });
 
-  await checkProfilesButtons(
-    document.getElementById("fxa-manage-account-button"),
-    true
+  // A separator sits directly below the manage account button, dividing it
+  // from the profiles section that follows.
+  const manageAccountSeparator = document.getElementById(
+    "PanelUI-fxa-menu-manage-account-separator"
+  );
+  ok(
+    !manageAccountSeparator.hidden,
+    "The manage account separator is visible when signed in"
+  );
+  is(
+    manageAccountSeparator.previousElementSibling,
+    document.getElementById("PanelUI-fxa-menu-manage-account-button"),
+    "The manage account separator sits directly below the manage account button"
+  );
+
+  await checkProfilesButtons(manageAccountSeparator, true);
+
+  // In the account (toolbar) menu the sign-out separator and button sit at the
+  // bottom of the secure sync section, directly below the connected devices
+  // list.
+  is(
+    document.getElementById("PanelUI-sign-out-separator")
+      .previousElementSibling,
+    document.getElementById("PanelUI-fxa-menu-devices-list"),
+    "The sign-out separator sits directly below the connected devices list"
+  );
+  is(
+    document.getElementById("PanelUI-fxa-menu-account-signout-button")
+      .previousElementSibling,
+    document.getElementById("PanelUI-sign-out-separator"),
+    "The sign-out button sits directly below the sign-out separator"
   );
 
   checkFxAAvatar("signedin");
@@ -267,7 +298,9 @@ add_task(async function test_ui_state_signedin() {
   await BrowserTestUtils.waitForEvent(fxaView, "ViewShown");
 
   // Verify the manage button is shown, just as a basic check.
-  let manageButton = fxaView.querySelector("#fxa-manage-account-button");
+  let manageButton = fxaView.querySelector(
+    "#PanelUI-fxa-menu-manage-account-button"
+  );
   ok(
     BrowserTestUtils.isVisible(manageButton),
     "expected manage button to be visible after opening"
@@ -280,8 +313,75 @@ add_task(async function test_ui_state_signedin() {
     !BrowserTestUtils.isVisible(profileButtonsContainer),
     "expected profile buttons container to not be visible"
   );
+  // The profiles separator has to be hidden along with the rest of the profiles
+  // section, otherwise it doubles up with the manage account separator.
+  ok(
+    !BrowserTestUtils.isVisible(
+      PanelMultiView.getViewNode(
+        document,
+        "PanelUI-fxa-menu-profiles-separator"
+      )
+    ),
+    "expected profiles separator to not be visible"
+  );
+
+  // In the app menu the sign-out button sits directly below the sync status
+  // section and above the connected devices list, with a separator either side.
+  is(
+    document.getElementById("PanelUI-fxa-menu-account-signout-button")
+      .previousElementSibling,
+    document.getElementById("PanelUI-sign-out-separator"),
+    "The sign-out button sits directly below the sign-out separator in the app menu"
+  );
+  is(
+    document.getElementById("PanelUI-fxa-menu-devices-list")
+      .previousElementSibling,
+    document.getElementById("PanelUI-fxa-menu-account-signout-button"),
+    "The connected devices list sits directly below the sign-out button in the app menu"
+  );
 
   await closeTabAndMainPanel();
+  sandbox.restore();
+});
+
+add_task(async function test_ui_state_signedin_profiles_disabled() {
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(SelectableProfileService, "isEnabled").get(() => false);
+
+  gSync.updateAllUI({
+    status: UIState.STATUS_SIGNED_IN,
+    syncEnabled: true,
+    email: "foo@bar.com",
+    displayName: "Foo Bar",
+    avatarURL: "https://foo.bar",
+    lastSync: new Date(),
+    syncing: false,
+  });
+
+  await openFxaPanel();
+
+  const manageAccountSeparator = document.getElementById(
+    "PanelUI-fxa-menu-manage-account-separator"
+  );
+  ok(
+    isElementVisible(manageAccountSeparator),
+    "The manage account separator is visible when signed in"
+  );
+  for (const id of [
+    "PanelUI-fxa-menu-profiles-header-label",
+    "PanelUI-fxa-menu-profile-buttons",
+  ]) {
+    ok(
+      !isElementVisible(document.getElementById(id)),
+      `${id} is not visible when the profiles feature is disabled`
+    );
+  }
+
+  // With the profiles section hidden, the manage account separator is the only
+  // line dividing the account and secure sync sections.
+  await checkProfilesButtons(manageAccountSeparator, false);
+
+  await closeFxaPanel();
   sandbox.restore();
 });
 
@@ -415,20 +515,40 @@ add_task(async function test_ui_state_unconfigured() {
 
   checkFxAAvatar("not_configured");
 
-  let signedOffLabel = gSync.fluentStrings.formatValueSync(
-    "appmenu-fxa-signed-in-label"
-  );
-
   await openMainPanel();
 
-  checkPanelUIStatusBar({
-    description: signedOffLabel,
-    titleHidden: true,
-    hideFxAText: false,
-  });
+  // With no menu message or update banner present, the app menu shows the
+  // sign-in promo in place of the compact "Sync and Save Data" sign-in row.
+  ok(
+    BrowserTestUtils.isVisible(
+      PanelMultiView.getViewNode(document, "appMenu-fxa-sign-in-promo")
+    ),
+    "sign-in promo is visible in the app menu when signed out"
+  );
+  ok(
+    BrowserTestUtils.isHidden(
+      PanelMultiView.getViewNode(document, "appMenu-fxa-status2")
+    ),
+    "compact sign-in row is hidden when the promo is shown"
+  );
   await closeTabAndMainPanel();
 
   await openFxaPanel();
+
+  // When signed out, "Get Firefox for mobile" is offered directly below the
+  // sync status button ("Sync your data").
+  const mobileButton = document.getElementById(
+    "PanelUI-fxa-menu-get-firefox-mobile"
+  );
+  ok(
+    isElementVisible(mobileButton),
+    "Get Firefox for mobile button is visible when signed out"
+  );
+  is(
+    mobileButton.previousElementSibling,
+    document.getElementById("PanelUI-fxa-menu-sync-status-button"),
+    "Get Firefox for mobile sits directly below the sync status button"
+  );
 
   await checkProfilesButtons(
     document.getElementById("PanelUI-signedin-panel"),
@@ -464,7 +584,7 @@ add_task(async function test_ui_state_signed_in() {
     ],
     disabledItems: [],
     hiddenItems: ["PanelUI-fxa-menu-setup-sync-container"],
-    visibleItems: [],
+    visibleItems: ["PanelUI-fxa-menu-get-firefox-mobile"],
   });
   checkFxAAvatar("signedin");
   await closeFxaPanel();
@@ -505,7 +625,7 @@ add_task(async function test_ui_state_signed_in_no_display_name() {
     ],
     disabledItems: [],
     hiddenItems: ["PanelUI-fxa-menu-setup-sync-container"],
-    visibleItems: [],
+    visibleItems: ["PanelUI-fxa-menu-get-firefox-mobile"],
   });
   checkFxAAvatar("signedin");
   await closeFxaPanel();
@@ -549,9 +669,13 @@ add_task(async function test_ui_state_unverified() {
     ],
     disabledItems: [],
     hiddenItems: ["PanelUI-fxa-menu-setup-sync-container"],
-    visibleItems: [],
+    visibleItems: ["PanelUI-fxa-menu-get-firefox-mobile"],
   });
   checkFxAAvatar("unverified");
+  await checkSignedOutCard(
+    state.email,
+    "fxa-menu-signed-out-message-unverified"
+  );
   await closeFxaPanel();
   await openMainPanel();
 
@@ -593,9 +717,13 @@ add_task(async function test_ui_state_loginFailed() {
     ],
     disabledItems: [],
     hiddenItems: ["PanelUI-fxa-menu-setup-sync-container"],
-    visibleItems: [],
+    visibleItems: ["PanelUI-fxa-menu-get-firefox-mobile"],
   });
   checkFxAAvatar("login-failed");
+  await checkSignedOutCard(
+    state.email,
+    "fxa-menu-signed-out-message-login-failed"
+  );
   await closeFxaPanel();
   await openMainPanel();
 
@@ -618,6 +746,13 @@ add_task(async function test_app_menu_fxa_disabled() {
   let menuButton = newWin.document.getElementById("PanelUI-menu-button");
   menuButton.click();
   await BrowserTestUtils.waitForEvent(newWin.PanelUI.mainView, "ViewShown");
+
+  ok(
+    BrowserTestUtils.isHidden(
+      PanelMultiView.getViewNode(newWin.document, "appMenu-fxa-sign-in-promo")
+    ),
+    "sign-in promo is hidden when Mozilla accounts are disabled"
+  );
 
   [...newWin.document.querySelectorAll(".sync-ui-item")].forEach(
     e => (e.hidden = false)
@@ -990,6 +1125,40 @@ add_task(async function test_bookmarks_menu_remote_tabs_promo() {
   sandbox.restore();
 });
 
+// When signed out, the sign-in promo replaces the account header button. The
+// email of a remembered account can't be recovered from the stored hashed UID,
+// so the promo is shown whether or not a previous account is remembered.
+add_task(async function test_signed_out_sign_in_promo() {
+  const LAST_USER_PREF = "identity.fxaccounts.lastSignedInUserIdHash";
+  const promo = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-sign-in-promo"
+  );
+
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(UIState, "get").returns({
+    status: UIState.STATUS_NOT_CONFIGURED,
+  });
+
+  for (const cachedUser of [false, true]) {
+    if (cachedUser) {
+      Services.prefs.setStringPref(LAST_USER_PREF, "cached-uid-hash");
+    } else {
+      Services.prefs.clearUserPref(LAST_USER_PREF);
+    }
+    gSync.updateAllUI(UIState.get());
+    await openFxaPanel();
+    ok(
+      BrowserTestUtils.isVisible(promo),
+      `Sign-in promo is visible when signed out (cachedUser=${cachedUser})`
+    );
+    await closeFxaPanel();
+  }
+
+  Services.prefs.clearUserPref(LAST_USER_PREF);
+  sandbox.restore();
+});
+
 // If the PXI experiment is enabled, we need to ensure we can see the CTAs when signed out
 add_task(async function test_experiment_ui_state_unconfigured() {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, "https://example.com/");
@@ -1078,12 +1247,7 @@ add_task(async function test_experiment_ui_state_signedin() {
 
   checkMenuBarItem("sync-syncnowitem");
   checkPanelHeader();
-  ok(
-    BrowserTestUtils.isVisible(
-      document.getElementById("fxa-menu-header-title")
-    ),
-    "expected toolbar to be visible after opening"
-  );
+  checkManageAccountButton(state.displayName || state.email);
   checkFxaToolbarButtonPanel({
     headerTitle: "Manage account",
     headerDescription: state.displayName,
@@ -1147,15 +1311,22 @@ add_task(async function test_new_sync_setup_ui() {
     ],
     disabledItems: [],
     hiddenItems: ["PanelUI-fxa-menu-setup-sync-container"],
-    visibleItems: [],
+    visibleItems: ["PanelUI-fxa-menu-get-firefox-mobile"],
   });
 
   await closeFxaPanel();
 });
 
-// Ensure we can see the new "My services" section if the user has enabled relay on their account
-add_task(async function test_ui_my_services_signedin() {
+// When a privacy tool is already in use by the account, it stays under the
+// "Privacy tools" header (there is no longer a separate "My services" section)
+// but shows an action-oriented title and no description.
+add_task(async function test_ui_privacy_tools_in_use_signedin() {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, "https://example.com/");
+
+  Services.prefs.setBoolPref(
+    "identity.fxaccounts.toolbar.pxiToolbarEnabled",
+    true
+  );
 
   const relativeDateAnchor = new Date();
   let state = {
@@ -1178,9 +1349,16 @@ add_task(async function test_ui_my_services_signedin() {
     },
   };
 
+  const sandbox = sinon.createSandbox();
+  // isSignedIn reads from UIState.get(), so stub it to reflect a signed-in
+  // account, and stub the network fetch so our injected client list is not
+  // clobbered.
+  sandbox.stub(UIState, "get").returns(state);
+  sandbox.stub(gSync, "fetchListOfOAuthClients").resolves(true);
+
   gSync.updateAllUI(state);
 
-  // pretend that the user has relay enabled
+  // Pretend the user has signed up for Relay.
   gSync._attachedClients = [
     {
       id: FX_RELAY_OAUTH_CLIENT_ID,
@@ -1191,12 +1369,7 @@ add_task(async function test_ui_my_services_signedin() {
 
   checkMenuBarItem("sync-syncnowitem");
   checkPanelHeader();
-  ok(
-    BrowserTestUtils.isVisible(
-      document.getElementById("fxa-menu-header-title")
-    ),
-    "expected toolbar to be visible after opening"
-  );
+  checkManageAccountButton(state.displayName || state.email);
   checkFxaToolbarButtonPanel({
     headerTitle: "Manage account",
     headerDescription: state.displayName,
@@ -1205,17 +1378,46 @@ add_task(async function test_ui_my_services_signedin() {
       "PanelUI-fxa-menu-account-signout-button",
       "PanelUI-fxa-cta-menu",
       "PanelUI-fxa-menu-monitor-button",
+      "PanelUI-fxa-menu-relay-button",
       "PanelUI-fxa-menu-vpn-button",
     ],
     disabledItems: [],
-    hiddenItems: [
-      "PanelUI-fxa-menu-setup-sync-container",
-      "PanelUI-fxa-menu-relay-button", // the relay button in the "other protections" side should be hidden
+    hiddenItems: ["PanelUI-fxa-menu-setup-sync-container"],
+    visibleItems: [
+      // The in-use tool stays visible under "Privacy tools".
+      "PanelUI-fxa-menu-relay-button",
     ],
-    visibleItems: [],
   });
+
+  const relayButton = document.getElementById("PanelUI-fxa-menu-relay-button");
+  is(
+    relayButton.querySelector(".cta-menu-title").getAttribute("data-l10n-id"),
+    "appmenuitem-relay-title-signed-in",
+    "in-use Relay button shows the signed-in title"
+  );
+  ok(
+    relayButton.querySelector(".cta-menu-description").hidden,
+    "in-use Relay button hides its description"
+  );
+
+  // Tools that are not in use keep their promo title and description.
+  const monitorButton = document.getElementById(
+    "PanelUI-fxa-menu-monitor-button"
+  );
+  is(
+    monitorButton.querySelector(".cta-menu-title").getAttribute("data-l10n-id"),
+    "appmenuitem-monitor-title2",
+    "unused Monitor button shows the promo title"
+  );
+  ok(
+    !monitorButton.querySelector(".cta-menu-description").hidden,
+    "unused Monitor button shows its description"
+  );
+
   checkFxAAvatar("signedin");
   gSync.relativeTimeFormat = origRelativeTimeFormat;
+  gSync._attachedClients = [];
+  sandbox.restore();
   await closeFxaPanel();
 
   await openMainPanel();
@@ -1232,6 +1434,111 @@ add_task(async function test_ui_my_services_signedin() {
     false
   );
   await closeTabAndMainPanel();
+});
+
+// When the account has signed up for every privacy tool, each one stays under
+// the "Privacy tools" header with its action-oriented title and no description.
+add_task(async function test_ui_privacy_tools_all_in_use_signedin() {
+  await BrowserTestUtils.openNewForegroundTab(gBrowser, "https://example.com/");
+
+  Services.prefs.setBoolPref(
+    "identity.fxaccounts.toolbar.pxiToolbarEnabled",
+    true
+  );
+
+  const relativeDateAnchor = new Date();
+  let state = {
+    status: UIState.STATUS_SIGNED_IN,
+    syncEnabled: true,
+    hasSyncKeys: true,
+    email: "foo@bar.com",
+    displayName: "Foo Bar",
+    avatarURL: "https://foo.bar",
+    lastSync: new Date(),
+    syncing: false,
+  };
+
+  const origRelativeTimeFormat = gSync.relativeTimeFormat;
+  gSync.relativeTimeFormat = {
+    formatBestUnit(date) {
+      return origRelativeTimeFormat.formatBestUnit(date, {
+        now: relativeDateAnchor,
+      });
+    },
+  };
+
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(UIState, "get").returns(state);
+  sandbox.stub(gSync, "fetchListOfOAuthClients").resolves(true);
+
+  gSync.updateAllUI(state);
+
+  // Pretend the user has signed up for Monitor, Relay and VPN.
+  gSync._attachedClients = [
+    { id: FX_MONITOR_OAUTH_CLIENT_ID },
+    { id: FX_RELAY_OAUTH_CLIENT_ID },
+    { id: VPN_OAUTH_CLIENT_ID },
+  ];
+
+  await openFxaPanel();
+
+  checkFxaToolbarButtonPanel({
+    headerTitle: "Manage account",
+    headerDescription: state.displayName,
+    enabledItems: [
+      "PanelUI-fxa-cta-menu",
+      "PanelUI-fxa-menu-monitor-button",
+      "PanelUI-fxa-menu-relay-button",
+      "PanelUI-fxa-menu-vpn-button",
+    ],
+    disabledItems: [],
+    hiddenItems: [],
+    visibleItems: [
+      "PanelUI-fxa-menu-monitor-button",
+      "PanelUI-fxa-menu-relay-button",
+      "PanelUI-fxa-menu-vpn-button",
+    ],
+  });
+
+  const inUseTools = [
+    {
+      buttonId: "PanelUI-fxa-menu-monitor-button",
+      titleId: "appmenuitem-monitor-title-signed-in",
+    },
+    {
+      buttonId: "PanelUI-fxa-menu-relay-button",
+      titleId: "appmenuitem-relay-title-signed-in",
+    },
+    {
+      buttonId: "PanelUI-fxa-menu-vpn-button",
+      titleId: "appmenuitem-vpn-title-signed-in1",
+    },
+  ];
+
+  for (const { buttonId, titleId } of inUseTools) {
+    const button = document.getElementById(buttonId);
+    is(
+      button.querySelector(".cta-menu-title").getAttribute("data-l10n-id"),
+      titleId,
+      `${buttonId} shows the signed-in title`
+    );
+    ok(
+      button.querySelector(".cta-menu-description").hidden,
+      `${buttonId} hides its description`
+    );
+  }
+
+  gSync.relativeTimeFormat = origRelativeTimeFormat;
+  gSync._attachedClients = [];
+  sandbox.restore();
+  await closeFxaPanel();
+
+  // Revert the pref at the end of the test
+  Services.prefs.setBoolPref(
+    "identity.fxaccounts.toolbar.pxiToolbarEnabled",
+    false
+  );
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 add_task(async function test_experiment_signin_button_signed_out() {
@@ -1358,6 +1665,51 @@ function checkMenuBarItem(expectedShownItemId) {
   );
 }
 
+async function checkSignedOutCard(email, messageL10nId) {
+  const card = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-signed-out-card"
+  );
+
+  ok(
+    BrowserTestUtils.isVisible(card),
+    "Signed-out card is visible when a remembered account needs to sign in"
+  );
+  is(
+    PanelMultiView.getViewNode(document, "PanelUI-fxa-menu-signed-out-email")
+      .value,
+    email,
+    "Signed-out card shows the remembered account email"
+  );
+  is(
+    PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-signed-out-message"
+    ).getAttribute("data-l10n-id"),
+    messageL10nId,
+    "Signed-out card shows the status-specific reason"
+  );
+}
+
+function checkManageAccountButton(expectedLabel) {
+  const manageButton = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-manage-account-button"
+  );
+  ok(
+    BrowserTestUtils.isVisible(manageButton),
+    "Manage account button is visible when signed in"
+  );
+  is(
+    PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-manage-account-email"
+    ).value,
+    expectedLabel,
+    "Manage account button shows the account display name or email"
+  );
+}
+
 function checkPanelHeader() {
   let fxaPanelView = PanelMultiView.getViewNode(document, "PanelUI-fxa");
   is(
@@ -1462,9 +1814,9 @@ async function checkProfilesButtons(
   previousElementSibling,
   separatorVisible = false
 ) {
-  const profilesHeaderSeparator = PanelMultiView.getViewNode(
+  const profilesHeaderLabel = PanelMultiView.getViewNode(
     document,
-    "PanelUI-fxa-menu-profiles-header-separator"
+    "PanelUI-fxa-menu-profiles-header-label"
   );
   const profilesSeparator = PanelMultiView.getViewNode(
     document,
@@ -1479,7 +1831,7 @@ async function checkProfilesButtons(
 
   is(
     previousElementSibling,
-    profilesHeaderSeparator.previousElementSibling,
+    profilesHeaderLabel.previousElementSibling,
     "The profiles section starts after " + previousElementSibling.id
   );
 }
@@ -2410,6 +2762,10 @@ add_task(async function test_sync_status_button_sync_off_signed_in() {
     BrowserTestUtils.isVisible(offCard),
     "Sync-off card is visible when signed in but sync is off"
   );
+  ok(
+    offCard.querySelector(".fxa-menu-sync-status-icon"),
+    "Sync-off card shows the sync status icon"
+  );
   is(
     PanelMultiView.getViewNode(
       document,
@@ -2465,21 +2821,21 @@ add_task(async function test_sync_status_button_sync_off_signed_out() {
       document,
       "PanelUI-fxa-menu-sync-status-title"
     ).getAttribute("value"),
-    gSync.fluentStrings.formatValueSync("fxa-menu-sync-status-off"),
-    "Sync status title reads 'Sync is Off'"
+    gSync.fluentStrings.formatValueSync("fxa-menu-sync-your-data"),
+    "Sync status title reads 'Sync Your Data' when never signed in"
   );
   const descEl = PanelMultiView.getViewNode(
     document,
     "PanelUI-fxa-menu-sync-status-description"
   );
-  is(
-    descEl.getAttribute("value"),
-    gSync.fluentStrings.formatValueSync("fxa-menu-sync-off-signin-description"),
-    "Description reads 'Sign in to sync'"
-  );
   ok(
-    descEl.classList.contains("fxa-menu-sync-status-description-error"),
-    "Description uses the error color"
+    !descEl.hasAttribute("value"),
+    "No description value is set when never signed in"
+  );
+  ok(descEl.hidden, "Description label is not rendered when never signed in");
+  ok(
+    !descEl.classList.contains("fxa-menu-sync-status-description-error"),
+    "Description does not use the error color when never signed in"
   );
 
   gSync._onSyncStatusButtonClick(syncStatusBtn, new PointerEvent("click"));

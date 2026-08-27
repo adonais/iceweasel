@@ -296,6 +296,14 @@ class RenderThread final {
   /// A pool of large memory chunks used by the per-frame allocators.
   WrChunkPool* MemoryChunkPool() { return mChunkPool; }
 
+  /// Optional shared pool of render backend threads. When non-null, every
+  /// window's `wr_window_new` call routes through it; the pool's size
+  /// reflects `gfx.webrender.render-backend-thread-count`. When null
+  /// (pref == 0), each window uses its own private backend thread.
+  ///
+  /// Can be called from any thread.
+  WrRenderBackendPool* GetRenderBackendPool() { return mRenderBackendPool; }
+
   /// Optional global glyph raster thread.
   /// Can be called from any thread.
   MaybeWebRenderGlyphRasterThread& GlyphRasterThread() {
@@ -489,11 +497,17 @@ class RenderThread final {
 
   ~RenderThread();
 
+  /// Shuts down the shared render backend pool, blocking until its threads
+  /// have exited. Does nothing if there is no pool or if it was already
+  /// destroyed.
+  void DestroyRenderBackendPool();
+
   RefPtr<nsIThread> const mThread;
 
   WebRenderThreadPool mThreadPool;
   WebRenderThreadPool mThreadPoolLP;
   WrChunkPool* mChunkPool;
+  WrRenderBackendPool* mRenderBackendPool;
   MaybeWebRenderGlyphRasterThread mGlyphRasterThread;
 
   UniquePtr<WebRenderProgramCache> mProgramCache;

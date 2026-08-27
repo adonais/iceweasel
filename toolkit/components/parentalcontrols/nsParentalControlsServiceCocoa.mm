@@ -15,7 +15,7 @@ nsParentalControlsService::nsParentalControlsService() : mEnabled(false) {
       CFSTR("restrictWeb"), CFSTR("com.apple.familycontrols.contentfilter"));
 }
 
-nsParentalControlsService::~nsParentalControlsService() {}
+nsParentalControlsService::~nsParentalControlsService() = default;
 
 NS_IMETHODIMP
 nsParentalControlsService::GetParentalControlsEnabled(bool* aResult) {

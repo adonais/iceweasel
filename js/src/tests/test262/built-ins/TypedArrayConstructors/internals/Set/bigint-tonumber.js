@@ -56,6 +56,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.throws(TypeError, function() {
     typedArray[0] = 1n;
   });
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

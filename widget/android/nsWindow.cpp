@@ -3334,17 +3334,19 @@ static int32_t ConvertScrollUpdateSource(
   return java::GeckoSession::ScrollPositionUpdate::SOURCE_USER_INTERACTION;
 }
 
-void nsWindow::NotifyCompositorScrollUpdate(
-    const CompositorScrollUpdate& aUpdate) {
+void nsWindow::NotifyCompositorScrollUpdates(
+    const nsTArray<mozilla::layers::CompositorScrollUpdate>& aUpdates) {
   MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
   if (::mozilla::jni::NativeWeakPtr<LayerViewSupport>::Accessor lvs{
           mLayerViewSupport.Access()}) {
     const auto& compositor = lvs->GetJavaCompositor();
     mContentDocumentDisplayed = true;
-    compositor->NotifyCompositorScrollUpdate(
-        aUpdate.mMetrics.mVisualScrollOffset.x,
-        aUpdate.mMetrics.mVisualScrollOffset.y, aUpdate.mMetrics.mZoom.scale,
-        ConvertScrollUpdateSource(aUpdate.mSource));
+    for (const auto& update : aUpdates) {
+      compositor->NotifyCompositorScrollUpdate(
+          update.mMetrics.mVisualScrollOffset.x,
+          update.mMetrics.mVisualScrollOffset.y, update.mMetrics.mZoom.scale,
+          ConvertScrollUpdateSource(update.mSource));
+    }
   }
 }
 

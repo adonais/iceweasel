@@ -91,7 +91,9 @@ export const DEFAULT_ENGINE_ID = "smart-openai";
  */
 export const MODEL_FEATURES = Object.freeze({
   CHAT: "chat",
+  SMART_FORM_FILL: "smart-form-fill",
   TITLE_GENERATION: "title-generation",
+  TAB_GROUP_NAMING: "tab-group-naming",
   CONVERSATION_STARTERS_SIDEBAR_SYSTEM: "conversation-starters-sidebar-system",
   CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER:
     "conversation-suggestions-sidebar-starter",
@@ -99,6 +101,8 @@ export const MODEL_FEATURES = Object.freeze({
   CONVERSATION_SUGGESTIONS_ASSISTANT_LIMITATIONS:
     "conversation-suggestions-assistant-limitations",
   CONVERSATION_SUGGESTIONS_MEMORIES: "conversation-suggestions-memories",
+  RESUME_ACTIVITY_CONVERSATION_STARTER: "resume-activity-conversation-starter",
+  RESUME_ACTIVITY_CONVERSATION: "resume-activity-conversation",
   // memories generation features
   MEMORIES_INITIAL_GENERATION_SYSTEM: "memories-initial-generation-system",
   MEMORIES_INITIAL_GENERATION_USER: "memories-initial-generation-user",
@@ -106,8 +110,7 @@ export const MODEL_FEATURES = Object.freeze({
     "memories-quality-and-sensitivity-filter-system",
   MEMORIES_QUALITY_AND_SENSITIVITY_FILTER_USER:
     "memories-quality-and-sensitivity-filter-user",
-  MEMORIES_DEDUPLICATION_SYSTEM: "memories-deduplication-system",
-  MEMORIES_DEDUPLICATION_USER: "memories-deduplication-user",
+  MEMORIES_MERGE: "memories-merge",
   // memories usage features
   MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM:
     "memories-message-classification-system",
@@ -139,7 +142,9 @@ export const SERVICE_TYPES = Object.freeze({
  */
 export const PURPOSES = Object.freeze({
   CHAT: "chat",
+  SMART_FORM_FILL: "smart-form-fill",
   TITLE_GENERATION: "title-generation",
+  TAB_GROUP_NAMING: "auto-tab-grouping",
   CONVERSATION_STARTERS_SIDEBAR: "convo-starters-sidebar",
   MEMORY_GENERATION: "memory-generation",
   // agents
@@ -156,21 +161,24 @@ export const PURPOSES = Object.freeze({
  * Keep ui/test/browser/head.js MOCK_RS_RECORDS aligned with this table.
  */
 export const FEATURE_MAJOR_VERSIONS = Object.freeze({
-  // TODO Bug 2053495: remove with mistral release pref (CHAT becomes 9)
+  // TODO Bug 2053495: remove with mistral release pref (CHAT becomes 11)
   get [MODEL_FEATURES.CHAT]() {
-    return Services.prefs.getBoolPref(MISTRAL_RELEASE_PREF, false) ? 9 : 8;
+    return Services.prefs.getBoolPref(MISTRAL_RELEASE_PREF, false) ? 11 : 10;
   },
+  [MODEL_FEATURES.SMART_FORM_FILL]: 1,
   [MODEL_FEATURES.TITLE_GENERATION]: 1,
+  [MODEL_FEATURES.TAB_GROUP_NAMING]: 1,
   [MODEL_FEATURES.CONVERSATION_STARTERS_SIDEBAR_SYSTEM]: 1,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER]: 3,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP]: 1,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_ASSISTANT_LIMITATIONS]: 1,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_MEMORIES]: 1,
+  [MODEL_FEATURES.RESUME_ACTIVITY_CONVERSATION_STARTER]: 1,
+  [MODEL_FEATURES.RESUME_ACTIVITY_CONVERSATION]: 1,
   // memories generation feature versions
   [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM]: 3,
   [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_USER]: 4,
-  [MODEL_FEATURES.MEMORIES_DEDUPLICATION_SYSTEM]: 1,
-  [MODEL_FEATURES.MEMORIES_DEDUPLICATION_USER]: 1,
+  [MODEL_FEATURES.MEMORIES_MERGE]: 1,
   [MODEL_FEATURES.MEMORIES_QUALITY_AND_SENSITIVITY_FILTER_SYSTEM]: 1,
   [MODEL_FEATURES.MEMORIES_QUALITY_AND_SENSITIVITY_FILTER_USER]: 1,
   // memories usage feature versions
@@ -188,6 +196,27 @@ export const FEATURE_MAJOR_VERSIONS = Object.freeze({
 });
 
 /**
+ * Inference parameters Firefox may pass to the model endpoint. This mirrors the
+ * set the MLPA ChatRequest (mlpa/core/classes.py) will respect — the server
+ * drops anything not in that set. This list should mirror the parameter list in
+ * the MLPA pydantic object - as any parameter listed here can be passed through
+ * RS parameters for inference.
+ *
+ * @typedef {object} InferenceParams
+ * @property {number} [temperature] - model temperature param
+ * @property {number} [top_p] - model top_p param
+ * @property {number} [max_completion_tokens] - model param
+ * @property {object} [response_format] - model param
+ * @property {number} [presence_penalty] - model param
+ * @property {number} [frequency_penalty] - model param
+ * @property {object} [logit_bias] - model param
+ * @property {boolean} [parallel_tool_calls] - model param
+ * @property {boolean} [logprobs] - model param
+ * @property {number} [top_logprobs] - model param
+ * @property {string|object} [tool_choice] - model param
+ */
+
+/**
  * Remote Settings configuration record structure
  *
  * @typedef {object} RemoteSettingsConfig
@@ -196,7 +225,7 @@ export const FEATURE_MAJOR_VERSIONS = Object.freeze({
  * @property {string} prompts - Prompt template content
  * @property {string} version - Version string in "v{major}.{minor}" format
  * @property {boolean} [is_default] - Whether this is the default config for the feature
- * @property {object} [parameters] - Optional inference parameters (e.g., temperature)
+ * @property {InferenceParams} [parameters] - Optional inference parameters (e.g., temperature)
  * @property {string[]} [additional_components] - Optional list of dependent feature configs
  */
 
@@ -322,7 +351,7 @@ export function selectMainConfig(
   // We figure out which model the user wants and load prompts for that model
   // If we can't find a config for the user selection, we load the generic one
   if (feature === MODEL_FEATURES.CHAT) {
-    if (modelChoiceId !== "0") {
+    if (modelChoiceId !== "0" && modelChoiceId !== "") {
       // First check the choice ID. If it's not 0, use the model associated with that ID
 
       // Look for config based on model choice ID
@@ -359,12 +388,12 @@ export function selectMainConfig(
     const genericConfig = sameMajor.find(
       config => config.model === GENERIC_MODEL_NAME
     );
-    // Inject the user model if one was provided
-    // If one wasn't, we return the generic config plain, which will intentionally break inference
-    if (userModel) {
-      genericConfig.model = userModel;
+    if (!genericConfig) {
+      return null;
     }
-    return genericConfig;
+    // Inject the user model if provided (non-mutating; the record may be a
+    // shared RS cache object). Plain generic intentionally breaks inference.
+    return userModel ? { ...genericConfig, model: userModel } : genericConfig;
   }
 
   // **For all features other than "chat"**
@@ -435,7 +464,10 @@ export async function resolveChatModelChoice(
     const allRecords = await client.get();
 
     const record = selectMainConfig(
-      allRecords.filter(r => r.feature === MODEL_FEATURES.CHAT),
+      // CHAT model+params live in v2 kind:"params" records.
+      allRecords.filter(
+        r => r.feature === MODEL_FEATURES.CHAT && r.kind === "params"
+      ),
       {
         majorVersion: maxMajorVersion,
         feature: MODEL_FEATURES.CHAT,
@@ -639,4 +671,65 @@ export function parseAndExtractJSON(response, fallback) {
       `Unexpected error parsing JSON from LLM response: ${e.message}`
     );
   }
+}
+
+/**
+ * Normalizes an inference result id into an integer, tolerating numeric strings
+ * such as "0".
+ *
+ * @param {*} value - Raw id from an inference result
+ * @returns {?number} Integer id, or null if invalid
+ */
+export function toIntegerId(value) {
+  if (typeof value === "number") {
+    return Number.isInteger(value) ? value : null;
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value);
+    return Number.isInteger(n) ? n : null;
+  }
+  return null;
+}
+
+/**
+ * Indexes inference results by the id the model echoes, allowing each output
+ * to be matched to its input regardless of output order. Results without a
+ * valid integer id are ignored. Keeps the first result for duplicate ids.
+ *
+ * @param {Array<object>} results - Parsed inference results
+ * @returns {Map<number, object>} Results keyed by id
+ */
+export function indexInferenceResultsById(results) {
+  const resultsById = new Map();
+  for (const result of results) {
+    const id = toIntegerId(result?.id);
+    if (id !== null && !resultsById.has(id)) {
+      resultsById.set(id, result);
+    }
+  }
+  return resultsById;
+}
+
+/**
+ * Builds an OpenAI-style `response_format` object for JSON-schema output,
+ * suitable for passing through `inferenceParams` to the LLM.
+ *
+ * @param {string} name - Identifier for the schema (required by the API even
+ *   when not enforced); use a short PascalCase label, e.g. "InitialMemories".
+ * @param {object} schema - JSON Schema describing the desired output shape.
+ * @param {boolean} [strict=false] - When true, requests guaranteed conformance
+ *   (Structured Outputs); the schema must be strict-valid (object root, every
+ *   property listed in `required`, `additionalProperties: false`). When false,
+ *   the schema is a best-effort hint only and is not enforced.
+ * @returns {{type: string, json_schema: {name: string, strict: boolean, schema: object}}}
+ */
+export function makeJSONSchemaBlob(name, schema, strict = false) {
+  return {
+    type: "json_schema",
+    json_schema: {
+      name,
+      strict,
+      schema,
+    },
+  };
 }

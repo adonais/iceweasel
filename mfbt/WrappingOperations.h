@@ -23,10 +23,11 @@
 #ifndef mozilla_WrappingOperations_h
 #define mozilla_WrappingOperations_h
 
-#include "mozilla/Attributes.h"
-
 #include <limits.h>
+
 #include <type_traits>
+
+#include "mozilla/Attributes.h"
 
 namespace mozilla {
 

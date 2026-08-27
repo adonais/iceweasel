@@ -539,8 +539,26 @@ class ThreadRegistrationLockedRWOnThread
   void SetCycleCollectedJSContext(CycleCollectedJSContext* aCCJSContext);
   void ClearCycleCollectedJSContext();
 
-  // Poll to see if JS sampling should be started/stopped.
+  // Poll to see if JS sampling should be started/stopped. Convenience wrapper
+  // that calls TakeJSSamplingChange() then ApplyJSSamplingChange() below; it
+  // must be called with no profiler lock held.
   void PollJSSampling();
+
+  // PollJSSampling(), split so a caller can drop the profiler locks before the
+  // JS-engine calls. TakeJSSamplingChange() flips mJSSampling for a pending
+  // request and returns what change to apply; it must run under the thread's
+  // data lock. ApplyJSSamplingChange() makes the js::Enable* calls and must run
+  // with NO profiler lock held: those calls can block waiting on the JS helper
+  // threads, which themselves need the profiler locks, so holding a profiler
+  // lock across them can deadlock.
+  struct JSSamplingChange {
+    enum class Action { None, Start, Stop };
+    Action mAction = Action::None;
+    JSContext* mContext = nullptr;
+    bool mAllocationsEnabled = false;
+  };
+  [[nodiscard]] JSSamplingChange TakeJSSamplingChange();
+  static void ApplyJSSamplingChange(const JSSamplingChange& aChange);
 
  public:
   ThreadRegistrationLockedRWOnThread(const char* aName, const void* aStackTop)

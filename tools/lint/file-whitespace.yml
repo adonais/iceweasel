@@ -135,10 +135,10 @@ file-whitespace:
         - devtools/client/styleeditor/test/sourcemap-css/test-stylus.css
         - dom/bindings/test/file_barewordGetsWindow_frame1.html
         - dom/bindings/test/file_barewordGetsWindow_frame2.html
-        - devtools/perfdocs/index.rst
-        - python/mozperftest/perfdocs/running.rst
-        - python/mozperftest/perfdocs/vision.rst
-        - python/mozperftest/perfdocs/writing.rst
+        - devtools/perfdocs/index.md
+        - python/mozperftest/perfdocs/running.md
+        - python/mozperftest/perfdocs/vision.md
+        - python/mozperftest/perfdocs/writing.md
 
     extensions:
         - .c
@@ -170,4 +170,5 @@ file-whitespace:
         - 'tools/lint/mozcheck/**'
     type: external
     payload: mozcheck:lint
+    setup: mozcheck:setup
     check: file-whitespace

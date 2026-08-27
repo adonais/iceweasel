@@ -83,7 +83,7 @@ class KeyboardLayout;
 
 class MOZ_STACK_CLASS UniCharsAndModifiers final {
  public:
-  UniCharsAndModifiers() {}
+  UniCharsAndModifiers() = default;
   UniCharsAndModifiers operator+(const UniCharsAndModifiers& aOther) const;
   UniCharsAndModifiers& operator+=(const UniCharsAndModifiers& aOther);
 

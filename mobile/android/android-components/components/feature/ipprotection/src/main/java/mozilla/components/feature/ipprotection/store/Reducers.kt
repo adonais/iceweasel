@@ -11,8 +11,11 @@ import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.Authorized
+import mozilla.components.feature.ipprotection.store.state.Country
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
+import mozilla.components.feature.ipprotection.store.state.LocationState
 import mozilla.components.feature.ipprotection.store.state.ProxyStatus
+import mozilla.components.feature.ipprotection.store.state.Recommended
 import mozilla.components.feature.ipprotection.store.state.Uninitialized
 
 @Suppress("CognitiveComplexMethod", "LongMethod", "ForbiddenSuppress")
@@ -82,6 +85,17 @@ internal fun iPProtectionReducer(
             lastError = action.info.lastError,
             proxyActiveShown = newProxyActiveShown,
             activate = newActivate,
+        )
+    }
+
+    is IPProtectionAction.CountryListChanged -> {
+        state.copy(
+            locationState = LocationState(
+                selectedLocation = state.locationState.selectedLocation,
+                locations = listOf(Recommended()) + action.countries.map {
+                    Country(countryCode = it.code, available = it.available)
+                },
+            ),
         )
     }
 
@@ -202,6 +216,14 @@ internal fun iPProtectionReducer(
             state
         }
     }
+
+    is IPProtectionAction.LocationChanged -> state.copy(
+        activate = if (state.proxyStatus == Authorized.Active) true else null,
+        locationState = LocationState(
+            selectedLocation = action.location,
+            locations = state.locationState.locations,
+        ),
+    )
 
     is InternalAction -> internalReducer(state, action)
 }

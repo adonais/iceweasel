@@ -303,6 +303,14 @@ function legacyType(node) {
   return node.type;
 }
 
+// Enums should be expressed as "oneOf" of "const"s. This returns the
+// permitted values for oneOf nodes.
+function constValues(node) {
+  return node.oneOf?.every(branch => "const" in branch)
+    ? node.oneOf.map(branch => branch.const)
+    : null;
+}
+
 function legacySchemaForDisplay(node) {
   if (Array.isArray(node)) {
     return node.map(legacySchemaForDisplay);
@@ -325,11 +333,19 @@ function legacySchemaForDisplay(node) {
       } else if (branch.type) {
         types.push(branch.type);
       }
-      if (branch.enum) {
-        result.enum = branch.enum;
+      let branchValues = constValues(branch) ?? branch.enum;
+      if (branchValues) {
+        result.enum = branchValues;
       }
     }
     return { type: types, ...result };
+  }
+
+  let values = constValues(node);
+  if (values) {
+    let rest = { ...node };
+    delete rest.oneOf;
+    return { ...legacySchemaForDisplay(rest), enum: values };
   }
 
   let result = {};
@@ -439,28 +455,27 @@ window.onload = function () {
 
   // Event delegation on #categories-nav element
   let menu = document.getElementById("categories-nav");
-  menu.addEventListener("change-view", e => show(e.target));
+  menu.addEventListener("change-view", e => onChangeView(e.target));
 
-  if (location.hash) {
-    let sectionButton = document.getElementById(
-      "category-" + location.hash.substring(1)
-    );
-    if (sectionButton) {
-      sectionButton.click();
-    }
-  }
-
-  window.addEventListener("hashchange", function () {
+  function onHashChange() {
     if (location.hash) {
       let sectionButton = document.getElementById(
         "category-" + location.hash.substring(1)
       );
-      sectionButton.click();
+      if (sectionButton) {
+        sectionButton.activate();
+      }
     }
+  }
+
+  window.addEventListener("hashchange", function () {
+    onHashChange();
   });
+
+  onHashChange();
 };
 
-function show(button) {
+function onChangeView(button) {
   let current_tab = document.querySelector(".active");
   let category = button.getAttribute("id").substring("category-".length);
   let content = document.getElementById(category);

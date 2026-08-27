@@ -332,6 +332,20 @@ add_task(async function discopane_with_real_api_data() {
 
   is(apiHandler.requestCount, 1, "Discovery API should be fetched once");
 
+  let footerPromo = win.document.querySelector("footer addons-promo");
+  is(
+    footerPromo.getAttribute("data-l10n-id"),
+    "find-more-addons-promo",
+    "The discopane promo card has the expected l10n id"
+  );
+  is(
+    footerPromo
+      .querySelector('moz-button[action="open-amo"]')
+      .getAttribute("data-l10n-id"),
+    "find-more-addons-promo-open-amo-button",
+    "The discopane promo AMO button has the expected l10n id"
+  );
+
   await closeView(win);
 });
 

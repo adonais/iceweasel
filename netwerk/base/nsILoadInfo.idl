@@ -963,19 +963,14 @@ interface nsILoadInfo : nsISupports
   [infallible] readonly attribute BrowsingContext browsingContext;
 
   /**
-   * The BrowsingContext which the worker is associated.
+   * The BrowsingContextID that a request such as fetch() or importScripts() is
+   * associated with.
    *
-   * When used with workers:
-   * Note that this could be 0 if the load is not triggered in a WorkerScope.
-   * This value is only set and used in the parent process for some sitautions
-   * the channel is created in the parent process for Workers. Such as fetch().
-   * In content process, it is always 0.
-   * This value would not be propagated through IPC.
-   *
-   * When used for Reporting API:
-   * Fetch is used send reports to endpoints. The associated bc ID is
+   * Fetch is used to send reports to endpoints. The associated bc ID is
    * used so that a web developer can track the sending of reports in devtools,
    * by ultimately setting the browsing context ID on a LoadInfo object.
+   *
+   * This will be 0 when the request is from a SharedWorker or ServiceWorker.
    */
   [infallible] attribute unsigned long long associatedBrowsingContextID;
   [infallible] readonly attribute BrowsingContext associatedBrowsingContext;
@@ -1651,12 +1646,6 @@ interface nsILoadInfo : nsISupports
 
   [noscript, notxpcom, nostdcall, binaryname(SetInterceptionInfo)]
   void binarySetInterceptionInfo(in nsIInterceptionInfo info);
-
-  /**
-   * Whether nsICookieInjector has injected a cookie for this request to
-   * handle a cookie banner. This is only done for top-level requests.
-   */
-  [infallible] attribute boolean hasInjectedCookieForCookieBannerHandling;
 
   cenum SchemelessInputType : 8 {
     SchemelessInputTypeUnset = 0,

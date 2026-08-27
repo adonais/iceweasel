@@ -134,27 +134,9 @@ bool CSSNumericValue::Equals(const Sequence<OwningCSSNumberish>& aValue) {
 // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-to
 already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
                                                    ErrorResult& aRv) const {
-  // Step 1.
-  StyleNumericType numericType;
-  if (!Servo_NumericType_Create(&aUnit, &numericType)) {
-    aRv.ThrowSyntaxError("Invalid unit: "_ns + aUnit);
-    return nullptr;
-  }
-
-  // Step 2.
-  auto styleNumericValue = ToStyleNumericValue();
-
-  auto sumValue = WrapUnique(Servo_SumValue_Create(&styleNumericValue));
-  if (!sumValue) {
-    aRv.ThrowTypeError("Failed to create a sum value");
-    return nullptr;
-  }
-
-  // Step 3.
-  auto styleUnitValue = StyleOptional<StyleUnitValue>::None();
-  Servo_SumValue_ToUnit(sumValue.get(), &aUnit, &styleUnitValue);
-  if (styleUnitValue.IsNone()) {
-    aRv.ThrowTypeError("Failed to convert to "_ns + aUnit);
+  // Step 1-3.
+  auto styleUnitValue = ToStyleUnitValue(aUnit, aRv);
+  if (aRv.Failed()) {
     return nullptr;
   }
 
@@ -250,6 +232,12 @@ void CSSNumericValue::Type(CSSNumericType& aRetVal) {
 // static
 already_AddRefed<CSSNumericValue> CSSNumericValue::Parse(
     const GlobalObject& aGlobal, const nsACString& aCssText, ErrorResult& aRv) {
+  return Parse(aGlobal.GetAsSupports(), aCssText, aRv);
+}
+
+// static
+already_AddRefed<CSSNumericValue> CSSNumericValue::Parse(
+    nsISupports* aParent, const nsACString& aCssText, ErrorResult& aRv) {
   // Step 1 & 2 & 3.
   auto declaration = WrapUnique(Servo_NumericDeclaration_Parse(&aCssText));
   if (!declaration) {
@@ -265,8 +253,7 @@ already_AddRefed<CSSNumericValue> CSSNumericValue::Parse(
     return nullptr;
   }
 
-  RefPtr<CSSNumericValue> numericValue =
-      Create(aGlobal.GetAsSupports(), result.AsNumeric());
+  RefPtr<CSSNumericValue> numericValue = Create(aParent, result.AsNumeric());
   return numericValue.forget();
 }
 
@@ -320,6 +307,38 @@ StyleNumericValue CSSNumericValue::ToStyleNumericValue() const {
     }
   }
   MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Bad numeric value type!");
+}
+
+// Step 1-3 of:
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-to
+StyleOptional<StyleUnitValue> CSSNumericValue::ToStyleUnitValue(
+    const nsACString& aUnit, ErrorResult& aRv) const {
+  auto result = StyleOptional<StyleUnitValue>::None();
+
+  // Step 1.
+  StyleNumericType numericType;
+  if (!Servo_NumericType_Create(&aUnit, &numericType)) {
+    aRv.ThrowSyntaxError("Invalid unit: "_ns + aUnit);
+    return result;
+  }
+
+  // Step 2.
+  auto styleNumericValue = ToStyleNumericValue();
+
+  auto sumValue = WrapUnique(Servo_SumValue_Create(&styleNumericValue));
+  if (!sumValue) {
+    aRv.ThrowTypeError("Failed to create a sum value");
+    return result;
+  }
+
+  // Step 3.
+  Servo_SumValue_ToUnit(sumValue.get(), &aUnit, &result);
+  if (result.IsNone()) {
+    aRv.ThrowTypeError("Failed to convert to "_ns + aUnit);
+    return result;
+  }
+
+  return result;
 }
 
 const CSSNumericValue& CSSStyleValue::GetAsCSSNumericValue() const {

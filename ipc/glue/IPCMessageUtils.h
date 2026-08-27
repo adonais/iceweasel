@@ -22,17 +22,6 @@ class PickleIterator;
 #  pragma warning(disable : 4800)
 #endif
 
-#if !defined(XP_UNIX)
-// This condition must be kept in sync with the one in
-// ipc_message_utils.h, but this dummy definition of
-// base::FileDescriptor acts as a static assert that we only get one
-// def or the other (or neither, in which case code using
-// FileDescriptor fails to build)
-namespace base {
-struct FileDescriptor {};
-}  // namespace base
-#endif
-
 namespace mozilla {
 template <typename...>
 class Variant;
@@ -86,21 +75,6 @@ struct ParamTraits<uint8_t> {
     return aReader->ReadBytesInto(aResult, sizeof(*aResult));
   }
 };
-
-#if !defined(XP_UNIX)
-// See above re: keeping definitions in sync
-template <>
-struct ParamTraits<base::FileDescriptor> {
-  typedef base::FileDescriptor paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    MOZ_CRASH("FileDescriptor isn't meaningful on this platform");
-  }
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    MOZ_CRASH("FileDescriptor isn't meaningful on this platform");
-    return false;
-  }
-};
-#endif  // !defined(XP_UNIX)
 
 template <>
 struct ParamTraits<mozilla::void_t> {

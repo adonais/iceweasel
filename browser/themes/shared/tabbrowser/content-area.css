@@ -40,6 +40,13 @@
     :root:is([inFullscreen], [inDOMFullscreen]) & {
       margin: 0;
     }
+
+    /* A maximized window has no outer padding, but keeps the gap below the
+       toolbox that separates it from the blocks in #browser. */
+    :root[sizemode="maximized"] & {
+      margin-block-start: 0;
+      margin-inline: 0;
+    }
   }
 
   #browser {
@@ -58,6 +65,13 @@
       padding-block-start: 2px;
       gap: 2px;
     }
+  }
+
+  /* Keep the gap between blocks, but drop the outer padding so they sit flush
+     against the edges of a maximized window. */
+  :root[sizemode="maximized"] #browser {
+    padding-inline: 0;
+    padding-block-end: 0;
   }
 
   #tabbrowser-tabbox {
@@ -103,12 +117,34 @@
         border-radius: 0;
       }
     }
+
+    /* Maximized: zero the outer corners & borders that meet the bottom window edge. */
+    :root[sizemode="maximized"] & {
+      border-end-start-radius: 0;
+      border-end-end-radius: 0;
+      border-block-end: none;
+    }
+
+    /* Maximized: when there's no sidebar docked on the inline-start edge,
+       remove those borders & corners. */
+    :root[sizemode="maximized"] #tabbrowser-tabbox:not([sidebar-shown]) &,
+    :root[sizemode="maximized"] #tabbrowser-tabbox[sidebar-shown][sidebar-positionend] & {
+      border-start-start-radius: 0;
+      border-inline-start: none;
+    }
+
+    /* If there's no sidebar docked on the inline-end edge, remove those borders & corners. */
+    :root[sizemode="maximized"] #tabbrowser-tabbox:not([sidebar-positionend], [ai-window-open]) & {
+      border-start-end-radius: 0;
+      border-inline-end: none;
+    }
   }
 
   /* Splitter between split-view panels. The active panel's 2px focus outline
    * extends into the splitter margin on the active panel's side, so we widen
    * that side's margin to 3px (2px outline + 1px clear) and keep the other
-   * side at 1px. See the :has() rules below for the asymmetric overrides. */
+   * side at 1px. See the [splitview-selected-column] rules below for the
+   * asymmetric overrides. */
   #tabbrowser-tabpanels[splitview] .split-view-splitter {
     background-color: transparent;
     border: none;
@@ -130,13 +166,13 @@
 
   /* When column-0 is selected, its right outline extends into the splitter's
    * inline-start margin: widen that side to 3px (2px outline + 1px clear). */
-  #tabbrowser-tabpanels[splitview]:has(.split-view-panel[column="0"].deck-selected) .split-view-splitter {
+  :root[splitview-selected-column="0"] #tabbrowser-tabpanels[splitview] .split-view-splitter {
     margin-inline-start: 3px;
   }
 
   /* When column-1 is selected, its left outline extends into the splitter's
    * inline-end margin: widen that side to 3px (2px outline + 1px clear). */
-  #tabbrowser-tabpanels[splitview]:has(.split-view-panel[column="1"].deck-selected) .split-view-splitter {
+  :root[splitview-selected-column="1"] #tabbrowser-tabpanels[splitview] .split-view-splitter {
     margin-inline-end: 3px;
   }
 }
@@ -198,18 +234,146 @@
   /* To contain the status panel */
   position: relative;
 
-  /* .browserContainer only contains the devtools when docked horizontally */
+  /* .browserContainer contains the devtools when docked horizontally or on the sides */
   min-height: 0;
+  min-width: 0;
 
   /* We want to be able to show the frame color behind the clipped radiused corner */
   background: var(--tabpanel-background-color);
+
+  display: grid;
+  /**
+   * We're defining all the possible rows and columns so we have an explicit view of all
+   * the items we could have to display.
+   * For all the areas which might not have an associated item (that's basically all of
+   * them, except `browserstack`), we're setting their row/column to `auto` so the area
+   * will have a size of 0x0 when there's no item for it.
+   */
+  grid-template-areas:
+    "devtools-side-start      devtools-side-start-splitter notificationbox          devtools-side-end-splitter  devtools-side-end"
+    "devtools-side-start      devtools-side-start-splitter rdm-toolbar              devtools-side-end-splitter  devtools-side-end"
+    "devtools-side-start      devtools-side-start-splitter browserstack             devtools-side-end-splitter  devtools-side-end"
+    "devtools-side-start      devtools-side-start-splitter findbar                  devtools-side-end-splitter  devtools-side-end"
+    "devtools-bottom-splitter devtools-bottom-splitter     devtools-bottom-splitter devtools-bottom-splitter    devtools-bottom-splitter"
+    "devtools-bottom          devtools-bottom              devtools-bottom          devtools-bottom             devtools-bottom";
+
+  grid-template-columns:
+    /* DevTools toolbox docked on the left */
+    auto
+    /* Splitter for left-docked DevTools toolbox */
+    auto
+    /* For notificationbox, browserstack, rdm toolbar and findbar, we want to take all
+       the available width */
+    minmax(var(--content-area-min-size), 1fr)
+    /* Splitter for right-docked DevTools toolbox */
+    auto
+    /* DevTools toolbox docked on the right */
+    auto;
+  grid-template-rows:
+    /* notificationbox */
+    auto
+    /* rdm toolbar */
+    var(
+      /* The iframe we load can also display the "Device Settings" dialog, which would
+         contribute to this row height when it's displayed, if the row would be set
+         to "auto", like the other areas we have that might not hold any element.
+         When the dialog is displayed, the iframe will span multiple rows (see
+         `&.device-modal-opened` rule), but we want this one to stay stable so the layout
+         doesn't shift.
+         `--rdm-toolbar-height` is only set when RDM is visible, so we can have a fallback
+         value of 0 so the row "collapses" */
+      --rdm-toolbar-height,
+      0
+    )
+    /* browserstack, we want to take all the available height */
+    minmax(var(--content-area-min-size), 1fr)
+    /* findbar */
+    auto
+    /* Splitter for bottom-docked DevTools toolbox */
+    auto
+    /* DevTools toolbox docked to the bottom */
+    auto;
+
+  & > .notificationbox-stack {
+    grid-area: notificationbox;
+  }
+
+  &.responsive-mode > .rdm-toolbar {
+    grid-area: rdm-toolbar;
+
+    /* When the Device Settings dialog is opened, we want the RDM iframe to span all
+       the rows */
+    &.device-modal-opened {
+      grid-row: rdm-toolbar-start / -1;
+      z-index: var(--browser-container-z-index-devtools-rdm-with-devices-dialog);
+    }
+  }
+
+  & > .browserStack {
+    grid-area: browserstack;
+  }
+
+  & > findbar {
+    grid-area: findbar;
+  }
+
+  /* DevTools docked to the left */
+  & > .devtools-toolbox-iframe.docked-left {
+    grid-area: devtools-side-start;
+
+    /* The grid-area follows logical direction, so in rtl, the layout is mirrored.
+       But the DevTools toolbox is placed physically: docking it to the right will put
+       the tooltbox to the right of the page, in both LTR and RTL. So here we need to
+       assign the correct grid-area when we're in RTL.
+       Same goes for the plitter, and when the toolbox is docked to the right.
+    */
+    &:dir(rtl) {
+      grid-area: devtools-side-end;
+    }
+  }
+
+  & > .devtools-toolbox-splitter.docked-left {
+    grid-area: devtools-side-start-splitter;
+
+    &:dir(rtl) {
+      grid-area: devtools-side-end-splitter;
+    }
+  }
+
+  /* DevTools docked to the right */
+  & > .devtools-toolbox-splitter.docked-right {
+    grid-area: devtools-side-end-splitter;
+
+    &:dir(rtl) {
+      grid-area: devtools-side-start-splitter;
+    }
+  }
+
+  & > .devtools-toolbox-iframe.docked-right {
+    grid-area: devtools-side-end;
+    min-height: 100%;
+
+    &:dir(rtl) {
+      grid-area: devtools-side-start;
+    }
+  }
+
+  /* DevTools docked to the bottom */
+  & > .devtools-toolbox-splitter.for-bottom-host {
+    grid-area: devtools-bottom-splitter;
+  }
+
+  & > .devtools-toolbox-iframe.bottom-host {
+    grid-area: devtools-bottom;
+    min-width: 100%;
+  }
 
   @media -moz-pref("sidebar.revamp") {
     outline: 0.01px solid var(--chrome-content-separator-color);
     box-shadow: var(--content-area-shadow);
   }
 
-  @media -moz-pref("sidebar.revamp") and -moz-pref("sidebar.revamp.round-content-area") {
+  @media -moz-pref("sidebar.revamp") {
     overflow: clip;
 
     @media not -moz-pref("browser.nova.enabled") {
@@ -453,6 +617,15 @@
       margin-block-end: 4px;
     }
   }
+
+  /* In split view the notification box is inside the panel's browserContainer.
+   * So we move the border to the bottom to face the web content. */
+  #tabbrowser-tabpanels[splitview] .split-view-panel > .browserContainer > .notificationbox-stack > notification-message {
+    margin: 0;
+    border-block-start: none;
+    border-block-end: var(--border-width) solid var(--chrome-content-separator-color);
+    --info-bar-background-color: var(--toolbar-background-color);
+  }
 }
 
 /* Split view */
@@ -476,11 +649,29 @@ split-view-footer {
 
   -moz-context-properties: fill;
   fill: var(--button-icon-fill);
+
+  /* Remove end|end radius when the content page does not have a border radius because
+     of the DevTools toolbox placement: */
+  :is(
+    /* when the toolbox is docked at the bottom */
+    .browserSidebarContainer[devtools-host-type="bottom"],
+    /* when the toolbox is docked on the right in LTR */
+    :dir(ltr) .browserSidebarContainer[devtools-host-type="right"],
+    /* when the toolbox is docked on the left in RTL */
+    :dir(rtl) .browserSidebarContainer[devtools-host-type="left"]
+  ) & {
+    border-end-end-radius: 0;
+  }
 }
 
 .split-view-icon {
   width: var(--icon-size);
   height: var(--icon-size);
+}
+
+.split-view-icon-insecure {
+  -moz-context-properties: fill, stroke;
+  stroke: var(--icon-color-critical);
 }
 
 .split-view-uri {
@@ -636,6 +827,12 @@ split-view-footer {
 
 #selection-shortcut-action-panel {
   --panel-subview-body-padding: 0;
+
+  &[ime-hiding] {
+    opacity: 0;
+    pointer-events: none;
+    -moz-window-shadow: none;
+  }
 }
 
 #ai-action-button {
@@ -643,6 +840,10 @@ split-view-footer {
   --button-size-icon: 34px;
   --button-border-radius: 7px;
   margin: 1px;
+
+  @media -moz-pref("browser.nova.enabled") {
+    --button-border-radius: var(--border-radius-xlarge);
+  }
 }
 
 #ask-chat-shortcuts {
@@ -765,6 +966,7 @@ split-view-footer {
   &.spotlightBox {
     max-width: none;
     max-height: none;
+    border-radius: inherit;
   }
 
   /* For window-modal dialogs, we allow overlapping the urlbar if the window is
@@ -816,8 +1018,11 @@ split-view-footer {
 }
 
 /* Radius the backdrop so it doesnt occlude the radiused .browserContainer below it */
-:root:not([inDOMFullscreen]) #tabbrowser-tabbox[sidebar-shown] .dialogOverlay[topmost="true"] {
-  @media -moz-pref("sidebar.revamp.round-content-area") {
+@media not -moz-pref("browser.nova.enabled") {
+  /* The border radius on those dialog is set in the next top-level rule (`.dialogOverlay[topmost="true"]`),
+     and uses the --chrome-block-radius, which is only set when Nova is enabled.
+     So here we only need to handle the case where Nova isn't enabled */
+  :root:not([inDOMFullscreen]) #tabbrowser-tabbox[sidebar-shown] .browserSidebarContainer:not(.responsive-mode) .dialogOverlay[topmost="true"] {
     border-start-end-radius: var(--border-radius-medium);
 
     @media -moz-pref("sidebar.position_start") {
@@ -830,6 +1035,28 @@ split-view-footer {
 .dialogOverlay[topmost="true"],
 #window-modal-dialog::backdrop {
   background-color: var(--background-color-overlay);
+  border-radius: var(--chrome-block-radius);
+
+  .browserSidebarContainer.responsive-mode & {
+    border-radius: 0;
+  }
+
+  .browserSidebarContainer:not(.responsive-mode)[devtools-host-type="bottom"] > .dialogStack > & {
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+  }
+
+  .browserSidebarContainer:not(.responsive-mode)[devtools-host-type="right"] > .dialogStack > & {
+    /* Use physical properties as devtools docking side is physical (left/right), and not logical */
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .browserSidebarContainer:not(.responsive-mode)[devtools-host-type="left"] > .dialogStack > & {
+    /* Use physical properties as devtools docking side is physical (left/right), and not logical */
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
 }
 
 .dialogOverlay[hideContent="true"][topmost="true"] {

@@ -951,8 +951,6 @@ installation:
           (optional, present if object is "full") Whether the default path was used
         type: string
     telemetry_mirror: Installation_FirstSeen_Full
-    no_lint:
-      - COMMON_PREFIX
 
   first_seen_stub:
     type: event
@@ -969,8 +967,6 @@ installation:
     expires: never
     extra_keys: *installation_first_seen_extra
     telemetry_mirror: Installation_FirstSeen_Stub
-    no_lint:
-      - COMMON_PREFIX
 
   first_seen_msix:
     type: event
@@ -987,8 +983,6 @@ installation:
     expires: never
     extra_keys: *installation_first_seen_extra
     telemetry_mirror: Installation_FirstSeen_Msix
-    no_lint:
-      - COMMON_PREFIX
 
 partner_link:
   click_newtab:
@@ -2102,4 +2096,25 @@ privacy.reduced_page_protection:
     notification_emails:
       - manuel@mozilla.com
       - privacy-team@mozilla.org
+    expires: never
+
+nova:
+  enabled:
+    type: boolean
+    lifetime: application
+    description: >
+      Whether the Nova redesign is enabled, i.e. the value of the
+      `browser.nova.enabled` preference. Recorded at startup and again on each
+      daily idle, so that changes made mid-session are picked up. Once Nova is
+      enabled by default this gives us a signal for how many people turn it
+      back off.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2057058
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2057058
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - sthompson@mozilla.com
+      - jbrown@mozilla.com
     expires: never

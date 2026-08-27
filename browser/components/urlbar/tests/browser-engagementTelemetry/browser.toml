@@ -43,11 +43,15 @@ prefs = ["browser.bookmarks.testing.skipDefaultBookmarksImport=true"]
 
 ["browser_glean_telemetry_bounce.js"]
 
+["browser_glean_telemetry_bounce_sap.js"]
+
 ["browser_glean_telemetry_disable.js"]
 skip-if = [
   "os == 'win' && os_version == '11.26100' && debug && verify-standalone",
   "os == 'win' && os_version == '11.26200' && debug && verify-standalone",
 ]
+
+["browser_glean_telemetry_disable_sap.js"]
 
 ["browser_glean_telemetry_engagement_available_semantic.js"]
 
@@ -68,6 +72,8 @@ skip-if = [
 ["browser_glean_telemetry_engagement_search_engine_default_id.js"]
 
 ["browser_glean_telemetry_engagement_search_mode.js"]
+
+["browser_glean_telemetry_engagement_search_mode_url_like.js"]
 
 ["browser_glean_telemetry_engagement_selected_result.js"]
 support-files = ["../../../search/test/browser/trendingSuggestionEngine.sjs"]

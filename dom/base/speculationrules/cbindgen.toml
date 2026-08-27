@@ -13,16 +13,18 @@ includes = ["nsString.h", "nsTArray.h"]
 namespaces = ["mozilla", "dom"]
 after_includes = """
 namespace mozilla::dom {
+class Element;
 class PrefetchCandidates;
 class SpeculationRuleSet;
 }
 """
 
 [export]
-include = ["ReferrerPolicy", "FfiPrefetchCandidate"]
+include = ["ReferrerPolicy", "FfiPrefetchCandidate", "SpeculationRulesUsage"]
 item_types = ["functions", "enums", "structs"]
 
 [export.rename]
+"Element" = "mozilla::dom::Element"
 "FfiPrefetchCandidate" = "PrefetchCandidate"
 "PrefetchCandidates" = "mozilla::dom::PrefetchCandidates"
 "ReferrerPolicy" = "SpeculationRulesReferrerPolicy"

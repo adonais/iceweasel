@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>ORB: subsequent no-cors media range request is shared across same-principal windows</title>
+<meta name="timeout" content="long">
+<link rel="help" href="https://bugzilla.mozilla.org/show_bug.cgi?id=2057272">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="/common/get-host-info.sub.js"></script>
+<body>
+<script>
+const { REMOTE_ORIGIN } = get_host_info();
+const MEDIA_URL =
+  `${REMOTE_ORIGIN}/_mozilla/fetch/orb/tentative/resources/partial-wav.py`;
+
+function makeSameOriginFrame(t) {
+  const iframe = document.createElement("iframe");
+  t.add_cleanup(() => iframe.remove());
+  return new Promise(resolve => {
+    iframe.addEventListener("load", () => resolve(iframe), { once: true });
+    iframe.src = "about:blank";
+    document.body.appendChild(iframe);
+  });
+}
+
+function addAudio(doc, preload) {
+  const audio = doc.createElement("audio");
+  audio.preload = preload;
+  audio.muted = true;
+  // No crossorigin attribute: this is a no-cors, cross-origin (opaque) media
+  // request, so Opaque Response Blocking applies.
+  audio.src = MEDIA_URL;
+  doc.body.appendChild(audio);
+  return audio;
+}
+
+function onceMetadata(audio, label) {
+  return new Promise((resolve, reject) => {
+    audio.addEventListener("loadedmetadata", resolve, { once: true });
+    audio.addEventListener(
+      "error", () => reject(new Error(`${label} failed to load metadata`)),
+      { once: true });
+  });
+}
+
+promise_test(async t => {
+  // Keep the media cache from reading ahead, so window A stops downloading right
+  // after it has read metadata. That way the tail of the resource is not in the
+  // shared media cache and window B is forced to fetch it over its own channel
+  // rather than waiting for window A's download to reach it.
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.cache_readahead_limit", 1],
+      ["media.cache_resume_threshold", 1],
+    ],
+  });
+
+  // Window A: a same-origin frame that performs the initial (byte 0) no-cors
+  // media request for the cross-origin resource. The response is sniffed as
+  // media, which records the URL as an allowed media resource for this
+  // frame's principal. It only reads metadata, so it downloads just the start
+  // of the file and then goes idle.
+  const frameA = await makeSameOriginFrame(t);
+  const audioA = addAudio(frameA.contentDocument, "metadata");
+  await onceMetadata(audioA, "window A");
+
+  // Window B: a *different* same-origin frame (same principal, same content
+  // process) loading the *same* cross-origin URL. It clones window A's media
+  // resource, so it never issues its own byte-0 request. Seeking close to the
+  // end forces it to fetch data window A never downloaded, which its clone
+  // stream requests as a mid-file range (a non-first-partial 206) on its own
+  // channel.
+  //
+  // Before bug 2057272 the "allowed media resource" set was scoped per window,
+  // so window B did not know the resource had already been validated as media
+  // and ORB blocked this range request. The block surfaced as a spurious media
+  // network error (the video.js overlay in the original report). The set is now
+  // shared per principal, so window B's range request is allowed.
+  const frameB = await makeSameOriginFrame(t);
+  const audioB = addAudio(frameB.contentDocument, "auto");
+  await onceMetadata(audioB, "window B");
+
+  audioB.currentTime = Math.max(0, audioB.duration - 2);
+
+  const outcome = await new Promise(resolve => {
+    audioB.addEventListener("error", () => resolve("error"), { once: true });
+    // "seeked" only fires once the data at the seek target has been fetched and
+    // decoded, i.e. the mid-file range request was allowed rather than blocked.
+    audioB.addEventListener("seeked", () => resolve("seeked"), { once: true });
+  });
+
+  assert_equals(outcome, "seeked",
+    "a subsequent no-cors media range request from a second window with the " +
+    "same principal must be allowed by ORB");
+}, "ORB shares the allowed no-cors media resource set across windows of the same principal");
+</script>
+</body>

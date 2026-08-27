@@ -41,6 +41,7 @@ export function useWidgetDnD({ widgetOrder, prefs, dispatch }) {
   return {
     effectiveOrder,
     draggedId: mouse.draggedId,
+    previewOrder: mouse.previewOrder,
     previewOrderMap,
     handleDragStart: mouse.handleDragStart,
     handleDragOver: mouse.handleDragOver,

@@ -79,6 +79,8 @@ skip-if = [
 
 ["browser_aboutwelcome_screen_targeting.js"]
 
+["browser_aboutwelcome_theme_picker.js"]
+
 ["browser_aboutwelcome_toolbar_button.js"]
 
 ["browser_aboutwelcome_upgrade_multistage_mr.js"]

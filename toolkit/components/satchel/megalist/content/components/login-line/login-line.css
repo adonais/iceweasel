@@ -4,7 +4,7 @@
 
 :host {
   --line-container-height: var(--size-item-xlarge);
-  --outer-border-radius: var(--border-radius-small);
+  --outer-border-radius: var(--border-radius-medium);
   --inner-border-radius: calc(var(--outer-border-radius) - 2px);
   --alert-color: var(--icon-color-warning);
   --input-field-color: var(--link-color);
@@ -83,20 +83,6 @@
     align-items: center;
     height: var(--line-container-height);
     padding: 3px;
-    --button-text-color-ghost: var(--icon-color);
-
-    &:focus-visible {
-      z-index: 1;
-    }
-
-    > moz-button.reveal-button:focus-within {
-      background-color: var(--button-background-color-ghost-hover);
-      border-color: var(--button-border-color-ghost-hover);
-    }
-
-    > moz-button.reveal-button::part(button) {
-      height: var(--line-container-height);
-    }
   }
 }
 

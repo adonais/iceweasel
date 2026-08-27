@@ -47,7 +47,8 @@ typedef struct PRLock PRLock;
 **   is returned.
 **
 ***********************************************************************/
-NSPR_API(PRLock*) PR_NewLock(void);
+NSPR_API(PRLock*)
+PR_NewLock(void);
 
 /***********************************************************************
 ** FUNCTION:    PR_DestroyLock
@@ -58,7 +59,8 @@ NSPR_API(PRLock*) PR_NewLock(void);
 ** OUTPUTS:     void
 ** RETURN:      None
 ***********************************************************************/
-NSPR_API(void) PR_DestroyLock(PRLock *lock);
+NSPR_API(void)
+PR_DestroyLock(PRLock* lock);
 
 /***********************************************************************
 ** FUNCTION:    PR_Lock
@@ -69,7 +71,8 @@ NSPR_API(void) PR_DestroyLock(PRLock *lock);
 ** OUTPUTS:     void
 ** RETURN:      None
 ***********************************************************************/
-NSPR_API(void) PR_Lock(PRLock *lock);
+NSPR_API(void)
+PR_Lock(PRLock* lock);
 
 /***********************************************************************
 ** FUNCTION:    PR_Unlock
@@ -81,7 +84,8 @@ NSPR_API(void) PR_Lock(PRLock *lock);
 ** RETURN:      PR_STATUS
 **              Returns PR_FAILURE if the caller does not own the lock.
 ***********************************************************************/
-NSPR_API(PRStatus) PR_Unlock(PRLock *lock);
+NSPR_API(PRStatus)
+PR_Unlock(PRLock* lock);
 
 /***********************************************************************
 ** MACRO:    PR_ASSERT_CURRENT_THREAD_OWNS_LOCK
@@ -101,7 +105,8 @@ NSPR_API(PRStatus) PR_Unlock(PRLock *lock);
 #endif
 
 /* Don't call this function directly. */
-NSPR_API(void) PR_AssertCurrentThreadOwnsLock(PRLock *lock);
+NSPR_API(void)
+PR_AssertCurrentThreadOwnsLock(PRLock* lock);
 
 PR_END_EXTERN_C
 

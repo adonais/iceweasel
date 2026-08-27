@@ -189,11 +189,18 @@ struct nsFactoryEntry {
 
   ~nsFactoryEntry() = default;
 
-  already_AddRefed<nsIFactory> GetFactory();
+  already_AddRefed<nsIFactory> GetFactory() const;
 
-  nsresult CreateInstance(const nsIID& aIID, void** aResult);
+  nsresult CreateInstance(const nsIID& aIID, void** aResult) const;
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
+
+  const nsCID& CID() const { return mCID; }
+
+  nsISupports* ServiceInstance() const { return mServiceObject; }
+  void SetServiceInstance(already_AddRefed<nsISupports> aInst) {
+    mServiceObject = std::move(aInst);
+  }
 
   const nsCID mCID;
 

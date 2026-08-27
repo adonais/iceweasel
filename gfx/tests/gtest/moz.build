@@ -11,6 +11,7 @@ UNIFIED_SOURCES += [
     "TestBSPTree.cpp",
     "TestBufferRotation.cpp",
     "TestConfigManager.cpp",
+    "TestConvolutionFilter.cpp",
     "TestCoord.cpp",
     "TestCopyPlane.cpp",
     "TestFontFallback.cpp",
@@ -28,6 +29,10 @@ UNIFIED_SOURCES += [
     "TestTreeTraversal.cpp",
     "TestVsync.cpp",
     "TestYUVtoRGB32.cpp",
+]
+
+SOURCES += [
+    "SwizzleGeneric.cpp",
 ]
 
 if CONFIG["OS_TARGET"] != "Android":
@@ -60,6 +65,7 @@ UNIFIED_SOURCES += [
 # notice embedded in the profiles should be reviewed to ensure there are
 # no known restrictions on distribution.
 TEST_HARNESS_FILES.gtest += [
+    "../../qcms/profiles/displaycal-lut-stripped.icc",
     "../../qcms/profiles/lcms_samsung_syncmaster.icc",
     "../../qcms/profiles/lcms_thinkpad_w540.icc",
 ]
@@ -76,6 +82,7 @@ LOCAL_INCLUDES += [
     "/gfx/qcms",
     "/gfx/thebes",
     "/layout/base",
+    "/third_party/xsimd/include",
 ]
 
 FINAL_LIBRARY = "xul-gtest"

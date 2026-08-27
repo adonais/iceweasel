@@ -18,23 +18,16 @@ else
 PKG_BASENAME = $(MOZ_PKG_APPNAME)-$(MOZ_PKG_VERSION).$(AB_CD).$(MOZ_PKG_PLATFORM)
 endif
 PKG_PATH =
-SDK_PATH =
 PKG_INST_BASENAME = $(PKG_BASENAME).installer
 PKG_STUB_BASENAME = $(PKG_BASENAME).installer-stub
-PKG_UPDATE_BASENAME = $(PKG_BASENAME)
 CHECKSUMS_FILE_BASENAME = $(PKG_BASENAME)
 MOZ_INFO_BASENAME = $(PKG_BASENAME)
-PKG_UPDATE_PATH = update/
-COMPLETE_MAR = $(PKG_UPDATE_PATH)$(PKG_UPDATE_BASENAME).complete.mar
 ifdef MOZ_SIMPLE_PACKAGE_NAME
 PKG_LANGPACK_BASENAME = $(MOZ_SIMPLE_PACKAGE_NAME).langpack
 else
 PKG_LANGPACK_BASENAME = $(MOZ_PKG_APPNAME)-$(MOZ_PKG_VERSION).$(AB_CD).langpack
 endif
 LANGPACK = $(PKG_LANGPACK_PATH)$(PKG_LANGPACK_BASENAME).xpi
-PKG_SRCPACK_BASENAME = source
-PKG_BUNDLE_BASENAME = $(MOZ_PKG_APPNAME)-$(MOZ_PKG_VERSION)
-PKG_SRCPACK_PATH =
 
 # Symbol package naming
 SYMBOL_FULL_ARCHIVE_BASENAME = $(PKG_BASENAME).crashreporter-symbols-full
@@ -54,17 +47,6 @@ MOZSEARCH_JAVA_INDEX_BASENAME = $(PKG_BASENAME).mozsearch-java-index
 
 # Mozharness naming
 MOZHARNESS_PACKAGE = mozharness.zip
-
-# Test package naming
-TEST_PACKAGE = $(PKG_BASENAME).common.tests.tar.zst
-CPP_TEST_PACKAGE = $(PKG_BASENAME).cppunittest.tests.tar.zst
-XPC_TEST_PACKAGE = $(PKG_BASENAME).xpcshell.tests.tar.zst
-MOCHITEST_PACKAGE = $(PKG_BASENAME).mochitest.tests.tar.zst
-REFTEST_PACKAGE = $(PKG_BASENAME).reftest.tests.tar.zst
-WP_TEST_PACKAGE = $(PKG_BASENAME).web-platform.tests.tar.zst
-TALOS_PACKAGE = $(PKG_BASENAME).talos.tests.tar.zst
-AWSY_PACKAGE = $(PKG_BASENAME).awsy.tests.tar.zst
-GTEST_PACKAGE = $(PKG_BASENAME).gtest.tests.tar.zst
 
 # `.xpt` artifacts: for use in artifact builds.
 XPT_ARTIFACTS_ARCHIVE_BASENAME = $(PKG_BASENAME).xpt_artifacts

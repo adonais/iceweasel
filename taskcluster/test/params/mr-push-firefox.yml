@@ -10530,6 +10530,8 @@ files_changed:
   - gfx/thebes/gfxUserFontSet.cpp
 filters:
   - target_tasks_method
+head_git_repository: https://github.com/mozilla-firefox/firefox
+head_git_rev: f18a08cd59a4c299c1f9bd6ed0d735647ca58d5b
 head_ref: 5ae4969c2b0450edbe68bd94b613f1f30f8a3fcb
 head_repository: https://hg.mozilla.org/releases/mozilla-release
 head_rev: 5ae4969c2b0450edbe68bd94b613f1f30f8a3fcb

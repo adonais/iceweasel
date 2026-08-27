@@ -14,7 +14,7 @@
   padding-inline-end: var(--space-small);
 }
 
-@media (max-width: 340px) {
+@container smartbar-controls (max-width: 340px) {
   .input-model-select-button {
     &::part(button) {
       padding-inline: var(--space-small);
@@ -97,19 +97,27 @@ panel-item:not(.panel-section-header)::part(button) {
   gap: var(--space-small);
   align-items: flex-start;
   margin-inline-end: var(--space-medium);
+  /* Allow the column to shrink below its content's intrinsic width so long
+     localized strings truncate/wrap instead of spilling out of the panel. */
+  min-width: 0;
 }
 
 .model-item-header {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   gap: var(--space-small);
   align-items: flex-start;
+  max-width: 100%;
 
   .model-item-label {
     font-size: var(--font-size-root);
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   moz-badge {
+    flex-shrink: 0;
     --badge-background-color-filled: light-dark(
       var(--color-violet-desaturated-0, var(--color-violet-0)),
       var(--color-violet-desaturated-50, var(--color-violet-50))
@@ -122,6 +130,7 @@ panel-item:not(.panel-section-header)::part(button) {
 .model-item-details {
   color: var(--text-color-deemphasized);
   font-size: var(--font-size-small);
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

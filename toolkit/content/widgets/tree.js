@@ -1359,7 +1359,17 @@
       // or indentation. bug 1708159 tracks fixing the implementation
       // of getCoordsForCellItem which we called above so it provides
       // better numbers in those cases.
-      let widthdiff = Math.abs(textRect.x - cellRect.x) - scrollbarWidth;
+      let widthdiff = Math.abs(textRect.x - cellRect.x);
+      // The cell width spans the vertical scrollbar's gutter. In LTR the
+      // scrollbar is on the trailing edge, so reserve its width to keep the
+      // input and its focus outline from overflowing the tree's clipped edge
+      // (bug 1805367). RTL positioning is offset via `left` above and is
+      // tracked separately in bug 1708159.
+      if (style.direction == "rtl") {
+        widthdiff -= scrollbarWidth;
+      } else {
+        widthdiff += scrollbarWidth;
+      }
 
       input.style.left = `${left}px`;
       input.style.height = `${

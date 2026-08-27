@@ -16,6 +16,38 @@
 // Ensure that the appropriate initialization has happened.
 do_get_profile();
 
+var gPrompt = {
+  QueryInterface: ChromeUtils.generateQI(["nsIPrompt"]),
+
+  passwordToTry: "",
+  numPrompts: 0,
+
+  // This intentionally does not use arrow function syntax to avoid an issue
+  // where in the context of the arrow function, |this != gPrompt| due to
+  // how objects get wrapped when going across xpcom boundaries.
+  promptPassword(dialogTitle, text, password, checkMsg) {
+    this.numPrompts++;
+    if (this.numPrompts > 1) {
+      // don't keep retrying a bad password
+      return false;
+    }
+    equal(
+      text,
+      "Please authenticate to the security device (Test PKCS11 Tokeñ Label).",
+      "password prompt text should be as expected"
+    );
+    equal(checkMsg, null, "checkMsg should be null");
+    ok(this.passwordToTry, "passwordToTry should be non-null");
+    password.value = this.passwordToTry;
+    return true;
+  },
+};
+
+const gPromptFactory = {
+  QueryInterface: ChromeUtils.generateQI(["nsIPromptFactory"]),
+  getPrompt: () => gPrompt,
+};
+
 function checkBasicAttributes(token) {
   let bundle = Services.strings.createBundle(
     "chrome://pipnss/locale/pipnss.properties"
@@ -49,7 +81,7 @@ function checkBasicAttributes(token) {
   );
 }
 
-add_task(async function run_test() {
+add_task(async function test_internal_token() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
@@ -83,4 +115,56 @@ add_task(async function run_test() {
     token.canHavePassword,
     "The internal token should always be able to have a password"
   );
+});
+
+add_task(async function test_external_token() {
+  MockRegistrar.register("@mozilla.org/prompter;1", gPromptFactory);
+
+  let libraryFile = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
+  libraryFile.append("pkcs11testmodule");
+  libraryFile.append(ctypes.libraryName("pkcs11testmodule"));
+  await loadPKCS11Module(libraryFile, "PKCS11 Test Module", false);
+
+  let moduleDB = Cc["@mozilla.org/security/pkcs11moduledb;1"].getService(
+    Ci.nsIPKCS11ModuleDB
+  );
+  let testModule = await findModuleByName(moduleDB, "PKCS11 Test Module");
+  notEqual(testModule, null, "should be able to find test module");
+  let testSlot = findSlotByName(testModule, "Test PKCS11 Slot");
+  notEqual(testSlot, null, "should be able to find 'Test PKCS11 Slot'");
+  let testToken = testSlot.getToken();
+  notEqual(testToken, null, "should be able to get token from slot");
+  await testToken.logout();
+
+  let threw = false;
+  try {
+    await testToken.changePassword("wrong password", "password");
+  } catch (e) {
+    threw = true;
+  }
+  ok(
+    threw,
+    "trying to change the password with the wrong password should fail"
+  );
+
+  await testToken.changePassword("", "password");
+  ok(
+    testToken.isLoggedIn,
+    "changing the password successfully logs the token in"
+  );
+  await testToken.logout();
+
+  gPrompt.passwordToTry = "wrong password";
+  threw = false;
+  try {
+    await testToken.login();
+  } catch (e) {
+    threw = true;
+  }
+  ok(threw, "trying to log in with the wrong password should fail");
+
+  gPrompt.numPrompts = 0;
+  gPrompt.passwordToTry = "password";
+  await testToken.login();
+  ok(testToken.isLoggedIn, "should have logged in successfully");
 });

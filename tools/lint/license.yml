@@ -112,5 +112,6 @@ license:
         - 'tools/lint/license/valid-licenses.txt'
     type: external
     payload: mozcheck:lint
+    setup: mozcheck:setup
     check: license
     find-dotfiles: true

@@ -12,18 +12,15 @@ describe("ASRouterTriggerListeners", () => {
   const frequentVisitsListener = ASRouterTriggerListeners.get("frequentVisits");
   const captivePortalLoginListener =
     ASRouterTriggerListeners.get("captivePortalLogin");
+  const bookmarkAddedListener = ASRouterTriggerListeners.get("bookmarkAdded");
   const bookmarkedURLListener =
     ASRouterTriggerListeners.get("openBookmarkedURL");
+  const visitBookmarkedURLListener =
+    ASRouterTriggerListeners.get("visitBookmarkedURL");
   const openArticleURLListener = ASRouterTriggerListeners.get("openArticleURL");
   const nthTabClosedListener = ASRouterTriggerListeners.get("nthTabClosed");
   const idleListener = ASRouterTriggerListeners.get("activityAfterIdle");
   const formAutofillListener = ASRouterTriggerListeners.get("formAutofill");
-  const cookieBannerDetectedListener = ASRouterTriggerListeners.get(
-    "cookieBannerDetected"
-  );
-  const cookieBannerHandledListener = ASRouterTriggerListeners.get(
-    "cookieBannerHandled"
-  );
   const hosts = ["www.mozilla.com", "www.mozilla.org"];
   const regexPatterns = ["mozilla"];
 
@@ -77,6 +74,117 @@ describe("ASRouterTriggerListeners", () => {
     globals.restore();
   });
 
+  const PLACES_BOOKMARKS = {
+    TYPE_BOOKMARK: 1,
+    TYPE_FOLDER: 2,
+    SOURCES: {
+      DEFAULT: 0,
+      SYNC: 1,
+      IMPORT: 2,
+      SYNC_REPARENT_REMOVED_FOLDER_CHILDREN: 4,
+      RESTORE: 5,
+      RESTORE_ON_STARTUP: 6,
+    },
+  };
+  const bookmarkAddedEvent = props => ({
+    itemType: PLACES_BOOKMARKS.TYPE_BOOKMARK,
+    isTagging: false,
+    source: PLACES_BOOKMARKS.SOURCES.DEFAULT,
+    ...props,
+  });
+
+  describe("bookmarkAdded", () => {
+    let addListenerStub;
+    let removeListenerStub;
+    let selectedBrowser;
+    beforeEach(() => {
+      addListenerStub = sandbox.stub();
+      removeListenerStub = sandbox.stub();
+      selectedBrowser = {};
+      globals.set("PlacesUtils", {
+        observers: {
+          addListener: addListenerStub,
+          removeListener: removeListenerStub,
+        },
+        bookmarks: PLACES_BOOKMARKS,
+      });
+      sandbox
+        .stub(global.Services.wm, "getMostRecentBrowserWindow")
+        .returns({ gBrowser: { selectedBrowser } });
+    });
+    afterEach(() => {
+      bookmarkAddedListener.uninit();
+    });
+    it("should add a bookmark-added listener on init", () => {
+      bookmarkAddedListener.init(sandbox.stub());
+
+      assert.calledOnce(addListenerStub);
+      assert.calledWithExactly(
+        addListenerStub,
+        ["bookmark-added"],
+        bookmarkAddedListener.handlePlacesEvents
+      );
+    });
+    it("should remove the listener on uninit", () => {
+      bookmarkAddedListener.init(sandbox.stub());
+      const { handlePlacesEvents } = bookmarkAddedListener;
+      bookmarkAddedListener.uninit();
+
+      assert.calledOnce(removeListenerStub);
+      assert.calledWithExactly(
+        removeListenerStub,
+        ["bookmark-added"],
+        handlePlacesEvents
+      );
+    });
+    it("should provide id to triggerHandler for a user bookmark add", () => {
+      const triggerHandlerStub = sandbox.stub();
+      bookmarkAddedListener.init(triggerHandlerStub);
+
+      bookmarkAddedListener.handlePlacesEvents([bookmarkAddedEvent()]);
+
+      assert.calledOnce(triggerHandlerStub);
+      assert.calledWithExactly(triggerHandlerStub, selectedBrowser, {
+        id: "bookmarkAdded",
+      });
+    });
+    it("should fire only once per notification batch", () => {
+      const triggerHandlerStub = sandbox.stub();
+      bookmarkAddedListener.init(triggerHandlerStub);
+
+      bookmarkAddedListener.handlePlacesEvents([
+        bookmarkAddedEvent(),
+        bookmarkAddedEvent(),
+        bookmarkAddedEvent(),
+      ]);
+
+      assert.calledOnce(triggerHandlerStub);
+    });
+    it("should ignore folders, tag operations and bulk sources", () => {
+      const triggerHandlerStub = sandbox.stub();
+      bookmarkAddedListener.init(triggerHandlerStub);
+
+      bookmarkAddedListener.handlePlacesEvents([
+        bookmarkAddedEvent({ itemType: PLACES_BOOKMARKS.TYPE_FOLDER }),
+        bookmarkAddedEvent({ isTagging: true }),
+        bookmarkAddedEvent({ source: PLACES_BOOKMARKS.SOURCES.IMPORT }),
+        bookmarkAddedEvent({ source: PLACES_BOOKMARKS.SOURCES.SYNC }),
+        bookmarkAddedEvent({ source: PLACES_BOOKMARKS.SOURCES.RESTORE }),
+      ]);
+
+      assert.notCalled(triggerHandlerStub);
+    });
+    it("should not fire in a private window", () => {
+      const triggerHandlerStub = sandbox.stub();
+      isWindowPrivateStub.returns(true);
+      bookmarkAddedListener.init(triggerHandlerStub);
+
+      bookmarkAddedListener.handlePlacesEvents([bookmarkAddedEvent()]);
+
+      assert.notCalled(triggerHandlerStub);
+    });
+  });
+
   describe("openBookmarkedURL", () => {
     let observerStub;
     describe("#init", () => {
@@ -115,6 +223,106 @@ describe("ASRouterTriggerListeners", () => {
           id: bookmarkedURLListener.id,
         });
       });
+    });
+  });
+
+  describe("visitBookmarkedURL", () => {
+    let fetchStub;
+    const webProgress = { isTopLevel: true };
+    const aLocationURI = { spec: "https://www.mozilla.org/" };
+    beforeEach(() => {
+      fetchStub = sandbox.stub().resolves(null);
+      globals.set("PlacesUtils", {
+        bookmarks: { fetch: fetchStub },
+      });
+    });
+    afterEach(() => {
+      visitBookmarkedURLListener.uninit();
+    });
+
+    it("should add tab progress listeners on init", () => {
+      visitBookmarkedURLListener.init(sandbox.stub());
+
+      assert.calledOnce(existingWindow.gBrowser.addTabsProgressListener);
+      assert.calledWithExactly(
+        existingWindow.gBrowser.addTabsProgressListener,
+        visitBookmarkedURLListener
+      );
+    });
+    it("should remove tab progress listeners on uninit", () => {
+      visitBookmarkedURLListener.init(sandbox.stub());
+      visitBookmarkedURLListener.uninit();
+
+      assert.calledOnce(existingWindow.gBrowser.removeTabsProgressListener);
+      assert.calledWithExactly(
+        existingWindow.gBrowser.removeTabsProgressListener,
+        visitBookmarkedURLListener
+      );
+    });
+    it("should fire when navigating to a bookmarked URL", async () => {
+      fetchStub.resolves({ guid: "bookmark-guid" });
+      const triggerHandlerStub = sandbox.stub();
+      visitBookmarkedURLListener.init(triggerHandlerStub);
+      const browser = {};
+
+      await visitBookmarkedURLListener.onLocationChange(
+        browser,
+        webProgress,
+        undefined,
+        aLocationURI,
+        0
+      );
+
+      assert.calledWithExactly(fetchStub, { url: aLocationURI });
+      assert.calledOnce(triggerHandlerStub);
+      assert.calledWithExactly(triggerHandlerStub, browser, {
+        id: "visitBookmarkedURL",
+      });
+    });
+    it("should not fire when the URL is not bookmarked", async () => {
+      const triggerHandlerStub = sandbox.stub();
+      visitBookmarkedURLListener.init(triggerHandlerStub);
+
+      await visitBookmarkedURLListener.onLocationChange(
+        {},
+        webProgress,
+        undefined,
+        aLocationURI,
+        0
+      );
+
+      assert.notCalled(triggerHandlerStub);
+    });
+    it("should not fire for same-document navigations", async () => {
+      fetchStub.resolves({ guid: "bookmark-guid" });
+      const triggerHandlerStub = sandbox.stub();
+      visitBookmarkedURLListener.init(triggerHandlerStub);
+
+      await visitBookmarkedURLListener.onLocationChange(
+        {},
+        webProgress,
+        undefined,
+        aLocationURI,
+        Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT
+      );
+
+      assert.notCalled(fetchStub);
+      assert.notCalled(triggerHandlerStub);
+    });
+    it("should not fire when fetch throws for an unnormalisable URL", async () => {
+      fetchStub.rejects(new Error("invalid url"));
+      const triggerHandlerStub = sandbox.stub();
+      visitBookmarkedURLListener.init(triggerHandlerStub);
+
+      await visitBookmarkedURLListener.onLocationChange(
+        {},
+        webProgress,
+        undefined,
+        aLocationURI,
+        0
+      );
+
+      assert.notCalled(triggerHandlerStub);
     });
   });
 
@@ -832,110 +1040,6 @@ describe("ASRouterTriggerListeners", () => {
             host: "www.mozilla.org",
           },
         });
-      });
-    });
-  });
-
-  describe("cookieBannerDetected", () => {
-    describe("#init", () => {
-      beforeEach(() => {
-        cookieBannerDetectedListener.init(triggerHandler);
-      });
-      afterEach(() => {
-        cookieBannerDetectedListener.uninit();
-      });
-
-      it("should set ._initialized to true and save the triggerHandler", () => {
-        assert.ok(cookieBannerDetectedListener._initialized);
-        assert.equal(
-          cookieBannerDetectedListener._triggerHandler,
-          triggerHandler
-        );
-      });
-
-      it("if already initialised, it should only update the trigger handler", () => {
-        const newTriggerHandler = () => {};
-        cookieBannerDetectedListener.init(newTriggerHandler);
-        assert.ok(cookieBannerDetectedListener._initialized);
-        assert.equal(
-          cookieBannerDetectedListener._triggerHandler,
-          newTriggerHandler
-        );
-      });
-
-      it("should add an event listeners to all existing browser windows", () => {
-        assert.calledOnce(existingWindow.addEventListener);
-      });
-    });
-    describe("#uninit", () => {
-      beforeEach(async () => {
-        cookieBannerDetectedListener.init(triggerHandler);
-        cookieBannerDetectedListener.uninit();
-      });
-      it("should set ._initialized to false and clear the triggerHandler and timestamps", () => {
-        assert.notOk(cookieBannerDetectedListener._initialized);
-        assert.equal(cookieBannerDetectedListener._triggerHandler, null);
-      });
-
-      it("should do nothing if already uninitialised", () => {
-        cookieBannerDetectedListener.uninit();
-        assert.notOk(cookieBannerDetectedListener._initialized);
-      });
-
-      it("should remove event listeners from all existing browser windows", () => {
-        assert.called(existingWindow.removeEventListener);
-      });
-    });
-  });
-
-  describe("cookieBannerHandled", () => {
-    describe("#init", () => {
-      beforeEach(() => {
-        cookieBannerHandledListener.init(triggerHandler);
-      });
-      afterEach(() => {
-        cookieBannerHandledListener.uninit();
-      });
-
-      it("should set ._initialized to true and save the triggerHandler", () => {
-        assert.ok(cookieBannerHandledListener._initialized);
-        assert.equal(
-          cookieBannerHandledListener._triggerHandler,
-          triggerHandler
-        );
-      });
-
-      it("if already initialised, it should only update the trigger handler", () => {
-        const newTriggerHandler = () => {};
-        cookieBannerHandledListener.init(newTriggerHandler);
-        assert.ok(cookieBannerHandledListener._initialized);
-        assert.equal(
-          cookieBannerHandledListener._triggerHandler,
-          newTriggerHandler
-        );
-      });
-
-      it("should add an event listeners to all existing browser windows", () => {
-        assert.calledOnce(existingWindow.addEventListener);
-      });
-    });
-    describe("#uninit", () => {
-      beforeEach(async () => {
-        cookieBannerHandledListener.init(triggerHandler);
-        cookieBannerHandledListener.uninit();
-      });
-      it("should set ._initialized to false and clear the triggerHandler and timestamps", () => {
-        assert.notOk(cookieBannerHandledListener._initialized);
-        assert.equal(cookieBannerHandledListener._triggerHandler, null);
-      });
-
-      it("should do nothing if already uninitialised", () => {
-        cookieBannerHandledListener.uninit();
-        assert.notOk(cookieBannerHandledListener._initialized);
-      });
-
-      it("should remove event listeners from all existing browser windows", () => {
-        assert.called(existingWindow.removeEventListener);
       });
     });
   });

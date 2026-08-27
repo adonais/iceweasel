@@ -32,6 +32,14 @@ class VulkanDeviceHolder final
   // Returns a new av_buffer_ref(); caller must av_buffer_unref() it.
   AVBufferRef* Ref() const;
 
+  // Uniquely identifies this VkInstance/VkDevice pair, unlike the raw
+  // VkInstance handle: once destroyed (see above), a later GetOrCreate()
+  // could in principle get a new VkInstance at the same, just-freed
+  // address (unconfirmed in practice; defensive measure). Callers caching
+  // anything keyed by VkInstance (e.g. function pointers) should fold
+  // this generation into the key to guard against that.
+  uint64_t Generation() const { return mGeneration; }
+
   ~VulkanDeviceHolder();
 
  private:
@@ -42,6 +50,7 @@ class VulkanDeviceHolder final
   AVBufferRef* mDeviceContext;
   // VK_MAX_PHYSICAL_DEVICE_NAME_SIZE is defined as 256 in the Vulkan spec.
   char mDeviceName[256] = {'\0'};
+  const uint64_t mGeneration;
 };
 
 }  // namespace mozilla

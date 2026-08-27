@@ -145,7 +145,8 @@ already_AddRefed<Promise> Client::Focus(CallerType aCallerType,
   mHandle->Focus(aCallerType)
       ->Then(
           mGlobal->SerialEventTarget(), __func__,
-          [ipcClientInfo, holder, outerPromise](const ClientState& aResult) {
+          [ipcClientInfo = std::move(ipcClientInfo), holder,
+           outerPromise](const ClientState& aResult) {
             holder->Complete();
             NS_ENSURE_TRUE_VOID(holder->GetParentObject());
             RefPtr<Client> newClient =

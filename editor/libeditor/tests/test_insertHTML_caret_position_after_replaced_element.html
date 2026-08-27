@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Caret position after inserting a replaced element with insertHTML</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div contenteditable></div>
+<script>
+"use strict";
+
+const kImage =
+  `<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">`;
+
+function describeNode(aNode) {
+  if (!aNode) {
+    return "null";
+  }
+  return aNode.nodeType === Node.TEXT_NODE
+    ? `"${aNode.data}"`
+    : `<${aNode.nodeName.toLowerCase()}>`;
+}
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.waitForFocus(() => {
+  const editor = document.querySelector("div[contenteditable]");
+  editor.focus();
+
+  for (const test of [
+    // Inserting into an empty block makes its padding <br> element
+    // unnecessary, so the editor deletes it after the insertion.
+    {
+      description: "into an empty paragraph following a non-empty paragraph",
+      innerHTML: "<p>abc</p><p><br></p>",
+      getCaretContainer: () => editor.querySelectorAll("p")[1],
+      caretOffset: 0,
+      expectedInnerHTML: `<p>abc</p><p>${kImage}X</p>`,
+    },
+    {
+      description: "into an empty paragraph which is the only paragraph",
+      innerHTML: "<p><br></p>",
+      getCaretContainer: () => editor.querySelector("p"),
+      caretOffset: 0,
+      expectedInnerHTML: `<p>${kImage}X</p>`,
+    },
+    {
+      description: "at end of a paragraph containing text",
+      innerHTML: "<p>abc</p>",
+      getCaretContainer: () => editor.querySelector("p").firstChild,
+      caretOffset: 3,
+      expectedInnerHTML: `<p>abc${kImage}X</p>`,
+    },
+    {
+      description: "before text in a paragraph containing text",
+      innerHTML: "<p>abc</p>",
+      getCaretContainer: () => editor.querySelector("p").firstChild,
+      caretOffset: 0,
+      expectedInnerHTML: `<p>${kImage}Xabc</p>`,
+    },
+  ]) {
+    editor.innerHTML = test.innerHTML;
+    getSelection().collapse(test.getCaretContainer(), test.caretOffset);
+
+    document.execCommand("insertHTML", false, kImage);
+
+    const image = editor.querySelector("img");
+    ok(image, `The image should be inserted ${test.description}`);
+
+    const selection = getSelection();
+    is(
+      `${describeNode(selection.anchorNode)}, offset ${selection.anchorOffset}`,
+      `${describeNode(image.parentNode)}, offset ${
+        Array.prototype.indexOf.call(image.parentNode.childNodes, image) + 1
+      }`,
+      `The caret should be immediately after the image inserted ${
+        test.description
+      }`
+    );
+
+    document.execCommand("insertText", false, "X");
+    is(
+      editor.innerHTML,
+      test.expectedInnerHTML,
+      `Typed text should be inserted after the image inserted ${
+        test.description
+      }`
+    );
+  }
+
+  SimpleTest.finish();
+});
+</script>
+</body>
+</html>

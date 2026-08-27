@@ -28,7 +28,6 @@ import mozilla.components.support.ktx.kotlin.stripMailToProtocol
 import mozilla.components.support.ktx.kotlin.takeOrReplace
 import mozilla.components.ui.widgets.DefaultSnackbarDelegate
 import mozilla.components.ui.widgets.SnackbarDelegate
-import kotlin.String
 
 /**
  * A candidate for an item to be displayed in the context menu.
@@ -526,6 +525,29 @@ data class ContextMenuCandidate(
         )
 
         /**
+         * Context Menu item: "Share Link".
+         *
+         * @param context [Context] used for various system interactions.
+         * @param additionalValidation Callback for the final validation in deciding whether this menu option
+         * will be shown. Will only be called if all the intrinsic validations passed.
+         * @param action The action to be invoked once the user selects the item.
+         */
+        fun createShareLinkCandidate(
+            context: Context,
+            additionalValidation: (SessionState, HitResult) -> Boolean = { _, _ -> true },
+            action: (SessionState, HitResult) -> Unit,
+        ) = ContextMenuCandidate(
+            id = "mozac.feature.contextmenu.share_link",
+            label = context.getString(R.string.mozac_feature_contextmenu_share_link),
+            showFor = { tab, hitResult ->
+                tab.isUrlSchemeAllowed(hitResult.getLink()) &&
+                    (hitResult.isUri() || hitResult.isImage() || hitResult.isVideoAudio()) &&
+                    additionalValidation(tab, hitResult)
+            },
+            action = action,
+        )
+
+        /**
          * Context Menu item: "Share image"
          *
          * @param context [Context] used for various system interactions.
@@ -737,15 +759,6 @@ internal fun HitResult.getLink(): String = when (this) {
         if (title.isNullOrBlank()) src else title.toString()
     is HitResult.AUDIO ->
         if (title.isNullOrBlank()) src else title.toString()
-    else -> "about:blank"
-}
-
-internal fun HitResult.getUrl(): String = when (this) {
-    is HitResult.UNKNOWN -> src
-    is HitResult.IMAGE_SRC -> uri
-    is HitResult.IMAGE -> src
-    is HitResult.VIDEO -> src
-    is HitResult.AUDIO -> src
     else -> "about:blank"
 }
 

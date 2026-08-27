@@ -784,6 +784,25 @@ class DefaultDownloadFileUtilsTest {
     }
 
     @Test
+    fun `Given a IllegalStateException occurs When deleteMediaFile is called Then it handles the exception and returns false`() {
+        val spyUtils = spy(defaultDownloadFileUtils)
+        val fileName = "delete-fail.pdf"
+        val directoryPath = "content://some/path"
+        val contentUri = "content://some/path/file".toUri()
+
+        doReturn(contentUri).`when`(spyUtils).findDownloadFileUri(fileName, directoryPath)
+        doThrow(IllegalStateException("Failed to delete")).`when`(spyUtils).deleteMediaStoreEntry(any(), any())
+
+        val result = spyUtils.deleteMediaFile(
+            contentResolver = testContext.contentResolver,
+            fileName = fileName,
+            directoryPath = directoryPath,
+        )
+
+        assertEquals(false, result)
+    }
+
+    @Test
     fun `getSafeContentType - WHEN the file content type is available via ContentResolver THEN use it`() {
         val contentTypeFromFile = "application/pdf; qs=0.001"
         val mockContentResolver = mock<ContentResolver>()

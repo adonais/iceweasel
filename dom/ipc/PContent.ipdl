@@ -181,7 +181,6 @@ using mozilla::dom::Wireframe from "mozilla/dom/DocumentBinding.h";
 using mozilla::PerfStats::MetricMask from "mozilla/PerfStats.h";
 using nsIDNSService::ResolverMode from "nsIDNSService.h";
 using mozilla::dom::UserActivation::Modifiers from "mozilla/dom/UserActivation.h";
-using mozilla::dom::PrivateAttributionImpressionType from "mozilla/dom/PrivateAttributionIPCUtils.h";
 using nsIClipboard::ClipboardType from "nsIClipboard.h";
 using nsIUrlClassifierFeature::listType from "nsIUrlClassifierFeature.h";
 using mozilla::dom::ReferrerPolicy from "mozilla/dom/ReferrerPolicyBinding.h";
@@ -211,7 +210,7 @@ struct SystemFontListEntry {
     nsCString faceName;
     nsCString filepath;
     uint32_t  weightRange;
-    uint32_t  stretchRange;
+    uint32_t  widthRange;
     uint32_t  styleRange;
     uint8_t   index;
     FontVisibility visibility;
@@ -830,6 +829,11 @@ child:
      * Send the remote type associated with the content process.
      */
     async RemoteType(nsCString aRemoteType, nsCString aProfile);
+
+    /**
+     * Record an origin which is being loaded in this content process.
+     */
+    async AddLoadedOrigin(nsIPrincipal aPrincipal);
 
     /**
      * Initialize the RemoteWorkerService thread in the content process.
@@ -2006,16 +2010,6 @@ parent:
     async KillGPUProcess();
 #endif
 
-  async AttributionEvent(nsCString aSourceHost,
-                         PrivateAttributionImpressionType aType,
-                         uint32_t aIndex, nsString aAd, nsCString aTargetHost);
-
-  async AttributionConversion(nsCString aTargetHost, nsString aTask,
-                              uint32_t aHistogramSize,
-                              uint32_t? aLookbackDays,
-                              PrivateAttributionImpressionType? aImpressionType,
-                              nsString[] aAds,
-                              nsCString[] aImpressionSourceHosts);
 };
 
 }

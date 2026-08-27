@@ -60,6 +60,8 @@ static const char* sEGLLibraryExtensionNames[] = {
     "EGL_ANGLE_display_power_preference",
     "EGL_ANGLE_platform_angle",
     "EGL_ANGLE_platform_angle_d3d",
+    "EGL_ANGLE_platform_angle_metal",
+    "EGL_ANGLE_platform_angle_device_id",
     "EGL_EXT_device_enumeration",
     "EGL_EXT_device_query",
     "EGL_EXT_platform_device",
@@ -85,7 +87,6 @@ static const char* sEGLExtensionNames[] = {
     "EGL_ANGLE_stream_producer_d3d_texture",
     "EGL_KHR_surfaceless_context",
     "EGL_KHR_create_context_no_error",
-    "EGL_MOZ_create_context_provoking_vertex_dont_care",
     "EGL_EXT_swap_buffers_with_damage",
     "EGL_KHR_swap_buffers_with_damage",
     "EGL_EXT_buffer_age",
@@ -96,6 +97,9 @@ static const char* sEGLExtensionNames[] = {
     "EGL_MESA_image_dma_buf_export",
     "EGL_KHR_no_config_context",
     "EGL_ANGLE_iosurface_client_buffer",
+    "EGL_ANGLE_metal_commands_scheduled_sync",
+    "EGL_ANGLE_metal_shared_event_sync",
+    "EGL_ANGLE_wait_until_work_scheduled",
 };
 
 PRLibrary* LoadApitraceLibrary() {
@@ -344,6 +348,30 @@ std::shared_ptr<EglDisplay> GLLibraryEGL::CreateDisplay(
   }
   return ret;
 }
+
+std::shared_ptr<EglDisplay> GLLibraryEGL::CreateDisplayForMetalDevice(
+    uint64_t aMetalDeviceRegistryID) {
+  StaticMutexAutoLock lock(sMutex);
+  MOZ_ASSERT(IsExtensionSupported(EGLLibExtension::ANGLE_platform_angle_metal));
+  MOZ_ASSERT(
+      IsExtensionSupported(EGLLibExtension::ANGLE_platform_angle_device_id));
+
+  const EGLAttrib attrib_list[] = {
+      LOCAL_EGL_PLATFORM_ANGLE_TYPE_ANGLE,
+      LOCAL_EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE,
+      LOCAL_EGL_PLATFORM_ANGLE_DEVICE_ID_HIGH_ANGLE,
+      static_cast<EGLAttrib>(aMetalDeviceRegistryID >> 32),
+      LOCAL_EGL_PLATFORM_ANGLE_DEVICE_ID_LOW_ANGLE,
+      static_cast<EGLAttrib>(aMetalDeviceRegistryID & 0xFFFFFFFF),
+      LOCAL_EGL_NONE,
+  };
+  const EGLDisplay display = fGetPlatformDisplay(
+      LOCAL_EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY, attrib_list);
+  if (!display) {
+    return nullptr;
+  }
+  return EglDisplay::Create(*this, display, false, lock);
+}  // namespace gl
 
 static bool IsAccelAngleSupported(nsACString* const out_failureId) {
   if (!gfx::gfxVars::AllowWebglAccelAngle()) {
@@ -654,6 +682,7 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
 
   // Check the ANGLE support the system has
   mIsANGLE = IsExtensionSupported(EGLLibExtension::ANGLE_platform_angle);
+  mIsD3DANGLE = IsExtensionSupported(EGLLibExtension::ANGLE_platform_angle_d3d);
 
   // Client exts are ready. (But not display exts!)
 
@@ -698,9 +727,15 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
     (void)fnLoadSymbols(symbols);
   }
   {
+    // EGL_KHR_fence_sync
     const SymLoadStruct symbols[] = {
         SYMBOL(CreateSyncKHR), SYMBOL(DestroySyncKHR),
         SYMBOL(ClientWaitSyncKHR), SYMBOL(GetSyncAttribKHR), END_OF_SYMBOLS};
+    (void)fnLoadSymbols(symbols);
+  }
+  {
+    // Core EGL 1.5 version
+    const SymLoadStruct symbols[]{SYMBOL(CreateSync), END_OF_SYMBOLS};
     (void)fnLoadSymbols(symbols);
   }
   {
@@ -784,6 +819,16 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
   }
   {
     const SymLoadStruct symbols[] = {SYMBOL(QueryDmaBufModifiersEXT),
+                                     END_OF_SYMBOLS};
+    (void)fnLoadSymbols(symbols);
+  }
+  {
+    const SymLoadStruct symbols[] = {SYMBOL(CopyMetalSharedEventANGLE),
+                                     END_OF_SYMBOLS};
+    (void)fnLoadSymbols(symbols);
+  }
+  {
+    const SymLoadStruct symbols[] = {SYMBOL(WaitUntilWorkScheduledANGLE),
                                      END_OF_SYMBOLS};
     (void)fnLoadSymbols(symbols);
   }

@@ -141,7 +141,7 @@ use style::values::animated::{Animate, Procedure, ToAnimatedZero};
 use style::values::computed::easing::ComputedTimingFunction;
 use style::values::computed::effects::Filter;
 use style::values::computed::font::{
-    FamilyName, FontFamily, FontFamilyList, FontStretch, FontStyle, FontWeight, GenericFontFamily,
+    FamilyName, FontFamily, FontFamilyList, FontStyle, FontWeight, FontWidth, GenericFontFamily,
 };
 use style::values::computed::length_percentage::{
     AllowAnchorPosResolutionInCalcPercentage, Unpacked,
@@ -156,6 +156,7 @@ use style::values::generics::Optional;
 use style::values::resolved;
 use style::values::resolved::ToResolvedValue;
 use style::values::specified::align::AlignFlags;
+use style::values::specified::calc::{CalcNodeParseInPlaceOperations, PercentageContext};
 use style::values::specified::intersection_observer::IntersectionObserverMargin;
 use style::values::specified::position::PositionTryFallbacksItem;
 use style::values::specified::source_size_list::SourceSizeList;
@@ -1143,6 +1144,7 @@ pub extern "C" fn Servo_StyleSet_GetBaseComputedValuesForElement(
         unsafe { &*snapshots },
     );
     let mut tlc = ThreadLocalStyleContext::new();
+    tlc.current_dom_depth = element.as_node().depth();
     let context = StyleContext {
         shared: &shared,
         thread_local: &mut tlc,
@@ -3796,14 +3798,14 @@ pub extern "C" fn Servo_FontFaceRule_GetFontWeight(
 }
 
 #[no_mangle]
-pub extern "C" fn Servo_FontFaceRule_GetFontStretch(
+pub extern "C" fn Servo_FontFaceRule_GetFontWidth(
     rule: &LockedFontFaceRule,
-    out: &mut font_face::ComputedFontStretchRange,
+    out: &mut font_face::ComputedFontWidthRange,
 ) -> bool {
     read_locked_arc_worker(rule, |rule: &FontFaceRule| {
         match rule
             .descriptors
-            .font_stretch
+            .font_width
             .as_ref()
             .and_then(|f| f.compute())
         {
@@ -4858,7 +4860,10 @@ pub extern "C" fn Servo_ComputedValues_SpecifiesAnimationsOrTransitions(
     values: &ComputedValues,
 ) -> bool {
     let ui = values.get_ui();
-    ui.specifies_animations() || ui.specifies_transitions()
+    ui.specifies_animations()
+        || ui.specifies_transitions()
+        || ui.specifies_scroll_timelines()
+        || ui.specifies_view_timelines()
 }
 
 #[repr(u8)]
@@ -5146,83 +5151,74 @@ pub extern "C" fn Servo_ParseProperty(
     )
 }
 
+macro_rules! parse_for {
+    (
+        $input:ident,
+        $parse_func:path
+    ) => {{
+        let s = unsafe { $input.as_str_unchecked() };
+        let mut input = ParserInput::new(&s);
+        let mut parser = Parser::new(&mut input);
+        let context = ParserContext::new(
+            Origin::Author,
+            unsafe { dummy_url_data() },
+            Some(CssRuleType::Style),
+            ParsingMode::DEFAULT,
+            QuirksMode::NoQuirks,
+            /* namespaces = */ Default::default(),
+            None,
+            None,
+            /* attr_taint */ Default::default(),
+        );
+        parser.parse_entirely(|p| $parse_func(&context, p))
+    }};
+}
+
 #[no_mangle]
-pub extern "C" fn Servo_ParseAndComputeViewTimelineInset(
+pub extern "C" fn Servo_ParseLengthPercentageForAbsoluteLengths(
+    lp: &nsACString,
+    output: &mut computed::LengthPercentage,
+) -> bool {
+    let Ok(specified) = parse_for!(lp, specified::LengthPercentage::parse) else {
+        return false;
+    };
+
+    match specified.compute_without_context() {
+        Some(value) => {
+            *output = value;
+            true
+        },
+        _ => false,
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_ParseViewTimelineInset(
     inset: &nsACString,
-    // view timeline subject doesn't support pseudo element, so only element here.
-    subject: &RawGeckoElement,
-    style: Option<&ComputedValues>,
-    raw_data: &PerDocumentStyleData,
     output: &mut computed::ViewTimelineInset,
 ) -> bool {
     use style::properties::longhands::view_timeline_inset;
     use style::values::specified::length::LengthPercentageOrAuto;
 
-    let inset = unsafe { inset.as_str_unchecked() };
-    let mut input = ParserInput::new(&inset);
-    let mut parser = Parser::new(&mut input);
-    let context = ParserContext::new(
-        Origin::Author,
-        unsafe { dummy_url_data() },
-        Some(CssRuleType::Style),
-        ParsingMode::DEFAULT,
-        QuirksMode::NoQuirks,
-        /* namespaces = */ Default::default(),
-        None,
-        None,
-        /* attr_taint */ Default::default(),
-    );
-    let Ok(specified) =
-        parser.parse_entirely(|p| view_timeline_inset::single_value::parse(&context, p))
-    else {
+    let Ok(specified) = parse_for!(inset, view_timeline_inset::single_value::parse) else {
         return false;
     };
 
-    // If the subject is detached from the document, we don't have the style so we cannot get the
-    // computed value. However, we still can convert the specified value into the computed value
-    // for some simple cases (as the fallback way), e.g. auto, px only, or percentage only. This is
-    // not spec'ed so we just follow Blink's behavior here.
-    let Some(style) = style else {
-        let to_computed_value_without_context = |lp: &LengthPercentageOrAuto| {
-            let LengthPercentageOrAuto::LengthPercentage(ref lp) = lp else {
-                return Some(computed::LengthPercentageOrAuto::Auto);
-            };
-            lp.compute_without_context()
-                .map(computed::LengthPercentageOrAuto::LengthPercentage)
+    let to_computed_value_without_context = |lp: &LengthPercentageOrAuto| {
+        let LengthPercentageOrAuto::LengthPercentage(ref lp) = lp else {
+            return Some(computed::LengthPercentageOrAuto::Auto);
         };
-        let Some(start) = to_computed_value_without_context(&specified.start) else {
-            return false;
-        };
-        let Some(end) = to_computed_value_without_context(&specified.end) else {
-            return false;
-        };
-        output.start = start;
-        output.end = end;
-        return true;
+        lp.compute_without_context()
+            .map(computed::LengthPercentageOrAuto::LengthPercentage)
     };
-
-    let data = raw_data.borrow();
-    let element = GeckoElement(subject);
-    let parent_element = element.inheritance_parent();
-    let parent_data = parent_element.as_ref().and_then(|e| e.borrow_data());
-    let parent_style = parent_data
-        .as_ref()
-        .map(|d| d.styles.primary())
-        .map(|x| &**x);
-    let container_size_query =
-        ContainerSizeQuery::for_element(element, None, /* is_pseudo = */ false);
-    let mut conditions = Default::default();
-    let mut tree_counting_caches = TreeCountingCaches::default();
-    let context = create_context_for_animation(
-        &data,
-        &style,
-        parent_style,
-        &mut conditions,
-        container_size_query,
-        &element,
-        &mut tree_counting_caches,
-    );
-    *output = specified.to_computed_value(&context);
+    let Some(start) = to_computed_value_without_context(&specified.start) else {
+        return false;
+    };
+    let Some(end) = to_computed_value_without_context(&specified.end) else {
+        return false;
+    };
+    output.start = start;
+    output.end = end;
     true
 }
 
@@ -5233,29 +5229,12 @@ pub extern "C" fn Servo_ParseEasing(
 ) -> bool {
     use style::properties::longhands::transition_timing_function;
 
-    let context = ParserContext::new(
-        Origin::Author,
-        unsafe { dummy_url_data() },
-        Some(CssRuleType::Style),
-        ParsingMode::DEFAULT,
-        QuirksMode::NoQuirks,
-        /* namespaces = */ Default::default(),
-        None,
-        None,
-        /* attr_taint */ Default::default(),
-    );
-    let easing = easing.to_string();
-    let mut input = ParserInput::new(&easing);
-    let mut parser = Parser::new(&mut input);
-    let result =
-        parser.parse_entirely(|p| transition_timing_function::single_value::parse(&context, p));
-    match result {
-        Ok(parsed_easing) => {
-            *output = parsed_easing.to_computed_value_without_context();
-            true
-        },
-        Err(_) => false,
-    }
+    let Ok(specified) = parse_for!(easing, transition_timing_function::single_value::parse) else {
+        return false;
+    };
+
+    *output = specified.to_computed_value_without_context();
+    true
 }
 
 #[no_mangle]
@@ -5267,23 +5246,7 @@ pub extern "C" fn Servo_ParseKeyframeSelector(
     use style::stylesheets::keyframes_rule::KeyframeOffset;
     use style::values::specified::animation::TimelineRangeName;
 
-    let selector = unsafe { selector.as_str_unchecked() };
-    let mut input = ParserInput::new(&selector);
-    let mut parser = Parser::new(&mut input);
-
-    // We don't care about these consts for now since we only accept a pure percentage value.
-    let context = ParserContext::new(
-        Origin::Author,
-        unsafe { dummy_url_data() },
-        Some(CssRuleType::Style),
-        ParsingMode::DEFAULT,
-        QuirksMode::NoQuirks,
-        /* namespaces = */ Default::default(),
-        None,
-        None,
-        /* attr_taint */ Default::default(),
-    );
-    let Ok(specified) = parser.parse_entirely(|i| KeyframeOffset::parse(&context, i)) else {
+    let Ok(specified) = parse_for!(selector, KeyframeOffset::parse) else {
         return false;
     };
 
@@ -5566,6 +5529,29 @@ pub extern "C" fn Servo_DeclarationBlock_GetAt(
     read_locked_arc(declarations, |decls: &PropertyDeclarationBlock| {
         if let Some(decl) = decls.declarations().get(index as usize) {
             *result = decl.id().to_gecko_css_property_id();
+
+            // -webkit-line-clamp is stored as the line-clamp longhand and can be
+            // pref-disabled while the legacy shorthand is enabled. For declaration
+            // block iteration, report the shorthand name rather than the disabled
+            // longhand. Computed style property-list iteration is generated
+            // separately.
+            // TODO(Bug 1540681): Remove when shipping line-clamp.
+            if let PropertyDeclarationId::Longhand(longhand) = decl.id() {
+                if !NonCustomPropertyId::from_longhand(longhand)
+                    .to_property_id()
+                    .enabled_for_all_content()
+                {
+                    for shorthand in longhand.shorthands() {
+                        if shorthand.is_legacy_shorthand()
+                            && shorthand.allows_disabled_subproperties()
+                        {
+                            result.mId = shorthand.to_noncustomcsspropertyid();
+                            break;
+                        }
+                    }
+                }
+            }
+
             true
         } else {
             false
@@ -5967,14 +5953,12 @@ pub unsafe extern "C" fn Servo_DeclarationBlock_RemoveProperty(
 #[no_mangle]
 pub extern "C" fn Servo_DeclarationBlock_RemovePropertyById(
     declarations: &LockedDeclarationBlock,
-    property: NonCustomCSSPropertyId,
+    property_id: &structs::CSSPropertyId,
     before_change_closure: DeclarationBlockMutationClosure,
 ) -> bool {
-    remove_property(
-        declarations,
-        get_property_id_from_noncustomcsspropertyid!(property, false),
-        before_change_closure,
-    )
+    let property_id = get_property_id_from_csspropertyid!(property_id, false);
+
+    remove_property(declarations, property_id, before_change_closure)
 }
 
 #[no_mangle]
@@ -7599,8 +7583,9 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
                     debug_assert!(!property.is_logical());
                     debug_assert!(property.is_animatable());
 
-                    // 'display' is only animatable from SMIL
-                    if property == PropertyDeclarationId::Longhand(LonghandId::Display) {
+                    if property == PropertyDeclarationId::Longhand(LonghandId::Display)
+                        && !static_prefs::pref!("layout.css.display-animations.enabled")
+                    {
                         return;
                     }
 
@@ -7757,23 +7742,7 @@ pub extern "C" fn Servo_ParseAnimationRangeStart(
     value: &nsACString,
     output: &mut computed::AnimationRangeStart,
 ) -> bool {
-    let context = ParserContext::new(
-        Origin::Author,
-        unsafe { dummy_url_data() },
-        Some(CssRuleType::Style),
-        ParsingMode::DEFAULT,
-        QuirksMode::NoQuirks,
-        /* namespaces = */ Default::default(),
-        None,
-        None,
-        /* attr_taint */ Default::default(),
-    );
-    let value = unsafe { value.as_str_unchecked() };
-    let mut input = ParserInput::new(&value);
-    let mut parser = Parser::new(&mut input);
-    let Ok(specified) =
-        parser.parse_entirely(|i| specified::animation::AnimationRangeStart::parse(&context, i))
-    else {
+    let Ok(specified) = parse_for!(value, specified::AnimationRangeStart::parse) else {
         return false;
     };
     let Some(lp) = specified.0.lp.compute_without_context() else {
@@ -7789,23 +7758,7 @@ pub extern "C" fn Servo_ParseAnimationRangeEnd(
     value: &nsACString,
     output: &mut computed::AnimationRangeEnd,
 ) -> bool {
-    let context = ParserContext::new(
-        Origin::Author,
-        unsafe { dummy_url_data() },
-        Some(CssRuleType::Style),
-        ParsingMode::DEFAULT,
-        QuirksMode::NoQuirks,
-        /* namespaces = */ Default::default(),
-        None,
-        None,
-        /* attr_taint */ Default::default(),
-    );
-    let value = unsafe { value.as_str_unchecked() };
-    let mut input = ParserInput::new(&value);
-    let mut parser = Parser::new(&mut input);
-    let Ok(specified) =
-        parser.parse_entirely(|i| specified::animation::AnimationRangeEnd::parse(&context, i))
-    else {
+    let Ok(specified) = parse_for!(value, specified::AnimationRangeEnd::parse) else {
         return false;
     };
     let Some(lp) = specified.0.lp.compute_without_context() else {
@@ -7849,49 +7802,12 @@ pub extern "C" fn Servo_IsWorkerThread() -> bool {
     thread_state::get().is_worker()
 }
 
-enum Offset {
-    Zero,
-    One,
-}
-
 fn property_value_pair_for(id: &PropertyDeclarationId) -> structs::PropertyValuePair {
     structs::PropertyValuePair {
         mProperty: id.to_gecko_css_property_id(),
         mServoDeclarationBlock: structs::RefPtr::null(),
         #[cfg(feature = "gecko_debug")]
         mSimulateComputeValuesFailure: false,
-    }
-}
-
-fn fill_in_missing_keyframe_values(
-    all_properties: &PropertyDeclarationIdSet,
-    timing_function: &ComputedTimingFunction,
-    composite: structs::CompositeOperationOrAuto,
-    properties_at_offset: &PropertyDeclarationIdSet,
-    offset: Offset,
-    keyframes: &mut nsTArray<structs::Keyframe>,
-) {
-    // Return early if all animated properties are already set.
-    if properties_at_offset.contains_all(all_properties) {
-        return;
-    }
-
-    let keyframe = match offset {
-        Offset::Zero => unsafe {
-            &mut *bindings::Gecko_GetOrCreateInitialKeyframe(keyframes, timing_function, composite)
-        },
-        Offset::One => unsafe {
-            &mut *bindings::Gecko_GetOrCreateFinalKeyframe(keyframes, timing_function, composite)
-        },
-    };
-
-    // Append properties that have not been set at this offset.
-    for property in all_properties.iter() {
-        if !properties_at_offset.contains(property) {
-            keyframe
-                .mPropertyValues
-                .push(property_value_pair_for(&property));
-        }
     }
 }
 
@@ -7932,7 +7848,6 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
     style: &ComputedValues,
     name: *mut nsAtom,
     inherited_timing_function: &ComputedTimingFunction,
-    inherited_composite: computed::AnimationComposition,
     keyframes: &mut nsTArray<structs::Keyframe>,
 ) -> bool {
     use style::gecko_bindings::structs::CompositeOperationOrAuto;
@@ -7955,52 +7870,34 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
     let guard = global_style_data.shared_lock.read();
 
     let mut properties_set_at_current_offset = PropertyDeclarationIdSet::default();
-    let mut properties_set_at_start = PropertyDeclarationIdSet::default();
-    let mut properties_set_at_end = PropertyDeclarationIdSet::default();
-    let mut has_complete_initial_keyframe = false;
-    let mut has_complete_final_keyframe = false;
     let mut current_offset = -1.;
 
     let writing_mode = style.writing_mode;
-    let map_composite = |composite: AnimationComposition| match composite {
-        AnimationComposition::Replace => CompositeOperationOrAuto::Replace,
-        AnimationComposition::Add => CompositeOperationOrAuto::Add,
-        AnimationComposition::Accumulate => CompositeOperationOrAuto::Accumulate,
-    };
-    // These two composites are for specified 0% and 100% keyframes whose default composite is
-    // auto, and we may update them later if the keyframe-specific composite is set.
-    let mut initial_keyframe_composite = CompositeOperationOrAuto::Auto;
-    let mut final_keyframe_composite = CompositeOperationOrAuto::Auto;
 
     let get_timing_func_and_composition =
-        |step: &KeyframesStep,
-         is_generated_missing_keyframe: bool|
-         -> (ComputedTimingFunction, CompositeOperationOrAuto) {
+        |step: &KeyframesStep| -> (ComputedTimingFunction, CompositeOperationOrAuto) {
             // Override timing_function if the keyframe has an animation-timing-function.
             let timing_function = match step.get_animation_timing_function(&guard) {
                 Some(val) => val.to_computed_value_without_context(),
                 None => (*inherited_timing_function).clone(),
             };
             // Override composite operation if the keyframe has an animation-composition.
+            // Otherwise, we use auto.
             let composition = step.get_animation_composition(&guard).map_or(
-                // If no specified animation-composition, use the default value for the missing
-                // keyframes. It's unfortunate we have to resolve auto now because we generate the
-                // missing keyframes too early.
-                // https://drafts.csswg.org/css-animations-2/#keyframes
-                // FIXME: We will generate the missing keyframes later in Bug 2037642.
-                if is_generated_missing_keyframe {
-                    map_composite(inherited_composite)
-                } else {
-                    CompositeOperationOrAuto::Auto
+                CompositeOperationOrAuto::Auto,
+                |c| match c {
+                    AnimationComposition::Replace => CompositeOperationOrAuto::Replace,
+                    AnimationComposition::Add => CompositeOperationOrAuto::Add,
+                    AnimationComposition::Accumulate => CompositeOperationOrAuto::Accumulate,
                 },
-                |val| map_composite(val),
             );
             (timing_function, composition)
         };
     let is_not_animatable = |id: &PropertyDeclarationId| {
-        // Skip non-animatable properties, including the 'display' property because although it is
-        // animatable from SMIL, it should not be animatable from CSS Animations.
-        !id.is_animatable() || id == &PropertyDeclarationId::Longhand(LonghandId::Display)
+        // Skip non-animatable properties.
+        !id.is_animatable()
+            || (id == &PropertyDeclarationId::Longhand(LonghandId::Display)
+                && !static_prefs::pref!("layout.css.display-animations.enabled"))
     };
     let make_declaration_pair = |declaration: &PropertyDeclaration| {
         let id = declaration.id().to_physical(writing_mode);
@@ -8015,22 +7912,19 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
         pair
     };
 
-    // Iterate over the keyframe rules backwards so we can drop overridden
-    // properties (since declarations in later rules override those in earlier
-    // ones).
+    // Iterate over the keyframe rules backwards so we can drop overridden properties (since
+    // declarations in later rules override those in earlier ones). We reverse the keyframes array
+    // at the end.
     for step in animation.steps.iter().rev() {
         debug_assert!(step.start_offset.range_name.is_none());
         if step.start_offset.percentage.0 != current_offset {
             properties_set_at_current_offset.clear();
             current_offset = step.start_offset.percentage.0;
         }
-        let (timing_function, composition) = get_timing_func_and_composition(
-            step,
-            matches!(step.value, KeyframesStepValue::ComputedValues),
-        );
-        // Look for an existing keyframe with the same offset, timing function, and compsition, or
-        // else add a new keyframe at the beginning of the keyframe array.
-        let keyframe = &mut *bindings::Gecko_GetOrCreateKeyframeAtStart(
+        let (timing_function, composition) = get_timing_func_and_composition(step);
+        // Look for an existing keyframe with the same offset, timing function, and composition, or
+        // else add a new keyframe at the end of the keyframe array.
+        let keyframe = &mut *bindings::Gecko_GetOrCreateKeyframeForPercentageOffset(
             keyframes,
             step.start_offset.percentage.0 as f32,
             &timing_function,
@@ -8038,32 +7932,7 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
         );
 
         match step.value {
-            KeyframesStepValue::ComputedValues => {
-                // In KeyframesAnimation::from_keyframes if there is no 0% or
-                // 100% keyframe at all, we will create a 'ComputedValues' step
-                // to represent that all properties animated by the keyframes
-                // animation should be set to the underlying computed value for
-                // that keyframe.
-                let mut seen = PropertyDeclarationIdSet::default();
-                for property in animation.properties_changed.iter() {
-                    let property = property.to_physical(writing_mode);
-                    if seen.contains(property) {
-                        continue;
-                    }
-                    seen.insert(property);
-                    keyframe
-                        .mPropertyValues
-                        .push(property_value_pair_for(&property));
-                }
-                if current_offset == 0.0 {
-                    has_complete_initial_keyframe = true;
-                } else if current_offset == 1.0 {
-                    has_complete_final_keyframe = true;
-                }
-
-                // Only generated keyframes use ComputedValue.
-                keyframe.mIsGenerated = true;
-            },
+            KeyframesStepValue::ComputedValues => unreachable!("No implicit keyframes"),
             KeyframesStepValue::Declarations { ref block } => {
                 let guard = block.read_with(&guard);
 
@@ -8086,53 +7955,15 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
                         .mPropertyValues
                         .push(make_declaration_pair(declaration));
 
-                    if current_offset == 0.0 {
-                        properties_set_at_start.insert(id);
-                    } else if current_offset == 1.0 {
-                        properties_set_at_end.insert(id);
-                    }
                     properties_set_at_current_offset.insert(id);
-                }
-
-                // Set the keyframe-specific composite for the specified 0% and 100% keyframes, to
-                // make sure we find the correct keyframe when filling missing properties later.
-                if current_offset == 0.0 {
-                    initial_keyframe_composite = composition;
-                } else if current_offset == 1.0 {
-                    final_keyframe_composite = composition;
                 }
             },
         }
     }
 
-    let mut properties_changed = PropertyDeclarationIdSet::default();
-    for property in animation.properties_changed.iter() {
-        properties_changed.insert(property.to_physical(writing_mode));
-    }
-
-    // Append property values that are missing in the initial or the final keyframes.
-    // Note: we have to make sure the easing and composite are correct to find the correct
-    // keyframe. Otherwise, this may generate the redundant keyframe.
-    if !has_complete_initial_keyframe {
-        fill_in_missing_keyframe_values(
-            &properties_changed,
-            inherited_timing_function,
-            initial_keyframe_composite,
-            &properties_set_at_start,
-            Offset::Zero,
-            keyframes,
-        );
-    }
-    if !has_complete_final_keyframe {
-        fill_in_missing_keyframe_values(
-            &properties_changed,
-            inherited_timing_function,
-            final_keyframe_composite,
-            &properties_set_at_end,
-            Offset::One,
-            keyframes,
-        );
-    }
+    // The loop above appended the keyframes while walking the steps in reverse, so put them back
+    // into ascending offset order.
+    keyframes.reverse();
 
     // After appending the missing initial and final keyframes, we start to append the Keyframes
     // with timeline range names. We create the Keyframes in a temporary array because we need to
@@ -8158,9 +7989,9 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
     let mut grouped_keyframes_indexes = HashSet::new();
     for step in animation.steps_with_range_name.iter().rev() {
         debug_assert!(!step.start_offset.range_name.is_none());
-        let (timing_function, composition) = get_timing_func_and_composition(step, false);
+        let (timing_function, composition) = get_timing_func_and_composition(step);
         let mut matched_idx = 0;
-        let keyframe = &mut *bindings::Gecko_GetOrCreateKeyframeWithRangeName(
+        let keyframe = &mut *bindings::Gecko_GetOrCreateKeyframeForTimelineRangeOffset(
             &mut keyframes_with_range_names,
             step.start_offset.range_name,
             step.start_offset.percentage.0 as f32,
@@ -8389,12 +8220,15 @@ pub extern "C" fn Servo_StyleSet_MightHaveAttributeDependencyInContainer(
 ) -> ContainerAttributeDependencyKind {
     let data = raw_data.borrow();
     let element = GeckoElement(element);
-
-    ContainerAttributeDependencyKind::element_container_dependency_kind(
-        element,
-        local_name,
-        &data.stylist,
-    )
+    unsafe {
+        AtomIdent::with(local_name, |local_name| {
+            ContainerAttributeDependencyKind::element_container_dependency_kind(
+                element,
+                local_name,
+                &data.stylist,
+            )
+        })
+    }
 }
 
 #[no_mangle]
@@ -10063,7 +9897,7 @@ pub unsafe extern "C" fn Servo_ParseFontShorthandForMatching(
     data: *mut URLExtraData,
     family: &mut FontFamilyList,
     style: &mut FontStyle,
-    stretch: &mut FontStretch,
+    width: &mut FontWidth,
     weight: &mut FontWeight,
     size: Option<&mut f32>,
     small_caps: Option<&mut bool>,
@@ -10112,13 +9946,13 @@ pub unsafe extern "C" fn Servo_ParseFontShorthandForMatching(
         },
     };
 
-    *stretch = match font.font_stretch {
-        specified::FontStretch::Keyword(ref k) => k.compute(),
-        specified::FontStretch::Stretch(ref p) => match p.compute() {
-            Some(v) => FontStretch::from_percentage(v.0),
+    *width = match font.font_width {
+        specified::FontWidth::Keyword(ref k) => k.compute(),
+        specified::FontWidth::Width(ref p) => match p.compute() {
+            Some(v) => FontWidth::from_percentage(v.0),
             None => return false,
         },
-        specified::FontStretch::System(_) => return false,
+        specified::FontWidth::System(_) => return false,
     };
 
     *weight = match font.font_weight {
@@ -10416,15 +10250,12 @@ pub extern "C" fn Servo_FontWeight_ToCss(w: &FontWeight, result: &mut nsACString
 }
 
 #[no_mangle]
-pub extern "C" fn Servo_FontStretch_ToCss(s: &FontStretch, result: &mut nsACString) {
+pub extern "C" fn Servo_FontWidth_ToCss(s: &FontWidth, result: &mut nsACString) {
     s.to_css(&mut CssWriter::new(result)).unwrap()
 }
 
 #[no_mangle]
-pub extern "C" fn Servo_FontStretch_SerializeKeyword(
-    s: &FontStretch,
-    result: &mut nsACString,
-) -> bool {
+pub extern "C" fn Servo_FontWidth_SerializeKeyword(s: &FontWidth, result: &mut nsACString) -> bool {
     let kw = match s.as_keyword() {
         Some(kw) => kw,
         None => return false,
@@ -11685,7 +11516,7 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
     raw_data: &PerDocumentStyleData,
     out: &mut nsTArray<nsString>,
 ) {
-    use style::values::generics::calc::{CalcUnits, SimplificationResult};
+    use style::values::generics::calc::SimplificationResult;
     use style::values::specified::calc::{CalcNode, CalcParseFlags, Leaf};
 
     let parser_context = ParserContext::new(
@@ -11725,8 +11556,11 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
         },
     };
 
-    let mut flags = CalcParseFlags::new(CalcUnits::ALL);
-    flags = flags.new_without_in_place_operations();
+    let flags = CalcParseFlags {
+        percentage_context: PercentageContext::allowed(),
+        in_place_operations: CalcNodeParseInPlaceOperations::No,
+        ..Default::default()
+    };
     // Initial parsing
     let mut node = match CalcNode::parse(&parser_context, &mut parser, math_func, flags) {
         Ok(n) => n,

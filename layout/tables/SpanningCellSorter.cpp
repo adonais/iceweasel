@@ -16,8 +16,6 @@ using namespace mozilla;
 
 SpanningCellSorter::SpanningCellSorter() = default;
 
-SpanningCellSorter::~SpanningCellSorter() = default;
-
 bool SpanningCellSorter::AddCell(int32_t aColSpan, int32_t aRow, int32_t aCol) {
   NS_ASSERTION(mState == ADDING, "cannot call AddCell after GetNext");
   NS_ASSERTION(aColSpan >= ARRAY_BASE, "cannot add cells with colspan<2");

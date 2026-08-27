@@ -12,15 +12,23 @@ support-files = [
   "test_agent_monitor_item.mjs",
   "test_ai_action_result_page.html",
   "test_ai_action_result.mjs",
+  "test_ai_action_confirmation_page.html",
+  "test_ai_action_confirmation.mjs",
   "test_assistant_message_footer_page.html",
   "test_applied_memories_page.html",
+  "test_chat_assistant_citations_page.html",
+  "test_chat_assistant_citations.mjs",
   "test_chat_assistant_error.html",
   "test_chat_assistant_error.mjs",
+  "test_chip_overflow_page.html",
+  "test_chip_overflow.mjs",
   "test_kit_mention_page.html",
   "test_memories_icon_button_page.html",
   "test_memories_icon_button.mjs",
   "test_grouped_chips_page.html",
   "test_grouped_chips.mjs",
+  "test_smartwindow_prompts_page.html",
+  "test_smartwindow_prompts.mjs",
   "test_smartwindow_panel_list_page.html",
   "test_smartwindow_panel_list.mjs",
   "test_website_chip_page.html",
@@ -34,6 +42,9 @@ support-files = [
   "test_context_url_page2.html",
   "test_context_url_injection_page.html"
 ]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && tsan && nova", # Bug 2057552
+]
 
 ["browser_actor_user_prompt.js"]
 
@@ -42,6 +53,8 @@ support-files = [
 ["browser_aichat_content_actors.js"]
 
 ["browser_aichat_content_background_token.js"]
+
+["browser_aichat_content_loader_suppression.js"]
 
 ["browser_aichat_content_message_event.js"]
 
@@ -59,7 +72,13 @@ support-files = [
 
 ["browser_aiwindow_account_auth.js"]
 
+["browser_aiwindow_agent_monitor_chat.js"]
+
 ["browser_aiwindow_agent_monitor_item.js"]
+
+["browser_aiwindow_agentui_command.js"]
+
+["browser_aiwindow_ai_action_confirmation.js"]
 
 ["browser_aiwindow_ai_action_result.js"]
 
@@ -70,6 +89,8 @@ support-files = [
 ["browser_aiwindow_ask_button.js"]
 
 ["browser_aiwindow_assistant_message_footer.js"]
+
+["browser_aiwindow_auto_tab_grouping_labeling.js"]
 
 ["browser_aiwindow_chat_tool_ui.js"]
 
@@ -102,9 +123,13 @@ skip-if = [
 
 ["browser_aiwindow_memories_toggle_prefs.js"]
 
+["browser_aiwindow_monitor_create.js"]
+
 ["browser_aiwindow_new_chat_button.js"]
 
 ["browser_aiwindow_newtab_preload.js"]
+
+["browser_aiwindow_organize_tabs_callout.js"]
 
 ["browser_aiwindow_session_restore.js"]
 
@@ -116,9 +141,14 @@ skip-if = [
 
 ["browser_aiwindow_smartbar_chat_active_navigate.js"]
 
+["browser_aiwindow_smartbar_command_palette.js"]
+
 ["browser_aiwindow_smartbar_context_chips.js"]
 
 ["browser_aiwindow_smartbar_context_paste.js"]
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && opt && nova", # Bug 2057548
+]
 
 ["browser_aiwindow_smartbar_focus.js"]
 
@@ -139,6 +169,10 @@ skip-if = [
 ["browser_aiwindow_smartbar_tab_switch.js"]
 
 ["browser_aiwindow_smartbar_telemetry.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && tsan",
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov",
+]
 
 ["browser_aiwindow_stop_generation.js"]
 
@@ -167,6 +201,10 @@ skip-if = [
 
 ["browser_aiwindowui.js"]
 
+["browser_chat_assistant_citations.js"]
+
+["browser_chat_conversation_memories_context.js"]
+
 ["browser_memories_icon_button.js"]
 
 ["browser_open_aiwindow.js"]
@@ -191,11 +229,17 @@ skip-if = [
 
 ["browser_smartwindow_beta_badge.js"]
 
+["browser_smartwindow_bookmarks_toolbar.js"]
+
 ["browser_smartwindow_chat_browser_tabbable.js"]
 
 ["browser_smartwindow_chat_markdown_parser.js"]
 
+["browser_smartwindow_chip_overflow.js"]
+
 ["browser_smartwindow_classic_mode_switch.js"]
+
+["browser_smartwindow_client_error_telemetry.js"]
 
 ["browser_smartwindow_content.js"]
 
@@ -254,6 +298,9 @@ skip-if = [
 ["browser_smartwindow_shortcut.js"]
 
 ["browser_smartwindow_sidebar.js"]
+skip-if = [
+  "nova", # Bug 2057925
+]
 
 ["browser_smartwindow_sidebar_auto_open_pref_prompt.js"]
 
@@ -276,6 +323,8 @@ skip-if = [
 ["browser_smartwindow_tab_switching_memories.js"]
 
 ["browser_smartwindow_tab_switching_starters.js"]
+
+["browser_smartwindow_tasks_actors.js"]
 
 ["browser_smartwindow_telemetry.js"]
 skip-if = [

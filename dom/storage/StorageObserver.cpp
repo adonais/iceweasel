@@ -177,7 +177,7 @@ nsresult StorageObserver::GetOriginScope(const char16_t* aData,
     return rv;
   }
 
-  aOriginScope = originScope;
+  aOriginScope = std::move(originScope);
   return NS_OK;
 }
 

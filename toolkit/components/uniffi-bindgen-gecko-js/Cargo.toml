@@ -23,3 +23,5 @@ uniffi_pipeline = { workspace = true }
 serde = "1"
 toml = "0.5"
 camino = "1.0.8"
+
+mozilla-central-workspace-hack = { version = "0.1", features = ["uniffi-bindgen-gecko-js"], optional = true }

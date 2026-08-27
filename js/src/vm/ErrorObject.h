@@ -43,20 +43,22 @@ class ErrorObject : public NativeObject {
   static const JSClass protoClasses[JSEXN_ERROR_LIMIT];
 
  protected:
-  static const uint32_t STACK_SLOT = 0;
-  static const uint32_t ERROR_REPORT_SLOT = STACK_SLOT + 1;
-  static const uint32_t FILENAME_SLOT = ERROR_REPORT_SLOT + 1;
+  JS_DEFINE_TYPED_SLOT(0, STACK_SLOT, Object, Null);
+  JS_DEFINE_TYPED_SLOT(STACK_SLOT.index() + 1, ERROR_REPORT_SLOT, Private,
+                       Undefined);
+  static const uint32_t FILENAME_SLOT = ERROR_REPORT_SLOT.index() + 1;
   static const uint32_t LINENUMBER_SLOT = FILENAME_SLOT + 1;
   static const uint32_t COLUMNNUMBER_SLOT = LINENUMBER_SLOT + 1;
   static const uint32_t MESSAGE_SLOT = COLUMNNUMBER_SLOT + 1;
   static const uint32_t CAUSE_SLOT = MESSAGE_SLOT + 1;
-  static const uint32_t SOURCEID_SLOT = CAUSE_SLOT + 1;
+  JS_DEFINE_TYPED_SLOT(CAUSE_SLOT + 1, SOURCEID_SLOT, Int32);
 
-  static const uint32_t RESERVED_SLOTS = SOURCEID_SLOT + 1;
+  static const uint32_t RESERVED_SLOTS = SOURCEID_SLOT.index() + 1;
 
   // This slot is only used for errors that could be Wasm traps.
-  static const uint32_t WASM_TRAP_SLOT = SOURCEID_SLOT + 1;
-  static const uint32_t RESERVED_SLOTS_MAYBE_WASM_TRAP = WASM_TRAP_SLOT + 1;
+  JS_DEFINE_TYPED_SLOT(SOURCEID_SLOT.index() + 1, WASM_TRAP_SLOT, Boolean);
+  static const uint32_t RESERVED_SLOTS_MAYBE_WASM_TRAP =
+      WASM_TRAP_SLOT.index() + 1;
 
  public:
   static const JSClass classes[JSEXN_ERROR_LIMIT];
@@ -97,7 +99,7 @@ class ErrorObject : public NativeObject {
   }
 
   JSErrorReport* getErrorReport() const {
-    const Value& slot = getReservedSlot(ERROR_REPORT_SLOT);
+    const Value& slot = getReservedSlotTyped(ERROR_REPORT_SLOT);
     if (slot.isUndefined()) {
       return nullptr;
     }
@@ -137,7 +139,7 @@ class ErrorObject : public NativeObject {
 
   void setStackSlot(const Value& stack) {
     MOZ_ASSERT(stack.isObjectOrNull());
-    setReservedSlot(STACK_SLOT, stack);
+    setReservedSlotTyped(STACK_SLOT, stack);
   }
 
   void setCauseSlot(const Value& cause) {
@@ -160,8 +162,8 @@ class ErrorObject : public NativeObject {
     if (!mightBeWasmTrap()) {
       return false;
     } else {
-      MOZ_ASSERT(JSCLASS_RESERVED_SLOTS(getClass()) > WASM_TRAP_SLOT);
-      return getReservedSlot(WASM_TRAP_SLOT).toBoolean();
+      MOZ_ASSERT(JSCLASS_RESERVED_SLOTS(getClass()) > WASM_TRAP_SLOT.index());
+      return getReservedSlotTyped(WASM_TRAP_SLOT).toBoolean();
     }
   }
   void setFromWasmTrap();
@@ -222,9 +224,7 @@ static_assert(
         JSProto_Error + int(JSEXN_EVALERR) == JSProto_EvalError &&
         JSProto_Error + int(JSEXN_RANGEERR) == JSProto_RangeError &&
         JSProto_Error + int(JSEXN_REFERENCEERR) == JSProto_ReferenceError &&
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
         JSProto_Error + int(JSEXN_SUPPRESSEDERR) == JSProto_SuppressedError &&
-#endif
         JSProto_Error + int(JSEXN_SYNTAXERR) == JSProto_SyntaxError &&
         JSProto_Error + int(JSEXN_TYPEERR) == JSProto_TypeError &&
         JSProto_Error + int(JSEXN_URIERR) == JSProto_URIError &&

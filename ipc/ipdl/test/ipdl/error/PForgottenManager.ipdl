@@ -1,0 +1,12 @@
+//error: |manages| declaration in protocol `PForgottenManager' does not match any |manager| declaration in protocol `PManageeForgot'
+
+include protocol PManageeForgot;
+
+// PManageeForgot should have this protocol as its manager.
+
+[ChildProc=any]
+protocol PForgottenManager {
+    manages PManageeForgot;
+child:
+    async PManageeForgot();
+};

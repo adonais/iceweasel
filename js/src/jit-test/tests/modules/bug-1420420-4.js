@@ -5,8 +5,8 @@ registerModule("a", parseModule(`throw undefined`));
 let b = registerModule("b", parseModule(`import "a";`));
 let c = registerModule("c", parseModule(`import "a";`));
 
-moduleLink(b);
-moduleLink(c);
+moduleLoadAndLink(b);
+moduleLoadAndLink(c);
 
 (async () => {
   let count = 0;

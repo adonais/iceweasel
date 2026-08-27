@@ -81,6 +81,12 @@ IPCResult RemoteMediaDataEncoderParent::RecvInit(InitResolver&& aResolver) {
     return IPC_OK();
   }
 
+  if (mInitAttempted) {
+    aResolver(MediaResult(NS_ERROR_ALREADY_INITIALIZED, __func__));
+    return IPC_OK();
+  }
+  mInitAttempted = true;
+
   mEncoder->Init()->Then(
       GetCurrentSerialEventTarget(), __func__,
       [encoder = RefPtr{mEncoder}, resolver = std::move(aResolver)](

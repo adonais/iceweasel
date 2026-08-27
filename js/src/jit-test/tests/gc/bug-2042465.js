@@ -5,18 +5,19 @@
 //
 // This test puts symbols into weak maps as values and arranges for them to be
 // black in the shared atoms-zone mark bits but only gray in this zone's atom
-// marking bitmap. Reading such a symbol back out of a weak map should promote
-// this zone's atom mark colour to black.
+// reference bitmap. Reading such a symbol back out of a weak map should
+// promote this zone's atom reference colour to black.
 
 gczeal(0);
 setJitCompilerOption("ion.warmup.trigger", 30);
 setJitCompilerOption("baseline.warmup.trigger", 10);
 setJitCompilerOption("offthread-compilation.enable", 0);
 
-// A second zone holds the symbols via ordinary (black) references, keeping them
-// black in the shared atoms-zone mark bits regardless of this zone's GCs.
+// Create the symbols in a second zone. They are initially held via ordinary
+// (black) references.
 let g = newGlobal({newCompartment: true});
 g.eval('var s1 = Symbol("s1"); var s2 = Symbol("s2");');
+g.eval('addMarkObservers([s1, s2]);');
 let i1 = g.eval('getAtomMarkIndex(s1)');
 let i2 = g.eval('getAtomMarkIndex(s2)');
 
@@ -47,14 +48,24 @@ for (let i = 0; i < 5000; i++) {
   readJit(throwawayMap, throwawayKey);
 }
 
-// Collect this zone and the atoms zone but not |g|. Within the collected set
-// the symbols are only reachable as gray weak map values, so this zone's atom
-// marking bitmap is refined down to gray. The symbols stay black in the shared
-// atoms-zone mark bits because |g| (uncollected) keeps them black.
-schedulezone(this);
-schedulezone('atoms');
-gc('zone');
+// Make the second's zone's references to the symbols gray and collect
+// everything. Marking state and atom reference state is now gray everywhere.
+g.eval('grayRoot()[0] = s1; grayRoot()[1] = s2;');
+g.eval('s1 = undefined; s2 = undefined;');
+gc();
+assertEq(getMarks()[0], 'gray');
+assertEq(getMarks()[1], 'gray');
+assertEq(getAtomMarkColor(this, i1), 'gray');
+assertEq(getAtomMarkColor(this, i2), 'gray');
+assertEq(getAtomMarkColor(g, i1), 'gray');
+assertEq(getAtomMarkColor(g, i2), 'gray');
 
+// Restore the second zone's references to black references. This marks the
+// symbols black and updates the second zone's reference state. This zone's
+// reference state is left as gray.
+g.eval('s1 = grayRoot()[0]; s2 = grayRoot()[1]; undefined;');
+assertEq(getMarks()[0], 'black');
+assertEq(getMarks()[1], 'black');
 assertEq(getAtomMarkColor(this, i1), 'gray');
 assertEq(getAtomMarkColor(this, i2), 'gray');
 assertEq(getAtomMarkColor(g, i1), 'black');

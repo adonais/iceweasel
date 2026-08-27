@@ -190,8 +190,8 @@ async function pickNodeInContentPage(
     _selector => {
       const rect = content.document
         .querySelector(_selector)
-        .getBoundingClientRect();
-      return { x: rect.x, y: rect.y };
+        .getClientRects()[0];
+      return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
     }
   );
 
@@ -201,8 +201,8 @@ async function pickNodeInContentPage(
   // We need to do this to mimick what's actually done in node-picker.js
   EventUtils.synthesizeMouse(
     document.querySelector(browserElementSelector),
-    x + 5,
-    y + 5,
+    x,
+    y,
     {}
   );
 

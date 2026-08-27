@@ -9,7 +9,7 @@ function f() {
 
 function execModule(source) {
     m = parseModule(source);
-    moduleLink(m);
+    moduleLoadAndLink(m);
     return moduleEvaluate(m);
 }
 

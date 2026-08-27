@@ -39,7 +39,7 @@ add_task(async function test_notification_is_only_shown_in_triggered_window() {
   const loginForm = megalist.querySelector("login-form");
 
   // Only show the discard changes notification if the login form has been modified.
-  setInputValue(loginForm, "login-username-field", login.username + "added");
+  setInputValue(loginForm, "moz-input-text", login.username + "added");
 
   const cancelButton = loginForm.shadowRoot.querySelector(
     "moz-button[data-l10n-id=login-item-cancel-button]"

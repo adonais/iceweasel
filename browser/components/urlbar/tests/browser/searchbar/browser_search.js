@@ -31,6 +31,20 @@ add_setup(async function () {
   engine2 = SearchService.getEngineById("engine2");
 });
 
+/**
+ * Waits until the searchbar's engine store reflects the given default engine.
+ * The store is updated through the actor, so it can still hold the previous
+ * default when SearchService.setDefault() resolves.
+ *
+ * @param {object} engine - The expected default engine.
+ */
+function promiseObservedDefaultEngine(engine) {
+  return TestUtils.waitForCondition(
+    () => searchbar.controller.engineStore.default?.name == engine.name,
+    "Waiting for the searchbar to observe the new default engine"
+  );
+}
+
 function revertUsingEscape() {
   Assert.ok(searchbar.value, "Searchbar is not empty");
   SearchbarTestUtils.promisePopupOpen(window, () => searchbar.focus());
@@ -149,6 +163,7 @@ add_task(async function test_switch_engine() {
   Assert.equal(searchbar.value, searchTerm, "Search term was persisted");
 
   await SearchService.setDefault(engine2, UNKNOWN_REASON);
+  await promiseObservedDefaultEngine(engine2);
 
   EventUtils.synthesizeMouseAtCenter(searchbar.goButton, {});
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
@@ -156,6 +171,7 @@ add_task(async function test_switch_engine() {
 
   searchbar.handleRevert();
   await SearchService.setDefault(engine1, UNKNOWN_REASON);
+  await promiseObservedDefaultEngine(engine1);
 });
 
 add_task(async function test_paste_and_go() {

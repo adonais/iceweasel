@@ -110,7 +110,7 @@ describe("ASRouterAdmin", () => {
           providers: FAKE_PROVIDER,
         });
 
-        assert.lengthOf(wrapper.find(`[data-provider]`), 1);
+        assert.lengthOf(wrapper.find(`#providers-table [data-provider]`), 1);
       });
     });
     describe("#renderMessages", () => {

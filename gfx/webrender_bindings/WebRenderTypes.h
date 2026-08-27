@@ -485,40 +485,6 @@ static inline wr::BorderRadius ToBorderRadius(const nsRectCornerRadii& aRadii,
   return br;
 }
 
-static inline wr::ComplexClipRegion ToComplexClipRegion(
-    const nsRect& aRect, const nsRectCornerRadii& aRadii,
-    int32_t aAppUnitsPerDevPixel) {
-  wr::ComplexClipRegion ret;
-  ret.rect =
-      ToLayoutRect(LayoutDeviceRect::FromAppUnits(aRect, aAppUnitsPerDevPixel));
-  ret.radii = ToBorderRadius(aRadii, aAppUnitsPerDevPixel);
-  ret.mode = ClipMode::Clip;
-  return ret;
-}
-
-static inline wr::ComplexClipRegion ToComplexClipRegion(
-    const gfx::RoundedRect& rect) {
-  wr::ComplexClipRegion ret;
-  ret.rect = ToLayoutRect(rect.rect);
-  ret.radii = ToBorderRadius(rect.corners);
-  ret.mode = wr::ClipMode::Clip;
-  return ret;
-}
-
-static inline wr::ComplexClipRegion SimpleRadii(const wr::LayoutRect& aRect,
-                                                float aRadii) {
-  wr::ComplexClipRegion ret;
-  wr::LayoutSize radii{aRadii, aRadii};
-  ret.rect = aRect;
-  ret.radii = EmptyBorderRadius();
-  ret.radii.top_left = radii;
-  ret.radii.top_right = radii;
-  ret.radii.bottom_left = radii;
-  ret.radii.bottom_right = radii;
-  ret.mode = wr::ClipMode::Clip;
-  return ret;
-}
-
 static inline wr::DeviceIntSideOffsets ToDeviceIntSideOffsets(int32_t top,
                                                               int32_t right,
                                                               int32_t bottom,
@@ -548,6 +514,18 @@ static inline wr::LayoutSideOffsets ToLayoutSideOffsets(
                              aMargin.left);
 }
 
+static inline wr::LayoutSideOffsets ToLayoutSideOffsets(
+    const nsMargin& aMargin, int32_t aAppUnitsPerDevPixel) {
+  return ToLayoutSideOffsets(aMargin.top / float(aAppUnitsPerDevPixel),
+                             aMargin.right / float(aAppUnitsPerDevPixel),
+                             aMargin.bottom / float(aAppUnitsPerDevPixel),
+                             aMargin.left / float(aAppUnitsPerDevPixel));
+}
+
+static inline wr::LayoutSideOffsets EmptyLayoutSideOffsets() {
+  return ToLayoutSideOffsets(0.0f, 0.0f, 0.0f, 0.0f);
+}
+
 static inline wr::LayoutSideOffsets ToBorderWidths(float top, float right,
                                                    float bottom, float left) {
   return ToLayoutSideOffsets(top, right, bottom, left);
@@ -558,6 +536,55 @@ static inline wr::LayoutSideOffsets ToBorderWidths(const gfx::Margin& aMargin) {
 }
 
 wr::RepeatMode ToRepeatMode(StyleBorderImageRepeatKeyword);
+
+static inline wr::ComplexClipRegion SimpleRadii(const wr::LayoutRect& aRect,
+                                                float aRadii) {
+  wr::ComplexClipRegion ret;
+  wr::LayoutSize radii{aRadii, aRadii};
+  ret.rect = aRect;
+  ret.radii = EmptyBorderRadius();
+  ret.radii.top_left = radii;
+  ret.radii.top_right = radii;
+  ret.radii.bottom_left = radii;
+  ret.radii.bottom_right = radii;
+  ret.inset = EmptyLayoutSideOffsets();
+  ret.mode = wr::ClipMode::Clip;
+  return ret;
+}
+
+static inline wr::ComplexClipRegion ToComplexClipRegion(
+    const gfx::RoundedRect& rect) {
+  wr::ComplexClipRegion ret;
+  ret.rect = ToLayoutRect(rect.rect);
+  ret.radii = ToBorderRadius(rect.corners);
+  ret.inset = EmptyLayoutSideOffsets();
+  ret.mode = wr::ClipMode::Clip;
+  return ret;
+}
+
+static inline wr::ComplexClipRegion ToComplexClipRegion(
+    const nsRect& aRect, const nsRectCornerRadii& aRadii,
+    int32_t aAppUnitsPerDevPixel) {
+  wr::ComplexClipRegion ret;
+  ret.rect =
+      ToLayoutRect(LayoutDeviceRect::FromAppUnits(aRect, aAppUnitsPerDevPixel));
+  ret.radii = ToBorderRadius(aRadii, aAppUnitsPerDevPixel);
+  ret.inset = EmptyLayoutSideOffsets();
+  ret.mode = ClipMode::Clip;
+  return ret;
+}
+
+static inline wr::ComplexClipRegion ToComplexClipRegion(
+    const nsRect& aRect, const nsRectCornerRadii& aRadii,
+    const nsMargin& aInset, int32_t aAppUnitsPerDevPixel) {
+  wr::ComplexClipRegion ret;
+  ret.rect =
+      ToLayoutRect(LayoutDeviceRect::FromAppUnits(aRect, aAppUnitsPerDevPixel));
+  ret.radii = ToBorderRadius(aRadii, aAppUnitsPerDevPixel);
+  ret.inset = ToLayoutSideOffsets(aInset, aAppUnitsPerDevPixel);
+  ret.mode = ClipMode::Clip;
+  return ret;
+}
 
 template <class S, class T>
 static inline wr::WrTransformProperty ToWrTransformProperty(

@@ -98,7 +98,16 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug",
 ]
 
+["browser_popupNotification_panel_level.js"]
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug",
+]
+
 ["browser_popupNotification_popupshown_leak.js"]
+
+["browser_popupNotification_replace_while_opening.js"]
 
 ["browser_popupNotification_security_delay.js"]
 skip-if = [

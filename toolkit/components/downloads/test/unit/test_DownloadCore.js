@@ -18,7 +18,12 @@ ChromeUtils.defineESModuleGetters(this, {
 var gUseLegacySaver = false;
 
 var scriptFile = do_get_file("common_test_Download.js");
-Services.scriptloader.loadSubScript(NetUtil.newURI(scriptFile).spec);
+Services.scriptloader.loadSubScriptWithOptions(
+  NetUtil.newURI(scriptFile).spec,
+  {
+    allowUnsafeURL: true,
+  }
+);
 
 // Tests
 
@@ -286,4 +291,46 @@ add_task(async function test_cancel_interrupted_download() {
     [],
     "Expect no nsIStreamListener.onDataAvaialable error"
   );
+});
+
+add_task(async function test_download_progress_throttle() {
+  gHttpServer.registerPathHandler("/progress", async (aRequest, aResponse) => {
+    aResponse.setStatusLine(null, 200, "OK");
+    aResponse.setHeader("Content-Type", "text/plain", false);
+    aResponse.setHeader("Content-Disposition", "attachment", false);
+    aResponse.setHeader("Content-Length", "4", false);
+    aResponse.processAsync();
+
+    let stream = aResponse.bodyOutputStream;
+    stream.write("xx", 2);
+    stream.flush();
+    // The throttle time is 400ms, so it just needs to be below that.
+    await promiseTimeout(100);
+    stream.write("x", 1);
+    stream.flush();
+    // Wait 0.75 second before finishing, so it's obvious whether we've
+    // gotten a progress update or not.
+    await promiseTimeout(750);
+    stream.write("x", 1);
+    aResponse.finish();
+  });
+
+  let startTime = Date.now();
+  let download = await promiseNewDownload(httpUrl("progress"));
+  let finished = false;
+  let promise = download.start().then(() => (finished = true));
+
+  // Wait for the first byte.
+  await promiseDownloadMidway(download);
+  Assert.ok(!finished, "Download has not finished immediately");
+  Assert.equal(download.currentBytes, 2, "Two bytes were received");
+
+  // Wait for the 400ms throttle to end.
+  await promiseDownloadMidway(download, 75);
+  Assert.ok(!finished, "Download has still not finished");
+  Assert.greater(Date.now(), startTime + 400, "Progress update was throttled");
+  Assert.equal(download.currentBytes, 3, "Three bytes were received");
+
+  await promise;
+  Assert.greater(Date.now(), startTime + 850, "Did not finish early");
 });

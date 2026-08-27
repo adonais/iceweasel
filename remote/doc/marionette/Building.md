@@ -61,7 +61,7 @@ ac_add_options --disable-webdriver
 
 [mozilla-unified]: https://mozilla-version-control-tools.readthedocs.io/en/latest/hgmozilla/unifiedrepo.html
 [artifact builds]: /contributing/build/artifact_builds.md
-[mozconfig]: /build/buildsystem/mozconfigs.rst
+[mozconfig]: /build/buildsystem/mozconfigs.md
 [ccache]: https://ccache.samba.org/
 [sccache]: https://github.com/mozilla/sccache
-[Remote Agent]: /remote/index.rst
+[Remote Agent]: /remote/index.md

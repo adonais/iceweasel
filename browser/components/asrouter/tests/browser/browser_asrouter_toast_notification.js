@@ -87,7 +87,27 @@ add_task(async function test_actionLocalization() {
 
   let dispatchStub = sinon.stub();
 
-  let message = await getMessage("MR2022_BACKGROUND_UPDATE_TOAST_NOTIFICATION");
+  let message = await getMessage("TEST_TOAST_NOTIFICATION1");
+  message.content = {
+    ...message.content,
+    title: { string_id: "mr2022-background-update-toast-title" },
+    body: { string_id: "mr2022-background-update-toast-text" },
+    tag: "mr2022_background_update",
+    actions: [
+      {
+        action: "primary",
+        title: {
+          string_id: "mr2022-background-update-toast-primary-button-label",
+        },
+      },
+      {
+        action: "secondary",
+        title: {
+          string_id: "mr2022-background-update-toast-secondary-button-label",
+        },
+      },
+    ],
+  };
   await ToastNotification.showToastNotification(message, dispatchStub);
 
   // Test display.

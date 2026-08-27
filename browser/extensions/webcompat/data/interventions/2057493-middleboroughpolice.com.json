@@ -1,0 +1,15 @@
+{
+  "label": "middleboroughpolice.com",
+  "bugs": {
+    "2057493": {
+      "issue": "firefox-blocked-completely",
+      "matches": ["*://*.middleboroughpolice.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "ua_string": ["Chrome_with_FxQuantum"]
+    }
+  ]
+}

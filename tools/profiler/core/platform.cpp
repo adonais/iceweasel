@@ -5994,10 +5994,8 @@ void profiler_start_from_signal() {
   // write any data that we gather anyway.
   if (XRE_IsParentProcess()) {
     // Start the profiler here directly, as we're on a background thread.
-    // set of preferences, configuration of them is TODO, see Bug 1866007
-    // Enabling the JS feature leaks an 8-byte object during testing, but is too
-    // useful to disable. See Bug 1904897, Bug 1699681, and browser.toml for
-    // more details.
+    // We use a default set of preferences, configuring them is TODO, see
+    // Bug 1913297.
     uint32_t features = ProfilerFeature::JS | ProfilerFeature::StackWalk;
     // as we often don't know what threads we'll care about, tell the
     // profiler to profile all threads.
@@ -6120,17 +6118,23 @@ void profiler_init_signal_handlers() {
 #endif
 
 static void PollJSSamplingForCurrentThread() {
-  // Don't call into the JS engine with the global profiler mutex held as this
-  // can deadlock.
+  // Don't call into the JS engine with a profiler lock held as this can
+  // deadlock: the js::Enable* calls can block waiting on the JS helper threads,
+  // which in turn need the profiler locks. Besides the global profiler mutex
+  // asserted below, that includes the thread's own data lock -- so take that
+  // lock only to flip the sampling state (TakeJSSamplingChange), then apply the
+  // JS-engine change (ApplyJSSamplingChange) with no lock held.
   MOZ_ASSERT(!PSAutoLock::IsLockedOnCurrentThread());
 
+  ThreadRegistration::LockedRWOnThread::JSSamplingChange change;
   ThreadRegistration::WithOnThreadRef(
-      [](ThreadRegistration::OnThreadRef aOnThreadRef) {
+      [&change](ThreadRegistration::OnThreadRef aOnThreadRef) {
         aOnThreadRef.WithLockedRWOnThread(
-            [](ThreadRegistration::LockedRWOnThread& aThreadData) {
-              aThreadData.PollJSSampling();
+            [&change](ThreadRegistration::LockedRWOnThread& aThreadData) {
+              change = aThreadData.TakeJSSamplingChange();
             });
       });
+  ThreadRegistration::LockedRWOnThread::ApplyJSSamplingChange(change);
 }
 
 void profiler_init(void* aStackTop) {
@@ -8152,16 +8156,17 @@ UniquePtr<ProfileChunkedBuffer> profiler_capture_backtrace() {
     return nullptr;
   }
 
-  auto buffer = MakeUnique<ProfileChunkedBuffer>(
+  ProfileChunkedBuffer captureBuffer(
       ProfileChunkedBuffer::ThreadSafety::WithoutMutex,
       MakeUnique<ProfileBufferChunkManagerSingle>(
           ProfileBufferChunkManager::scExpectedMaximumStackSize));
 
-  if (!profiler_capture_backtrace_into(*buffer, StackCaptureOptions::Full)) {
+  if (!profiler_capture_backtrace_into(captureBuffer,
+                                       StackCaptureOptions::Full)) {
     return nullptr;
   }
 
-  return buffer;
+  return mozilla::profiler::detail::CopyToRightSizedBuffer(captureBuffer);
 }
 
 UniqueProfilerBacktrace profiler_get_backtrace() {

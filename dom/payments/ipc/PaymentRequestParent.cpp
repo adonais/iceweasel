@@ -189,7 +189,8 @@ nsresult PaymentRequestParent::ChangeShippingAddress(
     nsAutoString requestId(aRequestId);
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
         "dom::PaymentRequestParent::ChangeShippingAddress",
-        [self, requestId, address]() {
+        [self, requestId = std::move(requestId),
+         address = std::move(address)]() {
           self->ChangeShippingAddress(requestId, address);
         });
     return NS_DispatchToMainThread(r);
@@ -217,7 +218,7 @@ nsresult PaymentRequestParent::ChangeShippingOption(const nsAString& aRequestId,
     nsAutoString option(aOption);
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
         "dom::PaymentRequestParent::ChangeShippingOption",
-        [self, requestId, option]() {
+        [self, requestId = std::move(requestId), option = std::move(option)]() {
           self->ChangeShippingOption(requestId, option);
         });
     return NS_DispatchToMainThread(r);
@@ -245,7 +246,9 @@ nsresult PaymentRequestParent::ChangePayerDetail(const nsAString& aRequestId,
     RefPtr<PaymentRequestParent> self = this;
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
         "dom::PaymentRequestParent::ChangePayerDetail",
-        [self, requestId, payerName, payerEmail, payerPhone]() {
+        [self, requestId = std::move(requestId),
+         payerName = std::move(payerName), payerEmail = std::move(payerEmail),
+         payerPhone = std::move(payerPhone)]() {
           self->ChangePayerDetail(requestId, payerName, payerEmail, payerPhone);
         });
     return NS_DispatchToMainThread(r);
@@ -269,7 +272,9 @@ nsresult PaymentRequestParent::ChangePaymentMethod(
     RefPtr<PaymentRequestParent> self = this;
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
         "dom::PaymentRequestParent::ChangePaymentMethod",
-        [self, requestId, methodName, methodDetails]() {
+        [self, requestId = std::move(requestId),
+         methodName = std::move(methodName),
+         methodDetails = std::move(methodDetails)]() {
           self->ChangePaymentMethod(requestId, methodName, methodDetails);
         });
     return NS_DispatchToMainThread(r);
@@ -429,7 +434,7 @@ nsresult PaymentRequestParent::SerializeResponseData(
       MOZ_ASSERT(response);
       IPCGeneralResponse data;
       NS_ENSURE_SUCCESS(response->GetData(data.data()), NS_ERROR_FAILURE);
-      aIPCData = data;
+      aIPCData = std::move(data);
       break;
     }
     case nsIPaymentResponseData::BASICCARD_RESPONSE: {
@@ -453,7 +458,7 @@ nsresult PaymentRequestParent::SerializeResponseData(
       NS_ENSURE_SUCCESS(SerializeAddress(ipcAddress, address),
                         NS_ERROR_FAILURE);
       data.billingAddress() = ipcAddress;
-      aIPCData = data;
+      aIPCData = std::move(data);
       break;
     }
     default: {

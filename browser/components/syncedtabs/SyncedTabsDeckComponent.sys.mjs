@@ -2,12 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { SyncedTabsDeckStore } from "resource:///modules/syncedtabs/SyncedTabsDeckStore.sys.mjs";
-import { SyncedTabsDeckView } from "resource:///modules/syncedtabs/SyncedTabsDeckView.sys.mjs";
-import { SyncedTabsListStore } from "resource:///modules/syncedtabs/SyncedTabsListStore.sys.mjs";
-import { TabListComponent } from "resource:///modules/syncedtabs/TabListComponent.sys.mjs";
-import { TabListView } from "resource:///modules/syncedtabs/TabListView.sys.mjs";
-import { getChromeWindow } from "resource:///modules/syncedtabs/util.sys.mjs";
+import { SyncedTabsDeckStore } from "moz-src:///browser/components/syncedtabs/SyncedTabsDeckStore.sys.mjs";
+import { SyncedTabsDeckView } from "moz-src:///browser/components/syncedtabs/SyncedTabsDeckView.sys.mjs";
+import { SyncedTabsListStore } from "moz-src:///browser/components/syncedtabs/SyncedTabsListStore.sys.mjs";
+import { TabListComponent } from "moz-src:///browser/components/syncedtabs/TabListComponent.sys.mjs";
+import { TabListView } from "moz-src:///browser/components/syncedtabs/TabListView.sys.mjs";
+import { getChromeWindow } from "moz-src:///browser/components/syncedtabs/util.sys.mjs";
 import { UIState } from "resource://services-sync/UIState.sys.mjs";
 
 /* SyncedTabsDeckComponent

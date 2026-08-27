@@ -21,6 +21,13 @@ interface nsIRemoteAgent : nsISupports
    * Indicates whether the Remote Agent is running.
    */
   readonly attribute boolean running;
+
+  /**
+   * Indicates whether a Remote Agent session for browser automation is
+   * currently running. Can be set to false when started at runtime (e.g. for
+   * tooling, agentic assisted browsing).
+   */
+  readonly attribute boolean isBrowserAutomationRunning;
 };
 
 %{C++

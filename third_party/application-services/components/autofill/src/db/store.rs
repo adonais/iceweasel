@@ -2,7 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use crate::db::models::address::{Address, UpdatableAddressFields};
+use crate::db::models::address::{
+    Address, AddressBulkResultEntry, AddressBulkTombstoneResultEntry, AddressTombstone,
+    UpdatableAddressFields, UpdatableAddressFieldsWithMeta,
+};
 use crate::db::models::credit_card::{CreditCard, UpdatableCreditCardFields};
 use crate::db::models::passport::{Passport, UpdatablePassportFields};
 use crate::db::{
@@ -10,13 +13,14 @@ use crate::db::{
 };
 use crate::error::*;
 use error_support::handle_error;
+use parking_lot::{MappedMutexGuard, Mutex, MutexGuard};
 use rusqlite::{
     types::{FromSql, ToSql},
     Connection,
 };
 use sql_support::{self, run_maintenance, ConnExt};
 use std::path::Path;
-use std::sync::{Arc, Mutex, Weak};
+use std::sync::{Arc, Weak};
 use sync15::engine::{SyncEngine, SyncEngineId};
 use sync_guid::Guid;
 
@@ -25,7 +29,8 @@ lazy_static::lazy_static! {
     // Mutex: just taken long enough to update the contents - needed to wrap
     //        the Weak as it isn't `Sync`
     // [Arc/Weak]<Store>: What the sync manager actually needs.
-    static ref STORE_FOR_MANAGER: Mutex<Weak<Store>> = Mutex::new(Weak::new());
+    static ref STORE_FOR_MANAGER: std::sync::Mutex<Weak<Store>> =
+        std::sync::Mutex::new(Weak::new());
 }
 
 /// Called by the sync manager to get a sync engine via the store previously
@@ -48,14 +53,14 @@ pub fn get_registered_sync_engine(engine_id: &SyncEngineId) -> Option<Box<dyn Sy
 
 // This is the type that uniffi exposes.
 pub struct Store {
-    pub(crate) db: Mutex<AutofillDb>,
+    pub(crate) db: Mutex<Option<AutofillDb>>,
 }
 
 impl Store {
     #[handle_error(Error)]
     pub fn new(db_path: impl AsRef<Path>) -> ApiResult<Self> {
         Ok(Self {
-            db: Mutex::new(AutofillDb::new(db_path)?),
+            db: Mutex::new(Some(AutofillDb::new(db_path)?)),
         })
     }
 
@@ -63,7 +68,7 @@ impl Store {
     #[cfg(test)]
     pub fn new_memory() -> Self {
         Self {
-            db: Mutex::new(crate::db::test::new_mem_db()),
+            db: Mutex::new(Some(crate::db::test::new_mem_db())),
         }
     }
 
@@ -71,26 +76,30 @@ impl Store {
     #[handle_error(Error)]
     pub fn new_shared_memory(db_name: &str) -> ApiResult<Self> {
         Ok(Self {
-            db: Mutex::new(AutofillDb::new_memory(db_name)?),
+            db: Mutex::new(Some(AutofillDb::new_memory(db_name)?)),
         })
+    }
+
+    pub(crate) fn lock_db(&self) -> Result<MappedMutexGuard<'_, AutofillDb>> {
+        MutexGuard::try_map(self.db.lock(), |db| db.as_mut()).map_err(|_| Error::DatabaseClosed)
     }
 
     #[handle_error(Error)]
     pub fn add_credit_card(&self, fields: UpdatableCreditCardFields) -> ApiResult<CreditCard> {
-        let credit_card = credit_cards::add_credit_card(&self.db.lock().unwrap().writer, fields)?;
+        let credit_card = credit_cards::add_credit_card(&self.lock_db()?.writer, fields)?;
         Ok(credit_card.into())
     }
 
     #[handle_error(Error)]
     pub fn get_credit_card(&self, guid: String) -> ApiResult<CreditCard> {
         let credit_card =
-            credit_cards::get_credit_card(&self.db.lock().unwrap().writer, &Guid::new(&guid))?;
+            credit_cards::get_credit_card(&self.lock_db()?.writer, &Guid::new(&guid))?;
         Ok(credit_card.into())
     }
 
     #[handle_error(Error)]
     pub fn get_all_credit_cards(&self) -> ApiResult<Vec<CreditCard>> {
-        let credit_cards = credit_cards::get_all_credit_cards(&self.db.lock().unwrap().writer)?
+        let credit_cards = credit_cards::get_all_credit_cards(&self.lock_db()?.writer)?
             .into_iter()
             .map(|x| x.into())
             .collect();
@@ -99,7 +108,7 @@ impl Store {
 
     #[handle_error(Error)]
     pub fn count_all_credit_cards(&self) -> ApiResult<i64> {
-        let count = credit_cards::count_all_credit_cards(&self.db.lock().unwrap().writer)?;
+        let count = credit_cards::count_all_credit_cards(&self.lock_db()?.writer)?;
         Ok(count)
     }
 
@@ -109,36 +118,99 @@ impl Store {
         guid: String,
         credit_card: UpdatableCreditCardFields,
     ) -> ApiResult<()> {
-        credit_cards::update_credit_card(
-            &self.db.lock().unwrap().writer,
-            &Guid::new(&guid),
-            &credit_card,
-        )
+        credit_cards::update_credit_card(&self.lock_db()?.writer, &Guid::new(&guid), &credit_card)
     }
 
     #[handle_error(Error)]
     pub fn delete_credit_card(&self, guid: String) -> ApiResult<bool> {
-        credit_cards::delete_credit_card(&self.db.lock().unwrap().writer, &Guid::new(&guid))
+        credit_cards::delete_credit_card(&self.lock_db()?.writer, &Guid::new(&guid))
     }
 
     #[handle_error(Error)]
     pub fn touch_credit_card(&self, guid: String) -> ApiResult<()> {
-        credit_cards::touch(&self.db.lock().unwrap().writer, &Guid::new(&guid))
+        credit_cards::touch(&self.lock_db()?.writer, &Guid::new(&guid))
     }
 
     #[handle_error(Error)]
     pub fn add_address(&self, new_address: UpdatableAddressFields) -> ApiResult<Address> {
-        Ok(addresses::add_address(&self.db.lock().unwrap().writer, new_address)?.into())
+        Ok(addresses::add_address(&self.lock_db()?.writer, new_address)?.into())
+    }
+
+    /// Adds an address **including metadata**. Normally you will use
+    /// `add_address` instead, and the metadata (guid, timestamps, change counter)
+    /// will be taken care of here. However, in some cases this method is
+    /// necessary, for example when migrating data from another store that
+    /// already contains the metadata.
+    #[handle_error(Error)]
+    pub fn add_address_with_meta(
+        &self,
+        entry_with_meta: UpdatableAddressFieldsWithMeta,
+    ) -> ApiResult<Address> {
+        Ok(addresses::add_address_with_meta(
+            &self.lock_db()?.writer,
+            entry_with_meta.fields,
+            entry_with_meta.meta,
+        )?
+        .into())
+    }
+
+    /// Adds multiple addresses **including metadata**, with a result per record.
+    #[handle_error(Error)]
+    pub fn add_many_addresses_with_meta(
+        &self,
+        entries_with_meta: Vec<UpdatableAddressFieldsWithMeta>,
+    ) -> ApiResult<Vec<AddressBulkResultEntry>> {
+        let results =
+            addresses::add_many_addresses_with_meta(&self.lock_db()?.writer, entries_with_meta)?;
+        Ok(results
+            .into_iter()
+            .map(|result| match result {
+                Ok(address) => AddressBulkResultEntry::Success {
+                    address: address.into(),
+                },
+                Err(message) => AddressBulkResultEntry::Error { message },
+            })
+            .collect())
+    }
+
+    /// Adds tombstones for addresses whose deletion has not yet been uploaded,
+    /// with a result per record.
+    #[handle_error(Error)]
+    pub fn add_many_address_tombstones(
+        &self,
+        tombstones: Vec<AddressTombstone>,
+    ) -> ApiResult<Vec<AddressBulkTombstoneResultEntry>> {
+        let results = addresses::add_many_address_tombstones(
+            &self.lock_db()?.writer,
+            tombstones
+                .into_iter()
+                .map(|t| (t.guid, t.time_deleted))
+                .collect(),
+        )?;
+        Ok(results
+            .into_iter()
+            .map(|result| match result {
+                Ok(guid) => AddressBulkTombstoneResultEntry::Success { guid },
+                Err(message) => AddressBulkTombstoneResultEntry::Error { message },
+            })
+            .collect())
+    }
+
+    /// Removes every address and every address tombstone.
+    #[handle_error(Error)]
+    pub fn delete_all_addresses(&self) -> ApiResult<()> {
+        addresses::delete_all_addresses(&self.lock_db()?.writer)?;
+        Ok(())
     }
 
     #[handle_error(Error)]
     pub fn get_address(&self, guid: String) -> ApiResult<Address> {
-        Ok(addresses::get_address(&self.db.lock().unwrap().writer, &Guid::new(&guid))?.into())
+        Ok(addresses::get_address(&self.lock_db()?.writer, &Guid::new(&guid))?.into())
     }
 
     #[handle_error(Error)]
     pub fn get_all_addresses(&self) -> ApiResult<Vec<Address>> {
-        let addresses = addresses::get_all_addresses(&self.db.lock().unwrap().writer)?
+        let addresses = addresses::get_all_addresses(&self.lock_db()?.writer)?
             .into_iter()
             .map(|x| x.into())
             .collect();
@@ -147,38 +219,55 @@ impl Store {
 
     #[handle_error(Error)]
     pub fn count_all_addresses(&self) -> ApiResult<i64> {
-        let count = addresses::count_all_addresses(&self.db.lock().unwrap().writer)?;
+        let count = addresses::count_all_addresses(&self.lock_db()?.writer)?;
         Ok(count)
     }
 
     #[handle_error(Error)]
     pub fn update_address(&self, guid: String, address: UpdatableAddressFields) -> ApiResult<()> {
-        addresses::update_address(&self.db.lock().unwrap().writer, &Guid::new(&guid), &address)
+        addresses::update_address(&self.lock_db()?.writer, &Guid::new(&guid), &address)
+    }
+
+    /// Updates an address **including metadata**, setting both its fields and
+    /// its timestamps and `times_used` to the supplied values. Normally you will
+    /// use `update_address` instead, which leaves `time_last_modified` to this
+    /// store; this is for keeping a record identical to one held elsewhere.
+    /// Errors with `NoSuchRecord` if the guid is absent.
+    #[handle_error(Error)]
+    pub fn update_address_with_meta(
+        &self,
+        entry_with_meta: UpdatableAddressFieldsWithMeta,
+    ) -> ApiResult<()> {
+        addresses::update_address_with_meta(
+            &self.lock_db()?.writer,
+            entry_with_meta.fields,
+            entry_with_meta.meta,
+        )
     }
 
     #[handle_error(Error)]
     pub fn delete_address(&self, guid: String) -> ApiResult<bool> {
-        addresses::delete_address(&self.db.lock().unwrap().writer, &Guid::new(&guid))
+        addresses::delete_address(&self.lock_db()?.writer, &Guid::new(&guid))
     }
 
     #[handle_error(Error)]
     pub fn touch_address(&self, guid: String) -> ApiResult<()> {
-        addresses::touch(&self.db.lock().unwrap().writer, &Guid::new(&guid))
+        addresses::touch(&self.lock_db()?.writer, &Guid::new(&guid))
     }
 
     #[handle_error(Error)]
     pub fn add_passport(&self, fields: UpdatablePassportFields) -> ApiResult<Passport> {
-        Ok(passports::add_passport(&self.db.lock().unwrap().writer, fields)?.into())
+        Ok(passports::add_passport(&self.lock_db()?.writer, fields)?.into())
     }
 
     #[handle_error(Error)]
     pub fn get_passport(&self, guid: String) -> ApiResult<Passport> {
-        Ok(passports::get_passport(&self.db.lock().unwrap().writer, &Guid::new(&guid))?.into())
+        Ok(passports::get_passport(&self.lock_db()?.writer, &Guid::new(&guid))?.into())
     }
 
     #[handle_error(Error)]
     pub fn get_all_passports(&self) -> ApiResult<Vec<Passport>> {
-        let passports = passports::get_all_passports(&self.db.lock().unwrap().writer)?
+        let passports = passports::get_all_passports(&self.lock_db()?.writer)?
             .into_iter()
             .map(|x| x.into())
             .collect();
@@ -187,7 +276,7 @@ impl Store {
 
     #[handle_error(Error)]
     pub fn count_all_passports(&self) -> ApiResult<i64> {
-        passports::count_all_passports(&self.db.lock().unwrap().writer)
+        passports::count_all_passports(&self.lock_db()?.writer)
     }
 
     #[handle_error(Error)]
@@ -196,28 +285,24 @@ impl Store {
         guid: String,
         passport: UpdatablePassportFields,
     ) -> ApiResult<()> {
-        passports::update_passport(
-            &self.db.lock().unwrap().writer,
-            &Guid::new(&guid),
-            &passport,
-        )
+        passports::update_passport(&self.lock_db()?.writer, &Guid::new(&guid), &passport)
     }
 
     #[handle_error(Error)]
     pub fn delete_passport(&self, guid: String) -> ApiResult<bool> {
-        passports::delete_passport(&self.db.lock().unwrap().writer, &Guid::new(&guid))
+        passports::delete_passport(&self.lock_db()?.writer, &Guid::new(&guid))
     }
 
     #[handle_error(Error)]
     pub fn touch_passport(&self, guid: String) -> ApiResult<()> {
-        passports::touch(&self.db.lock().unwrap().writer, &Guid::new(&guid))
+        passports::touch(&self.lock_db()?.writer, &Guid::new(&guid))
     }
 
     #[handle_error(Error)]
     pub fn scrub_encrypted_data(self: Arc<Self>) -> ApiResult<()> {
         // scrub the data on disk
         // Currently only credit cards have encrypted data
-        credit_cards::scrub_encrypted_credit_card_data(&self.db.lock().unwrap().writer)?;
+        credit_cards::scrub_encrypted_credit_card_data(&self.lock_db()?.writer)?;
         // Force the sync engine to refetch data (only need to do this for the credit cards, since the
         // addresses engine doesn't store encrypted data).
         crate::sync::credit_card::create_engine(self).reset_local_sync_data()?;
@@ -229,10 +314,10 @@ impl Store {
         self: Arc<Self>,
         local_encryption_key: String,
     ) -> ApiResult<CreditCardsDeletionMetrics> {
-        let db = &self.db.lock().unwrap().writer;
+        let db = self.lock_db()?;
         let deletion_stats =
             credit_cards::scrub_undecryptable_credit_card_data_for_remote_replacement(
-                db,
+                &db.writer,
                 local_encryption_key,
             )?;
 
@@ -241,15 +326,21 @@ impl Store {
         // record that exists on the sync server to overwrite the local record and restore
         // the scrubbed credit card number.
         crate::sync::credit_card::create_engine(self.clone())
-            .reset_local_sync_data_for_verification(db)?;
+            .reset_local_sync_data_for_verification(&db.writer)?;
         Ok(deletion_stats)
     }
 
     #[handle_error(Error)]
     pub fn run_maintenance(&self) -> ApiResult<()> {
-        let conn = self.db.lock().unwrap();
+        let conn = self.lock_db()?;
         run_maintenance(&conn)?;
         Ok(())
+    }
+
+    pub fn shutdown(&self) {
+        if let Some(db) = self.db.lock().take() {
+            db.close();
+        }
     }
 
     // This allows the embedding app to say "make this instance available to
@@ -362,6 +453,22 @@ mod tests {
         // dropping the registered object should drop the registration.
         drop(store);
         assert!(STORE_FOR_MANAGER.lock().unwrap().upgrade().is_none());
+    }
+
+    #[test]
+    fn test_shutdown_closes_the_store() {
+        let store = Store::new_shared_memory("shutdown-test").expect("create store");
+        // Operations succeed before shutdown.
+        assert_eq!(store.count_all_passports().expect("count"), 0);
+
+        store.shutdown();
+
+        // After shutdown, operations return an error rather than panicking or
+        // operating on a half-closed store.
+        assert!(store.count_all_passports().is_err());
+
+        // shutdown is idempotent.
+        store.shutdown();
     }
 
     #[test]

@@ -715,6 +715,7 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
       case JSOp::RetRval:
       case JSOp::InitialYield:
       case JSOp::Yield:
+      case JSOp::Resume:
       case JSOp::ResumeKind:
       case JSOp::ThrowMsg:
       case JSOp::Try:
@@ -722,11 +723,9 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
       case JSOp::NewPrivateName:
       case JSOp::StrictConstantEq:
       case JSOp::StrictConstantNe:
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
       case JSOp::AddDisposable:
       case JSOp::TakeDisposeCapability:
       case JSOp::CreateSuppressedError:
-#endif
         // Supported by WarpBuilder. Nothing to do.
         break;
 

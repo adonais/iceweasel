@@ -19,7 +19,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   DownloadsCommon:
     "moz-src:///browser/components/downloads/DownloadsCommon.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -130,7 +130,7 @@ export var DownloadsViewUI = {
    * Get source url of the download without'http' or'https' prefix.
    */
   getStrippedUrl(download) {
-    return lazy.UrlbarUtils.stripPrefixAndTrim(download?.source?.url, {
+    return lazy.UrlbarShared.stripPrefixAndTrim(download?.source?.url, {
       stripHttp: true,
       stripHttps: true,
     })[0];

@@ -53,8 +53,6 @@ zero_byte_load:
           Reason why this load was cancelled.
         type: string
     telemetry_mirror: Zero_byte_load_Load_Ftl
-    no_lint:
-      - COMMON_PREFIX
 
   load_dtd:
     type: event
@@ -76,8 +74,6 @@ zero_byte_load:
     expires: never
     extra_keys: *zero_byte_load_load_extra
     telemetry_mirror: Zero_byte_load_Load_Dtd
-    no_lint:
-      - COMMON_PREFIX
 
   load_properties:
     type: event
@@ -99,8 +95,6 @@ zero_byte_load:
     expires: never
     extra_keys: *zero_byte_load_load_extra
     telemetry_mirror: Zero_byte_load_Load_Properties
-    no_lint:
-      - COMMON_PREFIX
 
   load_js:
     type: event
@@ -122,8 +116,6 @@ zero_byte_load:
     expires: never
     extra_keys: *zero_byte_load_load_extra
     telemetry_mirror: Zero_byte_load_Load_Js
-    no_lint:
-      - COMMON_PREFIX
 
   load_xml:
     type: event
@@ -145,8 +137,6 @@ zero_byte_load:
     expires: never
     extra_keys: *zero_byte_load_load_extra
     telemetry_mirror: Zero_byte_load_Load_Xml
-    no_lint:
-      - COMMON_PREFIX
 
   load_xhtml:
     type: event
@@ -168,8 +158,6 @@ zero_byte_load:
     expires: never
     extra_keys: *zero_byte_load_load_extra
     telemetry_mirror: Zero_byte_load_Load_Xhtml
-    no_lint:
-      - COMMON_PREFIX
 
   load_css:
     type: event
@@ -191,8 +179,6 @@ zero_byte_load:
     expires: never
     extra_keys: *zero_byte_load_load_extra
     telemetry_mirror: Zero_byte_load_Load_Css
-    no_lint:
-      - COMMON_PREFIX
 
   load_json:
     type: event
@@ -214,8 +200,6 @@ zero_byte_load:
     expires: never
     extra_keys: *zero_byte_load_load_extra
     telemetry_mirror: Zero_byte_load_Load_Json
-    no_lint:
-      - COMMON_PREFIX
 
   load_html:
     type: event
@@ -237,8 +221,6 @@ zero_byte_load:
     expires: never
     extra_keys: *zero_byte_load_load_extra
     telemetry_mirror: Zero_byte_load_Load_Html
-    no_lint:
-      - COMMON_PREFIX
 
   load_png:
     type: event
@@ -260,8 +242,6 @@ zero_byte_load:
     expires: never
     extra_keys: *zero_byte_load_load_extra
     telemetry_mirror: Zero_byte_load_Load_Png
-    no_lint:
-      - COMMON_PREFIX
 
   load_svg:
     type: event
@@ -283,8 +263,6 @@ zero_byte_load:
     expires: never
     extra_keys: *zero_byte_load_load_extra
     telemetry_mirror: Zero_byte_load_Load_Svg
-    no_lint:
-      - COMMON_PREFIX
 
   load_others:
     type: event
@@ -306,5 +284,3 @@ zero_byte_load:
     expires: never
     extra_keys: *zero_byte_load_load_extra
     telemetry_mirror: Zero_byte_load_Load_Others
-    no_lint:
-      - COMMON_PREFIX

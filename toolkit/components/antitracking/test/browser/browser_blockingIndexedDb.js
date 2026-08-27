@@ -1,3 +1,7 @@
+// Two full runTestInNormalAndPrivateMode() passes in one file; the timeout is
+// armed once per file, so coverage builds need the headroom.
+requestLongerTimeout(5);
+
 AntiTracking.runTestInNormalAndPrivateMode(
   "IndexedDB",
   // blocking callback

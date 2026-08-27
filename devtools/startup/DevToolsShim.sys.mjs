@@ -125,9 +125,11 @@ export const DevToolsShim = {
    */
 
   /**
-   * This method is used by browser/components/extensions/ext-devtools.js for the events:
+   * This method is used by browser/components/extensions/parent/ext-devtools.js for the
+   * events:
    * - toolbox-ready
    * - toolbox-destroyed
+   * - theme-changed
    *
    * @param {string} event
    * @param {Function} listener
@@ -308,7 +310,6 @@ export const DevToolsShim = {
 const webExtensionsMethods = [
   "createCommandsForTabForWebExtension",
   "getTheme",
-  "openBrowserConsole",
 ];
 
 /**

@@ -50,5 +50,6 @@ startgc();
 assertEq(gcstate(), 'NotActive');
 
 checkMarks(['gray', 'black', 'black']);
-assertEq(getAtomMarkColor(g1, i), 'gray');
+// Mark observers weak edge (and any JIT weak edges) hold the atom ref black.
+assertEq(getAtomMarkColor(g1, i), 'black');
 assertEq(getAtomMarkColor(g2, i), 'black');

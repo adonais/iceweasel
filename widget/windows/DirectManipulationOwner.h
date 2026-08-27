@@ -41,7 +41,7 @@ class DirectManipulationOwner {
 
  private:
   nsWindow* mWindow;
-  DWORD mDmViewportHandlerCookie;
+  DWORD mDmViewportHandlerCookie = 0;
   RefPtr<IDirectManipulationManager> mDmManager;
   RefPtr<IDirectManipulationUpdateManager> mDmUpdateManager;
   RefPtr<IDirectManipulationViewport> mDmViewport;

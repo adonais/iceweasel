@@ -153,7 +153,11 @@ class SlimLinkedListElement {
 
   void makeSingleton() {
     MOZ_ASSERT(!isInList());
-    LinkElements(thisElement(), thisElement(), EndTag);
+    makeListTo(thisElement());
+  }
+
+  void makeListTo(ElementPtr last) {
+    LinkElements(last, thisElement(), EndTag);
   }
 
   void insertAfter(ElementPtr newElement) {
@@ -205,16 +209,29 @@ class SlimLinkedListElement {
    * Remove element |this| from its containing list.
    */
   void remove() {
+    removeTo(thisElement());
+    next_ = 0;
+    prev_ = 0;
+  }
+
+  /*
+   * Remove elements between |this| and |to| inclusive. The removed elements'
+   * links are not updated.
+   */
+  void removeTo(ElementPtr to) {
     MOZ_ASSERT(isInList());
 
     ElementPtr prev = GetPtr(prev_);
-    ElementPtr next = GetPtr(next_);
-    uintptr_t tag = GetTag(prev_) | GetTag(next_);
+    ElementPtr next = GetPtr(to->next_);
+    uintptr_t tag = GetTag(prev_) | GetTag(to->next_);
 
     LinkElements(prev, next, tag);
 
-    next_ = 0;
-    prev_ = 0;
+#ifdef DEBUG
+    static constexpr uintptr_t PoisonLink = uintptr_t(-1);
+    to->next_ = PoisonLink;
+    prev_ = PoisonLink;
+#endif
   }
 };
 
@@ -404,6 +421,36 @@ class SlimLinkedList {
       first_ = element->getNext();
     }
     element->remove();
+  }
+
+  /*
+   * Remove the elements between |from| and |to| inclusive from this list and
+   * return them as a new list.
+   */
+  SlimLinkedList<T> removeRange(ElementPtr from, ElementPtr to) {
+    MOZ_ASSERT(from);
+    MOZ_ASSERT(to);
+    checkContains(from);
+    checkContains(to);
+
+    bool removeFirst = from->isFirst();
+    bool removeLast = to->isLast();
+
+    if (removeFirst && removeLast) {
+      // The range covers every element in the list.
+      return std::move(*this);
+    }
+
+    if (removeFirst) {
+      first_ = to->getNext();
+    }
+
+    from->removeTo(to);
+    from->makeListTo(to);
+
+    SlimLinkedList<T> result;
+    result.first_ = from;
+    return result;
   }
 
   void checkContains(ElementPtr element) {

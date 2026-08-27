@@ -41,6 +41,23 @@ info_file_platform_map = {
 }
 
 
+# build platform -> ftp platform map
+build_platform_map = {
+    "linux64-shippable": "linux-x86_64",
+    "linux64-aarch64-shippable": "linux-aarch64",
+    "macosx64-shippable": "mac",
+    "win32-shippable": "win32",
+    "win64-shippable": "win64",
+    "win64-aarch64-shippable": "win64-aarch64",
+    "linux64-devedition": "linux-x86_64",
+    "linux64-aarch64-devedition": "linux-aarch64",
+    "macosx64-devedition": "mac",
+    "win32-devedition": "win32",
+    "win64-devedition": "win64",
+    "win64-aarch64-devedition": "win64-aarch64",
+}
+
+
 def ftp2updatePlatforms(platform):
     return update_platform_map[platform]
 
@@ -59,3 +76,7 @@ def updatePlatform2ftp(platform):
             return ftp_platform
 
     raise Exception(f"Couldn't find ftp platform for update platform {platform}!")
+
+
+def buildPlatform2ftp(platform):
+    return build_platform_map[platform]

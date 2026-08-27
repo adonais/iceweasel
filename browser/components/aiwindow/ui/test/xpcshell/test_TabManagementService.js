@@ -40,6 +40,11 @@ const mockSessionStore = {
 // Create TabManagementService instance with mock SessionStore
 const tabManagementService = new TabManagementService(mockSessionStore);
 
+// Canonical (trailing-slash) forms for findOpenTab/resolveOrOpenTabs tests -
+// mock tabs use these, while queries stay bare, to exercise normalization.
+const EXAMPLE_URL = "https://example.com/";
+const MOZILLA_URL = "https://mozilla.org/";
+
 /**
  * Helper to create a mock tab
  *
@@ -65,6 +70,10 @@ function createMockTab(
       contentPrincipal: {
         originAttributes: { userContextId },
       },
+      loadURICalls: [],
+      loadURI(uri, options) {
+        this.loadURICalls.push({ uri, options });
+      },
     },
     label: title,
     userContextId,
@@ -88,6 +97,16 @@ function createMockWindow() {
     gBrowser: {
       tabs: [],
       tabGroups: [],
+      failUrls: new Set(),
+      addTab(url) {
+        if (this.failUrls.has(url)) {
+          throw new Error(`mock failure opening ${url}`);
+        }
+        const tab = createMockTab(url, url);
+        tab.documentGlobal = mockWindow;
+        this.tabs.push(tab);
+        return tab;
+      },
       removeTab(tab) {
         const index = this.tabs.indexOf(tab);
         if (index > -1) {
@@ -501,12 +520,12 @@ add_task(async function test_timestamp_disambiguation() {
         operationTimestamp: aiOperationTime,
       },
     ],
+    window: mockWindow,
   });
 
   // Restore should pick the older tab (closest to operationTimestamp)
   const restoreResult = await tabManagementService.restoreTabs({
     operationId,
-    window: mockWindow,
   });
 
   Assert.equal(restoreResult.restoredCount, 1, "Should restore 1 tab");
@@ -652,6 +671,7 @@ add_task(async function test_restoreTabs_in_background() {
       },
     ],
     timestamp: Date.now(),
+    window: mockWindow,
   });
 
   // Track which tabs were selected during restoration
@@ -1031,5 +1051,344 @@ add_task(async function test_create_tab_group_invalid_window() {
     result2.error,
     "Invalid browser window provided",
     "Should return correct error message for window without gBrowser"
+  );
+});
+
+/**
+ * Test restoreTabs resolves the owning window from the stored operation.
+ */
+add_task(async function test_restoreTabs_resolves_owning_window() {
+  mockSessionStore.reset();
+  const owningWindow = createMockWindow();
+
+  const tab = createMockTab("https://example.com", "Example");
+  tab.documentGlobal = owningWindow;
+  owningWindow.gBrowser.tabs = [tab];
+
+  const closeResult = await tabManagementService.closeTabs({
+    tabs: [tab],
+    window: owningWindow,
+  });
+  Assert.ok(closeResult.operationId, "Close should return an operation ID");
+
+  const restoreResult = await tabManagementService.restoreTabs({
+    operationId: closeResult.operationId,
+  });
+
+  Assert.equal(
+    restoreResult.restoredCount,
+    1,
+    "Should restore the tab in its owning window without a window argument"
+  );
+  Assert.equal(
+    restoreResult.failedTabs.length,
+    0,
+    "Should have no failed tabs"
+  );
+});
+
+/**
+ * Test findOpenTab matching an existing tab by exact URL
+ */
+add_task(async function test_find_open_tab_matches_by_url() {
+  const mockWindow = createMockWindow();
+  const tab1 = createMockTab(EXAMPLE_URL, "Example");
+  const tab2 = createMockTab(MOZILLA_URL, "Mozilla");
+  mockWindow.gBrowser.tabs = [tab1, tab2];
+
+  const found = tabManagementService.findOpenTab({
+    url: "https://mozilla.org",
+    window: mockWindow,
+  });
+
+  Assert.equal(found, tab2, "Should find the tab with the matching URL");
+});
+
+/**
+ * Test findOpenTab returns null when no tab matches
+ */
+add_task(async function test_find_open_tab_no_match_returns_null() {
+  const mockWindow = createMockWindow();
+  mockWindow.gBrowser.tabs = [createMockTab("https://example.com", "Example")];
+
+  const found = tabManagementService.findOpenTab({
+    url: "https://not-open.com",
+    window: mockWindow,
+  });
+
+  Assert.equal(found, null, "Should return null when no tab matches");
+});
+
+/**
+ * Test findOpenTab respects excludeTabs, e.g. tabs already claimed by an
+ * earlier match in the same batch
+ */
+add_task(async function test_find_open_tab_respects_exclude_tabs() {
+  const mockWindow = createMockWindow();
+  const tab1 = createMockTab(EXAMPLE_URL, "Example 1");
+  const tab2 = createMockTab(EXAMPLE_URL, "Example 2");
+  mockWindow.gBrowser.tabs = [tab1, tab2];
+
+  const firstMatch = tabManagementService.findOpenTab({
+    url: "https://example.com",
+    window: mockWindow,
+  });
+  Assert.equal(firstMatch, tab1, "Should find the first matching tab");
+
+  const secondMatch = tabManagementService.findOpenTab({
+    url: "https://example.com",
+    window: mockWindow,
+    excludeTabs: new Set([tab1]),
+  });
+  Assert.equal(
+    secondMatch,
+    tab2,
+    "Should skip the excluded tab and find the next match"
+  );
+});
+
+/**
+ * Test restoreTabs fails gracefully when the owning window is closed after the
+ * tabs were closed before undo.
+ */
+add_task(async function test_restoreTabs_owning_window_closed() {
+  mockSessionStore.reset();
+  const owningWindow = createMockWindow();
+
+  const tab = createMockTab("https://example.com", "Example");
+  tab.documentGlobal = owningWindow;
+  owningWindow.gBrowser.tabs = [tab];
+
+  const closeResult = await tabManagementService.closeTabs({
+    tabs: [tab],
+    window: owningWindow,
+  });
+  Assert.ok(closeResult.operationId, "Close should return an operation ID");
+
+  // Simulate the owning window closing
+  owningWindow.gBrowser = null;
+
+  const restoreResult = await tabManagementService.restoreTabs({
+    operationId: closeResult.operationId,
+  });
+
+  Assert.equal(
+    restoreResult.restoredCount,
+    0,
+    "Should restore nothing when the owning window is closed"
+  );
+  Assert.equal(
+    restoreResult.requestedCount,
+    1,
+    "Should report the requested count from the stored operation"
+  );
+  Assert.equal(
+    restoreResult.failedTabs[0]?.reason,
+    "owning-window-closed",
+    "Should flag the failure reason"
+  );
+  Assert.ok(
+    tabManagementService.getStoredTabsForUndo(closeResult.operationId),
+    "Should keep the operation for a later retry"
+  );
+});
+
+/**
+ * Test switchToTab selects the given tab
+ */
+add_task(async function test_switch_to_tab_sets_selected_tab() {
+  const mockWindow = createMockWindow();
+  const tab = createMockTab("https://example.com", "Example");
+  mockWindow.gBrowser.tabs = [tab];
+
+  tabManagementService.switchToTab({ tab, window: mockWindow });
+
+  Assert.equal(
+    mockWindow.gBrowser.selectedTab,
+    tab,
+    "Should select the given tab"
+  );
+});
+
+/**
+ * Test resolveOrOpenTabs when every tab is already open - nothing should
+ * be opened, and the existing tab objects should be returned as-is
+ */
+add_task(async function test_resolve_or_open_tabs_all_merged() {
+  const mockWindow = createMockWindow();
+  const tab1 = createMockTab(EXAMPLE_URL, "Example");
+  const tab2 = createMockTab(MOZILLA_URL, "Mozilla");
+  mockWindow.gBrowser.tabs = [tab1, tab2];
+
+  const result = await tabManagementService.resolveOrOpenTabs({
+    tabs: [{ url: "https://example.com" }, { url: "https://mozilla.org" }],
+    window: mockWindow,
+  });
+
+  Assert.deepEqual(
+    result.resolvedTabs,
+    [tab1, tab2],
+    "Should resolve to the existing tabs, in order"
+  );
+  Assert.equal(result.mergedCount, 2, "Both tabs should count as merged");
+  Assert.equal(result.failedUrls.length, 0, "Should have no failed URLs");
+  Assert.equal(
+    mockWindow.gBrowser.tabs.length,
+    2,
+    "Should not open any new tabs"
+  );
+});
+
+/**
+ * Test resolveOrOpenTabs when no tab is already open - every URL should be
+ * opened fresh
+ */
+add_task(async function test_resolve_or_open_tabs_all_opened() {
+  const mockWindow = createMockWindow();
+
+  const result = await tabManagementService.resolveOrOpenTabs({
+    tabs: [{ url: "https://example.com" }, { url: "https://mozilla.org" }],
+    window: mockWindow,
+  });
+
+  Assert.equal(result.mergedCount, 0, "Neither tab should count as merged");
+  Assert.deepEqual(
+    result.resolvedTabs.map(tab => tab.linkedBrowser.currentURI.spec),
+    ["https://example.com", "https://mozilla.org"],
+    "Opened tabs should be in the original order"
+  );
+});
+
+/**
+ * Test resolveOrOpenTabs with a mix of already-open and not-yet-open tabs,
+ * preserving the original selection order
+ */
+add_task(async function test_resolve_or_open_tabs_mixed() {
+  const mockWindow = createMockWindow();
+  const existingTab1 = createMockTab(EXAMPLE_URL, "Example");
+  const existingTab3 = createMockTab(MOZILLA_URL, "Mozilla");
+  mockWindow.gBrowser.tabs = [existingTab1, existingTab3];
+
+  const result = await tabManagementService.resolveOrOpenTabs({
+    tabs: [
+      { url: "https://example.com" },
+      { url: "https://not-open.com" },
+      { url: "https://mozilla.org" },
+    ],
+    window: mockWindow,
+  });
+
+  Assert.equal(result.mergedCount, 2, "Two tabs should count as merged");
+  Assert.equal(
+    result.resolvedTabs[0],
+    existingTab1,
+    "First resolved tab should be the existing tab, not a duplicate"
+  );
+  Assert.equal(
+    result.resolvedTabs[1].linkedBrowser.currentURI.spec,
+    "https://not-open.com",
+    "Second resolved tab should be the newly-opened one"
+  );
+  Assert.equal(
+    result.resolvedTabs[2],
+    existingTab3,
+    "Third resolved tab should be the existing tab, not a duplicate"
+  );
+});
+
+/**
+ * Test resolveOrOpenTabs when opening one of the URLs fails - the
+ * remaining tabs should still resolve correctly, in order. Simulates a
+ * real gBrowser.addTab() failure (e.g. invalid URI) to verify our own
+ * order/bookkeeping logic survives it, not just that the mock can fail.
+ */
+add_task(async function test_resolve_or_open_tabs_partial_failure() {
+  const mockWindow = createMockWindow();
+  mockWindow.gBrowser.failUrls.add("https://fails.com");
+
+  const result = await tabManagementService.resolveOrOpenTabs({
+    tabs: [
+      { url: "https://example.com" },
+      { url: "https://fails.com" },
+      { url: "https://mozilla.org" },
+    ],
+    window: mockWindow,
+  });
+
+  Assert.deepEqual(
+    result.resolvedTabs.map(tab => tab.linkedBrowser.currentURI.spec),
+    ["https://example.com", "https://mozilla.org"],
+    "The 2 successful tabs should resolve, keeping their relative order"
+  );
+  Assert.equal(result.failedUrls.length, 1, "Should record the failed URL");
+  Assert.equal(
+    result.failedUrls[0].url,
+    "https://fails.com",
+    "Should record which URL failed"
+  );
+});
+
+/**
+ * Test resolveOrOpenTabs' current behavior when the same URL is selected
+ * twice: the second occurrence opens a fresh duplicate tab rather than
+ * reusing the first occurrence's result. For PUWYLO specifically, Models
+ * dedupes URLs before they ever reach the confirmation card, so this path
+ * isn't expected to be hit there - this documents the fallback behavior
+ * for any other caller that selects the same URL twice without deduping
+ * upstream first.
+ */
+add_task(async function test_resolve_or_open_tabs_duplicate_urls() {
+  const mockWindow = createMockWindow();
+  const existingTab = createMockTab(EXAMPLE_URL, "Example");
+  mockWindow.gBrowser.tabs = [existingTab];
+
+  const result = await tabManagementService.resolveOrOpenTabs({
+    tabs: [{ url: "https://example.com" }, { url: "https://example.com" }],
+    window: mockWindow,
+  });
+
+  Assert.equal(result.mergedCount, 1, "Only the first occurrence should merge");
+  Assert.equal(
+    result.resolvedTabs[0],
+    existingTab,
+    "First occurrence should reuse the existing tab"
+  );
+  Assert.notEqual(
+    result.resolvedTabs[1],
+    existingTab,
+    "Second occurrence should not reuse the already-claimed tab"
+  );
+});
+
+/**
+ * Test resolveOrOpenTabs with an empty tabs array
+ */
+add_task(async function test_resolve_or_open_tabs_empty() {
+  const mockWindow = createMockWindow();
+
+  const result = await tabManagementService.resolveOrOpenTabs({
+    tabs: [],
+    window: mockWindow,
+  });
+
+  Assert.deepEqual(
+    result,
+    { resolvedTabs: [], mergedCount: 0, failedUrls: [] },
+    "Should return an empty result for an empty input"
+  );
+});
+
+/**
+ * Test resolveOrOpenTabs throws for an invalid window, matching
+ * createTabGroup/closeTabs' existing contract
+ */
+add_task(async function test_resolve_or_open_tabs_invalid_window() {
+  await Assert.rejects(
+    tabManagementService.resolveOrOpenTabs({
+      tabs: [{ url: "https://example.com" }],
+      window: null,
+    }),
+    /Invalid browser window/,
+    "Should throw for null window"
   );
 });

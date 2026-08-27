@@ -845,7 +845,7 @@ nsresult FeatureData::InitializeList(
   }
 
   if (found) {
-    mHostInPrefTables[aListType] = tableName;
+    mHostInPrefTables[aListType] = std::move(tableName);
   }
 
   RefPtr<URIData> uriData;

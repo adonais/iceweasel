@@ -81,9 +81,13 @@ FINAL_TARGET_FILES.actors += [
     "ViewSourceChild.sys.mjs",
     "ViewSourcePageChild.sys.mjs",
     "ViewSourcePageParent.sys.mjs",
-    "WebChannelChild.sys.mjs",
-    "WebChannelParent.sys.mjs",
 ]
+
+if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
+    FINAL_TARGET_FILES.actors += [
+        "WebChannelChild.sys.mjs",
+        "WebChannelParent.sys.mjs",
+    ]
 
 MOZ_SRC_FILES += [
     "ColorPickerChild.sys.mjs",

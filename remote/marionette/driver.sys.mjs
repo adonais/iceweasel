@@ -22,7 +22,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   getMarionetteCommandsActorProxy:
     "chrome://remote/content/marionette/actors/MarionetteCommandsParent.sys.mjs",
-  isParentProcess:
+  isPrivilegedContext:
     "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
   isWebdriverSafeNavigationURL:
     "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
@@ -164,7 +164,9 @@ class ActionsHelper {
       (eventName === "synthesizeWheelAtPoint" &&
         lazy.actions.useAsyncWheelEvents) ||
       (eventName == "synthesizeMouseAtPoint" &&
-        lazy.actions.useAsyncMouseEvents)
+        lazy.actions.useAsyncMouseEvents) ||
+      (eventName == "synthesizeTouchAtPoint" &&
+        lazy.actions.useAsyncTouchEvents)
     ) {
       browsingContext = browsingContext.topChromeWindow?.browsingContext;
       details.eventData.asyncEnabled = true;
@@ -3844,12 +3846,7 @@ export class GeckoDriver {
       signCount,
     } = credentials;
 
-    lazy.assert.string(
-      authenticatorId,
-      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
-    );
-
-    // Bug 1976492: Check for valid authenticator id and raise invalid argument
+    this.#assertVirtualAuthenticator(authenticatorId);
 
     lazy.assert.string(
       credentialId,
@@ -3984,12 +3981,7 @@ export class GeckoDriver {
   webAuthn_getCredentials(cmd) {
     const { authenticatorId } = cmd.parameters;
 
-    lazy.assert.string(
-      authenticatorId,
-      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
-    );
-
-    // Bug 1976492: Check for valid authenticator id and raise invalid argument
+    this.#assertVirtualAuthenticator(authenticatorId);
 
     return lazy.webauthn.getCredentials(authenticatorId);
   }
@@ -4009,16 +4001,8 @@ export class GeckoDriver {
   webAuthn_removeCredential(cmd) {
     const { authenticatorId, credentialId } = cmd.parameters;
 
-    lazy.assert.string(
-      authenticatorId,
-      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
-    );
-    // Bug 1976492: Check for valid authenticator id and raise invalid argument
-
-    lazy.assert.string(
-      credentialId,
-      lazy.pprint`Expected "credentialId" to be a string, got ${credentialId}`
-    );
+    this.#assertVirtualAuthenticator(authenticatorId);
+    this.#assertCredential(authenticatorId, credentialId);
 
     lazy.webauthn.removeCredential(authenticatorId, credentialId);
   }
@@ -4036,12 +4020,7 @@ export class GeckoDriver {
   webAuthn_removeAllCredentials(cmd) {
     const { authenticatorId } = cmd.parameters;
 
-    lazy.assert.string(
-      authenticatorId,
-      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
-    );
-
-    // Bug 1976492: Check for valid authenticator id and raise invalid argument
+    this.#assertVirtualAuthenticator(authenticatorId);
 
     lazy.webauthn.removeAllCredentials(authenticatorId);
   }
@@ -4059,12 +4038,7 @@ export class GeckoDriver {
   webAuthn_removeVirtualAuthenticator(cmd) {
     const { authenticatorId } = cmd.parameters;
 
-    lazy.assert.string(
-      authenticatorId,
-      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
-    );
-
-    // Bug 1976492: Check for valid authenticator id and raise invalid argument
+    this.#assertVirtualAuthenticator(authenticatorId);
 
     lazy.webauthn.removeVirtualAuthenticator(authenticatorId);
   }
@@ -4084,17 +4058,12 @@ export class GeckoDriver {
   webAuthn_setUserVerified(cmd) {
     const { authenticatorId, isUserVerified } = cmd.parameters;
 
-    lazy.assert.string(
-      authenticatorId,
-      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
-    );
+    this.#assertVirtualAuthenticator(authenticatorId);
 
     lazy.assert.boolean(
       isUserVerified,
       lazy.pprint`Expected "isUserVerified" to be a boolean, got ${isUserVerified}`
     );
-
-    // Bug 1976492: Check for valid authenticator id and raise invalid argument
 
     lazy.webauthn.setUserVerified(authenticatorId, isUserVerified);
   }
@@ -4116,6 +4085,60 @@ export class GeckoDriver {
 
     this.#browsers[winId] = context;
     this.#curBrowser = this.#browsers[winId];
+  }
+
+  /**
+   * Assert that a credential with the given id is stored in the virtual
+   * authenticator identified by authenticatorId.
+   *
+   * @param {string} authenticatorId
+   *     The ID of the virtual authenticator to look up. It must refer to an
+   *     existing authenticator.
+   * @param {string} credentialId
+   *     The ID of the credential to look up.
+   *
+   * @throws {InvalidArgumentError}
+   *     If credentialId is not a string, or no credential with the given id is
+   *     stored in the authenticator.
+   */
+  #assertCredential(authenticatorId, credentialId) {
+    lazy.assert.string(
+      credentialId,
+      lazy.pprint`Expected "credentialId" to be a string, got ${credentialId}`
+    );
+
+    const credentials = lazy.webauthn.getCredentials(authenticatorId);
+    if (
+      !credentials.some(credential => credential.credentialId === credentialId)
+    ) {
+      throw new lazy.error.InvalidArgumentError(
+        lazy.pprint`No credential found with id ${credentialId}`
+      );
+    }
+  }
+
+  /**
+   * Assert that the given id refers to a virtual authenticator stored in the
+   * Virtual Authenticator Database.
+   *
+   * @param {string} authenticatorId
+   *     The ID of the virtual authenticator to look up.
+   *
+   * @throws {InvalidArgumentError}
+   *     If authenticatorId is not a string, or no virtual authenticator with
+   *     the given id is stored in the Virtual Authenticator Database.
+   */
+  #assertVirtualAuthenticator(authenticatorId) {
+    lazy.assert.string(
+      authenticatorId,
+      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
+    );
+
+    if (!lazy.webauthn.hasVirtualAuthenticator(authenticatorId)) {
+      throw new lazy.error.InvalidArgumentError(
+        lazy.pprint`No virtual authenticator found with id ${authenticatorId}`
+      );
+    }
   }
 
   #checkIfAlertIsPresent() {
@@ -4174,12 +4197,15 @@ export class GeckoDriver {
       async,
     };
 
-    // Script evaluation against parent process contexts should only be allowed
+    // Script evaluation against privileged contexts should only be allowed
     // if allowSystemAccess is true.
     const context = this.getBrowsingContext();
-    if (!lazy.RemoteAgent.allowSystemAccess && lazy.isParentProcess(context)) {
+    if (
+      !lazy.RemoteAgent.allowSystemAccess &&
+      lazy.isPrivilegedContext(context)
+    ) {
       throw new lazy.error.UnsupportedOperationError(
-        `ExecuteScript and ExecuteAsyncScript are not supported for parent process browsing contexts: ${context.id}`
+        `ExecuteScript and ExecuteAsyncScript are not supported for privileged browsing contexts: ${context.id}`
       );
     }
 

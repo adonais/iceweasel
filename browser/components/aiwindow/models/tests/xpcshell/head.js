@@ -92,3 +92,29 @@ async function insertPlacesMetadata(
     );
   });
 }
+
+function createFakeTab(url, title, lastAccessed) {
+  return {
+    linkedBrowser: {
+      currentURI: {
+        spec: url,
+      },
+    },
+    label: title,
+    lastAccessed,
+  };
+}
+
+function createFakeWindow(tabs, closed = false, isAIWindow = true) {
+  return {
+    closed,
+    gBrowser: {
+      tabs,
+    },
+    document: {
+      documentElement: {
+        hasAttribute: attr => attr === "ai-window" && isAIWindow,
+      },
+    },
+  };
+}

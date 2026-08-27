@@ -66,14 +66,14 @@ class ChunkedList {
     mozilla::Atomic<T> mElements[kLength];
     mozilla::UniquePtr<ListChunk> mNext;
 
-    ListChunk() : mNext(nullptr) {}
+    ListChunk() = default;
   };
 
   ListChunk mList;
-  mozilla::Atomic<size_t> mLength;
+  mozilla::Atomic<size_t> mLength{0};
 
  public:
-  ChunkedList() : mLength(0) {}
+  ChunkedList() = default;
 
   ~ChunkedList() {
     // There can be writes happening after this destructor runs, so keep

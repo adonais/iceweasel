@@ -1,0 +1,83 @@
+[DEFAULT]
+tags = "urlbar"
+support-files = [
+  "../browser/dummy_page.html",
+  "../browser/head-common.js",
+  "head.js",
+]
+prefs = [
+  "browser.bookmarks.testing.skipDefaultBookmarksImport=true",
+  "browser.urlbar.trending.featureGate=false",
+]
+
+["browser_caret_position.js"]
+
+["browser_clipboard.js"]
+
+["browser_copy_and_paste_first_result.js"]
+
+["browser_copy_during_load.js"]
+support-files = ["../browser/slow-page.sjs"]
+
+["browser_copying.js"]
+https_first_disabled = true
+support-files = [
+  "../browser/authenticate.sjs",
+  "../browser/file_copying_home.html",
+  "../browser/wait-a-bit.sjs",
+]
+
+["browser_cursor.js"]
+
+["browser_cutting.js"]
+
+["browser_decode.js"]
+
+["browser_delete.js"]
+
+["browser_deleteAllText.js"]
+
+["browser_edit_completed.js"]
+
+["browser_ime_composition.js"]
+
+["browser_less_common_selection_manipulations.js"]
+
+["browser_lossless_encode.js"]
+
+["browser_pasteAndGo.js"]
+https_first_disabled = true
+
+["browser_paste_multi_lines.js"]
+
+["browser_paste_then_focus.js"]
+
+["browser_percent_encoded.js"]
+
+["browser_primary_selection_safe_on_new_tab.js"]
+
+["browser_readOnly.js"]
+
+["browser_removeUnsafeProtocolsFromURLBarPaste.js"]
+
+["browser_restoreEmptyInput.js"]
+
+["browser_revert.js"]
+
+["browser_selectionKeyNavigation.js"]
+
+["browser_text_dont_shift_on_mousedown.js"]
+
+["browser_typed_value.js"]
+
+["browser_urlbar_contextmenu.js"]
+
+["browser_urlbar_selection.js"]
+skip-if = [
+  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # bug 1570474
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # bug 1869788
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # bug 1570474
+]
+
+["browser_userTypedValue.js"]
+support-files = ["../browser/file_userTypedValue.html"]

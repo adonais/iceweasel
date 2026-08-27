@@ -4,6 +4,8 @@
 
 include protocol PContent;
 
+using mozilla::dom::MaybeDiscardedWindowContext from "mozilla/dom/WindowContext.h";
+
 namespace mozilla {
 namespace layout {
 
@@ -18,7 +20,10 @@ both:
 
 parent:
   // Initialize the real print device with the given information.
-  async InitializePrint(nsString aDocumentTitle, uint64_t aBrowsingContextId,
+  // aWindowContext is the window global of the (static clone) document being
+  // printed.
+  async InitializePrint(nsString aDocumentTitle,
+                        MaybeDiscardedWindowContext aWindowContext,
                         int32_t aStartPage, int32_t aEndPage);
 
   // Translate the page recording writen into |fd| and play back the events to

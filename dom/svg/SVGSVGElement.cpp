@@ -550,12 +550,12 @@ void SVGSVGElement::SetCurrentView(const nsAString& aCurrentViewID) {
         doc->ScheduleForPresAttrEvaluation(this);
       }
     }
-
-    InvalidateTransformNotifyFrame();
   }
 
   mCurrentViewID = aCurrentViewID;
   mSVGView = nullptr;
+
+  InvalidateTransformNotifyFrame();
 }
 
 void SVGSVGElement::SetViewSpec(std::unique_ptr<SVGView> aSVGView) {

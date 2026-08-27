@@ -17,6 +17,21 @@ const IMPORT_HISTORY_DISMISSED_PREF =
   "browser.tabs.firefox-view.importHistory.dismissed";
 const NEVER_REMEMBER_HISTORY_PREF = "browser.privatebrowsing.autostart";
 
+// Different strings used for Nova UI.
+const isNovaEnabled = Services.prefs.getBoolPref("browser.nova.enabled", false);
+const EMPTY_HEADER_L10N_ID = isNovaEnabled
+  ? "firefoxview-history-empty-header-2"
+  : "firefoxview-history-empty-header";
+const EMPTY_DESCRIPTION_L10N_ID = isNovaEnabled
+  ? "firefoxview-history-empty-description-2"
+  : "firefoxview-history-empty-description";
+const NEVER_REMEMBER_HEADER_L10N_ID = isNovaEnabled
+  ? "firefoxview-dont-remember-history-empty-header-3"
+  : "firefoxview-dont-remember-history-empty-header-2";
+const NEVER_REMEMBER_DESCRIPTION_L10N_ID = isNovaEnabled
+  ? "firefoxview-dont-remember-history-empty-description-2"
+  : "firefoxview-dont-remember-history-empty-description-one";
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 const today = new Date();
 const yesterday = new Date(Date.now() - DAY_MS);
@@ -224,16 +239,15 @@ add_task(async function test_empty_states() {
       "Waiting for the history component to be in the empty state"
     );
     let emptyStateCard = historyComponent.emptyState;
-    ok(
-      emptyStateCard.headerEl.textContent.includes(
-        "Get back to where you’ve been"
-      ),
+    Assert.equal(
+      document.l10n.getAttributes(emptyStateCard.headerEl.querySelector("span"))
+        .id,
+      EMPTY_HEADER_L10N_ID,
       "Initial empty state header has the expected text."
     );
-    ok(
-      emptyStateCard.descriptionEls[0].textContent.includes(
-        "As you browse, the pages you visit will be listed here."
-      ),
+    Assert.equal(
+      document.l10n.getAttributes(emptyStateCard.descriptionEls[0]).id,
+      EMPTY_DESCRIPTION_L10N_ID,
       "Initial empty state description has the expected text."
     );
 
@@ -247,14 +261,15 @@ add_task(async function test_empty_states() {
       "Waiting for the history component to be fully updated"
     );
     emptyStateCard = historyComponent.emptyState;
-    ok(
-      emptyStateCard.headerEl.textContent.includes("You’re in control"),
+    Assert.equal(
+      document.l10n.getAttributes(emptyStateCard.headerEl.querySelector("span"))
+        .id,
+      NEVER_REMEMBER_HEADER_L10N_ID,
       "Empty state with never remember history header has the expected text."
     );
-    ok(
-      emptyStateCard.descriptionEls[0].textContent.includes(
-        "does not remember your browsing activity"
-      ),
+    Assert.equal(
+      document.l10n.getAttributes(emptyStateCard.descriptionEls[0]).id,
+      NEVER_REMEMBER_DESCRIPTION_L10N_ID,
       "Empty state with never remember history description has the expected text."
     );
     // Reset History mode to Remember
@@ -286,10 +301,12 @@ add_task(async function test_empty_states() {
       () => historyComponent.fullyUpdated,
       "Waiting for the history component to be fully updated"
     );
-    ok(
-      historyComponent.cards[0].textContent.includes(
-        "Import history from another browser"
-      ),
+    const importHistoryBanner =
+      historyComponent.cards[0].mainSlot.assignedNodes()[0];
+    Assert.equal(
+      document.l10n.getAttributes(importHistoryBanner.querySelector("#header"))
+        .id,
+      "firefoxview-import-history-header",
       "Import history banner is shown"
     );
     let importHistoryCloseButton =
@@ -628,7 +645,7 @@ add_task(async function test_forget_about_this_site_option() {
     );
 
     ok(
-      forgetOption.textContent.includes("Forget"),
+      forgetOption,
       "Forget About This Site option is present in the context menu."
     );
     let dialogOpened = BrowserTestUtils.promiseAlertDialogOpen(

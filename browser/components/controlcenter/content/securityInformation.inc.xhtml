@@ -124,5 +124,12 @@
               <description when-httpsonlystatus="failed-top" flex="1" data-l10n-id="identity-https-only-info-no-upgrade"></description>
             </vbox>
           </vbox>
+
+          <vbox id="identity-popup-content-tls-key-logging" when-tlskeylogging="true">
+            <description data-l10n-id="identity-description-tls-key-logging-heading" class="header"></description>
+            <description data-l10n-id="identity-description-tls-key-logging-message"></description>
+            <html:a is="moz-support-link" id="identity-popup-tls-key-logging-learn-more" support-page="sslkeylogfile-warning"/>
+          </vbox>
+
         </vbox>
       </vbox>

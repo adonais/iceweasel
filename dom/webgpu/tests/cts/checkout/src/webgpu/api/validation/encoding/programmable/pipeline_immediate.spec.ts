@@ -67,7 +67,7 @@ g.test('required_slots_set')
         When a struct variable is statically used, all non-padding bytes of the entire struct must be set,
         even if only one member is accessed. In this test, data.b.v is accessed, but both data.a and data.b
         must be set (excluding padding).
-      - dynamic_indexing: Array with dynamic indexing.
+      - dynamic_indexing: Vector with dynamic indexing.
     - Usage:
       - full: Set all declared bytes.
       - split: Set all declared bytes in multiple calls.
@@ -156,7 +156,7 @@ g.test('required_slots_set')
         break;
       case 'dynamic_indexing':
         layoutImmediateSize = 16;
-        declarations = 'var<immediate> data: array<u32, 4>;';
+        declarations = 'var<immediate> data: vec4u;';
         helpers = 'fn use_data(i: u32) { _ = data[i]; }';
         computeArgs = '@builtin(local_invocation_index) i: u32';
         callCompute = 'use_data(i);';
@@ -207,7 +207,7 @@ g.test('required_slots_set')
       usage === 'overprovision' && trailingPaddingBytes === 0
         ? layoutImmediateSize + 4
         : layoutImmediateSize;
-    if (layoutSize > t.device.limits.maxImmediateSize!) {
+    if (layoutSize > t.device.limits.maxImmediateSize) {
       t.skip('maxImmediateSize not large enough for overprovision test');
     }
 
@@ -215,7 +215,7 @@ g.test('required_slots_set')
 
     const setImmediates = (offset: number, size: number) => {
       const data = new Uint8Array(size);
-      encoder.setImmediates!(offset, data, 0, size);
+      encoder.setImmediates(offset, data, 0, size);
     };
 
     if (usage === 'overprovision') {
@@ -340,7 +340,7 @@ g.test('unused_variable')
 
     if (usage === 'partial_start') {
       const data = new Uint8Array(8);
-      encoder.setImmediates!(0, data, 0, 8);
+      encoder.setImmediates(0, data, 0, 8);
     }
 
     t.runPass(encoder, code, kImmediateSize);
@@ -379,7 +379,7 @@ g.test('overprovisioned_immediate_data')
     const kSetSize = scenario === 'larger_than_layout' ? kLayoutSize + 4 : kLayoutSize;
 
     const data = new Uint8Array(kSetSize);
-    encoder.setImmediates!(0, data, 0, kSetSize);
+    encoder.setImmediates(0, data, 0, kSetSize);
 
     t.runPass(encoder, code, kLayoutSize);
 
@@ -428,7 +428,7 @@ g.test('render_bundle_execution_state_invalidation')
     });
     bundleEncoder.setPipeline(pipeline);
     const immediateData = new Uint8Array(16);
-    bundleEncoder.setImmediates!(0, immediateData, 0, 16);
+    bundleEncoder.setImmediates(0, immediateData, 0, 16);
     bundleEncoder.draw(3);
     const bundle = bundleEncoder.finish();
 
@@ -437,7 +437,7 @@ g.test('render_bundle_execution_state_invalidation')
 
     // Initial setup
     pass.setPipeline(pipeline);
-    pass.setImmediates!(0, immediateData, 0, 16);
+    pass.setImmediates(0, immediateData, 0, 16);
 
     // Execute bundle - this should invalidate state
     pass.executeBundles([bundle]);
@@ -445,7 +445,7 @@ g.test('render_bundle_execution_state_invalidation')
     // Try to draw
     pass.setPipeline(pipeline);
     if (resetImmediates) {
-      pass.setImmediates!(0, immediateData, 0, 16);
+      pass.setImmediates(0, immediateData, 0, 16);
     }
     pass.draw(3);
 

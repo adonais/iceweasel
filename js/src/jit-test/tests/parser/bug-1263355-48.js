@@ -4,7 +4,7 @@ function eval(source) {
     offThreadCompileModuleToStencil(source);
     let stencil = finishOffThreadStencil();
     let m = instantiateModuleStencil(stencil);
-    moduleLink(m);
+    moduleLoadAndLink(m);
     return moduleEvaluate(m);
 }
 function runTestCase(testcase) {

@@ -16,7 +16,7 @@ import { SensitiveInfoDetector } from "moz-src:///browser/components/aiwindow/mo
 // Chat fetch defaults
 const DEFAULT_MAX_RESULTS = 50;
 const DEFAULT_HALF_LIFE_DAYS = 7;
-const MESSAGE_LENGTH_THRESHOLD = 1000;
+export const MESSAGE_LENGTH_THRESHOLD = 1000;
 const MS_PER_SEC = 1_000;
 const SEC_PER_MIN = 60;
 const MINS_PER_HOUR = 60;
@@ -134,4 +134,27 @@ export function computeFreshnessScore(
 
 export function _setBlockListManagerForTesting(mgr) {
   _mgr = mgr;
+}
+
+/**
+ * Return historical chats by id
+ *
+ * @param {Array<string>} conversationIds - Array of conversation IDs to fetch.
+ * @returns {Promise<Array<ChatConversation>>} Array of ChatConversation objects
+ */
+export async function getConversationsById(conversationIds) {
+  const conversations = await Promise.all(
+    conversationIds.map(id => ChatStore.findConversationById(id))
+  );
+  return conversations.filter(Boolean);
+}
+
+/**
+ * Convenience function to extract conversation source IDs from a memory object.
+ *
+ * @param {object} memory
+ * @returns {Array<string>} Array of conversation source IDs, or empty array if not present.
+ */
+export function getConversationSourceIdsFromMemory(memory) {
+  return memory.source_ids?.conversation_source_ids ?? [];
 }

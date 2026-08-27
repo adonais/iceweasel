@@ -189,7 +189,7 @@ nsContentDLF::CreateInstance(const char* aCommand, nsIChannel* aChannel,
       viewSourceChannel->SetContentType(type);
     } else if (imgLoader::SupportImageWithMimeType(type)) {
       // If it's an image, we want to display it the same way we normally would.
-      contentType = type;
+      contentType = std::move(type);
     } else {
       viewSourceChannel->SetContentType(nsLiteralCString(TEXT_PLAIN));
     }

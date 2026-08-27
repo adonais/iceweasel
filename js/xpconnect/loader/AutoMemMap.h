@@ -6,6 +6,7 @@
 #define loader_AutoMemMap_h
 
 #include "mozilla/FileUtils.h"
+#include "mozilla/MemoryMappedFile.h"
 #include "mozilla/RangedPtr.h"
 #include "mozilla/Result.h"
 
@@ -26,56 +27,39 @@ class AutoMemMap {
  public:
   AutoMemMap() = default;
 
-  ~AutoMemMap();
+  ~AutoMemMap() { reset(); }
 
   AutoMemMap(const AutoMemMap&) = delete;
   void operator=(const AutoMemMap&) = delete;
 
-  Result<Ok, nsresult> init(nsIFile* file, int flags = PR_RDONLY, int mode = 0,
-                            PRFileMapProtect prot = PR_PROT_READONLY);
-
-  Result<Ok, nsresult> init(const FileDescriptor& file,
-                            PRFileMapProtect prot = PR_PROT_READONLY,
-                            size_t maybeSize = 0);
+  Result<Ok, nsresult> init(nsIFile* aFile);
+  Result<Ok, nsresult> init(const FileDescriptor& aFile);
 
   void reset();
 
-  bool initialized() const { return addr; }
+  bool initialized() const { return mFile.IsValid(); }
 
-  uint32_t size() const { return size_; }
-
-  template <typename T = void>
-  RangedPtr<T> get() {
-    MOZ_ASSERT(addr);
-    return {static_cast<T*>(addr), size_};
-  }
+  uint32_t size() const { return mFile.Size(); }
 
   template <typename T = void>
-  const RangedPtr<T> get() const {
-    MOZ_ASSERT(addr);
-    return {static_cast<T*>(addr), size_};
+  RangedPtr<const T> get() const {
+    MOZ_ASSERT(mFile.IsValid());
+    return {static_cast<const T*>(mFile.Data()), mFile.Size()};
   }
 
-  size_t nonHeapSizeOfExcludingThis() { return size_; }
+  size_t nonHeapSizeOfExcludingThis() { return mFile.Size(); }
 
   FileDescriptor cloneFileDescriptor() const;
   FileDescriptor cloneHandle() const;
 
   // Makes this mapping persistent. After calling this, the mapped memory
   // will remained mapped, even after this instance is destroyed.
-  void setPersistent() { persistent_ = true; }
+  void setPersistent() { mPersistent = true; }
 
  private:
-  Result<Ok, nsresult> initInternal(PRFileMapProtect prot,
-                                    size_t maybeSize = 0);
-
-  AutoFDClose fd;
-  PRFileMap* fileMap = nullptr;
-
-  uint32_t size_ = 0;
-  void* addr = nullptr;
-
-  bool persistent_ = false;
+  AutoFDClose mFD;
+  MemoryMappedFile mFile;
+  bool mPersistent = false;
 };
 
 }  // namespace loader

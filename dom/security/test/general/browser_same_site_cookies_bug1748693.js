@@ -7,7 +7,7 @@ const HTTPS_PATH = getRootDirectory(gTestPath).replace(
 const HTTP_PATH = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
   // Disable eslint, since we explicitly need a insecure URL here for this test.
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   "http://example.com"
 );
 

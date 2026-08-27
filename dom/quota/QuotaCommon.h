@@ -929,6 +929,18 @@ struct IpcFailCustomRetVal {
 
 // QM_VERBOSEONLY_TRY_INSPECT doesn't make sense.
 
+/**
+ * QM_SCOPED_CONTEXT(context) declares a ScopedLogExtraInfo tagged with
+ * kTagContextTainted for the remainder of the enclosing scope, so that
+ * context string is attached to any QM_TRY-related calls. ScopedLogExtraInfo is
+ * needed if you want to have telemetry recorded if QM_TRY fails.
+ */
+#define QM_SCOPED_CONTEXT(context)                                           \
+  const ::mozilla::dom::quota::ScopedLogExtraInfo MOZ_UNIQUE_VAR(            \
+      scopedLogExtraInfo) {                                                  \
+    ::mozilla::dom::quota::ScopedLogExtraInfo::kTagContextTainted, (context) \
+  }
+
 // QM_OR_ELSE_REPORT macro is an implementation detail of
 // QM_OR_ELSE_WARN/QM_OR_ELSE_INFO/QM_OR_ELSE_LOG_VERBOSE and shouldn't be used
 // directly.
@@ -1378,6 +1390,8 @@ nsDependentCSubstring GetSourceTreeBase();
 // initialized in our exported header; no argument should ever be provided to
 // this method. GetSourceTreeBase handles identifying the root of the source
 // tree.
+// The _sp suffix on path literals ensures separators match __FILE__ on the
+// current platform (e.g. backslashes on clang-cl Windows).
 nsDependentCSubstring GetObjdirDistIncludeTreeBase(
     const nsLiteralCString& aQuotaCommonHPath = nsLiteralCString(__FILE__));
 
@@ -1645,6 +1659,16 @@ auto ReduceEachFileAtomicCancelable(nsIFile& aDirectory,
 constexpr bool IsDatabaseCorruptionError(const nsresult aRv) {
   return aRv == NS_ERROR_FILE_CORRUPTED || aRv == NS_ERROR_STORAGE_IOERR;
 }
+
+enum class IntegrityCheckMode { Quick, Full };
+
+// Run PRAGMA quick_check(1) or PRAGMA integrity_check(1) on the given
+// connection and return whether the database is structurally sound.
+// Quick mode validates B-tree structure and freelist consistency; Full mode
+// additionally cross-validates index entries against their parent tables.
+Result<bool, nsresult> DatabasePassesIntegrityCheck(
+    mozIStorageConnection& aConnection,
+    IntegrityCheckMode aMode = IntegrityCheckMode::Quick);
 
 template <typename Func>
 auto CallWithDelayedRetriesIfAccessDenied(Func&& aFunc, uint32_t aMaxRetries,

@@ -21,9 +21,10 @@ const {
   mapFilteredMemoriesToInitialList,
   generateInitialMemoriesList,
   runSessionMemoryPipeline,
-  deduplicateMemories,
   applyQualityAndSensitivityFilter,
   computeMemoryStrength,
+  classifyMemoryAndCapStrength,
+  isShouldDeleteMemoryDueToDecay,
   computeMemoryFrecency,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/memories/Memories.sys.mjs"
@@ -31,8 +32,16 @@ const {
 
 const {
   MEMORY_TYPE_SHORT_TERM_MEMORY,
+  MEMORY_TYPE_LONG_TERM_MEMORY,
   MEMORY_TYPE_DURABLE_MEMORY,
   MEMORY_SENSITIVITY_CATEGORY_NOT_SENSITIVE,
+  MEMORY_STRENGTH_LIFETIME_ACCESSED_HALFLIFE,
+  MEMORY_STRENGTH_MERGE_COUNT_HALFLIFE,
+  MEMORY_STRENGTH_EVIDENCE_CAP,
+  MEMORY_TYPE_SHORT_TERM_TO_LONG_TERM_AGE_THRESHOLD,
+  MEMORY_TYPE_SHORT_TERM_TO_LONG_TERM_STRENGTH_THRESHOLD,
+  MEMORY_TYPE_LONG_TERM_TO_DURABLE_AGE_THRESHOLD,
+  MEMORY_TYPE_LONG_TERM_TO_DURABLE_STRENGTH_THRESHOLD,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs"
 );
@@ -64,17 +73,119 @@ const API_KEY = "fake-key";
 const ENDPOINT = "https://api.fake-endpoint.com/v1";
 const MODEL = "fake-model";
 
-const EXISTING_MEMORIES = [
-  "Loves outdoor activities",
-  "Enjoys cooking recipes",
-  "Like sci-fi media",
-];
 const NEW_MEMORIES = [
   "Loves hiking and camping",
   "Reads science fiction novels",
   "Likes both dogs and cats",
   "Likes risky stock bets",
 ];
+
+const STRENGTH_DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Converts a day offset into a timestamp that many days in the past. A null
+ * offset passes through, matching what MemoryStore writes for a timestamp a
+ * memory has never earned.
+ *
+ * @param {?number} days   Age in days, or null.
+ * @returns {?number}      The timestamp, or null.
+ */
+const daysAgo = days =>
+  days === null ? null : Date.now() - days * STRENGTH_DAY_MS;
+
+/**
+ * Builds a memory fixture for strength computation. Every strength input
+ * defaults to its zero value, so each case below only declares the term it
+ * exercises.
+ *
+ * @param {object} overrides
+ * @param {Array<string>} overrides.sources                 Where the memory originated.
+ * @param {number} overrides.historyEvidenceCount           Number of supporting history source ids.
+ * @param {number} overrides.conversationEvidenceCount      Number of supporting conversation source ids.
+ * @param {number} overrides.lifetimeAccessedCount          Lifetime usage count.
+ * @param {?number} overrides.daysSinceAccessed             Age in days of last_accessed, or null for never used.
+ * @param {number} overrides.mergeCount                     Number of merges.
+ * @param {?number} overrides.daysSinceMerged               Age in days of last_merged, or null for never merged.
+ * @param {number} overrides.daysSinceCreated               Age in days of created_at.
+ * @returns {object}                                        Memory fixture.
+ */
+function makeStrengthMemory({
+  sources = ["history"],
+  historyEvidenceCount = 0,
+  conversationEvidenceCount = 0,
+  lifetimeAccessedCount = 0,
+  daysSinceAccessed = null,
+  mergeCount = 0,
+  daysSinceMerged = null,
+  daysSinceCreated = 0,
+} = {}) {
+  return {
+    sources,
+    source_ids: {
+      history_source_ids: Array.from(
+        { length: historyEvidenceCount },
+        (_, index) => index
+      ),
+      conversation_source_ids: Array.from(
+        { length: conversationEvidenceCount },
+        (_, index) => `conversation-${index}`
+      ),
+    },
+    created_at: daysAgo(daysSinceCreated),
+    last_accessed: daysAgo(daysSinceAccessed),
+    last_merged: daysAgo(daysSinceMerged),
+    lifetime_accessed_count: lifetimeAccessedCount,
+    merge_count: mergeCount,
+  };
+}
+
+/**
+ * Age and strength constants set relative to promotion thresholds
+ */
+const TIER_YOUNG_DAYS = MEMORY_TYPE_SHORT_TERM_TO_LONG_TERM_AGE_THRESHOLD - 1;
+const TIER_MIDDLE_AGED_DAYS =
+  MEMORY_TYPE_LONG_TERM_TO_DURABLE_AGE_THRESHOLD - 1;
+const TIER_OLD_DAYS = MEMORY_TYPE_LONG_TERM_TO_DURABLE_AGE_THRESHOLD;
+const TIER_STRONG = MEMORY_TYPE_LONG_TERM_TO_DURABLE_STRENGTH_THRESHOLD + 5;
+const TIER_MIDDLING =
+  MEMORY_TYPE_SHORT_TERM_TO_LONG_TERM_STRENGTH_THRESHOLD + 5;
+const TIER_WEAK = MEMORY_TYPE_SHORT_TERM_TO_LONG_TERM_STRENGTH_THRESHOLD - 5;
+
+/**
+ * Builds the subset of a memory that classifyMemoryAndCapStrength reads. The
+ * incoming type defaults to the weakest tier so promotions are visible; pass a
+ * stronger one to exercise a demotion.
+ *
+ * @param {object} fields
+ * @param {number} fields.daysSinceCreated    Age in days of created_at.
+ * @param {number} fields.strength            Already-computed memory strength.
+ * @param {string} fields.type                Memory type before assignment.
+ * @returns {object}                          Memory fixture.
+ */
+function makeTieredMemory({
+  daysSinceCreated,
+  strength,
+  type = MEMORY_TYPE_SHORT_TERM_MEMORY,
+}) {
+  return {
+    type,
+    strength,
+    created_at: daysAgo(daysSinceCreated),
+  };
+}
+
+/**
+ * Builds a memory fixture and assigns its type in place, returning it so the
+ * assertions below can read the result inline.
+ *
+ * @param {object} fields   Fields for {@link makeTieredMemory}.
+ * @returns {object}        The assigned memory.
+ */
+function assignTieredMemoryType(fields) {
+  const memory = makeTieredMemory(fields);
+  classifyMemoryAndCapStrength(memory);
+  return memory;
+}
 
 add_setup(async function () {
   // Setup prefs used across multiple tests
@@ -244,7 +355,7 @@ add_task(async function test_generateInitialMemoriesList_happy_path() {
       "First memory component summaries should be an array"
     );
     Assert.equal(
-      firstMemory.component_summaries,
+      firstMemory.component_summaries.length,
       0,
       "First memory component summaries should be empty"
     );
@@ -587,408 +698,6 @@ add_task(
         memoriesList[0].memory_summary,
         "Purchases dog food online",
         "Memory summary should match the valid memory"
-      );
-    } finally {
-      sb.restore();
-    }
-  }
-);
-
-/**
- * Tests successful memories deduplication
- */
-add_task(async function test_deduplicateMemoriesList_happy_path() {
-  const sb = sinon.createSandbox();
-  try {
-    /**
-     * The fake engine that returns a canned LLM response for deduplication.
-     * The `deduplicateMemories` function should return an array containing only the `main_memory` values.
-     */
-    const fakeEngine = {
-      run() {
-        return {
-          finalOutput: `{
-            "unique_memories": [
-              {
-                "main_memory": "Loves outdoor activities",
-                "duplicates": ["Loves hiking and camping"]
-              },
-              {
-                "main_memory": "Enjoys cooking recipes",
-                "duplicates": []
-              },
-              {
-                "main_memory": "Like sci-fi media",
-                "duplicates": ["Reads science fiction novels"]
-              },
-              {
-                "main_memory": "Likes both dogs and cats",
-                "duplicates": []
-              },
-              {
-                "main_memory": "Likes risky stock bets",
-                "duplicates": []
-              }
-            ]
-          }`,
-        };
-      },
-    };
-
-    // Check that the stub was called
-    const conversation = new Conversation({
-      feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-      model: TEST_MODEL,
-      serviceType: SERVICE_TYPES.MEMORIES,
-      purpose: PURPOSES.MEMORY_GENERATION,
-      parameters: {},
-      flowId: null,
-      engine: fakeEngine,
-    });
-
-    const dedupedMemoriesList = await deduplicateMemories(
-      conversation,
-      EXISTING_MEMORIES,
-      NEW_MEMORIES
-    );
-
-    // Check that the deduplicated list contains only unique memories (`main_memory` values)
-    Assert.equal(
-      dedupedMemoriesList.length,
-      5,
-      "Deduplicated memories list should contain 5 unique memories"
-    );
-    Assert.ok(
-      dedupedMemoriesList.includes("Loves outdoor activities"),
-      "Deduplicated memories should include 'Loves outdoor activities'"
-    );
-    Assert.ok(
-      dedupedMemoriesList.includes("Enjoys cooking recipes"),
-      "Deduplicated memories should include 'Enjoys cooking recipes'"
-    );
-    Assert.ok(
-      dedupedMemoriesList.includes("Like sci-fi media"),
-      "Deduplicated memories should include 'Like sci-fi media'"
-    );
-    Assert.ok(
-      dedupedMemoriesList.includes("Likes both dogs and cats"),
-      "Deduplicated memories should include 'Likes both dogs and cats'"
-    );
-    Assert.ok(
-      dedupedMemoriesList.includes("Likes risky stock bets"),
-      "Deduplicated memories should include 'Likes risky stock bets'"
-    );
-  } finally {
-    sb.restore();
-  }
-});
-
-/**
- * Tests failed memories deduplication - Empty output
- */
-add_task(async function test_deduplicateMemoriesList_sad_path_empty_output() {
-  const sb = sinon.createSandbox();
-  try {
-    // LLM returns the correct schema but with an empty unique_memories array
-    const fakeEngine = {
-      run() {
-        return {
-          finalOutput: `{
-            "unique_memories": []
-          }`,
-        };
-      },
-    };
-
-    // Check that the stub was called
-    const conversation = new Conversation({
-      feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-      model: TEST_MODEL,
-      serviceType: SERVICE_TYPES.MEMORIES,
-      purpose: PURPOSES.MEMORY_GENERATION,
-      parameters: {},
-      flowId: null,
-      engine: fakeEngine,
-    });
-
-    const dedupedMemoriesList = await deduplicateMemories(
-      conversation,
-      EXISTING_MEMORIES,
-      NEW_MEMORIES
-    );
-
-    Assert.ok(Array.isArray(dedupedMemoriesList), "Should return an array");
-    Assert.equal(dedupedMemoriesList.length, 0, "Should return an empty array");
-  } finally {
-    sb.restore();
-  }
-});
-
-/**
- * Tests failed memories deduplication - Wrong top-level data type
- */
-add_task(
-  async function test_deduplicateMemoriesList_sad_path_wrong_top_level_data_type() {
-    const sb = sinon.createSandbox();
-    try {
-      // LLM returns an incorrect data type
-      const fakeEngine = {
-        run() {
-          return {
-            finalOutput: `testing`,
-          };
-        },
-      };
-
-      // Check that the stub was called
-      const conversation = new Conversation({
-        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        model: TEST_MODEL,
-        serviceType: SERVICE_TYPES.MEMORIES,
-        purpose: PURPOSES.MEMORY_GENERATION,
-        parameters: {},
-        flowId: null,
-        engine: fakeEngine,
-      });
-
-      const dedupedMemoriesList = await deduplicateMemories(
-        conversation,
-        EXISTING_MEMORIES,
-        NEW_MEMORIES
-      );
-
-      Assert.ok(Array.isArray(dedupedMemoriesList), "Should return an array");
-      Assert.equal(
-        dedupedMemoriesList.length,
-        0,
-        "Should return an empty array"
-      );
-    } finally {
-      sb.restore();
-    }
-  }
-);
-
-/**
- * Tests failed memories deduplication - Wrong inner data type
- */
-add_task(
-  async function test_deduplicateMemoriesList_sad_path_wrong_inner_data_type() {
-    const sb = sinon.createSandbox();
-    try {
-      // LLM returns a map with the right top-level key, but the inner structure is wrong
-      const fakeEngine = {
-        run() {
-          return {
-            finalOutput: `{
-            "unique_memories": "testing"
-          }`,
-          };
-        },
-      };
-
-      // Check that the stub was called
-      const conversation = new Conversation({
-        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        model: TEST_MODEL,
-        serviceType: SERVICE_TYPES.MEMORIES,
-        purpose: PURPOSES.MEMORY_GENERATION,
-        parameters: {},
-        flowId: null,
-        engine: fakeEngine,
-      });
-
-      const dedupedMemoriesList = await deduplicateMemories(
-        conversation,
-        EXISTING_MEMORIES,
-        NEW_MEMORIES
-      );
-
-      Assert.ok(Array.isArray(dedupedMemoriesList), "Should return an array");
-      Assert.equal(
-        dedupedMemoriesList.length,
-        0,
-        "Should return an empty array"
-      );
-    } finally {
-      sb.restore();
-    }
-  }
-);
-
-/**
- * Tests failed memories deduplication - Wrong inner array structure
- */
-add_task(
-  async function test_deduplicateMemoriesList_sad_path_wrong_inner_array_structure() {
-    const sb = sinon.createSandbox();
-    try {
-      // LLM returns a map of nested arrays, but the array structure is wrong
-      const fakeEngine = {
-        run() {
-          return {
-            finalOutput: `{
-            "unique_memories": ["testing1", "testing2"]
-          }`,
-          };
-        },
-      };
-
-      // Check that the stub was called
-      const conversation = new Conversation({
-        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        model: TEST_MODEL,
-        serviceType: SERVICE_TYPES.MEMORIES,
-        purpose: PURPOSES.MEMORY_GENERATION,
-        parameters: {},
-        flowId: null,
-        engine: fakeEngine,
-      });
-
-      const dedupedMemoriesList = await deduplicateMemories(
-        conversation,
-        EXISTING_MEMORIES,
-        NEW_MEMORIES
-      );
-
-      Assert.ok(Array.isArray(dedupedMemoriesList), "Should return an array");
-      Assert.equal(
-        dedupedMemoriesList.length,
-        0,
-        "Should return an empty array"
-      );
-    } finally {
-      sb.restore();
-    }
-  }
-);
-
-/**
- * Tests failed memories deduplication - Incorrect top-level schema key
- */
-add_task(
-  async function test_deduplicateMemoriesList_sad_path_bad_top_level_key() {
-    const sb = sinon.createSandbox();
-    try {
-      // LLm returns correct output except that the top-level key is wrong
-      const fakeEngine = {
-        run() {
-          return {
-            finalOutput: `{
-            "correct_memories": [
-              {
-                "main_memory": "Loves outdoor activities",
-                "duplicates": ["Loves hiking and camping"]
-              },
-              {
-                "main_memory": "Enjoys cooking recipes",
-                "duplicates": []
-              },
-              {
-                "main_memory": "Like sci-fi media",
-                "duplicates": ["Reads science fiction novels"]
-              },
-              {
-                "main_memory": "Likes both dogs and cats",
-                "duplicates": []
-              },
-              {
-                "main_memory": "Likes risky stock bets",
-                "duplicates": []
-              }
-            ]
-          }`,
-          };
-        },
-      };
-
-      // Check that the stub was called
-      const conversation = new Conversation({
-        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        model: TEST_MODEL,
-        serviceType: SERVICE_TYPES.MEMORIES,
-        purpose: PURPOSES.MEMORY_GENERATION,
-        parameters: {},
-        flowId: null,
-        engine: fakeEngine,
-      });
-
-      const dedupedMemoriesList = await deduplicateMemories(
-        conversation,
-        EXISTING_MEMORIES,
-        NEW_MEMORIES
-      );
-
-      Assert.ok(Array.isArray(dedupedMemoriesList), "Should return an array");
-      Assert.equal(
-        dedupedMemoriesList.length,
-        0,
-        "Should return an empty array"
-      );
-    } finally {
-      sb.restore();
-    }
-  }
-);
-
-/**
- * Tests failed memories deduplication - Some correct inner schema
- */
-add_task(
-  async function test_deduplicateMemoriesList_sad_path_bad_some_correct_inner_schema() {
-    const sb = sinon.createSandbox();
-    try {
-      // LLm returns correct output except that 1 of the inner maps is wrong and 1 main_memory is the wrong data type
-      const fakeEngine = {
-        run() {
-          return {
-            finalOutput: `{
-            "unique_memories": [
-              {
-                "primary_memory": "Loves outdoor activities",
-                "duplicates": ["Loves hiking and camping"]
-              },
-              {
-                "main_memory": "Enjoys cooking recipes",
-                "duplicates": []
-              },
-              {
-                "main_memory": 12345,
-                "duplicates": []
-              }
-            ]
-          }`,
-          };
-        },
-      };
-
-      // Check that the stub was called
-      const conversation = new Conversation({
-        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        model: TEST_MODEL,
-        serviceType: SERVICE_TYPES.MEMORIES,
-        purpose: PURPOSES.MEMORY_GENERATION,
-        parameters: {},
-        flowId: null,
-        engine: fakeEngine,
-      });
-
-      const dedupedMemoriesList = await deduplicateMemories(
-        conversation,
-        EXISTING_MEMORIES,
-        NEW_MEMORIES
-      );
-
-      Assert.ok(Array.isArray(dedupedMemoriesList), "Should return an array");
-      Assert.equal(
-        dedupedMemoriesList.length,
-        1,
-        "Should return an array with one valid memory"
-      );
-      Assert.equal(
-        dedupedMemoriesList[0],
-        "Enjoys cooking recipes",
-        "Should return the single valid memory"
       );
     } finally {
       sb.restore();
@@ -1410,7 +1119,6 @@ add_task(async function test_runSessionMemoryPipeline_happy_path() {
     const result = await runSessionMemoryPipeline(
       conversation,
       SAMPLE_SESSIONS,
-      EXISTING_MEMORIES,
       { maxBatchRetries: 1 }
     );
 
@@ -1418,7 +1126,7 @@ add_task(async function test_runSessionMemoryPipeline_happy_path() {
     Assert.equal(
       result.memories[0].memory_summary,
       "Likes both dogs and cats",
-      "Should map the deduped summary back to the candidate"
+      "Should map the filtered summary back to the candidate"
     );
     Assert.equal(
       result.processedThroughMs,
@@ -1477,7 +1185,7 @@ add_task(
       });
 
       await Assert.rejects(
-        runSessionMemoryPipeline(conversation, twoSessions, EXISTING_MEMORIES, {
+        runSessionMemoryPipeline(conversation, twoSessions, {
           batchSize: 1,
           maxBatchRetries: 1,
         }),
@@ -1533,7 +1241,7 @@ add_task(async function test_runSessionMemoryPipeline_filter_429_throws() {
     });
 
     await Assert.rejects(
-      runSessionMemoryPipeline(conversation, oneSession, EXISTING_MEMORIES, {
+      runSessionMemoryPipeline(conversation, oneSession, {
         batchSize: 1,
         maxBatchRetries: 1,
       }),
@@ -1601,12 +1309,10 @@ add_task(
         engine: fakeEngine,
       });
 
-      const result = await runSessionMemoryPipeline(
-        conversation,
-        twoSessions,
-        EXISTING_MEMORIES,
-        { batchSize: 1, maxBatchRetries: 1 }
-      );
+      const result = await runSessionMemoryPipeline(conversation, twoSessions, {
+        batchSize: 1,
+        maxBatchRetries: 1,
+      });
 
       Assert.equal(
         result.processedThroughMs,
@@ -1691,39 +1397,523 @@ add_task(async function test_generateInitialMemoriesList_source_attribution() {
   }
 });
 
+/**
+ * Tests computeMemoryStrength one term at a time, then all terms together.
+ */
 add_task(async function test_compute_memory_strength() {
-  const memoryNotUserRequested = {
-    type: MEMORY_TYPE_DURABLE_MEMORY,
-    sources: ["history"],
-    source_ids: {
-      history_source_ids: [1, 2, 3],
-      conversation_source_ids: [4, 5, 6],
-    },
-    lifetime_accessed_count: 2,
-    merge_count: 4,
-  };
-
+  // 4 (floor)
   Assert.equal(
-    computeMemoryStrength(memoryNotUserRequested),
-    102.4,
-    "Memory without the user request source and durable type should have the expected strength"
+    computeMemoryStrength(makeStrengthMemory()).toFixed(2),
+    4.0,
+    "Memory with no evidence, accesses or merges should sit at the floor"
   );
 
-  const memoryUserRequested = {
-    type: MEMORY_TYPE_SHORT_TERM_MEMORY,
-    sources: ["user_request"],
-    source_ids: {
-      history_source_ids: [1, 2, 3],
-      conversation_source_ids: [4, 5, 6],
-    },
-    lifetime_accessed_count: 2,
-    merge_count: 4,
-  };
+  // 4 (floor) + 11 (user request)
+  Assert.equal(
+    computeMemoryStrength(
+      makeStrengthMemory({ sources: ["user_request"] })
+    ).toFixed(2),
+    15.0,
+    "Memory added by user request should add the user request modifier to the floor"
+  );
+
+  // 4 (floor) + 6 * 0.3 (evidence)
+  Assert.equal(
+    computeMemoryStrength(
+      makeStrengthMemory({ historyEvidenceCount: 6 })
+    ).toFixed(2),
+    5.8,
+    "Supporting evidence should add its weighted count to the floor"
+  );
+
+  // 4 (floor) + sqrt(4) * 0.5 * 5 (usage, one halflife elapsed)
+  Assert.equal(
+    computeMemoryStrength(
+      makeStrengthMemory({
+        lifetimeAccessedCount: 4,
+        daysSinceAccessed: MEMORY_STRENGTH_LIFETIME_ACCESSED_HALFLIFE,
+      })
+    ).toFixed(2),
+    9.0,
+    "Usage should add the square root of the count, halved after one accessed halflife"
+  );
+
+  // 4 (floor) + 2 * 0.5 * 4.5 (merges, one halflife elapsed)
+  Assert.equal(
+    computeMemoryStrength(
+      makeStrengthMemory({
+        mergeCount: 2,
+        daysSinceMerged: MEMORY_STRENGTH_MERGE_COUNT_HALFLIFE,
+      })
+    ).toFixed(2),
+    8.5,
+    "Merges should add their weighted count, halved after one merge halflife"
+  );
+
+  // 4 (floor) + 11 (user request) + 1.8 (evidence) + 5 (usage) + 4.5 (merges)
+  Assert.equal(
+    computeMemoryStrength(
+      makeStrengthMemory({
+        sources: ["history", "user_request"],
+        historyEvidenceCount: 6,
+        lifetimeAccessedCount: 4,
+        daysSinceAccessed: MEMORY_STRENGTH_LIFETIME_ACCESSED_HALFLIFE,
+        mergeCount: 2,
+        daysSinceMerged: MEMORY_STRENGTH_MERGE_COUNT_HALFLIFE,
+      })
+    ).toFixed(2),
+    26.3,
+    "Every strength term should sum together"
+  );
+});
+
+/**
+ * Tests that the evidence term counts ids from both source id lists and stops
+ * growing once the evidence cap is reached.
+ */
+add_task(async function test_compute_memory_strength_evidence() {
+  // 4 (floor) + (4 + 2) * 0.3 (evidence across both id lists)
+  Assert.equal(
+    computeMemoryStrength(
+      makeStrengthMemory({
+        historyEvidenceCount: 4,
+        conversationEvidenceCount: 2,
+      })
+    ).toFixed(2),
+    5.8,
+    "Evidence should be counted across both history and conversation source ids"
+  );
+
+  // 4 (floor) + 10 * 0.3 (evidence, exactly at the cap)
+  const strengthAtCap = computeMemoryStrength(
+    makeStrengthMemory({ historyEvidenceCount: MEMORY_STRENGTH_EVIDENCE_CAP })
+  );
+  Assert.equal(
+    strengthAtCap.toFixed(2),
+    7.0,
+    "Evidence at the cap should add the full capped weight"
+  );
+
+  // 4 (floor) + (10 (cap) + 15 (more evidence on top)) * 0.3
+  const strengthOverCap = computeMemoryStrength(
+    makeStrengthMemory({
+      historyEvidenceCount: MEMORY_STRENGTH_EVIDENCE_CAP + 15,
+      conversationEvidenceCount: MEMORY_STRENGTH_EVIDENCE_CAP,
+    })
+  );
+  Assert.equal(
+    strengthOverCap.toFixed(2),
+    strengthAtCap.toFixed(2),
+    "Evidence beyond the cap should not add any further strength"
+  );
+});
+
+/**
+ * Tests that the usage and merge terms decay exponentially against their
+ * halflives rather than dropping by a single fixed step.
+ */
+add_task(async function test_compute_memory_strength_decay() {
+  // 4 (floor) + sqrt(4) * 1 * 5 (usage, no time elapsed)
+  Assert.equal(
+    computeMemoryStrength(
+      makeStrengthMemory({ lifetimeAccessedCount: 4, daysSinceAccessed: 0 })
+    ).toFixed(2),
+    14.0,
+    "Usage just before the computation should add its undecayed weight"
+  );
+
+  // 4 (floor) + sqrt(4) * 0.25 * 5 (usage, two halflives elapsed)
+  Assert.equal(
+    computeMemoryStrength(
+      makeStrengthMemory({
+        lifetimeAccessedCount: 4,
+        daysSinceAccessed: 2 * MEMORY_STRENGTH_LIFETIME_ACCESSED_HALFLIFE,
+      })
+    ).toFixed(2),
+    6.5,
+    "Usage should decay to a quarter of its weight after two accessed halflives"
+  );
+
+  // 4 (floor) + 2 * 1 * 4.5 (merges, no time elapsed)
+  Assert.equal(
+    computeMemoryStrength(
+      makeStrengthMemory({ mergeCount: 2, daysSinceMerged: 0 })
+    ).toFixed(2),
+    13.0,
+    "Merges just before the computation should add their undecayed weight"
+  );
+
+  // 4 (floor) + 2 * 0.25 * 4.5 (merges, two halflives elapsed)
+  Assert.equal(
+    computeMemoryStrength(
+      makeStrengthMemory({
+        mergeCount: 2,
+        daysSinceMerged: 2 * MEMORY_STRENGTH_MERGE_COUNT_HALFLIFE,
+      })
+    ).toFixed(2),
+    6.25,
+    "Merges should decay to a quarter of their weight after two merge halflives"
+  );
+
+  // 4 (floor), both terms decayed away
+  Assert.equal(
+    computeMemoryStrength(
+      makeStrengthMemory({
+        lifetimeAccessedCount: 4,
+        daysSinceAccessed: 10000,
+        mergeCount: 2,
+        daysSinceMerged: 10000,
+      })
+    ).toFixed(2),
+    4.0,
+    "Usage and merges from many halflives ago should decay away back to the floor"
+  );
+});
+
+/**
+ * Tests the degenerate-but-persisted memory shapes MemoryStore can produce: a
+ * null last_accessed or last_merged alongside a non-zero count, and a sources
+ * list that could not be imputed.
+ */
+add_task(async function test_compute_memory_strength_missing_fields() {
+  // 4 (floor) + sqrt(4) * 0.5 * 5 (usage decayed from created_at)
+  Assert.equal(
+    computeMemoryStrength(
+      makeStrengthMemory({
+        lifetimeAccessedCount: 4,
+        daysSinceAccessed: null,
+        daysSinceCreated: MEMORY_STRENGTH_LIFETIME_ACCESSED_HALFLIFE,
+      })
+    ).toFixed(2),
+    9.0,
+    "A null last_accessed should decay the usage term from created_at"
+  );
+
+  // 4 (floor) + 2 * 0.5 * 4.5 (merges decayed from created_at)
+  Assert.equal(
+    computeMemoryStrength(
+      makeStrengthMemory({
+        mergeCount: 2,
+        daysSinceMerged: null,
+        daysSinceCreated: MEMORY_STRENGTH_MERGE_COUNT_HALFLIFE,
+      })
+    ).toFixed(2),
+    8.5,
+    "A null last_merged should decay the merge term from created_at"
+  );
+
+  // No sources
+  Assert.equal(
+    computeMemoryStrength(makeStrengthMemory({ sources: [] })).toFixed(2),
+    4.0,
+    "A memory with no imputed sources should sit at the floor"
+  );
+});
+
+/**
+ * Tests the ordering properties that the individual term values above cannot
+ * pin down on their own: evidence only ever helps, and age only ever hurts.
+ */
+add_task(async function test_compute_memory_strength_monotonicity() {
+  Assert.greater(
+    computeMemoryStrength(makeStrengthMemory({ historyEvidenceCount: 6 })),
+    computeMemoryStrength(makeStrengthMemory({ historyEvidenceCount: 3 })),
+    "More supporting evidence should never compute a weaker memory"
+  );
+
+  Assert.greater(
+    computeMemoryStrength(
+      makeStrengthMemory({ lifetimeAccessedCount: 4, daysSinceAccessed: 0 })
+    ),
+    computeMemoryStrength(
+      makeStrengthMemory({
+        lifetimeAccessedCount: 4,
+        daysSinceAccessed: 2 * MEMORY_STRENGTH_LIFETIME_ACCESSED_HALFLIFE,
+      })
+    ),
+    "A staler last_accessed should compute a weaker memory for the same usage count"
+  );
+});
+
+/**
+ * Tests that a memory old enough for every tier is typed purely by strength.
+ */
+add_task(async function test_assign_memory_type_promotes_by_strength() {
+  const strong = assignTieredMemoryType({
+    daysSinceCreated: TIER_OLD_DAYS,
+    strength: TIER_STRONG,
+  });
+  Assert.equal(
+    strong.type,
+    MEMORY_TYPE_DURABLE_MEMORY,
+    "A memory past the durable age and strength thresholds should be durable"
+  );
+  Assert.equal(
+    strong.strength,
+    TIER_STRONG,
+    "A memory that has aged into its tier should keep its computed strength"
+  );
 
   Assert.equal(
-    computeMemoryStrength(memoryUserRequested),
-    17.4,
-    "Memory with the user request source and short term type should have the expected strength"
+    assignTieredMemoryType({
+      daysSinceCreated: TIER_OLD_DAYS,
+      strength: TIER_MIDDLING,
+    }).type,
+    MEMORY_TYPE_LONG_TERM_MEMORY,
+    "An old memory that only clears the long term threshold should be long term"
+  );
+
+  Assert.equal(
+    assignTieredMemoryType({
+      daysSinceCreated: TIER_OLD_DAYS,
+      strength: TIER_WEAK,
+    }).type,
+    MEMORY_TYPE_SHORT_TERM_MEMORY,
+    "An old memory below every strength threshold should be short term"
+  );
+});
+
+/**
+ * Tests that a memory too young for a tier is denied it and has its strength
+ * held at that tier's entry requirement.
+ */
+add_task(async function test_assign_memory_type_age_caps() {
+  const youngAndStrong = assignTieredMemoryType({
+    daysSinceCreated: TIER_YOUNG_DAYS,
+    strength: TIER_STRONG,
+  });
+  Assert.equal(
+    youngAndStrong.type,
+    MEMORY_TYPE_SHORT_TERM_MEMORY,
+    "A memory too young for the long term tier should stay short term however strong"
+  );
+  Assert.equal(
+    youngAndStrong.strength,
+    MEMORY_TYPE_SHORT_TERM_TO_LONG_TERM_STRENGTH_THRESHOLD,
+    "A memory too young for the long term tier should be capped at its strength threshold"
+  );
+
+  const youngAndMiddling = assignTieredMemoryType({
+    daysSinceCreated: TIER_YOUNG_DAYS,
+    strength: TIER_MIDDLING,
+  });
+  Assert.equal(
+    youngAndMiddling.type,
+    MEMORY_TYPE_SHORT_TERM_MEMORY,
+    "A young memory over only the long term threshold should still stay short term"
+  );
+  Assert.equal(
+    youngAndMiddling.strength,
+    MEMORY_TYPE_SHORT_TERM_TO_LONG_TERM_STRENGTH_THRESHOLD,
+    "The long term cap should apply even when the durable cap is a no-op"
+  );
+
+  const youngAndWeak = assignTieredMemoryType({
+    daysSinceCreated: TIER_YOUNG_DAYS,
+    strength: TIER_WEAK,
+  });
+  Assert.equal(
+    youngAndWeak.type,
+    MEMORY_TYPE_SHORT_TERM_MEMORY,
+    "A young memory below the long term threshold should stay short term"
+  );
+  Assert.equal(
+    youngAndWeak.strength,
+    TIER_WEAK,
+    "A cap should never raise a strength that is already below it"
+  );
+
+  const middleAgedAndStrong = assignTieredMemoryType({
+    daysSinceCreated: TIER_MIDDLE_AGED_DAYS,
+    strength: TIER_STRONG,
+  });
+  Assert.equal(
+    middleAgedAndStrong.type,
+    MEMORY_TYPE_LONG_TERM_MEMORY,
+    "A memory too young for the durable tier should stop at long term however strong"
+  );
+  Assert.equal(
+    middleAgedAndStrong.strength,
+    MEMORY_TYPE_LONG_TERM_TO_DURABLE_STRENGTH_THRESHOLD,
+    "A memory too young for the durable tier should be capped at its strength threshold"
+  );
+
+  const middleAgedAndMiddling = assignTieredMemoryType({
+    daysSinceCreated: TIER_MIDDLE_AGED_DAYS,
+    strength: TIER_MIDDLING,
+  });
+  Assert.equal(
+    middleAgedAndMiddling.type,
+    MEMORY_TYPE_LONG_TERM_MEMORY,
+    "A memory that has aged into the long term tier should be promoted into it"
+  );
+  Assert.equal(
+    middleAgedAndMiddling.strength,
+    TIER_MIDDLING,
+    "A memory below the durable cap should keep its computed strength"
+  );
+
+  Assert.equal(
+    assignTieredMemoryType({
+      daysSinceCreated: TIER_MIDDLE_AGED_DAYS,
+      strength: TIER_WEAK,
+    }).type,
+    MEMORY_TYPE_SHORT_TERM_MEMORY,
+    "A middle aged memory below the long term threshold should stay short term"
+  );
+});
+
+/**
+ * Tests the threshold boundaries: strength must exceed a tier's requirement
+ * rather than merely reach it, while age only has to reach it.
+ */
+add_task(async function test_assign_memory_type_thresholds() {
+  Assert.equal(
+    assignTieredMemoryType({
+      daysSinceCreated: TIER_OLD_DAYS,
+      strength: MEMORY_TYPE_LONG_TERM_TO_DURABLE_STRENGTH_THRESHOLD,
+    }).type,
+    MEMORY_TYPE_LONG_TERM_MEMORY,
+    "Strength exactly at the durable threshold should not promote to durable"
+  );
+
+  Assert.equal(
+    assignTieredMemoryType({
+      daysSinceCreated: TIER_OLD_DAYS,
+      strength: MEMORY_TYPE_SHORT_TERM_TO_LONG_TERM_STRENGTH_THRESHOLD,
+    }).type,
+    MEMORY_TYPE_SHORT_TERM_MEMORY,
+    "Strength exactly at the long term threshold should not promote to long term"
+  );
+
+  Assert.equal(
+    assignTieredMemoryType({
+      daysSinceCreated: MEMORY_TYPE_SHORT_TERM_TO_LONG_TERM_AGE_THRESHOLD,
+      strength: TIER_MIDDLING,
+    }).type,
+    MEMORY_TYPE_LONG_TERM_MEMORY,
+    "Age exactly at the long term threshold should count as having aged into the tier"
+  );
+});
+
+/**
+ * Tests that a memory whose strength has fallen is demoted, and that the
+ * assignment is made in place.
+ */
+add_task(async function test_assign_memory_type_demotes_by_strength() {
+  Assert.equal(
+    assignTieredMemoryType({
+      daysSinceCreated: TIER_OLD_DAYS,
+      strength: TIER_WEAK,
+      type: MEMORY_TYPE_DURABLE_MEMORY,
+    }).type,
+    MEMORY_TYPE_SHORT_TERM_MEMORY,
+    "A durable memory that has decayed below every threshold should be demoted to short term"
+  );
+
+  Assert.equal(
+    assignTieredMemoryType({
+      daysSinceCreated: TIER_OLD_DAYS,
+      strength: TIER_MIDDLING,
+      type: MEMORY_TYPE_DURABLE_MEMORY,
+    }).type,
+    MEMORY_TYPE_LONG_TERM_MEMORY,
+    "A durable memory that has decayed past the durable threshold should be demoted to long term"
+  );
+
+  const memory = makeTieredMemory({
+    daysSinceCreated: TIER_OLD_DAYS,
+    strength: TIER_STRONG,
+  });
+  Assert.strictEqual(
+    classifyMemoryAndCapStrength(memory),
+    undefined,
+    "The assignment should be made in place rather than returned"
+  );
+  Assert.equal(
+    memory.type,
+    MEMORY_TYPE_DURABLE_MEMORY,
+    "The passed-in memory should have been mutated"
+  );
+});
+
+add_task(async function test_memory_should_delete_due_to_decay() {
+  const now = Date.now();
+
+  const veryOldMemory = {
+    last_accessed: 0,
+    strength: 10,
+  };
+  Assert.ok(
+    isShouldDeleteMemoryDueToDecay(veryOldMemory),
+    "Very old memory with 10 strength should be flagged to decay"
+  );
+
+  const veryNewMemory = {
+    last_accessed: now,
+    strength: 10,
+  };
+  Assert.ok(
+    !isShouldDeleteMemoryDueToDecay(veryNewMemory),
+    "Very new memory with 10 strength shold not be flagged to decay"
+  );
+
+  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+  const lowStrengthMemoryFrom30DaysAgo = {
+    last_accessed: thirtyDaysAgo,
+    strength: 10,
+  };
+  Assert.ok(
+    isShouldDeleteMemoryDueToDecay(lowStrengthMemoryFrom30DaysAgo),
+    "Memory from 30 days ago with strength 10 should be flagged to decay"
+  );
+  const strongerMemoryFrom30DaysAgo = {
+    last_accessed: thirtyDaysAgo,
+    strength: 11,
+  };
+  Assert.ok(
+    !isShouldDeleteMemoryDueToDecay(strongerMemoryFrom30DaysAgo),
+    "Slightly strong memory from 30 days ago with strength 11 should not be flagged to decay"
+  );
+
+  const oldMemoryWithoutLastAccessed = {
+    created_at: 0,
+    strength: 10,
+  };
+  Assert.ok(
+    isShouldDeleteMemoryDueToDecay(oldMemoryWithoutLastAccessed),
+    "Old memory without last_accessed should fallback to created_at and be flagged to decay"
+  );
+
+  const newMemoryWithoutLastAccessed = {
+    created_at: now,
+    strength: 10,
+  };
+  Assert.ok(
+    !isShouldDeleteMemoryDueToDecay(newMemoryWithoutLastAccessed),
+    "New memory without last_accesssed should fallback to created_at and not be flagged to decay"
+  );
+
+  // A never-used memory is persisted with an explicit null rather than a missing
+  // key, so the fallback has to treat the two the same way.
+  const newMemoryWithNullLastAccessed = {
+    created_at: now,
+    last_accessed: null,
+    strength: 10,
+  };
+  Assert.ok(
+    !isShouldDeleteMemoryDueToDecay(newMemoryWithNullLastAccessed),
+    "New memory with a null last_accessed should fallback to created_at and not be flagged to decay"
+  );
+
+  const oldMemoryWithNullLastAccessed = {
+    created_at: 0,
+    last_accessed: null,
+    strength: 10,
+  };
+  Assert.ok(
+    isShouldDeleteMemoryDueToDecay(oldMemoryWithNullLastAccessed),
+    "Old memory with a null last_accessed should fallback to created_at and be flagged to decay"
   );
 });
 

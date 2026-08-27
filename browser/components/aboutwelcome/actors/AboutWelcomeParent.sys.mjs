@@ -19,6 +19,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
   LangPackMatcher: "moz-src:///intl/locale/LangPackMatcher.sys.mjs",
+  MessagingSystemAllowlists:
+    "resource://messaging-system/lib/MessagingSystemAllowlists.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
   SpecialMessageActions:
@@ -196,6 +198,12 @@ export class AboutWelcomeParent extends JSWindowActorParent {
   constructor() {
     super();
     this.startAboutWelcomeObserver();
+    // Warm the Remote Settings-backed SET_PREF allowlist cache as early as
+    // possible, since about:welcome can dispatch SET_PREF actions (via
+    // SpecialMessageActions) without ever going through ASRouter's own init
+    // sequence. This isn't awaited, so it only shrinks the window for a
+    // possible race condition.
+    lazy.MessagingSystemAllowlists.ensureInit();
   }
 
   startAboutWelcomeObserver() {

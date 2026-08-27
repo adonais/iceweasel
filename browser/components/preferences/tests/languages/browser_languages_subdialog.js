@@ -180,16 +180,22 @@ add_task(async function () {
     "The Add button is disabled after opening the Languages dialog"
   );
 
-  win.document.getElementById("availableLanguages").click();
+  let availableLanguages = win.document.getElementById("availableLanguages");
+  let availableLanguagesPopup = availableLanguages.menupopup;
+  let popupShown = BrowserTestUtils.waitForPopupEvent(
+    availableLanguagesPopup,
+    "shown"
+  );
+  availableLanguages.open = true;
+  await popupShown;
   ok(
     win.document.getElementById("addButton").disabled,
-    "The Add button is disabled after clicking on the available languages list"
+    "The Add button is disabled after opening the available languages list"
   );
 
-  let availableLanguages =
-    win.document.getElementById("availableLanguages").menupopup;
-  let target = availableLanguages.querySelector("#he");
-  target.click();
+  await BrowserTestUtils.activateMenuItem(
+    availableLanguagesPopup.querySelector("#he")
+  );
   is(
     win.document.getElementById("addButton").disabled,
     false,

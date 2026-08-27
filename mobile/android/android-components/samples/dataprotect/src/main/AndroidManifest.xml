@@ -13,7 +13,6 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:dataExtractionRules="@xml/data_extraction_rules"
-        tools:ignore="DataExtractionRules"
         tools:targetApi="s">
         <activity android:name="org.mozilla.samples.dataprotect.MainActivity"
             android:exported="true">

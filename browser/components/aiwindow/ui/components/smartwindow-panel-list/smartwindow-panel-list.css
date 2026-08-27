@@ -22,6 +22,7 @@ panel-list {
   --panel-section-header-padding-inline-start: calc(var(--size-item-small) / 2);
   --panel-item-icon-size: var(--icon-size-small);
   --panel-item-button-border-radius: var(--border-radius-medium);
+  --icon-fill: light-dark(var(--color-violet-50), var(--color-violet-40));
   margin-inline: var(--panel-inline-margin);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   max-width: var(--panel-max-width);
@@ -83,6 +84,10 @@ panel-item.panel-section-header::part(button) {
   padding-inline: var(--panel-section-header-padding-inline-start) var(--panel-item-padding);
 }
 
+panel-item.panel-command-footer::part(button) {
+  border: none;
+}
+
 panel-item:not(.panel-section-header)::part(button) {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-radius: var(--panel-item-button-border-radius);
@@ -92,6 +97,10 @@ panel-item:not(.panel-section-header)::part(button) {
   max-width: calc(100% - 2 * var(--space-small));
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding: var(--panel-item-padding);
+}
+
+panel-item.selected:not(.panel-section-header)::part(button) {
+  background-color: var(--button-background-color-hover);
 }
 
 panel-item[icon]::part(button) {
@@ -117,6 +126,7 @@ panel-item::part(label) {
 }
 
 /* Style `ai-website-chip` to behave like a `panel-item`. */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 panel-list:has(ai-website-chip) {
   padding-block: 0;
 }
@@ -149,5 +159,115 @@ panel-list ai-website-chip::part(chip):focus-visible {
 @media -moz-pref("browser.nova.enabled") {
   panel-list ai-website-chip::part(chip) {
     --background-color-hover: light-dark(color-mix(in srgb, var(--color-violet-desaturated-10) 70%, transparent), var(--color-violet-desaturated-60));
+  }
+}
+
+.panel-item-container {
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+  margin-inline: var(--space-small);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding-inline: var(--panel-item-padding);
+
+  &:hover,
+  &:focus-within,
+  &.selected {
+    background-color: var(--button-background-color-hover);
+  }
+
+  &:focus-within {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-inset);
+  }
+
+  panel-item::part(button) {
+    background-color: transparent;
+    margin-inline: 0;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    max-width: 100%;
+    padding-block: 0;
+    padding-inline: 0;
+  }
+
+  panel-item::part(button):hover,
+  panel-item::part(button):hover:active {
+    background-color: transparent;
+  }
+
+  panel-item::part(button):focus-visible {
+    outline: none;
+  }
+
+  panel-item::part(label) {
+    font-size: var(--panel-section-header-font-size);
+    font-weight: var(--font-weight-heading);
+  }
+
+  .panel-item-description {
+    margin-inline: 0;
+    padding-inline: 0;
+    padding-block: 0 var(--space-small);
+    opacity: var(--opacity-deemphasized);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+}
+
+/* Command palette */
+:host([data-triggered-by="inline-command"]) {
+  panel-list {
+    --panel-inline-margin: 0;
+    --panel-max-width: none;
+  }
+
+  .panel-item-container {
+    align-items: center;
+    column-gap: var(--space-small);
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    padding: var(--panel-item-padding);
+  }
+
+  .panel-item-icon {
+    grid-column: 1;
+    align-items: center;
+    border-radius: var(--border-radius-xsmall);
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+    width: var(--size-item-medium);
+    height: var(--size-item-medium);
+
+    @media not (forced-colors) {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      background: var(--color-white);
+    }
+  }
+
+  .panel-item-icon-image {
+    -moz-context-properties: fill;
+    fill: var(--icon-fill);
+    width: var(--panel-item-icon-size);
+    height: var(--panel-item-icon-size);
+  }
+
+  .panel-item-text {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .panel-item-description {
+    padding-block-end: 0;
+  }
+
+  panel-item.panel-section-header::part(button) {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    color: var(--panel-list-text-color);
+    font-weight: var(--font-weight-heading);
   }
 }

@@ -1,0 +1,10 @@
+//error: field `i' of struct `S' has unknown type `Foobers'
+
+struct S {
+    Foobers i;
+};
+
+[ChildProc=any]
+protocol PstructUnknownField {
+child: async __delete__(S s);
+};

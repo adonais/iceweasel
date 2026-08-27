@@ -598,13 +598,6 @@ BrowserChild::GetChromeFlags(uint32_t* aChromeFlags) {
 }
 
 NS_IMETHODIMP
-BrowserChild::SetChromeFlags(uint32_t aChromeFlags) {
-  NS_WARNING("trying to SetChromeFlags from content process?");
-
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
 BrowserChild::RemoteDropLinks(
     const nsTArray<RefPtr<nsIDroppedLinkItem>>& aLinks) {
   nsTArray<nsString> linksArray;
@@ -3170,8 +3163,8 @@ mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(const bool& aEnabled) {
   } else {
     // NOTE: We want to call in even without a root frame (we might paint the
     // canvas background in that case).
-    presShell->PaintAndRequestComposite(presShell->GetRootFrame(),
-                                        mPuppetWidget->GetWindowRenderer(),
+    RefPtr<WindowRenderer> renderer = mPuppetWidget->GetWindowRenderer();
+    presShell->PaintAndRequestComposite(presShell->GetRootFrame(), renderer,
                                         PaintFlags::None);
   }
   presShell->SuppressDisplayport(false);

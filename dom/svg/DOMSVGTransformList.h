@@ -126,12 +126,6 @@ class DOMSVGTransformList final : public nsISupports, public nsWrapperCache {
     return mAList->mAnimVal && !mAList->IsAnimating();
   }
 
-  uint32_t NumberOfItems() const {
-    if (IsAnimValList()) {
-      Element()->FlushAnimations();
-    }
-    return LengthNoFlush();
-  }
   void Clear(ErrorResult& error);
   already_AddRefed<dom::DOMSVGTransform> Initialize(
       dom::DOMSVGTransform& newItem, ErrorResult& error);
@@ -153,7 +147,14 @@ class DOMSVGTransformList final : public nsISupports, public nsWrapperCache {
   already_AddRefed<dom::DOMSVGTransform> CreateSVGTransformFromMatrix(
       const DOMMatrix2DInit& aMatrix, ErrorResult& aRv);
   already_AddRefed<dom::DOMSVGTransform> Consolidate(ErrorResult& error);
-  uint32_t Length() const { return NumberOfItems(); }
+  void IndexedSetter(uint32_t aIndex, DOMSVGTransform& aNewValue,
+                     ErrorResult& aRv);
+  uint32_t Length() const {
+    if (IsAnimValList()) {
+      Element()->FlushAnimations();
+    }
+    return LengthNoFlush();
+  }
 
  private:
   dom::SVGElement* Element() const { return mAList->mElement; }

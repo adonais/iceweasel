@@ -69,6 +69,10 @@ def original_path():
 
 
 @depends(host, when="--enable-bootstrap")
+@checking(
+    "for bootstrappable toolchains",
+    callback=lambda tasks: f"{len(tasks.tasks)} found" if tasks else None,
+)
 @imports("os")
 @imports("traceback")
 @imports(_from="mozbuild.toolchains", _import="toolchain_task_definitions")

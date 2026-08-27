@@ -1,4 +1,4 @@
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 const ONION_BASE = "http://example.onion/";
 
 const ONION_PATH =

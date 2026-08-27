@@ -5,6 +5,8 @@
 
 import os
 import re
+import shutil
+import subprocess
 import sys
 from collections import defaultdict
 
@@ -78,6 +80,55 @@ def invalidate(cache):
 
     if tmod > cmod:
         os.remove(cache)
+
+
+WATCHMAN_TRIGGER_NAME = "rebuild-taskgraph-cache"
+
+WATCHMAN_HINT = """\
+Tip: this ~20s wait happens whenever a file under taskcluster/ changes (e.g.
+after pulling firefox-main or switching branches). watchman can rebuild the
+taskgraph cache in the background so `mach try` stays fast. Since watchman is
+already watching this checkout, enable it with:
+
+    watchman -j < {watchman_json}
+
+See https://firefox-source-docs.mozilla.org/tools/try/tasks.html for details.
+"""
+
+
+def suggest_watchman_setup():
+    """On an interactive cache miss, nudge the user toward the watchman trigger
+    that keeps the taskgraph cache warm in the background.
+
+    Only shown when stdout is a terminal (so the background watchman trigger and
+    CI runs stay silent), watchman is installed and already watching the
+    checkout, and the trigger is not already registered."""
+    if not sys.stdout.isatty():
+        return
+
+    watchman = shutil.which("watchman")
+    if not watchman:
+        return
+
+    try:
+        proc = subprocess.run(
+            [watchman, "trigger-list", build.topsrcdir],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return
+
+    # Only suggest when watchman is already watching this checkout (a failed
+    # `trigger-list` means it is not) and our trigger is not registered yet, so
+    # we never provoke inotify-limit issues by watching the firefox checkout here.
+    if proc.returncode != 0 or WATCHMAN_TRIGGER_NAME in proc.stdout:
+        return
+
+    watchman_json = os.path.join(here, "watchman.json")
+    print(WATCHMAN_HINT.format(watchman_json=watchman_json))
 
 
 def cache_key(attr, params, disable_target_task_filter, target_tasks_method):
@@ -180,6 +231,7 @@ def generate_tasks(
         os.makedirs(cache_dir)
 
     print("Task configuration changed, generating {}".format(attr.replace("_", " ")))
+    suggest_watchman_setup()
 
     cwd = os.getcwd()
     os.chdir(build.topsrcdir)

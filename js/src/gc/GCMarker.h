@@ -195,6 +195,13 @@ class MarkStack {
   [[nodiscard]] bool init();
   [[nodiscard]] bool resetStackCapacity();
 
+  // The maximum capacity reached since the last call to resetHighWaterMark().
+  size_t highWaterMark() const;
+
+  // Reset the high-water mark to the current capacity, ready to track the
+  // next GC.
+  void resetHighWaterMark();
+
   template <typename T>
   [[nodiscard]] bool push(T* ptr);
   void infalliblePush(const SlotsOrElementsRange& range);
@@ -257,6 +264,9 @@ class MarkStack {
 
   // Size of the stack in words.
   MainThreadOrGCTaskData<size_t> capacity_;
+
+  // The maximum value of capacity_ seen since the last reset.
+  MainThreadOrGCTaskData<size_t> highWaterMark_;
 
   // Index of the top of the stack.
   MainThreadOrGCTaskData<size_t> topIndex_;
@@ -597,6 +607,9 @@ class GCMarker {
   void resetStackCapacity();
   void freeStack();
 
+  size_t stackHighWaterMark() const;
+  void resetStackHighWaterMark();
+
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
   static GCMarker* fromTracer(JSTracer* trc) {
@@ -720,12 +733,12 @@ class GCMarker {
   MainThreadOrGCTaskData<mozilla::non_crypto::XorShift128PlusRNG> random;
 
   /*
-   * The zone of the object whose trace hook is currently being
-   * called, if any. Set with AutoSetTracingSource.
+   * The zone of the object whose trace hook is currently being called, if any.
+   * Set with AutoSetTracingSource.
    *
    * This is required so that MarkingTracerT::onEdge can keep the source zone's
-   * atom-marking bitmap entry for Symbol edges in sync. It's also used in debug
-   * builds to catch cross-compartment edges traced without
+   * atom reference bitmap entry for Symbol edges in sync. It's also used in
+   * debug builds to catch cross-compartment edges traced without
    * TraceCrossCompartmentEdge.
    */
   MainThreadOrGCTaskData<Zone*> tracingZone;
@@ -736,7 +749,7 @@ class GCMarker {
   MainThreadOrGCTaskData<bool> started;
 
   /*
-   * Whether to check that atoms traversed are present in atom marking
+   * Whether to check that atoms traversed are present in the atom reference
    * bitmap.
    */
   MainThreadOrGCTaskData<bool> checkAtomMarking;
@@ -761,6 +774,24 @@ inline bool IsConcurrentMarkingTracer(JSTracer* trc) {
   return trc->isMarkingTracer() &&
          GCMarker::fromTracer(trc)->isConcurrentMarking();
 }
+
+// Records the source zone for marking in situations where it might not
+// otherwise bet set, for example root marking.
+//
+// See also AutoSetTracingSource.
+class MOZ_RAII AutoSetMarkingZone {
+  GCMarker* marker = nullptr;
+  Zone* prevZone = nullptr;
+
+ public:
+  AutoSetMarkingZone(GCMarker* marker, Zone* zone)
+      : marker(marker), prevZone(marker->tracingZone) {
+    MOZ_ASSERT_IF(prevZone, prevZone == zone);
+    marker->tracingZone = zone;
+  }
+
+  ~AutoSetMarkingZone() { marker->tracingZone = prevZone; }
+};
 
 namespace gc {
 

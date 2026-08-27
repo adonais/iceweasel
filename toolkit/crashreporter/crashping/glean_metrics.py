@@ -16,6 +16,7 @@ header = """
 
 """
 source_path = path.join(path.dirname(__file__), "generated_metrics.yaml")
+static_metrics_path = path.join(path.dirname(__file__), "static_metrics.yaml")
 
 
 def make_bugzilla_url(bug):
@@ -32,10 +33,8 @@ def remove_non_glean_fields(glean):
 
 
 def generate_string(annotations):
-    output = {
-        "$schema": "moz://mozilla.org/schemas/glean/metrics/2-0-0",
-        "$tags": ["Toolkit :: Crash Reporting"],
-    }
+    with open(static_metrics_path) as static_metrics_file:
+        output = yaml.safe_load(static_metrics_file)
 
     for name, definition in annotations:
         glean = definition.get("glean")

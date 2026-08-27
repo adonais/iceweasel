@@ -22,7 +22,7 @@ MOZ_RUNINIT static std::unordered_map<uint64_t, IDWriteFontFileStream*>
 
 class DWriteFontFileLoader : public IDWriteFontFileLoader {
  public:
-  DWriteFontFileLoader() {}
+  DWriteFontFileLoader() = default;
 
   // IUnknown interface
   IFACEMETHOD(QueryInterface)(IID const& iid, OUT void** ppObject) {

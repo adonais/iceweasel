@@ -1,12 +1,10 @@
 /* Any copyright is dedicated to the Public Domain.
    http://creativecommons.org/publicdomain/zero/1.0/ */
 
-const TOPIC_BROWSERGLUE_TEST = "browser-glue-test";
-const TOPICDATA_BROWSERGLUE_TEST = "force-ui-migration";
 const UI_VERSION = 138;
 
-const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"].getService(
-  Ci.nsIObserver
+const { ProfileDataUpgrader } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/ProfileDataUpgrader.sys.mjs"
 );
 
 function checkConstraint(state, origin, type) {
@@ -28,7 +26,6 @@ add_task(async function test_resettingDefaults() {
   });
 
   Services.perms.removeAll();
-  Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
 
   let pm = Services.perms;
 
@@ -60,11 +57,7 @@ add_task(async function test_resettingDefaults() {
   }
 
   // Simulate a migration.
-  gBrowserGlue.observe(
-    null,
-    TOPIC_BROWSERGLUE_TEST,
-    TOPICDATA_BROWSERGLUE_TEST
-  );
+  ProfileDataUpgrader.upgrade(UI_VERSION, UI_VERSION + 1);
 
   // Check if the default permissions were reset.
   for (let originInfo of originInfos) {
@@ -81,7 +74,6 @@ add_task(async function test_resettingDenyAction() {
   });
 
   Services.perms.removeAll();
-  Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
 
   let pm = Services.perms;
   // Reset one default perm to DENY_ACTION.
@@ -98,11 +90,7 @@ add_task(async function test_resettingDenyAction() {
   checkConstraint(pm.DENY_ACTION, origin, type);
 
   // Simulate a migration.
-  gBrowserGlue.observe(
-    null,
-    TOPIC_BROWSERGLUE_TEST,
-    TOPICDATA_BROWSERGLUE_TEST
-  );
+  ProfileDataUpgrader.upgrade(UI_VERSION, UI_VERSION + 1);
 
   // We expect the permission to remain unchanged.
   checkConstraint(pm.DENY_ACTION, origin, type);

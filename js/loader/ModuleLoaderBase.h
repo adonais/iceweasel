@@ -480,11 +480,10 @@ class ModuleLoaderBase : public nsISupports {
       mozilla::UniquePtr<SpecifierResolutionRecord> aRecord);
 
   // https://html.spec.whatwg.org/#add-module-to-resolved-module-set
-  // The aScript and aHostDefined arguments are for determining if this is
-  // resolved during preloading.
+  // The aHostDefined argument is for determining if this is resolved during
+  // preloading.
   void AddToResolvedModuleSet(
       mozilla::UniquePtr<SpecifierResolutionRecord> aRecord,
-      ScriptFetchInfo* aFetchInfo = nullptr,
       Handle<Value> aHostDefined = UndefinedHandleValue);
 
   void ResetPreloadFlag(nsIURI* aURI);

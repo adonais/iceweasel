@@ -11,7 +11,6 @@ add_task(async function test_experiment_messaging_system_impressions() {
   registerCleanupFunction(() => {
     ASRouter.resetMessageState();
   });
-  const LOCALE = Services.locale.appLocaleAsBCP47;
   let experimentId = `pb_newtab_${Math.random()}`;
 
   let doExperimentCleanup = await setupMSExperimentWithMessage({
@@ -42,15 +41,14 @@ add_task(async function test_experiment_messaging_system_impressions() {
 
   Services.telemetry.clearEvents();
 
+  const selectors = getPromoSelectors();
+
   let { win: win1, tab: tab1 } = await openTabAndWaitForRender();
 
-  await SpecialPowers.spawn(tab1, [LOCALE], async function () {
-    is(
-      content.document
-        .querySelector(".promo button")
-        .classList.contains("primary"),
-      true,
-      "should render the promo button as a button"
+  await SpecialPowers.spawn(tab1, [selectors], async function (promo) {
+    ok(
+      content.document.querySelector(promo.container),
+      "should render the promo on the first impression"
     );
   });
 
@@ -69,13 +67,10 @@ add_task(async function test_experiment_messaging_system_impressions() {
 
   let { win: win2, tab: tab2 } = await openTabAndWaitForRender();
 
-  await SpecialPowers.spawn(tab2, [LOCALE], async function () {
-    is(
-      content.document
-        .querySelector(".promo button")
-        .classList.contains("primary"),
-      true,
-      "should render the promo button as a button"
+  await SpecialPowers.spawn(tab2, [selectors], async function (promo) {
+    ok(
+      content.document.querySelector(promo.container),
+      "should render the promo on the second impression"
     );
   });
 
@@ -94,9 +89,9 @@ add_task(async function test_experiment_messaging_system_impressions() {
 
   let { win: win3, tab: tab3 } = await openTabAndWaitForRender();
 
-  await SpecialPowers.spawn(tab3, [], async function () {
+  await SpecialPowers.spawn(tab3, [selectors], async function (promo) {
     is(
-      content.document.querySelector(".promo button"),
+      content.document.querySelector(promo.container),
       null,
       "should no longer render the experiment message after 2 impressions"
     );

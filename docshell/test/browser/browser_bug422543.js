@@ -22,7 +22,7 @@ add_task(async function runTests() {
   // Check if all history listeners are always notified.
   info("# part 1");
   await whenPageShown(browser, () =>
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     BrowserTestUtils.startLoadingURIString(browser, "http://www.example.com/")
   );
   checkListeners("newentry", "shistory has a new entry");

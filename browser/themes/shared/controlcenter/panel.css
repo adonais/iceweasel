@@ -28,7 +28,7 @@
 }
 
 /* Hide all conditional elements by default. */
-:is([when-connection], [when-customroot], [when-mixedcontent], [when-ciphers], [when-httpsonlystatus]) {
+:is([when-connection], [when-customroot], [when-tlskeylogging], [when-mixedcontent], [when-ciphers], [when-httpsonlystatus]) {
   display: none;
 }
 
@@ -63,6 +63,7 @@
 
 /* Show the right elements for the right connection states. */
 .site-information-popup[customroot] [when-customroot],
+.site-information-popup[tlskeylogging] [when-tlskeylogging],
 .site-information-popup[connection=not-secure] [when-connection~=not-secure],
 .site-information-popup[connection=secure-cert-user-overridden] [when-connection~=secure-cert-user-overridden],
 .site-information-popup[connection=secure-ev] [when-connection~=secure-ev],
@@ -245,7 +246,8 @@
   margin: var(--panel-menuitem-margin);
   padding: var(--panel-menuitem-padding);
   padding-block: var(--space-large);
-  -moz-context-properties: fill;
+  -moz-context-properties: fill, stroke;
+  stroke: var(--icon-color-critical);
 }
 
 .site-information-popup[connection="chrome"] .identity-popup-security-connection {
@@ -264,7 +266,7 @@
   list-style-image: url(chrome://global/skin/icons/security.svg);
 }
 
-.site-information-popup[connection^="secure"][customroot] .identity-popup-security-connection {
+.site-information-popup[connection^="secure"]:is([customroot], [tlskeylogging]) .identity-popup-security-connection {
   list-style-image: url(chrome://global/skin/icons/security-custom-root.svg);
 }
 
@@ -405,8 +407,8 @@
 }
 
 .protections-popup-trackersView-empty-image {
-  width: var(--size-item-xlarge);
-  height: var(--size-item-xlarge);
+  width: var(--icon-size-xxlarge);
+  height: var(--icon-size-xxlarge);
   -moz-context-properties: fill;
   margin-bottom: 16px;
 }
@@ -605,15 +607,6 @@
   }
 }
 
-#protections-popup-cookie-banner-undetected {
-  color: var(--text-color-deemphasized);
-}
-
-#protections-popup-cookie-banner-section[hasException] .protections-popup-cookie-banner-switch-on-header,
-#protections-popup-cookie-banner-section:not([hasException]) .protections-popup-cookie-banner-switch-off-header {
-  display: none;
-}
-
 #protections-popup-toast-panel-tp-on-desc,
 #protections-popup-toast-panel-tp-off-desc {
   display: none;
@@ -622,10 +615,6 @@
 #protections-popup:not([hasException])[toast] #protections-popup-toast-panel-tp-on-desc,
 #protections-popup[hasException][toast] #protections-popup-toast-panel-tp-off-desc {
   display: revert;
-}
-
-#protections-popup-cookie-banner-switch > vbox {
-  gap: var(--space-xxsmall);
 }
 
 /* Protection popup footer categories */
@@ -814,34 +803,6 @@
 .protections-popup-list-host-shim-allow-indicator {
   margin-inline-start: 0.5em;
   min-width: 16px;
-}
-
-#cookieBannerView-disable-site,
-#cookieBannerView-enable-site {
-  font-weight: var(--font-weight-semibold);
-}
-
-.protections-popup-cookieBannerView-footer {
-  margin-top: auto;
-}
-
-/* Cookie banner state toggles for the popup menu item */
-
-#protections-popup-cookie-banner-section:not([data-state="detected"]) description#protections-popup-cookie-banner-detected,
-#protections-popup-cookie-banner-section:not([data-state="undetected"]) description#protections-popup-cookie-banner-undetected,
-#protections-popup-cookie-banner-section:not([data-state="site-disabled"]) description#protections-popup-cookie-banner-site-disabled {
-  display: none;
-}
-
-/* Cookie banner state toggles for the subview: if the state is detected, show
- * the disable controls; if the state is site-disabled, show the enable controls. */
-#protections-popup-cookieBannerView:not([data-state="detected"]) #protections-popup-cookieBannerView-disable-button,
-#protections-popup-cookieBannerView:not([data-state="detected"]) description#cookieBannerView-disable-site,
-#protections-popup-cookieBannerView:not([data-state="detected"]) description#cookieBannerView-disable-site-warning,
-#protections-popup-cookieBannerView:not([data-state="site-disabled"]) #protections-popup-cookieBannerView-enable-button,
-#protections-popup-cookieBannerView:not([data-state="site-disabled"]) description#cookieBannerView-enable-site,
-#protections-popup-cookieBannerView:not([data-state="site-disabled"]) description#cookieBannerView-enable-site-description {
-  display: none;
 }
 
 .protections-popup-smartblock-section {
@@ -1065,6 +1026,8 @@
 #trustpanel-connection-icon,
 #trustpanel-siteinfo-icon {
   list-style-image: url(chrome://global/skin/icons/security-broken.svg);
+  -moz-context-properties: fill, stroke;
+  stroke: var(--icon-color-critical);
 
   #trustpanel-popup:is([connection^="secure"], [connection="extension"], [connection="chrome"], [connection="file"]):not(
       [connection="secure-cert-user-overridden"]
@@ -1073,7 +1036,7 @@
     list-style-image: url(chrome://global/skin/icons/security.svg);
   }
 
-  #trustpanel-popup[connection^="secure"][customroot] & {
+  #trustpanel-popup[connection^="secure"]:is([customroot], [tlskeylogging]) & {
     list-style-image: url(chrome://global/skin/icons/security-custom-root.svg);
   }
 
@@ -1166,7 +1129,8 @@
     background-repeat: no-repeat;
     background-size: var(--icon-size);
     padding-inline-start: calc(var(--icon-size) + var(--space-small));
-    -moz-context-properties: fill;
+    -moz-context-properties: fill, stroke;
+    stroke: var(--icon-color-critical);
 
     &:-moz-locale-dir(rtl) {
       background-position-x: right;

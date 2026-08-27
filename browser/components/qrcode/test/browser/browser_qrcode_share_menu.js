@@ -289,9 +289,12 @@ add_task(
       );
 
       let contextMenu = gURLBar.querySelector("moz-input-box").menupopup;
+      // This is a trusted event, so it really opens the context menu.
+      let popupShown = BrowserTestUtils.waitForPopupEvent(contextMenu, "shown");
       contextMenu.dispatchEvent(
         new MouseEvent("popupshowing", { bubbles: true })
       );
+      await popupShown;
 
       let shareItem = contextMenu.querySelector(".share-tab-url-item");
       Assert.ok(
@@ -309,6 +312,13 @@ add_task(
         qrCodeItem.disabled,
         "QR Code menu item should be disabled when multiple tabs are selected"
       );
+
+      let popupHidden = BrowserTestUtils.waitForEvent(
+        contextMenu,
+        "popuphidden"
+      );
+      contextMenu.hidePopup();
+      await popupHidden;
     } finally {
       gBrowser.clearMultiSelectedTabs();
       BrowserTestUtils.removeTab(tab1);

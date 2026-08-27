@@ -71,26 +71,20 @@ function checkForDefaultSetting(
   let targetWidth = RFPHelper.steppedSize(aRealWidth, true);
   let targetHeight = RFPHelper.steppedSize(aRealHeight);
 
-  // This platform-specific code is explained in the large comment below.
-  if (getPlatform() != "linux") {
-    ok(
-      handleOSFuzziness(aContentWidth, targetWidth),
-      `Default Dimensions: The content window width is correctly rounded into. ${aRealWidth}px -> ${aContentWidth}px should equal ${targetWidth}px`
-    );
-
-    ok(
-      handleOSFuzziness(aContentHeight, targetHeight),
-      `Default Dimensions: The content window height is correctly rounded into. ${aRealHeight}px -> ${aContentHeight}px should equal ${targetHeight}px`
-    );
-
-    // Using ok() above will cause Win/Mac to fail on even the first test, we don't need to repeat it, return true so waitForCondition ends
-    return true;
-  }
-  // Returning true or false depending on if the test succeeded will cause Linux to repeat until it succeeds.
-  return (
-    handleOSFuzziness(aContentWidth, targetWidth) &&
-    handleOSFuzziness(aContentHeight, targetHeight)
-  );
+  return {
+    widthMatches: handleOSFuzziness(aContentWidth, targetWidth),
+    heightMatches: handleOSFuzziness(aContentHeight, targetHeight),
+    assert() {
+      ok(
+        this.widthMatches,
+        `Default Dimensions: The content window width is correctly rounded into. ${aRealWidth}px -> ${aContentWidth}px should equal ${targetWidth}px`
+      );
+      ok(
+        this.heightMatches,
+        `Default Dimensions: The content window height is correctly rounded into. ${aRealHeight}px -> ${aContentHeight}px should equal ${targetHeight}px`
+      );
+    },
+  };
 }
 
 function test_letterboxing_css_rule() {
@@ -139,37 +133,21 @@ async function test_dynamical_window_rounding(aWindow, aURL, aCheckFunc) {
         `${caseString} Resizing (currently ${containerWidth}x${containerHeight})`
       );
 
+      // Resizing is asynchronous. On Linux an onresize can fire reporting an
+      // earlier requested dimension (see 1407366#53); previously the test tried
+      // to redo the resize when the browser container didn't match the
+      // requested width, but under browser.nova.enabled the container can never
+      // equal the requested outer width (the chrome consumes a different amount
+      // of space), so that redo looped forever with no size change and timed
+      // out (bug 2054792). We instead resolve on the first onresize and let the
+      // waitForCondition below cope with stale/intermediate sizes by re-reading
+      // both the container and the content until the rounding settles.
       aWindow.onresize = () => {
         ({ containerWidth, containerHeight } = getContainerSize(tab));
         info(
           `${caseString} Resized (currently ${containerWidth}x${containerHeight})`
         );
-        if (getPlatform() == "linux" && containerWidth != width) {
-          /*
-           * We observed frequent test failures that resulted from receiving an onresize
-           * event where the browser was resized to an earlier requested dimension. This
-           * resize event happens on Linux only, and is an artifact of the asynchronous
-           * resizing. (See more discussion on 1407366#53)
-           *
-           * We cope with this problem in two ways.
-           *
-           * 1: If we detect that the browser was resized to the wrong value; we
-           *    redo the resize. (This is the lines of code immediately following this
-           *    comment)
-           * 2: We repeat the test until it works using waitForCondition(). But we still
-           *    test Win/Mac more thoroughly: they do not loop in waitForCondition more
-           *    than once, and can fail the test on the first attempt (because their
-           *    check() functions use ok() while on Linux, we do not all ok() and instead
-           *    rely on waitForCondition to fail).
-           *
-           * The logging statements in this test, and RFPHelper.sys.mjs, help narrow down and
-           * illustrate the issue.
-           */
-          info(`${caseString} We hit the weird resize bug. Resize it again.`);
-          aWindow.resizeTo(width, height);
-        } else {
-          resolve();
-        }
+        resolve();
       };
       aWindow.resizeTo(width, height);
     });
@@ -180,8 +158,17 @@ async function test_dynamical_window_rounding(aWindow, aURL, aCheckFunc) {
     );
     await promiseRounding;
 
+    // The container and the content viewport can settle over more than one
+    // layout pass (e.g. under browser.nova.enabled the content area sits in a
+    // flex container whose size lags the window resize by a frame, so
+    // letterboxing rounds more than once before reaching its final size; see
+    // bug 2054792). Re-read the container on every iteration and compare it
+    // against a freshly-read content size so both come from the same settled
+    // layout generation, then wait for the rounding to reach its fixed point.
     info(`${caseString} Get innerWidth/Height from the content.`);
+    let result;
     await TestUtils.waitForCondition(async () => {
+      ({ containerWidth, containerHeight } = getContainerSize(tab));
       let { contentWidth, contentHeight } = await SpecialPowers.spawn(
         tab.linkedBrowser,
         [],
@@ -193,14 +180,21 @@ async function test_dynamical_window_rounding(aWindow, aURL, aCheckFunc) {
         }
       );
 
-      info(`${caseString} Check the result.`);
-      return aCheckFunc(
+      info(
+        `${caseString} Check the result (container ${containerWidth}x${containerHeight}, content ${contentWidth}x${contentHeight}).`
+      );
+      result = aCheckFunc(
         contentWidth,
         contentHeight,
         containerWidth,
         containerHeight
       );
-    }, "Default Dimensions: The content window width is correctly rounded into.");
+      return result.widthMatches && result.heightMatches;
+    }, "The content window is correctly rounded into.").catch(() => {});
+
+    // Assert the final result once, so a case that never settles reports a
+    // meaningful width/height mismatch rather than a bare timeout.
+    result.assert();
   }
 
   BrowserTestUtils.removeTab(tab);
@@ -249,26 +243,20 @@ async function test_customize_width_and_height(aWindow, aURL) {
       }
     }
 
-    // This platform-specific code is explained in the large comment above.
-    if (getPlatform() != "linux") {
-      ok(
-        handleOSFuzziness(aContentWidth, targetDimensions.width),
-        `Custom Dimension: The content window width is correctly rounded into. ${aRealWidth}px -> ${aContentWidth}px should equal ${targetDimensions.width}`
-      );
-
-      ok(
-        handleOSFuzziness(aContentHeight, targetDimensions.height),
-        `Custom Dimension: The content window height is correctly rounded into. ${aRealHeight}px -> ${aContentHeight}px should equal ${targetDimensions.height}`
-      );
-
-      // Using ok() above will cause Win/Mac to fail on even the first test, we don't need to repeat it, return true so waitForCondition ends
-      return true;
-    }
-    // Returning true or false depending on if the test succeeded will cause Linux to repeat until it succeeds.
-    return (
-      handleOSFuzziness(aContentWidth, targetDimensions.width) &&
-      handleOSFuzziness(aContentHeight, targetDimensions.height)
-    );
+    return {
+      widthMatches: handleOSFuzziness(aContentWidth, targetDimensions.width),
+      heightMatches: handleOSFuzziness(aContentHeight, targetDimensions.height),
+      assert() {
+        ok(
+          this.widthMatches,
+          `Custom Dimension: The content window width is correctly rounded into. ${aRealWidth}px -> ${aContentWidth}px should equal ${targetDimensions.width}`
+        );
+        ok(
+          this.heightMatches,
+          `Custom Dimension: The content window height is correctly rounded into. ${aRealHeight}px -> ${aContentHeight}px should equal ${targetDimensions.height}`
+        );
+      },
+    };
   };
 
   await test_dynamical_window_rounding(aWindow, aURL, checkDimension);

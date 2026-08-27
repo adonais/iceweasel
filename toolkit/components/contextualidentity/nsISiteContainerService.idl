@@ -1,0 +1,30 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#include "nsISupports.idl"
+
+interface nsIURI;
+
+/**
+ * Read-only, parent-process view over the site-to-container associations owned
+ * by ContextualIdentityService. Used by the networking code to decide, before
+ * a channel is created, which container a top-level navigation should load in.
+ */
+[scriptable, uuid(f13cdd21-71ab-4644-b43e-2d8a97bea774)]
+interface nsISiteContainerService : nsISupports {
+  /**
+   * The userContextId of the container the given host is bound to, or 0 if the
+   * host is not associated with any container. The host is matched exactly,
+   * after normalization (lowercased, IDN-encoded).
+   */
+  unsigned long lookup(in AUTF8String aHost);
+
+  /**
+   * Decides which container a top-level navigation to aURI should load in:
+   * the container associated with aURI's host, or aBaselineUserContextId when
+   * the host is not associated with any container.
+   */
+  unsigned long containerForNavigation(in nsIURI aURI,
+                                       in unsigned long aBaselineUserContextId);
+};

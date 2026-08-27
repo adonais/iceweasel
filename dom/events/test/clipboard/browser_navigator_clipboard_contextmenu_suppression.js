@@ -372,10 +372,8 @@ if (
         mustHaveAccessibleRule: false,
       });
       await SpecialPowers.spawn(browser, [], async () => {
-        EventUtils.synthesizeMouse(
+        EventUtils.synthesizeMouseAtCenter(
           content.document.documentElement,
-          1,
-          1,
           { button: 1 },
           content.window
         );

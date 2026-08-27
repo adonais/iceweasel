@@ -75,7 +75,7 @@ class InputTaskManager : public TaskManager {
   void NotifyVsync() { mInputPriorityController.WillRunVsync(); }
 
  private:
-  InputTaskManager() : mInputQueueState(STATE_DISABLED) {}
+  InputTaskManager() = default;
 
   class InputPriorityController {
    public:
@@ -124,7 +124,7 @@ class InputTaskManager : public TaskManager {
 
   int32_t GetPriorityModifierForEventLoopTurnForStrictVsyncAlignment();
 
-  Atomic<InputEventQueueState> mInputQueueState;
+  Atomic<InputEventQueueState> mInputQueueState{STATE_DISABLED};
 
   static StaticRefPtr<InputTaskManager> gInputTaskManager;
 

@@ -17,6 +17,7 @@
 #include <setupapi.h>
 
 #include "SerialLogging.h"
+#include "Win32SerialParityCheckStream.h"
 #include "mozilla/AsyncPlatformPipes.h"
 #include "mozilla/ScopeExit.h"
 #include "nsString.h"
@@ -681,7 +682,7 @@ nsresult Win32SerialPlatformService::GetSignalsImpl(
 }
 
 nsresult Win32SerialPlatformService::GetReadStreamImpl(
-    const nsString& aPortId, uint32_t aBufferSize,
+    const nsString& aPortId, uint32_t aBufferSize, bool aDetectParityErrors,
     nsIAsyncInputStream** aStream) {
   mIOCapability.AssertOnCurrentThread();
   HANDLE handle = FindPortHandle(aPortId);
@@ -702,7 +703,25 @@ nsresult Win32SerialPlatformService::GetReadStreamImpl(
   }
   RefPtr<PlatformPipeReader> reader =
       MakeRefPtr<PlatformPipeReader>(std::move(readHandle), aBufferSize);
-  reader.forget(aStream);
+
+  if (aDetectParityErrors) {
+    // Duplicate a separate handle for ClearCommError() so the wrapper can poll
+    // for parity errors independently of the reader's handle.
+    UniqueFileHandle commHandle = DuplicateFileHandle(handle);
+    if (!commHandle) {
+      MOZ_LOG(gWebSerialLog, LogLevel::Error,
+              ("Win32SerialPlatformService[%p]::GetReadStream DuplicateHandle "
+               "for comm error polling failed for port '%s'",
+               this, NS_ConvertUTF16toUTF8(aPortId).get()));
+      return NS_ERROR_FAILURE;
+    }
+    RefPtr<Win32SerialParityCheckStream> checker =
+        MakeRefPtr<Win32SerialParityCheckStream>(
+            nsCOMPtr<nsIAsyncInputStream>(reader), std::move(commHandle));
+    checker.forget(aStream);
+  } else {
+    reader.forget(aStream);
+  }
   return NS_OK;
 }
 

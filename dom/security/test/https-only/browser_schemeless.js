@@ -32,7 +32,7 @@ function runTest(aExpectedScheme, aDesc) {
 add_task(async function test_schemeless() {
   Services.perms.addFromPrincipal(
     Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       "http://example.com"
     ),
     "https-only-load-insecure",

@@ -860,6 +860,11 @@ def autotest(
                         f"\tChecker {checker_name} did not find any issues in its test file, "
                         f"clang-tidy output for the run is:\n{info1}"
                     )
+                elif checker_error == TOOLS_CHECKER_FAILED_FILE:
+                    message_to_log = (
+                        f"\tChecker {checker_name} failed to run on its test file, "
+                        f"clang-tidy output for the run is:\n{info1}"
+                    )
                 elif checker_error == TOOLS_CHECKER_RESULT_FILE_NOT_FOUND:
                     message_to_log = f"\tChecker {checker_name} does not have a result file - {checker_name}.json"
                 elif checker_error == TOOLS_CHECKER_DIFF_FAILED:
@@ -922,8 +927,10 @@ def _run_analysis(
             "utf-8"
         )
     except subprocess.CalledProcessError as e:
-        print(e.output)
-        return None
+        # Callers unpack the result, so this must stay a two-element tuple.
+        clang_output = e.output.decode("utf-8", errors="replace")
+        print(clang_output)
+        return None, clang_output
     return _parse_issues(command_context, clang_output), clang_output
 
 
@@ -1187,6 +1194,9 @@ def _verify_checker(
         sources={test_file_path_cpp: None},
     )
     if issues is None:
+        checker_error["checker-error"] = TOOLS_CHECKER_FAILED_FILE
+        checker_error["info1"] = clang_output
+        checkers_results.append(checker_error)
         return TOOLS_CHECKER_FAILED_FILE
 
     # Verify to see if we got any issues, if not raise exception

@@ -854,6 +854,7 @@ UniquePtr<AttrAtomArray> AttrAtomArray::CreateDeduplicatedCopyIfDifferentImpl()
       // Allocate the deduplicated copy and copy the preceding elements into it.
       deduplicatedArray = MakeUnique<AttrAtomArray>();
       deduplicatedArray->mMayContainDuplicates = false;
+      deduplicatedArray->mBloomFilter = mBloomFilter;
       deduplicatedArray->mArray.SetCapacity(len - 1);
       for (size_t indexToCopy = 0; indexToCopy < i; indexToCopy++) {
         deduplicatedArray->mArray.AppendElement(mArray[indexToCopy]);
@@ -877,7 +878,7 @@ uint32_t nsAttrValue::GetAtomCount() const {
   }
 
   if (type == eAtomArray) {
-    return GetAtomArrayValue()->mArray.Length();
+    return GetAtomArrayValue()->Array().Length();
   }
 
   return 0;
@@ -892,7 +893,7 @@ nsAtom* nsAttrValue::AtomAt(int32_t aIndex) const {
   }
 
   NS_ASSERTION(Type() == eAtomArray, "GetAtomCount must be confused");
-  return GetAtomArrayValue()->mArray.ElementAt(aIndex);
+  return GetAtomArrayValue()->Array().ElementAt(aIndex);
 }
 
 uint32_t nsAttrValue::HashValue() const {
@@ -946,7 +947,7 @@ uint32_t nsAttrValue::HashValue() const {
     }
     case eAtomArray: {
       uint32_t hash = 0;
-      for (const auto& atom : cont->mValue.mAtomArray->mArray) {
+      for (const auto& atom : cont->mValue.mAtomArray->Array()) {
         hash = AddToHash(hash, atom.get());
       }
       return hash;
@@ -1200,8 +1201,8 @@ struct HasSubstringFn {
       return std::search(aAttrValue, end, aSearchValue.BeginReading(),
                          aSearchValue.EndReading()) != end;
     }
-    return FindInReadable(aSearchValue, nsDependentString(aAttrValue, aAttrLen),
-                          nsASCIICaseInsensitiveStringComparator);
+    return AsciiCaseInsensitiveFindInReadable(
+        aSearchValue, nsDependentString(aAttrValue, aAttrLen));
   }
 };
 
@@ -1290,10 +1291,10 @@ bool nsAttrValue::Contains(nsAtom* aValue,
       if (Type() == eAtomArray) {
         const AttrAtomArray* array = GetAtomArrayValue();
         if (aCaseSensitive == eCaseMatters) {
-          return array->mArray.Contains(aValue);
+          return array->MayContain(aValue) && array->Array().Contains(aValue);
         }
 
-        for (const RefPtr<nsAtom>& cur : array->mArray) {
+        for (const RefPtr<nsAtom>& cur : array->Array()) {
           // For performance reasons, don't do a full on unicode case
           // insensitive string comparison. This is only used for quirks mode
           // anyway.
@@ -1323,7 +1324,7 @@ bool nsAttrValue::Contains(const nsAString& aValue) const {
     default: {
       if (Type() == eAtomArray) {
         const AttrAtomArray* array = GetAtomArrayValue();
-        return array->mArray.Contains(aValue, AtomArrayStringComparator());
+        return array->Array().Contains(aValue, AtomArrayStringComparator());
       }
     }
   }
@@ -1403,11 +1404,8 @@ void nsAttrValue::ParseAtomArray(nsAtom* aValue) {
   }
 
   // We have at least one class atom. Create a new AttrAtomArray.
-  AttrAtomArray* array = new AttrAtomArray;
-
-  // XXX(Bug 1631371) Check if this should use a fallible operation as it
-  // pretended earlier.
-  array->mArray.AppendElement(std::move(classAtom));
+  auto array = MakeUnique<AttrAtomArray>();
+  array->Append(std::move(classAtom));
 
   // parse the rest of the classnames
   while (iter != end) {
@@ -1419,10 +1417,7 @@ void nsAttrValue::ParseAtomArray(nsAtom* aValue) {
 
     classAtom = NS_AtomizeMainThread(Substring(start, iter));
 
-    // XXX(Bug 1631371) Check if this should use a fallible operation as it
-    // pretended earlier.
-    array->mArray.AppendElement(std::move(classAtom));
-    array->mMayContainDuplicates = true;
+    array->Append(std::move(classAtom));
 
     // skip whitespace
     while (iter != end && nsContentUtils::IsHTMLWhitespace(*iter)) {
@@ -1433,7 +1428,7 @@ void nsAttrValue::ParseAtomArray(nsAtom* aValue) {
   // Wrap the AtomArray into a fresh MiscContainer.
   MiscContainer* cont = EnsureEmptyMiscContainer();
   MOZ_ASSERT(cont->mValue.mRefCount == 0);
-  cont->mValue.mAtomArray = array;
+  cont->mValue.mAtomArray = array.release();
   cont->mType = eAtomArray;
   NS_ADDREF(cont);
   MOZ_ASSERT(cont->mValue.mRefCount == 1);

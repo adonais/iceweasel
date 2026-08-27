@@ -1653,7 +1653,9 @@ nsresult nsUrlClassifierRealTimeLookupHandler::StartRealTimeLookup(
   NS_ENSURE_TRUE(uri, NS_ERROR_FAILURE);
 
   rv = CreateFeatureHolders(uri);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
   nsUrlClassifierUtils* utilsService = nsUrlClassifierUtils::GetInstance();
   if (NS_WARN_IF(!utilsService)) {
@@ -1687,7 +1689,7 @@ nsresult nsUrlClassifierRealTimeLookupHandler::CreateFeatureHolders(
 
   // No real-time features found, bail out early.
   if (realTimeFeatures.IsEmpty()) {
-    return NS_ERROR_FAILURE;
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   // Create the feature holder for the real-time features.
@@ -1704,7 +1706,7 @@ nsresult nsUrlClassifierRealTimeLookupHandler::CreateFeatureHolders(
 
   // No local list features found, bail out earlier.
   if (localListFeatures.IsEmpty()) {
-    return NS_ERROR_FAILURE;
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   // Create the feature holder for the local list features.
@@ -2142,6 +2144,12 @@ nsUrlClassifierDBService::Classify(nsIPrincipal* aPrincipal,
     }
 
     rv = handler->StartRealTimeLookup(aPrincipal);
+    if (rv == NS_ERROR_NOT_AVAILABLE) {
+      // No SafeBrowsing features are configured, so there is nothing to
+      // classify and no callback will be fired.
+      *aResult = false;
+      return NS_OK;
+    }
     NS_ENSURE_SUCCESS(rv, rv);
 
     *aResult = true;

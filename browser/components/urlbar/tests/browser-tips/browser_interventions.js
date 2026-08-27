@@ -3,11 +3,6 @@
 
 "use strict";
 
-ChromeUtils.defineESModuleGetters(this, {
-  UrlbarProviderInterventions:
-    "moz-src:///browser/components/urlbar/UrlbarProviderInterventions.sys.mjs",
-});
-
 add_setup(async function () {
   Services.telemetry.clearEvents();
   await makeProfileResettable();
@@ -23,7 +18,7 @@ add_task(async function refresh() {
   // button.
   await checkIntervention({
     searchString: SEARCH_STRINGS.REFRESH,
-    tip: UrlbarProviderInterventions.TIP_TYPE.REFRESH,
+    tip: UrlbarShared.INTERVENTION_TIP_TYPE.REFRESH,
     title:
       "Restore default settings and remove old add-ons for optimal performance.",
     button: /^Refresh .+…$/,
@@ -43,7 +38,7 @@ add_task(async function clear() {
   // button.
   await checkIntervention({
     searchString: SEARCH_STRINGS.CLEAR,
-    tip: UrlbarProviderInterventions.TIP_TYPE.CLEAR,
+    tip: UrlbarShared.INTERVENTION_TIP_TYPE.CLEAR,
     title: "Clear your cache, cookies, history and more.",
     button: "Choose What to Clear…",
     awaitCallback() {
@@ -67,7 +62,7 @@ add_task(async function clear_private() {
   let result = (await awaitTip(SEARCH_STRINGS.REFRESH, win))[0];
   Assert.strictEqual(
     result.payload.type,
-    UrlbarProviderInterventions.TIP_TYPE.REFRESH
+    UrlbarShared.INTERVENTION_TIP_TYPE.REFRESH
   );
 
   // Blur the urlbar so that the engagement is ended.
@@ -164,7 +159,7 @@ add_task(async function tipsAreEnglishOnly() {
   let result = (await awaitTip(SEARCH_STRINGS.REFRESH, window))[0];
   Assert.strictEqual(
     result.payload.type,
-    UrlbarProviderInterventions.TIP_TYPE.REFRESH
+    UrlbarShared.INTERVENTION_TIP_TYPE.REFRESH
   );
   await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
 
@@ -207,7 +202,7 @@ add_task(async function pickHelp() {
     let [result] = await awaitTip(SEARCH_STRINGS.CLEAR);
     Assert.strictEqual(
       result.payload.type,
-      UrlbarProviderInterventions.TIP_TYPE.CLEAR
+      UrlbarShared.INTERVENTION_TIP_TYPE.CLEAR
     );
 
     // Click the help command and wait for the help page to load.

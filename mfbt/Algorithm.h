@@ -7,10 +7,10 @@
 #ifndef mozilla_Algorithm_h
 #define mozilla_Algorithm_h
 
-#include "mozilla/Result.h"
-
 #include <iterator>
 #include <type_traits>
+
+#include "mozilla/Result.h"
 
 namespace mozilla {
 

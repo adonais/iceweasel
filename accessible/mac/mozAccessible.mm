@@ -1282,6 +1282,17 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
       }
       break;
     }
+    case nsIAccessibleEvent::EVENT_DESCRIPTION_CHANGE: {
+      // There is no specific description-change event on macOS, so we use the
+      // announcement requested notification to expose this change manually.
+      nsAutoString description;
+      mGeckoAccessible->Description(description);
+      if (!description.IsEmpty()) {
+        [self handleAnnouncementEvent:nsCocoaUtils::ToNSString(description)
+                             priority:nsIAccessibleAnnouncementEvent::POLITE];
+      }
+      break;
+    }
     case nsIAccessibleEvent::EVENT_LIVE_REGION_CHANGED: {
       MOZ_ASSERT(mIsLiveRegion);
       [self moxPostNotification:@"AXLiveRegionChanged"];

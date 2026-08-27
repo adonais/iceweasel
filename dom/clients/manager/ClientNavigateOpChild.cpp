@@ -239,6 +239,16 @@ RefPtr<ClientOpPromise> ClientNavigateOpChild::DoNavigate(
 
   nsCOMPtr<nsIPrincipal> principal = doc->NodePrincipal();
 
+  rv = nsContentUtils::GetSecurityManager()->CheckLoadURIWithPrincipal(
+      principal, url, nsIScriptSecurityManager::STANDARD, doc->InnerWindowID());
+  if (NS_FAILED(rv)) {
+    nsPrintfCString err("Navigation to \"%s\" is not allowed",
+                        aArgs.url().get());
+    CopyableErrorResult result;
+    result.ThrowTypeError(err);
+    return ClientOpPromise::CreateAndReject(result, __func__);
+  }
+
   nsCOMPtr<nsIDocShell> docShell = window->GetDocShell();
   nsCOMPtr<nsIWebProgress> webProgress = do_GetInterface(docShell);
   if (!docShell || !webProgress) {

@@ -489,4 +489,68 @@ add_task(async function test_arrow_up_enters_previous_expanded_folder() {
   );
 
   SidebarTestUtils.closePanel(window);
+  await PlacesUtils.bookmarks.eraseEverything();
+});
+
+add_task(async function test_only_active_row_is_tab_stop() {
+  await PlacesUtils.bookmarks.insertTree({
+    guid: PlacesUtils.bookmarks.toolbarGuid,
+    children: [
+      { url: "https://example.com/one/", title: "One" },
+      { url: "https://example.com/two/", title: "Two" },
+    ],
+  });
+
+  const { component, contentWindow } = await showBookmarksSidebar();
+  const tabList = component.bookmarkList;
+
+  const toolbarDetails = await BrowserTestUtils.waitForMutationCondition(
+    tabList.shadowRoot,
+    { childList: true, subtree: true },
+    () => tabList.folderEls[0]
+  );
+  await openFolder(toolbarDetails);
+  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
+  await waitForNestedListRows(nestedList);
+  Assert.equal(nestedList.rowEls.length, 2, "Two bookmark rows are shown.");
+
+  info("Navigate into the folder and down to the second row.");
+  const toolbarSummary = toolbarDetails.querySelector("summary");
+  toolbarSummary.focus();
+  await focusWithKeyboard(nestedList.rowEls[0], "KEY_ArrowDown", contentWindow);
+  await focusWithKeyboard(nestedList.rowEls[1], "KEY_ArrowDown", contentWindow);
+
+  Assert.equal(
+    nestedList.rowEls[0].getAttribute("tabindex"),
+    -1,
+    "The unselected row is not a tab stop."
+  );
+  Assert.equal(
+    nestedList.rowEls[1].getAttribute("tabindex"),
+    0,
+    "The selected row is a tab stop."
+  );
+
+  info("Tab from the focused row exits the panel.");
+  const panelBlurred = BrowserTestUtils.waitForEvent(contentWindow, "blur");
+  EventUtils.synthesizeKey("KEY_Tab", {}, contentWindow);
+  await panelBlurred;
+  Assert.ok(
+    !contentWindow.document.hasFocus(),
+    "Tab from a bookmark row moves focus out of the panel."
+  );
+
+  info("Shift+Tab returns to the active row, not another item.");
+  const rowRefocused = BrowserTestUtils.waitForEvent(
+    nestedList.rowEls[1],
+    "focus"
+  );
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+  await rowRefocused;
+  Assert.ok(
+    isActiveElement(nestedList.rowEls[1]),
+    "Shift+Tab returns focus to the active row."
+  );
+
+  SidebarTestUtils.closePanel(window);
 });

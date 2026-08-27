@@ -5,6 +5,7 @@
 #ifndef DOM_QUOTA_QUOTAPARENT_H_
 #define DOM_QUOTA_QUOTAPARENT_H_
 
+#include "mozilla/Result.h"
 #include "mozilla/dom/quota/PQuotaParent.h"
 #include "nsISupportsImpl.h"
 
@@ -24,6 +25,16 @@ class Quota final : public PQuotaParent {
   ~Quota();
 
   bool TrustParams() const;
+
+  // Verifies that this actor is managed by the parent process. Operations
+  // which are not scoped to a single origin must never be performed on behalf
+  // of a content process.
+  mozilla::Result<mozilla::Ok, nsresult> VerifyIsParentProcessActor() const;
+
+  // Verifies that the principal info is structurally valid and that the actor
+  // which sent it could actually be hosting the corresponding origin. Content
+  // processes must never be able to act on other origins than their own.
+  bool VerifyPrincipalInfo(const PrincipalInfo& aPrincipalInfo) const;
 
   bool VerifyRequestParams(const RequestParams& aParams) const;
 

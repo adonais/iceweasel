@@ -68,7 +68,7 @@ add_task(async function test_domain_change() {
     gOverride.clearOverrides();
   });
 
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   let serverURL = `http://${DOMAIN_NAME}:${server.identity.primaryPort}/`;
   server.identity.add("http", DOMAIN_NAME, server.identity.primaryPort);
 

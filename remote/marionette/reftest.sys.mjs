@@ -760,7 +760,13 @@ reftest.Runner = class {
         0, // top
         browserRect.width,
         browserRect.height,
-        { canvas, flags, readback: !this.useDrawSnapshot }
+        {
+          canvas,
+          flags,
+          readback: !this.useDrawSnapshot,
+          // Match the DRAWWINDOW_DRAW_VIEW readback path above.
+          drawView: true,
+        }
       );
     }
     if (

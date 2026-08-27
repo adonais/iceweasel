@@ -108,10 +108,8 @@ bitflags! {
 /// The unpacked equivalent to a `Command`.
 ///
 /// Each variant carries an `Index<PrimitiveDrawHeader>` identifying which
-/// per-frame draw header to use. While `scratch.frame.draws` is identity-
-/// indexed by `PrimitiveInstanceIndex.0`, the numerical value of the draw
-/// index equals the prim instance index; a follow-up will make them
-/// physically distinct when draws becomes push-per-draw.
+/// per-frame draw header to use. That is a draw index, not a primitive instance
+/// index: reach the instance through the header's `prim_instance_index`.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub enum PrimitiveCommand {
     Simple {
@@ -125,7 +123,7 @@ pub enum PrimitiveCommand {
         src_task_id: RenderTaskId,
         // The picture's unclipped local rect, used to map plane positions to
         // texture coordinates.
-        local_rect: LayoutRect,
+        pattern_rect: LayoutRect,
     },
     Instance {
         draw_index: storage::Index<PrimitiveDrawHeader>,
@@ -161,14 +159,14 @@ impl PrimitiveCommand {
         polygons_address: GpuBufferAddress,
         transform_id: GpuTransformId,
         src_task_id: RenderTaskId,
-        local_rect: LayoutRect,
+        pattern_rect: LayoutRect,
     ) -> Self {
         PrimitiveCommand::SplitComposite {
             draw_index,
             polygons_address,
             transform_id,
             src_task_id,
-            local_rect,
+            pattern_rect,
         }
     }
 
@@ -293,16 +291,16 @@ impl CommandBuffer {
             PrimitiveCommand::Simple { draw_index } => {
                 self.commands.push(Command::draw_simple_prim(draw_index));
             }
-            PrimitiveCommand::SplitComposite { draw_index, polygons_address, transform_id, src_task_id, local_rect } => {
+            PrimitiveCommand::SplitComposite { draw_index, polygons_address, transform_id, src_task_id, pattern_rect } => {
                 self.commands.push(Command::draw_split_composite(draw_index));
                 self.commands.push(Command::data(polygons_address.as_u32()));
                 self.commands.push(Command::data(transform_id.0));
                 self.commands.push(Command::data(src_task_id.index));
                 self.commands.push(Command::data(src_task_id.sub_rect_index as u32));
-                self.commands.push(Command::data(local_rect.min.x.to_bits()));
-                self.commands.push(Command::data(local_rect.min.y.to_bits()));
-                self.commands.push(Command::data(local_rect.max.x.to_bits()));
-                self.commands.push(Command::data(local_rect.max.y.to_bits()));
+                self.commands.push(Command::data(pattern_rect.min.x.to_bits()));
+                self.commands.push(Command::data(pattern_rect.min.y.to_bits()));
+                self.commands.push(Command::data(pattern_rect.max.x.to_bits()));
+                self.commands.push(Command::data(pattern_rect.max.y.to_bits()));
             }
             PrimitiveCommand::Instance { draw_index, gpu_buffer_address } => {
                 self.commands.push(Command::draw_instance(draw_index));
@@ -356,7 +354,7 @@ impl CommandBuffer {
                         index: cmd_iter.next().unwrap().0,
                         sub_rect_index: cmd_iter.next().unwrap().0 as u16,
                     };
-                    let local_rect = LayoutRect {
+                    let pattern_rect = LayoutRect {
                         min: LayoutPoint::new(
                             f32::from_bits(cmd_iter.next().unwrap().0),
                             f32::from_bits(cmd_iter.next().unwrap().0),
@@ -371,7 +369,7 @@ impl CommandBuffer {
                         polygons_address,
                         transform_id,
                         src_task_id,
-                        local_rect,
+                        pattern_rect,
                     );
                     f(&cmd, current_spatial_node_index, &[]);
                 }

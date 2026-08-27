@@ -3,6 +3,40 @@
     {
       "kind": "module",
       "model": "generic",
+      "module": "system-instructions",
+      "schema": 1787172694544,
+      "feature": "aitab",
+      "prompts": "You turn web page content into a structured \"page config\" that renders as a rich, interactive page.\n\nRespond with ONLY a single JSON object — no prose, no explanation, and no markdown code fences.\n\nThe object MUST validate against the \"page\" schema below (which references the block schemas). Requirements:\n- Start with a \"header\" (title, optional emoji icon and subhead).\n- Build the body from the block types the schemas below define, choosing whichever fit the content: \"text\" for prose or summaries, \"table\" or \"list\" to compare or enumerate items, \"cards\" for visual or linked items, a \"timeline\" for ordered steps or plans, and \"highlight\" to call out a key verdict, the short answer, or standout figures. Do not invent block types or use any layout the schemas do not define.\n- Make the page scannable: prefer a \"highlight\" box for the headline takeaway or a key number, a checklist for actionable steps, big-number or stat layouts for important figures, and a table or cards to compare multiple items — rather than collapsing everything into plain paragraphs.\n- End with a \"footer\" whose buttons link back to the most relevant source URLs.\n- Use ONLY information present in the source content. Do not invent facts, numbers, ratings, prices, or URLs. Omit anything you are unsure about.\n\nSCHEMAS:\n{schemas}\n",
+      "version": "1.2",
+      "id": "aitab--system-instructions--generic--v1",
+      "last_modified": 1787587514437
+    },
+    {
+      "kind": "params",
+      "model": "generic",
+      "schema": 1787172694544,
+      "feature": "aitab",
+      "modules": [
+        {
+          "name": "system-instructions",
+          "version": "1.2"
+        },
+        {
+          "name": "user-data",
+          "version": "1.0"
+        }
+      ],
+      "purpose": "aitab",
+      "version": "1.3",
+      "is_default": true,
+      "parameters": "{\"temperature\": 0.7}",
+      "service_type": "ai",
+      "id": "aitab--params--generic--v1",
+      "last_modified": 1787587514434
+    },
+    {
+      "kind": "module",
+      "model": "generic",
       "module": "user-data",
       "schema": 1786741661666,
       "feature": "agent-monitor",
@@ -44,40 +78,6 @@
       "service_type": "agent",
       "id": "agent-monitor--params--generic--v2",
       "last_modified": 1787172694012
-    },
-    {
-      "kind": "module",
-      "model": "generic",
-      "module": "system-instructions",
-      "schema": 1786741661666,
-      "feature": "aitab",
-      "prompts": "You turn web page content into a structured \"page config\" that renders as a rich, interactive page.\n\nRespond with ONLY a single JSON object — no prose, no explanation, and no markdown code fences.\n\nThe object MUST validate against the \"page\" schema below (which references the block schemas). Requirements:\n- Start with a \"header\" (title, optional emoji icon and subhead).\n- Add \"blocks\" using ONLY the block types defined in the schemas below: a \"table\" or \"list\" to compare or enumerate multiple items, \"cards\" for visual or linked items, a \"timeline\" for ordered steps or plans, and \"text\" for prose or summaries. Do not invent block types (there is no \"info\", \"todo\", or \"highlight\" block).\n- End with a \"footer\" whose buttons link back to the most relevant source URLs.\n- Use ONLY information present in the source content. Do not invent facts, numbers, ratings, prices, or URLs. Omit anything you are unsure about.\n\nSCHEMAS:\n{schemas}\n",
-      "version": "1.1",
-      "id": "aitab--system-instructions--generic--v1",
-      "last_modified": 1787172694009
-    },
-    {
-      "kind": "params",
-      "model": "generic",
-      "schema": 1786741661666,
-      "feature": "aitab",
-      "modules": [
-        {
-          "name": "system-instructions",
-          "version": "1.1"
-        },
-        {
-          "name": "user-data",
-          "version": "1.0"
-        }
-      ],
-      "purpose": "aitab",
-      "version": "1.2",
-      "is_default": true,
-      "parameters": "{\"temperature\": 0.7}",
-      "service_type": "ai",
-      "id": "aitab--params--generic--v1",
-      "last_modified": 1787172694007
     },
     {
       "kind": "module",
@@ -3450,5 +3450,5 @@
       "last_modified": 1771607375493
     }
   ],
-  "timestamp": 1787172694019
+  "timestamp": 1787587514437
 }

@@ -120,6 +120,7 @@ TEST_HARNESS_FILES.gtest += [
     "perf_srgb_lossy.webp",
     "perf_ycbcr.jpg",
     "progressive.jxl",
+    "progressive_alpha_multigroup.jxl",
     "rle4.bmp",
     "rle8.bmp",
     "stackcheck.avif",

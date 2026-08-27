@@ -582,6 +582,7 @@ nsresult ChannelMediaResource::Open(nsIStreamListener** aStreamListener) {
   mSharedInfo->mResources.AppendElement(this);
 
   mIsLiveStream = streamLength < 0;
+  LOG("Open() streamLength={} mIsLiveStream={}", streamLength, mIsLiveStream);
   mListener = new Listener(this, 0, ++mLoadID);
   *aStreamListener = mListener;
   NS_ADDREF(*aStreamListener);

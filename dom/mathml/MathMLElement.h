@@ -22,7 +22,7 @@ using MathMLElementBase = nsStyledElement;
 /*
  * The base class for MathML elements.
  */
-class MathMLElement final : public MathMLElementBase, public Link {
+class MathMLElement : public MathMLElementBase, public Link {
  public:
   explicit MathMLElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
   explicit MathMLElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);

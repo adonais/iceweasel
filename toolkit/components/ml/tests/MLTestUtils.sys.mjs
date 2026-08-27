@@ -56,7 +56,7 @@ const EXTRA_RESPONSE_ARGS = {
 function startServer(server, path) {
   server.start(-1);
   const { primaryHost, primaryPort } = server.identity;
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   return `http://${primaryHost}:${primaryPort}${path}`;
 }
 
@@ -98,7 +98,7 @@ function createServer(markup, code) {
   server.start(-1);
 
   let { primaryHost, primaryPort } = server.identity;
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   const url = `http://${primaryHost}:${primaryPort}/page.html`;
 
   return {
@@ -578,7 +578,7 @@ export const MLTestUtils = {
 
       server.registerPathHandler(path, pageHandler);
 
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       const url = `http://${primaryHost}:${primaryPort}${path}`;
       const tab = await BrowserTestUtils.openNewForegroundTab(
         browser,
@@ -626,7 +626,7 @@ export const MLTestUtils = {
        *
        * @type {string}
        */
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       origin: `http://${primaryHost}:${primaryPort}`,
     };
   },

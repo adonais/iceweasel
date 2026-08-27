@@ -20,8 +20,10 @@ var gPrompt = {
     equal(text, EXPECTED_PROMPT_TEXT, "expecting alert() to be called");
   },
 
-  promptPassword() {
-    ok(false, "not expecting promptPassword() to be called");
+  promptPassword(_dialogTitle, _text, password, _checkMsg) {
+    // The first token in the test module has a blank password by default.
+    password.value = "";
+    return true;
   },
 };
 

@@ -103,11 +103,11 @@ nsresult Serialize(BlobImpl* aBlobImpl, IPCBlob& aIPCBlob) {
     if (NS_WARN_IF(rv.Failed())) {
       return rv.StealNSResult();
     }
-    file.fullPath() = value;
+    file.fullPath() = std::move(value);
 
     file.isDirectory() = aBlobImpl->IsDirectory();
 
-    aIPCBlob.file() = Some(file);
+    aIPCBlob.file() = Some(std::move(file));
   }
 
   aIPCBlob.fileId() = aBlobImpl->GetFileId();
@@ -134,7 +134,7 @@ nsresult Serialize(BlobImpl* aBlobImpl, IPCBlob& aIPCBlob) {
                                         /* aAllowLazy */ true)) {
     return NS_ERROR_FAILURE;
   }
-  aIPCBlob.inputStream() = stream;
+  aIPCBlob.inputStream() = std::move(stream);
   return NS_OK;
 }
 

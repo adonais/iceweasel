@@ -40,6 +40,14 @@ struct DeclarationTraits<MutableInlineStyleDeclarations> {
 
     declaration->SetPropertyTypedValue(aPropertyId, aValue, aRv);
   }
+
+  static void Delete(nsStyledElement* aStyledElement,
+                     const CSSPropertyId& aPropertyId, ErrorResult& aRv) {
+    MOZ_ASSERT(aStyledElement);
+    nsCOMPtr<nsDOMCSSDeclaration> declaration = aStyledElement->Style();
+
+    declaration->RemoveProperty(aPropertyId, aRv);
+  }
 };
 
 // Specialization for style rule
@@ -54,6 +62,14 @@ struct DeclarationTraits<MutableStyleRuleDeclarations> {
     nsCOMPtr<nsDOMCSSDeclaration> declaration = aRule->Style();
 
     declaration->SetPropertyTypedValue(aPropertyId, aValue, aRv);
+  }
+
+  static void Delete(CSSStyleRule* aRule, const CSSPropertyId& aPropertyId,
+                     ErrorResult& aRv) {
+    MOZ_ASSERT(aRule);
+    nsCOMPtr<nsDOMCSSDeclaration> declaration = aRule->Style();
+
+    declaration->RemoveProperty(aPropertyId, aRv);
   }
 };
 
@@ -80,14 +96,12 @@ void StylePropertyMap::Set(
     const Sequence<OwningCSSStyleValueOrUTF8String>& aValues,
     ErrorResult& aRv) {
   // Step 2.
+  auto propertyId = CSSPropertyId::Parse(aProperty);
 
-  NonCustomCSSPropertyId id = nsCSSProps::LookupProperty(aProperty);
-  if (id == eCSSProperty_UNKNOWN) {
+  if (!propertyId.IsValid()) {
     aRv.ThrowTypeError("Invalid property: "_ns + aProperty);
     return;
   }
-
-  auto propertyId = CSSPropertyId::FromIdOrCustomProperty(id, aProperty);
 
   if (aValues.Length() != 1) {
     aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
@@ -145,8 +159,27 @@ void StylePropertyMap::Append(
   aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
 }
 
+// https://drafts.css-houdini.org/css-typed-om/#dom-stylepropertymap-delete
 void StylePropertyMap::Delete(const nsACString& aProperty, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  if (!mParent) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return;
+  }
+
+  // Step 1. If property is not a custom property name string, set property to
+  // property ASCII lowercased.
+  // TODO: Implement Step 1 if it's actually needed.
+
+  // Step 2. If property is not a valid CSS property, throw a TypeError.
+  auto propertyId = CSSPropertyId::Parse(aProperty);
+  if (!propertyId.IsValid()) {
+    aRv.ThrowTypeError("Invalid property: "_ns + aProperty);
+    return;
+  }
+
+  // Step 3. If this’s [[declarations]] internal slot contains property, remove
+  // it.
+  mDeclarations.Delete(propertyId, aRv);
 }
 
 // https://drafts.css-houdini.org/css-typed-om/#dom-stylepropertymap-clear
@@ -200,6 +233,25 @@ void StylePropertyMapReadOnly::Declarations::Clear(ErrorResult& aRv) {
       declaration->SetCssText(""_ns, nullptr, aRv);
       return;
     }
+  }
+}
+
+void StylePropertyMapReadOnly::Declarations::Delete(
+    const CSSPropertyId& aPropertyId, ErrorResult& aRv) {
+  switch (mKind) {
+    case Kind::Inline:
+      DeclarationTraits<MutableInlineStyleDeclarations>::Delete(
+          mStyledElement, aPropertyId, aRv);
+      return;
+
+    case Kind::Computed:
+      MOZ_ASSERT_UNREACHABLE("ComputedStyleMap is not writable");
+      return;
+
+    case Kind::Rule:
+      DeclarationTraits<MutableStyleRuleDeclarations>::Delete(mRule,
+                                                              aPropertyId, aRv);
+      return;
   }
 }
 

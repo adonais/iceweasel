@@ -12,7 +12,7 @@ let importer = parseModule(`
 
 let b = registerModule("importer", importer);
 
-moduleLink(b);
+moduleLoadAndLink(b);
 moduleEvaluate(b);
 
 assertEq(globalThis.importedText, text);

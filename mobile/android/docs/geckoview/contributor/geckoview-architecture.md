@@ -114,7 +114,7 @@ The most important delegates are:
   active on the page and allows the embedder to pause, resume, receive playback
   state etc.
 - `WebExtension.MessageDelegate` Used by the embedder to exchange messages
-  with built-in extensions. See also [Interacting with Web Content](../consumer/web-extensions.html).
+  with built-in extensions. See also [Interacting with Web Content](../consumer/web-extensions.md).
 
 (geckodisplay)=
 
@@ -318,7 +318,7 @@ In addition to ordinary WebExtension APIs, GeckoView allows `builtIn`
 extensions to communicate to the app via native messaging. Apps can register
 themselves as native apps and extensions will be able to communicate to the app
 using `connectNative` and `sendNativeMessage`. Further information can be
-found [here](../consumer/web-extensions.html).
+found [here](../consumer/web-extensions.md).
 
 ## Internals
 
@@ -617,7 +617,7 @@ private void sessionDelegateFeature() {
 ### Permissions
 
 There are two separate but related permission concepts in GeckoView: `Content`
-permissions and `Android` permissions. See also the related [consumer doc](../consumer/permissions.html) on permissions.
+permissions and `Android` permissions. See also the related [consumer doc](../consumer/permissions.md) on permissions.
 
 #### Content permissions
 
@@ -726,7 +726,7 @@ whenever a password element is added to the DOM after the `pageshow` event.
 
 ### Prefs
 
-[Preferences](/modules/libpref/index.html) (or prefs) are used throughout
+[Preferences](/modules/libpref/index.md) (or prefs) are used throughout
 Gecko to configure the browser, enable custom features, etc.
 
 GeckoView does not directly expose prefs to Apps. A limited set configuration
@@ -772,4 +772,4 @@ detailed description of this see [here](https://gist.github.com/agi/c900f3e473ff
 ### Testing infrastructure
 
 For a detailed description of our testing infrastructure see [GeckoView junit
-Test Framework](junit.html).
+Test Framework](junit.md).

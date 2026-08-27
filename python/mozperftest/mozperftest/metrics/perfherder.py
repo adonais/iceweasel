@@ -12,7 +12,11 @@ import time
 import jsonschema
 
 from mozperftest.layers import Layer
-from mozperftest.metrics.common import COMMON_ARGS, filtered_metrics
+from mozperftest.metrics.common import (
+    COMMON_ARGS,
+    filtered_metrics,
+    get_available_metrics,
+)
 from mozperftest.metrics.exceptions import PerfherderValidDataError
 from mozperftest.metrics.notebook.constant import Constant
 from mozperftest.metrics.notebook.transformer import get_transformer
@@ -72,13 +76,21 @@ class Perfherder(Layer):
             exclusions = ["statistics."]
 
         # Get filtered metrics
+        transformer = self.get_arg("transformer")
         metrics = self.get_arg("metrics")
+        if not metrics:
+            metrics = [
+                {"name": name}
+                for name in get_available_metrics(
+                    metadata, output, prefix, transformer=transformer
+                )
+            ]
         results, fullsettings = filtered_metrics(
             metadata,
             output,
             prefix,
             metrics=metrics,
-            transformer=self.get_arg("transformer"),
+            transformer=transformer,
             settings=True,
             exclude=exclusions,
             split_by=self.get_arg("split-by"),

@@ -5,6 +5,11 @@
     <title>MozVisualPicker Tests</title>
     <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
     <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
+    <!-- testName/testDescr and gAccService come from the a11y mochitest tree
+         (accessible/tests/mochitest), added as support-files. common.js starts
+         the a11y service. -->
+    <script src="common.js"></script>
+    <script src="name.js"></script>
     <link rel="stylesheet" href="chrome://global/skin/in-content/common.css" />
     <link
       rel="stylesheet"
@@ -25,6 +30,8 @@
       }
     </style>
     <script>
+      /* import-globals-from ../../../../accessible/tests/mochitest/common.js */
+      /* import-globals-from ../../../../accessible/tests/mochitest/name.js */
       let html;
       let defaultTemplate;
       let testHelpers = new InputTestHelpers();
@@ -177,6 +184,19 @@
           );
         });
 
+        // Bug 2050153: the item's description is exposed as its accessible description,
+        // not folded into the accessible name.
+        renderTarget.querySelector("moz-visual-picker").scrollIntoView();
+        for (let i = 0; i < itemData.length; i++) {
+          let itemEl = items[i].itemEl;
+          await TestUtils.waitForCondition(
+            () => gAccService.getAccessibleFor(itemEl),
+            `Accessible is created for picker item ${i}.`
+          );
+          testName(itemEl, itemData[i].label);
+          testDescr(itemEl, itemData[i].description);
+        }
+
         items.forEach(async (item, i) => {
           let { label: itemLabel, description: itemDescription } = itemData[i];
 
@@ -223,6 +243,116 @@
             "Visual picker item is labelled by the slotted content."
           );
         });
+      });
+
+      add_task(async function testVisualPickerItemTitle() {
+        let itemData = [
+          {
+            value: "first",
+            label: "System",
+            title: "Match the operating system",
+          },
+          {
+            value: "second",
+            label: "Light",
+            title: "Always use a light theme",
+          },
+        ];
+
+        let titledItemsTemplate = html`
+          <moz-visual-picker label="Appearance" value="first">
+            ${itemData.map(
+              data => html`
+                <moz-visual-picker-item
+                  value=${data.value}
+                  label=${data.label}
+                  title=${data.title}
+                >
+                </moz-visual-picker-item>
+              `
+            )}
+          </moz-visual-picker>
+        `;
+        let renderTarget =
+          await testHelpers.renderTemplate(titledItemsTemplate);
+        let items = [
+          ...renderTarget.querySelectorAll("moz-visual-picker-item"),
+        ];
+        renderTarget.querySelector("moz-visual-picker").scrollIntoView();
+
+        // Bug 2050176: accessible description from the title, accessible name from the
+        // label.
+        for (let i = 0; i < itemData.length; i++) {
+          let itemEl = items[i].itemEl;
+          await TestUtils.waitForCondition(
+            () => gAccService.getAccessibleFor(itemEl),
+            `Accessible is created for titled picker item ${i}.`
+          );
+          testName(itemEl, itemData[i].label);
+          testDescr(itemEl, itemData[i].title);
+        }
+
+        // aria-describedby takes precedence over title, so a visible description is
+        // used as the accessible description instead of the title.
+        let item = items[0];
+        item.description = "A visible description";
+        await item.updateComplete;
+        await TestUtils.waitForCondition(
+          () =>
+            gAccService.getAccessibleFor(item.itemEl)?.description ==
+            "A visible description",
+          "Description takes precedence over title."
+        );
+        testDescr(item.itemEl, "A visible description");
+      });
+
+      add_task(async function testVisualPickerImageOnlyItemTitle() {
+        let itemData = [
+          {
+            value: "first",
+            imageSrc:
+              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3C/svg%3E",
+            title: "System theme",
+          },
+          {
+            value: "second",
+            imageSrc:
+              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3C/svg%3E",
+            title: "Light theme",
+          },
+        ];
+
+        let imageOnlyTemplate = html`
+          <moz-visual-picker label="Appearance" value="first">
+            ${itemData.map(
+              data => html`
+                <moz-visual-picker-item
+                  value=${data.value}
+                  imagesrc=${data.imageSrc}
+                  title=${data.title}
+                >
+                </moz-visual-picker-item>
+              `
+            )}
+          </moz-visual-picker>
+        `;
+        let renderTarget = await testHelpers.renderTemplate(imageOnlyTemplate);
+        let items = [
+          ...renderTarget.querySelectorAll("moz-visual-picker-item"),
+        ];
+        renderTarget.querySelector("moz-visual-picker").scrollIntoView();
+
+        // Bug 2050176: with no label the title becomes the accessible name. The
+        // image is role="presentation", so it contributes no name of its own.
+        for (let i = 0; i < itemData.length; i++) {
+          let itemEl = items[i].itemEl;
+          await TestUtils.waitForCondition(
+            () => gAccService.getAccessibleFor(itemEl),
+            `Accessible is created for image-only picker item ${i}.`
+          );
+          testName(itemEl, itemData[i].title);
+          testDescr(itemEl, "");
+        }
       });
 
       add_task(async function testChangingPickerValue() {

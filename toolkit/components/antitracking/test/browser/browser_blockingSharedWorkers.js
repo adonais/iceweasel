@@ -1,3 +1,5 @@
+requestLongerTimeout(5);
+
 AntiTracking.runTestInNormalAndPrivateMode(
   "SharedWorkers",
   async _ => {

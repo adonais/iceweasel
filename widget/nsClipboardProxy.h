@@ -27,7 +27,7 @@ class nsClipboardProxy final : public nsIClipboardProxy {
   NS_DECL_ISUPPORTS
   NS_DECL_NSICLIPBOARD
 
-  nsClipboardProxy();
+  nsClipboardProxy() = default;
 
   virtual void SetCapabilities(
       const ClipboardCapabilities& aClipboardCaps) override;
@@ -35,7 +35,7 @@ class nsClipboardProxy final : public nsIClipboardProxy {
  private:
   ~nsClipboardProxy() = default;
 
-  ClipboardCapabilities mClipboardCaps;
+  ClipboardCapabilities mClipboardCaps{false, false, false};
 };
 
 #endif

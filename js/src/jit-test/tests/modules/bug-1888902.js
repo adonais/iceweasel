@@ -8,7 +8,7 @@ const v0 = `
         drainJobQueue();
         registerModule("module2", parseModule(v13));
         registerModule("module3", parseModule(v0));
-        moduleLink(v11);
+        moduleLoadAndLink(v11);
         moduleEvaluate(v11);
     }
     F1();

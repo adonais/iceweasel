@@ -15,13 +15,17 @@ PR_BEGIN_EXTERN_C
 /********************************************************************************/
 /********************************************************************************/
 /********************************************************************************/
-/******************************       WARNING        ****************************/
+/******************************       WARNING ****************************/
 /********************************************************************************/
-/**************************** This is work in progress. *************************/
-/************************** Do not make any assumptions *************************/
-/************************** about the stability of this *************************/
-/************************** API or the underlying imple- ************************/
-/************************** mentation.                   ************************/
+/**************************** This is work in progress.
+ * *************************/
+/************************** Do not make any assumptions
+ * *************************/
+/************************** about the stability of this
+ * *************************/
+/************************** API or the underlying imple-
+ * ************************/
+/************************** mentation. ************************/
 /********************************************************************************/
 /********************************************************************************/
 
@@ -57,8 +61,7 @@ typedef struct PRWaitGroup PRWaitGroup;
 **                      calling PR_CancelWaitFileDesc() or destroying the
 **                      entire wait group (PR_DestroyWaitGroup()).
 */
-typedef enum PRMWStatus
-{
+typedef enum PRMWStatus {
     PR_MW_PENDING = 1,
     PR_MW_SUCCESS = 0,
     PR_MW_FAILURE = -1,
@@ -73,10 +76,9 @@ typedef enum PRMWStatus
 **      pointer to the first byte of that memory and the length (in
 **      bytes) of the interval.
 */
-typedef struct PRMemoryDescriptor
-{
-    void *start;                /* pointer to first byte of memory */
-    PRSize length;              /* length (in bytes) of memory interval */
+typedef struct PRMemoryDescriptor {
+    void* start;   /* pointer to first byte of memory */
+    PRSize length; /* length (in bytes) of memory interval */
 } PRMemoryDescriptor;
 
 /*
@@ -104,17 +106,16 @@ typedef struct PRMWaitClientData PRMWaitClientData;
 **      in the caller's address space where data from an initial read
 **      can be placed. The description may indicate a null interval.
 */
-typedef struct PRRecvWait
-{
-    PRCList internal;           /* internal runtime linkages */
+typedef struct PRRecvWait {
+    PRCList internal; /* internal runtime linkages */
 
-    PRFileDesc *fd;             /* file descriptor associated w/ object */
-    PRMWStatus outcome;         /* outcome of the current/last operation */
-    PRIntervalTime timeout;     /* time allowed for entire operation */
+    PRFileDesc* fd;         /* file descriptor associated w/ object */
+    PRMWStatus outcome;     /* outcome of the current/last operation */
+    PRIntervalTime timeout; /* time allowed for entire operation */
 
-    PRInt32 bytesRecv;          /* number of bytes transferred into buffer */
-    PRMemoryDescriptor buffer;  /* where to store first segment of input data */
-    PRMWaitClientData *client;  /* pointer to arbitrary client defined data */
+    PRInt32 bytesRecv;         /* number of bytes transferred into buffer */
+    PRMemoryDescriptor buffer; /* where to store first segment of input data */
+    PRMWaitClientData* client; /* pointer to arbitrary client defined data */
 } PRRecvWait;
 
 /*
@@ -127,7 +128,6 @@ typedef struct PRRecvWait
 **      only in serial fashion.
 */
 typedef struct PRMWaitEnumerator PRMWaitEnumerator;
-
 
 /*
 ** FUNCTION:    PR_AddWaitFileDesc
@@ -160,7 +160,8 @@ typedef struct PRMWaitEnumerator PRMWaitEnumerator;
 **      PR_INVALID_STATE_ERROR
 **                  The group is being destroyed.
 */
-NSPR_API(PRStatus) PR_AddWaitFileDesc(PRWaitGroup *group, PRRecvWait *desc);
+NSPR_API(PRStatus)
+PR_AddWaitFileDesc(PRWaitGroup* group, PRRecvWait* desc);
 
 /*
 ** FUNCTION:    PR_WaitRecvReady
@@ -194,7 +195,8 @@ NSPR_API(PRStatus) PR_AddWaitFileDesc(PRWaitGroup *group, PRRecvWait *desc);
 **      PR_INVALID_STATE_ERROR
 **                  The group is being destroyed.
 */
-NSPR_API(PRRecvWait*) PR_WaitRecvReady(PRWaitGroup *group);
+NSPR_API(PRRecvWait*)
+PR_WaitRecvReady(PRWaitGroup* group);
 
 /*
 ** FUNCTION:    PR_CancelWaitFileDesc
@@ -229,7 +231,8 @@ NSPR_API(PRRecvWait*) PR_WaitRecvReady(PRWaitGroup *group);
 **      PR_INVALID_STATE_ERROR
 **                  The group is being destroyed.
 */
-NSPR_API(PRStatus) PR_CancelWaitFileDesc(PRWaitGroup *group, PRRecvWait *desc);
+NSPR_API(PRStatus)
+PR_CancelWaitFileDesc(PRWaitGroup* group, PRRecvWait* desc);
 
 /*
 ** FUNCTION:    PR_CancelWaitGroup
@@ -256,7 +259,8 @@ NSPR_API(PRStatus) PR_CancelWaitFileDesc(PRWaitGroup *group, PRRecvWait *desc);
 **      PR_INVALID_ARGUMENT_ERROR
 **      PR_GROUP_EMPTY_ERROR
 */
-NSPR_API(PRRecvWait*) PR_CancelWaitGroup(PRWaitGroup *group);
+NSPR_API(PRRecvWait*)
+PR_CancelWaitGroup(PRWaitGroup* group);
 
 /*
 ** FUNCTION:    PR_CreateWaitGroup
@@ -283,7 +287,8 @@ NSPR_API(PRRecvWait*) PR_CancelWaitGroup(PRWaitGroup *group);
 **  ERRORS
 **      PR_OUT_OF_MEMORY_ERROR
 */
-NSPR_API(PRWaitGroup*) PR_CreateWaitGroup(PRInt32 size);
+NSPR_API(PRWaitGroup*)
+PR_CreateWaitGroup(PRInt32 size);
 
 /*
 ** FUNCTION:    PR_DestroyWaitGroup
@@ -306,7 +311,8 @@ NSPR_API(PRWaitGroup*) PR_CreateWaitGroup(PRInt32 size);
 **      PR_INVALID_STATE_ERROR
 **                  The group still contains receive wait objects.
 */
-NSPR_API(PRStatus) PR_DestroyWaitGroup(PRWaitGroup *group);
+NSPR_API(PRStatus)
+PR_DestroyWaitGroup(PRWaitGroup* group);
 
 /*
 ** FUNCTION:    PR_CreateMWaitEnumerator
@@ -328,7 +334,8 @@ NSPR_API(PRStatus) PR_DestroyWaitGroup(PRWaitGroup *group);
 **                  The 'group' argument does not reference a known object.
 **      PR_OUT_OF_MEMORY_ERROR
 */
-NSPR_API(PRMWaitEnumerator*) PR_CreateMWaitEnumerator(PRWaitGroup *group);
+NSPR_API(PRMWaitEnumerator*)
+PR_CreateMWaitEnumerator(PRWaitGroup* group);
 
 /*
 ** FUNCTION:    PR_DestroyMWaitEnumerator
@@ -346,7 +353,8 @@ NSPR_API(PRMWaitEnumerator*) PR_CreateMWaitEnumerator(PRWaitGroup *group);
 **      PR_INVALID_ARGUMENT_ERROR
 **                  The enumerator is invalid.
 */
-NSPR_API(PRStatus) PR_DestroyMWaitEnumerator(PRMWaitEnumerator* enumerator);
+NSPR_API(PRStatus)
+PR_DestroyMWaitEnumerator(PRMWaitEnumerator* enumerator);
 
 /*
 ** FUNCTION:    PR_EnumerateWaitGroup
@@ -369,8 +377,9 @@ NSPR_API(PRStatus) PR_DestroyMWaitEnumerator(PRMWaitEnumerator* enumerator);
 **      An enumeration may be abandoned at any time. The runtime is not
 **      keeping any state, so there are no issues in that regard.
 */
-NSPR_API(PRRecvWait*) PR_EnumerateWaitGroup(
-    PRMWaitEnumerator *enumerator, const PRRecvWait *previous);
+NSPR_API(PRRecvWait*)
+PR_EnumerateWaitGroup(PRMWaitEnumerator* enumerator,
+                      const PRRecvWait* previous);
 
 PR_END_EXTERN_C
 

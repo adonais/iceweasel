@@ -194,10 +194,10 @@ class gfxFontEntry {
   typedef mozilla::intl::Script Script;
   typedef mozilla::FontWeight FontWeight;
   typedef mozilla::FontSlantStyle FontSlantStyle;
-  typedef mozilla::FontStretch FontStretch;
+  typedef mozilla::FontWidth FontWidth;
   typedef mozilla::WeightRange WeightRange;
   typedef mozilla::SlantStyleRange SlantStyleRange;
-  typedef mozilla::StretchRange StretchRange;
+  typedef mozilla::WidthRange WidthRange;
   using imgDrawingParams = mozilla::image::imgDrawingParams;
 
   // Used by stylo
@@ -239,7 +239,7 @@ class gfxFontEntry {
   virtual nsCString RealFaceName();
 
   WeightRange Weight() const { return mWeightRange; }
-  StretchRange Stretch() const { return mStretchRange; }
+  WidthRange Width() const { return mWidthRange; }
   SlantStyleRange SlantStyle() const { return mStyleRange; }
 
   bool IsUserFont() const { return mIsDataUserFont || mIsLocalUserFont; }
@@ -259,14 +259,14 @@ class gfxFontEntry {
   // Return whether the face corresponds to "normal" CSS style properties:
   //    font-style: normal;
   //    font-weight: normal;
-  //    font-stretch: normal;
+  //    font-width: normal;
   // If this is false, we might want to fall back to a different face and
   // possibly apply synthetic styling.
   bool IsNormalStyle() const {
     return IsUpright() && Weight().Min() <= FontWeight::NORMAL &&
            Weight().Max() >= FontWeight::NORMAL &&
-           Stretch().Min() <= FontStretch::NORMAL &&
-           Stretch().Max() >= FontStretch::NORMAL;
+           Width().Min() <= FontWidth::NORMAL &&
+           Width().Max() >= FontWidth::NORMAL;
   }
 
   // whether a feature is supported by the font (limited to a small set
@@ -539,7 +539,7 @@ class gfxFontEntry {
 
   void CheckForVariationAxes();
 
-  // Set up the entry's weight/stretch/style ranges according to axes found
+  // Set up the entry's weight/width/style ranges according to axes found
   // by GetVariationAxes (for installed fonts; do NOT call this for user
   // fonts, where the ranges are provided by @font-face descriptors).
   void SetupVariationRanges();
@@ -630,7 +630,7 @@ class gfxFontEntry {
   uint32_t mLanguageOverride = NO_FONT_LANGUAGE_OVERRIDE;
 
   WeightRange mWeightRange = WeightRange(FontWeight::FromInt(500));
-  StretchRange mStretchRange = StretchRange(FontStretch::NORMAL);
+  WidthRange mWidthRange = WidthRange(FontWidth::NORMAL);
   SlantStyleRange mStyleRange = SlantStyleRange(FontSlantStyle::NORMAL);
 
   // Font metrics overrides (as multiples of used font size); negative values
@@ -642,7 +642,7 @@ class gfxFontEntry {
   // Scaling factor to be applied to the font size.
   float mSizeAdjust = 1.0;
 
-  // For user fonts (only), we need to record whether or not weight/stretch/
+  // For user fonts (only), we need to record whether or not weight/width/
   // slant variations should be clamped to the range specified in the entry
   // properties. When the @font-face rule omitted one or more of these
   // descriptors, it is treated as the initial value for font-matching (and
@@ -651,7 +651,7 @@ class gfxFontEntry {
   enum class RangeFlags : uint16_t {
     eNoFlags = 0,
     eAutoWeight = (1 << 0),
-    eAutoStretch = (1 << 1),
+    eAutoWidth = (1 << 1),
     eAutoSlantStyle = (1 << 2),
 
     // Flag to record whether the face has a variable "wght" axis
@@ -664,11 +664,11 @@ class gfxFontEntry {
     eSlantVariation = (1 << 5),
 
     // Flags to record if the face uses a non-CSS-compatible scale
-    // for weight and/or stretch, in which case we won't map the
+    // for weight and/or width, in which case we won't map the
     // properties to the variation axes (though they can still be
     // explicitly set using font-variation-settings).
     eNonCSSWeight = (1 << 6),
-    eNonCSSStretch = (1 << 7),
+    eNonCSSWidth = (1 << 7),
 
     // Whether the font has an 'opsz' axis.
     eOpticalSize = (1 << 8)
@@ -847,7 +847,7 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxFontEntry::RangeFlags)
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxFontEntry::SpaceFeatures)
 
 inline gfxFontEntry::RangeFlags gfxFontEntry::AutoRangeFlags() const {
-  return mRangeFlags & (RangeFlags::eAutoWeight | RangeFlags::eAutoStretch |
+  return mRangeFlags & (RangeFlags::eAutoWeight | RangeFlags::eAutoWidth |
                         RangeFlags::eAutoSlantStyle);
 }
 

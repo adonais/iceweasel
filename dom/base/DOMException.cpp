@@ -70,6 +70,9 @@ enum DOM4ErrorTypeCodeMap {
 
   /* Push API errors */
   NotAllowedError = 0,
+
+  /* Web Serial API errors https://wicg.github.io/serial/ */
+  ParityError = 0,
 };
 
 #define DOM4_MSG_DEF(name, message, nsresult) \

@@ -218,9 +218,6 @@ nsUrlClassifierUtils* nsUrlClassifierUtils::GetInstance() {
   return gUrlClassifierUtils;
 }
 
-nsUrlClassifierUtils::nsUrlClassifierUtils()
-    : mProviderDictLock("nsUrlClassifierUtils.mProviderDictLock") {}
-
 nsUrlClassifierUtils::~nsUrlClassifierUtils() {
   if (gUrlClassifierUtils) {
     MOZ_ASSERT(gUrlClassifierUtils == this);

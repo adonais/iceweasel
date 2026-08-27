@@ -48,7 +48,7 @@ nsresult FetchUtil::GetValidRequestMethod(const nsACString& aMethod,
       upperCaseMethod.EqualsLiteral("OPTIONS") ||
       upperCaseMethod.EqualsLiteral("POST") ||
       upperCaseMethod.EqualsLiteral("PUT")) {
-    outMethod = upperCaseMethod;
+    outMethod = std::move(upperCaseMethod);
   } else {
     outMethod = aMethod;  // Case unchanged for non-standard methods
   }

@@ -216,19 +216,19 @@ class nsDataObj : public IDataObject, public IDataObjectAsyncCapability {
                        ULONG* nBytesRead) final;
 
    protected:
-    uint32_t mStreamRead;
+    uint32_t mStreamRead{0};
 
-    CStreamBase();
-    virtual ~CStreamBase();
+    CStreamBase() = default;
+    virtual ~CStreamBase() = default;
   };
 
   class CStream final : public CStreamBase, public nsIStreamListener {
     nsCOMPtr<nsIChannel> mChannel;
     FallibleTArray<uint8_t> mChannelData;
     nsresult mChannelResult;
-    bool mChannelRead;
+    bool mChannelRead{false};
 
-    virtual ~CStream();
+    virtual ~CStream() = default;
     nsresult WaitForCompletion();
 
     // IUnknown
@@ -240,7 +240,7 @@ class nsDataObj : public IDataObject, public IDataObjectAsyncCapability {
     STDMETHODIMP Stat(STATSTG* statstg, DWORD dwFlags) final;
 
    public:
-    CStream();
+    CStream() = default;
     nsresult Init(nsIURI* pSourceURI, nsContentPolicyType aContentPolicyType,
                   nsIPrincipal* aRequestingPrincipal,
                   nsICookieJarSettings* aCookieJarSettings,
@@ -292,7 +292,7 @@ class nsDataObj : public IDataObject, public IDataObjectAsyncCapability {
     const uint32_t mTotalLength;
     RefPtr<IUnknown> mMarshaler;
 
-    virtual ~CMemStream();
+    virtual ~CMemStream() = default;
     void WaitForCompletion();
 
     // IStream

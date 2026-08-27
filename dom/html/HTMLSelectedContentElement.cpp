@@ -98,7 +98,8 @@ nsresult HTMLSelectedContentElement::BindToTree(BindContext& aContext,
   // selectedcontent.
   if (aContext.InComposedDoc() && nearestSelectAncestor && !mDisabled &&
       !nearestSelectAncestor->Multiple()) {
-    nearestSelectAncestor->ScheduleSelectedContentUpdateScriptRunner();
+    nearestSelectAncestor->ScheduleSelectedContentUpdate(
+        SelectedContentUpdateMode::ScriptRunner);
   }
 
   return NS_OK;

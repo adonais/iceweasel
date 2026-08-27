@@ -101,9 +101,12 @@ function markerCount(profile, value, additionalText) {
   let stringTable = thread0.stringTable;
   let markerStringIndex = stringTable.indexOf(TEST_USER_INTERACTION_ID);
 
+  // The Text marker's "name" field is a unique string, so the payload holds
+  // an index into the thread's string table rather than the string itself.
   let markers = thread0.markers.data.filter(markerData => {
     return (
-      markerData[0] == markerStringIndex && markerData[5].name == expectedName
+      markerData[0] == markerStringIndex &&
+      stringTable[markerData[5].name] == expectedName
     );
   });
 

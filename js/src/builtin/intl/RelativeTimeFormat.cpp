@@ -135,7 +135,7 @@ struct PackedRelativeTimeFormatOptions {
 
 RelativeTimeFormatOptions js::intl::RelativeTimeFormatObject::getOptions()
     const {
-  const auto& slot = getFixedSlot(OPTIONS);
+  const auto& slot = getFixedSlotTyped(OPTIONS);
   if (slot.isUndefined()) {
     return {};
   }
@@ -144,7 +144,7 @@ RelativeTimeFormatOptions js::intl::RelativeTimeFormatObject::getOptions()
 
 void js::intl::RelativeTimeFormatObject::setOptions(
     const RelativeTimeFormatOptions& options) {
-  setFixedSlot(OPTIONS, PackedRelativeTimeFormatOptions::pack(options));
+  setFixedSlotTyped(OPTIONS, PackedRelativeTimeFormatOptions::pack(options));
 }
 
 static constexpr std::string_view RelativeTimeStyleToString(

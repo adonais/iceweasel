@@ -20,6 +20,10 @@
 #  include <linux/videodev2.h>
 #  include <sys/ioctl.h>
 #endif  // MOZ_ENABLE_V4L2
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+#  include "mozilla/Components.h"
+#  include "nsIGfxInfo.h"
+#endif  // MOZ_ENABLE_VULKAN_VIDEO
 #ifdef MOZ_WIDGET_GTK
 #  include <glib.h>
 #endif
@@ -375,6 +379,30 @@ static void AddX11Dependencies(SandboxBroker::Policy* policy) {
   }
 #endif
 }
+
+#if defined(MOZ_WIDGET_GTK)
+static void AddWaylandDependencies(SandboxBroker::Policy* policy) {
+  static const bool kIsWayland =
+      mozilla::widget::GdkIsWaylandDisplay() && PR_GetEnv("WAYLAND_DISPLAY");
+  static const bool kIsXWayland = mozilla::widget::IsXWaylandProtocol();
+  if (kIsWayland || kIsXWayland) {
+    nsAutoCString waylandDisplayName(PR_GetEnv("WAYLAND_DISPLAY"));
+    nsAutoCString socketPath;
+    nsAutoCString xdgRuntimeDir(PR_GetEnv("XDG_RUNTIME_DIR"));
+    if (waylandDisplayName[0] == '/') {
+      socketPath = waylandDisplayName;
+    } else if (!xdgRuntimeDir.IsEmpty()) {
+      socketPath = nsPrintfCString("%s/%s", xdgRuntimeDir.get(),
+                                   waylandDisplayName.get());
+    }
+    // If WAYLAND_DISPLAY is relative and XDG_RUNTIME_DIR is unset, socketPath
+    // will be empty and EGL connect() will fail silently at runtime.
+    if (!socketPath.IsEmpty()) {
+      policy->AddPath(SandboxBroker::MAY_CONNECT, socketPath.get());
+    }
+  }
+}
+#endif
 
 static void AddGLDependencies(SandboxBroker::Policy* policy) {
   // Devices
@@ -914,8 +942,6 @@ static void AddV4l2Dependencies(SandboxBroker::Policy* policy) {
 
 static void AddVulkanDependencies(SandboxBroker::Policy* policy) {
   // RDD Vulkan Video decode: ICD manifests (paths beyond AddGLDependencies).
-  // No MAY_CONNECT rules needed: Vulkan initialisation is done before the
-  // sandbox starts (VA-API also does not need display-server connections).
   policy->AddTree(rdonly, "/usr/share/vulkan/icd.d");
   policy->AddTree(rdonly, "/usr/local/share/vulkan/icd.d");
   policy->AddTree(rdonly, "/etc/vulkan/icd.d");
@@ -959,6 +985,10 @@ static void AddVulkanDependencies(SandboxBroker::Policy* policy) {
     policy->AddPath(rdwr, nsPrintfCString("/dev/nvidia%d", i).get(),
                     SandboxBroker::Policy::AddIfExistsNow);
   }
+  // NVIDIA Wayland DMA-BUF export for Vulkan video (EGL / copy-ring NV12).
+  // AddAlways because the udmabuf misc device only exists while its module is
+  // loaded, which may happen after this policy is built.
+  policy->AddPath(rdwr, "/dev/udmabuf", SandboxBroker::Policy::AddAlways);
 }
 #endif  // MOZ_ENABLE_VULKAN_VIDEO
 
@@ -1025,7 +1055,38 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
   AddLdLibraryEnvPaths(policy.get());
 
 #ifdef MOZ_ENABLE_VULKAN_VIDEO
-  AddVulkanDependencies(policy.get());
+  // Only open Vulkan-specific sandbox paths if Vulkan Video is actually
+  // enabled and supported on this GPU, to avoid granting display-server
+  // access when the feature is blocked or disabled.
+  nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
+  int32_t vulkanStatus = nsIGfxInfo::FEATURE_STATUS_UNKNOWN;
+  nsAutoCString failureId;
+  if (gfxInfo &&
+      NS_SUCCEEDED(gfxInfo->GetFeatureStatus(
+          nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING_VULKAN, failureId,
+          &vulkanStatus)) &&
+      vulkanStatus == nsIGfxInfo::FEATURE_STATUS_OK) {
+    AddVulkanDependencies(policy.get());
+#  if defined(MOZ_WIDGET_GTK)
+    // EGL needs display server sockets for EGL_MESA_image_dma_buf_export
+    // (bug 2021722).
+    AddWaylandDependencies(policy.get());
+#  endif
+    // Vulkan on X11/XWayland needs display server socket access.
+    AddX11Dependencies(policy.get());
+#  if defined(MOZ_WIDGET_GTK) && defined(MOZ_X11)
+    // AddX11Dependencies() skips the X socket on a Wayland UI, but the EGL
+    // bring-up in RDD still connects to XWayland (bug 2057724). Grant the
+    // same paths it would have granted on X11: the socket, and the cookie
+    // ($XAUTHORITY — on GNOME this is $XDG_RUNTIME_DIR/.mutter-Xwaylandauth.*).
+    if (mozilla::widget::GdkIsWaylandDisplay() && PR_GetEnv("DISPLAY")) {
+      policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
+      if (auto* const xauth = PR_GetEnv("XAUTHORITY")) {
+        policy->AddPath(rdonly, xauth);
+      }
+    }
+#  endif
+  }
 #endif  // MOZ_ENABLE_VULKAN_VIDEO
 
 #ifdef MOZ_ENABLE_V4L2

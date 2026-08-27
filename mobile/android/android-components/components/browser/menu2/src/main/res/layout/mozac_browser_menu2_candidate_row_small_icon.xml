@@ -12,4 +12,5 @@
     android:background="?android:attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
+    tools:ignore="Overdraw"
     tools:src="@android:color/background_dark" />

@@ -2,6 +2,7 @@ import pytest
 
 URL = "https://iweather.gov.vn/dashboard/?areaRadar=COM&productRadar=CMAX"
 
+FRAME_CSS = "iframe[title=dashboard]"
 MAP_CSS = "#map"
 ASIDE_CSS = "aside.fixed"
 BOTTOM_BAR_CSS = ".w-mc.transition-all"
@@ -9,6 +10,7 @@ BOTTOM_BAR_CSS = ".w-mc.transition-all"
 
 async def is_bottom_bar_full_width(client, platform):
     await client.navigate(URL, wait="none")
+    client.switch_to_frame(client.await_css(FRAME_CSS))
     client.add_stylesheet(f"{BOTTOM_BAR_CSS} {{ transition-duration:0s !important; }}")
     map = client.await_css(MAP_CSS, is_displayed=True, timeout=30)
     aside = client.await_css(ASIDE_CSS, is_displayed=True)

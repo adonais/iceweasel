@@ -43,6 +43,10 @@ const port = httpServer.identity.primaryPort;
 const TEST_URL = `http://localhost:${port}/`;
 
 add_task(async function testSavingOriginalSources() {
+  const { MockFilePicker } = SpecialPowers;
+  MockFilePicker.init();
+  registerCleanupFunction(() => MockFilePicker.cleanup());
+
   const { ui } = await openStyleEditorForURL(TEST_URL);
 
   is(ui.editors.length, 1, "There should be only one stylesheet");
@@ -64,5 +68,32 @@ add_task(async function testSavingOriginalSources() {
     editor.savedFile,
     undefined,
     "The original stylesheet should not have a pre-populated source file"
+  );
+
+  const destDir = FileUtils.getDir("TmpD", []);
+  MockFilePicker.displayDirectory = destDir;
+
+  let pickerWasShown = false;
+  let destFile;
+  MockFilePicker.showCallback = function (fp) {
+    pickerWasShown = true;
+    destFile = destDir.clone();
+    destFile.append(fp.defaultString || "saved.css");
+    MockFilePicker.setFiles([destFile]);
+  };
+
+  const savePromise = new Promise(resolve => {
+    editor.saveToFile(null, resolve);
+  });
+  await savePromise;
+
+  ok(
+    pickerWasShown,
+    "File picker was shown for first save on a file:// stylesheet"
+  );
+  is(
+    editor.savedFile?.path,
+    destFile.path,
+    "savedFile is set to the picker result"
   );
 });

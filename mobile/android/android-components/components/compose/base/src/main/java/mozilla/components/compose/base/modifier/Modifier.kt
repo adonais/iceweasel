@@ -143,14 +143,16 @@ private const val MINIMUM_TIME_TO_SETTLE_MS = 1000
  * @param settleTime The amount of time to wait before calling [onVisible].
  * @param onVisible Invoked when the UI is visible to the user.
  * @param screenBounds Optional override to specify the exact bounds to detect the on-screen visibility.
+ * @param currentTimeMillis provider for the current time in milliseconds, injectable for testing.
  */
 fun Modifier.onShown(
     @FloatRange(from = 0.0, to = 1.0) threshold: Float,
     settleTime: Int = MINIMUM_TIME_TO_SETTLE_MS,
     onVisible: () -> Unit,
     screenBounds: Rect? = null,
+    currentTimeMillis: () -> Long = { System.currentTimeMillis() },
 ): Modifier {
-    val initialTime = System.currentTimeMillis()
+    val initialTime = currentTimeMillis()
     var lastVisibleCoordinates: LayoutCoordinates? = null
 
     return composed {
@@ -171,7 +173,7 @@ fun Modifier.onShown(
 
         onGloballyPositioned { coordinates ->
             if (!wasEventReported && coordinates.isVisible(bounds, threshold)) {
-                if (System.currentTimeMillis() - initialTime > settleTime) {
+                if (currentTimeMillis() - initialTime > settleTime) {
                     wasEventReported = true
                     onVisible()
                 } else {

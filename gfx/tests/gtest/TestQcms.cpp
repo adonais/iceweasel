@@ -405,3 +405,33 @@ MOZ_GTEST_BENCH_F(GfxQcmsPerf_Rgba, TransformPlatform,
 MOZ_GTEST_BENCH_F(GfxQcmsPerf_Bgra, TransformC, [this] { TransformPerf(); });
 MOZ_GTEST_BENCH_F(GfxQcmsPerf_Bgra, TransformPlatform,
                   [this] { TransformPlatformPerf(); });
+
+// The "stripped" displaycal profile has only an A2B0 LUT (no matrix/TRC), so a
+// transform from it exercises qcms's tetrahedral CLUT path (qcms_transform_data
+// -> qcms_transform_data_tetra_clut_rgba), unlike the matrix-shaper perf tests
+// above.
+class GfxQcms_DisplayCalLut_To_sRGB : public GfxQcms_ProfilePairBase {
+ protected:
+  void SetUp() override {
+    GfxQcms_ProfilePairBase::SetUp();
+    mInProfile = qcms_profile_from_path("displaycal-lut-stripped.icc");
+    mOutProfile = qcms_profile_sRGB();
+  }
+};
+
+class GfxQcmsPerf_Clut : public GfxQcms_DisplayCalLut_To_sRGB {
+ protected:
+  GfxQcmsPerf_Clut() { mStorageType = QCMS_DATA_RGBA_8; }
+
+  void ClutPerf() {
+    qcms_transform_data(mTransform, mInput.get(), mRef.get(), mPixels);
+  }
+
+  void SetUp() override {
+    GfxQcms_DisplayCalLut_To_sRGB::SetUp();
+    SetBuffers(mStorageType);
+    SetTransform(mStorageType);
+  }
+};
+
+MOZ_GTEST_BENCH_F(GfxQcmsPerf_Clut, TransformClut, [this] { ClutPerf(); });

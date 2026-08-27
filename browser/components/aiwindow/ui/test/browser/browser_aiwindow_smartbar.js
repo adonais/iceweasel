@@ -179,7 +179,7 @@ add_task(async function test_smartbar_explicit_search_action() {
 
   const searchQuery = "tell me about cats";
 
-  await stubLoadURL(browser, { captureURL: true });
+  await stubOpenSERP(browser);
   await typeInSmartbar(browser, searchQuery);
   await selectExplicitSmartbarAction(browser, "search");
   // Picking an action locks the button but does not submit.
@@ -191,14 +191,15 @@ add_task(async function test_smartbar_explicit_search_action() {
   );
   await submitSmartbar(browser);
 
-  const searchResult = await getStubLoadURLResult(browser);
+  const searchResult = await getStubOpenSERPResult(browser);
   Assert.ok(
     searchResult.called,
-    "_loadURL should get called for explicit search action"
+    "controller.openSERP should get called for explicit search action"
   );
-  Assert.ok(
-    searchResult.url.includes("cats"),
-    `Search URL should contain the query: ${searchResult.url}`
+  Assert.equal(
+    searchResult.terms,
+    searchQuery,
+    "Search terms should match the query"
   );
 
   await BrowserTestUtils.closeWindow(win);

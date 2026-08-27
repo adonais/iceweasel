@@ -24,10 +24,10 @@ class WorkerCSPEventListener final : public nsICSPEventListener {
       WorkerPrivate* aWorkerPrivate);
 
  private:
-  WorkerCSPEventListener();
+  WorkerCSPEventListener() = default;
   ~WorkerCSPEventListener() = default;
 
-  Mutex mMutex;
+  Mutex mMutex{"WorkerCSPEventListener::mMutex"};
 
   // Protected by mutex.
   RefPtr<WeakWorkerRef> mWorkerRef MOZ_GUARDED_BY(mMutex);

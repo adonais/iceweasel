@@ -395,7 +395,6 @@ css/css-view-transitions/old-content-with-overflow.html @web-platform-tests/inte
 css/css-view-transitions/old-root-vertical-writing-mode.html @web-platform-tests/interop
 css/css-view-transitions/outer-padding-inner-background.html @web-platform-tests/interop
 css/css-view-transitions/paint-holding-in-iframe.html @web-platform-tests/interop
-css/css-view-transitions/pseudo-element-overflow-clip-with-border-radius.html @web-platform-tests/interop
 css/css-view-transitions/pseudo-element-overflow-hidden.html @web-platform-tests/interop
 css/css-view-transitions/pseudo-element-preserve-3d.html @web-platform-tests/interop
 css/css-view-transitions/pseudo-rendering-invalidation.html @web-platform-tests/interop
@@ -738,7 +737,6 @@ css/css-scroll-snap/snap-after-relayout/not-resnap-outside-proximity-threshold.h
 css/css-scroll-snap/snap-after-relayout/resnap-on-oveflow-hidden-container.html @web-platform-tests/interop
 css/css-scroll-snap/snap-after-relayout/resnap-on-overflowing-snap-area.html @web-platform-tests/interop
 css/css-scroll-snap/snap-after-relayout/resnap-on-reconstructing-frame.html @web-platform-tests/interop
-css/css-scroll-snap/snap-fling-in-large-area.html @web-platform-tests/interop
 css/css-scroll-snap/snap-intended-direction.html @web-platform-tests/interop
 css/css-scroll-snap/snap-on-focus.html @web-platform-tests/interop
 css/css-scroll-snap/snap-to-combination-of-two-elements-1.html @web-platform-tests/interop

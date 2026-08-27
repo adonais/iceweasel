@@ -131,7 +131,7 @@ add_task(async function upgradeToSecure_for_https_is_noop() {
   });
 
   await extension.startup();
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   let win = window.open("http://example.com/tests/toolkit/components/extensions/test/mochitest/file_sample.html");
   await extension.awaitMessage("finished");
   win.close();

@@ -220,6 +220,14 @@ export class PictureInPictureParent extends JSWindowActorParent {
         }
         break;
       }
+      case "PictureInPicture:PlaybackRateChange": {
+        let { playbackRate } = aMessage.data;
+        let player = PictureInPicture.getWeakPipPlayer(this);
+        if (player) {
+          player.setPlaybackRate(playbackRate);
+        }
+        break;
+      }
     }
     return undefined;
   }
@@ -1029,6 +1037,7 @@ export var PictureInPicture = {
     win.setScrubberPosition(videoData.scrubberPosition);
     win.setTimestamp(videoData.timestamp);
     win.setVolume(videoData.volume);
+    win.setPlaybackRate(videoData.playbackRate);
 
     Services.prefs.setBoolPref(TOGGLE_HAS_USED_PREF, true);
 

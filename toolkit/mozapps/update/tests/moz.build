@@ -37,6 +37,18 @@ SimplePrograms(
 if CONFIG["OS_ARCH"] == "WINNT":
     SimplePrograms(["test_file_change_mtime", "test_file_hold_open"])
 
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+    MacOSBundle(
+        f"!/{FINAL_TARGET}/callback_app.app",
+        skeleton="macbuild/Contents",
+        binaries=[
+            (
+                f"!/{FINAL_TARGET}/TestAUSHelper",
+                "TestAUSHelper",
+            )
+        ],
+    )
+
 LOCAL_INCLUDES += [
     "/toolkit/mozapps/update",
     "/toolkit/mozapps/update/common",

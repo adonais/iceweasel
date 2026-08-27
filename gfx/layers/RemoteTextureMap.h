@@ -22,6 +22,7 @@
 #include "mozilla/ipc/Shmem.h"
 #include "mozilla/layers/CompositorTypes.h"  // for TextureFlags, etc
 #include "mozilla/layers/LayersSurfaces.h"   // for SurfaceDescriptor
+#include "mozilla/layers/TextureClient.h"
 #include "mozilla/layers/TextureHost.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 
@@ -45,8 +46,6 @@ namespace layers {
 
 class CompositableHost;
 class RemoteTextureHostWrapper;
-class TextureData;
-class TextureHost;
 
 struct RemoteTextureInfo {
   RemoteTextureInfo(const RemoteTextureId aTextureId,
@@ -134,7 +133,7 @@ class RemoteTextureRecycleBin final {
  private:
   friend class RemoteTextureMap;
 
-  ~RemoteTextureRecycleBin();
+  ~RemoteTextureRecycleBin() = default;
 
   struct RecycledTextureHolder {
     gfx::IntSize mSize;
@@ -258,7 +257,7 @@ class RemoteTextureOwnerClient final {
   const base::ProcessId mForPid;
 
  protected:
-  ~RemoteTextureOwnerClient();
+  ~RemoteTextureOwnerClient() = default;
 
   RemoteTextureOwnerIdSet mOwnerIds;
   RefPtr<RemoteTextureRecycleBin> mSharedRecycleBin;
@@ -274,8 +273,8 @@ class RemoteTextureMap {
   static void Shutdown();
   static RemoteTextureMap* Get() { return sInstance; }
 
-  RemoteTextureMap();
-  ~RemoteTextureMap();
+  RemoteTextureMap() = default;
+  ~RemoteTextureMap() = default;
 
   // Push remote texture data and gl::SharedSurface from texture owner.
   // The texture data is used for creating TextureHost.
@@ -477,7 +476,7 @@ class RemoteTextureMap {
   void UnregisterTxnScheduler(base::ProcessId aForPid,
                               RemoteTextureTxnType aType);
 
-  Monitor mMonitor MOZ_UNANNOTATED;
+  Monitor mMonitor MOZ_UNANNOTATED{"RemoteTextureMap::mMonitor"};
 
   std::map<std::pair<base::ProcessId, RemoteTextureOwnerId>,
            UniquePtr<WaitingTextureOwner>>

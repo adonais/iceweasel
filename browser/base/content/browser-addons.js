@@ -1610,7 +1610,11 @@ var gXPInstallObserver = {
           let messageString;
           if (
             install.addon &&
-            !Services.policies.mayInstallAddon(install.addon)
+            !Services.policies.mayInstallAddon({
+              id: install.addon.id,
+              type: install.addon.type,
+              permissions: install.addon.userPermissions?.permissions,
+            })
           ) {
             messageString = lazy.l10n.formatValueSync(
               "addon-installation-blocked-by-policy",

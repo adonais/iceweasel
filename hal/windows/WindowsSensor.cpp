@@ -20,7 +20,7 @@ constinit static RefPtr<ISensor> sAccelerometer;
 
 class SensorEvent final : public ISensorEvents {
  public:
-  SensorEvent() : mCount(0) {}
+  SensorEvent() = default;
 
   // IUnknown interface
 
@@ -93,7 +93,7 @@ class SensorEvent final : public ISensorEvents {
   }
 
  private:
-  ULONG mCount;
+  ULONG mCount{0};
 };
 
 void EnableSensorNotifications(SensorType aSensor) {

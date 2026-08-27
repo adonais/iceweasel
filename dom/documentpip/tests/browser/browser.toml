@@ -4,6 +4,7 @@ prefs = ["dom.documentpip.enabled=true"]
 
 ["browser_move_pip_for_fullscreen.js"]
 skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2057875
   "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
 ]
 
@@ -14,15 +15,18 @@ skip-if = [
 
 ["browser_pip_closes_once.js"]
 
+["browser_pip_exits_fs.js"]
+
 ["browser_pip_extensions.js"]
 
 ["browser_pip_fullscreen_disallowed.js"]
 
 ["browser_pip_remembers_position.js"]
+tags = "vertical-tabs" # Might collapse tabs toolbar, changing outer size
 skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2057874
   "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
 ]
-tags = "vertical-tabs" # Might collapse tabs toolbar, changing outer size
 
 ["browser_pip_throttling.js"]
 

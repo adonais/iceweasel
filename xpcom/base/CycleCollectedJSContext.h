@@ -17,6 +17,7 @@
 #include "nsCOMPtr.h"
 #include "nsRefPtrHashtable.h"
 #include "nsTArray.h"
+#include "nsTHashMap.h"
 
 class nsCycleCollectionNoteRootCallback;
 class nsIRunnable;
@@ -489,6 +490,14 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, public JS::JobQueue {
   JS::PersistentRooted<JS::GCVector<JSObject*, 0, js::SystemAllocPolicy>>
       mUncaughtRejections;
 
+  // Length past which mUncaughtRejections is searched through a companion
+  // index hashtable rather than scanned linearly.
+  static constexpr size_t kRejectedPromiseIndexThreshold = 8;
+
+  // Promise ID to its index in mUncaughtRejections. Only populated once that
+  // list grows past kRejectedPromiseIndexThreshold.
+  nsTHashMap<nsUint64HashKey, size_t> mUncaughtRejectionIndices;
+
   // Promises in this list have previously been reported as rejected
   // (because they were in the above list), but the rejection was handled
   // in the last turn of the event loop.
@@ -614,7 +623,14 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, public JS::JobQueue {
   // - it is handled, or
   // - A unhandledrejection is fired and it isn't being handled in event
   // handler.
-  typedef nsRefPtrHashtable<nsUint64HashKey, dom::Promise> PromiseHashtable;
+  struct PendingRejection {
+    RefPtr<dom::Promise> mPromise;
+    // Index of mPromise in mAboutToBeNotifiedRejectedPromises. That array is
+    // not compacted, so this stays valid until the array is emptied, after
+    // which it may name an unrelated entry and must be re-checked before use.
+    size_t mIndex = 0;
+  };
+  typedef nsTHashMap<nsUint64HashKey, PendingRejection> PromiseHashtable;
   PromiseHashtable mPendingUnhandledRejections;
 
   class NotifyUnhandledRejections final : public CancelableRunnable {

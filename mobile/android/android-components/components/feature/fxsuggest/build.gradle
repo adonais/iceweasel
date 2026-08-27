@@ -21,6 +21,7 @@ dependencies {
     implementation project(':components:concept-awesomebar')
     implementation project(':components:concept-base')
     implementation project(':components:concept-engine')
+    implementation project(':components:feature-awesomebar')
     implementation project(':components:feature-session')
     implementation project(':components:service-nimbus')
     implementation project(':components:support-appservices')

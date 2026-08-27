@@ -15,6 +15,8 @@ Services.scriptloader.loadSubScript(
 // and opening a toolbox targeting a process works, even though debugging
 // the main process of This Firefox is not really supported.
 add_task(async function () {
+  // We try opening a toolbox for the main process (browser-toolbox-like)
+  await pushPref("devtools.chrome.enabled", true);
   await pushPref("devtools.aboutdebugging.process-debugging", true);
   await pushPref("devtools.aboutdebugging.test-local-process-debugging", true);
 

@@ -305,7 +305,7 @@ power consumption.
   residency, GPU usage, etc.) may be helpful.
 - Animations are sometimes the cause of high power consumption. The
   [animation
-  inspector](/devtools-user/page_inspector/how_to/work_with_animations/index.rst#animation-inspector)
+  inspector](/devtools-user/page_inspector/how_to/work_with_animations/index.md#animation-inspector)
   in the Firefox Devtools can identify them. Alternatively, [here is
   an
   explanation](https://bugzilla.mozilla.org/show_bug.cgi?id=1190721#c10)

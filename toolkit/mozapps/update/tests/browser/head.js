@@ -558,10 +558,13 @@ function runDoorhangerUpdateTest(params, steps) {
       expectedStateOverride,
     } = step;
     return (async function () {
-      if (!params.popupShown && !PanelUI.isNotificationPanelOpen) {
-        await BrowserTestUtils.waitForEvent(
+      if (!params.popupShown) {
+        // Don't use PanelUI.isNotificationPanelOpen here: it also returns true
+        // while the panel is still in the "showing" state, in which case the
+        // popup frame isn't open yet and its contents aren't focusable.
+        await BrowserTestUtils.waitForPopupEvent(
           PanelUI.notificationPanel,
-          "popupshown"
+          "shown"
         );
       }
       const shownNotificationId = AppMenuNotifications.activeNotification.id;

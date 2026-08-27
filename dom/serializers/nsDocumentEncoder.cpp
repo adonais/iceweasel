@@ -1908,7 +1908,7 @@ nsHTMLCopyEncoder::EncodeToStringWithContext(nsAString& aContextString,
   infoString.AppendInt(mRangeSerializer.mContextInfoDepth.mStart);
   infoString.Append(char16_t(','));
   infoString.AppendInt(mRangeSerializer.mContextInfoDepth.mEnd);
-  aInfoString = infoString;
+  aInfoString = std::move(infoString);
 
   return rv;
 }

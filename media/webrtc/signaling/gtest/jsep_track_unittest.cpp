@@ -10,6 +10,7 @@
 
 #include "CodecConfig.h"
 #include "MockJsepCodecPreferences.h"
+#include "api/rtp_parameters.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "jsapi/DefaultCodecPreferences.h"
@@ -475,6 +476,72 @@ TEST_F(JsepTrackTest, CheckForAnsweringWithExtmapAllowMixedWhenNotOffered) {
       SdpAttribute::kExtmapAllowMixedAttribute));
   Negotiate();
   SanityCheck();
+}
+
+// Appends a sendrecv a=extmap entry to an msection.
+static void AddExtmap(SdpMediaSection& aMsection, uint16_t aId,
+                      const std::string& aUri,
+                      const SdpDirectionAttribute::Direction aDir =
+                          SdpDirectionAttribute::kSendrecv) {
+  auto& attrs = aMsection.GetAttributeList();
+  auto extmap = MakeUnique<SdpExtmapAttributeList>();
+  // Rummage for an existing extmap list
+  if (attrs.HasAttribute(SdpAttribute::kExtmapAttribute)) {
+    *extmap = attrs.GetExtmap();
+  }
+  extmap->PushEntry(aId, aDir, false /* only exists for serialization hack */
+                    ,
+                    aUri);
+  attrs.SetAttribute(std::move(extmap));
+}
+
+// A two-byte extension id is kept on the send track when the peer signaled
+// extmap-allow-mixed.
+TEST_F(JsepTrackTest, TwoByteExtIdKeptOnSendWhenExtmapAllowMixed) {
+  Init(SdpMediaSection::kVideo);
+  CreateOffer();
+  GetOffer().GetAttributeList().SetAttribute(
+      MakeUnique<SdpFlagAttribute>(SdpAttribute::kExtmapAllowMixedAttribute));
+  CreateAnswer();
+  const std::string uri = "urn:ietf:params:rtp-hdrext:toffset";
+  AddExtmap(GetAnswer(), 15, uri);
+  Negotiate();
+  ASSERT_TRUE(mSendAns.GetNegotiatedDetails());
+  ASSERT_NE(nullptr, mSendAns.GetNegotiatedDetails()->GetExt(uri));
+}
+
+// Without extmap-allow-mixed, a two-byte extension id is dropped from the send
+// track, but is still usable for receiving.
+TEST_F(JsepTrackTest, TwoByteExtIdDroppedFromSendWithoutExtmapAllowMixed) {
+  Init(SdpMediaSection::kVideo);
+  CreateOffer();
+  GetOffer().GetAttributeList().RemoveAttribute(
+      SdpAttribute::kExtmapAllowMixedAttribute);
+  CreateAnswer();
+  const std::string uri = "urn:ietf:params:rtp-hdrext:toffset";
+  AddExtmap(GetAnswer(), 15, uri);
+  Negotiate();
+  ASSERT_TRUE(mSendAns.GetNegotiatedDetails());
+  ASSERT_EQ(nullptr, mSendAns.GetNegotiatedDetails()->GetExt(uri));
+  // Check that the receiver is cool with the two-byte header ext.
+  ASSERT_TRUE(mRecvAns.GetNegotiatedDetails());
+  ASSERT_NE(nullptr, mRecvAns.GetNegotiatedDetails()->GetExt(uri));
+}
+
+// The dependency descriptor header ext requires the two-byte form, so we drop
+// it from the send track when extmap-allow-mixed was isn't negotiated.
+TEST_F(JsepTrackTest,
+       DependencyDescriptorDroppedFromSendWithoutExtmapAllowMixed) {
+  Init(SdpMediaSection::kVideo);
+  CreateOffer();
+  GetOffer().GetAttributeList().RemoveAttribute(
+      SdpAttribute::kExtmapAllowMixedAttribute);
+  CreateAnswer();
+  const std::string uri = webrtc::RtpExtension::kDependencyDescriptorUri;
+  AddExtmap(GetAnswer(), 5, uri);
+  Negotiate();
+  ASSERT_TRUE(mSendAns.GetNegotiatedDetails());
+  ASSERT_EQ(nullptr, mSendAns.GetNegotiatedDetails()->GetExt(uri));
 }
 
 TEST_F(JsepTrackTest, CheckForMismatchedAudioCodecAndVideoTrack) {

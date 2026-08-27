@@ -50,6 +50,11 @@
   fill: #fcd100;
 }
 
+.image-unsigned {
+  -moz-context-properties: fill, stroke;
+  stroke: var(--icon-color-critical);
+}
+
 .blocked-by-builtin {
   fill: red;
 }

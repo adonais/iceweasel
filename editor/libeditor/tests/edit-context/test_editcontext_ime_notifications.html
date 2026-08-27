@@ -17,6 +17,7 @@ const TIP = Cc['@mozilla.org/text-input-processor;1']
               .createInstance(Ci.nsITextInputProcessor);
 const TIPListener = Cc['@mozilla.org/text-input-processor-listener;1']
                       .createInstance(Ci.nsITextInputProcessorListener);
+let onReceiveNotification;
 TIPListener.setCallback(() => {
   const notification = TIPListener.getNotification();
   try {
@@ -32,24 +33,27 @@ TIPListener.setCallback(() => {
     return false;
   }
   notifications.push(notification.type);
+  if (onReceiveNotification) {
+    onReceiveNotification(notification.type);
+  }
   return true;
 });
 TIP.beginInputTransactionForTests(window, TIPListener);
 
 const host = document.querySelector('div');
-const editContext = new EditContext();
+const editContext = new EditContext({text: 'hello'});
 host.editContext = editContext;
 let notifications = [];
 
 async function doTest(func, expectation, description) {
   host.focus();
   notifications = [];
-  func();
+  await func();
   await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   for (const notification in expectation) {
     is(notifications.includes(notification),
        expectation[notification],
-      `Should ${expectation[notification] ? "not " : ""}notify of ${notification} when ${description}`);
+      `Should ${expectation[notification] ? "" : "not "}notify of ${notification} when ${description}`);
   }
 }
 
@@ -63,9 +67,14 @@ function typeA() {
   TIP.keyup(new KeyboardEvent('keyup', properties));
 }
 
+function updateAllCharacterBounds() {
+  editContext.updateCharacterBounds(0, new Array(editContext.text.length).fill(new DOMRect(5, 5, 5, 5)));
+}
+
 add_task(async () => {
   await SimpleTest.promiseFocus();
 
+  editContext.oncharacterboundsupdate = updateAllCharacterBounds;
   await doTest(() => {
     host.textContent = 'test';
   }, {
@@ -100,7 +109,82 @@ add_task(async () => {
     'notify-text-change': false,
     'notify-selection-change': false,
   }, 'DOM selection is changed.');
+
+  await doTest(async () => {
+    host.contentEditable = true;
+    host.editContext = null;
+    // If we immediately change the content, IMEContentObserver won't send
+    // a text change due to also notifying of focus. So we wait a bit first.
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    // IMEContentObserver should be observing for DOM changes.
+    host.append('hello');
+  }, {
+    'notify-focus': true,
+    'notify-text-change': true,
+  }, 'EditContext is detached from focused contenteditable element and the DOM text is changed.');
+
+  await doTest(async () => {
+    host.editContext = editContext;
+    // If we immediately change the content, IMEContentObserver won't send
+    // a text change due to also notifying of focus. So we wait a bit first.
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    // IMEContentObserver should not be observing for DOM changes.
+    host.append('hello');
+  }, {
+    'notify-focus': true,
+    'notify-text-change': false,
+  }, 'EditContext is attached to focused contenteditable element and the DOM text is changed.');
 });
+
+add_task(async () => {
+  host.focus();
+  editContext.updateCharacterBounds(0, []); // clear character bounds
+  const {promise: waitForConsole, resolve: onConsoleMessage} = Promise.withResolvers();
+  SimpleTest.monitorConsole(onConsoleMessage, [{
+    message: /EditContext.updateCharacterBounds\(\) was not called synchronously/,
+    isWarning: true,
+    category: 'DOM',
+  }]);
+  let updatedCharacterBounds = false;
+  editContext.oncharacterboundsupdate = () => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      updatedCharacterBounds = true;
+      updateAllCharacterBounds();
+    }));
+  };
+  const {resolve, promise} = Promise.withResolvers();
+  const startTime = new Date().getTime();
+  onReceiveNotification = () => {
+    resolve(new Date().getTime() - startTime);
+  }
+  typeA();
+  const timeWaited = await promise;
+  ok(updatedCharacterBounds,
+    'Should not receive any notifications until character bounds are updated.');
+  ok(timeWaited < 200,
+    'Should fire notifications just after updateCharacterBounds() is called.');
+  SimpleTest.endMonitorConsole();
+  await waitForConsole; // should warn in console.
+});
+
+add_task(async () => {
+  host.focus();
+  editContext.oncharacterboundsupdate = () => {
+    // don't actually provide any character bounds
+  };
+  editContext.updateCharacterBounds(0, []); // clear character bounds
+
+  const {resolve, promise} = Promise.withResolvers();
+  const startTime = new Date().getTime();
+  onReceiveNotification = () => {
+    resolve(new Date().getTime() - startTime);
+  }
+  typeA();
+  const timeWaited = await promise;
+  ok(timeWaited > 250,
+     'Should wait for updateCharacterBounds() but give up after a timeout if it is never called.');
+});
+
 </script>
 </body>
 </html>

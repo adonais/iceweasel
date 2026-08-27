@@ -2,12 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <stdio.h>
+#include <string.h>
+
+#include <string>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/JSONWriter.h"
 #include "mozilla/UniquePtr.h"
-#include <stdio.h>
-#include <string>
-#include <string.h>
 
 using mozilla::JSONWriteFunc;
 using mozilla::JSONWriter;

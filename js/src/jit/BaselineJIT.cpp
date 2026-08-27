@@ -253,7 +253,10 @@ static bool DispatchOffThreadBaselineCompile(JSContext* cx,
   BaselineCompileTask* task = alloc->new_<BaselineCompileTask>(
       realm, alloc.get(), std::move(snapshots));
   if (!task) {
-    snapshots.clear();
+    // The allocation failed, so the constructor never ran and the snapshot is
+    // still linked into |snapshots|. Unlink it to satisfy the LinkedList
+    // destructor's "list must be empty" assertion.
+    snapshotCopy->remove();
     ReportOutOfMemory(cx);
     return false;
   }
@@ -548,10 +551,6 @@ static MethodStatus CanEnterBaselineJIT(JSContext* cx, HandleScript script,
 bool jit::CanBaselineInterpretScript(JSScript* script) {
   MOZ_ASSERT(IsBaselineInterpreterEnabled());
 
-  if (script->hasForceInterpreterOp()) {
-    return false;
-  }
-
   if (script->nslots() > BaselineMaxScriptSlots) {
     // Avoid overrecursion exceptions when the script has a ton of stack slots
     // by forcing such scripts to run in the C++ interpreter with heap-allocated
@@ -760,7 +759,6 @@ void BaselineCompileQueue::assertInvariants() const {
 #endif
 
 void BaselineCompileQueue::trace(JSTracer* trc) {
-  assertInvariants();
   for (uint32_t i = 0; i < numQueued_; i++) {
     TraceEdge(trc, &queue_[i], "baseline_compile_queue");
   }

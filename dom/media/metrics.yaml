@@ -87,6 +87,213 @@ media.audio:
       - media-alerts@mozilla.com
     expires: never
 
+media.audio_focus:
+  interrupt_count:
+    type: labeled_counter
+    labels:
+      - system_transient
+      - system_permanent
+    description: >
+      Number of audio-session interruptions, by cause.
+    metadata:
+      tags:
+        - 'Core :: Audio/Video: Playback'
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - media-alerts@mozilla.com
+    expires: never
+
+  interrupt_outcome:
+    type: event
+    description: >
+      Terminal outcome of an audio-session interruption for a top-level
+      browsing context.
+    extra_keys:
+      outcome:
+        description: >
+          `recovered` (focus returned and the session resumed),
+          `ended_permanent` (a permanent loss inactivated it), or
+          `unresolved_at_teardown` (a transient interruption never resolved
+          before the controller went away).
+        type: string
+      cause:
+        description: The interruption cause, `system_transient` or `system_permanent`.
+        type: string
+    metadata:
+      tags:
+        - 'Core :: Audio/Video: Playback'
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - media-alerts@mozilla.com
+    expires: never
+
+  resume_decision:
+    type: labeled_counter
+    labels:
+      - media
+      - web_audio
+      - web_speech
+    description: >
+      When an interruption ends, the number of times each suspended audible
+      source (media element, Web Audio, or Web Speech) was dispatched its resume
+      signal. Sources the interruption never suspended, or that the page took
+      over during the interruption, are not counted.
+    metadata:
+      tags:
+        - 'Core :: Audio/Video: Playback'
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - media-alerts@mozilla.com
+    expires: never
+
+  platform_focus_type:
+    type: labeled_counter
+    labels:
+      - auto
+      - ambient
+      - transient
+      - transient_solo
+      - playback
+      - play_and_record
+    description: >
+      Android only: the effective audio-session type Firefox forwards to the
+      embedder to shape the platform audio-focus request, by value. This is the
+      type actually used on the platform, including the source-derived fallback
+      (e.g. ambient for Web Audio, transient for Web Speech) when no page set a
+      type explicitly.
+    metadata:
+      tags:
+        - 'Core :: Audio/Video: Playback'
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - media-alerts@mozilla.com
+    expires: never
+
+media.audio_session:
+  api_used:
+    type: counter
+    description: >
+      Incremented once per document that accesses `navigator.audioSession`
+      (recorded in the content process, so it counts accessing documents).
+    metadata:
+      tags:
+        - 'Core :: Audio/Video: Playback'
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - media-alerts@mozilla.com
+    expires: never
+
+  type_set:
+    type: labeled_counter
+    labels:
+      - auto
+      - playback
+      - transient
+      - transient_solo
+      - ambient
+      - play_and_record
+    description: >
+      Number of explicit `audioSession.type` assignments, by value.
+    metadata:
+      tags:
+        - 'Core :: Audio/Video: Playback'
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - media-alerts@mozilla.com
+    expires: never
+
+  effective_auto_type:
+    type: labeled_counter
+    labels:
+      - auto
+      - playback
+      - transient
+      - transient_solo
+      - ambient
+      - play_and_record
+    description: >
+      The concrete type an `auto`-typed selected session resolves to under the
+      audio-session type priority ranking.
+    metadata:
+      tags:
+        - 'Core :: Audio/Video: Playback'
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - media-alerts@mozilla.com
+    expires: never
+
+  selected_changed:
+    type: counter
+    description: >
+      Number of times the selected audio session changed for a top-level
+      browsing context.
+    metadata:
+      tags:
+        - 'Core :: Audio/Video: Playback'
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - media-alerts@mozilla.com
+    expires: never
+
+  inactivated_by_arbitration:
+    type: counter
+    description: >
+      Number of times audio-session arbitration inactivates one or more active
+      sessions because another session takes over. Counted once per arbitration
+      pass that displaces a session, not once per displaced session.
+    metadata:
+      tags:
+        - 'Core :: Audio/Video: Playback'
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054517
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - media-alerts@mozilla.com
+    expires: never
+
 media.playback:
   first_frame_loaded:
     type: event
@@ -421,12 +628,12 @@ media:
       This metric does not determine whether the MKV file is valid; it is simply
       a count based on the sniffed MIME type.
     bugs:
-      - https://bugzil.la/2016198
+      - https://bugzil.la/2057069
     data_reviews:
-      - https://bugzil.la/2016198
+      - https://bugzil.la/2057069
     notification_emails:
       - media-alerts@mozilla.com
-    expires: 156
+    expires: 162
 
   mkv_codec_type:
     type: labeled_counter
@@ -446,12 +653,12 @@ media:
       - AudioPcm
       - NoCodecSpecified
     bugs:
-      - https://bugzil.la/2016198
+      - https://bugzil.la/2057069
     data_reviews:
-      - https://bugzil.la/2016198
+      - https://bugzil.la/2057069
     notification_emails:
       - media-alerts@mozilla.com
-    expires: 156
+    expires: 162
 
   muted_by_content_attribute_runtime:
     type: counter

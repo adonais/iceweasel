@@ -1762,6 +1762,18 @@ getBoundListenSocket(unsigned short port)
         addr.inet.family = PR_AF_INET;
         addr.inet.ip = PR_htonl(PR_INADDR_ANY);
         addr.inet.port = PR_htons(port);
+    } else if (addr.raw.family == PR_AF_INET6) {
+        // Check if this is a dual-stack host. If it is, listen on the IPv6
+        // wildcard, instead of loopback, so that we can receive connections
+        // from IPv4 clients.
+        PRFileDesc *ipv4_probe = PR_NewTCPSocket();
+        if (ipv4_probe) {
+            PR_Close(ipv4_probe);
+            prStatus = PR_SetNetAddr(PR_IpAddrAny, PR_AF_INET6, port, &addr);
+            if (prStatus != PR_SUCCESS) {
+                errExit("PR_SetNetAddr");
+            }
+        }
     }
 
     if (addr.inet.family == PR_AF_INET6) {

@@ -609,10 +609,10 @@ class GCSchedulingState {
    * growth factor is a measure of how large (as a percentage of the last GC)
    * the heap is allowed to grow before we try to schedule another GC.
    */
-  mozilla::Atomic<bool, mozilla::Relaxed> inHighFrequencyGCMode_;
+  mozilla::Atomic<bool, mozilla::Relaxed> inHighFrequencyGCMode_{false};
 
  public:
-  GCSchedulingState() : inHighFrequencyGCMode_(false) {}
+  GCSchedulingState() = default;
 
   bool inHighFrequencyGCMode() const { return inHighFrequencyGCMode_; }
 
@@ -744,24 +744,21 @@ class PerZoneGCHeapSize : public HeapSizeChild {
 // GC heap and malloc thresholds defined below.
 class HeapThreshold {
  protected:
-  HeapThreshold()
-      : startBytes_(SIZE_MAX),
-        incrementalLimitBytes_(SIZE_MAX),
-        sliceBytes_(SIZE_MAX) {}
+  HeapThreshold() = default;
 
   // The threshold at which to start a new incremental collection.
   //
   // This can be read off main thread during collection, for example by sweep
   // tasks that resize tables.
-  MainThreadOrGCTaskData<size_t> startBytes_;
+  MainThreadOrGCTaskData<size_t> startBytes_{SIZE_MAX};
 
   // The threshold at which start a new non-incremental collection or finish an
   // ongoing collection non-incrementally.
-  MainThreadData<size_t> incrementalLimitBytes_;
+  MainThreadData<size_t> incrementalLimitBytes_{SIZE_MAX};
 
   // The threshold at which to trigger a slice during an ongoing incremental
   // collection.
-  MainThreadData<size_t> sliceBytes_;
+  MainThreadData<size_t> sliceBytes_{SIZE_MAX};
 
  public:
   size_t startBytes() const { return startBytes_; }

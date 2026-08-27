@@ -21,6 +21,31 @@ namespace net {
 
 NS_IMPL_ISUPPORTS(HTTPSRecordResolver, nsIDNSListener)
 
+// Returns the record's lone HTTPS AliasMode (SvcPriority 0) entry, if any. The
+// resolver produces such a record when an HTTPS alias was followed to a
+// TargetName that has no HTTPS record of its own (RFC 9460); the connection
+// still has to be routed to the TargetName. Returns null otherwise, since a
+// ServiceMode RRSet never contains a SvcPriority 0 record.
+static already_AddRefed<nsISVCBRecord> GetAliasModeRecord(
+    nsIDNSHTTPSSVCRecord* aHTTPSRecord) {
+  nsTArray<RefPtr<nsISVCBRecord>> records;
+  if (NS_FAILED(aHTTPSRecord->GetRecords(records)) || records.Length() != 1) {
+    return nullptr;
+  }
+
+  uint16_t priority = 0;
+  if (NS_FAILED(records[0]->GetPriority(&priority)) || priority != 0) {
+    return nullptr;
+  }
+
+  nsAutoCString name;
+  if (NS_FAILED(records[0]->GetName(name)) || name.IsEmpty()) {
+    return nullptr;
+  }
+
+  return records[0].forget();
+}
+
 HTTPSRecordResolver::HTTPSRecordResolver(nsAHttpTransaction* aTransaction)
     : mTransaction(aTransaction), mConnInfo(aTransaction->ConnectionInfo()) {}
 
@@ -164,7 +189,12 @@ nsresult HTTPSRecordResolver::InvokeCallback() {
   if (NS_FAILED(httpsRecord->GetServiceModeRecordWithCname(
           caps & NS_HTTP_DISALLOW_SPDY, caps & NS_HTTP_DISALLOW_HTTP3, cname,
           getter_AddRefs(svcbRecord)))) {
-    return transaction->OnHTTPSRRAvailable(httpsRecord, nullptr, cname);
+    // No ServiceMode record. If the origin's HTTPS record is an AliasMode
+    // record whose TargetName has no HTTPS record of its own, RFC 9460 still
+    // requires connecting to the TargetName. Route the connection to it so
+    // Happy Eyeballs issues A/AAAA/HTTPS queries for the target.
+    svcbRecord = GetAliasModeRecord(httpsRecord);
+    return transaction->OnHTTPSRRAvailable(httpsRecord, svcbRecord, cname);
   }
 
   return transaction->OnHTTPSRRAvailable(httpsRecord, svcbRecord, cname);

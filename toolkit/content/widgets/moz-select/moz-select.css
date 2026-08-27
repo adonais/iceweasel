@@ -34,6 +34,7 @@
     border-color: var(--border-color-error);
   }
 
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   &:hover,
   &:has(select:open),
   &:has(+ [open]) {
@@ -42,6 +43,7 @@
     color: var(--select-text-color-hover);
   }
 
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   &:has(> :disabled) {
     border-color: var(--select-border-color-disabled);
     background-color: var(--select-background-color-disabled);
@@ -49,6 +51,7 @@
     opacity: var(--select-opacity-disabled);
   }
 
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   &:has(:focus-visible) {
     outline: var(--focus-outline);
     outline-offset: var(--focus-outline-offset);
@@ -72,7 +75,7 @@ panel-item[icon]::part(button) {
   background-image: var(--select-item-icon-url);
 }
 
-panel-item[selected] {
+panel-item[selected]::part(button) {
   background-color: var(--button-background-color-selected);
   border-color: var(--button-border-color-selected);
   color: var(--button-text-color-selected);
@@ -94,6 +97,7 @@ panel-item[selected] {
     padding-inline-start: calc(var(--select-space-inline-small) + var(--icon-size) + var(--space-small));
   }
 
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   .with-icon:has(.panel-trigger) .select-option-icon {
     inset-inline-start: var(--select-space-inline-small);
   }
@@ -162,6 +166,7 @@ select {
   padding-inline-start: calc(var(--select-space-inline) + var(--icon-size) + var(--space-small));
 }
 
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .with-icon:has(.panel-trigger) .select-option-icon {
   opacity: 1;
   transform: scale(1);

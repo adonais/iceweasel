@@ -61,6 +61,11 @@ class SerialPortReadAlgorithms final : public InputToReadableStreamAlgorithms {
       JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
       ErrorResult& aRv) override;
 
+  // Maps serial-specific receive error codes (e.g. parity errors) to the
+  // corresponding named DOMException required by the Web Serial spec.
+  void BuildErrorValue(JSContext* aCx, nsresult aError,
+                       JS::MutableHandle<JS::Value> aErrorValue) override;
+
   void ReleaseObjects() override;
 
  protected:

@@ -57,7 +57,7 @@ export function AnimationFramePromise(win, options = {}) {
   }
 
   const animationFramePromise = new Promise(resolve => {
-    executeSoon(() => {
+    Services.tm.dispatchToMainThread(() => {
       win.requestAnimationFrame(resolve);
     });
   });
@@ -208,7 +208,7 @@ export function EventPromise(subject, eventName, options = {}) {
       }
 
       cleanUp();
-      executeSoon(() => resolve(event));
+      Services.tm.dispatchToMainThread(() => resolve(event));
     }
 
     subject.addEventListener(eventName, listener, {
@@ -233,20 +233,6 @@ export function EventPromise(subject, eventName, options = {}) {
       );
     }
   });
-}
-
-/**
- * Wait for the next tick in the event loop to execute a callback.
- *
- * @param {Function} fn
- *     Function to be executed.
- */
-export function executeSoon(fn) {
-  if (typeof fn != "function") {
-    throw new TypeError();
-  }
-
-  Services.tm.dispatchToMainThread(fn);
 }
 
 /**

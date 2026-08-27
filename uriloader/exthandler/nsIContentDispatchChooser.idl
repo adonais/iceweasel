@@ -31,10 +31,15 @@ interface nsIContentDispatchChooser : nsISupports {
   *        The browsing context where the load should happen.
   * @param aWasTriggeredExternally
   *        True if the load was tripped by an external app.
+  * @param aHasValidUserGestureActivation
+  *        True if the navigation that triggered this load had transient user
+  *        gesture activation. Used to gate the silent-launch shortcut for
+  *        protocols that would otherwise open without a prompt (see bug 299116).
   */
   void handleURI(in nsIHandlerInfo aHandler,
            in nsIURI aURI,
            in nsIPrincipal aTriggeringPrincipal,
            in BrowsingContext aBrowsingContext,
-           [optional] in boolean aWasTriggeredExternally);
+           [optional] in boolean aWasTriggeredExternally,
+           [optional] in boolean aHasValidUserGestureActivation);
 };

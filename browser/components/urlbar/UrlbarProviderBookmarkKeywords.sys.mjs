@@ -15,6 +15,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   KeywordUtils: "resource://gre/modules/KeywordUtils.sys.mjs",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
@@ -24,10 +25,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
  */
 export class UrlbarProviderBookmarkKeywords extends UrlbarProvider {
   /**
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof lazy.UrlbarShared.PROVIDER_TYPE>}
    */
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
+    return lazy.UrlbarShared.PROVIDER_TYPE.HEURISTIC;
   }
 
   /**
@@ -84,9 +85,10 @@ export class UrlbarProviderBookmarkKeywords extends UrlbarProvider {
         ]
       );
     } else {
-      title = UrlbarUtils.prepareUrlForDisplay(url);
+      title = lazy.UrlbarShared.prepareUrlForDisplay(url);
     }
 
+    let bookmark = await lazy.PlacesUtils.bookmarks.fetch({ url: entry.url });
     let result = new lazy.UrlbarResult({
       type: lazy.UrlbarShared.RESULT_TYPE.KEYWORD,
       source: lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS,
@@ -97,12 +99,13 @@ export class UrlbarProviderBookmarkKeywords extends UrlbarProvider {
         keyword,
         input: queryContext.searchString,
         postData,
-        icon: UrlbarUtils.getIconForUrl(entry.url),
+        icon: lazy.UrlbarShared.getIconForUrl(entry.url),
+        bookmarkDateMs: bookmark ? bookmark.dateAdded.getTime() : undefined,
       },
       highlights: {
-        title: UrlbarUtils.HIGHLIGHT.TYPED,
-        url: UrlbarUtils.HIGHLIGHT.TYPED,
-        keyword: UrlbarUtils.HIGHLIGHT.TYPED,
+        title: lazy.UrlbarShared.HIGHLIGHT.TYPED,
+        url: lazy.UrlbarShared.HIGHLIGHT.TYPED,
+        keyword: lazy.UrlbarShared.HIGHLIGHT.TYPED,
       },
     });
     addCallback(this, result);

@@ -163,7 +163,7 @@ CookieStoreNotifier::Observe(nsISupports* aSubject, const char* aTopic,
   bool deletedEvent = action == nsICookieNotification::COOKIE_DELETED;
 
   GetCurrentSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
-      __func__, [self = RefPtr(this), item, deletedEvent] {
+      __func__, [self = RefPtr(this), item = std::move(item), deletedEvent] {
         self->DispatchEvent(item, deletedEvent);
       }));
 

@@ -45,16 +45,11 @@ function test_dimensions({ width, height }) {
         Assert.equal(rect.height, height, "Should have the requested height");
       }
 
-      let treeOwner = win.docShell.treeOwner;
-      let persistPosition = {};
-      let persistSize = {};
-      let persistSizeMode = {};
-      treeOwner.getPersistence(persistPosition, persistSize, persistSizeMode);
-
-      Assert.ok(!persistPosition.value, "Should not persist position");
-      Assert.ok(!persistSize.value, "Should not persist size");
-      Assert.ok(!persistSizeMode.value, "Should not persist size mode");
-
+      Assert.equal(
+        win.document.documentElement.getAttribute("persist"),
+        "",
+        "Should disable persistence"
+      );
       await BrowserTestUtils.closeWindow(win);
     }
   );

@@ -93,11 +93,6 @@ class nsIWidgetListener {
   virtual void WindowDeactivated() {}
 
   /**
-   * Called when the show/hide toolbar button on the Mac titlebar is pressed.
-   */
-  virtual void OSToolbarButtonPressed() {}
-
-  /**
    * Called when a request is made to close the window. Returns true if the
    * notification was handled. Returns true if the notification was handled.
    */

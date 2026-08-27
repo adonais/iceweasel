@@ -1,5 +1,5 @@
 let a = parseModule(`throw new Error`);
-moduleLink(a);
+moduleLoadAndLink(a);
 stackTest(function() {
     moduleEvaluate(a);
 });

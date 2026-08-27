@@ -135,38 +135,6 @@ add_task(async function test_sendToDeviceEmailsSupported() {
   Assert.ok(!BrowserUtils.sendToDeviceEmailsSupported());
 });
 
-add_task(async function test_shouldShowFocusPromo() {
-  const allowedRegion = "US";
-  const disallowedRegion = "CN";
-
-  // Show promo when neither region is disallowed
-  setupRegions(allowedRegion, allowedRegion);
-  Assert.ok(BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.FOCUS));
-
-  // Don't show when home region is disallowed
-  setupRegions(disallowedRegion);
-  Assert.ok(!BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.FOCUS));
-
-  setupRegions(allowedRegion, allowedRegion);
-
-  // Don't show when there is an enterprise policy active
-  if (AppConstants.platform !== "android") {
-    // Services.policies isn't shipped on Android
-    await setupEnterprisePolicy();
-
-    Assert.ok(!BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.FOCUS));
-
-    // revert policy changes made earlier
-    await EnterprisePolicyTesting.setupPolicyEngineWithJson("");
-  }
-
-  // Don't show when promo disabled by pref
-  Preferences.set("browser.promo.focus.enabled", false);
-  Assert.ok(!BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.FOCUS));
-
-  Services.prefs.clearUserBranch("browser.promo.focus");
-});
-
 add_task(async function test_shouldShowPinPromo() {
   Preferences.set("browser.promo.pin.enabled", true);
   // Show pin promo type by default when promo is enabled
@@ -211,22 +179,6 @@ add_task(async function test_shouldShowRelayPromo() {
   Assert.ok(!BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.RELAY));
 
   Preferences.reset("identity.fxaccounts.autoconfig.uri");
-});
-
-add_task(async function test_shouldShowCookieBannersPromo() {
-  Preferences.set("browser.promo.cookiebanners.enabled", true);
-  // Show cookie banners promo type by default when promo is enabled
-  Assert.ok(
-    BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.COOKIE_BANNERS)
-  );
-
-  // Don't show when promo disabled by pref
-  Preferences.set("browser.promo.cookiebanners.enabled", false);
-  Assert.ok(
-    !BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.COOKIE_BANNERS)
-  );
-
-  Services.prefs.clearUserBranch("browser.promo.cookiebanners");
 });
 
 add_task(function test_getShareableURL() {

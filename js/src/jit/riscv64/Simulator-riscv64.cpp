@@ -2569,6 +2569,38 @@ static inline bool is_invalid_fsqrt(T src1) {
   return (src1 < 0);
 }
 
+template <typename T>
+void Simulator::AtomicMemoryHelper(AMO_OP<T> f, const SimInstruction& instr) {
+  static_assert(std::is_signed_v<T>,
+                "expect signed integer so no explicit sext32 is needed");
+
+  MOZ_ASSERT(instr.AqValue() && instr.RlValue(),
+             "only seqcst (aq+rl) memory ordering supported");
+
+  uint64_t addr = rs1();
+  T value = static_cast<T>(rs2());
+
+  unsigned element_size = sizeof(T);
+
+  if (addr % element_size == 0) {
+    if (handleWasmSegFault(addr, element_size)) {
+      return;
+    }
+
+    SharedMem<T*> ptr = SharedMem<T*>::shared(reinterpret_cast<T*>(addr));
+
+    set_rd(f(ptr, value));
+
+    // TODO(RISCV): trace memory read for AMO
+    return;
+  }
+
+  printf("Unaligned write at 0x%016" PRIx64 ", pc=0x%016" PRIxPTR "\n", addr,
+         reinterpret_cast<intptr_t>(instr.instr()));
+  MOZ_CRASH();
+  return;
+}
+
 int Simulator::loadLinkedW(uint64_t addr, const SimInstruction& instr) {
   if ((addr & 3) == 0) {
     if (handleWasmSegFault(addr, 4)) {
@@ -2692,8 +2724,7 @@ void Simulator::DecodeRVRAType() {
     case RO_SC_W: {
       sreg_t addr = rs1();
       auto value = static_cast<int32_t>(rs2());
-      auto result =
-          storeConditionalW(addr, static_cast<int32_t>(rs2()), instr_);
+      auto result = storeConditionalW(addr, value, instr_);
       set_rd(result);
       if (!result) {
         TraceSc(addr, value);
@@ -2701,86 +2732,30 @@ void Simulator::DecodeRVRAType() {
       break;
     }
     case RO_AMOSWAP_W: {
-      if ((rs1() & 0x3) != 0) {
-        DieOrDebug();
-      }
-      set_rd(sext32(amo<uint32_t>(
-          rs1(), [&](uint32_t lhs) { return (uint32_t)rs2(); }, instr_.instr(),
-          WORD)));
+      AtomicMemoryHelper(AtomicOperations::exchangeSeqCst<int32_t>, instr_);
       break;
     }
     case RO_AMOADD_W: {
-      if ((rs1() & 0x3) != 0) {
-        DieOrDebug();
-      }
-      set_rd(sext32(amo<uint32_t>(
-          rs1(), [&](uint32_t lhs) { return lhs + (uint32_t)rs2(); },
-          instr_.instr(), WORD)));
+      AtomicMemoryHelper(AtomicOperations::fetchAddSeqCst<int32_t>, instr_);
       break;
     }
     case RO_AMOXOR_W: {
-      if ((rs1() & 0x3) != 0) {
-        DieOrDebug();
-      }
-      set_rd(sext32(amo<uint32_t>(
-          rs1(), [&](uint32_t lhs) { return lhs ^ (uint32_t)rs2(); },
-          instr_.instr(), WORD)));
+      AtomicMemoryHelper(AtomicOperations::fetchXorSeqCst<int32_t>, instr_);
       break;
     }
     case RO_AMOAND_W: {
-      if ((rs1() & 0x3) != 0) {
-        DieOrDebug();
-      }
-      set_rd(sext32(amo<uint32_t>(
-          rs1(), [&](uint32_t lhs) { return lhs & (uint32_t)rs2(); },
-          instr_.instr(), WORD)));
+      AtomicMemoryHelper(AtomicOperations::fetchAndSeqCst<int32_t>, instr_);
       break;
     }
     case RO_AMOOR_W: {
-      if ((rs1() & 0x3) != 0) {
-        DieOrDebug();
-      }
-      set_rd(sext32(amo<uint32_t>(
-          rs1(), [&](uint32_t lhs) { return lhs | (uint32_t)rs2(); },
-          instr_.instr(), WORD)));
+      AtomicMemoryHelper(AtomicOperations::fetchOrSeqCst<int32_t>, instr_);
       break;
     }
-    case RO_AMOMIN_W: {
-      if ((rs1() & 0x3) != 0) {
-        DieOrDebug();
-      }
-      set_rd(sext32(amo<int32_t>(
-          rs1(), [&](int32_t lhs) { return std::min(lhs, (int32_t)rs2()); },
-          instr_.instr(), WORD)));
-      break;
-    }
-    case RO_AMOMAX_W: {
-      if ((rs1() & 0x3) != 0) {
-        DieOrDebug();
-      }
-      set_rd(sext32(amo<int32_t>(
-          rs1(), [&](int32_t lhs) { return std::max(lhs, (int32_t)rs2()); },
-          instr_.instr(), WORD)));
-      break;
-    }
-    case RO_AMOMINU_W: {
-      if ((rs1() & 0x3) != 0) {
-        DieOrDebug();
-      }
-      set_rd(sext32(amo<uint32_t>(
-          rs1(), [&](uint32_t lhs) { return std::min(lhs, (uint32_t)rs2()); },
-          instr_.instr(), WORD)));
-      break;
-    }
-    case RO_AMOMAXU_W: {
-      if ((rs1() & 0x3) != 0) {
-        DieOrDebug();
-      }
-      set_rd(sext32(amo<uint32_t>(
-          rs1(), [&](uint32_t lhs) { return std::max(lhs, (uint32_t)rs2()); },
-          instr_.instr(), WORD)));
-      break;
-    }
+    case RO_AMOMIN_W:
+    case RO_AMOMAX_W:
+    case RO_AMOMINU_W:
+    case RO_AMOMAXU_W:
+      UNSUPPORTED();
     case RO_LR_D: {
       sreg_t addr = rs1();
       set_rd(loadLinkedD(addr, instr_));
@@ -2790,8 +2765,7 @@ void Simulator::DecodeRVRAType() {
     case RO_SC_D: {
       sreg_t addr = rs1();
       auto value = static_cast<int64_t>(rs2());
-      auto result =
-          storeConditionalD(addr, static_cast<int64_t>(rs2()), instr_);
+      auto result = storeConditionalD(addr, value, instr_);
       set_rd(result);
       if (!result) {
         TraceSc(addr, value);
@@ -2799,58 +2773,30 @@ void Simulator::DecodeRVRAType() {
       break;
     }
     case RO_AMOSWAP_D: {
-      set_rd(amo<int64_t>(
-          rs1(), [&](int64_t lhs) { return rs2(); }, instr_.instr(), DWORD));
+      AtomicMemoryHelper(AtomicOperations::exchangeSeqCst<int64_t>, instr_);
       break;
     }
     case RO_AMOADD_D: {
-      set_rd(amo<int64_t>(
-          rs1(), [&](int64_t lhs) { return lhs + rs2(); }, instr_.instr(),
-          DWORD));
+      AtomicMemoryHelper(AtomicOperations::fetchAddSeqCst<int64_t>, instr_);
       break;
     }
     case RO_AMOXOR_D: {
-      set_rd(amo<int64_t>(
-          rs1(), [&](int64_t lhs) { return lhs ^ rs2(); }, instr_.instr(),
-          DWORD));
+      AtomicMemoryHelper(AtomicOperations::fetchXorSeqCst<int64_t>, instr_);
       break;
     }
     case RO_AMOAND_D: {
-      set_rd(amo<int64_t>(
-          rs1(), [&](int64_t lhs) { return lhs & rs2(); }, instr_.instr(),
-          DWORD));
+      AtomicMemoryHelper(AtomicOperations::fetchAndSeqCst<int64_t>, instr_);
       break;
     }
     case RO_AMOOR_D: {
-      set_rd(amo<int64_t>(
-          rs1(), [&](int64_t lhs) { return lhs | rs2(); }, instr_.instr(),
-          DWORD));
+      AtomicMemoryHelper(AtomicOperations::fetchOrSeqCst<int64_t>, instr_);
       break;
     }
-    case RO_AMOMIN_D: {
-      set_rd(amo<int64_t>(
-          rs1(), [&](int64_t lhs) { return std::min(lhs, rs2()); },
-          instr_.instr(), DWORD));
-      break;
-    }
-    case RO_AMOMAX_D: {
-      set_rd(amo<int64_t>(
-          rs1(), [&](int64_t lhs) { return std::max(lhs, rs2()); },
-          instr_.instr(), DWORD));
-      break;
-    }
-    case RO_AMOMINU_D: {
-      set_rd(amo<uint64_t>(
-          rs1(), [&](uint64_t lhs) { return std::min(lhs, (uint64_t)rs2()); },
-          instr_.instr(), DWORD));
-      break;
-    }
-    case RO_AMOMAXU_D: {
-      set_rd(amo<uint64_t>(
-          rs1(), [&](uint64_t lhs) { return std::max(lhs, (uint64_t)rs2()); },
-          instr_.instr(), DWORD));
-      break;
-    }
+    case RO_AMOMIN_D:
+    case RO_AMOMAX_D:
+    case RO_AMOMINU_D:
+    case RO_AMOMAXU_D:
+      UNSUPPORTED();
     // TODO(riscv): End Add macro for RISCV A extension
     default: {
       UNSUPPORTED();

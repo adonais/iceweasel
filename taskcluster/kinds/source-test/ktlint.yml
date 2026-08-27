@@ -5,6 +5,7 @@
 task-defaults:
     description: 'Run ktlint over all modules'
     run:
+        clone-with: hg
         using: gradlew
         gradlew: ['ktlint']
     attributes:
@@ -31,6 +32,7 @@ task-defaults:
 
 android-components:
     run:
+        clone-with: hg
         pre-gradlew:
             - ["cd", "mobile/android/android-components"]
     treeherder:
@@ -46,6 +48,7 @@ focus:
         files-changed:
             - "mobile/android/focus-android/**"
     run:
+        clone-with: hg
         pre-gradlew:
             - ["cd", "mobile/android/focus-android"]
     treeherder:
@@ -61,6 +64,7 @@ fenix:
         files-changed:
             - "mobile/android/fenix/**"
     run:
+        clone-with: hg
         pre-gradlew:
             - ["cd", "mobile/android/fenix"]
     treeherder:

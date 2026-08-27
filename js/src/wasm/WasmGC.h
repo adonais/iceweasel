@@ -281,7 +281,7 @@ class StackMaps {
   // memory to be linearly allocated as stack maps, giving us pointer stability
   // while avoiding lock contention from malloc across compilation threads. It
   // also allows us to undo a stack map allocation.
-  LifoAlloc stackMaps_;
+  LifoAlloc stackMaps_{4096, js::BackgroundMallocArena};
   // Map for finding a stack map at a specific code offset.
   StackMapHashMap codeOffsetToStackMap_;
 
@@ -297,7 +297,7 @@ class StackMaps {
 #endif
 
  public:
-  StackMaps() : stackMaps_(4096, js::BackgroundMallocArena) {}
+  StackMaps() = default;
 
   // Allocates a new empty stack map. After configuring the stack map to your
   // liking, you must call finalize().

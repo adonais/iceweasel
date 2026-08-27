@@ -5,9 +5,10 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  UrlbarQueryContext:
-    "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarQueryContext: "chrome://browser/content/urlbar/UrlbarQueryContext.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 // The content-side input/view methods a parent-side provider hook may invoke
@@ -15,10 +16,17 @@ ChromeUtils.defineESModuleGetters(lazy, {
 // An allowlist, so an `InvokeContentAction` message can't reach arbitrary methods.
 const INVOKABLE_CONTENT_ACTIONS = {
   input: new Set(["search", "setValue", "startQuery"]),
-  view: new Set(["acknowledgeFeedback", "close", "startTail150"]),
+  view: new Set([
+    "acknowledgeFeedback",
+    "clearTopSitesCache",
+    "close",
+    "updateResultMenuCommands",
+    "startTail150",
+  ]),
 };
 
 /**
+ * @import {URIFixupPrimitives} from "chrome://browser/content/urlbar/UrlbarShared.mjs"
  * @import {UrlbarParent} from "./UrlbarParent.sys.mjs"
  * @import {UrlbarParentController} from "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs"
  * @import {UrlbarChildController} from "chrome://browser/content/urlbar/UrlbarChildController.mjs"
@@ -81,6 +89,88 @@ export class UrlbarChild extends JSWindowActorChild {
   }
 
   /**
+   * Converts a privileged promise into one the content realm can consume: the
+   * resolution is cloned in, and a rejection is re-created as a content-realm
+   * `Error` carrying only its message, so neither a system-principal object nor
+   * a chrome stack crosses the boundary.
+   *
+   * @param {Promise} promise
+   *   The privileged promise to convert.
+   * @param {Window} win
+   *   The waived content window to build the content-realm promise in.
+   * @returns {Promise}
+   */
+  #wrapPromise(promise, win) {
+    return new win.Promise((resolve, reject) =>
+      promise.then(
+        result => resolve(Cu.cloneInto(result, win)),
+        ex => {
+          try {
+            reject(new win.Error(ex?.message ?? String(ex)));
+          } catch {
+            // The content window went away, so there's no realm left to build
+            // an error in.
+            reject();
+          }
+        }
+      )
+    );
+  }
+
+  /**
+   * Exposes the actor's content-facing surface on the window for a content-realm
+   * `<moz-urlbar>`, which can't reach the `[ChromeOnly]`
+   * `windowGlobalChild.getActor` nor hold the system-principal actor. Such an
+   * input reads `window.UrlbarActorPort` and calls it in the actor's place (see
+   * `UrlbarChildController`), and `UrlbarContentPrefs` reads the pref methods
+   * from it. Only meaningful in a child process; in the parent both reach their
+   * privileged side directly.
+   *
+   * This is the single surface the content realm gets, so to give content
+   * another capability, add it here.
+   *
+   * Object returns are `cloneInto`'d so content can read them; `sendQuery`
+   * returns a content-realm promise (see `#wrapPromise`).
+   */
+  exposePort() {
+    let win = Cu.waiveXrays(this.contentWindow);
+    win.UrlbarActorPort = Cu.cloneInto(
+      {
+        sendAsyncMessage: (name, data) => this.sendAsyncMessage(name, data),
+        sendQuery: (name, data) =>
+          this.#wrapPromise(this.sendQuery(name, data), win),
+        registerMessagePathInput: input => this.registerMessagePathInput(input),
+        registerChildController: (instanceId, child) =>
+          this.registerChildController(instanceId, child),
+        whereToOpenLink: event => this.whereToOpenLink(event),
+        willLoadInBackground: (where, params) =>
+          this.willLoadInBackground(where, params),
+        getFixupPrimitives: (searchString, isPrivate) =>
+          Cu.cloneInto(this.getFixupPrimitives(searchString, isPrivate), win),
+        getDisplaySpec: url => this.getDisplaySpec(url),
+        unEscapeURIForUI: uri => this.unEscapeURIForUI(uri),
+        getSupportUrl: topic => this.getSupportUrl(topic),
+        isTextDirectionRTL: (value, window) =>
+          this.isTextDirectionRTL(value, window),
+        getPref: name => Cu.cloneInto(lazy.UrlbarPrefs.get(name), win),
+        addPrefObserver: observer => lazy.UrlbarPrefs.addObserver(observer),
+        removePrefObserver: observer =>
+          lazy.UrlbarPrefs.removeObserver(observer),
+      },
+      win,
+      { cloneFunctions: true }
+    );
+  }
+
+  actorCreated() {
+    // Only a content realm reads the port; chrome holds the actor and imports
+    // UrlbarPrefs directly, so don't publish it on every chrome window.
+    if (!this.manager.parentActor) {
+      this.exposePort();
+    }
+  }
+
+  /**
    * Registers a message-path `<moz-urlbar>` input for teardown -- so the parent
    * drops the controller once the input is collected -- and returns the instance
    * id the child controller pairs with the proxy it builds.
@@ -109,6 +199,105 @@ export class UrlbarChild extends JSWindowActorChild {
     this.#childControllers.set(instanceId, new WeakRef(child));
   }
 
+  /**
+   * Forwards to `BrowserUtils.whereToOpenLink`. `UrlbarChildController.whereToOpen`
+   * computes the destination itself but can't import `BrowserUtils` (a system
+   * module) from its content-web scope, so it routes this one call through the
+   * actor, which is privileged and runs in the input's own process.
+   *
+   * @param {Event} event
+   *   The event that triggered the opening.
+   * @returns {"current" | "tabshifted" | "tab" | "save" | "window"}
+   */
+  whereToOpenLink(event) {
+    return lazy.BrowserUtils.whereToOpenLink(event, false, false);
+  }
+
+  /**
+   * Forwards to `BrowserUtils.willLoadInBackground`, for the same reason
+   * `whereToOpenLink` does: the content-web input can't import `BrowserUtils`.
+   *
+   * @param {string} where
+   *   Where the link will open, as returned by `whereToOpenLink`.
+   * @param {object} params
+   *   The params that will be passed to `openLinkIn`.
+   * @returns {boolean}
+   */
+  willLoadInBackground(where, params) {
+    return lazy.BrowserUtils.willLoadInBackground(where, params);
+  }
+
+  /**
+   * Runs URI fixup for a string on behalf of the content-web input, which can't
+   * reach `Services.uriFixup`. Returns only the primitives the callers need, so
+   * the input never holds an `nsIURIFixupInfo`.
+   *
+   * @param {string} searchString
+   *   The string to fix up.
+   * @param {boolean} isPrivate
+   *   Whether the fixup runs for a private context.
+   * @returns {?URIFixupPrimitives}
+   *   The fixup primitives, or null if fixup threw.
+   */
+  getFixupPrimitives(searchString, isPrivate) {
+    return lazy.UrlbarUtils.getFixupPrimitives(searchString, isPrivate);
+  }
+
+  /**
+   * Returns the SUMO URL for a support topic.
+   *
+   * @param {string} topic
+   *   The support page slug to append to the SUMO base URL.
+   * @returns {string}
+   */
+  getSupportUrl(topic) {
+    return Services.urlFormatter.formatURLPref("app.support.baseURL") + topic;
+  }
+
+  /**
+   * Checks whether a given text has right-to-left direction or not.
+   *
+   * @param {string} value The text which should be check for RTL direction.
+   * @param {Window} window The window where 'value' is going to be displayed.
+   * @returns {boolean} Returns true if text has right-to-left direction and
+   *                    false otherwise.
+   */
+  isTextDirectionRTL(value, window) {
+    let directionality = window.windowUtils.getDirectionFromText(value);
+    return directionality == window.windowUtils.DIRECTION_RTL;
+  }
+
+  /**
+   * Returns a URL's display spec, or null if it can't be parsed. Lets the
+   * content-web input normalize a URL without reaching `Services.io`.
+   *
+   * @param {string} url
+   *   The URL to parse.
+   * @returns {?string}
+   *   The display spec, or null if parsing threw.
+   */
+  getDisplaySpec(url) {
+    try {
+      return Services.io.newURI(url).displaySpec;
+    } catch (ex) {
+      return null;
+    }
+  }
+
+  /**
+   * Unescapes a URI's percent-encoding for display, applying the spoofing
+   * protections `nsITextToSubURI` implements. Lets content-realm code render a
+   * URL without reaching `Services.textToSubURI`.
+   *
+   * @param {string} uri
+   *   The URI fragment to unescape.
+   * @returns {string}
+   *   The unescaped fragment.
+   */
+  unEscapeURIForUI(uri) {
+    return Services.textToSubURI.unEscapeURIForUI(uri);
+  }
+
   receiveMessage(message) {
     switch (message.name) {
       case "Notify":
@@ -116,6 +305,9 @@ export class UrlbarChild extends JSWindowActorChild {
         break;
       case "InvokeContentAction":
         this.#invokeContentAction(message.data);
+        break;
+      case "UpdateEngineStore":
+        this.#updateEngineStore(message.data);
         break;
     }
   }
@@ -134,23 +326,16 @@ export class UrlbarChild extends JSWindowActorChild {
       this.#childControllers.delete(instanceId);
       return;
     }
+    // In a content process the child controller is a content object; waive
+    // Xrays so its methods (and `input`/`view`) are callable from here.
+    if (!this.manager.parentActor) {
+      child = Cu.waiveXrays(child);
+    }
     let deserialized = params.map(param =>
       param?.serializedQueryContext
         ? lazy.UrlbarQueryContext.fromWire(param.serializedQueryContext)
         : param
     );
-    // The parent ran the query but the input lives here, so let it react to the
-    // first result (search mode, autofill) before the results are shown. If it
-    // takes over (returns true), the results are stale; don't dispatch them.
-    if (name == "onQueryResults") {
-      let queryContext = deserialized[0];
-      if (
-        queryContext.firstResultChanged &&
-        child.input.onFirstResult(queryContext.results[0])
-      ) {
-        return;
-      }
-    }
     child.notify(name, ...deserialized);
   }
 
@@ -175,6 +360,25 @@ export class UrlbarChild extends JSWindowActorChild {
       console.error(`Urlbar: disallowed content action ${target}.${method}`);
       return;
     }
+    // In a content process `child.input`/`child.view` are content objects;
+    // waive Xrays so their methods are callable from here.
+    if (!this.manager.parentActor) {
+      child = Cu.waiveXrays(child);
+    }
     child[target]?.[method](...args);
+  }
+
+  #updateEngineStore({ instanceId, args }) {
+    let child = this.#childControllers.get(instanceId)?.deref();
+    if (!child) {
+      this.#childControllers.delete(instanceId);
+      return;
+    }
+    // In a content process the child controller is a content object; waive
+    // Xrays so its methods are callable from here.
+    if (!this.manager.parentActor) {
+      child = Cu.waiveXrays(child);
+    }
+    child.updateEngineStore(...args);
   }
 }

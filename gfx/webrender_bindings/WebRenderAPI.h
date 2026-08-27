@@ -136,12 +136,17 @@ class TransactionBuilder final {
 
   void RemovePipeline(PipelineId aPipelineId);
 
-  void SetDisplayList(Epoch aEpoch, wr::WrPipelineId pipeline_id,
+  // aIdNamespace is the namespace whose resources the display list is allowed
+  // to reference. It must be supplied by the compositor-side owner of the
+  // pipeline.
+  void SetDisplayList(Epoch aEpoch, wr::IdNamespace aIdNamespace,
+                      wr::WrPipelineId pipeline_id,
                       wr::BuiltDisplayListDescriptor dl_descriptor,
                       wr::Vec<uint8_t>& dl_items_data,
                       wr::Vec<uint8_t>& dl_spatial_tree);
 
-  void ClearDisplayList(Epoch aEpoch, wr::WrPipelineId aPipeline);
+  void ClearDisplayList(Epoch aEpoch, wr::IdNamespace aIdNamespace,
+                        wr::WrPipelineId aPipeline);
 
   void GenerateFrame(const VsyncId& aVsyncId, bool aPresent, bool aTracked,
                      wr::RenderReasons aReasons);
@@ -593,7 +598,15 @@ class DisplayListBuilder final {
              const Maybe<usize>& aEnd);
   void DumpSerializedDisplayList();
 
-  void Begin();
+  /// aAppUnitsPerDevPixel is the grid this display list's coordinates are
+  /// authored on (nsPresContext::AppUnitsPerDevPixel). WebRender normalizes
+  /// items by their accumulated external scroll offset in whole app units on
+  /// that grid, which is exact; doing it in floats lets positions drift with
+  /// the scroll offset and churn interning and invalidation (bug 2059570). It
+  /// is taken per display list because it changes with device scale and full
+  /// zoom, and differs between chrome and content within one WebRender
+  /// document.
+  void Begin(int32_t aAppUnitsPerDevPixel);
   void End(wr::BuiltDisplayList& aOutDisplayList);
   void End(layers::DisplayListData& aOutTransaction);
 
@@ -753,11 +766,13 @@ class DisplayListBuilder final {
 
   // XXX WrBorderSides are passed with Range.
   // It is just to bypass compiler bug. See Bug 1357734.
-  void PushBorder(const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
-                  bool aIsBackfaceVisible, const wr::LayoutSideOffsets& aWidths,
-                  const Range<const wr::BorderSide>& aSides,
-                  const wr::BorderRadius& aRadius,
-                  wr::AntialiasBorder = wr::AntialiasBorder::Yes);
+  void PushBorder(
+      const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
+      bool aIsBackfaceVisible, const wr::LayoutSideOffsets& aWidths,
+      const Range<const wr::BorderSide>& aSides,
+      const wr::BorderRadius& aRadius,
+      const wr::LayoutSideOffsets& aInset = EmptyLayoutSideOffsets(),
+      wr::AntialiasBorder = wr::AntialiasBorder::Yes);
 
   void PushBorderImage(const wr::LayoutRect& aBounds,
                        const wr::LayoutRect& aClip, bool aIsBackfaceVisible,

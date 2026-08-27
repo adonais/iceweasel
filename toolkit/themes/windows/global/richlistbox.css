@@ -15,12 +15,12 @@ richlistbox {
   }
 }
 
-richlistitem[selected="true"] {
+richlistitem[selected] {
   background-color: -moz-cellhighlight;
   color: -moz-cellhighlighttext;
 }
 
-richlistbox:where(:focus) > richlistitem[selected="true"] {
+richlistbox:where(:focus) > richlistitem[selected] {
   background-color: SelectedItem;
   color: SelectedItemText;
 }
@@ -32,8 +32,8 @@ richlistbox.theme-listbox:focus > richlistitem[current="true"] {
   outline-offset: calc(-1 * var(--default-focusring-width));
 }
 
-richlistbox[seltype="multiple"]:focus > richlistitem[current="true"][selected="true"],
-richlistbox.theme-listbox:focus > richlistitem[current="true"][selected="true"] {
+richlistbox[seltype="multiple"]:focus > richlistitem[current="true"][selected],
+richlistbox.theme-listbox:focus > richlistitem[current="true"][selected] {
   outline-color: #f3d982; /* TODO: find a suitable system color */
 }
 
@@ -41,12 +41,12 @@ richlistbox.theme-listbox > richlistitem {
   border: 1px solid transparent;
 }
 
-richlistbox.theme-listbox > richlistitem[selected="true"] {
+richlistbox.theme-listbox > richlistitem[selected] {
   background-color: -moz-cellhighlight;
   color: -moz-cellhighlighttext;
 }
 
-richlistbox.theme-listbox:focus > richlistitem[selected="true"] {
+richlistbox.theme-listbox:focus > richlistitem[selected] {
   background-color: SelectedItem;
   color: SelectedItemText;
 }
@@ -84,7 +84,7 @@ richlistbox.theme-listbox > richlistitem > label {
     background-size: 100% 100%;
   }
 
-  richlistbox.theme-listbox > richlistitem[selected="true"] {
+  richlistbox.theme-listbox > richlistitem[selected] {
     border-top-color: var(--listitem-selectedBorder);
     border-inline-color: var(--listitem-selectedBorder);
     border-bottom-color: var(--listitem-selectedBottomBorder);
@@ -93,7 +93,7 @@ richlistbox.theme-listbox > richlistitem > label {
     color: var(--listitem-selectedTextColor);
   }
 
-  richlistbox.theme-listbox:focus > richlistitem[selected="true"] {
+  richlistbox.theme-listbox:focus > richlistitem[selected] {
     border-top-color: var(--listitem-selectedFocusBorder);
     border-inline-color: var(--listitem-selectedFocusBorder);
     border-bottom-color: var(--listitem-selectedFocusBottomBorder);
@@ -107,7 +107,7 @@ richlistbox.theme-listbox > richlistitem > label {
     outline: none;
   }
 
-  richlistbox.theme-listbox:focus > richlistitem[selected="true"][current="true"] {
+  richlistbox.theme-listbox:focus > richlistitem[selected][current="true"] {
     border-top-color: var(--listitem-selectedFocusCurrentBorder);
     border-inline-color: var(--listitem-selectedFocusCurrentBorder);
     border-bottom-color: var(--listitem-selectedFocusCurrentBottomBorder);

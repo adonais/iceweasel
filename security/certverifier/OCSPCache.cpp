@@ -138,8 +138,6 @@ Result OCSPCache::Entry::Init(const CertID& aCertID,
   return Success;
 }
 
-OCSPCache::OCSPCache() : mMutex("OCSPCache-mutex") {}
-
 OCSPCache::~OCSPCache() { Clear(); }
 
 // Returns false with index in an undefined state if no matching entry was

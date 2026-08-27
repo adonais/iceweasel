@@ -23,7 +23,7 @@ origin:
 
   # Revision to pull in
   # Must be a long or short commit SHA (long preferred)
-  revision: d23308a2a7442be8e559b1b471862fd7588d6a57
+  revision: 45258a40a0c1d72bba911f61d81fd5a44d92f50d
 
   # The package's license, where possible using the mnemonic from
   # https://spdx.org/licenses/
@@ -56,5 +56,4 @@ vendoring:
     - 02_update_gyp.patch
     - 03_add_neon64_and_sve_gyp_targets.patch
     - 04_disable_sme.patch
-    - 05_fix_gcc_neon_rgbtouvmatrixrow.patch
 

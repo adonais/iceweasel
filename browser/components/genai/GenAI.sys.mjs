@@ -225,12 +225,12 @@ export const GenAI = {
       {
         iconUrl: "chrome://browser/content/genai/assets/brands/lechat.svg",
         id: "lechat",
-        link1: "https://mistral.ai/terms/#terms-of-service-le-chat",
-        link2: "https://mistral.ai/terms/#privacy-policy",
-        linksId: "genai-settings-chat-lechat-links",
+        link1: "https://chat.mistral.ai/legal/terms",
+        link2: "https://chat.mistral.ai/legal/privacy-policy",
+        linksId: "genai-settings-chat-lechat-links-2",
         maxLength: 13350,
-        name: "Le Chat Mistral",
-        tooltipId: "genai-onboarding-lechat-tooltip",
+        name: "Mistral Vibe",
+        tooltipId: "genai-onboarding-lechat-tooltip-2",
       },
     ],
     [
@@ -679,12 +679,30 @@ export const GenAI = {
     }
 
     switch (name) {
-      case "GenAI:HideShortcuts":
-        aiActionButton.hide();
+      case "GenAI:HideShortcuts": {
+        const shortcutPanel = document.getElementById(
+          "selection-shortcut-action-panel"
+        );
+        // For an IME selection change, hide via CSS
+        // to avoid hidePopup() cancelling the active IME composition.
+        // Any other hide reason closes the panel normally.
+        const imeHiding = data === "selectionchange-ime";
+        shortcutPanel?.toggleAttribute("ime-hiding", imeHiding);
+        if (!imeHiding) {
+          aiActionButton.hide();
+        }
         break;
+      }
       case "GenAI:ShowShortcuts": {
         // Save the latest selection so it can be used by popup
         aiActionButton.data = data;
+
+        // Clear any CSS hide from a prior selectionchange so the panel
+        // is visible when it opens for the new selection.
+        const shortcutPanel = document.getElementById(
+          "selection-shortcut-action-panel"
+        );
+        shortcutPanel?.removeAttribute("ime-hiding");
 
         Glean.genaiChatbot.shortcutsDisplayed.record({
           delay: data.delay,

@@ -58,8 +58,8 @@ class FormatEtc {
 class CEnumFormatEtc final : public IEnumFORMATETC {
  public:
   explicit CEnumFormatEtc(nsTArray<FormatEtc>& aArray);
-  CEnumFormatEtc();
-  ~CEnumFormatEtc();
+  CEnumFormatEtc() = default;
+  ~CEnumFormatEtc() = default;
 
   // IUnknown impl.
   STDMETHODIMP QueryInterface(REFIID riid, LPVOID* ppv);
@@ -77,8 +77,8 @@ class CEnumFormatEtc final : public IEnumFORMATETC {
 
  private:
   nsTArray<FormatEtc> mFormatList;  // Formats
-  ULONG mRefCnt;                    // Object reference count
-  ULONG mCurrentIdx;                // Current element
+  ULONG mRefCnt{0};                 // Object reference count
+  ULONG mCurrentIdx{0};             // Current element
 
   void SetIndex(uint32_t aIdx);
 };

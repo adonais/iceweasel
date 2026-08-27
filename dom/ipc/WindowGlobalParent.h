@@ -8,6 +8,7 @@
 #include "mozilla/ContentBlockingLog.h"
 #include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/PrincipalHashKey.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
@@ -15,6 +16,7 @@
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/DOMRect.h"
 #include "mozilla/dom/PWindowGlobalParent.h"
+#include "mozilla/dom/PrefetchMatchWaiter.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalActor.h"
 #include "mozilla/dom/WindowGlobalActorsBinding.h"
@@ -40,6 +42,7 @@ class CrossProcessPaint;
 namespace dom {
 
 class BrowserParent;
+class PrefetchRecordParent;
 class WindowGlobalChild;
 class JSWindowActorParent;
 class JSActorMessageMeta;
@@ -194,7 +197,7 @@ class WindowGlobalParent final : public WindowContext,
 
   already_AddRefed<mozilla::dom::Promise> DrawSnapshot(
       const DOMRect* aRect, double aScale, const nsACString& aBackgroundColor,
-      bool aResetScrollPosition, mozilla::ErrorResult& aRv);
+      const DrawSnapshotOptions& aOptions, mozilla::ErrorResult& aRv);
 
   already_AddRefed<mozilla::dom::Promise> RequestDocumentLanguageMetadata(
       const DocumentLanguageMetadataRequestOptions& aOptions,
@@ -288,7 +291,7 @@ class WindowGlobalParent final : public WindowContext,
   // loaded, if known.
   already_AddRefed<nsIChannel> GetFailedChannel();
 
-  dom::NoCorsMediaRequestState NoCorsMediaRequestState(nsIURI* aURI) const;
+  dom::NoCorsMediaRequestState NoCorsMediaRequestState(nsIURI* aURI);
 
   void RecordSubsequentNoCorsRequestState(nsIURI* aURI);
 
@@ -421,6 +424,40 @@ class WindowGlobalParent final : public WindowContext,
   already_AddRefed<dom::PDigitalCredentialParent>
   AllocPDigitalCredentialParent();
 
+  // Spec: https://wicg.github.io/nav-speculation/prefetch.html#prefetch-record
+  already_AddRefed<dom::PPrefetchRecordParent> AllocPPrefetchRecordParent(
+      const dom::SpeculativePrefetchArgs& aArgs);
+
+  // Called when a prefetch record's state changes (complete or canceled).
+  // Wakes PrefetchMatchWaiters registered via WaitForMatchingPrefetchRecord.
+  // Spec:
+  // https://wicg.github.io/nav-speculation/prefetch.html#wait-for-a-matching-prefetch-record
+  void NotifyPrefetchStateChanged(dom::PrefetchRecordParent* aRec);
+  void DedupePrefetchRecords(dom::PrefetchRecordParent* aJustCompleted);
+
+  // "Find a matching complete prefetch record": synchronous lookup of a
+  // completed prefetch record for navigation.
+  // Spec:
+  // https://wicg.github.io/nav-speculation/prefetch.html#find-a-matching-complete-prefetch-record
+  dom::PrefetchRecordParent* FindMatchingPrefetchRecord(nsIURI* aURI);
+
+  // "Wait for a matching prefetch record": async wait; resolves when a match
+  // completes or timeout expires.
+  // Spec:
+  // https://wicg.github.io/nav-speculation/prefetch.html#wait-for-a-matching-prefetch-record
+  RefPtr<PrefetchMatchPromise> WaitForMatchingPrefetchRecord(
+      nsIURI* aURI, TimeDuration aTimeout);
+
+  // Whether some ongoing prefetch record could still become a matching
+  // prefetch record for aURI once it completes. Used by
+  // WaitForMatchingPrefetchRecord and by PrefetchMatchWaiter to decide
+  // whether to keep waiting or give up early.
+  // Spec:
+  // https://wicg.github.io/nav-speculation/prefetch.html#wait-for-a-matching-prefetch-record
+  bool HasPotentialPrefetchMatch(nsIURI* aURI);
+
+  void RemoveWaiter(PrefetchMatchWaiter* aWaiter);
+
   void UpdateFullscreenKeyboardLockStatus(FullscreenKeyboardLock aStatus);
 
  private:
@@ -438,6 +475,23 @@ class WindowGlobalParent final : public WindowContext,
   };
   using PageUseCounterResult = EnumSet<PageUseCounterResultBits>;
   PageUseCounterResult FinishAccumulatingPageUseCounters();
+
+  struct KnownAllowedSubsequentRequests : public SupportsWeakPtr {
+    NS_INLINE_DECL_REFCOUNTING(KnownAllowedSubsequentRequests);
+    nsTHashtable<nsCStringHashKey> mNoCorsMediaRequestURIs;
+    nsCOMPtr<nsIPrincipal> mPrincipal;
+
+   private:
+    ~KnownAllowedSubsequentRequests();
+  };
+
+  using AllKnownAllowedSubsequentRequests =
+      nsTHashMap<PrincipalHashKey, WeakPtr<KnownAllowedSubsequentRequests>>;
+
+  static AllKnownAllowedSubsequentRequests&
+  GetAllKnownAllowedSubsequentRequests();
+
+  KnownAllowedSubsequentRequests* EnsureKnownAllowedSubsequentRequests();
 
   // NOTE: Neither this document principal nor the partitioned principal reflect
   // possible |document.domain| mutations which may have been made in the actual
@@ -508,6 +562,7 @@ class WindowGlobalParent final : public WindowContext,
   // counters will contribute to.  (If we are a top-level document, this
   // will point to ourselves.)
   RefPtr<WindowGlobalParent> mPageUseCountersWindow;
+  nsTArray<RefPtr<PrefetchMatchWaiter>> mPrefetchWaiters;
 
   // Our page use counters, if we are a top-level document.
   UniquePtr<PageUseCounters> mPageUseCounters;
@@ -539,10 +594,14 @@ class WindowGlobalParent final : public WindowContext,
 
   bool mShouldReportHasBlockedOpaqueResponse = false;
 
-  // URIs of media resources for which an initial no-cors media request has
-  // passed the Opaque Response Blocking media checks in this window. Used to
-  // recognise subsequent (range) requests for the same resource.
-  nsTHashtable<nsCStringHashKey> mNoCorsMediaRequestURIs;
+  // The per-principal set of media resources for which an initial no-cors media
+  // request has passed the Opaque Response Blocking media checks, shared
+  // between all windows with this window's principal. Used to recognise
+  // subsequent (range) requests for the same resource.
+  RefPtr<KnownAllowedSubsequentRequests> mKnownAllowedSubsequentRequests;
+
+  static StaticAutoPtr<AllKnownAllowedSubsequentRequests>
+      sAllKnownSubsequentRequests;
 };
 
 nsCString BFCacheStatusToString(uint32_t aFlags);

@@ -60,7 +60,8 @@ class Http2WebTransportStream final : public WebTransportStreamBase {
   already_AddRefed<nsIWebTransportReceiveStreamStats> GetReceiveStreamStats()
       override;
   bool RecvDone() const override;
-  void SetSendOrder(Maybe<int64_t> aSendOrder) override;
+  void SetSendOrder(int64_t aSendOrder) override;
+  void SetSendGroup(uint64_t aSendGroupId) override {}
   SenderFlowControlBase* SenderFc() override { return &mFc; }
   ReceiverFlowControlBase* ReceiverFc() override { return &mReceiverFc; }
 

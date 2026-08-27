@@ -1,3 +1,5 @@
+requestLongerTimeout(2);
+
 PartitionedStorageHelper.runTestInNormalAndPrivateMode(
   "HTTP Cookies",
   async (win3rdParty, win1stParty, allowed) => {

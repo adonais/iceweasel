@@ -7,6 +7,8 @@ if CONFIG["MOZ_BUILD_APP"] == "browser":
     FINAL_TARGET_FILES.defaults.settings.main += [
         "ai-window-prompts.json",
         "language-dictionaries.json",
+        "newtab-section-layouts.json",
+        "newtab-sections-ordering.json",
         "newtab-wallpapers-v2.json",
         "search-telemetry-v2.json",
         "sites-classification.json",
@@ -19,7 +21,6 @@ if CONFIG["MOZ_BUILD_APP"] == "browser":
 if not CONFIG["MOZ_BUILD_APP"].startswith("mobile/"):
     FINAL_TARGET_FILES.defaults.settings.main += [
         "anti-tracking-url-decoration.json",
-        "cookie-banner-rules-list.json",
         "devtools-compatibility-browsers.json",
         "devtools-devices.json",
         "example.json",

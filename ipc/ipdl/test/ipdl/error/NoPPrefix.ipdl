@@ -1,0 +1,5 @@
+//error: invalid protocol name `NoPPrefix': name must begin with `P'
+
+[ChildProc=any]
+protocol NoPPrefix {
+};

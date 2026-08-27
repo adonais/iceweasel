@@ -60,6 +60,8 @@ skip-if = [
 
 ["browser_bookmarkProperties_xulStore.js"]
 
+["browser_bookmarkStar_multipleBookmarks.js"]
+
 ["browser_bookmark_add_tags.js"]
 https_first_disabled = true
 skip-if = [
@@ -84,6 +86,8 @@ tags = "os_integration"
 ["browser_bookmark_folder_moveability.js"]
 
 ["browser_bookmark_menu_ctrl_click.js"]
+
+["browser_bookmark_open_all_in_tabs.js"]
 
 ["browser_bookmark_popup.js"]
 
@@ -181,6 +185,8 @@ https_first_disabled = true
 ["browser_library_bulk_tag_bookmarks.js"]
 
 ["browser_library_commands.js"]
+
+["browser_library_container_menu.js"]
 
 ["browser_library_delete.js"]
 

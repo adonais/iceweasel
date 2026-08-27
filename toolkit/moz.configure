@@ -885,6 +885,21 @@ def jxl(value):
 set_config("MOZ_JXL", jxl)
 set_define("MOZ_JXL", jxl)
 
+# Fontations font support
+# ==============================================================
+option("--enable-fontations", help="Enable Fontations for font handling")
+
+
+@depends("--enable-fontations")
+def fontations(value):
+    enabled = bool(value)
+    if enabled:
+        return True
+
+
+set_config("MOZ_FONTATIONS", fontations)
+set_define("MOZ_FONTATIONS", fontations)
+
 set_config("MOZ_SAMPLE_TYPE_FLOAT32", True)
 set_define("MOZ_SAMPLE_TYPE_FLOAT32", True)
 
@@ -3320,13 +3335,6 @@ set_config("MOZ_APP_DISPLAYNAME", moz_app_displayname)
 
 
 confvar(
-    "MOZ_DEV_EDITION",
-    nargs=1,
-    set_as_define=True,
-    help="Whether this a dev edition build",
-)
-
-confvar(
     "MOZ_MACBUNDLE_ID",
     nargs=1,
     set_as_config=False,
@@ -3785,8 +3793,6 @@ set_config("MOZ_LANGPACK_EID_HOST", moz_langpack_eid_host)
 
 # Every other platform just winds up in dist/bin
 non_macos_pkg_path = dependable("bin")
-set_config("MOZ_PKG_BINPATH", non_macos_pkg_path, when=~target_is_osx)
-set_config("MOZ_PKG_RESPATH", non_macos_pkg_path, when=~target_is_osx)
 
 
 # Smart card support
@@ -3818,19 +3824,6 @@ with only_when(target_is_osx):
         return f"{prefix}{app_displayname}{suffix}.app"
 
     set_config("MOZ_MACBUNDLE_NAME", mac_bundle_name)
-
-    @depends(mac_bundle_name)
-    def moz_pkg_binpath(mac_bundle_name):
-        return f"{mac_bundle_name}/Contents/MacOS"
-
-    set_config("MOZ_PKG_BINPATH", moz_pkg_binpath)
-
-    # Resource path for the precomplete file
-    @depends(mac_bundle_name)
-    def moz_pkg_respath(mac_bundle_name):
-        return f"{mac_bundle_name}/Contents/Resources"
-
-    set_config("MOZ_PKG_RESPATH", moz_pkg_respath)
 
     @depends(
         "MOZ_MACBUNDLE_ID", moz_app_displayname, "--with-distribution-id", moz_debug
@@ -3952,6 +3945,27 @@ with only_when(target_is_osx):
             )
 
         set_config("MOZ_PKCS11_PROCESS_BUNDLEID", moz_pkcs11_process_bundle_id)
+
+
+@depends(mac_bundle_name, non_macos_pkg_path)
+def moz_pkg_binpath(mac_bundle_name, non_macos_pkg_path):
+    if mac_bundle_name:
+        return f"{mac_bundle_name}/Contents/MacOS"
+    return non_macos_pkg_path
+
+
+set_config("MOZ_PKG_BINPATH", moz_pkg_binpath)
+
+
+# Resource path for the precomplete file
+@depends(mac_bundle_name, non_macos_pkg_path)
+def moz_pkg_respath(mac_bundle_name, non_macos_pkg_path):
+    if mac_bundle_name:
+        return f"{mac_bundle_name}/Contents/Resources"
+    return non_macos_pkg_path
+
+
+set_config("MOZ_PKG_RESPATH", moz_pkg_respath)
 
 
 # Update-related programs: updater, maintenance service, update agent,

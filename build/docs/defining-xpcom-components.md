@@ -18,7 +18,7 @@ Manifest files are Python data files registered in `moz.build` files in a
 
 ```python
 XPCOM_MANIFESTS += [
-  'components.conf',
+    "components.conf",
 ]
 ```
 
@@ -27,10 +27,10 @@ The files may define any of the following special variables:
 ```python
 # Optional: A function to be called once, the first time any component
 # listed in this manifest is instantiated.
-InitFunc = 'nsInitFooModule'
+InitFunc = "nsInitFooModule"
 # Optional: A function to be called at shutdown if any component listed in
 # this manifest has been instantiated.
-UnloadFunc = 'nsUnloadFooModule'
+UnloadFunc = "nsUnloadFooModule"
 
 # Optional: A processing priority, to determine how early or late the
 # manifest is processed. Defaults to 50. In practice, this mainly affects
@@ -46,8 +46,8 @@ Priority = 10
 #
 # Any relative header path must be exported.
 Headers = [
-    '/foo/nsFooModule.h',
-    'nsFoo.h',
+    "/foo/nsFooModule.h",
+    "nsFoo.h",
 ]
 
 # A list of component classes provided by this module.
@@ -60,9 +60,9 @@ Classes = [
 
 # A list of category registrations
 Categories = {
-    'category': {
-        'name': 'value',
-        'other-name': ('value', ProcessSelector.MAIN_PROCESS_ONLY),
+    "category": {
+        "name": "value",
+        "other-name": ("value", ProcessSelector.MAIN_PROCESS_ONLY),
         # ...
     },
     # ...
@@ -312,8 +312,8 @@ be specified by adding to a global `Categories` dictionary:
 
 ```python
 Categories = {
-    'update-timer': {
-        'nsUpdateService': '@mozilla.org/updates/update-service;1,getService,background-update-timer,app.update.interval,43200,86400',
+    "update-timer": {
+        "nsUpdateService": "@mozilla.org/updates/update-service;1,getService,background-update-timer,app.update.interval,43200,86400",
     }
 }
 ```
@@ -323,8 +323,8 @@ value:
 
 ```python
 Categories = {
-    '@mozilla.org/streamconv;1': {
-        '?from=gzip&to=uncompressed': ('', ProcessSelector.ALLOW_IN_SOCKET_PROCESS),
+    "@mozilla.org/streamconv;1": {
+        "?from=gzip&to=uncompressed": ("", ProcessSelector.ALLOW_IN_SOCKET_PROCESS),
     }
 }
 ```

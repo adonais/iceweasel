@@ -395,11 +395,25 @@ class RepackBase:
                 open_file.write("[XRE]\n")
                 open_file.write("EnableProfileMigrator=0\n")
 
+    def obfuscateCfg(self, autoconfig_src: Path, dest_dir: Path):
+        """Obfuscate the .cfg files copied out of autoconfig_src by adding 13
+        to each byte. Firefox unobfuscates them by subtracting
+        general.config.obscure_value, which defaults to 13.
+        """
+        for cfg in autoconfig_src.rglob("*.cfg"):
+            dest_cfg = dest_dir / cfg.relative_to(autoconfig_src)
+            data = dest_cfg.read_bytes()
+            dest_cfg.write_bytes(bytes((b + 13) & 0xFF for b in data))
+
     def copyFiles(self, platform_dir: Path):
         log.info(f"Copying files into {platform_dir}")
         # Check whether we've already copied files over for this partner.
         if not platform_dir.exists():
             platform_dir.mkdir(mode=0o755, exist_ok=True, parents=True)
+            autoconfig_path = self.full_partner_path / "autoconfig"
+            if autoconfig_path.exists():
+                copytree(str(autoconfig_path), str(platform_dir), dirs_exist_ok=True)
+                self.obfuscateCfg(autoconfig_path, platform_dir)
             for i in ["distribution", "extensions"]:
                 full_path = self.full_partner_path / i
                 if full_path.exists():

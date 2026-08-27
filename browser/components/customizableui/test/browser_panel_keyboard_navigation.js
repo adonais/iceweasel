@@ -8,11 +8,22 @@ const kHelpButtonId = "appMenu-help-button2";
 
 function getEnabledNavigableElementsForView(panelView) {
   return Array.from(
-    panelView.querySelectorAll("button,toolbarbutton,menulist,.text-link")
+    panelView.querySelectorAll(
+      "button,toolbarbutton,menulist,moz-button,a,.text-link"
+    )
   ).filter(element => {
     let bounds = element.getBoundingClientRect();
     return !element.disabled && bounds.width > 0 && bounds.height > 0;
   });
+}
+
+// Custom elements like moz-button use delegatesFocus, so the actual focused
+// element is the inner shadow button. The navigable element the test tracks is
+// the shadow host, so resolve back to it for comparisons.
+function getFocusedNavigableElement() {
+  let focused = document.commandDispatcher.focusedElement;
+  let root = focused?.getRootNode();
+  return ShadowRoot.isInstance(root) ? root.host : focused;
 }
 
 add_task(async function testUpDownKeys() {
@@ -26,7 +37,7 @@ add_task(async function testUpDownKeys() {
     }
     EventUtils.synthesizeKey("KEY_ArrowDown");
     Assert.equal(
-      document.commandDispatcher.focusedElement,
+      getFocusedNavigableElement(),
       button,
       "The correct button should be focused after navigating downward"
     );
@@ -34,7 +45,7 @@ add_task(async function testUpDownKeys() {
 
   EventUtils.synthesizeKey("KEY_ArrowDown");
   Assert.equal(
-    document.commandDispatcher.focusedElement,
+    getFocusedNavigableElement(),
     buttons[0],
     "Pressing upwards should cycle around and select the first button again"
   );
@@ -46,7 +57,7 @@ add_task(async function testUpDownKeys() {
     }
     EventUtils.synthesizeKey("KEY_ArrowUp");
     Assert.equal(
-      document.commandDispatcher.focusedElement,
+      getFocusedNavigableElement(),
       button,
       "The first button should be focused after navigating upward"
     );
@@ -67,14 +78,14 @@ add_task(async function testHomeEndKeys() {
 
   EventUtils.synthesizeKey("KEY_End");
   Assert.equal(
-    document.commandDispatcher.focusedElement,
+    getFocusedNavigableElement(),
     lastButton,
     "The last button should be focused after pressing End"
   );
 
   EventUtils.synthesizeKey("KEY_Home");
   Assert.equal(
-    document.commandDispatcher.focusedElement,
+    getFocusedNavigableElement(),
     firstButton,
     "The first button should be focused after pressing Home"
   );
@@ -89,7 +100,7 @@ add_task(async function testEnterKeyBehaviors() {
 
   // Navigate to the 'Help' button, which points to a subview.
   EventUtils.synthesizeKey("KEY_ArrowUp");
-  let focusedElement = document.commandDispatcher.focusedElement;
+  let focusedElement = getFocusedNavigableElement();
   Assert.equal(
     focusedElement,
     buttons[buttons.length - 1],
@@ -103,7 +114,7 @@ add_task(async function testEnterKeyBehaviors() {
     focusedElement.id != kHelpButtonId
   ) {
     EventUtils.synthesizeKey("KEY_ArrowUp");
-    focusedElement = document.commandDispatcher.focusedElement;
+    focusedElement = getFocusedNavigableElement();
   }
   EventUtils.synthesizeKey("KEY_Enter");
 
@@ -120,7 +131,7 @@ add_task(async function testEnterKeyBehaviors() {
   // When opening a subview, the first control *after* the Back button gets
   // focus.
   EventUtils.synthesizeKey("KEY_ArrowUp");
-  focusedElement = document.commandDispatcher.focusedElement;
+  focusedElement = getFocusedNavigableElement();
   Assert.equal(
     focusedElement,
     helpButtons[0],
@@ -132,7 +143,7 @@ add_task(async function testEnterKeyBehaviors() {
       continue;
     }
     EventUtils.synthesizeKey("KEY_ArrowUp");
-    focusedElement = document.commandDispatcher.focusedElement;
+    focusedElement = getFocusedNavigableElement();
     Assert.equal(
       focusedElement,
       button,
@@ -143,7 +154,7 @@ add_task(async function testEnterKeyBehaviors() {
   // Make sure the back button is in focus again.
   while (focusedElement != helpButtons[0]) {
     EventUtils.synthesizeKey("KEY_ArrowDown");
-    focusedElement = document.commandDispatcher.focusedElement;
+    focusedElement = getFocusedNavigableElement();
   }
 
   // The first button is the back button. Hittin Enter should navigate us back.
@@ -152,7 +163,7 @@ add_task(async function testEnterKeyBehaviors() {
   await promise;
 
   // Let's test a 'normal' command button.
-  focusedElement = document.commandDispatcher.focusedElement;
+  focusedElement = getFocusedNavigableElement();
   const kFindButtonId = "appMenu-find-button2";
   while (
     !focusedElement ||
@@ -160,7 +171,7 @@ add_task(async function testEnterKeyBehaviors() {
     focusedElement.id != kFindButtonId
   ) {
     EventUtils.synthesizeKey("KEY_ArrowUp");
-    focusedElement = document.commandDispatcher.focusedElement;
+    focusedElement = getFocusedNavigableElement();
   }
   let findBarPromise = gBrowser.isFindBarInitialized()
     ? null
@@ -184,14 +195,14 @@ add_task(async function testLeftRightKeys() {
   await gCUITestUtils.openMainMenu();
 
   // Navigate to the 'Help' button, which points to a subview.
-  let focusedElement = document.commandDispatcher.focusedElement;
+  let focusedElement = getFocusedNavigableElement();
   while (
     !focusedElement ||
     !focusedElement.id ||
     focusedElement.id != kHelpButtonId
   ) {
     EventUtils.synthesizeKey("KEY_ArrowUp");
-    focusedElement = document.commandDispatcher.focusedElement;
+    focusedElement = getFocusedNavigableElement();
   }
   Assert.equal(
     focusedElement.id,
@@ -210,7 +221,7 @@ add_task(async function testLeftRightKeys() {
   EventUtils.synthesizeKey("KEY_ArrowLeft");
   await promise;
 
-  focusedElement = document.commandDispatcher.focusedElement;
+  focusedElement = getFocusedNavigableElement();
   Assert.equal(
     focusedElement.id,
     kHelpButtonId,
@@ -231,7 +242,7 @@ add_task(async function testTabKey() {
     }
     EventUtils.synthesizeKey("KEY_Tab");
     Assert.equal(
-      document.commandDispatcher.focusedElement,
+      getFocusedNavigableElement(),
       button,
       "The correct button should be focused after tabbing"
     );
@@ -239,7 +250,7 @@ add_task(async function testTabKey() {
 
   EventUtils.synthesizeKey("KEY_Tab");
   Assert.equal(
-    document.commandDispatcher.focusedElement,
+    getFocusedNavigableElement(),
     buttons[0],
     "Pressing tab should cycle around and select the first button again"
   );
@@ -251,7 +262,7 @@ add_task(async function testTabKey() {
     }
     EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
     Assert.equal(
-      document.commandDispatcher.focusedElement,
+      getFocusedNavigableElement(),
       button,
       "The correct button should be focused after shift + tabbing"
     );
@@ -259,7 +270,7 @@ add_task(async function testTabKey() {
 
   EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
   Assert.equal(
-    document.commandDispatcher.focusedElement,
+    getFocusedNavigableElement(),
     buttons[buttons.length - 1],
     "Pressing shift + tab should cycle around and select the last button again"
   );
@@ -286,7 +297,7 @@ add_task(async function testInterleavedTabAndArrowKeys() {
   }
 
   Assert.equal(
-    document.commandDispatcher.focusedElement,
+    getFocusedNavigableElement(),
     buttons[buttons.length - 1],
     "The last button should be focused after a mix of Tab and ArrowDown"
   );
@@ -311,7 +322,7 @@ add_task(async function testSpaceDownAfterTabNavigation() {
   }
 
   Assert.equal(
-    document.commandDispatcher.focusedElement,
+    getFocusedNavigableElement(),
     button,
     "Help button should be focused after tabbing to it."
   );

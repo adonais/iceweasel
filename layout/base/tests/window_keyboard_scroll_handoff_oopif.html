@@ -1,0 +1,71 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Test cross-process main-thread keyboard scroll handoff to the embedder</title>
+<style>
+  html { overflow-y: scroll; }
+  body { margin: 0; }
+  #oopif { display: block; width: 300px; height: 200px; border: 0; }
+  .tall { height: 500vh; }
+</style>
+</head>
+<body>
+<iframe id="oopif"></iframe>
+<div class="tall"></div>
+<script>
+const SimpleTest = window.opener.SimpleTest;
+const SpecialPowers = window.opener.SpecialPowers;
+const ok = window.opener.ok;
+const is = window.opener.is;
+
+SimpleTest.waitForFocus(async () => {
+  await SpecialPowers.pushPrefEnv({ set: [["general.smoothScroll", false]] });
+
+  const iframe = document.getElementById("oopif");
+  let iframeURL = SimpleTest.getTestFileURL(
+    "file_keyboard_scroll_handoff_oopif.html");
+  iframeURL = iframeURL.replace(window.opener.location.origin, "https://example.com");
+  await new Promise(resolve => {
+    iframe.addEventListener("load", resolve, { once: true });
+    iframe.src = iframeURL;
+  });
+
+  // Focus an element inside the subframe and pin the subframe to its bottom
+  // edge, so a downward keyboard scroll there can no longer move it.
+  const innerBottom = await SpecialPowers.spawn(iframe, [], async () => {
+    const doc = content.document;
+    const target = doc.getElementById("focusTarget");
+    const focusPromise =
+        new Promise(resolve => target.addEventListener("focus", resolve()));
+    target.focus();
+    await focusPromise;
+    const scroller = doc.scrollingElement;
+    scroller.scrollTop = scroller.scrollTopMax;
+    return scroller.scrollTop;
+  });
+  ok(innerBottom > 0, "the subframe is scrolled to its bottom edge");
+  is(window.scrollY, 0, "the embedder document starts unscrolled");
+
+  // Run the scroll command in the subframe's process. Since the subframe is at
+  // its bottom edge, scrolling must be handed off to this embedder document.
+  const embedderScrolled = new Promise(resolve =>
+    window.addEventListener("scroll", resolve, { once: true }));
+  await SpecialPowers.spawn(iframe, [], () => {
+    SpecialPowers.doCommand(content, "cmd_scrollLineDown");
+  });
+  await embedderScrolled;
+
+  ok(window.scrollY > 0,
+     "keyboard scrolling was handed off to the embedder document");
+
+  const innerBottomAfter = await SpecialPowers.spawn(iframe, [], () =>
+    content.document.scrollingElement.scrollTop);
+  is(innerBottomAfter, innerBottom, "the subframe stayed at its bottom edge");
+
+  SimpleTest.finish();
+  window.close();
+}, window);
+</script>
+</body>
+</html>

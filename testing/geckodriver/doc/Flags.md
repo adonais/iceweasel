@@ -228,4 +228,4 @@ Port to use to connect to WebDriver BiDi. Defaults to 9222.
 A helpful trick is that it is possible to bind to 0 to get the
 system to atomically assign a free port.
 
-[Marionette]: /testing/marionette/index.rst
+[Marionette]: /remote/marionette/index.md

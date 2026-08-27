@@ -1048,7 +1048,7 @@ void CreatePushHashKey(const nsCString& scheme, const nsCString& hostHeader,
 
   if (NS_FAILED(rv)) {
     // Fallback to plain text copy - this may end up behaving poorly
-    outOrigin = fullOrigin;
+    outOrigin = std::move(fullOrigin);
   }
 
   outKey = outOrigin;

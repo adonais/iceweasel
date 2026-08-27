@@ -14,6 +14,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import mozilla.components.concept.integrity.IntegrityToken
+import mozilla.components.concept.llm.AttestationFailure
 import mozilla.components.concept.llm.AuthFailure
 import mozilla.components.concept.llm.Llm
 import mozilla.components.concept.llm.LlmProvider
@@ -33,7 +34,7 @@ sealed interface MlpaError
 /**
  * Thrown when the Integrity client experiences a failure, propagating its error message.
  */
-class IntegrityHandshakeFailure(message: String) : Llm.Exception(message), MlpaError
+class IntegrityHandshakeFailure(message: String) : Llm.Exception(message), MlpaError, AttestationFailure
 
 /**
  * Thrown when the MLPA verification service fails to process or validate a request.
@@ -144,7 +145,7 @@ data class MlpaConfig(
          */
         val nonProd
             get() = MlpaConfig(
-                baseUrl = "https://mlpa-nonprod-dev-mozilla.global.ssl.fastly.net",
+                baseUrl = "https://mlpa-nonprod-dev-mozilla.freetls.fastly.net",
             )
 
         /**
@@ -152,7 +153,7 @@ data class MlpaConfig(
          */
         val prodProd
             get() = MlpaConfig(
-                baseUrl = "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net",
+                baseUrl = "https://mlpa-prod-prod-mozilla.freetls.fastly.net",
             )
     }
 }

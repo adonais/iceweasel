@@ -10,7 +10,7 @@ ChromeUtils.defineESModuleGetters(this, {
 const TEST_PAGE_URL = encodeURI(
   `data:text/html;charset=utf-8,<a id="foo" href="http://nic.xn--rhqv96g/">abc</a><span id="bar">def</span>`
 );
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 const TEST_STATUS_TEXT = UrlbarTestUtils.trimURL("http://nic.\u4E16\u754C");
 
 /**

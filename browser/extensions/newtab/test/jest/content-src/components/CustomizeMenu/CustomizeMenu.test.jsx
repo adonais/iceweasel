@@ -97,4 +97,17 @@ describe("<CustomizeMenu>", () => {
     container.querySelector("moz-button.open-customization-button").click();
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
+
+  it("threads browserNovaEnabled from Prefs.values to ContentSection (renders the theme-picker)", () => {
+    const { container } = render(
+      <WrapWithProvider>
+        <CustomizeMenu
+          {...DEFAULT_PROPS}
+          showing={true}
+          Prefs={{ values: { browserNovaEnabled: true } }}
+        />
+      </WrapWithProvider>
+    );
+    expect(container.querySelector("theme-picker")).toBeInTheDocument();
+  });
 });

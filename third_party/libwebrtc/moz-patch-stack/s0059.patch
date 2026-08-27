@@ -166,7 +166,7 @@ index 05d8d9b7be..f4c5db5697 100644
  }
  
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index a15167060c..dcbd3de10f 100644
+index 75fc4fda46..ff730fa780 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
 @@ -88,6 +88,7 @@
@@ -177,29 +177,29 @@ index a15167060c..dcbd3de10f 100644
  #include "system_wrappers/include/ntp_time.h"
  #include "video/buffered_frame_decryptor.h"
  
-@@ -1367,6 +1368,9 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
+@@ -1378,6 +1379,9 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
                          packet_infos_.upper_bound(unwrapped_rtp_seq_num));
-     uint32_t num_packets_cleared = packet_buffer_.ClearTo(seq_num);
+     uint32_t num_packets_cleared = packet_buffer_.ClearTo(unwrapped_rtp_seq_num);
      if (num_packets_cleared > 0) {
 +      TRACE_EVENT2("webrtc",
 +                   "RtpVideoStreamReceiver2::FrameDecoded Cleared Old Packets",
 +                   "remote_ssrc", config_.rtp.remote_ssrc, "seq_num", seq_num);
        vcm_receive_statistics_->OnDiscardedPackets(num_packets_cleared);
      }
-     reference_finder_->ClearTo(seq_num);
+     reference_finder_->ClearTo(seq_num, rtp_timestamp);
 diff --git a/video/video_stream_buffer_controller.cc b/video/video_stream_buffer_controller.cc
-index dd77de3d2c..aef0c772b1 100644
+index 3986cceaa7..bf03366136 100644
 --- a/video/video_stream_buffer_controller.cc
 +++ b/video/video_stream_buffer_controller.cc
-@@ -36,6 +36,7 @@
+@@ -34,6 +34,7 @@
  #include "rtc_base/checks.h"
  #include "rtc_base/experiments/field_trial_parser.h"
  #include "rtc_base/logging.h"
 +#include "rtc_base/trace_event.h"
+ #include "system_wrappers/include/clock.h"
  #include "video/frame_decode_scheduler.h"
  #include "video/frame_decode_timing.h"
- #include "video/video_receive_stream_timeout_tracker.h"
-@@ -156,6 +157,9 @@ std::optional<int64_t> VideoStreamBufferController::InsertFrame(
+@@ -154,6 +155,9 @@ std::optional<int64_t> VideoStreamBufferController::InsertFrame(
      std::unique_ptr<EncodedFrame> frame) {
    RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
    FrameMetadata metadata(*frame);
@@ -209,8 +209,8 @@ index dd77de3d2c..aef0c772b1 100644
    int complete_units = buffer_->GetTotalNumberOfContinuousTemporalUnits();
    if (buffer_->InsertFrame(std::move(frame))) {
      RTC_DCHECK(metadata.receive_time) << "Frame receive time must be set!";
-@@ -166,6 +170,9 @@ std::optional<int64_t> VideoStreamBufferController::InsertFrame(
-                                       *metadata.receive_time);
+@@ -165,6 +169,9 @@ std::optional<int64_t> VideoStreamBufferController::InsertFrame(
+            .was_retransmitted = metadata.delayed_by_retransmission});
      }
      if (complete_units < buffer_->GetTotalNumberOfContinuousTemporalUnits()) {
 +      TRACE_EVENT2("webrtc",

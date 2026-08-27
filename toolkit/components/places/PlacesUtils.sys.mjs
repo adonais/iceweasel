@@ -1474,10 +1474,12 @@ export var PlacesUtils = {
    *
    * @param {nsINavHistoryContainerResultNode} aNode
    *   The container node to search through.
+   * @param {function(string): boolean} uriValidatorFn
+   *   An optional function that takes a URI and returns true if it should be considered a valid URI.
    * @returns {boolean}
    *   True if the node contains uri nodes, false otherwise.
    */
-  hasChildURIs(aNode) {
+  hasChildURIs(aNode, uriValidatorFn) {
     if (!this.nodeIsContainer(aNode)) {
       return false;
     }
@@ -1498,7 +1500,10 @@ export var PlacesUtils = {
     let found = false;
     for (let i = 0, count = root.childCount; i < count && !found; i++) {
       let child = root.getChild(i);
-      if (this.nodeIsURI(child)) {
+      if (
+        this.nodeIsURI(child) &&
+        (!uriValidatorFn || uriValidatorFn(child.uri))
+      ) {
         found = true;
       }
     }

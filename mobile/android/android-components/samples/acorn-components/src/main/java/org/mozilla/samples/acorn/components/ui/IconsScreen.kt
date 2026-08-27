@@ -35,7 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -56,7 +56,7 @@ private const val CATEGORY_LABEL_WIDTH = 140
 fun IconsScreen(onNavigateUp: () -> Unit = {}) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+    val resources = LocalResources.current
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -100,7 +100,7 @@ fun IconsScreen(onNavigateUp: () -> Unit = {}) {
                         icons = icons,
                         tint = tint,
                         onIconClick = { resId ->
-                            val name = context.resources.getResourceEntryName(resId)
+                            val name = resources.getResourceEntryName(resId)
                             scope.launch {
                                 snackbarHostState.currentSnackbarData?.dismiss()
                                 snackbarHostState.displaySnackbar(message = name)
@@ -381,6 +381,8 @@ private val iconsAlertsInfoHelp24 = listOf(
 
 private val iconsAudio24 = listOf(
     iconsR.drawable.mozac_ic_audio_wave_24,
+    iconsR.drawable.mozac_ic_audio_24,
+    iconsR.drawable.mozac_ic_audio_muted_24,
 )
 
 private val iconsAppMenuMore24 = listOf(
@@ -646,6 +648,10 @@ private val iconsReport24 = listOf(
     iconsR.drawable.mozac_ic_report_24,
 )
 
+private val iconsScreenshot24 = listOf(
+    iconsR.drawable.mozac_ic_screenshot_24,
+)
+
 private val iconsSearch24 = listOf(
     iconsR.drawable.mozac_ic_search_24,
     iconsR.drawable.mozac_ic_find_in_page_24,
@@ -868,6 +874,7 @@ private val iconSizeSections = listOf(
             IconCategory("QR Code", iconsQrCode24),
             IconCategory("Reader View", iconsReaderView24),
             IconCategory("Report", iconsReport24),
+            IconCategory("Screenshot", iconsScreenshot24),
             IconCategory("Search", iconsSearch24),
             IconCategory("Settings, Tools", iconsSettingsTools24),
             IconCategory("Share", iconsShare24),

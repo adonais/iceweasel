@@ -862,7 +862,7 @@ def test_perfdocs_framework_gatherers_urls(logger, structured_logger, perfdocs_s
         section = gn._verifier._gatherer.framework_gatherers[
             "raptor"
         ].build_suite_section(fg, suite_name, suites.get(suite_name)["description"])
-        assert suite_name.capitalize() == section[0]
+        assert f"### {suite_name.capitalize()}" == section[0]
         assert suite_name in section[2]
 
         tests = suites.get(suite_name).get("tests", {})
@@ -872,7 +872,7 @@ def test_perfdocs_framework_gatherers_urls(logger, structured_logger, perfdocs_s
             ].build_test_description(
                 fg, test_name, tests[test_name], suite_name, {"fcp": {}}
             )
-            assert f"**test url**: `<{url[0]['test_url']}>`__" in desc[0]
+            assert f"**test url**: <{url[0]['test_url']}>" in desc[0]
             assert f"**expected**: {url[0]['expected']}" in desc[0]
             assert test_name in desc[0]
 

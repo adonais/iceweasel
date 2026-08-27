@@ -59,6 +59,7 @@
 #include "nsAboutProtocolUtils.h"
 #include "nsBaseHashtable.h"
 #include "nsComponentManagerUtils.h"
+#include "nsCRT.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsCoord.h"

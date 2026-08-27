@@ -1,4 +1,4 @@
-# Debugging
+# Debugging remote protocols
 
 For other debugging resources, see also: Remote project [wiki]
 

@@ -3592,7 +3592,7 @@ bool wasm::ResultsToJSValue(JSContext* cx, ResultType type,
       }
     }
   }
-  rval.set(ObjectValue(*array));
+  rval.setObject(*array);
   return true;
 }
 

@@ -848,7 +848,8 @@ private fun autocompleteInputConnection(
  * Helper for sanitizing what gets pasted through the contextual menu.
  */
 @OptIn(ExperimentalFoundationApi::class) // for ComposeFoundationFlags
-private class PasteSanitizerTextToolbar(
+@VisibleForTesting
+internal class PasteSanitizerTextToolbar(
     private val context: Context,
     private val delegate: TextToolbar,
     private val clipboard: Clipboard,
@@ -875,11 +876,7 @@ private class PasteSanitizerTextToolbar(
         delegate.showMenu(
             rect = rect,
             onCopyRequested = onCopyRequested,
-            onPasteRequested = {
-                scope.launch {
-                    handlePaste(sanitizeAvailableTextClip())
-                }
-            },
+            onPasteRequested = sanitizedPasteAction(onPasteRequested),
             onCutRequested = onCutRequested,
             onSelectAllRequested = onSelectAllRequested,
             onAutofillRequested = onAutofillRequested,
@@ -896,14 +893,23 @@ private class PasteSanitizerTextToolbar(
         delegate.showMenu(
             rect = rect,
             onCopyRequested = onCopyRequested,
-            onPasteRequested = {
-                scope.launch {
-                    handlePaste(sanitizeAvailableTextClip())
-                }
-            },
+            onPasteRequested = sanitizedPasteAction(onPasteRequested),
             onCutRequested = onCutRequested,
             onSelectAllRequested = onSelectAllRequested,
         )
+    }
+
+    /**
+     * Returns a sanitized paste action only when paste is available.
+     */
+    private fun sanitizedPasteAction(
+        onPasteRequested: (() -> Unit)?,
+    ): (() -> Unit)? = onPasteRequested?.let {
+        {
+            scope.launch {
+                handlePaste(sanitizeAvailableTextClip())
+            }
+        }
     }
 
     private suspend fun sanitizeAvailableTextClip(): String {

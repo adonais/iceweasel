@@ -7,6 +7,7 @@
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/dom/MediaControlUtils.h"
 #include "mozilla/dom/WindowGlobalChild.h"
+#include "mozilla/glean/DomMediaMetrics.h"
 #include "nsGlobalWindowInner.h"
 
 #undef LOG
@@ -34,6 +35,8 @@ void AudioSession::SetType(AudioSessionType aType) {
   }
   LOG("SetType {}", GetEnumString(aType).get());
   mType = aType;
+  glean::media_audio_session::type_set.Get(AudioSessionTypeToGleanLabel(aType))
+      .Add(1);
   if (nsPIDOMWindowInner* window = GetOwnerWindow()) {
     if (WindowGlobalChild* wgc = window->GetWindowGlobalChild()) {
       wgc->SendNotifyAudioSessionTypeOverride(aType);

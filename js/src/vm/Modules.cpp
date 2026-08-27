@@ -1108,7 +1108,7 @@ static bool CyclicModuleResolveExport(JSContext* cx,
         //                 starResolution.[[BindingName]]), return AMBIGUOUS.
         if (binding->module() != starResolution->module() ||
             binding->bindingName() != starResolution->bindingName()) {
-          result.set(StringValue(cx->names().ambiguous));
+          result.setString(cx->names().ambiguous);
 
           if (errorInfoOut) {
             ModuleObject* module1 = starResolution->module();
@@ -2060,7 +2060,7 @@ static bool SyntheticModuleEvaluate(JSContext* cx,
   }
 
   // 16. Return pc.[[Promise]].
-  rval.set(ObjectValue(*resultPromise));
+  rval.setObject(*resultPromise);
   return true;
 }
 
@@ -2100,7 +2100,7 @@ static bool ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
   // Step 4. If module.[[TopLevelCapability]] is not empty, then:
   if (module->hasTopLevelCapability()) {
     // Step 4.a. Return module.[[TopLevelCapability]].[[Promise]].
-    result.set(ObjectValue(*module->topLevelCapability()));
+    result.setObject(*module->topLevelCapability());
     return true;
   }
 
@@ -2178,7 +2178,7 @@ static bool ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
   }
 
   // Step 11. Return capability.[[Promise]].
-  result.set(ObjectValue(*capability));
+  result.setObject(*capability);
   return true;
 }
 

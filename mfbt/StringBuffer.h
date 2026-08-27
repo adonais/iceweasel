@@ -7,11 +7,12 @@
 
 #include <atomic>
 #include <cstring>
-#include "mozilla/CheckedInt.h"
-#include "mozilla/MemoryReporting.h"
-#include "mozilla/Assertions.h"
+
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/RefCounted.h"
 #include "mozmemory.h"
 

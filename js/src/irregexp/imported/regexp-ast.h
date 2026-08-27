@@ -174,6 +174,9 @@ class CharacterRange {
   static void Intersect(const ZoneList<CharacterRange>* lhs,
                         const ZoneList<CharacterRange>* rhs,
                         ZoneList<CharacterRange>* dst, Zone* zone);
+  // Whether two character ranges in canonical form intersect.
+  static bool Intersects(const ZoneList<CharacterRange>* lhs,
+                         const ZoneList<CharacterRange>* rhs);
   // Subtract the contents of |to_remove| from the contents of |src|.
   static void Subtract(const ZoneList<CharacterRange>* src,
                        const ZoneList<CharacterRange>* to_remove,

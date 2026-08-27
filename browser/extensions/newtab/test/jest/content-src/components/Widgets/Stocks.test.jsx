@@ -33,6 +33,7 @@ function renderStocks(dispatch = jest.fn(), props = {}) {
     <WrapWithProvider state={mockState}>
       <Stocks
         dispatch={dispatch}
+        handleUserInteraction={jest.fn()}
         widgetsMayBeMaximized={true}
         widgetEnabledMap={{}}
         {...props}
@@ -104,6 +105,79 @@ describe("Stocks widget", () => {
         action.data?.user_action === "search_tickers"
     );
     expect(evt).toBeTruthy();
+    expect(evt[0].data).toMatchObject({
+      widget_name: "stocks",
+      widget_source: "context_menu",
+      widget_size: "medium",
+    });
+    expect(evt[0].data.action_value).toBeUndefined();
+  });
+
+  it("records the change_size user event with the new size", () => {
+    const dispatch = jest.fn();
+    const { container } = renderStocks(dispatch);
+    fireEvent.click(
+      container.querySelector(
+        '#stocks-size-submenu panel-item[data-size="large"]'
+      )
+    );
+    const evt = dispatch.mock.calls.find(
+      ([action]) =>
+        action.type === at.WIDGETS_USER_EVENT &&
+        action.data?.user_action === "change_size"
+    );
+    expect(evt).toBeTruthy();
+    expect(evt[0].data).toMatchObject({
+      widget_name: "stocks",
+      widget_source: "context_menu",
+      user_action: "change_size",
+      action_value: "large",
+      widget_size: "large",
+    });
+  });
+
+  describe("interaction pref", () => {
+    function renderWithInteraction() {
+      const handleUserInteraction = jest.fn();
+      const { container } = renderStocks(jest.fn(), { handleUserInteraction });
+      return { container, handleUserInteraction };
+    }
+
+    it("flips the interaction pref on change_size", () => {
+      const { container, handleUserInteraction } = renderWithInteraction();
+      fireEvent.click(
+        container.querySelector(
+          '#stocks-size-submenu panel-item[data-size="large"]'
+        )
+      );
+      expect(handleUserInteraction).toHaveBeenCalledWith("stocks");
+    });
+
+    it("flips the interaction pref on search_tickers", () => {
+      const { container, handleUserInteraction } = renderWithInteraction();
+      fireEvent.click(
+        container.querySelector('[data-l10n-id="newtab-stocks-menu-search"]')
+      );
+      expect(handleUserInteraction).toHaveBeenCalledWith("stocks");
+    });
+
+    it("flips the interaction pref on learn_more", () => {
+      const { container, handleUserInteraction } = renderWithInteraction();
+      fireEvent.click(
+        container.querySelector(
+          '[data-l10n-id="newtab-stocks-menu-learn-more"]'
+        )
+      );
+      expect(handleUserInteraction).toHaveBeenCalledWith("stocks");
+    });
+
+    it("does not flip the interaction pref when hiding the widget", () => {
+      const { container, handleUserInteraction } = renderWithInteraction();
+      fireEvent.click(
+        container.querySelector('[data-l10n-id="newtab-widget-menu-hide"]')
+      );
+      expect(handleUserInteraction).not.toHaveBeenCalled();
+    });
   });
 
   function renderStocksWithTickers(tickers, size = "medium") {
@@ -384,5 +458,191 @@ describe("Stocks error telemetry across a size change", () => {
       ([action]) => action.type === at.WIDGETS_ERROR
     );
     expect(errorCalls).toHaveLength(1);
+  });
+
+  it("records the error with the current size after a resize", () => {
+    const dispatch = jest.fn();
+    const store = createStore(combineReducers(reducers), {
+      ...mockState,
+      Stocks: { tickers: [], lastUpdated: null, error: true },
+      Prefs: {
+        ...mockState.Prefs,
+        values: { ...mockState.Prefs.values, "widgets.stocks.size": "medium" },
+      },
+    });
+    render(
+      <Provider store={store}>
+        <Stocks
+          dispatch={dispatch}
+          widgetsMayBeMaximized={true}
+          widgetEnabledMap={{}}
+        />
+      </Provider>
+    );
+
+    // Change to large before the error box is ever seen, so the first
+    // intersection reports the error at the new size.
+    act(() => {
+      store.dispatch({
+        type: at.PREF_CHANGED,
+        data: { name: "widgets.stocks.size", value: "large" },
+      });
+    });
+    fireAllIntersections();
+
+    const errorCalls = dispatch.mock.calls.filter(
+      ([action]) => action.type === at.WIDGETS_ERROR
+    );
+    expect(errorCalls).toHaveLength(1);
+    expect(errorCalls[0][0].data).toMatchObject({
+      widget_name: "stocks",
+      error_type: "load_error",
+      widget_size: "large",
+    });
+    expect(errorCalls[0][0].meta).toEqual(
+      expect.objectContaining({ to: "ActivityStream:Main" })
+    );
+  });
+});
+
+describe("Stocks impression telemetry", () => {
+  let originalIntersectionObserver;
+  let observerInstances;
+
+  beforeEach(() => {
+    observerInstances = [];
+    originalIntersectionObserver = global.IntersectionObserver;
+    global.IntersectionObserver = class MockIntersectionObserver {
+      constructor(callback) {
+        this.callback = callback;
+        this.observed = [];
+        observerInstances.push(this);
+      }
+      observe(el) {
+        this.observed.push(el);
+      }
+      unobserve() {}
+      disconnect() {}
+    };
+  });
+
+  afterEach(() => {
+    global.IntersectionObserver = originalIntersectionObserver;
+  });
+
+  it("fires WIDGETS_IMPRESSION once when the widget is seen", () => {
+    const dispatch = jest.fn();
+    renderStocks(dispatch);
+    const [observer] = observerInstances;
+    const [target] = observer.observed;
+
+    observer.callback([{ isIntersecting: true, target }], observer);
+    observer.callback([{ isIntersecting: true, target }], observer);
+
+    const impressions = dispatch.mock.calls.filter(
+      ([action]) => action?.type === at.WIDGETS_IMPRESSION
+    );
+    expect(impressions).toHaveLength(1);
+    expect(impressions[0][0].data).toMatchObject({
+      widget_name: "stocks",
+      widget_size: "medium",
+    });
+    expect(impressions[0][0].meta).toEqual(
+      expect.objectContaining({ to: "ActivityStream:Main" })
+    );
+  });
+});
+
+describe("Stocks new badge", () => {
+  const SAMPLE_TICKER = [
+    {
+      ticker: "SPY",
+      name: "SPDR S&P 500 ETF Trust",
+      last_price: "$559.44 USD",
+      todays_change_perc: "+0.2",
+    },
+  ];
+
+  function renderStocksBadge({
+    tickers = SAMPLE_TICKER,
+    hasInteracted = false,
+  } = {}) {
+    const state = {
+      ...mockState,
+      Prefs: {
+        ...mockState.Prefs,
+        values: {
+          ...mockState.Prefs.values,
+          "widgets.stocks.interaction": hasInteracted,
+        },
+      },
+      Stocks: { tickers, lastUpdated: 1, error: false },
+    };
+    return render(
+      <WrapWithProvider state={state}>
+        <Stocks
+          dispatch={jest.fn()}
+          handleUserInteraction={jest.fn()}
+          widgetsMayBeMaximized={true}
+          widgetEnabledMap={{}}
+        />
+      </WrapWithProvider>
+    );
+  }
+
+  it("shows the New badge when tickers are present and the user has not interacted", () => {
+    const { container } = renderStocksBadge();
+    const badge = container.querySelector(".stocks-new-badge");
+    expect(badge).toBeTruthy();
+    expect(badge.getAttribute("data-l10n-id")).toBe(
+      "newtab-widget-lists-label-new"
+    );
+  });
+
+  it("hides the New badge once the interaction pref is set", () => {
+    const { container } = renderStocksBadge({ hasInteracted: true });
+    expect(container.querySelector(".stocks-new-badge")).toBeNull();
+  });
+
+  it("hides the New badge while there are no tickers (loading)", () => {
+    const { container } = renderStocksBadge({ tickers: [] });
+    expect(container.querySelector(".stocks-new-badge")).toBeNull();
+  });
+
+  it("hides the New badge in the error state", () => {
+    const state = {
+      Stocks: { tickers: [], lastUpdated: null, error: true },
+      Prefs: { values: { "widgets.stocks.size": "medium" } },
+    };
+    const { container } = render(
+      <WrapWithProvider state={state}>
+        <Stocks
+          dispatch={jest.fn()}
+          handleUserInteraction={jest.fn()}
+          widgetsMayBeMaximized={true}
+          widgetEnabledMap={{}}
+        />
+      </WrapWithProvider>
+    );
+    expect(container.querySelector(".stocks-new-badge")).toBeNull();
+  });
+
+  it("shows the New badge with stale tickers even when error is set", () => {
+    const state = {
+      ...mockState,
+      Stocks: { tickers: SAMPLE_TICKER, lastUpdated: 1, error: true },
+    };
+    const { container } = render(
+      <WrapWithProvider state={state}>
+        <Stocks
+          dispatch={jest.fn()}
+          handleUserInteraction={jest.fn()}
+          widgetsMayBeMaximized={true}
+          widgetEnabledMap={{}}
+        />
+      </WrapWithProvider>
+    );
+    // The badge follows ticker presence, not the error flag.
+    expect(container.querySelector(".stocks-new-badge")).toBeTruthy();
   });
 });

@@ -120,9 +120,6 @@ void GeckoProfilerRuntime::enable(bool enabled) {
     cx->jitActivation->setLastProfilingCallSite(nullptr);
   }
 
-  // Enable/disable JIT code info collection for the Gecko Profiler.
-  jit::ResetPerfSpewer(enabled);
-
   enabled_ = enabled;
 
   scriptSources_.writeLock()->clear();
@@ -624,11 +621,20 @@ JS_PUBLIC_API JSScript* ProfilingStackFrame::script() const {
     return nullptr;
   }
 
-  // If profiling is suppressed then we can't trust the script pointers to be
-  // valid as they could be in the process of being moved by a compacting GC
-  // (although it's still OK to get the runtime from them).
+  // While profiling is suppressed the script pointer may be unsafe to use, as
+  // it could be in the middle of being relocated by a compacting GC (although
+  // it's still OK to get the runtime from it). A suppression site that
+  // guarantees scripts are not moving (currently only minor GC) opts in to
+  // allowing access here so the profiler can still resolve line/column
+  // attribution for the affected frames.
+  //
+  // The returned script is only safe to use for tenured data (e.g. its
+  // filename, line/column via pc()). It may still be reachable during a minor
+  // GC, so nursery-allocated objects hanging off it, notably its JSFunction,
+  // must not be dereferenced here. Go through function(), which keeps the
+  // broader isProfilerSamplingEnabled() guard.
   JSContext* cx = script->runtimeFromAnyThread()->mainContextFromAnyThread();
-  if (!cx->isProfilerSamplingEnabled()) {
+  if (!cx->isProfilerSamplingEnabled() && !cx->allowProfilerScriptAccess()) {
     return nullptr;
   }
 
@@ -638,7 +644,17 @@ JS_PUBLIC_API JSScript* ProfilingStackFrame::script() const {
 
 JS_PUBLIC_API JSFunction* ProfilingStackFrame::function() const {
   JSScript* script = this->script();
-  return script ? script->function() : nullptr;
+  if (!script) {
+    return nullptr;
+  }
+  // JSFunctions can live in the nursery and so may move during minor GC.
+  // Fall back to the broader sample-suppression flag here so callers don't
+  // dereference a function pointer while objects are being relocated.
+  JSContext* cx = script->runtimeFromAnyThread()->mainContextFromAnyThread();
+  if (!cx->isProfilerSamplingEnabled()) {
+    return nullptr;
+  }
+  return script->function();
 }
 
 JS_PUBLIC_API jsbytecode* ProfilingStackFrame::pc() const {
@@ -659,8 +675,9 @@ int32_t ProfilingStackFrame::pcToOffset(JSScript* aScript, jsbytecode* aPc) {
 void ProfilingStackFrame::setPC(jsbytecode* pc) {
   MOZ_ASSERT(isJsFrame());
   JSScript* script = this->script();
-  MOZ_ASSERT(
-      script);  // This should not be called while profiling is suppressed.
+  // This should not be called while script access is suppressed (see
+  // script()).
+  MOZ_ASSERT(script);
   pcOffsetIfJS_ = pcToOffset(script, pc);
 }
 
@@ -676,6 +693,10 @@ JS_PUBLIC_API void js::SetContextProfilingStack(
 
 JS_PUBLIC_API void js::EnableContextProfilingStack(JSContext* cx,
                                                    bool enabled) {
+  // Toggling leaves the engine transiently half-initialized (e.g. a Baseline
+  // Interpreter frame whose JitScript has no profiler label string yet), so the
+  // SamplerThread must not walk this thread's JS stack until we're done.
+  AutoSuppressProfilerSampling suppressSampling(cx);
   cx->geckoProfiler().enable(enabled);
   cx->runtime()->geckoProfiler().enable(enabled);
 }
@@ -733,17 +754,23 @@ js::RetrieveProfilerSourceContent(JSContext* cx, const char* filename) {
   return ProfilerJSSourceData();
 }
 
-AutoSuppressProfilerSampling::AutoSuppressProfilerSampling(JSContext* cx)
-    : cx_(cx), previouslyEnabled_(cx->isProfilerSamplingEnabled()) {
+AutoSuppressProfilerSampling::AutoSuppressProfilerSampling(
+    JSContext* cx, ProfilerScriptAccess scriptAccess)
+    : cx_(cx),
+      previouslyEnabled_(cx->isProfilerSamplingEnabled()),
+      previousScriptAccess_(cx->allowProfilerScriptAccess()) {
   if (previouslyEnabled_) {
     cx_->disableProfilerSampling();
   }
+  cx_->setAllowProfilerScriptAccess(scriptAccess ==
+                                    ProfilerScriptAccess::Allow);
 }
 
 AutoSuppressProfilerSampling::~AutoSuppressProfilerSampling() {
   if (previouslyEnabled_) {
     cx_->enableProfilerSampling();
   }
+  cx_->setAllowProfilerScriptAccess(previousScriptAccess_);
 }
 
 namespace JS {

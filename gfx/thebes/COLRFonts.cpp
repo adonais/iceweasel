@@ -2509,9 +2509,6 @@ bool COLRFonts::PaintGlyphLayers(
 
 const COLRFonts::GlyphPaintGraph* COLRFonts::GetGlyphPaintGraph(
     hb_blob_t* aCOLR, uint32_t aGlyphId) {
-  if (!StaticPrefs::gfx_font_rendering_colr_v1_enabled()) {
-    return nullptr;
-  }
   unsigned int blobLength;
   const auto* colr =
       reinterpret_cast<const COLRHeader*>(hb_blob_get_data(aCOLR, &blobLength));

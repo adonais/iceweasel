@@ -100,7 +100,10 @@ def setup_environment():
 
 
 def execute_tests(
-    flank_config: str, apk_app: Path, apk_test: Optional[Path] = None
+    flank_config: str,
+    apk_app: Path,
+    apk_test: Optional[Path] = None,
+    baseline_profile_max_iterations: Optional[str] = None,
 ) -> int:
     """Run UI tests on Firebase Test Lab using Flank.
 
@@ -138,6 +141,12 @@ def execute_tests(
         flank_command.extend([
             "--client-details",
             f"matrixLabel={urlparse(matrixLabel).path.rpartition('/')[-1]},geckoRev={geckoRev}",
+        ])
+
+    if "baseline-profile" in flank_config and baseline_profile_max_iterations:
+        flank_command.extend([
+            "--environment-variables",
+            f"baselineProfileMaxIterations={baseline_profile_max_iterations}",
         ])
 
     # Add androidTest APK if provided (optional) as robo test or instrumentation test
@@ -217,6 +226,11 @@ def main():
         help="Type of artifact to copy after running the tests",
         default=None,
     )
+    parser.add_argument(
+        "--baseline-profile-max-iterations",
+        help="Maximum iterations for baseline profile generation",
+        default=None,
+    )
     args = parser.parse_args()
 
     setup_environment()
@@ -227,6 +241,7 @@ def main():
         flank_config=args.flank_config,
         apk_app=Path(args.apk_app).resolve(),
         apk_test=apk_test_path,
+        baseline_profile_max_iterations=args.baseline_profile_max_iterations,
     )
 
     # Determine the instrumentation type to process the results differently

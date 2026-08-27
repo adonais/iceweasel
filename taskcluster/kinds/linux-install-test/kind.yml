@@ -18,6 +18,7 @@ task-defaults:
         substitution-fields:
             - description
     run:
+        clone-with: hg
         using: run-task
         run-as-root: true
         cwd: '{checkout}'

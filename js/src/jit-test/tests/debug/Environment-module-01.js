@@ -22,5 +22,5 @@ const m = g.parseModule(`
   foo();
   function foo() {}
 `);
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);

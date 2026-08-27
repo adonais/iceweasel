@@ -119,4 +119,83 @@ TEST_P(Pkcs11AESKeyWrapTest, TestVectors) { WrapUnwrap(GetParam()); }
 
 INSTANTIATE_TEST_SUITE_P(Pkcs11WycheproofAESKWTest, Pkcs11AESKeyWrapTest,
                          ::testing::ValuesIn(kWycheproofAesKWVectors));
+
+// Regression tests for a heap buffer over-read: AESKeyWrap_InitContext copies
+// exactly 8 bytes (AES_KEY_WRAP_IV_BYTES) from the iv pointer unconditionally,
+// so a pParameter buffer shorter than that would read past its end.
+class Pkcs11AESKeyWrapIVParamTest
+    : public ::testing::TestWithParam<CK_MECHANISM_TYPE> {
+ protected:
+  SECStatus TryEncryptMaybeDecrypt(SECItem* param, bool decrypt = false) {
+    ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
+    if (!slot) {
+      return SECFailure;
+    }
+    ScopedPK11SymKey kek(
+        PK11_KeyGen(slot.get(), CKM_AES_CBC, nullptr, 16, nullptr));
+    if (!kek) {
+      return SECFailure;
+    }
+
+    std::vector<unsigned char> plaintext = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
+                                            0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
+                                            0x0c, 0x0d, 0x0e, 0x0f};
+
+    // Output size is plaintext + 8 (padding) + 8 KW Header
+    std::vector<unsigned char> ciphertext(plaintext.size() + 16);
+    unsigned int enc_len = 0;
+    SECStatus rv = PK11_Encrypt(
+        kek.get(), GetParam(), param, ciphertext.data(), &enc_len,
+        static_cast<unsigned int>(ciphertext.size()), plaintext.data(),
+        static_cast<unsigned int>(plaintext.size()));
+    if (rv != SECSuccess || !decrypt) {
+      return rv;
+    }
+
+    // PAD mechanisms need room for the intermediate
+    // unwrapped-but-not-yet-unpadded result (plaintext + 8 padding bytes)
+    // before stripping the padding. Then the dec_len result should point to the
+    // correct decrypted buffer len.
+    std::vector<unsigned char> decrypted(plaintext.size() + 8);
+    unsigned int dec_len = 0;
+    rv = PK11_Decrypt(kek.get(), GetParam(), param, decrypted.data(), &dec_len,
+                      static_cast<unsigned int>(decrypted.size()),
+                      ciphertext.data(), enc_len);
+    if (rv != SECSuccess) {
+      return rv;
+    }
+
+    EXPECT_EQ(plaintext.size(), dec_len);
+    EXPECT_EQ(0, memcmp(plaintext.data(), decrypted.data(), dec_len));
+    return rv;
+  }
+};
+
+TEST_P(Pkcs11AESKeyWrapIVParamTest, ShortIVIsRejected) {
+  // 2-byte IV — shorter than the required 8 bytes (AES_KEY_WRAP_IV_BYTES).
+  unsigned char iv[2] = {0x01, 0x02};
+  SECItem param = {siBuffer, iv, sizeof(iv)};
+  EXPECT_EQ(SECFailure, TryEncryptMaybeDecrypt(&param));
+}
+
+TEST_P(Pkcs11AESKeyWrapIVParamTest, LongIVIsRejected) {
+  // 9-byte IV — longer than the required 8 bytes (AES_KEY_WRAP_IV_BYTES).
+  unsigned char iv[9] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09};
+
+  SECItem param = {siBuffer, iv, sizeof(iv)};
+  EXPECT_EQ(SECFailure, TryEncryptMaybeDecrypt(&param));
+}
+
+TEST_P(Pkcs11AESKeyWrapIVParamTest, CorrectLengthIVIsAccepted) {
+  // 8-byte custom IV — exactly AES_KEY_WRAP_IV_BYTES.
+  unsigned char iv[8] = {0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6};
+  SECItem param = {siBuffer, iv, sizeof(iv)};
+  EXPECT_EQ(SECSuccess, TryEncryptMaybeDecrypt(&param, true));
+}
+
+INSTANTIATE_TEST_SUITE_P(AESKeyWrapMechanisms, Pkcs11AESKeyWrapIVParamTest,
+                         ::testing::Values(CKM_NSS_AES_KEY_WRAP,
+                                           CKM_NSS_AES_KEY_WRAP_PAD,
+                                           CKM_AES_KEY_WRAP,
+                                           CKM_AES_KEY_WRAP_PAD));
 }  // namespace nss_test

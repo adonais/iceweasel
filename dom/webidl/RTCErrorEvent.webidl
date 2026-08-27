@@ -6,8 +6,11 @@
  * https://w3c.github.io/webrtc-pc/#dom-rtcerrorevent
  */
 
+// Current spec does not expose this on Worker, but that will change soon
+// See https://github.com/w3c/webrtc-pc/issues/3092 and
+// https://www.w3.org/2026/03/24-webrtc-minutes.html#51c7
 [Pref="media.peerconnection.enabled",
- Exposed=Window]
+ Exposed=(Window,DedicatedWorker)]
 interface RTCErrorEvent : Event {
   constructor(DOMString type, RTCErrorEventInit eventInitDict);
   [SameObject] readonly attribute RTCError error;

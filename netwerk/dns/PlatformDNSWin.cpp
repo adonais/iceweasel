@@ -28,7 +28,8 @@ namespace mozilla::net {
 
 nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
                                 nsIDNSService::DNSFlags aFlags,
-                                TypeRecordResultType& aResult, uint32_t& aTTL) {
+                                TypeRecordResultType& aResult, uint32_t& aTTL,
+                                nsACString& aAliasName) {
   nsAutoCString host(aHost);
   PDNS_RECORD result = nullptr;
   nsAutoCString cname;
@@ -117,22 +118,32 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
     }
 
     if (aResult.is<Nothing>() && !cname.IsEmpty()) {
+      // AliasMode/CNAME target. Its records may be chained within this same
+      // response; otherwise the caller re-queries aAliasName.
+      aAliasName = cname;
       host = cname;
       cname.Truncate();
       continue;
     }
 
     if (aResult.is<Nothing>()) {
-      return NS_ERROR_UNKNOWN_HOST;
+      break;
     }
   }
 
   // CNAME loop
   if (loopCount == 0) {
+    // Don't leave a stale alias target behind for the caller to follow.
+    aAliasName.Truncate();
     return NS_ERROR_UNKNOWN_HOST;
   }
 
   if (aResult.is<Nothing>()) {
+    if (!aAliasName.IsEmpty()) {
+      // We resolved to an alias but its target wasn't in this response; the
+      // caller will issue a fresh lookup for it.
+      return NS_OK;
+    }
     // The call succeeded, but no HTTPS records were found.
     return NS_ERROR_UNKNOWN_HOST;
   }

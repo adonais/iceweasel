@@ -95,7 +95,7 @@ add_setup(async function () {
         type: "tab",
         title: "Test Remote",
         url: "http://example.com",
-        icon: UrlbarUtils.ICON.DEFAULT,
+        icon: UrlbarShared.ICON.DEFAULT,
         client: "7cqCr77ptzX3",
         lastUsed: Math.floor(Date.now() / 1000),
       },

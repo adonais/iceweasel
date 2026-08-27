@@ -170,6 +170,7 @@ security:
       security.unexpectedload#systemprincipal.
     bugs:
       - https://bugzil.la/1644671
+      - https://bugzil.la/1983119
     data_reviews:
       - https://bugzil.la/1644671
     notification_emails:
@@ -179,8 +180,6 @@ security:
     extra_keys:
       value:
         description: >
-          The `value` of the event. Mirrors to the Legacy Telemetry
-          event's `value` parameter.
           The filename's type, see
           `nsContentSecurityUtils::FilenameToFilenameType(...)`.
         type: string
@@ -200,7 +199,6 @@ security:
         description: >
           Comma-separated string listing schemes for URLs that we redirected from
         type: string
-    telemetry_mirror: Security_Unexpectedload_Systemprincipal
 
   eval_usage_system_context:
     type: event
@@ -243,6 +241,7 @@ security:
     # yamllint enable
     bugs: &security_evalUsage_bugs
       - https://bugzil.la/1567623
+      - https://bugzil.la/1983119
     data_reviews: &security_evalUsage_data_reviews
       - https://bugzil.la/1567623
     notification_emails:
@@ -252,8 +251,6 @@ security:
     extra_keys: &security_evalUsage_extra
       value:
         description: >
-          The `value` of the event. Mirrors to the Legacy Telemetry
-          event's `value` parameter.
           The filename's type, see
           `nsContentSecurityUtils::FilenameToFilenameType(...)`.
         type: string
@@ -261,7 +258,6 @@ security:
         description: >
           Information about the file that triggered eval
         type: string
-    telemetry_mirror: Security_Evalusage_Systemcontext
 
   csp_violation_internal_page:
     type: event
@@ -271,6 +267,7 @@ security:
     bugs:
       - https://bugzil.la/1942622
       - https://bugzil.la/1960363
+      - https://bugzil.la/1983119
     data_reviews:
       - https://bugzil.la/1942622
       - https://bugzil.la/1960363
@@ -374,7 +371,6 @@ security:
       - ckerschb@mozilla.com
     expires: never
     extra_keys: *security_evalUsage_extra
-    telemetry_mirror: Security_Evalusage_Parentprocess
 
   javascript_load_parent_process:
     type: event
@@ -396,8 +392,6 @@ security:
     extra_keys:
       value:
         description: >
-          The `value` of the event. Mirrors to the Legacy Telemetry
-          event's `value` parameter.
           The filename's type, see
           `nsContentSecurityUtils::FilenameToFilenameType(...)`.
         type: string
@@ -580,69 +574,6 @@ mixed_content:
       - seceng-telemetry@mozilla.com
     expires: never
     telemetry_mirror: MIXED_CONTENT_HSTS
-
-  images:
-    type: labeled_counter
-    description: >
-      How often image loads fail in regular mode and in upgrading mode?
-
-      This metric was generated to correspond to the Legacy Telemetry
-      categorical histogram MIXED_CONTENT_IMAGES.
-    labels:
-      - ImgUpSuccess
-      - ImgUpFailure
-      - ImgNoUpSuccess
-      - ImgNoUpFailure
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1819336
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1819336
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: never
-    telemetry_mirror: h#MIXED_CONTENT_IMAGES
-
-  video:
-    type: labeled_counter
-    description: >
-      How often video loads fail in regular mode and in upgrading mode?
-
-      This metric was generated to correspond to the Legacy Telemetry
-      categorical histogram MIXED_CONTENT_VIDEO.
-    labels:
-      - VideoUpSuccess
-      - VideoUpFailure
-      - VideoNoUpSuccess
-      - VideoNoUpFailure
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1819336
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1819336
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: never
-    telemetry_mirror: h#MIXED_CONTENT_VIDEO
-
-  audio:
-    type: labeled_counter
-    description: >
-      How often audio loads fail in regular mode and in upgrading mode?
-
-      This metric was generated to correspond to the Legacy Telemetry
-      categorical histogram MIXED_CONTENT_AUDIO.
-    labels:
-      - AudioUpSuccess
-      - AudioUpFailure
-      - AudioNoUpSuccess
-      - AudioNoUpFailure
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1819336
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1819336
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: never
-    telemetry_mirror: h#MIXED_CONTENT_AUDIO
 
 security.ui:
   events:

@@ -182,6 +182,23 @@ mozilla::ipc::IPCResult BrowserBridgeChild::RecvScrollRectIntoView(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult BrowserBridgeChild::RecvScrollForKeyboard(
+    const mozilla::layers::KeyboardScrollAction& aAction) {
+  RefPtr<Element> owner = mFrameLoader->GetOwnerContent();
+  if (!owner) {
+    return IPC_OK();
+  }
+
+  nsIFrame* frame = owner->GetPrimaryFrame();
+  if (!frame) {
+    return IPC_OK();
+  }
+
+  RefPtr<PresShell> presShell = frame->PresShell();
+  presShell->ScrollByKeyboard(aAction, frame);
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult BrowserBridgeChild::RecvSubFrameCrashed() {
   if (RefPtr<nsFrameLoaderOwner> frameLoaderOwner =
           do_QueryObject(mFrameLoader->GetOwnerContent())) {

@@ -41,6 +41,7 @@
 /**
  * Unnested because :not() must live inside :host()
  */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 :host([orientation="vertical"]:not([labelposition="outside"])) .text-content:has(.label, .description) {
   text-align: start;
   flex: 1;
@@ -88,6 +89,7 @@
     border-radius: var(--visual-picker-item-child-border-radius);
   }
 
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   .text-content:has(.label, .description) {
     padding: var(--space-small) var(--space-medium);
     text-align: center;

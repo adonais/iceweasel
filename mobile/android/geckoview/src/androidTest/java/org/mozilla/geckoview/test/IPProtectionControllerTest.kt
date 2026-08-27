@@ -185,7 +185,7 @@ class IPProtectionControllerTest : BaseSessionTest() {
         val thrown = assertThrows(IPProtectionController.IPProxyException::class.java) {
             sessionRule.waitForResult(ipProtectionController.activate())
         }
-        assertThat(thrown.code, equalTo(IPProtectionController.IPProxyException.ERROR_UNKNOWN))
+        assertThat(thrown.code, equalTo(IPProtectionController.IPProxyException.ERROR_NOT_READY))
     }
 
     @Test
@@ -209,7 +209,7 @@ class IPProtectionControllerTest : BaseSessionTest() {
 
     @Test
     fun ipProxyExceptionUnknownErrorStringsMapsToErrorUnknown() {
-        val unknownStrings = listOf("generic-error", "some-unknown-error", null)
+        val unknownStrings = listOf("some-unknown-error", null)
         for (errorString in unknownStrings) {
             assertThat(
                 IPProtectionController.IPProxyException.fromErrorString(errorString).code,
@@ -258,7 +258,7 @@ class IPProtectionControllerTest : BaseSessionTest() {
     @Test
     fun getTokenEventWithoutProviderReturnsError() {
         ipProtectionController.setAuthProvider(null)
-        assertGetTokenError("no-auth-provider")
+        assertGetTokenError("no_auth_provider")
     }
 
     @Test
@@ -274,7 +274,7 @@ class IPProtectionControllerTest : BaseSessionTest() {
         ipProtectionController.setAuthProvider(
             StubAuthProvider(token = GeckoResult.fromValue(null)),
         )
-        assertGetTokenError("no-token")
+        assertGetTokenError("login_needed")
     }
 
     @Test
@@ -282,7 +282,7 @@ class IPProtectionControllerTest : BaseSessionTest() {
         ipProtectionController.setAuthProvider(
             StubAuthProvider(token = GeckoResult.fromValue("")),
         )
-        assertGetTokenError("no-token")
+        assertGetTokenError("login_needed")
     }
 
     private fun assertGetTokenError(expected: String) {
@@ -554,6 +554,40 @@ class IPProtectionControllerTest : BaseSessionTest() {
         )
     }
 
+    @Test
+    fun activateWhileActiveSwitchesSelectedServer() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf("toolkit.ipProtection.android.authProvider" to "test"),
+        )
+        sessionRule.setupIPPAuthProvider(JSONObject().put("signedIn", false))
+        sessionRule.waitForResult(ipProtectionController.init())
+        sessionRule.simulateIPPSignIn(true)
+
+        // Activate with no country: the recommended (REC) anycast server.
+        sessionRule.waitForResult(ipProtectionController.activate())
+        assertThat(
+            "starts on the recommended server",
+            sessionRule.getIPPProxyInfo()?.getString("host"),
+            equalTo("rec.example.com"),
+        )
+
+        // Activate again with an explicit country to switch the connection.
+        sessionRule.waitForResult(ipProtectionController.activate(true, false, "US"))
+        assertThat(
+            "switched to the US server",
+            sessionRule.getIPPProxyInfo()?.getString("host"),
+            equalTo("us.example.com"),
+        )
+
+        // Activate again with no country to switch back to the recommended server.
+        sessionRule.waitForResult(ipProtectionController.activate(true, false, null))
+        assertThat(
+            "back on the recommended server",
+            sessionRule.getIPPProxyInfo()?.getString("host"),
+            equalTo("rec.example.com"),
+        )
+    }
+
     companion object {
         private const val SERVER_LIST_JSON =
             """[{"name":"United States","code":"US","cities":[{"name":"Test City",""" +
@@ -650,7 +684,7 @@ class IPProtectionControllerTest : BaseSessionTest() {
     @Test
     fun requestTokenEventWithoutProviderReturnsError() {
         ipProtectionController.setGpiProvider(null)
-        assertRequestTokenError("no-gpi-provider")
+        assertRequestTokenError("no_gpi_provider")
     }
 
     @Test
@@ -666,7 +700,7 @@ class IPProtectionControllerTest : BaseSessionTest() {
         ipProtectionController.setGpiProvider(
             StubGpiProvider(tokenResult = GeckoResult.fromValue(null)),
         )
-        assertRequestTokenError("no-gpi-token")
+        assertRequestTokenError("no_gpi_token")
     }
 
     @Test
@@ -674,7 +708,7 @@ class IPProtectionControllerTest : BaseSessionTest() {
         ipProtectionController.setGpiProvider(
             StubGpiProvider(tokenResult = GeckoResult.fromValue("")),
         )
-        assertRequestTokenError("no-gpi-token")
+        assertRequestTokenError("no_gpi_token")
     }
 
     private fun assertRequestTokenError(expected: String) {

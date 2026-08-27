@@ -325,4 +325,22 @@ class EncoderTemplate : public DOMEventTargetHelper {
 
 }  // namespace mozilla::dom
 
+inline void ImplCycleCollectionUnlink(
+    mozilla::SimpleMap<int64_t, RefPtr<mozilla::dom::Promise>>& aField) {
+  aField.Clear(
+      [](const int64_t&, const RefPtr<mozilla::dom::Promise>& aPromise) {
+        aPromise->MaybeRejectWithInvalidStateError("Cycle-collected encoder");
+      });
+}
+
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback,
+    mozilla::SimpleMap<int64_t, RefPtr<mozilla::dom::Promise>>& aField,
+    const char* aName, uint32_t aFlags = 0) {
+  aField.Enumerate(
+      [&](const int64_t&, const RefPtr<mozilla::dom::Promise>& aPromise) {
+        CycleCollectionNoteChild(aCallback, aPromise.get(), aName, aFlags);
+      });
+}
+
 #endif  // mozilla_dom_EncoderTemplate_h

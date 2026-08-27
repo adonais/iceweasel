@@ -1259,14 +1259,9 @@ nsresult XPCConvert::JSValToXPCException(JSContext* cx, MutableHandleValue s,
     } else {
       // XXX all this nsISupportsDouble code seems a little redundant
       // now that we're storing the Value in the exception...
-      nsCOMPtr<nsISupportsDouble> data;
-      nsCOMPtr<nsIComponentManager> cm;
-      if (NS_FAILED(NS_GetComponentManager(getter_AddRefs(cm))) || !cm ||
-          NS_FAILED(cm->CreateInstanceByContractID(
-              NS_SUPPORTS_DOUBLE_CONTRACTID, NS_GET_IID(nsISupportsDouble),
-              getter_AddRefs(data)))) {
-        return NS_ERROR_FAILURE;
-      }
+      nsCOMPtr<nsISupportsDouble> data =
+          do_CreateInstance("@mozilla.org/supports-double;1");
+      NS_ENSURE_TRUE(data, NS_ERROR_FAILURE);
       data->SetData(number);
       rv = ConstructException(NS_ERROR_XPC_JS_THREW_NUMBER, nullptr, ifaceName,
                               methodName, data, exceptn, cx, s.address());

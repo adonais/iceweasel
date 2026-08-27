@@ -989,8 +989,8 @@ function triggerCommand({
         acknowledgeFeedback() {
           addCall("acknowledgeFeedback");
         },
-        invalidateResultMenuCommands() {
-          addCall("invalidateResultMenuCommands");
+        updateResultMenuCommands() {
+          addCall("updateResultMenuCommands");
         },
       },
     },

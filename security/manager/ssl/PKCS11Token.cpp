@@ -4,6 +4,7 @@
 
 #include "PKCS11Token.h"
 
+#include "PKCS11ModuleDB.h"
 #include "ScopedNSSTypes.h"
 #include "mozilla/Casting.h"
 #include "mozilla/ErrorResult.h"
@@ -19,6 +20,7 @@
 #include "secerr.h"
 
 using namespace mozilla;
+using namespace mozilla::psm;
 using mozilla::ErrorResult;
 using mozilla::dom::Promise;
 
@@ -368,3 +370,244 @@ PKCS11Token::GetHasPassword(bool* hasPassword) {
   *hasPassword = PK11_NeedLogin(mSlot.get()) && !PK11_NeedUserInit(mSlot.get());
   return NS_OK;
 }
+
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+nsresult PKCS11Token::GetTokenInfo(TokenInfo& tokenInfo) {
+  tokenInfo.moduleID() = PK11_GetModuleID(mSlot.get());
+  tokenInfo.slotID() = PK11_GetSlotID(mSlot.get());
+  nsresult rv = GetTokenName(tokenInfo.name());
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = GetTokenManID(tokenInfo.manID());
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = GetTokenHWVersion(tokenInfo.hwVersion());
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = GetTokenFWVersion(tokenInfo.fwVersion());
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = GetTokenSerialNumber(tokenInfo.serialNumber());
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = GetIsLoggedIn(&tokenInfo.isLoggedIn());
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = GetCanHavePassword(&tokenInfo.canHavePassword());
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  return GetHasPassword(&tokenInfo.hasPassword());
+}
+
+NS_IMPL_ISUPPORTS(RemotePKCS11Token, nsIPKCS11Token)
+
+NS_IMETHODIMP
+RemotePKCS11Token::GetTokenName(nsACString& tokenName) {
+  tokenName.Assign(mTokenInfo.name());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Token::GetIsInternalKeyToken(bool* isInternalKeyToken) {
+  *isInternalKeyToken = false;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Token::GetTokenManID(nsACString& tokenManID) {
+  tokenManID.Assign(mTokenInfo.manID());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Token::GetTokenHWVersion(nsACString& tokenHWVersion) {
+  tokenHWVersion.Assign(mTokenInfo.hwVersion());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Token::GetTokenFWVersion(nsACString& tokenFWVersion) {
+  tokenFWVersion.Assign(mTokenInfo.fwVersion());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Token::GetTokenSerialNumber(nsACString& tokenSerialNumber) {
+  tokenSerialNumber.Assign(mTokenInfo.serialNumber());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Token::GetIsLoggedIn(bool* isLoggedIn) {
+  *isLoggedIn = mTokenInfo.isLoggedIn();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Token::Login(JSContext* aCx, Promise** aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  RefPtr<PKCS11ModuleDB> pkcs11ModuleDB(PKCS11ModuleDB::GetSingleton());
+  if (!pkcs11ModuleDB) {
+    return NS_ERROR_FAILURE;
+  }
+
+  ErrorResult result;
+  RefPtr<Promise> promise =
+      Promise::Create(xpc::CurrentNativeGlobal(aCx), result);
+  if (result.Failed()) {
+    return result.StealNSResult();
+  }
+
+  pkcs11ModuleDB->LoginToken(mTokenInfo.moduleID(), mTokenInfo.slotID())
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [self = RefPtr{this}, promise](
+                 const PKCS11ModuleDB::TokenInfoPromise::ResolveOrRejectValue&
+                     aValue) {
+               if (aValue.IsResolve()) {
+                 self->mTokenInfo = std::move(aValue.ResolveValue());
+                 promise->MaybeResolveWithUndefined();
+               } else {
+                 promise->MaybeReject(aValue.RejectValue());
+               }
+             });
+
+  promise.forget(aPromise);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Token::Logout(JSContext* aCx, Promise** aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  RefPtr<PKCS11ModuleDB> pkcs11ModuleDB(PKCS11ModuleDB::GetSingleton());
+  if (!pkcs11ModuleDB) {
+    return NS_ERROR_FAILURE;
+  }
+
+  ErrorResult result;
+  RefPtr<Promise> promise =
+      Promise::Create(xpc::CurrentNativeGlobal(aCx), result);
+  if (result.Failed()) {
+    return result.StealNSResult();
+  }
+
+  pkcs11ModuleDB->LogoutToken(mTokenInfo.moduleID(), mTokenInfo.slotID())
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [self = RefPtr{this}, promise](
+                 const PKCS11ModuleDB::TokenInfoPromise::ResolveOrRejectValue&
+                     aValue) {
+               if (aValue.IsResolve()) {
+                 self->mTokenInfo = std::move(aValue.ResolveValue());
+                 promise->MaybeResolveWithUndefined();
+               } else {
+                 promise->MaybeReject(aValue.RejectValue());
+               }
+             });
+
+  promise.forget(aPromise);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Token::Reset(JSContext* aCx, Promise** aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  RefPtr<PKCS11ModuleDB> pkcs11ModuleDB(PKCS11ModuleDB::GetSingleton());
+  if (!pkcs11ModuleDB) {
+    return NS_ERROR_FAILURE;
+  }
+
+  ErrorResult result;
+  RefPtr<Promise> promise =
+      Promise::Create(xpc::CurrentNativeGlobal(aCx), result);
+  if (result.Failed()) {
+    return result.StealNSResult();
+  }
+
+  pkcs11ModuleDB->ResetToken(mTokenInfo.moduleID(), mTokenInfo.slotID())
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [self = RefPtr{this}, promise](
+                 const PKCS11ModuleDB::TokenInfoPromise::ResolveOrRejectValue&
+                     aValue) {
+               if (aValue.IsResolve()) {
+                 self->mTokenInfo = std::move(aValue.ResolveValue());
+                 promise->MaybeResolveWithUndefined();
+               } else {
+                 promise->MaybeReject(aValue.RejectValue());
+               }
+             });
+
+  promise.forget(aPromise);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Token::ChangePassword(const nsACString& oldPassword,
+                                  const nsACString& newPassword, JSContext* aCx,
+                                  Promise** aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  RefPtr<PKCS11ModuleDB> pkcs11ModuleDB(PKCS11ModuleDB::GetSingleton());
+  if (!pkcs11ModuleDB) {
+    return NS_ERROR_FAILURE;
+  }
+
+  ErrorResult result;
+  RefPtr<Promise> promise =
+      Promise::Create(xpc::CurrentNativeGlobal(aCx), result);
+  if (result.Failed()) {
+    return result.StealNSResult();
+  }
+
+  pkcs11ModuleDB
+      ->ChangeTokenPassword(mTokenInfo.moduleID(), mTokenInfo.slotID(),
+                            PromiseFlatCString(oldPassword),
+                            PromiseFlatCString(newPassword))
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [self = RefPtr{this}, promise](
+                 const PKCS11ModuleDB::TokenInfoPromise::ResolveOrRejectValue&
+                     aValue) {
+               if (aValue.IsResolve()) {
+                 self->mTokenInfo = std::move(aValue.ResolveValue());
+                 promise->MaybeResolveWithUndefined();
+               } else {
+                 promise->MaybeReject(aValue.RejectValue());
+               }
+             });
+
+  promise.forget(aPromise);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Token::GetCanHavePassword(bool* canHavePassword) {
+  *canHavePassword = mTokenInfo.canHavePassword();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Token::GetHasPassword(bool* hasPassword) {
+  *hasPassword = mTokenInfo.hasPassword();
+  return NS_OK;
+}
+#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS

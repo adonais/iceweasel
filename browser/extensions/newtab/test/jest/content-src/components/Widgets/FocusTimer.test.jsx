@@ -99,7 +99,7 @@ describe("<FocusTimer>", () => {
       ).toBeInTheDocument();
     });
 
-    it("offers only medium/large sizes (no small entry)", () => {
+    it("offers small/medium/large sizes", () => {
       const { container } = renderTimer({
         state: novaState(),
         props: { widgetsMayBeMaximized: true },
@@ -108,7 +108,7 @@ describe("<FocusTimer>", () => {
         "#focus-timer-size-submenu panel-item[type='checkbox']"
       );
       const sizes = Array.from(items).map(el => el.getAttribute("data-size"));
-      expect(sizes).toEqual(["medium", "large"]);
+      expect(sizes).toEqual(["small", "medium", "large"]);
     });
   });
 

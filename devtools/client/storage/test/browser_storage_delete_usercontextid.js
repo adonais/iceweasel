@@ -10,7 +10,11 @@
 const TEST_CASES = [
   [["localStorage", MAIN_ORIGIN], "ls1", "name"],
   [["sessionStorage", MAIN_ORIGIN], "ss1", "name"],
-  [["cookies", MAIN_ORIGIN], getCookieId("c1", MAIN_HOST, "/browser"), "name"],
+  [
+    ["cookies", MAIN_ORIGIN],
+    getCookieId("c1", MAIN_HOST, "/browser", { userContextId: 1 }),
+    "name",
+  ],
   [["indexedDB", MAIN_ORIGIN, "idb1 (default)", "obj1"], 1, "name"],
   [["Cache", MAIN_ORIGIN, "plop"], MAIN_URL + "404_cached_file.js", "url"],
 ];

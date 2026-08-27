@@ -100,6 +100,11 @@ add_task(async function run_test() {
     Ci.nsIPKCS11Slot.SLOT_NOT_PRESENT,
     "Actual and expected status should match"
   );
+  throws(
+    () => testSlot.getToken(),
+    /NS_ERROR_NOT_AVAILABLE/,
+    "Attempting to get a token when it isn't present should throw."
+  );
 
   let bundle = Services.strings.createBundle(
     "chrome://pipnss/locale/pipnss.properties"

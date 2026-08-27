@@ -52,7 +52,6 @@
 #include "nsUnicharUtils.h"
 #include "nsWindowsHelpers.h"
 #include "nsXULAppAPI.h"
-#include "Windows11TaskbarPinning.h"
 #include "WindowsDefaultBrowser.h"
 #include "WindowsUIElement.h"
 #include "WindowsUIOverlayImage.h"
@@ -101,24 +100,6 @@ using namespace ABI::Windows::UI::StartScreen;
 #define REG_SUCCEEDED(val) (val == ERROR_SUCCESS)
 
 #define REG_FAILED(val) (val != ERROR_SUCCESS)
-
-#ifdef DEBUG
-#  define NS_ENSURE_HRESULT(hres, ret)                    \
-    do {                                                  \
-      HRESULT result = hres;                              \
-      if (MOZ_UNLIKELY(FAILED(result))) {                 \
-        mozilla::SmprintfPointer msg = mozilla::Smprintf( \
-            "NS_ENSURE_HRESULT(%s, %s) failed with "      \
-            "result 0x%" PRIX32,                          \
-            #hres, #ret, static_cast<uint32_t>(result));  \
-        NS_WARNING(msg.get());                            \
-        return ret;                                       \
-      }                                                   \
-    } while (false)
-#else
-#  define NS_ENSURE_HRESULT(hres, ret) \
-    if (MOZ_UNLIKELY(FAILED(hres))) return ret
-#endif
 
 using namespace mozilla;
 using mozilla::intl::Localization;
@@ -422,6 +403,20 @@ nsWindowsShellService::CheckAllProgIDsExist(bool* aResult) {
 NS_IMETHODIMP
 nsWindowsShellService::CheckBrowserUserChoiceHashes(bool* aResult) {
   *aResult = ::CheckBrowserUserChoiceHashes();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsWindowsShellService::IsUserChoiceProtectionDriverRunning(bool* aResult) {
+  *aResult = ::IsUserChoiceProtectionDriverRunning();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsWindowsShellService::CanRenameUserChoiceAssociationKey(
+    const nsAString& aAssociation, bool* aResult) {
+  const nsString& flatAssociation = PromiseFlatString(aAssociation);
+  *aResult = ::CanRenameUserChoiceAssociationKey(flatAssociation.get());
   return NS_OK;
 }
 
@@ -1712,135 +1707,6 @@ NS_IMETHODIMP nsWindowsShellService::HasPinnableShortcut(
   return NS_OK;
 }
 
-static bool IsCurrentAppPinnedToTaskbarSync([[maybe_unused]] const nsAString& aumid) {
-  // Use new Windows pinning APIs to determine whether or not we're pinned.
-  // If these fail we can safely fall back to the old method for regular
-  // installs however MSIX will always return false.
-
-  // Bug 1911343: Add a check for whether we're looking for a regular pin
-  // or PB pin based on the AUMID value once private browser pinning
-  // is supported on MSIX.
-  // Right now only run this check on MSIX to avoid
-  // false positives when only private browsing is pinned.
-  if (widget::WinUtils::HasPackageIdentity()) {
-    auto pinWithWin11TaskbarAPIResults = IsCurrentAppPinnedToTaskbarWin11();
-    switch (pinWithWin11TaskbarAPIResults.result) {
-      case Win11PinToTaskBarResultStatus::NotPinned:
-        return false;
-        break;
-      case Win11PinToTaskBarResultStatus::AlreadyPinned:
-        return true;
-        break;
-      default:
-        // Fall through to the old mechanism.
-        // The old mechanism should continue working for non-MSIX
-        // builds.
-        break;
-    }
-  }
-
-  // There are two shortcut targets that we created. One always matches the
-  // binary we're running as (eg: firefox.exe). The other is the wrapper
-  // for launching in Private Browsing mode. We need to inspect shortcuts
-  // that point at either of these to accurately judge whether or not
-  // the app is pinned with the given AUMID.
-  wchar_t exePath[MAXPATHLEN] = {};
-  wchar_t pbExePath[MAXPATHLEN] = {};
-
-  if (NS_WARN_IF(NS_FAILED(BinaryPath::GetLong(exePath)))) {
-    return false;
-  }
-
-  wcscpy_s(pbExePath, MAXPATHLEN, exePath);
-  if (!PathRemoveFileSpecW(pbExePath)) {
-    return false;
-  }
-  if (!PathAppendW(pbExePath, L"private_browsing.exe")) {
-    return false;
-  }
-
-  wchar_t folderChars[MAX_PATH] = {};
-  HRESULT hr = SHGetKnownFolderPath(FOLDERID_UserPinned, SHGFP_TYPE_CURRENT,
-                                    nullptr, folderChars);
-  if (NS_WARN_IF(FAILED(hr))) {
-    return false;
-  }
-
-  nsAutoString folder;
-  folder.Assign(folderChars);
-  if (NS_WARN_IF(folder.IsEmpty())) {
-    return false;
-  }
-  if (folder[folder.Length() - 1] != '\\') {
-    folder.AppendLiteral("\\");
-  }
-  folder.AppendLiteral(
-      "TaskBar");
-  nsAutoString pattern;
-  pattern.Assign(folder);
-  pattern.AppendLiteral("\\*.lnk");
-
-  WIN32_FIND_DATAW findData = {};
-  HANDLE hFindFile = FindFirstFileW(pattern.get(), &findData);
-  if (hFindFile == INVALID_HANDLE_VALUE) {
-    (void)NS_WARN_IF(GetLastError() != ERROR_FILE_NOT_FOUND);
-    return false;
-  }
-  // Past this point we don't return until the end of the function,
-  // when FindClose() is called.
-
-  // Check all shortcuts until a match is found
-  bool isPinned = false;
-  do {
-    nsAutoString fileName;
-    fileName.Assign(folder);
-    fileName.AppendLiteral("\\");
-    fileName.Append(findData.cFileName);
-
-    // Create a shell link object for loading the shortcut
-    RefPtr<IShellLinkW> link;
-    HRESULT hr =
-        CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER,
-                         IID_IShellLinkW, getter_AddRefs(link));
-    if (NS_WARN_IF(FAILED(hr))) {
-      continue;
-    }
-
-    // Load
-    RefPtr<IPersistFile> persist;
-    hr = link->QueryInterface(IID_IPersistFile, getter_AddRefs(persist));
-    if (NS_WARN_IF(FAILED(hr))) {
-      continue;
-    }
-
-    hr = persist->Load(fileName.get(), STGM_READ);
-    if (NS_WARN_IF(FAILED(hr))) {
-      continue;
-    }
-
-    // Check the exe path
-    static_assert(MAXPATHLEN == MAX_PATH);
-    wchar_t storedExePath[MAX_PATH] = {};
-    // With no flags GetPath gets a long path
-    hr = link->GetPath(storedExePath, std::size(storedExePath), nullptr, 0);
-    if (FAILED(hr) || hr == S_FALSE) {
-      continue;
-    }
-    // Case insensitive path comparison
-    // NOTE: Because this compares the path directly, it is possible to
-    // have a false negative mismatch.
-    if (wcsnicmp(storedExePath, exePath, MAXPATHLEN) == 0 ||
-        wcsnicmp(storedExePath, pbExePath, MAXPATHLEN) == 0) {
-      isPinned = true;
-      break;
-    }
-  } while (FindNextFileW(hFindFile, &findData));
-
-  FindClose(hFindFile);
-
-  return isPinned;
-}
-
 static nsresult EnsureShellAppsFolderShortcut(
     const nsAString& aAppUserModelId) {
   MOZ_ASSERT(!NS_IsMainThread());
@@ -2022,7 +1888,7 @@ static bool PollAppsFolderForShortcut(const nsAString& aAppUserModelId,
 static Result<nsString, nsresult> EnsurePinnableShortcutExists(
     bool aPrivateBrowsing, const nsAString& aAppUserModelId,
     const nsAString& aShortcutName, const nsAString& aShortcutSubstring,
-    nsIFile* aGreDir, const ShortcutLocations& location) {
+    nsIFile* aGreDir, const ShortcutLocations& aLocation) {
   MOZ_DIAGNOSTIC_ASSERT(
       !NS_IsMainThread(),
       "EnsurePinnableShortcutExists should be called off main thread only");
@@ -2056,9 +1922,12 @@ static Result<nsString, nsresult> EnsurePinnableShortcutExists(
     MOZ_TRY(CreateShortcutImpl(exeFile, arguments, aShortcutName, exeFile,
                                // Icon indexes are defined as Resource IDs, but
                                // CreateShortcutImpl needs an index.
-                               IDI_APPICON - 1, aAppUserModelId, location,
+                               IDI_APPICON - 1, aAppUserModelId, aLocation,
                                linkName));
+
+    shortcutPath.Assign(aLocation.shortcutFile->NativePath());
   }
+
   MOZ_TRY(EnsureShellAppsFolderShortcut(aAppUserModelId));
 
   return shortcutPath;
@@ -2195,27 +2064,10 @@ nsWindowsShellService::IsCurrentAppPinnedToTaskbar(
     return rv.StealNSResult();
   }
 
-  // A holder to pass the promise through the background task and back to
-  // the main thread when finished.
-  auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
-      "IsCurrentAppPinnedToTaskbar promise", promise);
-
-  // nsAString can't be captured by a lambda because it does not have a
-  // public copy constructor
-  nsAutoString capturedAumid(aumid);
-  NS_DispatchBackgroundTask(
-      NS_NewRunnableFunction(
-          "IsCurrentAppPinnedToTaskbar",
-          [capturedAumid, promiseHolder = std::move(promiseHolder)] {
-            bool isPinned = IsCurrentAppPinnedToTaskbarSync(capturedAumid);
-
-            NS_DispatchToMainThread(NS_NewRunnableFunction(
-                "IsCurrentAppPinnedToTaskbar callback",
-                [isPinned, promiseHolder = std::move(promiseHolder)] {
-                  promiseHolder.get()->get()->MaybeResolve(isPinned);
-                }));
-          }),
-      NS_DISPATCH_EVENT_MAY_BLOCK);
+  nsresult pinRv = shell_windows_taskbar_is_current_app_pinned(&aumid, promise);
+  if (NS_FAILED(pinRv)) {
+    return pinRv;
+  }
 
   promise.forget(aPromise);
   return NS_OK;

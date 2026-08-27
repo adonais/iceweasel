@@ -3,6 +3,26 @@
     :members:
     :exclude-members: Address
 ```
+```{js:autoclass} RustAutofill.sys.AddressBulkResultEntry
+    :members:
+    :exclude-members: AddressBulkResultEntry
+```
+```{js:autoclass} RustAutofill.sys.AddressBulkTombstoneResultEntry
+    :members:
+    :exclude-members: AddressBulkTombstoneResultEntry
+```
+```{js:autoclass} RustAutofill.sys.AddressMeta
+    :members:
+    :exclude-members: AddressMeta
+```
+```{js:autoclass} RustAutofill.sys.AddressTombstone
+    :members:
+    :exclude-members: AddressTombstone
+```
+```{js:autoclass} RustAutofill.sys.AddressesBridgedEngine
+    :members:
+    :exclude-members: AddressesBridgedEngine
+```
 ```{js:autoclass} RustAutofill.sys.CreditCard
     :members:
     :exclude-members: CreditCard
@@ -38,6 +58,10 @@
 ```{js:autoclass} RustAutofill.sys.UpdatableAddressFields
     :members:
     :exclude-members: UpdatableAddressFields
+```
+```{js:autoclass} RustAutofill.sys.UpdatableAddressFieldsWithMeta
+    :members:
+    :exclude-members: UpdatableAddressFieldsWithMeta
 ```
 ```{js:autoclass} RustAutofill.sys.UpdatableCreditCardFields
     :members:

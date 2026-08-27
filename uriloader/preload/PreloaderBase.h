@@ -78,6 +78,10 @@ class PreloaderBase : public SupportsWeakPtr, public nsISupports {
   // Whether this preloader has been used for a regular/actual load or not.
   bool IsUsed() const { return mIsUsed; }
 
+  // Whether NotifyStop() has already been called, i.e. the load/error events
+  // have been (or are about to be) dispatched to the associated nodes.
+  bool HasStopped() const { return mOnStopStatus.isSome(); }
+
   // Removes itself from the document's preloads hashtable
   void RemoveSelf(dom::Document* aDocument);
 

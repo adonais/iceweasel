@@ -1,0 +1,22 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#include "nsIProtocolHandler.idl"
+
+interface nsIWebSocketChannel;
+
+/**
+ * The protocol handler for the "ws" and "wss" schemes. Use newWebSocketChannel()
+ * instead of newChannel() because nsIWebSocketChannel is not an nsIChannel.
+ */
+[scriptable, builtinclass, uuid(35683115-5964-42aa-a02f-b82852452cdc)]
+interface nsIWebSocketProtocolHandler : nsIProtocolHandler
+{
+    /**
+     * Create a new websocket channel for this handler's scheme. The caller is
+     * responsible for setting the load info and load group, as well as passing
+     * the URI to nsIWebSocketChannel::asyncOpen.
+     */
+    nsIWebSocketChannel newWebSocketChannel();
+};

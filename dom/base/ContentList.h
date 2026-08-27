@@ -664,7 +664,6 @@ class LabelsNodeList final : public ContentList {
   bool NodeIsInScope(nsINode* aNode);
 
   static bool ResetRootsCallback(void* aData);
-  static bool SetDirtyCallback(void* aData);
 
   void WatchLabeledDescendantsOfNearestAncestorLabel(Element* labeledHost);
 

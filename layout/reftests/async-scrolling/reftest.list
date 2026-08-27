@@ -195,10 +195,10 @@ defaults pref(apz.allow_zooming,true) test-pref(apz.fixed-margin-override.enable
                      == dynamic-toolbar-sticky-6c.html dynamic-toolbar-sticky-6-ref.html
 defaults
 
-pref(layout.css.anchor-positioning.enabled,true) == anchor-pos-1.html anchor-pos-1-ref.html
-pref(layout.css.anchor-positioning.enabled,true) == anchor-pos-2.html anchor-pos-2-ref.html
-pref(layout.css.anchor-positioning.enabled,true) == anchor-pos-sticky-1.html anchor-pos-sticky-1-ref.html
-pref(layout.css.anchor-positioning.enabled,true) == anchor-pos-sticky-2.html anchor-pos-sticky-2-ref.html
-pref(layout.css.anchor-positioning.enabled,true) == anchor-pos-sticky-3.html anchor-pos-sticky-3-ref.html
-pref(layout.css.anchor-positioning.enabled,true) == anchor-pos-sticky-4.html anchor-pos-sticky-4-ref.html
-pref(layout.css.anchor-positioning.enabled,true) == anchor-pos-one-axis-1.html anchor-pos-one-axis-1-ref.html
+== anchor-pos-1.html anchor-pos-1-ref.html
+== anchor-pos-2.html anchor-pos-2-ref.html
+== anchor-pos-sticky-1.html anchor-pos-sticky-1-ref.html
+== anchor-pos-sticky-2.html anchor-pos-sticky-2-ref.html
+== anchor-pos-sticky-3.html anchor-pos-sticky-3-ref.html
+== anchor-pos-sticky-4.html anchor-pos-sticky-4-ref.html
+== anchor-pos-one-axis-1.html anchor-pos-one-axis-1-ref.html

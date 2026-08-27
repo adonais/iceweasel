@@ -16,7 +16,6 @@ import { PictureOfTheDay } from "./PictureOfTheDay/PictureOfTheDay";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 
 const weatherEntry = WIDGET_REGISTRY.find(w => w.id === "weather");
-const clocksEntry = WIDGET_REGISTRY.find(w => w.id === "clocks");
 
 function WeatherRowWidget({ dispatch, widgetEnabledMap }) {
   const prefs = useSelector(state => state.Prefs.values);
@@ -38,24 +37,12 @@ function WeatherSidebarWidget({ dispatch }) {
   return <WeatherWidget dispatch={dispatch} size="small" />;
 }
 
-function ClocksRowWidget({ dispatch, widgetEnabledMap }) {
-  const prefs = useSelector(state => state.Prefs.values);
-  const clocksSize = resolveWidgetSize(clocksEntry, prefs);
-  return (
-    <Clocks
-      dispatch={dispatch}
-      size={clocksSize}
-      widgetEnabledMap={widgetEnabledMap}
-    />
-  );
-}
-
 export const WIDGET_ROW_COMPONENTS = {
   lists: Lists,
   focusTimer: FocusTimer,
   weather: WeatherRowWidget,
   sportsWidget: SportsWidget,
-  clocks: ClocksRowWidget,
+  clocks: Clocks,
   privacy: Privacy,
   crossword: Crossword,
   stocks: Stocks,

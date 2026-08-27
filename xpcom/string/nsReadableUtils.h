@@ -515,35 +515,62 @@ void ToLowerCase(const nsACString& aSource, nsACString& aDest);
  */
 
 bool FindInReadable(const nsAString& aPattern, nsAString::const_iterator&,
-                    nsAString::const_iterator&,
-                    nsStringComparator = nsTDefaultStringComparator);
+                    nsAString::const_iterator&);
 bool FindInReadable(const nsACString& aPattern, nsACString::const_iterator&,
-                    nsACString::const_iterator&,
-                    nsCStringComparator = nsTDefaultStringComparator);
+                    nsACString::const_iterator&);
 
 /* sometimes we don't care about where the string was, just that we
  * found it or not */
-inline bool FindInReadable(
-    const nsAString& aPattern, const nsAString& aSource,
-    nsStringComparator aCompare = nsTDefaultStringComparator) {
-  nsAString::const_iterator start, end;
-  aSource.BeginReading(start);
-  aSource.EndReading(end);
-  return FindInReadable(aPattern, start, end, aCompare);
+inline bool FindInReadable(const nsAString& aPattern,
+                           const nsAString& aSource) {
+  return aSource.Contains(aPattern);
 }
-
-inline bool FindInReadable(
-    const nsACString& aPattern, const nsACString& aSource,
-    nsCStringComparator aCompare = nsTDefaultStringComparator) {
-  nsACString::const_iterator start, end;
-  aSource.BeginReading(start);
-  aSource.EndReading(end);
-  return FindInReadable(aPattern, start, end, aCompare);
+inline bool FindInReadable(const nsACString& aPattern,
+                           const nsACString& aSource) {
+  return aSource.Contains(aPattern);
 }
 
 bool CaseInsensitiveFindInReadable(const nsACString& aPattern,
                                    nsACString::const_iterator&,
                                    nsACString::const_iterator&);
+bool CaseInsensitiveFindInReadable(const nsAString& aPattern,
+                                   nsAString::const_iterator&,
+                                   nsAString::const_iterator&);
+inline bool CaseInsensitiveFindInReadable(const nsACString& aPattern,
+                                          const nsACString& aSource) {
+  nsACString::const_iterator start, end;
+  aSource.BeginReading(start);
+  aSource.EndReading(end);
+  return CaseInsensitiveFindInReadable(aPattern, start, end);
+}
+inline bool CaseInsensitiveFindInReadable(const nsAString& aPattern,
+                                          const nsAString& aSource) {
+  nsAString::const_iterator start, end;
+  aSource.BeginReading(start);
+  aSource.EndReading(end);
+  return CaseInsensitiveFindInReadable(aPattern, start, end);
+}
+
+bool AsciiCaseInsensitiveFindInReadable(const nsACString& aPattern,
+                                        nsACString::const_iterator&,
+                                        nsACString::const_iterator&);
+bool AsciiCaseInsensitiveFindInReadable(const nsAString& aPattern,
+                                        nsAString::const_iterator&,
+                                        nsAString::const_iterator&);
+inline bool AsciiCaseInsensitiveFindInReadable(const nsACString& aPattern,
+                                               const nsACString& aSource) {
+  nsACString::const_iterator start, end;
+  aSource.BeginReading(start);
+  aSource.EndReading(end);
+  return AsciiCaseInsensitiveFindInReadable(aPattern, start, end);
+}
+inline bool AsciiCaseInsensitiveFindInReadable(const nsAString& aPattern,
+                                               const nsAString& aSource) {
+  nsAString::const_iterator start, end;
+  aSource.BeginReading(start);
+  aSource.EndReading(end);
+  return AsciiCaseInsensitiveFindInReadable(aPattern, start, end);
+}
 
 /**
  * Finds the rightmost occurrence of |aPattern|
@@ -552,11 +579,13 @@ bool CaseInsensitiveFindInReadable(const nsACString& aPattern,
  * and makes |aSearchStart == aSearchEnd|.
  */
 bool RFindInReadable(const nsAString& aPattern, nsAString::const_iterator&,
-                     nsAString::const_iterator&,
-                     nsStringComparator = nsTDefaultStringComparator);
+                     nsAString::const_iterator&);
 bool RFindInReadable(const nsACString& aPattern, nsACString::const_iterator&,
-                     nsACString::const_iterator&,
-                     nsCStringComparator = nsTDefaultStringComparator);
+                     nsACString::const_iterator&);
+
+bool CaseInsensitiveRFindInReadable(const nsACString& aPattern,
+                                    nsACString::const_iterator&,
+                                    nsACString::const_iterator&);
 
 /**
  * Finds the leftmost occurrence of |aChar|, if any in the range

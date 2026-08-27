@@ -1430,6 +1430,17 @@ nsresult nsObjectLoadingContent::OpenChannel() {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
+  // The channel's own security check happens in the parent process, which for
+  // a document load is only reached after the nsDocShellLoadState has already
+  // crossed IPC. Check here as well so that a load which content is not
+  // allowed to trigger never gets that far.
+  rv = nsContentUtils::GetSecurityManager()->CheckLoadURIWithPrincipal(
+      el->NodePrincipal(), mURI, nsIScriptSecurityManager::STANDARD,
+      doc->InnerWindowID());
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
   nsCOMPtr<nsILoadGroup> group = doc->GetDocumentLoadGroup();
   nsCOMPtr<nsIChannel> chan;
   RefPtr<ObjectInterfaceRequestorShim> shim =

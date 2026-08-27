@@ -630,19 +630,9 @@ add_task(async function test_history_context_menu() {
     rows[0].mainEl.href.includes("https") ? 8 : 7,
     rows[0].mainEl.href.length - 1
   );
-  let siteForgottenIsCorrect;
-  await BrowserTestUtils.waitForMutationCondition(
-    forgetSiteText,
-    { attributes: true, attributeFilter: ["data-l10n-args"] },
-    () => {
-      let text = JSON.parse(forgetSiteText.getAttribute("data-l10n-args")).site;
-      siteForgottenIsCorrect =
-        text.includes(siteToForget) || siteToForget.includes(text);
-      return siteForgottenIsCorrect;
-    }
-  );
+  let siteArg = JSON.parse(forgetSiteText.getAttribute("data-l10n-args")).site;
   ok(
-    siteForgottenIsCorrect,
+    siteArg.includes(siteToForget) || siteToForget.includes(siteArg),
     "The text for forgetting a specific site should be set"
   );
   let dialogClosed = BrowserTestUtils.waitForEvent(dialog, "unload");

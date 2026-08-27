@@ -169,7 +169,7 @@ async function getExtensions({ manifest_version = 2, expectGranted } = {}) {
         manifest_version,
         name: "Test add-on 8",
         browser_specific_settings: { gecko: { id: "addon8@mochi.test" } },
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         optional_permissions: ["https://*/*", "http://*/*", "file://*/*"],
       },
       background,
@@ -631,7 +631,7 @@ async function testPermissionsView({ manifest_version, expectGranted }) {
   await runTest({
     extension: extensions["addon8@mochi.test"],
     optional_permissions: ["https://*/*"],
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     optional_overlapping: ["https://*/*", "http://*/*"],
   });
 
@@ -859,7 +859,7 @@ add_task(async function testAllUrlsNotGrantedUnconditionally_MV3() {
 
 add_task(async function test_OneOfMany_AllSites_toggle() {
   // ESLint autofix will silently convert http://*/* match patterns into https.
-  /* eslint-disable @microsoft/sdl/no-insecure-url */
+  /* eslint-disable sdl/no-insecure-url */
   let id = "addon9@mochi.test";
 
   let extension = ExtensionTestUtils.loadExtension({
@@ -939,7 +939,7 @@ add_task(async function test_OneOfMany_AllSites_toggle() {
 
   await closeView(view);
   await extension.unload();
-  /* eslint-enable @microsoft/sdl/no-insecure-url */
+  /* eslint-enable sdl/no-insecure-url */
 });
 
 add_task(async function testOverrideLocalization() {

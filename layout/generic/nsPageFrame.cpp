@@ -621,8 +621,6 @@ enum {
 // This takes into account the value of the pref "print.center_page_on_sheet".
 static float OffsetToCenterPage(nscoord aContentSize, nscoord aSheetSize,
                                 float aScale, float aAppUnitsPerPixel) {
-  MOZ_ASSERT(aScale <= 1.0f && aScale > 0.0f,
-             "Scale must be in the range (0,1]");
   const unsigned centerPagePref = StaticPrefs::print_center_page_on_sheet();
   if (centerPagePref == kPrintCenterPageOnSheetNever) {
     return 0.0f;
@@ -692,6 +690,9 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
     // then center the page on the sheet.
     const float scale =
         pageFrame->ComputeSinglePPSPageSizeScale(contentPageSize);
+    MOZ_ASSERT(scale > 0.0f &&
+                   scale <= pageFrame->GetSharedPageData()->mMaxPageZoomRatio,
+               "Scale must be between 0 and the maximum page zoom ratio");
     const float centeringOffset = OffsetToCenterPage(
         contentPageSize.width, sheetSize.width, scale, aAppUnitsPerPixel);
 
@@ -846,6 +847,8 @@ float nsPageFrame::ComputeSinglePPSPageSizeScale(
     const nsSize aContentPageSize) const {
   MOZ_ASSERT(GetSharedPageData()->PagesPerSheetInfo()->mNumPages == 1,
              "Only intended for the pps==1 case");
+  MOZ_ASSERT(GetSharedPageData()->mMaxPageZoomRatio >= 1.0f,
+             "Max zoom ratio should be >= 1.0");
   MOZ_ASSERT(aContentPageSize == ComputePageSize(),
              "Incorrect content page size");
 
@@ -861,23 +864,22 @@ float nsPageFrame::ComputeSinglePPSPageSizeScale(
   // Compute scaling due to a possible mismatch in the paper size we are
   // printing to (from the pres context) and the specified page size when the
   // content uses "@page {size: ...}" to specify a page size for the content.
-  float scale = 1.0f;
-
   const nsSize sheetSize = sheet->GetSizeForChildren();
-  nscoord contentPageHeight = aContentPageSize.height;
-  // Scale down if the target is too wide.
-  if (aContentPageSize.width > sheetSize.width) {
-    scale *= float(sheetSize.width) / float(aContentPageSize.width);
-    contentPageHeight = NSToCoordRound(contentPageHeight * scale);
-  }
-  // Scale down if the target is too tall.
-  if (contentPageHeight > sheetSize.height) {
-    scale *= float(sheetSize.height) / float(contentPageHeight);
-  }
-  MOZ_ASSERT(
-      scale <= 1.0f,
-      "Page-size mismatches should only have caused us to scale down, not up.");
-  return scale;
+  // Find the scale factors to shrink or grow the page to match the sheet's
+  // width and height, respectively. This scale factor is then limited by the
+  // max zoom, which will be 1.0 by default.
+  //
+  // When the max zoom is 1.0, the page is never scaled above its size as given
+  // by the "@page {size: ...}" value.
+  // When the max zoom is above 1.0, the page can be scaled above its size
+  // within the sheet. This currently only occurs when printing a PDF scaled
+  // above 100% by user settings in the print dialog.
+  const float widthScale =
+      float(sheetSize.width) / float(aContentPageSize.width);
+  const float heightScale =
+      float(sheetSize.height) / float(aContentPageSize.height);
+  const float scale = std::min(widthScale, heightScale);
+  return std::min(scale, GetSharedPageData()->mMaxPageZoomRatio);
 }
 
 double nsPageFrame::GetPageOrientationRotation(nsSharedPageData* aPD) const {

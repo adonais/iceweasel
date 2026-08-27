@@ -7,15 +7,9 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 
 const PREF_SYSTEM_USES_DARK = "ui.systemUsesDarkTheme";
 
-// TODO(Bug 2052548): change these to separate svg icons (at toolkit level to
-// avoid having to also exempt them from mozilla/no-browser-refs-in-toolkit
-// linting rule) shared with the theme-picker reusable component.
-//
-/* eslint-disable mozilla/no-browser-refs-in-toolkit */
-const ICON_LIGHT = "chrome://browser/skin/weather/sunny.svg";
-const ICON_DARK = "chrome://browser/skin/weather/night-clear.svg";
-const ICON_DEVICE = "chrome://browser/skin/device-desktop.svg";
-/* eslint-enable mozilla/no-browser-refs-in-toolkit */
+const ICON_LIGHT = "chrome://global/skin/icons/sun.svg";
+const ICON_DARK = "chrome://global/skin/icons/moon.svg";
+const ICON_DEVICE = "chrome://global/skin/icons/local-host.svg";
 
 // TODO(Bug 2053873): in the long term we'd like to replacing this domain specific
 // webcomponent with a reusable component shared with the theme-picker.

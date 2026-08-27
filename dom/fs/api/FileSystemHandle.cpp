@@ -9,6 +9,8 @@
 #include "fs/FileSystemRequestHandler.h"
 #include "js/StructuredClone.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/UseCounter.h"
+#include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/FileSystemHandleBinding.h"
 #include "mozilla/dom/FileSystemLog.h"
 #include "mozilla/dom/FileSystemManager.h"
@@ -131,10 +133,32 @@ already_AddRefed<Promise> FileSystemHandle::IsSameEntry(
   return promise.forget();
 }
 
+void FileSystemHandle::SetMoveFileHandleUseCounter() {
+  if (Kind() != FileSystemHandleKind::File) {
+    return;
+  }
+  if (NS_IsMainThread()) {
+    SetUseCounter(GetWrapper(), eUseCounter_custom_FileSystemFileHandleMove);
+  } else {
+    SetUseCounter(UseCounterWorker::Custom_FileSystemFileHandleMove);
+  }
+}
+
 already_AddRefed<Promise> FileSystemHandle::Move(const nsAString& aName,
                                                  ErrorResult& aError) {
   LOG(("Move %s to %s", NS_ConvertUTF16toUTF8(mMetadata.entryName()).get(),
        NS_ConvertUTF16toUTF8(aName).get()));
+
+  SetMoveFileHandleUseCounter();
+  if (StringBeginsWith(aName, u"[object "_ns)) {
+    if (NS_IsMainThread()) {
+      SetUseCounter(GetWrapper(),
+                    eUseCounter_custom_FileSystemHandleMoveStringifiedObject);
+    } else {
+      SetUseCounter(
+          UseCounterWorker::Custom_FileSystemHandleMoveStringifiedObject);
+    }
+  }
 
   fs::EntryId parent;  // empty means same directory
   return Move(parent, aName, aError);
@@ -145,6 +169,8 @@ already_AddRefed<Promise> FileSystemHandle::Move(
   LOG(("Move %s to %s/%s", NS_ConvertUTF16toUTF8(mMetadata.entryName()).get(),
        NS_ConvertUTF16toUTF8(aParent.mMetadata.entryName()).get(),
        NS_ConvertUTF16toUTF8(mMetadata.entryName()).get()));
+
+  SetMoveFileHandleUseCounter();
   return Move(aParent, mMetadata.entryName(), aError);
 }
 
@@ -154,6 +180,8 @@ already_AddRefed<Promise> FileSystemHandle::Move(
   LOG(("Move %s to %s/%s", NS_ConvertUTF16toUTF8(mMetadata.entryName()).get(),
        NS_ConvertUTF16toUTF8(aParent.mMetadata.entryName()).get(),
        NS_ConvertUTF16toUTF8(aName).get()));
+
+  SetMoveFileHandleUseCounter();
   return Move(aParent.mMetadata.entryId(), aName, aError);
 }
 
@@ -182,8 +210,9 @@ already_AddRefed<Promise> FileSystemHandle::Move(const fs::EntryId& aParentId,
   // Other handles to this will be broken, and the spec is ok with this, but we
   // need to update our EntryId and name
   promise->AddCallbacksWithCycleCollectedArgs(
-      [newMetadata](JSContext* aCx, JS::Handle<JS::Value> aValue,
-                    ErrorResult& aRv, FileSystemHandle* aHandle) {
+      [newMetadata = std::move(newMetadata)](
+          JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
+          FileSystemHandle* aHandle) {
         // XXX Fix entryId!
         LOG(("Changing FileSystemHandle name from %s to %s",
              NS_ConvertUTF16toUTF8(aHandle->mMetadata.entryName()).get(),

@@ -11,8 +11,9 @@
 #include <stddef.h>  // size_t
 #include <stdint.h>  // uint8_t, uint32_t, uint64_t
 
-#include "ds/AvlTree.h"         // AvlTree
-#include "jit/CompactBuffer.h"  // CompactBufferReader, CompactBufferWriter
+#include "ds/AvlTree.h"             // AvlTree
+#include "jit/CompactBuffer.h"      // CompactBufferReader, CompactBufferWriter
+#include "jit/JitCodeSourceInfo.h"  // JitCodeSourceInfoVector
 #include "jit/shared/Assembler-shared.h"  // CodeOffset
 #include "js/AllocPolicy.h"               // SystemAllocPolicy
 #include "js/ProfilingFrameIterator.h"    // CallStackFrameInfo
@@ -227,9 +228,17 @@ bool IsRealmIndependentBaselineCode(JSScript* script);
 // profiler can resolve its frames, and mark the code as having a bytecode map.
 // On failure returns false with an error pending on cx; callers for which
 // registration is best-effort should clear it with recoverFromOutOfMemory.
-[[nodiscard]] bool AddBaselineJitcodeGlobalEntry(JSContext* cx,
-                                                 JSScript* script,
-                                                 JitCode* code);
+//
+// sourceInfo is the table used for sampler line/column lookups that's
+// constructed by PerfSpewer.
+//
+// FIXME: It is only available from the compile-time path. The enable-time path
+// for code already on the stack has no such data and registers an entry with an
+// empty table. We should generate this data without PerfSpewer for cases like
+// this. See bug 2054900.
+[[nodiscard]] bool AddBaselineJitcodeGlobalEntry(
+    JSContext* cx, JSScript* script, JitCode* code,
+    JitCodeSourceInfoVector&& sourceInfo = {});
 
 // Identity key used by the profiler to refer to a script after the JSScript
 // may have gone away.
@@ -372,15 +381,22 @@ class BaselineEntry : public JitcodeGlobalEntry {
   JitcodeScriptKey scriptKey_;
   UniqueChars str_;
   uint64_t realmId_;
+  // Native-offset -> source-position table for sampler line/column lookup.
+  // Populated by the PerfSpewer during compile-time.
+  // TODO: This is currently Baseline-only but we should move it to
+  // JitcodeGlobalEntry once other entries start using it.
+  JitCodeSourceInfoVector sourceInfo_;
 
  public:
   BaselineEntry(JitCode* code, void* nativeStartAddr, void* nativeEndAddr,
-                JSScript* script, UniqueChars str, uint64_t realmId)
+                JSScript* script, UniqueChars str, uint64_t realmId,
+                JitCodeSourceInfoVector&& sourceInfo)
       : JitcodeGlobalEntry(Kind::Baseline, code, nativeStartAddr,
                            nativeEndAddr),
         scriptKey_(script),
         str_(std::move(str)),
-        realmId_(realmId) {
+        realmId_(realmId),
+        sourceInfo_(std::move(sourceInfo)) {
     MOZ_ASSERT(str_);
   }
 

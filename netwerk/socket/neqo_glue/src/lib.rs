@@ -10,6 +10,7 @@ use std::{
     borrow::Cow,
     cell::RefCell,
     cmp::min,
+    collections::HashMap,
     ffi::c_void,
     io,
     net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr},
@@ -33,13 +34,14 @@ use neqo_common::{
     Header, Role, Tos,
 };
 use neqo_http3::{
-    features::extended_connect::session, ConnectUdpEvent, Error as Http3Error, Http3Client,
+    connect_udp::ClientSession as _, features::extended_connect::session,
+    webtransport::ClientSession as _, ConnectUdpEvent, Error as Http3Error, Http3Client,
     Http3ClientEvent, Http3Parameters, Http3State, Priority, WebTransportEvent,
 };
 use neqo_transport::{
-    stream_id::StreamType, CongestionControl, Connection, ConnectionParameters,
-    Error as TransportError, HyStartCssBaseline, Output, OutputBatch, RandomConnectionIdGenerator,
-    SlowStart, StreamId, Version,
+    stream_id::StreamType, streams::SendGroupId, CongestionControl, Connection,
+    ConnectionParameters, Error as TransportError, HyStartCssBaseline, Output, OutputBatch,
+    RandomConnectionIdGenerator, SlowStart, StreamId, Version,
 };
 use nserror::{
     nsresult, NS_BASE_STREAM_WOULD_BLOCK, NS_ERROR_CONNECTION_REFUSED,
@@ -63,6 +65,13 @@ use zlib_rs::{decompress_slice, InflateConfig, ReturnCode};
 std::thread_local! {
     static RECV_BUF: RefCell<neqo_udp::RecvBuf> = RefCell::new(neqo_udp::RecvBuf::default());
 }
+
+/// Upper bound on the bytes read from the socket in a single `neqo_http3conn_process_input` pass.
+/// No legitimate connection reads this much at once, so the cap only bounds a misbehaving or
+/// malicious peer that would otherwise make us buffer datagrams unboundedly. Nothing is lost when
+/// the cap is hit: buffered events are delivered to the upper layer right after, and the
+/// level-triggered poll re-fires `RecvData` to read the rest.
+const MAX_BYTES_READ_PER_PASS: usize = 50 * 1024 * 1024;
 
 #[cfg(target_vendor = "apple")]
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -130,6 +139,15 @@ pub struct NeqoHttp3Conn {
     datagram_segments_sent: LocalCustomDistribution<'static>,
     datagram_segments_received: LocalCustomDistribution<'static>,
     would_block_counter: WouldBlockCounter,
+    /// Maps the child-minted WebTransport send-group id (assigned synchronously in the
+    /// content process) to the neqo-minted [`SendGroupId`].
+    webtransport_send_groups: HashMap<u64, SendGroupId>,
+    /// Whether the connection-close reason has already been recorded to Glean.
+    /// A connection may surface a `Closing` state change followed later by a
+    /// `Closed` one; this guards against counting the same close twice while
+    /// still catching closes that skip `Closing` entirely (idle timeout).
+    #[cfg(not(target_os = "android"))]
+    close_reason_recorded: bool,
 }
 
 impl Drop for NeqoHttp3Conn {
@@ -601,8 +619,31 @@ impl NeqoHttp3Conn {
                 .start_buffer(),
             buffered_outbound_datagram: None,
             would_block_counter: WouldBlockCounter::new(),
+            webtransport_send_groups: HashMap::new(),
+            #[cfg(not(target_os = "android"))]
+            close_reason_recorded: false,
         }));
         unsafe { RefPtr::from_raw(conn).ok_or(NS_ERROR_NOT_CONNECTED) }
+    }
+
+    /// Record the reason this HTTP/3 connection closed to Glean, at most once
+    /// per connection. Called from both the `Closing` and `Closed` state
+    /// changes: closes that go through a closing handshake surface `Closing`
+    /// first, while closes that skip it (idle timeout) surface only `Closed`.
+    #[cfg(not(target_os = "android"))]
+    fn record_close_reason(&mut self, reason: &neqo_transport::CloseReason) {
+        if self.close_reason_recorded {
+            return;
+        }
+        self.close_reason_recorded = true;
+
+        let glean_label = match reason {
+            neqo_transport::CloseReason::Application(_) => "Application",
+            neqo_transport::CloseReason::Transport(r) => transport_error_to_glean_label(r),
+        };
+        networking::http_3_connection_close_reason
+            .get(glean_label)
+            .add(1);
     }
 
     fn record_stats_in_glean(&self) {
@@ -677,8 +718,12 @@ impl NeqoHttp3Conn {
             && static_prefs::pref!("network.http.http3.ecn_report")
         {
             let rx_ect0_sum: u64 = stats.ecn_rx.into_values().map(|v| v[Ecn::Ect0]).sum();
+            let rx_ect1_sum: u64 = stats.ecn_rx.into_values().map(|v| v[Ecn::Ect1]).sum();
             let rx_ce_sum: u64 = stats.ecn_rx.into_values().map(|v| v[Ecn::Ce]).sum();
-            if rx_ect0_sum > 0 {
+
+            // A CE mark can't be attributed to a specific ECT type on connections that saw
+            // both, so the per-type ratio and count metrics below are gated on exclusivity.
+            if rx_ect0_sum > 0 && rx_ect1_sum == 0 {
                 if let Ok(ratio) = i64::try_from((rx_ce_sum * PRECISION_FACTOR) / rx_ect0_sum) {
                     glean::http_3_ecn_ce_ect0_ratio_received.accumulate_single_sample_signed(ratio);
                 } else {
@@ -687,6 +732,18 @@ impl NeqoHttp3Conn {
                     debug_assert!(false, "{msg}");
                 }
             }
+
+            // Per-connection classification of the server's ECN marking (answers "% of servers").
+            let label = match (rx_ect0_sum > 0, rx_ect1_sum > 0, rx_ce_sum > 0) {
+                (true, true, _) => "ect0-and-ect1",
+                (true, false, false) => "ect0",
+                (false, true, false) => "ect1",
+                (true, false, true) => "ect0-and-ce",
+                (false, true, true) => "ect1-and-ce",
+                (false, false, true) => "ce-only",
+                (false, false, false) => "none",
+            };
+            glean::http_3_ecn_ect_received.get(label).add(1);
         }
 
         if !static_prefs::pref!("network.http.http3.use_nspr_for_io")
@@ -752,14 +809,17 @@ impl NeqoHttp3Conn {
                 }
             };
         // Records the unfiltered (old) slow start exit ratio
-        if stats.cc.slow_start_exit_cwnd.is_some() {
+        if stats.cc.slow_start_exit.is_some() {
             glean::http_3_slow_start_exited.get("exited").add(1);
         } else {
             glean::http_3_slow_start_exited.get("not_exited").add(1);
         }
 
         let cwnd_that_grew = stats.cc.cwnd.filter(|&c| c > MAX_INITIAL_CWND);
-        let growth_label = match (cwnd_that_grew, stats.cc.slow_start_exit_cwnd) {
+        let growth_label = match (
+            cwnd_that_grew,
+            stats.cc.slow_start_exit.as_ref().map(|e| e.exit_cwnd),
+        ) {
             (Some(_), Some(exit_cwnd)) if exit_cwnd < MAX_INITIAL_CWND => {
                 "no_growth_then_exit_then_growth"
             }
@@ -777,17 +837,11 @@ impl NeqoHttp3Conn {
                 glean::http_3_loss_ratio_filtered.accumulate_single_sample_signed(loss);
             }
             // Record metrics concerning the slow start exit point below this filter.
-            debug_assert_eq!(
-                stats.cc.slow_start_exit_cwnd.is_some(),
-                stats.cc.slow_start_exit_reason.is_some(),
-                "slow_start_exit_cwnd and slow_start_exit_reason must always be set together"
-            );
             let mut hystart_label = "not_exited";
             let mut search_label = "not_exited";
-            if let (Some(exit_cwnd), Some(reason)) = (
-                stats.cc.slow_start_exit_cwnd,
-                stats.cc.slow_start_exit_reason,
-            ) {
+            if let Some(slow_start_exit) = stats.cc.slow_start_exit.as_ref() {
+                let exit_cwnd = slow_start_exit.exit_cwnd;
+                let reason = &slow_start_exit.reason;
                 glean::http_3_slow_start_exit_cwnd.accumulate(exit_cwnd as u64);
                 glean::http_3_slow_start_exited_filtered
                     .get("exited")
@@ -807,7 +861,7 @@ impl NeqoHttp3Conn {
                     Ordering::Equal => "exact",
                 };
                 let (reason_label, accuracy_label) = match reason {
-                    SlowStartExitReason::CongestionEvent => {
+                    SlowStartExitReason::CongestionEvent(_) => {
                         glean::http_3_slow_start_exit_direction_loss
                             .get(direction_label)
                             .add(1);
@@ -1194,6 +1248,14 @@ pub unsafe extern "C" fn neqo_http3conn_process_input(
             conn.datagram_size_received.accumulate(sum as u64);
             conn.datagram_segments_received.accumulate(segment_count);
             bytes_read += sum;
+
+            if bytes_read >= MAX_BYTES_READ_PER_PASS {
+                qwarn!(
+                    "reached the {MAX_BYTES_READ_PER_PASS} byte receive cap in a single pass; \
+                     yielding to deliver buffered events, will continue on the next RecvData"
+                );
+                break;
+            }
         }
 
         ProcessInputResult {
@@ -1916,6 +1978,9 @@ pub enum WebTransportEventExternal {
     Datagram {
         session_id: u64,
     },
+    Draining {
+        session_id: u64,
+    },
 }
 #[repr(C)]
 pub enum ConnectUdpEventExternal {
@@ -1973,6 +2038,9 @@ impl WebTransportEventExternal {
                     session_id: session_id.as_u64(),
                 }
             }
+            WebTransportEvent::Draining { stream_id } => Self::Draining {
+                session_id: stream_id.as_u64(),
+            },
         }
     }
 }
@@ -2234,17 +2302,7 @@ pub extern "C" fn neqo_http3conn_event(
                     }
 
                     #[cfg(not(target_os = "android"))]
-                    {
-                        let glean_label = match &reason {
-                            neqo_transport::CloseReason::Application(_) => "Application",
-                            neqo_transport::CloseReason::Transport(r) => {
-                                transport_error_to_glean_label(r)
-                            }
-                        };
-                        networking::http_3_connection_close_reason
-                            .get(glean_label)
-                            .add(1);
-                    }
+                    conn.record_close_reason(&reason);
 
                     Http3Event::ConnectionClosing {
                         error: reason.into(),
@@ -2258,6 +2316,10 @@ pub extern "C" fn neqo_http3conn_event(
                     {
                         data.extend_from_slice(c.as_ref());
                     }
+
+                    #[cfg(not(target_os = "android"))]
+                    conn.record_close_reason(&error_code);
+
                     Http3Event::ConnectionClosed {
                         error: error_code.into(),
                     }
@@ -2566,7 +2628,7 @@ pub extern "C" fn neqo_http3conn_webtransport_close_session(
         message_tmp,
         Instant::now(),
     ) {
-        Ok(()) => NS_OK,
+        Ok(_) => NS_OK,
         Err(_) => NS_ERROR_INVALID_ARG,
     }
 }
@@ -2587,7 +2649,7 @@ pub extern "C" fn neqo_http3conn_connect_udp_close_session(
         message_tmp,
         Instant::now(),
     ) {
-        Ok(()) => NS_OK,
+        Ok(_) => NS_OK,
         Err(_) => NS_ERROR_INVALID_ARG,
     }
 }
@@ -2618,17 +2680,25 @@ pub extern "C" fn neqo_http3conn_webtransport_send_datagram(
     session_id: u64,
     data: &mut ThinVec<u8>,
     tracking_id: u64,
+    send_group_id: u64,
+    send_order: i64,
 ) -> nsresult {
     let id = if tracking_id == 0 {
         None
     } else {
         Some(tracking_id)
     };
-    match conn
-        .conn
-        .webtransport_send_datagram(StreamId::from(session_id), data, id, Instant::now())
-    {
-        Ok(()) => NS_OK,
+    // The local neqo2 vendor doesn't yet support per-datagram send group/order
+    // prioritization; accept the params from the C++ side but don't forward
+    // them until neqo grows the corresponding API.
+    let _ = (send_group_id, send_order);
+    match conn.conn.webtransport_send_datagram(
+        StreamId::from(session_id),
+        data,
+        id,
+        Instant::now(),
+    ) {
+        Ok(_) => NS_OK,
         Err(Http3Error::Transport(TransportError::TooMuchData)) => NS_ERROR_NOT_AVAILABLE,
         Err(_) => NS_ERROR_UNEXPECTED,
     }
@@ -2639,17 +2709,25 @@ pub extern "C" fn neqo_http3conn_connect_udp_send_datagram(
     session_id: u64,
     data: &mut ThinVec<u8>,
     tracking_id: u64,
+    send_group_id: u64,
+    send_order: i64,
 ) -> nsresult {
     let id = if tracking_id == 0 {
         None
     } else {
         Some(tracking_id)
     };
-    match conn
-        .conn
-        .connect_udp_send_datagram(StreamId::from(session_id), data, id, Instant::now())
-    {
-        Ok(()) => NS_OK,
+    // The local neqo2 vendor doesn't yet support per-datagram send group/order
+    // prioritization; accept the params from the C++ side but don't forward
+    // them until neqo grows the corresponding API.
+    let _ = (send_group_id, send_order);
+    match conn.conn.connect_udp_send_datagram(
+        StreamId::from(session_id),
+        data,
+        id,
+        Instant::now(),
+    ) {
+        Ok(_) => NS_OK,
         Err(Http3Error::Transport(TransportError::TooMuchData)) => NS_ERROR_NOT_AVAILABLE,
         Err(_) => NS_ERROR_UNEXPECTED,
     }
@@ -2684,6 +2762,129 @@ pub unsafe extern "C" fn neqo_http3conn_webtransport_set_sendorder(
     {
         Ok(()) => NS_OK,
         Err(_) => NS_ERROR_UNEXPECTED,
+    }
+}
+
+/// # Safety
+///
+/// Use of raw (i.e. unsafe) pointers as arguments.
+#[no_mangle]
+pub unsafe extern "C" fn neqo_http3conn_webtransport_set_sendgroup(
+    conn: &mut NeqoHttp3Conn,
+    stream_id: u64,
+    sendgroup_id: u64,
+) -> nsresult {
+    // sendgroup_id 0 means "no group" (null sendGroup); clear the group assignment.
+    if sendgroup_id == 0 {
+        return match conn
+            .conn
+            .webtransport_clear_sendgroup(StreamId::from(stream_id))
+        {
+            Ok(()) => NS_OK,
+            Err(_) => NS_ERROR_UNEXPECTED,
+        };
+    }
+    let Some(&sg_id) = conn.webtransport_send_groups.get(&sendgroup_id) else {
+        return NS_ERROR_UNEXPECTED;
+    };
+    match conn
+        .conn
+        .webtransport_set_sendgroup(StreamId::from(stream_id), sg_id)
+    {
+        Ok(()) => NS_OK,
+        Err(_) => NS_ERROR_UNEXPECTED,
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn neqo_http3conn_webtransport_register_send_group(
+    conn: &mut NeqoHttp3Conn,
+    session_id: u64,
+    group_id: u64,
+) -> nsresult {
+    // neqo allocates the send-group id; map the child's provisional id to it.
+    match conn
+        .conn
+        .webtransport_create_send_group(StreamId::from(session_id))
+    {
+        Ok(neqo_id) => {
+            conn.webtransport_send_groups.insert(group_id, neqo_id);
+            NS_OK
+        }
+        Err(_) => NS_ERROR_UNEXPECTED,
+    }
+}
+
+
+/// Get the negotiated protocol for a WebTransport session.
+#[no_mangle]
+pub extern "C" fn neqo_http3conn_webtransport_session_protocol(
+    conn: &mut NeqoHttp3Conn,
+    session_id: u64,
+    protocol: &mut nsACString,
+) -> nsresult {
+    match conn
+        .conn
+        .webtransport_session_protocol(StreamId::from(session_id))
+    {
+        Ok(Some(p)) => {
+            protocol.assign(&p);
+            NS_OK
+        }
+        Ok(None) => {
+            // SAFETY: shrinking the string to length 0 never exposes
+            // uninitialized memory.
+            unsafe {
+                protocol.set_length(0);
+            }
+            NS_OK
+        }
+        Err(_) => NS_ERROR_UNEXPECTED,
+    }
+}
+
+/// Export keying material per RFC 5705/8446.
+///
+/// # Safety
+///
+/// Use of raw (i.e. unsafe) pointers as arguments.
+/// The `out` buffer must be at least `out_len` bytes.
+#[no_mangle]
+pub unsafe extern "C" fn neqo_http3conn_export_keying_material(
+    conn: &mut NeqoHttp3Conn,
+    session_id: u64,
+    label: *const u8,
+    label_len: u32,
+    context: *const u8,
+    context_len: u32,
+    out: *mut u8,
+    out_len: u32,
+) -> nsresult {
+    let label_slice = if label.is_null() {
+        return NS_ERROR_INVALID_ARG;
+    } else {
+        slice::from_raw_parts(label, label_len as usize)
+    };
+
+    let context_slice = if context.is_null() || context_len == 0 {
+        &[]
+    } else {
+        slice::from_raw_parts(context, context_len as usize)
+    };
+
+    if out.is_null() || out_len == 0 {
+        return NS_ERROR_INVALID_ARG;
+    }
+
+    let out_slice = slice::from_raw_parts_mut(out, out_len as usize);
+    match conn.conn.webtransport_export_keying_material(
+        StreamId::from(session_id),
+        label_slice,
+        context_slice,
+        out_slice,
+    ) {
+        Ok(()) => NS_OK,
+        Err(_) => NS_ERROR_NOT_CONNECTED,
     }
 }
 

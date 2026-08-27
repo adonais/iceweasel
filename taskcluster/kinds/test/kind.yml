@@ -31,6 +31,7 @@ transforms:
 tasks-from:
     - awsy.yml
     - compiled.yml
+    - devtools-compat.yml
     - firefox-ui.yml
     - marionette.yml
     - misc.yml
@@ -41,8 +42,8 @@ task-defaults:
     run-on-repo-type: [hg]
     attributes:
         retrigger: true
-    use-python: default
-    use-uv: true
+    use-python: system
+    use-uv: false
     require-signed-extensions:
         by-release-type:
             release|esr.*: true

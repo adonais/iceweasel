@@ -43,10 +43,26 @@ export const CFR_ADDONS_ENABLED =
 export const NOT_ENTERPRISE = "!hasActiveEnterprisePolicies";
 
 // True when Windows will show its own OS-level consent prompt when pinning is
-// triggered. Mirrors GetPinningSupportedByWindowsVersionWithoutSystemPopup in
-// https://searchfox.org/firefox-main/source/browser/installer/windows/nsis/shared.nsh#1099
+// silently triggered (PIN_FIREFOX_TASKBAR_WIN_OS_PROMPT), i.e. the OS
+// supports it (mirrors GetPinningSupportedByWindowsVersionWithoutSystemPopup
+// in https://searchfox.org/firefox-main/source/browser/installer/windows/nsis/shared.nsh#1099)
+// and auto-triggered actions haven't been disabled via
+// browser.bypassAutoTriggerActions.
 export const WIN_OS_PIN_PROMPT_ENABLED =
-  "(os.isWindows && ((os.windowsBuildNumber == 19045 && os.windowsUBR >= 3996) || (os.windowsBuildNumber > 19045 && os.windowsBuildNumber < 22000) || (os.windowsBuildNumber == 22621 && os.windowsUBR >= 2361) || os.windowsBuildNumber > 22621))";
+  "(!('browser.bypassAutoTriggerActions'|preferenceValue) && (os.isWindows && ((os.windowsBuildNumber == 19045 && os.windowsUBR >= 3996) || (os.windowsBuildNumber > 19045 && os.windowsBuildNumber < 22000) || (os.windowsBuildNumber == 22621 && os.windowsUBR >= 2361) || os.windowsBuildNumber > 22621)))";
+
+// True when the OS itself will present the user with a consent surface if the
+// set default action is silently triggered
+// (SET_DEFAULT_MAC_AND_WINDOWS_OS_PROMPT). macOS always shows its own consent
+// prompt, and Windows falls back to its own "Choose default apps" settings UI
+// when one-click set default (a silent UserChoice registry write with no
+// consent surface at all) isn't available. Linux is excluded because
+// isOneClickSetDefaultEnabled is Windows only. Whether set default is
+// one-click on Linux varies by build, and targeting can't currently tell.
+// This also requires that auto-triggered actions haven't been disabled via
+// browser.bypassAutoTriggerActions.
+export const SET_DEFAULT_OS_PROMPT_ENABLED =
+  "(!('browser.bypassAutoTriggerActions'|preferenceValue) && (os.isMac || (os.isWindows && !isOneClickSetDefaultEnabled)))";
 
 export const FXA_NOT_SIGNED_IN = "isFxAEnabled && !isFxASignedIn";
 

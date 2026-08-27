@@ -100,8 +100,7 @@ bool nsMacUtilsImpl::GetAppPath(nsCString& aAppPath) {
   nsAutoCString::const_iterator start, end;
   appBinaryPath.BeginReading(start);
   appBinaryPath.EndReading(end);
-  if (RFindInReadable(pattern, start, end,
-                      nsCaseInsensitiveCStringComparator)) {
+  if (CaseInsensitiveRFindInReadable(pattern, start, end)) {
     end = start;
     appBinaryPath.BeginReading(start);
 
@@ -109,8 +108,7 @@ bool nsMacUtilsImpl::GetAppPath(nsCString& aAppPath) {
     // by searching backwards once more. The child executable resides
     // in Firefox.app/Contents/MacOS/plugin-container/Contents/MacOS.
     if (!XRE_IsParentProcess()) {
-      if (RFindInReadable(pattern, start, end,
-                          nsCaseInsensitiveCStringComparator)) {
+      if (CaseInsensitiveRFindInReadable(pattern, start, end)) {
         end = start;
         appBinaryPath.BeginReading(start);
       } else {

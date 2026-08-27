@@ -22,7 +22,7 @@ namespace a11y {
 struct TextMarkerData {
   TextMarkerData(uintptr_t aDoc, uintptr_t aID, int32_t aOffset)
       : mDoc(aDoc), mID(aID), mOffset(aOffset) {}
-  TextMarkerData() {}
+  TextMarkerData() = default;
   uintptr_t mDoc;
   uintptr_t mID;
   int32_t mOffset;

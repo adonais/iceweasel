@@ -436,7 +436,7 @@ bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName,
   aFontName.AssignLiteral("Roboto");
   aFontStyle.style = FontSlantStyle::NORMAL;
   aFontStyle.weight = FontWeight::NORMAL;
-  aFontStyle.stretch = FontStretch::NORMAL;
+  aFontStyle.width = FontWidth::NORMAL;
   aFontStyle.size = 9.0 * 96.0f / 72.0f;
   aFontStyle.systemFont = true;
   return true;

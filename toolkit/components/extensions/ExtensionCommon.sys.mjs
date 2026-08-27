@@ -1699,7 +1699,11 @@ class SchemaAPIManager extends EventEmitter {
 
     this.initGlobal();
 
-    Services.scriptloader.loadSubScript(module.url, this.global);
+    Services.scriptloader.loadSubScriptWithOptions(module.url, {
+      target: this.global,
+      // Usually chrome: URLs, except with experiment_apis.
+      allowUnsafeURL: true,
+    });
 
     module.loaded = true;
 

@@ -37,6 +37,8 @@ support-files = [
 
 ["browser_sma_fxa_aiwindow_signin_flow.js"]
 
+["browser_sma_get_referral_code.js"]
+
 ["browser_sma_handle_multiaction.js"]
 
 ["browser_sma_ipprotection_enroll.js"]
@@ -49,6 +51,8 @@ run-if = [
 ["browser_sma_open_about_page.js"]
 
 ["browser_sma_open_awesome_bar.js"]
+
+["browser_sma_open_organize_tabs_panel.js"]
 
 ["browser_sma_open_panel.js"]
 
@@ -89,6 +93,11 @@ run-if = [
 ["browser_sma_restore_session.js"]
 
 ["browser_sma_set_bookmarks_toolbar_visibility.js"]
+
+["browser_sma_set_browser_icon.js"]
+run-if = [
+  "os == 'win'",
+]
 
 ["browser_sma_set_prefs.js"]
 

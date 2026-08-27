@@ -126,19 +126,17 @@ class CssCompatibilityTooltipHelper {
    * This is the learn more message element linking to the MDN documentation
    * for the particular incompatible CSS declaration.
    * The element returned is:
-   *   <p data-l10n-id="css-compatibility-learn-more-message"
-   *       data-l10n-args="{&quot;property&quot;:&quot;user-select&quot;}">
-   *     <span data-l10n-name="link" class="link"></span>
+   *   <p>
+   *     <a data-l10n-id="devtools-tooltip-learn-more" class="link learn-more-link mdn-link" href="..."></a>
    *   </p>
    */
-  #getLearnMoreMessage(doc, { rootProperty }) {
-    const learnMoreMessage = this.#createElement(doc, "p", [], {
-      "data-l10n-id": "css-compatibility-learn-more-message",
-      "data-l10n-args": JSON.stringify({ rootProperty }),
-    });
+  #getLearnMoreMessage(doc, { url }) {
+    const learnMoreMessage = this.#createElement(doc, "p");
+    const classList = url ? ["link", "learn-more-link", "mdn-link"] : ["link"];
     learnMoreMessage.appendChild(
-      this.#createElement(doc, "span", ["link"], {
-        "data-l10n-name": "link",
+      this.#createElement(doc, "a", classList, {
+        "data-l10n-id": "devtools-tooltip-learn-more",
+        href: this.#currentUrl,
       })
     );
 
@@ -189,10 +187,8 @@ class CssCompatibilityTooltipHelper {
    *     <strong></strong>
    *   </p>
    *   <browser-list />
-   *   <p data-l10n-id="css-compatibility-learn-more-message"
-   *       data-l10n-args="{&quot;property&quot;:&quot;user-select&quot;}">
-   *     <span data-l10n-name="link" class="link"></span>
-   *     <strong></strong>
+   *   <p>
+   *     <a data-l10n-id="devtools-tooltip-learn-more" class="link learn-more-link mdn-link" href="..."></a>
    *   </p>
    * </div>
    *
@@ -260,11 +256,12 @@ class CssCompatibilityTooltipHelper {
    */
   addTab(event) {
     // The XUL panel swallows click events so handlers can't be added directly
-    // to the link span. As a workaround we listen to all click events in the
-    // panel and if a link span is clicked we proceed.
-    if (event.target.className !== "link") {
+    // to the link. As a workaround we listen to all click events in the
+    // panel and if a link is clicked we proceed.
+    if (!event.target.classList.contains("link")) {
       return;
     }
+    event.preventDefault();
 
     const tooltip = this.#currentTooltip;
     tooltip.hide();

@@ -11,6 +11,7 @@ task-defaults:
         env:
             PATH: "/usr/local/bin:/bin:/sbin:/usr/bin:/usr/sbin"
     run:
+        clone-with: hg
         script: unpack-sdk.py
         resources:
             - python/mozbuild/mozpack/macpkg.py
@@ -24,6 +25,7 @@ macosx64-sdk-13.3:
     treeherder:
         symbol: TM(sdk13.3)
     run:
+        clone-with: hg
         arguments:
             - https://swcdn.apple.com/content/downloads/15/62/032-84673-A_7A1TG1RF8Z/xpc8q44ggn2pkn82iwr0fi1zeb9cxi8ath/CLTools_macOSNMOS_SDK.pkg
             - 8de3306508dca31040b3b49ff370e96c94f4546bcf22cb4069abbb18e2d6bce8e20d40a6903f00ae75558175b624a979ea0444f54bc6d9d67e841f2000b0d863
@@ -35,6 +37,7 @@ macosx64-sdk-26.5:
     treeherder:
         symbol: TM(sdk26.5)
     run:
+        clone-with: hg
         arguments:
             - https://swcdn.apple.com/content/downloads/09/08/047-91568-A_Y1CFZWQCD4/4xekpyz43i26dbp4enxfro8eb1q7wiujh5/CLTools_macOSNMOS_SDK.pkg
             - 5db8b5a06a489a7d3ec587ebb7e01be55163128029923fc24edcad47faecd67830193c0d91e2643ee0e92f2ccca37adf20e4c42cf8de5784666f8663638b5cc5
@@ -54,6 +57,7 @@ ios-sdk-18.4:
     attributes:
         local-toolchain: false
     run:
+        clone-with: hg
         script: private_local_toolchain.sh
         arguments:
             - unpack-sdk.py
@@ -72,6 +76,7 @@ ios-sim-sdk-18.4:
     attributes:
         local-toolchain: false
     run:
+        clone-with: hg
         script: private_local_toolchain.sh
         arguments:
             - unpack-sdk.py

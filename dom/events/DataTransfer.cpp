@@ -515,7 +515,7 @@ void DataTransfer::GetData(const nsAString& aFormat, nsAString& aData,
         lastidx = idx + 1;
       }
     } else {
-      aData = stringdata;
+      aData = std::move(stringdata);
     }
   }
 }

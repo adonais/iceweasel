@@ -53,7 +53,11 @@ class CacheEntryTable : public TCacheEntryTable {
 
   void NoteNoVarySearchEntry(const nsACString& aBasePath,
                              const nsACString& aFullKey) {
-    mNoVarySearchIndex.LookupOrInsert(aBasePath).AppendElement(aFullKey);
+    auto& keys = mNoVarySearchIndex.LookupOrInsert(aBasePath);
+    // Only append if the key is not already present
+    if (!keys.Contains(aFullKey)) {
+      keys.AppendElement(aFullKey);
+    }
   }
 
   void RemoveNoVarySearchEntry(const nsACString& aBasePath,

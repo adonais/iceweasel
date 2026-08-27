@@ -33,8 +33,7 @@ window.onload = function() {
 addTest(function setup() {
   // Create an iframe to debug.
   const iframe = document.createElement("iframe");
-  iframe.srcdoc = "<div id='Tootles' onclick='debugger;'>I'm a DIV!</div>" +
-                  "<script id='Auddie'>function auddie() { debugger; }<\/script>";
+  iframe.src = "doc_Debugger.Source.prototype.introductionType.html";
   iframe.onload = onLoadHandler;
   document.body.appendChild(iframe);
 

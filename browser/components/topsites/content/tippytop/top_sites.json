@@ -217,6 +217,11 @@
     "favicon_url": "favicons/wix.ico"
   },
   {
+    "domains": ["wrexhamafc.co.uk"],
+    "image_url": "images/wrexham@2x.png",
+    "favicon_url": "favicons/wrexham.png"
+  },
+  {
     "domains": ["wykop.pl"],
     "image_url": "images/wykop-pl@2x.png",
     "favicon_url": "favicons/wykop-pl.png"

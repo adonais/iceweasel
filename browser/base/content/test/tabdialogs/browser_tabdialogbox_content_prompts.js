@@ -30,7 +30,7 @@ const TEST_EXTENSION_DATA = {
     "alert.js": `window.addEventListener("load", () => alert("Hi"));`,
   },
 };
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 const TEST_ORIGIN = "http://example.com";
 const TEST_PAGE =
   TEST_ROOT_CHROME.replace("chrome://mochitests/content", TEST_ORIGIN) +
@@ -45,7 +45,7 @@ var commonDialogsBundle = Services.strings.createBundle(
  */
 add_task(async function test_tabdialog_content_prompts() {
   await BrowserTestUtils.withNewTab(
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com",
     async function (browser) {
       info("Open a tab prompt.");

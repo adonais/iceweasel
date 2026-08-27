@@ -25,8 +25,7 @@ const DEFAULT_ENGINE_ID = "smart-openai";
 /**
  * The default endpoint used for preset models
  */
-const DEFAULT_ENDPOINT =
-  "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net/v1";
+const DEFAULT_ENDPOINT = "https://mlpa-prod-prod-mozilla.freetls.fastly.net/v1";
 
 /**
  * Transport for AI Window LLM calls against an OpenAI-style backend.

@@ -17,6 +17,48 @@ add_setup(async function () {
   });
 });
 
+/**
+ * Sums the sample weights attributed to each leaf frame of a profile, keyed by
+ * frame name. Lets a test assert where the bytes actually went, rather than
+ * only which frames happen to exist.
+ *
+ * @param {object} profile
+ *        A profile as returned by createSizeProfile.
+ * @returns {Map<string, number>}
+ *        Frame name to the number of bytes attributed to it.
+ */
+function bytesByLeafFrame(profile) {
+  const thread = profile.threads[0];
+  const bytes = new Map();
+  for (let i = 0; i < thread.samples.length; i++) {
+    const stackIndex = thread.samples.stack[i];
+    const frameIndex = thread.stackTable.frame[stackIndex];
+    const funcIndex = thread.frameTable.func[frameIndex];
+    const name = profile.shared.stringArray[thread.funcTable.name[funcIndex]];
+    bytes.set(name, (bytes.get(name) || 0) + thread.samples.weight[i]);
+  }
+  return bytes;
+}
+
+/**
+ * Sums the bytes accounted for by every sample of a profile.
+ *
+ * @param {object} profile
+ *        A profile as returned by createSizeProfile.
+ * @returns {number}
+ *        The total number of bytes attributed to samples.
+ */
+function totalProfiledBytes(profile) {
+  return profile.threads[0].samples.weight.reduce(
+    (sum, weight) => sum + weight,
+    0
+  );
+}
+
+function utf8Length(str) {
+  return new TextEncoder().encode(str).length;
+}
+
 add_task(async function testProfileSizeButtonExists() {
   info("Test that the Profile Size button exists in the tab bar");
 
@@ -158,12 +200,165 @@ add_task(async function testProfileCreation() {
   );
 
   // Validate total size of samples
-  const samples = profile.threads[0].samples;
-  const totalSize = samples.weight.reduce((sum, weight) => sum + weight, 0);
+  const totalSize = totalProfiledBytes(profile);
   is(
     totalSize,
     testJson.length,
     "Total sample size should match JSON string length"
+  );
+});
+
+add_task(async function testProfileCreationWithJsonl() {
+  info("Test that every record of a JSON Lines document is profiled");
+
+  const { createSizeProfile } = ChromeUtils.importESModule(
+    "resource://devtools/client/jsonview/json-size-profiler.mjs"
+  );
+
+  const lines = [];
+  for (let i = 0; i < 5; i++) {
+    lines.push(JSON.stringify({ id: i, name: `name${i}`, tags: ["a", "b"] }));
+  }
+  const testJsonl = lines.join("\n");
+  const profile = createSizeProfile(testJsonl, "test.jsonl", true);
+
+  const totalSize = totalProfiledBytes(profile);
+  is(
+    totalSize,
+    utf8Length(testJsonl),
+    "Every byte of the document should be accounted for, not just the first line"
+  );
+
+  // Records share the top-level path, so a property's bytes are summed across
+  // every record. Each record spends 5 bytes on the "id" key ("id" plus quotes
+  // and colon), so all 5 records together must account for 25.
+  const bytes = bytesByLeafFrame(profile);
+  is(
+    bytes.get("json.id (property key)"),
+    25,
+    "A property's bytes should be aggregated across all 5 records"
+  );
+  is(
+    bytes.get("json (separator)"),
+    4,
+    "The 4 newlines separating the records should be counted as separators"
+  );
+});
+
+add_task(async function testProfileCreationWithInvalidJsonlLine() {
+  info("Test that an unparseable JSON Lines record does not abort the profile");
+
+  const { createSizeProfile } = ChromeUtils.importESModule(
+    "resource://devtools/client/jsonview/json-size-profiler.mjs"
+  );
+
+  const invalidLine = "{not json";
+  const testJsonl = ['{"a": 1}', invalidLine, '{"b": 2}'].join("\n");
+  const profile = createSizeProfile(testJsonl, "test.jsonl", true);
+
+  const totalSize = totalProfiledBytes(profile);
+  is(
+    totalSize,
+    utf8Length(testJsonl),
+    "Bytes of an invalid line should still be accounted for"
+  );
+
+  const bytes = bytesByLeafFrame(profile);
+  is(
+    bytes.get("json (parse error)"),
+    invalidLine.length,
+    "The whole invalid line should be attributed to the error frame"
+  );
+  is(
+    bytes.get("json.b (number)"),
+    1,
+    "Records after an invalid line should still be parsed"
+  );
+});
+
+add_task(async function testProfileCreationWithTruncatedJsonlLine() {
+  info("Test that a truncated record does not consume the records after it");
+
+  const { createSizeProfile } = ChromeUtils.importESModule(
+    "resource://devtools/client/jsonview/json-size-profiler.mjs"
+  );
+
+  // An unterminated object would keep consuming past the newline if records
+  // were not bounded to their own line, swallowing the valid record below it.
+  const truncated = '{"id": 0, "name": "trunc"';
+  const testJsonl = [truncated, '{"id": 9}'].join("\n");
+  const profile = createSizeProfile(testJsonl, "test.jsonl", true);
+
+  const totalSize = totalProfiledBytes(profile);
+  is(totalSize, utf8Length(testJsonl), "Every byte should be accounted for");
+
+  const bytes = bytesByLeafFrame(profile);
+  is(
+    bytes.get("json (parse error)"),
+    truncated.length,
+    "The whole truncated line should be attributed to the error frame"
+  );
+  is(
+    bytes.get("json.id (property key)"),
+    6,
+    "The record after the truncated one should still be parsed"
+  );
+  ok(
+    !bytes.has("json.name (string)"),
+    "The truncated record should not be partially attributed to its fields"
+  );
+});
+
+add_task(async function testProfileCreationWithJsonlSeparators() {
+  info("Test blank lines, CRLF endings and a trailing newline in JSON Lines");
+
+  const { createSizeProfile } = ChromeUtils.importESModule(
+    "resource://devtools/client/jsonview/json-size-profiler.mjs"
+  );
+
+  for (const testJsonl of [
+    '{"a": 1}\r\n{"a": 2}',
+    '{"a": 1}\n\n\n{"a": 2}',
+    '{"a": 1}\n{"a": 2}\n',
+    '\n\n{"a": 1}',
+    "",
+    "\n \n",
+  ]) {
+    const profile = createSizeProfile(testJsonl, "test.jsonl", true);
+    const totalSize = totalProfiledBytes(profile);
+    is(
+      totalSize,
+      utf8Length(testJsonl),
+      `Every byte should be accounted for in ${JSON.stringify(testJsonl)}`
+    );
+  }
+});
+
+add_task(async function testProfileCreationWithJsonlUtf8() {
+  info("Test that JSON Lines records with multi-byte characters are counted");
+
+  const { createSizeProfile } = ChromeUtils.importESModule(
+    "resource://devtools/client/jsonview/json-size-profiler.mjs"
+  );
+
+  const testJsonl = [
+    JSON.stringify({ n: "café" }),
+    JSON.stringify({ n: "中文" }),
+    JSON.stringify({ n: "🔥" }),
+  ].join("\n");
+  const profile = createSizeProfile(testJsonl, "test.jsonl", true);
+
+  const totalSize = totalProfiledBytes(profile);
+  const expectedByteLength = utf8Length(testJsonl);
+  is(
+    totalSize,
+    expectedByteLength,
+    `Total should match UTF-8 byte length (${expectedByteLength} bytes, not ${testJsonl.length} characters)`
+  );
+  Assert.greater(
+    expectedByteLength,
+    testJsonl.length,
+    "This fixture should contain multi-byte characters"
   );
 });
 
@@ -181,12 +376,8 @@ add_task(async function testProfileCreationWithUtf8() {
   const testJson = '{"name": "café", "lang": "中文", "emoji": "🔥"}';
   const profile = createSizeProfile(testJson);
 
-  // Calculate expected byte length (UTF-8 encoded)
-  const utf8Encoder = new TextEncoder();
-  const expectedByteLength = utf8Encoder.encode(testJson).length;
-
-  const samples = profile.threads[0].samples;
-  const totalSize = samples.weight.reduce((sum, weight) => sum + weight, 0);
+  const expectedByteLength = utf8Length(testJson);
+  const totalSize = totalProfiledBytes(profile);
 
   is(
     totalSize,
@@ -199,5 +390,7 @@ add_task(async function testProfileCreationWithUtf8() {
     "UTF-8 byte length should be greater than character count for this test string"
   );
 
-  info(`Sample count: ${samples.length} for ${expectedByteLength} bytes`);
+  info(
+    `Sample count: ${profile.threads[0].samples.length} for ${expectedByteLength} bytes`
+  );
 });

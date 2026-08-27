@@ -65,6 +65,7 @@ category browser-window-delayed-startup resource:///modules/HomePage.sys.mjs Hom
 category browser-window-delayed-startup moz-src:///browser/components/genai/LinkPreview.sys.mjs LinkPreview.init
 category browser-window-delayed-startup moz-src:///browser/components/reportbrokensite/ReportBrokenSite.sys.mjs ReportBrokenSite.init
 category browser-window-delayed-startup moz-src:///browser/components/search/SearchUIUtils.sys.mjs SearchUIUtils.init
+category browser-window-delayed-startup moz-src:///browser/components/sharing/SharePageAction.sys.mjs SharePageAction.init
 category browser-window-delayed-startup resource:///modules/taskbartabs/TaskbarTabsPageAction.sys.mjs TaskbarTabsPageAction.init
 #ifdef XP_MACOSX
 category browser-window-delayed-startup resource://gre/modules/RosettaUtils.sys.mjs RosettaUtils.maybeWarnAboutRosetta
@@ -74,7 +75,6 @@ category browser-window-delayed-startup chrome://browser/content/browser.js#Brow
 category browser-window-delayed-startup chrome://browser/content/tabbrowser/browser-fullZoom.js FullZoom.init
 category browser-window-delayed-startup chrome://browser/content/customizableui/panelUI.js PanelUI.init
 category browser-window-delayed-startup chrome://browser/content/browser-places.js#BookmarkingUI BookmarkingUI.init
-category browser-window-delayed-startup chrome://browser/content/browser.js#gURLBar gURLBar.delayedStartupInit
 category browser-window-delayed-startup chrome://browser/content/browser-siteProtections.js gProtectionsHandler.init
 category browser-window-delayed-startup chrome://browser/content/browser-trustPanel.js gTrustPanelHandler.init
 category browser-window-delayed-startup chrome://browser/content/browser-places.js#PlacesToolbarHelper PlacesToolbarHelper.init
@@ -179,6 +179,7 @@ category browser-idle-startup moz-src:///browser/components/urlbar/QuickSuggest.
 category browser-idle-startup moz-src:///browser/components/urlbar/UrlbarSearchTermsPersistence.sys.mjs UrlbarSearchTermsPersistence.init
 category browser-idle-startup moz-src:///browser/components/search/SERPCategorization.sys.mjs SERPCategorization.init
 category browser-idle-startup resource://gre/modules/ContentRelevancyManager.sys.mjs ContentRelevancyManager.init
+category browser-idle-startup chrome://global/content/ml/EngineProcess.sys.mjs EngineProcess.maybeReportNativeOnnxRuntimeAvailability
 category browser-idle-startup resource://gre/modules/ColorwayThemeMigration.sys.mjs ColorwayThemeMigration.maybeWarn
 category browser-idle-startup resource://gre/modules/AppServicesTracing.sys.mjs RustLogForwarder.init
 #ifdef MOZ_UPDATER

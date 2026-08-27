@@ -128,12 +128,19 @@ class TestInitializeVerticalTabs(MarionetteTestCase):
 
         self.check_tabs_toolbar_visibilities("horizontal")
 
-        # Make sure we ended up with sensible defaults
+        # Make sure we ended up with sensible defaults. The flexible space is a
+        # special widget whose resolved id (customizableui-special-springN) isn't
+        # deterministic, so normalize it back to "spring" before comparing.
+        normalized_ids = [
+            "spring" if wid.startswith("customizableui-special-spring") else wid
+            for wid in horiz_tab_ids
+        ]
         self.assertEqual(
-            horiz_tab_ids,
+            normalized_ids,
             [
                 "tabbrowser-tabs",
                 "new-tab-button",
+                "spring",
                 "alltabs-button",
                 "ai-window-toggle",
             ],
@@ -144,6 +151,56 @@ class TestInitializeVerticalTabs(MarionetteTestCase):
             len(vertical_tab_ids),
             0,
             msg="The vertical tabstrip area was emptied",
+        )
+
+    def _count_springs(self, area):
+        return len([
+            wid
+            for wid in self.get_area_widgets(area)
+            if wid.startswith("customizableui-special-spring")
+        ])
+
+    def test_flexible_space_removed_in_vertical(self):
+        # Start fresh in horizontal tabs, where the tabstrip has a flexible space
+        # (spring) to the left of the alltabs-button by default.
+        self.restart_with_prefs({
+            "sidebar.revamp": True,
+            "sidebar.verticalTabs": False,
+            customization_pref: None,
+            snapshot_pref: None,
+        })
+
+        default_navbar_springs = self._count_springs("AREA_NAVBAR")
+        self.assertEqual(
+            self._count_springs("AREA_TABSTRIP"),
+            1,
+            msg="The tabstrip has a flexible space by default in horizontal tabs",
+        )
+
+        # Switching to vertical tabs should remove the tabstrip's flexible space
+        # entirely, not move it into the nav-bar.
+        self.marionette.set_pref("sidebar.verticalTabs", True)
+        self.check_tabs_toolbar_visibilities("vertical")
+
+        self.assertEqual(
+            len(self.get_area_widgets("AREA_TABSTRIP")),
+            0,
+            msg="The horizontal tabstrip area is empty in vertical tabs",
+        )
+        self.assertEqual(
+            self._count_springs("AREA_NAVBAR"),
+            default_navbar_springs,
+            msg="The tabstrip flexible space was not moved into the nav-bar",
+        )
+
+        # Switching back to horizontal should restore the flexible space.
+        self.marionette.set_pref("sidebar.verticalTabs", False)
+        self.check_tabs_toolbar_visibilities("horizontal")
+
+        self.assertEqual(
+            self._count_springs("AREA_TABSTRIP"),
+            1,
+            msg="The flexible space returned to the tabstrip in horizontal tabs",
         )
 
     def test_restore_tabstrip_customizations(self):

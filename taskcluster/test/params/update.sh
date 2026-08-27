@@ -81,6 +81,10 @@ for f in $files; do
             # this one is weird, ignore it
             continue
             ;;
+        onpush-backstop)
+            task=${trust_domain}.v2.${path}.latest.taskgraph.backstop
+            service=index
+            ;;
         cron-*)
             task=${action#cron-}
             task=${trust_domain}.v2.${path}.latest.taskgraph.decision-${task}

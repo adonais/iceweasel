@@ -1029,6 +1029,9 @@ skip-if = [
 
 ["test_video_in_audio_element.html"]
 
+["test_video_rate_vfr.html"]
+support-files = ["video_rate_vfr.mp4"]
+
 ["test_video_stats_resistfingerprinting.html"]
 tags = "resistfingerprinting"
 

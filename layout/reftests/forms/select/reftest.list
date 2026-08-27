@@ -1,7 +1,5 @@
 fuzzy-if(Android,0-4,0-12) == out-of-bounds-selectedindex.html out-of-bounds-selectedindex-ref.html # test for bug 471741
 == multiple.html multiple-ref.html
-== boguskids.html boguskids-ref.html
-== dynamic-boguskids.html boguskids-ref.html
 == option-children.html option-children-ref.html
 fuzzy(0-1,0-4) == padding-button-placement.html padding-button-placement-ref.html
 == vertical-centering.html vertical-centering-ref.html

@@ -5,10 +5,12 @@
 #ifndef DOM_WEBTRANSPORT_API_WEBTRANSPORT_H_
 #define DOM_WEBTRANSPORT_API_WEBTRANSPORT_H_
 
+#include "mozilla/dom/BufferSourceBindingFwd.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebTransportBinding.h"
 #include "mozilla/dom/WebTransportChild.h"
 #include "mozilla/dom/WebTransportReceiveStream.h"
+#include "mozilla/dom/WebTransportSendGroup.h"
 #include "mozilla/dom/WebTransportSendStream.h"
 #include "mozilla/dom/WebTransportStreams.h"
 #include "mozilla/ipc/DataPipe.h"
@@ -25,6 +27,7 @@ namespace mozilla::dom {
 class WebTransportError;
 class WebTransportDatagramDuplexStream;
 class WebTransportIncomingStreamsAlgorithms;
+class WebTransportSendGroup;
 class ReadableStream;
 class WritableStream;
 using BidirectionalPair = std::pair<RefPtr<mozilla::ipc::DataPipeReceiver>,
@@ -45,6 +48,10 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   // For mSendStreams/mReceiveStreams
   friend class WebTransportSendStream;
   friend class WebTransportReceiveStream;
+  // For mState access in CreateWritable
+  friend class WebTransportDatagramDuplexStream;
+  // For mWebTransport access in CreateWritable
+  friend class WebTransportSendGroup;
 
  public:
   explicit WebTransport(nsIGlobalObject* aGlobal);
@@ -62,6 +69,7 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
             const WebTransportOptions& aOptions, ErrorResult& aError);
   void ResolveWaitingConnection(WebTransportReliabilityMode aReliability);
   void RejectWaitingConnection(nsresult aRv);
+  void ResolveDraining();
   bool ParseURL(const nsAString& aURL) const;
   // this calls CloseNative(), which doesn't actually run script.   See bug
   // 1810942
@@ -85,6 +93,8 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   void RemoteClosed(bool aCleanly, const uint32_t& aCode,
                     const nsACString& aReason);
 
+  void SetNegotiatedProtocol(const nsACString& aProtocol);
+
   void OnStreamResetOrStopSending(uint64_t aStreamId,
                                   const StreamResetOrStopSendingError& aError);
   // WebIDL Boilerplate
@@ -99,10 +109,15 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
       const WebTransportOptions& aOptions, ErrorResult& aError);
 
   already_AddRefed<Promise> GetStats(ErrorResult& aError);
+  already_AddRefed<Promise> ExportKeyingMaterial(
+      const BufferSource& aLabel, const Optional<BufferSource>& aContext,
+      ErrorResult& aError);
 
   already_AddRefed<Promise> Ready() { return do_AddRef(mReady); }
   WebTransportReliabilityMode Reliability();
   WebTransportCongestionControl CongestionControl();
+  void GetProtocol(nsAString& aProtocol);
+  already_AddRefed<Promise> Draining() { return do_AddRef(mDraining); }
   already_AddRefed<Promise> Closed() { return do_AddRef(mClosed); }
   MOZ_CAN_RUN_SCRIPT void Close(const WebTransportCloseInfo& aOptions,
                                 ErrorResult& aRv);
@@ -117,7 +132,10 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY already_AddRefed<ReadableStream>
   IncomingUnidirectionalStreams();
 
-  void SendSetSendOrder(uint64_t aStreamId, Maybe<int64_t> aSendOrder);
+  already_AddRefed<WebTransportSendGroup> CreateSendGroup(ErrorResult& aRv);
+
+  void SendSetSendOrder(uint64_t aStreamId, int64_t aSendOrder);
+  void SendSetSendGroup(uint64_t aStreamId, uint64_t aGroupId);
 
   void Shutdown() {}
 
@@ -127,6 +145,14 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   template <typename Stream>
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void PropagateError(Stream* aStream,
                                                   WebTransportError* aError);
+
+  // Internal helpers for creating streams with sendGroup and sendOrder
+  already_AddRefed<Promise> CreateBidirectionalStreamInternal(
+      const WebTransportSendStreamOptions& aOptions,
+      WebTransportSendGroup* aSendGroup, int64_t aSendOrder, ErrorResult& aRv);
+  already_AddRefed<Promise> CreateUnidirectionalStreamInternal(
+      const WebTransportSendStreamOptions& aOptions,
+      WebTransportSendGroup* aSendGroup, int64_t aSendOrder, ErrorResult& aRv);
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
   // We are the owner of WebTransportChild.  We must call Shutdown() on it
@@ -148,15 +174,18 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
 
   WebTransportState mState;
   RefPtr<Promise> mReady;
+  RefPtr<Promise> mDraining;
   uint64_t mInnerWindowID = 0;
   uint64_t mHttpChannelID = 0;
   uint64_t mBrowsingContextID = 0;
+  uint64_t mNextSendGroupId = 1;
   RefPtr<mozilla::net::WebTransportEventService> mService;
   // XXX may not need to be a RefPtr, since we own it through the Streams
   RefPtr<WebTransportIncomingStreamsAlgorithms> mIncomingBidirectionalAlgorithm;
   RefPtr<WebTransportIncomingStreamsAlgorithms>
       mIncomingUnidirectionalAlgorithm;
   WebTransportReliabilityMode mReliability;
+  nsString mProtocol;
   // Incoming streams get queued here.  Use a TArray though it's working as
   // a FIFO - rarely will there be more than one entry in these arrays, so
   // the overhead of mozilla::Queue is unneeded

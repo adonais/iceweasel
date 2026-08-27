@@ -51,10 +51,12 @@ class PromiseDebugging {
       GlobalObject&, UncaughtRejectionObserver& aObserver);
 
   // Mark a Promise as having been left uncaught at script completion.
-  static void AddUncaughtRejection(JS::Handle<JSObject*>);
+  // aPromiseID must be JS::GetPromiseID(aPromise); it is passed in because
+  // the sole caller has already computed it.
+  static void AddUncaughtRejection(JS::Handle<JSObject*>, uint64_t aPromiseID);
   // Mark a Promise previously added with `AddUncaughtRejection` as
   // eventually consumed.
-  static void AddConsumedRejection(JS::Handle<JSObject*>);
+  static void AddConsumedRejection(JS::Handle<JSObject*>, uint64_t aPromiseID);
   // Propagate the informations from AddUncaughtRejection
   // and AddConsumedRejection to observers.
   static void FlushUncaughtRejections();

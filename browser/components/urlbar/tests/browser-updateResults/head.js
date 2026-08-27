@@ -338,7 +338,7 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
       "suggestedIndex after first search"
     );
     Assert.equal(
-      UrlbarUtils.getSpanForResult(result.element.row.result),
+      UrlbarShared.getSpanForResult(result.element.row.result),
       resultSpan,
       "resultSpan after first search"
     );
@@ -446,7 +446,7 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
 
       // resultSpan
       Assert.equal(
-        UrlbarUtils.getSpanForResult(row.result),
+        UrlbarShared.getSpanForResult(row.result),
         rowState.resultSpan || 1,
         `resultSpan at index ${rowIndex} during update`
       );
@@ -512,7 +512,7 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
         `suggestedIndex at index ${i} after update`
       );
       Assert.equal(
-        UrlbarUtils.getSpanForResult(result),
+        UrlbarShared.getSpanForResult(result),
         resultSpan,
         `resultSpan at index ${i} after update`
       );

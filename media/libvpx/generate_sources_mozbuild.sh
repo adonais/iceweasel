@@ -179,7 +179,10 @@ function gen_rtcd_header {
 # $2 - Config command line.
 function gen_config_files {
   mkdir -p $BASE_DIR/$LIBVPX_CONFIG_DIR/$1
-  ./configure $2 --log=$BASE_DIR/$LIBVPX_CONFIG_DIR/$1/config.log > /dev/null
+  # configure records its own command line in vpx_config.c, so pass a relative
+  # --log to keep the absolute path of this checkout out of the generated files.
+  ./configure $2 --log=config.log > /dev/null
+  cp config.log $BASE_DIR/$LIBVPX_CONFIG_DIR/$1/config.log
   echo "Log file: $BASE_DIR/$LIBVPX_CONFIG_DIR/$1/config.log"
 
   # Disable HAVE_UNISTD_H.

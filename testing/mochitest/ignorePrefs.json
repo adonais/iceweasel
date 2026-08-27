@@ -58,6 +58,7 @@
   "privacy.trackingprotection.allow_list.convenience.enabled",
   "privacy.trackingprotection.allow_list.hasMigratedCategoryPrefs",
   "security.webauthn.show_ms_settings_link",
+  "services.settings.base_attachments_url",
   "services.sync.clients.lastSync",
   "services.sync.declinedEngines",
   "services.sync.globalScore",

@@ -16,7 +16,7 @@ namespace a11y {
 class ServiceProvider final : public IServiceProvider {
  public:
   explicit ServiceProvider(MsaaAccessible* aMsaa) : mMsaa(aMsaa) {}
-  ~ServiceProvider() {}
+  ~ServiceProvider() = default;
 
   DECL_IUNKNOWN
 

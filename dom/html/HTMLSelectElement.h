@@ -38,6 +38,8 @@ class HTMLOptionElementOrHTMLOptGroupElement;
 class HTMLSelectElement;
 class HTMLSelectedContentElement;
 
+enum class SelectedContentUpdateMode : uint8_t { MicroTask, ScriptRunner };
+
 /**
  * Implementation of &lt;select&gt;
  */
@@ -167,7 +169,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   // via bindings.
   void SetCustomValidity(const nsAString& aError);
 
-  void ShowPicker(ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void ShowPicker(ErrorResult& aRv);
 
   using nsINode::Remove;
 
@@ -275,6 +277,11 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   /** Is this a combobox? */
   bool IsCombobox() const { return !Multiple() && Size() <= 1; }
 
+  bool IsBaseSelectAppearance() const;
+  nsGenericHTMLElement* GetPickerElement() const;
+  MOZ_CAN_RUN_SCRIPT void TogglePickerInternal(
+      bool aIsSourceTouchEvent = false);
+
   bool OpenInParentProcess() const { return mIsOpenInParentProcess; }
   void SetOpenInParentProcess(bool aVal) {
     mIsOpenInParentProcess = aVal;
@@ -308,27 +315,28 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
                                            IgnoredOptionList = {});
 
   // https://html.spec.whatwg.org/#selectedness-setting-algorithm
-  // NOTE: PR https://github.com/whatwg/html/pull/12263 rewrites this algorithm
   // aIgnored: options to skip (for pre-removal handling where options are still
   // in the list but about to be unbound).
   void RunSelectednessSettingAlgorithm(bool aNotify = true,
-                                       bool aInsertionOrRemovalSteps = false,
+                                       bool aSkipSelectedcontentUpdate = false,
                                        IgnoredOptionList aIgnored = {});
 
-  // Queues a microtask to update all descendant selectedcontent elements.
+  // Schedules an update of all descendant selectedcontent elements.
   // Multiple calls coalesce into a single update.
-  void ScheduleSelectedContentUpdate();
-  // Like ScheduleSelectedContentUpdate but uses AddScriptRunner instead of a
-  // microtask, so it fires in FIFO order with post-connection script runners.
   // aForceUpdate: skips IsInComposedDoc and mSelectedContentUpdatePending
   // guards. Used by spec algorithms (select.value, select.selectedIndex) that
   // must update selectedcontent even on disconnected selects and must not be
-  // coalesced with deferred mutation-driven updates. Safe from re-entrance
-  // because JS setters cannot be called during UpdateDescendantSelectedContent.
-  void ScheduleSelectedContentUpdateScriptRunner(bool aForceUpdate = false);
+  // coalesced with deferred mutation-driven updates.
+  void ScheduleSelectedContentUpdate(
+      SelectedContentUpdateMode aMode = SelectedContentUpdateMode::MicroTask,
+      bool aForceUpdate = false);
 
   // https://html.spec.whatwg.org/#update-a-select's-descendant-selectedcontent-elements
   MOZ_CAN_RUN_SCRIPT void UpdateDescendantSelectedContentElements();
+  // Runs UpdateDescendantSelectedContentElements only if an update is still
+  // pending. Entry point for the microtask and script-runner schedulers so they
+  // coalesce into a single update.
+  MOZ_CAN_RUN_SCRIPT void RunPendingSelectedContentUpdate();
   // https://html.spec.whatwg.org/#update-a-selectedcontent
   MOZ_CAN_RUN_SCRIPT void UpdateSelectedContentElement(
       HTMLSelectedContentElement* aSelectedContent);
@@ -431,10 +439,10 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   MOZ_CAN_RUN_SCRIPT nsresult HandleMouseUp(EventChainPostVisitor&);
   MOZ_CAN_RUN_SCRIPT nsresult HandleMouseMove(EventChainPostVisitor&);
 
-  // Returns the index of the option targeted by aEvent, using the
-  // listbox frame for the necessary hit-testing geometry. Returns a failure
-  // code if the event doesn't target a selectable option.
-  Maybe<int32_t> GetListBoxIndexFromEvent(const WidgetMouseEvent&);
+  // Returns the option targeted by aEvent, using the listbox frame
+  // for the necessary hit-testing geometry.
+  HTMLOptionElement* GetListBoxOptionFromEvent(const WidgetMouseEvent&);
+
   // Grabs/releases mouse capture for listbox drag-selection.
   void CaptureMouseEvents(bool aGrabMouseEvents);
 
@@ -457,7 +465,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   void UpdateListBoxSelectionAfterKeyEvent(int32_t aNewIndex,
                                            uint32_t aCharCode, bool aIsShift,
                                            bool aIsControlOrMeta);
-  void RemoveOptionFromListBoxSelection(int32_t aIndex);
+  void RemoveOptionFromListBoxSelection(HTMLOptionElement& aOption);
   void ScrollToOption(int32_t aIndex);
   MOZ_CAN_RUN_SCRIPT void DoScrollToOption(int32_t aIndex);
   void AdjustIndexForDisabledOpt(int32_t aStartIndex, int32_t& aNewIndex,
@@ -533,17 +541,28 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
    * The current displayed preview text.
    */
   nsString mPreviewValue;
+
+  static constexpr int32_t kNothingSelected = -1;
+
   /**
    * Listbox selection range, only meaningful while a listbox frame exists.
-   * Both default to kNothingSelected (-1); mEndSelectionIndex is the option
-   * focused for keyboard navigation.
+   * mEnd is the option focused for keyboard navigation.
    */
-  static constexpr int32_t kNothingSelected = -1;
   struct {
-    int32_t mStart = -1;
-    int32_t mEnd = -1;
+    RefPtr<HTMLOptionElement> mStart;
+    RefPtr<HTMLOptionElement> mEnd;
+    // Whether mStart's index <= mEnd's index.
+    bool mStartIsLow = true;
 
-    void SetTo(int32_t aIndex) { mStart = mEnd = aIndex; }
+    void SetTo(HTMLOptionElement* aOption) {
+      mStart = mEnd = aOption;
+      mStartIsLow = true;
+    }
+
+    void Clear() {
+      mStart = mEnd = nullptr;
+      mStartIsLow = true;
+    }
   } mListBoxSelection;
 
  private:

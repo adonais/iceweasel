@@ -9,6 +9,10 @@ support-files = ["common.js"]
 
 ["test_editcontext_blur_in_textupdate.html"]
 
+["test_editcontext_characterboundsupdate_focus.html"]
+
+["test_editcontext_characterboundsupdate_range.html"]
+
 ["test_editcontext_composition.html"]
 
 ["test_editcontext_content_command_replace_text.html"]
@@ -31,6 +35,8 @@ support-files = ["common.js"]
 
 ["test_editcontext_resist_fingerprinting.html"]
 support-files = ["file_editcontext_resist_fingerprinting.html"]
+
+["test_editcontext_set_selection.html"]
 
 ["test_editcontext_spellcheck.html"]
 skip-if = [

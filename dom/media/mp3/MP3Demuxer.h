@@ -8,6 +8,8 @@
 #include "MP3FrameParser.h"
 #include "MediaDataDemuxer.h"
 #include "MediaResource.h"
+#include "gtest/MozGtestFriend.h"
+#include "mozilla/CumulativeAverage.h"
 
 namespace mozilla {
 
@@ -86,6 +88,8 @@ class MP3TrackDemuxer : public MediaTrackDemuxer,
   // Destructor.
   ~MP3TrackDemuxer() = default;
 
+  FRIEND_TEST(MP3DemuxerTest, SeekOffsetSurvivesFrameLengthOverflow);
+
   // Fast approximate seeking to given time.
   media::TimeUnit FastSeek(const media::TimeUnit& aTime);
 
@@ -157,8 +161,8 @@ class MP3TrackDemuxer : public MediaTrackDemuxer,
   // Current frame index.
   int64_t mFrameIndex;
 
-  // Sum of parsed frames' lengths in bytes.
-  int64_t mTotalFrameLen;
+  // Running average of parsed frame lengths in bytes.
+  mozilla::CumulativeAverage<double> mMeanFrameLen;
 
   // Samples per frame metric derived from frame headers or 0 if none available.
   uint32_t mSamplesPerFrame;

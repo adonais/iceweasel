@@ -191,7 +191,7 @@ add_task(
     const browser = win.gBrowser.selectedBrowser;
 
     await typeInSmartbar(browser, "test");
-    await stubLoadURL(browser);
+    await stubOpenSERP(browser);
 
     await SpecialPowers.spawn(browser, [], async () => {
       const aiWindow = content.document.querySelector("ai-window");

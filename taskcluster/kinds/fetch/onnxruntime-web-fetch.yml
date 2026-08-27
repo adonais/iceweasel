@@ -41,10 +41,32 @@ mozilla-autofill:
     description: autofill model
     fetch:
         type: git
-        repo: https://huggingface.co/Mozilla/tinybert-uncased-autofill
-        revision: a8cdc0f19f2f5b6a099e4d7f24725a0b57073cb4
-        path-prefix: "onnx-models/Mozilla/tinybert-uncased-autofill/main/"
-        artifact-name: tinybert-uncased-autofill.tar.zst
+        repo: https://huggingface.co/Mozilla/tinybert-address-autofill
+        revision: 096fa0e7a0145950cf03d40119f5fe5c28ada102
+        path-prefix: "onnx-models/Mozilla/tinybert-address-autofill/main/"
+        artifact-name: tinybert-address-autofill.tar.zst
+
+# Triple-encoder autofill model (Approach 3): shared feature-extraction encoder.
+# Served under the v0.1.0 path used by FormAutofillML/production; the HF repo
+# currently only has a `main` branch (no v0.1.0 tag), so we pin its HEAD.
+mozilla-autofill-embed:
+    description: autofill triple-encoder (feature-extraction) model
+    fetch:
+        type: git
+        repo: https://huggingface.co/Mozilla/form-autofill-embed
+        revision: 81fc90166824c5707eae93dde3cf384142cc880d
+        path-prefix: "onnx-models/mozilla/form-autofill-embed/v0.1.0/"
+        artifact-name: form-autofill-embed.tar.zst
+
+# Triple-encoder autofill model (Approach 3): fusion head.
+mozilla-autofill-head:
+    description: autofill triple-encoder fusion head model
+    fetch:
+        type: git
+        repo: https://huggingface.co/Mozilla/form-autofill-head
+        revision: 33f69b42305bcfc0aff34514f84ef16c7f5d9522
+        path-prefix: "onnx-models/mozilla/form-autofill-head/v0.1.0/"
+        artifact-name: form-autofill-head.tar.zst
 
 distilbart-cnn-12-6:
     description: Distilbart-cnn-12-6 text summarization model

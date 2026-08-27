@@ -128,7 +128,7 @@ nsXHTMLContentSerializer::AppendText(Text* aText, int32_t aStartOffset,
                    NS_ERROR_OUT_OF_MEMORY);
   } else {
     int32_t lastNewlineOffset = kNotFound;
-    if (HasLongLines(data, lastNewlineOffset)) {
+    if (mAllowLineBreaking && HasLongLines(data, lastNewlineOffset)) {
       // We have long lines, rewrap
       mDoWrap = true;
       bool result = AppendToStringWrapped(data, *mOutput);
@@ -271,7 +271,7 @@ bool nsXHTMLContentSerializer::SerializeAttributes(
             nsAutoString absURI;
             rv = NS_MakeAbsoluteURI(absURI, valueStr, uri);
             if (NS_SUCCEEDED(rv)) {
-              valueStr = absURI;
+              valueStr = std::move(absURI);
             }
           }
         }

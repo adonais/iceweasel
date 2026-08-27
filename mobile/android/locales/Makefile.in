@@ -30,9 +30,13 @@ clobber-stage:
 l10n-%: AB_CD=$*
 l10n-%:
 	$(if $(filter en-US,$(AB_CD)),, $(MAKE) merge-$*)
+ifdef MOZ_USE_LEGACY_L10N
 	$(MAKE) -C $(DEPTH)/mobile/locales l10n-$*
 	$(MAKE) l10n AB_CD=$* XPI_NAME=locale-$* PREF_DIR=defaults/pref
 	$(MAKE) multilocale.txt-$* AB_CD=$* XPI_NAME=locale-$*
+else
+	$(call py_action,l10n_stage,--locale=$* --manifest=$(DEPTH)/l10n-manifest.json --merge-tree=$(BASE_MERGE)/$* --dest=$(DIST)/xpi-stage/locale-$* --topsrcdir=$(topsrcdir) --topobjdir=$(DEPTH))
+endif
 
 # Tailored target to just add the chrome processing for multi-locale builds
 # merge if we're not en-US, using conditional function as we need
@@ -41,5 +45,9 @@ chrome-%: AB_CD=$*
 chrome-%: IS_LANGUAGE_REPACK=1
 chrome-%:
 	$(if $(filter en-US,$(AB_CD)),, $(MAKE) merge-$*)
+ifdef MOZ_USE_LEGACY_L10N
 	$(MAKE) -C $(DEPTH)/mobile/locales chrome-$*
 	$(MAKE) chrome AB_CD=$*
+else
+	$(call py_action,l10n_stage,--locale=$* --manifest=$(DEPTH)/l10n-manifest.json --merge-tree=$(BASE_MERGE)/$* --dest=$(DIST)/bin --topsrcdir=$(topsrcdir) --topobjdir=$(DEPTH) --mode=chrome)
+endif

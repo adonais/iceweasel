@@ -54,6 +54,7 @@ task-defaults:
         # Each task only processes one installer...this should be quick.
         max-run-time: 600
     run:
+        clone-with: hg
         using: run-task
         cwd: "{checkout}"
         command:

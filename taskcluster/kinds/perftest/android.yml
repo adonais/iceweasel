@@ -15,6 +15,7 @@ task-defaults:
             PYTHONPATH: "testing/mozbase/mozdevice:third_party/python/six"
 
     run:
+        clone-with: hg
         sparse-profile: perftest
         checkout: true
         cwd: '{checkout}'
@@ -35,6 +36,7 @@ hw-a55-aarch64-shippable-startup-chrome-m-newssite-applink-startup:
     attributes:
         cron: true
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -62,6 +64,7 @@ hw-a55-aarch64-shippable-startup-fenix-newssite-applink-startup:
     require-build:
         android-hw-a55-14-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -84,6 +87,7 @@ hw-p6-aarch64-shippable-startup-chrome-m-newssite-applink-startup:
         cron: true
     run-on-projects: []
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -111,6 +115,7 @@ hw-p6-aarch64-shippable-startup-fenix-newssite-applink-startup:
     require-build:
         android-hw-p6-13-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -133,6 +138,7 @@ hw-s24-aarch64-shippable-startup-chrome-m-newssite-applink-startup:
         cron: true
     run-on-projects: []
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -160,6 +166,7 @@ hw-s24-aarch64-shippable-startup-fenix-newssite-applink-startup:
     require-build:
         android-hw-s24-14-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -181,6 +188,7 @@ hw-a55-aarch64-shippable-startup-chrome-m-shopify-applink-startup:
     attributes:
         cron: true
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -208,6 +216,7 @@ hw-a55-aarch64-shippable-startup-fenix-shopify-applink-startup:
     require-build:
         android-hw-a55-14-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -229,6 +238,7 @@ hw-p6-aarch64-shippable-startup-chrome-m-shopify-applink-startup:
     attributes:
         cron: true
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -256,6 +266,7 @@ hw-p6-aarch64-shippable-startup-fenix-shopify-applink-startup:
     require-build:
         android-hw-p6-13-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -277,6 +288,7 @@ hw-s24-aarch64-shippable-startup-chrome-m-shopify-applink-startup:
     attributes:
         cron: true
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -304,6 +316,7 @@ hw-s24-aarch64-shippable-startup-fenix-shopify-applink-startup:
     require-build:
         android-hw-s24-14-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -326,6 +339,7 @@ hw-a55-aarch64-shippable-startup-chrome-m-tab-restore-startup:
         cron: true
     run-on-projects: [trunk-only]
     run:
+        clone-with: hg
         command: >-
              mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
              cd $GECKO_PATH &&
@@ -353,6 +367,7 @@ hw-a55-aarch64-shippable-startup-fenix-tab-restore-startup:
     require-build:
         android-hw-a55-14-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -375,6 +390,7 @@ hw-p6-aarch64-shippable-startup-chrome-m-tab-restore-startup:
         cron: true
     run-on-projects: []
     run:
+        clone-with: hg
         command: >-
              mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
              cd $GECKO_PATH &&
@@ -402,6 +418,7 @@ hw-p6-aarch64-shippable-startup-fenix-tab-restore-startup:
     require-build:
         android-hw-p6-13-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -424,6 +441,7 @@ hw-s24-aarch64-shippable-startup-chrome-m-tab-restore-startup:
         cron: true
     run-on-projects: []
     run:
+        clone-with: hg
         command: >-
              mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
              cd $GECKO_PATH &&
@@ -451,6 +469,7 @@ hw-s24-aarch64-shippable-startup-fenix-tab-restore-startup:
     require-build:
         android-hw-s24-14-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -472,6 +491,7 @@ hw-a55-aarch64-shippable-startup-chrome-m-homeview-startup:
     attributes:
         cron: true
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -499,6 +519,7 @@ hw-a55-aarch64-shippable-startup-fenix-homeview-startup:
     require-build:
         android-hw-a55-14-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -520,6 +541,7 @@ hw-p6-aarch64-shippable-startup-chrome-m-homeview-startup:
     attributes:
         cron: true
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -547,6 +569,7 @@ hw-p6-aarch64-shippable-startup-fenix-homeview-startup:
     require-build:
         android-hw-p6-13-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -568,6 +591,7 @@ hw-s24-aarch64-shippable-startup-chrome-m-homeview-startup:
     attributes:
         cron: true
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -595,6 +619,7 @@ hw-s24-aarch64-shippable-startup-fenix-homeview-startup:
     require-build:
         android-hw-s24-14-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -630,6 +655,7 @@ hw-a55-aarch64-shippable-startup-fenix-cold-main-first-frame:
     require-build:
         android-hw-a55-14-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -658,6 +684,7 @@ hw-a55-aarch64-shippable-startup-fenix-cold-view-nav-start:
     require-build:
         android-hw-a55-14-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -685,6 +712,7 @@ hw-a55-aarch64-shippable-startup-focus-cold-main-first-frame:
     require-build:
         android-hw-a55-14-0-aarch64-shippable/opt: signing-apk-focus-nightly
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -713,6 +741,7 @@ hw-a55-aarch64-shippable-startup-focus-cold-view-nav-start:
     require-build:
         android-hw-a55-14-0-aarch64-shippable/opt: signing-apk-focus-nightly
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -742,6 +771,7 @@ hw-a55-aarch64-shippable-startup-geckoview-cold-main-first-frame:
     require-build:
         android-hw-a55-14-0-aarch64-shippable/opt: build-android-aarch64-shippable/opt
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -770,6 +800,7 @@ hw-a55-aarch64-shippable-startup-geckoview-cold-view-nav-start:
     require-build:
         android-hw-a55-14-0-aarch64-shippable/opt: build-android-aarch64-shippable/opt
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -791,6 +822,7 @@ hw-a55-aarch64-shippable-startup-chrome-m-cold-main-first-frame:
     attributes:
         cron: true
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -818,6 +850,7 @@ hw-p6-aarch64-shippable-startup-fenix-cold-main-first-frame:
     require-build:
         android-hw-p6-13-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -840,6 +873,7 @@ hw-p6-aarch64-shippable-startup-chrome-m-cold-main-first-frame:
     attributes:
         cron: true
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -867,6 +901,7 @@ hw-p6-aarch64-shippable-startup-fenix-cold-view-nav-start:
     require-build:
         android-hw-p6-13-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -896,6 +931,7 @@ hw-s24-aarch64-shippable-startup-fenix-cold-main-first-frame:
     require-build:
         android-hw-s24-14-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -918,6 +954,7 @@ hw-s24-aarch64-shippable-startup-chrome-m-cold-main-first-frame:
     attributes:
         cron: true
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -945,6 +982,7 @@ hw-s24-aarch64-shippable-startup-fenix-cold-view-nav-start:
     require-build:
         android-hw-s24-14-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -965,6 +1003,7 @@ hw-a55-aarch64-perfstats-gv:
     attributes:
         cron: false
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -994,6 +1033,7 @@ hw-a55-aarch64-perfstats-fenix:
     attributes:
         cron: false
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -1029,6 +1069,7 @@ hw-a55-record-websites:
         - secrets:get:project/releng/gecko/build/level-{level}/conditioned-profiles
         - secrets:get:project/perftest/gecko/level-{level}/perftest-login
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -1066,6 +1107,7 @@ hw-a55-background-resource-fenix:
     require-build:
         android-hw-a55-14-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -1091,6 +1133,7 @@ hw-a55-background-resource-chrome:
         toolchain:
             - android-xmlstarlet
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -1120,6 +1163,7 @@ hw-a55-foreground-resource-fenix:
     require-build:
         android-hw-a55-14-0-aarch64-shippable/opt: signing-apk-fenix-nightly-simulation
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&
@@ -1145,6 +1189,7 @@ hw-a55-foreground-resource-chrome:
         toolchain:
             - android-xmlstarlet
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $GECKO_PATH &&

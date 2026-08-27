@@ -41,4 +41,5 @@ Empty <empty>
 Release <release>
 Scriptworker <scriptworker>
 Perf </testing/perfdocs/mach-try-perf>
+compare
 ```

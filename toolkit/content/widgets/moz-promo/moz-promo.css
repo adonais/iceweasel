@@ -43,6 +43,7 @@
   align-items: center;
   overflow: hidden;
   flex-grow: 1;
+  position: relative;
 }
 
 .text-container {
@@ -100,6 +101,26 @@
   }
 }
 
+:host([dismissable][imagedisplay="cover"]:not([imagealignment="end"])) {
+  .text-container {
+    padding-inline-end: calc(var(--promo-padding) + var(--button-size-icon) + var(--space-small));
+  }
+}
+
+:host([dismissable][imagedisplay="padded"]:not([imagealignment="end"])) {
+  .text-container {
+    padding-inline-end: calc(var(--button-size-icon) + var(--space-small));
+  }
+}
+
+/* A padded image is inset rather than bleeding to the edge, make room for
+ * the close button instead of letting it sit on the illustration. */
+:host([dismissable][imagedisplay="padded"][imagealignment="end"]) {
+  .image-container {
+    margin-inline-end: calc(var(--space-small) + var(--button-size-icon) - var(--promo-padding));
+  }
+}
+
 :host([imagealignment="center"]) {
   .container {
     flex-direction: column;
@@ -122,6 +143,38 @@
   --promo-image-size: var(--promo-image-size-large);
 }
 
+.close {
+  position: absolute;
+  /* Sit at the top, except on promos too short to fit the button there, where
+   * centering keeps it aligned with the single line of text. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  inset-block-start: min(var(--space-small), calc(50% - var(--button-size-icon) / 2));
+  inset-inline-end: var(--space-small);
+  z-index: 1;
+}
+
+/* A cover image bleeds under the close button, so give it an opaque backplate to
+ * keep the icon legible. */
+@media not (forced-colors) {
+  :host([dismissable][imagealignment="end"][imagedisplay="cover"]) .close {
+    --button-background-color-ghost: var(--background-color-box);
+    --button-text-color-ghost: var(--text-color);
+  }
+}
+
+/* These tints only read as a state change against theme colors. In high contrast
+ * --text-color is a system color, so the mix lands within a few percent of the
+ * resting backplate and hover becomes indistinguishable; let the design system
+ * supply the hover and active colors there instead. */
+@media not ((prefers-contrast) or (forced-colors)) {
+  :host([dismissable][imagealignment="end"][imagedisplay="cover"]) .close {
+    --button-background-color-ghost-hover: color-mix(in srgb, var(--text-color) 10%, var(--background-color-box));
+    --button-background-color-ghost-active: color-mix(in srgb, var(--text-color) 20%, var(--background-color-box));
+    --button-text-color-ghost-hover: var(--text-color);
+    --button-text-color-ghost-active: var(--text-color);
+  }
+}
+
 /* MozPromo heading style */
 
 .heading {
@@ -138,6 +191,7 @@
   margin: 0;
   align-items: center;
 
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   &:has(slot:has-slotted) {
     gap: var(--space-small);
   }

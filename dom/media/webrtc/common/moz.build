@@ -18,6 +18,7 @@ UNIFIED_SOURCES += [
     "browser_logging/CSFLog.cpp",
     "browser_logging/WebRtcLog.cpp",
     "IceServerParser.cpp",
+    "RtpHeaderExtensions.cpp",
     "time_profiling/timecard.c",
     "YuvStamper.cpp",
 ]

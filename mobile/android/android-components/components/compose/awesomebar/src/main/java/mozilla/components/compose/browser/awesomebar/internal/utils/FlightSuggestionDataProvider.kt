@@ -5,8 +5,8 @@
 package mozilla.components.compose.browser.awesomebar.internal.utils
 
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import mozilla.components.concept.awesomebar.optimizedsuggestions.FlightData
-import mozilla.components.concept.awesomebar.optimizedsuggestions.FlightSuggestionStatus
+import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightData
+import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightSuggestionStatus
 
 internal class FlightSuggestionDataProvider :
     PreviewParameterProvider<FlightSuggestionPreviewModel> {

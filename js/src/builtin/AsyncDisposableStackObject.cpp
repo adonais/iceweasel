@@ -26,10 +26,10 @@ using namespace js;
   MOZ_ASSERT_IF(initialDisposeCapability.isObject(),
                 initialDisposeCapability.toObject().is<ArrayObject>());
 
-  obj->initReservedSlot(
+  obj->initReservedSlotTyped(
       AsyncDisposableStackObject::DISPOSABLE_RESOURCE_STACK_SLOT,
       initialDisposeCapability);
-  obj->initReservedSlot(
+  obj->initReservedSlotTyped(
       AsyncDisposableStackObject::STATE_SLOT,
       JS::Int32Value(
           int32_t(AsyncDisposableStackObject::DisposableState::Pending)));
@@ -188,7 +188,7 @@ using namespace js;
   // Step 6. Set newAsyncDisposableStack.[[DisposeCapability]] to
   // asyncDisposableStack.[[DisposeCapability]].
   JS::Rooted<JS::Value> existingDisposeCapability(
-      cx, asyncDisposableStack->getReservedSlot(
+      cx, asyncDisposableStack->getReservedSlotTyped(
               AsyncDisposableStackObject::DISPOSABLE_RESOURCE_STACK_SLOT));
   AsyncDisposableStackObject* newAsyncDisposableStack =
       AsyncDisposableStackObject::create(cx, nullptr,

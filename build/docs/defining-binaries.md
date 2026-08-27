@@ -19,13 +19,13 @@ each append requires the given list to be alphanumerically ordered.
 
 ```python
 UNIFIED_SOURCES += [
-    'FirstSource.cpp',
-    'SecondSource.cpp',
-    'ThirdSource.cpp',
+    "FirstSource.cpp",
+    "SecondSource.cpp",
+    "ThirdSource.cpp",
 ]
 
 SOURCES += [
-    'OtherSource.cpp',
+    "OtherSource.cpp",
 ]
 ```
 
@@ -38,7 +38,7 @@ To build a static library, other than defining the source files (see above), one
 just needs to define a library name with the `Library` template.
 
 ```python
-Library('foo')
+Library("foo")
 ```
 
 The library file name will be `libfoo.a` on UNIX systems and `foo.lib` on
@@ -49,7 +49,7 @@ If the static library needs to aggregate other static libraries, a list of
 requires the appended list to be alphanumerically ordered.
 
 ```python
-USE_LIBS += ['bar', 'baz']
+USE_LIBS += ["bar", "baz"]
 ```
 
 If there are multiple directories containing the same `Library` name, it is
@@ -58,8 +58,8 @@ or absolute):
 
 ```python
 USE_LIBS += [
-    '/path/from/topsrcdir/to/bar',
-    '../relative/baz',
+    "/path/from/topsrcdir/to/bar",
+    "../relative/baz",
 ]
 ```
 
@@ -83,7 +83,7 @@ the build system that the library built in the current directory is meant to
 be linked to that bigger library, with the `FINAL_LIBRARY` variable.
 
 ```python
-FINAL_LIBRARY = 'xul'
+FINAL_LIBRARY = "xul"
 ```
 
 The `FINAL_LIBRARY` value must match a unique `Library` name somewhere
@@ -99,7 +99,7 @@ are defined similarly to static libraries, using the `SharedLibrary` template
 instead of `Library`.
 
 ```python
-SharedLibrary('foo')
+SharedLibrary("foo")
 ```
 
 When this template is used, no static library is built. See further below to
@@ -116,7 +116,7 @@ On OSX, one may want to create a special kind of dynamic library: frameworks.
 This is done with the `Framework` template.
 
 ```python
-Framework('foo')
+Framework("foo")
 ```
 
 With a `Framework` name of `foo`, the framework file name will be `foo`.
@@ -129,7 +129,7 @@ Executables, a.k.a. programs, are, in the simplest form, defined with the
 `Program` template.
 
 ```python
-Program('foobar')
+Program("foobar")
 ```
 
 On UNIX systems, the executable file name will be `foobar`, while on Windows,
@@ -144,8 +144,8 @@ directory, in which case we can use the `SimplePrograms` template
 
 ```python
 SimplePrograms([
-    'FirstProgram',
-    'SecondProgram',
+    "FirstProgram",
+    "SecondProgram",
 ])
 ```
 
@@ -155,10 +155,13 @@ corresponding `sources` have an extension different from `.cpp`, it is
 possible to specify the proper extension:
 
 ```python
-SimplePrograms([
-    'ThirdProgram',
-    'FourthProgram',
-], ext='.c')
+SimplePrograms(
+    [
+        "ThirdProgram",
+        "FourthProgram",
+    ],
+    ext=".c",
+)
 ```
 
 Please note this construct was added for compatibility with what already lives
@@ -178,8 +181,8 @@ widget toolkit, etc. Those required dependencies can be given with the
 
 ```python
 OS_LIBS += [
-    'foo',
-    'bar',
+    "foo",
+    "bar",
 ]
 ```
 
@@ -191,7 +194,7 @@ such as `-L/some/path` and `-llib`, such that it is possible to directly
 assign `LIBS` variables from `CONFIG`, such as:
 
 ```python
-OS_LIBS += CONFIG['MOZ_PANGO_LIBS']
+OS_LIBS += CONFIG["MOZ_PANGO_LIBS"]
 ```
 
 (assuming `CONFIG['MOZ_PANGO_LIBS']` is a list, not a string)
@@ -211,8 +214,8 @@ prefix and suffix shall be given.
 
 ```python
 USE_LIBS += [
-    '/path/from/topsrcdir/to/third-party/bar',
-    '../relative/third-party/baz',
+    "/path/from/topsrcdir/to/third-party/bar",
+    "../relative/third-party/baz",
 ]
 ```
 
@@ -238,8 +241,8 @@ The `STATIC_LIBRARY_NAME` and `SHARED_LIBRARY_NAME` variables can be used
 to change either the static or the shared library name.
 
 ```python
-Library('foo')
-STATIC_LIBRARY_NAME = 'foo_s'
+Library("foo")
+STATIC_LIBRARY_NAME = "foo_s"
 ```
 
 With the above, on Windows, `foo_s.lib` will be the static library,
@@ -249,9 +252,9 @@ In some cases, for convenience, it is possible to set both
 `STATIC_LIBRARY_NAME` and `SHARED_LIBRARY_NAME`. For example:
 
 ```python
-Library('mylib')
-STATIC_LIBRARY_NAME = 'mylib_s'
-SHARED_LIBRARY_NAME = CONFIG['SHARED_NAME']
+Library("mylib")
+STATIC_LIBRARY_NAME = "mylib_s"
+SHARED_LIBRARY_NAME = CONFIG["SHARED_NAME"]
 ```
 
 This allows to use `mylib` in the `USE_LIBS` of another library or

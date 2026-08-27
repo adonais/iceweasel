@@ -491,9 +491,11 @@ export const AIWindowUI = {
    * Toggle the "Organize Tabs" panel anchored to its toolbar button.
    *
    * @param {Window} win
+   * @param {object} [options] - Passed through to AutoTabGrouping, which uses
+   *   options.source to record what asked for the panel.
    */
-  toggleGroupTabsPanel(win) {
-    lazy.AutoTabGrouping.toggleGroupTabsPanel(win);
+  toggleGroupTabsPanel(win, options) {
+    lazy.AutoTabGrouping.toggleGroupTabsPanel(win, options);
   },
 
   /**

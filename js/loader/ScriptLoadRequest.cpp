@@ -118,6 +118,7 @@ void ScriptLoadRequest::Cancel() {
   mState = State::Canceled;
   if (HasScriptLoadContext()) {
     GetScriptLoadContext()->MaybeCancelOffThreadScript();
+    GetScriptLoadContext()->MaybeUnblockOnload();
   }
 }
 

@@ -7,16 +7,16 @@
 #ifndef mozilla_Variant_h
 #define mozilla_Variant_h
 
+#include <stdint.h>
+
 #include <algorithm>
 #include <new>
-#include <stdint.h>
+#include <type_traits>
+#include <utility>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/OperatorNewExtensions.h"
-
-#include <type_traits>
-#include <utility>
 
 namespace IPC {
 template <typename T>

@@ -1,4 +1,9 @@
 import json
+import shlex
+import shutil
+import subprocess
+import sys
+import tempfile
 import urllib.parse
 from contextlib import ExitStack
 from unittest.mock import MagicMock, patch
@@ -306,6 +311,88 @@ def test_push_to_git_backing_returns_git_push_sha(
     env = mock_push.call_args.kwargs.get("env", {})
     assert "-o IdentitiesOnly=yes" in env.get("GIT_SSH_COMMAND", "")
     assert "-o StrictHostKeyChecking=accept-new" in env.get("GIT_SSH_COMMAND", "")
+
+
+@pytest.mark.skipif(
+    shutil.which("ssh-keygen") is None, reason="ssh-keygen not available"
+)
+def test_push_to_git_backing_key_usable(tmp_path, monkeypatch, mock_tc_secret):
+    """git-backing ssh deploy key is readable, with permissions ssh will accept"""
+    ssh_keygen = shutil.which("ssh-keygen")
+    assert ssh_keygen
+
+    if sys.platform == "win32":
+        # The tempdir might already have a narrow default ACL and therefore never
+        # reproduce the overly-open ACL the fix this is testing guards against. Point
+        # the keyfile at a dedicated directory instead, with an inheritable broad grant
+        # added ahead of time, so the test does something useful.
+        fake_temp = tmp_path / "faketemp"
+        fake_temp.mkdir()
+        subprocess.run(
+            ["icacls", str(fake_temp), "/grant", "Users:(OI)(CI)(RX)"],
+            check=True,
+            capture_output=True,
+        )
+        monkeypatch.setattr(tempfile, "tempdir", str(fake_temp))
+
+    git_repo = GitRepository(tmp_path)
+    monkeypatch.setattr(push, "vcs", git_repo)
+
+    def mock_run(*args, **kwargs):
+        if args[0] == "rev-parse":
+            return "gitsha456\n"
+        return None
+
+    unexpected_failures = []
+
+    def check_keyfile(*args, **kwargs):
+        ssh_command = kwargs.get("env", {}).get("GIT_SSH_COMMAND", "")
+        parts = shlex.split(ssh_command)
+        keyfile_path = parts[parts.index("-i") + 1]
+
+        proc = subprocess.run(
+            [ssh_keygen, "-y", "-f", keyfile_path],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        stderr = proc.stderr.lower()
+        # The only acceptable failure is one caused by our fake key's content
+        # being garbage, i.e. ssh-keygen must have gotten as far as reading and
+        # parsing the file. Different ssh-keygen builds word this differently.
+        content_error_markers = (
+            "invalid format",
+            "error in libcrypto",
+        )
+        if proc.returncode != 0 and not any(
+            marker in stderr for marker in content_error_markers
+        ):
+            unexpected_failures.append(proc.stderr)
+
+        if sys.platform == "win32":
+            # ssh's own strict permission check only fires once it actually
+            # authenticates over a live connection, which needs a real
+            # server. Inspect the ACL directly instead: the keyfile was
+            # created under a directory with an inheritable Users grant, so
+            # the fix must strip that inherited ACE (icacls marks inherited
+            # entries with "(I)") or ssh would reject the key as too open.
+            acl = subprocess.run(
+                ["icacls", keyfile_path],
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout
+            if "(I)" in acl or "users:" in acl.lower():
+                unexpected_failures.append(acl)
+
+    with patch.object(git_repo, "_run", side_effect=mock_run), patch.object(
+        git_repo, "push", side_effect=check_keyfile
+    ):
+        push.push_to_git_backing("try")
+
+    assert not unexpected_failures, (
+        f"ssh would reject the key file: {unexpected_failures}"
+    )
 
 
 def test_push_to_try_skips_git_backing_for_hg_repos():

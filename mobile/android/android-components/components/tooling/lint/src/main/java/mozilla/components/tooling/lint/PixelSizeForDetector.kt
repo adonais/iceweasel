@@ -14,11 +14,10 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
-import org.jetbrains.uast.getContainingUFile
 
 /**
- * Detects usage of `resources.getDimensionPixelSize()` in Fenix code and suggests
- * replacing it with the `pixelSizeFor()` extension on `Context`, `View`, or `Fragment`.
+ * Detects usage of `resources.getDimensionPixelSize()` and suggests replacing it with the
+ * `pixelSizeFor()` extension on `Context`, `View`, or `Fragment`.
  */
 class PixelSizeForDetector : Detector(), SourceCodeScanner {
     companion object {
@@ -49,9 +48,6 @@ class PixelSizeForDetector : Detector(), SourceCodeScanner {
         node: UCallExpression,
         method: PsiMethod,
     ) {
-        val packageName = node.getContainingUFile()?.packageName ?: return
-        if (!packageName.startsWith("org.mozilla.fenix")) return
-
         val containingClassName = method.containingClass?.qualifiedName ?: return
         if (containingClassName == "android.content.res.Resources") {
             context.report(

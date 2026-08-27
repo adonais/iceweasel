@@ -91,8 +91,7 @@ typedef PRInt64 int64;
  * int32
  */
 
-#if !defined(_PR_AIX_HAVE_BSD_INT_TYPES) \
-    && !defined(HPUX)
+#if !defined(_PR_AIX_HAVE_BSD_INT_TYPES) && !defined(HPUX)
 #if !defined(_WIN32) && !defined(NTO)
 typedef PRInt32 int32;
 #else
@@ -104,8 +103,7 @@ typedef long int32;
  * int16
  */
 
-#if !defined(_PR_AIX_HAVE_BSD_INT_TYPES) \
-    && !defined(HPUX)
+#if !defined(_PR_AIX_HAVE_BSD_INT_TYPES) && !defined(HPUX)
 typedef PRInt16 int16;
 #endif
 
@@ -113,8 +111,7 @@ typedef PRInt16 int16;
  * int8
  */
 
-#if !defined(_PR_AIX_HAVE_BSD_INT_TYPES) \
-    && !defined(HPUX)
+#if !defined(_PR_AIX_HAVE_BSD_INT_TYPES) && !defined(HPUX)
 typedef PRInt8 int8;
 #endif
 
@@ -123,11 +120,10 @@ typedef PRUptrdiff uptrdiff_t;
 typedef PRUword uprword_t;
 typedef PRWord prword_t;
 
-
 /* Re: prbit.h */
-#define TEST_BIT    PR_TEST_BIT
-#define SET_BIT     PR_SET_BIT
-#define CLEAR_BIT   PR_CLEAR_BIT
+#define TEST_BIT PR_TEST_BIT
+#define SET_BIT PR_SET_BIT
+#define CLEAR_BIT PR_CLEAR_BIT
 
 /* Re: prarena.h->plarena.h */
 #define PRArena PLArena

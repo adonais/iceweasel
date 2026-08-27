@@ -104,8 +104,14 @@ endif
 	mv -f '$(DIST)/l10n-stage/$(PACKAGE)' '$(ZIP_OUT)'
 	if test -f '$(DIST)/l10n-stage/$(PACKAGE).asc'; then mv -f '$(DIST)/l10n-stage/$(PACKAGE).asc' '$(ZIP_OUT).asc'; fi
 
+ifdef MOZ_USE_LEGACY_L10N
 repackage-zip-%: unpack
 	@$(MAKE) repackage-zip AB_CD=$*
+else
+repackage-zip-%: AB_CD=$*
+repackage-zip-%:
+	$(call py_action,l10n_repackage,--locale=$* --mach=$(topsrcdir)/mach --make='$(MAKE)' --l10n-stage='$(DIST)/l10n-stage' --unpack-distdir='$(DIST)/l10n-stage/$(MOZ_PKG_DIR)' --stagedist='$(STAGEDIST)' --xpi-stage='$(ABS_DIST)/xpi-stage/locale-$*' --pkg-dir='$(MOZ_PKG_DIR)' --pkg-format=$(MOZ_PKG_FORMAT) --pkg-filename='$(PACKAGE)' --tar=$(TAR) --output='$(ZIP_OUT)' --moz-widget-toolkit=$(MOZ_WIDGET_TOOLKIT) --os-arch=$(OS_ARCH) --installer-dir='$(DEPTH)/browser/installer/windows' --real-locale-mergedir='$(REAL_LOCALE_MERGEDIR)' $(addprefix --extra-l10n=,$(MOZ_PKG_EXTRAL10N)) $(if $(filter omni,$(MOZ_PACKAGER_FORMAT)),$(addprefix --non-resource=,$(NON_OMNIJAR_FILES))) $(if $(MOZ_PACKAGER_MINIFY),--minify) $(MOZ_PACKAGE_EXTRA_ARGS))
+endif
 
 # Dealing with app sub dirs: If DIST_SUBDIRS is defined it contains a
 # listing of app sub-dirs we should include in langpack xpis. If not,
@@ -117,6 +123,7 @@ GIT ?= git
 merge-%: IS_LANGUAGE_REPACK=1
 merge-%: AB_CD=$*
 merge-%:
+ifdef MOZ_USE_LEGACY_L10N
 	$(RM) -rf $(REAL_LOCALE_MERGEDIR)
 	$(PYTHON3) -m moz.l10n.bin.build --config $(srcdir)/l10n.toml --base $(L10NBASEDIR) --target $(BASE_MERGE) --locales $(AB_CD) --coverage
 # Hunspell dictionaries are interesting, as we don't ship the en-US
@@ -129,6 +136,9 @@ merge-%:
 		$(NSINSTALL) -D $(REAL_LOCALE_MERGEDIR)/extensions/spellcheck/hunspell ; \
 		cp $(L10NBASEDIR)/$(AB_CD)/extensions/spellcheck/hunspell/*.* $(REAL_LOCALE_MERGEDIR)/extensions/spellcheck/hunspell ; \
 	fi
+else
+	$(call py_action,l10n_merge,--locale=$* --config=$(srcdir)/l10n.toml --l10n-base=$(L10NBASEDIR) --target=$(BASE_MERGE))
+endif
 
 LANGPACK_METADATA = $(LOCALE_SRCDIR)/langpack-metadata.ftl
 
@@ -145,5 +155,9 @@ package-langpack-%: XPI_NAME=locale-$*
 package-langpack-%: AB_CD=$*
 package-langpack-%:
 	$(NSINSTALL) -D $(DIST)/$(PKG_LANGPACK_PATH)
+ifdef MOZ_USE_LEGACY_L10N
 	$(call py_action,langpack_manifest $(AB_CD),--locales $(AB_CD) --app-version $(MOZ_APP_VERSION) --max-app-ver $(MOZ_APP_MAXVERSION) --app-name '$(MOZ_APP_DISPLAYNAME)' --l10n-basedir '$(L10NBASEDIR)' --metadata $(LANGPACK_METADATA) --langpack-eid '$(MOZ_LANGPACK_EID)' --input $(DIST)/xpi-stage/locale-$(AB_CD))
 	$(call py_action,zip $(PKG_LANGPACK_BASENAME).xpi,-C $(DIST)/xpi-stage/locale-$(AB_CD) -x **/*.manifest -x **/*.js -x **/*.ini $(LANGPACK_FILE) $(PKG_ZIP_DIRS) manifest.json)
+else
+	$(call py_action,package_langpack,--locale=$* --xpi-stage=$(DIST)/xpi-stage/locale-$* --metadata=$(LANGPACK_METADATA) --output=$(LANGPACK_FILE) --eid='$(MOZ_LANGPACK_EID)' --app-version=$(MOZ_APP_VERSION) --max-app-ver=$(MOZ_APP_MAXVERSION) --app-name='$(MOZ_APP_DISPLAYNAME)' --l10n-basedir='$(L10NBASEDIR)' $(addprefix --include=,$(PKG_ZIP_DIRS)) --include=manifest.json)
+endif

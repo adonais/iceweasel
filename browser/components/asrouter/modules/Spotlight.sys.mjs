@@ -7,6 +7,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutWelcomeTelemetry:
     "resource:///modules/aboutwelcome/AboutWelcomeTelemetry.sys.mjs",
+  MessagingSystemAllowlists:
+    "resource://messaging-system/lib/MessagingSystemAllowlists.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(
@@ -72,6 +74,13 @@ export const Spotlight = {
     if (!win) {
       return false;
     }
+
+    // Warm the Remote Settings-backed SET_PREF allowlist cache as early as
+    // possible as a spotlight dialog can be opened directly via the SET_PREF
+    // action's own handleAction dispatch (SHOW_SPOTLIGHT), which does not go
+    // through ASRouter's own init sequence. This isn't awaited, so it only
+    // shrinks the window for a possible race condition.
+    lazy.MessagingSystemAllowlists.ensureInit();
 
     if (message.trigger?.id === "lastWindowClose") {
       win.gDialogBox.replaceDialogIfOpen();

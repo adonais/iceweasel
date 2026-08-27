@@ -15,7 +15,7 @@ dnl ========================================================
 dnl = Defaults
 dnl ========================================================
 MOD_MAJOR_VERSION=4
-MOD_MINOR_VERSION=39
+MOD_MINOR_VERSION=40
 MOD_PATCH_VERSION=0
 NSPR_MODNAME=nspr20
 _HAVE_PTHREADS=
@@ -25,7 +25,6 @@ USE_NSPR_THREADS=
 USE_N32=
 USE_X32=
 USE_64=
-USE_CPLUS=
 USE_IPV6=
 USE_MDUPDATE=
 _MACOSX_DEPLOYMENT_TARGET=
@@ -374,12 +373,6 @@ AC_ARG_ENABLE(mdupdate,
 	    USE_MDUPDATE=1
       fi ])
 
-AC_ARG_ENABLE(cplus,
-    [  --enable-cplus          Enable some c++ api routines],
-    [ if test "$enableval" = "yes"; then
-	    USE_CPLUS=1
-      fi])
-
 AC_ARG_WITH(arm-kuser,
     [  --with-arm-kuser        Use kuser helpers (Linux/ARM only)
                           (Requires kernel 2.6.13 or later)],
@@ -532,11 +525,6 @@ AC_PROG_CC
 
 dnl Reenter the conditional blocks after invoking AC_PROG_CC.
 if test "$target" != "$host"; then
-    if test -n "$USE_CPLUS"; then
-        AC_CHECK_PROGS(CXX, $CXX "${target_alias}-g++" "${target}-g++", echo)
-        unset ac_cv_prog_CXX
-        AC_PROG_CXX
-    fi
 
     case "$build:$target" in
       powerpc-apple-darwin8*:i?86-apple-darwin*|*:arm*-apple-darwin*)
@@ -579,13 +567,6 @@ if test "$target" != "$host"; then
     CFLAGS=$_SAVE_CFLAGS
     LDFLAGS=$_SAVE_LDFLAGS
 else
-    if test -n "$USE_CPLUS"; then
-        if test "$CC" = "cl" -a -z "$CXX"; then
-            CXX=$CC
-        else
-            AC_PROG_CXX
-        fi
-    fi
     AC_PROG_RANLIB
     AC_PATH_PROGS(AS, as, $CC)
     AC_PATH_PROGS(AR, ar, echo not_ar)
@@ -2396,7 +2377,6 @@ AC_SUBST(MOZ_OPTIMIZE)
 AC_SUBST(MOZ_DEBUG)
 AC_SUBST(MOZ_DEBUG_SYMBOLS)
 
-AC_SUBST(USE_CPLUS)
 AC_SUBST(USE_IPV6)
 AC_SUBST(USE_N32)
 AC_SUBST(USE_X32)
@@ -2538,13 +2518,6 @@ elif test -n "$USE_PTHREADS"; then
 elif test -n "$USE_BTHREADS"; then
     MAKEFILES="$MAKEFILES
         pr/src/bthreads/Makefile
-    "
-fi
-
-if test -n "$USE_CPLUS"; then
-    MAKEFILES="$MAKEFILES
-        pr/src/cplus/Makefile
-        pr/src/cplus/tests/Makefile
     "
 fi
 

@@ -297,39 +297,6 @@ BaseWebSocketChannel::GetHttpChannelId(uint64_t* aHttpChannelId) {
 }
 
 //-----------------------------------------------------------------------------
-// BaseWebSocketChannel::nsIProtocolHandler
-//-----------------------------------------------------------------------------
-
-NS_IMETHODIMP
-BaseWebSocketChannel::GetScheme(nsACString& aScheme) {
-  LOG(("BaseWebSocketChannel::GetScheme() %p\n", this));
-
-  if (mEncrypted) {
-    aScheme.AssignLiteral("wss");
-  } else {
-    aScheme.AssignLiteral("ws");
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-BaseWebSocketChannel::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
-                                 nsIChannel** outChannel) {
-  LOG(("BaseWebSocketChannel::NewChannel() %p\n", this));
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-BaseWebSocketChannel::AllowPort(int32_t port, const char* scheme,
-                                bool* _retval) {
-  LOG(("BaseWebSocketChannel::AllowPort() %p\n", this));
-
-  // do not override any blacklisted ports
-  *_retval = false;
-  return NS_OK;
-}
-
-//-----------------------------------------------------------------------------
 // BaseWebSocketChannel::nsIThreadRetargetableRequest
 //-----------------------------------------------------------------------------
 

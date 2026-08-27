@@ -15,7 +15,6 @@ support-files = [
 prefs = [
  "dom.ipc.processPrelaunch.enabled=false", # Disable randomly spawning processes during tests. After enabling windowless service workers, a process spawning will trigger an update of the service workers list which can fail the test if it occurs during shutdown (unhandled promise rejection).
  "devtools.debugger.features.javascript-tracing=true", # This pref has to be set before the process starts
- "javascript.options.experimental.explicit_resource_management=true", # This pref has to be set before the process starts
 ]
 
 ["browser_dbg-quick-open.js"]
@@ -99,6 +98,11 @@ fail-if = [
 ["browser_dbg-step-in-uninitialized.js"]
 
 ["browser_dbg-stepping.js"]
+
+["browser_dbg-stylesheets.js"]
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_dbg-tabs-keyboard.js"]
 

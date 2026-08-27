@@ -8,7 +8,7 @@ load(libdir + "iteration.js");
 
 function parseAndEvaluate(source) {
     let m = parseModule(source);
-    moduleLink(m);
+    moduleLoadAndLink(m);
     return moduleEvaluate(m);
 }
 
@@ -40,7 +40,7 @@ let b = registerModule('b', parseModule(
      export var x = ns.a + ns.b;`
 ));
 
-moduleLink(b);
+moduleLoadAndLink(b);
 moduleEvaluate(b);
 testHasNames(getModuleEnvironmentNames(b), ["ns", "x"]);
 let ns = getModuleEnvironmentValue(b, "ns");
@@ -89,8 +89,8 @@ let c = registerModule('c',
     parseModule("export let c = 1; import * as ns from 'd'; let d = ns.d;"));
 let d = registerModule('d',
     parseModule("export let d = 2; import * as ns from 'c'; let c = ns.c;"));
-moduleLink(c);
-moduleLink(d);
+moduleLoadAndLink(c);
+moduleLoadAndLink(d);
 moduleEvaluate(c)
   .then(r => {
     // We expect the evaluation to throw, so we should not reach this.
@@ -105,8 +105,8 @@ let e = registerModule('e',
     parseModule("export let e = 1; import * as ns from 'f'; export function f() { return ns.f }"));
 let f = registerModule('f',
     parseModule("export let f = 2; import * as ns from 'e'; export function e() { return ns.e }"));
-moduleLink(e);
-moduleLink(f);
+moduleLoadAndLink(e);
+moduleLoadAndLink(f);
 moduleEvaluate(e);
 moduleEvaluate(f);
 assertEq(e.namespace.f(), 2);

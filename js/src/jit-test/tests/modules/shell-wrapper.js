@@ -25,7 +25,7 @@ export const v = 10;
 const b = registerModule('b', parseModule(`
 import * as ns from 'a'
 `));
-moduleLink(b);
+moduleLoadAndLink(b);
 moduleEvaluate(b);
 assertEq(a.namespace.v, 10);
 testGetter(a, "namespace");
@@ -34,7 +34,7 @@ testGetter(a, "namespace");
 const c = registerModule('c', parseModule(`
 `));
 assertEq(c.status, "New");
-moduleLink(c);
+moduleLoadAndLink(c);
 assertEq(c.status, "Linked");
 moduleEvaluate(c);
 assertEq(c.status, "Evaluated");
@@ -44,7 +44,7 @@ testGetter(c, "status");
 const d = registerModule('d', parseModule(`
 f();
 `));
-moduleLink(d);
+moduleLoadAndLink(d);
 moduleEvaluate(d).catch(e => undefined);
 drainJobQueue();
 assertEq(d.evaluationError instanceof ReferenceError, true);
@@ -194,7 +194,7 @@ import {v1} from 'j'
 assertEq(j.dfsAncestorIndex, undefined);
 assertEq(k.dfsAncestorIndex, undefined);
 assertEq(l.dfsAncestorIndex, undefined);
-moduleLink(l);
+moduleLoadAndLink(l);
 assertEq(j.dfsAncestorIndex, 1);
 assertEq(k.dfsAncestorIndex, 1);
 assertEq(l.dfsAncestorIndex, 0);

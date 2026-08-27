@@ -170,6 +170,19 @@
   & > ai-action-result + .chat-bubble-assistant {
     padding-block-start: 0;
     margin-block-start: calc(-2 * var(--space-small));
+
+    /* Spacing for an assistant turn that ends with a confirmation card. */
+    & .chat-bubble-inner:has(ai-action-confirmation) {
+      padding-block-start: var(--space-small);
+    }
+  }
+
+  /* The spinner has no internal padding, so align its icon with the shimmer
+     text: the action log sits 24px below the previous message (8px flex gap +
+     4px wrapper + 12px header padding), so give the spinner 16px margin on top
+     of the 8px gap to match (24px). */
+  & > chat-assistant-loader {
+    margin-block-start: var(--space-large);
   }
 }
 

@@ -8,4 +8,5 @@ Program("MyProgram")
 USE_LIBS += [
     "bar",
     "baz",
+    "frob",
 ]

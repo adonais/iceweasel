@@ -4,6 +4,8 @@
 #ifndef mozilla_intl_LineBreaker_h_
 #define mozilla_intl_LineBreaker_h_
 
+#include "mozilla/Span.h"
+
 #include <cstdint>
 
 #define NS_LINEBREAKER_NEED_MORE_TEXT -1
@@ -24,18 +26,17 @@ class LineBreaker final {
   // rules to find breaks inside the word. aBreakBefore is set to the break-
   // before status of each character; aBreakBefore[0] will always be false
   // because we never return a break before the first character.
-  // aLength is the length of the aText array and also the length of the
-  // aBreakBefore output array.
-  static void ComputeBreakPositions(const char16_t* aText, uint32_t aLength,
+  // The aBreakBefore output array must have the same length as aText.
+  static void ComputeBreakPositions(Span<const char16_t> aText,
                                     WordBreakRule aWordBreak,
                                     LineBreakRule aLevel,
                                     bool aIsChineseOrJapanese,
-                                    uint8_t* aBreakBefore);
-  static void ComputeBreakPositions(const uint8_t* aText, uint32_t aLength,
+                                    Span<uint8_t> aBreakBefore);
+  static void ComputeBreakPositions(Span<const uint8_t> aText,
                                     WordBreakRule aWordBreak,
                                     LineBreakRule aLevel,
                                     bool aIsChineseOrJapanese,
-                                    uint8_t* aBreakBefore);
+                                    Span<uint8_t> aBreakBefore);
 
   static void Shutdown();
 };

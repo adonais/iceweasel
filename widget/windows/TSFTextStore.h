@@ -793,7 +793,7 @@ class TSFTextStore final : public TSFTextStoreBase,
     }
 
    private:
-    AutoPendingActionAndContentFlusher() {}
+    AutoPendingActionAndContentFlusher() = default;
 
     RefPtr<TSFTextStore> mTextStore;
   };
@@ -949,7 +949,7 @@ class TSFTextStore final : public TSFTextStoreBase,
    public:
     static const DWORD kInvalidCookie = static_cast<DWORD>(-1);
 
-    MouseTracker();
+    MouseTracker() = default;
 
     HRESULT Init(TSFTextStore* aTextStore);
     HRESULT AdviseSink(TSFTextStore* aTextStore, ITfRangeACP* aTextRange,
@@ -964,7 +964,7 @@ class TSFTextStore final : public TSFTextStoreBase,
    private:
     RefPtr<ITfMouseSink> mSink;
     Maybe<StartAndEndOffsets<LONG>> mRange;
-    DWORD mCookie;
+    DWORD mCookie{kInvalidCookie};
   };
   // mMouseTrackers is an array to store each information of installed
   // ITfMouseSink instance.

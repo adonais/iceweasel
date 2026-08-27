@@ -6,12 +6,12 @@ Firefox browser window. The test files are named `browser_something.js` by
 convention, and in addition to mochitest assertions supports the
 [CommonJS standard assertions](http://wiki.commonjs.org/wiki/Unit_Testing/1.1),
 like [nodejs' assert module](https://nodejs.org/api/assert.html#assert) but
-implemented in [`Assert.sys.mjs`](../assert.rst).
+implemented in [`Assert.sys.mjs`](../assert.md).
 
 These tests are used to test UI-related behaviour in Firefox for
 Desktop. They do not run on Android. If you're testing internal code that
 does not directly interact with the user interface,
-[xpcshell tests](../xpcshell/index.rst) are probably a better fit for your needs.
+[xpcshell tests](../xpcshell/index.md) are probably a better fit for your needs.
 
 
 Running the tests
@@ -30,7 +30,7 @@ Using `./mach mochitest --help` will give you an exhaustive overview of useful
 other available flags relating to running, debugging and evaluating tests.
 
 For both commands, you can use the `--verify` flag to run the test under
-[test verification](../test-verification/index.rst). This helps flush out
+[test verification](../test-verification/index.md). This helps flush out
 intermittent issues with the test.
 
 
@@ -80,7 +80,7 @@ the tests start.
 Alternatively, if you want to pause the debugger on failure, you can use
 `--debug-on-failure`.
 
-For more details, see [Avoiding intermittent tests](../intermittent/index.rst).
+For more details, see [Avoiding intermittent tests](../intermittent/index.md).
 
 Profiling tests
 ---------------
@@ -101,8 +101,20 @@ failure.
 Reference material
 ------------------
 
-- [Assert module](../assert.rst)
-- [TestUtils module](../testutils.rst)
-- [BrowserTestUtils module](browsertestutils.rst)
-- [SimpleTest utilities](../simpletest.rst)
-- [EventUtils utilities](../eventutils.rst)
+- [Assert module](../assert.md)
+- [TestUtils module](../testutils.md)
+- [BrowserTestUtils module](browsertestutils.md)
+- [SimpleTest utilities](../simpletest.md)
+- [EventUtils utilities](../eventutils.md)
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+browsertestutils
+writing
+../assert
+../testutils
+../simpletest
+../eventutils
+```

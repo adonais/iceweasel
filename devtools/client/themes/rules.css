@@ -44,10 +44,17 @@
 /* Rule View Toolbar */
 
 #ruleview-toolbar-container {
+  display: flex;
+  flex-direction: column;
+  /* We want the reveal panel to be as big as possible, but not taking the full height of the view,
+     so the rule view is still visible.
+     Therefore, it only uses up to 70% of the available space minus the height of the toolbar including its border. */
+  max-height: calc(70cqb - var(--theme-toolbar-height) + 1px);
   line-height: var(--theme-toolbar-height);
 }
 
 #ruleview-toolbar {
+  flex: none;
   flex-wrap: wrap;
   height: auto;
 }
@@ -61,11 +68,16 @@
   display: flex;
 }
 
+.ruleview-reveal-panel-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+}
+
 .ruleview-reveal-panel {
   border-bottom: 1px solid var(--theme-splitter-color);
   display: flex;
-  overflow: hidden;
-  flex-wrap: wrap;
   margin: 2px;
 }
 
@@ -83,6 +95,7 @@
   display: flex;
   align-items: center;
 
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   &:has(input:disabled) {
     color: var(--theme-text-color-inactive);
   }
@@ -112,6 +125,7 @@
   user-select: none;
 }
 
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 #pseudo-classes-element-specific label:has(input:disabled) {
   display: none;
 }
@@ -252,6 +266,7 @@
 
   /* Because of the overflow hidden, the outline that would be set on the child link
      would not be visible, so we need to set it here */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   &:focus-within:has(a:focus-visible) {
     outline: var(--theme-focus-outline);
   }
@@ -762,6 +777,7 @@
     }
 
     /* the overridden class is set on a parent element of the ruleview-highlight one */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
     .ruleview-overridden:has(&) {
       text-decoration-color: var(--theme-contrast-color);
     }
@@ -879,6 +895,7 @@
 }
 
 /* When hovering the selector warnings icon, highlight the selector it applies to */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .ruleview-selector:has(.ruleview-selector-warnings:hover) {
   background-color: var(--theme-warning-background);
   /* We're not using --theme-warning-border to make it more visible */
@@ -940,18 +957,113 @@
   direction: ltr;
 }
 
-#print-simulation-toggle::before {
-  background-image: url("chrome://devtools/skin/images/rules-view-print-simulation.svg");
-}
-
-#color-scheme-simulation-light-toggle::before {
-  background-image: url("chrome://devtools/skin/images/rules-view-light-mode-simulation.svg");
+#color-scheme-emulation-light-toggle::before {
+  background-image: url("chrome://devtools/skin/images/rules-view-light-mode-emulation.svg");
   -moz-context-properties: fill, stroke;
   stroke: currentColor;
 }
 
-#color-scheme-simulation-dark-toggle::before {
-  background-image: url("chrome://devtools/skin/images/rules-view-dark-mode-simulation.svg");
+#color-scheme-emulation-dark-toggle::before {
+  background-image: url("chrome://devtools/skin/images/rules-view-dark-mode-emulation.svg");
+}
+
+#emulation-panel-toggle::before {
+  content: "@";
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1em;
+}
+
+#emulation-panel {
+  flex-direction: column;
+  padding: 0 3px;
+
+  a {
+    margin: 3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--monospace-font-family);
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: normal;
+    color: var(--theme-link-color);
+
+    &::after {
+      content: "";
+      flex: none;
+      width: 12px;
+      height: 12px;
+      display: inline-block;
+      background-image: url("chrome://devtools/skin/images/mdn.svg");
+      background-size: contain;
+      background-repeat: no-repeat;
+      border: 1px solid var(--theme-icon-color);
+      -moz-context-properties: fill;
+      fill: var(--theme-icon-color);
+    }
+  }
+
+  label {
+    margin-block: 2px;
+    cursor: pointer;
+  }
+
+  input[type="radio"] {
+    margin: 4px;
+    cursor: pointer;
+  }
+}
+
+.emulation-media {
+  list-style: none;
+  margin-block: 0;
+  padding-inline-start: 0;
+}
+
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+.emulation-container:has(> #emulation-print-heading) {
+  display: flex;
+}
+
+.emulation-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 12px;
+  padding-inline: 10px;
+}
+
+:is(
+  #print-emulation-enabled-option,
+  #color-scheme-emulation-light-option,
+  #color-scheme-emulation-dark-option,
+  #reduced-motion-emulation-reduce-option,
+  #reduced-motion-emulation-no-preference-option
+)::after {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-inline-start: 6px;
+  -moz-context-properties: fill, stroke;
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+#color-scheme-emulation-light-option::after {
+  background-image: url("chrome://devtools/skin/images/rules-view-light-mode-emulation.svg");
+}
+
+#color-scheme-emulation-dark-option::after {
+  background-image: url("chrome://devtools/skin/images/rules-view-dark-mode-emulation.svg");
+}
+
+#reduced-motion-emulation-reduce-option::after {
+  background-image: url("chrome://devtools/skin/images/rules-view-reduced-motion-emulation.svg");
+}
+
+#reduced-motion-emulation-no-preference-option::after {
+  background-image: url("chrome://devtools/skin/images/rules-view-no-preference-motion-emulation.svg");
 }
 
 .flash-out {

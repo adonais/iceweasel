@@ -526,6 +526,9 @@ export class AddonList extends HTMLElement {
     for (let i = 0; i < sectionedAddons.length; i++) {
       this.sections[i].node = this.renderSection(sectionedAddons[i], i);
       frag.appendChild(this.sections[i].node);
+      if (this.type == "theme" && i == 0) {
+        frag.appendChild(document.createElement("aboutaddons-themes-picker"));
+      }
     }
 
     // Add the "empty list message" elements (but omit it in the list view

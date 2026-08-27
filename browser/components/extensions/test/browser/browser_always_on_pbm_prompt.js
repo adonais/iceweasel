@@ -41,6 +41,10 @@ async function testCheckbox(allowPbm, expectedCheckboxValue) {
   is(checkbox.checked, allowPbm, "The checkbox matches allowPbm.");
 
   // Accept the installation
+  const installNotificationShown = BrowserTestUtils.waitForPopupEvent(
+    PanelUI.notificationPanel,
+    "shown"
+  );
   panel.button.click();
 
   await readyPromise;
@@ -51,6 +55,18 @@ async function testCheckbox(allowPbm, expectedCheckboxValue) {
     allowPbm,
     `Private browsing permission has ${allowPbm ? "" : "not "}been granted`
   );
+
+  // Dismiss the "extension added" doorhanger, otherwise it stays open for the
+  // rest of the test file.
+  await installNotificationShown;
+  const installNotificationHidden = BrowserTestUtils.waitForPopupEvent(
+    PanelUI.notificationPanel,
+    "hidden"
+  );
+  document
+    .getElementById("appMenu-addon-installed-notification")
+    .button.click();
+  await installNotificationHidden;
 }
 
 async function uninstall() {

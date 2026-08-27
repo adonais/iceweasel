@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstring>
 #include <type_traits>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CompactPair.h"

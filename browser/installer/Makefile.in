@@ -55,10 +55,6 @@ ifdef MOZ_ANGLE_RENDERER
 DEFINES += -DMOZ_ANGLE_RENDERER=$(MOZ_ANGLE_RENDERER)
 endif
 
-ifdef MOZ_ENABLE_SKIA_PDF
-DEFINES += -DMOZ_ENABLE_SKIA_PDF=$(MOZ_ENABLE_SKIA_PDF)
-endif
-
 DEFINES += -DMOZ_CHILD_PROCESS_NAME=$(MOZ_CHILD_PROCESS_NAME)
 DEFINES += -DMOZ_EME_PROCESS_NAME="$(MOZ_EME_PROCESS_NAME)"
 DEFINES += -DMOZ_GPU_PROCESS_NAME="$(MOZ_GPU_PROCESS_NAME)"
@@ -88,16 +84,16 @@ ifneq (,$(filter WINNT Darwin Android,$(OS_TARGET)))
 DEFINES += -DMOZ_SHARED_MOZGLUE=1
 endif
 
-ifdef NECKO_WIFI
-DEFINES += -DNECKO_WIFI
-endif
-
 ifdef MAKENSISU
 DEFINES += -DHAVE_MAKENSISU=1
 endif
 
 ifdef UPCHECK
 DEFINES += -DHAVE_UPCHECK=1
+endif
+
+ifdef ENABLE_WEBDRIVER
+DEFINES += -DENABLE_WEBDRIVER=1
 endif
 
 ifdef MOZ_DEFAULT_BROWSER_AGENT
@@ -153,11 +149,3 @@ package-compare::
 	$(call py_action,preprocessor,$(DEFINES) $(ACDEFINES) $(MOZ_PKG_MANIFEST)) | grep '^$(BINPATH)' | sed -e 's/^\///' | sort > $(DIST)/pack-list.txt
 	-diff -u $(DIST)/pack-list.txt $(DIST)/bin-list.txt
 	rm -f $(DIST)/pack-list.txt $(DIST)/bin-list.txt
-
-ifdef ENABLE_WEBDRIVER
-DEFINES += -DENABLE_WEBDRIVER=1
-endif
-
-ifdef DESKTOP_LAUNCHER_ENABLED
-DEFINES += -DDESKTOP_LAUNCHER_ENABLED=1
-endif

@@ -4,19 +4,56 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Note that this crate, when used in app-services, directly creates the cdylib.
-# However, in moz-central it builds a staticlib. A new target in `../fenix-dylib`
-# takes this as a dep and creates the final cdylib.
-USE_LIBS += ["nss"]
+# This crate builds a staticlib. `../fenix-dylib` creates the final cdylib from it.
 
 UNIFIED_SOURCES += [
     "stub.cpp",
 ]
 
-# This is the name of the .a file created.
-RustLibrary("megazord")
+megazord_rust_features = ["mozbuild-rustlib"]
 
-# XXX - this doesn't really work - the tests fail due to missing `nss3`?
+# This is the name of the .a file created.
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+    RustLibrary("megazord", features=megazord_rust_features)
+else:
+    RustLibrary(
+        "megazord",
+        features=megazord_rust_features,
+        output_category="uniffi-target",
+    )
+
+# Qualified to nss so it applies to every -p test's transitive nss dep;
+# emits NSS dylib refs plus static mozpkix linkage for the test binaries.
+RUST_TEST_FEATURES = ["nss-as/mozbuild-rustlib"]
+
 RUST_TESTS = [
+    "logins",
     "megazord",
+    "rc_crypto",
+]
+
+# These USE_LIBS are only for build ordering. Cargo does the actual linking
+# through the mozbuild crate.
+USE_LIBS += [
+    "mozglue",
+    "nss",
+]
+
+if CONFIG["OS_TARGET"] == "Linux":
+    USE_LIBS += [
+        "freeblpriv3",
+    ]
+
+# NSS loads libraries dynamically.
+USE_LIBS += [
+    # Without `freebl3`, expect: "Could not initialize NSS: NSS error: -8023".
+    "freebl3",
+    # Without `softokn3`, expect: "Could not initialize NSS: NSS error: -5925".
+    "softokn3",
+]
+
+# `mozpkix` and its requirement `pure_virtual` are static libraries.
+USE_LIBS += [
+    "mozpkix",
+    "pure_virtual",
 ]

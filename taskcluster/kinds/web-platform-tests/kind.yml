@@ -21,8 +21,8 @@ task-defaults:
     run-on-repo-type: [hg]
     attributes:
         retrigger: true
-    use-python: default
-    use-uv: true
+    use-python: system
+    use-uv: false
     require-signed-extensions:
         by-release-type:
             release|esr.*: true
@@ -182,6 +182,7 @@ tasks:
                 - --exclude-tag=canvas
                 - --exclude-tag=webcodecs
                 - --exclude-tag=eme
+                - --exclude-tag=webrtc
 
     web-platform-tests-backlog:
         description: "Web platform test (backlog) run"
@@ -225,6 +226,7 @@ tasks:
                 - --exclude-tag=webgpu
                 - --exclude-tag=webcodecs
                 - --exclude-tag=eme
+                - --exclude-tag=webrtc
 
     web-platform-tests-webcodecs:
         description: "Web platform webcodecs test run"
@@ -278,6 +280,28 @@ tasks:
                 - --test-type=testharness
                 - --default-exclude
                 - --tag=eme
+                - --no-update-status-on-crash
+
+    web-platform-tests-webrtc:
+        description: "Web platform webrtc test run"
+        suite: web-platform-tests
+        treeherder-symbol: W(webrtc)
+        tier: default
+        chunks: dynamic
+        default-chunks: 1
+        max-run-time: 7200
+        # Runs in socket-process mode by default, no need for spi variants.
+        # We don't *really* need to be running these in nofis either.
+        # We do some things differently in private browsing mode though.
+        variants:
+            - privatebrowsing
+        run-on-projects: built-projects
+        mozharness:
+            chunked: true
+            extra-options:
+                - --test-type=testharness
+                - --default-exclude
+                - --tag=webrtc
                 - --no-update-status-on-crash
 
     web-platform-tests-reftest:
@@ -405,6 +429,7 @@ tasks:
                 - --exclude-tag=webgpu-long
                 - --exclude-tag=canvas
                 - --exclude-tag=webcodecs
+                - --exclude-tag=webrtc
                 - --timeout-multiplier=5.0
         worker-type:
             by-test-platform:
@@ -471,6 +496,7 @@ tasks:
                 - --exclude-tag=webgpu-long
                 - --exclude-tag=canvas
                 - --exclude-tag=webcodecs
+                - --exclude-tag=webrtc
                 - --skip-implementation-status=implementing
                 - --skip-implementation-status=not-implementing
                 - --backlog
@@ -575,6 +601,7 @@ tasks:
                 - --tag=canvas
                 - --exclude-tag=webgpu
                 - --exclude-tag=webcodecs
+                - --exclude-tag=webrtc
 
     web-platform-tests-reftest-backlog:
         description: "Web platform reftest (backlog) run"
@@ -611,6 +638,7 @@ tasks:
                 - --exclude-tag=webgpu
                 - --exclude-tag=webcodecs
                 - --exclude-tag=eme
+                - --exclude-tag=webrtc
 
     web-platform-tests-wdspec:
         description: "Web platform webdriver-spec run"

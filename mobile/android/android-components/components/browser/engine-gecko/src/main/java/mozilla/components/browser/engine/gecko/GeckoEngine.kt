@@ -48,7 +48,6 @@ import mozilla.components.concept.engine.CancellableOperation
 import mozilla.components.concept.engine.DownloadDelegate
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSession
-import mozilla.components.concept.engine.EngineSession.CookieBannerHandlingMode
 import mozilla.components.concept.engine.EngineSession.SafeBrowsingPolicy
 import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy
 import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy.TrackingCategory
@@ -141,19 +140,34 @@ class GeckoEngine(
         }
 
         override fun onToggleActionPopup(extension: WebExtension, action: Action): EngineSession? {
+            val isPrivate = webExtensionDelegate?.isInPrivateBrowsing() ?: false
+            if (isPrivate && !extension.isAllowedInPrivateBrowsing()) {
+                return null
+            }
             return webExtensionDelegate?.onToggleActionPopup(
                 extension,
                 GeckoEngineSession(
                     runtime = runtime,
+                    privateMode = isPrivate,
                     defaultSettings = defaultSettings,
                 ),
                 action,
+                isPrivate,
             )
         }
     }
     private val webExtensionTabHandler = object : TabHandler {
-        override fun onNewTab(webExtension: WebExtension, engineSession: EngineSession, active: Boolean, url: String) {
-            webExtensionDelegate?.onNewTab(webExtension, engineSession, active, url)
+        override fun isInPrivateBrowsing(): Boolean =
+            webExtensionDelegate?.isInPrivateBrowsing() ?: false
+
+        override fun onNewTab(
+            webExtension: WebExtension,
+            engineSession: EngineSession,
+            active: Boolean,
+            url: String,
+            isPrivate: Boolean,
+        ) {
+            webExtensionDelegate?.onNewTab(webExtension, engineSession, active, url, isPrivate)
         }
 
         override fun onOpenOptionsPage(extension: WebExtension) {
@@ -1451,8 +1465,8 @@ class GeckoEngine(
         countryCode: String,
         onSuccess: (AddressStructure) -> Unit,
         onError: (Throwable) -> Unit,
-    ) {
-        addressStructureAccessor.getAddressStructure(countryCode, onSuccess, onError)
+    ): CancellableOperation {
+        return addressStructureAccessor.getAddressStructure(countryCode, onSuccess, onError)
     }
 
     /**
@@ -1549,62 +1563,11 @@ class GeckoEngine(
                 }
             }
 
-        override var cookieBannerHandlingMode: CookieBannerHandlingMode = CookieBannerHandlingMode.DISABLED
-            set(value) {
-                with(runtime.settings.contentBlocking) {
-                    if (this.cookieBannerMode != value.mode) {
-                        this.cookieBannerMode = value.mode
-                    }
-                }
-                field = value
-            }
-
-        override var cookieBannerHandlingModePrivateBrowsing: CookieBannerHandlingMode =
-            CookieBannerHandlingMode.REJECT_ALL
-            set(value) {
-                with(runtime.settings.contentBlocking) {
-                    if (this.cookieBannerModePrivateBrowsing != value.mode) {
-                        this.cookieBannerModePrivateBrowsing = value.mode
-                    }
-                }
-                field = value
-            }
-
         override var emailTrackerBlockingPrivateBrowsing: Boolean = false
             set(value) {
                 with(runtime.settings.contentBlocking) {
                     if (this.emailTrackerBlockingPrivateBrowsingEnabled != value) {
                         this.setEmailTrackerBlockingPrivateBrowsing(value)
-                    }
-                }
-                field = value
-            }
-
-        override var cookieBannerHandlingDetectOnlyMode: Boolean = false
-            set(value) {
-                with(runtime.settings.contentBlocking) {
-                    if (this.cookieBannerDetectOnlyMode != value) {
-                        this.cookieBannerDetectOnlyMode = value
-                    }
-                }
-                field = value
-            }
-
-        override var cookieBannerHandlingGlobalRules: Boolean = false
-            set(value) {
-                with(runtime.settings.contentBlocking) {
-                    if (this.cookieBannerGlobalRulesEnabled != value) {
-                        this.cookieBannerGlobalRulesEnabled = value
-                    }
-                }
-                field = value
-            }
-
-        override var cookieBannerHandlingGlobalRulesSubFrames: Boolean = false
-            set(value) {
-                with(runtime.settings.contentBlocking) {
-                    if (this.cookieBannerGlobalRulesSubFramesEnabled != value) {
-                        this.cookieBannerGlobalRulesSubFramesEnabled = value
                     }
                 }
                 field = value
@@ -1749,6 +1712,16 @@ class GeckoEngine(
                     }
                     runtime.settings.setFirefoxRelay(mode)
                 }
+            }
+
+        @ExperimentalAndroidComponentsApi
+        override var ipProtectionAuthProvider: String?
+            @OptIn(ExperimentalGeckoViewApi::class)
+            get() = runtime.settings.ipProtectionAuthProvider
+
+            @OptIn(ExperimentalGeckoViewApi::class)
+            set(value) {
+                value?.let { runtime.settings.setIpProtectionAuthProvider(it) }
             }
 
         override var forceUserScalableContent: Boolean
@@ -2027,17 +2000,13 @@ class GeckoEngine(
             this.clearColor = it.clearColor
             this.loginAutofillEnabled = it.loginAutofillEnabled
             this.firefoxRelay = it.firefoxRelay
+            this.ipProtectionAuthProvider = it.ipProtectionAuthProvider
             this.enterpriseRootsEnabled = it.enterpriseRootsEnabled
             this.httpsOnlyMode = it.httpsOnlyMode
             this.dohSettingsMode = it.dohSettingsMode
             this.dohProviderUrl = it.dohProviderUrl
             this.dohDefaultProviderUrl = it.dohDefaultProviderUrl
             this.dohExceptionsList = it.dohExceptionsList
-            this.cookieBannerHandlingMode = it.cookieBannerHandlingMode
-            this.cookieBannerHandlingModePrivateBrowsing = it.cookieBannerHandlingModePrivateBrowsing
-            this.cookieBannerHandlingDetectOnlyMode = it.cookieBannerHandlingDetectOnlyMode
-            this.cookieBannerHandlingGlobalRules = it.cookieBannerHandlingGlobalRules
-            this.cookieBannerHandlingGlobalRulesSubFrames = it.cookieBannerHandlingGlobalRulesSubFrames
             this.globalPrivacyControlEnabled = it.globalPrivacyControlEnabled
             this.fingerprintingProtection = it.fingerprintingProtection
             this.fingerprintingProtectionPrivateBrowsing = it.fingerprintingProtectionPrivateBrowsing

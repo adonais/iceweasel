@@ -3,6 +3,20 @@
 
 "use strict";
 
+function assertHttpState(url, isAllowed) {
+  let uri = Services.io.newURI(url);
+  let siteUri = Services.io.newURI(
+    Services.scriptSecurityManager.createContentPrincipal(uri, {})
+      .siteOriginNoSuffix
+  );
+
+  Assert.equal(
+    Services.policies.isAllowedForURI("http", siteUri),
+    isAllowed,
+    `Policy service should return the expected HTTP state for ${url} (site: ${siteUri})`
+  );
+}
+
 function isJitDisabledForRemoteType(remoteType) {
   return (
     remoteType.endsWith("^disableJit=1") || remoteType.endsWith("&disableJit=1")
@@ -236,4 +250,133 @@ add_task(async function test_isAllowedForSite() {
   assertJitState("http://example.org/", false);
   assertJitState("http://example.com/", false);
   assertJitState("data:text/html,example", true);
+});
+
+add_task(async function test_httpsOnlyPolicy() {
+  // Empty policies allow HTTP everywhere.
+  await setupPolicyEngineWithJson({
+    policies: {
+      SitePolicies: [],
+    },
+  });
+
+  assertHttpState("http://example.net/", true);
+  assertHttpState("http://example.org/", true);
+  assertHttpState("http://example.com/", true);
+
+  // Simple match case: HttpsOnly blocks HTTP for matching sites.
+  await setupPolicyEngineWithJson({
+    policies: {
+      SitePolicies: [
+        {
+          Match: ["*.example.com"],
+          Policies: {
+            HttpsOnly: true,
+          },
+        },
+      ],
+    },
+  });
+
+  assertHttpState("http://example.net/", true);
+  assertHttpState("http://example.org/", true);
+  assertHttpState("http://example.com/", false);
+  assertHttpState("http://www.example.com/", false);
+  assertHttpState("http://test.example.com/", false);
+
+  // Multiple matches.
+  await setupPolicyEngineWithJson({
+    policies: {
+      SitePolicies: [
+        {
+          Match: ["*.example.com", "*.example.org"],
+          Policies: {
+            HttpsOnly: true,
+          },
+        },
+      ],
+    },
+  });
+
+  assertHttpState("http://example.net/", true);
+  assertHttpState("http://example.org/", false);
+  assertHttpState("http://example.com/", false);
+
+  // No match implies all sites; exceptions become the allowlist.
+  await setupPolicyEngineWithJson({
+    policies: {
+      SitePolicies: [
+        {
+          Exceptions: ["*.example.com"],
+          Policies: {
+            HttpsOnly: true,
+          },
+        },
+      ],
+    },
+  });
+
+  assertHttpState("http://example.net/", false);
+  assertHttpState("http://example.org/", false);
+  assertHttpState("http://example.com/", true);
+
+  // HttpsOnly: false explicitly allows HTTP.
+  await setupPolicyEngineWithJson({
+    policies: {
+      SitePolicies: [
+        {
+          Match: ["*.example.com"],
+          Policies: {
+            HttpsOnly: false,
+          },
+        },
+      ],
+    },
+  });
+
+  assertHttpState("http://example.com/", true);
+
+  // Earlier policies take precedence over later ones.
+  await setupPolicyEngineWithJson({
+    policies: {
+      SitePolicies: [
+        {
+          Match: ["*.example.com"],
+          Policies: {
+            HttpsOnly: false,
+          },
+        },
+        {
+          Match: ["*.example.com", "*.example.org"],
+          Policies: {
+            HttpsOnly: true,
+          },
+        },
+      ],
+    },
+  });
+
+  assertHttpState("http://example.net/", true);
+  assertHttpState("http://example.org/", false);
+  assertHttpState("http://example.com/", true);
+
+  // Both DisableJit and HttpsOnly can coexist in the same entry.
+  await setupPolicyEngineWithJson({
+    policies: {
+      SitePolicies: [
+        {
+          Match: ["*.example.com"],
+          Policies: {
+            DisableJit: true,
+            HttpsOnly: true,
+          },
+        },
+      ],
+    },
+  });
+
+  assertJitState("http://example.net/", true);
+  assertJitState("http://example.com/", false);
+  assertHttpState("http://example.net/", true);
+  assertHttpState("http://example.com/", false);
 });

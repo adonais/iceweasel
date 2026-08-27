@@ -5,6 +5,7 @@
 package mozilla.components.service.fxrelay
 
 import kotlinx.coroutines.test.runTest
+import mozilla.appservices.fxaclient.FxaException
 import mozilla.appservices.relay.BounceStatus
 import mozilla.appservices.relay.RelayAddress
 import mozilla.appservices.relay.RelayApiException
@@ -233,6 +234,11 @@ class FxRelayTest {
         assertNull(createFxRelay(token = null).createEmailMask())
     }
 
+    @Test
+    fun `GIVEN forbidden access token WHEN fetchEmailMasks THEN returns null`() = runTest {
+        assertNull(createFxRelay(getAccessTokenException = FxaException.Forbidden("forbidden")).fetchEmailMasks())
+    }
+
     // Client caching
     @Test
     fun `GIVEN same token on consecutive calls WHEN fetching THEN client is reused`() = runTest {
@@ -268,8 +274,9 @@ class FxRelayTest {
         fetchAddressesException: RelayApiException? = null,
         fetchProfileException: RelayApiException? = null,
         createAddressException: RelayApiException? = null,
+        getAccessTokenException: FxaException? = null,
     ) = FxRelayImpl(
-        account = FakeOAuthAccount { token },
+        account = FakeOAuthAccount(getAccessTokenException) { token },
         relayClientProvider = {
             FakeRelayClient(
                 addresses = addresses,
@@ -335,9 +342,11 @@ class FxRelayTest {
     )
 
     private class FakeOAuthAccount(
+        private val getAccessTokenException: FxaException? = null,
         private val tokenProvider: () -> String?,
     ) : OAuthAccount {
         override suspend fun getAccessToken(singleScope: String): AccessTokenInfo? {
+            getAccessTokenException?.let { throw it }
             val token = tokenProvider() ?: return null
             return AccessTokenInfo(
                 scope = singleScope,

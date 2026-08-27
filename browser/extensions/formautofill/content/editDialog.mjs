@@ -280,3 +280,40 @@ export class EditCreditCardDialog extends AutofillEditDialog {
     }
   }
 }
+
+export class EditPassportDialog extends AutofillEditDialog {
+  dataType = lazy.AutofillDataTypes.PASSPORT;
+
+  constructor(elements, record) {
+    super("passports", elements, record);
+    if (record) {
+      lazy.AutofillTelemetry.recordManageEvent(this.dataType, "show_entry");
+    }
+  }
+
+  localizeDocument() {
+    if (this._record?.guid) {
+      document.l10n.setAttributes(
+        this._elements.title,
+        "autofill-edit-passport-title"
+      );
+    }
+  }
+
+  async handleSubmit() {
+    let passport = this._elements.fieldContainer.buildFormObject();
+    if (!this._elements.fieldContainer.validateForm()) {
+      return;
+    }
+
+    try {
+      await this.saveRecord(passport, this._record ? this._record.guid : null);
+
+      this.recordFormSubmit();
+
+      window.close();
+    } catch (ex) {
+      console.error(ex);
+    }
+  }
+}

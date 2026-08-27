@@ -22,12 +22,12 @@ const {
 
 function UiState(
   locations = [],
-  debugTargetCollapsibilities = {},
+  mutableDebugTargetCollapsibilities = new Map(),
   showHiddenAddons = false
 ) {
   return {
     adbAddonStatus: null,
-    debugTargetCollapsibilities,
+    mutableDebugTargetCollapsibilities,
     isAdbReady: false,
     isScanningUsb: false,
     networkLocations: locations,
@@ -36,6 +36,9 @@ function UiState(
     showProfilerDialog: false,
     showHiddenAddons,
     temporaryInstallError: null,
+    // Incremented on each install failure so a dismissed error message is shown
+    // again when a new install fails.
+    temporaryInstallErrorCount: 0,
   };
 }
 
@@ -53,11 +56,8 @@ function uiReducer(state = UiState(), action) {
 
     case DEBUG_TARGET_COLLAPSIBILITY_UPDATED: {
       const { isCollapsed, key } = action;
-      const debugTargetCollapsibilities = new Map(
-        state.debugTargetCollapsibilities
-      );
-      debugTargetCollapsibilities.set(key, isCollapsed);
-      return Object.assign({}, state, { debugTargetCollapsibilities });
+      state.mutableDebugTargetCollapsibilities.set(key, isCollapsed);
+      return Object.assign({}, state);
     }
 
     case NETWORK_LOCATIONS_UPDATE_SUCCESS: {
@@ -101,7 +101,10 @@ function uiReducer(state = UiState(), action) {
 
     case TEMPORARY_EXTENSION_INSTALL_FAILURE: {
       const { error } = action;
-      return Object.assign({}, state, { temporaryInstallError: error });
+      return Object.assign({}, state, {
+        temporaryInstallError: error,
+        temporaryInstallErrorCount: state.temporaryInstallErrorCount + 1,
+      });
     }
 
     default:

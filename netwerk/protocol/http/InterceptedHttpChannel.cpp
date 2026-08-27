@@ -208,7 +208,7 @@ nsresult InterceptedHttpChannel::FollowSyntheticRedirect() {
   nsAutoCString locationBuf;
   if (NS_EscapeURL(location.get(), -1, esc_OnlyNonASCII | esc_Spaces,
                    locationBuf)) {
-    location = locationBuf;
+    location = std::move(locationBuf);
   }
 
   nsCOMPtr<nsIURI> redirectURI;

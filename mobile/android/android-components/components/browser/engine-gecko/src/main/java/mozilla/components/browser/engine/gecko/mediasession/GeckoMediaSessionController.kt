@@ -53,4 +53,17 @@ internal class GeckoMediaSessionController(
     override fun muteAudio(mute: Boolean) {
         mediaSession.muteAudio(mute)
     }
+
+    override fun onSystemAudioFocusChanged(change: MediaSession.SystemAudioFocusChange) {
+        mediaSession.notifySystemAudioFocusChange(
+            when (change) {
+                MediaSession.SystemAudioFocusChange.GAIN ->
+                    GeckoViewMediaSession.SYSTEM_AUDIO_FOCUS_GAIN
+                MediaSession.SystemAudioFocusChange.TRANSIENT_LOSS ->
+                    GeckoViewMediaSession.SYSTEM_AUDIO_FOCUS_TRANSIENT_LOSS
+                MediaSession.SystemAudioFocusChange.PERMANENT_LOSS ->
+                    GeckoViewMediaSession.SYSTEM_AUDIO_FOCUS_PERMANENT_LOSS
+            },
+        )
+    }
 }

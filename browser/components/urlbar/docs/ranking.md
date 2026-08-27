@@ -272,3 +272,10 @@ thus entries are removed if unused for 90 days.
    optimizing those coefficients.
 4. Changing the coefficients doesn't recalculate all the scores, making
    experimentation more complicated.
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+ranking-legacy
+```

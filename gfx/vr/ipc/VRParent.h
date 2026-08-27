@@ -20,7 +20,7 @@ class VRParent final : public PVRParent {
   friend class PVRParent;
 
  public:
-  explicit VRParent();
+  explicit VRParent() = default;
 
   bool Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
             const char* aParentBuildID);
@@ -52,7 +52,7 @@ class VRParent final : public PVRParent {
  private:
   nsCString mOpenVRControllerAction;
   nsTHashMap<nsUint32HashKey, nsCString> mOpenVRControllerManifest;
-  RefPtr<VRGPUParent> mVRGPUParent;
+  RefPtr<VRGPUParent> mVRGPUParent{nullptr};
   DISALLOW_COPY_AND_ASSIGN(VRParent);
 };
 

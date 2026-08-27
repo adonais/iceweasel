@@ -69,6 +69,7 @@ import mozilla.components.support.images.CancelOnDetach
 import mozilla.components.support.images.DesiredSize
 import mozilla.components.support.images.decoder.AndroidImageDecoder
 import mozilla.components.support.images.decoder.ImageDecoder
+import mozilla.components.support.ktx.android.content.pixelSizeFor
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.filterChanged
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
@@ -135,8 +136,8 @@ class BrowserIcons(
     val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : MemoryConsumer {
     private val logger = Logger("BrowserIcons")
-    private val maximumSize = context.resources.getDimensionPixelSize(R.dimen.mozac_browser_icons_maximum_size)
-    private val minimumSize = context.resources.getDimensionPixelSize(R.dimen.mozac_browser_icons_minimum_size)
+    private val maximumSize = context.pixelSizeFor(R.dimen.mozac_browser_icons_maximum_size)
+    private val minimumSize = context.pixelSizeFor(R.dimen.mozac_browser_icons_minimum_size)
     private val scope = CoroutineScope(jobDispatcher)
     private val backgroundHttpIconLoader = NonBlockingHttpIconLoader(
         httpClient = httpClient,
@@ -339,7 +340,7 @@ class BrowserIcons(
     }
 
     private fun desiredSizeForRequest(request: IconRequest) = DesiredSize(
-        targetSize = context.resources.getDimensionPixelSize(request.size.dimen),
+        targetSize = context.pixelSizeFor(request.size.dimen),
         minSize = minimumSize,
         maxSize = maximumSize,
         maxScaleFactor = MAXIMUM_SCALE_FACTOR,
@@ -463,7 +464,7 @@ private fun decodeIconLoaderResult(
 @VisibleForTesting
 internal fun IconRequest.getDesiredSize(context: Context, minimumSize: Int, maximumSize: Int) =
     DesiredSize(
-        targetSize = context.resources.getDimensionPixelSize(size.dimen),
+        targetSize = context.pixelSizeFor(size.dimen),
         minSize = minimumSize,
         maxSize = maximumSize,
         maxScaleFactor = MAXIMUM_SCALE_FACTOR,

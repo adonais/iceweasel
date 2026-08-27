@@ -37,11 +37,6 @@ GpuProcessTextureId GpuProcessD3D11TextureMap::GetNextTextureId() {
   return GpuProcessTextureId::GetNext();
 }
 
-GpuProcessD3D11TextureMap::GpuProcessD3D11TextureMap()
-    : mMonitor("GpuProcessD3D11TextureMap::mMonitor") {}
-
-GpuProcessD3D11TextureMap::~GpuProcessD3D11TextureMap() {}
-
 void GpuProcessD3D11TextureMap::Register(
     GpuProcessTextureId aTextureId, ID3D11Texture2D* aTexture,
     uint32_t aArrayIndex, const gfx::IntSize& aSize,
@@ -244,7 +239,7 @@ bool GpuProcessD3D11TextureMap::WaitTextureReady(
 
   auto start = TimeStamp::Now();
   const TimeDuration timeout = TimeDuration::FromMilliseconds(1000);
-  while (1) {
+  while (true) {
     CVStatus status = mMonitor.Wait(timeout);
     if (status == CVStatus::Timeout) {
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");

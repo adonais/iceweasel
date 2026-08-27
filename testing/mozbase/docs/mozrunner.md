@@ -12,7 +12,8 @@ and then wait for it to finish:
 
 ```python
 from mozrunner import FirefoxRunner
-binary = 'path/to/firefox/binary'
+
+binary = "path/to/firefox/binary"
 runner = FirefoxRunner(binary=binary)
 runner.start()
 runner.wait()
@@ -27,8 +28,8 @@ from mozprofile import FirefoxProfile
 from mozrunner import FirefoxRunner
 import os
 
-binary = 'path/to/firefox/binary'
-profile_path = 'path/to/profile'
+binary = "path/to/firefox/binary"
+profile_path = "path/to/profile"
 if os.path.exists(profile_path):
     profile = FirefoxProfile.clone(path_from=profile_path)
 else:
@@ -49,12 +50,13 @@ need to specify that explicitly. For example:
 ```python
 from mozrunner import FirefoxRunner
 
+
 def handle_output_line(line):
     do_something(line)
 
-binary = 'path/to/firefox/binary'
-process_args = { 'stream': sys.stdout,
-                 'processOutputLine': [handle_output_line] }
+
+binary = "path/to/firefox/binary"
+process_args = {"stream": sys.stdout, "processOutputLine": [handle_output_line]}
 runner = FirefoxRunner(binary=binary, process_args=process_args)
 ```
 
@@ -75,11 +77,13 @@ cases the process handler's `onTimeout` callbacks will be triggered.
 ```python
 from mozrunner import FirefoxRunner
 
-def on_timeout():
-    print('timed out after 10 seconds with no output!')
 
-binary = 'path/to/firefox/binary'
-process_args = { 'onTimeout': on_timeout }
+def on_timeout():
+    print("timed out after 10 seconds with no output!")
+
+
+binary = "path/to/firefox/binary"
+process_args = {"onTimeout": on_timeout}
 runner = FirefoxRunner(binary=binary, process_args=process_args)
 runner.start(outputTimeout=10)
 runner.wait()
@@ -109,8 +113,8 @@ object. For example to run Firefox for Android on the emulator, you might do:
 ```python
 from mozrunner import FennecEmulatorRunner
 
-avd_home = 'path/to/avd'
-runner = FennecEmulatorRunner(app='org.mozilla.fennec', avd_home=avd_home)
+avd_home = "path/to/avd"
+runner = FennecEmulatorRunner(app="org.mozilla.fennec", avd_home=avd_home)
 runner.start()
 runner.wait()
 ```
@@ -120,8 +124,8 @@ the device. In the case of the emulator, it is possible to start the
 device independently of the gecko process.
 
 ```python
-runner.device.start() # launches the emulator
-runner.start()        # stops the gecko process (if started), installs the profile, (re)starts the gecko process
+runner.device.start()  # launches the emulator
+runner.start()  # stops the gecko process (if started), installs the profile, (re)starts the gecko process
 ```
 
 ## Runner API Documentation

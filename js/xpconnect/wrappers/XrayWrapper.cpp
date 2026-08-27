@@ -46,23 +46,16 @@ namespace xpc {
 
 #define Between(x, a, b) (a <= x && x <= b)
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 static_assert(JSProto_URIError - JSProto_Error == 9,
               "New prototype added in error object range");
-#else
-static_assert(JSProto_URIError - JSProto_Error == 8,
-              "New prototype added in error object range");
-#endif
 #define AssertErrorObjectKeyInBounds(key)                      \
   static_assert(Between(key, JSProto_Error, JSProto_URIError), \
                 "We depend on js/ProtoKey.h ordering here");
 MOZ_FOR_EACH(AssertErrorObjectKeyInBounds, (),
              (JSProto_Error, JSProto_InternalError, JSProto_AggregateError,
               JSProto_EvalError, JSProto_RangeError, JSProto_ReferenceError,
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-              JSProto_SuppressedError,
-#endif
-              JSProto_SyntaxError, JSProto_TypeError, JSProto_URIError));
+              JSProto_SuppressedError, JSProto_SyntaxError, JSProto_TypeError,
+              JSProto_URIError));
 
 static_assert(JSProto_Uint8ClampedArray - JSProto_Int8Array == 8,
               "New prototype added in typed array range");
@@ -110,11 +103,9 @@ static bool IsJSXraySupported(JSProtoKey key) {
     case JSProto_Set:
     case JSProto_WeakMap:
     case JSProto_WeakSet:
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case JSProto_SuppressedError:
     case JSProto_DisposableStack:
     case JSProto_AsyncDisposableStack:
-#endif
       return true;
     default:
       return false;
@@ -685,7 +676,6 @@ bool JSXrayTraits::resolveOwnProperty(
       }
 #endif
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
       if (key == JSProto_SuppressedError) {
         // The .suppressed property of SuppressedErrors can have any value.
         if (id == GetJSIDByIndex(cx, XPCJSContext::IDX_SUPPRESSED)) {
@@ -697,7 +687,6 @@ bool JSXrayTraits::resolveOwnProperty(
           return getOwnPropertyFromWrapperIfSafe(cx, wrapper, id, desc);
         }
       }
-#endif
 
       if (key == JSProto_AggregateError &&
           id == GetJSIDByIndex(cx, XPCJSContext::IDX_ERRORS)) {
@@ -1894,7 +1883,7 @@ static bool RecreateLostWaivers(JSContext* cx, const PropertyDescriptor* orig,
     rewaived = &wrapped.value().toObject();
     rewaived = WrapperFactory::WaiveXray(cx, UncheckedUnwrap(rewaived));
     NS_ENSURE_TRUE(rewaived, false);
-    wrapped.value().set(ObjectValue(*rewaived));
+    wrapped.value().setObject(*rewaived);
   }
   if (getterWasWaived && !IsCrossCompartmentWrapper(wrapped.getter())) {
     // We can't end up with WindowProxy or Location as getters.

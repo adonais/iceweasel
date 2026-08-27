@@ -4,4 +4,6 @@
 
 ["test_createFile.js"]
 
+["test_file_createFromNsIInputStream.js"]
+
 ["test_ipc_messagemanager_blob.js"]

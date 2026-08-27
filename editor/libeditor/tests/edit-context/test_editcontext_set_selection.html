@@ -1,0 +1,102 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that EditContext handles eSetSelection correctly.</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div></div>
+<script>
+'use strict';
+const host = document.querySelector('div');
+const editContext = new EditContext({text: 'cạ̀́b'});
+host.editContext = editContext;
+const utils = SpecialPowers.getDOMWindowUtils(window);
+
+function doTest(test) {
+  const {selectionStart, selectionEnd, description} = test;
+  const expectStart = test.expectStart ?? selectionStart;
+  const expectEnd = test.expectEnd ?? selectionEnd;
+  const expectRange = `${expectStart}-${expectEnd}`;
+  let firedTextUpdate = false;
+  editContext.addEventListener('textupdate', e => {
+    firedTextUpdate = true;
+    is(e.updateRangeStart, e.updateRangeEnd,
+       `${description}: TextUpdateEvent should not delete any text.`);
+    is(e.text, '',
+       `${description}: TextUpdateEvent should not insert any text.`);
+  	is(`${e.selectionStart}-${e.selectionEnd}`, expectRange,
+  	  `${description}: TextUpdateEvent.selectionStart/End should be set appropriately.`);
+  	is(`${editContext.selectionStart}-${editContext.selectionEnd}`, expectRange,
+  	  `${description}: EditContext.selectionStart/End should be updated.`);
+  }, {once: true});
+  let flags = 0;
+  if (selectionStart > selectionEnd) {
+    flags |= utils.SELECTION_SET_FLAG_REVERSE;
+  }
+  if (test.expandToClusterBoundary) {
+    flags |= utils.SELECTION_EXPAND_TO_CLUSTER_BOUNDARY;
+  }
+	const success = utils.sendSelectionSetEvent(
+	  Math.min(selectionStart, selectionEnd),
+	  Math.abs(selectionStart - selectionEnd),
+	  flags);
+	ok(firedTextUpdate, `${description}: Should fire textupdate.`);
+	ok(success, `${description}: sendSelectionSetEvent should succeed.`);
+}
+
+const tests = [
+  {
+    description: 'Forwards selection',
+    selectionStart: 2,
+    selectionEnd: 4,
+  },
+  {
+    description: 'Backwards selection',
+    selectionStart: 4,
+    selectionEnd: 2,
+  },
+  {
+    description: 'Collapsed selection',
+    selectionStart: 3,
+    selectionEnd: 3,
+  },
+  {
+    description: 'Forwards selection expanding to grapheme cluster boundary',
+    selectionStart: 2,
+    selectionEnd: 4,
+    expectStart: 1,
+    expectEnd: 5,
+    expandToClusterBoundary: true,
+  },
+  {
+    description: 'Backwards selection expanding to grapheme cluster boundary',
+    selectionStart: 4,
+    selectionEnd: 2,
+    expectStart: 5,
+    expectEnd: 1,
+    expandToClusterBoundary: true,
+  },
+  {
+    description: 'Collapsed selection expanding to grapheme cluster boundary',
+    selectionStart: 3,
+    selectionEnd: 3,
+    expectStart: 1,
+    expectEnd: 5,
+    expandToClusterBoundary: true,
+  },
+];
+
+add_task(async () => {
+  await SimpleTest.promiseFocus();
+  host.focus();
+  for (let test of tests) {
+    doTest(test);
+  }
+});
+
+</script>
+</body>
+</html>

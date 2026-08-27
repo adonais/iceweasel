@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !getBuildConfiguration("explicit-resource-management"); --enable-explicit-resource-management
-
 load(libdir + "asserts.js");
 
 const valuesDisposedWithThisAccess = [];

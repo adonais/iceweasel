@@ -114,7 +114,7 @@ nsresult SetWindowAppUserModelProp(mozIDOMWindow* aParent,
 // default nsITaskbarPreviewController
 
 class DefaultController final : public nsITaskbarPreviewController {
-  ~DefaultController() {}
+  ~DefaultController() = default;
   HWND mWnd;
 
  public:
@@ -211,8 +211,6 @@ bool WinTaskbar::Initialize() {
   }
   return true;
 }
-
-WinTaskbar::WinTaskbar() : mTaskbar(nullptr) {}
 
 WinTaskbar::~WinTaskbar() {
   if (mTaskbar) {  // match successful Initialize() call

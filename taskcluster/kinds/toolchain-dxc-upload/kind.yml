@@ -34,6 +34,7 @@ tasks:
                 # NOTE: `{level}` gets replaced in the `upload_symbols` transform.
                 SYMBOL_SECRET: "project/releng/gecko/build/level-{level}/gecko-symbol-upload"
         run:
+            clone-with: hg
             using: mach
             mach: {task-reference: "python toolkit/crashreporter/tools/upload_symbols.py --task-id <toolchain> --ignore-missing"}
             sparse-profile: upload-symbols

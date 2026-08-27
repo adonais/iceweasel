@@ -6,7 +6,7 @@
 "use strict";
 
 const TEST_URI =
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   "http://example.com/browser/dom/geolocation/test/browser/geo_leak_test.html";
 
 const BASE_GEO_URL =

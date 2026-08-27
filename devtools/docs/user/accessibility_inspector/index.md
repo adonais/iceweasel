@@ -276,3 +276,10 @@ It is also very handy for verifying semantics — you can use the *Inspect Acces
 - [Understanding WCAG](https://developer.mozilla.org/en-US/docs/Web/Accessibility/Understanding_WCAG)
 - [WAI-ARIA basics](https://developer.mozilla.org/en-US/docs/Learn/Accessibility/WAI-ARIA_basics)
 - [Accessibility APIs: A Key To Web Accessibility](https://www.smashingmagazine.com/2015/03/web-accessibility-with-accessibility-api/) by Léonie Watson
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+simulation/index
+```

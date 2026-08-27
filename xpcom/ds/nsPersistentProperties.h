@@ -8,26 +8,25 @@
 #include "mozilla/ArenaAllocator.h"
 #include "nsCOMPtr.h"
 #include "nsIPersistentProperties2.h"
+#include "nsIUnicharInputStream.h"
 #include "nsString.h"
 #include "nsTHashMap.h"
 
-class nsIUnicharInputStream;
-
 class nsPersistentProperties final : public nsIPersistentProperties {
  public:
-  nsPersistentProperties();
+  nsPersistentProperties() = default;
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIPROPERTIES
   NS_DECL_NSIPERSISTENTPROPERTIES
 
  private:
-  ~nsPersistentProperties();
+  ~nsPersistentProperties() = default;
 
  protected:
   nsCOMPtr<nsIUnicharInputStream> mIn;
 
-  nsTHashMap<nsDepCharHashKey, const char16_t*> mTable;
+  nsTHashMap<nsDepCharHashKey, const char16_t*> mTable{16};
   mozilla::ArenaAllocator<2048, 4> mArena;
 };
 

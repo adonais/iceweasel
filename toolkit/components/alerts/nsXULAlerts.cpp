@@ -12,6 +12,7 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/dom/Notification.h"
+#include "nsIAlertsService.h"
 #include "nsISupportsPrimitives.h"
 #include "nsPIDOMWindow.h"
 #include "nsServiceManagerUtils.h"
@@ -23,39 +24,75 @@ namespace {
 StaticRefPtr<nsXULAlerts> gXULAlerts;
 }  // anonymous namespace
 
-NS_IMPL_CYCLE_COLLECTION(nsXULAlertObserver, mAlertWindow)
+NS_IMPL_CYCLE_COLLECTION(nsXULAlertCallbacks, mAlertWindow)
 
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsXULAlertObserver)
-  NS_INTERFACE_MAP_ENTRY(nsIObserver)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsXULAlertCallbacks)
+  NS_INTERFACE_MAP_ENTRY(nsIAlertCallbacks)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-NS_IMPL_CYCLE_COLLECTING_ADDREF(nsXULAlertObserver)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(nsXULAlertObserver)
+NS_IMPL_CYCLE_COLLECTING_ADDREF(nsXULAlertCallbacks)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(nsXULAlertCallbacks)
+
+NS_IMETHODIMP nsXULAlertCallbacks::OnAlertShow() {
+  if (!mCallbacks) {
+    return NS_OK;
+  }
+  return mCallbacks->OnAlertShow();
+}
+
+NS_IMETHODIMP nsXULAlertCallbacks::OnAlertClick(nsIAlertAction* aAction) {
+  if (!mCallbacks) {
+    return NS_OK;
+  }
+  return mCallbacks->OnAlertClick(aAction);
+}
+
+NS_IMETHODIMP nsXULAlertCallbacks::OnAlertDismissedFromForeground() {
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsXULAlertCallbacks::OnAlertClosed() {
+  if (!mCallbacks) {
+    return NS_OK;
+  }
+  return mCallbacks->OnAlertClosed();
+}
 
 NS_IMETHODIMP
-nsXULAlertObserver::Observe(nsISupports* aSubject, const char* aTopic,
-                            const char16_t* aData) {
-  if (!strcmp("alertfinished", aTopic)) {
-    mozIDOMWindowProxy* currentAlert =
-        mXULAlerts->mNamedWindows.GetWeak(mAlertName);
-    // The window in mNamedWindows might be a replacement, thus it should only
-    // be removed if it is the same window that is associated with this
-    // listener.
-    if (currentAlert == mAlertWindow) {
-      mXULAlerts->mNamedWindows.Remove(mAlertName);
+nsXULAlertCallbacks::OnAlertFinished() {
+  mozIDOMWindowProxy* currentAlert =
+      mXULAlerts->mNamedWindows.GetWeak(mAlertName);
+  // The window in mNamedWindows might be a replacement, thus it should only
+  // be removed if it is the same window that is associated with this
+  // listener.
+  if (currentAlert == mAlertWindow) {
+    mXULAlerts->mNamedWindows.Remove(mAlertName);
 
-      if (mIsPersistent) {
-        mXULAlerts->PersistentAlertFinished();
-      }
+    if (mIsPersistent) {
+      mXULAlerts->PersistentAlertFinished();
     }
   }
 
   nsresult rv = NS_OK;
-  if (mObserver) {
-    rv = mObserver->Observe(aSubject, aTopic, aData);
+  if (mCallbacks) {
+    rv = mCallbacks->OnAlertFinished();
   }
   return rv;
+}
+
+NS_IMETHODIMP nsXULAlertCallbacks::OnAlertSettings() {
+  if (!mCallbacks) {
+    return NS_OK;
+  }
+  return mCallbacks->OnAlertSettings();
+}
+
+NS_IMETHODIMP nsXULAlertCallbacks::OnAlertDisable() {
+  if (!mCallbacks) {
+    return NS_OK;
+  }
+  return mCallbacks->OnAlertDisable();
 }
 
 // We don't cycle collect nsXULAlerts since gXULAlerts will keep the instance
@@ -83,7 +120,7 @@ void nsXULAlerts::PersistentAlertFinished() {
   // Show next pending persistent alert if any.
   if (!mPendingPersistentAlerts.IsEmpty()) {
     ShowAlertImpl(mPendingPersistentAlerts[0].mAlert,
-                  mPendingPersistentAlerts[0].mListener);
+                  mPendingPersistentAlerts[0].mCallbacks);
     mPendingPersistentAlerts.RemoveElementAt(0);
   }
 }
@@ -91,6 +128,12 @@ void nsXULAlerts::PersistentAlertFinished() {
 NS_IMETHODIMP
 nsXULAlerts::ShowAlert(nsIAlertNotification* aAlert,
                        nsIObserver* aAlertListener) {
+  return NS_ERROR_NOT_IMPLEMENTED;  // Implemented in nsAlertsService
+}
+
+NS_IMETHODIMP
+nsXULAlerts::ShowAlertWithCallbacks(nsIAlertNotification* aAlert,
+                                    nsIAlertCallbacks* aAlertCallbacks) {
   nsAutoString name;
   nsresult rv = aAlert->GetName(name);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -110,13 +153,12 @@ nsXULAlerts::ShowAlert(nsIAlertNotification* aAlert,
         rv = pendingAlert->GetCookie(cookie);
         NS_ENSURE_SUCCESS(rv, rv);
 
-        if (mPendingPersistentAlerts[i].mListener) {
-          rv = mPendingPersistentAlerts[i].mListener->Observe(
-              nullptr, "alertfinished", cookie.get());
+        if (mPendingPersistentAlerts[i].mCallbacks) {
+          rv = mPendingPersistentAlerts[i].mCallbacks->OnAlertFinished();
           NS_ENSURE_SUCCESS(rv, rv);
         }
 
-        mPendingPersistentAlerts[i].Init(aAlert, aAlertListener);
+        mPendingPersistentAlerts[i].Init(aAlert, aAlertCallbacks);
         return NS_OK;
       }
     }
@@ -131,14 +173,14 @@ nsXULAlerts::ShowAlert(nsIAlertNotification* aAlert,
           Preferences::GetInt("dom.webnotifications.requireinteraction.count",
                               0)) {
     PendingAlert* pa = mPendingPersistentAlerts.AppendElement();
-    pa->Init(aAlert, aAlertListener);
+    pa->Init(aAlert, aAlertCallbacks);
     return NS_OK;
   }
-  return ShowAlertImpl(aAlert, aAlertListener);
+  return ShowAlertImpl(aAlert, aAlertCallbacks);
 }
 
 nsresult nsXULAlerts::ShowAlertImpl(nsIAlertNotification* aAlert,
-                                    nsIObserver* aAlertListener) {
+                                    nsIAlertCallbacks* aAlertCallbacks) {
   bool inPrivateBrowsing;
   nsresult rv = aAlert->GetInPrivateBrowsing(&inPrivateBrowsing);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -148,8 +190,8 @@ nsresult nsXULAlerts::ShowAlertImpl(nsIAlertNotification* aAlert,
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (mDoNotDisturb) {
-    if (aAlertListener) {
-      aAlertListener->Observe(nullptr, "alertfinished", cookie.get());
+    if (aAlertCallbacks) {
+      aAlertCallbacks->OnAlertFinished();
     }
     return NS_OK;
   }
@@ -282,16 +324,16 @@ nsresult nsXULAlerts::ShowAlertImpl(nsIAlertNotification* aAlert,
     mPersistentAlertCount++;
   }
 
-  // Add an observer (that wraps aAlertListener) to remove the window from
+  // Add callbacks (that wraps aAlertCallbacks) to remove the window from
   // mNamedWindows when it is closed.
   nsCOMPtr<nsISupportsInterfacePointer> ifptr =
       do_CreateInstance(NS_SUPPORTS_INTERFACE_POINTER_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
-  RefPtr<nsXULAlertObserver> alertObserver =
-      new nsXULAlertObserver(this, name, aAlertListener, requireInteraction);
-  nsCOMPtr<nsISupports> iSupports(do_QueryInterface(alertObserver));
+  RefPtr<nsXULAlertCallbacks> alertCallbacks =
+      new nsXULAlertCallbacks(this, name, aAlertCallbacks, requireInteraction);
+  nsCOMPtr<nsISupports> iSupports(do_QueryInterface(alertCallbacks));
   ifptr->SetData(iSupports);
-  ifptr->SetDataIID(&NS_GET_IID(nsIObserver));
+  ifptr->SetDataIID(&NS_GET_IID(nsIAlertCallbacks));
   rv = argsArray->AppendElement(ifptr);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -315,7 +357,7 @@ nsresult nsXULAlerts::ShowAlertImpl(nsIAlertNotification* aAlert,
   NS_ENSURE_SUCCESS(rv, rv);
 
   mNamedWindows.InsertOrUpdate(name, newWindow);
-  alertObserver->SetAlertWindow(newWindow);
+  alertCallbacks->SetAlertWindow(newWindow);
 
   return NS_OK;
 }

@@ -16,9 +16,11 @@
  * Each vector is made up of values representing the relationship with
  * features defined by the model.
  *
- * Production callers MUST go through the static factories `forPlaces` and
- * `forGeneral` so the policy for picking an embedding family stays in one
- * place. `forTest` is provided for tests and dev tooling.
+ * Production callers MUST go through the `embeddingsGeneratorFactory`
+ * singleton (`forPlaces` / `forGeneral`) so the policy for picking an
+ * embedding family stays in one place and stays stable for the lifetime of
+ * the process. `EmbeddingsGenerator.forTest` is provided for tests and dev
+ * tooling.
  *
  * Note: The "engine" referenced in this module is specifically an ML engine
  * used for feature extraction and embedding generation.
@@ -37,6 +39,8 @@ XPCOMUtils.defineLazyServiceGetter(
 
 ChromeUtils.defineESModuleGetters(lazy, {
   createEngine: "chrome://global/content/ml/EngineProcess.sys.mjs",
+  Region: "resource://gre/modules/Region.sys.mjs",
+  RegionLocaleMap: "moz-src:///toolkit/modules/RegionLocaleMap.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "console", () => {
@@ -59,12 +63,24 @@ export const EMBEDDING_TYPE = Object.freeze({
 // Maps an embedding type to the engineConfigId that implements it.
 const EMBEDDING_BACKEND_DEFAULTS = Object.freeze({
   [EMBEDDING_TYPE.STATIC]: "static-embeddings",
-  [EMBEDDING_TYPE.CONTEXTUAL]: "onnx-native",
+  [EMBEDDING_TYPE.CONTEXTUAL]: "onnx",
 });
 
 // Pref that picks static vs contextual (i.e. transformer based) embeddings
 // for Places semantic history.
 const PREF_PLACES_EMBEDDING_TYPE = "places.semanticHistory.embeddingType";
+
+// Regions and locales that are better served by multilingual (contextual)
+// embeddings. See RegionLocaleMap for the format: the default below reads as
+// "France in English or French, or a French locale anywhere".
+const PREF_MULTILINGUAL_EMBEDDING_REGIONS =
+  "places.semanticHistory.multilingualEmbeddingRegions";
+
+/** @type {[string, string[]][]} */
+const MULTILINGUAL_REGIONS_DEFAULT = [
+  ["FR", ["en-*", "fr-*"]],
+  ["*", ["fr-*"]],
+];
 
 // Custom embedding size and model for ML driver support of testing new embeddings.
 const PREF_CONTEXTUAL_EMBEDDING_DIM = "browser.ml.embedGen.textEmbeddingSize";
@@ -100,25 +116,13 @@ const staticEmbeddingsOptions = Object.freeze({
 // entry, fills in dimension + per-call overrides, and stamps engineConfigId.
 const ENGINE_OPTIONS = new Map([
   [
-    "onnx-native",
+    "onnx",
     {
       taskName: "feature-extraction",
       featureId: "simple-text-embedder",
       timeoutMS: -1,
       numThreads: 2,
-      backend: "onnx-native",
-      fallbackEngine: "onnx-wasm",
-      preferredDimension: 384,
-    },
-  ],
-  [
-    "onnx-wasm",
-    {
-      taskName: "feature-extraction",
-      featureId: "simple-text-embedder",
-      timeoutMS: -1,
-      numThreads: 2,
-      backend: "onnx",
+      backend: "best-onnx",
       preferredDimension: 384,
     },
   ],
@@ -136,6 +140,22 @@ const ENGINE_OPTIONS = new Map([
     },
   ],
 ]);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "multilingualEmbeddingRegions",
+  PREF_MULTILINGUAL_EMBEDDING_REGIONS,
+  JSON.stringify(MULTILINGUAL_REGIONS_DEFAULT),
+  null,
+  json =>
+    lazy.RegionLocaleMap.fromJSON(json, {
+      fallback: MULTILINGUAL_REGIONS_DEFAULT,
+      onInvalid: () =>
+        lazy.console.debug(
+          `Invalid json in ${PREF_MULTILINGUAL_EMBEDDING_REGIONS} pref.`
+        ),
+    })
+);
 
 /**
  * Resolve engine options for the given embedding type. Reads
@@ -204,25 +224,114 @@ function isMacOrWindows() {
 }
 
 /**
- * Get the type of embedding we're using for Places (static vs contextual)
- * based on config/Nimbus prefs. Contextual embeddings require the native ONNX
- * runtime, so they're only selected when it is available; otherwise we fall
- * back to static embeddings.
+ * Builds {@link EmbeddingsGenerator} instances for production callers.
  *
- * @returns {string} One of the EMBEDDING_TYPE values.
+ * The home region is read once, on first use, and then frozen for the lifetime
+ * of the factory. Persisted embeddings are only comparable when they come from
+ * the same model, and a changing region would otherwise make two generators
+ * built at different points in the session disagree on the embedding family,
+ * forcing the vector tables to be rebuilt mid-session.
+ *
+ * Use the `embeddingsGeneratorFactory` singleton. The class is exported so
+ * tests can get an instance with an unfrozen region.
  */
-function resolvePlacesEmbeddingType() {
-  const val = Services.prefs.getStringPref(
-    PREF_PLACES_EMBEDDING_TYPE,
-    EMBEDDING_TYPE.STATIC
-  );
-  // We make a best effort to not use onnx-wasm engine. There is no
-  // reliable check without trying to use it. Our focus is Mac/Windows
-  // for contextual embeddings until onnx-native has wider Linux adoption.
-  return val === EMBEDDING_TYPE.CONTEXTUAL && isMacOrWindows()
-    ? EMBEDDING_TYPE.CONTEXTUAL
-    : EMBEDDING_TYPE.STATIC;
+export class EmbeddingsGeneratorFactory {
+  #region;
+  #regionResolved = false;
+
+  /**
+   * The home region captured on first use, frozen thereafter.
+   *
+   * Note that `Region.home` is null until `Region.init()` has resolved. We
+   * deliberately freeze that null rather than retrying, so the embedding family
+   * cannot change underneath already-persisted embeddings. A region that
+   * resolves later is picked up on the next startup.
+   *
+   * @returns {?string}
+   */
+  get region() {
+    if (!this.#regionResolved) {
+      this.#region = lazy.Region.home;
+      this.#regionResolved = true;
+    }
+    return this.#region;
+  }
+
+  /**
+   * Whether to use embedding models that perform better in non-english markets.
+   *
+   * The home region and the app locale are matched against the
+   * `places.semanticHistory.multilingualEmbeddingRegions` pref. Entries are
+   * OR-ed, and the wildcard region applies whatever the home region is, so it
+   * also covers a region that has not resolved yet.
+   *
+   * @returns {boolean}
+   */
+  #useMultiLingualEmbedding() {
+    return lazy.multilingualEmbeddingRegions.matches(
+      this.region,
+      Services.locale.appLocaleAsBCP47
+    );
+  }
+
+  /**
+   * Get the type of embedding we're using for Places (static vs contextual)
+   * based on config/Nimbus prefs, region and locale. Contextual embeddings are
+   * best with the native ONNX runtime, so they're only selected when it is
+   * likely available for the OS.
+   *
+   * The default is static embeddings, but for non-English markets we use
+   * contextual embeddings because they perform better at matching strings
+   * despite being trained mostly with English.
+   *
+   * @returns {string} One of the EMBEDDING_TYPE values.
+   */
+  #resolvePlacesEmbeddingType() {
+    let embeddingType = Services.prefs.getStringPref(
+      PREF_PLACES_EMBEDDING_TYPE,
+      ""
+    );
+    if (!Object.values(EMBEDDING_TYPE).includes(embeddingType)) {
+      embeddingType = this.#useMultiLingualEmbedding()
+        ? EMBEDDING_TYPE.CONTEXTUAL
+        : "";
+    }
+
+    // We make a best effort to not use onnx-wasm engine. There is no
+    // reliable check without trying to use it. Our focus is Mac/Windows
+    // for contextual embeddings until onnx-native has wider Linux adoption.
+    if (embeddingType !== EMBEDDING_TYPE.CONTEXTUAL || !isMacOrWindows()) {
+      embeddingType = EMBEDDING_TYPE.STATIC;
+    }
+    return embeddingType;
+  }
+
+  /**
+   * Places semantic history. Embedding family comes from the Nimbus-driven
+   * pref `places.semanticHistory.embeddingType`, falling back to the region
+   * and locale.
+   *
+   * @returns {EmbeddingsGenerator}
+   */
+  forPlaces() {
+    return new EmbeddingsGenerator(
+      resolveEngineOptions(this.#resolvePlacesEmbeddingType())
+    );
+  }
+
+  /**
+   * Smart Window memories, navigation, and other general callers.
+   *
+   * @returns {EmbeddingsGenerator}
+   */
+  forGeneral() {
+    return new EmbeddingsGenerator(
+      resolveEngineOptions(EMBEDDING_TYPE.CONTEXTUAL)
+    );
+  }
 }
+
+export const embeddingsGeneratorFactory = new EmbeddingsGeneratorFactory();
 
 export class EmbeddingsGenerator {
   #engine = undefined;
@@ -231,8 +340,8 @@ export class EmbeddingsGenerator {
   options;
 
   /**
-   * Internal — use {@link EmbeddingsGenerator.forPlaces},
-   * {@link EmbeddingsGenerator.forGeneral} or
+   * Internal — use {@link EmbeddingsGeneratorFactory} via the
+   * `embeddingsGeneratorFactory` singleton, or
    * {@link EmbeddingsGenerator.forTest}.
    *
    * @param {object} resolvedOptions Output of `resolveEngineOptions`.
@@ -243,31 +352,8 @@ export class EmbeddingsGenerator {
   }
 
   /**
-   * Places semantic history. Embedding family comes from the Nimbus-driven
-   * pref `places.semanticHistory.embeddingType`.
-   *
-   * @returns {EmbeddingsGenerator}
-   */
-  static forPlaces() {
-    return new EmbeddingsGenerator(
-      resolveEngineOptions(resolvePlacesEmbeddingType())
-    );
-  }
-
-  /**
-   * Smart Window memories, navigation, and other general callers.
-   *
-   * @returns {EmbeddingsGenerator}
-   */
-  static forGeneral() {
-    return new EmbeddingsGenerator(
-      resolveEngineOptions(EMBEDDING_TYPE.CONTEXTUAL)
-    );
-  }
-
-  /**
-   * Tests and dev tooling only. Production callers MUST use forPlaces /
-   * forGeneral so policy stays in one place.
+   * Tests and dev tooling only. Production callers MUST use the
+   * `embeddingsGeneratorFactory` singleton so policy stays in one place.
    *
    * @param {object} opts
    * @param {string} opts.type One of EMBEDDING_TYPE.*
@@ -353,49 +439,15 @@ export class EmbeddingsGenerator {
    * @returns {Promise<void>}
    *   Resolves when the engine is created or already exists.
    * @throws {Error}
-   *   If the engine cannot be initialized using either primary or fallback options.
+   *   If the engine cannot be initialized.
    */
   async createEngineIfNotPresent() {
     if (!this.#engine) {
       try {
         this.#engine = await lazy.createEngine(this.options);
       } catch (ex) {
-        lazy.console.warn(
-          `Engine ${this.options.backend} init failed. Falling back to wasm. Error:` +
-            ex
-        );
-
-        if (this.options.fallbackEngine) {
-          const fallbackBase = ENGINE_OPTIONS.get(this.options.fallbackEngine);
-          const fallbackOptions = {
-            ...fallbackBase,
-            engineConfigId: this.options.fallbackEngine,
-            embeddingDimension: this.#embeddingSize,
-            featureId: this.options.featureId,
-            modelId: this.options.modelId,
-          };
-          try {
-            this.#engine = await lazy.createEngine(fallbackOptions);
-          } catch (fallbackEx) {
-            lazy.console.error(
-              `Fallback engine ${fallbackOptions.backend} also failed. Error:` +
-                fallbackEx
-            );
-            throw new Error(
-              "Unable to initialize the ML engine (including fallback).",
-              { cause: fallbackEx }
-            );
-          }
-        } else {
-          lazy.console.error(
-            "Unable to initialize the ML engine and no Fallback was provided. " +
-              ex
-          );
-          throw new Error(
-            "Unable to initialize the ML engine and no Fallback was provided. ",
-            { cause: ex }
-          );
-        }
+        lazy.console.error(`Unable to initialize the ML engine. Error:` + ex);
+        throw new Error("Unable to initialize the ML engine.", { cause: ex });
       }
     }
   }

@@ -23,3 +23,11 @@ If you want to test this functionality and you don't have a handy PWA available,
 
 - {doc}`Debug service workers <service_workers/index>`
 - {doc}`Inspect web app manifests <manifests/index>`
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+manifests/index
+service_workers/index
+```

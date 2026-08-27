@@ -5,11 +5,6 @@
 #ifndef SPA_UTILS_JSON_UTILS_H
 #define SPA_UTILS_JSON_UTILS_H
 
-#ifdef __cplusplus
-extern "C" {
-#else
-#include <stdbool.h>
-#endif
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -18,6 +13,12 @@ extern "C" {
 #include <float.h>
 
 #include <spa/utils/json-core.h>
+
+#ifdef __cplusplus
+extern "C" {
+#else
+#include <stdbool.h>
+#endif
 
 #ifndef SPA_API_JSON_UTILS
  #ifdef SPA_API_IMPL
@@ -104,7 +105,7 @@ SPA_API_JSON_UTILS int spa_json_begin_container(struct spa_json * iter,
 	spa_json_init(iter, data, size);
 	res = spa_json_enter_container(iter, iter, type);
 	if (res == -EPROTO && relax)
-		spa_json_init(iter, data, size);
+		spa_json_init_relax(iter, type, data, size);
 	else if (res <= 0)
 		return res;
 	return 1;

@@ -16,6 +16,7 @@ task-defaults:
         fetch:
             - dxc-src
     run:
+        clone-with: hg
         script: build-dxc.sh
         sparse-profile: null
     worker-type: b-linux-docker-amd
@@ -30,6 +31,7 @@ win64-dxc:
     treeherder:
         symbol: TW64(dxc)
     run:
+        clone-with: hg
         arguments:
             - "x86_64"
         toolchain-artifact: public/build/dxc-x86_64-pc-windows-msvc.tar.zst
@@ -40,6 +42,7 @@ win64-aarch64-dxc:
     treeherder:
         symbol: TWA64(dxc)
     run:
+        clone-with: hg
         arguments:
             - "aarch64"
         toolchain-artifact: public/build/dxc-aarch64-pc-windows-msvc.tar.zst

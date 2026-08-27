@@ -37,6 +37,8 @@ h6 {
 .description {
   color: var(--text-color-deemphasized);
 
+  /* Small subtree */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   &:has(+ .support-link) {
     margin-inline-end: var(--space-xxsmall);
   }

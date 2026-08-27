@@ -24,7 +24,7 @@ namespace mozilla {
 
 using FontSlantStyle = StyleFontStyle;
 using FontWeight = StyleFontWeight;
-using FontStretch = StyleFontStretch;
+using FontWidth = StyleFontWidth;
 
 /**
  * Convenience type to hold a <min, max> pair representing a range of values.
@@ -115,14 +115,13 @@ class WeightRange : public FontPropertyRange<FontWeight, WeightRange> {
   }
 };
 
-class StretchRange : public FontPropertyRange<FontStretch, StretchRange> {
+class WidthRange : public FontPropertyRange<FontWidth, WidthRange> {
  public:
-  StretchRange(FontStretch aMin, FontStretch aMax)
-      : FontPropertyRange(aMin, aMax) {}
+  WidthRange(FontWidth aMin, FontWidth aMax) : FontPropertyRange(aMin, aMax) {}
 
-  explicit StretchRange(FontStretch aStretch) : FontPropertyRange(aStretch) {}
+  explicit WidthRange(FontWidth aWidth) : FontPropertyRange(aWidth) {}
 
-  StretchRange(const StretchRange& aOther) = default;
+  WidthRange(const WidthRange& aOther) = default;
 
   void ToString(nsACString& aOutString, const char* aDelim = "..") const {
     aOutString.AppendFloat(Min().ToFloat());

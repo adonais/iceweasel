@@ -47,8 +47,8 @@ class DisposableStackObjectBase : public NativeObject {
  public:
   enum DisposableState : uint8_t { Pending, Disposed };
 
-  static constexpr uint32_t DISPOSABLE_RESOURCE_STACK_SLOT = 0;
-  static constexpr uint32_t STATE_SLOT = 1;
+  JS_DEFINE_TYPED_SLOT(0, DISPOSABLE_RESOURCE_STACK_SLOT, Object, Undefined);
+  JS_DEFINE_TYPED_SLOT(1, STATE_SLOT, Int32);
   static constexpr uint32_t RESERVED_SLOTS = 2;
 
  protected:

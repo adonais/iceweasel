@@ -55,7 +55,8 @@ class UiCompositorControllerParent final
   // necessary.
   void NotifyLayersUpdated();
   void NotifyFirstPaint();
-  void NotifyCompositorScrollUpdate(const CompositorScrollUpdate& aUpdate);
+  void NotifyCompositorScrollUpdates(
+      nsTArray<CompositorScrollUpdate>&& aUpdates);
 
  private:
   explicit UiCompositorControllerParent(const LayersId& aRootLayerTreeId);

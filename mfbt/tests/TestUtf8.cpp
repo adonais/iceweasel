@@ -4,12 +4,11 @@
 
 #define MOZ_PRETEND_NO_JSRUST 1
 
-#include "mozilla/Utf8.h"
-
 #include "mozilla/Assertions.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Span.h"
+#include "mozilla/Utf8.h"
 
 using mozilla::AsChars;
 using mozilla::DecodeOneUtf8CodePoint;

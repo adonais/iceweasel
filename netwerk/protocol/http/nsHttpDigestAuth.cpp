@@ -138,7 +138,7 @@ nsresult nsHttpDigestAuth::GetMethodAndPath(
           rv = NS_EscapeURL(path, esc_OnlyNonASCII | esc_Spaces, buf,
                             mozilla::fallible);
           if (NS_SUCCEEDED(rv)) {
-            path = buf;
+            path = std::move(buf);
           }
         }
       }

@@ -137,12 +137,13 @@ Be aware of hard-coded English context in migration. Consider for example:
 
 ```python
 ctx.add_transforms(
-        "browser/browser/preferences/siteDataSettings.ftl",
-        "browser/browser/preferences/siteDataSettings.ftl",
-        transforms_from(
-"""
+    "browser/browser/preferences/siteDataSettings.ftl",
+    "browser/browser/preferences/siteDataSettings.ftl",
+    transforms_from(
+        """
 site-usage-persistent = { site-usage-pattern } (Persistent)
-""")
+"""
+    ),
 )
 ```
 

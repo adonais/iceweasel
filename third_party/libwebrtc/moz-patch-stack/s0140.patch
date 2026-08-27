@@ -1,22 +1,21 @@
-From: Byron Campen <docfaraday@gmail.com>
-Date: Wed, 27 May 2026 11:38:00 -0500
-Subject: Bug 2040478 - (fix-2d195343e6) Add missing include of <optional>
- r?mjf
+From: Nico Grunbaum <ngrunbaum@mozilla.com>
+Date: Mon, 15 Jun 2026 11:02:00 -0700
+Subject: Bug 2047265 - (fix-0751415722) disable rtc_rust
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/c2a275c690c1e6ebd529752c0648c23cf3db3742
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b4df73705cf0855de2938aadaef93e12b1a3b153
 ---
- modules/desktop_capture/desktop_capture_options.h | 1 +
+ .gn | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/modules/desktop_capture/desktop_capture_options.h b/modules/desktop_capture/desktop_capture_options.h
-index aa3dd331fe..4ef972f184 100644
---- a/modules/desktop_capture/desktop_capture_options.h
-+++ b/modules/desktop_capture/desktop_capture_options.h
-@@ -11,6 +11,7 @@
- #define MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURE_OPTIONS_H_
+diff --git a/.gn b/.gn
+index 900d8b0b45..7e53eaebc2 100644
+--- a/.gn
++++ b/.gn
+@@ -94,6 +94,7 @@ default_args = {
+   enable_rust = false # Mozilla
+   enable_rust_cxx = true
+   enable_chromium_prelude = true
++  rtc_rust = false
  
- #include <cstdint>
-+#include <optional>
- 
- #include "api/environment/environment.h"
- #include "api/scoped_refptr.h"
+   # See context on https://issues.chromium.org/issues/415076048.
+   enable_js_protobuf = false

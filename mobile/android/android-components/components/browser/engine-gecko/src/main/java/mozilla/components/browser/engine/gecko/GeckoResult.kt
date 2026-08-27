@@ -9,18 +9,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import mozilla.components.concept.engine.CancellableOperation
 import org.mozilla.geckoview.GeckoResult
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * Wait for a GeckoResult to be complete in a co-routine.
  */
-suspend fun <T> GeckoResult<T>.await() = suspendCoroutine<T?> { continuation ->
+suspend fun <T> GeckoResult<T>.await() = suspendCancellableCoroutine<T?> { continuation ->
     then(
         {
             continuation.resume(it)
@@ -31,6 +31,7 @@ suspend fun <T> GeckoResult<T>.await() = suspendCoroutine<T?> { continuation ->
             GeckoResult<Void>()
         },
     )
+    continuation.invokeOnCancellation { cancel() }
 }
 
 /**

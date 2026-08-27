@@ -39,7 +39,7 @@ sp.check_call([
 ])
 
 result = sp.call([
-    "python3",
+    sys.executable,
     "../apilint/src/main/resources/diff.py",
     "--existing",
     args.expected,
@@ -48,7 +48,7 @@ result = sp.call([
 ])
 
 result_map = sp.call([
-    "python3",
+    sys.executable,
     "../apilint/src/main/resources/diff.py",
     "--existing",
     args.expected_map,

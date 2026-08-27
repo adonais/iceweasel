@@ -12,7 +12,7 @@ const EXPECTED_VALUES_FILE = "browser_webconsole_previewers.snapshot.mjs";
 
 add_task(async function () {
   // nsHttpServer does not support https
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   const hud = await openNewTabAndConsole("http://example.com");
 
   await JSObjectsTestUtils.runTest(

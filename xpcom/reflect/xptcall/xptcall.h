@@ -101,7 +101,7 @@ struct nsXPTCVariant {
 
   // As this type contains an anonymous union, we need to provide an explicit
   // destructor.
-  ~nsXPTCVariant() {}
+  ~nsXPTCVariant() {}  // NOLINT()
 };
 
 static_assert(offsetof(nsXPTCVariant, val) == offsetof(nsXPTCVariant, ext),

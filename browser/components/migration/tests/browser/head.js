@@ -311,6 +311,26 @@ async function waitForTestMigration(
 }
 
 /**
+ * Wait for a panel-list to be ready to interact with. In chrome the panel-list
+ * is parented to a XUL <panel> that it opens asynchronously, so its own "shown"
+ * event can fire before that panel is open and its items are interactive.
+ *
+ * Bug 2063011 will fix this in panel-list itself, and remove this helper.
+ *
+ * @param {Element} panelList
+ */
+async function waitForPanelListShown(panelList) {
+  await new Promise(resolve => {
+    panelList.addEventListener("shown", resolve, { once: true });
+  });
+
+  let panel = panelList.parentElement;
+  if (panel?.localName == "panel") {
+    await BrowserTestUtils.waitForPopupEvent(panel, "shown");
+  }
+}
+
+/**
  * Takes a MigrationWizard element and chooses the
  * InternalTestingProfileMigrator as the browser to migrate from. Then, it
  * checks the checkboxes associated with the selectedResourceTypes and
@@ -338,9 +358,7 @@ async function selectResourceTypesAndStartMigration(
   let selector = shadow.querySelector("#browser-profile-selector");
   EventUtils.synthesizeMouseAtCenter(selector, {}, wizard.documentGlobal);
 
-  await new Promise(resolve => {
-    panelList.addEventListener("shown", resolve, { once: true });
-  });
+  await waitForPanelListShown(panelList);
 
   let panelItem = shadow.querySelector(`panel-item[key="${migratorKey}"]`);
   Assert.ok(

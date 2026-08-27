@@ -128,7 +128,7 @@ bool TRRServiceParent::MaybeSetPrivateURI(const nsACString& aURI) {
     return false;
   }
 
-  mPrivateURI = newURI;
+  mPrivateURI = std::move(newURI);
   AsyncCreateTRRConnectionInfo(mPrivateURI);
 
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();

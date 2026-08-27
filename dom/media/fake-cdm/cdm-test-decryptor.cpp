@@ -391,10 +391,6 @@ class ReportReadRecordContinuation : public ReadContinuation {
   std::string mRecordId;
 };
 
-enum ShutdownMode { ShutdownNormal, ShutdownTimeout, ShutdownStoreToken };
-
-static ShutdownMode sShutdownMode = ShutdownNormal;
-
 void FakeDecryptor::UpdateSession(uint32_t aPromiseId, const char* aSessionId,
                                   uint32_t aSessionIdLength,
                                   const uint8_t* aResponse,
@@ -420,10 +416,7 @@ void FakeDecryptor::UpdateSession(uint32_t aPromiseId, const char* aSessionId,
                ReportReadStatusContinuation(id));
   } else if (task == "shutdown-mode") {
     const std::string& mode = tokens[1];
-    if (mode == "timeout") {
-      sShutdownMode = ShutdownTimeout;
-    } else if (mode == "token") {
-      sShutdownMode = ShutdownStoreToken;
+    if (mode == "token") {
       Message("shutdown-token received " + tokens[2]);
     }
   } else if (task == "retrieve-shutdown-token") {

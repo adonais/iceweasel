@@ -3266,7 +3266,6 @@ const PROXIED_EVENTS = new Set([
   "test-harness-message",
   "background-script-suspend",
   "background-script-suspend-canceled",
-  "background-script-suspend-ignored",
 ]);
 
 const PROXIED_TEST_EVENTS = new Set([

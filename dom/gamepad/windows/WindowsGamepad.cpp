@@ -120,6 +120,11 @@ class Gamepad {
   unsigned numAxes;
   unsigned numButtons;
 
+  // USB vendor/product id (raw-input devices), used to recognize controllers
+  // that need custom report handling.
+  uint16_t vendorId = 0;
+  uint16_t productId = 0;
+
   nsTArray<bool> buttons;
   struct axisValue {
     HIDP_VALUE_CAPS caps;
@@ -144,7 +149,7 @@ class Gamepad {
   }
 
  private:
-  Gamepad() {}
+  Gamepad() = default;
 };
 
 // Drop this in favor of decltype when we require a new enough SDK.
@@ -218,6 +223,28 @@ bool GetPreparsedData(HANDLE handle, nsTArray<uint8_t>& data) {
  */
 double ScaleAxis(ULONG value, LONG min, LONG max) {
   return 2.0 * (value - min) / (max - min) - 1.0;
+}
+
+// Nintendo Switch Pro controller (also reported by 8BitDo pads in Switch mode).
+// Its HID report descriptor doesn't describe the 0x30 full input report it
+// streams over USB, so HidP_* extracts garbage; the report is parsed by hand
+// instead (see WindowsGamepadService::ParseSwitchProReport).
+const uint16_t kSwitchProVendorId = 0x057e;
+const uint16_t kSwitchProProductId = 0x2009;
+const uint8_t kSwitchProFullReportId = 0x30;
+// Default analog-stick calibration; per-device SPI calibration is not read.
+const int kSwitchStickCenter = 2050;
+const int kSwitchStickMin = 550;
+const int kSwitchStickMax = 3550;
+const int kSwitchStickDeadzone = 160;
+
+// Normalize a 12-bit Switch Pro stick axis to -1.0 .. 1.0 with default
+// calibration.
+double NormalizeSwitchAxis(uint16_t value) {
+  const double scaled = 2.0 * (static_cast<double>(value) - kSwitchStickMin) /
+                            (kSwitchStickMax - kSwitchStickMin) -
+                        1.0;
+  return std::clamp(scaled, -1.0, 1.0);
 }
 
 /*
@@ -330,6 +357,10 @@ class WindowsGamepadService {
   void Shutdown();
   // Parse gamepad input from a WM_INPUT message.
   bool HandleRawInput(HRAWINPUT handle);
+  // Parse a Nintendo Switch Pro 0x30 full input report directly, emitting
+  // button/axis events. Used instead of the HID-usage path, which the device's
+  // report descriptor doesn't support.
+  void ParseSwitchProReport(Gamepad& aGamepad, const BYTE* aData);
   void SetLightIndicatorColor(const Tainted<GamepadHandle>& aGamepadHandle,
                               const Tainted<uint32_t>& aLightColorIndex,
                               const uint8_t& aRed, const uint8_t& aGreen,
@@ -744,6 +775,8 @@ bool WindowsGamepadService::GetRawGamepad(HANDLE handle) {
   remapper->SetButtonCount(numButtons);
   Gamepad gamepad(numAxes, numButtons, kRawInputGamepad);
   gamepad.handle = handle;
+  gamepad.vendorId = static_cast<uint16_t>(rdi.hid.dwVendorId);
+  gamepad.productId = static_cast<uint16_t>(rdi.hid.dwProductId);
 
   for (unsigned i = 0; i < gamepad.numAxes; i++) {
     gamepad.axes[i] = axes[i];
@@ -768,6 +801,77 @@ bool WindowsGamepadService::GetRawGamepad(HANDLE handle) {
 
   mGamepads.AppendElement(std::move(gamepad));
   return true;
+}
+
+void WindowsGamepadService::ParseSwitchProReport(Gamepad& aGamepad,
+                                                 const BYTE* aData) {
+  RefPtr<GamepadPlatformService> service =
+      GamepadPlatformService::GetParentService();
+  if (!service) {
+    return;
+  }
+
+  // 0x30 full report layout: [3]=right-side buttons, [4]=shared buttons,
+  // [5]=left-side buttons, [6..8]=left stick, [9..11]=right stick.
+  const uint8_t rb = aData[3];
+  const uint8_t sb = aData[4];
+  const uint8_t lb = aData[5];
+
+  auto setButton = [&](uint32_t aIndex, bool aPressed) {
+    if (aIndex < aGamepad.buttons.Length() &&
+        aGamepad.buttons[aIndex] != aPressed) {
+      service->NewButtonEvent(aGamepad.gamepadHandle, aIndex, aPressed);
+      aGamepad.buttons[aIndex] = aPressed;
+    }
+  };
+
+  // Nintendo face buttons map to the Standard Gamepad by physical position.
+  setButton(BUTTON_INDEX_PRIMARY, rb & 0x04);         // B (bottom)
+  setButton(BUTTON_INDEX_SECONDARY, rb & 0x08);       // A (right)
+  setButton(BUTTON_INDEX_TERTIARY, rb & 0x01);        // Y (left)
+  setButton(BUTTON_INDEX_QUATERNARY, rb & 0x02);      // X (top)
+  setButton(BUTTON_INDEX_LEFT_SHOULDER, lb & 0x40);   // L
+  setButton(BUTTON_INDEX_RIGHT_SHOULDER, rb & 0x40);  // R
+  setButton(BUTTON_INDEX_LEFT_TRIGGER, lb & 0x80);    // ZL
+  setButton(BUTTON_INDEX_RIGHT_TRIGGER, rb & 0x80);   // ZR
+  setButton(BUTTON_INDEX_BACK_SELECT, sb & 0x01);     // Minus
+  setButton(BUTTON_INDEX_START, sb & 0x02);           // Plus
+  setButton(BUTTON_INDEX_LEFT_THUMBSTICK, sb & 0x08);
+  setButton(BUTTON_INDEX_RIGHT_THUMBSTICK, sb & 0x04);
+  setButton(BUTTON_INDEX_DPAD_UP, lb & 0x02);
+  setButton(BUTTON_INDEX_DPAD_DOWN, lb & 0x01);
+  setButton(BUTTON_INDEX_DPAD_LEFT, lb & 0x08);
+  setButton(BUTTON_INDEX_DPAD_RIGHT, lb & 0x04);
+  setButton(BUTTON_INDEX_META, sb & 0x10);      // Home
+  setButton(BUTTON_INDEX_META + 1, sb & 0x20);  // Capture
+
+  // Each stick is two 12-bit values packed across three bytes.
+  const uint16_t lx = aData[6] | ((aData[7] & 0x0f) << 8);
+  const uint16_t ly = (aData[8] << 4) | (aData[7] >> 4);
+  const uint16_t rx = aData[9] | ((aData[10] & 0x0f) << 8);
+  const uint16_t ry = (aData[11] << 4) | (aData[10] >> 4);
+
+  auto withinDeadzone = [](uint16_t aX, uint16_t aY) {
+    const double dx = static_cast<double>(aX) - kSwitchStickCenter;
+    const double dy = static_cast<double>(aY) - kSwitchStickCenter;
+    return dx * dx + dy * dy <
+           static_cast<double>(kSwitchStickDeadzone) * kSwitchStickDeadzone;
+  };
+  const bool leftDead = withinDeadzone(lx, ly);
+  const bool rightDead = withinDeadzone(rx, ry);
+
+  auto setAxis = [&](uint32_t aIndex, double aValue) {
+    if (aIndex < aGamepad.axes.Length() &&
+        aGamepad.axes[aIndex].value != aValue) {
+      service->NewAxisMoveEvent(aGamepad.gamepadHandle, aIndex, aValue);
+      aGamepad.axes[aIndex].value = aValue;
+    }
+  };
+  // The Standard Gamepad uses +down for the Y axes, so invert them.
+  setAxis(AXIS_INDEX_LEFT_STICK_X, leftDead ? 0.0 : NormalizeSwitchAxis(lx));
+  setAxis(AXIS_INDEX_LEFT_STICK_Y, leftDead ? 0.0 : -NormalizeSwitchAxis(ly));
+  setAxis(AXIS_INDEX_RIGHT_STICK_X, rightDead ? 0.0 : NormalizeSwitchAxis(rx));
+  setAxis(AXIS_INDEX_RIGHT_STICK_Y, rightDead ? 0.0 : -NormalizeSwitchAxis(ry));
 }
 
 bool WindowsGamepadService::HandleRawInput(HRAWINPUT handle) {
@@ -802,6 +906,16 @@ bool WindowsGamepadService::HandleRawInput(HRAWINPUT handle) {
   }
   if (gamepad == nullptr) {
     return false;
+  }
+
+  // The Switch Pro's report descriptor doesn't describe its 0x30 full report,
+  // so parse it directly rather than via HidP_*.
+  if (gamepad->vendorId == kSwitchProVendorId &&
+      gamepad->productId == kSwitchProProductId &&
+      raw->data.hid.dwSizeHid >= 12 &&
+      raw->data.hid.bRawData[0] == kSwitchProFullReportId) {
+    ParseSwitchProReport(*gamepad, raw->data.hid.bRawData);
+    return true;
   }
 
   // Second, get the preparsed data
@@ -1060,7 +1174,7 @@ class StartWindowsGamepadServiceRunnable final : public Runnable {
   }
 
  private:
-  ~StartWindowsGamepadServiceRunnable() {}
+  ~StartWindowsGamepadServiceRunnable() = default;
 };
 
 class StopWindowsGamepadServiceRunnable final : public Runnable {
@@ -1084,7 +1198,7 @@ class StopWindowsGamepadServiceRunnable final : public Runnable {
   }
 
  private:
-  ~StopWindowsGamepadServiceRunnable() {}
+  ~StopWindowsGamepadServiceRunnable() = default;
 };
 
 }  // namespace

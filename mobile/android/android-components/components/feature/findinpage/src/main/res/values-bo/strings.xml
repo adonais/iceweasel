@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources xmlns:tools="http://schemas.android.com/tools">
+  <!--
+    String to be read by the accessibility service presenting the number of results found in the page
+    and the position the user is at. %1$d is the position, %2$d is the total number of results.
+  -->
+  <string name="mozac_feature_findindpage_accessibility_result" tools:ignore="PluralsCandidate">%1$d ནང་ནས་ %2$d\u0020</string>
+</resources>

@@ -249,6 +249,7 @@
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/SpeculationRuleSet.h"
 #include "mozilla/dom/SpeculationRules.h"
+#include "mozilla/dom/SpeculationRulesManager.h"
 #include "mozilla/dom/StyleSheetApplicableStateChangeEvent.h"
 #include "mozilla/dom/StyleSheetApplicableStateChangeEventBinding.h"
 #include "mozilla/dom/StyleSheetList.h"
@@ -2281,7 +2282,8 @@ void Document::AccumulatePageLoadTelemetry() {
         nsICacheInfoChannel::kCacheUnknown;
     if (NS_SUCCEEDED(cacheInfoChannel->GetCacheDisposition(&disposition))) {
       mPageloadEventData.set_cacheDisposition(disposition);
-      isCacheHit = disposition == nsICacheInfoChannel::kCacheHit;
+      isCacheHit = disposition == nsICacheInfoChannel::kCacheHit ||
+                   disposition == nsICacheInfoChannel::kCacheHitViaReval;
     }
   }
 
@@ -6879,14 +6881,12 @@ void Document::UpdateTextEditContext() {
   if (oldActiveEditContext) {
     oldActiveEditContext->Deactivate();
   }
-  // 4. If newActiveEditContext is not null, then:
-  if (newActiveEditContext) {
-    // 1. Update the Text Edit Context's text state to match the values in
-    //    newActiveEditContext's text state.
-    // TODO
-  }
   // 5. Set the document's active EditContext to newActiveEditContext.
   mActiveEditContext = newActiveEditContext;
+  // 4. If newActiveEditContext is not null, then:
+  //   1. Update the Text Edit Context's text state to match the values in
+  //      newActiveEditContext's text state.
+  EditContext::NotifyActiveEditContextChanged(*this);
 }
 
 void Document::MaybeDispatchCheckKeyPressEventModelEvent() {
@@ -9657,8 +9657,9 @@ void Document::GetCharacterSet(nsAString& aCharacterSet) const {
 }
 
 /* https://dom.spec.whatwg.org/#dom-document-importnode */
-already_AddRefed<nsINode> Document::ImportNode(nsINode& aNode, bool aDeep,
-                                               ErrorResult& rv) const {
+already_AddRefed<nsINode> Document::ImportNode(
+    nsINode& aNode, const BooleanOrImportNodeOptions& aOptions,
+    ErrorResult& rv) const {
   nsINode* imported = &aNode;
 
   switch (imported->NodeType()) {
@@ -9676,24 +9677,50 @@ already_AddRefed<nsINode> Document::ImportNode(nsINode& aNode, bool aDeep,
     case COMMENT_NODE:
     case DOCUMENT_TYPE_NODE: {
       // 2. Let subtree be false.
+      bool subtree = false;
       // 3. Let registry be null.
-      // 4. If options is a boolean, then set subtree to options.
-      // 5. Otherwise:
-      // 5.2. If options["customElementRegistry"] exists, then set registry to
-      // it.
-      // 5.3. If registry’s is scoped is false and registry is not this’s
-      // custom element registry, then throw a "NotSupportedError"
-      // DOMException.
-      // 5.4. If registry is null, then set registry to the result of
-      // looking up a custom element registry given this.
-      // 5.6. Return the result of cloning a node given node with document set
-      // to this, subtree set to subtree, and fallbackRegistry set to
-      // registry.
-      // todo(keithamus): ^ Scoped Return
+      RefPtr<CustomElementRegistry> registry;
 
-      // 6. Return the result of cloning a node given node with document set to
-      //    this, subtree set to subtree, and fallbackRegistry set to registry.
-      return imported->Clone(aDeep, mNodeInfoManager, rv);
+      // 4. If options is a boolean, then set subtree to options.
+      if (aOptions.IsBoolean()) {
+        subtree = aOptions.GetAsBoolean();
+      } else {
+        // 5. Otherwise:
+        const ImportNodeOptions& options = aOptions.GetAsImportNodeOptions();
+        // 5.1. Set subtree to the negation of options["selfOnly"].
+        subtree = !options.mSelfOnly;
+
+        // 5.2. If options["customElementRegistry"] exists, then set registry
+        //      to it.
+        if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+          if (options.mCustomElementRegistry.WasPassed()) {
+            registry = &options.mCustomElementRegistry.Value();
+            // 5.3. If registry's is scoped is false and registry is not this's
+            //      custom element registry, then throw a "NotSupportedError"
+            //      DOMException.
+            if (!registry->IsScoped() &&
+                registry != GetCustomElementRegistry()) {
+              rv.ThrowNotSupportedError(
+                  "Cannot use a global CustomElementRegistry from another "
+                  "document");
+              return nullptr;
+            }
+          }
+        }
+      }
+
+      // 6. If registry is null, then set registry to the result of looking
+      //    up a custom element registry given this.
+      // https://html.spec.whatwg.org/#look-up-a-custom-element-registry
+      // For a Document, this returns the document's custom element registry.
+      if (!registry) {
+        registry = GetCustomElementRegistry();
+      }
+
+      // 7. Return the result of cloning a node given node with document set
+      //    to this, subtree set to subtree, and fallbackRegistry set to
+      //    registry.
+      return imported->Clone(subtree, mNodeInfoManager, rv, registry);
     }
     default: {
       NS_WARNING("Don't know how to clone this nodetype for importNode.");
@@ -10366,6 +10393,13 @@ SMILAnimationController* Document::GetAnimationController() {
   }
 
   return mAnimationController;
+}
+
+SpeculationRulesManager* Document::EnsureSpeculationRulesManager() {
+  if (!mSpeculationRulesManager) {
+    mSpeculationRulesManager = MakeUnique<SpeculationRulesManager>();
+  }
+  return mSpeculationRulesManager.get();
 }
 
 /**
@@ -12107,7 +12141,8 @@ void Document::TerminateParserAndDisableScripts() {
 }
 
 /* https://dom.spec.whatwg.org/#effective-global-custom-element-registry */
-CustomElementRegistry* Document::GetEffectiveGlobalCustomElementRegistry() {
+CustomElementRegistry* Document::GetEffectiveGlobalCustomElementRegistry()
+    const {
   // 1. If document's custom element registry is a global custom element
   //    registry, then return document's custom element registry.
   CustomElementRegistry* registry = GetCustomElementRegistry();
@@ -12308,11 +12343,6 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest,
   // Check if we have pending network requests
   nsCOMPtr<nsILoadGroup> loadGroup = GetDocumentLoadGroup();
   if (loadGroup) {
-    nsCOMPtr<nsISimpleEnumerator> requests;
-    loadGroup->GetRequests(getter_AddRefs(requests));
-
-    bool hasMore = false;
-
     // We want to bail out if we have any requests other than aNewRequest (or
     // in the case when aNewRequest is a part of a multipart response the base
     // channel the multipart response is coming in on).
@@ -12322,32 +12352,40 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest,
       part->GetBaseChannel(getter_AddRefs(baseChannel));
     }
 
-    while (NS_SUCCEEDED(requests->HasMoreElements(&hasMore)) && hasMore) {
-      nsCOMPtr<nsISupports> elem;
-      requests->GetNext(getter_AddRefs(elem));
-
-      nsCOMPtr<nsIRequest> request = do_QueryInterface(elem);
-      if (request && request != aNewRequest && request != baseChannel) {
-        // Favicon loads don't need to block caching.
-        nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
-        if (channel) {
-          nsCOMPtr<nsILoadInfo> li = channel->LoadInfo();
-          if (li->InternalContentPolicyType() ==
-              nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON) {
-            continue;
-          }
-        }
-
-        if (MOZ_UNLIKELY(MOZ_LOG_TEST(gPageCacheLog, LogLevel::Verbose))) {
-          nsAutoCString requestName;
-          request->GetName(requestName);
-          MOZ_LOG(gPageCacheLog, LogLevel::Verbose,
-                  ("Save of %s blocked because document has request %s",
-                   uri.get(), requestName.get()));
-        }
-        aBFCacheCombo |= BFCacheStatus::REQUEST;
-        ret = false;
+    bool blocked = false;
+    loadGroup->VisitRequests([&](nsIRequest* aRequest) {
+      if (aRequest == aNewRequest || aRequest == baseChannel.get()) {
+        return true;
       }
+
+      // Favicon loads don't need to block caching.
+      nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
+      if (channel) {
+        nsCOMPtr<nsILoadInfo> li = channel->LoadInfo();
+        if (li->InternalContentPolicyType() ==
+            nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON) {
+          return true;
+        }
+      }
+
+      blocked = true;
+
+      // Further requests can only set the same bit; keep going only to log.
+      if (MOZ_LIKELY(!MOZ_LOG_TEST(gPageCacheLog, LogLevel::Verbose))) {
+        return false;
+      }
+
+      nsAutoCString requestName;
+      aRequest->GetName(requestName);
+      MOZ_LOG(gPageCacheLog, LogLevel::Verbose,
+              ("Save of %s blocked because document has request %s", uri.get(),
+               requestName.get()));
+      return true;
+    });
+
+    if (blocked) {
+      aBFCacheCombo |= BFCacheStatus::REQUEST;
+      ret = false;
     }
   }
 
@@ -15972,6 +16010,12 @@ void Document::ExitFullscreenInDocTree(Document* aMaybeNotARootDoc) {
     // we would actually do nothing below except crashing ourselves via
     // dispatching the "MozDOMFullscreen:Exited" event to an nonexistent
     // document.
+    //
+    // We still reset this document, otherwise it could keep a stale element
+    // in its top layer with the fullscreen flag set.
+    if (aMaybeNotARootDoc->GetUnretargetedFullscreenElement()) {
+      aMaybeNotARootDoc->CleanupFullscreenState();
+    }
     return;
   }
 
@@ -16486,6 +16530,7 @@ nsTArray<Element*> Document::GetTopLayer() const {
   nsTArray<Element*> elements;
   for (const nsWeakPtr& ptr : mTopLayer) {
     if (nsCOMPtr<Element> elem = do_QueryReferent(ptr)) {
+      MOZ_DIAGNOSTIC_ASSERT(elem->GetComposedDoc() == this);
       elements.AppendElement(elem);
     }
   }
@@ -16565,14 +16610,15 @@ void Document::HidePopoversUntil(Element* aEndpoint, bool aFocusPreviousElement,
   HidePopoverStackUntil(aEndpoint, PopoverAttributeState::Hint,
                         aFocusPreviousElement, aFireEvents);
 
-  // 3. If endpointIsHint, then return.
-  if (endpointIsHint) {
-    return;
-  }
+  // 3. Let autoEndpoint be endpoint.
+  // 4. If endpointIsHint is true, then set autoEndpoint to document's hint
+  // stack parent.
+  RefPtr<Element> autoEndpoint =
+      endpointIsHint ? PopoverHintStackParent() : aEndpoint;
 
-  // 4. Run hide popover stack until given document, endpoint, Auto,
+  // 5. Run hide popover stack until given document, autoEndpoint, Auto,
   // focusPreviousElement, and fireEvents.
-  HidePopoverStackUntil(aEndpoint, PopoverAttributeState::Auto,
+  HidePopoverStackUntil(autoEndpoint, PopoverAttributeState::Auto,
                         aFocusPreviousElement, aFireEvents);
 }
 
@@ -17242,24 +17288,38 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY
 bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
   Element* elem = aRequest->Element();
 
-  switch (FullscreenElementReadyCheck(*aRequest)) {
-    case ElementReadyCheckResult::eOk:
-      break;
-    case ElementReadyCheckResult::eKeyboardLockOnly:
-      SetKeyboardLockStatusAndMaybeDispatchEvent(this, *aRequest);
-      aRequest->MayResolvePromise();
-      return true;
-    case ElementReadyCheckResult::eSame:
-      aRequest->MayResolvePromise();
-      [[fallthrough]];
-    case ElementReadyCheckResult::eErrorPromiseRejected:
-      return false;
+  // Runs the ready check and returns the value ApplyFullscreen should return,
+  // or Nothing() to keep going.
+  auto readyCheck = [&]() -> Maybe<bool> {
+    switch (FullscreenElementReadyCheck(*aRequest)) {
+      case ElementReadyCheckResult::eOk:
+        return Nothing();
+      case ElementReadyCheckResult::eKeyboardLockOnly:
+        SetKeyboardLockStatusAndMaybeDispatchEvent(this, *aRequest);
+        aRequest->MayResolvePromise();
+        return Some(true);
+      case ElementReadyCheckResult::eSame:
+        aRequest->MayResolvePromise();
+        [[fallthrough]];
+      case ElementReadyCheckResult::eErrorPromiseRejected:
+        return Some(false);
+    }
+    MOZ_ASSERT_UNREACHABLE("Unhandled ElementReadyCheckResult");
+    return Some(false);
+  };
+
+  if (Maybe<bool> result = readyCheck()) {
+    return *result;
   }
 
   RefPtr<Document> doc = aRequest->Document();
   // https://github.com/whatwg/html/pull/12345
   RefPtr<Element> hideUntil = elem->GetTopmostPopoverAncestor(nullptr, false);
   doc->HidePopoversUntil(hideUntil, false, true);
+
+  if (Maybe<bool> result = readyCheck()) {
+    return *result;
+  }
 
   // Stash a reference to any existing fullscreen doc, we'll use this later
   // to detect if the origin which is fullscreen has changed.
@@ -17422,19 +17482,20 @@ void Document::ScheduleViewTransitionUpdateCallback(ViewTransition* aVt) {
 }
 
 // https://drafts.csswg.org/css-view-transitions-1/#flush-the-update-callback-queue
-void Document::FlushViewTransitionUpdateCallbackQueue() {
+bool Document::FlushViewTransitionUpdateCallbackQueue() {
   // 1. For each transition in document’s update callback queue, call the update
   // callback given transition.
   // Note: we move mViewTransitionUpdateCallbacks into a temporary array to make
   // sure no one updates the array when iterating.
-  auto callbacks = std::move(mViewTransitionUpdateCallbacks);
+  const auto callbacks = std::move(mViewTransitionUpdateCallbacks);
   MOZ_ASSERT(mViewTransitionUpdateCallbacks.IsEmpty());
-  for (RefPtr<ViewTransition>& vt : callbacks) {
+  for (const RefPtr<ViewTransition>& vt : callbacks) {
     MOZ_KnownLive(vt)->CallUpdateCallback(IgnoreErrors());
   }
 
   // 2. Set document’s update callback queue to an empty list.
   // mViewTransitionUpdateCallbacks is empty after the 1st step.
+  return !callbacks.IsEmpty();
 }
 
 // https://html.spec.whatwg.org/#update-the-visibility-state
@@ -21533,6 +21594,10 @@ class SpeculationRules& Document::SpeculationRules() {
     mSpeculationRules = MakeRefPtr<class SpeculationRules>(this);
   }
   return *mSpeculationRules;
+}
+
+class SpeculationRules* Document::GetSpeculationRules() {
+  return mSpeculationRules;
 }
 
 }  // namespace mozilla::dom

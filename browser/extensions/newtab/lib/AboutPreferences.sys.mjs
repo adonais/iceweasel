@@ -11,6 +11,7 @@ import {
   isWidgetToggleVisible,
   isWidgetsContainerVisible,
 } from "resource://newtab/common/WidgetsRegistry.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -102,6 +103,9 @@ const PREFS_FOR_SETTINGS = () => {
   ];
 };
 
+// @backward-compat { version 155 }
+// Drop this helper once 155 reaches Release; only used by the homepage and
+// customHomepage groups, which move to components/preferences on 155+.
 /**
  * Queries ExtensionSettingsStore for active extensions of the given type/key
  * and returns dropdown option objects for each.
@@ -129,6 +133,9 @@ async function getExtensionOptions(type, key) {
   return options;
 }
 
+// @backward-compat { version 155 }
+// Drop this helper once 155 reaches Release; only used by the homepage and
+// customHomepage groups, which move to components/preferences on 155+.
 function getActiveExtensionForSetting(type, key) {
   try {
     let setting = lazy.ExtensionSettingsStore.getSetting(type, key);
@@ -140,6 +147,9 @@ function getActiveExtensionForSetting(type, key) {
   }
 }
 
+// @backward-compat { version 155 }
+// Drop this helper once 155 reaches Release; only used by the homepage and
+// customHomepage groups, which move to components/preferences on 155+.
 function getHomepageActiveExtension() {
   let ext = getActiveExtensionForSetting(
     PREF_SETTING_TYPE,
@@ -157,6 +167,9 @@ function getHomepageActiveExtension() {
   }
 }
 
+// @backward-compat { version 155 }
+// Drop this helper once 155 reaches Release; only used by the homepage and
+// customHomepage groups, which move to components/preferences on 155+.
 /**
  * Build an AddonManager listener that runs `refreshFn` for any of the four
  * lifecycle events that affect the dropdown.
@@ -173,6 +186,9 @@ function makeAddonListenerForRefresh(refreshFn) {
   };
 }
 
+// @backward-compat { version 155 }
+// Drop this helper once 155 reaches Release; only used by the homepage and
+// customHomepage groups, which move to components/preferences on 155+.
 /**
  * Build a Management "extension-setting-changed" handler that runs `refreshFn`
  * when the changed setting matches the given type and key.
@@ -190,6 +206,9 @@ function makeExtensionSettingChangedListener(type, key, refreshFn) {
   };
 }
 
+// @backward-compat { version 155 }
+// Drop this helper once 155 reaches Release; only used by the homepage and
+// customHomepage groups, which move to components/preferences on 155+.
 /**
  * Force the moz-select value after the DOM has settled. Setting the value
  * in the same tick that the option is added doesn't take effect, so we
@@ -248,6 +267,12 @@ export class AboutPreferences {
           `addons://detail/${encodeURIComponent(action.data)}`
         );
         break;
+      // Open the about:addons themes list (from the New Tab theme picker).
+      case at.OPEN_ABOUT_ADDONS_THEMES:
+        action._target.window.BrowserAddonUI.openAddonsMgr(
+          "addons://list/theme"
+        );
+        break;
     }
   }
 
@@ -272,32 +297,42 @@ export class AboutPreferences {
 
       window.MozXULElement.insertFTLIfNeeded("browser/newtab/newtab.ftl");
 
+      // newtab still listens for home-pane-loaded because it owns the
+      // `home` group (Firefox Home content). On Firefox <155 it also
+      // owns `homepage` and `customHomepage` via the version-gated path
+      // below; on 155+ components/preferences registers them instead.
+
       // We observe 2 signals that about:settings is loading - the
       // PREFERENCES_LOADED_EVENT and PREFERENCES_LOADED_EVENT_SUBPANE
       // observer notifications. The first is fired anytime about:settings
       // is loaded directly. The second (and not the first) fires if loading
       // about:preferences#customHomepage. We handle those cases by observing
-      // both, and checking to see if the "homepage" settings group was already
+      // both, and checking to see if the "home" settings group was already
       // registered. If so, we take that as a sign that we don't need to
-      // re-register and then we bail out.
+      // re-register and we return early.
       try {
-        if (SettingGroupManager.get("homepage")) {
-          // The homepage group has already been registered for this load of
-          // about:settings, so no need to do it again. Bail out.
+        if (SettingGroupManager.get("home")) {
+          // The home group has already been registered for this load of
+          // about:settings, so no need to do it again. Return early.
           return;
         }
       } catch (e) {
-        // We didn't find the homepage settings group registered. That's okay,
+        // We didn't find the home settings group registered. That's okay,
         // we'll register the group(s) now - that's what we're here for.
       }
 
       this._registerPreferences(window);
 
-      SettingGroupManager.registerGroups({
-        homepage: this._setupHomepageGroup(window),
-        customHomepage: this._setupCustomHomepageGroup(window),
-        home: this._setupHomeGroup(window),
-      });
+      const groups = { home: this._setupHomeGroup(window) };
+      // @backward-compat { version 155 }
+      // Firefox 155+ registers `homepage` and `customHomepage` in
+      // components/preferences. They can't be registered twice, so skip them
+      // on 155+. Drop this condition once 155 reaches Release.
+      if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "155.0a1") < 0) {
+        groups.homepage = this._setupHomepageGroup(window);
+        groups.customHomepage = this._setupCustomHomepageGroup(window);
+      }
+      SettingGroupManager.registerGroups(groups);
       return;
     }
 

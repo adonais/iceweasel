@@ -113,6 +113,9 @@ class BaselineFrame {
   bool isConstructing() const {
     return CalleeTokenIsConstructing(calleeToken());
   }
+  bool isResumingGenerator() const {
+    return framePrefix()->isResumingGenerator();
+  }
   JSScript* script() const {
     return MaybeForwardedScriptFromCalleeToken(calleeToken());
   }
@@ -139,6 +142,8 @@ class BaselineFrame {
     }
     return UndefinedValue();
   }
+
+  Value* resumeArgs() { return framePrefix()->resumeArgs(); }
 
 #ifdef DEBUG
   size_t debugNumValueSlots() const { return numValueSlots(debugFrameSize()); }

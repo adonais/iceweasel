@@ -9,6 +9,10 @@ import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.feature.awesomebar.facts.SuggestionCardType
 import mozilla.components.feature.awesomebar.facts.emitOptimizedSuggestionCardClickedFact
 import mozilla.components.feature.awesomebar.facts.emitOptimizedSuggestionCardDisplayedFact
+import mozilla.components.feature.awesomebar.optimizedsuggestions.ChangePercent
+import mozilla.components.feature.awesomebar.optimizedsuggestions.CombinedSuggestionsDataSource
+import mozilla.components.feature.awesomebar.optimizedsuggestions.StockItem
+import mozilla.components.feature.awesomebar.optimizedsuggestions.StockSuggestion
 import mozilla.components.feature.search.SearchUseCases
 import java.text.NumberFormat
 import java.util.Locale
@@ -25,7 +29,7 @@ internal const val DEFAULT_STOCK_SUGGESTION_LIMIT = 1
  */
 class StocksOnlineSuggestionProvider(
     private val searchUseCase: SearchUseCases.SearchUseCase,
-    private val dataSource: AwesomeBar.CombinedSuggestionsDataSource,
+    private val dataSource: CombinedSuggestionsDataSource,
     private val suggestionsHeader: String? = null,
     @get:VisibleForTesting internal val maxNumberOfSuggestions: Int = DEFAULT_STOCK_SUGGESTION_LIMIT,
     private val locale: Locale = Locale.getDefault(),
@@ -43,7 +47,7 @@ class StocksOnlineSuggestionProvider(
     private val trailingCurrencyRegex = Regex("""([A-Z]{3})\s*$""")
     private val numericRegex = Regex("""-?\d+(\.\d+)?""")
 
-    override suspend fun onInputChanged(text: String): List<AwesomeBar.StockSuggestion> {
+    override suspend fun onInputChanged(text: String): List<StockSuggestion> {
         if (text.isBlank()) return emptyList()
 
         val items = dataSource.fetchStocks(text)
@@ -60,7 +64,7 @@ class StocksOnlineSuggestionProvider(
             }
     }
 
-    private fun AwesomeBar.StockItem.toSuggestionOrNull(locale: Locale): AwesomeBar.StockSuggestion? {
+    private fun StockItem.toSuggestionOrNull(locale: Locale): StockSuggestion? {
         val hasRequiredFields =
             query.isNotBlank() && ticker.isNotBlank() && name.isNotBlank() && exchange.isNotBlank()
 
@@ -68,7 +72,7 @@ class StocksOnlineSuggestionProvider(
         val parsedChange = parseChangePercent(todaysChangePerc, locale)
 
         return if (hasRequiredFields && formattedLastPrice != null && parsedChange != null) {
-            AwesomeBar.StockSuggestion(
+            StockSuggestion(
                 onSuggestionClicked = {
                     emitOptimizedSuggestionCardClickedFact(SuggestionCardType.STOCKS)
                     searchUseCase.invoke(query)
@@ -88,7 +92,7 @@ class StocksOnlineSuggestionProvider(
     }
 
     @VisibleForTesting
-    internal fun parseChangePercent(rawChangePerc: String?, locale: Locale): AwesomeBar.ChangePercent? {
+    internal fun parseChangePercent(rawChangePerc: String?, locale: Locale): ChangePercent? {
         val raw = rawChangePerc?.trim().orEmpty()
         val cleaned = raw.removeSuffix("%").trim()
         val numeric = cleaned
@@ -98,7 +102,7 @@ class StocksOnlineSuggestionProvider(
 
         return numeric?.let { n ->
             if (n == 0.0) {
-                AwesomeBar.ChangePercent.Neutral
+                ChangePercent.Neutral
             } else {
                 val formatter = NumberFormat.getNumberInstance(locale).apply {
                     minimumFractionDigits = 2
@@ -107,9 +111,9 @@ class StocksOnlineSuggestionProvider(
                 }
                 val magnitude = formatter.format(abs(n))
                 if (n > 0) {
-                    AwesomeBar.ChangePercent.Positive("+$magnitude")
+                    ChangePercent.Positive("+$magnitude")
                 } else {
-                    AwesomeBar.ChangePercent.Negative("-$magnitude")
+                    ChangePercent.Negative("-$magnitude")
                 }
             }
         }

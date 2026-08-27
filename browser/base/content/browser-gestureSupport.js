@@ -13,6 +13,9 @@
 // chrome-only, we must listen for the simple gesture events during
 // the capturing phase and call stopPropagation on every event.
 
+const BACK_COMMAND = "Browser:BackOrBackDuplicate";
+const FORWARD_COMMAND = "Browser:ForwardOrForwardDuplicate";
+
 var gGestureSupport = {
   _currentRotation: 0,
   _lastRotateDelta: 0,
@@ -184,16 +187,21 @@ var gGestureSupport = {
    * Checks whether a swipe gesture event can navigate the browser history or
    * not.
    *
-   * @param aEvent
-   *        The swipe gesture event.
+   * @param leftCommand
+   *        the command registered as `browser.gesture.swipe.left`.
+   * @param rightCommand
+   *        the command registered as `browser.gesture.swipe.right`.
    * @return true if the swipe event may navigate the history, false othwerwise.
    */
-  _swipeNavigatesHistory: function GS__swipeNavigatesHistory(aEvent) {
+  _swipeNavigatesHistory: function GS__swipeNavigatesHistory(
+    leftCommand,
+    rightCommand
+  ) {
     return (
-      this._getCommand(aEvent, ["swipe", "left"]) ==
-        "Browser:BackOrBackDuplicate" &&
-      this._getCommand(aEvent, ["swipe", "right"]) ==
-        "Browser:ForwardOrForwardDuplicate"
+      leftCommand == BACK_COMMAND ||
+      leftCommand == FORWARD_COMMAND ||
+      rightCommand == BACK_COMMAND ||
+      rightCommand == FORWARD_COMMAND
     );
   },
 
@@ -207,7 +215,10 @@ var gGestureSupport = {
    *         otherwise.
    */
   _shouldDoSwipeGesture: function GS__shouldDoSwipeGesture(aEvent) {
-    if (!this._swipeNavigatesHistory(aEvent)) {
+    const leftCommand = this._getCommand(aEvent, ["swipe", "left"]);
+    const rightCommand = this._getCommand(aEvent, ["swipe", "right"]);
+
+    if (!this._swipeNavigatesHistory(leftCommand, rightCommand)) {
       return false;
     }
 
@@ -236,12 +247,19 @@ var gGestureSupport = {
     let canGoForward = gHistorySwipeAnimation.canGoForward();
     let isLTR = gHistorySwipeAnimation.isLTR;
 
-    if (canGoBack) {
+    if (
+      (leftCommand == BACK_COMMAND && canGoBack) ||
+      (leftCommand == FORWARD_COMMAND && canGoForward)
+    ) {
       aEvent.allowedDirections |= isLTR
         ? aEvent.DIRECTION_LEFT
         : aEvent.DIRECTION_RIGHT;
     }
-    if (canGoForward) {
+
+    if (
+      (rightCommand == BACK_COMMAND && canGoBack) ||
+      (rightCommand == FORWARD_COMMAND && canGoForward)
+    ) {
       aEvent.allowedDirections |= isLTR
         ? aEvent.DIRECTION_RIGHT
         : aEvent.DIRECTION_LEFT;
@@ -263,7 +281,10 @@ var gGestureSupport = {
     gHistorySwipeAnimation.startAnimation();
 
     this._doUpdate = function GS__doUpdate(aEvent) {
-      gHistorySwipeAnimation.updateAnimation(aEvent.delta);
+      gHistorySwipeAnimation.updateAnimation({
+        event: aEvent,
+        delta: aEvent.delta,
+      });
     };
 
     this._doEnd = function GS__doEnd() {
@@ -703,7 +724,7 @@ var gHistorySwipeAnimation = {
     if (this.active) {
       this._addBoxes();
     }
-    this.updateAnimation(0);
+    this.updateAnimation({ event: null, delta: 0 });
   },
 
   /**
@@ -740,28 +761,38 @@ var gHistorySwipeAnimation = {
     }
   },
 
-  _willGoBack: function HSA_willGoBack(aVal) {
-    return (
-      ((aVal > 0 && this.isLTR) || (aVal < 0 && !this.isLTR)) && this._canGoBack
-    );
+  _swipeCommand: function HSA_swipeCommand(aSwipeUpdate) {
+    if (!aSwipeUpdate.event || aSwipeUpdate.delta == 0) {
+      return "";
+    }
+    const direction = aSwipeUpdate.delta < 0 == this.isLTR ? "right" : "left";
+    return gGestureSupport._getCommand(aSwipeUpdate.event, [
+      "swipe",
+      direction,
+    ]);
   },
 
-  _willGoForward: function HSA_willGoForward(aVal) {
+  _willGoBack: function HSA_willGoBack(aSwipeUpdate) {
+    return this._swipeCommand(aSwipeUpdate) == BACK_COMMAND && this._canGoBack;
+  },
+
+  _willGoForward: function HSA_willGoForward(aSwipeUpdate) {
     return (
-      ((aVal > 0 && !this.isLTR) || (aVal < 0 && this.isLTR)) &&
-      this._canGoForward
+      this._swipeCommand(aSwipeUpdate) == FORWARD_COMMAND && this._canGoForward
     );
   },
 
   /**
    * Updates the animation between two pages in history.
    *
-   * @param aVal
-   *        A floating point value that represents the progress of the
-   *        swipe gesture. History navigation will be triggered if the absolute
-   *        value of this `aVal` is greater than or equal to 0.25.
+   * @param aSwipeUpdate
+   *        An object describing the current state of the swipe gesture:
+   *        `event` is the swipe gesture event being processed, if any, and
+   *        `delta` is a floating point value that represents the progress of
+   *        the gesture. History navigation will be triggered if the absolute
+   *        value of `delta` is greater than or equal to 0.25.
    */
-  updateAnimation: function HSA_updateAnimation(aVal) {
+  updateAnimation: function HSA_updateAnimation(aSwipeUpdate) {
     if (!this.isAnimationRunning() || this._isStoppingAnimation) {
       return;
     }
@@ -769,7 +800,7 @@ var gHistorySwipeAnimation = {
     // Convert `aVal` into [0, 1] range.
     // Note that absolute values of 0.25 (or greater) trigger history
     // navigation, hence we multiply the value by 4 here.
-    const progress = Math.min(Math.abs(aVal) * 4, 1.0);
+    const progress = Math.min(Math.abs(aSwipeUpdate.delta) * 4, 1.0);
 
     // Compute the icon position based on preferences.
     let translate =
@@ -782,7 +813,7 @@ var gHistorySwipeAnimation = {
     // Compute the icon radius based on preferences.
     const radius =
       this.minRadius + progress * (this.maxRadius - this.minRadius);
-    if (this._willGoBack(aVal)) {
+    if (this._willGoBack(aSwipeUpdate)) {
       this._prevBox.collapsed = false;
       this._nextBox.collapsed = true;
       this._prevBox.style.translate = `${translate}px 0px`;
@@ -792,15 +823,15 @@ var gHistorySwipeAnimation = {
           .setAttribute("r", `${radius}`);
       }
 
-      if (Math.abs(aVal) >= 0.25) {
-        // If `aVal` goes above 0.25, it means history navigation will be
+      if (Math.abs(aSwipeUpdate.delta) >= 0.25) {
+        // If `delta` goes above 0.25, it means history navigation will be
         // triggered once after the user lifts their fingers, it's time to
         // trigger __indicator__ animations by adding `will-navigate` class.
         this._prevBox.querySelector("svg").classList.add("will-navigate");
       } else {
         this._prevBox.querySelector("svg").classList.remove("will-navigate");
       }
-    } else if (this._willGoForward(aVal)) {
+    } else if (this._willGoForward(aSwipeUpdate)) {
       // The intention is to go forward.
       this._nextBox.collapsed = false;
       this._prevBox.collapsed = true;
@@ -811,7 +842,7 @@ var gHistorySwipeAnimation = {
           .setAttribute("r", `${radius}`);
       }
 
-      if (Math.abs(aVal) >= 0.25) {
+      if (Math.abs(aSwipeUpdate.delta) >= 0.25) {
         // Same as above "go back" case.
         this._nextBox.querySelector("svg").classList.add("will-navigate");
       } else {

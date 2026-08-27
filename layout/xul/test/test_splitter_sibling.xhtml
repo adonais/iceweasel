@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-stylesheet href="chrome://global/skin" type="text/css"?>
 <?xml-stylesheet href="chrome://mochikit/content/tests/SimpleTest/test.css" type="text/css"?>
-<?xml-stylesheet href="data:text/css, hbox { border: 1px solid red; } vbox { border: 1px solid green }" type="text/css"?>
+<?xml-stylesheet href="data:text/css, hbox, box { border: 1px solid red; } vbox { border: 1px solid green } splitter { background-color: gray; }" type="text/css"?>
 <window title="XUL splitter resizebefore/after tests"
         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
         orient="horizontal">
@@ -35,29 +35,150 @@
     <vbox style="height: 200px; width: 40px" />
   </hbox>
 
+  <box style="width: 200px; height: 300px; display: none;
+    grid-template-areas: 'a s b' 'a s b' 'c c c';
+    grid-template-columns: auto 10px 1fr;
+    grid-template-rows: 100px 100px 100px;
+  ">
+    <box style="grid-area: a; width: 90px;">A</box>
+    <splitter
+      id="grid-area-vertical-splitter-before"
+      style="grid-area: s; width: 10px;"
+      orient="horizontal"
+      resizebefore="sibling"
+      resizeafter="none"/>
+    <box style="grid-area: b;">B</box>
+    <box style="grid-area: c;">C</box>
+  </box>
+
+  <box style="width: 200px; height: 300px; direction: rtl; display: none;
+    grid-template-areas: 'a s b' 'a s b' 'c c c';
+    grid-template-columns: auto 10px 1fr;
+    grid-template-rows: 100px 100px 100px;
+  ">
+    <box style="grid-area: a; width: 90px;">A</box>
+    <splitter
+      id="grid-area-rtl-vertical-splitter-before"
+      style="grid-area: s; width: 10px;"
+      orient="horizontal"
+      resizebefore="sibling"
+      resizeafter="none"/>
+    <box style="grid-area: b;">B</box>
+    <box style="grid-area: c;">C</box>
+  </box>
+
+  <box style="width: 200px; height: 300px; display: none;
+    grid-template-areas: 'a b' 'a b' 's s' 'c c';
+    grid-template-columns: 100px 100px;
+    grid-template-rows: 1fr 10px auto;
+  ">
+    <box style="grid-area: a;">A</box>
+    <box style="grid-area: b;">B</box>
+    <splitter
+      id="grid-area-horizontal-splitter-after"
+      style="grid-area: s; height: 10px;"
+      orient="vertical"
+      resizebefore="none"
+      resizeafter="sibling"/>
+    <box style="grid-area: c; height: 90px;">C</box>
+  </box>
+
+  <box style="width: 200px; height: 300px; direction: rtl; display: none;
+    grid-template-areas: 'a b' 'a b' 's s' 'c c';
+    grid-template-columns: 100px 100px;
+    grid-template-rows: 1fr 10px auto;
+  ">
+    <box style="grid-area: a;">A</box>
+    <box style="grid-area: b;">B</box>
+    <splitter
+      id="grid-area-rtl-horizontal-splitter-after"
+      style="grid-area: s; height: 10px;"
+      orient="vertical"
+      resizebefore="none"
+      resizeafter="sibling"/>
+    <box style="grid-area: c; height: 90px;">C</box>
+  </box>
+
+
+  <box style="width: 200px; height: 300px; display: none;
+    grid-template-areas: 'a s b' 'a s b' 'c c c';
+    grid-template-columns: auto 10px 1fr;
+    grid-template-rows: 100px 100px 100px;
+  ">
+    <box style="grid-area: a; width: 90px;">A</box>
+    <splitter
+      id="grid-area-invalid-splitter"
+      style="grid-area: s; width: 10px;"
+      resizebefore="closest"
+      resizeafter="farthest"/>
+    <box style="grid-area: b;">B</box>
+    <box style="grid-area: c;">C</box>
+  </box>
+
   <script><![CDATA[
-    async function dragSplitter(splitter, offsetX) {
-      info(`Dragging splitter ${splitter.id} to ${offsetX}`);
+    const HORIZONTALLY = Symbol();
+    const VERTICALLY = Symbol();
+
+    async function dragSplitter({
+      splitter,
+      offset,
+      direction = HORIZONTALLY,
+      checkDirection = true
+    }) {
+      info(`Dragging splitter ${splitter.id} to ${offset}`);
 
       const splitterRect = splitter.getBoundingClientRect();
       const splitterWidth = splitterRect.width;
-      synthesizeMouse(splitter, splitterWidth / 2, 2, {type: "mousedown"});
-      synthesizeMouse(splitter, splitterWidth / 2, 1, {type: "mousemove"});
+      const splitterHalfWidthOffset = splitterWidth / 2;
+      const splitterHeight = splitterRect.height;
+      const splitterHalfHeightOffset = splitterHeight / 2;
+
+      if (direction === HORIZONTALLY) {
+        synthesizeMouse(splitter, splitterHalfWidthOffset, 2, {type: "mousedown"});
+        synthesizeMouse(splitter, splitterHalfWidthOffset, 1, {type: "mousemove"});
+      } else {
+        synthesizeMouse(splitter, 2, splitterHalfHeightOffset, {type: "mousedown"});
+        synthesizeMouse(splitter, 1, splitterHalfHeightOffset, {type: "mousemove"});
+      }
       await new Promise(SimpleTest.executeSoon);
       is(splitter.getAttribute("state"), "dragging", "The splitter should be dragged");
-      synthesizeMouse(splitter, offsetX, 1, {type: "mousemove"});
-      synthesizeMouse(splitter, offsetX, 1, {type: "mouseup"});
+
+      if (direction === HORIZONTALLY) {
+        // We initiated the drag from the splitter horizontal center. Since synthesizeMouse
+        // offset is from the element left edge, we need to add half the width to offset
+        // to actually move by the wanted amount.
+        synthesizeMouse(splitter, splitterHalfWidthOffset + offset, 1, {type: "mousemove"});
+        synthesizeMouse(splitter, splitterHalfWidthOffset + offset, 1, {type: "mouseup"});
+      } else {
+        // We initiated the drag from the splitter vertical center. Since synthesizeMouse
+        // offset is from the element top edge, we need to add half the height to offset
+        // to actually move by the wanted amount.
+        synthesizeMouse(splitter, 1, splitterHalfHeightOffset + offset, {type: "mousemove"});
+        synthesizeMouse(splitter, 1, splitterHalfHeightOffset + offset, {type: "mouseup"});
+      }
+
       await new Promise(SimpleTest.executeSoon);
-      const newSplitterRect = splitter.getBoundingClientRect();
-      is(
-        offsetX > 0,
-        newSplitterRect.left > splitterRect.left,
-        `Should move in the right direction ${splitterRect.left} -> ${newSplitterRect.left}, ${offsetX}`
-      );
+
+      if (checkDirection){
+        const newSplitterRect = splitter.getBoundingClientRect();
+        if (direction === HORIZONTALLY) {
+          is(
+            offset > 0,
+            newSplitterRect.left > splitterRect.left,
+            `Should move in the right direction ${splitterRect.left} -> ${newSplitterRect.left}, ${offset}`
+          );
+        } else {
+          is(
+            offset > 0,
+            newSplitterRect.top > splitterRect.top,
+            `Should move in the right direction ${splitterRect.top} -> ${newSplitterRect.top}, ${offset}`
+          );
+        }
+      }
     }
 
-    add_task(async function() {
-      for (let splitter of document.querySelectorAll("splitter")) {
+    add_task(async function testHbox() {
+      for (let splitter of document.querySelectorAll("hbox > splitter")) {
         info(`Testing ${splitter.id}`);
         splitter.parentNode.style.display = "";
         const isBefore = splitter.getAttribute("resizebefore") == "sibling";
@@ -67,7 +188,7 @@
         const nonResizableElement = isBefore ? splitter.nextElementSibling : splitter.previousElementSibling;
         const oldWidth = resizableElement.getBoundingClientRect().width;
 
-        await dragSplitter(splitter, 10);
+        await dragSplitter({splitter, offset: 10});
 
         is(nonResizableElement.style.width, "", "Shouldn't have set width");
         isnot(resizableElement.style.width, "40px", "Should've changed width");
@@ -84,5 +205,132 @@
         splitter.parentNode.style.display = "none";
       }
     });
+
+    add_task(async function testVerticalSplitterInGridContainer() {
+      info(`Testing #grid-area-vertical-splitter-before`);
+      const splitter = document.getElementById("grid-area-vertical-splitter-before");
+      splitter.parentNode.style.display = "grid";
+      const [aEl, bEl, cEl] = [...splitter.parentNode.querySelectorAll("box")];
+      const aElInitialWidth = aEl.getBoundingClientRect().width;
+      const bElInitialWidth = bEl.getBoundingClientRect().width;
+      const cElInitialWidth = cEl.getBoundingClientRect().width;
+
+      const offset = 10;
+      await dragSplitter({splitter, offset});
+
+      is(
+        aEl.style.width,
+        // We're dragging the mouse to the right, so the element should grow
+        aElInitialWidth + offset + "px",
+        "'a' width was set"
+      );
+      is(bEl.style.width, "", "Shouldn't have set width on 'b'");
+      is(cEl.style.width, "", "Shouldn't have set width on 'c'");
+
+      splitter.parentNode.style.display = "none";
+    });
+
+    add_task(async function testVerticalSplitterInRtlGridContainer() {
+      info(`Testing #grid-area-rtl-vertical-splitter-before`);
+      const splitter = document.getElementById("grid-area-rtl-vertical-splitter-before");
+      splitter.parentNode.style.display = "grid";
+      const [aEl, bEl, cEl] = [...splitter.parentNode.querySelectorAll("box")];
+      const aElInitialWidth = aEl.getBoundingClientRect().width;
+      const bElInitialWidth = bEl.getBoundingClientRect().width;
+      const cElInitialWidth = cEl.getBoundingClientRect().width;
+
+      const offset = 10;
+      await dragSplitter({splitter, offset});
+
+      is(
+        aEl.style.width,
+        // `a` is placed at the start, and since we're in RTL, it's on the right side.
+        // Given we drag to the right, we're shrinking the associated element.
+        (aElInitialWidth - offset) + "px",
+        "'a' width was set"
+      );
+      is(bEl.style.width, "", "Shouldn't have set width on 'b'");
+      is(cEl.style.width, "", "Shouldn't have set width on 'c'");
+
+      splitter.parentNode.style.display = "none";
+    });
+
+    add_task(async function testHorizontalSplitterInGridContainer() {
+      info(`Testing #grid-area-horizontal-splitter-after`);
+      const splitter = document.getElementById("grid-area-horizontal-splitter-after");
+      splitter.parentNode.style.display = "grid";
+      const [aEl, bEl, cEl] = [...splitter.parentNode.querySelectorAll("box")];
+      const aElInitialHeight = aEl.getBoundingClientRect().height;
+      const bElInitialHeight = bEl.getBoundingClientRect().height;
+      const cElInitialHeight = cEl.getBoundingClientRect().height;
+
+      const offset = 10;
+      await dragSplitter({splitter, offset, direction: VERTICALLY});
+
+      is(aEl.style.height, "", "Shouldn't have set height on 'a'");
+      is(bEl.style.height, "", "Shouldn't have set height on 'b'");
+      is(
+        cEl.style.height,
+        // We're dragging the mouse to the bottom, so the `c` area shrinks.
+        cElInitialHeight - offset + "px",
+        "'c' height was set"
+      );
+      splitter.parentNode.style.display = "none";
+    });
+
+    add_task(async function testHorizontalSplitterInRtlGridContainer() {
+      info(`Testing #grid-area-rtl-horizontal-splitter-after`);
+      const splitter = document.getElementById("grid-area-rtl-horizontal-splitter-after");
+      splitter.parentNode.style.display = "grid";
+      const [aEl, bEl, cEl] = [...splitter.parentNode.querySelectorAll("box")];
+      const aElInitialHeight = aEl.getBoundingClientRect().height;
+      const bElInitialHeight = bEl.getBoundingClientRect().height;
+      const cElInitialHeight = cEl.getBoundingClientRect().height;
+
+      const offset = 10;
+      await dragSplitter({splitter, offset, direction: VERTICALLY});
+
+      is(aEl.style.height, "", "Shouldn't have set height on 'a'");
+      is(bEl.style.height, "", "Shouldn't have set height on 'b'");
+      is(
+        cEl.style.height,
+        // We're dragging the mouse to the bottom, so the `c` area shrinks, and the RTL
+        // should not have any impact on this.
+        cElInitialHeight - offset + "px",
+        "'c' height was set"
+      );
+      splitter.parentNode.style.display = "none";
+    });
+
+
+    add_task(async function testInvalidSplitterInGridContainer() {
+      // Not having the `orient` attribute will trigger an assertion
+      if (SpecialPowers.isDebugBuild) {
+        ok(true, "Test disabled on debug build");
+        return;
+      }
+
+      info(`Testing #grid-area-invalid-splitter`);
+      const splitter = document.getElementById("grid-area-invalid-splitter");
+      splitter.parentNode.style.display = "grid";
+      const [aEl, bEl, cEl] = [...splitter.parentNode.querySelectorAll("box")];
+      const aElInitialWidth = aEl.getBoundingClientRect().width;
+      const bElInitialWidth = bEl.getBoundingClientRect().width;
+      const cElInitialWidth = cEl.getBoundingClientRect().width;
+
+      const offset = 10;
+      await dragSplitter({splitter, offset, checkDirection: false});
+
+      is(
+        aEl.style.width,
+        aElInitialWidth + "px",
+        "'a' width wasn't updated"
+      );
+      is(bEl.style.width, "", "Shouldn't have set width on 'b'");
+      is(cEl.style.width, "", "Shouldn't have set width on 'c'");
+
+      splitter.parentNode.style.display = "none";
+    });
+
    ]]></script>
 </window>

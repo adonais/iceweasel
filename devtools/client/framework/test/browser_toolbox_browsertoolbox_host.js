@@ -17,7 +17,7 @@ add_task(async function () {
 
   is(toolbox.topWindow, window, "Toolbox is included in browser.xhtml");
   const iframe = document.querySelector(
-    ".devtools-toolbox-browsertoolbox-iframe"
+    ".devtools-toolbox-iframe.browsertoolbox-host"
   );
   ok(iframe, "A toolbox iframe was created in the provided document");
   is(toolbox.doc, iframe.contentDocument, "Toolbox is in the custom iframe");

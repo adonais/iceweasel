@@ -1,0 +1,12 @@
+//error: |manager| declaration in protocol `PForgottenManagee' does not match any |manages| declaration in protocol `PManagerForgot'
+
+include protocol PManagerForgot;
+
+// This protocol says PManagerForgot manages it,
+// but PManagerForgot does not manage it.
+
+protocol PForgottenManagee {
+    manager PManagerForgot;
+child:
+    async __delete__();
+};

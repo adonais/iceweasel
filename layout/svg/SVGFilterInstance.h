@@ -11,6 +11,7 @@
 #include "gfxMatrix.h"
 #include "gfxRect.h"
 #include "mozilla/ServoStyleConsts.h"
+#include "mozilla/dom/SVGUnitTypesBinding.h"
 
 namespace mozilla {
 class SVGFilterFrame;
@@ -245,7 +246,8 @@ class SVGFilterInstance {
   /**
    * The 'primitiveUnits' attribute value (objectBoundingBox or userSpaceOnUse).
    */
-  uint16_t mPrimitiveUnits;
+  uint16_t mPrimitiveUnits =
+      dom::SVGUnitTypes_Binding::SVG_UNIT_TYPE_USERSPACEONUSE;
 
   /**
    * The index of the FilterPrimitiveDescription that this SVG filter should use

@@ -54,6 +54,12 @@ run-if = [
 
 ["test_permissions.js"]
 
+["test_policies_schema.js"]
+support-files = [
+  "../../schemas/policies-schema.json",
+  "../../schemas/policies-schema.meta.json",
+]
+
 ["test_policy_descriptions.js"]
 
 ["test_policy_search_engine.js"]

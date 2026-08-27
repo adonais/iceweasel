@@ -25,6 +25,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/gfx/Point.h"
+#include "mozilla/layers/GpuFence.h"
 
 class nsIThread;
 
@@ -153,6 +154,7 @@ class SharedSurface {
   virtual bool IsValid() const { return true; };
 
   virtual Maybe<layers::SurfaceDescriptor> ToSurfaceDescriptor() = 0;
+  virtual RefPtr<layers::GpuFence> TakeGpuFence() { return nullptr; }
 
   void BeginWrite() {
     WaitForBufferOwnership();

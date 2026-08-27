@@ -515,9 +515,9 @@ content-search-handoff-ui {
 
   .logo {
     background: url("chrome://browser/skin/privatebrowsing/pbm-logo.svg") no-repeat center center;
-    background-size: var(--size-item-xlarge);
-    height: var(--size-item-xlarge);
-    width: var(--size-item-xlarge);
+    background-size: var(--icon-size-xxlarge);
+    height: var(--icon-size-xxlarge);
+    width: var(--icon-size-xxlarge);
   }
 
   .nova-tagline {
@@ -604,7 +604,6 @@ content-search-handoff-ui {
   }
 
   .nova-promo-wrapper {
-    position: relative;
     display: flex;
     width: 100%;
     margin-block-start: var(--space-xxlarge);
@@ -612,11 +611,5 @@ content-search-handoff-ui {
 
   #nova-promo {
     flex: 1;
-  }
-
-  #nova-dismiss-btn {
-    position: absolute;
-    inset-block-start: var(--space-small);
-    inset-inline-end: var(--space-small);
   }
 }

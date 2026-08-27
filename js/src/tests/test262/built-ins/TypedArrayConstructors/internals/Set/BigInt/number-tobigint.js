@@ -82,6 +82,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
     typedArray[0] = NaN;
   });
 
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

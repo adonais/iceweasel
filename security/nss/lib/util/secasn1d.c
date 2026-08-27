@@ -1067,6 +1067,8 @@ sec_asn1d_prepare_for_contents(sec_asn1d_state *state)
             state->top->status = decodeError;
             return;
         }
+        PORT_Assert(state->theTemplate->offset == 0 ||
+                    state->theTemplate->offset < state->theTemplate->size);
         state->dest = (char *)dest + state->theTemplate->offset;
 
         /*

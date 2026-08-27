@@ -27,7 +27,7 @@ class TimeRanges final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(TimeRanges)
 
-  TimeRanges();
+  TimeRanges() = default;
   explicit TimeRanges(nsISupports* aParent);
   explicit TimeRanges(const media::TimeIntervals& aTimeIntervals);
   explicit TimeRanges(const media::TimeRanges& aTimeRanges);

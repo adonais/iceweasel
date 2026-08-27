@@ -9,7 +9,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
-import mozilla.components.concept.awesomebar.AwesomeBar
+import mozilla.components.feature.awesomebar.optimizedsuggestions.ChangePercent
+import mozilla.components.feature.awesomebar.optimizedsuggestions.StockItem
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -174,17 +175,17 @@ class StocksOnlineSuggestionProviderTest {
     @Test
     fun `change percent formatted correctly in US`() {
         val result = provider.parseChangePercent("1.53", Locale.US)
-        assertEquals("+1.53", (result as AwesomeBar.ChangePercent.Positive).value)
+        assertEquals("+1.53", (result as ChangePercent.Positive).value)
     }
 
     @Test
     fun `change percent formatted correctly in Germany`() {
         val result = provider.parseChangePercent("1.53", Locale.GERMANY)
-        assertEquals("+1,53", (result as AwesomeBar.ChangePercent.Positive).value)
+        assertEquals("+1,53", (result as ChangePercent.Positive).value)
     }
 }
 
-/** Convenience factory for creating sample [AwesomeBar.StockItem] objects for tests. */
+/** Convenience factory for creating sample [StockItem] objects for tests. */
 private fun sampleStockItem(
     query: String = "VOO stock",
     name: String = "Vanguard S&P 500 ETF",
@@ -192,7 +193,7 @@ private fun sampleStockItem(
     changePercToday: String = "-0.11",
     lastPrice: String = "559.44 USD",
     exchange: String = "S&P 500",
-) = AwesomeBar.StockItem(
+) = StockItem(
     query = query,
     name = name,
     ticker = ticker,

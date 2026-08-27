@@ -14,16 +14,16 @@
 #include "nsIObserver.h"
 
 struct PendingAlert {
-  void Init(nsIAlertNotification* aAlert, nsIObserver* aListener) {
+  void Init(nsIAlertNotification* aAlert, nsIAlertCallbacks* aCallbacks) {
     mAlert = aAlert;
-    mListener = aListener;
+    mCallbacks = aCallbacks;
   }
   nsCOMPtr<nsIAlertNotification> mAlert;
-  nsCOMPtr<nsIObserver> mListener;
+  nsCOMPtr<nsIAlertCallbacks> mCallbacks;
 };
 
 class nsXULAlerts : public nsIAlertsService, public nsIAlertsDoNotDisturb {
-  friend class nsXULAlertObserver;
+  friend class nsXULAlertCallbacks;
 
  public:
   NS_DECL_NSIALERTSDONOTDISTURB
@@ -38,7 +38,7 @@ class nsXULAlerts : public nsIAlertsService, public nsIAlertsDoNotDisturb {
   virtual ~nsXULAlerts() = default;
   void PersistentAlertFinished();
   nsresult ShowAlertImpl(nsIAlertNotification* aAlert,
-                         nsIObserver* aAlertListener);
+                         nsIAlertCallbacks* aAlertListener);
 
   nsInterfaceHashtable<nsStringHashKey, mozIDOMWindowProxy> mNamedWindows;
   uint32_t mPersistentAlertCount = 0;
@@ -54,28 +54,28 @@ class nsXULAlerts : public nsIAlertsService, public nsIAlertsDoNotDisturb {
  * for the "alertfinished" event in order to release
  * the reference on the nsIDOMWindow of the XUL alert.
  */
-class nsXULAlertObserver : public nsIObserver {
+class nsXULAlertCallbacks : public nsIAlertCallbacks {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_NSIOBSERVER
-  NS_DECL_CYCLE_COLLECTION_CLASS(nsXULAlertObserver)
+  NS_DECL_NSIALERTCALLBACKS
+  NS_DECL_CYCLE_COLLECTION_CLASS(nsXULAlertCallbacks)
 
-  nsXULAlertObserver(nsXULAlerts* aXULAlerts, const nsAString& aAlertName,
-                     nsIObserver* aObserver, bool aIsPersistent)
+  nsXULAlertCallbacks(nsXULAlerts* aXULAlerts, const nsAString& aAlertName,
+                      nsIAlertCallbacks* aCallbacks, bool aIsPersistent)
       : mXULAlerts(aXULAlerts),
         mAlertName(aAlertName),
-        mObserver(aObserver),
+        mCallbacks(aCallbacks),
         mIsPersistent(aIsPersistent) {}
 
   void SetAlertWindow(mozIDOMWindowProxy* aWindow) { mAlertWindow = aWindow; }
 
  protected:
-  virtual ~nsXULAlertObserver() = default;
+  virtual ~nsXULAlertCallbacks() = default;
 
   RefPtr<nsXULAlerts> mXULAlerts;
   nsString mAlertName;
   nsCOMPtr<mozIDOMWindowProxy> mAlertWindow;
-  nsCOMPtr<nsIObserver> mObserver;
+  nsCOMPtr<nsIAlertCallbacks> mCallbacks;
   bool mIsPersistent;
 };
 

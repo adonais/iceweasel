@@ -542,7 +542,7 @@ void LSObject::Key(uint32_t aIndex, nsAString& aResult,
     return;
   }
 
-  aResult = result;
+  aResult = std::move(result);
 }
 
 void LSObject::GetItem(const nsAString& aKey, nsAString& aResult,
@@ -567,7 +567,7 @@ void LSObject::GetItem(const nsAString& aKey, nsAString& aResult,
     return;
   }
 
-  aResult = result;
+  aResult = std::move(result);
 }
 
 void LSObject::GetSupportedNames(nsTArray<nsString>& aNames) {

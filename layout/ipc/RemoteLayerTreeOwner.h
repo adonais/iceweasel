@@ -59,7 +59,7 @@ class RemoteLayerTreeOwner final {
  private:
   // The process id of the remote frame. This is used by the compositor to
   // do security checks on incoming layer transactions.
-  base::ProcessId mTabProcessId;
+  base::ProcessId mTabProcessId = 0;
   // The layers id of the remote frame.
   LayersId mLayersId;
   // The compositor options for this layers id. This is only meaningful if

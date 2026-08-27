@@ -14,6 +14,14 @@ namespace X86Encoding {
 
 class BaseAssemblerX64 : public BaseAssembler {
  public:
+  // So the buffer can be read, for verification
+  uint8_t getByteAtOffset(size_t offset) const {
+    MOZ_ASSERT(offset < m_formatter.size());
+    const uint8_t* code =
+        const_cast<X86InstructionFormatter&>(m_formatter).data();
+    return code[offset];
+  }
+
   // Arithmetic operations:
 
   void adcq_rr(RegisterID src, RegisterID dst) {
@@ -256,6 +264,29 @@ class BaseAssemblerX64 : public BaseAssembler {
       } else {
         m_formatter.oneByteOp64(OP_GROUP1_EvIz, dst, GROUP1_OP_AND);
       }
+      m_formatter.immediate32(imm);
+    }
+  }
+
+  void andq_im(int32_t imm, int32_t offset, RegisterID base) {
+    spew(currentOffset(), "andq       $%d, " MEM_ob, imm,
+         ADDR_ob(offset, base));
+    if (CAN_SIGN_EXTEND_8_32(imm)) {
+      m_formatter.oneByteOp64(OP_GROUP1_EvIb, offset, base, GROUP1_OP_AND);
+      m_formatter.immediate8s(imm);
+    } else {
+      m_formatter.oneByteOp64(OP_GROUP1_EvIz, offset, base, GROUP1_OP_AND);
+      m_formatter.immediate32(imm);
+    }
+  }
+
+  void andq_im(int32_t imm, const void* addr) {
+    spew(currentOffset(), "andq       $%d, %p", imm, addr);
+    if (CAN_SIGN_EXTEND_8_32(imm)) {
+      m_formatter.oneByteOp64(OP_GROUP1_EvIb, addr, GROUP1_OP_AND);
+      m_formatter.immediate8s(imm);
+    } else {
+      m_formatter.oneByteOp64(OP_GROUP1_EvIz, addr, GROUP1_OP_AND);
       m_formatter.immediate32(imm);
     }
   }

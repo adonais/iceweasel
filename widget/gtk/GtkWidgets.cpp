@@ -323,7 +323,7 @@ static GtkStyleContext* GetWidgetRootStyle(Type aType) {
     case Type::Tooltip:
       if (gtk_check_version(3, 20, 0) != nullptr) {
         GtkWidget* tooltipWindow = gtk_window_new(GTK_WINDOW_POPUP);
-        GtkStyleContext* style = gtk_widget_get_style_context(tooltipWindow);
+        style = gtk_widget_get_style_context(tooltipWindow);
         gtk_style_context_add_class(style, GTK_STYLE_CLASS_TOOLTIP);
         style = CreateStyleForWidget(tooltipWindow, nullptr);
         gtk_widget_destroy(tooltipWindow);  // Release GtkWindow self-reference.

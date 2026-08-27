@@ -76,6 +76,9 @@ export var WindowsLaunchOnLogin = {
    * restrictions on writing to the registry in MSIX.
    */
   async createLaunchOnLogin() {
+    if (Services.policies && !Services.policies.isAllowed("launchOnLogin")) {
+      return;
+    }
     if (Services.sysinfo.getProperty("hasWinPackageId")) {
       await this.enableLaunchOnLoginMSIX();
     } else {
@@ -342,9 +345,9 @@ export var WindowsLaunchOnLogin = {
    * like "Mozilla-Firefox-71AE18FE3142402B".
    */
   getLaunchOnLoginRegistryName() {
-    let xreDirProvider = Cc[
-      "@mozilla.org/xre/directory-provider;1"
-    ].createInstance(Ci.nsIXREDirProvider);
+    let xreDirProvider = Cc["@mozilla.org/xre/directory-provider;1"].getService(
+      Ci.nsIXREDirProvider
+    );
     let registryName = `${Services.appinfo.vendor}-${
       Services.appinfo.name
     }-${xreDirProvider.getInstallHash()}`;

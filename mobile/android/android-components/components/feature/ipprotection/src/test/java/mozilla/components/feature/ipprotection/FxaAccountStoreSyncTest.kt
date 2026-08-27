@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.sync.AuthFlowError
+import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.SCOPE_IPPROTECTION
 import mozilla.components.feature.ipprotection.store.InternalAction
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
@@ -150,5 +151,33 @@ class FxaAccountStoreSyncTest {
         }
         // The reducer moves AuthFailed into NeedsAuthentication.
         assertEquals(AccountStatus.NeedsAuthentication, ipProtectionStore.state.accountState.status)
+    }
+
+    @Test
+    fun `WHEN onReady is called without an account THEN NoAccount is forwarded`() {
+        val (ipProtectionStore, captureMiddleware) = buildStore()
+
+        val sync = FxaAccountStoreSync(syncStore, ipProtectionStore, lazyOf(accountManager), StandardTestDispatcher())
+
+        sync.onReady(authenticatedAccount = null)
+
+        captureMiddleware.assertLastAction(InternalAction.AccountManagerStateChanged::class) {
+            assertEquals(AccountStatus.NoAccount, it.status)
+        }
+        assertEquals(AccountStatus.NoAccount, ipProtectionStore.state.accountState.status)
+    }
+
+    @Test
+    fun `WHEN onReady is called with an account THEN WarmingUp is forwarded`() {
+        val (ipProtectionStore, captureMiddleware) = buildStore()
+
+        val sync = FxaAccountStoreSync(syncStore, ipProtectionStore, lazyOf(accountManager), StandardTestDispatcher())
+
+        sync.onReady(authenticatedAccount = mock<OAuthAccount>())
+
+        captureMiddleware.assertLastAction(InternalAction.AccountManagerStateChanged::class) {
+            assertEquals(AccountStatus.WarmingUp, it.status)
+        }
+        assertEquals(AccountStatus.WarmingUp, ipProtectionStore.state.accountState.status)
     }
 }

@@ -39,8 +39,7 @@ class BarProp : public nsISupports, public nsWrapperCache {
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
 
   virtual bool GetVisible(CallerType aCallerType, ErrorResult& aRv) = 0;
-  virtual void SetVisible(bool aVisible, CallerType aCallerType,
-                          ErrorResult& aRv) = 0;
+  void SetVisible(bool, CallerType, ErrorResult&) {}
 
  protected:
   virtual ~BarProp();
@@ -48,8 +47,6 @@ class BarProp : public nsISupports, public nsWrapperCache {
   bool GetVisibleByIsPopup();
   bool GetVisibleByFlag(uint32_t aChromeFlag, CallerType aCallerType,
                         ErrorResult& aRv);
-  void SetVisibleByFlag(bool aVisible, uint32_t aChromeFlag,
-                        CallerType aCallerType, ErrorResult& aRv);
 
   already_AddRefed<nsIWebBrowserChrome> GetBrowserChrome();
 
@@ -65,8 +62,6 @@ class MenubarProp final : public BarProp {
   virtual ~MenubarProp();
 
   bool GetVisible(CallerType aCallerType, ErrorResult& aRv) override;
-  void SetVisible(bool aVisible, CallerType aCallerType,
-                  ErrorResult& aRv) override;
 };
 
 // Script "toolbar" object
@@ -76,8 +71,6 @@ class ToolbarProp final : public BarProp {
   virtual ~ToolbarProp();
 
   bool GetVisible(CallerType aCallerType, ErrorResult& aRv) override;
-  void SetVisible(bool aVisible, CallerType aCallerType,
-                  ErrorResult& aRv) override;
 };
 
 // Script "locationbar" object
@@ -87,8 +80,6 @@ class LocationbarProp final : public BarProp {
   virtual ~LocationbarProp();
 
   bool GetVisible(CallerType aCallerType, ErrorResult& aRv) override;
-  void SetVisible(bool aVisible, CallerType aCallerType,
-                  ErrorResult& aRv) override;
 };
 
 // Script "personalbar" object
@@ -98,8 +89,6 @@ class PersonalbarProp final : public BarProp {
   virtual ~PersonalbarProp();
 
   bool GetVisible(CallerType aCallerType, ErrorResult& aRv) override;
-  void SetVisible(bool aVisible, CallerType aCallerType,
-                  ErrorResult& aRv) override;
 };
 
 // Script "statusbar" object
@@ -109,8 +98,6 @@ class StatusbarProp final : public BarProp {
   virtual ~StatusbarProp();
 
   bool GetVisible(CallerType aCallerType, ErrorResult& aRv) override;
-  void SetVisible(bool aVisible, CallerType aCallerType,
-                  ErrorResult& aRv) override;
 };
 
 // Script "scrollbars" object
@@ -120,8 +107,6 @@ class ScrollbarsProp final : public BarProp {
   virtual ~ScrollbarsProp();
 
   bool GetVisible(CallerType aCallerType, ErrorResult& aRv) override;
-  void SetVisible(bool aVisible, CallerType aCallerType,
-                  ErrorResult& aRv) override;
 };
 
 }  // namespace dom

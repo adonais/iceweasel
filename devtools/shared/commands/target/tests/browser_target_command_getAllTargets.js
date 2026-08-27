@@ -12,6 +12,8 @@ add_task(async function () {
   // Disable the preloaded process as it creates processes intermittently
   // which forces the emission of RDP requests we aren't correctly waiting for.
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
+  // We use a commands object for the main process
+  await pushPref("devtools.chrome.enabled", true);
 
   info("Setup the test page with workers of all types");
 

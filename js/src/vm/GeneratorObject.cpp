@@ -12,8 +12,10 @@
 #include "js/PropertySpec.h"
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
+#include "vm/BytecodeUtil.h"   // js::SuspendPCForAfterYield
 #include "vm/FunctionFlags.h"  // js::FunctionFlags
 #include "vm/GlobalObject.h"
+#include "vm/Interpreter.h"  // js::GeneratorResumeState, js::RunScript
 #include "vm/JSObject.h"
 #include "vm/PlainObject.h"  // js::PlainObject
 
@@ -98,20 +100,7 @@ JSObject* AbstractGeneratorObject::createModuleGenerator(
     return nullptr;
   }
 
-  // Create a handler function to wrap the module's script. This way
-  // we can access it later and restore the state.
-  Handle<PropertyName*> funName = cx->names().empty_;
-  RootedFunction handlerFun(
-      cx, NewFunctionWithProto(cx, nullptr, 0,
-                               FunctionFlags::INTERPRETED_GENERATOR_OR_ASYNC,
-                               nullptr, funName, nullptr,
-                               gc::AllocKind::FUNCTION, GenericObject));
-  if (!handlerFun) {
-    return nullptr;
-  }
-  handlerFun->initScript(module->script());
-
-  genObj->setCallee(*handlerFun);
+  genObj->setModule(*module);
   genObj->setEnvironmentChain(*frame.environmentChain());
 
   ArrayObject* stack =
@@ -141,8 +130,8 @@ bool AbstractGeneratorObject::suspend(JSContext* cx, HandleObject obj,
 
   auto genObj = obj.as<AbstractGeneratorObject>();
   MOZ_ASSERT(!genObj->hasStackStorage() || genObj->isStackStorageEmpty());
-  MOZ_ASSERT_IF(JSOp(*pc) == JSOp::Await, genObj->callee().isAsync());
-  MOZ_ASSERT_IF(JSOp(*pc) == JSOp::Yield, genObj->callee().isGenerator());
+  MOZ_ASSERT_IF(JSOp(*pc) == JSOp::Await, genObj->script()->isAsync());
+  MOZ_ASSERT_IF(JSOp(*pc) == JSOp::Yield, genObj->script()->isGenerator());
 
   if (nvalues > 0) {
     ArrayObject* stack = nullptr;
@@ -162,7 +151,13 @@ bool AbstractGeneratorObject::suspend(JSContext* cx, HandleObject obj,
 #ifdef DEBUG
 void AbstractGeneratorObject::dump() const {
   fprintf(stderr, "(AbstractGeneratorObject*) %p {\n", (void*)this);
-  fprintf(stderr, "  callee: (JSFunction*) %p,\n", (void*)&callee());
+  if (isModuleGenerator()) {
+    fprintf(stderr, "  module: (ModuleObject*) %p,\n", (void*)&module());
+  } else if (isClosed()) {
+    fprintf(stderr, "  callee: <closed>,\n");
+  } else {
+    fprintf(stderr, "  callee: (JSFunction*) %p,\n", (void*)&callee());
+  }
   fprintf(stderr, "  environmentChain: (JSObject*) %p,\n",
           (void*)&environmentChain());
   if (hasArgsObj()) {
@@ -268,34 +263,39 @@ bool js::GeneratorThrowOrReturn(JSContext* cx, AbstractFramePtr frame,
   return false;
 }
 
-bool AbstractGeneratorObject::resume(JSContext* cx,
+void AbstractGeneratorObject::resume(JSContext* cx,
                                      InterpreterActivation& activation,
                                      Handle<AbstractGeneratorObject*> genObj,
-                                     HandleValue arg, HandleValue resumeKind) {
+                                     HandleValue arg,
+                                     GeneratorResumeKind resumeKind) {
   MOZ_ASSERT(genObj->isSuspended());
 
-  RootedFunction callee(cx, &genObj->callee());
-  RootedObject envChain(cx, &genObj->environmentChain());
-  if (!activation.resumeGeneratorFrame(callee, envChain)) {
-    return false;
-  }
-  activation.regs().fp()->setResumedGenerator();
+  InterpreterFrame* fp = activation.regs().fp();
+  fp->setResumingGenerator();
+
+  uint32_t resumeIndex = genObj->resumeIndex();
+  genObj->setRunning();
+
+  // Initialize the resume args (ResumeFrameArgs) stored after the formals (for
+  // function frames) or immediately before the frame (for module frames).
+  MOZ_ASSERT_IF(fp->isFunctionFrame(), fp->numActualArgs() == 0);
+  ResumeFrameArgs::init(fp->resumeArgs(), arg, ObjectValue(*genObj), resumeKind,
+                        resumeIndex);
 
   if (genObj->hasArgsObj()) {
-    activation.regs().fp()->initArgsObj(genObj->argsObj());
+    fp->initArgsObj(genObj->argsObj());
   }
 
+  JSScript* script = fp->script();
   if (genObj->hasStackStorage() && !genObj->isStackStorageEmpty()) {
-    JSScript* script = activation.regs().fp()->script();
     ArrayObject* storage = &genObj->stackStorage();
     uint32_t len = storage->getDenseInitializedLength();
-    activation.regs().fp()->restoreGeneratorSlots(storage);
+    fp->restoreGeneratorSlots(storage);
     activation.regs().sp += len - script->nfixed();
     storage->setDenseInitializedLength(0);
   }
 
-  JSScript* script = callee->nonLazyScript();
-  uint32_t offset = script->resumeOffsets()[genObj->resumeIndex()];
+  uint32_t offset = script->resumeOffsets()[resumeIndex];
   activation.regs().pc = script->offsetToPC(offset);
 
   // Push arg, generator, resumeKind Values on the generator's stack.
@@ -303,10 +303,17 @@ bool AbstractGeneratorObject::resume(JSContext* cx,
   MOZ_ASSERT(activation.regs().spForStackDepth(activation.regs().stackDepth()));
   activation.regs().sp[-3] = arg;
   activation.regs().sp[-2] = ObjectValue(*genObj);
-  activation.regs().sp[-1] = resumeKind;
+  activation.regs().sp[-1] = Int32Value(int32_t(resumeKind));
+}
 
-  genObj->setRunning();
-  return true;
+bool js::ResumeGenerator(JSContext* cx, Handle<AbstractGeneratorObject*> genObj,
+                         HandleValue value, GeneratorResumeKind kind,
+                         MutableHandleValue result) {
+  MOZ_ASSERT(genObj->isSuspended());
+  MOZ_ASSERT(cx->realm() == genObj->script()->realm());
+
+  GeneratorResumeState state(cx, genObj, value, kind, result);
+  return RunScript(cx, state);
 }
 
 GeneratorObject* GeneratorObject::create(JSContext* cx, HandleFunction fun) {
@@ -434,7 +441,7 @@ const JSClass js::GeneratorFunctionClass = {
 const Value& AbstractGeneratorObject::getUnaliasedLocal(uint32_t slot) const {
   MOZ_ASSERT(isSuspended());
   MOZ_ASSERT(hasStackStorage());
-  MOZ_ASSERT(slot < callee().nonLazyScript()->nfixed());
+  MOZ_ASSERT(slot < script()->nfixed());
   return stackStorage().getDenseElement(slot);
 }
 
@@ -442,16 +449,16 @@ void AbstractGeneratorObject::setUnaliasedLocal(uint32_t slot,
                                                 const Value& value) {
   MOZ_ASSERT(isSuspended());
   MOZ_ASSERT(hasStackStorage());
-  MOZ_ASSERT(slot < callee().nonLazyScript()->nfixed());
+  MOZ_ASSERT(slot < script()->nfixed());
   return stackStorage().setDenseElement(slot, value);
 }
 
 void AbstractGeneratorObject::setClosed(JSContext* cx) {
-  setFixedSlot(CALLEE_SLOT, NullValue());
-  setFixedSlot(ENV_CHAIN_SLOT, NullValue());
-  setFixedSlot(ARGS_OBJ_SLOT, NullValue());
-  setFixedSlot(STACK_STORAGE_SLOT, NullValue());
-  setFixedSlot(RESUME_INDEX_SLOT, NullValue());
+  setFixedSlotTyped(CALLEE_OR_MODULE_SLOT, NullValue());
+  setFixedSlotTyped(ENV_CHAIN_SLOT, NullValue());
+  setFixedSlotTyped(ARGS_OBJ_SLOT, NullValue());
+  setFixedSlotTyped(STACK_STORAGE_SLOT, NullValue());
+  setFixedSlotTyped(RESUME_INDEX_SLOT, NullValue());
 
   DebugAPI::onGeneratorClosed(cx, this);
 }
@@ -469,24 +476,15 @@ bool AbstractGeneratorObject::isAfterYieldOrAwait(JSOp op) {
     return false;
   }
 
-  JSScript* script = callee().nonLazyScript();
+  JSScript* script = this->script();
   jsbytecode* code = script->code();
   uint32_t nextOffset = script->resumeOffsets()[resumeIndex()];
   if (JSOp(code[nextOffset]) != JSOp::AfterYield) {
     return false;
   }
 
-  static_assert(JSOpLength_Yield == JSOpLength_InitialYield,
-                "JSOp::Yield and JSOp::InitialYield must have the same length");
-  static_assert(JSOpLength_Yield == JSOpLength_Await,
-                "JSOp::Yield and JSOp::Await must have the same length");
-
-  uint32_t offset = nextOffset - JSOpLength_Yield;
-  JSOp prevOp = JSOp(code[offset]);
-  MOZ_ASSERT(prevOp == JSOp::InitialYield || prevOp == JSOp::Yield ||
-             prevOp == JSOp::Await);
-
-  return prevOp == op;
+  jsbytecode* suspendPC = SuspendPCForAfterYield(code + nextOffset);
+  return JSOp(*suspendPC) == op;
 }
 
 template <>

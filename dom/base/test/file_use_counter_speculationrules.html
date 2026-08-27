@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Use counter test for speculation rules</title>
+<style>
+  /* Sentinel use counter to signal that telemetry for this document has been captured */
+  div {
+    marker-mid: initial;
+  }
+</style>
+<script type="speculationrules">
+{
+  "prefetch": [
+    {"source": "list", "urls": ["speculationrules_immediate"], "eagerness": "immediate", "tag": "speculationrules_tag"},
+    {"source": "list", "urls": ["speculationrules_eager"], "eagerness": "eager"},
+    {"source": "document", "where": {"href_matches": "/speculationrules_moderate"}, "eagerness": "moderate"},
+    {"source": "document", "where": {"href_matches": "/speculationrules_conservative"}, "eagerness": "conservative"}
+  ]
+}
+</script>

@@ -1,4 +1,4 @@
-# Preferences
+# Marionette preferences
 
 There are a couple of [Remote Agent preferences] associated with the Gecko remote
 protocol. Those listed below are additional ones uniquely used for Marionette.
@@ -10,7 +10,7 @@ protocol. Those listed below are additional ones uniquely used for Marionette.
 Delay server startup until a modal dialogue has been clicked to
 allow time for user to set breakpoints in the [Browser Toolbox].
 
-[Browser Toolbox]: /devtools-user/browser_toolbox/index.rst
+[Browser Toolbox]: /devtools-user/browser_toolbox/index.md
 
 ## `marionette.port`
 

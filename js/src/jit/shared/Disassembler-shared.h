@@ -15,7 +15,7 @@
 #include "jstypes.h"  // JS_PUBLIC_API
 
 #if defined(JS_DISASM_ARM) || defined(JS_DISASM_ARM64) || \
-    defined(JS_DISASM_RISCV64)
+    defined(JS_DISASM_RISCV64) || defined(JS_DISASM_LOONG64)
 #  define JS_DISASM_SUPPORTED
 #endif
 

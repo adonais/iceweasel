@@ -83,6 +83,9 @@ class FileSystemHandle : public nsISupports, public nsWrapperCache {
     mMetadata.entryName() = aName;
   }
 
+ private:
+  void SetMoveFileHandleUseCounter();
+
  protected:
   virtual ~FileSystemHandle() = default;
 

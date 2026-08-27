@@ -11,7 +11,7 @@ namespace js {
 
 class BooleanObject : public NativeObject {
   /* Stores this Boolean object's [[PrimitiveValue]]. */
-  static const unsigned PRIMITIVE_VALUE_SLOT = 0;
+  JS_DEFINE_TYPED_SLOT(0, PRIMITIVE_VALUE_SLOT, Boolean);
 
   static const ClassSpec classSpec_;
 
@@ -27,13 +27,15 @@ class BooleanObject : public NativeObject {
   static inline BooleanObject* create(JSContext* cx, bool b,
                                       HandleObject proto = nullptr);
 
-  bool unbox() const { return getFixedSlot(PRIMITIVE_VALUE_SLOT).toBoolean(); }
+  bool unbox() const {
+    return getFixedSlotTyped(PRIMITIVE_VALUE_SLOT).toBoolean();
+  }
 
  private:
   static JSObject* createPrototype(JSContext* cx, JSProtoKey key);
 
-  inline void setPrimitiveValue(bool b) {
-    setFixedSlot(PRIMITIVE_VALUE_SLOT, BooleanValue(b));
+  inline void initPrimitiveValue(bool b) {
+    initFixedSlotTyped(PRIMITIVE_VALUE_SLOT, BooleanValue(b));
   }
 };
 

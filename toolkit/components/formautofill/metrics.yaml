@@ -66,7 +66,7 @@ formautofill:
     expires: never
     extra_keys:
       category:
-        description: Autofill category. Either "creditcard" or "address"
+        description: Autofill category. Either "creditcard", "address" or "passport"
         type: string
       flow_id:
         description: Flow id of an interaction session with a credit card form
@@ -196,7 +196,6 @@ address:
           event's `value` parameter.
           The flowId.
         type: string
-    no_lint: [COMMON_PREFIX]
 
   show_update_doorhanger:
     type: event
@@ -209,7 +208,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   show_edit_doorhanger:
     type: event
@@ -222,7 +220,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   save_capture_doorhanger:
     type: event
@@ -235,7 +232,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   save_update_doorhanger:
     type: event
@@ -248,7 +244,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   save_edit_doorhanger:
     type: event
@@ -261,7 +256,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   update_capture_doorhanger:
     type: event
@@ -274,7 +268,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   update_update_doorhanger:
     type: event
@@ -287,7 +280,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   update_edit_doorhanger:
     type: event
@@ -300,7 +292,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   cancel_capture_doorhanger:
     type: event
@@ -313,7 +304,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   cancel_update_doorhanger:
     type: event
@@ -326,7 +316,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   cancel_edit_doorhanger:
     type: event
@@ -339,7 +328,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   disable_capture_doorhanger:
     type: event
@@ -352,7 +340,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   disable_update_doorhanger:
     type: event
@@ -365,7 +352,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   disable_edit_doorhanger:
     type: event
@@ -378,7 +364,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   pref_capture_doorhanger:
     type: event
@@ -391,7 +376,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   pref_update_doorhanger:
     type: event
@@ -404,7 +388,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   pref_edit_doorhanger:
     type: event
@@ -417,7 +400,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   learn_more_capture_doorhanger:
     type: event
@@ -430,7 +412,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   learn_more_update_doorhanger:
     type: event
@@ -443,7 +424,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   learn_more_edit_doorhanger:
     type: event
@@ -456,7 +436,6 @@ address:
     notification_emails: *address_show_emails
     expires: never
     extra_keys: *address_show_extra
-    no_lint: [COMMON_PREFIX]
 
   show_manage:
     type: event
@@ -925,6 +904,10 @@ address:
         description: >
           telephone
         type: string
+      mlversion:
+        description: >
+          ml model version
+        type: string
 
   filled_address_form_ext:
     type: event
@@ -982,7 +965,6 @@ creditcard:
           event's `value` parameter.
           The flowId.
         type: string
-    no_lint: [COMMON_PREFIX]
 
   show_update_doorhanger:
     type: event
@@ -995,7 +977,6 @@ creditcard:
     notification_emails: *creditcard_show_emails
     expires: never
     extra_keys: *creditcard_show_extra
-    no_lint: [COMMON_PREFIX]
 
   save_capture_doorhanger:
     type: event
@@ -1008,7 +989,6 @@ creditcard:
     notification_emails: *creditcard_show_emails
     expires: never
     extra_keys: *creditcard_show_extra
-    no_lint: [COMMON_PREFIX]
 
   save_update_doorhanger:
     type: event
@@ -1021,7 +1001,6 @@ creditcard:
     notification_emails: *creditcard_show_emails
     expires: never
     extra_keys: *creditcard_show_extra
-    no_lint: [COMMON_PREFIX]
 
   update_capture_doorhanger:
     type: event
@@ -1034,7 +1013,6 @@ creditcard:
     notification_emails: *creditcard_show_emails
     expires: never
     extra_keys: *creditcard_show_extra
-    no_lint: [COMMON_PREFIX]
 
   update_update_doorhanger:
     type: event
@@ -1047,7 +1025,6 @@ creditcard:
     notification_emails: *creditcard_show_emails
     expires: never
     extra_keys: *creditcard_show_extra
-    no_lint: [COMMON_PREFIX]
 
   cancel_capture_doorhanger:
     type: event
@@ -1060,7 +1037,6 @@ creditcard:
     notification_emails: *creditcard_show_emails
     expires: never
     extra_keys: *creditcard_show_extra
-    no_lint: [COMMON_PREFIX]
 
   cancel_update_doorhanger:
     type: event
@@ -1073,7 +1049,6 @@ creditcard:
     notification_emails: *creditcard_show_emails
     expires: never
     extra_keys: *creditcard_show_extra
-    no_lint: [COMMON_PREFIX]
 
   disable_capture_doorhanger:
     type: event
@@ -1086,7 +1061,6 @@ creditcard:
     notification_emails: *creditcard_show_emails
     expires: never
     extra_keys: *creditcard_show_extra
-    no_lint: [COMMON_PREFIX]
 
   disable_update_doorhanger:
     type: event
@@ -1099,7 +1073,6 @@ creditcard:
     notification_emails: *creditcard_show_emails
     expires: never
     extra_keys: *creditcard_show_extra
-    no_lint: [COMMON_PREFIX]
 
   show_manage:
     type: event
@@ -1390,6 +1363,286 @@ creditcard:
           "edit" - when editing credit cards
           "autofill" - when autofilling credit cards
         type: string
+
+passport:
+  show_capture_doorhanger:
+    type: event
+    description: >
+      User interactions for the browser passport autofill doorhanger.
+      Recorded when the doorhanger is shown.
+    bugs: &passport_doorhanger_bugs
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2044946
+    data_reviews: &passport_doorhanger_data_reviews
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2044946
+    notification_emails: &passport_show_emails
+      - autofill@lists.mozilla.org
+    data_sensitivity:
+      - interaction
+    expires: never
+    extra_keys: &passport_doorhanger_extra
+      value:
+        description: >
+          The flowId of the interaction session with the passport form.
+        type: string
+    no_lint: [COMMON_PREFIX]
+
+  save_capture_doorhanger:
+    type: event
+    description: >
+      User interactions for the browser passport autofill doorhanger.
+      Recorded when the user accepts the doorhanger to save the passport.
+    bugs: *passport_doorhanger_bugs
+    data_reviews: *passport_doorhanger_data_reviews
+    notification_emails: *passport_show_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+    extra_keys: *passport_doorhanger_extra
+    no_lint: [COMMON_PREFIX]
+
+  cancel_capture_doorhanger:
+    type: event
+    description: >
+      User interactions for the browser passport autofill doorhanger.
+      Recorded when the user dismisses the doorhanger without saving.
+    bugs: *passport_doorhanger_bugs
+    data_reviews: *passport_doorhanger_data_reviews
+    notification_emails: *passport_show_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+    extra_keys: *passport_doorhanger_extra
+    no_lint: [COMMON_PREFIX]
+
+  disable_capture_doorhanger:
+    type: event
+    description: >
+      User interactions for the browser passport autofill doorhanger.
+      Recorded when the user chooses to never save passports.
+    bugs: *passport_doorhanger_bugs
+    data_reviews: *passport_doorhanger_data_reviews
+    notification_emails: *passport_show_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+    extra_keys: *passport_doorhanger_extra
+    no_lint: [COMMON_PREFIX]
+
+  show_manage:
+    type: event
+    description: >
+      User interactions for passport autofill preferences management UI.
+      Recorded when the passport management dialog is shown.
+    bugs: &passport_manage_bugs
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2044946
+    data_reviews: &passport_manage_data_reviews
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2044946
+    notification_emails: &passport_manage_emails
+      - autofill@lists.mozilla.org
+    data_sensitivity:
+      - interaction
+    expires: never
+
+  add_manage:
+    type: event
+    description: >
+      User interactions for passport autofill preferences management UI.
+      Recorded when a passport entry is added.
+    bugs: *passport_manage_bugs
+    data_reviews: *passport_manage_data_reviews
+    notification_emails: *passport_manage_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+
+  delete_manage:
+    type: event
+    description: >
+      User interactions for passport autofill preferences management UI.
+      Recorded when a passport entry is deleted.
+    bugs: *passport_manage_bugs
+    data_reviews: *passport_manage_data_reviews
+    notification_emails: *passport_manage_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+
+  edit_manage:
+    type: event
+    description: >
+      User interactions for passport autofill preferences management UI.
+      Recorded when a passport entry is edited.
+    bugs: *passport_manage_bugs
+    data_reviews: *passport_manage_data_reviews
+    notification_emails: *passport_manage_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+
+  show_entry_manage:
+    type: event
+    description: >
+      User interactions for passport autofill preferences management UI.
+      Recorded when the edit dialog for an existing passport entry is shown.
+    bugs: *passport_manage_bugs
+    data_reviews: *passport_manage_data_reviews
+    notification_emails: *passport_manage_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+
+  detected_passport_form:
+    type: event
+    description: >
+      Recorded when a form is recognized as a passport form.
+      The possible values of the field extra_keys are "true", "false", or 0.
+      When the value is "true", the field is identified via autocomplete attribute.
+      When the value is "false", the field is not detected in the form.
+      When the value is 0, the field is identified by regexp-based heuristic.
+      Note: passport fields have no standard autocomplete attribute, so they are
+      only identified by ML or regexp-based heuristics; the "true" value is not
+      expected for passport forms.
+    bugs: &passport_form_bugs
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2044946
+    data_reviews: &passport_form_data_reviews
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2044946
+    notification_emails: &passport_detected_emails
+      - autofill@lists.mozilla.org
+    data_sensitivity:
+      - interaction
+    expires: never
+    extra_keys: &passport_form_extra
+      value:
+        description: >
+          The flowId of the interaction session with the passport form.
+        type: string
+      field_name:
+        description: >
+          Name of the field being affected by the method. Used by `popup_shown`,
+          `filled_modified` and `cleared` methods.
+        type: string
+      name:
+        description: passport full name field result
+        type: string
+      given_name:
+        description: passport given name field result
+        type: string
+      additional_name:
+        description: passport additional name field result
+        type: string
+      family_name:
+        description: passport family name field result
+        type: string
+      country:
+        description: passport issuing country field result
+        type: string
+      number:
+        description: passport number field result
+        type: string
+      issue_date_day:
+        description: passport issue date day field result
+        type: string
+      issue_date_month:
+        description: passport issue date month field result
+        type: string
+      issue_date_year:
+        description: passport issue date year field result
+        type: string
+      issue_date:
+        description: passport issue date field result
+        type: string
+      expiry_date_day:
+        description: passport expiry date day field result
+        type: string
+      expiry_date_month:
+        description: passport expiry date month field result
+        type: string
+      expiry_date_year:
+        description: passport expiry date year field result
+        type: string
+      expiry_date:
+        description: passport expiry date field result
+        type: string
+
+  popup_shown_passport_form:
+    type: event
+    description: >
+      Recorded when the autofill popup is shown. Uses field_name to record the
+      field that triggers this event.
+    bugs: *passport_form_bugs
+    data_reviews: *passport_form_data_reviews
+    notification_emails: *passport_detected_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+    extra_keys: *passport_form_extra
+
+  filled_passport_form:
+    type: event
+    description: >
+      Recorded when a form is autofilled. Possible values are `filled`,
+      `not_filled`, `user_filled` or `unavailable`.
+    bugs: *passport_form_bugs
+    data_reviews: *passport_form_data_reviews
+    notification_emails: *passport_detected_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+    extra_keys: *passport_form_extra
+
+  filled_on_fields_update_passport_form:
+    type: event
+    description: >
+      Recorded when a previous autofill action for the passport form causes an
+      immediate fields update which triggers another autofill action including
+      for the new/updated fields. Possible values are `filled`,
+      `filled_on_fields_update`, `user_filled` or `unavailable`.
+    bugs: *passport_form_bugs
+    data_reviews: *passport_form_data_reviews
+    notification_emails: *passport_detected_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+    extra_keys: *passport_form_extra
+
+  filled_modified_passport_form:
+    type: event
+    description: >
+      Recorded when a field is autofilled and then modified by the user.
+      Uses field_name to record the field that triggers this event.
+    bugs: *passport_form_bugs
+    data_reviews: *passport_form_data_reviews
+    notification_emails: *passport_detected_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+    extra_keys: *passport_form_extra
+
+  submitted_passport_form:
+    type: event
+    description: >
+      Recorded when a form is submitted. Possible values are `autofilled`,
+      `not_filled`, `user_filled` or `unavailable`.
+    bugs: *passport_form_bugs
+    data_reviews: *passport_form_data_reviews
+    notification_emails: *passport_detected_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+    extra_keys: *passport_form_extra
+
+  cleared_passport_form:
+    type: event
+    description: >
+      Recorded when a form is cleared. Uses field_name to record the field that
+      triggers this event.
+    bugs: *passport_form_bugs
+    data_reviews: *passport_form_data_reviews
+    notification_emails: *passport_detected_emails
+    data_sensitivity:
+      - interaction
+    expires: never
+    extra_keys: *passport_form_extra
 
 formautofill.addresses:
   autofill_profiles_count:

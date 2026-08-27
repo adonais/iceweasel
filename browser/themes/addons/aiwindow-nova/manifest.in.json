@@ -18,7 +18,12 @@
       "ai_background_color": "#f5f4fe",
       "link_color": "{color.violet.50}",
       "tab_background_color_hover": "color-mix(in srgb, {color.violet-desaturated.60} 16%, transparent)",
-      "additional_backgrounds_alignment": ["center"]
+      "panel_separator_color": "{color.violet-desaturated.20}",
+      "button_background_color_menu_active": "color-mix(in srgb, {color.violet.60} 30%, transparent)",
+      "button_background_color_menu_hover": "color-mix(in srgb, {color.violet.60} 15%, transparent)",
+      "additional_backgrounds_alignment": ["center"],
+      "additional_backgrounds_tiling": ["no-repeat"],
+      "additional_backgrounds_size": ["cover"]
     },
     "colors": {
       "button_background_active": "color-mix(in srgb, {color.violet-desaturated.60} 30%, transparent)",
@@ -28,10 +33,13 @@
       "icons": "{toolbarbutton.icon.fill.@base}",
       "icons_attention": "{color.accent.primary.@base}",
       "popup": "{background.color.box.@base}",
-      "popup_border": "{color.violet-desaturated.20.value}",
+      "popup_border": "{color.violet-desaturated.20}",
       "popup_highlight": "{urlbarview.background.color.selected}",
       "popup_highlight_text": "{urlbarview.text.color.selected}",
       "popup_text": "{text.color.@base}",
+      "sidebar": "{sidebar.background.color}",
+      "sidebar_border": "{sidebar.border.color}",
+      "sidebar_text": "{sidebar.text.color}",
       "tab_background_text": "{text.color.@base}",
       "tab_line": "transparent",
       "tab_loading": "{color.accent.primary.@base}",
@@ -58,7 +66,12 @@
       "ai_background_color": "#1d1f30",
       "link_color": "{color.violet.20}",
       "tab_background_color_hover": "color-mix(in srgb, {color.violet.30} 24%, transparent)",
-      "additional_backgrounds_alignment": ["center"]
+      "panel_separator_color": "{color.violet-desaturated.50}",
+      "button_background_color_menu_active": "color-mix(in srgb, {color.violet.30} 36%, transparent)",
+      "button_background_color_menu_hover": "color-mix(in srgb, {color.violet.30} 24%, transparent)",
+      "additional_backgrounds_alignment": ["center"],
+      "additional_backgrounds_tiling": ["no-repeat"],
+      "additional_backgrounds_size": ["cover"]
     },
     "colors": {
       "button_background_active": "color-mix(in srgb, {color.violet.30} 36%, transparent)",
@@ -68,10 +81,13 @@
       "icons": "{toolbarbutton.icon.fill.@base}",
       "icons_attention": "{color.accent.primary.@base}",
       "popup": "{background.color.box.@base}",
-      "popup_border": "{color.violet-desaturated.50.value}",
+      "popup_border": "{color.violet-desaturated.50}",
       "popup_highlight": "{urlbarview.background.color.selected}",
       "popup_highlight_text": "{urlbarview.text.color.selected}",
       "popup_text": "{text.color.@base}",
+      "sidebar": "{sidebar.background.color}",
+      "sidebar_border": "{sidebar.border.color}",
+      "sidebar_text": "{sidebar.text.color}",
       "tab_background_text": "{text.color.@base}",
       "tab_line": "transparent",
       "tab_loading": "{color.accent.primary.@base}",
@@ -96,7 +112,10 @@
     "stylesheet": "aiwindow-theme-nova.css",
     "properties": {
       "ai_background_color": "--ai-background-color",
-      "tab_background_color_hover": "--tab-background-color-hover"
+      "tab_background_color_hover": "--tab-background-color-hover",
+      "panel_separator_color": "--panel-separator-color",
+      "button_background_color_menu_active": "--button-background-color-menu-active",
+      "button_background_color_menu_hover": "--button-background-color-menu-hover"
     }
   }
 }

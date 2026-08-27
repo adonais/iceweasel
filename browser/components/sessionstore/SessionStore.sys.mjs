@@ -72,7 +72,6 @@ const CHROME_FLAGS_MAP = [
   [Ci.nsIWebBrowserChrome.CHROME_TOOLBAR, "toolbar"],
   [Ci.nsIWebBrowserChrome.CHROME_LOCATIONBAR, "location"],
   [Ci.nsIWebBrowserChrome.CHROME_PERSONAL_TOOLBAR, "personalbar"],
-  [Ci.nsIWebBrowserChrome.CHROME_STATUSBAR, "status"],
   [Ci.nsIWebBrowserChrome.CHROME_MENUBAR, "menubar"],
   [Ci.nsIWebBrowserChrome.CHROME_WINDOW_RESIZE, "resizable"],
   [Ci.nsIWebBrowserChrome.CHROME_WINDOW_MINIMIZE, "minimizable"],
@@ -100,13 +99,11 @@ const WINDOW_HIDEABLE_FEATURES = [
   "toolbar",
   "locationbar",
   "personalbar",
-  "statusbar",
   "scrollbars",
 ];
 
 const WINDOW_OPEN_FEATURES_MAP = {
   locationbar: "location",
-  statusbar: "status",
 };
 
 // These are tab events that we listen to.
@@ -5557,6 +5554,9 @@ var SessionStoreInternal = {
     let startupPref = this._prefBranch.getIntPref("startup.page");
     if (startupPref == 1) {
       homePages = homePages.concat(lazy.HomePage.get(aWindow).split("|"));
+    }
+    if (lazy.AIWindow.isAIWindowActiveAndEnabled(aWindow)) {
+      homePages.push(lazy.AIWindow.initialStartupURL);
     }
 
     for (let i = tabbrowser.pinnedTabCount; i < tabbrowser.tabs.length; i++) {

@@ -35,6 +35,7 @@ import mozilla.components.concept.toolbar.Toolbar
 import mozilla.components.concept.toolbar.Toolbar.Highlight
 import mozilla.components.support.base.android.Padding
 import mozilla.components.support.base.log.logger.Logger
+import mozilla.components.support.ktx.android.view.pixelSizeFor
 import mozilla.components.support.ktx.kotlin.trimmed
 import mozilla.components.ui.autocomplete.AutocompleteView
 import mozilla.components.ui.autocomplete.InlineAutocompleteEditText
@@ -200,7 +201,7 @@ class BrowserToolbar @JvmOverloads constructor(
         val height = if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY) {
             MeasureSpec.getSize(heightMeasureSpec)
         } else {
-            resources.getDimensionPixelSize(R.dimen.mozac_browser_toolbar_default_toolbar_height)
+            pixelSizeFor(R.dimen.mozac_browser_toolbar_default_toolbar_height)
         }
 
         setMeasuredDimension(width, height)

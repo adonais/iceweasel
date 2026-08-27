@@ -78,7 +78,7 @@ To change more than one pref, you can add a `--setpref` argument for each:
 
 ## Can tests be run under a chrome URL?
 
-Yes, use [mochitest-chrome](../chrome-tests/index.rst).
+Yes, use [mochitest-chrome](../chrome-tests/index.md).
 
 ## How do I change the HTTP headers or status sent with a file used in a Mochitest?
 
@@ -113,7 +113,7 @@ strictly necessary.
 ## How do I write tests that check header values, method types, etc. of HTTP requests?
 
 To write such a test, you simply need to write an SJS (server-side JavaScript)
-for it. See the [testing HTTP server](/networking/http_server_for_testing.rst)
+for it. See the [testing HTTP server](/networking/http_server_for_testing.md)
 docs for less mochitest-specific documentation of what you can do in SJS
 scripts.
 

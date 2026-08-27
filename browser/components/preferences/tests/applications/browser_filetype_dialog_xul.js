@@ -87,14 +87,14 @@ add_setup(async function () {
     Ci.nsIWebHandlerApp
   );
   handler1.name = "Handler 1";
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   handler1.uriTemplate = "https://example.com/first/%s";
 
   let handler2 = Cc["@mozilla.org/uriloader/web-handler-app;1"].createInstance(
     Ci.nsIWebHandlerApp
   );
   handler2.name = "Handler 2";
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   handler2.uriTemplate = "http://example.org/second/%s";
   gDummyHandlers.push(handler1, handler2);
 

@@ -1,4 +1,4 @@
-// |jit-test| test-also=--gc-zeal=2
+// |jit-test| test-also=--gc-zeal=2; test-also=--no-avx
 
 // Test array instructions on different valtypes
 

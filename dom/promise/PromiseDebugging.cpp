@@ -211,30 +211,67 @@ bool PromiseDebugging::RemoveUncaughtRejectionObserver(
 }
 
 /* static */
-void PromiseDebugging::AddUncaughtRejection(JS::Handle<JSObject*> aPromise) {
+void PromiseDebugging::AddUncaughtRejection(JS::Handle<JSObject*> aPromise,
+                                            uint64_t aPromiseID) {
+  static constexpr size_t kThreshold =
+      CycleCollectedJSContext::kRejectedPromiseIndexThreshold;
+
+  CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
+  auto& uncaughtRejections = ccjs->mUncaughtRejections;
+  size_t index = uncaughtRejections.length();
   // This might OOM, but won't set a pending exception, so we'll just ignore it.
-  if (CycleCollectedJSContext::Get()->mUncaughtRejections.append(aPromise)) {
-    FlushRejections::DispatchNeeded();
+  if (!uncaughtRejections.append(aPromise)) {
+    return;
   }
+  if (index >= kThreshold) {
+    auto& indicesHashTable = ccjs->mUncaughtRejectionIndices;
+    if (index == kThreshold) {
+      // We just grew past the threshold, so index what is already here.
+      for (size_t i = 0; i < index; i++) {
+        if (uncaughtRejections[i].get()) {
+          indicesHashTable.InsertOrUpdate(
+              JS::GetPromiseID(uncaughtRejections[i]), i);
+        }
+      }
+    }
+    indicesHashTable.InsertOrUpdate(aPromiseID, index);
+  }
+  FlushRejections::DispatchNeeded();
 }
 
 /* void */
-void PromiseDebugging::AddConsumedRejection(JS::Handle<JSObject*> aPromise) {
+void PromiseDebugging::AddConsumedRejection(JS::Handle<JSObject*> aPromise,
+                                            uint64_t aPromiseID) {
+  static constexpr size_t kThreshold =
+      CycleCollectedJSContext::kRejectedPromiseIndexThreshold;
+
   // If the promise is in our list of uncaught rejections, we haven't yet
   // reported it as unhandled. In that case, just remove it from the list
   // and don't add it to the list of consumed rejections.
-  auto& uncaughtRejections =
-      CycleCollectedJSContext::Get()->mUncaughtRejections;
-  for (size_t i = 0; i < uncaughtRejections.length(); i++) {
-    if (uncaughtRejections[i] == aPromise) {
-      // To avoid large amounts of memmoves, we don't shrink the vector here.
-      // Instead, we filter out nullptrs when iterating over the vector later.
-      uncaughtRejections[i].set(nullptr);
-      return;
+  CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
+  auto& uncaughtRejections = ccjs->mUncaughtRejections;
+
+  Maybe<size_t> index;
+  if (uncaughtRejections.length() <= kThreshold) {
+    MOZ_ASSERT(ccjs->mUncaughtRejectionIndices.IsEmpty());
+    for (size_t i = 0; i < uncaughtRejections.length(); i++) {
+      if (uncaughtRejections[i] == aPromise) {
+        index = Some(i);
+        break;
+      }
     }
+  } else {
+    index = ccjs->mUncaughtRejectionIndices.Extract(aPromiseID);
+  }
+  if (index.isSome()) {
+    // To avoid large amounts of memmoves, we don't shrink the vector here.
+    // Instead, we filter out nullptrs when iterating over the vector later.
+    MOZ_ASSERT(uncaughtRejections[*index] == aPromise);
+    uncaughtRejections[*index].set(nullptr);
+    return;
   }
   // This might OOM, but won't set a pending exception, so we'll just ignore it.
-  if (CycleCollectedJSContext::Get()->mConsumedRejections.append(aPromise)) {
+  if (ccjs->mConsumedRejections.append(aPromise)) {
     FlushRejections::DispatchNeeded();
   }
 }
@@ -286,6 +323,7 @@ void PromiseDebugging::FlushUncaughtRejectionsInternal(bool aDeferToEventPath) {
     }
   }
   storage->mUncaughtRejections.clear();
+  storage->mUncaughtRejectionIndices.Clear();
 
   // Notify observers of consumed Promise.
 

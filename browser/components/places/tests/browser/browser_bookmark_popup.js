@@ -41,21 +41,36 @@ add_setup(async function () {
   });
 });
 
-function mouseout() {
+async function mouseout() {
+  if (!BrowserTestUtils.isVisible(bookmarkPanel)) {
+    throw new Error("The panel must be open to await the mouseout event");
+  }
+
   let mouseOutPromise = BrowserTestUtils.waitForEvent(
     bookmarkPanel,
     "mouseout"
   );
+
   EventUtils.synthesizeNativeMouseEvent({
     type: "mousemove",
-    target: win.gURLBar,
+    target: win.gURLBar.inputField,
     offsetX: 0,
     offsetY: 0,
     win,
   });
+  EventUtils.synthesizeMouse(bookmarkPanel, 0, 0, { type: "mouseover" }, win);
   EventUtils.synthesizeMouse(bookmarkPanel, 0, 0, { type: "mouseout" }, win);
+  EventUtils.synthesizeNativeMouseEvent({
+    type: "mousemove",
+    target: win.gURLBar.inputField,
+    offsetX: 0,
+    offsetY: 0,
+    win,
+  });
+
   info("Waiting for mouseout event");
-  return mouseOutPromise;
+  await mouseOutPromise;
+  info("Got mouseout event");
 }
 
 async function test_bookmarks_popup({
@@ -155,11 +170,12 @@ async function test_bookmarks_popup({
           );
         }
 
-        promises.push(promisePopupHidden(bookmarkPanel));
         if (popupHideFn) {
+          promises.push(promisePopupHidden(bookmarkPanel));
           await popupHideFn();
-        } else {
+        } else if (BrowserTestUtils.isVisible(bookmarkPanel)) {
           // Move the mouse out of the way so that the panel will auto-close.
+          promises.push(promisePopupHidden(bookmarkPanel));
           await mouseout();
         }
         await Promise.all(promises);

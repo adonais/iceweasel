@@ -7,6 +7,7 @@ task-defaults:
     worker:
         max-run-time: 1800
     run:
+        clone-with: hg
         using: toolchain-script
         script: build-libunwind.sh
 
@@ -15,6 +16,7 @@ android-aarch64-libunwind-21:
     treeherder:
         symbol: TA(aarch64-unwind-21)
     run:
+        clone-with: hg
         arguments:
             - build/build-clang/clang-21.json
         resources:
@@ -34,6 +36,7 @@ android-arm-libunwind-21:
     treeherder:
         symbol: TA(arm-unwind-21)
     run:
+        clone-with: hg
         arguments:
             - build/build-clang/clang-21.json
         resources:
@@ -53,6 +56,7 @@ android-x64-libunwind-21:
     treeherder:
         symbol: TA(x64-unwind-21)
     run:
+        clone-with: hg
         arguments:
             - build/build-clang/clang-21.json
         resources:
@@ -72,6 +76,7 @@ android-aarch64-libunwind-22:
     treeherder:
         symbol: TA(aarch64-unwind-22)
     run:
+        clone-with: hg
         arguments:
             - build/build-clang/clang-22.json
         resources:
@@ -91,6 +96,7 @@ android-arm-libunwind-22:
     treeherder:
         symbol: TA(arm-unwind-22)
     run:
+        clone-with: hg
         arguments:
             - build/build-clang/clang-22.json
         resources:
@@ -110,6 +116,7 @@ android-x64-libunwind-22:
     treeherder:
         symbol: TA(x64-unwind-22)
     run:
+        clone-with: hg
         arguments:
             - build/build-clang/clang-22.json
         resources:
@@ -131,6 +138,7 @@ android-aarch64-libunwind-trunk:
     treeherder:
         symbol: TA(aarch64-unwind-trunk)
     run:
+        clone-with: hg
         arguments:
             - build/build-clang/clang-trunk.json
         resources:
@@ -152,6 +160,7 @@ android-arm-libunwind-trunk:
     treeherder:
         symbol: TA(arm-unwind-trunk)
     run:
+        clone-with: hg
         arguments:
             - build/build-clang/clang-trunk.json
         resources:
@@ -173,6 +182,7 @@ android-x64-libunwind-trunk:
     treeherder:
         symbol: TA(x64-unwind-trunk)
     run:
+        clone-with: hg
         arguments:
             - build/build-clang/clang-trunk.json
         resources:

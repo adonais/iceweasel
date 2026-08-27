@@ -242,12 +242,34 @@ const FORM_AUTOFILL_CONFIG = {
       },
     ],
   },
+  personalInfo: {
+    l10nId: "personal-info-group",
+    iconSrc: "chrome://browser/skin/personal-info-16.svg",
+    headingLevel: 2,
+    subcategory: "personal-info-autofill passport-autofill",
+    items: [
+      {
+        id: "saveAndFillPersonalInfo",
+        l10nId: "autofill-personal-info-checkbox-message",
+        supportPage: "automatically-fill-your-address-web-forms",
+      },
+      {
+        id: "managePersonalInfoButton",
+        loadPane: "managePersonalInfo",
+        l10nId: "autofill-personal-info-manage-button",
+        control: "moz-box-button",
+      },
+    ],
+  },
 };
 
 Preferences.addAll([
   // Credit cards and addresses
   { id: ENABLED_AUTOFILL_ADDRESSES_PREF, type: "bool" },
   { id: ENABLED_AUTOFILL_CREDITCARDS_PREF, type: "bool" },
+
+  // Personal info (one .enabled pref per member type)
+  ...personalInfoEnabledPrefs().map(pref => ({ id: pref, type: "bool" })),
   {
     id: "extensions.formautofill.creditCards.os-auth.locked.enabled",
     type: "bool",
@@ -282,6 +304,60 @@ Preferences.addSetting({
     } else {
       window.gSubDialog.open(MANAGE_ADDRESSES_URL);
     }
+  },
+});
+
+// "Personal info" is a preferences-only grouping of data types (passports
+// today; more to come). It is purely a UI concept — the data-type registry is
+// intentionally unaware of it — so its membership is listed here.
+function personalInfoTypes() {
+  return [lazy.AutofillDataTypes.PASSPORT];
+}
+
+// The section shows whenever *any* member type is available, rather than being
+// tied to a specific type.
+function isPersonalInfoCategoryAvailable() {
+  return personalInfoTypes().some(typeId =>
+    FormAutofill.isAutofillTypeAvailable(typeId)
+  );
+}
+
+// The `.enabled` prefs of every personal-info member type. The single "Save and
+// autofill personal info" checkbox stands in for all of them: it writes every
+// pref and reads their logical OR, so there is no separate category-level pref.
+function personalInfoEnabledPrefs() {
+  return personalInfoTypes().map(
+    typeId => lazy.AutofillDataTypes.get(typeId).enabledPref
+  );
+}
+
+// Register a Setting for each member type's .enabled pref so the aggregate
+// checkbox below can depend on them. The Setting framework then owns the change
+// notifications, avoiding hand-rolled (and leak-prone) pref observers.
+const personalInfoEnabledSettingIds = personalInfoEnabledPrefs().map(pref => {
+  const id = `personalInfoEnabled-${pref}`;
+  Preferences.addSetting({ id, pref });
+  return id;
+});
+
+Preferences.addSetting({
+  id: "saveAndFillPersonalInfo",
+  deps: personalInfoEnabledSettingIds,
+  visible: isPersonalInfoCategoryAvailable,
+  get: (_, deps) => Object.values(deps).some(dep => dep.value),
+  set: (checked, deps) => {
+    for (const dep of Object.values(deps)) {
+      dep.value = checked;
+    }
+    return null;
+  },
+});
+Preferences.addSetting({
+  id: "managePersonalInfoButton",
+  visible: isPersonalInfoCategoryAvailable,
+  onUserClick: e => {
+    e.preventDefault();
+    window.gotoPref("paneManagePersonalInfo");
   },
 });
 
@@ -532,6 +608,114 @@ Preferences.addSetting(
 );
 
 Preferences.addSetting({
+  /** @type {{ _removePassportDialogStrings: string[] } & SettingConfig} */
+  id: "passport-item",
+  _removePassportDialogStrings: [],
+  onUserClick(e) {
+    const action = e.target.getAttribute("action");
+    const guid = e.target.getAttribute("guid");
+    if (action === "remove") {
+      let [title, confirmLabel, cancelLabel] =
+        this._removePassportDialogStrings;
+      lazy.FormAutofillPreferences.prototype.openRemovePassportDialog(
+        guid,
+        window.browsingContext.topChromeWindow.browsingContext,
+        title,
+        confirmLabel,
+        cancelLabel
+      );
+    } else if (action === "edit") {
+      lazy.FormAutofillPreferences.prototype.openEditPassportDialog(
+        guid,
+        window
+      );
+    }
+  },
+  setup(emitChange) {
+    document.l10n
+      .formatValues([
+        { id: "passports-delete-passport-prompt-title" },
+        { id: "passports-delete-passport-prompt-confirm-button" },
+        { id: "passports-delete-passport-prompt-cancel-button" },
+      ])
+      .then(val => (this._removePassportDialogStrings = val))
+      .then(emitChange);
+  },
+  disabled() {
+    return !!this._removePassportDialogStrings.length;
+  },
+});
+
+Preferences.addSetting({
+  id: "add-passport-button",
+  deps: ["saveAndFillPersonalInfo"],
+  visible: () =>
+    FormAutofill.isAutofillTypeAvailable(lazy.AutofillDataTypes.PASSPORT),
+  onUserClick: () => {
+    lazy.FormAutofillPreferences.prototype.openEditPassportDialog(
+      undefined,
+      window
+    );
+  },
+  disabled: ({ saveAndFillPersonalInfo }) => !saveAndFillPersonalInfo?.value,
+});
+
+Preferences.addSetting({
+  id: "passports-list-header",
+});
+
+Preferences.addSetting({
+  id: "no-passports-stored",
+});
+
+Preferences.addSetting(
+  class extends Preferences.AsyncSetting {
+    static id = "passports-list";
+
+    /** @type {Promise<any[]>} */
+    passports;
+
+    beforeRefresh() {
+      this.passports = this.getPassports();
+    }
+
+    async getPassports() {
+      if (
+        !FormAutofill.isAutofillTypeAvailable(lazy.AutofillDataTypes.PASSPORT)
+      ) {
+        return [];
+      }
+      await lazy.FormAutofillPreferences.prototype.initializePassportsStorage();
+      return lazy.FormAutofillPreferences.prototype.makePassportsListItems();
+    }
+
+    async getControlConfig() {
+      return {
+        items: await this.passports,
+      };
+    }
+
+    // Show the passport list (its header and, when empty, its empty state)
+    // whenever passports are supported. Membership of unsupported types is
+    // hidden so the subpage only surfaces data types available to the user.
+    visible() {
+      return FormAutofill.isAutofillTypeAvailable(
+        lazy.AutofillDataTypes.PASSPORT
+      );
+    }
+
+    setup() {
+      Services.obs.addObserver(this.emitChange, "formautofill-storage-changed");
+      return () =>
+        Services.obs.removeObserver(
+          this.emitChange,
+          "formautofill-storage-changed"
+        );
+    }
+  }
+);
+
+Preferences.addSetting({
   id: "savePasswords",
   pref: "signon.rememberSignons",
   controllingExtensionInfo: {
@@ -542,6 +726,10 @@ Preferences.addSetting({
 
 Preferences.addSetting({
   id: "managePasswordExceptions",
+  disabled: () =>
+    Services.prefs.prefIsLocked(
+      "pref.privacy.disable_button.view_passwords_exceptions"
+    ),
   onUserClick: () => {
     PasswordSettingHelpers.showPasswordExceptions();
   },
@@ -598,7 +786,10 @@ Preferences.addSetting({
   },
   visible: () => {
     let policy = Services.policies.getActivePolicies();
-    return policy?.PasswordManagerEnabled !== false;
+    return (
+      policy?.PasswordManagerEnabled !== false &&
+      !Services.prefs.prefIsLocked("pref.privacy.disable_button.view_passwords")
+    );
   },
 });
 
@@ -833,6 +1024,22 @@ SettingGroupManager.registerGroups({
       },
       {
         id: "addresses-list",
+        control: "moz-box-group",
+        controlAttrs: {
+          type: "list",
+        },
+      },
+    ],
+  },
+  managePersonalInfo: {
+    items: [
+      {
+        id: "add-passport-button",
+        control: "moz-button",
+        l10nId: "autofill-passports-add-button",
+      },
+      {
+        id: "passports-list",
         control: "moz-box-group",
         controlAttrs: {
           type: "list",

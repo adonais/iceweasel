@@ -1466,12 +1466,8 @@ nsXPCComponents_Utils::EvalInSandbox(
 NS_IMETHODIMP
 nsXPCComponents_Utils::GetUAWidgetScope(nsIPrincipal* principal, JSContext* cx,
                                         MutableHandleValue rval) {
-  rval.set(UndefinedValue());
-
   JSObject* scope = xpc::GetUAWidgetScope(cx, principal);
-
-  rval.set(JS::ObjectValue(*scope));
-
+  rval.setObject(*scope);
   return NS_OK;
 }
 

@@ -17,6 +17,7 @@ import android.view.inputmethod.ExtractedTextRequest
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputContentInfo
 import androidx.core.net.toUri
+import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import org.hamcrest.Matchers.equalTo
@@ -25,15 +26,21 @@ import org.hamcrest.Matchers.notNullValue
 import org.junit.Assume.assumeThat
 import org.junit.Before
 import org.junit.Ignore
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameter
+import org.mozilla.geckoview.Autofill
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSession.TextInputDelegate
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
+import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.NullDelegate
+import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.TimeoutMillis
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
+import org.mozilla.geckoview.test.util.UiThreadUtils
 
 @MediumTest
 @RunWith(Parameterized::class)
@@ -53,6 +60,11 @@ class TextInputDelegateTest : BaseSessionTest() {
     @field:Parameter(0)
     @JvmField
     var id: String = ""
+
+    val activityRule = ActivityScenarioRule(GeckoViewTestActivity::class.java)
+
+    @get:Rule
+    override val rules: RuleChain = RuleChain.outerRule(activityRule).around(sessionRule)
 
     @Before
     fun setup() {
@@ -476,42 +488,93 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     // When navigating away from a page with a focused input field, the keyboard should be dismissed.
-    @WithDisplay(width = 100, height = 100)
+    @NullDelegate(Autofill.Delegate::class)
     @Test
     fun restartInput_dismissAfterNavigation() {
         assumeThat("input only", id, equalTo("#input"))
 
-        mainSession.textInput.view = View(InstrumentationRegistry.getInstrumentation().targetContext)
-        mainSession.loadTestPath(RESUBMIT_CONFIRM)
-        mainSession.waitForPageStop()
+        activityRule.scenario.onActivity { activity ->
+            activity.view.setSession(mainSession)
+            mainSession.textInput.view = activity.view
+            activity.view.requestFocus()
 
-        mainSession.evaluateJS("document.querySelector('#text').focus()")
+            mainSession.loadTestPath(RESUBMIT_CONFIRM)
+            mainSession.waitForPageStop()
 
-        mainSession.waitUntilCalled(object : TextInputDelegate {
-            @AssertCalled(count = 1)
-            override fun restartInput(session: GeckoSession, reason: Int) {
-                assertThat(
-                    "Reason should be correct",
-                    reason,
-                    equalTo(GeckoSession.TextInputDelegate.RESTART_REASON_FOCUS),
-                )
-            }
-        })
+            mainSession.evaluateJS("document.querySelector('#text').focus()")
 
-        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
-        pressKeyNoWait(ic, KeyEvent.KEYCODE_ENTER)
+            mainSession.waitUntilCalled(object : TextInputDelegate {
+                @AssertCalled(count = 1)
+                override fun restartInput(session: GeckoSession, reason: Int) {
+                    assertThat(
+                        "Reason should be correct",
+                        reason,
+                        equalTo(GeckoSession.TextInputDelegate.RESTART_REASON_FOCUS),
+                    )
+                }
+            })
 
-        mainSession.waitUntilCalled(object : TextInputDelegate, GeckoSession.ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun hideSoftInput(session: GeckoSession) {
-            }
+            val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+            pressKeyNoWait(ic, KeyEvent.KEYCODE_ENTER)
 
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-            }
-        })
+            mainSession.waitUntilCalled(object : TextInputDelegate, GeckoSession.ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun hideSoftInput(session: GeckoSession) {
+                }
 
-        assertThat("hideSoftInput is called once", true, equalTo(true))
+                @AssertCalled(count = 1)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                }
+            })
+
+            assertThat("hideSoftInput is called once", true, equalTo(true))
+        }
+    }
+
+    // For bug 2048921
+    @Test(expected = UiThreadUtils.TimeoutException::class)
+    @TimeoutMillis(2000)
+    @NullDelegate(Autofill.Delegate::class)
+    fun noDismissKeyboardAfterlostFocus() {
+        assumeThat("input only", id, equalTo("#input"))
+
+        activityRule.scenario.onActivity { activity ->
+            activity.view.setSession(mainSession)
+            mainSession.textInput.view = activity.view
+            activity.view.requestFocus()
+
+            mainSession.loadTestPath(INPUTS_PATH)
+            mainSession.waitForPageStop()
+
+            var dismissCount = 0
+            mainSession.delegateUntilTestEnd(object : TextInputDelegate {
+                override fun hideSoftInput(session: GeckoSession) {
+                    dismissCount++
+                }
+            })
+
+            mainSession.pressKey(KeyEvent.KEYCODE_CTRL_LEFT)
+            mainSession.evaluateJS("document.querySelector('#input').focus()")
+
+            mainSession.waitUntilCalled(object : TextInputDelegate {
+                @AssertCalled(count = 1)
+                override fun showSoftInput(session: GeckoSession) {
+                }
+            })
+
+            mainSession.evaluateJS("document.querySelector('#input').blur()")
+            activity.view.clearFocus()
+
+            UiThreadUtils.waitForCondition({
+                dismissCount != 0
+            }, sessionRule.timeoutMillis)
+
+            assertThat(
+                "The keyboard should not be dismissed after losing focus.",
+                dismissCount,
+                equalTo(0),
+            )
+        }
     }
 
     private fun getText(ic: InputConnection) =

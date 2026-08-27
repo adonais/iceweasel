@@ -182,8 +182,9 @@ void ClientSource::Activate(PClientManagerChild* aActor) {
   // This can happen since we use MozURL for validation which does not handle
   // some of the more obscure internal principal/url combinations.  Normal
   // content pages will pass this check.
+  RefPtr<LoadedOriginSet> loadedOrigins = CurrentLoadedOriginSet();
   if (NS_WARN_IF(!ClientIsValidPrincipalInfo(mClientInfo.PrincipalInfo(),
-                                             CurrentRemoteType()))) {
+                                             loadedOrigins))) {
     Shutdown();
     return;
   }

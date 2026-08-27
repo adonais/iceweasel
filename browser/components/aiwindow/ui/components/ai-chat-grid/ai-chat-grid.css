@@ -7,10 +7,15 @@
   --ai-chat-grid-columns: repeat(3, minmax(0, 1fr));
   --ai-chat-grid-scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
   --ai-chat-grid-scrollarea-border-color: light-dark(var(--color-violet-10), var(--color-violet-80));
+  --ai-chat-grid-button-icon-fill: light-dark(var(--color-black), var(--color-white));
+  --ai-chat-grid-button-icon-fill-transparent: light-dark(var(--color-black-alpha-40), var(--color-white-alpha-20));
 
   @media (forced-colors: active) {
     --ai-chat-grid-scrollbar-color: auto;
     --ai-chat-grid-scrollarea-border-color: var(--background-color-canvas);
+
+    --ai-chat-grid-button-icon-fill: currentColor;
+    --ai-chat-grid-button-icon-fill-transparent: currentColor;
   }
 }
 
@@ -105,7 +110,7 @@ ai-chat-grid::part(row) {
 }
 
 .list-controls moz-button {
-  --button-icon-fill: light-dark(var(--color-black-alpha-40), var(--color-white-alpha-20));
+  --button-icon-fill: var(--ai-chat-grid-button-icon-fill-transparent);
   --button-background-color-ghost-selected: light-dark(var(--color-violet-10), var(--color-violet-80));
 }
 
@@ -122,7 +127,7 @@ ai-chat-grid::part(row) {
 
 :host([view="list"]) #list,
 :host([view="grid"]) #grid {
-  --button-icon-fill: light-dark(var(--color-black), var(--color-white));
+  --button-icon-fill: var(--ai-chat-grid-button-icon-fill);
 
   /* The selected button stays selected, so suppress the hover/active feedback
      to avoid implying it can be pressed again. */

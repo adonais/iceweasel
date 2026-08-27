@@ -5217,6 +5217,7 @@ files_changed:
   - toolkit/components/translations/tests/unit/xpcshell.toml
 filters:
   - target_tasks_method
+head_git_repository: https://github.com/mozilla-firefox/firefox
 head_git_rev: 88121de0ccd1a6e364645b9971f36c5eb00f4317
 head_ref: 9a81a01d61b6342b237a6431865eef20ee487c20
 head_repository: https://hg.mozilla.org/mozilla-central

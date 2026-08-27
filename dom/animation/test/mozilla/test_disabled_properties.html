@@ -13,20 +13,20 @@ function waitForSetPref(pref, value) {
 }
 
 /*
- * These tests rely on the fact that the font-palette property is
- * disabled by the layout.css.font-palette.enabled pref. If we ever remove
+ * These tests rely on the fact that the initial-letter property is
+ * disabled by the layout.css.initial-letter.enabled pref. If we ever remove
  * that pref we will need to substitute some other pref:property combination.
  */
 
 promise_test(function(t) {
-  return waitForSetPref('layout.css.font-palette.enabled', true).then(() => {
-    var anim = addDiv(t).animate({ fontPalette: [ 'light', 'dark' ]});
+  return waitForSetPref('layout.css.initial-letter.enabled', true).then(() => {
+    var anim = addDiv(t).animate({ initialLetter: [ '1', '3' ]});
     assert_equals(anim.effect.getKeyframes().length, 2,
                   'A property-indexed keyframe specifying only enabled'
                   + ' properties produces keyframes');
-    return waitForSetPref('layout.css.font-palette.enabled', false);
+    return waitForSetPref('layout.css.initial-letter.enabled', false);
   }).then(() => {
-    var anim = addDiv(t).animate({ fontPalette: [ 'light', 'dark' ]});
+    var anim = addDiv(t).animate({ initialLetter: [ '1', '3' ]});
     assert_equals(anim.effect.getKeyframes().length, 0,
                   'A property-indexed keyframe specifying only disabled'
                   + ' properties produces no keyframes');
@@ -35,8 +35,8 @@ promise_test(function(t) {
 
 promise_test(function(t) {
   var createAnim = () => {
-    var anim = addDiv(t).animate([ { fontPalette: 'light' },
-                                   { fontPalette: 'dark' } ]);
+    var anim = addDiv(t).animate([ { initialLetter: '1' },
+                                   { initialLetter: '3' } ]);
     assert_equals(anim.effect.getKeyframes().length, 2,
                   'Animation specified using a keyframe sequence should'
                   + ' return the same number of keyframes regardless of'
@@ -55,17 +55,15 @@ promise_test(function(t) {
       `${descr} should NOT have the '${property}' property`);
   };
 
-  return waitForSetPref('layout.css.font-palette.enabled', true).then(() => {
+  return waitForSetPref('layout.css.initial-letter.enabled', true).then(() => {
     var anim = createAnim();
-    assert_has_property(anim, 0, 'Initial keyframe', 'fontPalette');
-    assert_has_property(anim, 1, 'Final keyframe', 'fontPalette');
-    return waitForSetPref('layout.css.font-palette.enabled', false);
+    assert_has_property(anim, 0, 'Initial keyframe', 'initialLetter');
+    assert_has_property(anim, 1, 'Final keyframe', 'initialLetter');
+    return waitForSetPref('layout.css.initial-letter.enabled', false);
   }).then(() => {
     var anim = createAnim();
-    assert_does_not_have_property(anim, 0, 'Initial keyframe',
-                                  'fontPalette');
-    assert_does_not_have_property(anim, 1, 'Final keyframe',
-                                  'fontPalette');
+    assert_does_not_have_property(anim, 0, 'Initial keyframe', 'initialLetter');
+    assert_does_not_have_property(anim, 1, 'Final keyframe', 'initialLetter');
   });
 }, 'Specifying a disabled property using a keyframe sequence');
 

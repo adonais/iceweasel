@@ -159,6 +159,7 @@ pipeself
 poll_nm
 poll_to
 pollable
+prefloop
 prftest
 prfz
 primblok
@@ -203,6 +204,13 @@ version
 writev
 xnotify
 zerolen"
+
+# reinit is known to fail on Windows; exclude it there.
+case `uname` in
+    CYGWIN*|MINGW*|MSYS*|Windows_NT|Windows_95|Windows_98)
+        TESTS=`echo "$TESTS" | grep -v '^reinit$'`
+        ;;
+esac
 
 rval=0
 

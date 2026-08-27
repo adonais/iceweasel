@@ -39,8 +39,23 @@
         </toolbarbutton>
         <html:moz-button id="appMenu-nova-fxa-label"/>
       </toolbaritem>
+      <hbox id="appMenu-fxa-sign-in-promo"
+            align="center">
+        <html:img class="fxa-menu-sign-in-promo-image"
+                  alt=""
+                  src="chrome://browser/content/kit-signed-out.svg"/>
+        <vbox class="fxa-menu-sign-in-promo-text" flex="1">
+          <label class="fxa-menu-sign-in-promo-heading"
+                 data-l10n-id="appmenu-fxa-sign-in-promo-heading"/>
+          <description class="fxa-menu-sign-in-promo-message"
+                       data-l10n-id="appmenu-fxa-sign-in-promo-message"/>
+        </vbox>
+        <html:moz-button type="primary"
+                         id="appMenu-fxa-sign-in-promo-button"
+                         data-l10n-id="appmenu-fxa-sign-in-promo-button"/>
+      </hbox>
       <toolbarbutton id="appMenu-create-profile-button"
-                     class="subviewbutton subviewbutton-iconic subviewbutton-nav"
+                     class="subviewbutton subviewbutton-nav"
                      closemenu="none"
                      data-l10n-id="appmenu-create-profile2"
                      hidden="true"/>
@@ -78,14 +93,14 @@
                      key="key_privatebrowsing"
                      command="Tools:PrivateBrowsing"/>
       <toolbarseparator/>
-      <toolbarbutton id="appMenu-bookmarks-button"
-                     class="subviewbutton subviewbutton-nav"
-                     data-l10n-id="library-bookmarks-menu"
-                     closemenu="none"
-                     />
       <toolbarbutton id="appMenu-history-button"
                      class="subviewbutton subviewbutton-nav"
                      data-l10n-id="appmenuitem-history"
+                     closemenu="none"
+                     />
+      <toolbarbutton id="appMenu-bookmarks-button"
+                     class="subviewbutton subviewbutton-nav"
+                     data-l10n-id="library-bookmarks-menu"
                      closemenu="none"
                      />
       <toolbarbutton id="appMenu-tab-groups-button"
@@ -131,15 +146,15 @@
                      data-l10n-id="appmenuitem-save-page"
                      key="key_savePage"
                      command="Browser:SavePage"/>
+      <toolbarbutton id="appMenu-translate-button"
+                     class="subviewbutton"
+                     data-l10n-id="appmenuitem-translate"
+                     command="cmd_translate"/>
       <toolbarbutton id="appMenu-find-button2"
                      class="subviewbutton"
                      data-l10n-id="appmenuitem-find-in-page"
                      key="key_find"
                      command="cmd_find"/>
-      <toolbarbutton id="appMenu-translate-button"
-                     class="subviewbutton"
-                     data-l10n-id="appmenuitem-translate"
-                     command="cmd_translate"/>
       <toolbaritem id="appMenu-zoom-controls" class="subviewbutton toolbaritem-combined-buttons" closemenu="none">
         <label class="toolbarbutton-text" data-l10n-id="appmenuitem-zoom"/>
         <toolbarbutton id="appMenu-zoomReduce-button2"
@@ -177,15 +192,9 @@
                      data-l10n-id="appmenuitem-more-tools"
                      closemenu="none"
                      />
-      <toolbarbutton id="appMenu-report-broken-site-button"
-                     class="subviewbutton subviewbutton-nav"
-                     data-l10n-id="appmenuitem-report-broken-site"
-                     closemenu="none"
-                     disabled="true"
-                     command="cmd_reportBrokenSite"/>
       <toolbarbutton id="appMenu-help-button2"
                      class="subviewbutton subviewbutton-nav"
-                     data-l10n-id="appmenuitem-help"
+                     data-l10n-id="appmenuitem-help-and-report"
                      closemenu="none"
                      />
       <toolbarseparator id="appMenu-referrals-separator" hidden="true"/>
@@ -250,6 +259,10 @@
                    key="showAllHistoryKb"
                    command="Browser:ShowAllHistory"
                    />
+    <html:sync-promo id="PanelUI-history-sync-promo"
+                     promo-type="history"
+                     closemenu="none"
+                     hidden="true"/>
   </panelview>
 
   <panelview id="PanelUI-profiles"
@@ -281,7 +294,7 @@
     <vbox id="PanelUI-containersItems"/>
   </panelview>
 
-  <panelview id="PanelUI-helpView" class="PanelUI-subView" data-l10n-id="appmenu-help-header" data-l10n-attrs="title">
+  <panelview id="PanelUI-helpView" class="PanelUI-subView" data-l10n-id="appmenu-help-and-report-header" data-l10n-attrs="title">
     <vbox id="PanelUI-helpItems" class="panel-subview-body"/>
   </panelview>
 
@@ -320,6 +333,10 @@
                    class="subviewbutton panel-subview-footer-button"
                    command="Browser:ShowAllBookmarks"
                    />
+    <html:sync-promo id="PanelUI-bookmarks-sync-promo"
+                     promo-type="bookmarks"
+                     closemenu="none"
+                     hidden="true"/>
   </panelview>
 
   <panelview id="PanelUI-profiler"
@@ -620,20 +637,67 @@
       <toolbaritem id="PanelUI-fxa-menu-message"
                    closemenu="none">
       </toolbaritem>
-      <toolbarbutton id="fxa-manage-account-button"
+      <hbox id="PanelUI-fxa-menu-signed-out-card"
+            align="center"
+            hidden="true">
+        <html:img class="fxa-menu-signed-out-avatar"
+                  alt=""
+                  src="chrome://browser/skin/fxa/avatar-empty.svg"/>
+        <vbox class="fxa-menu-signed-out-text" flex="1">
+          <label id="PanelUI-fxa-menu-signed-out-email"
+                 class="fxa-menu-signed-out-email"
+                 crop="end"/>
+          <description id="PanelUI-fxa-menu-signed-out-message"
+                       class="fxa-menu-signed-out-message"/>
+        </vbox>
+        <html:moz-button id="PanelUI-fxa-menu-signed-out-sign-in-button"
+                         data-l10n-id="fxa-menu-signed-out-sign-in-button"/>
+      </hbox>
+      <toolbarseparator id="PanelUI-fxa-menu-signed-out-separator" hidden="true"/>
+      <toolbarbutton id="PanelUI-fxa-menu-manage-account-button"
                      align="center"
                      class="subviewbutton"
-                     >
+                     hidden="true">
+        <image class="fxa-menu-manage-account-avatar" role="presentation"/>
         <vbox flex="1">
-          <label id="fxa-menu-header-title"
+          <label id="PanelUI-fxa-menu-manage-account-email"
+                 class="fxa-menu-manage-account-email"
+                 crop="end"/>
+          <label class="fxa-menu-manage-account-subtitle"
                  crop="end"
-                 data-l10n-id="appmenuitem-fxa-sign-in"/>
-          <label id="fxa-menu-header-description"
-                 crop="end"
-                 hidden="true"
-                 data-l10n-id="fxa-menu-turn-on-sync"/>
+                 data-l10n-id="fxa-menu-manage-account-subtitle"/>
         </vbox>
       </toolbarbutton>
+      <toolbarseparator id="PanelUI-fxa-menu-manage-account-separator" hidden="true"/>
+      <!-- Hidden holder for the account header title/description. These are no
+           longer shown directly (the signed-in, signed-out and promo states
+           each render their own header), but the sign-in CTA copy experiment
+           still populates and reads these labels. -->
+      <vbox id="fxa-menu-header" hidden="true">
+        <label id="fxa-menu-header-title"
+               crop="end"
+               data-l10n-id="appmenuitem-fxa-sign-in"/>
+        <label id="fxa-menu-header-description"
+               crop="end"
+               hidden="true"
+               data-l10n-id="fxa-menu-turn-on-sync"/>
+      </vbox>
+      <hbox id="PanelUI-fxa-menu-sign-in-promo"
+            align="center"
+            hidden="true">
+        <html:img class="fxa-menu-sign-in-promo-image"
+                  alt=""
+                  src="chrome://browser/content/kit-signed-out.svg"/>
+        <vbox class="fxa-menu-sign-in-promo-text" flex="1">
+          <label class="fxa-menu-sign-in-promo-heading"
+                 data-l10n-id="fxa-menu-sign-in-promo-heading"/>
+          <description class="fxa-menu-sign-in-promo-message"
+                       data-l10n-id="fxa-menu-sign-in-promo-message"/>
+        </vbox>
+        <html:moz-button type="primary"
+                         id="PanelUI-fxa-menu-sign-in-promo-button"
+                         data-l10n-id="fxa-menu-sign-in-promo-button"/>
+      </hbox>
       <vbox id="PanelUI-signedin-panel" hidden="true">
         <toolbarbutton id="PanelUI-fxa-menu-sync-status-button"
                        class="subviewbutton subviewbutton-nav fxa-menu-sync-status-button"
@@ -649,10 +713,15 @@
                    crop="end"/>
           </vbox>
         </toolbarbutton>
+        <toolbarbutton id="PanelUI-fxa-menu-get-firefox-mobile"
+                       class="subviewbutton subviewbutton-iconic"
+                       data-l10n-id="fxa-menu-get-firefox-mobile"
+                       hidden="true"/>
         <hbox id="PanelUI-fxa-menu-sync-status-off-card"
               class="fxa-menu-sync-status-off-card"
               align="center"
               hidden="true">
+          <image class="fxa-menu-sync-status-icon" role="presentation"/>
           <vbox flex="1">
             <label id="PanelUI-fxa-menu-sync-status-off-title"
                    class="fxa-menu-sync-status-title"
@@ -682,9 +751,6 @@
                     class="subviewbutton"
                     data-l10n-id="appmenu-fxa-setup-sync-new"/>
           </vbox>
-          <toolbarbutton id="PanelUI-fxa-menu-get-firefox-mobile"
-                  class="subviewbutton subviewbutton-iconic"
-                  data-l10n-id="fxa-menu-get-firefox-mobile"/>
           <toolbarseparator id="PanelUI-set-up-sync-separator" />
       </vbox>
       <vbox id="PanelUI-fxa-menu-devices-list" hidden="true"/>
@@ -694,28 +760,10 @@
               data-l10n-id="fxa-menu-sign-out"
               hidden="true"/>
       </vbox>
-      <toolbarseparator id="PanelUI-fxa-menu-profiles-header-separator"/>
       <label id="PanelUI-fxa-menu-profiles-header-label" crop="end" class="subview-subheader" data-l10n-id="appmenu-profiles-header" />
       <vbox id="PanelUI-fxa-menu-profile-buttons" hidden="true"/>
       <toolbarseparator id="PanelUI-fxa-menu-profiles-separator" hidden="true"/>
       <label id="PanelUI-fxa-menu-secure-sync-header" crop="end" class="subview-subheader" data-l10n-id="appmenu-secure-sync-header" hidden="true"/>
-      <!-- My Services panel - visible if the user has any of the listed services below set up on their account-->
-      <vbox id="PanelUI-fxa-menu-services" hidden="true">
-        <toolbarseparator />
-          <label crop="end" class="subview-subheader" data-l10n-id="appmenu-services-header" />
-        <!-- Relay -->
-          <vbox>
-            <toolbarbutton id="PanelUI-services-menu-relay-button" class="fxa-cta-button subviewbutton subviewbutton-iconic">
-              <vbox flex="1">
-                <hbox align="center">
-                  <image class="PanelUI-fxa-menu-relay-button ctaMenuLogo" role="presentation" />
-                  <label id="fxa-menu-header-title" crop="end" data-l10n-id="appmenuitem-relay-title" />
-                </hbox>
-                <label id="cta-menu-header-description" crop="end" data-l10n-id="appmenuitem-services-relay-description" />
-              </vbox>
-            </toolbarbutton>
-          </vbox>
-      </vbox>
       <!-- updateCTAPanel will control if we show this panel -->
       <vbox id="PanelUI-fxa-cta-menu" hidden="true">
         <toolbarseparator id="PanelUI-fxa-menu-privacy-tools-separator" hidden="true"/>
@@ -724,8 +772,8 @@
           <hbox align="center">
             <image class="PanelUI-fxa-menu-monitor-button ctaMenuLogo" role="presentation" />
             <vbox flex="1">
-              <label id="fxa-menu-header-title" crop="end" data-l10n-id="appmenuitem-monitor-title2" />
-              <label id="cta-menu-header-description" crop="end" data-l10n-id="appmenuitem-monitor-description2" />
+              <label id="fxa-menu-header-title" class="cta-menu-title" crop="end" data-l10n-id="appmenuitem-monitor-title2" />
+              <label id="cta-menu-header-description" class="cta-menu-description" crop="end" data-l10n-id="appmenuitem-monitor-description2" />
             </vbox>
           </hbox>
         </toolbarbutton>
@@ -733,8 +781,8 @@
           <hbox align="center">
             <image class="PanelUI-fxa-menu-relay-button ctaMenuLogo" role="presentation" />
             <vbox flex="1">
-              <label id="fxa-menu-header-title" crop="end" data-l10n-id="appmenuitem-relay-title2" />
-              <label id="cta-menu-header-description" crop="end" data-l10n-id="appmenuitem-relay-description2" />
+              <label id="fxa-menu-header-title" class="cta-menu-title" crop="end" data-l10n-id="appmenuitem-relay-title2" />
+              <label id="cta-menu-header-description" class="cta-menu-description" crop="end" data-l10n-id="appmenuitem-relay-description2" />
             </vbox>
           </hbox>
         </toolbarbutton>
@@ -742,8 +790,16 @@
           <hbox align="center">
             <image class="PanelUI-fxa-menu-vpn-button ctaMenuLogo" role="presentation" />
             <vbox flex="1">
-              <label id="fxa-menu-header-title" crop="end" data-l10n-id="appmenuitem-vpn-title2" />
-              <label id="cta-menu-header-description" crop="end" data-l10n-id="appmenuitem-vpn-description3" />
+              <label id="fxa-menu-header-title" class="cta-menu-title" crop="end" data-l10n-id="appmenuitem-vpn-title2" />
+              <label id="cta-menu-header-description" class="cta-menu-description" crop="end" data-l10n-id="appmenuitem-vpn-description5" />
+            </vbox>
+          </hbox>
+        </toolbarbutton>
+        <toolbarbutton id="PanelUI-fxa-menu-share-firefox" class="fxa-cta-button subviewbutton subviewbutton-iconic">
+          <hbox align="center">
+            <image class="PanelUI-fxa-menu-share-firefox-button ctaMenuLogo" role="presentation" />
+            <vbox flex="1">
+              <label id="fxa-menu-header-title" crop="end" data-l10n-id="appmenuitem-share-firefox-title" />
             </vbox>
           </hbox>
         </toolbarbutton>

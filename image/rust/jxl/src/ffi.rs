@@ -234,6 +234,49 @@ pub unsafe extern "C" fn jxl_decoder_get_icc_profile(
     }
 }
 
+/// Writes the output color profile's CICP colour_primaries,
+/// transfer_characteristics and rendering_intent to the out-params and returns
+/// true when the output color space is a simple RGB encoding representable as
+/// standard CICP values (see `JxlApiDecoder::get_output_cicp`). Returns false
+/// otherwise, in which case the caller should fall back to
+/// `jxl_decoder_get_icc_profile`. rendering_intent uses the ICC codes
+/// (0=perceptual, 1=relative, 2=saturation, 3=absolute).
+///
+/// # Safety
+/// - `decoder` must be a valid pointer returned by `jxl_decoder_new`.
+/// - `out_primaries`, `out_transfer` and `out_rendering_intent` must be valid
+///   writable pointers to `u8`.
+#[no_mangle]
+pub unsafe extern "C" fn jxl_decoder_get_cicp(
+    decoder: *const JxlApiDecoder,
+    out_primaries: *mut u8,
+    out_transfer: *mut u8,
+    out_rendering_intent: *mut u8,
+) -> bool {
+    debug_assert!(
+        !decoder.is_null()
+            && !out_primaries.is_null()
+            && !out_transfer.is_null()
+            && !out_rendering_intent.is_null()
+    );
+
+    // SAFETY: Caller guarantees `decoder` is a valid, non-null pointer from `jxl_decoder_new`.
+    let decoder = unsafe { &*decoder };
+
+    match decoder.get_output_cicp() {
+        Some((primaries, transfer, rendering_intent)) => {
+            // SAFETY: Caller guarantees the out-params are valid writable pointers.
+            unsafe {
+                *out_primaries = primaries;
+                *out_transfer = transfer;
+                *out_rendering_intent = rendering_intent;
+            }
+            true
+        }
+        None => false,
+    }
+}
+
 /// # Safety
 /// `decoder` must be a valid pointer returned by `jxl_decoder_new`.
 #[no_mangle]
@@ -320,14 +363,4 @@ pub unsafe extern "C" fn jxl_decoder_flush_pixels(
         Ok(false) => JxlDecoderStatus::NeedMoreData,
         Err(_) => JxlDecoderStatus::Error,
     }
-}
-
-/// # Safety
-/// `decoder` must be a valid pointer returned by `jxl_decoder_new`.
-#[no_mangle]
-pub unsafe extern "C" fn jxl_decoder_num_completed_passes(decoder: *const JxlApiDecoder) -> u32 {
-    debug_assert!(!decoder.is_null());
-    // SAFETY: Caller guarantees valid pointer.
-    let decoder = unsafe { &*decoder };
-    decoder.num_completed_passes() as u32
 }

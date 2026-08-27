@@ -561,3 +561,64 @@ add_task(async function test_input_selection() {
 
   sandbox.restore();
 });
+
+/**
+ * Check that IME composition hides the shortcuts panel visually
+ */
+add_task(async function test_ime_composition_hides_panel() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.chat.shortcuts", true],
+      ["browser.ml.chat.provider", "http://localhost:8080"],
+    ],
+  });
+
+  await BrowserTestUtils.withNewTab("data:text/plain,hello", async browser => {
+    await SimpleTest.promiseFocus(browser);
+
+    const selectPromise = SpecialPowers.spawn(browser, [], () => {
+      ContentTaskUtils.waitForCondition(() => content.getSelection());
+    });
+    goDoCommand("cmd_selectAll");
+    await selectPromise;
+    BrowserTestUtils.synthesizeMouseAtCenter(
+      browser,
+      { type: "mouseup" },
+      browser
+    );
+
+    const panel = document.getElementById("selection-shortcut-action-panel");
+    await TestUtils.waitForCondition(
+      () => panel.getAttribute("panelopen") === "true",
+      "Panel should open after text selection"
+    );
+
+    Assert.ok(!panel.hasAttribute("ime-hiding"), "No ime-hiding before IME");
+
+    // Simulate IME composition - compositionstart sets #compositionActive, then
+    // selectionchange triggers a CSS-only hide instead of hidePopup().
+    await SpecialPowers.spawn(browser, [], () => {
+      content.document.dispatchEvent(
+        new content.CompositionEvent("compositionstart", {
+          bubbles: true,
+          data: "",
+        })
+      );
+      content.document.dispatchEvent(
+        new content.Event("selectionchange", { bubbles: true })
+      );
+    });
+
+    await TestUtils.waitForCondition(
+      () => panel.hasAttribute("ime-hiding"),
+      "Panel should have ime-hiding attribute during IME composition"
+    );
+    Assert.equal(
+      panel.getAttribute("panelopen"),
+      "true",
+      "hidePopup was not called during IME composition"
+    );
+  });
+
+  await SpecialPowers.popPrefEnv();
+});

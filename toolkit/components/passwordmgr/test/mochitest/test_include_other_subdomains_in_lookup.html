@@ -80,7 +80,7 @@
   add_named_task("including http login when includeOtherSubdomainsInLookup is false", async () => {
     await setPreferencesForTask(["signon.includeOtherSubdomainsInLookup", false]);
     await setStoredLoginsDuringTask(
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       [`http://${domainname}`, `https://${domainname}`, null, "example-user-http", "example-password", "uname", "pword"],
     );
     const form = setContentForTask(formTemplate);
@@ -93,7 +93,7 @@
   add_named_task("including http login when includeOtherSubdomainsInLookup is true", async () => {
     await setPreferencesForTask(["signon.includeOtherSubdomainsInLookup", true]);
     await setStoredLoginsDuringTask(
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       [`http://${domainname}`, `https://${domainname}`, null, "example-user-http", "example-password", "uname", "pword"],
     );
     const form = setContentForTask(formTemplate);
@@ -107,7 +107,7 @@
     await setPreferencesForTask(["signon.includeOtherSubdomainsInLookup", false]);
     await setStoredLoginsDuringTask(
       [`https://${domainname}`, `https://${domainname}`, null, "example-user-https", "example-password", "uname", "pword"],
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       [`http://${domainname}`, `https://${domainname}`, null, "example-user-http", "example-password", "uname", "pword"],
     );
     const form = setContentForTask(formTemplate);
@@ -121,7 +121,7 @@
     await setPreferencesForTask(["signon.includeOtherSubdomainsInLookup", true]);
     await setStoredLoginsDuringTask(
       [`https://${domainname}`, `https://${domainname}`, null, "example-user-https", "example-password", "uname", "pword"],
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       [`http://${domainname}`, `https://${domainname}`, null, "example-user-http", "example-password", "uname", "pword"],
     );
     const form = setContentForTask(formTemplate);
@@ -138,9 +138,9 @@
         // These two logins should never be visible on https: versions of
         // *.example.com since the login is for http: and an https: login exists
         // for this username.
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         [`http://${domainname}`, `https://${domainname}`, null, "example-user", "example-password", "uname", "pword"],
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         [`http://old.${domainname}`, `https://old.${domainname}`, null, "example-user", "old-example-password", "uname", "pword"],
         ...loginInfos,
       ]

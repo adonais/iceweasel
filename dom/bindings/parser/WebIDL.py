@@ -6058,6 +6058,11 @@ class IDLAttribute(IDLInterfaceMember):
                     "[UseCounter] must not be used on a stringifier attribute",
                     [attr.location, self.location],
                 )
+            if not attr.noArguments():
+                raise WebIDLError(
+                    "[UseCounter] on attributes must not have a value",
+                    [attr.location, self.location],
+                )
         elif identifier == "Unscopable":
             if not attr.noArguments():
                 raise WebIDLError(
@@ -7127,6 +7132,11 @@ class IDLMethod(IDLInterfaceMember, IDLScope):
             if self.isSpecial():
                 raise WebIDLError(
                     "[UseCounter] must not be used on a special operation",
+                    [attr.location, self.location],
+                )
+            if attr.hasValue() and attr.value() != "PerOverload":
+                raise WebIDLError(
+                    '[UseCounter] value must be "PerOverload" if specified',
                     [attr.location, self.location],
                 )
         elif identifier == "Unscopable":

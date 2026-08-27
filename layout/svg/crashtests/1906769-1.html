@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<body>
+<svg width="800px" height="500px" viewBox="-50 -50 100 100">
+  <g style="fill:#000; stroke:#fff; stroke-linecap:round; stroke-linejoin:miter; stroke-miterlimit:4;">
+    <g id="group" transform="scale(1,1)" style="stroke-width: 0.212951;">
+      <path d="m -4.773143,-2.70028 c -0.660147,0.35847 -1.429963,0.66725 -1.429963,1.5226 0,0.57852 0.209401,0.93698 0.584904,1.20672 H 5.641564 c 0.361661,-0.28393 0.561481,-0.63175 0.561481,-1.20672 0,-0.85535 -0.7975,-1.16768 -1.43032,-1.5226"/>
+    </g>
+  </g>
+</svg>
+<script>
+// Shrink the group by a decade per frame while growing the stroke width by the
+// inverse, so the stroked geometry stays visually constant while the group's
+// local coordinate space grows without bound. Once the raster scale drops below
+// the point where the content can cover a device pixel, the blob for this group
+// must not be sized from those (nscoord-saturated) local bounds.
+const g = document.getElementById("group");
+let scale = 1;
+let exp = 0;
+
+function step() {
+  if (exp <= -14) {
+    document.documentElement.removeAttribute("class");
+    return;
+  }
+  scale *= 0.1;
+  exp -= 1;
+  g.setAttribute("transform", "scale(" + scale + ")");
+  g.setAttribute("style", "stroke-width:" + (0.212952 / scale));
+  requestAnimationFrame(() => requestAnimationFrame(step));
+}
+requestAnimationFrame(step);
+</script>
+</body>
+</html>

@@ -81,6 +81,7 @@ skip-if = [
 https_first_disabled = true
 skip-if = [
   "debug", # bug 1369731
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && opt && nova", # Bug 2057534
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # platform migration
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1869787
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1707735

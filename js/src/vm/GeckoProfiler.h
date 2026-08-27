@@ -281,21 +281,6 @@ class MOZ_RAII GeckoProfilerBaselineOSRMarker {
   mozilla::DebugOnly<uint32_t> spBefore_ = 0;
 };
 
-/*
- * This class is used to suppress profiler sampling during
- * critical sections where stack state is not valid.
- */
-class MOZ_RAII AutoSuppressProfilerSampling {
- public:
-  explicit AutoSuppressProfilerSampling(JSContext* cx);
-
-  ~AutoSuppressProfilerSampling();
-
- private:
-  JSContext* cx_;
-  bool previouslyEnabled_;
-};
-
 } /* namespace js */
 
 #endif /* vm_GeckoProfiler_h */

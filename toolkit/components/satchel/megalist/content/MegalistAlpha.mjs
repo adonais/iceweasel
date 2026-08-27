@@ -15,6 +15,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 // Directly import moz-button here, otherwise, moz-button will be loaded and upgraded on DOMContentLoaded, after MegalistAlpha is first updated.
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/elements/moz-input-search.mjs";
 
 // eslint-disable-next-line import/no-unassigned-import
 import { PasswordCard } from "chrome://global/content/megalist/components/password-card/password-card.mjs";
@@ -40,7 +42,8 @@ const VIEW_MODES = {
   ALERTS: "Alerts",
 };
 
-const INPUT_CHANGE_DELAY = 300;
+const REVEAL_BUTTON_AGENT_SHEET =
+  "chrome://global/content/megalist/megalist-agent.css";
 
 export class MegalistAlpha extends MozLitElement {
   constructor() {
@@ -51,7 +54,6 @@ export class MegalistAlpha extends MozLitElement {
     this.notification = null;
     this.reauthResolver = null;
     this.displayMode = DISPLAY_MODES.ALL;
-    this.inputChangeTimeout = null;
     this.viewMode = VIEW_MODES.LIST;
     this.selectedRecord = null;
     this.sidebarHiding = false;
@@ -107,8 +109,21 @@ export class MegalistAlpha extends MozLitElement {
 
   connectedCallback() {
     super.connectedCallback();
+    this.#hideNativeRevealButton();
     this.#messageToViewModel("Refresh");
     this.#sendCommand("UpdateDisplayMode", { value: this.displayMode });
+  }
+
+  #hideNativeRevealButton() {
+    try {
+      const utils = window.windowUtils;
+      utils.loadSheetUsingURIString(
+        REVEAL_BUTTON_AGENT_SHEET,
+        utils.AGENT_SHEET
+      );
+    } catch (e) {
+      // NS_ERROR_INVALID_ARG means the sheet is already loaded for this document.
+    }
   }
 
   async getUpdateComplete() {
@@ -141,16 +156,9 @@ export class MegalistAlpha extends MozLitElement {
     this[functionName]?.(detail.data);
   }
 
-  #onInputChange(e) {
-    const searchText = e.target.value;
-    this.searchText = searchText;
-    this.viewMode = VIEW_MODES.LIST;
-    this.selectedRecord = null;
-
-    this.#debounce(
-      () => this.#messageToViewModel("UpdateFilter", { searchText }),
-      INPUT_CHANGE_DELAY
-    )();
+  #onSearchQuery(e) {
+    this.searchText = e.detail.query;
+    this.#messageToViewModel("UpdateFilter", { searchText: this.searchText });
   }
 
   #onAddButtonClick(trigger) {
@@ -317,15 +325,6 @@ export class MegalistAlpha extends MozLitElement {
     return [header, records];
   }
 
-  #debounce(callback, delay) {
-    return () => {
-      clearTimeout(this.inputChangeTimeout);
-      this.inputChangeTimeout = setTimeout(() => {
-        callback();
-      }, delay);
-    };
-  }
-
   #onSidebarWillHide(e) {
     // Prevent hiding the sidebar if a password is being edited and show a
     // message asking to confirm if the user wants to discard their changes.
@@ -335,8 +334,8 @@ export class MegalistAlpha extends MozLitElement {
 
     const loginForm = this.shadowRoot.querySelector("login-form");
     const loginFromForm = {
-      origin: loginForm.originValue || loginForm.originField.input.value,
-      username: loginForm.usernameField.input.value.trim(),
+      origin: loginForm.originValue || loginForm.originField?.value,
+      username: loginForm.usernameField.value.trim(),
       password: loginForm.passwordField.value,
     };
     if (this.#hasPendingEditChange(loginFromForm)) {
@@ -686,25 +685,12 @@ export class MegalistAlpha extends MozLitElement {
   }
 
   renderSearch() {
-    const hasResults = this.records.length;
-    const describedBy = hasResults ? "" : "no-results-message";
     return html`
-      <div
-        class="search-container"
-        @click=${() => {
-          this.shadowRoot.querySelector(".search").focus();
-        }}
-      >
-        <div class="search-icon"></div>
-        <input
-          class="search"
-          type="search"
-          data-l10n-id="contextual-manager-filter-input"
-          .value=${this.searchText}
-          aria-describedby=${describedBy}
-          @input=${e => this.#onInputChange(e)}
-        />
-      </div>
+      <moz-input-search
+        data-l10n-id="contextual-manager-filter-input"
+        data-l10n-attrs="placeholder, aria-label"
+        @MozInputSearch:search=${e => this.#onSearchQuery(e)}
+      ></moz-input-search>
     `;
   }
 

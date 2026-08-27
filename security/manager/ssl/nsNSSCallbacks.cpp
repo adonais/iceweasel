@@ -7,6 +7,7 @@
 
 #include "EnabledSignatureSchemes.h"
 #include "NSSSocketControl.h"
+#include "PKCS11ModuleDB.h"
 #include "SSLTokensCache.h"
 #include "ScopedNSSTypes.h"
 #include "SharedCertVerifier.h"
@@ -20,7 +21,6 @@
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/SyncRunnable.h"
-#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
 #include "mozpkix/pkixtypes.h"
 #include "nsComponentManagerUtils.h"
@@ -35,8 +35,6 @@
 #include "nsISupportsPriority.h"
 #include "nsIUploadChannel.h"
 #include "nsIWebProgressListener.h"
-#include "nsIWindowWatcher.h"
-#include "nsIWritablePropertyBag2.h"
 #include "nsNSSCertHelper.h"
 #include "nsNSSCertificate.h"
 #include "nsNSSComponent.h"
@@ -605,49 +603,8 @@ static char* ShowProtectedAuthPrompt(PK11SlotInfo* slot) {
     obsService->RemoveObserver(cancelObserver, "pk11-protected-auth-cancel");
   });
 
-  // Open the informational dialog only if there's an active window to host
-  // it. In headless contexts (xpcshell, very early startup) there's no
-  // WindowCreator registered and OpenWindow would assert/fail; the
-  // background C_Login still runs and SpinEventLoopUntil below waits on it.
-  nsCOMPtr<nsIWindowWatcher> ww =
-      do_GetService("@mozilla.org/embedcomp/window-watcher;1");
-  nsCOMPtr<mozIDOMWindowProxy> activeWindow;
-  if (ww) {
-    ww->GetActiveWindow(getter_AddRefs(activeWindow));
-  }
-  if (activeWindow) {
-    // Open a modal informational dialog that auto-closes when authentication
-    // completes. It has only a Cancel button — out-of-band PIN entry on the
-    // device itself is the sole confirmation mechanism.
-    nsCOMPtr<nsIWritablePropertyBag2> dialogArgs =
-        do_CreateInstance("@mozilla.org/hash-property-bag;1");
-    if (!dialogArgs) {
-      return nullptr;
-    }
-    rv = dialogArgs->SetPropertyAsAString(
-        u"tokenName"_ns, NS_ConvertUTF8toUTF16(PK11_GetTokenName(slot)));
-    if (NS_FAILED(rv)) {
-      return nullptr;
-    }
-    rv = dialogArgs->SetPropertyAsAString(u"promptId"_ns, promptId);
-    if (NS_FAILED(rv)) {
-      return nullptr;
-    }
-    // Inlined nsNSSDialogHelper::openDialog: the helper lives in
-    // security/manager/pki/, which is desktop-only, but this file builds on
-    // all platforms. Open the chrome XUL dialog directly via the window
-    // watcher and use AutoNoJSAPI so the new window's initial about:blank
-    // gets a system principal.
-    mozilla::dom::AutoNoJSAPI nojsapi;
-    nsCOMPtr<mozIDOMWindowProxy> newWindow;
-    rv = ww->OpenWindow(activeWindow,
-                        "chrome://pippki/content/protectedAuth.xhtml"_ns,
-                        "_blank"_ns, "centerscreen,chrome,modal,titlebar"_ns,
-                        dialogArgs, getter_AddRefs(newWindow));
-    if (NS_FAILED(rv)) {
-      return nullptr;
-    }
-  }
+  nsAutoCString tokenName(PK11_GetTokenName(slot));
+  ShowProtectedAuthDialog(tokenName, promptId);
 
   // Wait until C_Login returns, the user cancels, or shutdown.
   MOZ_ALWAYS_TRUE(SpinEventLoopUntil("ShowProtectedAuthPrompt"_ns, [&state]() {
@@ -896,7 +853,8 @@ static void PreliminaryHandshakeDone(PRFileDesc* fd) {
     } else {
       socketControl->SetNegotiatedNPN(nullptr, 0);
     }
-    mozilla::glean::ssl::npn_type.AccumulateSingleSample(state);
+    glean::tls::npn_type.EnumGet(static_cast<glean::tls::NpnTypeLabel>(state))
+        .Add();
   } else {
     socketControl->SetNegotiatedNPN(nullptr, 0);
   }
@@ -973,8 +931,10 @@ SECStatus CanFalseStartCallback(PRFileDesc* fd, void* client_data,
   // to the same protocol we previously saw for the server, after the
   // first successful connection to the server.
 
-  glean::ssl::reasons_for_not_false_starting.AccumulateSingleSample(
-      reasonsForNotFalseStarting);
+  glean::tls::reasons_for_not_false_starting
+      .EnumGet(static_cast<glean::tls::ReasonsForNotFalseStartingLabel>(
+          reasonsForNotFalseStarting))
+      .Add();
 
   if (reasonsForNotFalseStarting == 0) {
     *canFalseStart = PR_TRUE;
@@ -985,44 +945,6 @@ SECStatus CanFalseStartCallback(PRFileDesc* fd, void* client_data,
   }
 
   return SECSuccess;
-}
-
-static unsigned int NonECCKeySize(uint32_t bits) {
-  return bits < 512      ? 1
-         : bits == 512   ? 2
-         : bits < 768    ? 3
-         : bits == 768   ? 4
-         : bits < 1024   ? 5
-         : bits == 1024  ? 6
-         : bits < 1280   ? 7
-         : bits == 1280  ? 8
-         : bits < 1536   ? 9
-         : bits == 1536  ? 10
-         : bits < 2048   ? 11
-         : bits == 2048  ? 12
-         : bits < 3072   ? 13
-         : bits == 3072  ? 14
-         : bits < 4096   ? 15
-         : bits == 4096  ? 16
-         : bits < 8192   ? 17
-         : bits == 8192  ? 18
-         : bits < 16384  ? 19
-         : bits == 16384 ? 20
-                         : 0;
-}
-
-// XXX: This attempts to map a bit count to an ECC named curve identifier. In
-// the vast majority of situations, we only have the Suite B curves available.
-// In that case, this mapping works fine. If we were to have more curves
-// available, the mapping would be ambiguous since there could be multiple
-// named curves for a given size (e.g. secp256k1 vs. secp256r1). We punt on
-// that for now. See also NSS bug 323674.
-static unsigned int ECCCurve(uint32_t bits) {
-  return bits == 255   ? 29  // Curve25519
-         : bits == 256 ? 23  // P-256
-         : bits == 384 ? 24  // P-384
-         : bits == 521 ? 25  // P-521
-                       : 0;  // Unknown
 }
 
 static void AccumulateCipherSuite(const SSLChannelInfo& channelInfo) {
@@ -1102,6 +1024,79 @@ static void AccumulateCipherSuite(const SSLChannelInfo& channelInfo) {
   glean::tls::cipher_suite.AccumulateSingleSample(value);
 }
 
+const nsLiteralCString KeyExchangeAlgorithmNameFromType(SSLKEAType keaType) {
+  switch (keaType) {
+    case ssl_kea_rsa:
+      return "rsa"_ns;
+      break;
+    case ssl_kea_dh:
+      return "dh"_ns;
+      break;
+    case ssl_kea_dh_psk:
+      return "dh_psk"_ns;
+      break;
+    case ssl_kea_ecdh:
+      return "ecdh"_ns;
+      break;
+    case ssl_kea_ecdh_psk:
+      return "ecdh_psk"_ns;
+      break;
+    case ssl_kea_ecdh_hybrid:
+      return "ecdh_hybrid"_ns;
+      break;
+    case ssl_kea_ecdh_hybrid_psk:
+      return "ecdh_hybrid_psk"_ns;
+      break;
+    case ssl_kea_kem:
+      return "kem"_ns;
+      break;
+    case ssl_kea_kem_psk:
+      return "kem_psk"_ns;
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("unhandled key exchange algorithm");
+      return "__other__"_ns;
+      break;
+  }
+}
+
+glean::tls::KeaEcdheCurveLabel ECDHECurveLabelFromNamedGroup(
+    SSLNamedGroup namedGroup) {
+  switch (namedGroup) {
+    case ssl_grp_ec_secp256r1:
+      return glean::tls::KeaEcdheCurveLabel::eP256;
+    case ssl_grp_ec_secp384r1:
+      return glean::tls::KeaEcdheCurveLabel::eP384;
+    case ssl_grp_ec_secp521r1:
+      return glean::tls::KeaEcdheCurveLabel::eP521;
+    case ssl_grp_ec_curve25519:
+      return glean::tls::KeaEcdheCurveLabel::eCurve25519;
+    default:
+      MOZ_ASSERT_UNREACHABLE("unhandled or invalid group");
+      return glean::tls::KeaEcdheCurveLabel::e__Other__;
+  }
+}
+
+// In terms of ECDSA, only keys on secp256r1, secp384r1, or secp521r1 may be
+// present in the server certificate, and thus there should be a 1-to-1
+// relationship between the bit length of the auth key and the curve. If other
+// curves are ever accepted in server certificates in the future, this property
+// may not hold.
+glean::tls::AuthEcdsaCurveLabel AuthCurveLabelFromBitLength(
+    uint32_t curveLengthBits) {
+  switch (curveLengthBits) {
+    case 256:
+      return glean::tls::AuthEcdsaCurveLabel::eP256;
+    case 384:
+      return glean::tls::AuthEcdsaCurveLabel::eP384;
+    case 521:
+      return glean::tls::AuthEcdsaCurveLabel::eP521;
+    default:
+      MOZ_ASSERT_UNREACHABLE("unhandled or invalid ecdsa auth curve size");
+      return glean::tls::AuthEcdsaCurveLabel::e__Other__;
+  }
+}
+
 void HandshakeCallback(PRFileDesc* fd, void* client_data) {
   // Do the bookkeeping that needs to be done after the
   // server's ServerHello...ServerHelloDone have been processed, but that
@@ -1142,56 +1137,30 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
   if (rv != SECSuccess) {
     return;
   }
-  // keyExchange null=0, rsa=1, dh=2, fortezza=3, ecdh=4, ecdh_hybrid=8
-  if (infoObject->IsFullHandshake()) {
-    glean::ssl::key_exchange_algorithm_full.AccumulateSingleSample(
-        channelInfo.keaType);
-  } else {
-    glean::ssl::key_exchange_algorithm_resumed.AccumulateSingleSample(
-        channelInfo.keaType);
-  }
+
+  glean::tls::key_exchange_algorithm
+      .Get(infoObject->IsFullHandshake() ? "full"_ns : "resumed"_ns,
+           KeyExchangeAlgorithmNameFromType(channelInfo.keaType))
+      .Add();
 
   if (infoObject->IsFullHandshake()) {
-    switch (channelInfo.keaType) {
-      case ssl_kea_rsa:
-        glean::ssl::kea_rsa_key_size_full.AccumulateSingleSample(
-            NonECCKeySize(channelInfo.keaKeyBits));
-        break;
-      case ssl_kea_dh:
-        glean::ssl::kea_dhe_key_size_full.AccumulateSingleSample(
-            NonECCKeySize(channelInfo.keaKeyBits));
-        break;
-      case ssl_kea_ecdh:
-        glean::ssl::kea_ecdhe_curve_full.AccumulateSingleSample(
-            ECCCurve(channelInfo.keaKeyBits));
-        break;
-      case ssl_kea_ecdh_hybrid:
-      case ssl_kea_kem:
-        break;
-      default:
-        MOZ_CRASH("impossible KEA");
-        break;
+    if (channelInfo.keaType == ssl_kea_ecdh) {
+      glean::tls::kea_ecdhe_curve
+          .EnumGet(ECDHECurveLabelFromNamedGroup(channelInfo.keaGroup))
+          .Add();
     }
 
-    glean::ssl::auth_algorithm_full.AccumulateSingleSample(
-        channelInfo.authType);
+    glean::tls::auth_algorithm
+        .EnumGet(
+            static_cast<glean::tls::AuthAlgorithmLabel>(channelInfo.authType))
+        .Add();
 
     // RSA key exchange doesn't use a signature for auth.
-    if (channelInfo.keaType != ssl_kea_rsa) {
-      switch (channelInfo.authType) {
-        case ssl_auth_rsa:
-        case ssl_auth_rsa_sign:
-          glean::ssl::auth_rsa_key_size_full.AccumulateSingleSample(
-              NonECCKeySize(channelInfo.authKeyBits));
-          break;
-        case ssl_auth_ecdsa:
-          glean::ssl::auth_ecdsa_curve_full.AccumulateSingleSample(
-              ECCCurve(channelInfo.authKeyBits));
-          break;
-        default:
-          MOZ_CRASH("impossible auth algorithm");
-          break;
-      }
+    if (channelInfo.keaType != ssl_kea_rsa &&
+        channelInfo.authType == ssl_auth_ecdsa) {
+      glean::tls::auth_ecdsa_curve
+          .EnumGet(AuthCurveLabelFromBitLength(channelInfo.authKeyBits))
+          .Add();
     }
   }
 

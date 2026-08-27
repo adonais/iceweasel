@@ -88,6 +88,12 @@ body,
   grid-template-columns: auto min-content;
   width: 100%;
   user-select: none;
+
+  /* Add some inline padding in Nova so the close icon isn't clipped by
+     the browser  container border radius */
+  @media -moz-pref("browser.nova.enabled") {
+    padding-inline: 8px;
+  }
 }
 
 #toolbar :is(select, button):focus-visible {
@@ -211,8 +217,8 @@ body,
 @media (max-width: 800px) {
   /* When room becomes scarce, no need to constrain the selectors with a minmax like we
      do in larger viewports, here they can occupy 1fr. We should also make sure to keep
-     the max-width value of the media-query in sync with the resizeToolbarObserver
-     in devtools/client/responsive/ui.js */
+     the max-width value of the media-query in sync with the MediaQueryList
+     in devtools/client/responsive/index.js */
   #toolbar.user-agent #toolbar-center-controls {
     grid-template-columns:
       [device-selector]
@@ -318,6 +324,15 @@ body,
 /* Override the style defined in tooltips.css */
 .tooltip-container[type="doorhanger"] .menuitem > .command.iconic.device-selector-item > .label::before {
   fill: var(--theme-icon-dimmed-color);
+}
+
+@media -moz-pref("browser.nova.enabled") {
+  /* In Nova, remove the inline-end padding and margin so the close button aligns with
+     the ones in .notificationBox */
+  #toolbar #exit-button {
+    margin-inline-end: 0;
+    padding-inline-end: 0;
+  }
 }
 
 /**

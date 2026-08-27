@@ -6,6 +6,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
+  normalizeChatLog:
+    "moz-src:///browser/components/aiwindow/ui/modules/ChatUtils.sys.mjs",
 });
 
 export const FeedbackModal = {
@@ -39,7 +41,10 @@ export const FeedbackModal = {
 
         if (textboxTile && metadata.chatLog) {
           textboxTile.data.content = JSON.stringify(
-            { metadata: metadata.metadata, ...metadata.chatLog },
+            {
+              metadata: metadata.metadata,
+              ...lazy.normalizeChatLog(metadata.chatLog),
+            },
             null,
             2
           );
@@ -57,7 +62,7 @@ export const FeedbackModal = {
             textboxTile.data.alternateContent = JSON.stringify(
               {
                 metadata: metadata.metadata,
-                ...metadata.chatLogWithoutPageContent,
+                ...lazy.normalizeChatLog(metadata.chatLogWithoutPageContent),
               },
               null,
               2

@@ -7,7 +7,7 @@ const { AddonTestUtils } = ChromeUtils.importESModule(
 AddonTestUtils.initMochitest(this);
 
 const AMO_TEST_HOST = "addons.allizom.org";
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 const AMO_TEST_URL = `http://${AMO_TEST_HOST}/`;
 
 const amoServer = AddonTestUtils.createHttpServer({

@@ -8,57 +8,52 @@
   <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
 </head>
 <body>
-<span id="spanBefore"></span>
 <div></div>
-<span id="spanAfter"></span>
 <script>
 'use strict';
 
 const host = document.querySelector('div');
-const editContext = new EditContext({text: 'hello'});
-host.editContext = editContext;
+let editContext;
 const spanBefore = document.getElementById('spanBefore');
 const spanAfter = document.getElementById('spanAfter');
+let provideCharacterBounds;
 
 function check(func, shouldFire, message) {
   let fired = false;
-  editContext.addEventListener('characterboundsupdate', () => fired = true);
+  editContext.addEventListener('characterboundsupdate', () => fired = true, {once: true});
   func();
   synthesizeQueryTextRect(3, 1);
-  is(fired, shouldFire, `Should${shouldFire ? " " : " not "} fire characterboundsupdate when ${message}.`);
+  is(fired, shouldFire, `Should${shouldFire ? " " : " not "}fire characterboundsupdate when ${message} (provideCharacterBounds = ${provideCharacterBounds}).`);
 }
 
-add_task(async () => {
-  await SimpleTest.promiseFocus();
+function runTests() {
+  editContext = new EditContext({text: 'hello'});
+  host.editContext = editContext;
   host.focus();
-  editContext.oncharacterboundsupdate = () => {
-    editContext.updateCharacterBounds(3, [new DOMRect(10,20,30,40)]);
-  };
-  check(() => {}, true, 'rectangle is first queried.');
+  // Clear any existing character bounds
+  editContext.updateCharacterBounds(0, []);
   check(() => {
-    spanAfter.textContent = 'something';
-    spanAfter.getBoundingClientRect();
+    editContext.updateSelection(3, 4);
+  }, true, 'Selection is set without any character bounds.');
+  if (provideCharacterBounds) {
+    editContext.updateCharacterBounds(3, [new DOMRect(10,20,30,40)]);
+  }
+  check(() => {
+    host.after(document.createElement('hr'));
+    document.body.getBoundingClientRect();
   }, false, 'unrelated element is reflowed');
   check(() => {
-    spanBefore.textContent = 'something';
-    spanBefore.getBoundingClientRect();
-  }, true, 'associated element bounding rect changes');
-  for (let viaUserInput of [false, true]) {
-    function insertChar(start, end, replacement) {
-      if (viaUserInput) {
-        editContext.updateSelection(start, end);
-        synthesizeKey(replacement);
-      } else {
-        editContext.updateText(start, end, replacement);
-      }
-    }
-    check(() => {
-      insertChar(1, 2, 'x');
-    }, true, 'text before queried character changes');
-    check(() => {
-      insertChar(4, 4, 'z');
-    }, false, 'text after queried character changes');
-  }
+    editContext.updateSelection(3, 3);
+    synthesizeKey('x');
+  }, true, 'user inputs text');
+  check(() => {
+    editContext.updateText(1, 2, 'y');
+    // This will only fire characterboundsupdate if we actually provided
+    // the character bounds. Otherwise, we assume nothing relevant has changed.
+  }, provideCharacterBounds, 'text before queried character changes');
+  check(() => {
+    editContext.updateText(4, 4, 'z');
+  }, false, 'text after queried character changes');
   check(() => {
     editContext.updateControlBounds(new DOMRect(99, 99, 1, 1));
   }, true, 'control bounds are set');
@@ -66,10 +61,18 @@ add_task(async () => {
     editContext.updateControlBounds(new DOMRect(999, 9, 1, 1));
   }, true, 'control bounds are changed');
   check(() => {
-    spanBefore.replaceChildren();
-    spanBefore.getBoundingClientRect();
+    document.querySelector('hr').remove();
+    host.getBoundingClientRect();
   }, false, 'associated element bounding rect changes, but control bounds stay the same');
-});
+}
+
+for (let provideBounds of [false, true]) {
+  add_task(async () => {
+    provideCharacterBounds = provideBounds;
+    await SimpleTest.promiseFocus();
+    runTests();
+  });
+}
 
 </script>
 </body>

@@ -1,9 +1,32 @@
 {
   "nova": {
-    "padding": {
-      "inline": {
-        "small": {
-          "value": "{space.medium}"
+    "background": {
+      "color": {
+        "selected": {
+          "value": {
+            "forcedColors": "SelectedItem"
+          }
+        }
+      }
+    },
+    "border": {
+      "width": {
+        "split": {
+          "value": "0"
+        }
+      }
+    },
+    "gap": {
+      "split": {
+        "value": "0"
+      }
+    },
+    "split": {
+      "separator": {
+        "background": {
+          "color": {
+            "value": "{button.border.color.@base}"
+          }
         }
       }
     }
@@ -406,6 +429,11 @@
     },
     "radius": {
       "value": "{border.radius.medium}"
+    },
+    "width": {
+      "split": {
+        "value": "{border.width}"
+      }
     }
   },
   "content": {
@@ -424,6 +452,11 @@
     },
     "weight": {
       "value": "{font.weight.semibold}"
+    }
+  },
+  "gap": {
+    "split": {
+      "value": "{space.xxsmall}"
     }
   },
   "icon": {
@@ -493,6 +526,15 @@
       },
       "large": {
         "value": "{button.min-height.large}"
+      }
+    }
+  },
+  "split": {
+    "separator": {
+      "background": {
+        "color": {
+          "value": "transparent"
+        }
       }
     }
   },

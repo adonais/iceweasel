@@ -1,0 +1,13 @@
+// it's an error to define two protocols in the same file
+
+//error: only one protocol definition per file
+
+[ChildProc=any]
+protocol Pp1 {
+child: async Msg();
+};
+
+[ChildProc=any]
+protocol Pp2 {
+child: async Msg();
+};

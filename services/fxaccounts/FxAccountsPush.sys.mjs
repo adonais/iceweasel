@@ -16,7 +16,6 @@ import {
   ON_PASSWORD_RESET_NOTIFICATION,
   ON_PROFILE_CHANGE_NOTIFICATION,
   ON_PROFILE_UPDATED_NOTIFICATION,
-  ON_VERIFY_LOGIN_NOTIFICATION,
   log,
 } from "resource://gre/modules/FxAccountsCommon.sys.mjs";
 
@@ -219,13 +218,6 @@ FxAccountsPushService.prototype = {
           payload.data.collections
         );
         return;
-      case ON_VERIFY_LOGIN_NOTIFICATION:
-        Services.obs.notifyObservers(
-          null,
-          ON_VERIFY_LOGIN_NOTIFICATION,
-          JSON.stringify(payload.data)
-        );
-        break;
       default:
         this.log.warn("FxA Push command unrecognized: " + payload.command);
     }

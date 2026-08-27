@@ -1,6 +1,6 @@
 (mach-settings)=
 
-# Settings
+# Mach settings
 
 Mach can read settings in from a set of configuration files. These
 configuration files are either named `machrc` or `.machrc` and
@@ -37,11 +37,12 @@ decorator in an existing mach command module. E.g:
 from mach.decorators import SettingsProvider
 from mozbuild.base import MachCommandBase
 
+
 @SettingsProvider
 class ArbitraryClassName(MachCommandBase):
     config_settings = [
-        ('foo.bar', 'string', "A helpful description"),
-        ('foo.baz', 'int', "Another description", 0, {'choices': set([0,1,2])}),
+        ("foo.bar", "string", "A helpful description"),
+        ("foo.baz", "int", "Another description", 0, {"choices": set([0, 1, 2])}),
     ]
 ```
 
@@ -52,7 +53,7 @@ called `config_settings` that returns a list of tuples.
 Each tuple is of the form:
 
 ```python
-('<section>.<option>', '<type>', '<description>', default, extra)
+("<section>.<option>", "<type>", "<description>", default, extra)
 ```
 
 `type` is a string and can be one of:
@@ -122,16 +123,17 @@ from mach.decorators import (
 )
 from mozbuild.base import MachCommandBase
 
+
 @SettingsProvider
 class ExampleSettings(object):
     config_settings = [
-        ('a.b', 'string', 'desc', 'default'),
-        ('foo.bar', 'string', 'desc',),
-        ('foo.baz', 'int', 'desc', 0, {'choices': set([0,1,2])}),
+        ("a.b", "string", "desc", "default"),
+        ("foo.bar", "string", "desc"),
+        ("foo.baz", "int", "desc", 0, {"choices": set([0, 1, 2])}),
     ]
 
-@Command('command', category='misc',
-         description='Prints a setting')
+
+@Command("command", category="misc", description="Prints a setting")
 def command(command_context):
     settings = command_context._mach_context.settings
     print(settings.a.b)

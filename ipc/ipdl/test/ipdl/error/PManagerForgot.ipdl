@@ -1,0 +1,12 @@
+//error: |manager| declaration in protocol `PForgottenManagee' does not match any |manages| declaration in protocol `PManagerForgot'
+
+include protocol PForgottenManagee;
+
+// See PForgottenManagee.ipdl. This includes PForgottenManagee to
+// ensure that loading this file fails.
+
+[ChildProc=any]
+protocol PManagerForgot {
+child:
+    async Msg();
+};

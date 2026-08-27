@@ -15,18 +15,11 @@ import org.mozilla.geckoview.GeckoRuntimeSettings
 
 /**
  * Converts a [TrackingProtectionPolicy] into a GeckoView setting that can be used with [GeckoRuntimeSettings.Builder].
- * Also contains the cookie banner handling settings for regular and private browsing.
  */
 @OptIn(ExperimentalGeckoViewApi::class)
 @Suppress("SpreadOperator")
 fun TrackingProtectionPolicy.toContentBlockingSetting(
     safeBrowsingPolicy: Array<EngineSession.SafeBrowsingPolicy> = arrayOf(EngineSession.SafeBrowsingPolicy.RECOMMENDED),
-    cookieBannerHandlingMode: EngineSession.CookieBannerHandlingMode = EngineSession.CookieBannerHandlingMode.DISABLED,
-    cookieBannerHandlingModePrivateBrowsing: EngineSession.CookieBannerHandlingMode =
-        EngineSession.CookieBannerHandlingMode.REJECT_ALL,
-    cookieBannerHandlingDetectOnlyMode: Boolean = false,
-    cookieBannerGlobalRulesEnabled: Boolean = false,
-    cookieBannerGlobalRulesSubFramesEnabled: Boolean = false,
     queryParameterStripping: Boolean = false,
     queryParameterStrippingPrivateBrowsing: Boolean = false,
     queryParameterStrippingAllowList: String = "",
@@ -50,11 +43,6 @@ fun TrackingProtectionPolicy.toContentBlockingSetting(
     cookiePurging(cookiePurging)
     safeBrowsing(safeBrowsingPolicy.sumOf { it.id })
     strictSocialTrackingProtection(getStrictSocialTrackingProtection())
-    cookieBannerHandlingMode(cookieBannerHandlingMode.mode)
-    cookieBannerHandlingModePrivateBrowsing(cookieBannerHandlingModePrivateBrowsing.mode)
-    cookieBannerHandlingDetectOnlyMode(cookieBannerHandlingDetectOnlyMode)
-    cookieBannerGlobalRulesEnabled(cookieBannerGlobalRulesEnabled)
-    cookieBannerGlobalRulesSubFramesEnabled(cookieBannerGlobalRulesSubFramesEnabled)
     queryParameterStrippingEnabled(queryParameterStripping)
     queryParameterStrippingPrivateBrowsingEnabled(queryParameterStrippingPrivateBrowsing)
     queryParameterStrippingAllowList(*queryParameterStrippingAllowList.split(",").toTypedArray())

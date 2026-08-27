@@ -9,6 +9,6 @@ await null;
 
 registerModule("B", B);
 registerModule("A", A);
-moduleLink(A);
+moduleLoadAndLink(A);
 moduleEvaluate(A);
 drainJobQueue();

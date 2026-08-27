@@ -29,6 +29,11 @@ system_lib_option(
     when=use_pkg_config,
 )
 
+@depends("--with-system-nss", when=use_pkg_config)
+def with_system_nss_option(with_system_nss):
+    return with_system_nss
+
+
 imply_option("--with-system-nspr", True, when="--with-system-nss")
 
 nss_pkg = pkg_check_modules(

@@ -2470,30 +2470,6 @@ class Toolbox extends EventEmitter {
     await this.commands.threadConfigurationCommand.updateConfiguration(
       threadConfiguration
     );
-
-    // @backward-compat { version 153 } Fx 153 unified the two following pref into a unique one.
-    // Migrate the value from old profiles.
-    const requestBodyLimit = Services.prefs.getIntPref(
-      "devtools.netmonitor.requestBodyLimit",
-      1048576
-    );
-    const responseBodyLimit = Services.prefs.getIntPref(
-      "devtools.netmonitor.responseBodyLimit",
-      1048576
-    );
-    if (responseBodyLimit != 1048576) {
-      Services.prefs.setIntPref(
-        "devtools.netmonitor.bodyLimit",
-        responseBodyLimit
-      );
-    } else if (requestBodyLimit != 1048576) {
-      Services.prefs.setIntPref(
-        "devtools.netmonitor.bodyLimit",
-        requestBodyLimit
-      );
-    }
-    Services.prefs.clearUserPref("devtools.netmonitor.requestBodyLimit");
-    Services.prefs.clearUserPref("devtools.netmonitor.responseBodyLimit");
   }
 
   /**
@@ -4996,7 +4972,7 @@ class Toolbox extends EventEmitter {
    * and emit a "webextension-registered" event to allow toolbox-options.js
    * to refresh the listed tools accordingly.
    *
-   * @see browser/components/extensions/ext-devtools.js
+   * @see browser/components/extensions/parent/ext-devtools.js
    */
   registerWebExtension(extensionUUID, { name, pref }) {
     // Ensure that an installed extension (active in the AddonManager) which
@@ -5012,7 +4988,7 @@ class Toolbox extends EventEmitter {
    * name), and emit a "webextension-unregistered" event to allow toolbox-options.js
    * to refresh the listed tools accordingly.
    *
-   * @see browser/components/extensions/ext-devtools.js
+   * @see browser/components/extensions/parent/ext-devtools.js
    */
   unregisterWebExtension(extensionUUID) {
     // Ensure that an extension that has been disabled/uninstalled from the AddonManager
@@ -5026,7 +5002,7 @@ class Toolbox extends EventEmitter {
    * as active for the toolbox and has its related devtools about:config preference set
    * to true.
    *
-   * @see browser/components/extensions/ext-devtools.js
+   * @see browser/components/extensions/parent/ext-devtools.js
    */
   isWebExtensionEnabled(extensionUUID) {
     const extInfo = this.#webExtensions.get(extensionUUID);

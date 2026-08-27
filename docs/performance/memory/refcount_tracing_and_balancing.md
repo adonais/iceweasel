@@ -129,7 +129,7 @@ stack.
 
     python3 tools/rb/fix_stacks.py < ./refcounts.log > fixed_stack.log
 
-Also, it is possible to [locally symbolicate](/contributing/debugging/local_symbols.rst)
+Also, it is possible to [locally symbolicate](/contributing/debugging/local_symbols.md)
 logs generated on TreeHerder.
 
 ## **Post-processing step 3: building the balance tree**

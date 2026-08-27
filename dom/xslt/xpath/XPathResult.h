@@ -43,7 +43,7 @@ class XPathResult final : public nsStubMutationObserver, public nsWrapperCache {
   };
 
   // nsISupports interface
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(XPathResult)
 
   virtual JSObject* WrapObject(JSContext* aCx,

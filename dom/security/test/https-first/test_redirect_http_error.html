@@ -90,7 +90,7 @@ Test error pages after redirects causing us to downgrade.
 
   async function startTest() {
     const test = testCase[currentTest];
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     let uri = `http://example.com/tests/dom/security/test/https-first/file_redirect_error.sjs?${test}`;
     testWin = window.open(uri);
   }

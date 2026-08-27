@@ -377,7 +377,7 @@ describe("<Crossword>", () => {
       });
     });
 
-    it("dispatches a menu_action WIDGETS_USER_EVENT carrying the action", () => {
+    it("dispatches a WIDGETS_USER_EVENT with the real action in user_action (no menu_action bucket)", () => {
       const { container, dispatch } = renderCrossword();
       const frame = container.querySelector("iframe.crossword-frame");
       jest
@@ -389,15 +389,23 @@ describe("<Crossword>", () => {
       const userEventCall = dispatch.mock.calls.find(
         ([action]) =>
           action?.type === at.WIDGETS_USER_EVENT &&
-          action.data?.user_action === "menu_action"
+          action.data?.user_action === "show_all_clues"
       );
       expect(userEventCall?.[0].data).toMatchObject({
         widget_name: "crossword",
         widget_source: "context_menu",
-        user_action: "menu_action",
-        action_value: "show_all_clues",
+        user_action: "show_all_clues",
         widget_size: "medium",
       });
+      // The opaque "menu_action" bucket is gone; crossword now matches the
+      // convention every other widget uses.
+      expect(
+        dispatch.mock.calls.some(
+          ([action]) =>
+            action?.type === at.WIDGETS_USER_EVENT &&
+            action.data?.user_action === "menu_action"
+        )
+      ).toBe(false);
     });
 
     it("does not post when the endpoint is malformed (no resolvable origin)", () => {
@@ -448,30 +456,64 @@ describe("<Crossword>", () => {
       });
     });
 
-    it("dispatches an interaction WIDGETS_USER_EVENT for a valid message", () => {
+    it("puts the real action in user_action for an allowlisted interaction", () => {
       const { container, dispatch } = renderCrossword();
 
       postWidgetMessage(container, {
-        data: validMessage("interaction", { action: "cell_focus" }),
+        data: validMessage("interaction", { action: "hint_revealed" }),
       });
 
       const call = dispatch.mock.calls.find(
-        ([action]) =>
-          action?.type === at.WIDGETS_USER_EVENT &&
-          action.data?.user_action === "interaction"
+        ([action]) => action?.type === at.WIDGETS_USER_EVENT
       );
       expect(call?.[0].data).toMatchObject({
+        widget_name: "crossword",
         widget_source: "iframe",
-        user_action: "interaction",
-        action_value: "cell_focus",
+        user_action: "hint_revealed",
       });
+    });
+
+    it("does not forward a non-allowlisted interaction (keystroke noise) to Glean, but still flips the interaction pref", () => {
+      const { container, dispatch, handleUserInteraction } = renderCrossword();
+
+      postWidgetMessage(container, {
+        data: validMessage("interaction", {
+          action: "input_letter",
+          letter: "a",
+        }),
+      });
+
+      expect(
+        dispatch.mock.calls.some(
+          ([action]) => action?.type === at.WIDGETS_USER_EVENT
+        )
+      ).toBe(false);
+      // Side effect preserved: the "New" badge pref still flips.
+      expect(handleUserInteraction).toHaveBeenCalledWith("crossword");
+    });
+
+    it("does not forward a menu-echo interaction to Glean (Firefox records the menu action itself)", () => {
+      const { container, dispatch } = renderCrossword();
+
+      postWidgetMessage(container, {
+        data: validMessage("interaction", {
+          action: "all_clues_opened",
+          entry: "context_menu",
+        }),
+      });
+
+      expect(
+        dispatch.mock.calls.some(
+          ([action]) => action?.type === at.WIDGETS_USER_EVENT
+        )
+      ).toBe(false);
     });
 
     it("ignores messages from an unexpected origin", () => {
       const { container, dispatch } = renderCrossword();
 
       postWidgetMessage(container, {
-        data: validMessage("interaction", { action: "cell_focus" }),
+        data: validMessage("interaction", { action: "hint_revealed" }),
         origin: "https://evil.example.com",
       });
 
@@ -486,7 +528,7 @@ describe("<Crossword>", () => {
       const { container, dispatch } = renderCrossword();
 
       postWidgetMessage(container, {
-        data: validMessage("interaction", { action: "cell_focus" }),
+        data: validMessage("interaction", { action: "hint_revealed" }),
         source: window,
       });
 
@@ -503,7 +545,7 @@ describe("<Crossword>", () => {
       postWidgetMessage(container, {
         data: {
           type: "interaction",
-          payload: { action: "cell_focus" },
+          payload: { action: "hint_revealed" },
         },
       });
 

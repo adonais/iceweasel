@@ -35,6 +35,9 @@ DOM4_MSG_DEF(NotAllowedError, "The request is not allowed by the user agent or t
 /* StringEncoding API errors from http://wiki.whatwg.org/wiki/StringEncoding */
 DOM4_MSG_DEF(EncodingError, "The given encoding is not supported.", NS_ERROR_DOM_ENCODING_NOT_SUPPORTED_ERR)
 
+/* Web Serial API errors from https://wicg.github.io/serial/ */
+DOM4_MSG_DEF(ParityError, "A parity error occurred while reading from the serial port.", NS_ERROR_DOM_SERIAL_PARITY_ERROR)
+
 /* WebCrypto API errors from http://www.w3.org/TR/WebCryptoAPI/ */
 DOM4_MSG_DEF(UnknownError, "The operation failed for an unknown transient reason", NS_ERROR_DOM_UNKNOWN_ERR)
 DOM4_MSG_DEF(DataError, "Data provided to an operation does not meet requirements", NS_ERROR_DOM_DATA_ERR)

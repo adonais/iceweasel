@@ -72,7 +72,7 @@ class Cache {
   // key in so that our testing caches don't conflict with each other or with
   // a possible production cache on the test machine.
   explicit Cache(const wchar_t* cacheRegKey = nullptr);
-  ~Cache();
+  ~Cache() = default;
 
   // The version of the cache (not to be confused with the version of the cache
   // entries). This should only be incremented if we need to make breaking

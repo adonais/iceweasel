@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>A deferred form submission is not performed after the form moves into a document sandboxed without allow-forms</title>
+<link rel="help" href="https://html.spec.whatwg.org/multipage/browsers.html#sandboxed-forms-browsing-context-flag">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="/common/utils.js"></script>
+<body>
+<div id="log"></div>
+<script>
+// Gecko-only: a submission requested during a submit button's click is stored
+// on the form and flushed when the click ends, which is not in the spec. Only
+// that deferral lets a submission be built in one document and performed after
+// the form has moved to another. Both tests check it is dropped when the
+// document it would be performed in has the sandboxed forms flag set.
+
+const STASH_PUT = `${location.origin}/fetch/api/resources/stash-put.py`;
+
+function takeStash(key) {
+  return fetch(`/fetch/api/resources/stash-take.py?key=${key}`)
+      .then(response => response.json());
+}
+
+// The target must be one the sandboxed document may navigate, or a wrongly
+// performed submission is stopped by target resolution and the test passes for
+// the wrong reason.
+function formMarkup(key, target) {
+  const targetAttr = target ? ` target="${target}"` : "";
+  return `<form method="get" action="${STASH_PUT}"${targetAttr}>` +
+         `<input type="hidden" name="key" value="${key}">` +
+         `<input type="hidden" name="value" value="submitted">` +
+         `<button type="submit"></button></form>`;
+}
+
+promise_test(async t => {
+  const key = token();
+
+  const iframe = document.createElement("iframe");
+  iframe.sandbox = "allow-scripts";
+  t.add_cleanup(() => iframe.remove());
+
+  const done = new Promise(resolve => {
+    window.addEventListener("message", function onMessage(event) {
+      if (event.source === iframe.contentWindow && event.data === "done") {
+        window.removeEventListener("message", onMessage);
+        resolve();
+      }
+    });
+  });
+
+  // The sandboxed document builds the submission in a data document and takes
+  // the form back while the click is still being handled.
+  iframe.srcdoc = `
+    <iframe name="target"></iframe>
+    <script>
+      const dataDoc = document.implementation.createHTMLDocument("");
+      dataDoc.body.innerHTML = \`${formMarkup(key, "target")}\`;
+      const form = dataDoc.querySelector("form");
+      const button = dataDoc.querySelector("button");
+      button.addEventListener("click", () => {
+        form.submit();
+        document.body.appendChild(document.adoptNode(form));
+      });
+      button.click();
+      parent.postMessage("done", "*");
+    <\/script>
+  `;
+  document.body.appendChild(iframe);
+  await done;
+
+  await new Promise(resolve => t.step_timeout(resolve, 1000));
+  assert_equals(await takeStash(key), null);
+}, "A submission built in a data document and flushed at the end of a click " +
+   "is not performed in a document sandboxed without allow-forms");
+
+promise_test(async t => {
+  const key = token();
+
+  const sandboxed = document.createElement("iframe");
+  sandboxed.sandbox = "allow-same-origin";
+  sandboxed.src = "/common/blank.html";
+  const loaded = new Promise(resolve => { sandboxed.onload = resolve; });
+  document.body.appendChild(sandboxed);
+  t.add_cleanup(() => sandboxed.remove());
+  await loaded;
+
+  const sandboxedDoc = sandboxed.contentDocument;
+  assert_true(!!sandboxedDoc && !!sandboxedDoc.body,
+              "allow-same-origin gives access to the sandboxed document");
+
+  const container = document.createElement("div");
+  container.innerHTML = formMarkup(key, null);
+  document.body.appendChild(container);
+  t.add_cleanup(() => container.remove());
+  const form = container.querySelector("form");
+  const button = container.querySelector("button");
+
+  button.addEventListener("click", () => {
+    form.submit();
+    sandboxedDoc.body.appendChild(sandboxedDoc.adoptNode(form));
+  });
+  button.click();
+
+  await new Promise(resolve => t.step_timeout(resolve, 1000));
+  assert_equals(await takeStash(key), null);
+}, "A submission deferred in an unsandboxed document is not performed after " +
+   "the form moves into a document sandboxed without allow-forms");
+</script>

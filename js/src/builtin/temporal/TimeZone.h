@@ -34,33 +34,35 @@ class TimeZoneObject : public NativeObject {
  public:
   static const JSClass class_;
 
-  static constexpr uint32_t IDENTIFIER_SLOT = 0;
-  static constexpr uint32_t PRIMARY_IDENTIFIER_SLOT = 1;
-  static constexpr uint32_t OFFSET_MINUTES_SLOT = 2;
-  static constexpr uint32_t INTL_TIMEZONE_SLOT = 3;
+  JS_DEFINE_TYPED_SLOT(0, IDENTIFIER_SLOT, String);
+  JS_DEFINE_TYPED_SLOT(1, PRIMARY_IDENTIFIER_SLOT, String, Undefined);
+  JS_DEFINE_TYPED_SLOT(2, OFFSET_MINUTES_SLOT, Int32, Undefined);
+  JS_DEFINE_TYPED_SLOT(3, INTL_TIMEZONE_SLOT, Private, Undefined);
   static constexpr uint32_t SLOT_COUNT = 4;
 
   // Estimated memory use for intl::TimeZone (see IcuMemoryUsage).
   static constexpr size_t EstimatedMemoryUse = 6840;
 
-  bool isOffset() const { return getFixedSlot(OFFSET_MINUTES_SLOT).isInt32(); }
+  bool isOffset() const {
+    return getFixedSlotTyped(OFFSET_MINUTES_SLOT).isInt32();
+  }
 
   JSLinearString* identifier() const {
-    return &getFixedSlot(IDENTIFIER_SLOT).toString()->asLinear();
+    return &getFixedSlotTyped(IDENTIFIER_SLOT).toString()->asLinear();
   }
 
   JSLinearString* primaryIdentifier() const {
     MOZ_ASSERT(!isOffset());
-    return &getFixedSlot(PRIMARY_IDENTIFIER_SLOT).toString()->asLinear();
+    return &getFixedSlotTyped(PRIMARY_IDENTIFIER_SLOT).toString()->asLinear();
   }
 
   int32_t offsetMinutes() const {
     MOZ_ASSERT(isOffset());
-    return getFixedSlot(OFFSET_MINUTES_SLOT).toInt32();
+    return getFixedSlotTyped(OFFSET_MINUTES_SLOT).toInt32();
   }
 
   mozilla::intl::TimeZone* getTimeZone() const {
-    const auto& slot = getFixedSlot(INTL_TIMEZONE_SLOT);
+    const auto& slot = getFixedSlotTyped(INTL_TIMEZONE_SLOT);
     if (slot.isUndefined()) {
       return nullptr;
     }
@@ -68,7 +70,7 @@ class TimeZoneObject : public NativeObject {
   }
 
   void setTimeZone(mozilla::intl::TimeZone* timeZone) {
-    setFixedSlot(INTL_TIMEZONE_SLOT, JS::PrivateValue(timeZone));
+    setFixedSlotTyped(INTL_TIMEZONE_SLOT, JS::PrivateValue(timeZone));
   }
 
  private:

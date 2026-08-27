@@ -7,6 +7,8 @@ support-files = [
   "page.pdf",
 ]
 
+["browser_anonymous_headless_extractor.js"]
+
 ["browser_dom_extractor.js"]
 
 ["browser_dom_extractor_pdf.js"]
@@ -23,12 +25,11 @@ skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2004856
 ]
 
-["browser_anonymous_headless_extractor.js"]
-
 ["browser_page_metadata.js"]
 
 ["browser_viewport_extractor.js"]
-
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2023967
 ]
+
+["browser_youtube_extraction.js"]

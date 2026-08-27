@@ -54,7 +54,6 @@ dependencies {
     implementation project(':components:support-utils')
 
     implementation libs.androidx.core
-    implementation libs.androidx.datastore.preferences
     implementation libs.androidx.lifecycle.livedata
     implementation libs.androidx.paging
     implementation libs.kotlinx.coroutines

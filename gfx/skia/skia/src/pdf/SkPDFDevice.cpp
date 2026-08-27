@@ -1717,6 +1717,9 @@ void SkPDFDevice::internalDrawImageRect(SkKeyedImage imageSubset,
         if (!content) {
             return;
         }
+        if (content.needShape()) {
+            content.setShape(SkPath::Rect(dst).makeTransform(ctm));
+        }
         this->setGraphicState(SkPDFGraphicState::GetSMaskGraphicState(
                 maskDevice->makeFormXObjectFromDevice(maskDeviceBounds, true), false,
                 SkPDFGraphicState::kLuminosity_SMaskMode, fDocument), content.stream());

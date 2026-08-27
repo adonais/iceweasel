@@ -390,8 +390,8 @@ void Realm::setAllocationMetadataBuilder(
     }
   }
 
-  for (wasm::Instance* instance : wasm.instances()) {
-    instance->setAllocationMetadataBuilder(builder);
+  for (auto iter = wasm.instances().iter(); !iter.done(); iter.next()) {
+    iter.get()->setAllocationMetadataBuilder(builder);
   }
   allocationMetadataBuilder_ = builder;
 }
@@ -410,8 +410,8 @@ void Realm::forgetAllocationMetadataBuilder() {
 
   zone()->decNumRealmsWithAllocMetadataBuilder();
 
-  for (wasm::Instance* instance : wasm.instances()) {
-    instance->setAllocationMetadataBuilder(nullptr);
+  for (auto iter = wasm.instances().iter(); !iter.done(); iter.next()) {
+    iter.get()->setAllocationMetadataBuilder(nullptr);
   }
   allocationMetadataBuilder_ = nullptr;
 }

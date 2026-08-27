@@ -174,6 +174,24 @@ class TestStatusHandler(BaseStructuredTest):
         self.assertEqual(1, summary.action_counts["crash"])
         self.assertEqual(1, summary.expected_statuses["PASS"])
 
+    def test_quiet_crash_not_counted(self):
+        # A harness that asked for the dump itself (e.g. force-killing a test
+        # that timed out) logs the crash quietly; the timeout is the failure.
+        self.logger.suite_start([])
+        self.logger.test_start("test1")
+        self.logger.crash(
+            test="test1",
+            process=1234,
+            signature="test_signature",
+            minidump_path="/path/to/dump",
+            quiet=True,
+        )
+        self.logger.test_end("test1", "TIMEOUT", expected="TIMEOUT")
+        self.logger.suite_end()
+        summary = self.handler.summarize()
+        self.assertEqual(0, summary.action_counts.get("crash", 0))
+        self.assertEqual(1, summary.expected_statuses["TIMEOUT"])
+
 
 class TestSummaryHandler(BaseStructuredTest):
     def setUp(self):

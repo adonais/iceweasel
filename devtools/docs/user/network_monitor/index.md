@@ -63,3 +63,18 @@ The following articles cover different aspects of using the network monitdor:
 - {doc}`Throttling <throttling/index>`
 - {doc}`Inspecting web sockets <inspecting_web_sockets/index>`
 - {doc}`Inspecting server-sent events <inspecting_server-sent_events/index>`
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+inspecting_server-sent_events/index
+inspecting_web_sockets/index
+network_overrides/index
+performance_analysis/index
+recording/index
+request_details/index
+request_list/index
+throttling/index
+toolbar/index
+```

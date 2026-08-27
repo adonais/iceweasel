@@ -217,6 +217,10 @@ class SyncedTabsInSidebar extends SidebarPage {
     this.searchTextbox?.focus();
   }
 
+  #onCardToggle() {
+    this.dispatchEvent(new CustomEvent("folder-toggle"));
+  }
+
   handleNavigateToLink(e) {
     navigateToLink(e, undefined, { forceNewTab: false });
     // TO DO: update the below to handle multiple links opened at once. Bug 2024639
@@ -299,6 +303,7 @@ class SyncedTabsInSidebar extends SidebarPage {
       .iconSrc=${this.getDeviceIconSrc(deviceType)}
       class=${deviceType}
       @keydown=${this.keydownHandler}
+      @toggle=${this.#onCardToggle}
     >
       <sidebar-tab-list
         compactRows
@@ -464,6 +469,7 @@ class SyncedTabsInSidebar extends SidebarPage {
     this.controller.searchQuery = e.detail.query;
     this.requestUpdate();
     Glean.browserUiInteraction.sidebarSyncedTabs.search.add(1);
+    this.treeView.resetActiveNode();
   }
 }
 

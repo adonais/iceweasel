@@ -1,0 +1,75 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Test main-thread keyboard scroll handoff to an ancestor scroll container</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+<style>
+  #outer { height: 200px; overflow: auto; }
+  #inner { height: 100px; overflow: auto; }
+  .tall { height: 1000px; }
+</style>
+</head>
+<body>
+<div id="outer">
+  <div id="inner">
+    <button id="focusTarget">focus</button>
+    <div class="tall"></div>
+  </div>
+  <div class="tall"></div>
+</div>
+<pre id="test">
+<script>
+SimpleTest.waitForExplicitFinish();
+
+SimpleTest.waitForFocus(async () => {
+  await SpecialPowers.pushPrefEnv({set: [["general.smoothScroll", false]]});
+
+  const outer = document.getElementById("outer");
+  const inner = document.getElementById("inner");
+  const focusTarget = document.getElementById("focusTarget");
+
+  focusTarget.focus();
+  is(document.activeElement, focusTarget,
+     "the button inside the inner scroll container is focused");
+
+  ok(inner.scrollHeight > inner.clientHeight,
+     "the inner scroll container has vertical scroll range");
+  ok(outer.scrollHeight > outer.clientHeight,
+     "the outer scroll container has vertical scroll range");
+
+  // While the inner scroll container can still scroll down, scrolling stays in
+  // the inner one and the outer one is left untouched.
+  inner.scrollTop = 0;
+  outer.scrollTop = 0;
+  let scrollEndPromise = new Promise(resolve =>
+    inner.addEventListener("scrollend", resolve, { once: true }));
+  SpecialPowers.doCommand(window, "cmd_scrollLineDown");
+  await scrollEndPromise;
+  ok(inner.scrollTop > 0, "the inner scroll container scrolled down");
+  is(outer.scrollTop, 0,
+     "the outer scroll container did not scroll while the inner one could");
+
+  // Pin the inner scroll container to its bottom edge. It can no longer scroll
+  // down, so scrolling must be handed off to the outer scroll container.
+  inner.scrollTop = inner.scrollTopMax;
+  const innerBottom = inner.scrollTop;
+  ok(innerBottom > 0, "the inner scroll container is at its bottom edge");
+  outer.scrollTop = 0;
+
+  scrollEndPromise = new Promise(resolve => outer.addEventListener("scrollend",
+    resolve, { once: true }));
+  SpecialPowers.doCommand(window, "cmd_scrollLineDown");
+  await scrollEndPromise;
+  is(inner.scrollTop, innerBottom,
+     "the inner scroll container stayed at its bottom edge");
+  ok(outer.scrollTop > 0,
+     "scrolling was handed off to the outer scroll container");
+
+  SimpleTest.finish();
+});
+</script>
+</pre>
+</body>
+</html>

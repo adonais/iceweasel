@@ -1,0 +1,102 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+
+# Android perftests that run on a macOS arm64 emulator. These are split out from
+# android.yml because they need the macOS build of node (for the HTTP/2 test
+# server) rather than the linux64-node the on-device tasks use, and a task
+# cannot depend on two toolchains that both provide node.tar.zst.
+task-defaults:
+    fetches:
+        toolchain:
+            - macosx64-aarch64-node
+    worker:
+        env:
+            PYTHONPATH: "testing/mozbase/mozdevice:third_party/python/six"
+    run:
+        sparse-profile: perftest
+        checkout: true
+        cwd: '{checkout}'
+
+shippable-newssite-applink-startup:
+    worker-type: t-osx-1500-m4
+    worker:
+        max-run-time: 900
+        env:
+            ANDROID_EMULATOR_HOME: '/opt/worker/tasks/cltbld/fetches/android-device/emulator'
+            ANDROID_AVD_HOME: '/opt/worker/tasks/cltbld/fetches/android-device/avd'
+            ANDROID_SDK_ROOT: '/opt/worker/tasks/cltbld/fetches/android-sdk-macosx'
+            ANDROID_SDK_HOME: '/opt/worker/tasks/cltbld/fetches/android-sdk-macosx'
+            MOZBUILD_STATE_PATH: '/opt/worker/tasks/cltbld/fetches'
+    description: Run android cold_view_nav_end (newssite) perftest on Fenix on an emulator
+    treeherder:
+        symbol: perftest-fenix(shopify-applink-em)
+        tier: 1
+    platform: perftest-android-em-arm64/opt
+    attributes:
+        cron: true
+    fetches:
+        toolchain:
+            - android-sdk-macos
+            - android-system-image-arm64-macos
+            - android-avd-arm64-macos
+            - macosx64-jdk-repack
+        build:
+            - artifact: target.arm64-v8a.apk
+              extract: false
+    require-build:
+        perftest-android-em-arm64/opt: signing-apk-fenix-nightly-simulation
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $GECKO_PATH &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --flavor custom-script
+            --app fenix
+            --android-use-emulator
+            testing/performance/mobile-startup/cvne-newssite.sh
+            --perfherder
+            --android-install-apk $MOZ_FETCHES_DIR/target.arm64-v8a.apk
+            --output $MOZ_FETCHES_DIR/../artifacts
+
+shippable-first-frame-startup:
+    worker-type: t-osx-1500-m4
+    worker:
+        max-run-time: 900
+        env:
+            ANDROID_EMULATOR_HOME: '/opt/worker/tasks/cltbld/fetches/android-device/emulator'
+            ANDROID_AVD_HOME: '/opt/worker/tasks/cltbld/fetches/android-device/avd'
+            ANDROID_SDK_ROOT: '/opt/worker/tasks/cltbld/fetches/android-sdk-macosx'
+            ANDROID_SDK_HOME: '/opt/worker/tasks/cltbld/fetches/android-sdk-macosx'
+            MOZBUILD_STATE_PATH: '/opt/worker/tasks/cltbld/fetches'
+    description: Run android cold_main_first_frame perftest on Fenix on an emulator
+    treeherder:
+        symbol: perftest-fenix(first-frame-em)
+        tier: 1
+    platform: perftest-android-em-arm64/opt
+    attributes:
+        cron: true
+    fetches:
+        toolchain:
+            - android-sdk-macos
+            - android-system-image-arm64-macos
+            - android-avd-arm64-macos
+            - macosx64-jdk-repack
+        build:
+            - artifact: target.arm64-v8a.apk
+              extract: false
+    require-build:
+        perftest-android-em-arm64/opt: signing-apk-fenix-nightly-simulation
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $GECKO_PATH &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --flavor custom-script
+            --app fenix
+            --android-use-emulator
+            testing/performance/mobile-startup/cmff.sh
+            --perfherder
+            --android-install-apk $MOZ_FETCHES_DIR/target.arm64-v8a.apk
+            --output $MOZ_FETCHES_DIR/../artifacts

@@ -339,7 +339,7 @@ radio {
 .extension-controlled-icon.close-icon {
   height: 30px;
   width: 30px;
-  margin-inline-start: 5px;
+  margin-inline: 5px 8px;
 }
 
 #getStarted {
@@ -348,15 +348,6 @@ radio {
 
 #colors {
   margin-inline-start: 5px;
-}
-
-#FontsDialog menulist:empty {
-  /* When there's no menupopup, while the font builder is running,
-   * the height of the menulist would otherwise shrink. This throws
-   * off the height determination SubDialog.sys.mjs does, which then
-   * leads to content being cut off. Fix by enforcing a minimum height
-   * when there's no content: */
-  min-height: max(32px, calc(1.4em + 16px));
 }
 
 #useDocumentColors {
@@ -673,29 +664,8 @@ html|dialog,
   user-select: none;
 }
 
-.fxaPairDeviceIcon {
-  background-image: url("chrome://browser/content/logos/fxa-logo.svg");
-  background-position: center center;
-  background-repeat: no-repeat;
-  position: relative;
-  height: 80px;
-  padding-top: 42px;
-  margin-top: -40px;
-}
-
-.fxaPairDeviceIcon .close-icon {
-  margin-top: 10px;
-}
-
-.close-icon {
-  border: none;
-  background-color: transparent; /* override common.css, but keep hover/active states */
-  min-width: 0;
-  min-height: auto;
-  width: var(--icon-size-medium);
-  height: var(--icon-size-medium);
-  padding: 0;
-  margin-inline: 0 8px;
+.dialogClose {
+  margin-inline: 0 var(--space-xsmall);
 }
 
 .dialogFrame {
@@ -1626,6 +1596,8 @@ setting-group[groupid="aiStatesDescription"] {
   margin: 0 0 var(--space-large);
 }
 
+/* Small subtree */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .search-header:has(.section-heading) {
   margin: 0;
 }
@@ -1678,12 +1650,14 @@ setting-pane[onsearchpane] {
 }
 
 #addresses-list-header,
-#payments-list-header {
+#payments-list-header,
+#passports-list-header {
   --box-label-font-weight: var(--font-weight-heading);
 }
 
 #no-addresses-stored,
-#no-payments-stored {
+#no-payments-stored,
+#no-passports-stored {
   color: var(--text-color-deemphasized);
 }
 
@@ -1694,9 +1668,13 @@ setting-pane[onsearchpane] {
 .containers-identity-item {
   --box-icon-start-fill: var(--identity-icon-color);
   --box-icon-size: var(--icon-size-xlarge);
-  --box-icon-padding: var(--space-small);
-  --box-icon-border-radius: var(--border-radius-circle);
-  --box-icon-background: color-mix(in srgb, var(--identity-icon-color) 15%, transparent);
+
+  @media -moz-pref("browser.nova.enabled") {
+    --box-icon-start-fill: var(--identity-fill-color);
+    --box-icon-padding: round(up, var(--space-small), 0.5px);
+    --box-icon-border-radius: var(--border-radius-circle);
+    --box-icon-background: var(--identity-fill-tint);
+  }
 }
 
 .products-grid {

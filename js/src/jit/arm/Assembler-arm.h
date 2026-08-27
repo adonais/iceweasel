@@ -1218,10 +1218,10 @@ class Assembler : public AssemblerShared {
 
   void initDisassembler();
   void finishDisassembler();
-  void spew(Instruction* i);
-  void spewBranch(Instruction* i, const LabelDoc& target);
-  void spewLiteralLoad(PoolHintPun& php, bool loadToPC, const Instruction* offs,
-                       const LiteralDoc& doc);
+  void spew(Instruction* i, BufferOffset offs);
+  void spewBranch(Instruction* i, BufferOffset offs, const LabelDoc& target);
+  void spewLiteralLoad(PoolHintPun& php, bool loadToPC, const Instruction* i,
+                       BufferOffset offs, const LiteralDoc& doc);
 #endif
 
  public:
@@ -1342,6 +1342,10 @@ class Assembler : public AssemblerShared {
 
   // Size of the instruction stream, in bytes, after pools are flushed.
   size_t size() const;
+  // Returns the size of the buffer we can currently read, hence ignoring any
+  // un-flushed data in currently-under-construction constant pool(s).
+  size_t readableSize() const;
+
   // Size of the jump relocation table, in bytes.
   size_t jumpRelocationTableBytes() const;
   size_t dataRelocationTableBytes() const;
@@ -1355,7 +1359,7 @@ class Assembler : public AssemblerShared {
     MOZ_ASSERT(hasCreator());
     BufferOffset offs = m_buffer.putInt(x);
 #ifdef JS_DISASM_ARM
-    spew(m_buffer.getInstOrNull(offs));
+    spew(m_buffer.getInstOrNull(offs), offs);
 #endif
     return offs;
   }
@@ -1366,7 +1370,7 @@ class Assembler : public AssemblerShared {
   writeBranchInst(uint32_t x, const LabelDoc& documentation) {
     BufferOffset offs = m_buffer.putInt(x);
 #ifdef JS_DISASM_ARM
-    spewBranch(m_buffer.getInstOrNull(offs), documentation);
+    spewBranch(m_buffer.getInstOrNull(offs), offs, documentation);
 #endif
     return offs;
   }

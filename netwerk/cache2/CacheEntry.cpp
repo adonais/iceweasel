@@ -7,6 +7,7 @@
 #include <math.h>
 
 #include <algorithm>
+#include <numbers>
 
 #include "CacheFileUtils.h"
 #include "CacheIndex.h"
@@ -1970,8 +1971,8 @@ void CacheEntry::BackgroundOp(uint32_t aOperations, bool aForceAsync)
       // Half-life is dynamic, in seconds.
       static double half_life = CacheObserver::HalfLifeSeconds();
       // Must convert from seconds to milliseconds since PR_Now() gives usecs.
-      static double const decay =
-          (M_LN2 / half_life) / static_cast<double>(PR_USEC_PER_SEC);
+      static double const decay = (std::numbers::ln2 / half_life) /
+                                  static_cast<double>(PR_USEC_PER_SEC);
 
       double now_decay = static_cast<double>(PR_Now()) * decay;
 

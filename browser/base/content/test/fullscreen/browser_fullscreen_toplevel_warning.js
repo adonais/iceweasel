@@ -19,6 +19,12 @@ async function waitForWarningState(aWarningElement, aExpectedState) {
   await BrowserTestUtils.waitForAttribute(aExpectedState, aWarningElement, "");
 }
 
+// Fires once the warning has finished sliding in. The exit button isn't
+// accessible before that, unlike what the "onscreen" attribute suggests.
+function waitForWarningOnScreen() {
+  return BrowserTestUtils.waitForEvent(window, "FullscreenWarningOnScreen");
+}
+
 add_setup(async function init() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -46,7 +52,7 @@ add_task(async function test_fullscreen_warning_cross_origin_shows_toplevel() {
       await loaded;
     });
 
-    let warningShown = waitForWarningState(warning, "onscreen");
+    let warningShown = waitForWarningOnScreen();
     await SpecialPowers.spawn(browser, [], async () => {
       let frame = content.document.querySelector("iframe");
       frame.focus();
@@ -139,7 +145,7 @@ add_task(async function test_fullscreen_warning_three_nested_origins() {
     }
 
     // Step 1: Top-level (example.com) requests fullscreen on its div.
-    let warningShown = waitForWarningState(warning, "onscreen");
+    let warningShown = waitForWarningOnScreen();
     await SpecialPowers.spawn(browser, [], () => {
       content.document.querySelector("div").requestFullscreen();
     });
@@ -152,7 +158,7 @@ add_task(async function test_fullscreen_warning_three_nested_origins() {
     await exitFullscreen();
 
     // Step 2: Middle frame (example.org) requests fullscreen on its div.
-    warningShown = waitForWarningState(warning, "onscreen");
+    warningShown = waitForWarningOnScreen();
     await SpecialPowers.spawn(browser, [], async () => {
       let middleFrame = content.document.querySelector("iframe");
       middleFrame.focus();
@@ -169,7 +175,7 @@ add_task(async function test_fullscreen_warning_three_nested_origins() {
     await exitFullscreen();
 
     // Step 3: Inner frame (example.net) requests fullscreen on an element.
-    warningShown = waitForWarningState(warning, "onscreen");
+    warningShown = waitForWarningOnScreen();
     await SpecialPowers.spawn(browser, [], async () => {
       let middleFrame = content.document.querySelector("iframe");
       await SpecialPowers.spawn(middleFrame, [], async () => {

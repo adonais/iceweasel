@@ -5,7 +5,6 @@
 package mozilla.components.browser.state.state
 
 import mozilla.components.concept.engine.EngineSession
-import mozilla.components.concept.engine.EngineSession.CookieBannerHandlingStatus
 import mozilla.components.concept.engine.manifest.WebAppManifest
 import java.util.UUID
 
@@ -37,7 +36,6 @@ data class CustomTabSessionState(
     override val contextId: String? = null,
     override val source: SessionState.Source = SessionState.Source.Internal.CustomTab,
     override val restored: Boolean = false,
-    override val cookieBanner: CookieBannerHandlingStatus = CookieBannerHandlingStatus.NO_DETECTED,
     override val originalInput: String? = null,
 ) : SessionState {
 
@@ -50,7 +48,6 @@ data class CustomTabSessionState(
         extensionState: Map<String, WebExtensionState>,
         mediaSessionState: MediaSessionState?,
         contextId: String?,
-        cookieBanner: CookieBannerHandlingStatus,
     ) = copy(
         id = id,
         content = content,

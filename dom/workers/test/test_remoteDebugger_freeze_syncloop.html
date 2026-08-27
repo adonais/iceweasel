@@ -26,6 +26,17 @@
       SimpleTest.waitForExplicitFinish();
       SimpleTest.requestFlakyTimeout("Intentionally waits on a delayed server response across a bfcache freeze/thaw.");
 
+      // Test-verify runs this test many times in one browser (and in chaos
+      // mode). Give every run a unique token so the SharedWorker and the
+      // BroadcastChannels of one run cannot collide with stale pages left over
+      // from a previous run, which would desync the freeze/thaw state machine.
+      const token = Array.from(
+        crypto.getRandomValues(new Uint8Array(8)),
+        b => b.toString(16).padStart(2, "0")
+      ).join("");
+      const bcName = "remoteDebugger_freeze_syncloop_" + token;
+      const bcNavName = "remoteDebugger_freeze_syncloop_nav_" + token;
+
       let win;
       let bc;
       let bcNav;
@@ -50,10 +61,10 @@
 
       function runTest() {
         bc = SpecialPowers.wrap(BroadcastChannel).unpartitionedTestingChannel(
-          "remoteDebugger_freeze_syncloop"
+          bcName
         );
         bcNav = SpecialPowers.wrap(BroadcastChannel).unpartitionedTestingChannel(
-          "remoteDebugger_freeze_syncloop_nav"
+          bcNavName
         );
 
         bc.onmessage = event => {
@@ -94,7 +105,11 @@
           done(false, "Timed out: the worker never finished, content process likely deadlocked");
         }, 30000);
 
-        win = window.open("remoteDebugger_freeze_syncloop_frame.html", "_blank", "noopener");
+        win = window.open(
+          "remoteDebugger_freeze_syncloop_frame.html?token=" + encodeURIComponent(token),
+          "_blank",
+          "noopener"
+        );
       }
 
       SpecialPowers.pushPrefEnv(

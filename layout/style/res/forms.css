@@ -255,9 +255,31 @@ select::picker-icon {
   vertical-align: top;
 }
 
+/* NOTE(emilio): The :not(:-moz-select-list-box) is needed, for now, because
+ * this rule otherwise would be less specific than the [popover] rules.
+ * We should probably find a better solution than this (probably ::picker()
+ * should be more specific? Or we could use cascade layers). See also
+ * https://github.com/w3c/csswg-drafts/issues/13108 */
 /* stylelint-disable-next-line selector-pseudo-element-no-unknown */
-select:-moz-select-list-box::picker-icon {
-  display: none;
+select:not(:-moz-select-list-box)::picker(select) {
+  box-sizing: border-box;
+  border: 1px solid;
+  padding: 0;
+  /* color intentionally inherits here so that options into the picker inherit
+   * the <select>'s colours in legacy appearance. */
+  color: inherit;
+  background-color: transparent;
+  margin: 0;
+  inset: auto;
+  min-inline-size: anchor-size(self-inline);
+  max-block-size: -moz-available;
+  overflow: auto;
+  position-area: self-block-end span-self-inline-end;
+  position-try-order: most-block-size;
+  position-try-fallbacks:
+    self-block-start span-self-inline-end,
+    self-block-end span-self-inline-start,
+    self-block-start span-self-inline-start;
 }
 
 select:-moz-select-list-box {
@@ -275,15 +297,16 @@ select:-moz-select-list-box {
   }
 }
 
+select:-moz-select-list-box::-moz-select-content,
 /* stylelint-disable-next-line selector-pseudo-element-no-unknown */
-select::picker(select) {
-  /* TODO(custom-select): Remove when making the picker a proper popover */
-  display: none;
+select:-moz-select-list-box::picker-icon {
+  display: none !important;
 }
 
 /* stylelint-disable-next-line selector-pseudo-element-no-unknown */
 select:-moz-select-list-box::picker(select) {
   display: contents !important;
+  color: inherit;
 }
 
 select > button:first-child {
@@ -489,8 +512,14 @@ input:where([type="color"], [type="reset"], [type="button"], [type="submit"]) {
   background-color: ButtonFace;
   cursor: default;
   box-sizing: border-box;
-  user-select: none;
   break-inside: avoid;
+}
+
+/* Disable text-selection by default, for button-flavored input elements
+   (including the file-selector button for input[type="file"]) */
+::file-selector-button,
+input:where([type="color"], [type="reset"], [type="button"], [type="submit"]) {
+  user-select: none;
 }
 
 /* Text-related properties for buttons: these ones are not shared with
@@ -997,6 +1026,12 @@ textarea:autofill {
       content: counter(fake-counter-name, disclosure-open) / "";
       display: block;
       margin-inline-start: auto;
+    }
+
+    /* stylelint-disable-next-line selector-pseudo-element-no-unknown */
+    select:not(:-moz-select-list-box)::picker(select) {
+      color: CanvasText;
+      background-color: Canvas;
     }
   }
 }

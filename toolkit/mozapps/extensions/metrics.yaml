@@ -46,8 +46,6 @@ addons:
     notification_emails:
       - addons-dev-internal@mozilla.com
     expires: never
-    no_lint:
-      - COMMON_PREFIX
     structure:
       type: array
       items:
@@ -196,8 +194,6 @@ addons:
     notification_emails:
       - addons-dev-internal@mozilla.com
     expires: never
-    no_lint:
-      - COMMON_PREFIX
     structure:
       type: array
       items:

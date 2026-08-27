@@ -3455,12 +3455,12 @@
     lhs: ValId
     rhs: ValId
 
-- name: CallIsSuspendedGeneratorResult
+- name: IsSuspendedGeneratorResult
   shared: true
-  transpile: false
+  transpile: true
   cost_estimate: 2
   args:
-    val: ValId
+    obj: ObjId
 
 - name: CompareStringResult
   shared: false

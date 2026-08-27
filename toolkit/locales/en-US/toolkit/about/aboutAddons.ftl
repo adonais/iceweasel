@@ -653,3 +653,89 @@ mlmodel-addon-detail-used-by-label = Used by
 mlmodel-addon-detail-model-card = Model card
 # This is a label for the Model Card link to Hugging face
 mlmodel-addon-detail-model-card-link-label = View on Hugging Face
+
+## Promo footer shown in the about:addons recommendations view when
+## Project Nova styles are enabled.
+## The heading refers to the user choosing a Firefox theme or extension to
+## install. In the message, "tools" refers to Firefox extensions and
+## "styles" refers to Firefox themes.
+
+find-more-addons-promo =
+  .heading = Shape { -brand-product-name } your way
+  .message = Add tools and styles to fit your needs and taste.
+
+find-more-addons-promo-open-amo-button = Explore extensions and themes
+
+## Promo footer shown in the about:addons extensions list view when
+## Project Nova styles are enabled.
+## In the message, "tools" refers to Firefox extensions.
+
+find-more-extensions-promo =
+  .heading = Find your next favorite extension
+  .message = Customize { -brand-product-name } with tools for focus, privacy, shopping, and more.
+
+find-more-extensions-promo-open-amo-button = Explore extensions
+
+## Promo footer shown in the about:addons themes list view when
+## Project Nova styles are enabled.
+## "Find more fresh looks" refers to the user looking for more Firefox themes.
+
+find-more-themes-promo =
+  .heading = Find more fresh looks
+  .message = Choose a style that makes { -brand-product-name } feel like yours.
+
+find-more-themes-promo-open-amo-button = Explore themes
+
+## Promo shown in about:addons extensions list view when no extension is yet installed
+## and Project Nova is enabled.
+
+list-empty-get-extensions-promo =
+  .heading = A few extensions go a long way
+  .message = We’ve got recommendations to help you improve focus, privacy and more.
+
+list-empty-get-extensions-promo-button = Find your first extension
+
+## Themes Mode segmented control shown at the top of the about:addons themes list view
+## when Project Nova is enabled.
+
+themes-mode-light =
+  .label = Light
+
+themes-mode-dark =
+  .label = Dark
+
+# "Device" refers to the mode that makes the Firefox active theme's selected color scheme
+# update based on the color scheme mode currently chosen by the operating system.
+themes-mode-device =
+  .label = Device
+
+# Heading for the in-product themes picker section in about:addons
+aboutaddons-themes-picker-heading =
+    .heading = { -brand-product-name } themes
+
+# Show more / show less button at the bottom of the themes picker
+aboutaddons-themes-picker-see-more = Show more
+aboutaddons-themes-picker-see-less = Show less
+
+## Enable/disable/install buttons on each theme card inside the theme picker.
+
+aboutaddons-themes-picker-enable-button =
+    .label = Enable
+
+aboutaddons-themes-picker-disable-button =
+    .label = Disable
+
+aboutaddons-themes-picker-install-button =
+    .label = Install
+
+# Shown when a Nova theme fails to be downloaded, installed, enabled, or
+# disabled (e.g. no network access to reach the AMO-hosted theme, or a
+# local install/disk failure).
+aboutaddons-themes-picker-error-message =
+    .message = Couldn’t update your theme. Check your connection and try again.
+
+# Checkbox shown inside the enabled default theme's addon-card, on Linux
+# only, to opt-in/opt-out matching the GTK/system theme colors instead of
+# the built-in default theme colors.
+aboutaddons-linux-theme-colors-checkbox-label =
+    .label = Use Linux system theme

@@ -151,16 +151,26 @@ class Http3SessionBase {
   virtual nsresult CloseWebTransport(uint64_t aSessionId, uint32_t aError,
                                      const nsACString& aMessage) = 0;
   virtual void SendDatagram(Http3WebTransportSession* aSession,
-                            nsTArray<uint8_t>& aData, uint64_t aTrackingId) = 0;
+                            nsTArray<uint8_t>& aData, uint64_t aTrackingId,
+                            uint64_t aSendGroupId, int64_t aSendOrder) = 0;
   virtual uint64_t MaxDatagramSize(uint64_t aSessionId) = 0;
+  virtual nsresult ExportWebTransportKeyingMaterial(
+      uint64_t aSessionId, const nsTArray<uint8_t>& aLabel,
+      const nsTArray<uint8_t>& aContext,
+      nsTArray<uint8_t>& aKeyingMaterial) = 0;
+  virtual nsresult RegisterWebTransportSendGroup(uint64_t aSessionId,
+                                                 uint64_t aGroupId) = 0;
+  virtual nsresult GetWebTransportSessionProtocol(uint64_t aSessionId,
+                                                  nsACString& aProtocol) = 0;
   virtual nsresult TryActivatingWebTransportStream(
       uint64_t* aStreamId, Http3StreamBase* aStream) = 0;
   virtual void ResetWebTransportStream(Http3WebTransportStream* aStream,
                                        uint64_t aErrorCode) = 0;
   virtual void StreamStopSending(Http3WebTransportStream* aStream,
                                  uint8_t aErrorCode) = 0;
-  virtual void SetSendOrder(Http3StreamBase* aStream,
-                            Maybe<int64_t> aSendOrder) = 0;
+  virtual void SetSendOrder(Http3StreamBase* aStream, int64_t aSendOrder) = 0;
+  virtual void SetSendGroup(Http3StreamBase* aStream,
+                            uint64_t aSendGroupId) = 0;
 };
 
 class Http3Session final : public Http3SessionBase,
@@ -282,14 +292,22 @@ class Http3Session final : public Http3SessionBase,
                          uint8_t aErrorCode) override;
 
   void SendDatagram(Http3WebTransportSession* aSession,
-                    nsTArray<uint8_t>& aData, uint64_t aTrackingId) override;
+                    nsTArray<uint8_t>& aData, uint64_t aTrackingId,
+                    uint64_t aSendGroupId, int64_t aSendOrder) override;
   void SendHTTPDatagram(uint64_t aStreamId, nsTArray<uint8_t>& aData,
                         uint64_t aTrackingId) override;
 
   uint64_t MaxDatagramSize(uint64_t aSessionId) override;
-
-  void SetSendOrder(Http3StreamBase* aStream,
-                    Maybe<int64_t> aSendOrder) override;
+  nsresult ExportWebTransportKeyingMaterial(
+      uint64_t aSessionId, const nsTArray<uint8_t>& aLabel,
+      const nsTArray<uint8_t>& aContext,
+      nsTArray<uint8_t>& aKeyingMaterial) override;
+  nsresult RegisterWebTransportSendGroup(uint64_t aSessionId,
+                                         uint64_t aGroupId) override;
+  nsresult GetWebTransportSessionProtocol(uint64_t aSessionId,
+                                          nsACString& aProtocol) override;
+  void SetSendOrder(Http3StreamBase* aStream, int64_t aSendOrder) override;
+  void SetSendGroup(Http3StreamBase* aStream, uint64_t aSendGroupId) override;
 
   void CloseWebTransportConn() override;
 

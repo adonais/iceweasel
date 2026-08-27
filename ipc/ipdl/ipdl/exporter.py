@@ -2,15 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import json
-import os
-import sys
 
-from ipdl.ast import ASYNC, SYNC
-from ipdl.ast import IN, OUT, INOUT
-from ipdl.ast import StringLiteral
-
-from pprint import pprint
+from ipdl.ast import IN, INOUT, OUT, SYNC, StringLiteral
 
 # We export some protocol data to JSON so it can be consumed and processed
 # further by external tooling, such as Fuzzing/Security to automatically
@@ -53,10 +46,10 @@ class JSONExporter:
                     ],
                 }
 
-            if md.direction == IN or md.direction == INOUT:
+            if md.direction in (IN, INOUT):
                 p["parent_methods"].append(serialize_md(md))
 
-            if md.direction == OUT or md.direction == INOUT:
+            if md.direction in (OUT, INOUT):
                 p["child_methods"].append(serialize_md(md))
 
         return p

@@ -62,7 +62,7 @@ add_resultGroupsLimit_tasks({
 add_resultGroupsLimit_tasks({
   testName: "root no match",
   resultGroups: {
-    group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+    group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
   },
   providerResults: [...makeHistoryResults(1)],
   expectedResultIndexes: [],
@@ -71,7 +71,7 @@ add_resultGroupsLimit_tasks({
 add_resultGroupsLimit_tasks({
   testName: "children no match",
   resultGroups: {
-    children: [{ group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION }],
+    children: [{ group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION }],
   },
   providerResults: [...makeHistoryResults(1)],
   expectedResultIndexes: [],
@@ -83,7 +83,7 @@ add_resultGroupsLimit_tasks({
   testName: "root limit: 0",
   resultGroups: {
     limit: 0,
-    group: UrlbarUtils.RESULT_GROUP.GENERAL,
+    group: UrlbarShared.RESULT_GROUP.GENERAL,
   },
   providerResults: [...makeHistoryResults(1)],
   expectedResultIndexes: [0],
@@ -95,7 +95,7 @@ add_resultGroupsLimit_tasks({
   testName: "root limit: 0 with children",
   resultGroups: {
     limit: 0,
-    children: [{ group: UrlbarUtils.RESULT_GROUP.GENERAL }],
+    children: [{ group: UrlbarShared.RESULT_GROUP.GENERAL }],
   },
   providerResults: [...makeHistoryResults(1)],
   expectedResultIndexes: [0],
@@ -107,7 +107,7 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         limit: 0,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
     ],
   },
@@ -118,7 +118,7 @@ add_resultGroupsLimit_tasks({
 add_resultGroupsLimit_tasks({
   testName: "root group",
   resultGroups: {
-    group: UrlbarUtils.RESULT_GROUP.GENERAL,
+    group: UrlbarShared.RESULT_GROUP.GENERAL,
   },
   providerResults: [...makeHistoryResults(1)],
   expectedResultIndexes: [...makeIndexRange(0, 1)],
@@ -127,7 +127,7 @@ add_resultGroupsLimit_tasks({
 add_resultGroupsLimit_tasks({
   testName: "root group multiple",
   resultGroups: {
-    group: UrlbarUtils.RESULT_GROUP.GENERAL,
+    group: UrlbarShared.RESULT_GROUP.GENERAL,
   },
   providerResults: [...makeHistoryResults(2)],
   expectedResultIndexes: [...makeIndexRange(0, 2)],
@@ -136,7 +136,7 @@ add_resultGroupsLimit_tasks({
 add_resultGroupsLimit_tasks({
   testName: "child group multiple",
   resultGroups: {
-    children: [{ group: UrlbarUtils.RESULT_GROUP.GENERAL }],
+    children: [{ group: UrlbarShared.RESULT_GROUP.GENERAL }],
   },
   providerResults: [...makeHistoryResults(2)],
   expectedResultIndexes: [0, 1],
@@ -148,7 +148,7 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         limit: 1,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
     ],
   },
@@ -162,9 +162,9 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         limit: 1,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
-      { group: UrlbarUtils.RESULT_GROUP.GENERAL },
+      { group: UrlbarShared.RESULT_GROUP.GENERAL },
     ],
   },
   providerResults: [...makeHistoryResults(2)],
@@ -177,7 +177,7 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         limit: 1,
-        children: [{ group: UrlbarUtils.RESULT_GROUP.GENERAL }],
+        children: [{ group: UrlbarShared.RESULT_GROUP.GENERAL }],
       },
     ],
   },
@@ -192,8 +192,8 @@ add_resultGroupsLimit_tasks({
       {
         limit: 1,
         children: [
-          { group: UrlbarUtils.RESULT_GROUP.GENERAL },
-          { group: UrlbarUtils.RESULT_GROUP.GENERAL },
+          { group: UrlbarShared.RESULT_GROUP.GENERAL },
+          { group: UrlbarShared.RESULT_GROUP.GENERAL },
         ],
       },
     ],
@@ -208,9 +208,9 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         limit: 1,
-        children: [{ group: UrlbarUtils.RESULT_GROUP.GENERAL }],
+        children: [{ group: UrlbarShared.RESULT_GROUP.GENERAL }],
       },
-      { group: UrlbarUtils.RESULT_GROUP.GENERAL },
+      { group: UrlbarShared.RESULT_GROUP.GENERAL },
     ],
   },
   providerResults: [...makeHistoryResults(2)],
@@ -226,7 +226,7 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             limit: 99,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
         ],
       },
@@ -245,7 +245,7 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             limit: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
         ],
       },
@@ -259,8 +259,8 @@ add_resultGroupsLimit_tasks({
   testName: "multiple groups",
   resultGroups: {
     children: [
-      { group: UrlbarUtils.RESULT_GROUP.GENERAL },
-      { group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION },
+      { group: UrlbarShared.RESULT_GROUP.GENERAL },
+      { group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION },
     ],
   },
   providerResults: [
@@ -276,9 +276,9 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         limit: 1,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
-      { group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION },
+      { group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION },
     ],
   },
   providerResults: [
@@ -292,10 +292,10 @@ add_resultGroupsLimit_tasks({
   testName: "multiple groups limit 2",
   resultGroups: {
     children: [
-      { group: UrlbarUtils.RESULT_GROUP.GENERAL },
+      { group: UrlbarShared.RESULT_GROUP.GENERAL },
       {
         limit: 1,
-        group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+        group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
       },
     ],
   },
@@ -312,10 +312,10 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         limit: 1,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
-      { group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION },
-      { group: UrlbarUtils.RESULT_GROUP.GENERAL },
+      { group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION },
+      { group: UrlbarShared.RESULT_GROUP.GENERAL },
     ],
   },
   providerResults: [
@@ -333,12 +333,12 @@ add_resultGroupsLimit_tasks({
   testName: "multiple groups limit 4",
   resultGroups: {
     children: [
-      { group: UrlbarUtils.RESULT_GROUP.GENERAL },
+      { group: UrlbarShared.RESULT_GROUP.GENERAL },
       {
         limit: 1,
-        group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+        group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
       },
-      { group: UrlbarUtils.RESULT_GROUP.GENERAL },
+      { group: UrlbarShared.RESULT_GROUP.GENERAL },
     ],
   },
   providerResults: [
@@ -354,8 +354,8 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         children: [
-          { group: UrlbarUtils.RESULT_GROUP.GENERAL },
-          { group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION },
+          { group: UrlbarShared.RESULT_GROUP.GENERAL },
+          { group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION },
         ],
       },
     ],
@@ -372,10 +372,10 @@ add_resultGroupsLimit_tasks({
   resultGroups: {
     children: [
       {
-        children: [{ group: UrlbarUtils.RESULT_GROUP.GENERAL }],
+        children: [{ group: UrlbarShared.RESULT_GROUP.GENERAL }],
       },
       {
-        children: [{ group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION }],
+        children: [{ group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION }],
       },
     ],
   },
@@ -393,8 +393,8 @@ add_resultGroupsLimit_tasks({
       {
         limit: 1,
         children: [
-          { group: UrlbarUtils.RESULT_GROUP.GENERAL },
-          { group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION },
+          { group: UrlbarShared.RESULT_GROUP.GENERAL },
+          { group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION },
         ],
       },
     ],
@@ -414,12 +414,12 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             limit: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
         ],
       },
       {
-        children: [{ group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION }],
+        children: [{ group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION }],
       },
     ],
   },
@@ -435,13 +435,13 @@ add_resultGroupsLimit_tasks({
   resultGroups: {
     children: [
       {
-        children: [{ group: UrlbarUtils.RESULT_GROUP.GENERAL }],
+        children: [{ group: UrlbarShared.RESULT_GROUP.GENERAL }],
       },
       {
         children: [
           {
             limit: 1,
-            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+            group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           },
         ],
       },
@@ -462,15 +462,15 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             limit: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
         ],
       },
       {
-        children: [{ group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION }],
+        children: [{ group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION }],
       },
       {
-        children: [{ group: UrlbarUtils.RESULT_GROUP.GENERAL }],
+        children: [{ group: UrlbarShared.RESULT_GROUP.GENERAL }],
       },
     ],
   },
@@ -490,18 +490,18 @@ add_resultGroupsLimit_tasks({
   resultGroups: {
     children: [
       {
-        children: [{ group: UrlbarUtils.RESULT_GROUP.GENERAL }],
+        children: [{ group: UrlbarShared.RESULT_GROUP.GENERAL }],
       },
       {
         children: [
           {
             limit: 1,
-            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+            group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           },
         ],
       },
       {
-        children: [{ group: UrlbarUtils.RESULT_GROUP.GENERAL }],
+        children: [{ group: UrlbarShared.RESULT_GROUP.GENERAL }],
       },
     ],
   },
@@ -520,12 +520,12 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             limit: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
         ],
       },
-      { group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION },
-      { group: UrlbarUtils.RESULT_GROUP.GENERAL },
+      { group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION },
+      { group: UrlbarShared.RESULT_GROUP.GENERAL },
     ],
   },
   providerResults: [
@@ -546,11 +546,11 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+        group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
       },
     ],
   },
@@ -573,11 +573,11 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         flex: 2,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+        group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
       },
     ],
   },
@@ -600,11 +600,11 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
       {
         flex: 2,
-        group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+        group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
       },
     ],
   },
@@ -627,15 +627,15 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+        group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
       },
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+        group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
       },
     ],
   },
@@ -667,15 +667,15 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         flex: 2,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+        group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
       },
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+        group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
       },
     ],
   },
@@ -703,15 +703,15 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
       {
         flex: 2,
-        group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+        group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
       },
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+        group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
       },
     ],
   },
@@ -739,15 +739,15 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+        group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
       },
       {
         flex: 2,
-        group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+        group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
       },
     ],
   },
@@ -779,15 +779,15 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         flex: 2,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+        group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
       },
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+        group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
       },
     ],
   },
@@ -810,15 +810,15 @@ add_resultGroupsLimit_tasks({
     children: [
       {
         flex: 2,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
       {
         flex: 2,
-        group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+        group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
       },
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+        group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
       },
     ],
   },
@@ -849,11 +849,11 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             flex: 2,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
           {
             flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+            group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           },
         ],
       },
@@ -881,11 +881,11 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
           {
             flex: 2,
-            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+            group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           },
         ],
       },
@@ -913,11 +913,11 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
           {
             flex: 2,
-            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+            group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           },
         ],
       },
@@ -927,11 +927,11 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             flex: 2,
-            group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+            group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
           },
           {
             flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
         ],
       },
@@ -966,19 +966,19 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
           {
             flex: 2,
-            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+            group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           },
         ],
       },
       {
         limit: 3,
         children: [
-          { group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY },
-          { group: UrlbarUtils.RESULT_GROUP.GENERAL },
+          { group: UrlbarShared.RESULT_GROUP.FORM_HISTORY },
+          { group: UrlbarShared.RESULT_GROUP.GENERAL },
         ],
       },
     ],
@@ -1010,17 +1010,17 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
           {
             flex: 2,
-            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+            group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           },
         ],
       },
       {
         limit: 3,
-        group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+        group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
       },
     ],
   },
@@ -1052,11 +1052,11 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
           {
             flex: 2,
-            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+            group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           },
         ],
       },
@@ -1066,11 +1066,11 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             flex: 2,
-            group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+            group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
           },
           {
             flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
         ],
       },
@@ -1109,11 +1109,11 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
           {
             flex: 2,
-            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+            group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           },
         ],
       },
@@ -1123,11 +1123,11 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             flex: 2,
-            group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+            group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
           },
           {
             flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
         ],
       },
@@ -1163,11 +1163,11 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
           {
             flex: 2,
-            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+            group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           },
         ],
       },
@@ -1177,11 +1177,11 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             flex: 2,
-            group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+            group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
           },
           {
             flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
         ],
       },
@@ -1211,11 +1211,11 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
           {
             flex: 2,
-            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+            group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           },
         ],
       },
@@ -1225,11 +1225,11 @@ add_resultGroupsLimit_tasks({
         children: [
           {
             flex: 2,
-            group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+            group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
           },
           {
             flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: UrlbarShared.RESULT_GROUP.GENERAL,
           },
         ],
       },
@@ -1256,11 +1256,11 @@ add_resultGroupsLimit_tasks({
       {
         limit: 1,
         flex: 2,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
       {
         flex: 1,
-        group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+        group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
       },
     ],
   },
@@ -1281,10 +1281,10 @@ add_resultGroupsLimit_tasks({
   resultGroups: {
     children: [
       {
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
       {
-        group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+        group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
       },
     ],
   },
@@ -1309,7 +1309,7 @@ add_resultGroups_task({
       {
         maxResultCount: 1,
         availableSpan: 3,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
     ],
   },
@@ -1324,7 +1324,7 @@ add_resultGroups_task({
       {
         maxResultCount: 1,
         availableSpan: 3,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
     ],
   },
@@ -1343,7 +1343,7 @@ add_resultGroups_task({
       {
         maxResultCount: 3,
         availableSpan: 1,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
     ],
   },
@@ -1358,7 +1358,7 @@ add_resultGroups_task({
       {
         maxResultCount: 3,
         availableSpan: 1,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
     ],
   },
@@ -1372,7 +1372,7 @@ add_resultGroups_task({
     children: [
       {
         availableSpan: 1,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
     ],
   },
@@ -1386,7 +1386,7 @@ add_resultGroups_task({
     children: [
       {
         availableSpan: 1,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
     ],
   },
@@ -1400,7 +1400,7 @@ add_resultGroups_task({
     children: [
       {
         availableSpan: 3,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
     ],
   },
@@ -1418,7 +1418,7 @@ add_resultGroups_task({
     children: [
       {
         availableSpan: 3,
-        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: UrlbarShared.RESULT_GROUP.GENERAL,
       },
     ],
   },

@@ -19,7 +19,7 @@ namespace mozilla {
 // path.
 class CallbackThreadRegistry final {
  public:
-  CallbackThreadRegistry();
+  CallbackThreadRegistry() = default;
 
   // It would be nice to be able to assert that all threads have been
   // unregistered, but we can't: it's legal to suspend an audio stream, so
@@ -47,7 +47,8 @@ class CallbackThreadRegistry final {
     ProfilerThreadId mId;  // from profiler_current_thread_id
     int mUserCount = 0;
   };
-  DataMutex<nsTArray<ThreadUserCount>> mThreadIds;
+  DataMutex<nsTArray<ThreadUserCount>> mThreadIds{
+      "CallbackThreadRegistry::mThreadIds"};
 };
 
 }  // namespace mozilla

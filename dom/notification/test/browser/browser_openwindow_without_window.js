@@ -17,14 +17,13 @@ let callListener = () => {
 };
 
 let mockAlertsService = {
-  showAlert(alert, alertListener) {
+  showAlertWithCallbacks(alert, alertCallbacks) {
     ok(true, "Showing alert");
     // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
     setTimeout(function () {
-      alertListener.observe(null, "alertshow", null);
+      alertCallbacks.onAlertShow();
     }, 100);
-    callListener = () =>
-      alertListener.observe(null, "alertclickcallback", null);
+    callListener = () => alertCallbacks.onAlertClick();
   },
 
   QueryInterface: ChromeUtils.generateQI(["nsIAlertsService"]),

@@ -133,7 +133,10 @@ class SponsoredContentsDaoTest {
 
     @Test
     fun `GIVEN no sponsored contents are persisted in the database WHEN sponsored content impression is recorded THEN don't persist any data in the database`() = runTest {
-        dao.recordImpression(targetUrl = PocketTestResources.sponsoredContentEntity.url)
+        dao.recordImpression(
+            targetUrl = PocketTestResources.sponsoredContentEntity.url,
+            targetImpressionDateInSeconds = 0L,
+        )
 
         val impressions = dao.getSponsoredContentImpressions()
 

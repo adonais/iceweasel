@@ -7,6 +7,7 @@
 import errno
 import json
 import os
+import platform
 import shutil
 import site
 import socket
@@ -51,6 +52,13 @@ def pip_command(*, python_executable, subcommand=None, args=None, non_uv_args=No
             command.append(subcommand)
             python_root = Path(python_executable).parent.parent
             command.append(f"--python={python_root}")
+            # The fetched uv may not match the target interpreter's arch (e.g.
+            # an x86_64 uv running under Rosetta on an arm64 mac worker), which
+            # makes it resolve wrong-arch wheels. We run under the interpreter
+            # the venv is built from, so tell uv the target arch explicitly.
+            if subcommand == "install" and sys.platform == "darwin":
+                arch = "aarch64" if platform.machine() == "arm64" else "x86_64"
+                command.append(f"--python-platform={arch}-apple-darwin")
         full_command = command + (args or [])
     else:
         command = [python_executable, "-m", "pip"]
@@ -564,17 +572,18 @@ class VirtualenvMixin:
             if uv_executable := get_uv_executable():
                 self.run_command([uv_executable, "--version"])
 
-                # MOZ_PYTHON_HOME is only set in CI, but this code can execute locally for testing
-                # (e.g.: `./mach raptor`), so let's fall back to the sys.executable path in that case.
-                python_path = os.environ.get(
-                    "MOZ_PYTHON_HOME", Path(sys.executable).parents[1]
-                )
-                uv_venv_creation_command = [
-                    "uv",
-                    "venv",
-                    venv_path,
-                    "--relocatable",
-                    f"--python={python_path}",
+                uv_venv_creation_command = ["uv", "venv", venv_path]
+                # `uv venv --relocatable` rewrites console-script shebangs into
+                # a /bin/sh trampoline that shells out to `realpath` to locate
+                # the venv. macOS workers (10.15) don't ship `realpath`, so
+                # those scripts fail to run there. Their task paths are short
+                # enough that plain absolute-path shebangs stay well under the
+                # length limit, whereas the long device-pool paths on other
+                # platforms overflow it and genuinely need a relative shebang.
+                if not self._is_darwin():
+                    uv_venv_creation_command.append("--relocatable")
+                uv_venv_creation_command += [
+                    f"--python={sys.executable}",
                     "--no-project",
                 ]
                 self.run_command(

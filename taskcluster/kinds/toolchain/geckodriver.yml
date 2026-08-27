@@ -14,6 +14,7 @@ task-defaults:
         shippable: true
         rebuild-on-release: true
     run:
+        clone-with: hg
         script: build-geckodriver.sh
         toolchain-artifact: public/build/geckodriver.tar.gz
         sparse-profile: null
@@ -31,6 +32,7 @@ linux64-geckodriver:
         symbol: TL(gd)
         platform: linux64/opt
     run:
+        clone-with: hg
         arguments: ['x86_64-unknown-linux-musl']
     attributes:
         build_platform: linux64-geckodriver
@@ -43,6 +45,7 @@ linux64-aarch64-geckodriver:
         symbol: TLA64(gd)
         platform: linux64-aarch64/opt
     run:
+        clone-with: hg
         arguments: ['aarch64-unknown-linux-musl']
     attributes:
         build_platform: linux64-aarch64-geckodriver
@@ -56,6 +59,7 @@ macosx64-geckodriver:
         symbol: TM(gd)
         platform: macosx64/opt
     run:
+        clone-with: hg
         arguments: ['apple-darwin']
     attributes:
         build_platform: macosx64-geckodriver
@@ -71,6 +75,7 @@ win32-geckodriver:
         symbol: TW32(gd)
         platform: win32/opt
     run:
+        clone-with: hg
         arguments: ['i686-pc-windows-msvc']
         toolchain-artifact: public/build/geckodriver.zip
     attributes:
@@ -86,6 +91,7 @@ win64-aarch64-geckodriver:
         symbol: TWA64(gd)
         platform: windows2012-aarch64/opt
     run:
+        clone-with: hg
         arguments: ['aarch64-pc-windows-msvc']
         toolchain-artifact: public/build/geckodriver.zip
     attributes:
@@ -101,6 +107,7 @@ win64-geckodriver:
         symbol: TW64(gd)
         platform: win64/opt
     run:
+        clone-with: hg
         arguments: ['x86_64-pc-windows-msvc']
         toolchain-artifact: public/build/geckodriver.zip
     attributes:

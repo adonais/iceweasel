@@ -16,10 +16,11 @@ interface IPProtectionHandler {
     /**
      * Activates the IP protection.
      *
+     * @param countryCode ISO 3166-1 alpha-2 country code.
      * @param onResult Invoked once the activation request resolves. Receives `null` on success or
      *  the [Throwable] that caused the failure.
      */
-    fun activate(onResult: (Throwable?) -> Unit = {})
+    fun activate(countryCode: String?, onResult: (Throwable?) -> Unit = {})
 
     /**
      * Deactivates the IP protection proxy.
@@ -42,6 +43,11 @@ interface IPProtectionHandler {
      * Request for the current [ServiceState].
      */
     fun getState(onResult: (ServiceState) -> Unit)
+
+    /**
+     * Requests an update for the list of countries available in the proxy server-list.
+     */
+    fun updateCountryList()
 
     /**
      * Initializes the proxy state machine.
@@ -157,6 +163,17 @@ interface IPProtectionHandler {
                 " lastError=$lastError)"
         }
     }
+
+    /**
+     * Represents a country from the IP protection proxy server list.
+     *
+     * @property code ISO 3166-1 alpha-2 country code.
+     * @property available Whether the country could be selected as the active proxy.
+     */
+    data class Country(
+        val code: String,
+        val available: Boolean,
+    )
 }
 
 /** The possible states of the IP protection service. */

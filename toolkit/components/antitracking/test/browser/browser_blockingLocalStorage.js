@@ -1,3 +1,5 @@
+requestLongerTimeout(2);
+
 AntiTracking.runTestInNormalAndPrivateMode(
   "localStorage",
   async _ => {

@@ -100,7 +100,6 @@ internal open class TestableFxaAccountManager(
 class FxaAccountManagerTest {
     @After
     fun cleanup() {
-        SyncAuthInfoCache(testContext).clear()
         SyncEnginesStorage(testContext).clear()
     }
 

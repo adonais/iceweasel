@@ -91,7 +91,7 @@ static DebuggerFrameType GetFrameType(AbstractFramePtr frame) {
   }
 
   if (result) {
-    cx->markAtom(result);
+    cx->recordRef(result);
   }
   return true;
 }

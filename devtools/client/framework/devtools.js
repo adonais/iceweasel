@@ -831,7 +831,8 @@ class DevTools extends EventEmitter {
 
   /**
    * Compatibility layer for web-extensions. Used by DevToolsShim for
-   * browser/components/extensions/ext-devtools.js
+   * browser/components/extensions/parent/ext-devtools-inspectedWindow.js and
+   * browser/components/extensions/parent/ext-devtools-panels.js
    *
    * web-extensions need to use dedicated instances of Commands and cannot reuse the
    * cached instances managed by DevTools.
@@ -843,18 +844,7 @@ class DevTools extends EventEmitter {
   }
 
   /**
-   * Compatibility layer for web-extensions. Used by DevToolsShim for
-   * toolkit/components/extensions/ext-c-toolkit.js
-   */
-  openBrowserConsole() {
-    const {
-      BrowserConsoleManager,
-    } = require("resource://devtools/client/webconsole/browser-console-manager.js");
-    BrowserConsoleManager.openBrowserConsoleOrFocus();
-  }
-
-  /**
-   * Called from the DevToolsShim, used by nsContextMenu.js.
+   * Called from the DevToolsShim, used by nsContextMenu.sys.mjs.
    *
    * @param {XULTab} tab
    *        The browser tab on which inspect node was used.
@@ -911,7 +901,7 @@ class DevTools extends EventEmitter {
   }
 
   /**
-   * Called from the DevToolsShim, used by nsContextMenu.js.
+   * Called from the DevToolsShim, used by nsContextMenu.sys.mjs.
    *
    * @param {XULTab} tab
    *        The browser tab on which inspect accessibility was used.

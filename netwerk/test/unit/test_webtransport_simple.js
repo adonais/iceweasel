@@ -87,7 +87,7 @@ add_task(async function test_wt_datagram() {
   let rawData = new Uint8Array(size);
   rawData.fill(42);
 
-  webTransport.sendDatagram(rawData, 1);
+  webTransport.sendDatagram(rawData, 1, 0, 0);
   let { id, outcome } = await pOutcome;
   Assert.equal(id, 1);
   Assert.equal(outcome, Ci.WebTransportSessionEventListener.SENT);
@@ -103,7 +103,7 @@ add_task(async function test_wt_datagram() {
   info("max size:" + size);
 
   rawData = new Uint8Array(size + 1);
-  webTransport.sendDatagram(rawData, 2);
+  webTransport.sendDatagram(rawData, 2, 0, 0);
 
   pOutcome = new Promise(resolve => {
     listener.onDatagramOutcome = resolve;

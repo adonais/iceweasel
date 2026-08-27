@@ -59,6 +59,7 @@ from __future__ import absolute_import
 import fluent.syntax.ast as FTL
 from fluent.migrate.helpers import transforms_from
 
+
 def migrate(ctx):
     """Bug 1411707 - Migrate the findbar XBL binding to a Custom Element, part {index}."""
 
@@ -66,10 +67,13 @@ def migrate(ctx):
         "toolkit/toolkit/main-window/findbar.ftl",
         "toolkit/toolkit/main-window/findbar.ftl",
         transforms_from(
-"""
+            """
 findbar-next =
     .tooltiptext = { COPY(from_path, "next.tooltip") }
-""", from_path="toolkit/chrome/global/findbar.dtd"))
+""",
+            from_path="toolkit/chrome/global/findbar.dtd",
+        ),
+    )
 ```
 
 The first important thing to notice is that the migration recipe needs file
@@ -105,10 +109,12 @@ ctx.add_transforms(
     "toolkit/toolkit/main-window/findbar.ftl",
     "toolkit/toolkit/main-window/findbar.ftl",
     transforms_from(
-"""
+        """
 findbar-next =
     .tooltiptext = { COPY("toolkit/chrome/global/findbar.dtd", "next.tooltip") }
-"""))
+"""
+    ),
+)
 ```
 
 This method of writing migration recipes allows to take the original FTL
@@ -132,14 +138,11 @@ ctx.add_transforms(
             attributes=[
                 FTL.Attribute(
                     id=FTL.Identifier("tooltiptext"),
-                    value=COPY(
-                        "toolkit/chrome/global/findbar.dtd",
-                        "next.tooltip"
-                    )
+                    value=COPY("toolkit/chrome/global/findbar.dtd", "next.tooltip"),
                 )
-            ]
+            ],
         )
-    ]
+    ],
 )
 ```
 
@@ -191,8 +194,8 @@ FTL.Message(
         {
             "&brandShortName;": TERM_REFERENCE("brand-short-name"),
         },
-    )
-),
+    ),
+)
 ```
 
 This creates an {python}`FTL.Message`, taking the value from the legacy string
@@ -208,12 +211,10 @@ needs to be defined as a {python}`TextElement`. For example, to replace
 {js}`example.com` with HTML markup:
 
 ```python
-value=REPLACE(
+value = REPLACE(
     "browser/chrome/browser/preferences/preferences.properties",
     "searchResults.sorryMessageWin",
-    {
-        "example.com": FTL.TextElement('<span data-l10n-name="example"></span>')
-    }
+    {"example.com": FTL.TextElement('<span data-l10n-name="example"></span>')},
 )
 ```
 
@@ -265,8 +266,8 @@ FTL.Message(
             "%1$S": VARIABLE_REFERENCE("name"),
             "%2$S": VARIABLE_REFERENCE("buildID"),
         },
-        normalize_printf=True
-    )
+        normalize_printf=True,
+    ),
 )
 ```
 
@@ -331,21 +332,20 @@ To disable the default trimming behavior, set {python}`trim:"False"` or
 
 ```python
 transforms_from(
-"""
+    """
 about-about-note = { COPY("toolkit/chrome/global/aboutAbout.dtd", "aboutAbout.note", trim:"False") }
-""")
+"""
+)
 
 FTL.Message(
     id=FTL.Identifier("discover-description"),
     value=REPLACE(
         "toolkit/chrome/mozapps/extensions/extensions.dtd",
         "discover.description2",
-        {
-            "&brandShortName;": TERM_REFERENCE("brand-short-name")
-        },
-        trim=False
-    )
-),
+        {"&brandShortName;": TERM_REFERENCE("brand-short-name")},
+        trim=False,
+    ),
+)
 ```
 
 ## Concatenating Strings
@@ -396,13 +396,13 @@ FTL.Message(
                     {
                         "%1$S": TERM_REFERENCE("brand-short-name"),
                     },
-                    normalize_printf=True
+                    normalize_printf=True,
                 ),
-                FTL.TextElement("</a>")
+                FTL.TextElement("</a>"),
             )
-        }
-    )
-),
+        },
+    ),
+)
 ```
 
 {js}`%S` in {js}`searchResults.needHelpSupportLink` is replaced by a reference
@@ -466,13 +466,8 @@ FTL.Message(
         "browser/chrome/browser/preferences/preferences.properties",
         "disableContainersOkButton",
         VARIABLE_REFERENCE("tabCount"),
-        lambda text: REPLACE_IN_TEXT(
-            text,
-            {
-                "#1": VARIABLE_REFERENCE("tabCount")
-            }
-        )
-    )
+        lambda text: REPLACE_IN_TEXT(text, {"#1": VARIABLE_REFERENCE("tabCount")}),
+    ),
 )
 ```
 
@@ -527,7 +522,7 @@ FTL.Message(
                                     value=COPY(
                                         "browser/chrome/browser/preferences/main.dtd",
                                         "useCurrentPage.label",
-                                    )
+                                    ),
                                 ),
                                 FTL.Variant(
                                     key=FTL.Identifier("other"),
@@ -535,23 +530,23 @@ FTL.Message(
                                     value=COPY(
                                         "browser/chrome/browser/preferences/main.dtd",
                                         "useMultiple.label",
-                                    )
-                                )
-                            ]
+                                    ),
+                                ),
+                            ],
                         )
                     )
                 ]
-            )
+            ),
         ),
         FTL.Attribute(
             id=FTL.Identifier("accesskey"),
             value=COPY(
                 "browser/chrome/browser/preferences/main.dtd",
                 "useCurrentPage.accesskey",
-            )
+            ),
         ),
     ],
-),
+)
 ```
 
 This Transform uses several concepts already described in this document. Notable
@@ -564,7 +559,7 @@ are copied without interpolation.
 
 ```python
 transforms_from(
-"""
+    """
 use-current-pages =
     .label =
         { $tabCount ->
@@ -572,7 +567,8 @@ use-current-pages =
            *[other] { COPY(main_dtd, "useMultiple.label") }
         }
     .accesskey = { COPY(main_dtd, "useCurrentPage.accesskey") }
-""", main_dtd="browser/chrome/browser/preferences/main.dtd"
+""",
+    main_dtd="browser/chrome/browser/preferences/main.dtd",
 )
 ```
 

@@ -18,4 +18,12 @@ interface IPProtectionDelegate {
      * @param info The current [IPProtectionHandler.StateInfo].
      */
     fun onStateChanged(info: IPProtectionHandler.StateInfo)
+
+    /**
+     * Called when the list of available proxy countries changes, either in response to
+     * [IPProtectionHandler.updateCountryList] or by a server side push.
+     *
+     * @param countries The current list of available [IPProtectionHandler.Country] entries.
+     */
+    fun onCountryListChanged(countries: List<IPProtectionHandler.Country>) = Unit
 }

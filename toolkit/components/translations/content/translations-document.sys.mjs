@@ -1489,19 +1489,57 @@ export class TranslationsDocument {
                 cancelledFromEngineCount +=
                   contentPreventionResult.cancelledFromEngineCount;
 
-                const selfOrParentElement =
-                  asElement(removedNode) ?? asElement(removedNode.parentNode);
+                // We want to consider both elements if they are distinct,
+                // but handle once if they're the same, so we will deduplicate with a Set.
+                const observableElements = new Set([
+                  getObservableElementForContentTranslation(removedNode),
+                  getObservableElementForContentTranslation(mutation.target),
+                ]);
 
-                if (selfOrParentElement) {
-                  deleteFromNestedMap(
-                    this.#pendingContentTranslations,
-                    selfOrParentElement,
-                    removedNode
-                  );
-                  this.#removeFromContentIntersectionObservation(
-                    selfOrParentElement,
-                    removedNode
-                  );
+                for (const observableElement of observableElements) {
+                  if (!observableElement) {
+                    continue;
+                  }
+
+                  const observedNodes =
+                    this.#intersectionObservedContentElements.get(
+                      observableElement
+                    );
+
+                  if (!observedNodes) {
+                    continue;
+                  }
+
+                  // The following loop may mutate the structure of observedNodes,
+                  // so we will loop through a snapshot of the Set.
+                  for (const targetNode of [...observedNodes]) {
+                    if (
+                      targetNode !== removedNode &&
+                      !removedNode.contains(targetNode)
+                    ) {
+                      continue;
+                    }
+
+                    deleteFromNestedMap(
+                      this.#queuedIntersectionPrunableContentElements,
+                      observableElement,
+                      targetNode
+                    );
+                    deleteFromNestedMap(
+                      this.#queuedIntersectionExemptContentElements,
+                      observableElement,
+                      targetNode
+                    );
+                    deleteFromNestedMap(
+                      this.#pendingContentTranslations,
+                      observableElement,
+                      targetNode
+                    );
+                    this.#removeFromContentIntersectionObservation(
+                      observableElement,
+                      targetNode
+                    );
+                  }
                 }
 
                 const element = asElement(removedNode);
@@ -1820,25 +1858,25 @@ export class TranslationsDocument {
     this.#processedContentNodes.delete(node);
     this.#nodesWithMutatedContent.add(node);
 
-    const selfOrParentElement = asElement(node) ?? asElement(node.parentNode);
+    const observableElement = getObservableElementForContentTranslation(node);
 
-    if (selfOrParentElement) {
+    if (observableElement) {
       deleteFromNestedMap(
         this.#pendingContentTranslations,
-        selfOrParentElement,
+        observableElement,
         node
       );
 
-      if (this.#intersectionObservedContentElements.has(selfOrParentElement)) {
+      if (this.#intersectionObservedContentElements.has(observableElement)) {
         // If the mutated content belongs to an element that we are already observing
         // for intersection, we must re-register it with the Beyond-Viewport intersection
         // observer, which will ensure that any mutated elements within extended-viewport
         // proximity will be re-enqueued for prioritization when the next observer cycle runs.
         this.#intersectionObserverForContentTranslationsBeyondViewport.unobserve(
-          selfOrParentElement
+          observableElement
         );
         this.#intersectionObserverForContentTranslationsBeyondViewport.observe(
-          selfOrParentElement
+          observableElement
         );
       }
     }
@@ -2011,24 +2049,36 @@ export class TranslationsDocument {
   }
 
   /**
-   * If a pending node contains or is the target node, return that pending node.
+   * Return the element used to cancel pending content translations associated
+   * with the target.
    *
    * @param {Node} target
    *
-   * @returns {Element | undefined}
+   * @returns {Element | null}
    */
   #getPendingParentElementFromTarget(target) {
+    const targetObservableElement =
+      getObservableElementForContentTranslation(target);
+    if (
+      targetObservableElement &&
+      this.#pendingContentTranslations.has(targetObservableElement)
+    ) {
+      return targetObservableElement;
+    }
+
     const pendingParent = this.#nodeToPendingParent.get(target);
     const pendingParentElement = asElement(pendingParent);
+    const pendingParentObservableElement =
+      getObservableElementForContentTranslation(pendingParentElement);
 
     if (
-      pendingParentElement &&
-      this.#pendingContentTranslations.has(pendingParentElement)
+      pendingParentObservableElement &&
+      this.#pendingContentTranslations.has(pendingParentObservableElement)
     ) {
       return pendingParentElement;
     }
 
-    return undefined;
+    return null;
   }
 
   /**
@@ -2055,7 +2105,11 @@ export class TranslationsDocument {
     const parentElement = asElement(node.parentNode);
 
     if (textNode && parentElement) {
-      const pendingNodes = this.#pendingContentTranslations.get(parentElement);
+      const observableElement =
+        getObservableElementForContentTranslation(textNode);
+      const pendingNodes =
+        observableElement &&
+        this.#pendingContentTranslations.get(observableElement);
       const translationId = pendingNodes?.get(textNode);
 
       if (translationId) {
@@ -2072,7 +2126,7 @@ export class TranslationsDocument {
       }
     }
 
-    const element = asElement(node);
+    const element = asElement(node) ?? parentElement;
     if (!element) {
       return {
         preventedCount: 0,
@@ -2085,8 +2139,18 @@ export class TranslationsDocument {
     let cancelledFromSchedulerCount = 0;
     let cancelledFromEngineCount = 0;
 
+    const observableElement =
+      getObservableElementForContentTranslation(element);
+    if (!observableElement) {
+      return {
+        preventedCount,
+        cancelledFromSchedulerCount,
+        cancelledFromEngineCount,
+      };
+    }
+
     const preventionResult =
-      this.#preventUnscheduledContentTranslations(element);
+      this.#preventUnscheduledContentTranslations(observableElement);
 
     if (preventionResult.preventedNodeSet) {
       // We were able to prevent these content translations before
@@ -2096,7 +2160,8 @@ export class TranslationsDocument {
         preventionResult.cancelledFromSchedulerCount;
     }
 
-    const pendingNodes = this.#pendingContentTranslations.get(element);
+    const pendingNodes =
+      this.#pendingContentTranslations.get(observableElement);
     if (!pendingNodes) {
       // No pending content translations were found for this element.
       // They either already completed, or never existed.
@@ -2122,8 +2187,8 @@ export class TranslationsDocument {
     }
 
     if (pendingNodes.size === 0) {
-      removeMozTranslationsIds(element);
-      this.#pendingContentTranslations.delete(element);
+      removeMozTranslationsIds(observableElement);
+      this.#pendingContentTranslations.delete(observableElement);
     }
 
     return {
@@ -2698,7 +2763,7 @@ export class TranslationsDocument {
     }
 
     if (
-      nodeOrParentIncludesItself(
+      isContentTranslationTargetRegistered(
         node,
         this.#intersectionObservedContentElements
       )
@@ -2743,24 +2808,20 @@ export class TranslationsDocument {
    * @param {Element} element
    */
   #enqueueForIntersectionPrunableContentPrioritization(element) {
-    if (this.#queuedIntersectionPrunableContentElements.has(element)) {
-      return;
-    }
-
     const nodeSet =
       this.#intersectionObservedContentElements.get(element) ??
       new Set([element]);
 
-    let queuedNodes =
+    const queuedNodes =
       this.#queuedIntersectionPrunableContentElements.get(element);
 
-    if (queuedNodes) {
-      for (const node of nodeSet) {
-        queuedNodes.add(node);
-      }
-    } else {
-      queuedNodes = nodeSet;
-      this.#queuedIntersectionPrunableContentElements.set(element, queuedNodes);
+    if (!queuedNodes) {
+      this.#queuedIntersectionPrunableContentElements.set(element, nodeSet);
+      return;
+    }
+
+    for (const node of nodeSet) {
+      queuedNodes.add(node);
     }
   }
 
@@ -2775,24 +2836,20 @@ export class TranslationsDocument {
    * @param {Element} element
    */
   #enqueueForIntersectionExemptContentPrioritization(element) {
-    if (this.#queuedIntersectionExemptContentElements.has(element)) {
-      return;
-    }
-
     const nodeSet =
       this.#intersectionObservedContentElements.get(element) ??
       new Set([element]);
 
-    let queuedNodes =
+    const queuedNodes =
       this.#queuedIntersectionExemptContentElements.get(element);
 
-    if (queuedNodes) {
-      for (const node of nodeSet) {
-        queuedNodes.add(node);
-      }
-    } else {
-      queuedNodes = nodeSet;
-      this.#queuedIntersectionExemptContentElements.set(element, queuedNodes);
+    if (!queuedNodes) {
+      this.#queuedIntersectionExemptContentElements.set(element, nodeSet);
+      return;
+    }
+
+    for (const node of nodeSet) {
+      queuedNodes.add(node);
     }
   }
 
@@ -3002,10 +3059,11 @@ export class TranslationsDocument {
    */
   #submitForContentTranslation(priority, observableElement, nodeSet) {
     for (const targetNode of nodeSet) {
+      const targetElement = asElement(targetNode);
       // Give each element an id that gets passed through the translation so it can be reunited later on.
-      if (observableElement === targetNode) {
+      if (targetElement) {
         /** @type {Array<Element>} */
-        const elements = observableElement.querySelectorAll("*");
+        const elements = targetElement.querySelectorAll("*");
 
         elements.forEach((el, i) => {
           const dataset = getDataset(el);
@@ -3020,23 +3078,31 @@ export class TranslationsDocument {
       /** @type {boolean} */
       let isHTML;
 
-      if (
+      if (asTextNode(targetNode)) {
         // This node is a text node, therefore it cannot be an HTML translation.
-        asTextNode(targetNode) ||
+        sourceText = targetNode.textContent ?? "";
+        isHTML = false;
+      } else if (
         // When an element has no child elements and its textContent is exactly
         // equal to its innerHTML, then it is safe to treat as a text translation.
-        (observableElement.childElementCount === 0 &&
-          observableElement.textContent === observableElement.innerHTML)
+        targetElement?.childElementCount === 0 &&
+        targetElement.textContent === targetElement.innerHTML
       ) {
         sourceText = targetNode.textContent ?? "";
         isHTML = false;
-      } else {
-        sourceText = /** @type {string} */ (observableElement.innerHTML);
+      } else if (targetElement) {
+        sourceText = targetElement.innerHTML;
         isHTML = true;
+      } else {
+        continue;
       }
 
       if (sourceText.trim().length === 0) {
-        return;
+        this.#removeFromContentIntersectionObservation(
+          observableElement,
+          targetNode
+        );
+        continue;
       }
       const translationId = this.#lastTranslationId++;
 
@@ -3073,11 +3139,11 @@ export class TranslationsDocument {
             pendingNodes.delete(targetNode);
             if (pendingNodes.size === 0) {
               this.#pendingContentTranslations.delete(observableElement);
-              this.#removeFromContentIntersectionObservation(
-                observableElement,
-                targetNode
-              );
             }
+            this.#removeFromContentIntersectionObservation(
+              observableElement,
+              targetNode
+            );
           }
         })
         .catch(error => {
@@ -3090,11 +3156,11 @@ export class TranslationsDocument {
             pendingNodes.delete(targetNode);
             if (pendingNodes.size === 0) {
               this.#pendingContentTranslations.delete(observableElement);
-              this.#removeFromContentIntersectionObservation(
-                observableElement,
-                targetNode
-              );
             }
+            this.#removeFromContentIntersectionObservation(
+              observableElement,
+              targetNode
+            );
           }
         });
     }
@@ -3313,25 +3379,28 @@ export class TranslationsDocument {
         } else if (eligibility === "detached") {
           // This node is detached from the DOM: there is no point in updating it.
           detachedNodeCount++;
-        } else if (element === targetNode) {
-          elementCount++;
-
-          const translationsDocument = this.#domParser.parseFromSafeString(
-            `<!DOCTYPE html><div>${translatedContent}</div>`,
-            "text/html"
-          );
-
-          updateElement(translationsDocument, element);
-          this.#maybeUpdateScriptDirection(element);
-
-          this.#processedContentNodes.add(targetNode);
         } else {
-          textNodeCount++;
+          const targetElement = asElement(targetNode);
+          if (targetElement) {
+            elementCount++;
 
-          targetNode.textContent = translatedContent;
-          this.#maybeUpdateScriptDirection(asElement(targetNode.parentNode));
+            const translationsDocument = this.#domParser.parseFromSafeString(
+              `<!DOCTYPE html><div>${translatedContent}</div>`,
+              "text/html"
+            );
 
-          this.#processedContentNodes.add(targetNode);
+            updateElement(translationsDocument, targetElement);
+            this.#maybeUpdateScriptDirection(targetElement);
+
+            this.#processedContentNodes.add(targetElement);
+          } else {
+            textNodeCount++;
+
+            targetNode.textContent = translatedContent;
+            this.#maybeUpdateScriptDirection(asElement(targetNode.parentNode));
+
+            this.#processedContentNodes.add(targetNode);
+          }
         }
 
         deleteFromNestedMap(
@@ -4200,16 +4269,7 @@ export class TranslationsDocument {
    * @param {Node} node
    */
   #observeOrEnqueueNodeForContentPrioritization(node) {
-    let observableElement;
-    let translatableNode;
-
-    const element = asElement(node);
-    if (element) {
-      observableElement = element;
-      translatableNode = element;
-    } else if ((translatableNode = asTextNode(node))) {
-      observableElement = asElement(node.parentNode);
-    }
+    const translatableNode = asElement(node) ?? asTextNode(node);
 
     if (!translatableNode) {
       // This node is not translatable, and it should have been filtered earlier.
@@ -4218,6 +4278,9 @@ export class TranslationsDocument {
       );
       return;
     }
+
+    const observableElement =
+      getObservableElementForContentTranslation(translatableNode);
 
     if (!observableElement) {
       // This node is translatable, but its immediate parent is not observable for intersection.
@@ -6168,6 +6231,10 @@ function updateElement(translationsDocument, element) {
    * @type {Map<Node, string>}
    */
   const nodeValues = new Map();
+  const selectElement = asHTMLSelectElement(element);
+  if (selectElement) {
+    nodeValues.set(selectElement, selectElement.value);
+  }
   for (const select of element.querySelectorAll("select")) {
     nodeValues.set(select, select.value);
   }
@@ -6178,9 +6245,8 @@ function updateElement(translationsDocument, element) {
   }
 
   // Restore the <select> values.
-  if (element.tagName === "SELECT") {
-    /** @type {HTMLSelectElement} */ (element).value =
-      nodeValues.get(element) ?? "";
+  if (selectElement) {
+    selectElement.value = nodeValues.get(selectElement) ?? "";
   }
   for (const select of element.querySelectorAll("select")) {
     select.value = nodeValues.get(select);
@@ -6500,19 +6566,24 @@ function containsExcludedNode(node, excludedNodeSelector) {
 
 /**
  *
- * Check if this node or its parent's node is already included in the given Map or Set.
+ * Check if this node or one of its ancestors is already registered as a
+ * content-translation target in the given Map.
  *
  * @param {Node} node
- * @param { Map<Node, Set<Node>> } map
+ * @param {Map<Element, Set<Node>>} map
  *
  * @returns {boolean}
  */
-function nodeOrParentIncludesItself(node, map) {
+function isContentTranslationTargetRegistered(node, map) {
   if (map.size === 0) {
     return false;
   }
 
-  if (map.get(node)?.has(node)) {
+  const observableElement = getObservableElementForContentTranslation(node);
+  const observableTargetSet = observableElement
+    ? map.get(observableElement)
+    : undefined;
+  if (observableTargetSet?.has(node)) {
     return true;
   }
 
@@ -6529,7 +6600,10 @@ function nodeOrParentIncludesItself(node, map) {
   let parentNode;
   let lastNode = node;
   while ((parentNode = lastNode.parentNode)) {
-    if (map.get(parentNode)?.has(parentNode)) {
+    if (
+      map.get(parentNode)?.has(parentNode) ||
+      observableTargetSet?.has(parentNode)
+    ) {
       return true;
     }
     lastNode = parentNode;
@@ -6742,7 +6816,7 @@ function asTextNode(node) {
 /**
  * Use TypeScript to determine if the Node is an HTMLElement.
  *
- * @param {Node | null} node
+ * @param {Node | null | undefined} node
  *
  * @returns {HTMLElement | null}
  */
@@ -6779,6 +6853,52 @@ function ensureExists(item, message = "Item did not exist") {
 }
 
 /**
+ * Use TypeScript to determine if the Node is an HTML <select> element.
+ *
+ * @param {Node | null | undefined} node
+ *
+ * @returns {HTMLSelectElement | null}
+ */
+function asHTMLSelectElement(node) {
+  if (HTMLSelectElement.isInstance) {
+    if (HTMLSelectElement.isInstance(node)) {
+      return /** @type {HTMLSelectElement} */ (node);
+    }
+  } else if (
+    // eslint-disable-next-line mozilla/use-isInstance
+    node instanceof HTMLSelectElement
+  ) {
+    return /** @type {HTMLSelectElement} */ (node);
+  }
+  return null;
+}
+
+/**
+ * Determine which element should be observed for a content-translation node.
+ *
+ * @param {Node | null | undefined} node
+ *
+ * @returns {Element | null}
+ */
+function getObservableElementForContentTranslation(node) {
+  if (!node) {
+    return null;
+  }
+
+  // An <option> or <optgroup> may not have an observable box while its owning
+  // <select> is closed, even though its content is represented by the <select>.
+  const htmlElement = getHTMLElementForStyle(node);
+  const select = htmlElement?.closest("select");
+
+  const selectElement = asHTMLSelectElement(select);
+  if (selectElement) {
+    return selectElement;
+  }
+
+  return asElement(node) ?? asElement(node.parentNode);
+}
+
+/**
  * Get the ShadowRoot from the chrome-only openOrClosedShadowRoot API.
  *
  * @param {Node} node
@@ -6786,7 +6906,7 @@ function ensureExists(item, message = "Item did not exist") {
  * @returns {ShadowRoot | null}
  */
 function getShadowRoot(node) {
-  let root = asElement(node)?.openOrClosedShadowRoot;
+  const root = asElement(node)?.openOrClosedShadowRoot;
   if (!root || root.isUAWidget()) {
     return null;
   }

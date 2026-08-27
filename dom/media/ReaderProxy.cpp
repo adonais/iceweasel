@@ -7,9 +7,15 @@
 #include "MediaFormatReader.h"
 #include "TimeUnits.h"
 #include "mozilla/CDMProxy.h"
+#include "mozilla/Logging.h"
 #include "mozilla/MozPromise.h"
 
 namespace mozilla {
+
+extern LazyLogModule gMediaDecoderLog;
+
+#define LOG(msg, ...) \
+  MOZ_LOG_FMT(gMediaDecoderLog, LogLevel::Debug, msg, ##__VA_ARGS__)
 
 ReaderProxy::ReaderProxy(AbstractThread* aOwnerThread,
                          MediaFormatReader* aReader)
@@ -83,11 +89,36 @@ RefPtr<ReaderProxy::VideoDataPromise> ReaderProxy::RequestVideoData(
       ->Then(
           mOwnerThread, __func__,
           [startTime](RefPtr<VideoData> aVideo) {
-            return aVideo->AdjustForStartTime(startTime)
-                       ? VideoDataPromise::CreateAndResolve(aVideo.forget(),
-                                                            __func__)
-                       : VideoDataPromise::CreateAndReject(
-                             NS_ERROR_DOM_MEDIA_OVERFLOW_ERR, __func__);
+            const auto originalTime = aVideo->mTime;
+            if (!aVideo->AdjustForStartTime(startTime)) {
+              LOG("Failed to adjust video sample time {} for media start {}",
+                  originalTime.ToString().get(), startTime.ToString().get());
+              return VideoDataPromise::CreateAndReject(
+                  NS_ERROR_DOM_MEDIA_OVERFLOW_ERR, __func__);
+            }
+            const auto endTime = aVideo->GetEndTime();
+            if (!endTime.IsValid()) {
+              LOG("Rejecting video sample at {} with an invalid end time",
+                  aVideo->mTime.ToString().get());
+              return VideoDataPromise::CreateAndReject(
+                  NS_ERROR_DOM_MEDIA_OVERFLOW_ERR, __func__);
+            }
+            const auto zero = media::TimeUnit::Zero(aVideo->mTime);
+            if (aVideo->mTime.IsNegative() && endTime < zero) {
+              LOG("Rejecting video sample [{}, {}] before media start",
+                  aVideo->mTime.ToString().get(), endTime.ToString().get());
+              return VideoDataPromise::CreateAndReject(
+                  NS_ERROR_DOM_MEDIA_OVERFLOW_ERR, __func__);
+            }
+            if (aVideo->mTime.IsNegative()) {
+              LOG("Clipping video sample start from {} to {}, preserving end "
+                  "{}",
+                  aVideo->mTime.ToString().get(), zero.ToString().get(),
+                  endTime.ToString().get());
+              aVideo->UpdateTimestamp(zero);
+            }
+            return VideoDataPromise::CreateAndResolve(aVideo.forget(),
+                                                      __func__);
           },
           [](const MediaResult& aError) {
             return VideoDataPromise::CreateAndReject(aError, __func__);

@@ -14,6 +14,7 @@
 #include "nsIURI.h"
 #include "nsITimer.h"
 #include "nsTHashMap.h"
+#include "nsTHashSet.h"
 #include "nsTHashtable.h"
 #include "nsTArray.h"
 #include "nsString.h"
@@ -349,25 +350,6 @@ class PermissionManager final : public nsIPermissionManager,
                              nsTArray<IPC::Permission>& aPerms);
 
   /**
-   * Add a callback which should be run when all permissions are available for
-   * the given nsIPrincipal. This method invokes the callback runnable
-   * synchronously when the permissions are already available. Otherwise the
-   * callback will be run asynchronously in SystemGroup when all permissions
-   * are available in the future.
-   *
-   * NOTE: This method will not request the permissions be sent by the parent
-   * process. This should only be used to wait for permissions which may not
-   * have arrived yet in order to ensure they are present.
-   *
-   * @param aPrincipal The principal to wait for permissions to be available
-   * for.
-   * @param aRunnable  The runnable to run when permissions are available for
-   * the given principal.
-   */
-  void WhenPermissionsAvailable(nsIPrincipal* aPrincipal,
-                                nsIRunnable* aRunnable);
-
-  /**
    * Strip origin attributes for permissions, depending on permission isolation
    * pref state.
    * @param aForceStrip If true, strips user context and private browsing id,
@@ -608,8 +590,8 @@ class PermissionManager final : public nsIPermissionManager,
 
   void FinishAsyncShutdown();
 
-  nsRefPtrHashtable<nsCStringHashKey, GenericNonExclusivePromise::Private>
-      mPermissionKeyPromiseMap MOZ_GUARDED_BY(mMonitor);
+  // Set of permission keys loaded within this content process.
+  nsTHashSet<nsCString> mPermissionKeys MOZ_GUARDED_BY(mMonitor);
 
   nsCOMPtr<nsIFile> mPermissionsFile MOZ_GUARDED_BY(mMonitor);
 

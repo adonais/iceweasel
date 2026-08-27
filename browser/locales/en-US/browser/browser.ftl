@@ -26,8 +26,15 @@ browser-shortcut-description = Fast and private web browsing
 
 ##
 
-urlbar-identity-button =
-    .aria-label = View site information
+# Variables
+#   $count (number) - The number of blocked trackers on this page. Please leave the mention of blocked trackers out when there are none.
+urlbar-identity-button2 =
+    .aria-label =
+        { $count ->
+            [0] View site information
+            [1] View site information (1 tracker blocked)
+           *[other] View site information ({ $count } trackers blocked)
+        }
 
 ## Tooltips for images appearing in the address bar
 
@@ -490,6 +497,8 @@ identity-description-passive-loaded-insecure2 = This website contains content th
 identity-description-passive-loaded-mixed2 = Although { -brand-short-name } has blocked some content, there is still content on the page that is not secure (such as images).
 identity-description-active-loaded = This website contains content that is not secure (such as scripts) and your connection to it is not private.
 identity-description-active-loaded-insecure = Information you share with this site could be viewed by others (like passwords, messages, credit cards, etc.).
+identity-description-tls-key-logging-heading = Your connection may not be private
+identity-description-tls-key-logging-message = An app or service may see your encrypted traffic from this site.
 identity-more-info-link-text =
     .label = More information
 
@@ -694,35 +703,13 @@ urlbar-result-action-undefined-calculator-result = undefined
 #   $date (string) - A localized relative date string
 urlbar-result-explanation-last-visited-relative-2 = Last visited { $date }
 
-# This explanation is used when the last-visited date is a small number of days
-# in the past.
+# This explanation is used when the last-visited date is a small number of days,
+# weeks, or months in the past.
 # Variables:
-#   $daysAgo (number) - The number of days ago
-urlbar-result-explanation-last-visited-days-2 =
-    { $daysAgo ->
-        [one] Last visited { $daysAgo } day ago
-        *[other] Last visited { $daysAgo } days ago
-    }
-
-# This explanation is used when the last-visited date is a small number of weeks
-# in the past.
-# Variables:
-#   $weeksAgo (number) - The number of weeks ago
-urlbar-result-explanation-last-visited-weeks-2 =
-    { $weeksAgo ->
-        [one] Last visited { $weeksAgo } week ago
-        *[other] Last visited { $weeksAgo } weeks ago
-    }
-
-# This explanation is used when the last-visited date is a small number of
-# months in the past.
-# Variables:
-#   $monthsAgo (number) - The number of months ago
-urlbar-result-explanation-last-visited-months-2 =
-    { $monthsAgo ->
-        [one] Last visited { $monthsAgo } month ago
-        *[other] Last visited { $monthsAgo } months ago
-    }
+#   $date (string) - A localized relative date string like one of the following:
+#                    "6 days ago", "1 week ago", "4 weeks ago", "1 month ago",
+#                    "11 months ago"
+urlbar-result-explanation-last-visited-days-weeks-months-ago = Last visited { $date }
 
 # This explanation is used when the last-visited date is further in the past.
 # The date will be formatted as an absolute date like: "11 May", "11 May 2026"
@@ -1349,6 +1336,17 @@ private-browsing-indicator-label = Private browsing
 private-browsing-indicator-tooltip =
     .tooltiptext = Private browsing
 
+# Tooltip for the private browsing indicator button that opens the info panel.
+private-browsing-indicator-button =
+    .tooltiptext = Private browsing info
+
+# Title shown in the private browsing info panel.
+private-browsing-info-panel-title = You’re in a Private Window
+
+# Body copy shown in the private browsing info panel. The learn-more link text
+# is embedded in the sentence.
+private-browsing-info-panel-description = This helps keep your browsing hidden from others on this device, but doesn’t make you invisible online. <a data-l10n-name="learn-more">Who might be able to see my activity?</a>
+
 # Tooltip for the indicator shown in the window titlebar when content analysis is active.
 # Variables:
 #   $agentName (String): The name of the DLP agent that is connected
@@ -1395,8 +1393,8 @@ unified-extensions-button-blocklisted =
 ## Private browsing reset button
 
 reset-pbm-toolbar-button2 =
-    .label = Clear Private Session
-    .tooltiptext = Clear Private Session
+    .label = Clear private session
+    .tooltiptext = Clear private session
 reset-pbm-panel-heading2 = Clear data and start a fresh private session?
 reset-pbm-panel-description2 = This deletes history, cookies, and all other site data without closing your Private Window.
 reset-pbm-panel-always-ask-checkbox =
@@ -1541,6 +1539,14 @@ onboarding-checklist-button-label = Finish setup
 # Keep this string as short as possible, this is displayed in the URL bar
 # use a synonym for "safe" or "private" if "secure" is too long.
 urlbar-trust-icon-notsecure-label = Not Secure
+
+# Keep this string as short as possible, this is displayed in the URL bar
+# Variables
+#  $count (number): the number of trackers blocked.
+urlbar-trust-icon-trackers-blocked-longform-label = { $count ->
+  [one] { $count } tracker blocked
+  *[other] { $count } trackers blocked
+}
 
 trustpanel-etp-label-enabled = Enhanced Tracking Protection is on
 trustpanel-etp-label-disabled = Enhanced Tracking Protection is off

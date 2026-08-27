@@ -26,9 +26,6 @@ StaticRefPtr<NamedPipeService> NamedPipeService::gSingleton;
 NS_IMPL_ISUPPORTS(NamedPipeService, nsINamedPipeService, nsIObserver,
                   nsIRunnable)
 
-NamedPipeService::NamedPipeService()
-    : mIocp(nullptr), mIsShutdown(false), mLock("NamedPipeServiceLock") {}
-
 nsresult NamedPipeService::Init() {
   MOZ_ASSERT(!mIsShutdown);
 

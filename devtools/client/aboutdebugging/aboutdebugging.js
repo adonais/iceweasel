@@ -171,7 +171,7 @@ const AboutDebugging = {
     removeUSBRuntimesObserver(this.onUSBRuntimesUpdated);
     adbAddon.off("update", this.onAdbAddonUpdated);
     adbProcess.off("adb-ready", this.onAdbProcessReady);
-    setDebugTargetCollapsibilities(state.ui.debugTargetCollapsibilities);
+    setDebugTargetCollapsibilities(state.ui.mutableDebugTargetCollapsibilities);
     unmountComponentAtNode(this.mount);
   },
 

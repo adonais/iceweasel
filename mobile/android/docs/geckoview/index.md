@@ -17,6 +17,7 @@ That is where GeckoView comes in. GeckoView is:
 consumer/index
 contributor/index
 design/index
+project/isolated-process/overview
 Changelog <https://mozilla.github.io/geckoview/javadoc/mozilla-central/org/mozilla/geckoview/doc-files/CHANGELOG>
 API Javadoc <https://mozilla.github.io/geckoview/javadoc/mozilla-central/index.html>
 ```

@@ -112,7 +112,7 @@ void gfxFontEntry::InitializeFrom(fontlist::Face* aFace,
   mShmemFamily = aFamily;
   mStyleRange = aFace->mStyle;
   mWeightRange = aFace->mWeight;
-  mStretchRange = aFace->mStretch;
+  mWidthRange = aFace->mWidth;
   mFixedPitch = aFace->mFixedPitch;
   mIsBadUnderlineFont = aFamily->IsBadUnderlineFamily();
   auto* list = gfxPlatformFontList::PlatformFontList()->SharedFontList();
@@ -1045,8 +1045,7 @@ gfxFloat gfxFontEntry::TrackingForCSSPx(gfxFloat aSize) const {
 void gfxFontEntry::SetupVariationRanges() {
   // No locking because this is done during initialization before any other
   // thread has access to the entry.
-  if (!gfxPlatform::HasVariationFontSupport() ||
-      !StaticPrefs::layout_css_font_variations_enabled() || !HasVariations() ||
+  if (!gfxPlatform::HasVariationFontSupport() || !HasVariations() ||
       IsUserFont()) {
     return;
   }
@@ -1081,14 +1080,14 @@ void gfxFontEntry::SetupVariationRanges() {
 
       case HB_TAG('w', 'd', 't', 'h'):
         if (axis.mMinValue >= 0.0f && axis.mMaxValue <= 1000.0f &&
-            Stretch().Min() <= FontStretch::FromFloat(axis.mMaxValue)) {
-          if (FontStretch::FromFloat(axis.mDefaultValue) != Stretch().Min()) {
+            Width().Min() <= FontWidth::FromFloat(axis.mMaxValue)) {
+          if (FontWidth::FromFloat(axis.mDefaultValue) != Width().Min()) {
             mStandardFace = false;
           }
-          mStretchRange = StretchRange(FontStretch::FromFloat(axis.mMinValue),
-                                       FontStretch::FromFloat(axis.mMaxValue));
+          mWidthRange = WidthRange(FontWidth::FromFloat(axis.mMinValue),
+                                   FontWidth::FromFloat(axis.mMaxValue));
         } else {
-          mRangeFlags |= RangeFlags::eNonCSSStretch;
+          mRangeFlags |= RangeFlags::eNonCSSWidth;
         }
         break;
 
@@ -1176,25 +1175,20 @@ bool gfxFontEntry::HasOpticalSize() {
 
 void gfxFontEntry::GetVariationsForStyle(nsTArray<gfxFontVariation>& aResult,
                                          const gfxFontStyle& aStyle) {
-  if (!gfxPlatform::HasVariationFontSupport() ||
-      !StaticPrefs::layout_css_font_variations_enabled()) {
-    return;
-  }
-
-  if (!HasVariations()) {
+  if (!gfxPlatform::HasVariationFontSupport() || !HasVariations()) {
     return;
   }
 
   // Resolve high-level CSS properties from the requested style
-  // (font-{style,weight,stretch}) to the appropriate variations.
+  // (font-{style,weight,width}) to the appropriate variations.
   // The value used is clamped to the range available in the font face,
   // unless the face is a user font where no explicit descriptor was
   // given, indicated by the corresponding 'auto' range-flag.
 
-  // We don't do these mappings if the font entry has weight and/or stretch
+  // We don't do these mappings if the font entry has weight and/or width
   // ranges that do not appear to use the CSS property scale. Some older
   // fonts created for QuickDrawGX/AAT may use "normalized" values where the
-  // standard variation is 1.0 rather than 400.0 (weight) or 100.0 (stretch).
+  // standard variation is 1.0 rather than 400.0 (weight) or 100.0 (width).
 
   if (!(mRangeFlags & RangeFlags::eNonCSSWeight)) {
     float weight = (IsUserFont() && (mRangeFlags & RangeFlags::eAutoWeight))
@@ -1203,12 +1197,11 @@ void gfxFontEntry::GetVariationsForStyle(nsTArray<gfxFontVariation>& aResult,
     aResult.AppendElement(gfxFontVariation{HB_TAG('w', 'g', 'h', 't'), weight});
   }
 
-  if (!(mRangeFlags & RangeFlags::eNonCSSStretch)) {
-    float stretch = (IsUserFont() && (mRangeFlags & RangeFlags::eAutoStretch))
-                        ? aStyle.stretch.ToFloat()
-                        : Stretch().Clamp(aStyle.stretch).ToFloat();
-    aResult.AppendElement(
-        gfxFontVariation{HB_TAG('w', 'd', 't', 'h'), stretch});
+  if (!(mRangeFlags & RangeFlags::eNonCSSWidth)) {
+    float width = (IsUserFont() && (mRangeFlags & RangeFlags::eAutoWidth))
+                      ? aStyle.width.ToFloat()
+                      : Width().Clamp(aStyle.width).ToFloat();
+    aResult.AppendElement(gfxFontVariation{HB_TAG('w', 'd', 't', 'h'), width});
   }
 
   if (aStyle.style.IsItalic() && SupportsItalic()) {
@@ -1400,10 +1393,9 @@ gfxFontEntry* gfxFontFamily::FindFontForStyle(const gfxFontStyle& aFontStyle,
   return nullptr;
 }
 
-static inline double WeightStyleStretchDistance(
+static inline double WeightStyleWidthDistance(
     gfxFontEntry* aFontEntry, const gfxFontStyle& aTargetStyle) {
-  double stretchDist =
-      StretchDistance(aFontEntry->Stretch(), aTargetStyle.stretch);
+  double widthDist = WidthDistance(aFontEntry->Width(), aTargetStyle.width);
   double styleDist = StyleDistance(
       aFontEntry->SlantStyle(), aTargetStyle.style,
       aTargetStyle.synthesisStyle != StyleFontSynthesisStyle::ObliqueOnly);
@@ -1411,14 +1403,14 @@ static inline double WeightStyleStretchDistance(
 
   // Sanity-check that the distances are within the expected range
   // (update if implementation of the distance functions is changed).
-  MOZ_ASSERT(stretchDist >= 0.0 && stretchDist <= 2000.0);
+  MOZ_ASSERT(widthDist >= 0.0 && widthDist <= 2000.0);
   MOZ_ASSERT(styleDist >= 0.0 && styleDist <= 900.0);
   MOZ_ASSERT(weightDist >= 0.0 && weightDist <= 1600.0);
 
-  // weight/style/stretch priority: stretch >> style >> weight
-  // so we multiply the stretch and style values to make them dominate
+  // weight/style/width priority: width >> style >> weight
+  // so we multiply the width and style values to make them dominate
   // the result
-  return stretchDist * kStretchFactor + styleDist * kStyleFactor +
+  return widthDist * kWidthFactor + styleDist * kStyleFactor +
          weightDist * kWeightFactor;
 }
 
@@ -1497,14 +1489,14 @@ void gfxFontFamily::FindAllFontsForStyle(
   }
 
   // Pick the font(s) that are closest to the desired weight, style, and
-  // stretch. Iterate over all fonts, measuring the weight/style distance.
+  // width. Iterate over all fonts, measuring the weight/style distance.
   // Because of unicode-range values, there may be more than one font for a
   // given but the 99% use case is only a single font entry per
-  // weight/style/stretch distance value. To optimize this, only add entries
+  // weight/style/width distance value. To optimize this, only add entries
   // to the matched font array when another entry already has the same
-  // weight/style/stretch distance and add the last matched font entry. For
+  // weight/style/width distance and add the last matched font entry. For
   // normal platform fonts with a single font entry for each
-  // weight/style/stretch combination, only the last matched font entry will
+  // weight/style/width combination, only the last matched font entry will
   // be added.
 
   double minDistance = INFINITY;
@@ -1514,8 +1506,8 @@ void gfxFontFamily::FindAllFontsForStyle(
   // note that faces are sorted with "standard" faces later in the list.
   for (uint32_t i = count; i > 0;) {
     fe = mAvailableFonts[--i];
-    // weight/style/stretch priority: stretch >> style >> weight
-    double distance = WeightStyleStretchDistance(fe, aFontStyle);
+    // weight/style/width priority: width >> style >> weight
+    double distance = WeightStyleWidthDistance(fe, aFontStyle);
     if (distance < minDistance) {
       matched = fe;
       if (!aFontEntryList.IsEmpty()) {
@@ -1555,16 +1547,16 @@ void gfxFontFamily::CheckForSimpleFamily() {
     return;
   }
 
-  StretchRange firstStretch = mAvailableFonts[0]->Stretch();
-  if (!firstStretch.IsSingle()) {
+  WidthRange firstWidth = mAvailableFonts[0]->Width();
+  if (!firstWidth.IsSingle()) {
     return;  // family with variation fonts is not considered "simple"
   }
 
   gfxFontEntry* faces[4] = {nullptr};
   for (uint8_t i = 0; i < count; ++i) {
     gfxFontEntry* fe = mAvailableFonts[i];
-    if (fe->Stretch() != firstStretch || fe->IsOblique()) {
-      // simple families don't have varying font-stretch or oblique
+    if (fe->Width() != firstWidth || fe->IsOblique()) {
+      // simple families don't have varying font-width or oblique
       return;
     }
     if (!fe->Weight().IsSingle() || !fe->SlantStyle().IsSingle()) {
@@ -1669,7 +1661,7 @@ void gfxFontFamily::FindFontForChar(GlobalFontMatch* aMatchData) {
       }
 
       fe = e;
-      distance = WeightStyleStretchDistance(fe, aMatchData->mStyle);
+      distance = WeightStyleWidthDistance(fe, aMatchData->mStyle);
       if (aMatchData->mPresentation != FontPresentation::Any) {
         RefPtr<gfxFont> font = fe->FindOrMakeFont(&aMatchData->mStyle);
         if (!font) {
@@ -1686,7 +1678,7 @@ void gfxFontFamily::FindFontForChar(GlobalFontMatch* aMatchData) {
   }
 
   if (!fe && !aMatchData->mStyle.IsNormalStyle()) {
-    // If style/weight/stretch was not Normal, see if we can
+    // If style/weight/width was not Normal, see if we can
     // fall back to a next-best face (e.g. Arial Black -> Bold,
     // or Arial Narrow -> Regular).
     GlobalFontMatch data(aMatchData->mCh, aMatchData->mNextCh,
@@ -1724,7 +1716,7 @@ void gfxFontFamily::SearchAllFontsForChar(GlobalFontMatch* aMatchData) {
   for (uint32_t i = numFonts; i > 0;) {
     gfxFontEntry* fe = mAvailableFonts[--i];
     if (fe && fe->HasCharacter(aMatchData->mCh)) {
-      float distance = WeightStyleStretchDistance(fe, aMatchData->mStyle);
+      float distance = WeightStyleWidthDistance(fe, aMatchData->mStyle);
       if (aMatchData->mPresentation != FontPresentation::Any) {
         RefPtr<gfxFont> font = fe->FindOrMakeFont(&aMatchData->mStyle);
         if (!font) {

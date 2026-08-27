@@ -2227,4 +2227,84 @@ BEGIN_TEST(testAssemblerBuffer_RISCV64_SameDeadlineLong) {
 }
 END_TEST(testAssemblerBuffer_RISCV64_SameDeadlineLong)
 
+BEGIN_TEST(testAssemblerBuffer_RISCV64_PendingDeadlinesExceedNewBranchRange) {
+  using namespace js::jit;
+  using namespace RV64;
+
+  const auto beq_unbound = RV64::Inst::beq(a0, a1, unbound).InstructionBits();
+
+  constexpr int32_t guardSize = 1;
+
+  // Forward range of beq instructions.
+  int32_t beq_range =
+      ImmBranchMaxForwardOffset(CondBranchRangeType) / kInstrSize;
+
+  // Test
+  for (int32_t i = -10; i <= 10; ++i) {
+    js::LifoAlloc lifo(4096, js::MallocArena);
+    TempAllocator alloc(&lifo);
+    JitContext jc(cx);
+    StackMacroAssembler masm(cx, alloc);
+    AutoCreatedBy acb(masm, __func__);
+
+    // Create enough unconditional jumps so that a following conditional branch
+    // will get out of range.
+    int32_t j_count = beq_range + i;
+    Label j_lbl;
+    for (int32_t i = 0; i < j_count; ++i) {
+      masm.jump(&j_lbl);
+    }
+
+    Label beq_lbl;
+    auto beq_offset = masm.nextOffset();
+    masm.ma_b(a0, a1, &beq_lbl, Assembler::Equal, ShortJump);
+
+    // Still unbound.
+    CHECK_EQUAL(masm.getInstructionAt(beq_offset)->InstructionBits(),
+                beq_unbound);
+
+    BufferOffset guard_offset = masm.nextOffset();
+
+    // Adding a single nop instruction may trigger veneer pool construction.
+    masm.nop();
+
+    auto nop_offset = masm.nextOffset() - kInstrSize;
+
+    // Last instruction is a nop instruction.
+    CHECK_EQUAL(masm.getInstructionAt(nop_offset)->InstructionBits(),
+                RV64::Inst::nop().InstructionBits());
+
+    if (beq_offset + kInstrSize != nop_offset) {
+      // Pool guard is an unconditional jump.
+      CHECK_EQUAL(masm.getInstructionAt(guard_offset)->InstructionBits(),
+                  RV64::Inst::j(nop_offset - guard_offset).InstructionBits());
+
+      // Veneer for "beq" was created.
+      auto veneer_offset = guard_offset + guardSize * kInstrSize;
+      CHECK_EQUAL(masm.getInstructionAt(beq_offset)->InstructionBits(),
+                  RV64::Inst::beq(a0, a1, veneer_offset - beq_offset)
+                      .InstructionBits());
+    }
+
+    // Finally bind all labels.
+    masm.bind(&j_lbl);
+    masm.bind(&beq_lbl);
+
+    if (beq_offset + kInstrSize != nop_offset) {
+      auto veneer_offset = guard_offset + guardSize * kInstrSize;
+      auto veneer_inst =
+          RV64::Inst::veneer(BufferOffset(beq_lbl.offset()) - veneer_offset);
+
+      // Veneer correctly bound to |beq_lbl|.
+      CHECK_EQUAL(masm.getInstructionAt(veneer_offset)->InstructionBits(),
+                  veneer_inst.first.InstructionBits());
+      CHECK_EQUAL(
+          masm.getInstructionAt(veneer_offset + kInstrSize)->InstructionBits(),
+          veneer_inst.second.InstructionBits());
+    }
+  }
+  return true;
+}
+END_TEST(testAssemblerBuffer_RISCV64_PendingDeadlinesExceedNewBranchRange)
+
 #endif /* JS_CODEGEN_RISCV64 */

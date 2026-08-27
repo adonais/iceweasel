@@ -60,7 +60,7 @@ function run_test() {
 
   do_test_pending();
 
-  geolocation = Cc["@mozilla.org/geolocation;1"].createInstance(Ci.nsISupports);
+  geolocation = Cc["@mozilla.org/geolocation;1"].getService(Ci.nsISupports);
   geolocation.watchPosition(successCallback, errorCallback);
   watchID2 = geolocation.watchPosition(successCallback, errorCallback, {
     enableHighAccuracy: true,

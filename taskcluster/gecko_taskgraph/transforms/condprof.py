@@ -73,6 +73,7 @@ def generate_scenarios(config, tasks):
                 "index": deepcopy(index),
                 "run": {
                     "using": "run-task",
+                    "clone-with": task["run"]["clone-with"],
                     "cwd": task["run"]["cwd"],
                     "checkout": task["run"]["checkout"],
                     "tooltool-downloads": deepcopy(task["run"]["tooltool-downloads"]),

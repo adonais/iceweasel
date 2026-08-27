@@ -372,7 +372,8 @@ void SMRegExpMacroAssembler::CheckBitInTable(Handle<ByteArray> table,
 
 void SMRegExpMacroAssembler::SkipUntilBitInTable(
     int cp_offset, Handle<ByteArray> table, Handle<ByteArray> nibble_table,
-    int advance_by, Label* on_match, Label* on_no_match) {
+    int advance_by, int bounds_check_offset, Label* on_match,
+    Label* on_no_match) {
   // Claim ownership of the ByteArray from the current HandleScope.
   // ByteArrays are allocated on the C++ heap and are (eventually)
   // owned by the RegExpShared.
@@ -387,8 +388,7 @@ void SMRegExpMacroAssembler::SkipUntilBitInTable(
 
   js::jit::Label scalarRepeat;
   masm_.bind(&scalarRepeat);
-  CheckPosition(cp_offset, on_no_match);
-  LoadCurrentCharacterUnchecked(cp_offset, 1);
+  LoadCurrentCharacter(cp_offset, on_no_match, true, 1, bounds_check_offset);
 
   Register index = current_character_;
   if (mode_ != LATIN1 || kTableMask != String::kMaxOneByteCharCode) {
@@ -807,31 +807,6 @@ void SMRegExpMacroAssembler::IfRegisterLT(int reg, int comparand,
 void SMRegExpMacroAssembler::IfRegisterEqPos(int reg, Label* if_eq) {
   masm_.branchPtr(Assembler::Equal, register_location(reg), current_position_,
                   LabelOrBacktrack(if_eq));
-}
-
-// This is a word-for-word identical copy of the V8 code, which is
-// duplicated in at least nine different places in V8 (one per
-// supported architecture) with no differences outside of comments and
-// formatting. It should be hoisted into the superclass. Once that is
-// done upstream, this version can be deleted.
-void SMRegExpMacroAssembler::LoadCurrentCharacterImpl(int cp_offset,
-                                                      Label* on_end_of_input,
-                                                      bool check_bounds,
-                                                      int characters,
-                                                      int eats_at_least) {
-  // It's possible to preload a small number of characters when each success
-  // path requires a large number of characters, but not the reverse.
-  MOZ_ASSERT(eats_at_least >= characters);
-  MOZ_ASSERT(cp_offset < (1 << 30));  // Be sane! (And ensure negation works)
-
-  if (check_bounds) {
-    if (cp_offset >= 0) {
-      CheckPosition(cp_offset + eats_at_least - 1, on_end_of_input);
-    } else {
-      CheckPosition(cp_offset, on_end_of_input);
-    }
-  }
-  LoadCurrentCharacterUnchecked(cp_offset, characters);
 }
 
 // Load the character (or characters) at the specified offset from the

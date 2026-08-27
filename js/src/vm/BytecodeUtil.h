@@ -324,6 +324,22 @@ static inline bool BytecodeIsJumpTarget(JSOp op) {
   }
 }
 
+// Returns the pc of the InitialYield/Yield/Await op that precedes the
+// JSOp::AfterYield op at afterYieldPC.
+static inline jsbytecode* SuspendPCForAfterYield(jsbytecode* afterYieldPC) {
+  MOZ_ASSERT(JSOp(*afterYieldPC) == JSOp::AfterYield);
+
+  static_assert(JSOpLength_Yield == JSOpLength_InitialYield,
+                "JSOp::Yield and JSOp::InitialYield must have the same length");
+  static_assert(JSOpLength_Yield == JSOpLength_Await,
+                "JSOp::Yield and JSOp::Await must have the same length");
+
+  jsbytecode* pc = afterYieldPC - JSOpLength_Yield;
+  MOZ_ASSERT(JSOp(*pc) == JSOp::InitialYield || JSOp(*pc) == JSOp::Yield ||
+             JSOp(*pc) == JSOp::Await);
+  return pc;
+}
+
 // The JSOp argument is superflous, but we are using it to avoid a
 // store forwarding Bug on some Android phones; see Bug 1833315
 MOZ_ALWAYS_INLINE unsigned StackUses(JSOp op, jsbytecode* pc) {

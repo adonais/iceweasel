@@ -7,3 +7,6 @@ support-files = ["head.js"]
 support-files = ["browser_disableglobalhistory.xhtml"]
 
 ["test_cached_favicon.xhtml"]
+skip-if = [
+  "nova", # Bug 2055050
+]

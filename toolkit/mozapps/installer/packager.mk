@@ -21,7 +21,7 @@ endif
 
 export USE_ELF_HACK
 
-stage-package: multilocale.txt locale-manifest.in $(MOZ_PKG_MANIFEST) $(MOZ_PKG_MANIFEST_DEPS)
+stage-package: multilocale.txt locale-manifest.in $(MOZ_PKG_MANIFEST)
 	NO_PKG_FILES="$(NO_PKG_FILES)" \
 	$(PYTHON3) $(MOZILLA_DIR)/toolkit/mozapps/installer/packager.py $(DEFINES) $(ACDEFINES) \
 		--format $(MOZ_PACKAGER_FORMAT) \
@@ -42,14 +42,12 @@ prepare-package: stage-package
 ifdef RUN_FIND_DUPES
 	$(PYTHON3) $(MOZILLA_DIR)/toolkit/mozapps/installer/find-dupes.py $(DEFINES) $(ACDEFINES) $(MOZ_PKG_DUPEFLAGS) $(DIST)/$(MOZ_PKG_DIR)
 endif # RUN_FIND_DUPES
-ifndef MOZ_IS_COMM_TOPDIR
 ifdef RUN_MOZHARNESS_ZIP
 	# Package mozharness
 	$(call py_action,test_archive $(MOZHARNESS_PACKAGE), \
 		mozharness \
 		$(ABS_DIST)/$(PKG_PATH)$(MOZHARNESS_PACKAGE))
 endif # RUN_MOZHARNESS_ZIP
-endif # MOZ_IS_COMM_TOPDIR
 ifdef MOZ_PACKAGE_JSSHELL
 	# Package JavaScript Shell
 	@echo 'Packaging JavaScript Shell...'
@@ -182,10 +180,6 @@ upload:
 		$(CHECKSUM_ALGORITHM_PARAM) \
 		$(UPLOAD_PATH)
 	$(PYTHON3) -u $(MOZILLA_DIR)/build/upload.py --base-path $(ABS_DIST) $(CHECKSUM_FILE)
-
-hg-bundle:
-	$(MKDIR) -p $(DIST)/$(PKG_SRCPACK_PATH)
-	$(CREATE_HG_BUNDLE_CMD)
 
 ALL_LOCALES = $(if $(filter en-US,$(LOCALES)),$(LOCALES),$(LOCALES) en-US)
 

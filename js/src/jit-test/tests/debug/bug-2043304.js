@@ -9,8 +9,8 @@ g.root = g.parseModule(`import "javascript:export let x = 1;";`);
 dbg.onNewScript = script => {
   if (script.isModule && !entered) {
     entered = true;
-    moduleLink(g.root);
+    moduleLoadAndLink(g.root);
   }
 };
 
-moduleLink(g.root);
+moduleLoadAndLink(g.root);

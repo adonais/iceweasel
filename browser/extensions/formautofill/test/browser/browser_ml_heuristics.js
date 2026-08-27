@@ -38,25 +38,34 @@ function detectFields(fieldDetails) {
 
 add_setup(async function () {
   let detectFieldsStub = sinon.stub(FormAutofillML.prototype, "detectFields");
+  let getModelVersionStub = sinon.stub(FormAutofillML, "getModelVersion");
   detectFieldsStub.callsFake(async (window, fieldDetails) => {
     return await detectFields(window, fieldDetails);
+  });
+  getModelVersionStub.callsFake(() => {
+    return "test1.0";
   });
 
   registerCleanupFunction(() => {
     detectFieldsStub.restore();
+    getModelVersionStub.restore();
   });
 
   await SpecialPowers.pushPrefEnv({
     set: [
       ["extensions.formautofill.useml", true],
       ["extensions.formautofill.useml.nativeOnnxAvailable", true],
-      ["extensions.formautofill.useml.succeeded", false],
+      ["extensions.formautofill.useml.successful", false],
     ],
   });
+
+  // Earlier test files leave detected_address_form events behind, which
+  // assertTelemetry would otherwise read instead of the ones recorded here.
+  await clearGleanTelemetry();
 });
 
 add_heuristic_tests([
-  // This first test should run with "extensions.formautofill.useml.succeeded" set to false, so
+  // This first test should run with "extensions.formautofill.useml.successful" set to false, so
   // should use heuristics and not ML inference.
   {
     fixtureData: `
@@ -72,10 +81,20 @@ add_heuristic_tests([
       <p><label>email: <input type="email" id="email" name="email"/></label></p>`,
     onTestComplete: async () => {
       // Assign the preference after the test.
-      Services.prefs.setBoolPref(
-        "extensions.formautofill.useml.successful",
-        true
-      );
+      await SpecialPowers.pushPrefEnv({
+        set: [["extensions.formautofill.useml.successful", true]],
+      });
+      await assertTelemetry({
+        given_name: "0",
+        family_name: "0",
+        organization: "true",
+        street_address: "0",
+        address_level2: "0",
+        address_level1: "0",
+        country: "0",
+        tel: "true",
+        email: "0",
+      });
     },
     expectedResult: [
       {
@@ -109,6 +128,19 @@ add_heuristic_tests([
       <p><label>country: <input type="text" id="country" name="country"/></label></p>
       <p><label>tel: <input type="text" id="tel" name="tel" autocomplete="tel" /></label></p>
       <p><label>email: <input type="email" id="email" name="email"/></label></p>`,
+    onTestComplete: async () => {
+      await assertTelemetry({
+        given_name: "ml",
+        family_name: "ml",
+        organization: "true",
+        street_address: "ml",
+        address_level2: "ml",
+        address_level1: "ml",
+        country: "ml",
+        tel: "true",
+        email: "0",
+      });
+    },
     expectedResult: [
       {
         default: {
@@ -154,3 +186,33 @@ add_heuristic_tests([
     ],
   },
 ]);
+
+async function assertTelemetry(expected) {
+  const events = Glean.address.detectedAddressForm.testGetValue();
+  Assert.equal(
+    events.length,
+    1,
+    `Expected 1 event of type detected_address_form.`
+  );
+
+  const eventsExt = Glean.address.detectedAddressFormExt.testGetValue();
+  Assert.equal(
+    eventsExt.length,
+    1,
+    `Expected 1 event of type detected_address_form_ext.`
+  );
+
+  for (let [fieldName, reason] of Object.entries(expected)) {
+    let value =
+      fieldName in events[0].extra
+        ? events[0].extra[fieldName]
+        : eventsExt[0].extra[fieldName];
+    Assert.equal(value, reason);
+  }
+
+  // Verify that the test ML engine is used.
+  Assert.equal(eventsExt[0].extra.mlversion, "test1.0");
+
+  Services.telemetry.clearEvents();
+  Services.fog.testResetFOG();
+}

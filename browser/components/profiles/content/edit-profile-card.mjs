@@ -68,6 +68,10 @@ import "chrome://browser/content/profiles/profile-avatar-selector.mjs";
 import "chrome://global/content/elements/moz-toggle.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-support-link.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/elements/theme-picker.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/elements/moz-checkbox.mjs";
 
 const SAVE_NAME_TIMEOUT = 2000;
 const SAVED_MESSAGE_TIMEOUT = 5000;
@@ -104,6 +108,9 @@ export class EditProfileCard extends MozLitElement {
   clearSavedMessageTimer = null;
 
   get themeCards() {
+    if (this.novaEnabled) {
+      return this.themesPicker.pickerEl.childElements;
+    }
     return this.themesPicker.childElements;
   }
 
@@ -128,8 +135,21 @@ export class EditProfileCard extends MozLitElement {
     window.addEventListener("pagehide", this);
     document.addEventListener("Profiles:CustomAvatarUpload", this);
     document.addEventListener("Profiles:AvatarSelected", this);
+    document.addEventListener("ThemePickerThemeUpdated", this);
+    window.addEventListener("ThemePickerDeviceAppearanceUpdated", this);
 
     this.init().then(() => (this.initialized = true));
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+
+    window.removeEventListener("beforeunload", this);
+    window.removeEventListener("pagehide", this);
+    document.removeEventListener("Profiles:CustomAvatarUpload", this);
+    document.removeEventListener("Profiles:AvatarSelected", this);
+    document.removeEventListener("ThemePickerThemeUpdated", this);
+    window.removeEventListener("ThemePickerDeviceAppearanceUpdated", this);
   }
 
   async init() {
@@ -152,6 +172,7 @@ export class EditProfileCard extends MozLitElement {
       platform,
       profiles,
       themes,
+      novaEnabled,
     } = await RPMSendQuery("Profiles:GetEditProfileContent");
 
     if (isInAutomation) {
@@ -163,6 +184,7 @@ export class EditProfileCard extends MozLitElement {
     this.profiles = profiles;
     this.setProfile(currentProfile);
     this.themes = themes;
+    this.novaEnabled = novaEnabled;
 
     await this.setInitialInput();
   }
@@ -259,7 +281,20 @@ export class EditProfileCard extends MozLitElement {
         this.updateAvatar(avatar);
         break;
       }
+      case "ThemePickerThemeUpdated":
+      case "ThemePickerDeviceAppearanceUpdated": {
+        this.refreshProfile();
+        break;
+      }
     }
+  }
+
+  async refreshProfile() {
+    let { currentProfile } = await RPMSendQuery(
+      "Profiles:GetEditProfileContent"
+    );
+    this.setProfile(currentProfile);
+    this.requestUpdate();
   }
 
   updated() {
@@ -438,6 +473,16 @@ export class EditProfileCard extends MozLitElement {
       return null;
     }
 
+    if (!this.novaEnabled) {
+      return this.legacyThemesTemplate();
+    }
+    return html`<theme-picker
+      id="themes"
+      installsource="profiles"
+    ></theme-picker>`;
+  }
+
+  legacyThemesTemplate() {
     return html`<moz-visual-picker
       type="listbox"
       id="themes"

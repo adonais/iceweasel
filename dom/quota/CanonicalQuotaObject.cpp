@@ -197,7 +197,7 @@ bool CanonicalQuotaObject::LockedMaybeUpdateSize(
   }
 
   if (!sizeToBeFreed) {
-    uint64_t usage = quotaManager->mTemporaryStorageUsage;
+    int64_t usage = quotaManager->mTemporaryStorageUsage;
 
     DirtyTrackingAutoLock::PauseLock pauseLock(aProofOfLock);
 

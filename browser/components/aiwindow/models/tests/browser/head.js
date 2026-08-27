@@ -34,7 +34,7 @@ function serveHTML(html) {
   server.start(-1);
 
   const { primaryHost, primaryPort } = server.identity;
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   const url = `http://${primaryHost}:${primaryPort}/test-page.html`;
 
   return {

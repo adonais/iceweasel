@@ -5,12 +5,20 @@
  */
 
 /**
- * Self-contained flow backing the search_the_web tool. One Exa retrieval, an
- * on-demand page-read loop (bounded), grounded answer generation on a pinned
- * model, and a non-LLM schema validation. Returns a structured result the main
- * assistant uses to decide whether to answer in chat or fall back to a Google
- * handoff. All the logic lives here as functions — there is no separate agent
- * object because there is no state to carry between calls.
+ * Self-contained flow backing the search_the_web tool. Two paths, selected by
+ * SEARCH_THE_WEB_FAST_PREF:
+ *
+ * - Grounded (pref off, the default): one Exa retrieval, an on-demand page-read
+ *   loop (bounded), grounded answer generation on a pinned model, and a non-LLM
+ *   schema validation.
+ * - Fast (pref on): one Exa retrieval whose sanitized snippets go straight back
+ *   to the main assistant, which answers from them or reads a page itself.
+ *
+ * Either way the main assistant uses the result to decide whether to answer in
+ * chat or fall back to a Google handoff. The two paths are deliberately kept as
+ * separate entrypoints so that whichever one loses can be deleted whole. All
+ * the logic lives here as functions — there is no separate agent object because
+ * there is no state to carry between calls.
  */
 
 /**
@@ -28,6 +36,7 @@ import { ExaSearchProvider } from "moz-src:///browser/components/aiwindow/models
 import {
   GetPageContent,
   GET_PAGE_CONTENT,
+  SEARCH_THE_WEB_FAST_PREF,
 } from "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs";
 
 const lazy = {};
@@ -60,6 +69,21 @@ const MAX_READ_ROUNDS = 3;
 // to answer with what it already has. Pref-backed so tests can shrink it.
 const READ_TIMEOUT_PREF = "browser.smartwindow.search.readTimeoutMs";
 const READ_TIMEOUT_DEFAULT_MS = 15000;
+
+// Fast path only. Over-fetch so that dropping results with a bad URL or no
+// snippet still leaves a full set. What the assistant gets back is deliberately
+// small: it answers from the snippets and reads a page itself when it needs
+// more.
+const MAX_RESULTS_RETRIEVED = 5;
+const MAX_RESULTS_RETURNED = 3;
+
+// Per-snippet character cap, mirroring how GetPageContent owns its own
+// MAX_CHARACTERS for extracted page text.
+const MAX_SNIPPET_LENGTH = 2000;
+
+// Shorter than this and the snippet is a stub ("Sign in", "404") with nothing
+// for the assistant to answer from, so the result is dropped.
+const MIN_SNIPPET_LENGTH = 25;
 
 /**
  * JSON schema describing the structured answer the model emits. Used both as
@@ -128,7 +152,7 @@ const GET_PAGE_CONTENT_TOOL = {
  */
 
 /**
- * The structured result returned to the main assistant.
+ * The structured result returned to the main assistant by the grounded path.
  *
  * @typedef {object} SearchWorkflowResult
  * @property {string} answer - Grounded answer text (empty on failure).
@@ -141,6 +165,15 @@ const GET_PAGE_CONTENT_TOOL = {
  */
 
 /**
+ * The structured result returned to the main assistant by the fast path.
+ *
+ * @typedef {object} FastSearchWorkflowResult
+ * @property {SearchResult[]} results - Sanitized Exa results (empty on failure).
+ * @property {boolean} requiresSearchHandoff - Whether to route to search handoff.
+ * @property {string} [error] - Present when the flow could not run.
+ */
+
+/**
  * Stable id shown to the model for the result at `index` (result_1, …). Shared
  * by the rendered results and the id->URL map so the two stay aligned.
  *
@@ -149,6 +182,26 @@ const GET_PAGE_CONTENT_TOOL = {
  */
 function resultIdFor(index) {
   return `result_${index + 1}`;
+}
+
+/**
+ * Collapses whitespace and truncates a result snippet. Fast path only.
+ *
+ * A snippet is page body text, so it follows the
+ * get_page_content model instead — bound the length and rely on the security
+ * flags, which this flow always sets.
+ *
+ * @param {unknown} text
+ * @returns {string}
+ */
+function normalizeAndTruncateText(text) {
+  if (typeof text !== "string" || !text) {
+    return "";
+  }
+  const collapsed = text.replace(/\s+/g, " ").trim();
+  return collapsed.length > MAX_SNIPPET_LENGTH
+    ? collapsed.slice(0, MAX_SNIPPET_LENGTH) + "\u2026"
+    : collapsed;
 }
 
 /**
@@ -359,12 +412,6 @@ async function generateAnswer({
     throw new DOMException("Aborted", "AbortError");
   }
   const response = await conversation.run({
-    inferenceParams: {
-      response_format: {
-        type: "json_schema",
-        json_schema: SEARCH_ANSWER_SCHEMA,
-      },
-    },
     tool_choice: "none",
     tools: [],
     fxAccountToken,
@@ -392,16 +439,129 @@ function failure(searchedUrls, readUrls, message) {
   };
 }
 
+/**
+ * Builds a fast-path failure result that routes the main assistant to fallback.
+ *
+ * @param {string} message
+ * @returns {FastSearchWorkflowResult}
+ */
+function fastFailure(message) {
+  return {
+    results: [],
+    error: message,
+    requiresSearchHandoff: false,
+  };
+}
+
 function shouldCallSearchHandoff(conversation) {
   return conversation._searchTheWebTurn === conversation.currentTurnIndex();
 }
 
 /**
- * Tool entrypoint for search_the_web. Runs one Exa retrieval, drives the
- * on-demand page reads (bounded by MAX_PAGES), generates and validates the
- * grounded answer, and returns the structured result. Errors are returned as a
- * result with could_answer false rather than thrown, so the main assistant can
- * fall back to the Google handoff.
+ * Tool entrypoint for search_the_web. Dispatches to the path selected by
+ * SEARCH_THE_WEB_FAST_PREF. The two paths return different shapes, so
+ * Chat.sys.mjs offers the model a matching tool config for whichever is on.
+ *
+ * @param {object} toolParams
+ * @param {string} toolParams.query - Search query (may be rewritten by the assistant).
+ * @param {string} [toolParams.context] - Optional caller-supplied context.
+ * @param {ChatConversation} conversation - Originating conversation.
+ * @param {AbortSignal} [signal] - Cancels the in-flight answer generation.
+ * @returns {Promise<SearchWorkflowResult|FastSearchWorkflowResult>}
+ */
+export async function runSearchTheWeb(toolParams, conversation, signal) {
+  return Services.prefs.getBoolPref(SEARCH_THE_WEB_FAST_PREF, true)
+    ? runFastSearch(toolParams, conversation)
+    : runGroundedSearch(toolParams, conversation, signal);
+}
+
+/**
+ * Fast path. Runs one Exa retrieval and returns the sanitized results for the
+ * main assistant to answer from. Errors are returned as a result with no
+ * results rather than thrown, so the assistant can fall back to the Google
+ * handoff.
+ *
+ * @param {object} toolParams
+ * @param {string} toolParams.query - Search query (may be rewritten by the assistant).
+ * @param {ChatConversation} conversation - Originating conversation; owns the
+ *   anonymous-fetch ledger and security state a follow-up page read depends on.
+ * @returns {Promise<FastSearchWorkflowResult>}
+ */
+async function runFastSearch(toolParams, conversation) {
+  if (shouldCallSearchHandoff(conversation)) {
+    return {
+      requiresSearchHandoff: true,
+    };
+  }
+
+  const query = toolParams?.query;
+  if (typeof query !== "string" || !query.trim()) {
+    return fastFailure("a non-empty query is required");
+  }
+  conversation._searchTheWebTurn = conversation.currentTurnIndex();
+
+  let retrieved;
+  try {
+    const provider = new ExaSearchProvider();
+    const response = await provider.search(query.trim(), {
+      maxResults: MAX_RESULTS_RETRIEVED,
+    });
+    retrieved = response.results;
+  } catch (e) {
+    lazy.console.error("retrieval failed:", e);
+    return fastFailure(e.message);
+  }
+
+  const kept = retrieved
+    .filter(
+      item =>
+        isValidHttpUrl(item?.url) && item?.snippet?.length > MIN_SNIPPET_LENGTH
+    )
+    .slice(0, MAX_RESULTS_RETURNED);
+
+  if (!kept.length) {
+    return fastFailure("no search results");
+  }
+
+  const urls = kept.map(item => item.url);
+
+  // Record the results as seen and add them to the anonymous-fetch ledger so a
+  // follow-up get_page_content is allowed, then mark the conversation as having
+  // seen private + untrusted content.
+  conversation.addSeenUrls(urls);
+  conversation.addSerpUrlsForAnonymousFetch(urls);
+  conversation.securityProperties.setPrivateData();
+  conversation.securityProperties.setUntrustedInput();
+
+  // The snippets are excerpts of these pages, so they ground the answer the
+  // same way a full page read does on the grounded path.
+  conversation.addCitations(
+    kept.map(item =>
+      item.title ? { url: item.url, title: item.title } : { url: item.url }
+    )
+  );
+
+  lazy.console.log("[Tool] searchTheWeb (fast)", {
+    query,
+    returned: kept.length,
+  });
+
+  return {
+    results: kept.map(item => ({
+      title: sanitizeUntrustedContent(item.title || ""),
+      url: item.url,
+      snippet: normalizeAndTruncateText(item.snippet),
+    })),
+    requiresSearchHandoff: false,
+  };
+}
+
+/**
+ * Grounded path. Runs one Exa retrieval, drives the on-demand page reads
+ * (bounded by MAX_PAGES), generates and validates the grounded answer, and
+ * returns the structured result. Errors are returned as a result with
+ * could_answer false rather than thrown, so the main assistant can fall back to
+ * the Google handoff.
  *
  * @param {object} toolParams
  * @param {string} toolParams.query - Search query (may be rewritten by the assistant).
@@ -411,7 +571,7 @@ function shouldCallSearchHandoff(conversation) {
  * @param {AbortSignal} [signal] - Cancels the in-flight answer generation.
  * @returns {Promise<SearchWorkflowResult>}
  */
-export async function runSearchTheWeb(toolParams, conversation, signal) {
+async function runGroundedSearch(toolParams, conversation, signal) {
   if (shouldCallSearchHandoff(conversation)) {
     return {
       requiresSearchHandoff: true,
@@ -433,9 +593,9 @@ export async function runSearchTheWeb(toolParams, conversation, signal) {
     const response = await provider.search(query.trim(), {
       maxResults: ExaSearchProvider.MAX_RESULTS,
     });
-    results = Array.isArray(response?.results) ? response.results : [];
+    results = response.results;
   } catch (e) {
-    console.error("[SearchWorkflow] retrieval failed:", e);
+    lazy.console.error("retrieval failed:", e);
     return failure([], [], e.message);
   }
 
@@ -527,7 +687,7 @@ export async function runSearchTheWeb(toolParams, conversation, signal) {
       signal,
     });
   } catch (e) {
-    console.error("[SearchWorkflow] answer generation failed:", e);
+    lazy.console.error("answer generation failed:", e);
     return failure(searchedUrls, readUrls, e.message);
   }
 
@@ -538,6 +698,13 @@ export async function runSearchTheWeb(toolParams, conversation, signal) {
     read: readUrls.length,
     couldAnswer: validated.could_answer,
   });
+
+  const titlesByUrl = new Map(results.map(item => [item.url, item.title]));
+  const readSources = readUrls.map(url => {
+    const title = titlesByUrl.get(url);
+    return title ? { url, title } : { url };
+  });
+  conversation.addCitations(readSources);
 
   return {
     ...validated,

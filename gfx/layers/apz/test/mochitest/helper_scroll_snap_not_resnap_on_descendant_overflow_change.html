@@ -1,0 +1,117 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>An ancestor scroll container should not re-snap while a descendant is being panned and a descendant's overflow toggles</title>
+  <script src="apz_test_utils.js"></script>
+  <script src="apz_test_native_event_utils.js"></script>
+  <script src="/tests/SimpleTest/paint_listener.js"></script>
+  <style>
+    body {
+      margin: 0;
+    }
+    #scroller {
+      width: 300px;
+      height: 300px;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+    }
+    .snap {
+      width: 100%;
+      height: 300px;
+      scroll-snap-align: start;
+    }
+    .snap:nth-child(even) { background-color: #cde; }
+    .snap:nth-child(odd) { background-color: #fcd; }
+    /* The descendant scroll container whose overflow we toggle to force a
+       reflow during the gesture. Its box size is fixed so only scrollbar
+       presence changes; #scroller's snap geometry is unaffected, so any change
+       in #scroller's scroll position would be a (spurious) re-snap. */
+    #toggler {
+      width: 100%;
+      height: 100px;
+      overflow-y: auto;
+      background-color: #ffd;
+    }
+    .tall {
+      height: 600px;
+    }
+  </style>
+</head>
+<body>
+  <div id="scroller">
+    <div class="snap"></div>
+    <div class="snap">
+      <div id="toggler"><div class="tall"></div></div>
+    </div>
+  </div>
+  <script type="application/javascript">
+    const TOUCH_CONTACT = SpecialPowers.DOMWindowUtils.TOUCH_CONTACT;
+    const TOUCH_REMOVE = SpecialPowers.DOMWindowUtils.TOUCH_REMOVE;
+
+    async function test() {
+      const secondChild = scroller.querySelectorAll(".snap")[1];
+      const secondRect = secondChild.getBoundingClientRect();
+
+      // Snap #scroller to the second child and let it settle.
+      secondChild.scrollIntoView();
+      await promiseApzFlushedRepaints();
+      is(scroller.scrollTop, secondRect.y, "The scroller starts snapped to the second child");
+      const initialSnapPosition = scroller.scrollTop;
+
+      // Put a finger down on #toggler, which is at its own top.
+      const touchStartPromise = promiseOneEvent(toggler, "touchstart");
+      await synthesizeNativeTouch(toggler, 50, 20, TOUCH_CONTACT);
+      await touchStartPromise;
+      await promiseApzFlushedRepaints();
+
+      // Drag the finger downward. #toggler is pinned at its top, so the scroll
+      // is handed off to #scroller, which scrolls up off its snap point.
+      const scrollPromise = waitForScrollEvent(scroller);
+      await synthesizeNativeTouch(toggler, 50, 50, TOUCH_CONTACT);
+      await synthesizeNativeTouch(toggler, 50, 80, TOUCH_CONTACT);
+      await synthesizeNativeTouch(toggler, 50, 110, TOUCH_CONTACT);
+      await scrollPromise;
+
+      ok(scroller.scrollTop < initialSnapPosition,
+         "The pan handed off to the scroller, moving it off its snap point");
+      const offSnapPos = scroller.scrollTop;
+
+      // While the descendant pan is active and the scroller is off-snap,
+      // toggle a descendant scroll container's overflow; reading scrollTop
+      // forces the layout flush so that it would trigger re-snapping but
+      // the scroller must not re-snap mid-gesture.
+      toggler.style.overflowY = "hidden"; // auto -> hidden
+      is(scroller.scrollTop, offSnapPos,
+         "auto->hidden on a descendant must not re-snap the scroller mid-gesture");
+
+      toggler.style.overflowY = "auto"; // hidden -> auto
+      is(scroller.scrollTop, offSnapPos,
+         "hidden->auto on a descendant must not re-snap the scroller mid-gesture");
+
+      // Lift the finger; now that the gesture is over the scroller must re-snap.
+      const scrollEndPromise = promiseOneEvent(scroller, "scrollend");
+      await synthesizeNativeTouch(toggler, 50, 110, TOUCH_REMOVE);
+      await scrollEndPromise;
+
+      // Once the gesture ends, the mandatory-snap scroller must settle on a snap
+      // point (the first child at 0 or the second child at initialSnapPosition),
+      // not stay stuck off-snap.
+      ok(scroller.scrollTop == 0 || scroller.scrollTop == initialSnapPosition,
+         `The pan-end re-snaps the scroller to a snap point (got ${scroller.scrollTop})`);
+    }
+
+    if (getPlatform() == "windows") {
+      // Bug 1875916. On Windows synthesizeNativeTouch(TOUCH_REMOVE) causes
+      // `InjectTouchInput failure` with ERROR_TIMEOUT.
+      ok(true, "Test doesn't need to run on Windows");
+      subtestDone();
+    } else {
+      waitUntilApzStable()
+      .then(test)
+      .then(subtestDone, subtestFailed);
+    }
+  </script>
+</body>
+</html>

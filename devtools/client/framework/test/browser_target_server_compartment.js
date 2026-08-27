@@ -11,6 +11,9 @@ const CHROME_PAGE =
   "test/test_chrome_page.html";
 
 add_task(async function () {
+  // We use a commands object for the main process
+  await pushPref("devtools.chrome.enabled", true);
+
   await testChromeTab();
   await testMainProcess();
 });

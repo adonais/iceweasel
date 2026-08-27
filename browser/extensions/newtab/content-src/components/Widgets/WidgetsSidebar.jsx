@@ -22,6 +22,9 @@ function WidgetsSidebar({ dispatch }) {
   const widgetsEnabled = prefs[PREF_WIDGETS_ENABLED];
   const novaEnabled = prefs[PREF_NOVA_ENABLED];
 
+  // Only one widget is supported here going forward: .sidebar-inline-end
+  // subgrids two rows of the outer grid, and anything past that overflows into
+  // the .content-full-width band below it.
   const sidebarWidgets = WIDGET_REGISTRY.filter(
     w =>
       resolveWidgetHasSidebar(w, prefs) &&

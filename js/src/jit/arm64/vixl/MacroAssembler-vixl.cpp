@@ -1095,15 +1095,15 @@ void MacroAssembler::AddSubMacro(const Register& rd,
       // extend encoding.
       if (rd.IsSP()) {
         // If the destination is SP and flags will be set, we can't pre-shift
-        // the immediate at all. 
+        // the immediate at all.
         mode = (S == SetFlags) ? kNoShift : kLimitShiftForSP;
       } else if (rn.IsSP()) {
         mode = kLimitShiftForSP;
-      } 
+      }
 
       Operand imm_operand =
           MoveImmediateForShiftedOp(temp, operand.immediate(), mode);
-      AddSub(rd, rn, imm_operand, S, op); 
+      AddSub(rd, rn, imm_operand, S, op);
     } else {
       Mov(temp, operand);
       AddSub(rd, rn, temp, S, op);
@@ -1206,15 +1206,15 @@ void MacroAssembler::AddSubWithCarryMacro(const Register& rd,
   }
 }
 
-#define DEFINE_FUNCTION(FN, REGTYPE, REG, OP)                               \
-  js::wasm::FaultingCodeOffset MacroAssembler::FN(const REGTYPE REG,        \
-                                                  const MemOperand& addr) { \
-    return LoadStoreMacro(REG, addr, OP);                                   \
+#define DEFINE_FUNCTION(FN, REGTYPE, REG, OP)                              \
+  js::wasm::FaultingCodeRange MacroAssembler::FN(const REGTYPE REG,        \
+                                                 const MemOperand& addr) { \
+    return LoadStoreMacro(REG, addr, OP);                                  \
   }
 LS_MACRO_LIST(DEFINE_FUNCTION)
 #undef DEFINE_FUNCTION
 
-js::wasm::FaultingCodeOffset MacroAssembler::LoadStoreMacro(
+js::wasm::FaultingCodeRange MacroAssembler::LoadStoreMacro(
     const CPURegister& rt,
     const MemOperand& addr,
     LoadStoreOp op) {
@@ -1230,7 +1230,7 @@ js::wasm::FaultingCodeOffset MacroAssembler::LoadStoreMacro(
   // Check if an immediate offset fits in the immediate field of the
   // appropriate instruction. If not, emit two instructions to perform
   // the operation.
-  js::wasm::FaultingCodeOffset fco;
+  js::wasm::FaultingCodeRange fcr;
   if (addr.IsImmediateOffset() && !IsImmLSScaled(offset, access_size) &&
       !IsImmLSUnscaled(offset)) {
     // Immediate offset that can't be encoded using unsigned or unscaled
@@ -1260,7 +1260,7 @@ js::wasm::FaultingCodeOffset MacroAssembler::LoadStoreMacro(
     Mov(temp, offset);
     {
       js::jit::AutoForbidPoolsAndNops afp(this, 1);
-      fco = js::wasm::FaultingCodeOffset(currentOffset());
+      fcr = js::wasm::FaultingCodeRange(currentOffset());
       LoadStore(rt, MemOperand(addr.base(), temp), op);
     }
     if (!recycle0.Is(NoReg)) {
@@ -1271,7 +1271,7 @@ js::wasm::FaultingCodeOffset MacroAssembler::LoadStoreMacro(
     // Post-index beyond unscaled addressing range.
     {
       js::jit::AutoForbidPoolsAndNops afp(this, 1);
-      fco = js::wasm::FaultingCodeOffset(currentOffset());
+      fcr = js::wasm::FaultingCodeRange(currentOffset());
       LoadStore(rt, MemOperand(addr.base()), op);
     }
     Add(addr.base(), addr.base(), Operand(offset));
@@ -1280,17 +1280,17 @@ js::wasm::FaultingCodeOffset MacroAssembler::LoadStoreMacro(
     Add(addr.base(), addr.base(), Operand(offset));
     {
       js::jit::AutoForbidPoolsAndNops afp(this, 1);
-      fco = js::wasm::FaultingCodeOffset(currentOffset());
+      fcr = js::wasm::FaultingCodeRange(currentOffset());
       LoadStore(rt, MemOperand(addr.base()), op);
     }
   } else {
     // Encodable in one load/store instruction.
     js::jit::AutoForbidPoolsAndNops afp(this, 1);
-    fco = js::wasm::FaultingCodeOffset(currentOffset());
+    fcr = js::wasm::FaultingCodeRange(currentOffset());
     LoadStore(rt, addr, op);
   }
 
-  return fco;
+  return fcr;
 }
 
 #define DEFINE_FUNCTION(FN, REGTYPE, REG, REG2, OP)  \

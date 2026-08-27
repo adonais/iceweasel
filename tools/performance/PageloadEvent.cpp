@@ -140,6 +140,27 @@ static bool DomainMatchesWildcard(char* cn, const char* hn,
   return false;
 }
 
+// A small set of well-known public domains for which we record the full
+// hostname instead of just the eTLD+1. These are high-traffic sites where
+// the subdomain identifies a distinct product surface (e.g. mail vs. docs)
+// rather than an individual user.
+static bool IsAllowedFullHostname(const nsACString& aHost) {
+  static constexpr std::string_view kFullHostnameAllowlist[] = {
+      "docs.google.com",    "mail.google.com",   "news.google.com",
+      "drive.google.com",   "meet.google.com",   "calendar.google.com",
+      "www.google.com",     "m.facebook.com",    "support.microsoft.com",
+      "scholar.google.com", "ads.google.com",    "play.google.com",
+      "mail.yahoo.com",     "search.yahoo.com",  "search.yahoo.co.jp",
+      "photos.google.com",  "gemini.google.com",
+  };
+  for (const auto& allowed : kFullHostnameAllowlist) {
+    if (aHost.EqualsASCII(allowed.data(), allowed.size())) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // There are several conditions before we can assign an etld+1 domain:
 // 1.  The server's IP address must be a public IP.
 // 2.  The suffix must be on the PSL (Public Suffix List).
@@ -181,6 +202,15 @@ bool PageloadEventData::MaybeSetPublicRegistrableDomain(nsCOMPtr<nsIURI> aURI,
   rv = tldService->HasKnownPublicSuffix(aURI, &hasKnownPublicSuffix);
   if (NS_FAILED(rv) || !hasKnownPublicSuffix) {
     return false;
+  }
+
+  // For a small set of allowlisted domains, record the full hostname rather
+  // than reducing it to the eTLD+1.
+  nsAutoCString host;
+  rv = aURI->GetAsciiHost(host);
+  if (NS_SUCCEEDED(rv) && IsAllowedFullHostname(host)) {
+    mDomain = mozilla::Some(host);
+    return true;
   }
 
   // Get cert for wildcard matching.
@@ -304,6 +334,7 @@ void PageloadEventData::SendAsPageLoadDomainEvent() {
 
   mozilla::glean::perf::PageLoadDomainExtra extra;
   extra.domain = this->mDomain;
+  extra.isFirstDailyLoad = mozilla::Some(this->mIsFirstDailyLoad);
   extra.httpVer = this->httpVer;
   extra.sameOriginNav = this->sameOriginNav;
   extra.documentFeatures = this->documentFeatures;

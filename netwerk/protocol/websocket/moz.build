@@ -11,6 +11,7 @@ XPIDL_SOURCES += [
     "nsIWebSocketEventService.idl",
     "nsIWebSocketImpl.idl",
     "nsIWebSocketListener.idl",
+    "nsIWebSocketProtocolHandler.idl",
 ]
 
 XPIDL_MODULE = "necko_websocket"
@@ -44,6 +45,7 @@ UNIFIED_SOURCES += [
     "WebSocketEventListenerParent.cpp",
     "WebSocketEventService.cpp",
     "WebSocketFrame.cpp",
+    "WebSocketProtocolHandler.cpp",
 ]
 
 IPDL_SOURCES += [

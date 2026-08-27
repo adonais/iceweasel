@@ -228,6 +228,8 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   void OnUnlockedDraw();
   void OnImageIsAnimated(imgIRequest* aRequest);
 
+  bool HasPendingAlwaysLoadImageTask() const;
+
   // The nsContentPolicyType we would use for this ImageLoadType
   static nsContentPolicyType PolicyTypeForLoad(ImageLoadType aImageLoadType);
 

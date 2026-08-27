@@ -9,8 +9,8 @@
 
 #ifdef MOZILLA_INTERNAL_API
 
-#  include "prlink.h"
 #  include "mozilla/Char16.h"
+#  include "prlink.h"
 
 namespace mozilla {
 

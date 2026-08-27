@@ -40,7 +40,7 @@ add_task(async function same_origin_but_other() {
         visitCount: 0,
         isVisited: false,
       });
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       await assertLinkVisitedStatus(browser, "http://example.com/", {
         visitCount: 0,
         isVisited: false,
@@ -62,7 +62,7 @@ add_task(async function same_origin_but_other() {
       });
 
       info("Visit others by Scripts");
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       await synthesizeVisitByScript(browser, "http://example.com/");
       await synthesizeVisitByScript(browser, "https://www.example.com/");
       await synthesizeVisitByScript(browser, "https://example.org/");
@@ -72,7 +72,7 @@ add_task(async function same_origin_but_other() {
         visitCount: 1,
         isVisited: true,
       });
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       await assertLinkVisitedStatus(browser, "http://example.com/", {
         visitCount: 0,
         isVisited: true,

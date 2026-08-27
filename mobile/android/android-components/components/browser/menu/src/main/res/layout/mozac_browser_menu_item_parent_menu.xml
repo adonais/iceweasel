@@ -10,8 +10,7 @@
     android:orientation="horizontal"
     android:clickable="true"
     android:focusable="true"
-    android:gravity="center_vertical"
-    tools:ignore="UseCompoundDrawables">
+    android:gravity="center_vertical">
 
     <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/image"

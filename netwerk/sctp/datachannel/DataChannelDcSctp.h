@@ -22,6 +22,7 @@ class DataChannelConnectionDcSctp : public DataChannelConnection,
   // DataChannelConnection API
   void Destroy() override;
   bool RaiseStreamLimitTo(uint16_t aNewLimit) override;
+  uint16_t GetStreamIdCeiling() const override;
   void OnTransportReady() override;
   bool Init(const uint16_t aLocalPort, const uint16_t aNumStreams) override;
   int SendMessage(DataChannel& aChannel, OutgoingMsg&& aMsg) override;

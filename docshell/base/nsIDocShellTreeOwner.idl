@@ -85,20 +85,6 @@ interface nsIDocShellTreeOwner : nsISupports
   void setRootShellSize(in long width, in long height);
 
   /*
-  Sets the persistence of different attributes of the window.
-  */
-  void setPersistence(in boolean aPersistPosition,
-                          in boolean aPersistSize,
-                          in boolean aPersistSizeMode);
-
-  /*
-  Gets the current persistence states of the window.
-  */
-  void getPersistence(out boolean aPersistPosition,
-                          out boolean aPersistSize,
-                          out boolean aPersistSizeMode);
-
-  /*
   Returns true if there is a primary content shell or a primary
   remote tab.
   */

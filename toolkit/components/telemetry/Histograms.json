@@ -274,109 +274,6 @@
     "releaseChannelCollection": "opt-out",
     "description": "Whether a content process was launched synchronously (unnecessarily delaying UI response)."
   },
-  "CYCLE_COLLECTOR_FINISH_IGC": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["dev-telemetry-gc-alerts@mozilla.org"],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "description": "Cycle collection finished an incremental GC"
-  },
-  "CYCLE_COLLECTOR_SYNC_SKIPPABLE": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["dev-telemetry-gc-alerts@mozilla.org"],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "description": "Cycle collection synchronously ran forget skippable"
-  },
-  "CYCLE_COLLECTOR_VISITED_REF_COUNTED": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["dev-telemetry-gc-alerts@mozilla.org"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 300000,
-    "n_buckets": 50,
-    "description": "Number of ref counted objects visited by the cycle collector"
-  },
-  "CYCLE_COLLECTOR_WORKER_VISITED_REF_COUNTED": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["dev-telemetry-gc-alerts@mozilla.org"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 300000,
-    "n_buckets": 50,
-    "description": "Number of ref counted objects visited by the cycle collector in a worker"
-  },
-  "CYCLE_COLLECTOR_VISITED_GCED": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["dev-telemetry-gc-alerts@mozilla.org"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 300000,
-    "n_buckets": 50,
-    "description": "Number of JS objects visited by the cycle collector"
-  },
-  "CYCLE_COLLECTOR_WORKER_VISITED_GCED": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["dev-telemetry-gc-alerts@mozilla.org"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 300000,
-    "n_buckets": 50,
-    "description": "Number of JS objects visited by the cycle collector in a worker"
-  },
-  "CYCLE_COLLECTOR_COLLECTED": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["dev-telemetry-gc-alerts@mozilla.org"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 100000,
-    "n_buckets": 50,
-    "description": "Number of objects collected by the cycle collector"
-  },
-  "CYCLE_COLLECTOR_WORKER_COLLECTED": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["dev-telemetry-gc-alerts@mozilla.org"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 100000,
-    "n_buckets": 50,
-    "description": "Number of objects collected by the cycle collector in a worker"
-  },
-  "CYCLE_COLLECTOR_NEED_GC": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["dev-telemetry-gc-alerts@mozilla.org"],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "description": "Needed garbage collection before cycle collection."
-  },
-  "CYCLE_COLLECTOR_WORKER_NEED_GC": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["dev-telemetry-gc-alerts@mozilla.org"],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "description": "Needed garbage collection before cycle collection in a worker."
-  },
-  "CYCLE_COLLECTOR_SLICE_DURING_IDLE": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["dev-telemetry-gc-alerts@mozilla.org"],
-    "expires_in_version": "never",
-    "kind": "linear",
-    "high": 100,
-    "n_buckets": 50,
-    "bug_numbers": [1372042],
-    "description": "Percent of cycle collector slice done during idle time"
-  },
   "DEVICE_RESET_REASON": {
     "record_in_processes": ["main", "content", "gpu"],
     "products": ["firefox", "fennec"],
@@ -447,17 +344,6 @@
     "n_buckets": 50,
     "bug_numbers": [1271160],
     "description": "The time content uses to enter/exit fullscreen regardless of fullscreen transition timeout"
-  },
-  "GC_SLICE_DURING_IDLE": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox"],
-    "alert_emails": ["dev-telemetry-gc-alerts@mozilla.org"],
-    "expires_in_version": "never",
-    "kind": "linear",
-    "high": 100,
-    "n_buckets": 50,
-    "bug_numbers": [1372042],
-    "description": "Percent of GC slice done during idle time"
   },
   "GPU_PROCESS_LAUNCH_TIME_MS_2": {
     "record_in_processes": ["main", "content"],
@@ -767,29 +653,6 @@
     "description": "WebGL2 creation success",
     "bug_numbers": [1247327]
   },
-  "CANVAS_FINGERPRINTING_PER_TAB": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["seceng-telemetry@mozilla.com"],
-    "expires_in_version": "160",
-    "keyed": true,
-    "keys": ["known_text", "unknown", "unknown_matched", "known_text_matched"],
-    "kind": "enumerated",
-    "n_values": 8,
-    "releaseChannelCollection": "opt-out",
-    "description": "Type of canvas fingerprinter detected (keyed by known_fingerprinting_text or unknown), 0 = none",
-    "bug_numbers": [1847990, 1912169, 1946406]
-  },
-  "FONT_FINGERPRINTING_PER_TAB": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["seceng-telemetry@mozilla.com"],
-    "expires_in_version": "160",
-    "kind": "boolean",
-    "releaseChannelCollection": "opt-out",
-    "description": "Whether a probable font fingerprinting attempt was detected",
-    "bug_numbers": [1847990, 1912169, 1946406]
-  },
   "HTTP_PAGE_DNS_ISSUE_TIME": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -1047,17 +910,6 @@
     "bug_numbers": [1364235, 1590385, 1623098, 1649954, 1689257, 1754639],
     "releaseChannelCollection": "opt-out",
     "description": "Record hits and misses to the startup cache, with categories."
-  },
-  "SCRIPT_PRELOADER_REQUESTS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["dothayer@mozilla.com", "plawless@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "categorical",
-    "labels": ["Hit", "HitChild", "Miss"],
-    "bug_numbers": [1364235, 1590385, 1623098, 1649954, 1689257, 1754639],
-    "releaseChannelCollection": "opt-out",
-    "description": "Record hits and misses to the script preloader, with categories."
   },
   "SCRIPT_PRELOADER_WAIT_TIME": {
     "record_in_processes": ["main", "content"],
@@ -2799,43 +2651,6 @@
     "bug_numbers": [1334615],
     "description": "The input method the user used to select a result in the searchbar. 'enter' => The user hit the Enter key without choosing a result in the popup. 'enterSelection' => The user chose a result and then hit the Enter key. 'click' => The user clicked a result with the mouse."
   },
-  "HTMLEDITORS_WITH_BEFOREINPUT_LISTENERS": {
-    "record_in_processes": ["content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["mnakano.birchill@mozilla.com"],
-    "bug_numbers": [1668134, 1665530],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "releaseChannelCollection": "opt-out",
-    "description": "Number of HTML editors whose window or a node in it has had beforeinput event listeners"
-  },
-  "HTMLEDITORS_OVERRIDDEN_BY_BEFOREINPUT_LISTENERS": {
-    "record_in_processes": ["content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["mnakano.birchill@mozilla.com"],
-    "bug_numbers": [1668134, 1665530],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "releaseChannelCollection": "opt-out",
-    "description": "Number of HTML editors whose dispatching beforeinput events are canceled"
-  },
-  "HTMLEDITORS_WITH_MUTATION_OBSERVERS_WITHOUT_BEFOREINPUT_LISTENERS": {
-    "record_in_processes": ["content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["mnakano.birchill@mozilla.com"],
-    "bug_numbers": [1668134, 1665530],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "releaseChannelCollection": "opt-out",
-    "description": "Number of HTML editors a node in the window has been observed by mutation observers, but has not had beforeinput event listeners"
-  },
-  "XMLHTTPREQUEST_ASYNC_OR_SYNC": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "description": "Type of XMLHttpRequest, async or sync"
-  },
   "TELEMETRY_TEST_COUNT": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec", "thunderbird"],
@@ -3389,25 +3204,6 @@
     ],
     "description": "Records search counts for search access points. The format is: <engine-name>.<search-access-point>. For the urlbar when in search mode, the format is <engine name>.urlbar-searchmode. For the urlbar when an internal @engine shortcut is used, the format is: <engine-name>.alias.",
     "record_into_store": ["main", "account-ecosystem"]
-  },
-  "SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "alert_emails": ["fx-search-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "n_buckets": 30,
-    "high": 100000,
-    "description": "Time (ms) it takes to fetch the country code"
-  },
-  "SEARCH_SERVICE_COUNTRY_FETCH_RESULT": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "alert_emails": ["fx-search-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "n_values": 8,
-    "description": "Result of XHR request fetching the country-code. 0=SUCCESS, 1=SUCCESS_WITHOUT_DATA, 2=XHRTIMEOUT, 3=ERROR (rest reserved for finer-grained error codes later)"
   },
   "SEARCH_SUGGESTIONS_LATENCY_MS": {
     "record_in_processes": ["main"],
@@ -4040,54 +3836,6 @@
     "kind": "enumerated",
     "n_values": 10,
     "description": "How often would blocked mixed content be allowed if HSTS upgrades were allowed? 0=display/no-HSTS, 1=display/HSTS, 2=active/no-HSTS, 3=active/HSTS"
-  },
-  "MIXED_CONTENT_IMAGES": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "bug_numbers": [1819336],
-    "alert_emails": ["seceng-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "categorical",
-    "releaseChannelCollection": "opt-out",
-    "labels": [
-      "ImgUpSuccess",
-      "ImgUpFailure",
-      "ImgNoUpSuccess",
-      "ImgNoUpFailure"
-    ],
-    "description": "How often image loads fail in regular mode and in upgrading mode?"
-  },
-  "MIXED_CONTENT_VIDEO": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "bug_numbers": [1819336],
-    "alert_emails": ["seceng-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "categorical",
-    "releaseChannelCollection": "opt-out",
-    "labels": [
-      "VideoUpSuccess",
-      "VideoUpFailure",
-      "VideoNoUpSuccess",
-      "VideoNoUpFailure"
-    ],
-    "description": "How often video loads fail in regular mode and in upgrading mode?"
-  },
-  "MIXED_CONTENT_AUDIO": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "bug_numbers": [1819336],
-    "alert_emails": ["seceng-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "categorical",
-    "releaseChannelCollection": "opt-out",
-    "labels": [
-      "AudioUpSuccess",
-      "AudioUpFailure",
-      "AudioNoUpSuccess",
-      "AudioNoUpFailure"
-    ],
-    "description": "How often audio loads fail in regular mode and in upgrading mode?"
   },
   "FX_THUMBNAILS_BG_QUEUE_SIZE_ON_CAPTURE": {
     "record_in_processes": ["main", "content"],
@@ -5361,30 +5109,6 @@
       "FailEnqueue"
     ]
   },
-  "BFCACHE_COMBO": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["sefeng@mozilla.com"],
-    "bug_numbers": [1531917],
-    "expires_in_version": "never",
-    "kind": "categorical",
-    "releaseChannelCollection": "opt-out",
-    "labels": [
-      "BFCache_Success",
-      "Success_Not_Toplevel",
-      "Unload",
-      "Unload_Req",
-      "Req",
-      "Unload_Req_Peer",
-      "Unload_Req_Peer_MSE",
-      "Unload_Req_MSE",
-      "SPD_Unload_Req_Peer",
-      "Remote_Subframes",
-      "Beforeunload",
-      "Other"
-    ],
-    "description": "The common combinations of BFCacheStatus when we determine whether the page can be BFCached or not; If it's BFCached, we record BFCache_Success; Success_Not_Toplevel represents the number of not the only top level document in BrowsingContextGroup's documents that are BFCached, and BFCache_Success includes Success_Not_Toplevel; If it's not and it falls under common failure reasons combinations, we record the corresponding combination; Otherwise, we record Other to indicate this is not a common failure"
-  },
   "QM_QUOTA_INFO_LOAD_TIME_V0": {
     "record_in_processes": ["main"],
     "products": ["firefox", "fennec"],
@@ -5698,65 +5422,6 @@
     "bug_numbers": [1812051],
     "description": "If any opaque response was blocked for a given top-level window context."
   },
-  "ORB_BLOCK_REASON": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["sefeng@mozilla.com", "afarre@mozilla.com"],
-    "releaseChannelCollection": "opt-out",
-    "expires_in_version": "never",
-    "kind": "categorical",
-    "labels": [
-      "MIME_NEVER_SNIFFED",
-      "RESP_206_BLCLISTED",
-      "NOSNIFF_BLC_OR_TEXTP",
-      "RESP_206_NO_FIRST",
-      "AFTER_SNIFF_MEDIA",
-      "AFTER_SNIFF_NOSNIFF",
-      "AFTER_SNIFF_STA_CODE",
-      "AFTER_SNIFF_CT_FAIL",
-      "MEDIA_NOT_INITIAL",
-      "MEDIA_INCORRECT_RESP",
-      "JS_VALIDATION_FAILED"
-    ],
-    "bug_numbers": [1833216],
-    "description": "The reason of why this request was blocked by ORB"
-  },
-  "ORB_BLOCK_INITIATOR": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["sefeng@mozilla.com", "afarre@mozilla.com"],
-    "releaseChannelCollection": "opt-out",
-    "expires_in_version": "never",
-    "kind": "categorical",
-    "labels": [
-      "INVALID",
-      "OTHER",
-      "FILTERED_FETCH",
-      "BLOCKED_FETCH",
-      "JSON",
-      "SCRIPT",
-      "IMAGE",
-      "STYLESHEET",
-      "XMLHTTPREQUEST",
-      "DTD",
-      "FONT",
-      "MEDIA",
-      "CSP_REPORT",
-      "XSLT",
-      "IMAGESET",
-      "WEB_MANIFEST",
-      "SPECULATIVE",
-      "UA_FONT",
-      "PROXIED_WEBRTC_MEDIA",
-      "PING",
-      "BEACON",
-      "WEB_TRANSPORT",
-      "EXCLUDED",
-      "TEXT"
-    ],
-    "bug_numbers": [1833216],
-    "description": "The initiator of this ORB blocked request."
-  },
   "STRIP_ON_SHARE_PARAMS_REMOVED": {
     "record_in_processes": ["main"],
     "products": ["firefox"],
@@ -5780,29 +5445,5 @@
     "alert_emails": ["amadan@mozilla.com", "emz@mozilla.com"],
     "bug_numbers": [1833105],
     "description": "The decrease in the length of the URL when strip on share is used, only if at least one parameter is stripped"
-  },
-  "SCREENWAKELOCK_HELD_DURATION_MS": {
-    "record_in_processes": ["content"],
-    "products": ["firefox"],
-    "alert_emails": ["vhilla@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 240000,
-    "high": 28800000,
-    "n_buckets": 50,
-    "bug_numbers": [1589554],
-    "description": "How long a screen wake lock was held in ms"
-  },
-  "SCREENWAKELOCK_RELEASE_BATTERY_LEVEL_DISCHARGING": {
-    "record_in_processes": ["content"],
-    "products": ["firefox"],
-    "alert_emails": ["vhilla@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "linear",
-    "low": 1,
-    "high": 100,
-    "n_buckets": 50,
-    "bug_numbers": [1589554],
-    "description": "Battery level when discharging and the wake lock was released"
   }
 }

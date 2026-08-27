@@ -25,6 +25,7 @@
     const RESOLUTION = 4;
     const OFFSET_SCREEN_PX = 50;
     const OFFSET_CSS_PX = OFFSET_SCREEN_PX / RESOLUTION;
+    const MARGIN_CSS_PX = 10;
 
     function computeDelta(visual) {
       // Compute the distance from the right/bottom edge of the visual
@@ -39,7 +40,7 @@
     async function test() {
       const cases = [
         {
-          x: 0,
+          x: MARGIN_CSS_PX,
           y: 0,
           dx: (width) => -computeDelta(width),
           dy: () => 0,
@@ -49,7 +50,7 @@
           },
         },
         {
-          x: OFFSET_CSS_PX,
+          x: MARGIN_CSS_PX + OFFSET_CSS_PX,
           y: 0,
           dx: () => 0,
           dy: (height) => -computeDelta(height),

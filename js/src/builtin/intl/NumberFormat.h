@@ -31,13 +31,13 @@ class NumberFormatObject : public NativeObject {
   static const JSClass class_;
   static const JSClass& protoClass_;
 
-  static constexpr uint32_t LOCALE_SLOT = 0;
-  static constexpr uint32_t NUMBERING_SYSTEM_SLOT = 1;
-  static constexpr uint32_t OPTIONS_SLOT = 2;
-  static constexpr uint32_t DIGITS_OPTIONS_SLOT = 3;
-  static constexpr uint32_t UNUMBER_FORMATTER_SLOT = 4;
-  static constexpr uint32_t UNUMBER_RANGE_FORMATTER_SLOT = 5;
-  static constexpr uint32_t BOUND_FORMAT_SLOT = 6;
+  JS_DEFINE_TYPED_SLOT(0, LOCALE_SLOT, Object, String, Undefined);
+  JS_DEFINE_TYPED_SLOT(1, NUMBERING_SYSTEM_SLOT, String, Undefined);
+  JS_DEFINE_TYPED_SLOT(2, OPTIONS_SLOT, Double, Undefined);
+  JS_DEFINE_TYPED_SLOT(3, DIGITS_OPTIONS_SLOT, Double, Undefined);
+  JS_DEFINE_TYPED_SLOT(4, UNUMBER_FORMATTER_SLOT, Private, Undefined);
+  JS_DEFINE_TYPED_SLOT(5, UNUMBER_RANGE_FORMATTER_SLOT, Private, Undefined);
+  JS_DEFINE_TYPED_SLOT(6, BOUND_FORMAT_SLOT, Object, Undefined);
   static constexpr uint32_t SLOT_COUNT = 7;
 
   // Estimated memory use for UNumberFormatter and UFormattedNumber
@@ -48,10 +48,12 @@ class NumberFormatObject : public NativeObject {
   // (see IcuMemoryUsage).
   static constexpr size_t EstimatedRangeFormatterMemoryUse = 19894;
 
-  bool isLocaleResolved() const { return getFixedSlot(LOCALE_SLOT).isString(); }
+  bool isLocaleResolved() const {
+    return getFixedSlotTyped(LOCALE_SLOT).isString();
+  }
 
   JSObject* getRequestedLocales() const {
-    const auto& slot = getFixedSlot(LOCALE_SLOT);
+    const auto& slot = getFixedSlotTyped(LOCALE_SLOT);
     if (slot.isUndefined()) {
       return nullptr;
     }
@@ -59,11 +61,11 @@ class NumberFormatObject : public NativeObject {
   }
 
   void setRequestedLocales(JSObject* requestedLocales) {
-    setFixedSlot(LOCALE_SLOT, JS::ObjectValue(*requestedLocales));
+    setFixedSlotTyped(LOCALE_SLOT, JS::ObjectValue(*requestedLocales));
   }
 
   JSLinearString* getLocale() const {
-    const auto& slot = getFixedSlot(LOCALE_SLOT);
+    const auto& slot = getFixedSlotTyped(LOCALE_SLOT);
     if (slot.isUndefined()) {
       return nullptr;
     }
@@ -71,11 +73,11 @@ class NumberFormatObject : public NativeObject {
   }
 
   void setLocale(JSLinearString* locale) {
-    setFixedSlot(LOCALE_SLOT, JS::StringValue(locale));
+    setFixedSlotTyped(LOCALE_SLOT, JS::StringValue(locale));
   }
 
   JSLinearString* getNumberingSystem() const {
-    const auto& slot = getFixedSlot(NUMBERING_SYSTEM_SLOT);
+    const auto& slot = getFixedSlotTyped(NUMBERING_SYSTEM_SLOT);
     if (slot.isUndefined()) {
       return nullptr;
     }
@@ -83,7 +85,7 @@ class NumberFormatObject : public NativeObject {
   }
 
   void setNumberingSystem(JSLinearString* numberingSystem) {
-    setFixedSlot(NUMBERING_SYSTEM_SLOT, JS::StringValue(numberingSystem));
+    setFixedSlotTyped(NUMBERING_SYSTEM_SLOT, JS::StringValue(numberingSystem));
   }
 
   NumberFormatOptions getOptions() const;
@@ -91,7 +93,7 @@ class NumberFormatObject : public NativeObject {
   void setOptions(const NumberFormatOptions& options);
 
   mozilla::intl::NumberFormat* getNumberFormatter() const {
-    const auto& slot = getFixedSlot(UNUMBER_FORMATTER_SLOT);
+    const auto& slot = getFixedSlotTyped(UNUMBER_FORMATTER_SLOT);
     if (slot.isUndefined()) {
       return nullptr;
     }
@@ -99,11 +101,11 @@ class NumberFormatObject : public NativeObject {
   }
 
   void setNumberFormatter(mozilla::intl::NumberFormat* formatter) {
-    setFixedSlot(UNUMBER_FORMATTER_SLOT, PrivateValue(formatter));
+    setFixedSlotTyped(UNUMBER_FORMATTER_SLOT, PrivateValue(formatter));
   }
 
   mozilla::intl::NumberRangeFormat* getNumberRangeFormatter() const {
-    const auto& slot = getFixedSlot(UNUMBER_RANGE_FORMATTER_SLOT);
+    const auto& slot = getFixedSlotTyped(UNUMBER_RANGE_FORMATTER_SLOT);
     if (slot.isUndefined()) {
       return nullptr;
     }
@@ -111,11 +113,11 @@ class NumberFormatObject : public NativeObject {
   }
 
   void setNumberRangeFormatter(mozilla::intl::NumberRangeFormat* formatter) {
-    setFixedSlot(UNUMBER_RANGE_FORMATTER_SLOT, PrivateValue(formatter));
+    setFixedSlotTyped(UNUMBER_RANGE_FORMATTER_SLOT, PrivateValue(formatter));
   }
 
   JSObject* getBoundFormat() const {
-    const auto& slot = getFixedSlot(BOUND_FORMAT_SLOT);
+    const auto& slot = getFixedSlotTyped(BOUND_FORMAT_SLOT);
     if (slot.isUndefined()) {
       return nullptr;
     }
@@ -123,7 +125,7 @@ class NumberFormatObject : public NativeObject {
   }
 
   void setBoundFormat(JSObject* boundFormat) {
-    setFixedSlot(BOUND_FORMAT_SLOT, JS::ObjectValue(*boundFormat));
+    setFixedSlotTyped(BOUND_FORMAT_SLOT, JS::ObjectValue(*boundFormat));
   }
 
  private:

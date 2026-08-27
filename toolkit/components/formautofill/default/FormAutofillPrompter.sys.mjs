@@ -35,8 +35,6 @@ const l10n = new Localization(
   true
 );
 
-const { ENABLED_AUTOFILL_CREDITCARDS_PREF } = FormAutofill;
-
 let CONTENT = {};
 
 /**
@@ -258,6 +256,13 @@ export class AutofillDoorhanger {
       this.flowId
     );
 
+    // showPrompt() only starts loading the doorhanger's Fluent files. Every
+    // string except the buttons' is applied by the document's asynchronous
+    // localization, so format one of them here to make sure the files are
+    // available before the panel opens. Otherwise the doorhanger is displayed
+    // with those strings missing and resizes once the translation lands.
+    await this.doc.l10n.formatValue(this.ui.header.l10nId);
+
     let options = {
       ...this.ui.options,
       eventCallback: state => this.onEventCallback(state),
@@ -364,6 +369,41 @@ export class AutofillDoorhanger {
     }
 
     return [mainAction, secondaryActions];
+  }
+
+  /**
+   * Create a `moz-select` populated with an empty option followed by every
+   * country, with the ISO code as the value and the localized name as the
+   * label, sorted by name. The caller sets the selected value and attaches any
+   * listeners.
+   *
+   * @param {string} inputId   The id to assign to the select element
+   * @param {string} labelText The visible label for the select element
+   * @returns {Element} The populated `moz-select` element
+   */
+  _createCountrySelect(inputId, labelText) {
+    const input = this.doc.createElement("moz-select");
+    input.setAttribute("label", labelText);
+    input.setAttribute("id", inputId);
+
+    const emptyOpt = this.doc.createElement("moz-option");
+    emptyOpt.setAttribute("value", "");
+    emptyOpt.setAttribute("label", "");
+    input.appendChild(emptyOpt);
+
+    const countries = [...FormAutofill.countries.entries()].sort((e1, e2) =>
+      e1[1].localeCompare(e2[1])
+    );
+    for (const [countryCode] of countries) {
+      const countryName = Services.intl.getRegionDisplayNames(undefined, [
+        countryCode.toLowerCase(),
+      ]);
+      const opt = this.doc.createElement("moz-option");
+      opt.setAttribute("value", countryCode);
+      opt.setAttribute("label", countryName);
+      input.appendChild(opt);
+    }
+    return input;
   }
 }
 
@@ -733,28 +773,7 @@ export class AddressEditDoorhanger extends AutofillDoorhanger {
 
     let input;
     if (fieldName === "country") {
-      input = this.doc.createElement("moz-select");
-      input.setAttribute("label", labelText);
-      input.setAttribute("id", inputId);
-
-      const emptyOpt = this.doc.createElement("moz-option");
-      emptyOpt.setAttribute("value", "");
-      emptyOpt.setAttribute("label", "");
-      input.appendChild(emptyOpt);
-
-      const countries = [...FormAutofill.countries.entries()].sort((e1, e2) =>
-        e1[1].localeCompare(e2[1])
-      );
-      for (const [countryCode] of countries) {
-        const countryName = Services.intl.getRegionDisplayNames(undefined, [
-          countryCode.toLowerCase(),
-        ]);
-        const opt = this.doc.createElement("moz-option");
-        opt.setAttribute("value", countryCode);
-        opt.setAttribute("label", countryName);
-        input.appendChild(opt);
-      }
-
+      input = this._createCountrySelect(inputId, labelText);
       input.value = this.newRecord.country ?? "";
       /* eslint-disable mozilla/balanced-listeners */
       input.addEventListener("change", event => {
@@ -1020,6 +1039,165 @@ export class CreditCardUpdateDoorhanger extends CreditCardSaveDoorhanger {
   }
 }
 
+// The passport field-label strings expose their text via a .label attribute
+// (so they can be assigned directly to moz-input-text/moz-select fields),
+// rather than as a message value.
+function formatLabelSync(id) {
+  const [msg] = l10n.formatMessagesSync([{ id }]);
+  return msg?.attributes?.find(attr => attr.name == "label")?.value ?? "";
+}
+
+/**
+ * The passport capture doorhanger. Unlike the address save doorhanger (which
+ * shows a read-only summary with an "edit" link), the passport doorhanger is
+ * editable inline: the user can correct the captured fields before saving.
+ */
+export class PassportSaveDoorhanger extends AutofillDoorhanger {
+  // Passport uses its own header, description, and content containers so its
+  // styling can diverge from the address doorhanger in the future, even though
+  // they currently share the same layout.
+  static headerClass = "passport-capture-header";
+  static descriptionClass = "passport-capture-description";
+  static contentClass = "passport-capture-content";
+
+  static dataType = AutofillDataTypes.PASSPORT;
+  static telemetryObject = "capture_doorhanger";
+
+  constructor(browser, oldRecord, newRecord, flowId) {
+    // Passport capture is save-only; there is no "old" record to merge against.
+    super(browser, oldRecord, newRecord, flowId);
+  }
+
+  static header(panel) {
+    return panel.querySelector(`.${PassportSaveDoorhanger.headerClass}`);
+  }
+  get header() {
+    return PassportSaveDoorhanger.header(this.panel);
+  }
+
+  static description(panel) {
+    return panel.querySelector(`.${PassportSaveDoorhanger.descriptionClass}`);
+  }
+  get description() {
+    return PassportSaveDoorhanger.description(this.panel);
+  }
+
+  static content(panel) {
+    return panel.querySelector(`.${PassportSaveDoorhanger.contentClass}`);
+  }
+  get content() {
+    return PassportSaveDoorhanger.content(this.panel);
+  }
+
+  /**
+   * Generate a unique input ID from a passport field name.
+   *
+   * @param {string} fieldName The name of the passport field
+   */
+  static getInputId(fieldName) {
+    return `passport-save-${fieldName}-input`;
+  }
+
+  /*
+   * Return a regular expression that matches the ID pattern generated by getInputId.
+   */
+  static #getInputIdMatchRegexp() {
+    return /^passport-save-(.+)-input$/;
+  }
+
+  #createField({ id, type, labelId }) {
+    const labelText = formatLabelSync(labelId);
+    const inputId = PassportSaveDoorhanger.getInputId(id);
+
+    let input;
+    if (type == "country") {
+      input = this._createCountrySelect(inputId, labelText);
+      // The captured value is free-text (e.g. "Germany"), but the options are
+      // keyed by ISO country code, so normalize it to a code to pre-select it.
+      input.value =
+        FormAutofillUtils.identifyCountryCode(this.newRecord[id]) ?? "";
+    } else {
+      input = this.doc.createElement(
+        type == "password" ? "moz-input-password" : "moz-input-text"
+      );
+      input.setAttribute("label", labelText);
+      input.setAttribute("id", inputId);
+      input.value = this.newRecord[id] ?? "";
+    }
+    return input;
+  }
+
+  #createDatePart(headingText, { id, labelId }) {
+    // The design shows the MM/DD/YYYY hints as placeholder text rather than
+    // visible labels, so combine the group heading with the part hint for the
+    // accessible name. Let Fluent decide the order for the locale.
+    const placeholder = formatLabelSync(labelId);
+    const input = this.doc.createElement("moz-input-text");
+    input.setAttribute("id", PassportSaveDoorhanger.getInputId(id));
+    input.setAttribute("placeholder", placeholder);
+    input.ariaLabel = l10n.formatValueSync(
+      "passport-capture-date-part-aria-label",
+      {
+        heading: headingText,
+        part: placeholder,
+      }
+    );
+    input.classList.add("passport-capture-date-input");
+    input.value = this.newRecord[id] ?? "";
+    return input;
+  }
+
+  #createDateGroup(field) {
+    const headingText = l10n.formatValueSync(field.headingId) ?? "";
+    const group = this.doc.createElement("div");
+    group.className = "passport-capture-date-group";
+
+    const heading = this.doc.createElement("span");
+    heading.className = "passport-capture-date-heading";
+    heading.textContent = headingText;
+    group.appendChild(heading);
+
+    const row = this.doc.createElement("div");
+    row.className = "passport-capture-date-row";
+    for (const part of field.parts) {
+      row.appendChild(this.#createDatePart(headingText, part));
+    }
+    group.appendChild(row);
+
+    return group;
+  }
+
+  renderContent() {
+    this.content.replaceChildren();
+
+    for (const field of this.ui.content.fields) {
+      const element =
+        field.type == "date-group"
+          ? this.#createDateGroup(field)
+          : this.#createField(field);
+      this.content.appendChild(element);
+    }
+  }
+
+  /**
+   * Collects the current value of every passport field input in the doorhanger.
+   */
+  recordToSave() {
+    const record = {};
+    const regex = PassportSaveDoorhanger.#getInputIdMatchRegexp();
+    const elements = this.panel.querySelectorAll(
+      "moz-input-text, moz-input-password, moz-select"
+    );
+    for (const element of elements) {
+      const match = element.id.match(regex);
+      if (match?.[1]) {
+        record[match[1]] = element.value;
+      }
+    }
+    return record;
+  }
+}
+
 CONTENT = {
   [AddressSaveDoorhanger.name]: {
     id: "address-save-update",
@@ -1072,6 +1250,10 @@ CONTENT = {
         {
           l10nId: "address-capture-not-now-button",
           callbackState: "cancel",
+        },
+        {
+          l10nId: "address-capture-never-save-button",
+          callbackState: "disable",
         },
       ],
     },
@@ -1271,111 +1453,208 @@ CONTENT = {
       hideClose: true,
     },
   },
+
+  [PassportSaveDoorhanger.name]: {
+    id: "passport-save",
+    anchor: {
+      id: "autofill-passport-notification-icon",
+      URL: "chrome://formautofill/content/formfill-anchor.svg",
+      tooltiptext: l10n.formatValueSync("autofill-message-tooltip"),
+    },
+    header: {
+      l10nId: "passport-capture-save-doorhanger-header",
+    },
+    description: {
+      l10nId: "passport-capture-save-doorhanger-description",
+    },
+    content: {
+      // The passport fields, top to bottom, matching the capture doorhanger
+      // design. Date groups render a heading followed by MM/DD/YYYY inputs.
+      fields: [
+        {
+          id: "passport-name",
+          type: "text",
+          labelId: "autofill-passport-name",
+        },
+        {
+          id: "passport-country",
+          type: "country",
+          labelId: "autofill-passport-country",
+        },
+        {
+          id: "passport-number",
+          type: "password",
+          labelId: "autofill-passport-number",
+        },
+        {
+          type: "date-group",
+          headingId: "autofill-passport-issue-date",
+          parts: [
+            {
+              id: "passport-issue-date-month",
+              labelId: "autofill-passport-date-month",
+            },
+            {
+              id: "passport-issue-date-day",
+              labelId: "autofill-passport-date-day",
+            },
+            {
+              id: "passport-issue-date-year",
+              labelId: "autofill-passport-date-year",
+            },
+          ],
+        },
+        {
+          type: "date-group",
+          headingId: "autofill-passport-expiry-date",
+          parts: [
+            {
+              id: "passport-expiry-date-month",
+              labelId: "autofill-passport-date-month",
+            },
+            {
+              id: "passport-expiry-date-day",
+              labelId: "autofill-passport-date-day",
+            },
+            {
+              id: "passport-expiry-date-year",
+              labelId: "autofill-passport-date-year",
+            },
+          ],
+        },
+      ],
+    },
+    footer: {
+      mainAction: {
+        l10nId: "passport-capture-save-button",
+        callbackState: "create",
+      },
+      secondaryActions: [
+        {
+          l10nId: "passport-capture-not-now-button",
+          callbackState: "cancel",
+        },
+        {
+          l10nId: "passport-capture-never-save-button",
+          callbackState: "disable",
+        },
+      ],
+    },
+    options: {
+      autofocus: true,
+      persistWhileVisible: true,
+      hideClose: true,
+    },
+  },
+};
+
+/**
+ * Per-data-type configuration driving {@link FormAutofillPrompter.promptToSave}.
+ * Keyed by `AutofillDataTypes` id. Each entry describes how to build and behave
+ * for that type's save/update doorhanger so a new data type only needs a new
+ * entry here.
+ *
+ * @typedef {object} SavePromptConfig
+ * @property {typeof AutofillDoorhanger} saveDoorhanger Doorhanger shown when saving a new record
+ * @property {typeof AutofillDoorhanger} [updateDoorhanger] Doorhanger shown when merging into an existing record
+ * @property {typeof AutofillDoorhanger} [editDoorhanger] Doorhanger shown when the user edits before saving
+ * @property {string[]} ftls Fluent files to load before showing the doorhanger
+ * @property {boolean} [requiresAuth] Whether OS key store authentication is required before saving
+ * @property {object} confirmationHint Confirmation hint l10n ids, keyed by "created" and "updated"
+ */
+const SAVE_PROMPT_CONFIG = {
+  [AutofillDataTypes.ADDRESS]: {
+    saveDoorhanger: AddressSaveDoorhanger,
+    updateDoorhanger: AddressUpdateDoorhanger,
+    editDoorhanger: AddressEditDoorhanger,
+    ftls: [
+      "toolkit/formautofill/formAutofill.ftl",
+      // address-autofill-* are defined in browser/preferences now
+      "browser/preferences/formAutofill.ftl",
+    ],
+    confirmationHint: {
+      created: "confirmation-hint-address-created",
+      updated: "confirmation-hint-address-updated",
+    },
+  },
+  [AutofillDataTypes.CREDIT_CARD]: {
+    saveDoorhanger: CreditCardSaveDoorhanger,
+    updateDoorhanger: CreditCardUpdateDoorhanger,
+    ftls: ["toolkit/formautofill/formAutofill.ftl"],
+    requiresAuth: true,
+    confirmationHint: {
+      created: "confirmation-hint-credit-card-created",
+      updated: "confirmation-hint-credit-card-updated",
+    },
+  },
+  [AutofillDataTypes.PASSPORT]: {
+    saveDoorhanger: PassportSaveDoorhanger,
+    ftls: [
+      "toolkit/formautofill/formAutofill.ftl",
+      // passport-capture-* and autofill-passport-* are defined in
+      // browser/preferences, matching the address doorhanger.
+      "browser/preferences/formAutofill.ftl",
+    ],
+    confirmationHint: {
+      created: "confirmation-hint-passport-created",
+      updated: "confirmation-hint-passport-updated",
+    },
+  },
 };
 
 export let FormAutofillPrompter = {
-  async promptToSaveCreditCard(
-    browser,
-    storage,
-    flowId,
-    { oldRecord, newRecord }
-  ) {
-    if (!browser) {
-      return;
-    }
-
-    const showUpdateDoorhanger = !!Object.keys(oldRecord).length;
-
-    lazy.log.debug(
-      `Show the ${
-        showUpdateDoorhanger ? "update" : "save"
-      } credit card doorhanger`
-    );
-
-    const { documentGlobal: win } = browser;
-    win.MozXULElement.insertFTLIfNeeded(
-      "toolkit/formautofill/formAutofill.ftl"
-    );
-
-    let action;
-    const doorhanger = showUpdateDoorhanger
-      ? new CreditCardUpdateDoorhanger(browser, oldRecord, newRecord, flowId)
-      : new CreditCardSaveDoorhanger(browser, oldRecord, newRecord, flowId);
-    action = await doorhanger.show();
-
-    lazy.log.debug(`Doorhanger action is ${action}`);
-
-    if (action == "cancel") {
-      return;
-    } else if (action == "disable") {
-      Services.prefs.setBoolPref(ENABLED_AUTOFILL_CREDITCARDS_PREF, false);
-      return;
-    }
-
-    if (!(await lazy.OSKeyStore.ensureLoggedIn(false)).authenticated) {
-      lazy.log.warn("User canceled encryption login");
-      return;
-    }
-
-    this._updateStorageAfterInteractWithPrompt(
-      browser,
-      storage,
-      "credit-card",
-      action == "update" ? oldRecord : null,
-      doorhanger.recordToSave()
-    );
-  },
-
   /**
-   * Show save or update address doorhanger
+   * Show the save or update doorhanger for a given autofill data type, then
+   * persist the record the user chose to keep.
    *
-   * @param {Element<browser>} browser  Browser to show the save/update address prompt
-   * @param {object} storage Address storage
+   * @param {string} type One of the `AutofillDataTypes` ids (address, creditCard, passport)
+   * @param {Element<browser>} browser Browser to show the prompt in
+   * @param {object} storage Storage collection for the given type
    * @param {string} flowId Unique GUID to record a series of the same user action
    * @param {object} options
-   * @param {object} [options.oldRecord] Record to be merged
-   * @param {object} [options.newRecord] Record with more information
+   * @param {object} [options.oldRecord] Existing record to merge into; empty when saving a new record
+   * @param {object} options.newRecord Record captured from the submitted form
    */
-  async promptToSaveAddress(
+  async promptToSave(
+    type,
     browser,
     storage,
     flowId,
-    { oldRecord, newRecord }
+    { oldRecord = {}, newRecord }
   ) {
     if (!browser) {
       return;
     }
 
+    const config = SAVE_PROMPT_CONFIG[type];
     const showUpdateDoorhanger = !!Object.keys(oldRecord).length;
 
     lazy.log.debug(
-      `Show the ${showUpdateDoorhanger ? "update" : "save"} address doorhanger`
+      `Show the ${showUpdateDoorhanger ? "update" : "save"} ${type} doorhanger`
     );
 
     const { documentGlobal: win } = browser;
-    win.MozXULElement.insertFTLIfNeeded(
-      "toolkit/formautofill/formAutofill.ftl"
-    );
-    // address-autofill-* are defined in browser/preferences now
-    win.MozXULElement.insertFTLIfNeeded("browser/preferences/formAutofill.ftl");
+    for (const ftl of config.ftls) {
+      win.MozXULElement.insertFTLIfNeeded(ftl);
+    }
 
     let doorhanger;
     let action;
     while (true) {
       doorhanger = showUpdateDoorhanger
-        ? new AddressUpdateDoorhanger(browser, oldRecord, newRecord, flowId)
-        : new AddressSaveDoorhanger(browser, oldRecord, newRecord, flowId);
+        ? new config.updateDoorhanger(browser, oldRecord, newRecord, flowId)
+        : new config.saveDoorhanger(browser, oldRecord, newRecord, flowId);
       action = await doorhanger.show();
 
-      if (action == "edit-address") {
-        doorhanger = new AddressEditDoorhanger(
+      if (config.editDoorhanger && action == "edit-address") {
+        doorhanger = new config.editDoorhanger(
           browser,
           { ...oldRecord, ...newRecord },
           flowId
         );
         action = await doorhanger.show();
 
-        // If users cancel the edit address doorhanger, show the save/update
+        // If users cancel the edit doorhanger, show the save/update
         // doorhanger again.
         if (action == "cancel") {
           continue;
@@ -1391,11 +1670,37 @@ export let FormAutofillPrompter = {
       return;
     }
 
+    if (action == "disable") {
+      const descriptor = AutofillDataTypes.get(type);
+      if (type == AutofillDataTypes.ADDRESS) {
+        Services.prefs.setBoolPref(
+          `extensions.formautofill.${descriptor.prefKey}.capture.enabled`,
+          false
+        );
+      } else {
+        Services.prefs.setBoolPref(descriptor.enabledPref, false);
+      }
+      return;
+    }
+
+    if (
+      config.requiresAuth &&
+      !(await lazy.OSKeyStore.ensureLoggedIn(false)).authenticated
+    ) {
+      lazy.log.warn("User canceled encryption login");
+      return;
+    }
+
+    // Update the existing record only when we started in update mode and the
+    // user didn't pick "save as new" (which reports "create" even in update
+    // mode); otherwise add a new record.
+    const isUpdate = showUpdateDoorhanger && action != "create";
+
     this._updateStorageAfterInteractWithPrompt(
       browser,
       storage,
-      "address",
-      showUpdateDoorhanger ? oldRecord : null,
+      config.confirmationHint,
+      isUpdate ? oldRecord : null,
       doorhanger.recordToSave()
     );
   },
@@ -1404,7 +1709,7 @@ export let FormAutofillPrompter = {
   async _updateStorageAfterInteractWithPrompt(
     browser,
     storage,
-    type,
+    confirmationHint,
     oldRecord,
     newRecord
   ) {
@@ -1417,19 +1722,9 @@ export let FormAutofillPrompter = {
     }
     storage.notifyUsed(changedGUID);
 
-    const messageIdMap = {
-      "credit-card": {
-        created: "confirmation-hint-credit-card-created",
-        updated: "confirmation-hint-credit-card-updated",
-      },
-      address: {
-        created: "confirmation-hint-address-created",
-        updated: "confirmation-hint-address-updated",
-      },
-    };
     showConfirmation(
       browser,
-      messageIdMap[type][oldRecord ? "updated" : "created"]
+      confirmationHint[oldRecord ? "updated" : "created"]
     );
   },
 };

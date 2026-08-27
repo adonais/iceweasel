@@ -15,6 +15,8 @@ use super::CSSFloat;
 use crate::context::QuirksMode;
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
+use crate::typed_om::NumericBaseType;
+use crate::values::specified::calc::PercentageContext;
 use crate::values::specified::number::parse_number_with_clamping_mode;
 use crate::values::{computed, serialize_atom_identifier, AtomString};
 use crate::{Atom, Namespace, Prefix};
@@ -60,8 +62,8 @@ pub use self::flex::FlexBasis;
 pub use self::font::{FontFamily, FontLanguageOverride, FontPalette, FontStyle};
 pub use self::font::{FontFeatureSettings, FontVariantLigatures, FontVariantNumeric};
 pub use self::font::{
-    FontSize, FontSizeAdjust, FontSizeAdjustFactor, FontSizeKeyword, FontStretch, FontSynthesis,
-    FontSynthesisStyle,
+    FontSize, FontSizeAdjust, FontSizeAdjustFactor, FontSizeKeyword, FontSynthesis,
+    FontSynthesisStyle, FontWidth,
 };
 pub use self::font::{FontVariantAlternates, FontWeight};
 pub use self::font::{FontVariantEastAsian, FontVariationSettings, LineHeight};
@@ -231,7 +233,13 @@ impl NumberOrPercentage {
             return Ok(NumberOrPercentage::Percentage(per));
         }
 
-        parse_number_with_clamping_mode(context, input, type_).map(NumberOrPercentage::Number)
+        parse_number_with_clamping_mode(
+            context,
+            input,
+            type_,
+            PercentageContext::allowed_with_hint(NumericBaseType::Percent),
+        )
+        .map(NumberOrPercentage::Number)
     }
 
     /// Parse a non-negative number or percentage.

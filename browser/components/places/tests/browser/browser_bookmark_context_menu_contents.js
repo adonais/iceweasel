@@ -123,6 +123,16 @@ let OptionItemExists = (elementId, doc = document) => {
   );
 };
 
+let OptionItemIsHidden = (elementId, doc = document) => {
+  let optionItem = doc.getElementById(elementId);
+
+  Assert.ok(optionItem, `Context menu contains the menuitem ${elementId}`);
+  Assert.ok(
+    !BrowserTestUtils.isVisible(optionItem),
+    `Context menu option ${elementId} is hidden`
+  );
+};
+
 let OptionsMatchExpected = (contextMenu, expectedOptionItems) => {
   let idList = [];
   for (let elem of contextMenu.children) {
@@ -936,3 +946,188 @@ add_task(async function test_private_browsing_window() {
 
   await BrowserTestUtils.closeWindow(win);
 });
+
+/**
+ * Bug 2040610: with contentsharing enabled, the Share Folder option should be
+ * hidden when right-clicking a folder in the bookmarks toolbar, unless the folder
+ * contains at least one bookmark with an http or https URL.
+ */
+add_task(
+  async function test_folder_context_menu_hides_empty_toolbar_share_folder() {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.contentsharing.enabled", true]],
+    });
+
+    // Create an empty folder, open context menu, Share Folder should be hidden
+    let folder = await PlacesUtils.bookmarks.insert({
+      index: -1,
+      type: PlacesUtils.bookmarks.TYPE_FOLDER,
+      parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+      title: "Test Share Folder",
+    });
+
+    let toolbarNode = await waitForToolbarNode(folder.guid);
+    Assert.ok(toolbarNode, "Empty folder created");
+
+    let contextMenu = await openContextMenuWithRetry(
+      document.getElementById("placesContext"),
+      () => {
+        EventUtils.synthesizeMouseAtCenter(
+          toolbarNode,
+          { button: 2, type: "contextmenu" },
+          toolbarNode.documentGlobal
+        );
+      }
+    );
+
+    OptionItemIsHidden("contentsharing_sharefolder");
+    await hidePopupAndWait(contextMenu);
+
+    // Add a bookmark with no page content to the folder, open context menu,
+    // Share Folder should be hidden
+    await PlacesUtils.bookmarks.insert({
+      index: -1,
+      type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      parentGuid: folder.guid,
+      url: `about:config`,
+      title: `Page with No Content`,
+    });
+
+    toolbarNode = await waitForToolbarNode(folder.guid);
+    Assert.ok(toolbarNode, "New bookmark added");
+
+    contextMenu = await openContextMenuWithRetry(
+      document.getElementById("placesContext"),
+      () => {
+        EventUtils.synthesizeMouseAtCenter(
+          toolbarNode,
+          { button: 2, type: "contextmenu" },
+          toolbarNode.documentGlobal
+        );
+      }
+    );
+
+    OptionItemIsHidden("contentsharing_sharefolder");
+    await hidePopupAndWait(contextMenu);
+
+    // Add a bookmark with content to the folder, open context menu,
+    // Share Folder should be visible
+    await PlacesUtils.bookmarks.insert({
+      index: -1,
+      type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      parentGuid: folder.guid,
+      url: `https://example.com`,
+      title: `Page with Content`,
+    });
+
+    toolbarNode = await waitForToolbarNode(folder.guid);
+    Assert.ok(toolbarNode, "New bookmark added");
+
+    contextMenu = await openContextMenuWithRetry(
+      document.getElementById("placesContext"),
+      () => {
+        EventUtils.synthesizeMouseAtCenter(
+          toolbarNode,
+          { button: 2, type: "contextmenu" },
+          toolbarNode.documentGlobal
+        );
+      }
+    );
+
+    OptionItemExists("contentsharing_sharefolder");
+    await hidePopupAndWait(contextMenu);
+    await PlacesUtils.bookmarks.eraseEverything();
+  }
+);
+
+/**
+ * Bug 2040610: with contentsharing enabled, the Share Folder option should be
+ * hidden when right-clicking a folder in the bookmarks library, unless the folder
+ * contains at least one bookmark with an http or https URL.
+ */
+add_task(
+  async function test_folder_context_menu_hides_empty_library_share_folder() {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.contentsharing.enabled", true]],
+    });
+
+    // Open a library window
+    await withLibraryWindow("BookmarksToolbar", async ({ right }) => {
+      // Create an empty folder, open context menu, Share Folder should be hidden
+      let folder = await PlacesUtils.bookmarks.insert({
+        index: -1,
+        type: PlacesUtils.bookmarks.TYPE_FOLDER,
+        parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+        title: "Test Share Folder",
+      });
+
+      let toolbarNode = await waitForToolbarNode(folder.guid);
+      Assert.ok(toolbarNode, "Empty folder created");
+
+      let contextMenu = await openContextMenuWithRetry(
+        right.ownerDocument.getElementById("placesContext"),
+        async () => {
+          right.selectItems([folder.guid]);
+          await synthesizeClickOnSelectedTreeCell(right, {
+            type: "contextmenu",
+          });
+        }
+      );
+
+      OptionItemIsHidden("contentsharing_sharefolder", right.ownerDocument);
+      await hidePopupAndWait(contextMenu);
+
+      // Add a bookmark with no page content to the folder, open context menu,
+      // Share Folder should be hidden
+      await PlacesUtils.bookmarks.insert({
+        index: -1,
+        type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+        parentGuid: folder.guid,
+        url: `about:config`,
+        title: `Page with No Content`,
+      });
+
+      toolbarNode = await waitForToolbarNode(folder.guid);
+      Assert.ok(toolbarNode, "New bookmark added");
+
+      contextMenu = await openContextMenuWithRetry(
+        right.ownerDocument.getElementById("placesContext"),
+        async () => {
+          right.selectItems([folder.guid]);
+          await synthesizeClickOnSelectedTreeCell(right, {
+            type: "contextmenu",
+          });
+        }
+      );
+
+      OptionItemIsHidden("contentsharing_sharefolder", right.ownerDocument);
+      await hidePopupAndWait(contextMenu);
+
+      // Add a bookmark with content to the folder, open context menu,
+      // Share Folder should be visible
+      await PlacesUtils.bookmarks.insert({
+        index: -1,
+        type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+        parentGuid: folder.guid,
+        url: `https://example.com`,
+        title: `Page with Content`,
+      });
+
+      toolbarNode = await waitForToolbarNode(folder.guid);
+      Assert.ok(toolbarNode, "New bookmark added");
+
+      contextMenu = await openContextMenuWithRetry(
+        right.ownerDocument.getElementById("placesContext"),
+        async () => {
+          right.selectItems([folder.guid]);
+          await synthesizeClickOnSelectedTreeCell(right, {
+            type: "contextmenu",
+          });
+        }
+      );
+
+      OptionItemExists("contentsharing_sharefolder", right.ownerDocument);
+      await hidePopupAndWait(contextMenu);
+    });
+  }
+);

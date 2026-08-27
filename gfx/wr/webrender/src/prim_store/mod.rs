@@ -9,12 +9,12 @@ use crate::clip::ClipLeafId;
 use crate::render_backend::DataStores;
 use crate::space::SnapRounding;
 use crate::quad::QuadTileClassifier;
-use crate::renderer::{GpuBufferAddress, GpuBufferHandle, GpuBufferWriterF};
+use crate::renderer::GpuBufferHandle;
 use crate::segment::EdgeMask;
 use crate::debug_item::{DebugItem, DebugMessage};
 use crate::debug_colors;
 use glyph_rasterizer::{GlyphKey, SubpixelDirection};
-use crate::gpu_types::{BrushFlags, BrushSegmentGpuData, QuadSegment};
+use crate::gpu_types::QuadSegment;
 use crate::intern;
 use crate::picture::{PictureInstance, PictureScratch};
 use crate::render_task_graph::RenderTaskId;
@@ -22,7 +22,7 @@ use crate::resource_cache::ImageProperties;
 use std::{hash, u32, usize};
 use crate::util::Recycler;
 use crate::internal_types::{FastHashSet, LayoutPrimitiveInfo};
-use crate::visibility::PrimitiveDrawHeader;
+use crate::visibility::{PrimitiveDrawHeader, PrimitiveDrawIndex};
 
 pub mod backdrop;
 pub mod borders;
@@ -37,16 +37,14 @@ pub mod interned;
 pub mod storage;
 
 use backdrop::{BackdropCaptureDataHandle, BackdropRenderDataHandle};
-use borders::{ImageBorderDataHandle, ImageBorderScratch, NormalBorderDataHandle};
+use borders::{ImageBorderDataHandle, NormalBorderDataHandle};
 use gradient::{LinearGradientDataHandle, RadialGradientDataHandle, ConicGradientDataHandle};
-use image::{ImageDataHandle, ImageScratch, VisibleImageTile, YuvImageDataHandle};
+use image::{ImageDataHandle, YuvImageDataHandle};
 use line_dec::LineDecorationDataHandle;
 use picture::PictureDataHandle;
 use rectangle::RectangleDataHandle;
 use text_run::{TextRunDataHandle, TextRunScratch};
 use crate::box_shadow::BoxShadowDataHandle;
-
-pub const VECS_PER_SEGMENT: usize = 2;
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -265,46 +263,6 @@ pub enum ClipMaskKind {
     Clipped,
 }
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, MallocSizeOf)]
-pub struct BrushSegment {
-    pub local_rect: LayoutRect,
-    pub may_need_clip_mask: bool,
-    pub edge_flags: EdgeMask,
-    pub extra_data: [f32; 4],
-    pub brush_flags: BrushFlags,
-}
-
-impl BrushSegment {
-    pub fn new(
-        local_rect: LayoutRect,
-        may_need_clip_mask: bool,
-        edge_flags: EdgeMask,
-        extra_data: [f32; 4],
-        brush_flags: BrushFlags,
-    ) -> Self {
-        Self {
-            local_rect,
-            may_need_clip_mask,
-            edge_flags,
-            extra_data,
-            brush_flags,
-        }
-    }
-
-    pub fn gpu_data(&self) -> BrushSegmentGpuData {
-        BrushSegmentGpuData {
-            local_rect: self.local_rect,
-            extra_data: self.extra_data,
-        }
-    }
-
-    pub fn write_gpu_blocks(&self, writer: &mut GpuBufferWriterF) {
-        writer.push(&self.gpu_data());
-    }
-}
-
 // `NinePatchDescriptor` now lives in `webrender_api` so builder-side interning
 // keys can reference it. Re-exported here to keep existing references working.
 pub use api::key_types::NinePatchDescriptor;
@@ -410,7 +368,7 @@ pub struct PrimitiveInstance {
     /// `PrimTemplateCommonData.prim_size` but is per-instance now so that the
     /// intern key can deduplicate across differently-sized instances of the
     /// same prim shape.
-    pub unsnapped_prim_rect: LayoutRect,
+    pub unsnapped_pattern_rect: LayoutRect,
 }
 
 /// How a primitive's clips round to the device pixel grid. Distinct from how
@@ -446,12 +404,12 @@ impl PrimitiveInstance {
     pub fn new(
         kind: PrimitiveKind,
         clip_leaf_id: ClipLeafId,
-        unsnapped_prim_rect: LayoutRect,
+        unsnapped_pattern_rect: LayoutRect,
     ) -> Self {
         PrimitiveInstance {
             kind,
             clip_leaf_id,
-            unsnapped_prim_rect,
+            unsnapped_pattern_rect,
         }
     }
 
@@ -546,44 +504,37 @@ impl PrimitiveInstance {
     }
 }
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[derive(Debug)]
-pub struct BrushSegmentation {
-    pub gpu_data: GpuBufferAddress,
-    pub segments_range: SegmentsRange,
-}
-
 pub type GlyphKeyStorage = storage::Storage<GlyphKey>;
-pub type SegmentStorage = storage::Storage<BrushSegment>;
-pub type SegmentsRange = storage::Range<BrushSegment>;
-pub type SegmentInstanceStorage = storage::Storage<BrushSegmentation>;
-pub type SegmentInstanceIndex = storage::Index<BrushSegmentation>;
+
 /// Per-frame scratch storage. All fields are cleared every frame in
 /// `begin_frame`. Anything written here lives only for the current frame.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PrimitiveFrameScratch {
-    /// Per-frame draw headers, one entry per `PrimitiveInstance`.
-    /// Resized to `prim_instances.len()` at frame start and identity-
-    /// indexed by `PrimitiveInstanceIndex.0` (a follow-up will switch
-    /// this to push-per-draw with `Index<PrimitiveDrawHeader>`). Holds
-    /// visibility state, clip chain and clip-task index for each
-    /// visible primitive.
-    pub draws: Vec<PrimitiveDrawHeader>,
+    /// Per-frame draw headers. Holds visibility state, clip chain and
+    /// clip-task index for each visible primitive.
+    ///
+    /// Densely populated: the visibility pass pushes one entry per primitive it
+    /// finds is drawn, so the length tracks drawn primitives rather than scene
+    /// size, and an entry existing at all means it was written this frame.
+    ///
+    /// Deliberately private: reach entries through `draw`/`draw_mut`, keyed by
+    /// `PrimitiveDrawIndex`. Use `draw_index_for_instance` to go from a
+    /// primitive instance to its draw, and `PrimitiveDrawHeader`'s
+    /// `prim_instance_index` to go back.
+    draws: Vec<PrimitiveDrawHeader>,
+
+    /// Maps a primitive instance to the draw pushed for it this frame, or
+    /// `PrimitiveDrawIndex::INVALID` when the instance produced no draw (it was
+    /// culled, or its cluster was not visited). Exists because the visibility
+    /// and prepare passes both walk primitive instances; it becomes redundant
+    /// once they iterate draws directly.
+    instance_to_draw: Vec<PrimitiveDrawIndex>,
 
     /// Per-frame scratch for Picture primitives. Holds the picture's
     /// primary/secondary render task ids and any per-composite-mode
     /// extra GPU buffer addresses. Indexed by `scratch_handle` on
     /// `PrimitiveKind::Picture`.
     pub pictures: storage::Storage<PictureScratch>,
-
-    /// Per-frame scratch for Image primitives. Holds the source render
-    /// task (or a Range of per-tile tasks for tiled images), normalized-
-    /// uvs flag, and image adjustment.
-    pub images: storage::Storage<ImageScratch>,
-
-    /// Per-tile entries for tiled Image primitives. Each `ImageScratch`
-    /// holds a `Range` into this storage.
-    pub visible_image_tiles: storage::Storage<VisibleImageTile>,
 
     /// Per-frame scratch for TextRun primitives. Holds the per-frame
     /// font snapshot, glyph-key range, snapping offset, and raster
@@ -596,23 +547,6 @@ pub struct PrimitiveFrameScratch {
     /// graduated to per-frame here so the scene buffer cannot grow
     /// unbounded between scene rebuilds.
     pub glyph_keys: GlyphKeyStorage,
-
-    /// A list of brush segments built each frame for the segmented
-    /// brush primitives (Rectangle, YuvImage, non-tiled Image). The
-    /// segment builder runs every frame for every visible segmented
-    /// prim.
-    pub segments: SegmentStorage,
-
-    /// A list of per-prim brush segmentation records (segments range
-    /// + GPU buffer address). Each PrimitiveDrawHeader.segment_instance_index
-    /// holds an index into this storage, or UNUSED for non-segmented
-    /// prims.
-    pub segment_instances: SegmentInstanceStorage,
-
-    /// Per-frame scratch for ImageBorder primitives. Holds the range
-    /// into `segments` for the nine-patch brush segments built each
-    /// frame against the prim's size.
-    pub image_border: storage::Storage<ImageBorderScratch>,
 
     /// Contains a list of clip mask instance parameters
     /// per segment generated.
@@ -635,14 +569,10 @@ impl Default for PrimitiveFrameScratch {
     fn default() -> Self {
         PrimitiveFrameScratch {
             draws: Vec::new(),
+            instance_to_draw: Vec::new(),
             pictures: storage::Storage::new(0),
-            images: storage::Storage::new(0),
-            visible_image_tiles: storage::Storage::new(0),
             text_runs: storage::Storage::new(0),
             glyph_keys: GlyphKeyStorage::new(0),
-            segments: SegmentStorage::new(0),
-            segment_instances: SegmentInstanceStorage::new(0),
-            image_border: storage::Storage::new(0),
             clip_mask_instances: Vec::new(),
             debug_items: Vec::new(),
             required_sub_graphs: FastHashSet::default(),
@@ -653,16 +583,87 @@ impl Default for PrimitiveFrameScratch {
 }
 
 impl PrimitiveFrameScratch {
+    /// Prepare the draw storage for a new frame over a scene with `prim_count`
+    /// primitive instances.
+    pub fn reset_draws(&mut self, prim_count: usize) {
+        self.draws.clear();
+        self.instance_to_draw.clear();
+        self.instance_to_draw.resize(prim_count, PrimitiveDrawIndex::INVALID);
+    }
+
+    /// Record a draw for the primitive instance named by the header, and return
+    /// its index. Called once per drawn primitive by the visibility pass.
+    pub fn push_draw(&mut self, header: PrimitiveDrawHeader) -> PrimitiveDrawIndex {
+        let prim_instance_index = header.prim_instance_index;
+        debug_assert!(prim_instance_index.0 != PrimitiveInstanceIndex::INVALID.0);
+
+        let draw_index = PrimitiveDrawIndex::from_u32(self.draws.len() as u32);
+        self.draws.push(header);
+        self.instance_to_draw[prim_instance_index.0 as usize] = draw_index;
+
+        draw_index
+    }
+
+    /// Check that the visibility pass resolved a state for every draw it
+    /// pushed. A draw is pushed before its state is known in the common case
+    /// (the tile-cache dependency update decides it), so a path that pushes and
+    /// then fails to resolve would leave `DrawState::Unset` for prepare and
+    /// batching to trip over.
+    pub fn assert_draws_resolved(&self) {
+        #[cfg(debug_assertions)]
+        {
+            for draw in &self.draws {
+                assert!(
+                    !matches!(draw.state, crate::visibility::DrawState::Unset),
+                    "bug: draw for {:?} left Unset by the visibility pass",
+                    draw.prim_instance_index,
+                );
+            }
+        }
+    }
+
+    /// The draw pushed for a primitive instance this frame, if any.
+    pub fn draw_index_for_instance(
+        &self,
+        prim_instance_index: PrimitiveInstanceIndex,
+    ) -> Option<PrimitiveDrawIndex> {
+        let draw_index = self.instance_to_draw[prim_instance_index.0 as usize];
+
+        if draw_index == PrimitiveDrawIndex::INVALID {
+            None
+        } else {
+            Some(draw_index)
+        }
+    }
+
+    /// The draw header for a draw index, as carried by the command stream and
+    /// by consumers such as `PlaneSplitAnchor` and `ExternalSurfaceDescriptor`.
+    pub fn draw(&self, draw_index: PrimitiveDrawIndex) -> &PrimitiveDrawHeader {
+        &self.draws[draw_index.0 as usize]
+    }
+
+    pub fn draw_mut(&mut self, draw_index: PrimitiveDrawIndex) -> &mut PrimitiveDrawHeader {
+        &mut self.draws[draw_index.0 as usize]
+    }
+
+    /// The draw header for a primitive instance, if it produced a draw this
+    /// frame. Convenience for the passes that still walk primitive instances
+    /// rather than draws; goes away once they iterate draws directly.
+    pub fn draw_for_instance(
+        &self,
+        prim_instance_index: PrimitiveInstanceIndex,
+    ) -> Option<&PrimitiveDrawHeader> {
+        self.draw_index_for_instance(prim_instance_index)
+            .map(|draw_index| self.draw(draw_index))
+    }
+
+
     pub fn recycle(&mut self, recycler: &mut Recycler) {
         recycler.recycle_vec(&mut self.draws);
+        recycler.recycle_vec(&mut self.instance_to_draw);
         self.pictures.recycle(recycler);
-        self.images.recycle(recycler);
-        self.visible_image_tiles.recycle(recycler);
         self.text_runs.recycle(recycler);
         self.glyph_keys.recycle(recycler);
-        self.segments.recycle(recycler);
-        self.segment_instances.recycle(recycler);
-        self.image_border.recycle(recycler);
         recycler.recycle_vec(&mut self.clip_mask_instances);
         recycler.recycle_vec(&mut self.debug_items);
         recycler.recycle_vec(&mut self.quad_direct_segments);
@@ -671,13 +672,8 @@ impl PrimitiveFrameScratch {
 
     pub fn begin_frame(&mut self) {
         self.pictures.clear();
-        self.images.clear();
-        self.visible_image_tiles.clear();
         self.text_runs.clear();
         self.glyph_keys.clear();
-        self.segments.clear();
-        self.segment_instances.clear();
-        self.image_border.clear();
 
         // Clear the clip mask tasks for the beginning of the frame. Append
         // a single kind representing no clip mask, at the ClipTaskIndex::INVALID

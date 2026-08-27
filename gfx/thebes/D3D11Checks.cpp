@@ -242,8 +242,8 @@ static bool DoesTextureSharingWorkInternal(ID3D11Device* device,
   desc.BindFlags = bindflags;
 
   uint32_t color[texture_size * texture_size];
-  for (size_t i = 0; i < sizeof(color) / sizeof(color[0]); i++) {
-    color[i] = 0xff00ffff;
+  for (unsigned int& i : color) {
+    i = 0xff00ffff;
   }
   // XXX If we pass the data directly at texture creation time we
   //     get a crash on Intel 8.5.10.[18xx-1994] drivers.

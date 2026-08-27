@@ -2,13 +2,14 @@
  * This file contains tests for the Preferences search bar.
  */
 
+// Opening about:preferences repeatedly is very slow under the macOS
+// test-verify chaos passes; see bug 2052897.
+requestLongerTimeout(4);
+
 /**
  * Test for searching for the "Settings - Site Data" subdialog.
  */
 add_task(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["cookiebanners.ui.desktop.enabled", false]],
-  });
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });

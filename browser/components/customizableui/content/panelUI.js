@@ -14,6 +14,8 @@ ChromeUtils.defineESModuleGetters(this, {
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   PanelMultiView:
     "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
+  ReportBrokenSite:
+    "moz-src:///browser/components/reportbrokensite/ReportBrokenSite.sys.mjs",
   updateZoomUI: "resource:///modules/ZoomUI.sys.mjs",
 });
 
@@ -795,6 +797,12 @@ const PanelUI = {
         button.id = "appMenu_" + node.id;
       }
 
+      if (node.id == "help_reportBrokenSite") {
+        button.removeAttribute("command");
+        button.classList.add("subviewbutton-nav");
+        button.setAttribute("closemenu", "none");
+      }
+
       button.classList.add("subviewbutton");
       fragment.appendChild(button);
     }
@@ -845,6 +853,9 @@ const PanelUI = {
 
   _onHelpCommand(aEvent) {
     switch (aEvent.target.id) {
+      case "appMenu_help_reportBrokenSite":
+        ReportBrokenSite.handleParentMenuButtonCommand(aEvent.target);
+        break;
       case "appMenu_menu_openHelp":
         openHelpLink("firefox-help");
         break;

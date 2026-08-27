@@ -682,14 +682,19 @@ class MozPromise : public MozPromiseBase {
     }
   }
 
-  template <typename PromiseType>
+  template <bool SupportChaining, typename PromiseType>
   static void MaybeChain(PromiseType* aFrom,
                          RefPtr<typename PromiseType::Private>&& aTo) {
-    if (aTo) {
+    if constexpr (SupportChaining) {
+      if (aTo) {
+        MOZ_RELEASE_ASSERT(
+            aFrom,
+            "Can't do promise chaining for a non-promise-returning method.");
+        aFrom->ChainTo(aTo.forget(), "<chained completion promise>");
+      }
+    } else {
       MOZ_DIAGNOSTIC_ASSERT(
-          aFrom,
-          "Can't do promise chaining for a non-promise-returning method.");
-      aFrom->ChainTo(aTo.forget(), "<chained completion promise>");
+          !aTo, "A completion promise requires a promise-returning callback.");
     }
   }
 
@@ -754,7 +759,8 @@ class MozPromise : public MozPromiseBase {
       // which may or may not be ok.
       mThisVal = nullptr;
 
-      MaybeChain<PromiseType>(result, std::move(mCompletionPromise));
+      MaybeChain<SupportChaining, PromiseType>(result,
+                                               std::move(mCompletionPromise));
     }
 
    private:
@@ -810,7 +816,8 @@ class MozPromise : public MozPromiseBase {
       // which may or may not be ok.
       mThisVal = nullptr;
 
-      MaybeChain<PromiseType>(result, std::move(mCompletionPromise));
+      MaybeChain<SupportChaining, PromiseType>(result,
+                                               std::move(mCompletionPromise));
     }
 
    private:
@@ -882,7 +889,8 @@ class MozPromise : public MozPromiseBase {
       mResolveFunction.reset();
       mRejectFunction.reset();
 
-      MaybeChain<PromiseType>(result, std::move(mCompletionPromise));
+      MaybeChain<SupportChaining, PromiseType>(result,
+                                               std::move(mCompletionPromise));
     }
 
    private:
@@ -944,7 +952,8 @@ class MozPromise : public MozPromiseBase {
       // ThenValue, which may or may not be ok.
       mResolveRejectFunction.reset();
 
-      MaybeChain<PromiseType>(result, std::move(mCompletionPromise));
+      MaybeChain<SupportChaining, PromiseType>(result,
+                                               std::move(mCompletionPromise));
     }
 
    private:

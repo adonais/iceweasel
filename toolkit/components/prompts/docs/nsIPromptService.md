@@ -1,7 +1,7 @@
 # Prompt Service
 
 The `nsIPromptService` provides methods for opening various types of prompts.
-See the [interface documentation](nsIPromptService-reference.html) for a list
+See the [interface documentation](nsIPromptService-reference.md) for a list
 of prompt types.
 Every prompt method has 3 different versions:
 
@@ -175,4 +175,4 @@ void PromptHandler::ResolvedCallback(JSContext* aCx,
 ```
 
 For a full list of prompt methods check
-[nsIPromptService reference](nsIPromptService-reference.html).
+[nsIPromptService reference](nsIPromptService-reference.md).

@@ -2,36 +2,14 @@
 <issues format="6" by="lint 9.2.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.2.1)" variant="all" version="9.2.1">
 
     <issue
-        id="UnusedResources"
-        message="The resource `R.color.mozac_ui_tabcounter_default_tint` appears to be unused"
-        errorLine1="    &lt;color name=&quot;mozac_ui_tabcounter_default_tint&quot;>#ff15141a&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="DataExtractionRules"
+        message="The attribute `android:dataExtractionRules` only applies for Android 12 and higher; since `minSdkVersion` is API 26 you should also set `android:fullBackupContent`"
+        errorLine1="        android:dataExtractionRules=&quot;@xml/data_extraction_rules&quot;>"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/values/colors.xml"
-            line="6"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.mozac_ui_icons_fill` appears to be unused"
-        errorLine1="    &lt;color name=&quot;mozac_ui_icons_fill&quot;>#ff15141a&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="7"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.color.icon_tint` appears to be unused"
-        errorLine1="    &lt;color name=&quot;icon_tint&quot;>#ff15141a&lt;/color>"
-        errorLine2="           ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/colors.xml"
-            line="8"
-            column="12"/>
+            file="src/main/AndroidManifest.xml"
+            line="43"
+            column="38"/>
     </issue>
 
 </issues>

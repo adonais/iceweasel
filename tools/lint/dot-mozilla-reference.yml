@@ -8,6 +8,7 @@ avoid-dot-mozilla-without-xdg:
     include: ['.']
     type: external
     payload: mozcheck:lint
+    setup: mozcheck:setup
     check: rejected-words
     check-config:
         regex-pattern: "\"\\.mozilla\"|'\\.mozilla'"

@@ -2311,10 +2311,10 @@ DateTimeInfo* DateObject::dateTimeInfo() const {
 
 void DateObject::setUTCTime(ClippedTime t) {
   for (size_t ind = COMPONENTS_START_SLOT; ind < RESERVED_SLOTS; ind++) {
-    setReservedSlot(ind, UndefinedValue());
+    setNeverGCThingFixedSlot(ind, UndefinedValue());
   }
 
-  setFixedSlot(UTC_TIME_SLOT, TimeValue(t));
+  setFixedSlotTyped(UTC_TIME_SLOT, TimeValue(t));
 }
 
 void DateObject::setUTCTime(ClippedTime t, MutableHandleValue vp) {
@@ -2332,41 +2332,42 @@ void DateObject::fillLocalTimeSlots() {
   const int32_t timeZoneCacheKey = DateTimeInfo::timeZoneCacheKey(dtInfo);
 
   /* Check if the cache is already populated. */
-  if (!getReservedSlot(LOCAL_TIME_SLOT).isUndefined() &&
-      getReservedSlot(TIME_ZONE_CACHE_KEY_SLOT).toInt32() == timeZoneCacheKey) {
+  if (!getReservedSlotTyped(LOCAL_TIME_SLOT).isUndefined() &&
+      getReservedSlotTyped(TIME_ZONE_CACHE_KEY_SLOT).toInt32() ==
+          timeZoneCacheKey) {
     return;
   }
 
   /* Remember time zone used to generate the local cache. */
-  setReservedSlot(TIME_ZONE_CACHE_KEY_SLOT, Int32Value(timeZoneCacheKey));
+  setReservedSlotTyped(TIME_ZONE_CACHE_KEY_SLOT, Int32Value(timeZoneCacheKey));
 
   double utcTime = UTCTime().toDouble();
   MOZ_ASSERT(IsTimeValue(utcTime));
 
   if (std::isnan(utcTime)) {
     for (size_t ind = COMPONENTS_START_SLOT; ind < RESERVED_SLOTS; ind++) {
-      setReservedSlot(ind, DoubleValue(utcTime));
+      setNeverGCThingFixedSlot(ind, DoubleValue(utcTime));
     }
     return;
   }
 
   int64_t localTime = LocalTime(dtInfo, utcTime);
 
-  setReservedSlot(LOCAL_TIME_SLOT, DoubleValue(localTime));
+  setReservedSlotTyped(LOCAL_TIME_SLOT, DoubleValue(localTime));
 
   const auto [year, month, day] = ToYearMonthDay(localTime);
 
-  setReservedSlot(LOCAL_YEAR_SLOT, Int32Value(year));
-  setReservedSlot(LOCAL_MONTH_SLOT, Int32Value(month));
-  setReservedSlot(LOCAL_DATE_SLOT, Int32Value(day));
+  setReservedSlotTyped(LOCAL_YEAR_SLOT, Int32Value(year));
+  setReservedSlotTyped(LOCAL_MONTH_SLOT, Int32Value(month));
+  setReservedSlotTyped(LOCAL_DATE_SLOT, Int32Value(day));
 
   int weekday = WeekDay(localTime);
-  setReservedSlot(LOCAL_DAY_SLOT, Int32Value(weekday));
+  setReservedSlotTyped(LOCAL_DAY_SLOT, Int32Value(weekday));
 
   int64_t yearStartTime = TimeFromYear(year);
   uint64_t yearTime = uint64_t(localTime - yearStartTime);
   int32_t yearSeconds = int32_t(yearTime / msPerSecond);
-  setReservedSlot(LOCAL_SECONDS_INTO_YEAR_SLOT, Int32Value(yearSeconds));
+  setReservedSlotTyped(LOCAL_SECONDS_INTO_YEAR_SLOT, Int32Value(yearSeconds));
 }
 
 /**

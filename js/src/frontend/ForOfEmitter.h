@@ -89,7 +89,6 @@ class MOZ_STACK_CLASS ForOfEmitter {
 #endif
 
  public:
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   enum class HeadUsingDeclarationKind { None, Sync, Async };
 
  private:
@@ -97,16 +96,10 @@ class MOZ_STACK_CLASS ForOfEmitter {
       HeadUsingDeclarationKind::None;
 
  public:
-#endif
-
   ForOfEmitter(BytecodeEmitter* bce,
                const EmitterScope* headLexicalEmitterScope,
-               SelfHostedIter selfHostedIter, IteratorKind iterKind
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-               ,
-               HeadUsingDeclarationKind usingDeclarationInHead
-#endif
-  );
+               SelfHostedIter selfHostedIter, IteratorKind iterKind,
+               HeadUsingDeclarationKind usingDeclarationInHead);
 
   // The offset in the source code for each character below:
   //

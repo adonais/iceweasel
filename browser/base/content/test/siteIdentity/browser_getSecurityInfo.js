@@ -16,7 +16,7 @@ add_task(async function test() {
     ok(!securityInfo, "Found no security info");
 
     loaded = BrowserTestUtils.browserLoaded(browser);
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     BrowserTestUtils.startLoadingURIString(browser, "http://example.com");
     await loaded;
     securityInfo = gBrowser.securityUI.secInfo;

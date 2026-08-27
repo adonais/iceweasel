@@ -42,6 +42,7 @@
 #include "mozilla/dom/ServiceWorkerParent.h"
 #include "mozilla/dom/ServiceWorkerRegistrar.h"
 #include "mozilla/dom/ServiceWorkerRegistrationParent.h"
+#include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/SessionStorageManager.h"
 #include "mozilla/dom/SharedWorkerParent.h"
 #include "mozilla/dom/StorageActivityService.h"
@@ -461,6 +462,21 @@ BackgroundParentImpl::AllocPBackgroundSessionStorageServiceParent() {
   return MakeAndAddRef<mozilla::dom::BackgroundSessionStorageServiceParent>();
 }
 
+mozilla::ipc::IPCResult
+BackgroundParentImpl::RecvPBackgroundSessionStorageServiceConstructor(
+    mozilla::dom::PBackgroundSessionStorageServiceParent* aActor) {
+  AssertIsInMainProcess();
+  AssertIsOnBackgroundThread();
+
+  // ClearStoragesForOrigin is not scoped to any origin the sender is allowed
+  // to touch, so only the parent process may construct this actor.
+  if (BackgroundParent::IsOtherProcessActor(this)) {
+    return IPC_FAIL(aActor, "Wrong actor");
+  }
+
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult BackgroundParentImpl::RecvCreateFileSystemManagerParent(
     const PrincipalInfo& aPrincipalInfo,
     Endpoint<PFileSystemManagerParent>&& aParentEndpoint,
@@ -472,7 +488,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvCreateFileSystemManagerParent(
   // so system principals must be allowed there.
   EnumSet<dom::ValidatePrincipalOptions> options;
   if (BackgroundParent::GetRemoteType(this) == INFERENCE_REMOTE_TYPE) {
-    options += dom::ValidatePrincipalOptions::AllowSystem;
+    options += dom::ValidatePrincipalOptions::AllowSystemIfLoaded;
   }
   if (!BackgroundParent::ValidatePrincipalInfo(this, aPrincipalInfo, options)) {
     aResolver(NS_ERROR_FAILURE);
@@ -487,7 +503,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvCreateWebTransportParent(
     const nsAString& aURL, nsIPrincipal* aPrincipal,
     const uint64_t& aBrowsingContextID, const IPCClientInfo& aClientInfo,
     const bool& aDedicated, const bool& aRequireUnreliable,
-    const uint32_t& aCongestionControl,
+    const uint32_t& aCongestionControl, nsTArray<nsString>&& aProtocols,
     nsTArray<WebTransportHash>&& aServerCertHashes,
     Endpoint<PWebTransportParent>&& aParentEndpoint,
     CreateWebTransportParentResolver&& aResolver) {
@@ -498,8 +514,9 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvCreateWebTransportParent(
     return IPC_FAIL(this, "CreateWebTransport aPrincipal is invalid");
   }
 
-  if (!dom::ClientIsValidPrincipalInfo(aClientInfo.principalInfo(),
-                                       BackgroundParent::GetRemoteType(this))) {
+  if (!dom::ClientIsValidPrincipalInfo(
+          aClientInfo.principalInfo(),
+          BackgroundParent::GetLoadedOrigins(this))) {
     return IPC_FAIL(
         this,
         "CreateWebTransport ClientInfo principal not valid for remote type");
@@ -508,7 +525,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvCreateWebTransportParent(
   RefPtr<mozilla::dom::WebTransportParent> webt =
       new mozilla::dom::WebTransportParent();
   webt->Create(aURL, aPrincipal, aBrowsingContextID, aClientInfo, aDedicated,
-               aRequireUnreliable, aCongestionControl,
+               aRequireUnreliable, aCongestionControl, std::move(aProtocols),
                std::move(aServerCertHashes), std::move(aParentEndpoint),
                std::move(aResolver));
   return IPC_OK();
@@ -536,6 +553,16 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvCreateNotificationParent(
     return IPC_FAIL(
         this,
         "Invalid aEffectiveStoragePrincipal for CreateNotificationParent");
+  }
+  if (!aScope.IsEmpty()) {
+    nsCOMPtr<nsIURI> scopeURI;
+    NS_ENSURE_SUCCESS(NS_NewURI(getter_AddRefs(scopeURI), aScope),
+                      IPC_FAIL(this, "Malformed scope parameter"));
+    IgnoredErrorResult rv;
+    dom::ServiceWorkerScopeIsValid(aPrincipal, scopeURI, rv);
+    if (rv.Failed()) {
+      return IPC_FAIL(this, "Invalid scope parameter");
+    }
   }
 
   dom::notification::NotificationParentArgs args{
@@ -1220,8 +1247,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvCreateMLSTransaction(
 
   RefPtr<ThreadsafeContentParentHandle> parent =
       BackgroundParent::GetContentParentHandle(this);
-  if (parent && !dom::ValidatePrincipalCouldPotentiallyBeLoadedBy(
-                    aPrincipal, parent->GetRemoteType())) {
+  if (parent && !parent->ValidatePrincipal(aPrincipal)) {
     dom::ContentParent::LogAndAssertFailedPrincipalValidationInfo(aPrincipal,
                                                                   __func__);
     return IPC_FAIL(this, "Principal validation failed");
@@ -1354,8 +1380,9 @@ BackgroundParentImpl::RecvPServiceWorkerRegistrationConstructor(
     return IPC_FAIL(this, "Invalid principal for PServiceWorkerRegistration");
   }
 
-  if (!dom::ClientIsValidPrincipalInfo(aForClient.principalInfo(),
-                                       BackgroundParent::GetRemoteType(this))) {
+  if (!dom::ClientIsValidPrincipalInfo(
+          aForClient.principalInfo(),
+          BackgroundParent::GetLoadedOrigins(this))) {
     return IPC_FAIL(this, "Invalid ClientInfo for PServiceWorkerRegistration");
   }
 

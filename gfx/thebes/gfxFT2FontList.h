@@ -40,8 +40,8 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
 
   // create a font entry for a downloaded font
   static already_AddRefed<FT2FontEntry> CreateFontEntry(
-      const nsACString& aFontName, WeightRange aWeight, StretchRange aStretch,
-      SlantStyleRange aStyle, const uint8_t* aFontData, uint32_t aLength);
+      const nsACString& aFontName, WeightRange aWeight, WidthRange aWidth,
+      SlantStyleRange aStyle, FontData* aFontData);
 
   // create a font entry representing an installed font, identified by
   // a FontListEntry; the freetype and cairo faces will not be instantiated
@@ -170,12 +170,12 @@ class gfxFT2FontList final : public gfxPlatformFontList {
   already_AddRefed<gfxFontEntry> LookupLocalFont(
       FontVisibilityProvider* aFontVisibilityProvider,
       const nsACString& aFontName, WeightRange aWeightForEntry,
-      StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry) override;
+      WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry) override;
 
   already_AddRefed<gfxFontEntry> MakePlatformFont(
       const nsACString& aFontName, WeightRange aWeightForEntry,
-      StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
-      const uint8_t* aFontData, uint32_t aLength) override;
+      WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry,
+      FontData* aFontData) override;
 
   void WriteCache();
 

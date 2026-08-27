@@ -176,6 +176,7 @@ nsresult SerialPlatformService::GetSignals(const nsString& aPortId,
 
 nsresult SerialPlatformService::GetReadStream(const nsString& aPortId,
                                               uint32_t aBufferSize,
+                                              bool aDetectParityErrors,
                                               nsIAsyncInputStream** aStream) {
   {
     auto observerState = mObserverState.Lock();
@@ -183,7 +184,7 @@ nsresult SerialPlatformService::GetReadStream(const nsString& aPortId,
       return NS_ERROR_NOT_AVAILABLE;
     }
   }
-  return GetReadStreamImpl(aPortId, aBufferSize, aStream);
+  return GetReadStreamImpl(aPortId, aBufferSize, aDetectParityErrors, aStream);
 }
 
 void SerialPlatformService::AddDeviceChangeObserver(

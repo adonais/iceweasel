@@ -13,6 +13,8 @@ include NeckoChannelParams;
 include "mozilla/dom/ReferrerInfoUtils.h";
 
 [RefCounted] using class nsIReferrerInfo from "nsIReferrerInfo.h";
+[RefCounted] using class nsIPrincipal from "nsIPrincipal.h";
+[RefCounted] using class nsIInputStream from "mozilla/ipc/IPCStreamUtils.h";
 
 namespace mozilla {
 
@@ -32,7 +34,6 @@ struct WebBrowserPersistDocumentAttrs {
   nsString contentDisposition;
   uint32_t sessionHistoryCacheKey;
   uint32_t persistFlags;
-  PrincipalInfo principal;
 };
 
 // IPDL doesn't have tuples, so this gives the pair of strings from
@@ -67,7 +68,8 @@ parent:
   // is either a response to the constructor (if it was parent->child)
   // or sent after it (if it was child->parent).
   async Attributes(WebBrowserPersistDocumentAttrs aAttrs,
-                   IPCStream? stream);
+                   nsIPrincipal aPrincipal,
+                   nullable nsIInputStream aStream);
   async InitFailure(nsresult aStatus);
 
 child:

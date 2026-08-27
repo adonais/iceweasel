@@ -399,12 +399,23 @@ class LandoAPI:
         try:
             response_json = response.json()
         except json.JSONDecodeError:
-            # If the server didn't send back a valid JSON object, raise a stack
-            # trace to the terminal which includes error details.
-            response.raise_for_status()
+            # The server didn't send back a valid JSON object. This commonly
+            # happens on transient server-side errors (e.g. a 503 returns an
+            # HTML error page rather than JSON). Surface a readable message
+            # rather than letting a raw `HTTPError` traceback escape.
+            if response.status_code >= 400:
+                detail = (
+                    f"Lando returned HTTP {response.status_code} "
+                    f"({response.reason}) for {url}."
+                )
+                if response.status_code >= 500:
+                    detail += (
+                        " This is likely a transient server-side issue; "
+                        "please try again in a few moments."
+                    )
+                raise LandoAPIException(detail=detail)
 
-            # Raise `ValueError` if the response wasn't JSON and we didn't raise
-            # from an invalid status.
+            # The response wasn't JSON but the status was valid.
             raise LandoAPIException(
                 detail="Response was not valid JSON yet status was valid."
             )

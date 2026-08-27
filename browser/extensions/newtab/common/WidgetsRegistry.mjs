@@ -115,6 +115,18 @@ export const PREF_WIDGETS_PRIVACY_ENABLED = "widgets.privacy.enabled";
 export const PREF_PRIVACY_SIZE = "widgets.privacy.size";
 export const PREF_WIDGETS_SYSTEM_PRIVACY_ENABLED =
   "widgets.system.privacy.enabled";
+export const PREF_PRIVACY_MAX_COUNT = "widgets.privacy.maxCount";
+export const PREF_PRIVACY_MAX_DISPLAY_COUNT = "widgets.privacy.maxDisplayCount";
+export const PREF_PRIVACY_BLANK_CHANCE = "widgets.privacy.blankChance";
+export const PREF_PRIVACY_SHOW_VPN_MESSAGES = "widgets.privacy.showVpnMessages";
+export const PREF_PRIVACY_FORCE_MESSAGE_ID = "widgets.privacy.forceMessageId";
+export const PREF_PRIVACY_MESSAGE_STATE = "widgets.privacy.messageState";
+export const PREF_PRIVACY_CELEBRATION_THRESHOLD =
+  "widgets.privacy.celebrationThreshold";
+export const PREF_PRIVACY_CELEBRATION_STATE =
+  "widgets.privacy.celebrationState";
+export const PREF_PRIVACY_FORCE_CELEBRATION =
+  "widgets.privacy.forceCelebration";
 export const PREF_WIDGETS_CROSSWORD_ENABLED = "widgets.crossword.enabled";
 export const PREF_CROSSWORD_SIZE = "widgets.crossword.size";
 export const PREF_WIDGETS_SYSTEM_CROSSWORD_ENABLED =
@@ -146,7 +158,7 @@ export const PREF_WIDGETS_SYSTEM_PICTURE_OF_THE_DAY_ENABLED =
  * @property {string|null} trainhopSidebarKey - Key in trainhopConfig.widgets.* for the hasSidebar override.
  * @property {string} widgetsSettingsVisibleKey - Key in trainhopConfig.widgetsSettings.* that additively reveals this widget's toggle in the settings UIs (does not enable the widget).
  * @property {string} widgetsSettingsEnabledKey - Key in trainhopConfig.widgetsSettings.* that overrides this widget's default enabled value (written to the pref default branch; an explicit user toggle still wins).
- * @property {string|null} [trainhopNamespace] - When set, the widget ships its whole config in one dedicated object at trainhopConfig.<namespace>. Its `enabled` overrides the default value of enabledPref on the default branch (user toggle still wins, like widgetsSettings.*Enabled); `visible` reveals the widget (isWidgetAddable) without writing a pref; `size` is read by resolveWidgetSize. Picture of the Day and Crossword use this today.
+ * @property {string|null} [trainhopNamespace] - When set, the widget ships its whole config in one dedicated object at trainhopConfig.<namespace>. Its `enabled` overrides the default value of enabledPref on the default branch (user toggle still wins, like widgetsSettings.*Enabled); `visible` reveals the widget (isWidgetAddable) without writing a pref; `size` is read by resolveWidgetSize. Picture of the Day, Crossword and Privacy use this today.
  */
 
 /** @type {WidgetRegistryEntry[]} */
@@ -263,6 +275,7 @@ export const WIDGET_REGISTRY = [
     trainhopSidebarKey: null,
     widgetsSettingsVisibleKey: "privacyVisible",
     widgetsSettingsEnabledKey: "privacyEnabled",
+    trainhopNamespace: "widgetPrivacy",
   },
   {
     id: "crossword",
@@ -474,6 +487,173 @@ export function resolveCrosswordEndpoint(prefs) {
     prefs.trainhopConfig?.widgets?.crosswordEndpoint ||
     prefs[PREF_CROSSWORD_ENDPOINT]
   );
+}
+
+/**
+ * Picks the dedicated trainhopConfig.widgetPrivacy value when it has the
+ * expected type, otherwise falls through to the shared trainhopConfig.widgets
+ * key. A present-but-wrong-typed dedicated value is a recipe misconfig (e.g.
+ * the string "0.4" where a number is required — the string form is only correct
+ * for the pref, which cannot hold a float), so warn rather than silently
+ * masking the shared key with a value that is about to be discarded.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @param {string} key - key in trainhopConfig.widgetPrivacy
+ * @param {string} sharedKey - fallback key in trainhopConfig.widgets
+ * @param {string} type - expected typeof result
+ * @returns {*} the dedicated value, else the shared value, else undefined
+ */
+function resolvePrivacyTrainhopValue(prefs, key, sharedKey, type) {
+  const dedicated = prefs.trainhopConfig?.widgetPrivacy?.[key];
+  if (typeof dedicated === type) {
+    return dedicated;
+  }
+  if (dedicated !== undefined) {
+    console.warn(
+      `trainhopConfig.widgetPrivacy.${key} is ${JSON.stringify(
+        dedicated
+      )}; expected a ${type}. Ignoring it.`
+    );
+  }
+  return prefs.trainhopConfig?.widgets?.[sharedKey];
+}
+
+/**
+ * Resolves the today-count at which the Privacy widget fires its "daily cap"
+ * celebration message. This is NOT the display ceiling — the readout keeps
+ * showing the real number past this point (see resolvePrivacyDisplayCount).
+ * Priority: widgetPrivacy > widgets > pref > 100. Routed through this helper
+ * (never the raw pref) per the trainhop-gate convention.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {number}
+ */
+export function resolvePrivacyMaxCount(prefs) {
+  return (
+    resolvePrivacyTrainhopValue(
+      prefs,
+      "maxCount",
+      "privacyMaxCount",
+      "number"
+    ) ||
+    prefs[PREF_PRIVACY_MAX_COUNT] ||
+    100
+  );
+}
+
+/**
+ * Resolves the ceiling for the tracker-count readout: above it the number
+ * shows as "{cap}+" so it stays a tidy few characters. Default 999 (three
+ * digits). Distinct from resolvePrivacyMaxCount (the daily-cap celebration
+ * threshold). Priority: widgetPrivacy > widgets > pref > 999.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {number}
+ */
+export function resolvePrivacyDisplayCount(prefs) {
+  return (
+    resolvePrivacyTrainhopValue(
+      prefs,
+      "maxDisplayCount",
+      "privacyMaxDisplayCount",
+      "number"
+    ) ||
+    prefs[PREF_PRIVACY_MAX_DISPLAY_COUNT] ||
+    999
+  );
+}
+
+/**
+ * Resolves the Privacy widget "blank chance" — the probability (0..1) that an
+ * eligible info message is suppressed to keep the experience calm. It's compared
+ * against Math.random(), so it MUST be a 0–1 fraction (0.4 = 40%), not a percent.
+ * A value > 1 (e.g. 40) would blank every message; guard against that by warning
+ * and falling back to the default. Priority: widgetPrivacy > widgets > pref > 0.4.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {number}
+ */
+export function resolvePrivacyBlankChance(prefs) {
+  const DEFAULT = 0.4;
+  const trainhop = resolvePrivacyTrainhopValue(
+    prefs,
+    "blankChance",
+    "privacyBlankChance",
+    "number"
+  );
+  // The pref is stored as a string ("0.4") because Firefox prefs have no float
+  // type — a numeric default would land as 0 and silently disable blanks.
+  // trainhopConfig comes from JSON, so it's already a number.
+  const rawPref = prefs[PREF_PRIVACY_BLANK_CHANCE];
+  const raw = typeof trainhop === "number" ? trainhop : parseFloat(rawPref);
+  if (Number.isNaN(raw)) {
+    // Warn on a present-but-unparseable value (a misconfig); stay quiet when
+    // the pref is simply unset.
+    if (rawPref !== undefined && rawPref !== "") {
+      console.warn(
+        `widgets.privacy.blankChance is ${JSON.stringify(
+          rawPref
+        )}; expected a 0-1 number. Using ${DEFAULT}.`
+      );
+    }
+    return DEFAULT;
+  }
+  if (raw < 0 || raw > 1) {
+    console.warn(
+      `widgets.privacy.blankChance is ${raw}; expected a 0-1 fraction (0.4 = 40%). Using ${DEFAULT}.`
+    );
+    return DEFAULT;
+  }
+  return raw;
+}
+
+/**
+ * Resolves whether the Privacy widget may show VPN promotional messages. Off by
+ * default: not all users are eligible for the built-in VPN (unsupported region,
+ * enterprise-managed, removed from the toolbar), and promoting an unavailable
+ * feature erodes trust. An experiment can enable them for eligible cohorts — or
+ * force them off. Priority: widgetPrivacy > widgets > pref > false.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+export function resolvePrivacyShowVpnMessages(prefs) {
+  const trainhop = resolvePrivacyTrainhopValue(
+    prefs,
+    "showVpnMessages",
+    "privacyShowVpnMessages",
+    "boolean"
+  );
+  if (typeof trainhop === "boolean") {
+    return trainhop;
+  }
+  return !!prefs[PREF_PRIVACY_SHOW_VPN_MESSAGES];
+}
+
+/**
+ * Resolves how far the blocked-tracker count must climb before the count-up
+ * celebration fires. Priority: widgetPrivacy > widgets > pref > 10 (HNT-2845).
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {number}
+ */
+export function resolvePrivacyCelebrationThreshold(prefs) {
+  const DEFAULT = 10;
+  const trainhop = resolvePrivacyTrainhopValue(
+    prefs,
+    "celebrationThreshold",
+    "privacyCelebrationThreshold",
+    "number"
+  );
+  const raw =
+    typeof trainhop === "number"
+      ? trainhop
+      : prefs[PREF_PRIVACY_CELEBRATION_THRESHOLD];
+  // A zero or negative threshold would fire on every refresh.
+  if (typeof raw !== "number" || !Number.isFinite(raw) || raw < 1) {
+    return DEFAULT;
+  }
+  return raw;
 }
 
 /**

@@ -5,7 +5,7 @@
 import os
 import shutil
 import unittest
-from io import StringIO
+from io import BytesIO, StringIO
 from tempfile import mkdtemp
 
 from mozunit import MockedOpen, main
@@ -720,6 +720,28 @@ class TestPreprocessor(unittest.TestCase):
         with MockedOpen({"@foo@.in": "@foo@\n"}):
             self.pp.handleCommandLine(["-Fsubstitution", "-Dfoo=foobarbaz", "@foo@.in"])
             self.assertEqual(self.pp.out.getvalue(), "foobarbaz\n")
+
+    def test_output_encoding_without_output(self):
+        out = BytesIO()
+        self.pp.out = out
+        with MockedOpen({"f.in": "@FOO@\n"}):
+            self.pp.handleCommandLine([
+                "-Fsubstitution",
+                "-DFOO=PASS",
+                "--output-encoding",
+                "utf-16",
+                "f.in",
+            ])
+        self.assertEqual(out.getvalue(), "PASS\n".encode("utf-16"))
+
+    def test_output_encoding_without_output_text_stream(self):
+        with MockedOpen({"f.in": "PASS\n"}):
+            with self.assertRaises(Preprocessor.Error) as e:
+                self.pp.handleCommandLine(["--output-encoding", "utf-16", "f.in"])
+            self.assertEqual(
+                e.exception.key,
+                "--output-encoding without --output requires a binary output stream",
+            )
 
     def test_invalid_ifdef(self):
         with MockedOpen({"dummy": "#ifdef FOO == BAR\nPASS\n#endif"}):

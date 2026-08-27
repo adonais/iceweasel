@@ -224,6 +224,14 @@ pub struct Wrench {
     pub frame_start_sender: chase_lev::Worker<Instant>,
 
     pub callbacks: Arc<Mutex<blob::BlobCallbacks>>,
+
+    /// The base debug flags configured at startup. Used as the baseline when
+    /// toggling individual flags per test (e.g. DISABLE_COMPOSITOR_CLIPS).
+    debug_flags: DebugFlags,
+
+    /// Set by the `--compositor-clips` command line argument. When set it
+    /// overrides whatever each subcommand would otherwise pick.
+    compositor_clips_override: Option<bool>,
 }
 
 impl Wrench {
@@ -239,16 +247,22 @@ impl Wrench {
         verbose: bool,
         no_scissor: bool,
         no_batch: bool,
+        color_target_init: bool,
         precache_shaders: bool,
         dump_shader_source: Option<String>,
         notifier: Option<Box<dyn RenderNotifier>>,
         layer_compositor: Option<Box<dyn LayerCompositor>>,
+        compositor_clips_override: Option<bool>,
     ) -> Self {
         println!("Shader override path: {:?}", shader_override_path);
 
         let mut debug_flags = DebugFlags::ECHO_DRIVER_MESSAGES;
         debug_flags.set(DebugFlags::DISABLE_BATCHING, no_batch);
         debug_flags.set(DebugFlags::MISSING_SNAPSHOT_PINK, true);
+        debug_flags.set(DebugFlags::COLOR_TARGET_INIT, color_target_init);
+        if let Some(enabled) = compositor_clips_override {
+            debug_flags.set(DebugFlags::DISABLE_COMPOSITOR_CLIPS, !enabled);
+        }
         let callbacks = Arc::new(Mutex::new(blob::BlobCallbacks::new()));
 
         let precache_flags = if precache_shaders {
@@ -278,6 +292,7 @@ impl Wrench {
             // SWGL doesn't support the GL_ALWAYS depth comparison function used by
             // `clear_caches_with_quads`, but scissored clears work well.
             clear_caches_with_quads: !window.is_software(),
+            enable_shared_instance_buffer: !cfg!(target_os = "windows"),
             compositor_config,
             enable_debugger: true,
             ..Default::default()
@@ -323,6 +338,9 @@ impl Wrench {
             frame_start_sender: timing_sender,
 
             callbacks,
+
+            debug_flags,
+            compositor_clips_override,
         };
 
         wrench.set_title("start");
@@ -337,6 +355,21 @@ impl Wrench {
         let mut txn = Transaction::new();
         txn.set_quality_settings(settings);
         self.api.send_transaction(self.document_id, txn);
+    }
+
+    /// Enable or disable promoting rounded-rect clips to compositor clips (the
+    /// "fast path"). Sent via set_debug_flags (not send_debug_cmd) so that it
+    /// reaches the scene builder, where the promotion decision is made. Because
+    /// this goes through the scene sender, it is ordered before any display
+    /// list submitted afterwards.
+    ///
+    /// The `--compositor-clips` command line argument, if specified, takes
+    /// precedence over `enabled`.
+    pub fn set_compositor_clips_enabled(&mut self, enabled: bool) {
+        let enabled = self.compositor_clips_override.unwrap_or(enabled);
+        let mut flags = self.debug_flags;
+        flags.set(DebugFlags::DISABLE_COMPOSITOR_CLIPS, !enabled);
+        self.api.set_debug_flags(flags);
     }
 
     pub fn layout_simple_ascii(
@@ -446,6 +479,20 @@ impl Wrench {
         )
     }
 
+    #[cfg(all(unix, not(target_os = "android")))]
+    pub fn font_key_from_name(&mut self, font_name: &str) -> FontKey {
+        let property = system_fonts::FontPropertyBuilder::new()
+            .family(font_name)
+            .build();
+        let (font, index) = system_fonts::get(&property).unwrap();
+        self.font_key_from_bytes(font, index as u32)
+    }
+
+    #[cfg(target_os = "android")]
+    pub fn font_key_from_name(&mut self, _font_name: &str) -> FontKey {
+        unimplemented!()
+    }
+
     #[cfg(target_os = "windows")]
     pub fn font_key_from_properties(
         &mut self,
@@ -508,20 +555,6 @@ impl Wrench {
         unimplemented!()
     }
 
-    #[cfg(all(unix, not(target_os = "android")))]
-    pub fn font_key_from_name(&mut self, font_name: &str) -> FontKey {
-        let property = system_fonts::FontPropertyBuilder::new()
-            .family(font_name)
-            .build();
-        let (font, index) = system_fonts::get(&property).unwrap();
-        self.font_key_from_bytes(font, index as u32)
-    }
-
-    #[cfg(target_os = "android")]
-    pub fn font_key_from_name(&mut self, _font_name: &str) -> FontKey {
-        unimplemented!()
-    }
-
     pub fn font_key_from_bytes(&mut self, bytes: Vec<u8>, index: u32) -> FontKey {
         let key = self.api.generate_font_key();
         let mut txn = Transaction::new();
@@ -581,6 +614,7 @@ impl Wrench {
 
             txn.set_display_list(
                 Epoch(*frame_number),
+                self.api.get_namespace_id(),
                 (display_list.pipeline, display_list.payload),
             );
 

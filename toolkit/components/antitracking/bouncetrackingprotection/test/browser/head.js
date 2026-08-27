@@ -20,7 +20,7 @@ const SITE_TRACKER = "itisatracker.org";
 const ORIGIN_TRACKER = `https://${SITE_TRACKER}`;
 
 const SITE_TRACKER_B = "trackertest.org";
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 const ORIGIN_TRACKER_B = `http://${SITE_TRACKER_B}`;
 
 // Test message used for observing when the record-bounces method in
@@ -160,22 +160,60 @@ function getBounceURL({
 }
 
 /**
+ * Inserts an iframe element and resolves once the iframe has loaded.
+ *
+ * @param {MozBrowser|BrowsingContext} browserOrBrowsingContext - Browser or
+ * BrowsingContext to insert the iframe into.
+ * @param {string} url - URL to load in the iframe.
+ * @param {object} options - Additional options.
+ * @param {string} [options.sandbox] - Value for the iframe's sandbox attribute.
+ * @returns {Promise<BrowsingContext>} Promise which resolves to the iframe's
+ * BrowsingContext.
+ */
+function insertIframeAndWaitForLoad(
+  browserOrBrowsingContext,
+  url,
+  { sandbox = null } = {}
+) {
+  return SpecialPowers.spawn(
+    browserOrBrowsingContext,
+    [url, sandbox],
+    async (url, sandbox) => {
+      let iframe = content.document.createElement("iframe");
+      if (sandbox != null) {
+        iframe.sandbox = sandbox;
+      }
+      iframe.src = url;
+      content.document.body.appendChild(iframe);
+      // Wait for it to load.
+      await ContentTaskUtils.waitForEvent(iframe, "load");
+
+      return iframe.browsingContext;
+    }
+  );
+}
+
+/**
  * Insert an <a href/> element with the given target and perform a synthesized
  * click on it.
  *
- * @param {MozBrowser} browser - Browser to insert the link in.
+ * @param {MozBrowser|BrowsingContext} browser - Browser or BrowsingContext to
+ * insert the link in.
  * @param {URL} targetURL - Destination for navigation.
  * @param {object} options - Additional options.
  * @param {string} [options.spawnWindow] - If set to "newTab" or "popup" the
  * link will be opened in a new tab or popup window respectively. If unset the
  * link is opened in the given browser.
+ * @param {string} [options.linkTarget] - Value for the link's target attribute,
+ * e.g. "_top" to navigate the top level context from a frame. Only applies when
+ * spawnWindow is unset.
  * @returns {Promise} Resolves once the click is done. Does not wait for
  * navigation or load.
  */
 async function navigateLinkClick(
   browser,
   targetURL,
-  { spawnWindow = null } = {}
+  { spawnWindow = null, linkTarget = null } = {}
 ) {
   if (spawnWindow && !["newTab", "popup"].includes(spawnWindow)) {
     throw new Error(`Invalid option '${spawnWindow}' for spawnWindow`);
@@ -183,8 +221,8 @@ async function navigateLinkClick(
 
   await SpecialPowers.spawn(
     browser,
-    [targetURL.href, spawnWindow],
-    async (targetURL, spawnWindow) => {
+    [targetURL.href, spawnWindow, linkTarget],
+    async (targetURL, spawnWindow, linkTarget) => {
       let link = content.document.createElement("a");
       link.id = "link";
       link.textContent = "Click Me";
@@ -207,6 +245,9 @@ async function navigateLinkClick(
       } else {
         // For regular navigation add href and click.
         link.href = targetURL;
+        if (linkTarget) {
+          link.target = linkTarget;
+        }
       }
 
       content.document.body.appendChild(link);
@@ -220,14 +261,109 @@ async function navigateLinkClick(
 }
 
 /**
+ * Navigate the top level context from within a frame by assigning
+ * top.location.href. Unlike navigateContentParentLoad, which navigates the
+ * context it is spawned in, this always targets the top level.
+ *
+ * Runs as page script: the SpecialPowers sandbox has the system principal and is
+ * not a window, so the navigation would carry that instead of the frame's content
+ * principal.
+ *
+ * @param {BrowsingContext} frameBC - BrowsingContext of the frame initiating the
+ * navigation.
+ * @param {URL} targetURL - Destination for the navigation.
+ * @param {object} options - Additional options.
+ * @param {boolean} [options.withGesture] - Whether to grant the frame transient
+ * user activation before navigating. Pass false to keep the navigation
+ * gesture-free, which requires the frame to be allowed to framebust by other
+ * means, e.g. a sandbox attribute with allow-top-navigation.
+ * @returns {Promise} Resolves once the navigation has been started. Does not
+ * wait for navigation or load.
+ */
+async function navigateTopFromFrame(
+  frameBC,
+  targetURL,
+  { withGesture = true } = {}
+) {
+  await SpecialPowers.spawn(
+    frameBC,
+    [targetURL.href, withGesture],
+    async (targetURL, withGesture) => {
+      if (withGesture) {
+        SpecialPowers.wrap(content.document).notifyUserGestureActivation();
+        content.document.userInteractionForTesting();
+      }
+      let script = content.document.createElement("script");
+      script.textContent = `window.top.location.href = ${JSON.stringify(
+        targetURL
+      )};`;
+      content.document.body.appendChild(script);
+    }
+  );
+}
+
+/**
+ * Start a top level navigation from the address bar. This is a parent process
+ * initiated load triggered by the system principal, which goes through
+ * DocumentLoadListener::OpenInParent (Bug 2056952).
+ *
+ * @param {MozBrowser} browser - Browser to navigate.
+ * @param {URL} targetURL - Destination for the navigation.
+ * @returns {Promise} Resolves once the load has been started. Does not wait for
+ * navigation or load.
+ */
+async function navigateSystemPrincipalLoad(browser, targetURL) {
+  BrowserTestUtils.startLoadingURIString(browser, targetURL.href);
+}
+
+/**
+ * Start a content triggered top level navigation from within the page, without
+ * a user gesture. When the destination is cross-site this results in a process
+ * switch which makes the parent initiate the load via
+ * DocumentLoadListener::OpenInParent (Bug 2056952), carrying the page's content
+ * principal as the triggering principal.
+ *
+ * @param {MozBrowser} browser - Browser containing the initiating page.
+ * @param {URL} targetURL - Destination for the navigation.
+ * @param {boolean} [hasUserActivation=true] - Whether the initiating page
+ * should have a user gesture activation for the navigation.
+ * @returns {Promise} Resolves once the navigation has been started. Does not
+ * wait for navigation or load.
+ */
+async function navigateContentParentLoad(
+  browser,
+  targetURL,
+  hasUserActivation = true
+) {
+  await SpecialPowers.spawn(
+    browser,
+    [targetURL.href, hasUserActivation],
+    async (targetURL, hasUserActivation) => {
+      if (hasUserActivation) {
+        SpecialPowers.wrap(content.document).notifyUserGestureActivation();
+        content.document.userInteractionForTesting();
+      }
+      content.location.href = targetURL;
+    }
+  );
+}
+
+/**
  * Wait for the record-bounces method to run for the given tab / browser.
  *
  * @param {browser} browser - Browser element which represents the tab we want
  * to observe.
+ * @param {number} [minCandidateCount=1] - Only resolve once a record-bounces
+ * run for the browser classified at least this many bounce tracker candidates.
+ * The record-bounces method can also run for finalizations that classify
+ * nothing, e.g. when a user activated navigation ends an extended navigation
+ * whose record is empty or fully exempt (such as the initial top level load in
+ * a tab). Callers waiting for an actual classification must skip those, so the
+ * default is 1. Pass 0 to resolve on the first run regardless of the result.
  * @returns {Promise} Promise which resolves once the record-bounces method has
- * run for the given browser.
+ * run for the given browser and classified at least minCandidateCount hosts.
  */
-async function waitForRecordBounces(browser) {
+async function waitForRecordBounces(browser, minCandidateCount = 1) {
   let { browserId } = browser.browsingContext;
   info(
     `waitForRecordBounces: Waiting for record bounces for browser: ${browserId}.`
@@ -238,7 +374,12 @@ async function waitForRecordBounces(browser) {
     subject => {
       // Ensure the message was dispatched for the browser we're interested in.
       let propBag = subject.QueryInterface(Ci.nsIPropertyBag2);
-      return browserId == propBag.getProperty("browserId");
+      if (browserId != propBag.getProperty("browserId")) {
+        return false;
+      }
+      return (
+        propBag.getProperty("bounceTrackerCandidateCount") >= minCandidateCount
+      );
     }
   );
 
@@ -391,7 +532,14 @@ async function runTestBounce(options = {}) {
 
   let promiseRecordBounces;
   if (expectRecordBounces) {
-    promiseRecordBounces = waitForRecordBounces(browser);
+    // When we expect the redirecting site to be classified the finalizing
+    // record-bounces run classifies at least one candidate. When we don't (e.g.
+    // the site is protected by user activation) it classifies none, so wait for
+    // a run with zero candidates instead.
+    promiseRecordBounces = waitForRecordBounces(
+      browser,
+      expectCandidate ? 1 : 0
+    );
   }
 
   // The final destination after the bounce.

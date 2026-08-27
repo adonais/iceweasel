@@ -16,8 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light"
         android:dataExtractionRules="@xml/data_extraction_rules"
-        tools:targetApi="s"
-        tools:ignore="DataExtractionRules">
+        tools:targetApi="s">
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTask"

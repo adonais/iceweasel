@@ -20,7 +20,7 @@ namespace a11y {
 class RootAccessibleWrap : public RootAccessible {
  public:
   RootAccessibleWrap(dom::Document* aDocument, PresShell* aPresShell);
-  virtual ~RootAccessibleWrap();
+  virtual ~RootAccessibleWrap() = default;
 
   // RootAccessible
   virtual void DocumentActivated(DocAccessible* aDocument);

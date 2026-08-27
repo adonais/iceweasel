@@ -1,0 +1,8 @@
+//error: bad syntax near `"Foo.ipdl"'
+
+include protocol "Foo.ipdl";
+
+[ChildProc=any]
+protocol PoldIncludeSyntax {
+child: async __delete__(X x);
+};

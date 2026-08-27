@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { MAX_SEARCH_TERM_LENGTH } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
+);
+
 const prefix = "https://www.example.com/search";
 
 add_setup(async function () {
@@ -58,6 +62,32 @@ add_task(async function test_getSubmission_utf8_url() {
 add_task(async function test_getSubmission_windows1252() {
   let engine = SearchService.getEngineById("windows1252");
   testEncode(engine, "windows-1252", "caff\u00E8+", "?q=caff%E8%2B");
+});
+
+add_task(async function test_getSubmission_maxSearchTermLength() {
+  let engine = SearchService.getEngineById("utf8_param");
+
+  // Compare lengths rather than the terms themselves to keep the log readable.
+  let submission = engine.getSubmission("a".repeat(MAX_SEARCH_TERM_LENGTH + 1));
+  Assert.equal(
+    new URL(submission.uri.spec).searchParams.get("q").length,
+    MAX_SEARCH_TERM_LENGTH,
+    "Should truncate search terms to MAX_SEARCH_TERM_LENGTH."
+  );
+
+  submission = engine.getSubmission(
+    "a".repeat(MAX_SEARCH_TERM_LENGTH - 1) + "\u{1F600}"
+  );
+  let searchTerms = new URL(submission.uri.spec).searchParams.get("q");
+  Assert.equal(
+    searchTerms.length,
+    MAX_SEARCH_TERM_LENGTH - 1,
+    "Should drop a lone high surrogate left by truncation."
+  );
+  Assert.ok(
+    !searchTerms.includes("\uFFFD"),
+    "Should not encode a lone high surrogate."
+  );
 });
 
 // Spaces are percent-encoded to either + or %20, depending on the url component.

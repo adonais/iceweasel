@@ -89,7 +89,7 @@ class Service : public mozIStorageService,
   void getConnections(nsTArray<RefPtr<Connection> >& aConnections);
 
  private:
-  Service();
+  Service() = default;
   virtual ~Service();
 
   struct AutoVFSRegistration {
@@ -112,7 +112,7 @@ class Service : public mozIStorageService,
   /**
    * Protects mConnections.
    */
-  Mutex mRegistrationMutex MOZ_UNANNOTATED;
+  Mutex mRegistrationMutex MOZ_UNANNOTATED{"Service::mRegistrationMutex"};
 
   /**
    * The list of connections we have created.  Modifications to it are

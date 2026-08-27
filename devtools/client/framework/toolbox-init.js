@@ -95,6 +95,22 @@ async function initToolbox(url, host) {
   const tool = url.searchParams.get("tool");
 
   try {
+    // Prevent opening "Browser toolbox"-like toolboxes when devtools.chrome.enabled is false,
+    // which is the default value, unless you are on local builds.
+    // But still accept opening multiprocess browser toolbox from about:debugging when remote debugging
+    // Fenix without having to toggle that pref.
+    if (
+      url.searchParams.get("type") === "process" &&
+      !url.searchParams.get("remoteId") &&
+      !Services.prefs.getBoolPref("devtools.chrome.enabled")
+    ) {
+      showErrorPage(
+        host.contentDocument,
+        `Can't open multiprocess browser toolbox without chrome.devtools.enabled pref set to true.`
+      );
+      return;
+    }
+
     const commands = await commandsFromURL(url);
     const toolbox = gDevTools.getToolboxForCommands(commands);
     if (toolbox && toolbox.isDestroying()) {

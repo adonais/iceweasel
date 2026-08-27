@@ -27,6 +27,9 @@ var cs = getComputedStyle(content, "");
 
 for (var prop in gCSSProperties) {
   var info = gCSSProperties[prop];
+  if ("subproperties" in info && info.subproperties.length == 0) {
+    continue;
+  }
   function test_val(v) {
     content.style.setProperty(prop, v, "");
     isnot(get_computed_value(cs, prop), "",

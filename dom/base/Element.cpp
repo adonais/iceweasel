@@ -592,7 +592,7 @@ void Element::SetKeepCustomElementRegistryNull() {
 CustomElementRegistry* Element::GetCustomElementRegistry() {
   switch (GetCustomElementRegistryState()) {
     case CustomElementRegistryState::Global:
-      return OwnerDoc()->GetEffectiveGlobalCustomElementRegistry();
+      return OwnerDoc()->GetCustomElementRegistry();
     case CustomElementRegistryState::Null:
       return nullptr;
     case CustomElementRegistryState::Scoped: {
@@ -1200,7 +1200,7 @@ already_AddRefed<DOMRect> Element::GetBoundingClientRect() {
   RefPtr<DOMRect> rect = new DOMRect(ToSupports(OwnerDoc()));
 
   nsIFrame* frame = GetPrimaryFrame(FlushType::Layout);
-  if (!frame) {
+  if (!frame || frame->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
     // display:none, perhaps? Return the empty rect
     return rect.forget();
   }
@@ -1213,7 +1213,7 @@ already_AddRefed<DOMRectList> Element::GetClientRects() {
   RefPtr<DOMRectList> rectList = new DOMRectList(this);
 
   nsIFrame* frame = GetPrimaryFrame(FlushType::Layout);
-  if (!frame) {
+  if (!frame || frame->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
     // display:none, perhaps? Return an empty list
     return rectList.forget();
   }
@@ -2816,10 +2816,9 @@ static uint64_t HashClassesForBloom(const nsAttrValue* aValue) {
 
   if (aValue->Type() == nsAttrValue::eAtomArray) {
     const mozilla::AttrAtomArray* array = aValue->GetAtomArrayValue();
-    if (array) {
-      for (const RefPtr<nsAtom>& className : array->mArray) {
-        filter |= AttrArray::HashForBloomFilter(className);
-      }
+    MOZ_ASSERT(array);
+    for (const RefPtr<nsAtom>& className : array->Array()) {
+      filter |= AttrArray::HashForBloomFilter(className);
     }
   } else if (aValue->Type() == nsAttrValue::eAtom) {
     filter |= AttrArray::HashForBloomFilter(aValue->GetAtomValue());
@@ -4253,6 +4252,72 @@ bool Element::GetAttr(int32_t aNameSpaceID, const nsAtom* aName,
   return true;
 }
 
+void Element::GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr,
+                         nsAString& aResult) const {
+  nsCOMPtr<nsIURI> uri;
+  const nsAttrValue* attr = GetURIAttr(aAttr, aBaseAttr, getter_AddRefs(uri));
+  if (!attr) {
+    aResult.Truncate();
+    return;
+  }
+  if (!uri) {
+    // Just return the attr value
+    attr->ToString(aResult);
+    return;
+  }
+  nsAutoCString spec;
+  uri->GetSpec(spec);
+  CopyUTF8toUTF16(spec, aResult);
+}
+
+void Element::GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr,
+                         nsACString& aResult) const {
+  nsCOMPtr<nsIURI> uri;
+  const nsAttrValue* attr = GetURIAttr(aAttr, aBaseAttr, getter_AddRefs(uri));
+  if (!attr) {
+    aResult.Truncate();
+    return;
+  }
+  if (!uri) {
+    // Just return the attr value
+    nsAutoString value;
+    attr->ToString(value);
+    CopyUTF16toUTF8(value, aResult);
+    return;
+  }
+  uri->GetSpec(aResult);
+}
+
+const nsAttrValue* Element::GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr,
+                                       nsIURI** aURI) const {
+  *aURI = nullptr;
+
+  const nsAttrValue* attr = mAttrs.GetAttr(aAttr);
+  if (!attr) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIURI> baseURI = GetBaseURI();
+  if (aBaseAttr) {
+    nsAutoString baseAttrValue;
+    if (GetAttr(aBaseAttr, baseAttrValue)) {
+      nsCOMPtr<nsIURI> baseAttrURI;
+      nsresult rv = nsContentUtils::NewURIWithDocumentCharset(
+          getter_AddRefs(baseAttrURI), baseAttrValue, OwnerDoc(), baseURI);
+      if (NS_FAILED(rv)) {
+        return attr;
+      }
+      baseURI.swap(baseAttrURI);
+    }
+  }
+
+  // Don't care about return value.  If it fails, we still want to
+  // return true, and *aURI will be null.
+  nsContentUtils::NewURIWithDocumentCharset(
+      aURI, nsAttrValueOrString(attr).String(), OwnerDoc(), baseURI);
+  return attr;
+}
+
 int32_t Element::FindAttrValueIn(int32_t aNameSpaceID, const nsAtom* aName,
                                  AttrArray::AttrValuesArray* aValues,
                                  nsCaseTreatment aCaseSensitive) const {
@@ -4800,43 +4865,18 @@ nsresult Element::CopyInnerTo(Element* aDst) {
                                 IsKnownNewAttr::Yes));
   }
 
-  // https://dom.spec.whatwg.org/#clone-a-single-node
-  // Step 2.1. Let registry be node's custom element registry.
-  // Step 2.2. If registry is null, then set registry to fallbackRegistry.
-  // Step 2.3. If registry is a global custom element registry, then set
-  //           registry to document's effective global custom element registry.
-  // XXX Steps 2.1-2.3 are partially handled here by propagating registry
-  // state; the full registry resolution happens in "create an element".
-  CustomElementRegistryState state = GetCustomElementRegistryState();
-  if (state == CustomElementRegistryState::Scoped) {
-    MOZ_ASSERT(StaticPrefs::dom_scoped_custom_element_registries_enabled());
-    RefPtr<CustomElementRegistry> scopedRegistry =
-        CustomElementRegistry::GetScopedRegistry(*this);
-    aDst->SetCustomElementRegistry(scopedRegistry);
-  } else {
-    MOZ_ASSERT(state == CustomElementRegistryState::Global ||
-               StaticPrefs::dom_scoped_custom_element_registries_enabled());
-    aDst->SetCustomElementRegistryState(state);
-  }
-
-  // https://html.spec.whatwg.org/#enqueue-a-custom-element-upgrade-reaction
-  dom::NodeInfo* dstNodeInfo = aDst->NodeInfo();
+  // NOTE: Custom element registry state propagation, definition lookup, and
+  // upgrade reaction enqueuing are handled by CloneAndAdopt in nsINode.cpp,
+  // which has access to the resolved registry (including fallbackRegistry from
+  // importNode). CopyInnerTo only copies the CustomElementData type atom so
+  // that CloneAndAdopt can use it for definition lookup.
   if (CustomElementData* data = GetCustomElementData()) {
-    // The cloned node may be a custom element that may require
-    // enqueing upgrade reaction.
     if (nsAtom* typeAtom = data->GetCustomElementType()) {
       aDst->SetCustomElementData(MakeUnique<CustomElementData>(typeAtom));
-      MOZ_ASSERT(dstNodeInfo->NameAtom()->Equals(dstNodeInfo->LocalName()));
-      CustomElementDefinition* definition =
-          nsContentUtils::LookupCustomElementDefinition(
-              dstNodeInfo->GetDocument(), dstNodeInfo->NameAtom(),
-              dstNodeInfo->NamespaceID(), typeAtom);
-      if (definition) {
-        nsContentUtils::EnqueueUpgradeReaction(aDst, definition);
-      }
     }
   }
 
+  dom::NodeInfo* dstNodeInfo = aDst->NodeInfo();
   if (dstNodeInfo->GetDocument()->IsStaticDocument()) {
     // Propagate :defined state to the static clone.
     if (State().HasState(ElementState::DEFINED)) {
@@ -5496,7 +5536,9 @@ void Element::SetOuterHTML(const TrustedHTMLOrNullIsEmptyString& aOuterHTML,
     RefPtr<DocumentFragment> fragment = new (nim) DocumentFragment(nim);
     nsContentUtils::ParseFragmentHTML(
         *compliantString, fragment, localName, namespaceID,
-        OwnerDoc()->GetCompatibilityMode() == eCompatibility_NavQuirks, true);
+        OwnerDoc()->GetCompatibilityMode() == eCompatibility_NavQuirks, true,
+        nsContentUtils::kParseFragmentPrivilegedDefaultSanitization,
+        mozilla::Nothing());
     parent->ReplaceChild(*fragment, *this, aError);
     return;
   }
@@ -5514,7 +5556,7 @@ void Element::SetOuterHTML(const TrustedHTMLOrNullIsEmptyString& aOuterHTML,
   }
 
   RefPtr<DocumentFragment> fragment = nsContentUtils::CreateContextualFragment(
-      context, *compliantString, true, aError);
+      context, *compliantString, true, Nothing(), aError);
   if (aError.Failed()) {
     return;
   }
@@ -5580,6 +5622,12 @@ void Element::InsertAdjacentHTML(
   mozAutoDocUpdate updateBatch(doc, true);
   nsAutoScriptLoaderDisabler sld(doc);
 
+  // https://html.spec.whatwg.org/#create-an-element-for-the-token
+  // Step 6: Let registry be the result of looking up a custom element registry
+  // given intendedParent.
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry =
+      nsContentUtils::GetCustomElementRegistry(destination);
+
   // XXX: Fast path - parse directly into destination if possible, bypassing
   // the fragment creation in steps 4-5.
   nsIContent* oldLastChild = destination->GetLastChild();
@@ -5599,7 +5647,9 @@ void Element::InsertAdjacentHTML(
     }
     aError = nsContentUtils::ParseFragmentHTML(
         *compliantString, destination, contextLocal, contextNs,
-        doc->GetCompatibilityMode() == eCompatibility_NavQuirks, true);
+        doc->GetCompatibilityMode() == eCompatibility_NavQuirks, true,
+        nsContentUtils::kParseFragmentPrivilegedDefaultSanitization,
+        std::move(customElementRegistry));
     doc->ResumeDOMNotifications();
     nsIContent* firstNewChild = oldLastChild ? oldLastChild->GetNextSibling()
                                              : destination->GetFirstChild();
@@ -5615,7 +5665,8 @@ void Element::InsertAdjacentHTML(
   // 5. "Let fragment be the result of invoking the fragment parsing algorithm
   //    steps with context and compliantString."
   RefPtr<DocumentFragment> fragment = nsContentUtils::CreateContextualFragment(
-      destination, *compliantString, true, aError);
+      destination, *compliantString, true, std::move(customElementRegistry),
+      aError);
   if (aError.Failed()) {
     return;
   }

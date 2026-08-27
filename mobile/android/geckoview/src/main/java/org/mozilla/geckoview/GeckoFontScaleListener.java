@@ -4,7 +4,6 @@
 
 package org.mozilla.geckoview;
 
-import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.ContentObserver;
@@ -26,7 +25,6 @@ import org.mozilla.gecko.util.ThreadUtils;
   private static final float DEFAULT_FONT_SCALE = 1.0f;
 
   // We're referencing the *application* context, so this is in fact okay.
-  @SuppressLint("StaticFieldLeak")
   private static final GeckoFontScaleListener sInstance = new GeckoFontScaleListener();
 
   private Context mApplicationContext;

@@ -18,6 +18,42 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
 });
 
+const PROMPTS_PAGE =
+  "chrome://mochitests/content/browser/browser/components/aiwindow/ui/test/browser/test_smartwindow_prompts_page.html";
+
+// Disable memories by default; relevant tests opt in explicitly.
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.memories.generateFromConversation", false],
+      ["browser.smartwindow.memories.generateFromHistory", false],
+    ],
+  });
+});
+
+/**
+ * Creates a smartwindow-prompts element directly on a static test page, for
+ * testing pure rendering behavior in isolation from the starter-generation
+ * flow.
+ *
+ * @param {MozTabbrowserTab} tab
+ * @param {Array<object>} prompts
+ * @param {string} [mode]
+ */
+async function createPromptsElement(tab, prompts, mode = "fullpage") {
+  const browser = tab.linkedBrowser;
+  const contentWin = browser.contentWindow;
+  const contentDoc = browser.contentDocument;
+
+  await contentWin.customElements.whenDefined("smartwindow-prompts");
+  const el = contentDoc.createElement("smartwindow-prompts");
+  el.mode = mode;
+  el.prompts = prompts;
+  contentDoc.body.appendChild(el);
+  await el.updateComplete;
+  return el;
+}
+
 function getSidebarPromptButtons(win) {
   const sidebarBrowser = win.document.getElementById("ai-window-browser");
   const aiWindowEl =
@@ -399,6 +435,361 @@ describe("sidebar conversation starter prompts", () => {
   });
 });
 
+add_task(async function test_fullpage_resume_starters() {
+  const sb = sinon.createSandbox();
+  let win;
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.memories.generateFromConversation", true],
+      ["browser.smartwindow.memories.generateFromHistory", true],
+    ],
+  });
+
+  let resumeActivityStubs;
+  try {
+    resumeActivityStubs = await stubResumeActivityGeneration(sb);
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+    const buttons = await getPromptButtons(browser);
+    const aiWindow = browser.contentDocument.querySelector("ai-window");
+    const promptsEl = aiWindow.shadowRoot.querySelector("smartwindow-prompts");
+
+    // 1 valid resume pill (memory-2's headline comes back empty) + 3 static
+    // starters, truncated to MAX_PILL_COUNT (3) - independent of
+    // MAX_NUM_MEMORIES_FOR_RESUME_ACTIVITY, since this fixture never yields
+    // more than 1 valid resume pill.
+    Assert.equal(
+      buttons.length,
+      3,
+      "Resume pill plus static starters, truncated to MAX_PILL_COUNT"
+    );
+    Assert.equal(
+      buttons[0].ariaLabel,
+      "Pick up your research",
+      "The resume pill should be prepended to static starters"
+    );
+    Assert.equal(
+      promptsEl.prompts.filter(prompt => prompt.type === "resume").length,
+      1,
+      "Entries with empty generated headlines should be omitted"
+    );
+    Assert.deepEqual(
+      {
+        previewIcons: promptsEl.prompts[0].previewIcons,
+        previewTabsLength: promptsEl.prompts[0].content.previewTabs.length,
+        memoryId: promptsEl.prompts[0].memory.id,
+      },
+      {
+        previewIcons: [1, 2, 3, 4].map(id => ({
+          iconSrc: `page-icon:https://example.com/${id}`,
+        })),
+        previewTabsLength: 4,
+        memoryId: "memory-1",
+      },
+      "The resume pill should retain favicons, tab payload, and memory id"
+    );
+  } finally {
+    if (win) {
+      await BrowserTestUtils.closeWindow(win);
+    }
+    sb.restore();
+    await resumeActivityStubs?.cleanup();
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(
+  async function test_fullpage_resume_starters_not_regenerated_after_new_chat() {
+    const sb = sinon.createSandbox();
+    let win;
+
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.smartwindow.memories.generateFromConversation", true],
+        ["browser.smartwindow.memories.generateFromHistory", true],
+      ],
+    });
+
+    let resumeActivityStubs;
+    try {
+      resumeActivityStubs = await stubResumeActivityGeneration(sb);
+      win = await openAIWindow();
+      const browser = win.gBrowser.selectedBrowser;
+      await getPromptButtons(browser);
+      const aiWindow = browser.contentDocument.querySelector("ai-window");
+
+      Assert.ok(
+        aiWindow.shadowRoot
+          .querySelector("smartwindow-prompts")
+          .prompts.some(prompt => prompt.type === "resume"),
+        "Resume pill should show on the tab's initial load"
+      );
+
+      resumeActivityStubs.getMemoriesStub.resetHistory();
+      aiWindow.onCreateNewChatClick();
+
+      await TestUtils.waitForCondition(() => {
+        const promptsEl = aiWindow.shadowRoot.querySelector(
+          "smartwindow-prompts"
+        );
+        return (
+          promptsEl?.prompts.length &&
+          promptsEl.prompts.every(prompt => prompt.type !== "resume")
+        );
+      }, "Starters should reload without a resume pill after New Chat");
+
+      Assert.ok(
+        resumeActivityStubs.getMemoriesStub.notCalled,
+        "New Chat should not re-trigger resume-activity generation"
+      );
+    } finally {
+      if (win) {
+        await BrowserTestUtils.closeWindow(win);
+      }
+      sb.restore();
+      await resumeActivityStubs?.cleanup();
+      await SpecialPowers.popPrefEnv();
+    }
+  }
+);
+
+add_task(
+  async function test_fullpage_resume_starters_fresh_opportunity_per_tab() {
+    const sb = sinon.createSandbox();
+    let win, tab2;
+
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.smartwindow.memories.generateFromConversation", true],
+        ["browser.smartwindow.memories.generateFromHistory", true],
+      ],
+    });
+
+    let resumeActivityStubs;
+    try {
+      resumeActivityStubs = await stubResumeActivityGeneration(sb);
+
+      win = await openAIWindow();
+      await getPromptButtons(win.gBrowser.selectedBrowser);
+      const aiWindow1 =
+        win.gBrowser.selectedBrowser.contentDocument.querySelector("ai-window");
+      aiWindow1.onCreateNewChatClick();
+      await TestUtils.waitForCondition(() => {
+        const promptsEl = aiWindow1.shadowRoot.querySelector(
+          "smartwindow-prompts"
+        );
+        return (
+          promptsEl?.prompts.length &&
+          promptsEl.prompts.every(prompt => prompt.type !== "resume")
+        );
+      }, "First tab's starters should reload without a resume pill after New Chat");
+
+      tab2 = await BrowserTestUtils.openNewForegroundTab({
+        gBrowser: win.gBrowser,
+        opening: AIWINDOW_URL,
+        waitForLoad: true,
+      });
+      await getPromptButtons(tab2.linkedBrowser);
+      const aiWindow2 =
+        tab2.linkedBrowser.contentDocument.querySelector("ai-window");
+
+      Assert.ok(
+        aiWindow2.shadowRoot
+          .querySelector("smartwindow-prompts")
+          .prompts.some(prompt => prompt.type === "resume"),
+        "A newly opened tab should get its own fresh resume-pill opportunity"
+      );
+    } finally {
+      if (tab2) {
+        BrowserTestUtils.removeTab(tab2);
+      }
+      if (win) {
+        await BrowserTestUtils.closeWindow(win);
+      }
+      sb.restore();
+      await resumeActivityStubs?.cleanup();
+      await SpecialPowers.popPrefEnv();
+    }
+  }
+);
+
+add_task(async function test_resume_prompt_click_shows_confirmation_card() {
+  const sb = sinon.createSandbox();
+  try {
+    sb.stub(openAIEngine, "build").resolves({});
+    const fetchWithHistoryStub = sb.stub(Chat, "fetchWithHistory").resolves();
+
+    await testResumeActivityClick(sb, async ({ aiWindow, buttons }) => {
+      buttons[0].click();
+
+      await TestUtils.waitForCondition(
+        () => fetchWithHistoryStub.calledOnce,
+        "Should generate a response for the resume-activity conversation"
+      );
+
+      const assistantMessage = aiWindow.conversation.messages.at(-1);
+      Assert.deepEqual(
+        assistantMessage.toolUIData,
+        {
+          uiType: "tab-group-confirmation",
+          toolCallId: "resume-activity-memory-1",
+          properties: {
+            actionType: "open_tabs",
+            tabGroupLabel: "Pick up your research",
+            tabs: [1, 2, 3, 4].map((id, index) => ({
+              token: String(index),
+              url: `https://example.com/${id}`,
+              title: `Example ${id}`,
+              iconSrc: `page-icon:https://example.com/${id}`,
+              checked: false,
+            })),
+          },
+        },
+        "Should attach a tab-selection confirmation card built from the pill's preview tabs"
+      );
+    });
+  } finally {
+    sb.restore();
+  }
+});
+
+add_task(async function test_resume_prompt_click_injects_context() {
+  const sb = sinon.createSandbox();
+  try {
+    sb.stub(openAIEngine, "build").resolves({});
+    const fetchWithHistoryStub = sb.stub(Chat, "fetchWithHistory").resolves();
+    const realTimeStub = sb
+      .stub(this.ChatConversation.prototype, "injectRealTimeContext")
+      .resolves();
+
+    await testResumeActivityClick(sb, async ({ buttons }) => {
+      buttons[0].click();
+
+      await TestUtils.waitForCondition(
+        () => fetchWithHistoryStub.calledOnce,
+        "Should generate a response for the resume-activity conversation"
+      );
+
+      Assert.ok(
+        realTimeStub.calledOnce,
+        "Should inject real-time context onto the resume-activity user message"
+      );
+    });
+  } finally {
+    sb.restore();
+  }
+});
+
+add_task(
+  async function test_resume_prompt_click_shows_confirmation_card_without_memory_context_when_toggled_off() {
+    const sb = sinon.createSandbox();
+    try {
+      sb.stub(openAIEngine, "build").resolves({});
+      const fetchWithHistoryStub = sb.stub(Chat, "fetchWithHistory").resolves();
+
+      await testResumeActivityClick(sb, async ({ aiWindow, buttons }) => {
+        const memoriesButton = aiWindow.shadowRoot.querySelector(
+          "memories-icon-button"
+        );
+        memoriesButton.dispatchEvent(
+          new CustomEvent("aiwindow-memories-toggle:on-change", {
+            bubbles: true,
+            composed: true,
+            detail: { pressed: false },
+          })
+        );
+        await TestUtils.waitForCondition(
+          () => memoriesButton.pressed === false,
+          "Memories toggle should turn off"
+        );
+
+        buttons[0].click();
+
+        await TestUtils.waitForCondition(
+          () => fetchWithHistoryStub.calledOnce,
+          "Should generate a response for the resume-activity conversation"
+        );
+
+        const assistantMessage = aiWindow.conversation.messages.at(-1);
+        Assert.deepEqual(
+          assistantMessage.toolUIData,
+          {
+            uiType: "tab-group-confirmation",
+            toolCallId: "resume-activity-memory-1",
+            properties: {
+              actionType: "open_tabs",
+              tabGroupLabel: "Pick up your research",
+              tabs: [1, 2, 3, 4].map((id, index) => ({
+                token: String(index),
+                url: `https://example.com/${id}`,
+                title: `Example ${id}`,
+                iconSrc: `page-icon:https://example.com/${id}`,
+                checked: false,
+              })),
+            },
+          },
+          "Should still attach a tab-selection confirmation card when memories are toggled off"
+        );
+
+        const userMessage = aiWindow.conversation.messages.at(-2);
+        Assert.ok(
+          !userMessage.content.userContext?.resumeActivityContext,
+          "Should not bake memory context into the conversation when memories are toggled off"
+        );
+      });
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+add_task(
+  async function test_fullpage_resume_starters_disabled_without_existing_memories() {
+    const sb = sinon.createSandbox();
+    let win;
+
+    // Prefs off alone don't disable resume starters - #memoriesIconShown
+    // falls back to #hasMemories, so this only holds with no existing
+    // memories either.
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.smartwindow.memories.generateFromConversation", false],
+        ["browser.smartwindow.memories.generateFromHistory", false],
+      ],
+    });
+
+    try {
+      const getMemoriesStub = sb
+        .stub(MemoriesManager, "getMemoriesByAttribute")
+        .resolves([]);
+      sb.stub(MemoriesManager, "getAllMemories").resolves([]);
+      win = await openAIWindow();
+      const browser = win.gBrowser.selectedBrowser;
+      await getPromptButtons(browser);
+      const aiWindow = browser.contentDocument.querySelector("ai-window");
+      const promptsEl = aiWindow.shadowRoot.querySelector(
+        "smartwindow-prompts"
+      );
+
+      Assert.ok(
+        promptsEl.prompts.every(prompt => prompt.type !== "resume"),
+        "Resume pills should not render with memories disabled and none existing"
+      );
+      Assert.ok(
+        getMemoriesStub.notCalled,
+        "Resume starter generation should not run with memories disabled and none existing"
+      );
+    } finally {
+      if (win) {
+        await BrowserTestUtils.closeWindow(win);
+      }
+      sb.restore();
+      await SpecialPowers.popPrefEnv();
+    }
+  }
+);
+
 add_task(async function test_starter_prompts_click_triggers_chat_on_new_tab() {
   const sb = sinon.createSandbox();
 
@@ -410,7 +801,7 @@ add_task(async function test_starter_prompts_click_triggers_chat_on_new_tab() {
     const browser = win.gBrowser.selectedBrowser;
 
     const buttons = await getPromptButtons(browser);
-    const firstPromptText = buttons[0].textContent.trim();
+    const firstPromptText = buttons[0].ariaLabel;
     buttons[0].click();
 
     await TestUtils.waitForCondition(
@@ -445,7 +836,7 @@ add_task(async function test_starter_prompts_click_triggers_chat_in_sidebar() {
     const browser = win.gBrowser.selectedBrowser;
 
     const buttons = await getPromptButtons(browser);
-    const firstPromptText = buttons[0].textContent.trim();
+    const firstPromptText = buttons[0].ariaLabel;
     buttons[0].click();
 
     await TestUtils.waitForCondition(
@@ -604,3 +995,156 @@ add_task(async function test_starter_prompts_hidden_after_click_in_sidebar() {
     sb.restore();
   }
 });
+
+// Confirms a resume pill's click event carries memory/content while a chat
+// pill's stays plain {text, type}. Clicks both in one render purely to check
+// each shape - not a simulated user session.
+add_task(async function test_prompt_selected_event_detail() {
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    PROMPTS_PAGE
+  );
+  try {
+    const memory = { id: "memory-1", memory_summary: "Research project" };
+    const content = {
+      headline: "Pick up your research",
+      status: "Continue reading",
+      previewTabs: [
+        { url: "https://example.com/1", title: "First tab" },
+        { url: "https://example.com/2", title: "Second tab" },
+      ],
+    };
+    const el = await createPromptsElement(tab, [
+      {
+        text: "Pick up your research",
+        type: "resume",
+        memory,
+        content,
+      },
+      { text: "Write a first draft", type: "chat" },
+    ]);
+
+    const details = [];
+    el.addEventListener("SmartWindowPrompt:prompt-selected", event => {
+      details.push(event.detail);
+    });
+
+    const buttons = el.shadowRoot.querySelectorAll(".sw-prompt-button");
+    buttons[0].click();
+    buttons[1].click();
+
+    Assert.deepEqual(
+      details[0],
+      {
+        text: "Pick up your research",
+        type: "resume",
+        memory,
+        content,
+      },
+      "Resume prompt events should include their memory and content payload"
+    );
+    Assert.deepEqual(
+      details[1],
+      { text: "Write a first draft", type: "chat" },
+      "Chat prompt event detail should remain unchanged"
+    );
+  } finally {
+    BrowserTestUtils.removeTab(tab);
+  }
+});
+
+// Favicon cluster rendering. Tested in isolation on a static page rather
+// than the full AI Window, since this is pure rendering behavior with no
+// starter-generation or chat involved.
+
+add_task(async function test_prompts_no_favicons_without_preview_icons() {
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    PROMPTS_PAGE
+  );
+  try {
+    const el = await createPromptsElement(tab, [
+      { text: "Write a first draft", type: "chat" },
+    ]);
+    Assert.ok(
+      !el.shadowRoot.querySelector(".sw-prompt-favicons"),
+      "No favicon cluster should render without previewIcons"
+    );
+  } finally {
+    BrowserTestUtils.removeTab(tab);
+  }
+});
+
+add_task(
+  async function test_prompts_favicon_cluster_renders_all_icons_up_to_max() {
+    const tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      PROMPTS_PAGE
+    );
+    try {
+      const el = await createPromptsElement(tab, [
+        {
+          text: "Pick up your Tokyo trip",
+          type: "resume",
+          previewIcons: [
+            { iconSrc: "page-icon:https://example.com/1" },
+            { iconSrc: "page-icon:https://example.com/2" },
+          ],
+        },
+      ]);
+      Assert.equal(
+        el.shadowRoot.querySelectorAll(".sw-prompt-favicon").length,
+        2,
+        "Should render one icon per previewIcons entry when under the max"
+      );
+      Assert.ok(
+        !el.shadowRoot.querySelector(".sw-prompt-favicon-overflow"),
+        "No overflow badge should render when under the max"
+      );
+    } finally {
+      BrowserTestUtils.removeTab(tab);
+    }
+  }
+);
+
+add_task(
+  async function test_prompts_favicon_cluster_shows_overflow_badge_beyond_max() {
+    const tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      PROMPTS_PAGE
+    );
+    try {
+      const el = await createPromptsElement(tab, [
+        {
+          text: "Continue shopping",
+          type: "resume",
+          previewIcons: [
+            { iconSrc: "page-icon:https://example.com/1" },
+            { iconSrc: "page-icon:https://example.com/2" },
+            { iconSrc: "page-icon:https://example.com/3" },
+            { iconSrc: "page-icon:https://example.com/4" },
+          ],
+        },
+      ]);
+      Assert.equal(
+        el.shadowRoot.querySelectorAll(".sw-prompt-favicon").length,
+        2,
+        "Should cap visible icons when previewIcons exceeds the max"
+      );
+      const overflow = el.shadowRoot.querySelector(
+        ".sw-prompt-favicon-overflow"
+      );
+      Assert.ok(
+        overflow,
+        "Overflow badge should render when previewIcons exceeds the max"
+      );
+      Assert.equal(
+        overflow.textContent,
+        "+2",
+        "Overflow badge should show the count of hidden icons"
+      );
+    } finally {
+      BrowserTestUtils.removeTab(tab);
+    }
+  }
+);

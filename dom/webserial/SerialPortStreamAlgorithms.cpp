@@ -5,10 +5,13 @@
 #include "SerialPortStreamAlgorithms.h"
 
 #include "SerialLogging.h"
+#include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/SerialPort.h"
 #include "mozilla/dom/SerialPortChild.h"
+#include "mozilla/dom/ToJSValue.h"
+#include "nsError.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla::dom {
@@ -221,6 +224,24 @@ already_AddRefed<Promise> SerialPortReadAlgorithms::CancelCallbackImpl(
           });
 
   return promise.forget();
+}
+
+void SerialPortReadAlgorithms::BuildErrorValue(
+    JSContext* aCx, nsresult aError, JS::MutableHandle<JS::Value> aErrorValue) {
+  if (aError == NS_ERROR_DOM_SERIAL_PARITY_ERROR) {
+    MOZ_LOG(gWebSerialLog, LogLevel::Debug,
+            ("SerialPortReadAlgorithms[%p]::BuildErrorValue surfacing "
+             "ParityError",
+             this));
+    // DOMException::Create derives the name ("ParityError") and message from
+    // the nsresult via domerr.msg.
+    RefPtr<DOMException> exception = DOMException::Create(aError);
+    if (exception && ToJSValue(aCx, *exception, aErrorValue)) {
+      return;
+    }
+    // Fall through to the generic error if creation/wrapping failed.
+  }
+  InputToReadableStreamAlgorithms::BuildErrorValue(aCx, aError, aErrorValue);
 }
 
 SerialPortReadAlgorithms::~SerialPortReadAlgorithms() = default;

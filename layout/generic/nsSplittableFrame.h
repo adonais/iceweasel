@@ -161,8 +161,13 @@ class nsSplittableFrame : public nsIFrame {
 
   /**
    * Cached pointers to the first-continuation and first-in-flow, if currently
-   * known. These may be null, in which case the first-* will need to be found
-   * by following the chain.
+   * known. A frame that is itself the first-continuation (or first-in-flow)
+   * caches itself. These may be null, meaning the cache was purged, in which
+   * case the first-* will need to be found by following the chain.
+   *
+   * Invariant: if mFirstContinuation is null, it is also null on all of its
+   * next-continuations. Likewise, if mFirstInFlow is null, it is also null on
+   * all of its next-in-flows.
    */
   nsIFrame* mFirstContinuation = nullptr;
   nsIFrame* mFirstInFlow = nullptr;

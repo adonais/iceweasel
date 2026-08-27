@@ -216,7 +216,7 @@ constructor.
 
 ```python
 UNIFIED_SOURCES = [
-    'TestFoo.cpp',
+    "TestFoo.cpp",
 ]
 ```
 
@@ -229,9 +229,9 @@ Makefile.in inside of the testing directory.
 
 ```python
 LOCAL_INCLUDES += [
-    '/gfx/2d',
-    '/gfx/2d/unittest',
-    '/gfx/layers',
+    "/gfx/2d",
+    "/gfx/2d/unittest",
+    "/gfx/layers",
 ]
 ```
 

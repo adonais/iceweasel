@@ -101,6 +101,8 @@
 
   &[data-identity="unknownIdentity"]::before {
     background-image: url("chrome://global/skin/icons/security-broken.svg");
+    -moz-context-properties: fill, stroke;
+    stroke: var(--icon-color-critical);
   }
 }
 

@@ -50,6 +50,6 @@ See [Testing](Testing.md) for how to run tests.
 [commands]: https://docs.rs/webdriver/newest/webdriver/command/
 [responses]: https://docs.rs/webdriver/newest/webdriver/response/
 [errors]: https://docs.rs/webdriver/newest/webdriver/error/enum.ErrorStatus.html
-[Marionette protocol]: /testing/marionette/Protocol.md
+[Marionette protocol]: /remote/marionette/Protocol.md
 [WebDriver]: https://w3c.github.io/webdriver/
-[Marionette]: /testing/marionette/index.rst
+[Marionette]: /remote/marionette/index.md

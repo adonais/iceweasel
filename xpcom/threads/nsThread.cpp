@@ -624,9 +624,6 @@ nsresult nsThread::Init(const nsACString& aName) {
     if (!(thread = PR_CreateThread(PR_USER_THREAD, ThreadFunc, initData.get(),
                                    PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
                                    PR_JOINABLE_THREAD, mStackSize))) {
-      // Until bug 2017883 is fixed, these values may not be useful on
-      // Windows as NSPR does not propagate the OS error from thread
-      // creation.
       PRErrorCode prError = PR_GetError();
       PRInt32 osError = PR_GetOSError();
       CrashReporter::RecordAnnotationNSCString(

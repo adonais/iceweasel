@@ -14,6 +14,7 @@ from taskgraph.util import json
 
 from gecko_taskgraph.test.conftest import FakeParameters
 from gecko_taskgraph.transforms import test as test_transforms
+from gecko_taskgraph.transforms.test import chunk
 
 
 @pytest.fixture
@@ -437,6 +438,118 @@ def test_split_chunks_base_task_no_variant_suffix(
     )
     assert len(tasks) == 1
     assert "task" in calls
+
+
+_TESTS_ROOT = "testing/web-platform/tests/"
+_MOZ_TESTS_ROOT = "testing/web-platform/mozilla/tests/"
+
+
+@pytest.mark.parametrize(
+    "test_name,input_paths,expected",
+    [
+        # A subsuite task runs when at least one path is under its prefix...
+        ("web-platform-tests-webrtc-1", [_TESTS_ROOT + "webrtc/a.html"], True),
+        # ...and does not when none are.
+        ("web-platform-tests-webrtc-1", [_TESTS_ROOT + "dom/a.html"], False),
+        # Prefix matching is deliberately loose: "webrtc" covers the webrtc-*
+        # sibling directories too.
+        (
+            "web-platform-tests-webrtc-1",
+            [_TESTS_ROOT + "webrtc-encoded-transform/a.html"],
+            True,
+        ),
+        # Every input path is considered, not just the first.
+        (
+            "web-platform-tests-webrtc-1",
+            [_TESTS_ROOT + "dom/a.html", _TESTS_ROOT + "webrtc/b.html"],
+            True,
+        ),
+        # The mozilla-specific wpt root is matched too.
+        ("web-platform-tests-webrtc-1", [_MOZ_TESTS_ROOT + "webrtc/a.html"], True),
+        # A nested subsuite prefix only matches its specific subdir.
+        (
+            "web-platform-tests-webcodecs-1",
+            [_TESTS_ROOT + "media-source/mse-for-webcodecs/a.html"],
+            True,
+        ),
+        # A general (non-subsuite) task runs when at least one path is outside
+        # every subsuite prefix.
+        ("web-platform-tests-1", [_TESTS_ROOT + "dom/a.html"], True),
+        ("web-platform-tests-1", [_MOZ_TESTS_ROOT + "dom/a.html"], True),
+        # media-source (but not mse-for-webcodecs) belongs to the general task.
+        ("web-platform-tests-1", [_TESTS_ROOT + "media-source/a.html"], True),
+        # A path that merely contains a subsuite name as a substring rather than
+        # a path prefix belongs to the general task.
+        ("web-platform-tests-1", [_TESTS_ROOT + "css/foo-webgpu/a.html"], True),
+        # A general task does not run when every path belongs to a subsuite.
+        ("web-platform-tests-1", [_TESTS_ROOT + "webrtc/a.html"], False),
+        (
+            "web-platform-tests-1",
+            [_TESTS_ROOT + "webrtc/a.html", _TESTS_ROOT + "webgpu/b.html"],
+            False,
+        ),
+        # ...but does when at least one path is non-subsuite.
+        (
+            "web-platform-tests-1",
+            [_TESTS_ROOT + "webrtc/a.html", _TESTS_ROOT + "dom/b.html"],
+            True,
+        ),
+        # A non-wpt (e.g. mochitest) path mixed into a wpt task's scheduled
+        # paths is ignored; the subsuite task still runs on its wpt path.
+        (
+            "web-platform-tests-webrtc-1",
+            [_TESTS_ROOT + "webrtc/a.html", "dom/media/webrtc/tests/mochitest/a.html"],
+            True,
+        ),
+        # ...and a subsuite task with only a non-wpt path does not run.
+        (
+            "web-platform-tests-webrtc-1",
+            ["dom/media/webrtc/tests/mochitest/a.html"],
+            False,
+        ),
+        # A non-wpt path that merely contains a subsuite name as a substring must
+        # not trigger the matching wpt subsuite task. webgpu exists as both a wpt
+        # and a mochitest subsuite, but only paths under the wpt roots count.
+        ("web-platform-tests-webgpu-1", ["dom/webgpu/mochitest/a.html"], False),
+        # No scheduled paths means there is nothing for the task to run.
+        ("web-platform-tests-webrtc-1", [], False),
+        ("web-platform-tests-1", [], False),
+    ],
+)
+def test_wpt_task_should_run(test_name, input_paths, expected):
+    assert chunk._wpt_task_should_run(test_name, input_paths) == expected
+
+
+def test_test_paths_do_not_drop_no_manifest_loader_tasks(run_transform):
+    """MOZHARNESS_TEST_PATHS must not drop tasks that opt out of taskgraph-time
+    manifest resolution (test-manifest-loader=None), such as gtest/cppunittest.
+    """
+    tasks = [
+        {
+            "test-name": "gtest",
+            "attributes": {"unittest_suite": "gtest"},
+            "test-manifest-loader": None,
+        },
+        {
+            "test-name": "cppunittest",
+            "attributes": {"unittest_suite": "cppunittest"},
+            "test-manifest-loader": None,
+        },
+    ]
+    params = FakeParameters({
+        "try_task_config": {
+            "env": {
+                "MOZHARNESS_TEST_PATHS": json.dumps({
+                    "web-platform-tests": [_TESTS_ROOT + "webrtc/a.html"],
+                    "mochitest-plain": ["dom/media/test/a.html"],
+                })
+            }
+        },
+        "test_manifest_loader": "default",
+    })
+
+    result = list(run_transform(chunk.set_test_manifests, tasks, params=params))
+    assert sorted(t["test-name"] for t in result) == ["cppunittest", "gtest"]
 
 
 if __name__ == "__main__":

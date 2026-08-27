@@ -97,7 +97,8 @@ fn run(args: CliArgs) -> miette::Result<()> {
     let cts_https_html_path = out_wpt_dir.child("cts-withsomeworkers.https.html");
 
     {
-        for file_name in ["cts-chunked2sec.https.html", "cts.https.html"] {
+        #[expect(clippy::single_element_loop)]
+        for file_name in ["cts.https.html"] {
             let file_name = out_wpt_dir.child(file_name);
             log::info!("removing extraneous {file_name}…");
             remove_file(&*file_name)?;

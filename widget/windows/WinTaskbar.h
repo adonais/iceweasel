@@ -18,7 +18,7 @@ class WinTaskbar final : public nsIWinTaskbar {
   ~WinTaskbar();
 
  public:
-  WinTaskbar();
+  WinTaskbar() = default;
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIWINTASKBAR
@@ -39,7 +39,7 @@ class WinTaskbar final : public nsIWinTaskbar {
  private:
   bool Initialize();
 
-  ITaskbarList4* mTaskbar;
+  ITaskbarList4* mTaskbar = nullptr;
 };
 
 }  // namespace widget

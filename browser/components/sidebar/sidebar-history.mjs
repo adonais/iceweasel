@@ -7,7 +7,6 @@ const lazy = {};
 import {
   classMap,
   html,
-  ifDefined,
   when,
   nothing,
 } from "chrome://global/content/vendor/lit.all.mjs";
@@ -380,7 +379,6 @@ export class SidebarHistory extends SidebarPage {
   }
 
   #dateCardTemplate(l10nId, index, items, isDateSite = false) {
-    const tabIndex = index > 0 ? "-1" : undefined;
     return html` <moz-card
       type="accordion"
       class="date-card"
@@ -390,7 +388,7 @@ export class SidebarHistory extends SidebarPage {
         date: isDateSite ? items[0][1][0].time : items[0].time,
       })}
       @keydown=${this.keydownHandler}
-      tabindex=${ifDefined(tabIndex)}
+      @toggle=${this.#onCardToggle}
     >
       ${isDateSite
         ? items.map(([domain, visits], i) =>
@@ -413,7 +411,6 @@ export class SidebarHistory extends SidebarPage {
     isDateSite = false,
     isLastCard = false
   ) {
-    let tabIndex = index > 0 || isDateSite ? "-1" : undefined;
     return html` <moz-card
       class=${classMap({
         "last-card": isLastCard,
@@ -424,7 +421,7 @@ export class SidebarHistory extends SidebarPage {
       ?expanded=${!isDateSite}
       heading=${domain}
       @keydown=${this.keydownHandler}
-      tabindex=${ifDefined(tabIndex)}
+      @toggle=${this.#onCardToggle}
       data-l10n-id=${domain ? nothing : "sidebar-history-site-localhost"}
       data-l10n-attrs=${domain ? nothing : "heading"}
     >
@@ -432,31 +429,50 @@ export class SidebarHistory extends SidebarPage {
     </moz-card>`;
   }
 
+  #onCardToggle() {
+    this.dispatchEvent(new CustomEvent("folder-toggle"));
+  }
+
   #emptyMessageTemplate() {
+    const nova = Services.prefs.getBoolPref("browser.nova.enabled", false);
     let descriptionHeader;
     let descriptionLabels;
     let descriptionLink;
+
     if (Services.prefs.getBoolPref(NEVER_REMEMBER_HISTORY_PREF, false)) {
       // History pref set to never remember history
-      descriptionHeader = "firefoxview-dont-remember-history-empty-header-2";
+      descriptionHeader = nova
+        ? "firefoxview-dont-remember-history-empty-header-3"
+        : "firefoxview-dont-remember-history-empty-header-2";
       descriptionLabels = [
-        "firefoxview-dont-remember-history-empty-description-one",
+        nova
+          ? "firefoxview-dont-remember-history-empty-description-2"
+          : "firefoxview-dont-remember-history-empty-description-one",
       ];
+
       descriptionLink = {
         url: "about:preferences#privacy",
         name: "history-settings-url-two",
       };
     } else {
-      descriptionHeader = "firefoxview-history-empty-header";
-      descriptionLabels = [
-        "firefoxview-history-empty-description",
-        "firefoxview-history-empty-description-two",
-      ];
+      descriptionHeader = nova
+        ? "firefoxview-history-empty-header-2"
+        : "firefoxview-history-empty-header";
+      descriptionLabels = nova
+        ? ["firefoxview-history-empty-description-2"]
+        : [
+            "firefoxview-history-empty-description",
+            "firefoxview-history-empty-description-two",
+          ];
       descriptionLink = {
         url: "about:preferences#privacy",
         name: "history-settings-url",
       };
     }
+    let asset = nova
+      ? "chrome://browser/skin/sidebar/kit-page-history.svg"
+      : "chrome://browser/content/firefoxview/history-empty.svg";
+
     return html`
       <fxview-empty-state
         headerLabel=${descriptionHeader}
@@ -464,7 +480,7 @@ export class SidebarHistory extends SidebarPage {
         .descriptionLink=${descriptionLink}
         class="empty-state history"
         isSelectedTab
-        mainImageUrl="chrome://browser/content/firefoxview/history-empty.svg"
+        mainImageUrl=${asset}
         openLinkInParentWindow
       >
       </fxview-empty-state>
@@ -517,6 +533,7 @@ export class SidebarHistory extends SidebarPage {
   onSearchQuery(e) {
     this.controller.onSearchQuery(e);
     Glean.browserUiInteraction.sidebarHistory.search.add(1);
+    this.treeView.resetActiveNode();
   }
 
   getTabItems(items) {

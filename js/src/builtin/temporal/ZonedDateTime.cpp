@@ -524,18 +524,18 @@ static ZonedDateTimeObject* CreateTemporalZonedDateTime(
 
   // Step 4.
   auto epochNs = ToEpochNanoseconds(epochNanoseconds);
-  object->initFixedSlot(ZonedDateTimeObject::SECONDS_SLOT,
-                        NumberValue(epochNs.seconds));
-  object->initFixedSlot(ZonedDateTimeObject::NANOSECONDS_SLOT,
-                        Int32Value(epochNs.nanoseconds));
+  object->initFixedSlotTyped(ZonedDateTimeObject::SECONDS_SLOT,
+                             NumberValue(epochNs.seconds));
+  object->initFixedSlotTyped(ZonedDateTimeObject::NANOSECONDS_SLOT,
+                             Int32Value(epochNs.nanoseconds));
 
   // Step 5.
-  object->initFixedSlot(ZonedDateTimeObject::TIMEZONE_SLOT,
-                        timeZone.toSlotValue());
+  object->initFixedSlotTyped(ZonedDateTimeObject::TIMEZONE_SLOT,
+                             timeZone.toSlotValue());
 
   // Step 6.
-  object->initFixedSlot(ZonedDateTimeObject::CALENDAR_SLOT,
-                        calendar.toSlotValue());
+  object->initFixedSlotTyped(ZonedDateTimeObject::CALENDAR_SLOT,
+                             calendar.toSlotValue());
 
   // Step 7.
   return object;
@@ -558,18 +558,18 @@ ZonedDateTimeObject* js::temporal::CreateTemporalZonedDateTime(
   }
 
   // Step 4.
-  object->initFixedSlot(ZonedDateTimeObject::SECONDS_SLOT,
-                        NumberValue(epochNanoseconds.seconds));
-  object->initFixedSlot(ZonedDateTimeObject::NANOSECONDS_SLOT,
-                        Int32Value(epochNanoseconds.nanoseconds));
+  object->initFixedSlotTyped(ZonedDateTimeObject::SECONDS_SLOT,
+                             NumberValue(epochNanoseconds.seconds));
+  object->initFixedSlotTyped(ZonedDateTimeObject::NANOSECONDS_SLOT,
+                             Int32Value(epochNanoseconds.nanoseconds));
 
   // Step 5.
-  object->initFixedSlot(ZonedDateTimeObject::TIMEZONE_SLOT,
-                        timeZone.toSlotValue());
+  object->initFixedSlotTyped(ZonedDateTimeObject::TIMEZONE_SLOT,
+                             timeZone.toSlotValue());
 
   // Step 6.
-  object->initFixedSlot(ZonedDateTimeObject::CALENDAR_SLOT,
-                        calendar.toSlotValue());
+  object->initFixedSlotTyped(ZonedDateTimeObject::CALENDAR_SLOT,
+                             calendar.toSlotValue());
 
   // Step 7.
   return object;

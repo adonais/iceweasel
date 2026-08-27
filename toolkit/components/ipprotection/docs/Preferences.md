@@ -1,4 +1,4 @@
-# Preferences
+# IP Protection preferences
 
 This document describes preferences affecting Firefox's IP Protection.
 These preferences are normally hidden and should not be used unless you really
@@ -26,6 +26,10 @@ know what you are doing.
 `browser.ipProtection.features.siteExceptions` (boolean, default: `false`)
 
 : Feature flag enabling the site exceptions capability.
+
+`browser.ipProtection.features.siteInclusions` (boolean, default: `false`)
+
+: Feature flag enabling the site inclusions capability.
 
 `browser.ipProtection.optedOut` (boolean, default: `false`)
 

@@ -52,8 +52,6 @@ pref(layout.display-list.improve-fragmentation,true) == table-cell-8.html table-
 == continuation-positioned-inline-2.html continuation-positioned-inline-ref.html
 == scrollframe-1.html scrollframe-1-ref.html
 fuzzy-if(gtkWidget,0-1,0-1) fuzzy-if(Android,0-9,0-185) == scrollframe-2.html scrollframe-2-ref.html #bug 756530
-fuzzy-if(gtkWidget,0-1,0-8) fuzzy-if(Android,0-4,0-2) == select-1.html select-1-ref.html
-fuzzy-if(gtkWidget,0-1,0-8) fuzzy-if(Android,0-4,0-2) == select-1-dynamic.html select-1-ref.html
 == select-2.html select-2-ref.html
 == select-3.html select-3-ref.html
 fuzzy(0-1,0-8) == select-4.html select-4-ref.html

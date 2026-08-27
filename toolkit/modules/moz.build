@@ -222,6 +222,7 @@ MOZ_SRC_FILES += [
     "DateTimePickerPanel.sys.mjs",
     "FaviconUtils.sys.mjs",
     "InputPickerPanelCommon.sys.mjs",
+    "RegionLocaleMap.sys.mjs",
 ]
 
 if CONFIG["MOZ_ASAN_REPORTER"]:
@@ -318,7 +319,6 @@ for var in (
 
 for var in (
     "NIGHTLY_BUILD",
-    "ENABLE_EXPLICIT_RESOURCE_MANAGEMENT",
     "RELEASE_OR_BETA",
     "EARLY_BETA_OR_EARLIER",
     "MOZ_ESR",
@@ -353,6 +353,7 @@ for var in (
     "MOZ_CODE_COVERAGE",
     "ENABLE_WEBDRIVER",
     "MOZ_GLEAN_ANDROID",
+    "MOZ_FONTATIONS",
     "MOZ_JXL",
     "MOZ_SYSTEM_POLICIES",
     "MOZ_SELECTABLE_PROFILES",

@@ -741,6 +741,109 @@ add_task(async function test_removing_elements() {
   cleanup();
 });
 
+add_task(async function test_reparenting_select_options_during_translation() {
+  const {
+    translate,
+    htmlMatches,
+    cleanup,
+    document,
+    resolveRequests,
+    collectPortData,
+  } = await setupMutationsTest(/* html */ `
+      <select id="original-select">
+        <option style="display: block">
+          Move to no-translate select
+        </option>
+        <option style="display: block">
+          Move to translatable select
+        </option>
+      </select>
+      <select id="no-translate-select" translate="no"></select>
+      <select id="translate-select"></select>
+    `);
+
+  translate();
+
+  await waitForCondition(
+    () => collectPortData(/* resetCounters */ false).requestCount === 2,
+    "Waiting for the initial option translation requests."
+  );
+
+  const [noTranslateOption, translateOption] = document.querySelectorAll(
+    "#original-select option"
+  );
+  document.querySelector("#no-translate-select").append(noTranslateOption);
+  document.querySelector("#translate-select").append(translateOption);
+
+  await htmlMatches(
+    "The reparented options respect their destination selects.",
+    /* html */ `
+      <select id="original-select"></select>
+      <select id="no-translate-select" translate="no">
+        <option style="display: block">
+          Move to no-translate select
+        </option>
+      </select>
+      <select id="translate-select">
+        <option style="display: block" value="Move to translatable select">
+          M̅o̅v̅e̅ t̅o̅ t̅r̅a̅n̅s̅l̅a̅t̅a̅b̅l̅e̅ s̅e̅l̅e̅c̅t̅ (id:3)
+        </option>
+      </select>
+    `,
+    document,
+    resolveRequests
+  );
+
+  assertPortData(collectPortData, {
+    expectedEngineStatusCount: 1,
+    expectedCancelCount: 2,
+    expectedRequestCount: 3,
+  });
+
+  cleanup();
+});
+
+add_task(async function test_empty_select_option_does_not_skip_sibling() {
+  const {
+    translate,
+    htmlMatches,
+    cleanup,
+    document,
+    resolveRequests,
+    collectPortData,
+  } = await setupMutationsTest(/* html */ `
+      <select>
+        <option style="display: block">Clear before submission</option>
+        <option style="display: block">Translate sibling</option>
+      </select>
+    `);
+
+  translate();
+
+  document.querySelector("option").textContent = "";
+
+  await htmlMatches(
+    "An empty option does not prevent its sibling from being translated.",
+    /* html */ `
+      <select>
+        <option style="display: block"></option>
+        <option style="display: block" value="Translate sibling">
+          T̅r̅a̅n̅s̅l̅a̅t̅e̅ s̅i̅b̅l̅i̅n̅g̅ (id:1)
+        </option>
+      </select>
+    `,
+    document,
+    resolveRequests
+  );
+
+  assertPortData(collectPortData, {
+    expectedEngineStatusCount: 1,
+    expectedRequestCount: 1,
+  });
+
+  cleanup();
+});
+
 add_task(async function test_mixed_block_inline() {
   const {
     translate,

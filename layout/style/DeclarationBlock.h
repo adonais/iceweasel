@@ -10,6 +10,7 @@
 #ifndef mozilla_DeclarationBlock_h
 #define mozilla_DeclarationBlock_h
 
+#include "CSSPropertyId.h"
 #include "NonCustomCSSPropertyId.h"
 #include "mozilla/ServoBindings.h"
 #include "nsString.h"
@@ -149,7 +150,9 @@ class DeclarationBlock final {
   bool RemovePropertyById(NonCustomCSSPropertyId aProperty,
                           DeclarationBlockMutationClosure aClosure = {}) {
     AssertMutable();
-    return Servo_DeclarationBlock_RemovePropertyById(mRaw, aProperty, aClosure);
+    auto propertyId = CSSPropertyId(aProperty);
+    return Servo_DeclarationBlock_RemovePropertyById(mRaw, &propertyId,
+                                                     aClosure);
   }
 
  private:

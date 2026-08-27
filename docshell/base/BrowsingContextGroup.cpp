@@ -219,7 +219,8 @@ void BrowsingContextGroup::Subscribe(ContentParent* aProcess) {
 
   nsTArray<OriginAgentClusterInitializer> useOriginAgentCluster;
   for (auto& entry : mUseOriginAgentCluster) {
-    if (!aProcess->ValidatePrincipal(entry.GetKey())) {
+    if (!aProcess->ValidatePrincipal(
+            entry.GetKey(), {ValidatePrincipalOptions::AllowNotLoadedOrigin})) {
       continue;
     }
 
@@ -709,7 +710,8 @@ void BrowsingContextGroup::SetUseOriginAgentClusterFromNetwork(
   EachParent([&](ContentParent* aContentParent) {
     // If this ContentParent can never load this principal, don't send it the
     // information.
-    if (!aContentParent->ValidatePrincipal(aPrincipal)) {
+    if (!aContentParent->ValidatePrincipal(
+            aPrincipal, {ValidatePrincipalOptions::AllowNotLoadedOrigin})) {
       return;
     }
 
@@ -737,10 +739,11 @@ Maybe<bool> BrowsingContextGroup::UsesOriginAgentCluster(
 
   // If this assertion fails, we may return `Nothing()` below unexpectedly, as
   // the parent process may have chosen to not process-switch.
+  RefPtr<LoadedOriginSet> loadedOrigins = CurrentLoadedOriginSet();
   MOZ_DIAGNOSTIC_ASSERT(
       XRE_IsParentProcess() ||
-          ValidatePrincipalCouldPotentiallyBeLoadedBy(
-              aPrincipal, ContentChild::GetSingleton()->GetRemoteType()),
+          loadedOrigins->ValidatePrincipal(
+              aPrincipal, {ValidatePrincipalOptions::AllowNotLoadedOrigin}),
       "Attempting to create document with unexpected principal");
 
   if (auto entry = mUseOriginAgentCluster.Lookup(aPrincipal)) {

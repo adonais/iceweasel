@@ -249,7 +249,10 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
   .top-sites-list:not(.dnd-active) &:has(.top-site-inner:is(:hover, :focus-within)) {
     .context-menu-button {
       opacity: 1;
-      transition: opacity 200ms;
+
+      @media (prefers-reduced-motion: no-preference) {
+        transition: opacity 200ms;
+      }
     }
 
     .tile {

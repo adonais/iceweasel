@@ -865,8 +865,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: TELEMETRY_TEST_MIRROR_FOR_COUNTER
 
   a_counter_for_hgram:
@@ -886,8 +884,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: h#TELEMETRY_TEST_COUNT
 
   a_labeled_counter_for_hgram:
@@ -907,8 +903,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     labels:
       - "false"
       - "true"
@@ -927,8 +921,6 @@ test_only.ipc:
     notification_emails: [ "glean-team@mozilla.com" ]
     expires: never
     send_in_pings: [ "test-ping" ]
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: h#TELEMETRY_TEST_KEYED_COUNT
 
   a_labeled_counter_for_categorical:
@@ -945,8 +937,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     labels:
       - "CommonLabel"
       - "Label4"
@@ -972,8 +962,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: TELEMETRY_TEST_MIRROR_FOR_UNORDERED_BOOL
   a_bool:
     type: boolean
@@ -992,8 +980,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: TELEMETRY_TEST_BOOLEAN_KIND
   an_unordered_labeled_boolean:
     type: labeled_boolean
@@ -1013,8 +999,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: TELEMETRY_TEST_MIRROR_FOR_UNORDERED_LABELED_BOOL
   a_date:
     type: datetime
@@ -1034,8 +1018,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: TELEMETRY_TEST_MIRROR_FOR_DATE
   a_string:
     type: string
@@ -1054,8 +1036,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: TELEMETRY_TEST_MULTIPLE_STORES_STRING
   a_text:
     type: text
@@ -1073,8 +1053,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
   a_memory_dist:
     type: memory_distribution
     memory_unit: kilobyte
@@ -1093,8 +1071,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: TELEMETRY_TEST_LINEAR
   a_timing_dist:
     type: timing_distribution
@@ -1113,8 +1089,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: TELEMETRY_TEST_EXPONENTIAL
   a_custom_dist:
     type: custom_distribution
@@ -1132,8 +1106,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     range_min: 1
     range_max: 2147483646
     bucket_count: 10
@@ -1156,8 +1128,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: TELEMETRY_TEST_KEYED_BOOLEAN_KIND
   an_event:
     type: event
@@ -1186,8 +1156,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: TelemetryTest_MirrorWithExtra_Object1
   event_with_extra:
     type: event
@@ -1219,8 +1187,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
   no_extra_event:
     type: event
     description: |
@@ -1256,8 +1222,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: TELEMETRY_TEST_STRING_KIND
   a_labeled_counter:
     type: labeled_counter
@@ -1276,8 +1240,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: TELEMETRY_TEST_ANOTHER_MIRROR_FOR_LABELED_COUNTER
   another_labeled_counter:
     type: labeled_counter
@@ -1297,8 +1259,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: TELEMETRY_TEST_MIRROR_FOR_LABELED_COUNTER
   a_dual_labeled_counter:
     type: dual_labeled_counter
@@ -1327,8 +1287,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: TELEMETRY_TEST_MIRROR_FOR_DUAL_LABELED_COUNTER
   another_dual_labeled_counter:
     type: dual_labeled_counter
@@ -1346,8 +1304,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     dual_labels:
       key:
         description: |
@@ -1376,8 +1332,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
   an_unordered_quantity:
     type: quantity
     unit: squad
@@ -1397,8 +1351,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: TELEMETRY_TEST_MIRROR_FOR_UNORDERED_QUANTITY
   irate:
     type: rate
@@ -1450,8 +1402,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
   a_url:
     type: url
     description: |
@@ -1468,8 +1418,6 @@ test_only.ipc:
     expires: never
     send_in_pings:
       - test-ping
-    no_lint:
-      - COMMON_PREFIX
     telemetry_mirror: TELEMETRY_TEST_MIRROR_FOR_URL
 
 test_only.jog:

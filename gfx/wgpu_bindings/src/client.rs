@@ -905,12 +905,8 @@ pub extern "C" fn wgpu_client_create_swap_chain(
     client: &Client,
     device_id: id::DeviceId,
     queue_id: id::QueueId,
-    width: i32,
-    height: i32,
+    desc: &wgt::TextureDescriptor<Option<&nsACString>, FfiSlice<TextureFormat>>,
     format: crate::SurfaceFormat,
-    texture_format: TextureFormat,
-    usage: wgt::TextureUsages,
-    view_formats: FfiSlice<TextureFormat>,
     remote_texture_owner_id: crate::RemoteTextureOwnerId,
     use_shared_texture_in_swap_chain: bool,
 ) {
@@ -919,17 +915,14 @@ pub extern "C" fn wgpu_client_create_swap_chain(
         array::from_fn(|_| identities.buffers.process());
     drop(identities);
 
-    let view_formats = unsafe { view_formats.as_slice() }.to_vec();
-
     let message = Message::CreateSwapChain {
         device_id,
         queue_id,
-        width,
-        height,
         format,
-        texture_format,
-        usage,
-        view_formats,
+        desc: desc.map_label_and_view_formats(
+            |_| (),
+            |view_formats| Cow::from(unsafe { view_formats.as_slice() }),
+        ),
         buffer_ids,
         remote_texture_owner_id,
         use_shared_texture_in_swap_chain,

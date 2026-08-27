@@ -42,6 +42,7 @@ puppeteer-{this_chunk}:
     treeherder:
         symbol: Pup({this_chunk})
     run:  # Bug 1651542: Use screenshot feature to warm-up the font cache before the actual test
+        clone-with: hg
         using: run-task
         command: >
             cd $GECKO_PATH/ &&

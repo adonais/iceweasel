@@ -9,6 +9,12 @@ customElements.define("shadow-input", class extends HTMLElement {
     this.attachShadow({ mode: "open" });
     this.shadowRoot.appendChild(document.createElement("input"));
   }
+  connectedCallback() {
+    // Not in the constructor: attributes aren't set yet for parser-created
+    // custom elements.
+    this.shadowRoot.querySelector("input").type =
+      this.getAttribute("type") || "text";
+  }
 });
 </script>
 <script type="application/javascript" src="chrome://global/content/globalOverlay.js"/>
@@ -41,6 +47,7 @@ customElements.define("shadow-input", class extends HTMLElement {
 <html:input />
 <html:input type="password" />
 <html:shadow-input />
+<html:shadow-input type="password" />
 </hbox>
 
 </window>

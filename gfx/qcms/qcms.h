@@ -158,6 +158,9 @@ void qcms_data_create_rgb_with_gamma(
  * Don't use enums here because they can't go safely across FFI. */
 qcms_profile* qcms_profile_create_cicp(uint8_t colour_primaries,
                                        uint8_t transfer_characteristics);
+qcms_profile* qcms_profile_create_cicp_with_intent(
+    uint8_t colour_primaries, uint8_t transfer_characteristics,
+    qcms_intent rendering_intent);
 
 qcms_profile* qcms_profile_from_memory(const void *mem, size_t size);
 qcms_profile* qcms_profile_from_memory_curves_only(const void *mem, size_t size);

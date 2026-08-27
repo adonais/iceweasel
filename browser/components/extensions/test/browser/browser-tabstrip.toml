@@ -1,7 +1,4 @@
 [DEFAULT]
-skip-if = [
-	"debug && standalone", # TODO bug 2048260: Drop skip-if = standalone
-]
 tags = "webextensions"
 prefs = [
   # We don't want to reset this at the end of the test, so that we don't have

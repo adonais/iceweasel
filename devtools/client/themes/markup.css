@@ -178,6 +178,7 @@ ul.children + .tag-line::before {
 }
 
 /* Change selected line style when editing an attribute */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .tag-line[selected]:has(.styleinspector-propertyeditor:focus) .theme-selected {
   background-color: var(--theme-body-alternate-emphasized-background);
   color: unset;
@@ -570,6 +571,7 @@ ul.children + .tag-line::before {
    inplace editor input).
    theme-selected doesn't work in this case since the text is a
    sibling of the class, not a child. */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .tag-line[selected]:not(:has(.styleinspector-propertyeditor:focus)) :is(.editor, .editor.comment, .editor :is(.attr-name, .attr-value, .tag, .pseudo)) {
   color: var(--theme-selection-color);
 

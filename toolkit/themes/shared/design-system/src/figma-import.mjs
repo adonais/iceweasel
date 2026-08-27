@@ -56,6 +56,9 @@ const FIGMA_IGNORES = new Set([
 // still come from Figma; only the surrounding structure is maintained here.
 // See bug 2031765.
 const NOVA_STRUCTURAL_OVERRIDES = {
+  "page-nav/focus/padding": {
+    default: "calc(var(--focus-outline-offset) + var(--focus-outline-width))",
+  },
   "text/color": {
     prefersContrast: "CanvasText",
     nativeTheme: "currentColor",
@@ -88,13 +91,13 @@ const NOVA_STRUCTURAL_OVERRIDES = {
     nativeTheme: "var(--toolbar-background-color)",
     default: "{background.color.box.@base}",
   },
-  "tab/border/color/selected/leading": "{color.violet.30}",
-  "tab/border/color/selected/trailing": {
-    light: "{color.orange.30}",
-    dark: "{color.violet.50}",
-  },
   "tab/loading/fill": "{color.accent.primary.@base}",
   "tab/outline/color": "transparent",
+  "toolbar/field/border/color/focus": {
+    nativeTheme: "color-mix(in srgb, {focus.outline.color} 50%, transparent)",
+    default: "{focus.outline.color}",
+    prefersContrast: "{focus.outline.color}",
+  },
   // color-mix() on currentColor for nativeTheme can't be stored in Figma.
   "urlbar/box/background/color": {
     nativeTheme: "color-mix(in srgb, currentColor 16%, transparent)",
@@ -116,6 +119,39 @@ const NOVA_STRUCTURAL_OVERRIDES = {
     light: "0.7",
     dark: "0.95",
     prefersContrast: "1",
+  },
+  "message-bar/background/color/warning": {
+    default: "{message-bar.background.color.@base}",
+  },
+  "message-bar/background/color/success": {
+    default: "{message-bar.background.color.@base}",
+  },
+  "message-bar/background/color/critical": {
+    default: "{message-bar.background.color.@base}",
+  },
+  "message-bar/container/padding/inline": {
+    comment:
+      "Using rem-based space tokens ends up causing subpixel rendering issues that cause the icon to look uncentered",
+    default: "8px",
+  },
+  "message-bar/icon/container/border": {
+    default: "1px solid {message-bar.icon.container.border.color}",
+  },
+  "message-bar/icon/container/color": {
+    default: "transparent",
+    forcedColors: "{message-bar.icon.color}",
+  },
+  "message-bar/icon/container/height": {
+    default: "{message-bar.icon.size}",
+  },
+  "message-bar/icon/container/margin/block-start": {
+    default: "0",
+  },
+  "message-bar/icon/container/padding": {
+    default: "calc({space.small} - 1px)",
+  },
+  "message-bar/text/container/padding/block": {
+    default: "0",
   },
 };
 

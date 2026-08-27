@@ -15,7 +15,10 @@
       "pref_check": {
         "layout.css.webkit-fill-available.enabled": false
       },
-      "css": ["fix_narrow_interface"]
+      "css": {
+        "all_frames": true,
+        "which": ["fix_narrow_interface"]
+      }
     }
   ]
 }

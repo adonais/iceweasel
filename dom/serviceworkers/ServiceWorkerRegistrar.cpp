@@ -720,7 +720,7 @@ nsresult ServiceWorkerRegistrar::ReadData() {
             for (const ExpandoHandler& handler : mExpandoHandlers) {
               if (handler.mKey == key) {
                 entry->mExpandos.AppendElement(
-                    ExpandoData{key, value, &handler});
+                    ExpandoData{std::move(key), std::move(value), &handler});
                 break;
               }
             }

@@ -23,7 +23,6 @@ User agent (UA) widgets are like custom elements but run in per-origin UA widget
 There are a much smaller number of these widgets compared to the Mozilla Custom Elements:
 - [datetimebox.js](https://searchfox.org/firefox-main/source/toolkit/content/widgets/datetimebox.js)
 - [marquee.js](https://searchfox.org/firefox-main/source/toolkit/content/widgets/marquee.js)
-- [textrecognition.js](https://searchfox.org/firefox-main/source/toolkit/content/widgets/textrecognition.js)
 - [videocontrols.js](https://searchfox.org/firefox-main/source/toolkit/content/widgets/videocontrols.js)
 
 Please refer to the existing [UA widgets documentation](https://firefox-source-docs.mozilla.org/toolkit/content/toolkit_widgets/ua_widget.html) for more details.

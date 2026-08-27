@@ -322,3 +322,21 @@ This reason is set when the heuristic was tripped by a proxy being detected.
 Value: 47
 
 This reason is set when the heuristic was tripped by a NRPT being detected.
+
+## TRR_BAD_URL
+
+Value: 48
+
+This reason is set when we attempted to use a bad URL (one that doesn't parse or is not https).
+
+## TRR_SYSTEM_SLEEP_MODE
+
+Value: 49
+
+This reason is set when the system is in sleep mode.
+
+## TRR_HEURISTIC_TRIPPED_PRIVATE_DNS
+
+Value: 50
+
+This reason is set when the heuristic was tripped by a private DNS (DNS-over-TLS) provider being active. This is currently only detected on Android, via `LinkProperties#isPrivateDnsActive()`.

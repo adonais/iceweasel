@@ -6,7 +6,7 @@ let m = registerModule('m', parseModule(
 let l = registerModule('l', parseModule(
   `await(0);`));
 
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);
 drainJobQueue();
 assertEq(state, "complete");

@@ -46,12 +46,7 @@
   MACRO_(Async, "Async")                                                       \
   MACRO_(async, "async")                                                       \
   MACRO_(Async_from_Sync_Iterator_, "Async-from-Sync Iterator")                \
-  MACRO_(AsyncFunctionNext, "AsyncFunctionNext")                               \
-  MACRO_(AsyncFunctionThrow, "AsyncFunctionThrow")                             \
   MACRO_(AsyncGenerator, "AsyncGenerator")                                     \
-  MACRO_(AsyncGeneratorNext, "AsyncGeneratorNext")                             \
-  MACRO_(AsyncGeneratorReturn, "AsyncGeneratorReturn")                         \
-  MACRO_(AsyncGeneratorThrow, "AsyncGeneratorThrow")                           \
   MACRO2(at, "at")                                                             \
   MACRO_(await, "await")                                                       \
   MACRO_(bound, "bound")                                                       \
@@ -114,10 +109,8 @@
   MACRO_(direction, "direction")                                               \
   MACRO_(disambiguation, "disambiguation")                                     \
   MACRO_(displayURL, "displayURL")                                             \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(                                             \
-      MACRO_(DisposeResourcesAsync, "DisposeResourcesAsync"))                  \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(                                             \
-      MACRO_(DisposeResourcesSync, "DisposeResourcesSync"))                    \
+  MACRO_(DisposeResourcesAsync, "DisposeResourcesAsync")                       \
+  MACRO_(DisposeResourcesSync, "DisposeResourcesSync")                         \
   MACRO2(do_, "do")                                                            \
   MACRO_(dollar_ArrayBufferSpecies_, "$ArrayBufferSpecies")                    \
   MACRO_(dollar_ArraySpecies_, "$ArraySpecies")                                \
@@ -154,7 +147,7 @@
   MACRO_(enumerable, "enumerable")                                             \
   MACRO_(era, "era")                                                           \
   MACRO_(eraYear, "eraYear")                                                   \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO_(error, "error"))                      \
+  MACRO_(error, "error")                                                       \
   MACRO_(errors, "errors")                                                     \
   MACRO_(ErrorToStringWithTrailingNewline, "ErrorToStringWithTrailingNewline") \
   MACRO_(escape, "escape")                                                     \
@@ -183,7 +176,6 @@
   MACRO_(flatMap, "flatMap")                                                   \
   MACRO_(for_, "for")                                                          \
   MACRO_(formatMatcher, "formatMatcher")                                       \
-  MACRO_(forceInterpreter, "forceInterpreter")                                 \
   MACRO_(forEach, "forEach")                                                   \
   MACRO_(fraction, "fraction")                                                 \
   MACRO_(fractionalDigits, "fractionalDigits")                                 \
@@ -229,7 +221,7 @@
   MACRO_(hash_constructor_, "#constructor")                                    \
   MACRO_(hasIndices, "hasIndices")                                             \
   MACRO_(hasOwn, "hasOwn")                                                     \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO_(hint, "hint"))                        \
+  MACRO_(hint, "hint")                                                         \
   MACRO_(hour, "hour")                                                         \
   MACRO_(hour12, "hour12")                                                     \
   MACRO_(hourCycle, "hourCycle")                                               \
@@ -257,12 +249,10 @@
   MACRO_(instanceof, "instanceof")                                             \
   MACRO_(integer, "integer")                                                   \
   MACRO_(interface, "interface")                                               \
-  MACRO_(InterpretGeneratorResume, "InterpretGeneratorResume")                 \
   MACRO_(IntlLegacyConstructedSymbol, "IntlLegacyConstructedSymbol")           \
   MACRO_(Invalid_Date_, "Invalid Date")                                        \
   MACRO_(isBreakpoint, "isBreakpoint")                                         \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT_OR_DECORATORS(                               \
-      MACRO_(IsCallable, "IsCallable"))                                        \
+  MACRO_(IsCallable, "IsCallable")                                             \
   MACRO_(isEntryPoint, "isEntryPoint")                                         \
   MACRO_(isExtensible, "isExtensible")                                         \
   MACRO_(isError, "isError")                                                   \
@@ -311,7 +301,7 @@
   MACRO_(maxLine, "maxLine")                                                   \
   MACRO_(maxOffset, "maxOffset")                                               \
   MACRO_(message, "message")                                                   \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT_OR_DECORATORS(MACRO_(method, "method"))      \
+  MACRO_(method, "method")                                                     \
   MACRO_(meta, "meta")                                                         \
   MACRO_(microsecond, "microsecond")                                           \
   MACRO_(microseconds, "microseconds")                                         \
@@ -478,7 +468,7 @@
   MACRO_(style, "style")                                                       \
   MACRO_(sumPrecise, "sumPrecise")                                             \
   MACRO_(super, "super")                                                       \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO_(suppressed, "suppressed"))            \
+  MACRO_(suppressed, "suppressed")                                             \
   MACRO_(switch_, "switch")                                                    \
   MACRO_(target, "target")                                                     \
   MACRO_(test, "test")                                                         \
@@ -532,7 +522,7 @@
   MACRO_(usage, "usage")                                                       \
   MACRO_(use_strict_, "use strict")                                            \
   MACRO_(useGrouping, "useGrouping")                                           \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO_(using_, "using"))                     \
+  MACRO_(using_, "using")                                                      \
   MACRO_(UTC, "UTC")                                                           \
   MACRO_(value, "value")                                                       \
   MACRO_(valueOf, "valueOf")                                                   \

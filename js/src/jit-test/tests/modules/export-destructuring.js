@@ -38,7 +38,7 @@ m = parseModule(`
     assertArrayEq(a.n, [22]);
 `);
 
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);
 
 registerModule('o', parseModule(`
@@ -64,7 +64,7 @@ m = parseModule(`
     assertEq(o.h, 6);
 `);
 
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);
 
 registerModule('ao', parseModule(`
@@ -100,5 +100,5 @@ m = parseModule(`
     assertEq(ao.p, 21);
 `);
 
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);

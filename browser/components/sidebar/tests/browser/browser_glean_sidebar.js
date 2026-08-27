@@ -277,6 +277,7 @@ add_task(async function test_customize_panel_toggle() {
 });
 
 add_task(async function test_customize_icon_click() {
+  await SidebarController.waitUntilStable();
   info("Click on the gear icon.");
   const { customizeButton } = SidebarController.sidebarMain;
   Assert.ok(
@@ -287,6 +288,11 @@ add_task(async function test_customize_icon_click() {
   EventUtils.synthesizeMouseAtCenter(customizeButton, {});
 
   await sideShown;
+  Assert.equal(
+    SidebarController.currentID,
+    "viewCustomizeSidebar",
+    "The customize sidebar was opened."
+  );
   const events = Glean.sidebarCustomize.iconClick.testGetValue();
   Assert.equal(events?.length, 1, "One event was reported.");
 
@@ -623,7 +629,7 @@ async function testIconClick(expanded) {
     ["viewCPMSidebar", Glean.sidebar.passwordsIconClick],
   ]);
 
-  sidebarMain.updateComplete;
+  await sidebarMain.updateComplete;
 
   for (const button of sidebarMain.toolButtons) {
     await SidebarController.updateUIState({
@@ -645,7 +651,9 @@ async function testIconClick(expanded) {
       let buttonEl = sidebarMain.shadowRoot.querySelector(
         `moz-button[view='${view}']`
       );
+      const shown = BrowserTestUtils.waitForEvent(document, "SidebarShown");
       EventUtils.synthesizeMouseAtCenter(buttonEl, {});
+      await shown;
 
       let gleanEvent = gleanEvents.get(view);
       if (gleanEvent) {
@@ -856,25 +864,18 @@ add_task(async function test_history_link_glean_probe() {
   Services.fog.testResetFOG();
   const { URLs } = await populateHistory();
   const { component, contentWindow } = await showHistorySidebar();
-  const { lists } = component;
 
-  await BrowserTestUtils.waitForMutationCondition(
-    component.shadowRoot,
-    { childList: true, subtree: true },
-    () => !!lists.length
-  );
-  await BrowserTestUtils.waitForMutationCondition(
-    lists[0].shadowRoot,
-    { subtree: true, childList: true },
-    () => lists[0].rowEls.length
+  const row = await TestUtils.waitForCondition(
+    () =>
+      Array.from(component.lists[0]?.rowEls ?? []).find(r => r.url === URLs[0]),
+    "History row for the target URL is rendered."
   );
 
-  const rows = lists[0].rowEls;
   const browser = gBrowser.selectedBrowser;
   const loaded = BrowserTestUtils.browserLoaded(browser, false, URLs[0]);
 
   AccessibilityUtils.setEnv({ focusableRule: false });
-  EventUtils.synthesizeMouseAtCenter(rows[0].mainEl, {}, contentWindow);
+  EventUtils.synthesizeMouseAtCenter(row.mainEl, {}, contentWindow);
   AccessibilityUtils.resetEnv();
   await loaded;
 

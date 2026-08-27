@@ -62,7 +62,7 @@ Debugger(parent).onEnterFrame = function () {
 
 {
   let m = registerModule("1", parseModule("await {};"));
-  moduleLink(m);
+  moduleLoadAndLink(m);
 
   dbgGlobal.entered = 0;
   let p = moduleEvaluate(m);

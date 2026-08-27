@@ -59,12 +59,12 @@ simplify XPCOM in places where its usefulness is questionable.
 
 ```{mermaid}
 sequenceDiagram
-    Caller->>Component Registry: Get service @mozilla.org/cookie-banner-service#59;1
-    Component Registry->>nsCookieBannerService: new
-    nsCookieBannerService-->>Component Registry: return
+    Caller->>Component Registry: Get service @mozilla.org/cookieService#59;1
+    Component Registry->>CookieService: new
+    CookieService-->>Component Registry: return
     Component Registry-->>Caller: return
-    Caller->>nsCookieBannerService: QueryInterface(nsICookieBannerService)
-    nsCookieBannerService-->>Caller: return
+    Caller->>CookieService: QueryInterface(nsICookieManager)
+    CookieService-->>Caller: return
 ```
 
 {ref}`Read more <xpcom>`

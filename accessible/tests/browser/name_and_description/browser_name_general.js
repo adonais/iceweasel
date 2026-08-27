@@ -189,7 +189,7 @@ addAccessibleTask(
     is(iframeDoc.name, "hello", "Doc should have name");
     testAttrs(iframeDoc, { "explicit-name": "true" }, true);
   },
-  { topLevel: true, chrome: true }
+  { topLevel: true }
 );
 
 /*

@@ -2,4 +2,13 @@
 
 ["test_bug_2027541.html"]
 
+["test_dynamicImport_dependency_load_failure.html"]
+support-files = [
+  "import_404_evaluated.mjs",
+  "import_404_indirect.mjs",
+  "import_404_indirect_1.mjs",
+  "import_404_sibling.mjs",
+  "module_a.mjs",
+]
+
 ["test_nested_modules.html"]

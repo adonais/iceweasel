@@ -102,14 +102,14 @@ By default, a comment is bound to the message immediately following it. Fluent
 supports both [file-level and group-level comments](https://projectfluent.org/fluent/guide/comments.html). Be aware that a group
 comment will apply to all messages following that comment until the end of the
 file. If that shouldn’t be the case, you’ll need to “reset” the group comment,
-by adding an empty one ({js}`##`), or moving the section of messages at the end
+by adding an empty one (`##`), or moving the section of messages at the end
 of the file.
 
 Comments are fundamental for localizers, since they don’t see the file as a
 whole, or changes as a fragment of a larger patch. Their work happens on a
 message at a time, and the context is only provided by comments.
 
-License headers are standalone comments, that is, a single {js}`#` as prefix,
+License headers are standalone comments, that is, a single `#` as prefix,
 and the comment is followed by at least one empty line.
 
 ## Changes to Existing Messages

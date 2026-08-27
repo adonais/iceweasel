@@ -114,6 +114,45 @@ SimpleTest.waitForFocus(async () => {
       "The character offset is wrong");
   }
 
+  // QUERY_CHARACTER_AT_POINT must use the same CSS transform chain as frame
+  // hit testing.  macOS Look Up uses this query and otherwise resolves a
+  // neighboring character in horizontally scaled text such as PDF.js' text
+  // layer.
+  {
+    const untransformedFirstRect = gUtils.sendQueryContentEvent(
+      gUtils.QUERY_TEXT_RECT, 0, 1, 0, 0);
+    const untransformedSecondRect = gUtils.sendQueryContentEvent(
+      gUtils.QUERY_TEXT_RECT, 1, 1, 0, 0);
+    editor.style.transformOrigin = "left top";
+    editor.style.transform = "scaleX(2)";
+    await waitForFlushingIMEContentObserver();
+
+    const transformedFirstRect = gUtils.sendQueryContentEvent(
+      gUtils.QUERY_TEXT_RECT, 0, 1, 0, 0);
+    const transformedTextRect = gUtils.sendQueryContentEvent(
+      gUtils.QUERY_TEXT_RECT, 1, 1, 0, 0);
+    ok(transformedTextRect.succeeded,
+      "QUERY_TEXT_RECT should succeed for transformed text");
+    isfuzzy(
+      transformedTextRect.left - transformedFirstRect.left,
+      2 * (untransformedSecondRect.left - untransformedFirstRect.left), 2,
+      "QUERY_TEXT_RECT should transform the range's start offset");
+    isfuzzy(transformedTextRect.width, 2 * untransformedSecondRect.width, 2,
+      "QUERY_TEXT_RECT should transform the range's width");
+    const result = gUtils.sendQueryContentEvent(
+      gUtils.QUERY_CHARACTER_AT_POINT, 0, 0,
+      transformedTextRect.left + transformedTextRect.width / 2,
+      transformedTextRect.top + transformedTextRect.height / 2);
+    ok(result.succeeded,
+      "QUERY_CHARACTER_AT_POINT should succeed for transformed text");
+    is(result.offset, 1,
+      "QUERY_CHARACTER_AT_POINT should account for CSS transforms");
+
+    editor.style.transform = "";
+    editor.style.transformOrigin = "";
+    await waitForFlushingIMEContentObserver();
+  }
+
   // SelectionSet and QuerySelectedText
   {
     await waitForFlushingIMEContentObserver();

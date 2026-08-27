@@ -65,7 +65,7 @@ ClientHandleParent::~ClientHandleParent() { MOZ_DIAGNOSTIC_ASSERT(!mSource); }
 IPCResult ClientHandleParent::Init(const IPCClientInfo& aClientInfo) {
   if (!ClientIsValidPrincipalInfo(
           aClientInfo.principalInfo(),
-          BackgroundParent::GetRemoteType(Manager()->Manager()))) {
+          BackgroundParent::GetLoadedOrigins(Manager()->Manager()))) {
     return IPC_FAIL(this, "Invalid PrincipalInfo!");
   }
 

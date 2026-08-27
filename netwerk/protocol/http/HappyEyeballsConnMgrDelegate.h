@@ -57,12 +57,13 @@ class HappyEyeballsConnMgrDelegate {
                                           bool aIsHttp3) = 0;
   virtual bool RemoveTransFromPendingQ(ConnectionEntry* aEntry,
                                        nsHttpTransaction* aTrans) = 0;
-  // Start a fresh Happy Eyeballs attempt for aTrans that resolves with TRR
-  // disabled (the TRR-resolved -> native-DNS connection fallback).
-  virtual nsresult StartRetryWithoutTRR(ConnectionEntry* aEntry,
-                                        nsHttpTransaction* aTrans,
-                                        uint32_t aCaps, bool aSpeculative,
-                                        bool aUrgentStart, bool aAllow1918) = 0;
+  // Start a fresh Happy Eyeballs attempt for aTrans. aRetryWithoutTRR resolves
+  // with TRR disabled (the TRR-resolved -> native-DNS fallback); otherwise it's
+  // a plain retry (e.g. a claimed attempt that had refused a local peer).
+  virtual nsresult StartRetry(ConnectionEntry* aEntry,
+                              nsHttpTransaction* aTrans, uint32_t aCaps,
+                              bool aSpeculative, bool aUrgentStart,
+                              bool aAllow1918, bool aRetryWithoutTRR) = 0;
 
  protected:
   virtual ~HappyEyeballsConnMgrDelegate() = default;

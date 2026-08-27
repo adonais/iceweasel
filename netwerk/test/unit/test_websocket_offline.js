@@ -30,9 +30,9 @@ function run_test() {
   Services.io.offline = true;
 
   try {
-    chan = Cc["@mozilla.org/network/protocol;1?name=ws"].createInstance(
-      Ci.nsIWebSocketChannel
-    );
+    chan = Cc["@mozilla.org/network/protocol;1?name=ws"]
+      .getService(Ci.nsIWebSocketProtocolHandler)
+      .newWebSocketChannel();
     chan.initLoadInfo(
       null, // aLoadingNode
       Services.scriptSecurityManager.getSystemPrincipal(),

@@ -12,9 +12,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
   isInitialDocument:
     "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
+  isPrivilegedContext:
+    "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
   MessageHandlerFrameActor:
     "chrome://remote/content/shared/messagehandler/transports/js-window-actors/MessageHandlerFrameActor.sys.mjs",
+  RemoteAgent: "chrome://remote/content/components/RemoteAgent.sys.mjs",
   TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
   waitForCurrentWindowGlobal:
     "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
@@ -149,6 +152,23 @@ export class RootTransport {
       try {
         if (browsingContext.isContent) {
           browsingContext = webProgress.browsingContext;
+
+          // The browsing context is (re-)resolved from the web progress on
+          // every attempt and may have navigated to a privileged page since
+          // the command was initially dispatched. Without system access no
+          // command may run in a privileged context, so refuse to forward it
+          // there instead of executing with elevated privileges. Commands that
+          // are always allowed regardless of privilege (e.g. the base URL
+          // lookup for a navigation) opt out via `skipPrivilegeCheck`.
+          if (
+            !command.skipPrivilegeCheck &&
+            !lazy.RemoteAgent.allowSystemAccess &&
+            lazy.isPrivilegedContext(browsingContext)
+          ) {
+            throw new lazy.error.MessageHandlerError(
+              `Cannot forward command ${name} to a privileged browsing context`
+            );
+          }
         }
 
         if (!browsingContext.currentWindowGlobal) {

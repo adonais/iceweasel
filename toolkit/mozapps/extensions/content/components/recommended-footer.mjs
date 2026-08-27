@@ -42,7 +42,7 @@ export class RecommendedFooter extends AboutAddonsHTMLElement {
 
   connectedCallback() {
     if (this.childElementCount == 0) {
-      this.appendChild(RecommendedFooter.fragment);
+      this.appendChild(this.constructor.fragment);
       this.querySelector(".privacy-policy-link").href =
         Services.prefs.getStringPref(PREF_PRIVACY_POLICY_URL);
       this.addEventListener("click", this);

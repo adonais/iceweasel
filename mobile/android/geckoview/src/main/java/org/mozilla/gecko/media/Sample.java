@@ -4,7 +4,6 @@
 
 package org.mozilla.gecko.media;
 
-import android.annotation.SuppressLint;
 import android.media.MediaCodec;
 import android.media.MediaCodec.BufferInfo;
 import android.media.MediaCodec.CryptoInfo;
@@ -259,7 +258,6 @@ public final class Sample implements Parcelable {
     return str.toString();
   }
 
-  @SuppressLint("DiscouragedPrivateApi")
   public static CryptoInfo.Pattern getCryptoPatternCompat(final CryptoInfo cryptoInfo) {
     // getPattern() added in API 31:
     // https://developer.android.com/reference/android/media/MediaCodec.CryptoInfo#getPattern()

@@ -4,6 +4,8 @@
 
 package mozilla.components.browser.engine.gecko.autofill
 
+import mozilla.components.browser.engine.gecko.asCancellableOperation
+import mozilla.components.concept.engine.CancellableOperation
 import mozilla.components.concept.engine.autofill.AddressStructure
 import mozilla.components.concept.engine.autofill.UnexpectedNullError
 import org.mozilla.geckoview.GeckoResult
@@ -24,7 +26,7 @@ fun interface RuntimeAddressStructureAccessor {
         countryCode: String,
         onSuccess: (AddressStructure) -> Unit,
         onError: (Throwable) -> Unit,
-    )
+    ): CancellableOperation
 }
 
 internal class DefaultRuntimeAddressStructureAccessor(
@@ -36,12 +38,14 @@ internal class DefaultRuntimeAddressStructureAccessor(
         countryCode: String,
         onSuccess: (AddressStructure) -> Unit,
         onError: (Throwable) -> Unit,
-    ) {
+    ): CancellableOperation {
+        val geckoResult = getGeckoAddressStructure(countryCode).toConceptAddressStructure()
         handleGeckoResult(
-            geckoResult = getGeckoAddressStructure(countryCode).toConceptAddressStructure(),
+            geckoResult,
             onSuccess = onSuccess,
             onError = onError,
         )
+        return geckoResult.asCancellableOperation()
     }
 
     private fun <T : Any> handleGeckoResult(

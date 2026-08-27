@@ -3,21 +3,21 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"].getService(
-  Ci.nsIObserver
+const { ProfileDataUpgrader } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/ProfileDataUpgrader.sys.mjs"
 );
 
 add_setup(() => {
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("browser.fixup.alternate.enabled");
+    Services.prefs.clearUserPref("browser.migration.version");
   });
 });
 
 add_task(async function browser_fixup_alternate_enabled() {
   Services.prefs.setBoolPref("browser.fixup.alternate.enabled", true);
-  Services.prefs.setIntPref("browser.migration.version", 139);
 
-  gBrowserGlue.observe(null, "browser-glue-test", "force-ui-migration");
+  ProfileDataUpgrader.upgrade(139, 140);
 
   Assert.ok(
     !Services.prefs.getBoolPref("browser.fixup.alternate.enabled", false),

@@ -66,6 +66,7 @@ projects:
     - components:support-test-libstate
     - components:support-utils
     - components:support-webextensions
+    - components:tooling-detekt
     - components:tooling-lint
     - components:ui-autocomplete
     - components:ui-colors

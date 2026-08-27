@@ -7,7 +7,7 @@
 
 const TEST_HOST = "example.com";
 
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 const TEST_URL = "http://" + TEST_HOST;
 
 const TEST_URL_FULL =

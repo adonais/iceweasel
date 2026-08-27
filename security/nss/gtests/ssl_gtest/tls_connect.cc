@@ -313,7 +313,8 @@ void TlsConnectTestBase::SetupEch(std::shared_ptr<TlsAgent>& client,
                                   std::shared_ptr<TlsAgent>& server,
                                   HpkeKemId kem_id, bool expect_ech,
                                   bool set_client_config,
-                                  bool set_server_config, int max_name_len) {
+                                  bool set_server_config, int max_name_len,
+                                  bool compress_xtns) {
   EXPECT_TRUE(set_server_config || set_client_config);
   ScopedSECKEYPublicKey pub;
   ScopedSECKEYPrivateKey priv;
@@ -334,6 +335,10 @@ void TlsConnectTestBase::SetupEch(std::shared_ptr<TlsAgent>& client,
   if (set_client_config) {
     rv = SSL_SetClientEchConfigs(client->ssl_fd(), record.data(), record.len());
     ASSERT_EQ(SECSuccess, rv);
+    if (!compress_xtns) {
+      rv = SSLInt_SetEnableEchXtnCompression(client->ssl_fd(), PR_FALSE);
+      ASSERT_EQ(SECSuccess, rv);
+    }
   }
 
   /* Filter expect_ech, which typically defaults to true. Parameterized tests

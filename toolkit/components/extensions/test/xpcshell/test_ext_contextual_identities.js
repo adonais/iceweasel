@@ -271,6 +271,172 @@ add_task(async function test_contextualIdentity_events() {
   Services.prefs.clearUserPref(CONTAINERS_PREF);
 });
 
+add_task(async function test_contextualIdentity_site_associations() {
+  async function background() {
+    function nextEvent() {
+      return new Promise(resolve => {
+        const listener = changeInfo => {
+          browser.contextualIdentities.onSiteAssociationChanged.removeListener(
+            listener
+          );
+          resolve(changeInfo);
+        };
+        browser.contextualIdentities.onSiteAssociationChanged.addListener(
+          listener
+        );
+      });
+    }
+
+    browser.test.assertEq(
+      null,
+      await browser.contextualIdentities.getSiteAssociation({
+        site: "example.com",
+      }),
+      "No association by default"
+    );
+
+    let addedPromise = nextEvent();
+    await browser.contextualIdentities.setSiteAssociation({
+      site: "example.com",
+      cookieStoreId: "firefox-container-1",
+    });
+    let added = await addedPromise;
+    browser.test.assertEq("example.com", added.site, "add event site");
+    browser.test.assertEq(
+      "firefox-container-1",
+      added.cookieStoreId,
+      "add event cookieStoreId"
+    );
+
+    browser.test.assertDeepEq(
+      { site: "example.com", cookieStoreId: "firefox-container-1" },
+      await browser.contextualIdentities.getSiteAssociation({
+        site: "example.com",
+      }),
+      "Association was set"
+    );
+
+    browser.test.assertDeepEq(
+      { site: "example.com", cookieStoreId: "firefox-container-1" },
+      await browser.contextualIdentities.getSiteAssociation({
+        site: "EXAMPLE.com",
+      }),
+      "The returned site is normalized"
+    );
+
+    let list = await browser.contextualIdentities.querySiteAssociations({});
+    browser.test.assertEq(1, list.length, "One association");
+    browser.test.assertEq("example.com", list[0].site, "queried site");
+    browser.test.assertEq(
+      "firefox-container-1",
+      list[0].cookieStoreId,
+      "queried cookieStoreId"
+    );
+
+    browser.test.assertEq(
+      0,
+      (
+        await browser.contextualIdentities.querySiteAssociations({
+          cookieStoreId: "firefox-container-2",
+        })
+      ).length,
+      "No associations for another container"
+    );
+
+    await browser.test.assertRejects(
+      browser.contextualIdentities.setSiteAssociation({
+        site: "example.com",
+        cookieStoreId: "firefox-default",
+      }),
+      "Invalid contextual identity: firefox-default",
+      "Cannot associate a site with the default store"
+    );
+
+    await browser.test.assertRejects(
+      browser.contextualIdentities.querySiteAssociations({
+        cookieStoreId: "bogus",
+      }),
+      "Invalid contextual identity: bogus",
+      "Filtering by an invalid store rejects"
+    );
+
+    for (let site of ["", "example.com/path", "*.example.com"]) {
+      await browser.test.assertRejects(
+        browser.contextualIdentities.setSiteAssociation({
+          site,
+          cookieStoreId: "firefox-container-1",
+        }),
+        `Invalid site: ${site}`,
+        `${site} is rejected as a site`
+      );
+
+      await browser.test.assertRejects(
+        browser.contextualIdentities.getSiteAssociation({ site }),
+        `Invalid site: ${site}`,
+        `${site} is rejected when getting an association`
+      );
+    }
+
+    await browser.contextualIdentities.setSiteAssociation({
+      site: "BÜCHER.example",
+      cookieStoreId: "firefox-container-2",
+    });
+    browser.test.assertDeepEq(
+      {
+        site: "xn--bcher-kva.example",
+        cookieStoreId: "firefox-container-2",
+      },
+      await browser.contextualIdentities.getSiteAssociation({
+        site: "bücher.example",
+      }),
+      "An IDN site is returned encoded as ASCII"
+    );
+    await browser.contextualIdentities.removeSiteAssociation({
+      site: "bücher.example",
+    });
+
+    let removedPromise = nextEvent();
+    await browser.contextualIdentities.removeSiteAssociation({
+      site: "example.com",
+    });
+    let removed = await removedPromise;
+    browser.test.assertEq("example.com", removed.site, "remove event site");
+    browser.test.assertFalse(
+      "cookieStoreId" in removed,
+      "remove event omits cookieStoreId"
+    );
+
+    browser.test.assertEq(
+      null,
+      await browser.contextualIdentities.getSiteAssociation({
+        site: "example.com",
+      }),
+      "Association was removed"
+    );
+
+    browser.test.notifyPass("site_associations");
+  }
+
+  let extension = ExtensionTestUtils.loadExtension({
+    background,
+    useAddonManager: "temporary",
+    manifest: {
+      browser_specific_settings: {
+        gecko: { id: "site-associations@thing.com" },
+      },
+      permissions: ["contextualIdentities"],
+    },
+  });
+
+  Services.prefs.setBoolPref(CONTAINERS_PREF, true);
+
+  await extension.startup();
+  await extension.awaitFinish("site_associations");
+  await extension.unload();
+
+  Services.prefs.clearUserPref(CONTAINERS_PREF);
+});
+
 add_task(async function test_contextualIdentity_with_permissions() {
   async function background() {
     let ci;
@@ -680,11 +846,21 @@ add_task(
         browser.contextualIdentities.onRemoved.addListener(() => {
           browser.test.sendMessage("removed");
         });
+        browser.contextualIdentities.onSiteAssociationChanged.addListener(
+          changeInfo => {
+            browser.test.sendMessage("site-association-changed", changeInfo);
+          }
+        );
         browser.test.sendMessage("ready");
       },
     });
 
-    const EVENTS = ["onCreated", "onUpdated", "onRemoved"];
+    const EVENTS = [
+      "onCreated",
+      "onUpdated",
+      "onRemoved",
+      "onSiteAssociationChanged",
+    ];
 
     await extension.startup();
     await extension.awaitMessage("ready");
@@ -711,6 +887,44 @@ add_task(
         primed: false,
       });
     }
+
+    // onSiteAssociationChanged does not share its registrar with the events
+    // above, so check that it primes and wakes the background on its own.
+    // The onCreated call above is still tracked as a pending listener, which
+    // would otherwise reset the idle timer instead of terminating.
+    await extension.terminateBackground({ disableResetIdleForTest: true });
+    for (let event of EVENTS) {
+      assertPersistentListeners(extension, "contextualIdentities", event, {
+        primed: true,
+      });
+    }
+
+    ContextualIdentityService.setSiteAssociation(
+      "example.com",
+      identity.userContextId
+    );
+
+    await extension.awaitMessage("ready");
+    Assert.deepEqual(
+      await extension.awaitMessage("site-association-changed"),
+      {
+        site: "example.com",
+        cookieStoreId: `firefox-container-${identity.userContextId}`,
+      },
+      "A new association woke the background and was delivered"
+    );
+    for (let event of EVENTS) {
+      assertPersistentListeners(extension, "contextualIdentities", event, {
+        primed: false,
+      });
+    }
+
+    ContextualIdentityService.removeSiteAssociation("example.com");
+    Assert.deepEqual(
+      await extension.awaitMessage("site-association-changed"),
+      { site: "example.com" },
+      "A removed association is delivered without a cookieStoreId"
+    );
 
     ContextualIdentityService.remove(identity.userContextId);
     await extension.awaitMessage("removed");

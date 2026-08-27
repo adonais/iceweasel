@@ -314,6 +314,22 @@ class IPProtectionWidget {
     );
   }
 
+  /**
+   * Uninits and forgets the panel and toolbar button for a closed window.
+   *
+   * @param {Window} window - the window being closed.
+   */
+  onWindowClosed(window) {
+    if (this.#panels.has(window)) {
+      this.#panels.get(window).uninit();
+      this.#panels.delete(window);
+    }
+    if (this.#toolbarButtons.has(window)) {
+      this.#toolbarButtons.get(window).uninit();
+      this.#toolbarButtons.delete(window);
+    }
+  }
+
   async onWidgetRemoved(widgetId) {
     if (widgetId != IPProtectionWidget.WIDGET_ID) {
       return;

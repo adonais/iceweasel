@@ -173,6 +173,7 @@ PhaseKindGraphRoots = [
                     ),
                 ],
             ),
+            getPhaseKind("EVICT_NURSERY_FOR_MAJOR_GC"),
             addPhaseKind("UPDATE_ATOMS_BITMAP", "Sweep Atoms Bitmap"),
             addPhaseKind("SWEEP_ATOMS_TABLE", "Sweep Atoms Table"),
             addPhaseKind(

@@ -390,6 +390,14 @@ void MacroAssembler::andPtr(Imm32 imm, Register src, Register dest) {
   ma_and(dest, src, imm);
 }
 
+void MacroAssembler::andPtr(Imm32 imm, const Address& dest) {
+  UseScratchRegisterScope temps(this);
+  Register scratch2 = temps.Acquire();
+  loadPtr(dest, scratch2);
+  ma_and(scratch2, scratch2, imm);
+  storePtr(scratch2, dest);
+}
+
 void MacroAssembler::branch8(Condition cond, const Address& lhs, Imm32 rhs,
                              Label* label) {
   UseScratchRegisterScope temps(this);
@@ -1636,11 +1644,11 @@ void MacroAssembler::maxPtr(Register lhs, ImmWord rhs, Register dest) {
 
 void MacroAssembler::maxDouble(FloatRegister other, FloatRegister srcDest,
                                bool handleNaN) {
-  Float64Max(srcDest, srcDest, other);
+  Float64Max(srcDest, srcDest, other, handleNaN);
 }
 void MacroAssembler::maxFloat32(FloatRegister other, FloatRegister srcDest,
                                 bool handleNaN) {
-  Float32Max(srcDest, srcDest, other);
+  Float32Max(srcDest, srcDest, other, handleNaN);
 }
 void MacroAssembler::memoryBarrier(MemoryBarrier barrier) {
   if (!barrier.isNone()) {
@@ -1649,11 +1657,11 @@ void MacroAssembler::memoryBarrier(MemoryBarrier barrier) {
 }
 void MacroAssembler::minDouble(FloatRegister other, FloatRegister srcDest,
                                bool handleNaN) {
-  Float64Min(srcDest, srcDest, other);
+  Float64Min(srcDest, srcDest, other, handleNaN);
 }
 void MacroAssembler::minFloat32(FloatRegister other, FloatRegister srcDest,
                                 bool handleNaN) {
-  Float32Min(srcDest, srcDest, other);
+  Float32Min(srcDest, srcDest, other, handleNaN);
 }
 void MacroAssembler::move16SignExtend(Register src, Register dest) {
   SignExtendShort(dest, src);
@@ -1692,7 +1700,7 @@ void MacroAssembler::move64To32(Register64 src, Register dest) {
 }
 
 void MacroAssembler::move8ZeroExtend(Register src, Register dest) {
-  andi(dest, src, 0xFF);
+  ZeroExtendByte(dest, src);
 }
 
 void MacroAssembler::move8SignExtend(Register src, Register dest) {
@@ -2028,31 +2036,31 @@ void MacroAssembler::sqrtFloat32(FloatRegister src, FloatRegister dest) {
   fsqrt_s(dest, src);
 }
 
-FaultingCodeOffset MacroAssembler::storeFloat16(FloatRegister src,
-                                                const Address& dest, Register) {
+FaultingCodeRange MacroAssembler::storeFloat16(FloatRegister src,
+                                               const Address& dest, Register) {
   return ma_storeFloat16(src, dest);
 }
-FaultingCodeOffset MacroAssembler::storeFloat16(FloatRegister src,
-                                                const BaseIndex& dest,
-                                                Register) {
+FaultingCodeRange MacroAssembler::storeFloat16(FloatRegister src,
+                                               const BaseIndex& dest,
+                                               Register) {
   return ma_storeFloat16(src, dest);
 }
 
-FaultingCodeOffset MacroAssembler::storeFloat32(FloatRegister src,
-                                                const Address& addr) {
-  return ma_storeFloat(src, addr);
-}
-FaultingCodeOffset MacroAssembler::storeFloat32(FloatRegister src,
-                                                const BaseIndex& addr) {
-  return ma_storeFloat(src, addr);
-}
-
-FaultingCodeOffset MacroAssembler::storeDouble(FloatRegister src,
+FaultingCodeRange MacroAssembler::storeFloat32(FloatRegister src,
                                                const Address& addr) {
+  return ma_storeFloat(src, addr);
+}
+FaultingCodeRange MacroAssembler::storeFloat32(FloatRegister src,
+                                               const BaseIndex& addr) {
+  return ma_storeFloat(src, addr);
+}
+
+FaultingCodeRange MacroAssembler::storeDouble(FloatRegister src,
+                                              const Address& addr) {
   return ma_storeDouble(src, addr);
 }
-FaultingCodeOffset MacroAssembler::storeDouble(FloatRegister src,
-                                               const BaseIndex& addr) {
+FaultingCodeRange MacroAssembler::storeDouble(FloatRegister src,
+                                              const BaseIndex& addr) {
   return ma_storeDouble(src, addr);
 }
 

@@ -6,10 +6,10 @@ Date:   Sat May 2 22:05:16 2026 +0100
     
     Differential Revision: https://phabricator.services.mozilla.com/D298051
 
-diff --git a/gfx/cairo/cairo/src/win32/cairo-dwrite-font.cpp b/gfx/cairo/cairo/src/win32/cairo-dwrite-font.cpp
+diff --git a/src/win32/cairo-dwrite-font.cpp b/src/win32/cairo-dwrite-font.cpp
 index bf5191967e0f..7f5de8c58824 100644
---- a/gfx/cairo/cairo/src/win32/cairo-dwrite-font.cpp
-+++ b/gfx/cairo/cairo/src/win32/cairo-dwrite-font.cpp
+--- a/src/win32/cairo-dwrite-font.cpp
++++ b/src/win32/cairo-dwrite-font.cpp
 @@ -1301,6 +1301,12 @@ _cairo_dwrite_scaled_font_init_glyph_color_surface(cairo_dwrite_scaled_font_t *s
  	return _cairo_dwrite_error (hr, "EndDraw failed");
  

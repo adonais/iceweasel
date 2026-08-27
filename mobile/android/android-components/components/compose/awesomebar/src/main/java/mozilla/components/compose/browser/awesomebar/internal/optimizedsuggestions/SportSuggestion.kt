@@ -50,12 +50,12 @@ import mozilla.components.compose.browser.awesomebar.R
 import mozilla.components.compose.browser.awesomebar.internal.utils.SportSuggestionDataProvider
 import mozilla.components.compose.browser.awesomebar.internal.utils.SportSuggestionPreviewModel
 import mozilla.components.compose.browser.awesomebar.internal.utils.stringResId
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionCategory
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionDate
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionState
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatus
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatusType
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionTeam
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionCategory
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionDate
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionState
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionStatus
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionStatusType
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionTeam
 import mozilla.components.ui.icons.R as iconsR
 
 @Composable

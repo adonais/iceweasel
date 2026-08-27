@@ -16,14 +16,19 @@ export default {
   },
 };
 
-const Template = ({ layout, showLabels }) => html`
-  <theme-picker layout=${layout} .showLabels=${showLabels}></theme-picker>
+const Template = ({ layout, showLabels, showNativeThemeOption }) => html`
+  <theme-picker
+    layout=${layout}
+    .showLabels=${showLabels}
+    .showNativeThemeOption=${showNativeThemeOption}
+  ></theme-picker>
 `;
 
 export const Default = Template.bind({});
 Default.args = {
   layout: "full",
   showLabels: true,
+  showNativeThemeOption: true,
 };
 
 export const Compact = Template.bind({});

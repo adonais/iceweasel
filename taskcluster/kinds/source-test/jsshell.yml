@@ -31,6 +31,7 @@ task-defaults:
         tier: 2
     run-on-repo-type: [hg]
     run:
+        clone-with: hg
         using: mach
         mach: jsshell-bench --perfherder={shell} --binary=$MOZ_FETCHES_DIR/$JSSHELL {test}
     run-on-projects:

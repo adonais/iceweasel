@@ -111,7 +111,6 @@ add_task(async function testWindowCreate() {
               "toolbar",
               "location",
               "directories",
-              "status",
               "extrachrome",
             ],
             chromeFlags: ["CHROME_OPENAS_DIALOG"],

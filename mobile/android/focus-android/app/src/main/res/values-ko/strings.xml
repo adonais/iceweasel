@@ -921,7 +921,7 @@
 
     CFR for Toolbar Shield Icon (Banner Info Message)
   -->
-  <string name="cfr_for_toolbar_shield_icon2">잡았다! %@가 사용자를 감시하는 이 사이트를 중지했습니다. 차단된 항목에 대한 정보를 보려면 방패를 탭하세요.</string>
+  <string name="cfr_for_toolbar_shield_icon2">잡았다! 사용자를 감시하는 이 사이트를 중지했습니다. 차단된 항목에 대한 정보를 보려면 방패를 탭하세요.</string>
   <!-- Content description (not visible, for screen readers etc.): Button that closes the CFR popup -->
   <string name="cfr_close_button_description">팝업 닫기</string>
   <!--

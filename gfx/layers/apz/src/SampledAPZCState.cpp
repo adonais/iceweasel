@@ -5,6 +5,7 @@
 #include "SampledAPZCState.h"
 
 #include "APZUtils.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 namespace layers {
@@ -18,10 +19,10 @@ SampledAPZCState::SampledAPZCState(const FrameMetrics& aMetrics)
   RemoveFractionalAsyncDelta();
 }
 
-SampledAPZCState::SampledAPZCState(
-    const FrameMetrics& aMetrics, Maybe<CompositionPayload>&& aPayload,
-    APZScrollGeneration aGeneration,
-    std::vector<CompositorScrollUpdate>&& aUpdates)
+SampledAPZCState::SampledAPZCState(const FrameMetrics& aMetrics,
+                                   Maybe<CompositionPayload>&& aPayload,
+                                   APZScrollGeneration aGeneration,
+                                   nsTArray<CompositorScrollUpdate>&& aUpdates)
     : mLayoutViewport(aMetrics.GetLayoutViewport()),
       mVisualScrollOffset(aMetrics.GetVisualScrollOffset()),
       mZoom(aMetrics.GetZoom()),

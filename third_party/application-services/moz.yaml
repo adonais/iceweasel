@@ -32,8 +32,8 @@ origin:
   license-file: "LICENSE"
 
   # Automatically managed by vendor process
-  release: 03ef316a544651c2e4b9c0b54c19ea8ebb841344 (2026-07-30T13:30:17Z).
-  revision: 03ef316a544651c2e4b9c0b54c19ea8ebb841344
+  release: 5995881c47184145a63b770e7d4bbb1a96d7dbe8 (2026-08-11T22:13:15Z).
+  revision: 5995881c47184145a63b770e7d4bbb1a96d7dbe8
 
 vendoring:
   # Canonical repository is on GitHub
@@ -59,7 +59,6 @@ vendoring:
     - gradlew.bat
     - build.gradle
     - gradle.properties
-    - proguard-rules-consumer-jna.pro
     - install-nimbus-cli.sh
     - rust-toolchain.toml
     - .cargo/**
@@ -78,3 +77,5 @@ vendoring:
     - taskcluster/**
     # hacks which only make sense in app-services.
     - monorepo-hacks/**
+    # moz.build files only matter to the mozilla-central build, so we maintain them here rather than vendoring from upstream.
+    - "**/moz.build"

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<body>
+<script>
+var lbl = document.createElement("label");
+var hostDiv = document.createElement("div");
+var victim = document.createElement("input");
+lbl.appendChild(hostDiv);
+lbl.appendChild(victim);
+document.body.appendChild(lbl);
+
+var sr = hostDiv.attachShadow({mode: "open"});
+var inner = document.createElement("input");
+inner.id = "inner";
+sr.appendChild(inner);
+sr.referenceTarget = "inner";
+
+(function(){ victim.labels; })();
+
+victim.remove();
+victim = null;
+
+for (var i = 0; i < 3; i++) {
+  SpecialPowers.gc();
+  SpecialPowers.forceShrinkingGC();
+  SpecialPowers.forceCC();
+}
+
+sr.referenceTarget = "trigger";
+</script>

@@ -337,8 +337,8 @@ sccache:
     fetch:
         type: git
         repo: https://github.com/mozilla/sccache
-        # 0.15.0 release
-        revision: c2e4b4ca035f91f8b63978afc8e2c71f174fe306
+        # 0.17.0 release
+        revision: c037e117c7625a2668633574028a6addf2a96a6e
 
 fxc2:
     description: fxc2 source code
@@ -495,7 +495,7 @@ dump-syms:
     fetch:
         type: git
         repo: https://github.com/mozilla/dump_syms/
-        revision: 01b3559d5b3692e731d768d94e2eef42984c737b
+        revision: 34e934c8d0aefad43e6d9d9352667b6d36140264
 
 rust-minidump:
     description: rust-minidump 0.25.0 source code (for minidump-stackwalk)
@@ -813,11 +813,11 @@ xmlstarlet-1.6.1:
         artifact-name: xmlstarlet.deb
 
 uv:
-    description: uv 0.7.2 source code
+    description: uv 0.11.28 source code
     fetch:
         type: git
         repo: https://github.com/astral-sh/uv
-        revision: 481d05d8dfb8627612dec72840a02c17b926b263
+        revision: ebf0f43d7c4267876fc256f5fce75982c33f4399
 
 dxc-src:
     description: Source code for mozilla's DXC fork
@@ -836,12 +836,12 @@ jj:
         revision: 2508982cde5c7e4db0933e0b6469f9e778e71e28
 
 searchfox-cli:
-    description: searchfox-cli 0.18.0 source code
+    description: searchfox-cli 0.19.0 source code
     fetch:
         type: static-url
-        url: https://crates.io/api/v1/crates/searchfox-cli/0.18.0/download
-        sha256: e284bf3dddb000af548c5651f0f62be2c1a1c8edb25590319f185f8032b0b6be
-        size: 26771
+        url: https://crates.io/api/v1/crates/searchfox-cli/0.19.0/download
+        sha256: 25612ec327e523e8e253f009a55157eae079431bdc8a93d1015c59dada4f6b3f
+        size: 26768
         artifact-name: searchfox-cli.tar.zst
         strip-components: 1
         add-prefix: searchfox-cli/
@@ -858,34 +858,34 @@ socorro-cli:
         add-prefix: socorro-cli/
 
 stmo-cli:
-    description: stmo-cli 0.8.0 source code
+    description: stmo-cli 0.9.1 source code
     fetch:
         type: static-url
-        url: https://crates.io/api/v1/crates/stmo-cli/0.8.0/download
-        sha256: 32b826cfbf6a29801a4fe2c46d113650ea79ca73ce8040cab60e89d0bec9e4e0
-        size: 73054
+        url: https://crates.io/api/v1/crates/stmo-cli/0.9.1/download
+        sha256: c76a2f976d24294c145a8d7a22ee9e7e048b054d29d397c43d5007144badd7e8
+        size: 88219
         artifact-name: stmo-cli.tar.zst
         strip-components: 1
         add-prefix: stmo-cli/
 
 treeherder-cli:
-    description: treeherder-cli 0.2.13 source code
+    description: treeherder-cli 0.2.16 source code
     fetch:
         type: static-url
-        url: https://crates.io/api/v1/crates/treeherder-cli/0.2.13/download
-        sha256: 05ddb3b2954bf5441b167e2057c98f81c536af5ccf89aa61e21093b39cbafbe1
-        size: 49498
+        url: https://crates.io/api/v1/crates/treeherder-cli/0.2.16/download
+        sha256: 918230aacff5e5b71a42290a2d2d8ad82480b7c3dca565cfe4abd63abafde6ff
+        size: 126790
         artifact-name: treeherder-cli.tar.zst
         strip-components: 1
         add-prefix: treeherder-cli/
 
 webspec-index:
-    description: webspec-index 0.10.0 source code
+    description: webspec-index 0.12.0 source code
     fetch:
         type: static-url
-        url: https://crates.io/api/v1/crates/webspec-index/0.10.0/download
-        sha256: 5b89be8299e086f740e30e6bf028df3501ea7ce219cf49e32b987f902aa68645
-        size: 146433
+        url: https://crates.io/api/v1/crates/webspec-index/0.12.0/download
+        sha256: 1a82dc18333061cf11092ebf7f8f509ca36ae682b525ed3e8701c9b9c8f8ad2f
+        size: 184601
         artifact-name: webspec-index.tar.zst
         strip-components: 1
         add-prefix: webspec-index/
@@ -895,7 +895,7 @@ firefox-profiler:
     fetch:
         type: git
         repo: https://github.com/firefox-devtools/profiler
-        revision: 03c34e0b5931ea8e25b89e038c6e3be87763747d
+        revision: a04f7ea013f28042d203b2c2db3fc632506d2903
 
 # See https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads
 # We can't catch regressions from these updates in CI. Testing should focus on

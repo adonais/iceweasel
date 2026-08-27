@@ -61,12 +61,8 @@ toolbarpaletteitem > #downloads-button > .toolbarbutton-badge-stack > #downloads
 /* Button progress indication */
 #downloads-button > .toolbarbutton-badge-stack > #downloads-indicator-progress-outer {
   visibility: hidden;
-  top: calc(50% - 9px); /* Vertically center the 18px tall animatable image */
-  left: calc(50% - 9px); /* Horizontally center the 18px wide animatable image */
-  width: 18px;
-  height: 18px;
-  border-radius: var(--border-radius-circle);
-  border: 1px solid currentColor;
+  background: url("chrome://browser/skin/downloads/progress-ring-20.svg") no-repeat center;
+  fill: var(--toolbarbutton-icon-fill);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -79,8 +75,8 @@ toolbarpaletteitem > #downloads-button > .toolbarbutton-badge-stack > #downloads
 #downloads-indicator-progress-inner {
   --download-progress-pcent: 0%;
 
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   /*
     From javascript side we update the --download-progress-pcent variable to show the current progress
    */
@@ -127,15 +123,18 @@ toolbarpaletteitem > #downloads-button > .toolbarbutton-badge-stack > #downloads
 /*** Download notifications (transitions between downloading states) ***/
 
 #downloads-indicator-start-image {
-  --anim-steps: 16;
+  --anim-frames: 43;
+  --anim-steps: calc(var(--anim-frames) - 1);
 
   list-style-image: url("chrome://browser/skin/downloads/notification-start-animation.svg");
-  width: calc(20px * (var(--anim-steps) + 1));
+  width: calc(20px * var(--anim-frames));
   height: 20px;
 
-  fill: currentColor;
+  /* fill tints the spinner ring; stroke tints the download-arrow glyph, so it
+     can be recolored or hidden independently (see the rules below). */
+  fill: var(--toolbarbutton-icon-fill);
   fill-opacity: 1;
-  stroke: currentColor;
+  stroke: var(--toolbarbutton-icon-fill);
 
   /* initial state for animation */
   transform: translateX(0);
@@ -152,20 +151,19 @@ toolbarpaletteitem > #downloads-button > .toolbarbutton-badge-stack > #downloads
 
 #downloads-button[animate][notification="start"] > .toolbarbutton-badge-stack > #downloads-indicator-start-box > #downloads-indicator-start-image {
   visibility: visible;
-  /* Upon changing the animation-duration below, please keep the
-     setTimeout() identical in indicator.js#_showNotification.
-  */
+  /* When changed, also update the fallback timer in indicator.js. */
   animation-name: downloadsButtonNotification;
   animation-duration: calc(var(--anim-steps) * 16.667ms);
   animation-timing-function: steps(var(--anim-steps));
 
-  /* end state for animation: */
+  /* end state for animation: rest on the last frame */
   transform: translateX(calc(var(--anim-steps) * -20px));
 }
 
 #downloads-indicator-finish-image {
-  --anim-frames: 26;
-  --anim-steps: calc(var(--anim-frames) + 100); /* Add 100 frames for doing the pause in the middle */
+  --anim-frames: 39;
+  /* Add 90 frames for doing the pause in the middle */
+  --anim-steps: calc(var(--anim-frames) + 90);
 
   fill: var(--toolbarbutton-icon-fill-attention);
   fill-opacity: 1;
@@ -202,13 +200,13 @@ toolbarpaletteitem > #downloads-button > .toolbarbutton-badge-stack > #downloads
     animation-timing-function: steps(18);
     transform: translateX(0);
   }
-  14.28% {
-    /* 18th frame (18/126) */
+  13.95% {
+    /* 18th frame (18/129) */
     transform: translateX(calc(18 * -20px));
   }
-  93.65% {
-    /* Wait 100 frames of time, but resume from 18th frame (118/126) */
-    animation-timing-function: steps(8);
+  83.72% {
+    /* Wait 90 frames of time, but resume from 18th frame (108/129) */
+    animation-timing-function: steps(21);
     transform: translateX(calc(18 * -20px));
   }
 }

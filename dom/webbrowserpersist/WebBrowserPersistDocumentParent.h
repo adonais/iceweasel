@@ -6,7 +6,6 @@
 #ifndef WebBrowserPersistDocumentParent_h_
 #define WebBrowserPersistDocumentParent_h_
 
-#include "mozilla/Maybe.h"
 #include "mozilla/PWebBrowserPersistDocumentParent.h"
 #include "nsCOMPtr.h"
 #include "nsIWebBrowserPersistDocument.h"
@@ -44,8 +43,9 @@ class WebBrowserPersistDocumentParent final
   using Attrs = WebBrowserPersistDocumentAttrs;
 
   // IPDL methods:
-  mozilla::ipc::IPCResult RecvAttributes(const Attrs& aAttrs,
-                                         const Maybe<IPCStream>& aPostStream);
+  mozilla::ipc::IPCResult RecvAttributes(Attrs&& aAttrs,
+                                         NotNull<nsIPrincipal*> aPrincipal,
+                                         nsIInputStream* aPostStream);
   mozilla::ipc::IPCResult RecvInitFailure(const nsresult& aFailure);
 
   PWebBrowserPersistResourcesParent* AllocPWebBrowserPersistResourcesParent();

@@ -140,13 +140,15 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TCPSocket)
 NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
 
 TCPSocket::TCPSocket(nsIGlobalObject* aGlobal, const nsAString& aHost,
-                     uint16_t aPort, bool aSsl, bool aUseArrayBuffers)
+                     uint16_t aPort, bool aSsl, bool aUseArrayBuffers,
+                     uint32_t aConnectionFlags)
     : DOMEventTargetHelper(aGlobal),
       mReadyState(TCPReadyState::Closed),
       mUseArrayBuffers(aUseArrayBuffers),
       mHost(aHost),
       mPort(aPort),
       mSsl(aSsl),
+      mConnectionFlags(aConnectionFlags),
       mAsyncCopierActive(false),
       mWaitingForDrain(false),
       mInnerWindowID(0),
@@ -262,6 +264,13 @@ nsresult TCPSocket::Init(nsIProxyInfo* aProxyInfo) {
       sts->CreateTransport(socketTypes, NS_ConvertUTF16toUTF8(mHost), mPort,
                            aProxyInfo, nullptr, getter_AddRefs(transport));
   NS_ENSURE_SUCCESS(rv, rv);
+
+  // Must happen before InitWithUnconnectedTransport, which opens the streams
+  // and thereby dispatches the connect to the socket thread.
+  if (mConnectionFlags) {
+    rv = transport->SetConnectionFlags(mConnectionFlags);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   return InitWithUnconnectedTransport(transport);
 }
@@ -915,7 +924,8 @@ already_AddRefed<TCPSocket> TCPSocket::Constructor(
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
   RefPtr<TCPSocket> socket =
       new TCPSocket(global, aHost, aPort, aOptions.mUseSecureTransport,
-                    aOptions.mBinaryType == TCPSocketBinaryType::Arraybuffer);
+                    aOptions.mBinaryType == TCPSocketBinaryType::Arraybuffer,
+                    aOptions.mConnectionFlags);
   socket->ResolveProxy();
 
   return socket.forget();

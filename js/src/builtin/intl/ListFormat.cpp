@@ -128,7 +128,7 @@ struct PackedListFormatOptions {
 };
 
 ListFormatOptions js::intl::ListFormatObject::getOptions() const {
-  const auto& slot = getFixedSlot(OPTIONS);
+  const auto& slot = getFixedSlotTyped(OPTIONS);
   if (slot.isUndefined()) {
     return {};
   }
@@ -136,7 +136,7 @@ ListFormatOptions js::intl::ListFormatObject::getOptions() const {
 }
 
 void js::intl::ListFormatObject::setOptions(const ListFormatOptions& options) {
-  setFixedSlot(OPTIONS, PackedListFormatOptions::pack(options));
+  setFixedSlotTyped(OPTIONS, PackedListFormatOptions::pack(options));
 }
 
 static constexpr std::string_view ListFormatTypeToString(

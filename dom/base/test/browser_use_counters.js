@@ -7,6 +7,7 @@ add_setup(async function test_initialize() {
     set: [
       ["layout.css.use-counters.enabled", true],
       ["layout.css.use-counters-unimplemented.enabled", true],
+      ["dom.speculation_rules.enabled", true],
     ],
   });
 });
@@ -221,6 +222,51 @@ add_task(async function test_page_counters() {
         {
           name: "SVGSVGELEMENT_GETELEMENTBYID",
           glean: ["", "svgsvgelementGetelementbyid"],
+        },
+      ],
+    },
+
+    // Check that use counters are incremented for <script type="speculationrules">
+    // elements, and for the source and eagerness values they use.
+    {
+      type: "direct",
+      filename: "file_use_counter_speculationrules.html",
+      counters: [
+        {
+          name: "SpeculationRulesScriptTag",
+          glean: ["", "speculationRulesScriptTag"],
+        },
+        {
+          name: "SpeculationRulesPrefetch",
+          glean: ["", "speculationRulesPrefetch"],
+        },
+        {
+          name: "SpeculationRulesListSource",
+          glean: ["", "speculationRulesListSource"],
+        },
+        {
+          name: "SpeculationRulesDocumentSource",
+          glean: ["", "speculationRulesDocumentSource"],
+        },
+        {
+          name: "SpeculationRulesEagernessImmediate",
+          glean: ["", "speculationRulesEagernessImmediate"],
+        },
+        {
+          name: "SpeculationRulesEagernessEager",
+          glean: ["", "speculationRulesEagernessEager"],
+        },
+        {
+          name: "SpeculationRulesEagernessModerate",
+          glean: ["", "speculationRulesEagernessModerate"],
+        },
+        {
+          name: "SpeculationRulesEagernessConservative",
+          glean: ["", "speculationRulesEagernessConservative"],
+        },
+        {
+          name: "SpeculationRulesTag",
+          glean: ["", "speculationRulesTag"],
         },
       ],
     },

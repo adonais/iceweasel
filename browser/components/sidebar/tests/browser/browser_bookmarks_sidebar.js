@@ -1136,6 +1136,16 @@ add_task(async function test_bookmarks_empty_folder_shows_label() {
     "Empty Folder",
     "Empty folder label text matches."
   );
+  Assert.equal(
+    nestedList.folderLabelEl.getAttribute("role"),
+    "listitem",
+    "Empty folder has a listitem role."
+  );
+  Assert.equal(
+    nestedList.folderLabelEl.getAttribute("aria-label"),
+    "Empty Folder",
+    "Empty folder has an accessible name matching its title."
+  );
 
   await PlacesUtils.bookmarks.remove({ guid: folder.guid });
   SidebarTestUtils.closePanel(window);
@@ -1657,6 +1667,80 @@ add_task(async function test_bookmarks_smart_bookmark_uses_bookmark_guid() {
   await PlacesUtils.bookmarks.remove(innerBookmark.guid);
   await PlacesUtils.bookmarks.remove(folder.guid);
   SidebarController.hide();
+});
+
+add_task(async function test_bookmarks_folder_shortcut_uses_folder_icon() {
+  // A shortcut to a plain folder should render with a plain folder icon,
+  // not the tag-container icon (bug 2047956).
+  const folder = await addFolder("Icon Shortcut Target");
+  const innerBookmark = await addBookmark({
+    title: "Inner Page",
+    url: "https://example.com/folder-shortcut-icon-inner",
+    parentGuid: folder.guid,
+  });
+  const folderShortcut = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "Folder Shortcut Icon Test",
+    url: `place:parent=${folder.guid}`,
+  });
+  // A shortcut to an actual tag container should still render with the
+  // tag-container icon.
+  const taggedBookmark = await addBookmark({
+    title: "Tagged Page",
+    url: "https://example.com/folder-shortcut-icon-test",
+  });
+  await PlacesUtils.tagging.tagURI(
+    Services.io.newURI("https://example.com/folder-shortcut-icon-test"),
+    ["icon-test-tag"]
+  );
+  const tagShortcut = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "Tag Shortcut Icon Test",
+    url: "place:tag=icon-test-tag",
+  });
+
+  const { component } = await showBookmarksSidebar();
+  const tabList = component.bookmarkList;
+  const toolbarDetails = await openToolbarFolder(tabList);
+  const toolbarList = toolbarDetails.querySelector("sidebar-bookmark-list");
+  await BrowserTestUtils.waitForMutationCondition(
+    toolbarList.shadowRoot,
+    { childList: true, subtree: true },
+    () =>
+      [...toolbarList.folderEls].some(d => d.guid === folderShortcut.guid) &&
+      [...toolbarList.folderEls].some(d => d.guid === tagShortcut.guid)
+  );
+
+  const folderShortcutEl = [...toolbarList.folderEls].find(
+    d => d.guid === folderShortcut.guid
+  );
+  ok(folderShortcutEl, "Folder shortcut renders as a folder.");
+  Assert.equal(
+    folderShortcutEl.dataset.folderKind,
+    "place-container",
+    "Folder shortcut has the place-container folder kind, not tag-container."
+  );
+
+  const tagShortcutEl = [...toolbarList.folderEls].find(
+    d => d.guid === tagShortcut.guid
+  );
+  ok(tagShortcutEl, "Tag shortcut renders as a folder.");
+  Assert.equal(
+    tagShortcutEl.dataset.folderKind,
+    "tag-container",
+    "Tag shortcut still has the tag-container folder kind."
+  );
+
+  await PlacesUtils.tagging.untagURI(
+    Services.io.newURI("https://example.com/folder-shortcut-icon-test"),
+    ["icon-test-tag"]
+  );
+  await PlacesUtils.bookmarks.remove(tagShortcut.guid);
+  await PlacesUtils.bookmarks.remove(taggedBookmark.guid);
+  await PlacesUtils.bookmarks.remove(folderShortcut.guid);
+  await PlacesUtils.bookmarks.remove(innerBookmark.guid);
+  await PlacesUtils.bookmarks.remove(folder.guid);
+  SidebarTestUtils.closePanel(window);
 });
 
 add_task(async function test_bookmarks_smart_bookmark_drag_disabled() {

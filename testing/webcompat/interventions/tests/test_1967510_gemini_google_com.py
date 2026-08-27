@@ -32,7 +32,7 @@ async def check_paste_works(client):
     await client.stall(1)
     return client.execute_script(
         """
-        return arguments[0].innerText.trim() === arguments[1] + "hello"
+        return arguments[0].innerText.trim() === (arguments[1] + "hello").trim()
       """,
         prompt,
         old_value,

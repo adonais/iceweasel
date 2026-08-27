@@ -11,8 +11,16 @@
 #include "mozIStorageConnection.h"
 #include "mozIStorageStatement.h"
 #include "mozilla/dom/quota/AssertionsImpl.h"
+#include "mozilla/dom/quota/QuotaCommon.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/dom/quota/UsageInfo.h"
+
+#if defined(NIGHTLY_BUILD) || defined(DEBUG)
+#  define CHECK_USAGE() \
+    CheckIfUsageIsConsistent("OriginInfo::"_ns + nsDependentCString(__func__))
+#else
+#  define CHECK_USAGE()
+#endif
 
 namespace mozilla::dom::quota {
 
@@ -45,37 +53,39 @@ OriginInfo::OriginInfo(GroupInfo* aGroupInfo, const nsACString& aOrigin,
   MOZ_ASSERT(aClientUsages.Length() == Client::TypeMax());
   MOZ_ASSERT_IF(aPersisted,
                 aGroupInfo->mPersistenceType == PERSISTENCE_TYPE_DEFAULT);
-
-#ifdef DEBUG
-  QuotaManager* quotaManager = QuotaManager::Get();
-  MOZ_ASSERT(quotaManager);
-
-  uint64_t usage = 0;
-  for (Client::Type type : quotaManager->AllClientTypes()) {
-    AssertNoOverflow(usage, aClientUsages[type].valueOr(0));
-    usage += aClientUsages[type].valueOr(0);
-  }
-  MOZ_ASSERT(aUsage == usage);
-#endif
-
+  CHECK_USAGE();
   MOZ_COUNT_CTOR(OriginInfo);
 }
 
-int64_t OriginInfo::LockedUsage() const {
-  AssertCurrentThreadOwnsQuotaMutex();
-
-#ifdef DEBUG
+#if defined(NIGHTLY_BUILD) || defined(DEBUG)
+void OriginInfo::CheckIfUsageIsConsistent(const nsACString& context) const {
   QuotaManager* quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
 
   uint64_t usage = 0;
   for (Client::Type type : quotaManager->AllClientTypes()) {
     AssertNoOverflow(usage, mClientUsages[type].valueOr(0));
-    usage += mClientUsages[type].valueOr(0);
+    QM_SCOPED_CONTEXT(context + "["_ns + Client::TypeToText(type) +
+                      "]Underflow"_ns);
+    const uint64_t value = mClientUsages[type].valueOr(0);
+    QM_WARNONLY_TRY(OkIf(value < static_cast<uint64_t>(INT64_MAX)));
+    usage += value;
   }
-  MOZ_ASSERT(mUsage == usage);
-#endif
+  {
+    QM_SCOPED_CONTEXT(context + "Mismatch"_ns);
+    QM_WARNONLY_TRY(OkIf(mUsage == usage));
+    MOZ_ASSERT(mUsage == usage);
+  }
+  {
+    QM_SCOPED_CONTEXT(context + "mUsageUnderflow"_ns);
+    QM_WARNONLY_TRY(OkIf(mUsage < static_cast<uint64_t>(INT64_MAX)));
+  }
+}
+#endif  // defined(NIGHTLY_BUILD) || defined(DEBUG)
 
+int64_t OriginInfo::LockedUsage() const {
+  AssertCurrentThreadOwnsQuotaMutex();
+  CHECK_USAGE();
   return mUsage;
 }
 
@@ -312,8 +322,8 @@ Maybe<bool> OriginInfo::LockedUpdateUsages(
   }
 
   AssertNoOverflow(quotaManager->mTemporaryStorageUsage, aDelta);
-  uint64_t newTemporaryStorageUsage =
-      quotaManager->mTemporaryStorageUsage + aDelta;
+  int64_t newTemporaryStorageUsage =
+      quotaManager->mTemporaryStorageUsage + AssertedCast<int64_t>(aDelta);
 
   if (newTemporaryStorageUsage <= quotaManager->mTemporaryStorageLimit) {
     mClientUsages[aClientType] = Some(newClientUsage);
@@ -346,8 +356,8 @@ bool OriginInfo::LockedUpdateUsagesForEviction(
   uint64_t newClientUsage = mClientUsages[aClientType].valueOr(0) + aDelta;
 
   AssertNoOverflow(quotaManager->mTemporaryStorageUsage, aDelta);
-  uint64_t newTemporaryStorageUsage =
-      quotaManager->mTemporaryStorageUsage + aDelta;
+  int64_t newTemporaryStorageUsage =
+      quotaManager->mTemporaryStorageUsage + AssertedCast<int64_t>(aDelta);
 
   uint64_t newGroupUsage = mGroupInfo->mUsage;
   if (!LockedPersisted()) {
@@ -379,7 +389,8 @@ bool OriginInfo::LockedUpdateUsagesForEviction(
   }
 
   AssertNoOverflow(quotaManager->mTemporaryStorageUsage, aDelta);
-  newTemporaryStorageUsage = quotaManager->mTemporaryStorageUsage + aDelta;
+  newTemporaryStorageUsage =
+      quotaManager->mTemporaryStorageUsage + AssertedCast<int64_t>(aDelta);
 
   NS_ASSERTION(newTemporaryStorageUsage <= quotaManager->mTemporaryStorageLimit,
                "How come?!");
@@ -419,3 +430,5 @@ void OriginInfo::LockedDirectoryCreated() {
 }
 
 }  // namespace mozilla::dom::quota
+
+#undef CHECK_USAGE

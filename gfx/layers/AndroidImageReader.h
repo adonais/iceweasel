@@ -59,7 +59,8 @@ class AndroidImageReaderImage final : public Image {
 
   void OnSetCurrent() override;
 
-  bool MaybeReleaseFrameToCodec(bool aRender);
+  bool MaybeReleaseFrameToCodec(const MonitorAutoLock& aProofOfLock,
+                                bool aRender);
 
   void RegisterSetCurrentCallback(
       UniquePtr<SurfaceTextureImage::SetCurrentCallback> aCallback) {
@@ -129,6 +130,8 @@ class AndroidImageReader final {
                                   gfx::DataSourceSurface* aSurface,
                                   const gfx::IntSize aSize,
                                   const gfx::SurfaceFormat aFormat);
+
+  void MaybeRenderFirstFrame(AndroidMediaCodecFrameId aFrameId);
 
   bool DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
                         AndroidMediaCodecFrameId aFrameId)

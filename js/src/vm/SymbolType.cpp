@@ -35,7 +35,7 @@ Symbol* Symbol::new_(JSContext* cx, JS::SymbolCode code,
 
   Symbol* sym = newInternal(cx, code, cx->runtime()->randomHashCode(), atom);
   if (sym) {
-    cx->markAtom(sym);
+    cx->recordRef(sym);
   }
   return sym;
 }
@@ -54,7 +54,7 @@ Symbol* Symbol::for_(JSContext* cx, HandleString description) {
   SymbolRegistry& registry = cx->symbolRegistry();
   DependentAddPtr<SymbolRegistry> p(cx, registry, atom);
   if (p) {
-    cx->markAtom(*p);
+    cx->recordRef(*p);
     return *p;
   }
 
@@ -70,7 +70,7 @@ Symbol* Symbol::for_(JSContext* cx, HandleString description) {
     return nullptr;
   }
 
-  cx->markAtom(sym);
+  cx->recordRef(sym);
   return sym;
 }
 

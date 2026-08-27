@@ -14,6 +14,10 @@
 
 "use strict";
 
+const { UrlbarParentController } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs"
+);
+
 add_setup(async function () {
   await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
@@ -33,7 +37,7 @@ add_setup(async function () {
 
 add_task(async function test_dragText_heuristicResultMissing() {
   const stub = sinon
-    .stub(UrlbarUtils, "getHeuristicResultFor")
+    .stub(UrlbarParentController.prototype, "getHeuristicResult")
     .rejects(new Error("Initialization failed"));
 
   await BrowserTestUtils.withNewTab(
@@ -83,7 +87,7 @@ add_task(async function test_dragText_heuristicResultMissing() {
 
 add_task(async function test_enterKey_heuristicResultMissing() {
   const stub = sinon
-    .stub(UrlbarUtils, "getHeuristicResultFor")
+    .stub(UrlbarParentController.prototype, "getHeuristicResult")
     .rejects(new Error("Initialization failed"));
 
   await BrowserTestUtils.withNewTab(
@@ -114,7 +118,7 @@ add_task(async function test_enterKey_heuristicResultMissing() {
 
 add_task(async function test_oneOffSearch_heuristicResultMissing() {
   const stub = sinon
-    .stub(UrlbarUtils, "getHeuristicResultFor")
+    .stub(UrlbarParentController.prototype, "getHeuristicResult")
     .rejects(new Error("Initialization failed"));
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },

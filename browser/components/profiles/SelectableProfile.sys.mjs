@@ -259,7 +259,10 @@ export class SelectableProfile {
 
     const fileExists = await IOUtils.exists(this.getAvatarPath());
     if (!fileExists) {
-      throw new Error("Custom avatar file doesn't exist.");
+      // The avatar is missing, so fall back to a default.
+      Glean.profilesError.avatar.record();
+      await this.setAvatar("star");
+      return standardAvatarURL("star", size);
     }
     const file = await File.createFromFileName(this.getAvatarPath());
     this.#lastAvatarURL = URL.createObjectURL(file);

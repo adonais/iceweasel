@@ -97,6 +97,10 @@ void MacroAssembler::andPtr(Imm32 imm, Register src, Register dest) {
   andPtr(imm, dest);
 }
 
+void MacroAssembler::andPtr(Imm32 imm, const Address& dest) {
+  andq(imm, Operand(dest));
+}
+
 void MacroAssembler::and64(Imm64 imm, Register64 dest) {
   if (INT32_MIN <= int64_t(imm.value) && int64_t(imm.value) <= INT32_MAX) {
     if (int32_t(imm.value) >= 0) {

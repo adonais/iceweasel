@@ -4,7 +4,6 @@
 
 package mozilla.components.concept.identitycredential
 
-import android.annotation.SuppressLint
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
@@ -14,7 +13,6 @@ import kotlinx.parcelize.Parcelize
  * @property icon An icon of the provider, normally the logo of the brand.
  * @property name The name of this [Provider].
  */
-@SuppressLint("ParcelCreator")
 @Parcelize
 data class Provider(
     val id: Int,

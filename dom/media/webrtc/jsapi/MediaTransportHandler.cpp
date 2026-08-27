@@ -139,6 +139,16 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
     uint64_t mBytesReceived = 0;
     uint64_t mPacketsSent = 0;
     uint64_t mPacketsReceived = 0;
+    // Number of times the selected candidate pair has changed (spec:
+    // RTCTransportStats.selectedCandidatePairChanges), plus the last selected
+    // pair we observed used to detect changes. Maintained in
+    // OnConnectionStateChange, and cumulative across the transport's lifetime.
+    uint32_t mSelectedCandidatePairChanges = 0;
+    std::pair<std::string, std::string> mLastSelectedCandidatePair;
+    // The most recent ICE transport state observed in OnConnectionStateChange.
+    // GetIceStats reports this rather than deriving from
+    // NrIceMediaStream::state(), which has no "new" state.
+    dom::RTCIceTransportState mIceState = dom::RTCIceTransportState::New;
   };
 
   using MediaTransportHandler::OnAlpnNegotiated;
@@ -709,7 +719,7 @@ void MediaTransportHandlerSTS::ActivateTransport(
           stream->DisableComponent(2);
         }
 
-        mTransports[aTransportId] = transport;
+        mTransports[aTransportId] = std::move(transport);
       },
       [](const std::string& aError) {});
 }
@@ -1142,28 +1152,28 @@ RefPtr<dom::RTCStatsPromise> MediaTransportHandlerSTS::GetIceStats(
                 transport.mIceLocalUsernameFragment.Construct(
                     NS_ConvertASCIItoUTF16(ufrag.c_str()));
               }
-              switch (stream->state()) {
-                case NrIceMediaStream::ICE_CONNECTING:
-                  transport.mIceState.Construct(
-                      dom::RTCIceTransportState::Checking);
-                  break;
-                case NrIceMediaStream::ICE_OPEN:
-                  transport.mIceState.Construct(
-                      dom::RTCIceTransportState::Connected);
-                  break;
-                case NrIceMediaStream::ICE_CLOSED:
-                  transport.mIceState.Construct(
-                      dom::RTCIceTransportState::Closed);
-                  break;
-              }
+              auto transportIt = mTransports.find(stream->GetId());
+              // Report the ICE transport state captured from connection-state
+              // changes, which distinguishes "new" (no connectivity checks yet)
+              // from "checking"; NrIceMediaStream::state() has no "new" state.
+              // This also keeps the stat consistent with RTCIceTransport.state.
+              transport.mIceState.Construct(
+                  transportIt != mTransports.end()
+                      ? transportIt->second.mIceState
+                      : dom::RTCIceTransportState::New);
               // XXX(Bug 1225723) Determine if dtlsState should be `required`.
               transport.mDtlsState = dom::RTCDtlsTransportState::New;
-              auto transportIt = mTransports.find(stream->GetId());
+              // The DTLS role is not known until it has been negotiated (via
+              // a=setup) and a DTLS transport exists. Until then, report
+              // "unknown" rather than leaving the member unset. This is
+              // overridden below once the DTLS transport is available.
+              transport.mDtlsRole.Construct(dom::RTCDtlsRole::Unknown);
               if (transportIt != mTransports.end() &&
                   transportIt->second.mFlow) {
                 if (auto* dtlsLayer = static_cast<TransportLayerDtls*>(
                         transportIt->second.mFlow->GetLayer(
                             TransportLayerDtls::ID()))) {
+                  transport.mDtlsRole.Reset();
                   transport.mDtlsRole.Construct(
                       dtlsLayer->role() == TransportLayerDtls::CLIENT
                           ? dom::RTCDtlsRole::Client
@@ -1255,6 +1265,10 @@ RefPtr<dom::RTCStatsPromise> MediaTransportHandlerSTS::GetIceStats(
                 transport.mPacketsReceived.Construct(
                     transportIt->second.mPacketsReceived);
               }
+              transport.mSelectedCandidatePairChanges.Construct(
+                  transportIt != mTransports.end()
+                      ? transportIt->second.mSelectedCandidatePairChanges
+                      : 0);
               // XXX(Bug 2037532) Fill missing fields on the transport.
               GetIceStats(*stream, aNow, stats.get(), transport);
 
@@ -1639,6 +1653,15 @@ void MediaTransportHandlerSTS::OnConnectionStateChange(
     selectedPair = Some(dom::IceCandidateAttributePair(nsCString(localAttr),
                                                        nsCString(remoteAttr)));
   }
+  if (auto it = mTransports.find(aIceStream->GetId());
+      it != mTransports.end()) {
+    it->second.mIceState = toDomIceTransportState(aState);
+    auto newPair = std::make_pair(localAttr, remoteAttr);
+    if (newPair != it->second.mLastSelectedCandidatePair) {
+      it->second.mSelectedCandidatePairChanges += 1;
+      it->second.mLastSelectedCandidatePair = std::move(newPair);
+    }
+  }
   OnConnectionStateChange(aIceStream->GetId(), toDomIceTransportState(aState),
                           selectedPair);
 }
@@ -1736,8 +1759,8 @@ void MediaTransportHandlerSTS::OnStateChange(TransportLayer* aLayer,
 
   // DTLS state indicates the readiness of the transport as a whole, because
   // SRTP uses the keys from the DTLS handshake.
-  MediaTransportHandler::OnStateChange(aLayer->flow_id(), aState,
-                                       std::move(remoteCerts), error);
+  MediaTransportHandler::OnStateChange(
+      aLayer->flow_id(), aState, std::move(remoteCerts), std::move(error));
 }
 
 void MediaTransportHandlerSTS::OnRtcpStateChange(TransportLayer* aLayer,
@@ -1749,7 +1772,8 @@ void MediaTransportHandlerSTS::OnRtcpStateChange(TransportLayer* aLayer,
     error = Some(GetErrorInfo(*dtlsLayer));
   }
 
-  MediaTransportHandler::OnRtcpStateChange(aLayer->flow_id(), aState, error);
+  MediaTransportHandler::OnRtcpStateChange(aLayer->flow_id(), aState,
+                                           std::move(error));
 }
 
 void MediaTransportHandlerSTS::PacketReceived(TransportLayer* aLayer,

@@ -1,0 +1,27 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<svg width="42" height="32" viewBox="0 0 42 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M14.7646 9.58618H0V26.285C0 27.0407 0.743089 27.6529 1.66032 27.6529H32.18C33.0972 27.6529 33.8403 27.0407 33.8403 26.285V9.58618H14.7646Z" fill="url(#paint0_linear_20685_6150)"/>
+<path d="M31.9286 4.34741C32.9847 4.34741 33.8409 5.2037 33.8409 6.25979V9.58568H0V6.25979C0 5.2037 0.856225 4.34741 1.91231 4.34741H31.9286ZM2.66468 5.98664C2.13169 5.98664 1.69962 6.41871 1.69962 6.9517V6.98132C1.69962 7.51424 2.13169 7.94631 2.66468 7.94631H7.58634C8.11933 7.94631 8.5514 7.51424 8.5514 6.98132V6.9517C8.5514 6.41871 8.11933 5.98664 7.58634 5.98664H2.66468Z" fill="url(#paint1_linear_20685_6150)"/>
+<path d="M38.4506 0C39.8996 0 41.0745 1.17489 41.0745 2.62388V29.877C41.0745 31.0495 40.124 32 38.9515 32H27.9159C26.7434 32 25.793 31.0495 25.793 29.877V2.62388C25.793 1.17489 26.9677 0 28.4166 0H38.4506Z" fill="url(#paint2_linear_20685_6150)"/>
+<path d="M37.7555 2.24927H29.1125C28.5795 2.24927 28.1475 2.68131 28.1475 3.21427V3.97309C28.1475 4.50605 28.5795 4.93809 29.1125 4.93809H37.7555C38.2884 4.93809 38.7205 4.50605 38.7205 3.97309V3.21427C38.7205 2.68131 38.2884 2.24927 37.7555 2.24927Z" fill="url(#paint3_linear_20685_6150)"/>
+<defs>
+<linearGradient id="paint0_linear_20685_6150" x1="3.17256" y1="10.194" x2="28.46" y2="31.1107" gradientUnits="userSpaceOnUse">
+<stop stop-color="#E652F7"/>
+<stop offset="1" stop-color="#271AF5"/>
+</linearGradient>
+<linearGradient id="paint1_linear_20685_6150" x1="-11.8436" y1="0.0630127" x2="33.8409" y2="9.58561" gradientUnits="userSpaceOnUse">
+<stop stop-color="#E652F7"/>
+<stop offset="1" stop-color="#271AF5"/>
+</linearGradient>
+<linearGradient id="paint2_linear_20685_6150" x1="21.2745" y1="8.98545" x2="45.0016" y2="25.3428" gradientUnits="userSpaceOnUse">
+<stop stop-color="#E652F7"/>
+<stop offset="1" stop-color="#271AF5"/>
+</linearGradient>
+<linearGradient id="paint3_linear_20685_6150" x1="11.612" y1="-2.29238" x2="39.0434" y2="-0.729508" gradientUnits="userSpaceOnUse">
+<stop stop-color="#E652F7"/>
+<stop offset="1" stop-color="#271AF5"/>
+</linearGradient>
+</defs>
+</svg>

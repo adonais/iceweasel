@@ -8,7 +8,6 @@ description: >
   "media-patch-review", "/media-patch-review".
 argument-hint: <"diff", "local", or D-number>
 allowed-tools: [Agent]
-paths: dom/media/**
 ---
 
 # media-patch-review — quick fan-out dom/media review

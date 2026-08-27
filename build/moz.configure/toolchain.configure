@@ -493,7 +493,7 @@ def try_preprocess(
 @imports(_from="mozbuild.configure.constants", _import="OS_preprocessor_checks")
 @imports(_from="textwrap", _import="dedent")
 @imports(_from="__builtin__", _import="Exception")
-def get_compiler_info(configure_cache, compiler, language):
+def get_compiler_info(configure_cache, compiler, language, wrapper=[]):
     """Returns information about the given `compiler` (command line in the
     form of a list or tuple), in the given `language`.
 
@@ -567,7 +567,9 @@ def get_compiler_info(configure_cache, compiler, language):
     """
     )
 
-    result = try_preprocess(configure_cache, compiler, language, check)
+    result = try_preprocess(
+        configure_cache, compiler, language, check, wrapper=wrapper
+    )
 
     if not result:
         raise FatalCheckError("Unknown compiler or compiler not supported.")
@@ -653,8 +655,10 @@ def same_arch_different_bits():
 
 @imports(_from="mozshellutil", _import="quote")
 @imports(_from="mozbuild.configure.constants", _import="OS_preprocessor_checks")
-def check_compiler(configure_cache, compiler, language, target, android_version):
-    info = get_compiler_info(configure_cache, compiler, language)
+def check_compiler(
+    configure_cache, compiler, language, target, android_version, wrapper=[]
+):
+    info = get_compiler_info(configure_cache, compiler, language, wrapper)
 
     flags = []
 
@@ -789,25 +793,59 @@ def rust_search_path(rust_path, original_path):
 # cygwin dll errors during configure if we get called from another msys2
 # environment, see bug 1801826.
 @depends(
-    mozillabuild_bin_paths, clang_search_path, rust_search_path, target, original_path
+    build_environment,
+    mozillabuild_bin_paths,
+    clang_search_path,
+    rust_search_path,
+    target,
+    original_path,
 )
 @imports("os")
+@imports(_from="mach.util", _import="get_virtualenv_base_dir")
 def altered_path(
-    mozillabuild_bin_paths, clang_search_path, rust_search_path, target, original_path
+    build_env,
+    mozillabuild_bin_paths,
+    clang_search_path,
+    rust_search_path,
+    target,
+    original_path,
 ):
-    altered_path = mozillabuild_bin_paths
+    # Trim trailing empty entries so a stray `;;` in the input doesn't
+    # surface as a blank PATH entry.
+    def strip_trailing_empty_entries(path):
+        path = list(path)
+        while path and not path[-1]:
+            path.pop()
+        return path
+
     if target.kernel == "Darwin":
         # The rust compiler wants to execute dsymutil, but it does so in a
         # non-configurable way (https://github.com/rust-lang/rust/issues/52728)
         # so we add the clang path.
-        path = clang_search_path
+        path = strip_trailing_empty_entries(clang_search_path)
     else:
-        path = original_path
+        path = strip_trailing_empty_entries(original_path)
     # cargo needs the rust search path to find cargo-$subcommand.
-    path += rust_search_path
-    for p in path:
-        if p not in altered_path:
-            altered_path.append(p)
+    path.extend(strip_trailing_empty_entries(rust_search_path))
+
+    # Bug 2040992: Strip mach virtualenv entries so any prepended venvs
+    # (from intermediate ./mach activations along the build chain) don't
+    # end up in the captured PATH. This is safe because the build never
+    # invokes anything in those dirs.
+    venv_prefix = normalize_path_list_entry(
+        get_virtualenv_base_dir(build_env.topsrcdir)
+    )
+
+    seen = set()
+    altered_path = []
+    for p in mozillabuild_bin_paths + path:
+        normalized = normalize_path_list_entry(p)
+        if normalized in seen:
+            continue
+        if normalized.startswith(venv_prefix):
+            continue
+        seen.add(normalized)
+        altered_path.append(normalized)
     return os.pathsep.join(altered_path)
 
 
@@ -924,6 +962,40 @@ def sccache_verbose_stats(using_sccache, verbose_stats):
 set_config("SCCACHE_VERBOSE_STATS", sccache_verbose_stats)
 
 
+@depends(when=using_sccache)
+def sccache_max_frame_length():
+    # Workaround for https://github.com/mozilla/sccache/issues/459#issuecomment-618756635
+    return "500000000"
+
+
+@depends(moz_automation)
+def sccache_client_side_default(moz_automation):
+    return "false" if moz_automation else "true"
+
+
+option(
+    env="SCCACHE_CLIENT_SIDE",
+    choices=("true", "false"),
+    default=sccache_client_side_default,
+    help="Whether to enable sccache client side mode",
+)
+
+
+@depends("SCCACHE_CLIENT_SIDE", using_sccache)
+def sccache_client_side(client_side, using_sccache):
+    if using_sccache:
+        return client_side[0]
+
+
+# The base directories are handled further below, where the sysroot and SDK
+# paths they contain are known.
+option(
+    env="SCCACHE_BASEDIRS",
+    nargs=1,
+    help="Base directories sccache rewrites to relative paths for cache keys",
+)
+
+
 @depends("--with-compiler-wrapper", ccache)
 @imports(_from="mozshellutil", _import="split", _as="shell_split")
 def compiler_wrapper(wrapper, ccache):
@@ -949,6 +1021,16 @@ def compiler_wrapper(wrapper, ccache):
 
 
 set_config("COMPILER_WRAPPER", compiler_wrapper)
+
+
+@depends(compiler_wrapper)
+@imports("os")
+def cc_known_wrapper_custom(wrapper):
+    if wrapper:
+        return os.path.splitext(os.path.basename(wrapper[0]))[0]
+
+
+set_config("CC_KNOWN_WRAPPER_CUSTOM", cc_known_wrapper_custom)
 
 
 @dependable
@@ -1232,6 +1314,68 @@ target_multiarch_dir = multiarch_dir(target)
 host_multiarch_dir = multiarch_dir(host)
 
 
+@depends(
+    build_environment,
+    target_sysroot.path,
+    valid_windows_sdk_dir,
+    vc_path,
+    when=using_sccache,
+)
+@imports("os")
+def default_sccache_basedirs(build_env, sysroot_path, windows_sdk_dir, vc_path):
+    # sccache rewrites paths under these base directories to be relative
+    # before computing cache keys, so builds in different worktrees (or in
+    # automation versus locally) hit the same cache entries instead of
+    # missing on differing absolute paths. These are the same directories as
+    # the path remapping below: the object and source directories, plus the
+    # sysroot and SDKs.
+    basedirs = [build_env.topobjdir, build_env.topsrcdir]
+    if sysroot_path:
+        basedirs.append(sysroot_path)
+    if windows_sdk_dir:
+        basedirs.append(windows_sdk_dir.path)
+    if vc_path:
+        basedirs.append(vc_path)
+
+    return os.pathsep.join(basedirs)
+
+
+@depends("SCCACHE_BASEDIRS", default_sccache_basedirs, using_sccache)
+def sccache_basedirs(basedirs, default_basedirs, using_sccache):
+    if not using_sccache:
+        return
+
+    # Don't override a value the developer set explicitly.
+    return basedirs[0] if basedirs else default_basedirs
+
+
+@template
+def sccache_config(**kwargs):
+    """Set the given configuration items, and return a @depends function that
+    puts them in the environment. sccache reads its configuration from the
+    environment, and its server only does so when it starts, which can be from
+    one of the compiler checks below, so the variables need to be set before
+    that happens."""
+    for name, value in kwargs.items():
+        set_config(name, value)
+
+    @depends(*kwargs.values())
+    @imports("os")
+    def sccache_environment(*values):
+        for name, value in zip(kwargs, values):
+            if value:
+                os.environ[name] = value
+
+    return sccache_environment
+
+
+sccache_environment = sccache_config(
+    SCCACHE_BASEDIRS=sccache_basedirs,
+    SCCACHE_CLIENT_SIDE=sccache_client_side,
+    SCCACHE_MAX_FRAME_LENGTH=sccache_max_frame_length,
+)
+
+
 def minimum_gcc_version():
     return Version("10.1.0")
 
@@ -1330,6 +1474,7 @@ def compiler(
         multiarch_dir,
         winsysroot,
         host,
+        sccache_environment,
     )
     @checking("whether %s can be used" % what, lambda x: bool(x))
     @imports(_from="mozshellutil", _import="quote")
@@ -1348,7 +1493,14 @@ def compiler(
         multiarch_dir,
         winsysroot,
         host,
+        sccache_environment,
     ):
+        # This is only a dependency for its side effect of setting the sccache
+        # variables in the environment, which needs to happen before the
+        # compiler wrapper is invoked. The statement below is only there to
+        # appease configure's lint, which rejects unused dependencies.
+        sccache_environment
+
         wrapper = list(compiler_wrapper or ())
         flags = []
         if sysroot.path:
@@ -1365,10 +1517,11 @@ def compiler(
 
         info = check_compiler(
             configure_cache,
-            wrapper + [compiler] + flags,
+            [compiler] + flags,
             language,
             host_or_target,
             android_version,
+            wrapper=wrapper,
         )
 
         if host_or_target.os == "OSX" and macos_target:
@@ -1399,10 +1552,11 @@ def compiler(
                 flags += info.flags
                 info = check_compiler(
                     configure_cache,
-                    wrapper + [compiler] + flags,
+                    [compiler] + flags,
                     language,
                     host_or_target,
                     android_version,
+                    wrapper=wrapper,
                 )
         except FatalCheckError:
             pass
@@ -3007,14 +3161,19 @@ option(env="AS", nargs=1, help="Path to the assembler")
 @depends(target, c_compiler)
 def as_info(target, c_compiler):
     if c_compiler.type == "clang-cl":
+        if target.cpu == "aarch64":
+            return namespace(type="armasm", names=("armasm64.exe",))
         ml = {
             "x86": "ml.exe",
             "x86_64": "ml64.exe",
-            "aarch64": "armasm64.exe",
         }.get(target.cpu)
         return namespace(type="masm", names=(ml,))
     # When building with anything but clang-cl, we just use the C compiler as the assembler.
     return namespace(type="gcc", names=(c_compiler.compiler,))
+
+
+assembler_is_masm = depends(as_info)(lambda info: info.type == "masm")
+assembler_is_armasm = depends(as_info)(lambda info: info.type == "armasm")
 
 
 # One would expect the assembler to be specified merely as a program.  But in
@@ -3038,7 +3197,7 @@ def as_with_flags(as_info, assembler, provided_assembler, c_compiler):
     if provided_assembler:
         return provided_assembler.wrapper + [assembler] + provided_assembler.flags
 
-    if as_info.type == "masm":
+    if as_info.type in ("masm", "armasm"):
         return assembler
 
     assert as_info.type == "gcc"
@@ -3072,10 +3231,10 @@ def gnu_as(assembler, c_compiler, toolchain_flags):
 set_config("GNU_AS", gnu_as)
 
 
-@depends(as_info, target)
-def as_dash_c_flag(as_info, target):
+@depends(as_info)
+def as_dash_c_flag(as_info):
     # armasm64 doesn't understand -c.
-    if as_info.type == "masm" and target.cpu == "aarch64":
+    if as_info.type == "armasm":
         return ""
     else:
         return "-c"
@@ -3084,10 +3243,10 @@ def as_dash_c_flag(as_info, target):
 set_config("AS_DASH_C_FLAG", as_dash_c_flag)
 
 
-@depends(as_info, target)
-def as_outoption(as_info, target):
+@depends(as_info)
+def as_outoption(as_info):
     # The uses of ASOUTOPTION depend on the spacing for -o/-Fo.
-    if as_info.type == "masm" and target.cpu != "aarch64":
+    if as_info.type == "masm":
         return "-Fo"
 
     return "-o "
@@ -3372,7 +3531,7 @@ def add_libfuzzer_flags(libfuzzer_flags, linker_flags):
 
 
 # The LLVM symbolizer is used by all sanitizers
-check_prog(
+llvm_symbolizer = check_prog(
     "LLVM_SYMBOLIZER",
     ("llvm-symbolizer",),
     allow_missing=True,
@@ -3654,52 +3813,6 @@ def path_remappings(target, build_env, sysroot_path, windows_sdk_dir, vc_path):
                 die(f"Cannot remap paths because {p} is an ancestor of {q}")
 
     return path_remappings
-
-
-option(
-    env="SCCACHE_BASEDIRS",
-    nargs=1,
-    help="Base directories sccache rewrites to relative paths for cache keys",
-)
-
-
-@depends(
-    "SCCACHE_BASEDIRS",
-    using_sccache,
-    build_environment,
-    target_sysroot.path,
-    valid_windows_sdk_dir,
-    vc_path,
-)
-@imports("os")
-def sccache_basedirs(
-    basedirs, using_sccache, build_env, sysroot_path, windows_sdk_dir, vc_path
-):
-    if not using_sccache:
-        return
-
-    # Don't override a value the developer set explicitly.
-    if basedirs:
-        return basedirs[0]
-
-    # sccache rewrites paths under these base directories to be relative
-    # before computing cache keys, so builds in different worktrees (or in
-    # automation versus locally) hit the same cache entries instead of
-    # missing on differing absolute paths. These are the same directories as
-    # the path remapping above: the object and source directories, plus the
-    # sysroot and SDKs.
-    basedirs = [build_env.topobjdir, build_env.topsrcdir]
-    if sysroot_path:
-        basedirs.append(sysroot_path)
-    if windows_sdk_dir:
-        basedirs.append(windows_sdk_dir.path)
-    if vc_path:
-        basedirs.append(vc_path)
-
-    return os.pathsep.join(basedirs)
-
-
-set_config("SCCACHE_BASEDIRS", sccache_basedirs)
 
 
 @depends(target)

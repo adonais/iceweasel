@@ -674,6 +674,7 @@ class nsHtml5AttributeName {
   static nsHtml5AttributeName* ATTR_CONTROLS;
   static nsHtml5AttributeName* ATTR_CONTENT;
   static nsHtml5AttributeName* ATTR_CONTEXTMENU;
+  static nsHtml5AttributeName* ATTR_CUSTOMELEMENTREGISTRY;
   static nsHtml5AttributeName* ATTR_DEPTH;
   static nsHtml5AttributeName* ATTR_ENCTYPE;
   static nsHtml5AttributeName* ATTR_FONT_STRETCH;

@@ -15,6 +15,8 @@ import {
   TOP_SITES_SOURCE,
 } from "./TopSitesConstants";
 import { PinnedAreaOverlay } from "./PinnedAreaOverlay.jsx";
+import { TopSitesHoverCard } from "content-src/components/TopSitesHoverCard/TopSitesHoverCard";
+import { TopSiteWebNotification } from "content-src/components/TopSiteWebNotification/TopSiteWebNotification";
 import { LinkMenu } from "content-src/components/LinkMenu/LinkMenu";
 import { ImpressionStats } from "../DiscoveryStreamImpressionStats/ImpressionStats";
 import React from "react";
@@ -394,23 +396,28 @@ export class TopSiteLink extends React.PureComponent {
             data-l10n-args={JSON.stringify({ title })}
           >
             <div className="tile" aria-hidden={true}>
-              <div
-                className={
-                  selectedColor
-                    ? "icon-wrapper letter-fallback"
-                    : "icon-wrapper"
-                }
-                data-fallback={letterFallback}
-                style={selectedColor ? { backgroundColor: selectedColor } : {}}
-              >
-                <div className={imageClassName} style={imageStyle} />
-                {showSmallFavicon && (
-                  <div
-                    className="top-site-icon default-icon"
-                    data-fallback={smallFaviconStyle ? "" : letterFallback}
-                    style={smallFaviconStyle}
-                  />
-                )}
+              <div className="icon-stack">
+                <div
+                  className={
+                    selectedColor
+                      ? "icon-wrapper letter-fallback"
+                      : "icon-wrapper"
+                  }
+                  data-fallback={letterFallback}
+                  style={
+                    selectedColor ? { backgroundColor: selectedColor } : {}
+                  }
+                >
+                  <div className={imageClassName} style={imageStyle} />
+                  {showSmallFavicon && (
+                    <div
+                      className="top-site-icon default-icon"
+                      data-fallback={smallFaviconStyle ? "" : letterFallback}
+                      style={smallFaviconStyle}
+                    />
+                  )}
+                </div>
+                <TopSiteWebNotification link={link} />
               </div>
             </div>
             {link.isPinned && <div className="icon icon-pin-small" />}
@@ -435,6 +442,7 @@ export class TopSiteLink extends React.PureComponent {
           </a>
           {children}
           {impressionStats}
+          <TopSitesHoverCard link={link} />
         </div>
         {this.props.addButton}
       </li>

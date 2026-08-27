@@ -32,7 +32,9 @@ class PlacesBookmarksStorageTest {
 
     @Before
     fun setup() = runTest {
-        bookmarks = PlacesBookmarksStorage(testContext)
+        // Query 100ms in the future so the maxAge recency assertions are deterministic against
+        // bookmarks inserted moments earlier in the same test.
+        bookmarks = PlacesBookmarksStorage(testContext, currentTimeMillis = { System.currentTimeMillis() + 100 })
         // There's a database on disk which needs to be cleaned up between tests.
         bookmarks.writer.deleteEverything()
     }
@@ -158,7 +160,7 @@ class PlacesBookmarksStorageTest {
             assertEquals(insertedItem, this[0].guid)
         }
 
-        with(bookmarks.getRecentBookmarks(1, 99, System.currentTimeMillis() + 100).getOrNull()!!) {
+        with(bookmarks.getRecentBookmarks(1, 99).getOrNull()!!) {
             assertTrue(this.isEmpty())
         }
 
@@ -174,7 +176,7 @@ class PlacesBookmarksStorageTest {
             assertEquals(insertedItem, this[1].guid)
         }
 
-        with(bookmarks.getRecentBookmarks(2, 99, System.currentTimeMillis() + 100).getOrNull()!!) {
+        with(bookmarks.getRecentBookmarks(2, 99).getOrNull()!!) {
             assertTrue(this.isEmpty())
         }
 

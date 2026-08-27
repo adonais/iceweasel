@@ -62,4 +62,6 @@ early_hints.md
 new_to_necko_resources
 neqo_triage_guideline.md
 necko_lingo.md
+dns/trr-skip-reasons
+webtransport/webtransportsessionproxy
 ```

@@ -41,13 +41,13 @@
 #include <stdio.h>
 
 #ifdef WIN32
-#  include <windows.h>
-#  include <process.h>
+#include <windows.h>
+#include <process.h>
 #elif defined(_PR_PTHREADS)
-#  include <pthread.h>
-#  include "md/_pth.h"
+#include <pthread.h>
+#include "md/_pth.h"
 #elif defined(SOLARIS)
-#  include <thread.h>
+#include <thread.h>
 #endif
 
 #define DEFAULT_COUNT 1000
@@ -56,197 +56,205 @@ PRIntn debug_mode;
 
 int count;
 
-static void AttachDetach(void) {
-  PRThread* me;
-  PRInt32 index;
+static void
+AttachDetach(void)
+{
+    PRThread* me;
+    PRInt32 index;
 
-  for (index = 0; index < count; index++) {
-    me = PR_AttachThread(PR_USER_THREAD, PR_PRIORITY_NORMAL, NULL);
+    for (index = 0; index < count; index++) {
+        me = PR_AttachThread(PR_USER_THREAD, PR_PRIORITY_NORMAL, NULL);
 
-    if (!me) {
-      fprintf(stderr, "Error attaching thread %d: PR_AttachThread failed\n",
-              count);
-      failed_already = 1;
-      return;
+        if (!me) {
+            fprintf(stderr, "Error attaching thread %d: PR_AttachThread failed\n",
+                    count);
+            failed_already = 1;
+            return;
+        }
+        PR_DetachThread();
     }
-    PR_DetachThread();
-  }
 }
 
 /************************************************************************/
 
-static void Measure(void (*func)(void), const char* msg) {
-  PRIntervalTime start, stop;
-  double d;
+static void
+Measure(void (*func)(void), const char* msg)
+{
+    PRIntervalTime start, stop;
+    double d;
 
-  start = PR_IntervalNow();
-  (*func)();
-  stop = PR_IntervalNow();
+    start = PR_IntervalNow();
+    (*func)();
+    stop = PR_IntervalNow();
 
-  d = (double)PR_IntervalToMicroseconds(stop - start);
-  if (debug_mode) {
-    printf("%40s: %6.2f usec\n", msg, d / count);
-  }
+    d = (double)PR_IntervalToMicroseconds(stop - start);
+    if (debug_mode) {
+        printf("%40s: %6.2f usec\n", msg, d / count);
+    }
 }
 
 #ifdef WIN32
-static unsigned __stdcall threadStartFunc(void* arg)
+static unsigned __stdcall
+threadStartFunc(void* arg)
 #else
-static void* threadStartFunc(void* arg)
+static void*
+threadStartFunc(void* arg)
 #endif
 {
-  Measure(AttachDetach, "Attach/Detach");
+    Measure(AttachDetach, "Attach/Detach");
 
-  return 0;
+    return 0;
 }
 
-int main(int argc, char** argv) {
+int
+main(int argc, char** argv)
+{
 #ifdef _PR_PTHREADS
-  int rv;
-  pthread_t threadID;
-  pthread_attr_t attr;
+    int rv;
+    pthread_t threadID;
+    pthread_attr_t attr;
 #elif defined(SOLARIS)
-  int rv;
-  thread_t threadID;
+    int rv;
+    thread_t threadID;
 #elif defined(WIN32)
-  DWORD rv;
-  unsigned threadID;
-  HANDLE hThread;
+    DWORD rv;
+    unsigned threadID;
+    HANDLE hThread;
 #endif
 
-  /* The command line argument: -d is used to determine if the test is being run
-  in debug mode. The regress tool requires only one line output:PASS or FAIL.
-  All of the printfs associated with this test has been handled with a if
-  (debug_mode) test. Usage: test_name [-d] [-c n]
-  */
-  PLOptStatus os;
-  PLOptState* opt = PL_CreateOptState(argc, argv, "dc:");
-  while (PL_OPT_EOL != (os = PL_GetNextOpt(opt))) {
-    if (PL_OPT_BAD == os) {
-      continue;
+    /* The command line argument: -d is used to determine if the test is being run
+    in debug mode. The regress tool requires only one line output:PASS or FAIL.
+    All of the printfs associated with this test has been handled with a if
+    (debug_mode) test. Usage: test_name [-d] [-c n]
+    */
+    PLOptStatus os;
+    PLOptState* opt = PL_CreateOptState(argc, argv, "dc:");
+    while (PL_OPT_EOL != (os = PL_GetNextOpt(opt))) {
+        if (PL_OPT_BAD == os) {
+            continue;
+        }
+        switch (opt->option) {
+            case 'd': /* debug mode */
+                debug_mode = 1;
+                break;
+            case 'c': /* loop count */
+                count = atoi(opt->value);
+                break;
+            default:
+                break;
+        }
     }
-    switch (opt->option) {
-      case 'd': /* debug mode */
-        debug_mode = 1;
-        break;
-      case 'c': /* loop count */
-        count = atoi(opt->value);
-        break;
-      default:
-        break;
+    PL_DestroyOptState(opt);
+
+    if (0 == count) {
+        count = DEFAULT_COUNT;
     }
-  }
-  PL_DestroyOptState(opt);
 
-  if (0 == count) {
-    count = DEFAULT_COUNT;
-  }
+    /*
+     * To force the implicit initialization of nspr20
+     */
+    PR_SetError(0, 0);
 
-  /*
-   * To force the implicit initialization of nspr20
-   */
-  PR_SetError(0, 0);
-
-  /*
-   * Platform-specific code to create a native thread.  The native
-   * thread will repeatedly call PR_AttachThread and PR_DetachThread.
-   * The primordial thread waits for this new thread to finish.
-   */
+    /*
+     * Platform-specific code to create a native thread.  The native
+     * thread will repeatedly call PR_AttachThread and PR_DetachThread.
+     * The primordial thread waits for this new thread to finish.
+     */
 
 #ifdef _PR_PTHREADS
 
-  rv = _PT_PTHREAD_ATTR_INIT(&attr);
-  if (debug_mode) {
-    PR_ASSERT(0 == rv);
-  } else if (0 != rv) {
-    failed_already = 1;
-    goto exit_now;
-  }
-
-  rv = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-  if (debug_mode) {
-    PR_ASSERT(0 == rv);
-  } else if (0 != rv) {
-    failed_already = 1;
-    goto exit_now;
-  }
-  rv = _PT_PTHREAD_CREATE(&threadID, attr, threadStartFunc, NULL);
-  if (rv != 0) {
-    fprintf(stderr, "thread creation failed: error code %d\n", rv);
-    failed_already = 1;
-    goto exit_now;
-  } else {
+    rv = _PT_PTHREAD_ATTR_INIT(&attr);
     if (debug_mode) {
-      printf("thread creation succeeded \n");
+        PR_ASSERT(0 == rv);
+    } else if (0 != rv) {
+        failed_already = 1;
+        goto exit_now;
     }
-  }
-  rv = _PT_PTHREAD_ATTR_DESTROY(&attr);
-  if (debug_mode) {
-    PR_ASSERT(0 == rv);
-  } else if (0 != rv) {
-    failed_already = 1;
-    goto exit_now;
-  }
-  rv = pthread_join(threadID, NULL);
-  if (debug_mode) {
-    PR_ASSERT(0 == rv);
-  } else if (0 != rv) {
-    failed_already = 1;
-    goto exit_now;
-  }
+
+    rv = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    if (debug_mode) {
+        PR_ASSERT(0 == rv);
+    } else if (0 != rv) {
+        failed_already = 1;
+        goto exit_now;
+    }
+    rv = _PT_PTHREAD_CREATE(&threadID, attr, threadStartFunc, NULL);
+    if (rv != 0) {
+        fprintf(stderr, "thread creation failed: error code %d\n", rv);
+        failed_already = 1;
+        goto exit_now;
+    } else {
+        if (debug_mode) {
+            printf("thread creation succeeded \n");
+        }
+    }
+    rv = _PT_PTHREAD_ATTR_DESTROY(&attr);
+    if (debug_mode) {
+        PR_ASSERT(0 == rv);
+    } else if (0 != rv) {
+        failed_already = 1;
+        goto exit_now;
+    }
+    rv = pthread_join(threadID, NULL);
+    if (debug_mode) {
+        PR_ASSERT(0 == rv);
+    } else if (0 != rv) {
+        failed_already = 1;
+        goto exit_now;
+    }
 
 #elif defined(SOLARIS)
 
-  rv = thr_create(NULL, 0, threadStartFunc, NULL, 0, &threadID);
-  if (rv != 0) {
-    if (!debug_mode) {
-      failed_already = 1;
-      goto exit_now;
-    } else {
-      fprintf(stderr, "thread creation failed: error code %d\n", rv);
+    rv = thr_create(NULL, 0, threadStartFunc, NULL, 0, &threadID);
+    if (rv != 0) {
+        if (!debug_mode) {
+            failed_already = 1;
+            goto exit_now;
+        } else {
+            fprintf(stderr, "thread creation failed: error code %d\n", rv);
+        }
     }
-  }
-  rv = thr_join(threadID, NULL, NULL);
-  if (debug_mode) {
-    PR_ASSERT(0 == rv);
-  } else if (0 != rv) {
-    failed_already = 1;
-    goto exit_now;
-  }
+    rv = thr_join(threadID, NULL, NULL);
+    if (debug_mode) {
+        PR_ASSERT(0 == rv);
+    } else if (0 != rv) {
+        failed_already = 1;
+        goto exit_now;
+    }
 
 #elif defined(WIN32)
 
-  hThread =
-      (HANDLE)_beginthreadex(NULL, 0, threadStartFunc, NULL,
-                             STACK_SIZE_PARAM_IS_A_RESERVATION, &threadID);
-  if (hThread == 0) {
-    fprintf(stderr, "thread creation failed: error code %d\n", GetLastError());
-    failed_already = 1;
-    goto exit_now;
-  }
-  rv = WaitForSingleObject(hThread, INFINITE);
-  if (debug_mode) {
-    PR_ASSERT(rv != WAIT_FAILED);
-  } else if (rv == WAIT_FAILED) {
-    failed_already = 1;
-    goto exit_now;
-  }
+    hThread =
+        (HANDLE)_beginthreadex(NULL, 0, threadStartFunc, NULL,
+                               STACK_SIZE_PARAM_IS_A_RESERVATION, &threadID);
+    if (hThread == 0) {
+        fprintf(stderr, "thread creation failed: error code %d\n", GetLastError());
+        failed_already = 1;
+        goto exit_now;
+    }
+    rv = WaitForSingleObject(hThread, INFINITE);
+    if (debug_mode) {
+        PR_ASSERT(rv != WAIT_FAILED);
+    } else if (rv == WAIT_FAILED) {
+        failed_already = 1;
+        goto exit_now;
+    }
 
 #else
-  if (!debug_mode) {
-    failed_already = 1;
-  } else
-    printf(
-        "The attach test does not apply to this platform because\n"
-        "either this platform does not have native threads or the\n"
-        "test needs to be written for this platform.\n");
-  goto exit_now;
+    if (!debug_mode) {
+        failed_already = 1;
+    } else
+        printf(
+            "The attach test does not apply to this platform because\n"
+            "either this platform does not have native threads or the\n"
+            "test needs to be written for this platform.\n");
+    goto exit_now;
 #endif
 
 exit_now:
-  if (failed_already) {
-    return 1;
-  } else {
-    return 0;
-  }
+    if (failed_already) {
+        return 1;
+    } else {
+        return 0;
+    }
 }

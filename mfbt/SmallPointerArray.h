@@ -7,13 +7,13 @@
 #ifndef mozilla_SmallPointerArray_h
 #define mozilla_SmallPointerArray_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/PodOperations.h"
-
 #include <algorithm>
 #include <cstddef>
 #include <new>
 #include <vector>
+
+#include "mozilla/Assertions.h"
+#include "mozilla/PodOperations.h"
 
 namespace mozilla {
 

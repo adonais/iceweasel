@@ -41,7 +41,7 @@ import mozilla.components.compose.base.theme.success
 import mozilla.components.compose.browser.awesomebar.R
 import mozilla.components.compose.browser.awesomebar.internal.utils.StockSuggestionDataProvider
 import mozilla.components.compose.browser.awesomebar.internal.utils.StockSuggestionPreviewModel
-import mozilla.components.concept.awesomebar.AwesomeBar.ChangePercent
+import mozilla.components.feature.awesomebar.optimizedsuggestions.ChangePercent
 import mozilla.components.ui.icons.R as iconsR
 
 @Composable

@@ -1,0 +1,11 @@
+//error: redeclaration of symbol `a', first declared at
+
+struct Redecl {
+    int a;
+    double a;
+};
+
+[ChildProc=any]
+protocol PstructRedecl {
+child: async __delete__();
+};

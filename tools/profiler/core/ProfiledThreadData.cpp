@@ -431,7 +431,7 @@ ProcessStreamingContext::ProcessStreamingContext(
   if (mFailureLatch.Failed()) {
     return;
   }
-  if (!mTIDList.initCapacity(aThreadCount)) {
+  if (!mThreadIds.initCapacity(aThreadCount)) {
     mFailureLatch.SetFailure(
         "OOM in ProcessStreamingContext allocating TID list");
     return;
@@ -439,7 +439,7 @@ ProcessStreamingContext::ProcessStreamingContext(
   if (!mThreadStreamingContextList.initCapacity(aThreadCount)) {
     mFailureLatch.SetFailure(
         "OOM in ProcessStreamingContext allocating context list");
-    mTIDList.clear();
+    mThreadIds.clear();
     return;
   }
 }
@@ -448,8 +448,8 @@ ProcessStreamingContext::~ProcessStreamingContext() {
   if (mFailureLatch.Failed()) {
     return;
   }
-  MOZ_ASSERT(mTIDList.length() == mThreadStreamingContextList.length());
-  MOZ_ASSERT(mTIDList.length() == mTIDList.capacity(),
+  MOZ_ASSERT(mThreadIds.length() == mThreadStreamingContextList.length());
+  MOZ_ASSERT(mThreadIds.length() == mThreadIds.capacity(),
              "Didn't pre-allocate exactly right");
 }
 
@@ -461,10 +461,12 @@ void ProcessStreamingContext::AddThreadStreamingContext(
   if (mFailureLatch.Failed()) {
     return;
   }
-  MOZ_ASSERT(mTIDList.length() == mThreadStreamingContextList.length());
-  MOZ_ASSERT(mTIDList.length() < mTIDList.capacity(),
+  MOZ_ASSERT(mThreadIds.length() == mThreadStreamingContextList.length());
+  MOZ_ASSERT(mThreadIds.length() < mThreadIds.capacity(),
              "Didn't pre-allocate enough");
-  mTIDList.infallibleAppend(aProfiledThreadData.Info().ThreadId());
+  mThreadIds.infallibleAppend(
+      ThreadStreamingId{aProfiledThreadData.Info().ThreadId(),
+                        aProfiledThreadData.BufferPositionWhenUnregistered()});
   mThreadStreamingContextList.infallibleEmplaceBack(
       aProfiledThreadData, aBuffer, aCx, mFailureLatch, aService,
       aProgressLogger.CreateSubLoggerFromTo(

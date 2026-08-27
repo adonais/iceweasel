@@ -3,19 +3,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import {
-  MODEL_FEATURES,
-  renderPrompt,
-} from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
+import { MODEL_FEATURES } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
 
 import {
   constructRelevantMemoriesContextMessage,
-  constructRealTimeInfoInjectionMessage,
   replaceUrlsWithTokens,
   resolveMentionUrls,
-  sanitizeUntrustedContent,
   stripUnresolvedUrlTokens,
 } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
+
+import { DEFAULT_RELEVANT_MEMORIES_MESSAGE_COUNT } from "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs";
 
 import { getRoleLabel } from "./ChatUtils.sys.mjs";
 import {
@@ -45,6 +42,15 @@ import { consumeStreamChunk } from "moz-src:///browser/components/aiwindow/model
  * @typedef {Omit<HistoryRow, "relevanceScore"> & { timestamp?: string, image?: (string|null), hasFavicon?: boolean }} PooledHistoryResult
  */
 
+/**
+ * A web-search source rendered as a citation chip.
+ *
+ * @typedef {object} Citation
+ * @property {string} url - The source URL
+ * @property {string} [title] - The page title
+ * @property {boolean} [hasFavicon] - Whether Places has a stored favicon
+ */
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   convertTimestamp: "chrome://browser/content/firefoxview/helpers.mjs",
@@ -52,6 +58,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs",
   MemoriesManager:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
+  buildBrowserContextPrompt:
+    "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
   loadPrompt:
     "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
   ToolUI: "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
@@ -185,6 +193,29 @@ export class ChatConversation extends Conversation {
   #historyResultsPool = new Map();
 
   /**
+   * Conversation-level pool of web-search citations keyed by URL, accumulated
+   * across every `search_the_web` invocation in this conversation.
+   *
+   * @type {Map<string, Citation>}
+   */
+  #citationsPool = new Map();
+
+  /**
+   * URLs read by `search_the_web` during the current turn.
+   *
+   * @type {Set<string>}
+   */
+  #pendingCitationUrls = new Set();
+
+  /**
+   * Last browser-context string written; injectRealTimeContext skips
+   * rewriting an identical one so the prompt-cache prefix stays stable.
+   *
+   * @type {string|null}
+   */
+  #lastBrowserContext = null;
+
+  /**
    * @param {object} params
    * @param {string} [params.id]
    * @param {string} params.title
@@ -229,6 +260,7 @@ export class ChatConversation extends Conversation {
     this.pageUrl = pageUrl;
     this.pageMeta = pageMeta;
     this.rehydrateHistoryResultsPool();
+    this.rehydrateCitationsPool();
     this.memoriesToggled = memoriesToggled;
 
     // transient: tracks the URL the current starter prompts were generated
@@ -386,6 +418,12 @@ export class ChatConversation extends Conversation {
       currentMessage.historyResults = this.getHistoryResultsSnapshot();
     }
 
+    // Snapshot the web-search citations onto the message so the reply can show
+    // its source chips underneath.
+    if (this.#pendingCitationUrls.size) {
+      currentMessage.citations = this.getCitationsSnapshot();
+    }
+
     const result = await super.receiveResponse(stream, currentMessage);
 
     if (result.currentMessage?.content?.body) {
@@ -399,11 +437,12 @@ export class ChatConversation extends Conversation {
       this.emit("chat-conversation:message-update", currentMessage);
     }
 
-    if (currentMessage.memoriesApplied.length) {
+    // Only resolve used memories once the entire assistant turn is complete,
+    // including all tool calls
+    const citedMemoryIds = currentMessage.tokens?.existing_memory ?? [];
+    if (!result.pendingToolCalls?.length && citedMemoryIds.length) {
       currentMessage.memoriesApplied =
-        await lazy.MemoriesManager.getMemoriesByID(
-          new Set(currentMessage.memoriesApplied)
-        );
+        await lazy.MemoriesManager.resolveUsedMemories(citedMemoryIds);
 
       this.emit("chat-conversation:message-update", currentMessage);
     }
@@ -453,7 +492,8 @@ export class ChatConversation extends Conversation {
       if (type === "function") {
         return false;
       }
-      if (type === "text" && !body) {
+      // Keep localized messages (rendered from l10n id)
+      if (type === "text" && !body && !content?.l10nId) {
         return false;
       }
       return true;
@@ -500,6 +540,7 @@ export class ChatConversation extends Conversation {
     const newTurnIndex =
       this.messages.length === 1 ? currentTurn : currentTurn + 1;
 
+    this.#pendingCitationUrls.clear();
     this.#dismissPendingUndos();
 
     return this.addMessage(MESSAGE_ROLE.USER, content, newTurnIndex, {
@@ -560,8 +601,8 @@ export class ChatConversation extends Conversation {
         continue;
       }
 
-      const operationId = td.properties?.confirmedData?.operationId;
-      if (!operationId) {
+      const confirmedData = td.properties?.confirmedData;
+      if (!confirmedData?.operationIds?.length) {
         continue;
       }
 
@@ -604,6 +645,41 @@ export class ChatConversation extends Conversation {
   }
 
   /**
+   * Add a localized assistant message that renders from a Fluent id, optionally
+   * embedding a link via '<a data-l10n-name>' element in the message
+   *
+   * @param {string} l10nId - Fluent id for the message
+   * @param {object} [l10nArgs] - Fluent variables for the message
+   * @param {{ l10nName: string, href: string }} [link] - Link to fill the
+   *   matching '<a data-l10n-name>' element in the message
+   * @param {AssistantRoleOpts} [assistantOpts=new AssistantRoleOpts()]
+   * @returns {ChatMessage} The newly created assistant message
+   */
+  addAssistantWithL10nMessage(
+    l10nId,
+    l10nArgs = null,
+    link = null,
+    assistantOpts = new AssistantRoleOpts()
+  ) {
+    if (assistantOpts.modelId == null) {
+      assistantOpts.modelId = this.engine?.model ?? null;
+    }
+    const content = { type: "text", body: "", l10nId, l10nArgs, link };
+    const message = this.addMessage(
+      MESSAGE_ROLE.ASSISTANT,
+      content,
+      this.currentTurnIndex(),
+      assistantOpts
+    );
+
+    if (message) {
+      this.emit("chat-conversation:message-update", message);
+      this.emit("chat-conversation:message-complete", message);
+    }
+    return message;
+  }
+
+  /**
    * Add a tool call message to the conversation
    *
    * @param {object} content - The tool call object to be saved as JSON
@@ -629,49 +705,49 @@ export class ChatConversation extends Conversation {
   }
 
   /**
-   * Add a system message to the conversation
+   * Finalize a tool call message added early (with a placeholder body) so the
+   * action log could show a pending row while a slow tool ran: replace its
+   * content in place and re-emit so the renderer refreshes the same row instead
+   * of appending a duplicate. Falls back to adding a fresh message when there
+   * is none to update.
    *
-   * @param {string} type - The assistant message type: text|injected_memories|injected_real_time_info
-   * @param {string} contentBody - The system message object to be saved as JSON
-   * @param {string} [version] - Prompt version for SYSTEM_PROMPT_TYPE.TEXT messages
-   * @returns {ChatMessage} The newly created system message
+   * `content` replaces the existing content entirely (callers pass the complete
+   * object). Like addToolCallMessage, this does NOT persist; the caller must
+   * call ChatStore.updateConversation afterwards.
+   *
+   * @param {ChatMessage|null} message - Message returned by a prior
+   *   addToolCallMessage, or null to add a fresh one.
+   * @param {object} content - The finalized tool call content.
+   * @returns {ChatMessage} The updated (or newly added) tool message.
    */
-  addSystemMessage(type, contentBody, version) {
-    const content = { type, body: contentBody, ...(version && { version }) };
-
-    return this.addMessage(
-      MESSAGE_ROLE.SYSTEM,
-      content,
-      this.currentTurnIndex()
-    );
+  updateToolCallMessage(message, content) {
+    if (!message) {
+      return this.addToolCallMessage(content);
+    }
+    message.content = content;
+    this.emit("chat-conversation:message-update", message);
+    return message;
   }
 
   /**
-   * Idempotent upsert of the chat system prompt at index 0. Writes the
-   * rendered body and the RS-record version onto the system message's
-   * `content`.
+   * Upserts the chat system prompt at index 0, always rewriting body and
+   * version so a fresh build (today's timestamp, latest RS content) wins.
    *
    * @param {object} [opts]
-   * @param {string} [opts.modelChoiceIdOverride]
+   * @param {string} [opts.model] - Model to assemble the prompt for; defaults
+   *   to the conversation engine's model.
    */
   async loadSystemPrompt(opts = {}) {
     const { prompt: body, version } = await lazy.loadPrompt(
       MODEL_FEATURES.CHAT,
-      opts
+      { ...opts, model: opts.model ?? this.engine?.model }
     );
 
-    const existing = this.messages.find(
-      message =>
-        message.role === MESSAGE_ROLE.SYSTEM &&
-        message.content?.type === SYSTEM_PROMPT_TYPE.TEXT
-    );
-    if (existing) {
-      existing.content.body = body;
-      existing.content.version = version;
-      return existing;
-    }
-
-    return this.addSystemMessage(SYSTEM_PROMPT_TYPE.TEXT, body, version);
+    return this.setSystemMessage({
+      type: SYSTEM_PROMPT_TYPE.TEXT,
+      body,
+      ...(version && { version }),
+    });
   }
 
   /**
@@ -760,14 +836,15 @@ export class ChatConversation extends Conversation {
       err.clientReason = "retryInvalidMessage";
       throw err;
     }
+    this.#pendingCitationUrls.clear();
     // splice() bypasses our setter; refresh branch-tip manually.
     this.#updateActiveBranchTipMessageId();
     return removed;
   }
 
   /**
-   * Fetch real-time browser/tab data, render the prompt, mutate
-   * `userMessage.content.userContext.realTimeContext` in place.
+   * Fetch browser/tab + mentions context and write it onto
+   * `userMessage.content.userContext.realTimeContext`.
    *
    * SECURITY: current-tab info is private, so it raises setPrivateData() when
    * hasTabInfo is true. Context mentions inject only a URL and sanitized
@@ -779,54 +856,35 @@ export class ChatConversation extends Conversation {
    * @param {Function} [opts.getRealTimeMapping]
    */
   async injectRealTimeContext(userMessage, opts = {}) {
-    const {
-      contextMentions,
-      getRealTimeMapping = constructRealTimeInfoInjectionMessage,
-    } = opts;
-    const realTimeInfoMapping = await getRealTimeMapping(contextMentions);
-    if (!realTimeInfoMapping) {
+    const { contextMentions, getRealTimeMapping } = opts;
+    const realTimePrompt = await lazy.buildBrowserContextPrompt(
+      this.engine?.model,
+      {
+        ...(getRealTimeMapping && { getRealTimeMapping }),
+        contextMentions,
+        securityProperties: this.securityProperties,
+      }
+    );
+    if (!realTimePrompt || !userMessage?.content) {
       return;
     }
-    let { prompt: realTimePromptRaw } = await lazy.loadPrompt(
-      MODEL_FEATURES.REAL_TIME_CONTEXT_DATE
-    );
-    if (realTimeInfoMapping.hasTabInfo) {
-      this.securityProperties.setPrivateData();
-      const { prompt: realTimeTabPromptRaw } = await lazy.loadPrompt(
-        MODEL_FEATURES.REAL_TIME_CONTEXT_TAB
-      );
-      realTimePromptRaw += realTimeTabPromptRaw;
-    } else {
-      delete realTimeInfoMapping.url;
-      delete realTimeInfoMapping.title;
-      delete realTimeInfoMapping.description;
+    if (realTimePrompt === this.#lastBrowserContext) {
+      return;
     }
-    delete realTimeInfoMapping.hasTabInfo;
-
-    if (contextMentions?.length) {
-      const contextUrls = contextMentions
-        .map(
-          mention =>
-            `- URL: ${mention.url}\n  Title: ${sanitizeUntrustedContent(mention.label)}`
-        )
-        .join("\n");
-      realTimeInfoMapping.contextUrls = contextUrls;
-      const { prompt: contextMentionsPrompt } = await lazy.loadPrompt(
-        MODEL_FEATURES.REAL_TIME_CONTEXT_MENTIONS
-      );
-      realTimePromptRaw += contextMentionsPrompt;
-    }
-
-    const realTimePrompt = renderPrompt(realTimePromptRaw, realTimeInfoMapping);
-    if (realTimePrompt && userMessage?.content) {
-      userMessage.content.userContext ??= {};
-      userMessage.content.userContext.realTimeContext = realTimePrompt;
-    }
+    userMessage.content.userContext ??= {};
+    userMessage.content.userContext.realTimeContext = realTimePrompt;
+    this.#lastBrowserContext = realTimePrompt;
   }
 
   /**
    * Fetch relevant memories, mutate
    * `userMessage.content.userContext.memoriesContext` in place.
+   *
+   * Retrieval is keyed on `prompt` alone, but the injected context also lists
+   * the memories retrieved for the preceding user messages, so a semantically
+   * isolated message like "what about the other one?" still has memories relevant
+   * to its immediate context. The memories retrieved for this message are recorded on
+   * `userMessage.content.relevantMemories` to feed the next messages' window.
    *
    * SECURITY: retrieved memories are private user data, so this raises
    * setPrivateData() whenever memories are returned.
@@ -835,21 +893,56 @@ export class ChatConversation extends Conversation {
    * @param {ChatMessage} userMessage
    * @param {string} prompt
    * @param {Function} [constructMemories]
+   * @param {number} [messageCount] - How many recent user messages, including
+   *   this one, contribute their memories to the injected context
    */
   async injectMemoriesContext(
     userMessage,
     prompt,
-    constructMemories = constructRelevantMemoriesContextMessage
+    constructMemories = constructRelevantMemoriesContextMessage,
+    messageCount = DEFAULT_RELEVANT_MEMORIES_MESSAGE_COUNT
   ) {
-    const memoriesContext = await constructMemories(prompt);
+    const memoriesContext = await constructMemories(
+      prompt,
+      this.#getPreviousRelevantMemories(messageCount)
+    );
     if (memoriesContext == null) {
       return;
     }
     this.securityProperties.setPrivateData();
     if (userMessage?.content) {
       userMessage.content.userContext ??= {};
-      userMessage.content.userContext.memoriesContext = memoriesContext.content;
+      userMessage.content.userContext.memoriesContext =
+        memoriesContext.message.content;
+      userMessage.content.relevantMemories = memoriesContext.relevantMemories;
     }
+  }
+
+  /**
+   * Retrieve memories for the user messages before the one being sent,
+   * ordered newest message first.
+   *
+   * @param {number} [messageCount] - Size of the window the message being sent
+   * @returns {Array<{id: string, memory_summary: string}>}
+   */
+  #getPreviousRelevantMemories(
+    messageCount = DEFAULT_RELEVANT_MEMORIES_MESSAGE_COUNT
+  ) {
+    const userMessages = [];
+
+    for (
+      let i = this.messages.length - 1;
+      i >= 0 && userMessages.length < messageCount;
+      i--
+    ) {
+      if (this.messages[i].role === MESSAGE_ROLE.USER) {
+        userMessages.push(this.messages[i]);
+      }
+    }
+
+    return userMessages
+      .slice(1)
+      .flatMap(message => message.content?.relevantMemories ?? []);
   }
 
   /**
@@ -1170,14 +1263,21 @@ export class ChatConversation extends Conversation {
    * onto the pooled history records by URL, so snapshots dispatched afterward
    * already include them.
    *
-   * @param {Array<{url: string, image: ?string, hasFavicon: boolean}>} assets
+   * @param {Array<{url: string, image: ?string, requestedThumbnail?: boolean, hasFavicon: boolean}>} assets
    */
   applyHistoryAssets(assets) {
-    for (const { url, image, hasFavicon } of assets) {
+    for (const { url, image, requestedThumbnail, hasFavicon } of assets) {
       const record = this.#historyResultsPool.get(url);
       if (record) {
-        record.image = image;
+        // A citation-only request has no thumbnail
+        if (requestedThumbnail !== false) {
+          record.image = image;
+        }
         record.hasFavicon = hasFavicon;
+      }
+      const citation = this.#citationsPool.get(url);
+      if (citation) {
+        citation.hasFavicon = hasFavicon;
       }
     }
   }
@@ -1191,6 +1291,42 @@ export class ChatConversation extends Conversation {
     for (const message of this.messages) {
       for (const record of message.historyResults) {
         this.#historyResultsPool.set(record.url, record);
+      }
+    }
+  }
+
+  /**
+   * Merge web-search citation records into the conversation-level citations.
+   *
+   * @param {Iterable<{url: string, title?: string}>} records
+   */
+  addCitations(records) {
+    for (const record of records) {
+      // Keep any favicon availability already resolved for this URL.
+      const existing = this.#citationsPool.get(record.url);
+      this.#citationsPool.set(record.url, { ...existing, ...record });
+      this.#pendingCitationUrls.add(record.url);
+    }
+  }
+
+  /**
+   * A snapshot of the current turn’s citations.
+   *
+   * @returns {Citation[]}
+   */
+  getCitationsSnapshot() {
+    return [...this.#pendingCitationUrls]
+      .map(url => this.#citationsPool.get(url))
+      .filter(Boolean);
+  }
+
+  /**
+   * Rehydrate the citations pool from the message snapshots.
+   */
+  rehydrateCitationsPool() {
+    for (const message of this.messages) {
+      for (const record of message.citations) {
+        this.#citationsPool.set(record.url, record);
       }
     }
   }

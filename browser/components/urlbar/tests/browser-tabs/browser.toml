@@ -1,0 +1,55 @@
+[DEFAULT]
+tags = "urlbar"
+support-files = [
+  "../browser/head-common.js",
+  "../browser/dummy_page.html",
+  "head.js",
+]
+prefs = [
+  "browser.bookmarks.testing.skipDefaultBookmarksImport=true",
+  "browser.urlbar.trending.featureGate=false",
+]
+
+["browser_action_tabgroups.js"]
+
+["browser_closesUrlbarPopup.js"]
+
+["browser_currentTab.js"]
+
+["browser_decodeuri.js"]
+
+["browser_inputHistory.js"]
+
+["browser_keepStateAcrossTabSwitches.js"]
+https_first_disabled = true
+
+["browser_move_tab_to_new_window.js"]
+
+["browser_new_tab_urlbar_reset.js"]
+
+["browser_notFoundPage.js"]
+
+["browser_override.js"]
+
+["browser_paste_then_switch_tab.js"]
+
+["browser_raceWithTabs.js"]
+
+["browser_remotetab.js"]
+
+["browser_switchToTabHavingURI_aOpenParams.js"]
+
+["browser_switchToTab_chiclet.js"]
+
+["browser_switchToTab_closed_tab.js"]
+
+["browser_switchToTab_closes_newtab.js"]
+
+["browser_switchToTab_fullUrl_repeatedKeydown.js"]
+
+["browser_tabMatchesInAwesomebar.js"]
+support-files = ["../browser/moz.png"]
+
+["browser_tabMatchesInAwesomebar_perwindowpb.js"]
+
+["browser_valueOnTabSwitch.js"]

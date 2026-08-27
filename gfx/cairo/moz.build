@@ -4,6 +4,3 @@
 
 DIRS += ['cairo/src']
 
-if CONFIG['MOZ_TREE_PIXMAN']:
-    DIRS += ['libpixman/src']
-

@@ -1,4 +1,4 @@
-# Preferences
+# Remote protocol preferences
 
 There are a couple of preferences associated with the Remote Agent:
 
@@ -57,6 +57,23 @@ content processes should be retried when a browsing context is replaced due
 to cross-origin navigation, or made inactive when a page moved into BFCache.
 
 Introduced in Firefox 132, the preference is set to `true` by default.
+
+### `remote.screenshot.use_readback`
+
+Debugging aid for investigating WebRender rendering. When set to `true`,
+WebDriver and Marionette screenshots are captured by reading back the actual
+WebRender composited framebuffer (the real on-screen pixels) instead of
+re-rendering the document through the software `drawSnapshot` path. This makes
+captured screenshots reflect WebRender-specific rendering (snapping, blending,
+compositing) that the default path cannot show.
+
+Because readback can only return the pixels currently composited on screen, every
+capture degrades to the full content area of the foreground tab: full-document
+screenshots, clip regions and element screenshots all return the viewport
+instead. Captures with no content area to read back, such as those taken while
+the session is in chrome (privileged) scope, keep using the `drawSnapshot` path.
+
+Defaults to `false`.
 
 ### `remote.system-access-check.enabled`
 

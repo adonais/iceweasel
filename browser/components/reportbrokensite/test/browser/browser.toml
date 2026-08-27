@@ -13,6 +13,9 @@ support-files = [ "send_more_info.js" ]
 
 ["browser_antitracking_data_sent.js"]
 support-files = [ "send_more_info.js" ]
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && opt && nova", # Bug 2057853
+]
 
 ["browser_back_buttons.js"]
 

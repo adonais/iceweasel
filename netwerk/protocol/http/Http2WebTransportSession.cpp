@@ -74,9 +74,35 @@ uint64_t Http2WebTransportSessionImpl::GetStreamId() const { return mStreamId; }
 
 void Http2WebTransportSessionImpl::GetMaxDatagramSize() {}
 
+nsresult Http2WebTransportSessionImpl::ExportKeyingMaterial(
+    const nsTArray<uint8_t>& aLabel, const nsTArray<uint8_t>& aContext,
+    nsTArray<uint8_t>& aKeyingMaterial) {
+  // TODO: Implement exportKeyingMaterial for HTTP/2 WebTransport
+  // HTTP/2 WebTransport over TLS should support this via the underlying TLS
+  // connection, but the implementation is not yet available.
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+nsresult Http2WebTransportSessionImpl::RegisterSendGroup(uint64_t aGroupId) {
+  // HTTP/2 WebTransport doesn't support send group scheduling.
+  return NS_OK;
+}
+
+void Http2WebTransportSessionImpl::GetNegotiatedProtocol(
+    nsACString& aProtocol) {
+  // TODO: Implement protocol negotiation for HTTP/2 WebTransport
+  aProtocol.Truncate();
+}
+
 void Http2WebTransportSessionImpl::SendDatagram(nsTArray<uint8_t>&& aData,
-                                                uint64_t aTrackingId) {
-  LOG(("Http2WebTransportSession::SendDatagram %p", this));
+                                                uint64_t aTrackingId,
+                                                uint64_t aSendGroupId,
+                                                int64_t aSendOrder) {
+  LOG(("Http2WebTransportSessionImpl::SendDatagram %p, sendGroup=%" PRIu64
+       ", sendOrder=%" PRId64,
+       this, aSendGroupId, aSendOrder));
+  // Note: Http2 WebTransport doesn't support sendGroup/sendOrder prioritization
+  // yet. These parameters are accepted for API compatibility but not used.
 
   Capsule capsule = Capsule::WebTransportDatagram(std::move(aData));
 

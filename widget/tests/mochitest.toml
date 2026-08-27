@@ -116,6 +116,11 @@ run-if = [
 ]
 support-files = ["!/gfx/layers/apz/test/mochitest/apz_test_utils.js"]
 
+["test_paragraph_selection_with_alt_arrow_on_mac.html"]
+run-if = [
+  "os == 'mac'",
+]
+
 ["test_picker_no_crash.html"]
 skip-if = [
   "asan",

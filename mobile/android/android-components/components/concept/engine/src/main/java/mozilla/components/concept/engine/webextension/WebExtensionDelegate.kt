@@ -63,6 +63,12 @@ interface WebExtensionDelegate {
     fun onAllowedInPrivateBrowsingChanged(extension: WebExtension) = Unit
 
     /**
+     * Invoked to determine the current private browsing mode. New tabs opened
+     * by extensions may use this state if not specified otherwise.
+     */
+    fun isInPrivateBrowsing(): Boolean = false
+
+    /**
      * Invoked when a web extension attempts to open a new tab via
      * browser.tabs.create. Note that browser.tabs.update and browser.tabs.remove
      * can only be observed using session-specific handlers,
@@ -72,8 +78,16 @@ interface WebExtensionDelegate {
      * @param engineSession an instance of engine session to open a new tab with.
      * @param active whether or not the new tab should be active/selected.
      * @param url the target url to be loaded in a new tab.
+     * @param isPrivate whether private browsing mode is enabled for the new
+     * tab. Must match the engineSession.privateMode flag.
      */
-    fun onNewTab(extension: WebExtension, engineSession: EngineSession, active: Boolean, url: String) = Unit
+    fun onNewTab(
+        extension: WebExtension,
+        engineSession: EngineSession,
+        active: Boolean,
+        url: String,
+        isPrivate: Boolean,
+    ) = Unit
 
     /**
      * Invoked when a web extension defines a browser action. To listen for session-specific
@@ -101,6 +115,8 @@ interface WebExtensionDelegate {
      * @param extension The [WebExtension] that wants to display the popup.
      * @param engineSession The [EngineSession] to use for displaying the popup.
      * @param action the [Action] that defines the popup.
+     * @param isPrivate whether private browsing mode is enabled for the popup.
+     * Must match the engineSession.privateMode flag.
      * @return the [EngineSession] used to display the popup, or null if no popup
      * was displayed.
      */
@@ -108,6 +124,7 @@ interface WebExtensionDelegate {
         extension: WebExtension,
         engineSession: EngineSession,
         action: Action,
+        isPrivate: Boolean,
     ): EngineSession? = null
 
     /**

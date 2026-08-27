@@ -123,14 +123,14 @@ add_task(async function () {
       url:
         getRootDirectory(gTestPath).replace(
           "chrome://mochitests/content",
-          // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+          // eslint-disable-next-line sdl/no-insecure-url
           "http://example.com"
         ) + "dummy_page.html",
     },
     async function (browser) {
       let path = getRootDirectory(gTestPath).replace(
         "chrome://mochitests/content",
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         "http://example.com"
       );
       await SpecialPowers.spawn(browser, [path], async function (path) {

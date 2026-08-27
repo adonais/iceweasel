@@ -253,7 +253,7 @@ bool js::ParseDebugMetadata(JSContext* cx, JS::Handle<JSObject*> opts,
     if (!JS_DefineProperty(cx, infoObject, "element", elementValue, 0)) {
       return false;
     }
-    privateValue.set(JS::ObjectValue(*infoObject));
+    privateValue.setObject(*infoObject);
   }
 
   if (!JS_GetProperty(cx, opts, "elementAttributeName", &v)) {

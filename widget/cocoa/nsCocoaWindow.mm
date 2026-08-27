@@ -4992,6 +4992,7 @@ nsresult nsCocoaWindow::Create(nsIWidget* aParent, const DesktopIntRect& aRect,
 
   mAlwaysOnTop = aInitData.mAlwaysOnTop;
   mIsAlert = aInitData.mIsAlert;
+  mIsInitialFullscreenSuppressed = aInitData.mIsInitialFullscreenSuppressed;
 
   nsresult rv = CreateNativeWindow(nsCocoaUtils::GeckoRectToCocoaRect(aRect),
                                    mBorderStyle, false, aInitData.mIsPrivate);
@@ -5513,12 +5514,14 @@ void nsCocoaWindow::Show(bool aState) {
     // opened from an existing fullscreen window, then macOS will open the new
     // window in fullscreen, too. For some windows, this is not desirable. We
     // want to prevent it for any popup, alert, or alwaysOnTop windows that
-    // aren't already in fullscreen. If the user already got the window into
-    // fullscreen somehow, that's fine, but we don't want the initial display to
-    // be in fullscreen.
+    // aren't already in fullscreen, as well as windows that explicitly asked to
+    // suppress it (e.g. a window created by detaching a tab from a fullscreen
+    // window). If the user already got the window into fullscreen somehow,
+    // that's fine, but we don't want the initial display to be in fullscreen.
     bool savedValueForSupportsNativeFullscreen = GetSupportsNativeFullscreen();
     if (!mInFullScreenMode &&
-        ((mWindowType == WindowType::Popup) || mAlwaysOnTop || mIsAlert)) {
+        ((mWindowType == WindowType::Popup) || mAlwaysOnTop || mIsAlert ||
+         mIsInitialFullscreenSuppressed)) {
       SetSupportsNativeFullscreen(false);
     }
 
@@ -7330,14 +7333,6 @@ void nsCocoaWindow::SetInputRegion(const InputRegion& aInputRegion) {
   }
 }
 
-void nsCocoaWindow::SetShowsToolbarButton(bool aShow) {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
-
-  if (mWindow) [mWindow setShowsToolbarButton:aShow];
-
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
-}
-
 bool nsCocoaWindow::GetSupportsNativeFullscreen() {
   return mWindow.collectionBehavior &
          NSWindowCollectionBehaviorFullScreenPrimary;
@@ -7620,7 +7615,7 @@ void nsCocoaWindow::LockNativePointer(
 }
 
 void nsCocoaWindow::UnlockNativePointer() {
-  if (NS_WARN_IF(!GetNativePointerLockedMode())) {
+  if (!GetNativePointerLockedMode()) {
     MOZ_ASSERT(!sNativeLockedWindow);
     MOZ_ASSERT(sNativeLockedPoint == LayoutDeviceIntPoint(0, 0));
     return;
@@ -8243,7 +8238,6 @@ static NSImage* GetMenuMaskImage() {
 static const NSString* kStateTitleKey = @"title";
 static const NSString* kStateDrawsContentsIntoWindowFrameKey =
     @"drawsContentsIntoWindowFrame";
-static const NSString* kStateShowsToolbarButton = @"showsToolbarButton";
 static const NSString* kStateCollectionBehavior = @"collectionBehavior";
 
 - (void)importState:(NSDictionary*)aState {
@@ -8253,8 +8247,6 @@ static const NSString* kStateCollectionBehavior = @"collectionBehavior";
   [self setDrawsContentsIntoWindowFrame:
             [[aState objectForKey:kStateDrawsContentsIntoWindowFrameKey]
                 boolValue]];
-  [self setShowsToolbarButton:[[aState objectForKey:kStateShowsToolbarButton]
-                                  boolValue]];
   [self setCollectionBehavior:[[aState objectForKey:kStateCollectionBehavior]
                                   unsignedIntValue]];
 }
@@ -8266,8 +8258,6 @@ static const NSString* kStateCollectionBehavior = @"collectionBehavior";
   }
   [state setObject:[NSNumber numberWithBool:self.drawsContentsIntoWindowFrame]
             forKey:kStateDrawsContentsIntoWindowFrameKey];
-  [state setObject:[NSNumber numberWithBool:self.showsToolbarButton]
-            forKey:kStateShowsToolbarButton];
   [state setObject:[NSNumber numberWithUnsignedInt:self.collectionBehavior]
             forKey:kStateCollectionBehavior];
   return state;
@@ -8830,33 +8820,6 @@ static CGFloat DefaultTitlebarHeight() {
 
 - (NSRect)windowButtonsRect {
   return mWindowButtonsRect;
-}
-
-// Returning YES here makes the setShowsToolbarButton method work even though
-// the window doesn't contain an NSToolbar.
-- (BOOL)_hasToolbar {
-  return YES;
-}
-
-// Dispatch a toolbar pill button clicked message to Gecko.
-- (void)_toolbarPillButtonClicked:(id)sender {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
-
-  RollUpPopups();
-
-  if ([self.delegate isKindOfClass:[WindowDelegate class]]) {
-    auto* windowDelegate = static_cast<WindowDelegate*>(self.delegate);
-    nsCocoaWindow* geckoWindow = windowDelegate.geckoWidget;
-    if (!geckoWindow) {
-      return;
-    }
-
-    if (nsIWidgetListener* listener = geckoWindow->GetWidgetListener()) {
-      listener->OSToolbarButtonPressed();
-    }
-  }
-
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 // Retain and release "self" to avoid crashes when our widget (and its native

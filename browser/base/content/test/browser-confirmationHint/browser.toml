@@ -1,0 +1,6 @@
+# Tests for the ConfirmationHint mechanism itself. A test checking that some
+# feature shows a hint belongs with that feature.
+
+[DEFAULT]
+
+["browser_confirmationHint.js"]

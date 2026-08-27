@@ -5,6 +5,7 @@ avoid-blacklist-and-whitelist:
     include: ['.']
     type: external
     payload: mozcheck:lint
+    setup: mozcheck:setup
     check: rejected-words
     check-config:
         regex-pattern: (black|white)[-_]?list
@@ -62,8 +63,9 @@ avoid-blacklist-and-whitelist:
         - browser/components/tabbrowser/test/browser/tabMediaIndicator/browser_mute_webAudio.js
         - browser/components/tabbrowser/test/browser/tabs/browser_new_file_whitelisted_http_tab.js
         - browser/components/tabbrowser/test/browser/tabs/browser_tab_drag_drop_perwindow.js
-        - browser/components/urlbar/tests/browser/browser_searchSingleWordNotification.js
-        - browser/components/urlbar/tests/browser/browser_trust_panel.js
+        - browser/components/urlbar/tests/browser-search/browser_searchSingleWordNotification.js
+        - browser/components/urlbar/tests/browser-trustPanel/browser_trust_panel.js
+        - browser/components/urlbar/tests/browser-trustPanel/browser_trust_panel_icon.js
         - browser/components/urlbar/tests/browser-UrlbarInput/browser_trimURLs.js
         - browser/components/urlbar/tests/unit/test_providerHeuristicFallback.js
         - browser/components/urlbar/tests/unit/test_search_suggestions.js
@@ -310,6 +312,7 @@ avoid-gobbledygook:
     include: ['.']
     type: external
     payload: mozcheck:lint
+    setup: mozcheck:setup
     check: rejected-words
     check-config:
         regex-pattern: \b(gobbledy)?-?gook
@@ -337,6 +340,7 @@ forbid-moduleloaderbase-include:
     include: ['.']
     type: external
     payload: mozcheck:lint
+    setup: mozcheck:setup
     check: rejected-words
     check-config:
         regex-pattern: '#\s*include\s+"(js/loader/)?ModuleLoaderBase\.h"'

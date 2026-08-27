@@ -64,7 +64,7 @@
       "  (prefix, host, frecency, recalc_frecency, recalc_alt_frecency) " \
       "VALUES (get_prefix(NEW.url), get_host_and_port(NEW.url), "         \
       "        NEW.frecency, 1, 1)  "                                     \
-      "ON CONFLICT(prefix, host) DO UPDATE "                              \
+      "ON CONFLICT(host, prefix) DO UPDATE "                              \
       "  SET recalc_frecency = 1, recalc_alt_frecency = 1 "               \
       "  WHERE EXCLUDED.recalc_frecency = 0 OR "                          \
       "        EXCLUDED.recalc_alt_frecency = 0; "                        \

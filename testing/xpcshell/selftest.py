@@ -194,6 +194,14 @@ add_task(async function this_test_will_fail() {
 });
 """
 
+ADD_TASK_ABORT_FROM_TEST = """
+function run_test() { run_next_test(); }
+
+add_task(async function test_throws_abort() {
+  throw Components.Exception("", Cr.NS_ERROR_ABORT);
+});
+"""
+
 ADD_TASK_SKIP = """
 add_task(async function skipMeNot1() {
   Assert.ok(true, "Well well well.");
@@ -1149,6 +1157,43 @@ add_test({
         self.assertInLog("this_test_will_fail")
         self.assertInLog("run_next_test")
         self.assertInLog("run_test")
+
+    def testAddTaskFailureReportedOnce(self):
+        """
+        A failed assertion inside add_task() reports the single assertion
+        failure and nothing else. The marker the harness throws to unwind must
+        not surface as an extra exception report dumping harness-internal stack
+        frames into the log.
+        """
+        self.writeFile("test_add_task_failure_once.js", ADD_TASK_FAILURE_INSIDE)
+        self.writeManifest(["test_add_task_failure_once.js"])
+
+        self.assertTestResult(False)
+        self.assertEqual(1, self.x.failCount)
+        # A single in-task assertion failure should produce exactly two failure
+        # lines: the assertion itself and the per-file summary. The abort the
+        # harness throws to unwind must not be re-reported as an exception,
+        # which would dump a JS stack trace into the log.
+        log_lines = self.log.getvalue().splitlines()
+        fail_lines = [l for l in log_lines if "TEST-UNEXPECTED-FAIL" in l]
+        stack_lines = [l for l in log_lines if re.search(r"@.+:\d+(:\d+)?$", l)]
+        self.assertEqual(2, len(fail_lines), msg=pprint.pformat(log_lines))
+        self.assertEqual(0, len(stack_lines), msg=pprint.pformat(log_lines))
+
+    def testAddTaskAbortFromTest(self):
+        """
+        An NS_ERROR_ABORT thrown by the test itself (rather than by the harness
+        to unwind after a reported failure) is reported as a failure rather
+        than silently swallowed.
+        """
+        self.writeFile("test_add_task_abort_from_test.js", ADD_TASK_ABORT_FROM_TEST)
+        self.writeManifest(["test_add_task_abort_from_test.js"])
+
+        self.assertTestResult(False)
+        self.assertEqual(1, self.x.testCount)
+        self.assertEqual(0, self.x.passCount)
+        self.assertEqual(1, self.x.failCount)
+        self.assertInLog(TEST_FAIL_STRING)
 
     def testAddTaskSkip(self):
         self.writeFile("test_tasks_skip.js", ADD_TASK_SKIP)

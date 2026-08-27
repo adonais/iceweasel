@@ -80,7 +80,7 @@ add_task(async function test() {
         }),
         makeSearchResult(context, {
           engineName: "TestEngine",
-          engineIconUri: UrlbarUtils.ICON.SEARCH_GLASS,
+          engineIconUri: UrlbarShared.ICON.SEARCH_GLASS,
           searchUrlDomainWithoutSuffix: "en.example.",
           providesSearchMode: true,
           query: "",
@@ -123,7 +123,7 @@ add_task(async function test() {
         }),
         makeSearchResult(context, {
           engineName: engine2.name,
-          engineIconUri: UrlbarUtils.ICON.SEARCH_GLASS,
+          engineIconUri: UrlbarShared.ICON.SEARCH_GLASS,
           searchUrlDomainWithoutSuffix: "www.it.mochi.",
           providesSearchMode: true,
           query: "",
@@ -171,7 +171,7 @@ add_task(async function test() {
         }),
         makeSearchResult(context, {
           engineName: "TestEngine3",
-          engineIconUri: UrlbarUtils.ICON.SEARCH_GLASS,
+          engineIconUri: UrlbarShared.ICON.SEARCH_GLASS,
           searchUrlDomainWithoutSuffix: "search.foo.",
           providesSearchMode: true,
           query: "",

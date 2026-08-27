@@ -2,16 +2,436 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <algorithm>
 #include <bit>
 
 #include "Orientation.h"
+#include "gtest/MozGTestBench.h"
 #include "gtest/gtest.h"
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/gfx/Swizzle.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;
 using namespace mozilla::image;
+
+namespace mozilla::gfx {
+
+// These are implementations of the row methods using SwizzleGeneric.h without
+// any architecture specific specialization. This allows us to test the generics
+// without any of the architecture specific template specializations and instead
+// use only the pure generics. This is useful to test because if a new target
+// doesn't use any specializations for the actual operations, we want to keep it
+// working.
+SwizzleRowFn PremultiplyRowGeneric(SurfaceFormat aSrcFormat,
+                                   SurfaceFormat aDstFormat, SwizzleArch aArch);
+SwizzleRowFn UnpremultiplyRowGeneric(SurfaceFormat aSrcFormat,
+                                     SurfaceFormat aDstFormat,
+                                     SwizzleArch aArch);
+SwizzleRowFn SwizzleRowGeneric(SurfaceFormat aSrcFormat,
+                               SurfaceFormat aDstFormat, SwizzleArch aArch);
+
+}  // namespace mozilla::gfx
+
+enum class SwizzleOp {
+  Copy,
+  YFlip,
+  YFlipInplace,
+  Premultiply,
+  PremultiplyYFlip,
+  PremultiplyYFlipInplace,
+  Unpremultiply
+};
+
+// AVX2 is our widest at 32 bytes, or 8 pixels. Below we calculate the value
+// needed to cover 3 full passes, including any remainders.
+constexpr int32_t kMaxSweepPixels = 8 * 3;
+
+// If the arch isn't available on this machine, the swizzle will just not
+// happen, and then we will try the next one.
+constexpr SwizzleArch kSwizzleArchs[] = {
+    SwizzleArch::eAny,  SwizzleArch::eFallback, SwizzleArch::eGeneric,
+#ifdef USE_SSE2
+    SwizzleArch::eSSE2, SwizzleArch::eSSSE3,    SwizzleArch::eAVX2,
+#endif
+#ifdef USE_NEON
+    SwizzleArch::eNEON,
+#endif
+};
+
+static uint8_t RefPremultiply(uint8_t aColor, uint8_t aAlpha) {
+  uint32_t t = uint32_t(aColor) * aAlpha + 0xFF;
+  return uint8_t((t + (t >> 8)) >> 8);
+}
+
+static uint8_t RefUnpremultiply(uint8_t aColor, uint8_t aAlpha) {
+  uint32_t q = aAlpha ? (0xFF00FFu / aAlpha) : 0u;
+  return uint8_t((uint32_t(aColor) * q) >> 16);
+}
+
+// Generate the expected pixel for testing with the given
+// configuration/operation. It does this in the simplest way possible for manual
+// verification of correctness.
+static void GeneratePixel(SwizzleOp aOp, SurfaceFormat aDstFormat, uint8_t aB,
+                          uint8_t aG, uint8_t aR, uint8_t aA, uint8_t* aDst) {
+  uint8_t r = aR;
+  uint8_t g = aG;
+  uint8_t b = aB;
+  switch (aOp) {
+    default:
+      break;
+    case SwizzleOp::Premultiply:
+    case SwizzleOp::PremultiplyYFlip:
+    case SwizzleOp::PremultiplyYFlipInplace:
+      r = RefPremultiply(aR, aA);
+      g = RefPremultiply(aG, aA);
+      b = RefPremultiply(aB, aA);
+      break;
+    case SwizzleOp::Unpremultiply:
+      r = RefUnpremultiply(aR, aA);
+      g = RefUnpremultiply(aG, aA);
+      b = RefUnpremultiply(aB, aA);
+      break;
+  }
+
+  switch (aDstFormat) {
+    case SurfaceFormat::B8G8R8A8:
+      aDst[0] = b;
+      aDst[1] = g;
+      aDst[2] = r;
+      aDst[3] = aA;
+      break;
+    case SurfaceFormat::R8G8B8A8:
+      aDst[0] = r;
+      aDst[1] = g;
+      aDst[2] = b;
+      aDst[3] = aA;
+      break;
+    case SurfaceFormat::A8R8G8B8:
+      aDst[0] = aA;
+      aDst[1] = r;
+      aDst[2] = g;
+      aDst[3] = b;
+      break;
+    case SurfaceFormat::R8G8B8X8:
+      aDst[0] = r;
+      aDst[1] = g;
+      aDst[2] = b;
+      aDst[3] = 0xFF;
+      break;
+    case SurfaceFormat::B8G8R8X8:
+      aDst[0] = b;
+      aDst[1] = g;
+      aDst[2] = r;
+      aDst[3] = 0xFF;
+      break;
+    case SurfaceFormat::X8R8G8B8:
+      aDst[0] = 0xFF;
+      aDst[1] = r;
+      aDst[2] = g;
+      aDst[3] = b;
+      break;
+    default:
+      ADD_FAILURE() << "Unhandled destination format";
+      break;
+  }
+}
+
+// Reference CMYK -> RGB conversion matching the scalar SwizzleCmykRowFallback:
+// R = iC*iK/255, G = iM*iK/255, B = iY*iK/255 (truncating), with i meaning
+// inverted. The result is packed via GeneratePixel so the destination byte
+// order is handled consistently.
+static void GenerateCmykPixel(bool aInverted, SurfaceFormat aDstFormat,
+                              uint8_t aC, uint8_t aM, uint8_t aY, uint8_t aK,
+                              uint8_t* aDst) {
+  uint32_t iC = aC, iM = aM, iY = aY, iK = aK;
+
+  // Invert if necessary, as the math expects inverted CMYK.
+  if (!aInverted) {
+    iC = 255 - iC;
+    iM = 255 - iM;
+    iY = 255 - iY;
+    iK = 255 - iK;
+  }
+  uint8_t r = iC * iK / 255;
+  uint8_t g = iM * iK / 255;
+  uint8_t b = iY * iK / 255;
+  GeneratePixel(SwizzleOp::Copy, aDstFormat, b, g, r, 0xFF, aDst);
+}
+
+// Generate a BGRA sample with a range of channel values. It can clamp the RGB
+// values to ensure it is normal for unpremultiply.
+static void FillTestBGRA(uint8_t* aDst, int32_t aWidth, bool aClampToAlpha) {
+  for (int32_t i = 0; i < aWidth; ++i) {
+    uint8_t a = (i % 17 == 0)   ? 0
+                : (i % 13 == 0) ? 255
+                                : uint8_t((i * 5 + 7) & 0xFF);
+    uint8_t b = uint8_t((i * 7 + 1) & 0xFF);
+    uint8_t g = uint8_t((i * 13 + 2) & 0xFF);
+    uint8_t r = uint8_t((i * 29 + 3) & 0xFF);
+    if (aClampToAlpha) {
+      b = std::min(b, a);
+      g = std::min(g, a);
+      r = std::min(r, a);
+    }
+    aDst[i * 4 + 0] = b;
+    aDst[i * 4 + 1] = g;
+    aDst[i * 4 + 2] = r;
+    aDst[i * 4 + 3] = a;
+  }
+}
+
+static SwizzleRowFn RowFnFor(SwizzleOp aOp, SurfaceFormat aSrc,
+                             SurfaceFormat aDst, SwizzleArch aArch) {
+  switch (aOp) {
+    case SwizzleOp::Premultiply:
+      return PremultiplyRowGeneric(aSrc, aDst, aArch);
+    case SwizzleOp::Unpremultiply:
+      return UnpremultiplyRowGeneric(aSrc, aDst, aArch);
+    case SwizzleOp::Copy:
+      return SwizzleRowGeneric(aSrc, aDst, aArch);
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unhandled row SwizzleOp!");
+      break;
+  }
+  return nullptr;
+}
+
+// Verify the *Data methods exported for swizzling.
+static void CheckBGRADataSweep(SwizzleOp aOp, SurfaceFormat aDstFormat) {
+  constexpr int32_t kHeight = 3;
+  constexpr int32_t kGapPixels = 5;
+  constexpr int32_t kStride = (kMaxSweepPixels + kGapPixels) * 4;
+  constexpr int32_t kSize = kStride * kHeight;
+  uint8_t src[kSize];
+  uint8_t dst[kSize];
+  uint8_t expected[kSize];
+
+  for (int32_t i = 0; i < kHeight; ++i) {
+    uint8_t* rowStart = src + i * kStride;
+    FillTestBGRA(rowStart, kMaxSweepPixels, aOp == SwizzleOp::Unpremultiply);
+    memset(rowStart + kMaxSweepPixels * 4, 0xDF, kGapPixels * 4);
+  }
+
+  bool inplace = aOp == SwizzleOp::YFlipInplace ||
+                 aOp == SwizzleOp::PremultiplyYFlipInplace;
+  bool yflip =
+      inplace || aOp == SwizzleOp::YFlip || aOp == SwizzleOp::PremultiplyYFlip;
+  const uint8_t* srcOpPtr = inplace ? dst : src;
+
+  for (SwizzleArch arch : kSwizzleArchs) {
+    SCOPED_TRACE(testing::Message() << "arch=" << int(arch));
+    // When we are inplace, there are pixels not just dummy values from src so
+    // we need to copy src into expected first so that the unwritten pixels
+    // still match.
+    if (inplace) {
+      memcpy(expected, src, sizeof(expected));
+    } else {
+      memset(expected, 0xCD, sizeof(expected));
+    }
+
+    for (int32_t i = 0; i < kMaxSweepPixels; ++i) {
+      for (int32_t k = 0; k < kHeight; ++k) {
+        int32_t srcPos = k * kStride + i * 4;
+        int32_t dstPos = yflip ? (kHeight - k - 1) * kStride + i * 4 : srcPos;
+        GeneratePixel(aOp, aDstFormat, src[srcPos], src[srcPos + 1],
+                      src[srcPos + 2], src[srcPos + 3], expected + dstPos);
+      }
+
+      int32_t width = i + 1;
+
+      if (inplace) {
+        memcpy(dst, src, sizeof(dst));
+      } else {
+        memset(dst, 0xCD, sizeof(dst));
+      }
+
+      bool success = false;
+      switch (aOp) {
+        case SwizzleOp::Copy:
+          success =
+              SwizzleData(srcOpPtr, kStride, SurfaceFormat::B8G8R8A8, dst,
+                          kStride, aDstFormat, IntSize(width, kHeight), arch);
+          break;
+        case SwizzleOp::YFlip:
+        case SwizzleOp::YFlipInplace:
+          success = SwizzleYFlipData(srcOpPtr, kStride, SurfaceFormat::B8G8R8A8,
+                                     dst, kStride, aDstFormat,
+                                     IntSize(width, kHeight), arch);
+          break;
+        case SwizzleOp::Premultiply:
+          success = PremultiplyData(srcOpPtr, kStride, SurfaceFormat::B8G8R8A8,
+                                    dst, kStride, aDstFormat,
+                                    IntSize(width, kHeight), arch);
+          break;
+        case SwizzleOp::PremultiplyYFlip:
+        case SwizzleOp::PremultiplyYFlipInplace:
+          success = PremultiplyYFlipData(
+              srcOpPtr, kStride, SurfaceFormat::B8G8R8A8, dst, kStride,
+              aDstFormat, IntSize(width, kHeight), arch);
+          break;
+        case SwizzleOp::Unpremultiply:
+          success = UnpremultiplyData(
+              srcOpPtr, kStride, SurfaceFormat::B8G8R8A8, dst, kStride,
+              aDstFormat, IntSize(width, kHeight), arch);
+          break;
+        default:
+          MOZ_ASSERT_UNREACHABLE("Unhandled SwizzleOp!");
+          break;
+      }
+
+      // We can fail if the arch isn't supported for this operation, but
+      // any/fallback should always succeed.
+      if (!success) {
+        EXPECT_NE(arch, SwizzleArch::eAny);
+        EXPECT_NE(arch, SwizzleArch::eFallback);
+        break;
+      }
+
+      EXPECT_TRUE(ArrayEqual(dst, expected))
+          << (inplace ? "same buffer" : "separate buffers") << ", width "
+          << width;
+    }
+  }
+}
+
+// Verify the *Row methods exported for swizzling.
+static void CheckBGRARowSweep(SwizzleOp aOp, SurfaceFormat aDstFormat) {
+  constexpr int32_t kSize = kMaxSweepPixels * 4;
+  uint8_t src[kSize];
+  uint8_t dst[kSize];
+  uint8_t expected[kSize];
+  FillTestBGRA(src, kMaxSweepPixels, aOp == SwizzleOp::Unpremultiply);
+
+  for (SwizzleArch arch : kSwizzleArchs) {
+    SCOPED_TRACE(testing::Message()
+                 << "dstFormat=" << int(aDstFormat) << " arch=" << int(arch));
+
+    // We can fail if the arch isn't supported for this operation, but
+    // any/fallback should always succeed.
+    SwizzleRowFn func =
+        RowFnFor(aOp, SurfaceFormat::B8G8R8A8, aDstFormat, arch);
+    if (!func) {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+      continue;
+    }
+
+    memset(expected, 0xCD, sizeof(expected));
+
+    for (int32_t i = 0; i < kMaxSweepPixels; ++i) {
+      GeneratePixel(aOp, aDstFormat, src[i * 4 + 0], src[i * 4 + 1],
+                    src[i * 4 + 2], src[i * 4 + 3], &expected[i * 4]);
+
+      int32_t len = i + 1;
+      memset(dst, 0xCD, sizeof(dst));
+      func(src, dst, len);
+      EXPECT_TRUE(ArrayEqual(dst, expected))
+          << "separate buffers, length " << len;
+
+      memcpy(dst, src, len * 4);
+      func(dst, dst, len);
+      EXPECT_TRUE(ArrayEqual(dst, expected)) << "in place, length " << len;
+    }
+  }
+}
+
+// Verify the SwizzleRow methods exported for unpacking RGB, which has
+// different sizes and so needs a slightly different algorithm for generating
+// the inputs.
+static void CheckUnpackRowSweep(SurfaceFormat aDstFormat) {
+  constexpr int32_t kSrcSize = kMaxSweepPixels * 3;
+  constexpr int32_t kDstSize = kMaxSweepPixels * 4;
+  uint8_t src[kSrcSize];
+  uint8_t dst[kDstSize];
+  uint8_t expected[kDstSize];
+  for (int32_t i = 0; i < kSrcSize; ++i) {
+    src[i] = uint8_t((i * 11 + 5) & 0xFF);
+  }
+
+  for (SwizzleArch arch : kSwizzleArchs) {
+    SCOPED_TRACE(testing::Message()
+                 << "dstFormat=" << int(aDstFormat) << " arch=" << int(arch));
+
+    // We can fail if the arch isn't supported for this operation, but
+    // any/fallback should always succeed.
+    SwizzleRowFn func =
+        RowFnFor(SwizzleOp::Copy, SurfaceFormat::R8G8B8, aDstFormat, arch);
+    if (!func) {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+      continue;
+    }
+
+    memset(expected, 0xCD, sizeof(expected));
+
+    for (int32_t i = 0; i < kMaxSweepPixels; ++i) {
+      uint8_t r = src[i * 3 + 0];
+      uint8_t g = src[i * 3 + 1];
+      uint8_t b = src[i * 3 + 2];
+      GeneratePixel(SwizzleOp::Copy, aDstFormat, b, g, r, 0xFF,
+                    &expected[i * 4]);
+
+      int32_t len = i + 1;
+      memset(dst, 0xCD, sizeof(dst));
+      func(src, dst, len);
+      EXPECT_TRUE(ArrayEqual(dst, expected))
+          << "unpack separate buffers, length " << len;
+
+      memcpy(dst, src, len * 3);
+      func(dst, dst, len);
+      EXPECT_TRUE(ArrayEqual(dst, expected))
+          << "unpack in place, length " << len;
+    }
+  }
+}
+
+// Verify the *Row methods exported for swizzling CMYK.
+static void CheckCmykRowSweep(SurfaceFormat aSrcFormat) {
+  constexpr int32_t kSize = kMaxSweepPixels * 4;
+  uint8_t src[kSize];
+  uint8_t dst[kSize];
+  uint8_t expected[kSize];
+  // Spread of C/M/Y/K values across the row. The multiplier and addition are
+  // arbitrary values intended to select for values across the spectrum.
+  for (int32_t i = 0; i < kSize; ++i) {
+    src[i] = uint8_t((i * 37 + 11) & 0xFF);
+  }
+  const bool inverted = aSrcFormat == SurfaceFormat::InvertedCMYK;
+
+  for (SwizzleArch arch : kSwizzleArchs) {
+    SCOPED_TRACE(testing::Message()
+                 << "srcFormat=" << int(aSrcFormat) << " arch=" << int(arch));
+
+    SwizzleRowFn func =
+        RowFnFor(SwizzleOp::Copy, aSrcFormat, SurfaceFormat::B8G8R8X8, arch);
+    if (!func) {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+      continue;
+    }
+
+    memset(expected, 0xCD, sizeof(expected));
+
+    for (int32_t i = 0; i < kMaxSweepPixels; ++i) {
+      GenerateCmykPixel(inverted, SurfaceFormat::B8G8R8X8, src[i * 4 + 0],
+                        src[i * 4 + 1], src[i * 4 + 2], src[i * 4 + 3],
+                        &expected[i * 4]);
+
+      int32_t len = i + 1;
+      memset(dst, 0xCD, sizeof(dst));
+      func(src, dst, len);
+      EXPECT_TRUE(ArrayEqual(dst, expected))
+          << "separate buffers, length " << len;
+
+      memcpy(dst, src, len * 4);
+      func(dst, dst, len);
+      EXPECT_TRUE(ArrayEqual(dst, expected)) << "in place, length " << len;
+    }
+  }
+}
 
 TEST(Moz2D, PremultiplyData)
 {
@@ -68,18 +488,38 @@ TEST(Moz2D, PremultiplyRow)
       255, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 0, 128,
   };
 
-  SwizzleRowFn func =
-      PremultiplyRow(SurfaceFormat::B8G8R8A8, SurfaceFormat::B8G8R8A8);
-  func(in_bgra, out, 5);
-  EXPECT_TRUE(ArrayEqual(out, check_bgra));
+  for (auto arch : kSwizzleArchs) {
+    SwizzleRowFn func =
+        RowFnFor(SwizzleOp::Premultiply, SurfaceFormat::B8G8R8A8,
+                 SurfaceFormat::B8G8R8A8, arch);
+    if (func) {
+      func(in_bgra, out, 5);
+      EXPECT_TRUE(ArrayEqual(out, check_bgra));
+    } else {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
 
-  func = PremultiplyRow(SurfaceFormat::B8G8R8A8, SurfaceFormat::R8G8B8A8);
-  func(in_bgra, out, 5);
-  EXPECT_TRUE(ArrayEqual(out, check_rgba));
+    func = RowFnFor(SwizzleOp::Premultiply, SurfaceFormat::B8G8R8A8,
+                    SurfaceFormat::R8G8B8A8, arch);
+    if (func) {
+      func(in_bgra, out, 5);
+      EXPECT_TRUE(ArrayEqual(out, check_rgba));
+    } else {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
 
-  func = PremultiplyRow(SurfaceFormat::B8G8R8A8, SurfaceFormat::A8R8G8B8);
-  func(in_bgra, out, 5);
-  EXPECT_TRUE(ArrayEqual(out, check_argb));
+    func = RowFnFor(SwizzleOp::Premultiply, SurfaceFormat::B8G8R8A8,
+                    SurfaceFormat::A8R8G8B8, arch);
+    if (func) {
+      func(in_bgra, out, 5);
+      EXPECT_TRUE(ArrayEqual(out, check_argb));
+    } else {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
+  }
 }
 
 TEST(Moz2D, PremultiplyYFlipData)
@@ -206,18 +646,38 @@ TEST(Moz2D, UnpremultiplyRow)
       255, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 128, 0, 0, 255,
   };
 
-  SwizzleRowFn func =
-      UnpremultiplyRow(SurfaceFormat::B8G8R8A8, SurfaceFormat::B8G8R8A8);
-  func(in_bgra, out, 5);
-  EXPECT_TRUE(ArrayEqual(out, check_bgra));
+  for (auto arch : kSwizzleArchs) {
+    SwizzleRowFn func =
+        RowFnFor(SwizzleOp::Unpremultiply, SurfaceFormat::B8G8R8A8,
+                 SurfaceFormat::B8G8R8A8, arch);
+    if (func) {
+      func(in_bgra, out, 5);
+      EXPECT_TRUE(ArrayEqual(out, check_bgra));
+    } else {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
 
-  func = UnpremultiplyRow(SurfaceFormat::B8G8R8A8, SurfaceFormat::R8G8B8A8);
-  func(in_bgra, out, 5);
-  EXPECT_TRUE(ArrayEqual(out, check_rgba));
+    func = RowFnFor(SwizzleOp::Unpremultiply, SurfaceFormat::B8G8R8A8,
+                    SurfaceFormat::R8G8B8A8, arch);
+    if (func) {
+      func(in_bgra, out, 5);
+      EXPECT_TRUE(ArrayEqual(out, check_rgba));
+    } else {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
 
-  func = UnpremultiplyRow(SurfaceFormat::B8G8R8A8, SurfaceFormat::A8R8G8B8);
-  func(in_bgra, out, 5);
-  EXPECT_TRUE(ArrayEqual(out, check_argb));
+    func = RowFnFor(SwizzleOp::Unpremultiply, SurfaceFormat::B8G8R8A8,
+                    SurfaceFormat::A8R8G8B8, arch);
+    if (func) {
+      func(in_bgra, out, 5);
+      EXPECT_TRUE(ArrayEqual(out, check_argb));
+    } else {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
+  }
 }
 
 TEST(Moz2D, SwizzleData)
@@ -409,53 +869,166 @@ TEST(Moz2D, SwizzleRow)
       255, 25, 26,  27,  255, 28,  29, 30, 255, 31, 32, 33, 255, 34, 35, 36,
   };
 
-  SwizzleRowFn func =
-      SwizzleRow(SurfaceFormat::B8G8R8A8, SurfaceFormat::R8G8B8A8);
-  func(in_bgra, out, 5);
-  EXPECT_TRUE(ArrayEqual(out, check_rgba));
+  for (auto arch : kSwizzleArchs) {
+    SwizzleRowFn func = RowFnFor(SwizzleOp::Copy, SurfaceFormat::B8G8R8A8,
+                                 SurfaceFormat::R8G8B8A8, arch);
+    if (func) {
+      func(in_bgra, out, 5);
+      EXPECT_TRUE(ArrayEqual(out, check_rgba));
+    } else {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
 
-  func = SwizzleRow(SurfaceFormat::B8G8R8A8, SurfaceFormat::R8G8B8X8);
-  func(in_bgra, out, 5);
-  EXPECT_TRUE(ArrayEqual(out, check_rgbx));
+    func = RowFnFor(SwizzleOp::Copy, SurfaceFormat::B8G8R8A8,
+                    SurfaceFormat::R8G8B8X8, arch);
+    if (func) {
+      func(in_bgra, out, 5);
+      EXPECT_TRUE(ArrayEqual(out, check_rgbx));
+    } else {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
 
-  func = SwizzleRow(SurfaceFormat::B8G8R8A8, SurfaceFormat::B8G8R8A8);
-  func(in_bgra, out, 5);
-  EXPECT_TRUE(ArrayEqual(out, in_bgra));
+    func = RowFnFor(SwizzleOp::Copy, SurfaceFormat::B8G8R8A8,
+                    SurfaceFormat::B8G8R8A8, arch);
+    if (func) {
+      func(in_bgra, out, 5);
+      EXPECT_TRUE(ArrayEqual(out, in_bgra));
+    } else {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
 
-  func = SwizzleRow(SurfaceFormat::B8G8R8A8, SurfaceFormat::B8G8R8);
-  func(in_bgra, out24, 5);
-  EXPECT_TRUE(ArrayEqual(out24, check_bgr));
+    func = RowFnFor(SwizzleOp::Copy, SurfaceFormat::B8G8R8A8,
+                    SurfaceFormat::B8G8R8, arch);
+    if (func) {
+      func(in_bgra, out24, 5);
+      EXPECT_TRUE(ArrayEqual(out24, check_bgr));
+    } else {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
 
-  func = SwizzleRow(SurfaceFormat::B8G8R8A8, SurfaceFormat::R8G8B8);
-  func(in_bgra, out24, 5);
-  EXPECT_TRUE(ArrayEqual(out24, check_rgb));
+    func = RowFnFor(SwizzleOp::Copy, SurfaceFormat::B8G8R8A8,
+                    SurfaceFormat::R8G8B8, arch);
+    if (func) {
+      func(in_bgra, out24, 5);
+      EXPECT_TRUE(ArrayEqual(out24, check_rgb));
+    } else {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
 
-  func = SwizzleRow(SurfaceFormat::R8G8B8, SurfaceFormat::B8G8R8X8);
-  func(in_rgb, out_unpack, 16);
-  EXPECT_TRUE(ArrayEqual(out_unpack, check_unpack_bgrx));
+    func = RowFnFor(SwizzleOp::Copy, SurfaceFormat::R8G8B8,
+                    SurfaceFormat::B8G8R8X8, arch);
+    if (func) {
+      func(in_rgb, out_unpack, 16);
+      EXPECT_TRUE(ArrayEqual(out_unpack, check_unpack_bgrx));
 
-  memset(out_unpack, 0xE5, sizeof(out_unpack));
-  memcpy(out_unpack, in_rgb, sizeof(in_rgb));
-  func(out_unpack, out_unpack, 16);
-  EXPECT_TRUE(ArrayEqual(out_unpack, check_unpack_bgrx));
+      memset(out_unpack, 0xE5, sizeof(out_unpack));
+      memcpy(out_unpack, in_rgb, sizeof(in_rgb));
+      func(out_unpack, out_unpack, 16);
+      EXPECT_TRUE(ArrayEqual(out_unpack, check_unpack_bgrx));
+    } else {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
 
-  func = SwizzleRow(SurfaceFormat::R8G8B8, SurfaceFormat::R8G8B8X8);
-  func(in_rgb, out_unpack, 16);
-  EXPECT_TRUE(ArrayEqual(out_unpack, check_unpack_rgbx));
+    func = RowFnFor(SwizzleOp::Copy, SurfaceFormat::R8G8B8,
+                    SurfaceFormat::R8G8B8X8, arch);
+    if (func) {
+      func(in_rgb, out_unpack, 16);
+      EXPECT_TRUE(ArrayEqual(out_unpack, check_unpack_rgbx));
 
-  memset(out_unpack, 0xE5, sizeof(out_unpack));
-  memcpy(out_unpack, in_rgb, sizeof(in_rgb));
-  func(out_unpack, out_unpack, 16);
-  EXPECT_TRUE(ArrayEqual(out_unpack, check_unpack_rgbx));
+      memset(out_unpack, 0xE5, sizeof(out_unpack));
+      memcpy(out_unpack, in_rgb, sizeof(in_rgb));
+      func(out_unpack, out_unpack, 16);
+      EXPECT_TRUE(ArrayEqual(out_unpack, check_unpack_rgbx));
+    } else {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
 
-  func = SwizzleRow(SurfaceFormat::R8G8B8, SurfaceFormat::X8R8G8B8);
-  func(in_rgb, out_unpack, 16);
-  EXPECT_TRUE(ArrayEqual(out_unpack, check_unpack_xrgb));
+    func = RowFnFor(SwizzleOp::Copy, SurfaceFormat::R8G8B8,
+                    SurfaceFormat::X8R8G8B8, arch);
+    if (func) {
+      func(in_rgb, out_unpack, 16);
+      EXPECT_TRUE(ArrayEqual(out_unpack, check_unpack_xrgb));
 
-  memset(out_unpack, 0xE5, sizeof(out_unpack));
-  memcpy(out_unpack, in_rgb, sizeof(in_rgb));
-  func(out_unpack, out_unpack, 16);
-  EXPECT_TRUE(ArrayEqual(out_unpack, check_unpack_xrgb));
+      memset(out_unpack, 0xE5, sizeof(out_unpack));
+      memcpy(out_unpack, in_rgb, sizeof(in_rgb));
+      func(out_unpack, out_unpack, 16);
+      EXPECT_TRUE(ArrayEqual(out_unpack, check_unpack_xrgb));
+    } else {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
+  }
+}
+
+TEST(Moz2D, SwizzleRowCmyk)
+{
+  // We use inverted CMYK here as it's preferred in the field and is easier to
+  // explain
+  const uint8_t in_inverted_cmyk[10 * 4] = {
+      200, 50,  10,  255,  // K=255: color passes through (R=iC, G=iM, B=iY)
+      200, 50,  10,  0,    // K=0: fully black
+      255, 255, 255, 255,  // all max -> 255,255,255
+      0,   0,   0,   0,    // all min -> 0,0,0
+      128, 128, 128, 128,  // floor edge: 128*128/255 = 64.25 -> 64
+      255, 0,   0,   255,  // only iC -> only R (catches R/B swap)
+      0,   0,   255, 255,  // only iY -> only B (catches R/B swap)
+      2,   2,   2,   128,  // truncation: 2*128/255 = 1.003 -> 1
+      255, 255, 255, 1,    // tiny K: 255*1/255 = 1
+      100, 150, 200, 77,   // arbitrary mid values
+  };
+  uint8_t out[10 * 4];
+
+  // clang-format off
+  const uint8_t check_inverted_bgrx[10 * 4] = {
+       10, 50, 200, 255,  0,  0,  0, 255, 255, 255, 255, 255,
+        0,  0,   0, 255, 64, 64, 64, 255,   0,   0, 255, 255,
+      255,  0,   0, 255,  1,  1,  1, 255,   1,   1,   1, 255,
+       60, 45,  30, 255,
+  };
+
+  // Non-inverted CMYK: each channel is inverted (255 - x) during the conversion.
+  const uint8_t check_bgrx[10 * 4] = {
+        0,   0,   0, 255, 245, 205,  55, 255, 0,  0,   0, 255,
+      255, 255, 255, 255,  63,  63,  63, 255, 0,  0,   0, 255,
+        0,   0,   0, 255, 126, 126, 126, 255, 0,  0,   0, 255,
+       38, 73,  108, 255,
+  };
+  // clang-format on
+
+  for (SwizzleArch arch : kSwizzleArchs) {
+    SwizzleRowFn func = RowFnFor(SwizzleOp::Copy, SurfaceFormat::CMYK,
+                                 SurfaceFormat::B8G8R8X8, arch);
+    if (func) {
+      func(in_inverted_cmyk, out, 10);
+      EXPECT_TRUE(ArrayEqual(out, check_bgrx));
+    } else {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
+
+    func = RowFnFor(SwizzleOp::Copy, SurfaceFormat::InvertedCMYK,
+                    SurfaceFormat::B8G8R8X8, arch);
+    if (func) {
+      func(in_inverted_cmyk, out, 10);
+      EXPECT_TRUE(ArrayEqual(out, check_inverted_bgrx));
+    } else {
+      EXPECT_NE(arch, SwizzleArch::eAny);
+      EXPECT_NE(arch, SwizzleArch::eFallback);
+    }
+  }
+}
+
+TEST(Moz2D, SwizzleCmykRowSweep)
+{
+  CheckCmykRowSweep(SurfaceFormat::CMYK);
+  CheckCmykRowSweep(SurfaceFormat::InvertedCMYK);
 }
 
 TEST(Moz2D, ReorientRow)
@@ -694,3 +1267,352 @@ TEST(Moz2D, ReorientRow)
   // Flip, rotate 270 degrees is the same as rotate 90 degrees, flip.
   EXPECT_TRUE(ArrayEqual(out, check_d90_flip));
 }
+
+TEST(Moz2D, PremultiplyRowSweep)
+{
+  CheckBGRARowSweep(SwizzleOp::Premultiply, SurfaceFormat::B8G8R8A8);
+  CheckBGRARowSweep(SwizzleOp::Premultiply, SurfaceFormat::R8G8B8A8);
+  CheckBGRARowSweep(SwizzleOp::Premultiply, SurfaceFormat::A8R8G8B8);
+}
+
+TEST(Moz2D, PremultiplyDataSweep)
+{
+  CheckBGRADataSweep(SwizzleOp::Premultiply, SurfaceFormat::B8G8R8A8);
+  CheckBGRADataSweep(SwizzleOp::Premultiply, SurfaceFormat::R8G8B8A8);
+}
+
+TEST(Moz2D, PremultiplyYFlipDataSweep)
+{
+  CheckBGRADataSweep(SwizzleOp::PremultiplyYFlip, SurfaceFormat::B8G8R8A8);
+  CheckBGRADataSweep(SwizzleOp::PremultiplyYFlip, SurfaceFormat::R8G8B8A8);
+}
+
+TEST(Moz2D, PremultiplyYFlipInplaceDataSweep)
+{
+  CheckBGRADataSweep(SwizzleOp::PremultiplyYFlipInplace,
+                     SurfaceFormat::B8G8R8A8);
+  CheckBGRADataSweep(SwizzleOp::PremultiplyYFlipInplace,
+                     SurfaceFormat::R8G8B8A8);
+}
+
+TEST(Moz2D, UnpremultiplyRowSweep)
+{
+  CheckBGRARowSweep(SwizzleOp::Unpremultiply, SurfaceFormat::B8G8R8A8);
+  CheckBGRARowSweep(SwizzleOp::Unpremultiply, SurfaceFormat::R8G8B8A8);
+  CheckBGRARowSweep(SwizzleOp::Unpremultiply, SurfaceFormat::A8R8G8B8);
+}
+
+TEST(Moz2D, UnpremultiplyDataSweep)
+{
+  CheckBGRADataSweep(SwizzleOp::Unpremultiply, SurfaceFormat::B8G8R8A8);
+  CheckBGRADataSweep(SwizzleOp::Unpremultiply, SurfaceFormat::R8G8B8A8);
+}
+
+TEST(Moz2D, SwizzleDataSweep)
+{
+  CheckBGRADataSweep(SwizzleOp::Copy, SurfaceFormat::B8G8R8X8);
+  CheckBGRADataSweep(SwizzleOp::Copy, SurfaceFormat::R8G8B8A8);
+  CheckBGRADataSweep(SwizzleOp::Copy, SurfaceFormat::R8G8B8X8);
+}
+
+TEST(Moz2D, SwizzleYFlipDataSweep)
+{
+  CheckBGRADataSweep(SwizzleOp::YFlip, SurfaceFormat::B8G8R8X8);
+  CheckBGRADataSweep(SwizzleOp::YFlip, SurfaceFormat::R8G8B8A8);
+  CheckBGRADataSweep(SwizzleOp::YFlip, SurfaceFormat::R8G8B8X8);
+}
+
+TEST(Moz2D, SwizzleYFlipInplaceDataSweep)
+{
+  CheckBGRADataSweep(SwizzleOp::YFlipInplace, SurfaceFormat::B8G8R8X8);
+  CheckBGRADataSweep(SwizzleOp::YFlipInplace, SurfaceFormat::R8G8B8A8);
+  CheckBGRADataSweep(SwizzleOp::YFlipInplace, SurfaceFormat::R8G8B8X8);
+}
+
+TEST(Moz2D, SwizzleRowSweep)
+{
+  CheckBGRARowSweep(SwizzleOp::Copy, SurfaceFormat::B8G8R8A8);
+  CheckBGRARowSweep(SwizzleOp::Copy, SurfaceFormat::R8G8B8A8);
+  CheckBGRARowSweep(SwizzleOp::Copy, SurfaceFormat::R8G8B8X8);
+}
+
+TEST(Moz2D, UnpackRowRGB24Sweep)
+{
+  CheckUnpackRowSweep(SurfaceFormat::R8G8B8X8);
+  CheckUnpackRowSweep(SurfaceFormat::B8G8R8X8);
+  CheckUnpackRowSweep(SurfaceFormat::X8R8G8B8);
+}
+
+class Moz2D_SwizzleBench : public ::testing::Test {
+ public:
+  static constexpr int32_t kWidth = 256;
+  static constexpr int32_t kGap = 0;
+  static constexpr int32_t kStride = kWidth * 4 + kGap;
+  static constexpr int32_t kHeight = 4;
+  static constexpr int32_t kBufLen = kStride * kHeight;
+  static constexpr int32_t kRepeat = 256;
+
+  Moz2D_SwizzleBench() = default;
+  ~Moz2D_SwizzleBench() = default;
+
+  void SetUp() final {
+    mSrc = MakeUniqueFallible<uint8_t[]>(kBufLen);
+    if (!mSrc) {
+      return;
+    }
+    mDst = MakeUniqueFallible<uint8_t[]>(kBufLen);
+    if (!mDst) {
+      mSrc.reset();
+      return;
+    }
+    memset(mSrc.get(), 0x2A, kBufLen);
+    memset(mDst.get(), 0x0, kBufLen);
+  }
+
+  bool SwizzleRow(SwizzleOp aOp, SurfaceFormat aSrcFormat,
+                  SurfaceFormat aDstFormat, SwizzleArch aArch) {
+    if (!mSrc || !mDst) {
+      return false;
+    }
+
+    SwizzleRowFn func = RowFnFor(aOp, aSrcFormat, aDstFormat, aArch);
+    if (!func) {
+      return false;
+    }
+
+    int32_t srcStride = BytesPerPixel(aSrcFormat) * kWidth + kGap;
+    int32_t dstStride = BytesPerPixel(aDstFormat) * kWidth + kGap;
+    MOZ_ASSERT(srcStride <= kStride);
+    MOZ_ASSERT(dstStride <= kStride);
+
+    for (int32_t i = 0; i < kRepeat; ++i) {
+      uint8_t* src = mSrc.get();
+      uint8_t* dst = mDst.get();
+      for (int32_t k = 0; k < kHeight; ++k) {
+        func(src, dst, kWidth);
+        src += srcStride;
+        dst += dstStride;
+      }
+    }
+    return true;
+  }
+
+  bool SwizzleData(SwizzleOp aOp, SurfaceFormat aSrcFormat,
+                   SurfaceFormat aDstFormat, SwizzleArch aArch) {
+    if (!mSrc || !mDst) {
+      return false;
+    }
+
+    int32_t srcStride = BytesPerPixel(aSrcFormat) * kWidth + kGap;
+    int32_t dstStride = BytesPerPixel(aDstFormat) * kWidth + kGap;
+    MOZ_ASSERT(srcStride <= kStride);
+    MOZ_ASSERT(dstStride <= kStride);
+
+    bool success = true;
+    uint8_t* src = mSrc.get();
+    uint8_t* dst = mDst.get();
+
+    for (int32_t i = 0; i < kRepeat && success; ++i) {
+      switch (aOp) {
+        case SwizzleOp::Copy:
+          success = ::SwizzleData(src, srcStride, aSrcFormat, dst, dstStride,
+                                  aDstFormat, IntSize(kWidth, kHeight), aArch);
+          break;
+        case SwizzleOp::Premultiply:
+          success =
+              PremultiplyData(src, srcStride, aSrcFormat, dst, dstStride,
+                              aDstFormat, IntSize(kWidth, kHeight), aArch);
+          break;
+        case SwizzleOp::Unpremultiply:
+          success =
+              UnpremultiplyData(src, srcStride, aSrcFormat, dst, dstStride,
+                                aDstFormat, IntSize(kWidth, kHeight), aArch);
+          break;
+        default:
+          MOZ_ASSERT_UNREACHABLE("Unhandled SwizzleOp!");
+          return false;
+      }
+    }
+
+    return success;
+  }
+
+  void TearDown() final {
+    mSrc.reset();
+    mDst.reset();
+  }
+
+ private:
+  UniquePtr<uint8_t[]> mSrc;
+  UniquePtr<uint8_t[]> mDst;
+};
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Unpack_RGB_BGRX_Fallback,
+                  [this]() -> bool {
+                    return SwizzleRow(SwizzleOp::Copy, SurfaceFormat::R8G8B8,
+                                      SurfaceFormat::B8G8R8X8,
+                                      SwizzleArch::eFallback);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Unpack_RGB_BGRX_Generic,
+                  [this]() -> bool {
+                    return SwizzleRow(SwizzleOp::Copy, SurfaceFormat::R8G8B8,
+                                      SurfaceFormat::B8G8R8X8,
+                                      SwizzleArch::eGeneric);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Unpack_RGB_BGRX_NEON, [this]() -> bool {
+  return SwizzleRow(SwizzleOp::Copy, SurfaceFormat::R8G8B8,
+                    SurfaceFormat::B8G8R8X8, SwizzleArch::eNEON);
+});
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Unpack_RGB_BGRX_SSSE3, [this]() -> bool {
+  return SwizzleRow(SwizzleOp::Copy, SurfaceFormat::R8G8B8,
+                    SurfaceFormat::B8G8R8X8, SwizzleArch::eSSSE3);
+});
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Unpack_RGB_BGRX_AVX2, [this]() -> bool {
+  return SwizzleRow(SwizzleOp::Copy, SurfaceFormat::R8G8B8,
+                    SurfaceFormat::B8G8R8X8, SwizzleArch::eAVX2);
+});
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Swizzle_RGBA_BGRX_Fallback,
+                  [this]() -> bool {
+                    return SwizzleData(SwizzleOp::Copy, SurfaceFormat::R8G8B8A8,
+                                       SurfaceFormat::B8G8R8X8,
+                                       SwizzleArch::eFallback);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Swizzle_RGBA_BGRX_Generic,
+                  [this]() -> bool {
+                    return SwizzleRow(SwizzleOp::Copy, SurfaceFormat::R8G8B8A8,
+                                      SurfaceFormat::B8G8R8X8,
+                                      SwizzleArch::eGeneric);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Swizzle_RGBA_BGRX_NEON, [this]() -> bool {
+  return SwizzleData(SwizzleOp::Copy, SurfaceFormat::R8G8B8A8,
+                     SurfaceFormat::B8G8R8X8, SwizzleArch::eNEON);
+});
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Swizzle_RGBA_BGRX_SSE2, [this]() -> bool {
+  return SwizzleData(SwizzleOp::Copy, SurfaceFormat::R8G8B8A8,
+                     SurfaceFormat::B8G8R8X8, SwizzleArch::eSSE2);
+});
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Swizzle_RGBA_BGRX_SSSE3,
+                  [this]() -> bool {
+                    return SwizzleData(SwizzleOp::Copy, SurfaceFormat::R8G8B8A8,
+                                       SurfaceFormat::B8G8R8X8,
+                                       SwizzleArch::eSSSE3);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Swizzle_RGBA_BGRX_AVX2, [this]() -> bool {
+  return SwizzleData(SwizzleOp::Copy, SurfaceFormat::R8G8B8A8,
+                     SurfaceFormat::B8G8R8X8, SwizzleArch::eAVX2);
+});
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Swizzle_InvertedCMYK_BGRX_Fallback,
+                  [this]() -> bool {
+                    return SwizzleRow(
+                        SwizzleOp::Copy, SurfaceFormat::InvertedCMYK,
+                        SurfaceFormat::B8G8R8X8, SwizzleArch::eFallback);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Swizzle_InvertedCMYK_BGRX_Generic,
+                  [this]() -> bool {
+                    return SwizzleRow(
+                        SwizzleOp::Copy, SurfaceFormat::InvertedCMYK,
+                        SurfaceFormat::B8G8R8X8, SwizzleArch::eGeneric);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Swizzle_InvertedCMYK_BGRX_NEON,
+                  [this]() -> bool {
+                    return SwizzleRow(
+                        SwizzleOp::Copy, SurfaceFormat::InvertedCMYK,
+                        SurfaceFormat::B8G8R8X8, SwizzleArch::eNEON);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Swizzle_InvertedCMYK_BGRX_SSE2,
+                  [this]() -> bool {
+                    return SwizzleRow(
+                        SwizzleOp::Copy, SurfaceFormat::InvertedCMYK,
+                        SurfaceFormat::B8G8R8X8, SwizzleArch::eSSE2);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Swizzle_InvertedCMYK_BGRX_AVX2,
+                  [this]() -> bool {
+                    return SwizzleRow(
+                        SwizzleOp::Copy, SurfaceFormat::InvertedCMYK,
+                        SurfaceFormat::B8G8R8X8, SwizzleArch::eAVX2);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Premultiply_RGBA_BGRA_Fallback,
+                  [this]() -> bool {
+                    return SwizzleData(
+                        SwizzleOp::Premultiply, SurfaceFormat::R8G8B8A8,
+                        SurfaceFormat::B8G8R8A8, SwizzleArch::eFallback);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Premultiply_RGBA_BGRA_Generic,
+                  [this]() -> bool {
+                    return SwizzleRow(
+                        SwizzleOp::Premultiply, SurfaceFormat::R8G8B8A8,
+                        SurfaceFormat::B8G8R8A8, SwizzleArch::eGeneric);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Premultiply_RGBA_BGRA_NEON,
+                  [this]() -> bool {
+                    return SwizzleData(
+                        SwizzleOp::Premultiply, SurfaceFormat::R8G8B8A8,
+                        SurfaceFormat::B8G8R8A8, SwizzleArch::eNEON);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Premultiply_RGBA_BGRA_SSE2,
+                  [this]() -> bool {
+                    return SwizzleData(
+                        SwizzleOp::Premultiply, SurfaceFormat::R8G8B8A8,
+                        SurfaceFormat::B8G8R8A8, SwizzleArch::eSSE2);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Premultiply_RGBA_BGRA_AVX2,
+                  [this]() -> bool {
+                    return SwizzleData(
+                        SwizzleOp::Premultiply, SurfaceFormat::R8G8B8A8,
+                        SurfaceFormat::B8G8R8A8, SwizzleArch::eAVX2);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Unpremultiply_RGBA_BGRA_Fallback,
+                  [this]() -> bool {
+                    return SwizzleData(
+                        SwizzleOp::Unpremultiply, SurfaceFormat::R8G8B8A8,
+                        SurfaceFormat::B8G8R8A8, SwizzleArch::eFallback);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Unpremultiply_RGBA_BGRA_Generic,
+                  [this]() -> bool {
+                    return SwizzleRow(
+                        SwizzleOp::Unpremultiply, SurfaceFormat::R8G8B8A8,
+                        SurfaceFormat::B8G8R8A8, SwizzleArch::eGeneric);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Unpremultiply_RGBA_BGRA_NEON,
+                  [this]() -> bool {
+                    return SwizzleData(
+                        SwizzleOp::Unpremultiply, SurfaceFormat::R8G8B8A8,
+                        SurfaceFormat::B8G8R8A8, SwizzleArch::eNEON);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Unpremultiply_RGBA_BGRA_SSE2,
+                  [this]() -> bool {
+                    return SwizzleData(
+                        SwizzleOp::Unpremultiply, SurfaceFormat::R8G8B8A8,
+                        SurfaceFormat::B8G8R8A8, SwizzleArch::eSSE2);
+                  });
+
+MOZ_GTEST_BENCH_F(Moz2D_SwizzleBench, Unpremultiply_RGBA_BGRA_AVX2,
+                  [this]() -> bool {
+                    return SwizzleData(
+                        SwizzleOp::Unpremultiply, SurfaceFormat::R8G8B8A8,
+                        SurfaceFormat::B8G8R8A8, SwizzleArch::eAVX2);
+                  });

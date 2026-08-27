@@ -1018,6 +1018,7 @@ STATIC_ATOMS = [
     Atom("otherwise", "otherwise"),
     Atom("outerHTML", "outerHTML"),
     Atom("output", "output"),
+    Atom("outside", "outside"),
     Atom("overflow", "overflow"),
     Atom("overflowBlock", "overflow-block"),
     Atom("overflowInline", "overflow-inline"),

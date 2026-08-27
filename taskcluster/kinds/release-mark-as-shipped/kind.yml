@@ -59,7 +59,6 @@ tasks:
             notify:
                 slackText: |-
                     Firefox Desktop {version} is live and rolled out at 25%.
-                    We will increase the rollout to 100% tomorrow if no major issue is reported.
                     - <https://www.firefox.com/firefox/{version}/releasenotes/|Desktop {version} Release Notes>
         task-context:
             substitution-fields:
@@ -77,7 +76,6 @@ tasks:
             notify:
                 slackText: |-
                     Fenix/Focus/Klar {version} are live and rolled out at 25%.
-                    We will increase the rollout to 100% tomorrow if no major issue is reported.
                     - <https://www.firefox.com/firefox/android/{version}/releasenotes/|Android {version} Release Notes>
         task-context:
             substitution-fields:

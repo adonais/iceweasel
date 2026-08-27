@@ -108,6 +108,60 @@ const buildFireworks = (run, colors, count) =>
     return { id: b, left, top: topPct, color, scale: sizeScale, sparks };
   });
 
+const SPARKLE_SIZES = ["lg", "md", "sm"];
+
+const buildSparkles = (run, count, staggerMs) =>
+  Array.from({ length: count }, (_, i) => {
+    const base = (run + 1) * 500 + i * 13;
+    // Fan across the anchor by index (with jitter) rather than clustering at
+    // its edges, so they read as sparkling ON the number, not beside it. The
+    // slight overhang lets some sit just outside the glyphs.
+    const left = -8 + ((i + celebrationRandom(base + 7)) / count) * 116;
+    return {
+      id: i,
+      size: SPARKLE_SIZES[i % SPARKLE_SIZES.length],
+      left: `${left.toFixed(1)}%`,
+      top: `${(-28 + celebrationRandom(base + 1) * 112).toFixed(1)}%`,
+      delay: `${i * staggerMs}ms`,
+    };
+  });
+
+/**
+ * Sparkle burst, rendered *inside* the element it should decorate (give that
+ * element `position: relative`). Positioning is pure CSS inset, so it tracks
+ * the element through icon swaps, count-up digit changes and font loads — a
+ * measured rect captured once at trigger time does not.
+ */
+export const CelebrationSparkles = ({
+  classNamePrefix = "widget-celebration",
+  celebrationId,
+  count,
+  staggerMs = 50,
+}) => {
+  if (!count) {
+    return null;
+  }
+  return (
+    <div className={`${classNamePrefix}-sparkles`} aria-hidden="true">
+      {buildSparkles(celebrationId, count, staggerMs).map(sparkle => (
+        <span
+          key={sparkle.id}
+          className={`${classNamePrefix}-sparkle ${classNamePrefix}-sparkle--${sparkle.size}`}
+          style={{
+            "--sparkle-delay": sparkle.delay,
+            left: sparkle.left,
+            top: sparkle.top,
+          }}
+        >
+          <svg viewBox="0 0 16 16">
+            <path d="M7 0h2v5.2h5.2v1.6H9v5.2H7v-5.2H1.8V5.2H7V0z" />
+          </svg>
+        </span>
+      ))}
+    </div>
+  );
+};
+
 const confettiPieceStyle = piece => ({
   "--confetti-x": piece.left,
   "--confetti-w": piece.width,
@@ -133,6 +187,8 @@ export const WidgetCelebration = ({
   headlineL10nId,
   illustrationSrc,
   onComplete,
+  showBorder = true,
+  showRing = false,
   subheadL10nId,
 }) => {
   const className = suffix =>
@@ -174,57 +230,62 @@ export const WidgetCelebration = ({
         }
       }}
     >
-      <div className={className("effects")} aria-hidden="true">
-        <svg
-          viewBox={`0 0 ${celebrationFrame.width} ${celebrationFrame.height}`}
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <linearGradient
-              id={`${classNamePrefix}-gradient-${celebrationId}`}
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="100%"
-            >
-              {gradientStops.map(({ offset, color }) => (
-                <stop key={offset} offset={offset} stopColor={color} />
-              ))}
-            </linearGradient>
-          </defs>
-          <rect
-            className={className("stroke-track")}
-            x={celebrationFrame.strokeInset}
-            y={celebrationFrame.strokeInset}
-            width={strokeWidth}
-            height={strokeHeight}
-            rx={celebrationFrame.radius}
-            ry={celebrationFrame.radius}
-            pathLength="100"
-          />
-          <rect
-            className={className("stroke")}
-            x={celebrationFrame.strokeInset}
-            y={celebrationFrame.strokeInset}
-            width={strokeWidth}
-            height={strokeHeight}
-            rx={celebrationFrame.radius}
-            ry={celebrationFrame.radius}
-            pathLength="100"
-            stroke={`url(#${classNamePrefix}-gradient-${celebrationId})`}
-          />
-          <rect
-            className={className("stroke-orbit")}
-            x={celebrationFrame.strokeInset}
-            y={celebrationFrame.strokeInset}
-            width={strokeWidth}
-            height={strokeHeight}
-            rx={celebrationFrame.radius}
-            ry={celebrationFrame.radius}
-            pathLength="100"
-          />
-        </svg>
-      </div>
+      {showRing ? (
+        <div className={className("ring")} aria-hidden="true" />
+      ) : null}
+      {showBorder ? (
+        <div className={className("effects")} aria-hidden="true">
+          <svg
+            viewBox={`0 0 ${celebrationFrame.width} ${celebrationFrame.height}`}
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <linearGradient
+                id={`${classNamePrefix}-gradient-${celebrationId}`}
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="100%"
+              >
+                {gradientStops.map(({ offset, color }) => (
+                  <stop key={offset} offset={offset} stopColor={color} />
+                ))}
+              </linearGradient>
+            </defs>
+            <rect
+              className={className("stroke-track")}
+              x={celebrationFrame.strokeInset}
+              y={celebrationFrame.strokeInset}
+              width={strokeWidth}
+              height={strokeHeight}
+              rx={celebrationFrame.radius}
+              ry={celebrationFrame.radius}
+              pathLength="100"
+            />
+            <rect
+              className={className("stroke")}
+              x={celebrationFrame.strokeInset}
+              y={celebrationFrame.strokeInset}
+              width={strokeWidth}
+              height={strokeHeight}
+              rx={celebrationFrame.radius}
+              ry={celebrationFrame.radius}
+              pathLength="100"
+              stroke={`url(#${classNamePrefix}-gradient-${celebrationId})`}
+            />
+            <rect
+              className={className("stroke-orbit")}
+              x={celebrationFrame.strokeInset}
+              y={celebrationFrame.strokeInset}
+              width={strokeWidth}
+              height={strokeHeight}
+              rx={celebrationFrame.radius}
+              ry={celebrationFrame.radius}
+              pathLength="100"
+            />
+          </svg>
+        </div>
+      ) : null}
       {confettiPieces.length ? (
         <div className={className("confetti")} aria-hidden="true">
           <svg className={className("confetti-defs")} aria-hidden="true">

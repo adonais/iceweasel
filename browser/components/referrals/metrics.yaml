@@ -1,0 +1,51 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# Adding a new metric? We have docs for that!
+# https://firefox-source-docs.mozilla.org/toolkit/components/glean/user/new_definitions_file.html
+
+---
+$schema: moz://mozilla.org/schemas/glean/metrics/2-0-0
+
+browser:
+  referral_code:
+    type: string
+    description: |
+      The referral code extracted from attribution data on first run. Recorded
+      and submitted via the separate `referrals` ping so that the referral code
+      is kept out of regular attribution data (bug 2055255).
+    lifetime: ping
+    send_in_pings:
+      - referrals
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055255
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055255
+    data_sensitivity:
+      - highly_sensitive
+    notification_emails:
+      - jhirsch@mozilla.com
+      - nbarrett@mozilla.com
+    expires: never
+
+referrals:
+  entrypoint_clicked:
+    type: event
+    description: |
+      Recorded when a user activates one of the referral program entry points
+      to open about:referrals.
+    extra_keys:
+      entrypoint:
+        type: string
+        description: |
+          The UI surface used to open the referrals tab. One of: app_menu,
+          accounts_menu, preferences, help_menu, about_dialog.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2064156
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2064156
+    notification_emails:
+      - jhirsch@mozilla.com
+      - nbarrett@mozilla.com
+    expires: never

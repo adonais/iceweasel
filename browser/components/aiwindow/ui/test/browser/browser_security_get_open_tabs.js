@@ -200,7 +200,7 @@ add_task(async function test_get_open_tabs_returns_sanitized_data() {
   Assert.ok(
     tabs.every(
       t =>
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         t.url.startsWith("http://") || t.url.startsWith("https://")
     ),
     "Every returned tab uses http or https."

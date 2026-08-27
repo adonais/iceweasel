@@ -1,0 +1,56 @@
+<!DOCTYPE HTML>
+
+<html>
+<head>
+<meta charset="utf-8">
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/ExtensionTestUtils.js"></script>
+  <script type="text/javascript" src="head.js"></script>
+<script>
+"use strict";
+
+// Regression test for bug 2048884. webRequest events for importScripts()
+// in a Worker should be attributed to the frame hosting the worker.
+
+add_task(async function test_worker_importscripts_frameId() {
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: { permissions: ["webRequest", "<all_urls>"] },
+    background() {
+      browser.webRequest.onBeforeRequest.addListener(
+        details => browser.test.sendMessage("request", details),
+        { urls: ["<all_urls>"] }
+      );
+    },
+  });
+  await extension.startup();
+
+  let url = new URL("file_worker_importscripts.html", location.href).href;
+  let tab = await AppTestDelegate.openNewForegroundTab(window, url);
+
+  // The worker is created by the iframe, so its main script, its importScripts()
+  // and its fetch() must all report the iframe's frameId.
+  let want = ["worker_importscripts.js", "file_simple_worker.js", "file_sample.txt"];
+  let seen = {};
+  while (want.some(file => !(file in seen))) {
+    let details = await extension.awaitMessage("request");
+    let file = details.url.split("/").pop();
+    if (want.includes(file)) {
+      seen[file] = details;
+    }
+  }
+
+  let frameId = seen["worker_importscripts.js"].frameId;
+  ok(frameId > 0, "worker main script is attributed to the iframe");
+  for (let file of want) {
+    is(seen[file].frameId, frameId, `${file} is attributed to the iframe`);
+  }
+
+  await AppTestDelegate.removeTab(window, tab);
+  await extension.unload();
+});
+
+</script>
+</head>
+<body>
+</body>
+</html>

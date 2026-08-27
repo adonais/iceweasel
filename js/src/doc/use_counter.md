@@ -1,7 +1,7 @@
 Adding Use Counter Telemetry to the JS Engine
 ==============================================
 
-[Use Counters](../dom/use-counters.rst) are used to collect data about the execution
+[Use Counters](../dom/use-counters.md) are used to collect data about the execution
 of Firefox. In SpiderMonkey we can use use counters to highlight when certain VM
 features are used or to measure how often certain scenarios are encountered.
 

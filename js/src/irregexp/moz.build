@@ -29,6 +29,7 @@ if CONFIG["CC_TYPE"] in ("clang", "clang-cl"):
 UNIFIED_SOURCES += [
     "imported/regexp-bytecode-generator.cc",
     "imported/regexp-bytecode-iterator.cc",
+    "imported/regexp-bytecodes.cc",
     "imported/regexp-code-generator.cc",
     "imported/regexp-dotprinter.cc",
     "imported/regexp-interpreter.cc",

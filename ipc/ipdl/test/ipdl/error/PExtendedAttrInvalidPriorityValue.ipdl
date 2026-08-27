@@ -1,0 +1,7 @@
+//error: invalid value for attribute `Priority', expected one of: normal, input, vsync, mediumhigh, control, low
+
+[ChildProc=any]
+protocol PExtendedAttrInvalidPriorityValue {
+child:
+  [Priority=invalid] async __delete__();
+};

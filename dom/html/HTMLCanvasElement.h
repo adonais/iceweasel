@@ -225,6 +225,11 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
       gfxAlphaType* aOutAlphaType = nullptr,
       gfx::DrawTarget* aTarget = nullptr);
 
+  using SurfaceSnapshotPromise =
+      MozPromise<RefPtr<gfx::SourceSurface>, nsresult, true>;
+
+  RefPtr<SurfaceSnapshotPromise> GetSurfaceSnapshotAsync();
+
   /*
    * Register a FrameCaptureListener with this canvas.
    * The canvas hooks into the RefreshDriver while there are

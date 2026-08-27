@@ -43,16 +43,6 @@
  *      signature algorithm: ECDSA, then RSA, then DSS.
  *    * As a special case, the PSK ciphers, which are only enabled when
  *      TLS 1.3 PSK-resumption is in use, come first.
- *
- * Exception: Because some servers ignore the high-order byte of the cipher
- * suite ID, we must be careful about adding cipher suites with IDs larger
- * than 0x00ff; see bug 946147. For these broken servers, the first three
- * cipher suites, with the MSB zeroed, look like:
- *      TLS_RSA_WITH_AES_128_CBC_SHA { 0x00,0x2F }
- *      TLS_RSA_WITH_3DES_EDE_CBC_SHA { 0x00,0x0A }
- *      TLS_RSA_WITH_DES_CBC_SHA { 0x00,0x09 }
- * The broken server only supports the third and fourth ones and will select
- * the third one.
  */
 const PRUint16 SSL_ImplementedCiphers[] = {
     TLS_AES_128_GCM_SHA256,
@@ -65,14 +55,11 @@ const PRUint16 SSL_ImplementedCiphers[] = {
     TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
     TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
     TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-    /* TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA must appear before
-     * TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA to work around bug 946147.
-     */
-    TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
     TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
     TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
     TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
     TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+    TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
     TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
     TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
     TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,

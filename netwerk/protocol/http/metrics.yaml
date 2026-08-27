@@ -109,6 +109,34 @@ netwerk:
       - necko@mozilla.com
     expires: never
 
+  happy_eyeballs_dns_answer_spread:
+    type: custom_distribution
+    description: >
+      Happy Eyeballs: time in milliseconds between the first positive DNS
+      answer and the last positive DNS answer received before the first
+      connection attempt of a single algorithm run, across the A, AAAA and
+      HTTPS queries (a positive answer is one that carried at least one address
+      or service info). Answers arriving after racing begins are excluded,
+      since the resolution delay no longer applies to them. This is the window
+      during which additional, possibly preferred-family, addresses keep
+      arriving after the first usable answer. Used to tune the resolution delay
+      (network.http.happy_eyeballs_resolution_delay): the delay should cover
+      most of this spread so the preferred address family is usually available
+      before the connection phase begins. A run with a single positive answer
+      records 0.
+    range_min: 1
+    range_max: 10000
+    bucket_count: 100
+    histogram_type: exponential
+    unit: ms
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055890
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055890
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
   happy_eyeballs_connection_attempt_count:
     type: labeled_custom_distribution
     description: >
@@ -253,6 +281,41 @@ netwerk:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2043832
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2043832
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
+  happy_eyeballs_h3_discovery_by_resolver:
+    type: dual_labeled_counter
+    description: >
+      Happy Eyeballs: how HTTP/3 (h3) reachability was advertised for a
+      connection (the same crossing of Alt-Svc h3 and HTTPS-record h3 as
+      happy_eyeballs_h3_discovery), split by the resolver type (DoH/TRR vs
+      native) that resolved the connection. Only the HTTPS-record axis
+      (https_rr_only, both) depends on the resolver; Alt-Svc comes from a prior
+      response header and is resolver-independent, so altsvc_only and none serve
+      as control categories. Used to measure how often each resolver yields a
+      first-connection-capable h3 opportunity, and to tell a resolver mechanism
+      apart from site/network selection. The resolver is attributed from whether
+      any of the connection's DNS records were resolved via TRR. This is the
+      resolver-split companion of happy_eyeballs_h3_discovery.
+    dual_labels:
+      key:
+        labels:
+          - doh
+          - native
+        description: The resolver type that resolved the connection.
+      category:
+        labels:
+          - none
+          - altsvc_only
+          - https_rr_only
+          - both
+        description: How h3 reachability was advertised for the connection.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054503
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054503
     notification_emails:
       - necko@mozilla.com
     expires: never
@@ -496,12 +559,13 @@ network:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1687364
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1902182
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1958158
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2057071
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1687364
     notification_emails:
       - necko@mozilla.com
       - kershaw@mozilla.com
-    expires: 156
+    expires: 169
 
   cache_hit_time:
     type: timing_distribution
@@ -1685,7 +1749,6 @@ orb:
       - sefeng@mozilla.com
       - afarre@mozilla.com
     expires: never
-    telemetry_mirror: h#ORB_BLOCK_REASON
 
   block_initiator:
     type: labeled_counter
@@ -1727,7 +1790,6 @@ orb:
       - sefeng@mozilla.com
       - afarre@mozilla.com
     expires: never
-    telemetry_mirror: h#ORB_BLOCK_INITIATOR
 
 spdy:
   parallel_streams:

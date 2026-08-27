@@ -92,12 +92,16 @@ export class PromptParent extends JSWindowActorParent {
     );
   }
 
+  #isNestedInSidebarBrowser(browser) {
+    return (
+      browser?.documentGlobal?.browsingContext.embedderElement?.id == "sidebar"
+    );
+  }
+
   // Note that this will return false for the sidebar <browser> element
   // itself.
   isEmbeddedInSidebar(browser) {
-    if (
-      browser?.documentGlobal?.browsingContext.embedderElement?.id != "sidebar"
-    ) {
+    if (!this.#isNestedInSidebarBrowser(browser)) {
       return false;
     }
     // Extensions in the sidebar have more layers of nesting, and this causes
@@ -109,6 +113,17 @@ export class PromptParent extends JSWindowActorParent {
       return false;
     }
     return true;
+  }
+
+  // Prompts from the AI chatbot browser also need to be hoisted to the sidebar
+  // <browser> so they are shown as tab dialogs (bug 1955250), even though
+  // isEmbeddedInSidebar() excludes it.
+  shouldShowPromptOnSidebarBrowser(browser) {
+    return (
+      this.isEmbeddedInSidebar(browser) ||
+      (this.#isNestedInSidebarBrowser(browser) &&
+        browser.getAttribute("messagemanagergroup") == "chatbot-browser")
+    );
   }
 
   receiveMessage(message) {
@@ -144,8 +159,11 @@ export class PromptParent extends JSWindowActorParent {
 
     let browser = browsingContext.embedderElement;
 
-    let isEmbeddedInSidebar = this.isEmbeddedInSidebar(browser);
-    if (isEmbeddedInSidebar || this.isAboutAddonsOptionsPage(browsingContext)) {
+    let showOnSidebarBrowser = this.shouldShowPromptOnSidebarBrowser(browser);
+    if (
+      showOnSidebarBrowser ||
+      this.isAboutAddonsOptionsPage(browsingContext)
+    ) {
       browser = browser.documentGlobal.browsingContext.embedderElement;
     }
 
@@ -250,7 +268,7 @@ export class PromptParent extends JSWindowActorParent {
               allowFocusCheckbox: args.allowFocusCheckbox,
               hideContent: args.isTopLevelCrossDomainAuth,
               // If we are in the sidebar, use the inner browser to detect when navigation is done
-              webProgress: isEmbeddedInSidebar
+              webProgress: showOnSidebarBrowser
                 ? browsingContext?.webProgress
                 : undefined,
             },

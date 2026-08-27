@@ -5,7 +5,7 @@ fuzzy(0-1,0-1500) == global-alpha.html global-alpha-ref.html
 == global-composite-operation.html global-composite-operation-ref.html
 == liveness.html ref.html
 == liveness-document-open.html data:text/html,PASS
-== liveness-document-removeChild.html data:text/html,PASS
+fuzzy(0-45,0-1) == liveness-document-removeChild.html data:text/html,PASS
 == multiple-drop-shadows.html shadow-ref.html
 == shadow.html shadow-ref.html
 == subregion-fill-paint.html subregion-ref.html

@@ -50,7 +50,7 @@ function assertSearchModeScalars(entry, engineOrSource) {
     1
   );
 
-  for (let e of UrlbarUtils.SEARCH_MODE_ENTRY) {
+  for (let e of UrlbarShared.SEARCH_MODE_ENTRY) {
     if (e == entry) {
       Assert.equal(
         Object.keys(scalars[ENTRY_SCALAR_PREFIX + entry]).length,
@@ -78,7 +78,7 @@ function assertSearchModeScalars(entry, engineOrSource) {
  *   An engine name or a search mode source.
  */
 function assertSearchModeTelemetry(entry, engineOrSource) {
-  for (let e of UrlbarUtils.SEARCH_MODE_ENTRY) {
+  for (let e of UrlbarShared.SEARCH_MODE_ENTRY) {
     // Convert snake_case to CamelCase to check Glean searchmode entry labels.
     // Glean labels are in CamelCase.
     let camelCaseEntry = e

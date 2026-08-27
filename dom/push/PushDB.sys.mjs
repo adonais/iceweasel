@@ -305,7 +305,7 @@ PushDB.prototype = {
           // It seems ok to use getAll here, since unlike contacts or other
           // high storage APIs, we don't expect more than a handful of
           // registrations per domain, and usually only one.
-          let getAllReq = index.mozGetAll(aKeyValue);
+          let getAllReq = index.getAll(aKeyValue);
           getAllReq.onsuccess = aEvent => {
             aTxn.result = aEvent.target.result.map(record =>
               this.toPushRecord(record)
@@ -335,7 +335,7 @@ PushDB.prototype = {
         this._dbStoreName,
         (aTxn, aStore) => {
           aTxn.result = undefined;
-          aStore.mozGetAll().onsuccess = event => {
+          aStore.getAll().onsuccess = event => {
             aTxn.result = event.target.result.map(record =>
               this.toPushRecord(record)
             );

@@ -208,6 +208,13 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
     return mDocShellHasBeenActiveSinceNavigationStart;
   }
 
+  bool WasActivatedFromNavigationalPrefetch() const {
+    return mWasActivatedFromNavigationalPrefetch;
+  }
+  void SetWasActivatedFromNavigationalPrefetch() {
+    mWasActivatedFromNavigationalPrefetch = true;
+  }
+
   mozilla::TimeStamp LoadEventEnd() { return mLoadEventEnd; }
 
  private:
@@ -253,6 +260,7 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
   mozilla::TimeStamp mTTFI;
 
   bool mDocShellHasBeenActiveSinceNavigationStart;
+  bool mWasActivatedFromNavigationalPrefetch = false;
 
   friend struct IPC::ParamTraits<nsDOMNavigationTiming*>;
 };

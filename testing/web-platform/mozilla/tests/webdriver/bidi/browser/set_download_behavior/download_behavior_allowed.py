@@ -1,3 +1,4 @@
+import asyncio
 import tempfile
 
 import pytest
@@ -92,5 +93,56 @@ async def test_unique_filename(
     # Verify that the file name contains "big" but not equal to "big.png".
     assert "big" in event["suggestedFilename"]
     assert event["suggestedFilename"] != filename
+
+    await bidi_session.browser.set_download_behavior(download_behavior=None)
+
+
+# In this test case, we want to verify that when a download begins
+# the focus will not be moved to the download panel.
+# Since the test is not directly related to the "browser.setDownloadBehavior"
+# command, the test is in the Mozilla-specific folder.
+async def test_download_focus(
+    bidi_session,
+    new_tab,
+    subscribe_events,
+    inline,
+    wait_for_event,
+    wait_for_future_safe,
+    get_document_focus,
+):
+    await bidi_session.browser.set_download_behavior(
+        download_behavior={"type": "allowed", "destinationFolder": tempfile.mkdtemp()}
+    )
+
+    assert await get_document_focus(new_tab) is True
+
+    await subscribe_events(events=[DOWNLOAD_END])
+    url = inline(
+        """<a id="download_link" href="/_mozilla/webdriver/support/assets/big.png" download>download</a>"""
+    )
+    await bidi_session.browsing_context.navigate(
+        context=new_tab["context"], url=url, wait="complete"
+    )
+    on_download_end = wait_for_event(DOWNLOAD_END)
+
+    # Trigger download to populate default download folder.
+    result = await bidi_session.browsing_context.locate_nodes(
+        context=new_tab["context"], locator={"type": "css", "value": "#download_link"}
+    )
+
+    await bidi_session.script.call_function(
+        arguments=[result["nodes"][0]],
+        function_declaration="(link) => link.click()",
+        target=ContextTarget(new_tab["context"]),
+        await_promise=True,
+        user_activation=True,
+    )
+
+    await wait_for_future_safe(on_download_end)
+
+    # Wait for download popup to open.
+    await asyncio.sleep(1)
+
+    assert await get_document_focus(new_tab) is True
 
     await bidi_session.browser.set_download_behavior(download_behavior=None)

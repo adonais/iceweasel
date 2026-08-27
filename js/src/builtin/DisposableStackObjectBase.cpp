@@ -94,7 +94,7 @@ bool js::CreateDisposableResource(JSContext* cx, JS::Handle<JS::Value> objVal,
   if (!disposableRecord) {
     return false;
   }
-  result.set(ObjectValue(*disposableRecord));
+  result.setObject(*disposableRecord);
 
   return true;
 }
@@ -128,7 +128,7 @@ bool js::CreateDisposableResource(JSContext* cx, JS::Handle<JS::Value> obj,
   if (!disposableRecord) {
     return false;
   }
-  result.set(ObjectValue(*disposableRecord));
+  result.setObject(*disposableRecord);
 
   return true;
 }
@@ -235,7 +235,7 @@ bool js::GetDisposeMethod(JSContext* cx, JS::Handle<JS::Value> objVal,
           }
           asyncWrapper->initExtendedSlot(
               uint8_t(SyncDisposalClosureSlots::Method), syncDisposeMethod);
-          disposeMethod.set(JS::ObjectValue(*asyncWrapper));
+          disposeMethod.setObject(*asyncWrapper);
         }
       }
 
@@ -282,8 +282,8 @@ DisposableStackObjectBase::GetOrCreateDisposeCapability(
     if (!disposablesList) {
       return nullptr;
     }
-    obj->setReservedSlot(DISPOSABLE_RESOURCE_STACK_SLOT,
-                         ObjectValue(*disposablesList));
+    obj->setReservedSlotTyped(DISPOSABLE_RESOURCE_STACK_SLOT,
+                              ObjectValue(*disposablesList));
   } else {
     disposablesList = obj->nonEmptyDisposableResourceStack();
   }
@@ -292,26 +292,26 @@ DisposableStackObjectBase::GetOrCreateDisposeCapability(
 }
 
 bool DisposableStackObjectBase::isDisposableResourceStackEmpty() const {
-  return getReservedSlot(DISPOSABLE_RESOURCE_STACK_SLOT).isUndefined();
+  return getReservedSlotTyped(DISPOSABLE_RESOURCE_STACK_SLOT).isUndefined();
 }
 
 void DisposableStackObjectBase::clearDisposableResourceStack() {
-  setReservedSlot(DISPOSABLE_RESOURCE_STACK_SLOT, JS::UndefinedValue());
+  setReservedSlotTyped(DISPOSABLE_RESOURCE_STACK_SLOT, JS::UndefinedValue());
 }
 
 ArrayObject* DisposableStackObjectBase::nonEmptyDisposableResourceStack()
     const {
   MOZ_ASSERT(!isDisposableResourceStackEmpty());
-  return &getReservedSlot(DISPOSABLE_RESOURCE_STACK_SLOT)
+  return &getReservedSlotTyped(DISPOSABLE_RESOURCE_STACK_SLOT)
               .toObject()
               .as<ArrayObject>();
 }
 
 DisposableStackObjectBase::DisposableState DisposableStackObjectBase::state()
     const {
-  return DisposableState(uint8_t(getReservedSlot(STATE_SLOT).toInt32()));
+  return DisposableState(uint8_t(getReservedSlotTyped(STATE_SLOT).toInt32()));
 }
 
 void DisposableStackObjectBase::setState(DisposableState state) {
-  setReservedSlot(STATE_SLOT, JS::Int32Value(int32_t(state)));
+  setReservedSlotTyped(STATE_SLOT, JS::Int32Value(int32_t(state)));
 }

@@ -177,7 +177,6 @@ class SitePermissionsRulesTest {
             mediaKeySystemAccess = Status.BLOCKED,
             localDeviceAccess = Status.BLOCKED,
             localNetworkAccess = Status.ALLOWED,
-            savedAt = 1L,
         )
 
         val rules = SitePermissionsRules(
@@ -194,7 +193,7 @@ class SitePermissionsRulesTest {
             localNetworkAccess = ALLOWED,
         )
 
-        val convertedSitePermissions = rules.toSitePermissions(origin = "origin", savedAt = 1L)
+        val convertedSitePermissions = rules.toSitePermissions(origin = "origin")
 
         assertEquals(expectedSitePermission.origin, convertedSitePermissions.origin)
         assertEquals(expectedSitePermission.camera, convertedSitePermissions.camera)
@@ -208,7 +207,6 @@ class SitePermissionsRulesTest {
         assertEquals(expectedSitePermission.mediaKeySystemAccess, convertedSitePermissions.mediaKeySystemAccess)
         assertEquals(expectedSitePermission.localDeviceAccess, convertedSitePermissions.localDeviceAccess)
         assertEquals(expectedSitePermission.localNetworkAccess, convertedSitePermissions.localNetworkAccess)
-        assertEquals(expectedSitePermission.savedAt, convertedSitePermissions.savedAt)
     }
 
     @Test

@@ -240,7 +240,7 @@ class BookmarksStorageSuggestionProviderTest {
             throw NotImplementedError()
         }
 
-        override suspend fun getRecentBookmarks(limit: Int, maxAge: Long?, currentTime: Long): Result<List<BookmarkNode>> {
+        override suspend fun getRecentBookmarks(limit: Int, maxAge: Long?): Result<List<BookmarkNode>> {
             // "Not needed for the test"
             throw NotImplementedError()
         }

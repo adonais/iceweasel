@@ -235,7 +235,7 @@ nsTArray<std::tuple<nsCString, SupportedAlpnRank>> SVCB::GetAllAlpn(
 
 SVCBRecord::SVCBRecord(const SVCB& data,
                        Maybe<std::tuple<nsCString, SupportedAlpnRank>> aAlpn)
-    : mData(data), mAlpn(aAlpn) {
+    : mData(data), mAlpn(std::move(aAlpn)) {
   mPort = mData.GetPort();
 }
 

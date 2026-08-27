@@ -729,7 +729,7 @@
         // select items according to their attributes
         var children = this.itemChildren;
         for (let i = 0; i < children.length; ++i) {
-          if (children[i].getAttribute("selected") == "true") {
+          if (children[i].hasAttribute("selected")) {
             this.selectedItems.append(children[i]);
           }
         }
@@ -984,11 +984,7 @@
      * nsIDOMXULSelectControlItemElement
      */
     set selected(val) {
-      if (val) {
-        this.setAttribute("selected", "true");
-      } else {
-        this.removeAttribute("selected");
-      }
+      this.toggleAttribute("selected", val);
       this._updateInnerControlsForSelection(val);
     }
 

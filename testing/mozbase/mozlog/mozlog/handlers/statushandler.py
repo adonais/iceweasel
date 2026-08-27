@@ -44,8 +44,12 @@ class StatusHandler:
         # Handle crash actions specially to only count once per test
         if action == "crash":
             test_name = data.get("test")
+            # A crash the harness logged quietly -- one it expected, or one on a
+            # run whose test will be retried -- is not an unexpected crash.
+            if data.get("quiet"):
+                pass
             # Only count the first crash per test, or always count if no test name
-            if test_name is None or test_name not in self.tests_with_counted_crash:
+            elif test_name is None or test_name not in self.tests_with_counted_crash:
                 self.action_counts["crash"] += 1
                 if test_name is not None:
                     self.tests_with_counted_crash.add(test_name)

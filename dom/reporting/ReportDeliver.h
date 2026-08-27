@@ -89,6 +89,8 @@ class ReportDeliver final : public nsIObserver, public nsINamed {
   void EndpointRespondedWithRemove(uint64_t aGlobalKey,
                                    const nsAString& aEndpointName);
 
+  static void RemoveGlobalEndpoints(uintptr_t aGlobalKey);
+
  private:
   ReportDeliver();
   ~ReportDeliver();

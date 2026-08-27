@@ -43,6 +43,8 @@ skip-if = [
 
 ["browser_searchbar.js"]
 
+["browser_searchbar_new.js"]
+
 ["browser_select.js"]
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2034604

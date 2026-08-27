@@ -1217,7 +1217,7 @@ void AccessibleWrap::GetKeyBinding(Accessible* aAccessible,
       keyBinding.AppendToString(keyBindingsStr, KeyBinding::eAtkFormat);
     }
   }
-  aResult = keyBindingsStr;
+  aResult = std::move(keyBindingsStr);
 }
 
 // static

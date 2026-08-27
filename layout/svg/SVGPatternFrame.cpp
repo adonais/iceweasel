@@ -139,9 +139,9 @@ static float MaxExpansion(const Matrix& aMatrix) {
 static bool IncludeBBoxScale(const SVGAnimatedViewBox& aViewBox,
                              uint32_t aPatternContentUnits,
                              uint32_t aPatternUnits) {
-  return (!aViewBox.IsExplicitlySet() &&
+  return (!aViewBox.HasRect() &&
           aPatternContentUnits == SVG_UNIT_TYPE_OBJECTBOUNDINGBOX) ||
-         (aViewBox.IsExplicitlySet() &&
+         (aViewBox.HasRect() &&
           aPatternUnits == SVG_UNIT_TYPE_OBJECTBOUNDINGBOX);
 }
 
@@ -469,7 +469,7 @@ const SVGAnimatedViewBox& SVGPatternFrame::GetViewBox(nsIContent* aDefault) {
   const SVGAnimatedViewBox& thisViewBox =
       static_cast<SVGPatternElement*>(GetContent())->mViewBox;
 
-  if (thisViewBox.IsExplicitlySet()) {
+  if (thisViewBox.HasRect()) {
     return thisViewBox;
   }
 
@@ -623,15 +623,14 @@ gfxMatrix SVGPatternFrame::ConstructCTM(const SVGAnimatedViewBox& aViewBox,
     scaleX = scaleY = MaxExpansion(callerCTM);
   }
 
-  if (!aViewBox.IsExplicitlySet()) {
+  if (!aViewBox.HasRect()) {
     return gfxMatrix(scaleX, 0.0, 0.0, scaleY, 0.0, 0.0);
+  }
+  if (aViewBox.IsEmpty()) {
+    return gfxMatrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);  // singular
   }
   const SVGViewBox& viewBox =
       aViewBox.GetAnimValue() * Style()->EffectiveZoom().ToFloat();
-
-  if (!viewBox.IsValid()) {
-    return gfxMatrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);  // singular
-  }
 
   float viewportWidth, viewportHeight;
   if (targetContent->IsSVGElement()) {

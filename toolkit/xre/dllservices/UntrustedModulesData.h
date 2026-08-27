@@ -169,8 +169,7 @@ class ProcessedModuleLoadEvent final {
 class ModulesMap final
     : public nsRefPtrHashtable<nsStringCaseInsensitiveHashKey, ModuleRecord> {
  public:
-  ModulesMap()
-      : nsRefPtrHashtable<nsStringCaseInsensitiveHashKey, ModuleRecord>() {}
+  ModulesMap() = default;
 };
 
 struct ProcessedModuleLoadEventContainer final

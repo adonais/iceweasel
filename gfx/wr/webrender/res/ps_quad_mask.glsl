@@ -22,6 +22,7 @@ flat varying highp vec4 vClipPlane_B;
 flat varying highp vec4 vClipPlane_C;
 
 flat varying highp vec4 vClipShape;
+flat varying highp vec4 vClipClampedInset;
 
 #endif
 flat varying highp vec2 vClipMode;
@@ -42,6 +43,7 @@ struct Clip {
     vec4 radii_bottom;
 
     vec4 shape;
+    vec4 inset;
 #endif
     float mode;
     int space;
@@ -58,23 +60,30 @@ Clip fetch_clip(int index) {
     clip.radii = texels[1];
     clip.mode = texels[2].x;
 #else
-    vec4 texels[5] = fetch_from_gpu_buffer_5f(index);
+    vec4 texels[6] = fetch_from_gpu_buffer_6f(index);
     clip.rect = RectWithEndpoint(texels[0].xy, texels[0].zw);
     clip.radii_top = texels[1];
     clip.radii_bottom = texels[2];
     clip.mode = texels[3].x;
     clip.shape = texels[4];
+    clip.inset = texels[5];
 #endif
 
     return clip;
 }
 
-vec4 precalc_corner(vec2 center, vec2 radii, float k) {
+vec4 precalc_corner(vec2 center, vec2 radii, vec2 inset, vec2 clip_sign, float k) {
     if (k == 1.0) {
         // round/ellipse corner, precalc the ellipse parameters
         return vec4(center, inverse_radii_squared(radii));
     } else {
         // superellipse, precalc the superellipse parameters
+        if (k < 1.0) {
+            vec2 reference_radii = (radii == vec2(0.0)) ? vec2(0.0) : radii + inset;
+            vec4 offset_radii = compute_contoured_superellipse(reference_radii, k, inset);
+            center += offset_radii.xy * clip_sign;
+            radii = offset_radii.zw;
+        }
         return vec4(center, inverse_radii(radii));
     }
 }
@@ -91,8 +100,8 @@ void pattern_vertex(PrimitiveInfo prim_info) {
         vTransformBounds = vec4(clip.rect.p0, clip.rect.p1);
     } else {
         RectWithEndpoint xf_bounds = RectWithEndpoint(
-            max(clip.rect.p0, prim_info.local_clip_rect.p0),
-            min(clip.rect.p1, prim_info.local_clip_rect.p1)
+            max(clip.rect.p0, prim_info.bounds.p0),
+            min(clip.rect.p1, prim_info.bounds.p1)
         );
         vTransformBounds = vec4(xf_bounds.p0, xf_bounds.p1);
     }
@@ -116,20 +125,28 @@ void pattern_vertex(PrimitiveInfo prim_info) {
 
     vClipCenter_Radius_TL = precalc_corner(clip.rect.p0 + r_tl,
                                            r_tl,
+                                           clip.inset.wx,
+                                           vec2(-1.0, -1.0),
                                            clip.shape.x);
 
     vClipCenter_Radius_TR = precalc_corner(vec2(clip.rect.p1.x - r_tr.x,
                                                 clip.rect.p0.y + r_tr.y),
                                            r_tr,
+                                           clip.inset.yx,
+                                           vec2(1.0, -1.0),
                                            clip.shape.y);
 
     vClipCenter_Radius_BR = precalc_corner(clip.rect.p1 - r_br,
                                            r_br,
+                                           clip.inset.yz,
+                                           vec2(1.0, 1.0),
                                            clip.shape.z);
 
     vClipCenter_Radius_BL = precalc_corner(vec2(clip.rect.p0.x + r_bl.x,
                                                 clip.rect.p1.y - r_bl.y),
                                            r_bl,
+                                           clip.inset.wz,
+                                           vec2(-1.0, 1.0),
                                            clip.shape.w);
 
     // We need to know the half-spaces of the corners separate from the center
@@ -156,6 +173,7 @@ void pattern_vertex(PrimitiveInfo prim_info) {
     vClipPlane_C = vec4(br.z, bl.x, bl.y, bl.z);
 
     vClipShape = clip.shape;
+    vClipClampedInset = min(clip.inset, 0.0);
 #endif
 
 }
@@ -210,7 +228,8 @@ vec4 pattern_fragment(vec4 _base_color) {
             vClipCenter_Radius_BR,
             vClipCenter_Radius_BL,
             vTransformBounds,
-            vClipShape
+            vClipShape,
+            vClipClampedInset
         );
     }
 #endif

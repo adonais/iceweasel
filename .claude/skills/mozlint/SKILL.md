@@ -20,6 +20,15 @@ Firefox's linting infrastructure (mozlint) provides a unified way to run various
 ### Python linters
 Python-based linters are the right choice when the linter primarily calls external programs (e.g., eslint, ruff, clang-format) or needs complex Python library integrations. They use types like `external`, `string`, `regex`, `structured_log`, or `global`, with a `payload` of the form `module:function`.
 
+### mozcheck (Rust linter binary)
+Rust-based checks in `mozcheck` are preferred over new Python linters whenever feasible.
+
+`tools/lint/mozcheck/` is a Rust crate hosting fast, in-process checks (currently `file-perm`, `file-whitespace`, `license`, `rejected-words`, `test-manifest-toml`, `trojan-source`). The Python shim at `tools/lint/mozcheck/__init__.py` finds or builds the binary and invokes it in batch mode.
+
+Wire a YAML to it with `type: external`, `payload: mozcheck:lint`, `check: <subcommand>`, and `support-files: ['tools/lint/mozcheck/**']`. Extra YAML keys are forwarded as the check's `config`.
+
+To add a check: add `src/<name>.rs`, register it in `src/main.rs` and `src/batch.rs`, create the YAML, and add tests under `tools/lint/test/`. Prefer this over a new Python linter for self-contained file checks.
+
 ## Adding New Linters
 See `docs/code-quality/lint/create.rst` for the full guide on creating a new linter.
 
@@ -28,7 +37,7 @@ See `docs/code-quality/lint/create.rst` for the full guide on creating a new lin
 - Python-based linters are typically in `tools/lint/python/`
 - To add a new linter:
   1. Create a YAML configuration in `tools/lint/`
-  2. If it's a custom linter, implement the Python module in `tools/lint/python/`
+  2. If it's a custom linter, implement the Python module in `tools/lint/python/` (or add a check to `tools/lint/mozcheck/` for fast file checks)
   3. Add tests in `tools/lint/test/`
 - To run the full mozlint test suite (slow): `./mach python-test --subsuite mozlint --run-slow`
 - To run a single mozlint test: `./mach python-test --subsuite mozlint <test_name>`

@@ -2,11 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Assertions.h"
-#include "mozilla/EndianUtils.h"
 #include "mozilla/SHA1.h"
 
 #include <string.h>
+
+#include "mozilla/Assertions.h"
+#include "mozilla/EndianUtils.h"
 
 using mozilla::NativeEndian;
 using mozilla::SHA1Sum;

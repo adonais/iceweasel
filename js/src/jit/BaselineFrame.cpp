@@ -35,6 +35,14 @@ void BaselineFrame::trace(JSTracer* trc, const JSJitFrameIter& frameIterator) {
     TraceRootRange(trc, numArgs + isConstructing(), argv(), "baseline-args");
   }
 
+  // A resumed generator/async frame stores the resume args (ResumeFrameArgs)
+  // after the formals (for function frames) or before the frame (for module
+  // frames).
+  if (isResumingGenerator()) {
+    TraceRootRange(trc, ResumeFrameArgs::NumSlots, resumeArgs(),
+                   "baseline-resume-args");
+  }
+
   // Trace environment chain, if it exists.
   if (envChain_) {
     TraceRoot(trc, &envChain_, "baseline-envchain");
@@ -77,6 +85,12 @@ void BaselineFrame::trace(JSTracer* trc, const JSJitFrameIter& frameIterator) {
       // All locals are live.
       TraceLocals(this, trc, 0, numValueSlots);
     } else {
+      // Make sure we don't incorrectly clear locals of a frame that's still
+      // resuming before we reach JSOp::AfterYield. Currently nothing can
+      // trigger GC between restoring stack slots and jumping to
+      // JSOp::AfterYield.
+      MOZ_ASSERT_IF(isResumingGenerator(), JSOp(*pc) == JSOp::AfterYield);
+
       // Trace operand stack.
       TraceLocals(this, trc, nfixed, numValueSlots);
 
@@ -130,6 +144,9 @@ void BaselineFrame::setInterpreterFieldsForPrologue(JSScript* script) {
 
 void BaselineFrame::initForOsr(InterpreterFrame* fp, uint32_t numStackValues) {
   mozilla::PodZero(this);
+
+  MOZ_ASSERT(!fp->isResumingGenerator());
+  MOZ_ASSERT(!isResumingGenerator());
 
   envChain_ = fp->environmentChain();
 

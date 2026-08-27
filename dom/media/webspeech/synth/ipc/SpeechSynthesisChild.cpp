@@ -8,6 +8,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/ContentMediaController.h"
 #include "mozilla/dom/MediaControlUtils.h"
+#include "mozilla/glean/DomMediaMetrics.h"
 #include "nsPIDOMWindowInlines.h"
 #include "nsSynthVoiceRegistry.h"
 #include "nsXULAppAPI.h"
@@ -361,6 +362,7 @@ void SpeechTaskChild::ResumeFromMediaControl() {
     return;
   }
   mPausedByMediaControl = false;
+  glean::media_audio_focus::resume_decision.Get("web_speech"_ns).Add(1);
   // This runs only as the platform interruption ends, by which point the
   // interrupted state that Resume() checks has already been cleared, so its
   // gate is a no-op and reusing the page-resume path is safe.

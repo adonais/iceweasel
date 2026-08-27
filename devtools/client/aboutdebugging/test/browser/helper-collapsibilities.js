@@ -40,10 +40,14 @@ function prepareCollapsibilitiesTest() {
 /* exported prepareCollapsibilitiesTest */
 
 async function toggleCollapsibility(debugTargetPane) {
+  info("Toggle the debug target pane");
+  const isOpen = debugTargetPane.querySelector("details").open;
+  // eslint-disable-next-line no-undef
+  const hasToggled = waitFor(
+    () => debugTargetPane.querySelector("details").open !== isOpen
+  );
   debugTargetPane.querySelector(".qa-debug-target-pane-title").click();
-  // Wait for animation of collapse/expand.
-  const animations = debugTargetPane.ownerDocument.getAnimations();
-  await Promise.all(animations.map(animation => animation.finished));
+  return hasToggled;
 }
 /* exported toggleCollapsibility */
 

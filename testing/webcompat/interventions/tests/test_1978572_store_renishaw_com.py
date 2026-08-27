@@ -3,7 +3,7 @@ import pytest
 URL = "https://store.renishaw.com/en-GB/search?q=styli&WebsiteProductFilter=%3AStyli+straight&TipMaterial=%3ARuby"
 POPUPS_CSS = "#onetrust-consent-sdk, [data-testid=toast]"
 MOBILE_FILTERS_CSS = "[data-testid=plp-filters-open-modal-button]"
-LEFT_SLIDER_CSS = "details.bg-primary #undefined-min"
+LEFT_SLIDER_CSS = "#BallDiameter-min"
 
 
 async def does_left_slider_work(client):

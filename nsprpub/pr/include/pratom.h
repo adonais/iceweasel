@@ -24,7 +24,8 @@ PR_BEGIN_EXTERN_C
 ** RETURN:
 **    the returned value is the result of the increment
 */
-NSPR_API(PRInt32)   PR_AtomicIncrement(PRInt32 *val);
+NSPR_API(PRInt32)
+PR_AtomicIncrement(PRInt32* val);
 
 /*
 ** FUNCTION: PR_AtomicDecrement
@@ -35,7 +36,8 @@ NSPR_API(PRInt32)   PR_AtomicIncrement(PRInt32 *val);
 ** RETURN:
 **    the returned value is the result of the decrement
 */
-NSPR_API(PRInt32)   PR_AtomicDecrement(PRInt32 *val);
+NSPR_API(PRInt32)
+PR_AtomicDecrement(PRInt32* val);
 
 /*
 ** FUNCTION: PR_AtomicSet
@@ -47,7 +49,8 @@ NSPR_API(PRInt32)   PR_AtomicDecrement(PRInt32 *val);
 ** RETURN:
 **    Returns the prior value
 */
-NSPR_API(PRInt32) PR_AtomicSet(PRInt32 *val, PRInt32 newval);
+NSPR_API(PRInt32)
+PR_AtomicSet(PRInt32* val, PRInt32 newval);
 
 /*
 ** FUNCTION: PR_AtomicAdd
@@ -59,7 +62,8 @@ NSPR_API(PRInt32) PR_AtomicSet(PRInt32 *val, PRInt32 newval);
 ** RETURN:
 **    the returned value is the result of the addition
 */
-NSPR_API(PRInt32)   PR_AtomicAdd(PRInt32 *ptr, PRInt32 val);
+NSPR_API(PRInt32)
+PR_AtomicAdd(PRInt32* ptr, PRInt32 val);
 
 /*
 ** MACRO: PR_ATOMIC_INCREMENT
@@ -89,28 +93,23 @@ NSPR_API(PRInt32)   PR_AtomicAdd(PRInt32 *ptr, PRInt32 val);
 #pragma intrinsic(_InterlockedExchangeAdd)
 #endif
 
-#define PR_ATOMIC_INCREMENT(val) _InterlockedIncrement((long volatile *)(val))
-#define PR_ATOMIC_DECREMENT(val) _InterlockedDecrement((long volatile *)(val))
+#define PR_ATOMIC_INCREMENT(val) _InterlockedIncrement((long volatile*)(val))
+#define PR_ATOMIC_DECREMENT(val) _InterlockedDecrement((long volatile*)(val))
 #define PR_ATOMIC_SET(val, newval) \
-        _InterlockedExchange((long volatile *)(val), (long)(newval))
+    _InterlockedExchange((long volatile*)(val), (long)(newval))
 #define PR_ATOMIC_ADD(ptr, val) \
-        (_InterlockedExchangeAdd((long volatile *)(ptr), (long)(val)) + (val))
+    (_InterlockedExchangeAdd((long volatile*)(ptr), (long)(val)) + (val))
 
-#elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && \
-      ((defined(__APPLE__) && \
-           (defined(__ppc__) || defined(__i386__) || defined(__x86_64__))) || \
-       (defined(__linux__) && \
-           ((defined(__i386__) && \
-           defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)) || \
-           defined(__ia64__) || defined(__x86_64__) || \
-           defined(__powerpc__) || \
-           (defined(__arm__) && \
-           defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)) || \
-           defined(__aarch64__) || defined(__alpha) || \
-           (defined(__riscv) && \
-           defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)) || \
-           (defined(__mips__) && \
-           defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)))))
+#elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) &&          \
+    ((defined(__APPLE__) &&                                                  \
+      (defined(__ppc__) || defined(__i386__) || defined(__x86_64__))) ||     \
+     (defined(__linux__) &&                                                  \
+      ((defined(__i386__) && defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)) || \
+       defined(__ia64__) || defined(__x86_64__) || defined(__powerpc__) ||   \
+       (defined(__arm__) && defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)) ||  \
+       defined(__aarch64__) || defined(__alpha) ||                           \
+       (defined(__riscv) && defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)) ||  \
+       (defined(__mips__) && defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)))))
 
 /*
  * Because the GCC manual warns that some processors may support
@@ -138,8 +137,8 @@ NSPR_API(PRInt32)   PR_AtomicAdd(PRInt32 *ptr, PRInt32 val);
 typedef struct PRStackElemStr PRStackElem;
 
 struct PRStackElemStr {
-    PRStackElem *prstk_elem_next;   /* next pointer MUST be at offset 0;
-                                      assembly language code relies on this */
+    PRStackElem* prstk_elem_next; /* next pointer MUST be at offset 0;
+                                    assembly language code relies on this */
 };
 
 typedef struct PRStackStr PRStack;
@@ -153,7 +152,8 @@ typedef struct PRStackStr PRStack;
 ** RETURN:
 **    A pointer to the created stack, if successful, else NULL.
 */
-NSPR_API(PRStack *) PR_CreateStack(const char *stack_name);
+NSPR_API(PRStack*)
+PR_CreateStack(const char* stack_name);
 
 /*
 ** FUNCTION: PR_StackPush
@@ -165,7 +165,8 @@ NSPR_API(PRStack *) PR_CreateStack(const char *stack_name);
 ** RETURN:
 **    None
 */
-NSPR_API(void)          PR_StackPush(PRStack *stack, PRStackElem *stack_elem);
+NSPR_API(void)
+PR_StackPush(PRStack* stack, PRStackElem* stack_elem);
 
 /*
 ** FUNCTION: PR_StackPop
@@ -178,7 +179,8 @@ NSPR_API(void)          PR_StackPush(PRStack *stack, PRStackElem *stack_elem);
 **    if non-empty,
 **    else NULL
 */
-NSPR_API(PRStackElem *) PR_StackPop(PRStack *stack);
+NSPR_API(PRStackElem*)
+PR_StackPop(PRStack* stack);
 
 /*
 ** FUNCTION: PR_DestroyStack
@@ -192,7 +194,8 @@ NSPR_API(PRStackElem *) PR_StackPop(PRStack *stack);
 **                  PR_GetError will return
 **                      PR_INVALID_STATE_ERROR - stack is not empty
 */
-NSPR_API(PRStatus)      PR_DestroyStack(PRStack *stack);
+NSPR_API(PRStatus)
+PR_DestroyStack(PRStack* stack);
 
 PR_END_EXTERN_C
 

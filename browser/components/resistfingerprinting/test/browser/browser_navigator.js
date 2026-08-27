@@ -7,11 +7,6 @@
 
 const CC = Components.Constructor;
 
-ChromeUtils.defineESModuleGetters(this, {
-  WindowsVersionInfo:
-    "resource://gre/modules/components-utils/WindowsVersionInfo.sys.mjs",
-});
-
 let expectedResults;
 
 const osVersion = Services.sysinfo.get("version");
@@ -50,7 +45,7 @@ const WindowsOscpuPromise = (async () => {
   let WindowsOscpu = null;
   if (AppConstants.platform == "win") {
     let cpuArch = Services.sysinfo.get("arch");
-    let isWin11 = WindowsVersionInfo.get().buildNumber >= 22000;
+    let isWin11 = Services.sysinfo.isWindows10BuildOrLater(22000);
     let isWow64 = (await Services.sysinfo.processInfo).isWow64;
     WindowsOscpu =
       cpuArch == "x86-64" || isWow64 || (cpuArch == "aarch64" && isWin11)

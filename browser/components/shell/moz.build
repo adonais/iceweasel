@@ -66,7 +66,6 @@ elif CONFIG["OS_ARCH"] == "WINNT":
     ]
     SOURCES += [
         "nsWindowsShellService.cpp",
-        "Windows11TaskbarPinning.cpp",
         "WindowsDefaultBrowser.cpp",
         "WindowsUIElement.cpp",
         "WindowsUIOverlayImage.cpp",
@@ -128,6 +127,11 @@ for var in (
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     CXXFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
+
+SPHINX_TREES["/widget/windows/shell"] = "docs"
+
+with Files("docs/**"):
+    SCHEDULES.exclusive = ["docs"]
 
 with Files("**"):
     BUG_COMPONENT = ("Firefox", "Shell Integration")

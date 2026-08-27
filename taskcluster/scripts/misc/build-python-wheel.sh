@@ -17,6 +17,18 @@ WHEEL_DIR=$(find "$MOZ_FETCHES_DIR/" -maxdepth 1 -mindepth 1 -type d -not -name 
 
 export PATH="$MOZ_FETCHES_DIR/python/bin":/builds/worker/.local/bin:$PATH
 
+# The fetched python toolchain is relocated at extraction time by patching
+# sysconfig's build_time_vars, but its python3.X-config script still has the
+# unrelocated build-time prefix (e.g. /python) baked in as plain text, which
+# is what build backends like meson-python consult to find Python.h. Point
+# the compiler at the real header location directly instead.
+if [ -d "$MOZ_FETCHES_DIR/python/include" ]; then
+    python_include=$(find "$MOZ_FETCHES_DIR/python/include" -maxdepth 1 -name 'python3.*' -type d | head -n1)
+    if [ -n "$python_include" ]; then
+        export CPATH="$python_include${CPATH:+:$CPATH}"
+    fi
+fi
+
 python3 -m venv venv
 . venv/bin/activate
 python3 -m pip install -r "${GECKO_PATH}/build/wheel_requirements.txt"

@@ -109,10 +109,15 @@ static capi::LineSegmenter* GetLineSegmenter(bool aUseDefault,
       locale, options.AsFFI());
 }
 
-void LineBreaker::ComputeBreakPositions(
-    const char16_t* aChars, uint32_t aLength, WordBreakRule aWordBreak,
-    LineBreakRule aLevel, bool aIsChineseOrJapanese, uint8_t* aBreakBefore) {
-  if (aLength == 1) {
+void LineBreaker::ComputeBreakPositions(Span<const char16_t> aText,
+                                        WordBreakRule aWordBreak,
+                                        LineBreakRule aLevel,
+                                        bool aIsChineseOrJapanese,
+                                        Span<uint8_t> aBreakBefore) {
+  MOZ_ASSERT(aText.Length() == aBreakBefore.Length());
+
+  const size_t length = aText.Length();
+  if (length == 1) {
     // Although UAX#14 LB2 rule requires never breaking at the start of text
     // (SOT), ICU4X line segmenter API is designed to match other segmenter in
     // UAX#29 to always break at the start of text. Hence the optimization
@@ -126,8 +131,8 @@ void LineBreaker::ComputeBreakPositions(
   // to make that decision, we probe every /kStride/ characters.
   bool useCache = [=]() {
     const uint32_t kStride = 8;
-    for (uint32_t i = 0; i < aLength; i += kStride) {
-      if (intl::UnicodeProperties::IsScriptioContinua(aChars[i])) {
+    for (uint32_t i = 0; i < length; i += kStride) {
+      if (intl::UnicodeProperties::IsScriptioContinua(aText[i])) {
         return true;
       }
     }
@@ -135,31 +140,31 @@ void LineBreaker::ComputeBreakPositions(
   }();
   Maybe<LineBreakCache::Entry> entry;
   if (useCache) {
-    LineBreakCache::KeyType key{aChars, aLength, aWordBreak, aLevel,
+    LineBreakCache::KeyType key{aText.Elements(), length, aWordBreak, aLevel,
                                 aIsChineseOrJapanese};
     entry.emplace(LineBreakCache::Cache()->Lookup(key));
     if (*entry) {
       auto& breakBefore = entry->Data().mBreaks;
-      LineBreakCache::CopyAndFill(breakBefore, aBreakBefore,
-                                  aBreakBefore + aLength);
+      LineBreakCache::CopyAndFill(breakBefore, aBreakBefore);
       return;
     }
   }
 
-  memset(aBreakBefore, 0, aLength);
+  std::fill(aBreakBefore.begin(), aBreakBefore.end(), 0);
 
-  CheckedInt<int32_t> length = aLength;
-  if (length.isValid()) {
+  CheckedInt<int32_t> checkedLength = length;
+  if (checkedLength.isValid()) {
     const bool useDefault =
         UseDefaultLineSegmenter(aWordBreak, aLevel, aIsChineseOrJapanese);
     auto lineSegmenter =
         GetLineSegmenter(useDefault, aWordBreak, aLevel, aIsChineseOrJapanese);
     auto segmenter = LineSegmenter::FromFFI(lineSegmenter);
-    auto iterator = segmenter->segment16(std::u16string_view{aChars, aLength});
+    auto iterator =
+        segmenter->segment16(std::u16string_view{aText.Elements(), length});
 
     while (true) {
       const int32_t nextPos = iterator->next();
-      if (nextPos < 0 || nextPos >= length.value()) {
+      if (nextPos < 0 || nextPos >= checkedLength.value()) {
         break;
       }
       aBreakBefore[nextPos] = 1;
@@ -173,26 +178,30 @@ void LineBreaker::ComputeBreakPositions(
   if (useCache) {
     // As a very simple memory saving measure we trim off trailing elements
     // that are false before caching.
-    auto* afterLastTrue = aBreakBefore + aLength;
+    auto* afterLastTrue = aBreakBefore.Elements() + length;
     while (!*(afterLastTrue - 1)) {
-      if (--afterLastTrue == aBreakBefore) {
+      if (--afterLastTrue == aBreakBefore.Elements()) {
         break;
       }
     }
 
     entry->Set(LineBreakCache::EntryType{
-        nsString(aChars, aLength),
-        nsTArray<uint8_t>(aBreakBefore, afterLastTrue - aBreakBefore),
+        nsString(aText.Elements(), aText.Length()),
+        nsTArray<uint8_t>(aBreakBefore.Elements(),
+                          afterLastTrue - aBreakBefore.Elements()),
         aWordBreak, aLevel, aIsChineseOrJapanese});
   }
 }
 
-void LineBreaker::ComputeBreakPositions(const uint8_t* aChars, uint32_t aLength,
+void LineBreaker::ComputeBreakPositions(Span<const uint8_t> aText,
                                         WordBreakRule aWordBreak,
                                         LineBreakRule aLevel,
                                         bool aIsChineseOrJapanese,
-                                        uint8_t* aBreakBefore) {
-  if (aLength == 1) {
+                                        Span<uint8_t> aBreakBefore) {
+  MOZ_ASSERT(aText.Length() == aBreakBefore.Length());
+
+  const size_t length = aText.Length();
+  if (length == 1) {
     // Although UAX#14 LB2 rule requires never breaking at the start of text
     // (SOT), ICU4X line segmenter API is designed to match other segmenter in
     // UAX#29 to always break at the start of text. Hence the optimization
@@ -201,10 +210,10 @@ void LineBreaker::ComputeBreakPositions(const uint8_t* aChars, uint32_t aLength,
     return;
   }
 
-  memset(aBreakBefore, 0, aLength);
+  std::fill(aBreakBefore.begin(), aBreakBefore.end(), 0);
 
-  CheckedInt<int32_t> length = aLength;
-  if (!length.isValid()) {
+  CheckedInt<int32_t> checkedLength = length;
+  if (!checkedLength.isValid()) {
     return;
   }
 
@@ -213,12 +222,12 @@ void LineBreaker::ComputeBreakPositions(const uint8_t* aChars, uint32_t aLength,
   auto lineSegmenter =
       GetLineSegmenter(useDefault, aWordBreak, aLevel, aIsChineseOrJapanese);
   auto segmenter = icu4x::LineSegmenter::FromFFI(lineSegmenter);
-  auto iterator =
-      segmenter->segment_latin1(diplomat::span<const uint8_t>{aChars, aLength});
+  auto iterator = segmenter->segment_latin1(
+      diplomat::span<const uint8_t>{aText.Elements(), length});
 
   while (true) {
     const int32_t nextPos = iterator->next();
-    if (nextPos < 0 || nextPos >= length.value()) {
+    if (nextPos < 0 || nextPos >= checkedLength.value()) {
       break;
     }
     aBreakBefore[nextPos] = 1;

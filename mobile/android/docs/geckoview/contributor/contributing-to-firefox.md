@@ -12,7 +12,7 @@
 
 This guide will take you through submitting and updating a patch to
 `firefox` as a git user. You need to already be [set up to use
-git to contribute to Firefox](/setup/index.html).
+git to contribute to Firefox](/setup/index.md).
 
 ### Performing a bug fix
 

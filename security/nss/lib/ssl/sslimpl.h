@@ -311,6 +311,7 @@ typedef struct sslOptionsStr {
     unsigned int enableTls13GreaseEch : 1;
     unsigned int enableTls13BackendEch : 1;
     unsigned int callExtensionWriterOnEchInner : 1;
+    unsigned int enableEchXtnCompression : 1;
     unsigned int enableGrease : 1;
     unsigned int enableChXtnPermutation : 1;
     unsigned int dbLoadCertChain : 1;

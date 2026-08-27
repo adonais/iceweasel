@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Live stream media without a known Content-Length</title>
+</head>
+<body>
+<!--
+  live_stream.sjs serves a real MP3 fixture without ever revealing its
+  total length and keeps the connection open, which makes Gecko treat its
+  resource as a live stream (`MediaDecoder::IsLiveStream()`). The fixture
+  starts with a ~1 second pre-recorded prelude, well under the
+  media-control eligible-duration threshold, so this element is only
+  controllable at first because it's recognized as live. More content is
+  then streamed in, growing the reported duration well past the threshold.
+-->
+<audio id="live-stream" src="live_stream.sjs"></audio>
+</body>
+</html>

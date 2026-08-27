@@ -595,7 +595,6 @@ class MOZ_STACK_CLASS ParseContext : public Nestable<ParseContext> {
     return (scriptId() == 0);
   }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   bool isUsingSyntaxAllowed() {
     if (innermostStatement() &&
         innermostStatement()->kind() == StatementKind::Switch) {
@@ -604,7 +603,6 @@ class MOZ_STACK_CLASS ParseContext : public Nestable<ParseContext> {
 
     return innermostStatement_ || sc_->isFunction() || sc_->isModule();
   }
-#endif
 
   void setSuperScopeNeedsHomeObject() {
     MOZ_ASSERT(sc_->allowSuperProperty());

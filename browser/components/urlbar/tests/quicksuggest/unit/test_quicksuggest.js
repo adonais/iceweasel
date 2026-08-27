@@ -174,7 +174,7 @@ add_task(async function manySuggestResults() {
                   url: record.url,
                   suggestedIndex: -1,
                 }),
-                { exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN }
+                { exposureTelemetry: UrlbarShared.EXPOSURE_TELEMETRY.HIDDEN }
               )
             )
             .reverse(),
@@ -359,7 +359,7 @@ add_task(async function tabToSearch() {
           // tab to search
           makeSearchResult(context, {
             engineName: engine.name,
-            engineIconUri: UrlbarUtils.ICON.SEARCH_GLASS,
+            engineIconUri: UrlbarShared.ICON.SEARCH_GLASS,
             searchUrlDomainWithoutSuffix: UrlbarUtils.stripPublicSuffixFromHost(
               engine.searchUrlDomain
             ),

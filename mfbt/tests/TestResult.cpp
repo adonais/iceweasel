@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <string.h>
+
 #include "mozilla/Casting.h"
 #include "mozilla/ResultVariant.h"
 #include "mozilla/Try.h"

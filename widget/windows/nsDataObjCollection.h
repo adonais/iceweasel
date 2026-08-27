@@ -31,7 +31,7 @@ class nsIDataObjCollection : public IUnknown {
 class nsDataObjCollection final : public nsIDataObjCollection,
                                   public nsDataObj {
  public:
-  nsDataObjCollection();
+  nsDataObjCollection() = default;
 
  private:
   ~nsDataObjCollection() final;

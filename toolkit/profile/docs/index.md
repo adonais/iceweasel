@@ -134,3 +134,10 @@ Users can create additional Selectable Profiles [using the Profiles menu and
 menuitems](https://support.mozilla.org/kb/profile-management). The `about:newprofile`,
 `about:editprofile`, `about:deleteprofile`, and `about:profilemanager` pages are used to manage
 Selectable Profiles.
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+changes
+```

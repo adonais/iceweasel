@@ -84,6 +84,79 @@
       widget-celebration-border-orbit-out var(--widget-celebration-exit-duration) ease var(--widget-celebration-hold-duration) forwards;
   }
 
+  // Conic ring confined to a 2px border band by an xor mask. The angle needs
+  // the registered --widget-celebration-spin property below to interpolate;
+  // without it the gradient jumps instead of rotating.
+  .#{$prefix}-ring {
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    border-radius: inherit;
+    padding: var(--space-xxsmall);
+    background: conic-gradient(from var(--widget-celebration-spin), var(--widget-celebration-ring-stops));
+    mask-image: linear-gradient(#FFF 0 0), linear-gradient(#FFF 0 0);
+    mask-clip: content-box, border-box;
+    mask-composite: exclude;
+    mask-origin: border-box;
+    transform: translateZ(0);
+    pointer-events: none;
+    animation:
+      widget-celebration-tint-in 600ms ease forwards,
+      widget-celebration-ring-spin var(--widget-celebration-ring-duration) linear infinite,
+      widget-celebration-tint-out var(--widget-celebration-exit-duration) ease var(--widget-celebration-hold-duration) forwards;
+  }
+
+  // Rendered inside the element it decorates. Room above and to the sides,
+  // almost none below, so sparkles never stray into text beneath.
+  .#{$prefix}-sparkles {
+    position: absolute;
+    // Decorative overhang around the decorated element, not layout spacing —
+    // no design token expresses a negative inset triple.
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list */
+    inset: -12px -8px -2px;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  .#{$prefix}-sparkle {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform-origin: 50% 50%;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    color: var(--widget-celebration-sparkle-color);
+    animation: widget-celebration-sparkle var(--widget-celebration-sparkle-duration)
+      cubic-bezier(0.22, 1, 0.36, 1) var(--sparkle-delay) forwards;
+
+    svg {
+      display: block;
+      height: 100%;
+      width: 100%;
+      fill: currentColor;
+    }
+
+    // Sparkle sizes are decorative glyph dimensions, not layout items; the
+    // two smaller steps have no matching size token.
+    &--lg {
+      height: var(--size-item-xsmall);
+      width: var(--size-item-xsmall);
+    }
+
+    /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+    &--md {
+      height: 9px;
+      width: 9px;
+    }
+
+    &--sm {
+      height: 7px;
+      width: 7px;
+    }
+    /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+  }
+
   .#{$prefix}-copy {
     align-items: center;
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
@@ -451,5 +524,36 @@
 
   to {
     opacity: 0;
+  }
+}
+
+@property --widget-celebration-spin {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes widget-celebration-ring-spin {
+  to {
+    --widget-celebration-spin: 360deg;
+  }
+}
+
+@keyframes widget-celebration-sparkle {
+  0% {
+    opacity: 0;
+    transform: scale(0.35) translate3d(0, 4px, 0) rotate(-4deg);
+  }
+
+  30% {
+    // Keyframe midpoint, no matching opacity token.
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    opacity: 0.92;
+    transform: scale(1) translate3d(0, 0, 0) rotate(0deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.65) translate3d(0, -8px, 0) rotate(3deg);
   }
 }

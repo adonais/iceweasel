@@ -174,4 +174,10 @@ class DOMRectList final : public nsISupports, public nsWrapperCache {
 
 }  // namespace mozilla::dom
 
+std::ostream& operator<<(std::ostream& aStream,
+                         const mozilla::dom::DOMRectReadOnly& aRect);
+template <>
+struct fmt::formatter<mozilla::dom::DOMRectReadOnly> : fmt::ostream_formatter {
+};
+
 #endif /*MOZILLA_DOMRECT_H_*/

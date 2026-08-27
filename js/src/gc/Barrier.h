@@ -1027,9 +1027,14 @@ class HeapSlot : public BarrieredBase<Value>,
  public:
   enum Kind { Slot = 0, Element = 1 };
 
+  template <bool MayBeGCThing = true>
   void init(NativeObject* owner, Kind kind, uint32_t slot, const Value& v) {
+    MOZ_ASSERT_IF(!MayBeGCThing, !v.isGCThing());
+
     this->unbarrieredSet(v);
-    post(owner, kind, slot, v);
+    if constexpr (MayBeGCThing) {
+      post(owner, kind, slot, v);
+    }
   }
 
   // Initialization (so no pre-barrier) but where the barriers will be applied
@@ -1084,12 +1089,20 @@ class HeapSlot : public BarrieredBase<Value>,
                                              const Value& target) const;
 #endif
 
+  template <bool MayBeGCThing = true>
   MOZ_ALWAYS_INLINE void set(NativeObject* owner, Kind kind, uint32_t slot,
                              const Value& v) {
     MOZ_ASSERT(preconditionForSet(owner, kind, slot));
-    pre();
+    MOZ_ASSERT_IF(!MayBeGCThing, !this->unbarrieredGet().isGCThing());
+    MOZ_ASSERT_IF(!MayBeGCThing, !v.isGCThing());
+
+    if constexpr (MayBeGCThing) {
+      pre();
+    }
     this->unbarrieredSet(v);
-    post(owner, kind, slot, v);
+    if constexpr (MayBeGCThing) {
+      post(owner, kind, slot, v);
+    }
   }
 
  private:

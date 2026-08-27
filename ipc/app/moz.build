@@ -91,6 +91,69 @@ if CONFIG["MOZ_DEBUG"]:
 else:
     WINCONSOLE = False
 
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+    mac_bundles = [
+        (
+            CONFIG["MOZ_CHILD_PROCESS_NAME"],
+            CONFIG["MOZ_CHILD_PROCESS_NAME"],
+            CONFIG["MOZ_CHILD_PROCESS_BUNDLEID"],
+            CONFIG["MOZ_CHILD_PROCESS_APPNAME"],
+        ),
+        (
+            CONFIG["MOZ_EME_PROCESS_NAME"],
+            CONFIG["MOZ_EME_PROCESS_NAME_BRANDED"],
+            CONFIG["MOZ_EME_PROCESS_BUNDLEID"],
+            CONFIG["MOZ_EME_PROCESS_BUNDLENAME"],
+        ),
+        (
+            CONFIG["MOZ_GPU_PROCESS_NAME"],
+            CONFIG["MOZ_GPU_PROCESS_NAME_BRANDED"],
+            CONFIG["MOZ_GPU_PROCESS_BUNDLEID"],
+            CONFIG["MOZ_GPU_PROCESS_NAME_BRANDED"],
+        ),
+    ]
+    if CONFIG["MOZ_PKCS11_PROCESS_NAME"]:
+        mac_bundles.append((
+            CONFIG["MOZ_PKCS11_PROCESS_NAME"],
+            CONFIG["MOZ_PKCS11_PROCESS_NAME_BRANDED"],
+            CONFIG["MOZ_PKCS11_PROCESS_BUNDLEID"],
+            CONFIG["MOZ_PKCS11_PROCESS_BUNDLENAME"],
+        ))
+    child = CONFIG["MOZ_CHILD_PROCESS_NAME"]
+    for bundle, executable, bundleid, app_name in mac_bundles:
+        GeneratedFile(
+            f"{bundle}.Info.plist",
+            script="/python/mozbuild/mozbuild/action/preprocessor.py",
+            entry_point="generate",
+            inputs=["macbuild/Contents/Info.plist.in"],
+            flags=[
+                "-Fsubstitution",
+                f"-DEXECUTABLE={executable}",
+                f"-DBUNDLEID={bundleid}",
+                f"-DMOZ_DEVELOPER_REPO_PATH={TOPSRCDIR}",
+                f"-DMOZ_DEVELOPER_OBJ_PATH={TOPOBJDIR}",
+            ],
+        )
+        GeneratedFile(
+            f"{bundle}.InfoPlist.strings",
+            script="/python/mozbuild/mozbuild/action/preprocessor.py",
+            entry_point="generate",
+            inputs=["macbuild/Contents/Resources/English.lproj/InfoPlist.strings.in"],
+            flags=[
+                "-Fsubstitution",
+                "--output-encoding",
+                "utf-16",
+                f"-DAPP_NAME={app_name}",
+            ],
+        )
+        MacOSBundle(
+            f"!/{FINAL_TARGET}/{bundle}.app",
+            skeleton="macbuild/Contents",
+            info_plist=f"!{bundle}.Info.plist",
+            strings=f"!{bundle}.InfoPlist.strings",
+            binaries=[(f"!/{FINAL_TARGET}/{child}", executable)],
+        )
+
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "DOM: Content Processes")

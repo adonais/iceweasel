@@ -1,4 +1,4 @@
-/* eslint-disable @microsoft/sdl/no-insecure-url */
+/* eslint-disable sdl/no-insecure-url */
 
 const ANY_URL = undefined;
 
@@ -43,7 +43,7 @@ add_task(async function single_url3() {
 // Single text/plain item, with multiple links.
 add_task(async function multiple_urls() {
   await dropText("www.example.com/1\nexample.com/2", [
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://www.example.com/1",
     "http://example.com/2",
   ]);

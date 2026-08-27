@@ -1,0 +1,95 @@
+<!DOCTYPE HTML>
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
+<html>
+<head>
+  <title>Test for Alerts Service</title>
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css"/>
+</head>
+
+<body>
+<p id="display"></p>
+
+<br>Alerts service, with observer "synchronous" case.
+<br>
+<br>Did a notification appear anywhere?
+<br>If so, the test will finish once the notification disappears.
+
+<pre id="test">
+<script class="testbody">
+
+var notifier;
+var alertName = "fiorello";
+
+var callbacks = {
+  alertShow: false,
+  onAlertShow() {
+    ok(!this.alertShow, "Alert should not be shown more than once");
+    this.alertShow = true;
+    notifier.closeAlert(alertName);
+  },
+  onAlertClick() {
+    ok(false, "Did someone click the notification while running mochitests? (Please don't.)");
+  },
+  onAlertDismissedFromForeground() {
+    ok(false, "We did not close the notification until it's dismissed automatically?");
+  },
+  onAlertFinished() {
+    SimpleTest.finish();
+  },
+  onAlertSettings() {
+    ok(false, "Did someone click the notification settings while running mochitests? (Please don't.)");
+  },
+  onAlertDisable() {
+    ok(false, "Did someone disable the notification while running mochitests? (Please don't.)");
+  },
+};
+
+function runTest() {
+  const Cc = SpecialPowers.Cc;
+  const Ci = SpecialPowers.Ci;
+  const AlertNotification = Components.Constructor(
+    "@mozilla.org/alert-notification;1",
+    "nsIAlertNotification",
+    "initWithObject"
+  );
+
+  if (!("@mozilla.org/alerts-service;1" in Cc)) {
+    todo(false, "Alerts service does not exist in this application");
+    return;
+  }
+
+  ok(true, "Alerts service exists in this application");
+
+  try {
+    notifier = Cc["@mozilla.org/alerts-service;1"].
+               getService(Ci.nsIAlertsService);
+    ok(true, "Alerts service is available");
+  } catch (ex) {
+    todo(false,
+         "Alerts service is not available.", ex);
+    return;
+  }
+
+  try {
+    SimpleTest.waitForExplicitFinish();
+    let alert = new AlertNotification({
+      title: "Notification test",
+      text: "Surprise! I'm here to test notifications!",
+      cookie: "foobarcookie",
+      name: alertName,
+    });
+    notifier.showAlertWithCallbacks(alert, callbacks);
+  } catch (ex) {
+    todo(false, "showAlertWithCallbacks() failed.", ex);
+    SimpleTest.finish();
+  }
+}
+
+runTest();
+
+</script>
+</pre>
+</body>
+</html>

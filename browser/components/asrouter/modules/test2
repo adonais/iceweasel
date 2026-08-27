@@ -1,0 +1,153 @@
+{
+  "weight": 100,
+  "id": "FX_BACKUP_SYNC_FOLLOWUP",
+  "groups": [
+    "cfr",
+    "win10-eos-sync"
+  ],
+  "content": {
+    "id": "FX_BACKUP_SYNC_FOLLOWUP",
+    "screens": [
+      {
+        "id": "FX_BACKUP_SYNC_FOLLOWUP_A",
+        "anchors": [
+          {
+            "selector": "#PanelUI-menu-button",
+            "hide_arrow": true,
+            "panel_position": {
+              "anchor_attachment": "bottomright",
+              "callout_attachment": "topright"
+            }
+          }
+        ],
+        "content": {
+          "width": "max(366px, 45ex)",
+          "position": "callout",
+          "logo": {
+            "width": "260px",
+            "height": "auto",
+            "imageURL": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/e4b7bdc9-595b-4ee5-bcaf-aea304ad7a1e.svg"
+          },
+          "title": {
+            "string_id": "windows-10-eos-sync-toast-title"
+          },
+          "subtitle": {
+            "string_id": "windows-10-eos-sync-toast-subtitle"
+          },
+          "primary_button": {
+            "label": {
+              "string_id": "windows-10-eos-sync-callout-get-started-button"
+            },
+            "action": {
+              "type": "SHOW_FIREFOX_ACCOUNTS",
+              "data": {
+                "entrypoint": "callout-win10-eos",
+                "where": "tabshifted",
+                "extraParams": {
+                  "entrypoint_experiment": "fx-backup-followup",
+                  "utm_medium": "firefox-desktop",
+                  "utm_source": "callout",
+                  "utm_campaign": "fx-backup-onboarding",
+                  "utm_term": "fx-backup-onboarding-sync-callout-followup"
+                }
+              },
+              "dismiss": true
+            }
+          },
+          "additional_button": {
+            "label": {
+              "string_id": "fx-view-discoverability-secondary-button-label"
+            },
+            "style": "secondary",
+            "action": {
+              "type": "BLOCK_MESSAGE",
+              "data": {
+                "id": "FX_BACKUP_SYNC_FOLLOWUP"
+              },
+              "dismiss": true
+            }
+          },
+          "submenu_button": {
+            "submenu": [
+              {
+                "type": "action",
+                "label": {
+                  "string_id": "split-dismiss-button-dont-show-option"
+                },
+                "action": {
+                  "type": "BLOCK_MESSAGE",
+                  "data": {
+                    "id": "FX_BACKUP_SYNC_FOLLOWUP"
+                  },
+                  "dismiss": true
+                },
+                "id": "block_recommendation"
+              },
+              {
+                "type": "action",
+                "label": {
+                  "string_id": "split-dismiss-button-show-fewer-option"
+                },
+                "action": {
+                  "type": "MULTI_ACTION",
+                  "dismiss": true,
+                  "data": {
+                    "actions": [
+                      {
+                        "type": "SET_PREF",
+                        "data": {
+                          "pref": {
+                            "name": "messaging-system-action.backup-promo-recommendations",
+                            "value": true
+                          }
+                        }
+                      },
+                      {
+                        "type": "BLOCK_MESSAGE",
+                        "data": {
+                          "id": "FX_BACKUP_SYNC_FOLLOWUP"
+                        }
+                      }
+                    ]
+                  }
+                },
+                "id": "show_fewer_recommendations"
+              },
+              {
+                "type": "separator"
+              },
+              {
+                "type": "action",
+                "label": {
+                  "string_id": "split-dismiss-button-manage-settings-option"
+                },
+                "action": {
+                  "type": "OPEN_ABOUT_PAGE",
+                  "data": {
+                    "args": "preferences#general-cfrfeatures",
+                    "where": "tab"
+                  },
+                  "dismiss": true
+                },
+                "id": "manage_settings"
+              }
+            ],
+            "attached_to": "additional_button"
+          }
+        }
+      }
+    ],
+    "backdrop": "transparent",
+    "template": "multistage",
+    "transitions": false,
+    "disableHistoryUpdates": true
+  },
+  "trigger": {
+    "id": "defaultBrowserCheck"
+  },
+  "template": "feature_callout",
+  "frequency": {
+    "lifetime": 1
+  },
+  "targeting": "source == 'startup' && isFxAEnabled && !isFxASignedIn && !isMajorUpgrade && !willShowDefaultPrompt && !activeNotifications && previousSessionEnd && 'browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features' | preferenceValue == true && backupArchiveEnabled && (!'browser.backup.scheduled.enabled' | preferenceValue) && (currentDate|date - profileAgeCreated|date) / 86400000 >= 7 && (messageImpressions.BROWSER_BACKUP_OPTIN_SPOTLIGHT[messageImpressions.BROWSER_BACKUP_OPTIN_SPOTLIGHT | length - 1] < currentDate|date - 604800000)"
+}

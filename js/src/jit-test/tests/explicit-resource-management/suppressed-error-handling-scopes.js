@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !getBuildConfiguration("explicit-resource-management"); --enable-explicit-resource-management
-
 load(libdir + "asserts.js");
 
 {
@@ -162,7 +160,7 @@ load(libdir + "asserts.js");
     }
     throw globalThis.errorsToThrowModule[2];
   `);
-  moduleLink(m);
+  moduleLoadAndLink(m);
   let e = null;
   moduleEvaluate(m).catch((err) => { e = err; });
   drainJobQueue();

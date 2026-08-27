@@ -27,6 +27,7 @@ BROWSER_CHROME_MANIFESTS += [
     "tests/browser/browser.toml",
     "tests/browser/perftest.toml",
     "tests/browser_eval/eval.toml",
+    "tests/browser_models/browser_models.toml",
 ]
 
 XPIDL_SOURCES += ["nsIMLUtils.idl"]

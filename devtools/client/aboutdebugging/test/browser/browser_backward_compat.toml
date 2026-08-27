@@ -1,0 +1,47 @@
+# Remote debugging backward compatibility tests. These connect this Firefox to a
+# second Firefox provisioned by ./mach devtools-compat-test, and no-op when run
+# without it. Documentation in /documentation/TESTS_BACKWARD_COMPAT.md
+#
+# They live in the same folder as the regular about:debugging tests so that they
+# can reuse head.js and its helpers, which are resolved relative to the test
+# directory, but they have their own manifest and subsuite.
+[DEFAULT]
+tags = "devtools"
+subsuite = "devtools-compat"
+prefs = ["devtools.aboutdebugging.showHiddenAddons=false"] # showHiddenAddons has different values depending on the build flags, ensure consistent test behavior by always setting it to false.
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
+support-files = [
+  "head.js",
+  "helper-backward-compat.js",
+  "helper-mocks.js",
+  "helper-serviceworker.js",
+  "mocks/*",
+  "resources/backward-compat/*",
+  "!/devtools/client/debugger/test/mochitest/shared-head.js",
+  "!/devtools/client/shared/test/shared-head.js",
+  "!/devtools/client/webconsole/test/browser/shared-head.js",
+]
+
+["browser_backward_compat_connect.js"]
+
+["browser_backward_compat_extension.js"]
+
+["browser_backward_compat_profiler.js"]
+support-files = [
+  "!/devtools/client/performance-new/test/browser/helpers.js",
+  "!/devtools/client/performance-new/test/browser/fake-frontend.html",
+]
+
+["browser_backward_compat_serviceworker.js"]
+
+["browser_backward_compat_tabs.js"]
+
+["browser_backward_compat_toolbox_console.js"]
+
+["browser_backward_compat_toolbox_debugger.js"]
+
+["browser_backward_compat_toolbox_inspector.js"]
+
+["browser_backward_compat_toolbox_netmonitor.js"]

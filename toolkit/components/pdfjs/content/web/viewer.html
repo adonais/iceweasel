@@ -29,7 +29,7 @@ See https://github.com/adobe-type-tools/cmap-resources
   <link rel="icon" type="image/svg+xml" href="chrome://global/skin/icons/pdf.svg" />
   <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; script-src resource: 'wasm-unsafe-eval'; worker-src resource:; style-src resource:; img-src resource: blob: data:; media-src blob:; font-src resource:; connect-src resource:; base-uri 'none'; form-action 'none';"
+      content="default-src 'none'; script-src resource: 'wasm-unsafe-eval'; worker-src resource:; style-src resource: chrome:; img-src resource: blob: data:; media-src blob:; font-src resource:; connect-src resource:; base-uri 'none'; form-action 'none';"
     />
 
 <!-- This snippet is used in the Firefox extension (included from viewer.html) -->
@@ -39,6 +39,8 @@ See https://github.com/adobe-type-tools/cmap-resources
   <link rel="localization" href="toolkit/pdfviewer/viewer.ftl"/>
 
   <script src="resource://pdf.js/web/viewer.mjs" type="module"></script>
+
+  <script src="resource://pdf.js/pdfFeaturesNotification.mjs" type="module"></script>
   </head>
 
   <body tabindex="0">
@@ -793,6 +795,8 @@ See https://github.com/adobe-type-tools/cmap-resources
           </div>
         </div>
 
+  <pdf-features-notification id="pdfFeaturesNotification" data-focus-target="#viewerContainer" hidden></pdf-features-notification>
+
         <div id="viewerContainer" tabindex="0">
           <div id="viewer" class="pdfViewer"></div>
         </div>
@@ -808,8 +812,8 @@ See https://github.com/adobe-type-tools/cmap-resources
             <input type="password" id="password" class="toolbarField" />
           </div>
           <div class="buttonRow">
-            <button id="passwordCancel" class="dialogButton" type="button"><span data-l10n-id="pdfjs-password-cancel-button"></span></button>
-            <button id="passwordSubmit" class="dialogButton" type="button"><span data-l10n-id="pdfjs-password-ok-button"></span></button>
+            <button id="passwordCancel" class="secondaryButton" type="button"><span data-l10n-id="pdfjs-password-cancel-button"></span></button>
+            <button id="passwordSubmit" class="primaryButton" type="button"><span data-l10n-id="pdfjs-password-ok-button"></span></button>
           </div>
         </dialog>
         <dialog id="documentPropertiesDialog">
@@ -873,7 +877,9 @@ See https://github.com/adobe-type-tools/cmap-resources
             <p id="linearizedField" aria-labelledby="linearizedLabel">-</p>
           </div>
           <div class="buttonRow">
-            <button id="documentPropertiesClose" class="dialogButton" type="button"><span data-l10n-id="pdfjs-document-properties-close-button"></span></button>
+            <button id="documentPropertiesClose" class="secondaryButton" type="button">
+              <span data-l10n-id="pdfjs-document-properties-close-button"></span>
+            </button>
           </div>
         </dialog>
         <dialog class="dialog altText" id="altTextDialog" aria-labelledby="dialogLabel" aria-describedby="dialogDescription">
@@ -1117,7 +1123,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                       <button class="clearInputButton" type="button" tabindex="0" aria-hidden="true"></button>
                     </span>
                   </div>
-                  <button id="clearSignatureButton" type="button" data-l10n-id="pdfjs-editor-add-signature-clear-button" tabindex="0">
+                  <button id="clearSignatureButton" class="secondaryButton" type="button" data-l10n-id="pdfjs-editor-add-signature-clear-button" tabindex="0">
                     <span data-l10n-id="pdfjs-editor-add-signature-clear-button-label"></span>
                   </button>
                 </div>
@@ -1202,7 +1208,7 @@ See https://github.com/adobe-type-tools/cmap-resources
           <div>
             <span id="editorUndoBarMessage" class="description"></span>
           </div>
-          <button id="editorUndoBarUndoButton" class="undoButton" type="button" tabindex="0" data-l10n-id="pdfjs-editor-undo-bar-undo-button">
+          <button id="editorUndoBarUndoButton" class="secondaryButton" type="button" tabindex="0" data-l10n-id="pdfjs-editor-undo-bar-undo-button">
             <span data-l10n-id="pdfjs-editor-undo-bar-undo-button-label"></span>
           </button>
           <button id="editorUndoBarCloseButton" class="closeButton" type="button" tabindex="0" data-l10n-id="pdfjs-editor-undo-bar-close-button">

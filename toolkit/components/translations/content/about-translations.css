@@ -125,6 +125,8 @@ body {
     outline-offset: -1px;
   }
 
+  /* Small subtree and predates lint */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   &:has(moz-button:focus, a:focus) {
     outline: none;
   }
@@ -141,6 +143,8 @@ body {
     outline-offset: -1px;
   }
 
+  /* Small subtree and predates lint */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   &:has(moz-button:focus) {
     outline: none;
   }

@@ -20,6 +20,9 @@
       };
     }
 
+    // DisplayPortUtils::MaybeCreateDisplayPortInFirstScrollFrameEncountered
+    // relies on the scrollbox being a direct child here, so that it can give
+    // the chrome tab bar's scroller a displayport without walking the tabs.
     get markup() {
       return `
       <html:link rel="stylesheet" href="chrome://global/skin/toolbarbutton.css"/>
@@ -84,10 +87,7 @@
       this._destination = 0;
       this._direction = 0;
 
-      this.addEventListener("wheel", this);
-      this.addEventListener("touchstart", this);
-      this.addEventListener("touchmove", this);
-      this.addEventListener("touchend", this);
+      this.#updateInputListeners();
       this.shadowRoot.addEventListener("click", this);
       this.shadowRoot.addEventListener("mousedown", this);
       this.shadowRoot.addEventListener("mouseover", this);
@@ -144,6 +144,29 @@
 
       this.initializeAttributeInheritance();
       this.#updateScrollButtonsDisabledState();
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+      super.attributeChangedCallback(name, oldValue, newValue);
+
+      if (name == "orient" && oldValue != newValue) {
+        this.#updateInputListeners();
+      }
+    }
+
+    /**
+     * Wheel and touch listeners exist for horizontal mode only. Vertical mode
+     * must not register them at all: an APZ-aware listener here would make APZ
+     * wait for the main thread before it can scroll.
+     */
+    #updateInputListeners() {
+      for (let type of ["wheel", "touchstart", "touchmove", "touchend"]) {
+        if (this.#verticalMode) {
+          this.removeEventListener(type, this);
+        } else {
+          this.addEventListener(type, this);
+        }
+      }
     }
 
     get overflowing() {

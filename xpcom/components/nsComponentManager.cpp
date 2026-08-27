@@ -54,10 +54,6 @@
 #include "prthread.h"
 #include "xpcpublic.h"
 
-#ifdef MOZ_MEMORY
-#  include "mozmemory.h"
-#endif
-
 using namespace mozilla;
 using namespace mozilla::xpcom;
 
@@ -154,20 +150,12 @@ class MOZ_STACK_CLASS EntryWrapper final {
 
   explicit EntryWrapper(const StaticModule* aEntry) : mEntry(aEntry) {}
 
-#define MATCH(type, ifFactory, ifStatic)                     \
-  struct Matcher {                                           \
-    type operator()(nsFactoryEntry* entry) { ifFactory; }    \
-    type operator()(const StaticModule* entry) { ifStatic; } \
-  };                                                         \
-  return mEntry.match((Matcher()))
-
-  const nsID& CID() {
-    MATCH(const nsID&, return entry->mCID, return entry->CID());
+  const nsID& CID() const {
+    return mEntry.match([](const auto* e) -> const nsID& { return e->CID(); });
   }
 
-  already_AddRefed<nsIFactory> GetFactory() {
-    MATCH(already_AddRefed<nsIFactory>, return entry->GetFactory(),
-          return entry->GetFactory());
+  already_AddRefed<nsIFactory> GetFactory() const {
+    return mEntry.match([](const auto* e) { return e->GetFactory(); });
   }
 
   /**
@@ -176,35 +164,28 @@ class MOZ_STACK_CLASS EntryWrapper final {
    * side-steps the necessity of creating a nsIFactory instance for static
    * modules.
    */
-  nsresult CreateInstance(const nsIID& aIID, void** aResult) {
-    if (mEntry.is<nsFactoryEntry*>()) {
-      return mEntry.as<nsFactoryEntry*>()->CreateInstance(aIID, aResult);
-    }
-    return mEntry.as<const StaticModule*>()->CreateInstance(aIID, aResult);
+  nsresult CreateInstance(const nsIID& aIID, void** aResult) const {
+    return mEntry.match(
+        [&](const auto* e) { return e->CreateInstance(aIID, aResult); });
   }
 
   /**
    * Returns the cached service instance for this entry, if any. This should
    * only be accessed while mLock is held.
    */
-  nsISupports* ServiceInstance() {
-    MATCH(nsISupports*, return entry->mServiceObject,
-          return entry->ServiceInstance());
+  nsISupports* ServiceInstance() const {
+    return mEntry.match([](const auto* e) { return e->ServiceInstance(); });
   }
   void SetServiceInstance(already_AddRefed<nsISupports> aInst) {
-    if (mEntry.is<nsFactoryEntry*>()) {
-      mEntry.as<nsFactoryEntry*>()->mServiceObject = aInst;
-    } else {
-      return mEntry.as<const StaticModule*>()->SetServiceInstance(
-          std::move(aInst));
-    }
+    mEntry.match(
+        [&](const auto& e) { e->SetServiceInstance(std::move(aInst)); });
   }
 
   /**
    * Returns the description string for the module this entry belongs to.
    * Currently always returns "<unknown module>".
    */
-  nsCString ModuleDescription() { return "<unknown module>"_ns; }
+  nsCString ModuleDescription() const { return "<unknown module>"_ns; }
 
  private:
   Variant<nsFactoryEntry*, const StaticModule*> mEntry;
@@ -456,15 +437,6 @@ nsresult nsComponentManagerImpl::Init() {
 }
 
 template <typename T>
-static void AssertNotMallocAllocated(T* aPtr) {
-#if defined(DEBUG) && defined(MOZ_MEMORY)
-  jemalloc_ptr_info_t info;
-  jemalloc_ptr_info((void*)aPtr, &info);
-  MOZ_ASSERT(info.tag == TagUnknown);
-#endif
-}
-
-template <typename T>
 static void AssertNotStackAllocated(T* aPtr) {
   // On all of our supported platforms, the stack grows down. Any address
   // located below the address of our argument is therefore guaranteed not to be
@@ -626,7 +598,7 @@ Maybe<EntryWrapper> nsComponentManagerImpl::LookupByContractID(
     // UnregisterFactory might have left a stale nsFactoryEntry in
     // mContractIDs, so we should check to see whether this entry has
     // anything useful.
-    if (entry->mFactory || entry->mServiceObject) {
+    if (entry->mFactory || entry->ServiceInstance()) {
       return Some(EntryWrapper(entry));
     }
   }
@@ -869,7 +841,7 @@ nsresult nsComponentManagerImpl::FreeServices() {
 
   for (nsFactoryEntry* entry : mFactories.Values()) {
     entry->mFactory = nullptr;
-    entry->mServiceObject = nullptr;
+    entry->SetServiceInstance(nullptr);
   }
 
   for (const auto& module : gStaticModules) {
@@ -1358,14 +1330,15 @@ size_t nsComponentManagerImpl::SizeOfIncludingThis(
 nsFactoryEntry::nsFactoryEntry(const nsCID& aCID, nsIFactory* aFactory)
     : mCID(aCID), mFactory(aFactory) {}
 
-already_AddRefed<nsIFactory> nsFactoryEntry::GetFactory() {
+already_AddRefed<nsIFactory> nsFactoryEntry::GetFactory() const {
   nsComponentManagerImpl::gComponentManager->mLock.AssertNotCurrentThreadOwns();
 
   nsCOMPtr<nsIFactory> factory = mFactory;
   return factory.forget();
 }
 
-nsresult nsFactoryEntry::CreateInstance(const nsIID& aIID, void** aResult) {
+nsresult nsFactoryEntry::CreateInstance(const nsIID& aIID,
+                                        void** aResult) const {
   nsCOMPtr<nsIFactory> factory = GetFactory();
   NS_ENSURE_TRUE(factory, NS_ERROR_FAILURE);
   return factory->CreateInstance(aIID, aResult);

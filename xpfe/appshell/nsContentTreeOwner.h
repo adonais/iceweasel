@@ -42,7 +42,6 @@ class nsContentTreeOwner final : public nsIDocShellTreeOwner,
   /* nsIWebBrowserChrome (Get/SetDimensions overlap with nsIBaseWindow) */
   NS_IMETHOD SetLinkStatus(const nsAString& status) override;
   NS_IMETHOD GetChromeFlags(uint32_t* aChromeFlags) override;
-  NS_IMETHOD SetChromeFlags(uint32_t aChromeFlags) override;
   NS_IMETHOD ShowAsModal() override;
   NS_IMETHOD IsWindowModal(bool* _retval) override;
   NS_IMETHOD Blur() override;

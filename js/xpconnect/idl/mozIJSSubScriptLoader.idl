@@ -22,8 +22,7 @@ interface mozIJSSubScriptLoader : nsISupports
      * In JS, the signature looks like:
      * rv loadSubScript (url [, obj] [, charset]);
      * @param url the url of the UTF-8-encoded sub-script, which MUST be either
-     *            a chrome:, resource:, moz-src:, file:, jar:, or (privileged) moz-extension: url.
-     *            TODO(Bug 1974213):  Disallow file: or jar.
+     *            a chrome:, resource: or moz-src: URL.
      * @param obj an optional object to evaluate the script onto, it
      *            defaults to the global object of the caller.
      * @retval rv the value returned by the sub-script
@@ -36,19 +35,17 @@ interface mozIJSSubScriptLoader : nsISupports
      * In JS, the signature looks like:
      * rv = loadSubScript (url, optionsObject)
      * @param url the url of the UTF-8-encoded sub-script, which MUST be either
-     *            a chrome:, resource:, moz-src:, file:, jar:, or (privileged) moz-extension: url.
-     *            TODO(Bug 1974213):  Disallow file: or jar.
+     *            a chrome:, resource: or moz-src: URL. (But see `allowUnsafeURL` below)
      * @param optionsObject an object with parameters. Valid parameters are:
      *                      - target:  an object to evaluate onto (default: global object of the caller)
      *                      - ignoreCache: if set to true, will bypass the cache for reading the file.
-     *                      - async: if set to true, the script will be loaded
-     *                        asynchronously, and a Promise is returned which
-     *                        resolves to its result when execution is complete.
      *                      - wantReturnValue: If true, the script will return
      *                        the value of the last statement that it evaluated.
      *                        This option disables most optimizations in the
      *                        top-level scope, and should be avoided if at all
      *                        possible. Defaults to false.
+     *                      - allowUnsafeURL: If true, the url parameter also accepts
+     *                        jar:, file: and moz-extension: URLs.
      * @retval rv the value returned by the sub-script
      */
     [implicit_jscontext]

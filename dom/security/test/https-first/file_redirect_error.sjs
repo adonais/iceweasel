@@ -55,7 +55,7 @@ const CROSS_ORIGIN_REDIRECT =
 const SAME_ORIGIN_REDIRECT =
   "https://example.com/tests/dom/security/test/https-first/file_redirect_error.sjs?check";
 const DOWNGRADE_SECURE =
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   "http://example.com/tests/dom/security/test/https-first/file_redirect_error.sjs?downgrade-302";
 const START_TEST =
   "https://example.com/tests/dom/security/test/https-first/file_redirect_error.sjs?cross-302";

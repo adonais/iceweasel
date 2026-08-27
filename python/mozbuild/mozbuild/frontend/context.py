@@ -1745,6 +1745,7 @@ VARIABLES = {
 
         Refer to the documentation of ``GENERATED_FILES``; for the most part things work the same.
         The two major differences are:
+
         1. The function in the Python script will be passed an additional keyword argument `locale`
            which provides the locale in use, i.e. ``en-US``.
         2. The ``inputs`` list may contain paths to files that will be taken from the locale
@@ -1787,6 +1788,18 @@ VARIABLES = {
         <topobjdir>/jsshell-archive.list; the packager reads it via
         --files-from when producing the archive named by JSSHELL_NAME (from
         package-name.mk).
+        """,
+    ),
+    "MACOS_BUNDLES": (
+        TypedList(dict),
+        list,
+        """macOS application bundles to assemble from a skeleton directory.
+
+        Use the ``MACOS_BUNDLE`` template rather than appending to this
+        directly. Each entry describes one ``.app`` bundle: a skeleton
+        directory copied into ``Contents``, an optional generated
+        ``Info.plist`` and ``InfoPlist.strings``, and binaries to install
+        into ``Contents/MacOS``.
         """,
     ),
     "OBJDIR_FILES": (
@@ -2209,6 +2222,30 @@ VARIABLES = {
         see :ref:`jar_manifests`.
         """,
     ),
+    "LOCALE_PP_DEFINES": (
+        dict,
+        dict,
+        """Per-locale preprocessor defines applied when localized jar.mn
+        files are processed.
+
+        Each top-level key is the name of a define. Each value is a lookup
+        table that maps an ab_cd code or an fnmatch pattern to the value
+        the define should take for that locale.
+
+        Example:
+            LOCALE_PP_DEFINES = {
+                "ANDROID_MARKETPLACE_AB_CD": {
+                    "es*": "es-ES",
+                    "es-MX": "es-MX",
+                    "fr": "fr",
+                },
+            }
+
+        Exact ab_cd keys win over patterns. A locale that matches neither
+        leaves the define unset, so #ifdef branches in the jar.mn fall
+        through to their #else.
+        """,
+    ),
     # IDL Generation.
     "XPIDL_SOURCES": (
         ContextDerivedTypedList(SourcePath, StrictOrderingOnAppendList),
@@ -2467,6 +2504,7 @@ VARIABLES = {
             "no_unified": bool,
             "non_unified_sources": StrictOrderingOnAppendList,
             "action_overrides": dict,
+            "install_static_libs": list,
         }),
         list,
         """Defines a list of object directories handled by gyp configurations.
@@ -2475,6 +2513,7 @@ VARIABLES = {
         element of the list, GYP_DIRS may be accessed as a dictionary
         (GYP_DIRS[foo]). The object this returns has attributes that need to be
         set to further specify gyp processing:
+
             - input, gives the path to the root gyp configuration file for that
               object directory.
             - variables, a dictionary containing variables and values to pass
@@ -2491,8 +2530,14 @@ VARIABLES = {
               unification.
             - action_overrides, a dict of action_name to values of the `script`
               attribute to use for GENERATED_FILES for the specified action.
+            - install_static_libs, a list of gyp ``static_library`` target names
+              whose output should be installed to ``$(DIST)/lib``. Equivalent
+              to setting ``BUILD_STATIC_LIB_ARCHIVE = True`` and
+              ``DIST_INSTALL = True`` on those targets, but selective rather
+              than affecting every target in the gyp directory.
 
-        Typical use looks like:
+        Typical use looks like::
+
             GYP_DIRS += ['foo', 'bar']
             GYP_DIRS['foo'].input = 'foo/foo.gyp'
             GYP_DIRS['foo'].variables = {
@@ -2748,18 +2793,30 @@ VARIABLES = {
         which subdirectory they should be exported to. For example,
         to export ``foo.py`` to ``_tests/foo``, append to
         ``TEST_HARNESS_FILES`` like so::
+
            TEST_HARNESS_FILES.foo += ['foo.py']
 
         Files from topsrcdir and the objdir can also be installed by prefixing
         the path(s) with a '/' character and a '!' character, respectively::
+
            TEST_HARNESS_FILES.path += ['/build/bar.py', '!quux.py']
         """,
     ),
     "NO_EXPAND_LIBS": (
         bool,
         bool,
-        """Forces to build a real static library, and no corresponding fake
-           library.
+        """Consumers link the static library archive instead of the expanded
+           object files. Implies BUILD_STATIC_LIB_ARCHIVE.
+        """,
+    ),
+    "BUILD_STATIC_LIB_ARCHIVE": (
+        bool,
+        bool,
+        """Builds the static library archive without changing consumer
+           linkage. Consumers continue to link the expanded object files.
+
+           Use this when a consumer outside mozbuild's linkage, such as a cargo
+           link directive, needs the archive to exist.
         """,
     ),
     "USE_NASM": (

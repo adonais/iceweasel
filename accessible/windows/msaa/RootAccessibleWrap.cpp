@@ -19,8 +19,6 @@ RootAccessibleWrap::RootAccessibleWrap(dom::Document* aDocument,
                                        PresShell* aPresShell)
     : RootAccessible(aDocument, aPresShell) {}
 
-RootAccessibleWrap::~RootAccessibleWrap() {}
-
 ////////////////////////////////////////////////////////////////////////////////
 // RootAccessible
 

@@ -185,8 +185,9 @@ void HTMLButtonAccessible::Value(nsString& aValue) const {
         nsAutoString rs(NS_ConvertUTF8toUTF16(r.toString()));
         nsAutoString gs(NS_ConvertUTF8toUTF16(g.toString()));
         nsAutoString bs(NS_ConvertUTF8toUTF16(b.toString()));
-        Accessible::TranslateString(u"inputColorValue"_ns, aValue,
-                                    {rs, gs, bs});
+        Accessible::TranslateString(
+            u"inputColorValue"_ns, aValue,
+            {std::move(rs), std::move(gs), std::move(bs)});
         return;
       }
     }

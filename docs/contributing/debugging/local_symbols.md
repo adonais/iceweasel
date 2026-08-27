@@ -40,10 +40,14 @@ the Firefox source directory. You need to add these two lines to the function
 `is_missing_newline`.
 
 ```python
-line_str = line_str.replace("/builds/worker/workspace/build/application/firefox/firefox",
-                            "<TARGET_DIR>/firefox/firefox-bin")
-line_str = line_str.replace("/builds/worker/workspace/build/application/firefox/libxul.so",
-                            "<TARGET_DIR>/firefox/libxul.so")
+line_str = line_str.replace(
+    "/builds/worker/workspace/build/application/firefox/firefox",
+    "<TARGET_DIR>/firefox/firefox-bin",
+)
+line_str = line_str.replace(
+    "/builds/worker/workspace/build/application/firefox/libxul.so",
+    "<TARGET_DIR>/firefox/libxul.so",
+)
 ```
 
 The initial locations should appear verbatim in the stack you are trying to

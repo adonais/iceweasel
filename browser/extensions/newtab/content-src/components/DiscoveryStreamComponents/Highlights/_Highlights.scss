@@ -90,12 +90,7 @@
 
       grid-column: 1 / -1;
       font-weight: var(--font-weight-heading);
-      font-size: var(--font-size-heading-large);
-
-      @include at-content-cols(12) {
-        font-size: var(--font-size-heading-xlarge);
-      }
-
+      font-size: var(--font-size-heading-medium);
       color: var(--newtab-contextual-text-primary-color);
       margin-block: var(--space-small) 0;
     }

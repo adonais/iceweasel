@@ -175,7 +175,26 @@ async function testPseudoElements(inspector, container) {
     "::picker-icon shows up in breadcrumb"
   );
 
-  info("Check breadcrum items for ::view-transition");
+  info("Check breadcrumb items for ::checkmark");
+  // The ::checkmark pseudo element only exists when the select is opened, so show the
+  // picker so we can see them
+  await showCustomizableSelectPicker(inspector, "select");
+
+  const optionNodeFront = await getNodeFront("option", inspector);
+  const optionChildren = await inspector.walker.children(optionNodeFront);
+  is(
+    optionChildren.nodes.length,
+    2,
+    "Expected number of children for the <option> element"
+  );
+  const checkmarkNodeFront = optionChildren.nodes[0];
+  await checkBreadcrumbContent(
+    checkmarkNodeFront,
+    ["html", "body", "select", "option", "::checkmark"],
+    "::checkmark shows up in breadcrumb"
+  );
+
+  info("Check breadcrumb items for ::view-transition");
   const htmlNodeFront = await getNodeFront("html", inspector);
   const onMarkupMutation = inspector.once("markupmutation");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {

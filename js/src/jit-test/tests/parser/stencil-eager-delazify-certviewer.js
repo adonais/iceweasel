@@ -26,7 +26,7 @@ function evalModule(source, opts) {
   let job = offThreadCompileModuleToStencil(source, opts);
   let stencil = finishOffThreadStencil(job);
   let m = instantiateModuleStencil(stencil);
-  moduleLink(m);
+  moduleLoadAndLink(m);
   moduleEvaluate(m)
   return m.result;
 }

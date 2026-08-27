@@ -46,12 +46,11 @@ class SearchRobot {
     }
 
     fun verifySearchSuggestionsAreShown() {
-        suggestionsList.waitForExists(waitingTime)
-        assertTrue(suggestionsList.childCount >= 1)
+        assertTrue(suggestionsList.getChild(UiSelector().clickable(true)).waitForExists(waitingTime))
     }
 
     fun verifySearchSuggestionsAreNotShown() {
-        assertFalse(suggestionsList.exists())
+        assertFalse(suggestionsList.getChild(UiSelector().clickable(true)).exists())
     }
 
     fun verifySearchEditBarContainsText(text: String) {

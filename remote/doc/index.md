@@ -43,6 +43,8 @@ extends WebDriver HTTP to add bidirectional communication.
 :maxdepth: 1
 
 webdriver-bidi/Extensions.md
+marionette/index
+messagehandler/index
 ```
 
 ## Architecture
@@ -63,6 +65,6 @@ See [Communication] on [our project wiki].
 [communication]: https://wiki.mozilla.org/Remote#Communication
 [our project wiki]: https://wiki.mozilla.org/Remote
 [remote protocol product]: https://bugzilla.mozilla.org/describecomponents.cgi?product=Remote%20Protocol
-[remote/messagehandler]: messagehandler/
-[testing/marionette]: /testing/marionette
+[remote/messagehandler]: messagehandler/index.md
+[testing/marionette]: marionette/index.md
 [webdriver (http) specification]: https://w3c.github.io/webdriver/

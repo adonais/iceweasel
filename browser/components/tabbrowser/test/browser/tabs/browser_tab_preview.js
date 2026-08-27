@@ -31,12 +31,14 @@ const TAB_PREVIEW_PANEL_ID = "tab-preview-panel";
 const TAB_GROUP_PREVIEW_PANEL_ID = "tabgroup-preview-panel";
 
 async function openTabPreview(tab, win = window) {
-  const previewShown = BrowserTestUtils.waitForPopupEvent(
-    win.document.getElementById(TAB_PREVIEW_PANEL_ID),
-    "shown"
+  const panel = win.document.getElementById(TAB_PREVIEW_PANEL_ID);
+  const previewShown = BrowserTestUtils.waitForPopupEvent(panel, "shown");
+  const previewUpdated = BrowserTestUtils.waitForEvent(
+    panel,
+    "TabPreviewUpdated"
   );
   EventUtils.synthesizeMouse(tab, 1, 1, { type: "mouseover" }, win);
-  return previewShown;
+  await Promise.all([previewShown, previewUpdated]);
 }
 
 async function closeTabPreviews(win = window) {
@@ -68,12 +70,16 @@ async function openGroupPreview(group, win = window) {
     previewElement,
     "shown"
   );
+  const previewUpdated = BrowserTestUtils.waitForEvent(
+    previewElement,
+    "TabGroupPreviewUpdated"
+  );
   EventUtils.synthesizeMouseAtCenter(
     group.labelElement,
     { type: "mouseover" },
     win
   );
-  return previewShown;
+  await Promise.all([previewShown, previewUpdated]);
 }
 
 async function closeGroupPreviews(win = window) {
@@ -101,11 +107,57 @@ function getOpenPanels() {
   );
 }
 
+async function withGroupPanel(fn) {
+  // Creates a collapsed tab group
+  const tab = await addTabTo(gBrowser, "about:robots");
+  const group = gBrowser.addTabGroup([tab]);
+  group.collapsed = true;
+
+  // Ensure the lazy-loaded preview component exists
+  await openGroupPreview(group);
+  await closeGroupPreviews();
+  const { tabGroupPanel } = gBrowser.tabContainer.previewPanel;
+
+  // Run `fn` with the group panel and group
+  try {
+    await fn(tabGroupPanel, group);
+  } finally {
+    // Clean it up
+    await removeTabGroup(group);
+    await resetState();
+  }
+}
+
+// Utility to assert popupOptions given prefs and expected values.
+// Waits for RTL_UI to settle when toggling text direction.
+async function assertPopupOptions(tabGroupPanel, { prefs, expected, message }) {
+  const bidi = prefs.some(
+    ([pref, value]) => pref == "intl.l10n.pseudo" && value == "bidi"
+  );
+  await SpecialPowers.pushPrefEnv({ set: prefs });
+  if (bidi) {
+    await TestUtils.waitForCondition(
+      () => window.RTL_UI,
+      "UI direction is RTL"
+    );
+  }
+  Assert.deepEqual(tabGroupPanel.popupOptions, expected, message);
+  await SpecialPowers.popPrefEnv();
+  if (bidi) {
+    await TestUtils.waitForCondition(
+      () => !window.RTL_UI,
+      "UI direction is LTR"
+    );
+  }
+}
+
 async function resetState() {
   // Ensure the mouse is not hovering over the tab strip.
   EventUtils.synthesizeMouseAtCenter(document.documentElement, {
     type: "mouseover",
   });
+
+  gBrowser.tabContainer.previewPanel?.forceReset();
 
   for (let panel of getOpenPanels()) {
     let hiddenEvent = BrowserTestUtils.waitForPopupEvent(panel, "hidden");
@@ -192,6 +244,111 @@ add_task(async function tabHoverTests() {
 
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
+
+  await resetState();
+});
+
+/**
+ * Verify that closing tabs in a row without moving the pointer keeps
+ * previewing whatever ends up under it, and that the preview is dismissed once
+ * nothing takes the closed tab's place.
+ */
+add_task(async function tabCloseHoverTests() {
+  const titles = ["First Closed", "Second Closed", "Last Closed"];
+  const tabs = [];
+  for (let title of titles) {
+    tabs.push(
+      await addTabTo(
+        gBrowser,
+        `data:text/html,<html><head><title>${title}</title></head><body>Hello</body></html>`
+      )
+    );
+  }
+  const previewContainer = document.getElementById(TAB_PREVIEW_PANEL_ID);
+
+  await openTabPreview(tabs[0]);
+
+  let sawHidden = false;
+  const onHidden = () => {
+    sawHidden = true;
+  };
+  previewContainer.addEventListener("popuphidden", onHidden);
+
+  // No mouse events in between: each close has to hand the hover over to the
+  // tab moving into its place on its own.
+  for (let i = 0; i < 2; i++) {
+    BrowserTestUtils.removeTab(tabs[i]);
+    await TestUtils.waitForCondition(
+      () =>
+        previewContainer.querySelector(".tab-preview-title").innerText ==
+        titles[i + 1],
+      `Preview moved onto ${titles[i + 1]}`
+    );
+    Assert.ok(tabs[i + 1]._hover, `${titles[i + 1]} took over the hover`);
+  }
+  Assert.ok(!sawHidden, "Preview stayed open across the tab closes");
+  previewContainer.removeEventListener("popuphidden", onHidden);
+
+  // The last tab has no successor, so nothing slides under the pointer.
+  const previewHidden = BrowserTestUtils.waitForPopupEvent(
+    previewContainer,
+    "hidden"
+  );
+  BrowserTestUtils.removeTab(tabs[2]);
+  await previewHidden;
+
+  await resetState();
+});
+
+/**
+ * Verify the container (contextual identity) indicator:
+ *
+ * 1. Container tabs show a pill with the container label and identity classes
+ * 2. Non-container tabs hide the indicator
+ */
+add_task(async function tabContainerIndicatorTests() {
+  const { ContextualIdentityService } = ChromeUtils.importESModule(
+    "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs"
+  );
+
+  const userContextId = 1;
+  const identity =
+    ContextualIdentityService.getPublicIdentityFromId(userContextId);
+  const containerTab = await addTabTo(gBrowser, "about:blank", {
+    userContextId,
+  });
+  const plainTab = await addTabTo(gBrowser, "about:blank");
+  const previewContainer = document.getElementById(TAB_PREVIEW_PANEL_ID);
+  const indicator = previewContainer.querySelector(
+    ".tab-preview-container-indicator"
+  );
+
+  await openTabPreview(containerTab);
+  Assert.ok(
+    !indicator.hidden,
+    "Container indicator is shown for container tab"
+  );
+  Assert.equal(
+    indicator.querySelector(".tab-preview-container-label").textContent,
+    ContextualIdentityService.getUserContextLabel(userContextId),
+    "Container indicator shows the correct label"
+  );
+  Assert.ok(
+    indicator.classList.contains(`identity-color-${identity.color}`),
+    "Container indicator has the identity color class"
+  );
+  Assert.ok(
+    indicator.classList.contains(`identity-icon-${identity.icon}`),
+    "Container indicator has the identity icon class"
+  );
+  await closeTabPreviews();
+
+  await openTabPreview(plainTab);
+  Assert.ok(indicator.hidden, "Container indicator is hidden for plain tab");
+  await closeTabPreviews();
+
+  BrowserTestUtils.removeTab(containerTab);
+  BrowserTestUtils.removeTab(plainTab);
 
   await resetState();
 });
@@ -332,7 +489,7 @@ add_task(async function tabThumbnailTests() {
 
   let thumbnailUpdated = BrowserTestUtils.waitForEvent(
     previewPanel,
-    "previewThumbnailUpdated",
+    "TabPreviewThumbnailUpdated",
     false,
     evt => evt.detail.thumbnail
   );
@@ -348,7 +505,7 @@ add_task(async function tabThumbnailTests() {
   await closeTabPreviews();
   thumbnailUpdated = BrowserTestUtils.waitForEvent(
     previewPanel,
-    "previewThumbnailUpdated"
+    "TabPreviewThumbnailUpdated"
   );
   await openTabPreview(tab2);
   await thumbnailUpdated;
@@ -403,7 +560,7 @@ add_task(async function tabWireframeTests() {
 
   let thumbnailUpdated = BrowserTestUtils.waitForEvent(
     previewPanel,
-    "previewThumbnailUpdated",
+    "TabPreviewThumbnailUpdated",
     false,
     evt => evt.detail.thumbnail
   );
@@ -534,6 +691,10 @@ add_task(async function tabContentChangeTests() {
   );
 
   let tabRenameEvent = BrowserTestUtils.waitForEvent(tab, "TabAttrModified");
+  let previewUpdated = BrowserTestUtils.waitForEvent(
+    previewPanel,
+    "TabPreviewUpdated"
+  );
   await SpecialPowers.spawn(
     tab.linkedBrowser,
     [newTitle],
@@ -541,7 +702,7 @@ add_task(async function tabContentChangeTests() {
       content.document.title = newTitleInContentProcess;
     }
   );
-  await tabRenameEvent;
+  await Promise.all([tabRenameEvent, previewUpdated]);
 
   Assert.equal(
     previewPanel.querySelector(".tab-preview-title").innerText,
@@ -1012,6 +1173,123 @@ add_task(async function moveBetweenTabGroupsTests() {
   await resetState();
 });
 
+add_task(async function tabGroupPanelHorizontalOffsetOptions() {
+  // The vertical-tabs variant enables sidebar.verticalTabs for the whole run.
+  await SpecialPowers.pushPrefEnv({ set: [["sidebar.verticalTabs", false]] });
+
+  const testCases = [
+    {
+      prefs: [["browser.nova.enabled", false]],
+      expected: { position: "bottomleft topleft", x: 0, y: 0 },
+      message: "Without Nova there is no offset",
+    },
+    {
+      prefs: [["browser.nova.enabled", true]],
+      expected: { position: "bottomleft topleft", x: -16, y: 0 },
+      message: "LTR Nova anchors to the left edge and offsets by -16px",
+    },
+    {
+      prefs: [
+        ["browser.nova.enabled", true],
+        ["intl.l10n.pseudo", "bidi"],
+      ],
+      expected: { position: "bottomright topright", x: 16, y: 0 },
+      message: "RTL Nova anchors to the right edge and offsets by +16px",
+    },
+  ];
+
+  await withGroupPanel(async groupPanel => {
+    info("Horizontal Tab Group Panel Offset");
+    for (const instance of testCases) {
+      await assertPopupOptions(groupPanel, instance);
+    }
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function tabGroupPanelHorizontalOpensWithOffset() {
+  // The vertical-tabs variant enables sidebar.verticalTabs for the whole run.
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["sidebar.verticalTabs", false],
+      ["browser.nova.enabled", true],
+    ],
+  });
+
+  await withGroupPanel(async (groupPanel, group) => {
+    const openPopupSpy = sinon.spy(groupPanel.panelElement, "openPopup");
+    await openGroupPreview(group);
+
+    Assert.ok(
+      openPopupSpy.calledWith(
+        group.labelContainerElement,
+        sinon.match({ position: "bottomleft topleft", x: -16, y: 0 })
+      ),
+      "openPopup is called anchored to the label with the Nova offset"
+    );
+
+    await closeGroupPreviews();
+    sinon.restore();
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function tabGroupPanelVerticalOffsetOptions() {
+  const testCases = [
+    {
+      nova: false,
+      start: true,
+      expected: { position: "topright topleft", x: 0, y: -5 },
+      message: "Nova off, sidebar at start: keeps the 5px upward offset",
+    },
+    {
+      nova: false,
+      start: false,
+      expected: { position: "topleft topright", x: 0, y: -5 },
+      message: "Nova off, sidebar at end: 5px offset, anchor mirrored",
+    },
+    {
+      nova: true,
+      start: true,
+      expected: { position: "topright topleft", x: 0, y: -16 },
+      message: "Nova on, sidebar at start: 16px upward offset",
+    },
+    {
+      nova: true,
+      start: false,
+      expected: { position: "topleft topright", x: 0, y: -16 },
+      message: "Nova on, sidebar at end: 16px offset, anchor mirrored",
+    },
+  ];
+  await withGroupPanel(async groupPanel => {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["sidebar.revamp", true],
+        ["sidebar.verticalTabs", true],
+      ],
+    });
+    await TestUtils.waitForCondition(
+      () => gBrowser.tabContainer.verticalMode,
+      "Tabs are in vertical mode"
+    );
+
+    for (const { nova, start, expected, message } of testCases) {
+      await assertPopupOptions(groupPanel, {
+        prefs: [
+          ["browser.nova.enabled", nova],
+          ["sidebar.position_start", start],
+        ],
+        expected,
+        message,
+      });
+    }
+
+    await SpecialPowers.popPrefEnv();
+  });
+});
+
 add_task(async function tabGroupPanelUpdatesTests() {
   const groupedTab = await addTabTo(gBrowser, "about:robots");
   const group = gBrowser.addTabGroup([groupedTab]);
@@ -1296,7 +1574,7 @@ add_task(async function delayTests() {
 add_task(async function zeroDelayTests() {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["ui.tooltip.delay_ms", 1000],
+      ["ui.tooltip.delay_ms", 100],
       ["ui.prefersReducedMotion", 1],
     ],
   });
@@ -1304,19 +1582,31 @@ add_task(async function zeroDelayTests() {
   const tabUrl =
     "data:text/html,<html><head><title>First New Tab</title></head><body>Hello</body></html>";
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, tabUrl);
+  const previewComponent = gBrowser.tabContainer.previewPanel;
 
   await openTabPreview(tab);
   await closeTabPreviews();
 
-  let resolved = false;
-  let openPreviewPromise = openTabPreview(tab).then(() => {
-    resolved = true;
-  });
-  // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
-  let timeoutPromise = new Promise(resolve => setTimeout(resolve, 900));
-  await Promise.race([openPreviewPromise, timeoutPromise]);
+  Assert.ok(
+    previewComponent.panelOpener.zeroDelayActive,
+    "Zero delay is active immediately after the preview is dismissed"
+  );
 
-  Assert.ok(resolved, "Panel was opened the second time without a delay");
+  // Inlined rather than using openTabPreview() so we can assert the zero-delay
+  // window is still active at the moment the open is scheduled
+  const panel = document.getElementById(TAB_PREVIEW_PANEL_ID);
+  const previewShown = BrowserTestUtils.waitForPopupEvent(panel, "shown");
+  const previewUpdated = BrowserTestUtils.waitForEvent(
+    panel,
+    "TabPreviewUpdated"
+  );
+  EventUtils.synthesizeMouse(tab, 1, 1, { type: "mouseover" });
+  Assert.ok(
+    previewComponent.panelOpener.zeroDelayActive,
+    "Second hover is scheduled while still in the zero-delay window"
+  );
+  await Promise.all([previewShown, previewUpdated]);
+  Assert.equal(panel.state, "open", "Panel opened on the second hover");
 
   await closeTabPreviews();
 
@@ -1464,8 +1754,11 @@ add_task(async function tabPreviewHidesWhenDraggingOverPanel() {
     "dragend"
   );
 
+  const groupLabelRect = group.labelElement.getBoundingClientRect();
   EventUtils.synthesizePlainDragAndDrop({
     srcElement: group.labelElement,
+    srcX: Math.floor(groupLabelRect.width / 2),
+    srcY: Math.floor(groupLabelRect.height / 2),
     destElement: null,
     stepX: 10,
     stepY: 0,
@@ -1791,6 +2084,7 @@ add_task(async function verticalTabsPositioningTests() {
     set: [
       ["sidebar.revamp", true],
       ["sidebar.verticalTabs", true],
+      ["ui.prefersReducedMotion", 1],
     ],
   });
 

@@ -62,7 +62,7 @@ const HTTPS_TEST_ROOT = getRootDirectory(gTestPath).replace(
 );
 const HTTP_TEST_ROOT = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   "http://example.com"
 );
 

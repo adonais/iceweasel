@@ -922,7 +922,11 @@ void nsPresContext::RecomputeBrowsingContextDependentData() {
     auto systemZoom = LookAndFeel::SystemZoomSettings();
     SetFullZoom(browsingContext->FullZoom() * systemZoom.mFullZoom);
     SetTextZoom(browsingContext->TextZoom() * systemZoom.mTextZoom);
-    SetOverrideDPPX(browsingContext->OverrideDPPX());
+    if (doc->ShouldResistFingerprinting(RFPTarget::WindowDevicePixelRatio)) {
+      SetOverrideDPPX(nsRFPService::GetDevicePixelRatioAtZoom(GetFullZoom()));
+    } else {
+      SetOverrideDPPX(browsingContext->OverrideDPPX());
+    }
   }
 
   auto* top = browsingContext->Top();

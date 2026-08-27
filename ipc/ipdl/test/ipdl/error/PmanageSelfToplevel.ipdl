@@ -1,0 +1,10 @@
+//error: top-level protocol `PmanageSelfToplevel' cannot manage itself
+
+protocol PmanageSelfToplevel {
+    manager PmanageSelfToplevel;
+    manages PmanageSelfToplevel;
+
+child:
+    async PmanageSelfToplevel();
+    async __delete__();
+};

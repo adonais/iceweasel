@@ -4,9 +4,10 @@
 
 const {
   resolveChatModelChoice,
-  FEATURE_MAJOR_VERSIONS,
   _setRemoteClientForTesting,
   _clearRemoteClientForTesting,
+  FEATURE_MAJOR_VERSIONS,
+  MODEL_FEATURES,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
 );
@@ -23,16 +24,18 @@ add_task(async function test_resolveChatModelChoice_found() {
     // Mock Remote Settings data with model_choice_id
     const fakeRecords = [
       {
+        kind: "params",
         feature: "chat",
-        version: `${FEATURE_MAJOR_VERSIONS.chat}.1`,
+        version: `${FEATURE_MAJOR_VERSIONS[MODEL_FEATURES.CHAT]}.1`,
         model: "qwen3-235b-a22b-instruct-2507-maas",
         model_choice_id: "2",
         owner_name: "Alibaba",
         is_default: true,
       },
       {
+        kind: "params",
         feature: "chat",
-        version: `${FEATURE_MAJOR_VERSIONS.chat}.1`,
+        version: `${FEATURE_MAJOR_VERSIONS[MODEL_FEATURES.CHAT]}.1`,
         model: "gemini-2.5-flash-lite",
         model_choice_id: "1",
         owner_name: "Google",
@@ -81,12 +84,14 @@ add_task(async function test_resolveChatModelChoice_version_filtering() {
     // Test that higher version records are filtered out
     const fakeRecords = [
       {
+        kind: "params",
         feature: "chat",
         version: "3.0", // Should be filtered out with maxMajorVersion=2
         model: "future-model",
         model_choice_id: "1",
       },
       {
+        kind: "params",
         feature: "chat",
         version: "2.5",
         model: "current-model",
@@ -117,8 +122,9 @@ add_task(async function test_resolveChatModelChoice_not_found() {
     // No matching records
     const fakeRecords = [
       {
+        kind: "params",
         feature: "chat",
-        version: "${FEATURE_MAJOR_VERSIONS.chat}.0",
+        version: `${FEATURE_MAJOR_VERSIONS[MODEL_FEATURES.CHAT]}.0`,
         model: "some-model",
         model_choice_id: "2", // Different choice ID
       },

@@ -307,14 +307,14 @@ class JujutsuRepository(Repository):
             return
 
         relative_paths = [self._repo_root_relative_path(p) for p in paths]
-        self._run("file", "track", *relative_paths)
+        self._run_batched("file", "track", paths=relative_paths)
 
     def forget_add_remove_files(self, *paths: Union[str, Path]):
         if not paths:
             return
 
         relative_paths = [self._repo_root_relative_path(p) for p in paths]
-        self._run("file", "untrack", *relative_paths)
+        self._run_batched("file", "untrack", paths=relative_paths)
 
     def get_tracked_files_finder(self, path=None):
         files = [mozpath.normsep(p) for p in self._run("file", "list").splitlines()]

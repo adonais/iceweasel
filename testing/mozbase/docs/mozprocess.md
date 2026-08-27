@@ -34,7 +34,7 @@ Finally the *wait()* method will wait until end of execution.
 from mozprocess import processhandler
 
 # under Windows replace by command = ['dir', '/a']
-command = ['ls', '-l']
+command = ["ls", "-l"]
 p = processhandler.ProcessHandler(command)
 print("execute command: %s" % p.commandline)
 p.run()
@@ -84,16 +84,19 @@ In the following example the command's output will be stored in a file *output.l
 import sys
 from mozprocess import processhandler
 
-fd = open('output.log', 'w')
+fd = open("output.log", "w")
+
 
 def tostdout(line):
     sys.stdout.write("<%s>\n" % line)
 
+
 def tofile(line):
     fd.write("<%s>\n" % line)
 
+
 # under Windows you'll replace by 'proc_sleep_echo.bat'
-command = './proc_sleep_echo.sh'
+command = "./proc_sleep_echo.sh"
 outputs = [tostdout, tofile]
 
 p = processhandler.ProcessHandlerMixin(command, processOutputLine=outputs)
@@ -110,7 +113,7 @@ import time
 import sys
 from mozprocess import processhandler
 
-command = './proc_sleep_echo.sh' # Windows: 'proc_sleep_echo.bat'
+command = "./proc_sleep_echo.sh"  # Windows: 'proc_sleep_echo.bat'
 
 p = processhandler.ProcessHandler(command, storeOutput=True)
 p.run()
@@ -133,7 +136,7 @@ import time
 import signal
 from mozprocess import processhandler
 
-command = './proc_sleep_echo.sh'
+command = "./proc_sleep_echo.sh"
 p = processhandler.ProcessHandler(command)
 p.run()
 time.sleep(2)
@@ -154,10 +157,12 @@ It is also possible to provide functions (*obj = ProcessHandler(..., onTimeout=f
 ```python
 from mozprocess import processhandler
 
+
 def ontimeout():
     print("REACHED TIMEOUT")
 
-command = './proc_sleep_echo.sh' # Windows: 'proc_sleep_echo.bat'
+
+command = "./proc_sleep_echo.sh"  # Windows: 'proc_sleep_echo.bat'
 functions = [ontimeout]
 p = processhandler.ProcessHandler(command, onTimeout=functions)
 p.run(timeout=2)
@@ -181,7 +186,7 @@ In this case, no output will be available after the timeout, but the process wil
 It is possible to wait until the process exits as already seen with the method *wait()*, or until the end of a timeout if given. Note that in last case the process is still alive after the timeout.
 
 ```python
-command = './proc_sleep_echo.sh' # Windows: 'proc_sleep_echo.bat'
+command = "./proc_sleep_echo.sh"  # Windows: 'proc_sleep_echo.bat'
 p = processhandler.ProcessHandler(command)
 p.run()
 p.wait(timeout=2)
@@ -199,7 +204,7 @@ Except on Windows, you can specify the signal with which to kill method the proc
 import time
 from mozprocess import processhandler
 
-command = './proc_sleep_echo.sh' # Windows: 'proc_sleep_echo.bat'
+command = "./proc_sleep_echo.sh"  # Windows: 'proc_sleep_echo.bat'
 p = processhandler.ProcessHandler(command)
 p.run()
 time.sleep(2)
@@ -213,10 +218,12 @@ You can provide a function or a list of functions to call at the end of the proc
 ```python
 from mozprocess import processhandler
 
+
 def finish():
     print("Finished!!")
 
-command = './proc_sleep_echo.sh' # Windows: 'proc_sleep_echo.bat'
+
+command = "./proc_sleep_echo.sh"  # Windows: 'proc_sleep_echo.bat'
 
 p = processhandler.ProcessHandler(command, onFinish=finish)
 p.run()
@@ -285,10 +292,12 @@ By default the *ignore_children* option is False. In that case, killing the main
 import time
 from mozprocess import processhandler
 
+
 def finish():
     print("Finished")
 
-command = './proc_parent.sh'
+
+command = "./proc_parent.sh"
 p = processhandler.ProcessHandler(command, ignore_children=False, onFinish=finish)
 p.run()
 time.sleep(2)
@@ -302,10 +311,12 @@ If *ignore_children* is set to *True*, killing will apply only to the main proce
 import time
 from mozprocess import processhandler
 
+
 def finish():
     print("Finished")
 
-command = './proc_parent.sh'
+
+command = "./proc_parent.sh"
 p = processhandler.ProcessHandler(command, ignore_children=True, onFinish=finish)
 p.run()
 time.sleep(2)

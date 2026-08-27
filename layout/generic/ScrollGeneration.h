@@ -33,7 +33,7 @@ struct ScrollGeneration final {
 
  public:
   // Dummy constructor, needed for IPDL purposes. Not intended for manual use.
-  ScrollGeneration();
+  ScrollGeneration() = default;
 
   uint64_t Raw() const { return mValue; }
 
@@ -47,7 +47,7 @@ struct ScrollGeneration final {
   auto MutTiedFields() { return std::tie(mValue); }
 
  private:
-  uint64_t mValue;
+  uint64_t mValue{0};
 };
 
 using APZScrollGeneration = ScrollGeneration<APZTag>;

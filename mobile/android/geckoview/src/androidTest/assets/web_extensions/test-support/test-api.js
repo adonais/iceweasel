@@ -225,20 +225,6 @@ this.test = class extends ExtensionAPI {
           return Services.appinfo.fissionAutostart;
         },
 
-        async triggerCookieBannerDetected(tabId) {
-          const actor = getActorForTab(tabId, "CookieBanner");
-          return actor.receiveMessage({
-            name: "CookieBanner::DetectedBanner",
-          });
-        },
-
-        async triggerCookieBannerHandled(tabId) {
-          const actor = getActorForTab(tabId, "CookieBanner");
-          return actor.receiveMessage({
-            name: "CookieBanner::HandledBanner",
-          });
-        },
-
         async triggerTranslationsOffer(tabId) {
           const browser = context.extension.tabManager.get(tabId).browser;
           const { CustomEvent } = browser.documentGlobal;

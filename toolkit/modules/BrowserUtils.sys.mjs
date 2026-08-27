@@ -819,9 +819,7 @@ export var BrowserUtils = {
     DEFAULT: 0, // invalid
     VPN: 1,
     RELAY: 2,
-    FOCUS: 3,
     PIN: 4,
-    COOKIE_BANNERS: 5,
   },
 
   /**
@@ -842,10 +840,8 @@ export var BrowserUtils = {
   shouldShowPromo(promoType) {
     switch (promoType) {
       case this.PromoType.VPN:
-      case this.PromoType.FOCUS:
       case this.PromoType.PIN:
       case this.PromoType.RELAY:
-      case this.PromoType.COOKIE_BANNERS:
         break;
       default:
         throw new Error("Unknown promo type: ", promoType);
@@ -941,18 +937,6 @@ let PromoInfo = {
       "tr",
     ],
   },
-  [BrowserUtils.PromoType.FOCUS]: {
-    enabledPref: "browser.promo.focus.enabled",
-    lazyStringSetPrefs: {
-      // there are no particular limitions to where it is "supported",
-      // so we leave out the supported pref
-      disallowedRegions: {
-        name: "browser.promo.focus.disallowed_regions",
-        default: "cn",
-      },
-    },
-    illegalRegions: ["cn"],
-  },
   [BrowserUtils.PromoType.PIN]: {
     enabledPref: "browser.promo.pin.enabled",
     lazyStringSetPrefs: {},
@@ -974,12 +958,6 @@ let PromoInfo = {
         "identity.fxaccounts.remote.pairing.uri",
         "identity.sync.tokenserver.uri",
       ].every(pref => !Services.prefs.prefHasUserValue(pref)),
-  },
-  [BrowserUtils.PromoType.COOKIE_BANNERS]: {
-    enabledPref: "browser.promo.cookiebanners.enabled",
-    lazyStringSetPrefs: {},
-    illegalRegions: [],
-    showForEnterprise: true,
   },
 };
 

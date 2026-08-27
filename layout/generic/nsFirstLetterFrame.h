@@ -84,7 +84,7 @@ class nsFirstLetterFrame : public nsContainerFrame {
   bool UseTightBounds() const;
 
  protected:
-  nscoord mBaseline;
+  nscoord mBaseline = 0;
 
   void DrainOverflowFrames(nsPresContext* aPresContext);
 };

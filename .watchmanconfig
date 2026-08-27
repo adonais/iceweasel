@@ -1,0 +1,15 @@
+{
+  "ignore_dirs": [
+    "artifacts",
+    "obj-aarch64-apple-darwin",
+    "obj-aarch64-unknown-linux-gnu",
+    "obj-x86_64-apple-darwin",
+    "obj-x86_64-pc-linux-gnu",
+    "obj-x86_64-pc-mingw32",
+    "obj-debug",
+    "obj-ff-dbg",
+    "obj-ff-opt",
+    "obj-opt",
+    "objdir"
+  ]
+}

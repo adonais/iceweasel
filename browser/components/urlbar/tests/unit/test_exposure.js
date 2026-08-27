@@ -54,7 +54,7 @@ add_task(async function oneExposureResult_shown_matched() {
     matches: [
       {
         ...QuickSuggestTestUtils.ampResult({ suggestedIndex: -1 }),
-        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.SHOWN,
+        exposureTelemetry: UrlbarShared.EXPOSURE_TELEMETRY.SHOWN,
       },
     ],
   });
@@ -74,7 +74,7 @@ add_task(async function oneExposureResult_shown_notMatched() {
     matches: [
       {
         ...QuickSuggestTestUtils.wikipediaResult(),
-        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.NONE,
+        exposureTelemetry: UrlbarShared.EXPOSURE_TELEMETRY.NONE,
       },
     ],
   });
@@ -94,7 +94,7 @@ add_task(async function oneExposureResult_hidden_matched() {
     matches: [
       {
         ...QuickSuggestTestUtils.ampResult({ suggestedIndex: -1 }),
-        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
+        exposureTelemetry: UrlbarShared.EXPOSURE_TELEMETRY.HIDDEN,
       },
     ],
   });
@@ -114,7 +114,7 @@ add_task(async function oneExposureResult_hidden_notMatched() {
     matches: [
       {
         ...QuickSuggestTestUtils.wikipediaResult(),
-        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.NONE,
+        exposureTelemetry: UrlbarShared.EXPOSURE_TELEMETRY.NONE,
       },
     ],
   });
@@ -139,7 +139,7 @@ add_task(async function manyExposureResults_shown_oneMatched_1() {
     matches: [
       {
         ...QuickSuggestTestUtils.ampResult({ suggestedIndex: -1 }),
-        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.SHOWN,
+        exposureTelemetry: UrlbarShared.EXPOSURE_TELEMETRY.SHOWN,
       },
     ],
   });
@@ -164,7 +164,7 @@ add_task(async function manyExposureResults_shown_oneMatched_2() {
     matches: [
       {
         ...QuickSuggestTestUtils.wikipediaResult(),
-        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.SHOWN,
+        exposureTelemetry: UrlbarShared.EXPOSURE_TELEMETRY.SHOWN,
       },
     ],
   });
@@ -193,7 +193,7 @@ add_task(async function manyExposureResults_shown_manyMatched() {
     matches: [
       {
         ...QuickSuggestTestUtils.ampResult({ keyword, suggestedIndex: -1 }),
-        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.SHOWN,
+        exposureTelemetry: UrlbarShared.EXPOSURE_TELEMETRY.SHOWN,
       },
     ],
   });
@@ -218,7 +218,7 @@ add_task(async function manyExposureResults_hidden_oneMatched_1() {
     matches: [
       {
         ...QuickSuggestTestUtils.ampResult({ suggestedIndex: -1 }),
-        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
+        exposureTelemetry: UrlbarShared.EXPOSURE_TELEMETRY.HIDDEN,
       },
     ],
   });
@@ -243,7 +243,7 @@ add_task(async function manyExposureResults_hidden_oneMatched_2() {
     matches: [
       {
         ...QuickSuggestTestUtils.wikipediaResult(),
-        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
+        exposureTelemetry: UrlbarShared.EXPOSURE_TELEMETRY.HIDDEN,
       },
     ],
   });
@@ -272,11 +272,11 @@ add_task(async function manyExposureResults_hidden_manyMatched() {
     matches: [
       {
         ...QuickSuggestTestUtils.wikipediaResult({ keyword }),
-        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
+        exposureTelemetry: UrlbarShared.EXPOSURE_TELEMETRY.HIDDEN,
       },
       {
         ...QuickSuggestTestUtils.ampResult({ keyword, suggestedIndex: -1 }),
-        exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
+        exposureTelemetry: UrlbarShared.EXPOSURE_TELEMETRY.HIDDEN,
       },
     ],
   });

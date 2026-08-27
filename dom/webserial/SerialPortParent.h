@@ -80,6 +80,10 @@ class SerialPortParent final : public PSerialPortParent {
   // missing disconnect so the browser sharing indicator count stays in sync.
   bool mSharingConnected = false;
   uint32_t mPipeCapacity = 0;
+  // Whether the port was opened with parity checking enabled (even/odd). When
+  // set, the read stream is wrapped to detect parity errors and surface them
+  // as a ParityError on the readable stream.
+  bool mDetectParityErrors = false;
 
   // DataPipe endpoints held by the parent: the read pump writes device data
   // to mReadPipeSender, and the write pump reads JS data from

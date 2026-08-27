@@ -365,10 +365,14 @@ size_t StyleSheetInfo::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
 }
 
 void StyleSheetInfo::AddSheet(StyleSheet* aSheet) {
+  aSheet->mInnerSheetIndex = mSheets.Length();
   mSheets.AppendElement(aSheet);
 }
 
 bool StyleSheetInfo::RemoveSheet(StyleSheet* aSheet) {
+  const size_t index = aSheet->mInnerSheetIndex;
+  MOZ_ASSERT(mSheets[index] == aSheet, "mInnerSheetIndex out of sync?");
+
   // Fix up the parent pointer in children lists.
   StyleSheet* newParent =
       aSheet == mSheets[0] ? mSheets.SafeElementAt(1) : mSheets[0];
@@ -385,9 +389,16 @@ bool StyleSheetInfo::RemoveSheet(StyleSheet* aSheet) {
     return true;
   }
 
-  mSheets.UnorderedRemoveElement(aSheet);
+  {
+    // We don't care about order so can make removals constant time by using
+    // swap and keeping the cached index up to date.
+    const size_t lastIndex = mSheets.Length() - 1;
+    mSheets[lastIndex]->mInnerSheetIndex = index;
+    mSheets.UnorderedRemoveElementAt(index);
+  }
+
   if (mSheets.Length() == 1 &&
-      !mSheets.ElementAt(0)->GetAssociatedDocumentOrShadowRoot()) {
+      !mSheets[0]->GetAssociatedDocumentOrShadowRoot()) {
     // A stylesheet without an associated document just became unique (most
     // likely from the stylesheet cache). Make sure the entry is evicted from
     // the cache eventually.
@@ -489,13 +500,15 @@ void StyleSheet::EnsureUniqueInner() {
     return;
   }
 
-  StyleSheetInfo* clone = mInner->CloneFor(this);
-  MOZ_ASSERT(clone);
-
+  // Remove ourselves from the shared inner before cloning, since CloneFor would
+  // clobber mInnerSheetIndex otherwise.
   DebugOnly<bool> last = mInner->RemoveSheet(this);
   MOZ_ASSERT(
       !last,
       "HasUniqueInner implies mInner should have pointed to more than this");
+
+  StyleSheetInfo* clone = mInner->CloneFor(this);
+  MOZ_ASSERT(clone);
   mInner = clone;
 
   // Fixup the child lists and parent links in the Servo sheet. This is done
@@ -865,6 +878,20 @@ void StyleSheet::SubjectSubsumesInnerPrincipal(nsIPrincipal& aSubjectPrincipal,
   }
 }
 
+bool StyleSheet::IsAdoptedBy(const dom::DocumentOrShadowRoot& aTree) const {
+  // Our adopter list and the tree's adopted stylesheet list answer the same
+  // question, and either can be arbitrarily long depending on the workload
+  // (one sheet adopted into many shadow roots vs. many sheets adopted into one
+  // tree), so scan whichever is shorter.
+  const auto& adopted = aTree.AdoptedStyleSheets();
+  const bool result = mAdopters.Length() <= adopted.Length()
+                          ? mAdopters.Contains(&aTree)
+                          : adopted.Contains(this);
+  MOZ_ASSERT(result == mAdopters.Contains(&aTree));
+  MOZ_ASSERT(result == adopted.Contains(this));
+  return result;
+}
+
 bool StyleSheet::IsDirectlyAssociatedTo(
     dom::DocumentOrShadowRoot& aTree) const {
   if (mParentSheet) {
@@ -875,11 +902,7 @@ bool StyleSheet::IsDirectlyAssociatedTo(
   }
   bool associated = false;
   if (IsConstructed()) {
-    // Idea is that the adopted stylesheet list is likely to be smaller than
-    // list of adopters of a single sheet, but we could reverse the check if
-    // needed.
-    associated = aTree.AdoptedStyleSheets().Contains(this);
-    MOZ_ASSERT(associated == mAdopters.Contains(&aTree));
+    associated = IsAdoptedBy(aTree);
   } else {
     associated = GetAssociatedDocumentOrShadowRoot() == &aTree;
   }

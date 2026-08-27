@@ -23,6 +23,8 @@ add_setup(async function () {
     set: [
       ["browser.smartwindow.firstrun.modelChoice", DEFAULT_MODEL_CHOICE_ID],
       ["places.semanticHistory.smartwindow.featureGate", false],
+      // TODO: Bug 2053495 - Refactor tests upon pref removal
+      ["browser.smartwindow.mistralRelease", false],
     ],
   });
 });

@@ -8,7 +8,7 @@ function handleRequest(request, response) {
     response.setHeader(
       "Location",
       // We explicitly want a insecure URL here, so disable eslint
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       `http://${request.host}${request.path}`,
       false
     );

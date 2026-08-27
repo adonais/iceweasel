@@ -222,6 +222,9 @@ void ConvolveVerticallyA8(
 void convolve_vertically_avx2(const int16_t* filter, int filterLen,
                               uint8_t* const* srcRows, int width, uint8_t* out,
                               bool hasAlpha);
+void convolve_horizontally_avx2(const unsigned char* srcData,
+                                const SkConvolutionFilter1D& filter,
+                                unsigned char* outRow, bool hasAlpha);
 void convolve_horizontally_sse2(const unsigned char* srcData,
                                 const SkConvolutionFilter1D& filter,
                                 unsigned char* outRow, bool hasAlpha);
@@ -250,6 +253,10 @@ void convolve_horizontally(const unsigned char* srcData,
 
   bool hasAlpha = !IsOpaque(format);
 #ifdef USE_SSE2
+  if (mozilla::supports_avx2()) {
+    convolve_horizontally_avx2(srcData, filter, outRow, hasAlpha);
+    return;
+  }
   if (mozilla::supports_ssse3()) {
     convolve_horizontally_ssse3(srcData, filter, outRow, hasAlpha);
     return;
@@ -401,8 +408,6 @@ class CircularRowBuffer {
 };
 
 SkConvolutionFilter1D::SkConvolutionFilter1D() : fMaxFilter(0) {}
-
-SkConvolutionFilter1D::~SkConvolutionFilter1D() = default;
 
 bool SkConvolutionFilter1D::AddFilter(int filterOffset,
                                       const ConvolutionFixed* filterValues,

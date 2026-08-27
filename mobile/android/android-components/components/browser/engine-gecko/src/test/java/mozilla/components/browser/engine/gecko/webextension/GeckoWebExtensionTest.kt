@@ -31,6 +31,7 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.never
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.verifyNoMoreInteractions
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoSession
@@ -340,11 +341,102 @@ class GeckoWebExtensionTest {
         // Verify that tab methods are forwarded to the handler
         val tabDetails = mockCreateTabDetails(active = true, url = "url")
         tabDelegateCaptor.value.onNewTab(nativeGeckoWebExt, tabDetails)
-        verify(tabHandler).onNewTab(eq(extension), engineSessionCaptor.capture(), eq(true), eq("url"))
+        verify(tabHandler).onNewTab(eq(extension), engineSessionCaptor.capture(), eq(true), eq("url"), eq(false))
         assertNotNull(engineSessionCaptor.value)
+        assertFalse(engineSessionCaptor.value.geckoSession.settings.usePrivateMode)
 
         tabDelegateCaptor.value.onOpenOptionsPage(nativeGeckoWebExt)
         verify(tabHandler).onOpenOptionsPage(eq(extension))
+    }
+
+    @Test
+    fun `global tab handler opens a private tab when private browsing mode is active`() {
+        val runtime: GeckoRuntime = mock()
+        whenever(runtime.settings).thenReturn(mock())
+        whenever(runtime.webExtensionController).thenReturn(mock())
+        val tabHandler: TabHandler = mock()
+        val tabDelegateCaptor = argumentCaptor<WebExtension.TabDelegate>()
+        val engineSessionCaptor = argumentCaptor<GeckoEngineSession>()
+
+        val nativeGeckoWebExt: WebExtension =
+            mockNativeWebExtension(
+                id = "id",
+                location = "uri",
+                metaData = mockNativeWebExtensionMetaData(allowedInPrivateBrowsing = true),
+            )
+
+        // Create extension and register global tab handler
+        val extension = GeckoWebExtension(
+            runtime = runtime,
+            nativeExtension = nativeGeckoWebExt,
+        )
+        val defaultSettings: DefaultSettings = mock()
+
+        // Simulate that the user has enabled private browsing.
+        whenever(tabHandler.isInPrivateBrowsing()).thenReturn(true)
+
+        extension.registerTabHandler(tabHandler, defaultSettings)
+        verify(nativeGeckoWebExt).tabDelegate = tabDelegateCaptor.capture()
+
+        // Simulate browser.tabs.create() call from extension.
+        val tabDetails = mockCreateTabDetails(active = true, url = "url")
+        val result = tabDelegateCaptor.value.onNewTab(nativeGeckoWebExt, tabDetails)
+        verify(tabHandler).onNewTab(eq(extension), engineSessionCaptor.capture(), eq(true), eq("url"), eq(true))
+        assertTrue(engineSessionCaptor.value.geckoSession.settings.usePrivateMode)
+        assertNotNull(result)
+
+        // Simulate that the user switched back to non-private browsing.
+        whenever(tabHandler.isInPrivateBrowsing()).thenReturn(false)
+
+        // Now browser.tabs.create() should open in a non-private browsing context.
+        val result2 = tabDelegateCaptor.value.onNewTab(nativeGeckoWebExt, tabDetails)
+        verify(tabHandler).onNewTab(eq(extension), engineSessionCaptor.capture(), eq(true), eq("url"), eq(false))
+        assertFalse(engineSessionCaptor.value.geckoSession.settings.usePrivateMode)
+        assertNotNull(result2)
+    }
+
+    @Test
+    fun `global tab handler does not open private tab when extension is not allowed in private browsing`() {
+        val runtime: GeckoRuntime = mock()
+        whenever(runtime.settings).thenReturn(mock())
+        whenever(runtime.webExtensionController).thenReturn(mock())
+        val tabHandler: TabHandler = mock()
+        val tabDelegateCaptor = argumentCaptor<WebExtension.TabDelegate>()
+        val engineSessionCaptor = argumentCaptor<GeckoEngineSession>()
+
+        // Defaults to metaData.allowedInPrivateBrowsing = false
+        val nativeGeckoWebExt: WebExtension =
+            mockNativeWebExtension(id = "id", location = "uri", metaData = mockNativeWebExtensionMetaData())
+
+        // Create extension and register global tab handler
+        val extension = GeckoWebExtension(
+            runtime = runtime,
+            nativeExtension = nativeGeckoWebExt,
+        )
+        val defaultSettings: DefaultSettings = mock()
+
+        // Simulate that the user has enabled private browsing.
+        whenever(tabHandler.isInPrivateBrowsing()).thenReturn(true)
+
+        extension.registerTabHandler(tabHandler, defaultSettings)
+        verify(nativeGeckoWebExt).tabDelegate = tabDelegateCaptor.capture()
+
+        // Simulate browser.tabs.create() call from extension.
+        val tabDetails = mockCreateTabDetails(active = true, url = "url")
+        val result = tabDelegateCaptor.value.onNewTab(nativeGeckoWebExt, tabDetails)
+        verify(tabHandler).isInPrivateBrowsing()
+        // Not expecting onNewTab because isInPrivateBrowsing=false:
+        verifyNoMoreInteractions(tabHandler)
+        assertNull(result)
+
+        // Simulate that the user switched back to non-private browsing.
+        whenever(tabHandler.isInPrivateBrowsing()).thenReturn(false)
+
+        // Now browser.tabs.create() should open in a non-private browsing context.
+        val result2 = tabDelegateCaptor.value.onNewTab(nativeGeckoWebExt, tabDetails)
+        verify(tabHandler).onNewTab(eq(extension), engineSessionCaptor.capture(), eq(true), eq("url"), eq(false))
+        assertFalse(engineSessionCaptor.value.geckoSession.settings.usePrivateMode)
+        assertNotNull(result2)
     }
 
     @Test
@@ -548,11 +640,24 @@ class GeckoWebExtensionTest {
             location = "uri",
             isBuiltIn = true,
             metaData = mockNativeWebExtensionMetaData(
-                allowedInPrivateBrowsing = false,
+                // Gecko defaults to allowedInPrivateBrowsing=true for builtin.
+                allowedInPrivateBrowsing = true,
             ),
         )
         val builtInExtension = GeckoWebExtension(nativeBuiltInExtension, runtime)
         assertTrue(builtInExtension.isAllowedInPrivateBrowsing())
+
+        val nativeBuiltInWithoutPrivateBrowsing = mockNativeWebExtension(
+            id = "id",
+            location = "uri",
+            isBuiltIn = true,
+            metaData = mockNativeWebExtensionMetaData(
+                // Builtins can opt out with incognito:not_allowed.
+                allowedInPrivateBrowsing = false,
+            ),
+        )
+        val builtInWithoutPrivateBrowsing = GeckoWebExtension(nativeBuiltInWithoutPrivateBrowsing, runtime)
+        assertFalse(builtInWithoutPrivateBrowsing.isAllowedInPrivateBrowsing())
 
         val nativeWebExtensionWithPrivateBrowsing = mockNativeWebExtension(
             id = "id",

@@ -28,8 +28,7 @@
                     android:layout_height="wrap_content"
                     android:hint="@string/mozac_feature_prompt_username_hint"
                     android:inputType="text"
-                    android:autofillHints="username"
-                    tools:ignore="UnusedAttribute"/>
+                    android:autofillHints="username"/>
 
         </com.google.android.material.textfield.TextInputLayout >
 
@@ -45,8 +44,7 @@
                     android:layout_height="wrap_content"
                     android:hint="@string/mozac_feature_prompt_password_hint"
                     android:inputType="textPassword"
-                    android:autofillHints="password"
-                    tools:ignore="UnusedAttribute"/>
+                    android:autofillHints="password"/>
 
         </com.google.android.material.textfield.TextInputLayout >
 

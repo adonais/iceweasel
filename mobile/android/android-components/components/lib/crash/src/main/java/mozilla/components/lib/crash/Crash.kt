@@ -40,6 +40,13 @@ private const val INTENT_PROCESS_TYPE = "processType"
 private const val INTENT_REMOTE_TYPE = "remoteType"
 
 /**
+ * Reads the crash timestamp from the bundle, falling back to [now] when the bundle does not carry
+ * one. Declared at the top level so the [now] default is an injectable parameter default.
+ */
+private fun Bundle.getCrashTimestamp(now: Long = System.currentTimeMillis()): Long =
+    getLong(INTENT_CRASH_TIMESTAMP, now)
+
+/**
  * Crash types that are handled by this library.
  */
 sealed class Crash {
@@ -206,7 +213,7 @@ sealed class Crash {
                     Breadcrumb::class.java,
                 )
                     ?: arrayListOf(),
-                timestamp = bundle.getLong(INTENT_CRASH_TIMESTAMP, System.currentTimeMillis()),
+                timestamp = bundle.getCrashTimestamp(),
                 runtimeTags = bundle.getSerializable(INTENT_RUNTIME_TAGS) as? HashMap<String, String>
                     ?: hashMapOf(),
             )
@@ -303,7 +310,7 @@ sealed class Crash {
                 )
                     ?: arrayListOf(),
                 remoteType = bundle.getString(INTENT_REMOTE_TYPE, null),
-                timestamp = bundle.getLong(INTENT_CRASH_TIMESTAMP, System.currentTimeMillis()),
+                timestamp = bundle.getCrashTimestamp(),
                 runtimeTags = bundle.getSerializable(INTENT_RUNTIME_TAGS) as? HashMap<String, String>
                     ?: hashMapOf(),
             )

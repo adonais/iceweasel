@@ -4,7 +4,7 @@
 
 package mozilla.components.feature.fxsuggest.parser
 
-import mozilla.components.concept.awesomebar.AwesomeBar.SportItem
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportItem
 import mozilla.components.feature.fxsuggest.dto.SportEventDto
 import mozilla.components.feature.fxsuggest.dto.SportsPayloadDto
 import mozilla.components.feature.fxsuggest.dto.TeamDto

@@ -371,7 +371,7 @@ AddonUtilsInternal.prototype = {
     // Policy prevents either installing this addon or any addon
     if (
       Services.policies &&
-      (!Services.policies.mayInstallAddon(addon) ||
+      (!Services.policies.mayInstallAddon({ id: addon.id, type: addon.type }) ||
         !Services.policies.isAllowed("xpinstall"))
     ) {
       this._log.info(

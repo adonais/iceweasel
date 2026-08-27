@@ -93,7 +93,7 @@ class nsCSSBorderRenderer final {
                       const Rect& aDirtyRect, Rect& aOuterRect,
                       const mozilla::StyleBorderStyle* aBorderStyles,
                       const Margin& aBorderWidths,
-                      RectCornerRadii& aBorderRadii,
+                      RectCornerRadii& aBorderRadii, const Margin& aBorderInset,
                       const nscolor* aBorderColors, bool aBackfaceIsVisible,
                       const mozilla::Maybe<Rect>& aClipRect);
 
@@ -137,6 +137,7 @@ class nsCSSBorderRenderer final {
   mozilla::StyleBorderStyle mBorderStyles[4];
   Margin mBorderWidths;
   RectCornerRadii mBorderRadii;
+  Margin mBorderInset;
 
   // the colors for 'border-top-color' et. al.
   nscolor mBorderColors[4];

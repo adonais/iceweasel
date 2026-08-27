@@ -48,7 +48,7 @@ def test_ml_services_sets_browser_prefs():
         allowlist = browser_prefs["network.socket.allowed_nonlocal_domains"]
         assert "firefox.settings.services.mozilla.com" in allowlist
         assert "model-hub.mozilla.org" in allowlist
-        assert "mlpa-prod-prod-mozilla.global.ssl.fastly.net" in allowlist
+        assert "mlpa-prod-prod-mozilla.freetls.fastly.net" in allowlist
 
     finally:
         cleanup_ml_services(mach_cmd)
@@ -60,7 +60,7 @@ def test_ml_services_allowlist_contains_all_expected_hosts():
         "firefox-settings-attachments.cdn.mozilla.net",
         "content-signature-2.cdn.mozilla.net",
         "model-hub.mozilla.org",
-        "mlpa-prod-prod-mozilla.global.ssl.fastly.net",
+        "mlpa-prod-prod-mozilla.freetls.fastly.net",
     ]
 
     mach_cmd, metadata, env = get_running_env()

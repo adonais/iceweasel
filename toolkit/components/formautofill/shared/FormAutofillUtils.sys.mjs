@@ -90,6 +90,23 @@ const EDIT_CREDITCARD_L10N_IDS = [
   // section easier to find via the search input in about:settings.
   "autofill-card-search-term-credit-cards",
 ];
+const MANAGE_PASSPORTS_L10N_IDS = [
+  "autofill-add-passport-title",
+  "autofill-personal-info-manage-title",
+];
+const EDIT_PASSPORT_L10N_IDS = [
+  "autofill-passport-name",
+  "autofill-passport-country",
+  "autofill-passport-number",
+  "autofill-passport-issue-date",
+  "autofill-passport-expiry-date",
+  "autofill-passport-date-month",
+  "autofill-passport-date-day",
+  "autofill-passport-date-year",
+  "autofill-edit-passport-title",
+  "autofill-cancel-button",
+  "autofill-save-button",
+];
 const FIELD_STATES = {
   NORMAL: "",
   AUTO_FILLED: "autofill",
@@ -128,6 +145,8 @@ FormAutofillUtils = {
   EDIT_ADDRESS_L10N_IDS,
   MANAGE_CREDITCARDS_L10N_IDS,
   EDIT_CREDITCARD_L10N_IDS,
+  MANAGE_PASSPORTS_L10N_IDS,
+  EDIT_PASSPORT_L10N_IDS,
   MAX_FIELD_VALUE_LENGTH,
   FIELD_STATES,
   FORM_SUBMISSION_REASON,

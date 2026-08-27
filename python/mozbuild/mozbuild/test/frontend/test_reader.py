@@ -543,6 +543,24 @@ class TestBuildReader(unittest.TestCase):
         self.assertEqual(contexts["foo/biz"]["DEFINES"], {"ALL": True, "FOO": True})
         self.assertEqual(contexts["bar"]["DEFINES"], {"ALL": True, "BAR_ONLY": True})
 
+    def test_locale_pp_defines(self):
+        reader = self.reader("locale-pp-defines")
+
+        contexts = list(reader.read_topsrcdir())
+        self.assertEqual(len(contexts), 1)
+
+        locale_pp_defines = contexts[0]["LOCALE_PP_DEFINES"]
+        self.assertEqual(
+            locale_pp_defines,
+            {
+                "ANDROID_MARKETPLACE_AB_CD": {
+                    "es*": "es-ES",
+                    "es-MX": "es-MX",
+                    "fr": "fr",
+                },
+            },
+        )
+
 
 if __name__ == "__main__":
     main()

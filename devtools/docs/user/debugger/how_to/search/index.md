@@ -1,4 +1,4 @@
-# Search
+# Search (Debugger)
 
 (debugger-how-to-search-searching-for-files)=
 

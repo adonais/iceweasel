@@ -23,6 +23,7 @@
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/EditContext.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"
 #include "nsAtom.h"
@@ -261,20 +262,30 @@ bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
 
   RefPtr<PresShell> presShell = aPresContext.GetPresShell();
 
-  RefPtr selection = GetSelection();
-  if (NS_WARN_IF(!selection)) {
-    return false;
-  }
+  if (EditContext* editContext = aEditorBase.ComputeEditContext()) {
+    mIsForEditContext = true;
+    // If there's an active EditContext, set mRootElement from it directly,
+    // instead of using ComputeRootElement(), since that looks at the selection
+    // (see bug 2055955).
+    mRootElement = editContext->GetAssociatedElement();
+    MOZ_ASSERT(mRootElement,
+               "Active EditContext should always have an associated element.");
+  } else {
+    RefPtr selection = GetSelection();
+    if (NS_WARN_IF(!selection)) {
+      return false;
+    }
 
-  mRootElement = ComputeRootElement(presShell);
-  // If we're in the design mode, but there are no contents, this document
-  // is not editable. However, this is not illegal. Don't warn.
-  if (!mRootElement && IsForDesignMode()) {
-    return false;
-  }
-  // Otherwise, there must be a root editable element.
-  if (NS_WARN_IF(!mRootElement)) {
-    return false;
+    mRootElement = ComputeRootElement(presShell);
+    // If we're in the design mode, but there are no contents, this document
+    // is not editable. However, this is not illegal. Don't warn.
+    if (!mRootElement && IsForDesignMode()) {
+      return false;
+    }
+    // Otherwise, there must be a root editable element.
+    if (NS_WARN_IF(!mRootElement)) {
+      return false;
+    }
   }
 
   if (mEditorBase->IsTextEditor()) {
@@ -390,7 +401,7 @@ void IMEContentObserver::ObserveEditableNode() {
   // For EditContext, we shouldn't observe the element for mutations,
   // since updating the text is only done through the updateText() method
   // or text input.
-  if (!mRootElement->HasFlag(ELEMENT_HAS_EDIT_CONTEXT)) {
+  if (!mIsForEditContext) {
     mRootElement->AddMutationObserver(this);
     // If it's in a document (should be so), we can use document observer to
     // reduce redundant computation of text change offsets.
@@ -537,6 +548,14 @@ bool IMEContentObserver::IsObserving(const nsPresContext& aPresContext,
   // subtree of aElement.  Therefore, return false if we're observing with
   // HTMLEditor.
   else if (!mIsTextControl) {
+    return false;
+  }
+  const bool hasEditContext =
+      aElement && aElement->HasFlag(ELEMENT_HAS_EDIT_CONTEXT);
+  if (hasEditContext != mIsForEditContext) {
+    // For EditContext, we don't observe DOM mutations. So we should
+    // return false here if aElement has an EditContext and we don't,
+    // or vice versa.
     return false;
   }
   return IsObservingElement(aPresContext, aElement);
@@ -738,7 +757,7 @@ void IMEContentObserver::OnSelectionChange(Selection& aSelection) {
   if (!mIsObserving || !mWidget) {
     return;
   }
-  if (mRootElement->HasFlag(ELEMENT_HAS_EDIT_CONTEXT)) {
+  if (mIsForEditContext) {
     // For EditContext, we notify the IME of selection change only when
     // EditContext.updateSelection() is called, since the DOM selection
     // should not be used by the IME.

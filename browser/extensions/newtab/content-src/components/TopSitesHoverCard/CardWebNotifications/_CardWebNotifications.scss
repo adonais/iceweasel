@@ -1,0 +1,157 @@
+.top-sites-hover-card-inner {
+  .top-sites-hover-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-small);
+  }
+
+  .top-sites-hover-card-header-title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-small);
+  }
+
+  .top-sites-hover-card-header-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--space-xsmall);
+  }
+
+  // Header action buttons and the per-notification dismiss are icon buttons.
+  .top-sites-hover-card-mark-read,
+  .top-sites-hover-card-settings,
+  .top-sites-hover-card-notification-dismiss {
+    flex-shrink: 0;
+    inline-size: var(--size-item-medium);
+    block-size: var(--size-item-medium);
+    padding: 0;
+    border: none;
+    border-radius: var(--border-radius-circle);
+    background-color: transparent;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: var(--size-item-small);
+    -moz-context-properties: fill;
+    fill: currentColor;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background-color: var(--background-color-dimmed-further);
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: var(--button-opacity-disabled);
+    }
+  }
+
+  .top-sites-hover-card-mark-read {
+    background-image: url('chrome://global/skin/icons/double-checkmark.svg');
+  }
+
+  .top-sites-hover-card-settings {
+    background-image: url('chrome://global/skin/icons/settings.svg');
+  }
+
+  .top-sites-hover-card-notification-dismiss {
+    align-self: center;
+    background-image: url('chrome://global/skin/icons/close.svg');
+    background-size: var(--size-item-xsmall);
+  }
+
+  .top-sites-hover-card-notifications {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    // Roughly three rows, but rows are variable height (titles and bodies clamp at two
+    // lines each), so this cannot be expressed in row counts.
+    // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens
+    max-block-size: 240px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .top-sites-hover-card-notification {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-small);
+    padding-block: var(--space-large);
+    padding-inline: var(--space-small);
+    border: none;
+    border-radius: var(--border-radius-medium);
+    background: transparent;
+    text-align: start;
+    transition: background 0.15s;
+
+    &:hover,
+    &:focus-within {
+      background: var(--background-color-dimmed-further);
+    }
+  }
+
+  .top-sites-hover-card-notification-icon {
+    inline-size: var(--size-item-large);
+    block-size: var(--size-item-large);
+    border-radius: var(--border-radius-circle);
+    flex-shrink: 0;
+    object-fit: fill;
+  }
+
+  // The notification body (icon + text). A button when the notification is
+  // service-worker backed, a plain container otherwise; the reset keeps both
+  // looking identical.
+  .top-sites-hover-card-notification-activate {
+    flex: 1;
+    min-inline-size: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-small);
+    padding: 0;
+    border: none;
+    background: transparent;
+    text-align: start;
+    color: inherit;
+    font: inherit;
+
+    &:is(button) {
+      cursor: pointer;
+    }
+  }
+
+  .top-sites-hover-card-notification-text {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .top-sites-hover-card-notification-title {
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-bold);
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .top-sites-hover-card-notification-body {
+    color: var(--text-color-deemphasized);
+    font-size: var(--font-size-small);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .top-sites-hover-card-notification-time {
+    color: var(--text-color-deemphasized);
+    // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens
+    font-size: var(--newtab-font-size-xsmall);
+    margin-block-start: var(--space-xxsmall);
+  }
+}

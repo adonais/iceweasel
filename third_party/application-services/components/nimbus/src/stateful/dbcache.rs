@@ -8,14 +8,14 @@ use std::sync::{Arc, RwLock};
 use crate::enrollment::{
     EnrolledFeature, EnrolledFeatureConfig, ExperimentEnrollment, map_features_by_feature_id,
 };
-use crate::error::{NimbusError, Result, warn};
-use crate::evaluator::{ExperimentAvailable, is_experiment_available};
+use crate::error::{NimbusError, Result, debug, warn};
+use crate::evaluator::{CanEnrollResult, can_enroll};
 use crate::stateful::enrollment::get_enrollments;
 use crate::stateful::firefox_labs::FirefoxLabsMetadata;
 use crate::stateful::gecko_prefs::GeckoPrefStore;
 use crate::stateful::persistence::{Database, StoreId, Writer};
 use crate::targeting::NimbusTargetingHelper;
-use crate::{EnrolledExperiment, Experiment};
+use crate::{AvailableRandomizationUnits, EnrolledExperiment, Experiment};
 
 // This module manages an in-memory cache of the database, so that some
 // functions exposed by nimbus can return results without blocking on any
@@ -219,6 +219,7 @@ impl DatabaseCache {
 
     pub fn get_available_firefox_labs_metadata(
         &self,
+        available_randomization_units: &AvailableRandomizationUnits,
         targeting_helper: &NimbusTargetingHelper,
         coenrolling_feature_ids: &[String],
     ) -> Result<Vec<FirefoxLabsMetadata>> {
@@ -229,34 +230,84 @@ impl DatabaseCache {
             let coenrolling_feature_ids: HashSet<&str> =
                 coenrolling_feature_ids.iter().map(|s| s.as_ref()).collect();
 
-            data.experiments
+            debug!("firefox labs: querying experiments...");
+            let available = data
+                .experiments
                 .iter()
                 .filter_map(|experiment| {
                     if !experiment.is_firefox_labs_opt_in {
+                        debug!(
+                            "firefox labs: {}: not a firefox labs opt-in",
+                            experiment.slug
+                        );
                         return None;
                     }
 
                     let enrolled = data.experiments_by_slug.contains_key(&experiment.slug);
+                    match can_enroll(available_randomization_units, targeting_helper, experiment) {
+                        CanEnrollResult::Enrollable { .. } => {}
 
-                    // We call is_experiment_available with is_release=true
-                    // because being able to enroll in experiments for different channels is a bug.
-                    //
-                    // See-also https://bugzilla.mozilla.org/show_bug.cgi?id=1909348
-                    if is_experiment_available(targeting_helper, experiment, true)
-                        == ExperimentAvailable::Available
-                        && (enrolled
-                            || (features_available(
-                                experiment,
-                                &enrolled_feature_ids,
-                                &coenrolling_feature_ids,
-                            ) && !experiment.is_enrollment_paused))
-                    {
-                        experiment.get_firefox_labs_metadata(enrolled)
-                    } else {
-                        None
+                        CanEnrollResult::Unavailable { reason } => {
+                            debug!("firefox labs: {}: unavailable: {}", experiment.slug, reason);
+                            return None;
+                        }
+
+                        CanEnrollResult::TargetingError { reason } => {
+                            debug!(
+                                "firefox labs: {}: targeting error: {}",
+                                experiment.slug, reason
+                            );
+                            return None;
+                        }
+
+                        CanEnrollResult::NotTargeted => {
+                            debug!("firefox labs: {}: not targeted", experiment.slug);
+                            return None;
+                        }
+
+                        CanEnrollResult::NotSelected => {
+                            debug!("firefox labs: {}: not selected", experiment.slug);
+                            return None;
+                        }
+
+                        CanEnrollResult::NoRandomizationUnit => {
+                            debug!("firefox labs: {}: no randomization unit", experiment.slug);
+                            return None;
+                        }
                     }
+
+                    if !enrolled {
+                        let feature_conflict = !features_available(
+                            experiment,
+                            &enrolled_feature_ids,
+                            &coenrolling_feature_ids,
+                        );
+
+                        if feature_conflict {
+                            debug!("firefox labs: {}: feature conflict", experiment.slug);
+                            return None;
+                        }
+
+                        if experiment.is_enrollment_paused {
+                            debug!("firefox labs: {}: enrollment paused", experiment.slug);
+                            return None;
+                        }
+                    }
+
+                    let metadata = experiment.get_firefox_labs_metadata(enrolled);
+                    if metadata.is_none() {
+                        debug!("firefox labs: {}: invalid lab", experiment.slug);
+                    } else {
+                        debug!("firefox labs: {}: available", experiment.slug);
+                    }
+
+                    metadata
                 })
-                .collect()
+                .collect();
+
+            debug!("firefox labs: finished querying experiments");
+
+            available
         })?;
 
         // XXX: This is maybe only useful for tests, but at least we get a

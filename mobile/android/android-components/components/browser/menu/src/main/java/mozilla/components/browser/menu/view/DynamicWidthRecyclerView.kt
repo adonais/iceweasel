@@ -11,6 +11,7 @@ import androidx.annotation.Px
 import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.RecyclerView
 import mozilla.components.browser.menu.R
+import mozilla.components.support.ktx.android.view.pixelSizeFor
 
 /**
  * [RecyclerView] with automatically set width between widthMin / widthMax xml attributes.
@@ -54,8 +55,8 @@ class DynamicWidthRecyclerView @JvmOverloads constructor(
         desiredWidth: Int,
         desiredHeight: Int,
     ) {
-        val minimumTapArea = resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_tap_area)
-        val minimumItemWidth = resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_item_width)
+        val minimumTapArea = pixelSizeFor(R.dimen.mozac_browser_menu_material_min_tap_area)
+        val minimumItemWidth = pixelSizeFor(R.dimen.mozac_browser_menu_material_min_item_width)
 
         val reconciledWidth = desiredWidth
             .coerceAtLeast(minWidth)

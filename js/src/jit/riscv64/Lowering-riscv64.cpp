@@ -580,19 +580,19 @@ void LIRGeneratorRiscv64::lowerBigIntPtrMod(MBigIntPtrMod* ins) {
 }
 
 void LIRGeneratorRiscv64::lowerAtomicLoad64(MLoadUnboxedScalar* ins) {
-  const LUse elements = useRegister(ins->elements());
-  const LAllocation index =
-      useRegisterOrIndexConstant(ins->index(), ins->storageType());
+  LUse elements = useRegisterAtStart(ins->elements());
+  LAllocation index =
+      useRegisterOrIndexConstantAtStart(ins->index(), ins->storageType());
 
   auto* lir = new (alloc()) LAtomicLoad64(elements, index);
   defineInt64(lir, ins);
 }
 
 void LIRGeneratorRiscv64::lowerAtomicStore64(MStoreUnboxedScalar* ins) {
-  LUse elements = useRegister(ins->elements());
+  LUse elements = useRegisterAtStart(ins->elements());
   LAllocation index =
-      useRegisterOrIndexConstant(ins->index(), ins->writeType());
-  LInt64Allocation value = useInt64Register(ins->value());
+      useRegisterOrIndexConstantAtStart(ins->index(), ins->writeType());
+  LInt64Allocation value = useInt64RegisterAtStart(ins->value());
 
   add(new (alloc()) LAtomicStore64(elements, index, value), ins);
 }
@@ -689,8 +689,8 @@ void LIRGenerator::visitCompareExchangeTypedArrayElement(
   MOZ_ASSERT(ins->elements()->type() == MIRType::Elements);
   MOZ_ASSERT(ins->index()->type() == MIRType::IntPtr);
 
-  const LUse elements = useRegister(ins->elements());
-  const LAllocation index =
+  LUse elements = useRegister(ins->elements());
+  LAllocation index =
       useRegisterOrIndexConstant(ins->index(), ins->arrayType());
 
   if (Scalar::isBigIntType(ins->arrayType())) {
@@ -703,8 +703,8 @@ void LIRGenerator::visitCompareExchangeTypedArrayElement(
     return;
   }
 
-  const LAllocation oldval = useRegister(ins->oldval());
-  const LAllocation newval = useRegister(ins->newval());
+  LAllocation oldval = useRegister(ins->oldval());
+  LAllocation newval = useRegister(ins->newval());
 
   // If the target is a floating register then we need a temp at the
   // CodeGenerator level for creating the result.
@@ -724,11 +724,9 @@ void LIRGenerator::visitCompareExchangeTypedArrayElement(
     maskTemp = temp();
   }
 
-  LCompareExchangeTypedArrayElement* lir = new (alloc())
-      LCompareExchangeTypedArrayElement(elements, index, oldval, newval,
-                                        outTemp, valueTemp, offsetTemp,
-                                        maskTemp);
-
+  auto* lir = new (alloc()) LCompareExchangeTypedArrayElement(
+      elements, index, oldval, newval, outTemp, valueTemp, offsetTemp,
+      maskTemp);
   define(lir, ins);
 }
 
@@ -737,12 +735,12 @@ void LIRGenerator::visitAtomicExchangeTypedArrayElement(
   MOZ_ASSERT(ins->elements()->type() == MIRType::Elements);
   MOZ_ASSERT(ins->index()->type() == MIRType::IntPtr);
 
-  const LUse elements = useRegister(ins->elements());
-  const LAllocation index =
-      useRegisterOrIndexConstant(ins->index(), ins->arrayType());
+  LUse elements = useRegisterAtStart(ins->elements());
+  LAllocation index =
+      useRegisterOrIndexConstantAtStart(ins->index(), ins->arrayType());
 
   if (Scalar::isBigIntType(ins->arrayType())) {
-    LInt64Allocation value = useInt64Register(ins->value());
+    LInt64Allocation value = useInt64RegisterAtStart(ins->value());
 
     auto* lir = new (alloc())
         LAtomicExchangeTypedArrayElement64(elements, index, value);
@@ -750,18 +748,17 @@ void LIRGenerator::visitAtomicExchangeTypedArrayElement(
     return;
   }
 
-  // If the target is a floating register then we need a temp at the
-  // CodeGenerator level for creating the result.
-
   MOZ_ASSERT(ins->arrayType() <= Scalar::Uint32);
 
-  const LAllocation value = useRegister(ins->value());
+  LAllocation value = useRegisterAtStart(ins->value());
 
   LDefinition outTemp = LDefinition::BogusTemp();
   LDefinition valueTemp = LDefinition::BogusTemp();
   LDefinition offsetTemp = LDefinition::BogusTemp();
   LDefinition maskTemp = LDefinition::BogusTemp();
 
+  // If the target is a floating register then we need a temp at the
+  // CodeGenerator level for creating the result.
   if (ins->arrayType() == Scalar::Uint32) {
     MOZ_ASSERT(ins->type() == MIRType::Double);
     outTemp = temp();
@@ -773,10 +770,8 @@ void LIRGenerator::visitAtomicExchangeTypedArrayElement(
     maskTemp = temp();
   }
 
-  LAtomicExchangeTypedArrayElement* lir =
-      new (alloc()) LAtomicExchangeTypedArrayElement(
-          elements, index, value, outTemp, valueTemp, offsetTemp, maskTemp);
-
+  auto* lir = new (alloc()) LAtomicExchangeTypedArrayElement(
+      elements, index, value, outTemp, valueTemp, offsetTemp, maskTemp);
   define(lir, ins);
 }
 
@@ -787,32 +782,31 @@ void LIRGenerator::visitAtomicTypedArrayElementBinop(
   MOZ_ASSERT(ins->elements()->type() == MIRType::Elements);
   MOZ_ASSERT(ins->index()->type() == MIRType::IntPtr);
 
-  const LUse elements = useRegister(ins->elements());
-  const LAllocation index =
-      useRegisterOrIndexConstant(ins->index(), ins->arrayType());
+  LUse elements = useRegisterAtStart(ins->elements());
+  LAllocation index =
+      useRegisterOrIndexConstantAtStart(ins->index(), ins->arrayType());
 
   if (Scalar::isBigIntType(ins->arrayType())) {
-    LInt64Allocation value = useInt64Register(ins->value());
-    LInt64Definition temp = tempInt64();
+    LInt64Allocation value = useInt64RegisterAtStart(ins->value());
 
     // Case 1: the result of the operation is not used.
 
     if (ins->isForEffect()) {
-      auto* lir = new (alloc()) LAtomicTypedArrayElementBinopForEffect64(
-          elements, index, value, temp);
+      auto* lir = new (alloc())
+          LAtomicTypedArrayElementBinopForEffect64(elements, index, value);
       add(lir, ins);
       return;
     }
 
     // Case 2: the result of the operation is used.
 
-    auto* lir = new (alloc())
-        LAtomicTypedArrayElementBinop64(elements, index, value, temp);
+    auto* lir =
+        new (alloc()) LAtomicTypedArrayElementBinop64(elements, index, value);
     defineInt64(lir, ins);
     return;
   }
 
-  const LAllocation value = useRegister(ins->value());
+  LAllocation value = useRegisterAtStart(ins->value());
 
   LDefinition valueTemp = LDefinition::BogusTemp();
   LDefinition offsetTemp = LDefinition::BogusTemp();
@@ -825,25 +819,21 @@ void LIRGenerator::visitAtomicTypedArrayElementBinop(
   }
 
   if (ins->isForEffect()) {
-    LAtomicTypedArrayElementBinopForEffect* lir =
-        new (alloc()) LAtomicTypedArrayElementBinopForEffect(
-            elements, index, value, valueTemp, offsetTemp, maskTemp);
+    auto* lir = new (alloc()) LAtomicTypedArrayElementBinopForEffect(
+        elements, index, value, valueTemp, offsetTemp, maskTemp);
     add(lir, ins);
     return;
   }
 
   // For a Uint32Array with a known double result we need a temp for
   // the intermediate output.
-
   LDefinition outTemp = LDefinition::BogusTemp();
-
   if (ins->arrayType() == Scalar::Uint32 && IsFloatingPointType(ins->type())) {
     outTemp = temp();
   }
 
-  LAtomicTypedArrayElementBinop* lir =
-      new (alloc()) LAtomicTypedArrayElementBinop(
-          elements, index, value, outTemp, valueTemp, offsetTemp, maskTemp);
+  auto* lir = new (alloc()) LAtomicTypedArrayElementBinop(
+      elements, index, value, outTemp, valueTemp, offsetTemp, maskTemp);
   define(lir, ins);
 }
 
@@ -964,16 +954,21 @@ void LIRGenerator::visitWasmAtomicExchangeHeap(MWasmAtomicExchangeHeap* ins) {
   // See comment in visitWasmLoad re the type of 'base'.
   MOZ_ASSERT(base->type() == MIRType::Int32 || base->type() == MIRType::Int64);
 
-  LAllocation memoryBase = ins->hasMemoryBase()
-                               ? LAllocation(useRegister(ins->memoryBase()))
-                               : LGeneralReg(HeapReg);
+  LAllocation ptr = useRegisterAtStart(base);
+
+  LAllocation memoryBase =
+      ins->hasMemoryBase() ? LAllocation(useRegisterAtStart(ins->memoryBase()))
+                           : LGeneralReg(HeapReg);
 
   if (ins->access().type() == Scalar::Int64) {
-    auto* lir = new (alloc()) LWasmAtomicExchangeI64(
-        useRegister(base), useInt64Register(ins->value()), memoryBase);
+    LInt64Allocation value = useInt64RegisterAtStart(ins->value());
+
+    auto* lir = new (alloc()) LWasmAtomicExchangeI64(ptr, value, memoryBase);
     defineInt64(lir, ins);
     return;
   }
+
+  LAllocation value = useRegisterAtStart(ins->value());
 
   LDefinition valueTemp = LDefinition::BogusTemp();
   LDefinition offsetTemp = LDefinition::BogusTemp();
@@ -985,9 +980,8 @@ void LIRGenerator::visitWasmAtomicExchangeHeap(MWasmAtomicExchangeHeap* ins) {
     maskTemp = temp();
   }
 
-  auto* lir = new (alloc())
-      LWasmAtomicExchangeHeap(useRegister(base), useRegister(ins->value()),
-                              memoryBase, valueTemp, offsetTemp, maskTemp);
+  auto* lir = new (alloc()) LWasmAtomicExchangeHeap(
+      ptr, value, memoryBase, valueTemp, offsetTemp, maskTemp);
   define(lir, ins);
 }
 
@@ -995,17 +989,22 @@ void LIRGenerator::visitWasmAtomicBinopHeap(MWasmAtomicBinopHeap* ins) {
   MDefinition* base = ins->base();
   // See comment in visitWasmLoad re the type of 'base'.
   MOZ_ASSERT(base->type() == MIRType::Int32 || base->type() == MIRType::Int64);
-  LAllocation memoryBase = ins->hasMemoryBase()
-                               ? LAllocation(useRegister(ins->memoryBase()))
-                               : LGeneralReg(HeapReg);
+
+  LAllocation ptr = useRegisterAtStart(base);
+
+  LAllocation memoryBase =
+      ins->hasMemoryBase() ? LAllocation(useRegisterAtStart(ins->memoryBase()))
+                           : LGeneralReg(HeapReg);
 
   if (ins->access().type() == Scalar::Int64) {
-    auto* lir = new (alloc())
-        LWasmAtomicBinopI64(useRegister(base), useInt64Register(ins->value()),
-                            memoryBase, tempInt64());
+    LInt64Allocation value = useInt64RegisterAtStart(ins->value());
+
+    auto* lir = new (alloc()) LWasmAtomicBinopI64(ptr, value, memoryBase);
     defineInt64(lir, ins);
     return;
   }
+
+  LAllocation value = useRegisterAtStart(ins->value());
 
   LDefinition valueTemp = LDefinition::BogusTemp();
   LDefinition offsetTemp = LDefinition::BogusTemp();
@@ -1019,16 +1018,13 @@ void LIRGenerator::visitWasmAtomicBinopHeap(MWasmAtomicBinopHeap* ins) {
 
   if (!ins->hasUses()) {
     auto* lir = new (alloc()) LWasmAtomicBinopHeapForEffect(
-        useRegister(base), useRegister(ins->value()), memoryBase, valueTemp,
-        offsetTemp, maskTemp);
+        ptr, value, memoryBase, valueTemp, offsetTemp, maskTemp);
     add(lir, ins);
     return;
   }
 
-  auto* lir = new (alloc())
-      LWasmAtomicBinopHeap(useRegister(base), useRegister(ins->value()),
-                           memoryBase, valueTemp, offsetTemp, maskTemp);
-
+  auto* lir = new (alloc()) LWasmAtomicBinopHeap(
+      ptr, value, memoryBase, valueTemp, offsetTemp, maskTemp);
   define(lir, ins);
 }
 

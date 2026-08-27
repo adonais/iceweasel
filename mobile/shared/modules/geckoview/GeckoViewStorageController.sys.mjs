@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
 
 const lazy = {};
@@ -11,20 +10,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
   PrincipalsCollector: "resource://gre/modules/PrincipalsCollector.sys.mjs",
 });
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "serviceMode",
-  "cookiebanners.service.mode",
-  Ci.nsICookieBannerService.MODE_DISABLED
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "serviceModePBM",
-  "cookiebanners.service.mode.privateBrowsing",
-  Ci.nsICookieBannerService.MODE_DISABLED
-);
 
 const { debug, warn } = GeckoViewUtils.initLogging(
   "GeckoViewStorageController"
@@ -37,7 +22,6 @@ const ClearFlags = [
     1 << 0,
     Ci.nsIClearDataService.CLEAR_COOKIES |
       Ci.nsIClearDataService.CLEAR_MEDIA_DEVICES |
-      Ci.nsIClearDataService.CLEAR_COOKIE_BANNER_EXECUTED_RECORD |
       Ci.nsIClearDataService.CLEAR_FINGERPRINTING_PROTECTION_STATE |
       Ci.nsIClearDataService.CLEAR_BOUNCE_TRACKING_PROTECTION_STATE,
   ],
@@ -62,7 +46,6 @@ const ClearFlags = [
     Ci.nsIClearDataService.CLEAR_DOM_QUOTA |
       Ci.nsIClearDataService.CLEAR_DOM_PUSH_NOTIFICATIONS |
       Ci.nsIClearDataService.CLEAR_REPORTS |
-      Ci.nsIClearDataService.CLEAR_COOKIE_BANNER_EXECUTED_RECORD |
       Ci.nsIClearDataService.CLEAR_FINGERPRINTING_PROTECTION_STATE |
       Ci.nsIClearDataService.CLEAR_BOUNCE_TRACKING_PROTECTION_STATE,
   ],
@@ -213,72 +196,6 @@ export const GeckoViewStorageController = {
           aData.newValue,
           expirePolicy
         );
-        break;
-      }
-
-      case "GeckoView:SetCookieBannerModeForDomain": {
-        let exceptionLabel = "SetCookieBannerModeForDomain";
-        try {
-          const uri = Services.io.newURI(aData.uri);
-          if (aData.allowPermanentPrivateBrowsing) {
-            exceptionLabel = "setDomainPrefAndPersistInPrivateBrowsing";
-            Services.cookieBanners.setDomainPrefAndPersistInPrivateBrowsing(
-              uri,
-              aData.mode
-            );
-          } else {
-            Services.cookieBanners.setDomainPref(
-              uri,
-              aData.mode,
-              aData.isPrivateBrowsing
-            );
-          }
-          aCallback.onSuccess();
-        } catch (ex) {
-          debug`Failed ${exceptionLabel} ${ex}`;
-        }
-        break;
-      }
-
-      case "GeckoView:RemoveCookieBannerModeForDomain": {
-        try {
-          const uri = Services.io.newURI(aData.uri);
-          Services.cookieBanners.removeDomainPref(uri, aData.isPrivateBrowsing);
-          aCallback.onSuccess();
-        } catch (ex) {
-          debug`Failed RemoveCookieBannerModeForDomain ${ex}`;
-        }
-        break;
-      }
-
-      case "GeckoView:GetCookieBannerModeForDomain": {
-        try {
-          let globalMode;
-          if (aData.isPrivateBrowsing) {
-            globalMode = lazy.serviceModePBM;
-          } else {
-            globalMode = lazy.serviceMode;
-          }
-
-          if (globalMode === Ci.nsICookieBannerService.MODE_DISABLED) {
-            aCallback.onSuccess({ mode: globalMode });
-            return;
-          }
-
-          const uri = Services.io.newURI(aData.uri);
-          const mode = Services.cookieBanners.getDomainPref(
-            uri,
-            aData.isPrivateBrowsing
-          );
-          if (mode !== Ci.nsICookieBannerService.MODE_UNSET) {
-            aCallback.onSuccess({ mode });
-          } else {
-            aCallback.onSuccess({ mode: globalMode });
-          }
-        } catch (ex) {
-          aCallback.onError(`Unexpected error: ${ex}`);
-          debug`Failed GetCookieBannerModeForDomain ${ex}`;
-        }
         break;
       }
     }

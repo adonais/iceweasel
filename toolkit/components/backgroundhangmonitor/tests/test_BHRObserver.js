@@ -255,6 +255,11 @@ add_task(async function test_BHRObserver() {
           gleanHang.annotations,
           "annotations have been copied to glean"
         );
+      } else if (
+        Services.prefs.getBoolPref("telemetry.fog.artifact_build", false)
+      ) {
+        // bug 1965481 - Empty `object` array fields are [] on artifact.
+        Assert.equal(0, gleanHang.annotations.length, "no annotations");
       } else {
         Assert.equal(
           "undefined",
@@ -271,6 +276,11 @@ add_task(async function test_BHRObserver() {
           gleanHang.remoteType,
           "the remote type is correct"
         );
+      } else if (
+        Services.prefs.getBoolPref("telemetry.fog.artifact_build", false)
+      ) {
+        // bug 1965481 - Empty `object` object fields are null on artifact.
+        Assert.equal(null, gleanHang.remoteType, "no remote type");
       } else {
         Assert.equal(
           "undefined",

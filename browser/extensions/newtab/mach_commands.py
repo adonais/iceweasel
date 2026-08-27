@@ -20,6 +20,9 @@ from zipfile import ZipFile
 import requests
 import yaml
 from colorama import Fore, Style
+from fluent.syntax import parse as fluent_parse
+from fluent.syntax import serialize as fluent_serialize
+from fluent.syntax.ast import Message, Resource
 from mach.decorators import (
     Command,
     CommandArgument,
@@ -40,6 +43,7 @@ sys.path.append(
 WEBEXT_METRICS_PATH = Path("browser", "extensions", "newtab", "webext-glue", "metrics")
 sys.path.append(str(WEBEXT_METRICS_PATH.absolute()))
 import glean_utils
+from gen_runtime_metrics import get_new_metrics, get_new_pings
 from run_glean_parser import parse_with_options
 
 FIREFOX_L10N_REPO = "https://github.com/mozilla-l10n/firefox-l10n.git"
@@ -55,6 +59,37 @@ REPORT_LEFT_JUSTIFY_CHARS = 15
 REPORT_WRAP_CHARS = 80
 FLUENT_FILE_ANCESTRY = Path("browser", "newtab")
 SUPPORTED_LOCALES_PATH = Path(WEBEXT_LOCALES_PATH, "supported-locales.json")
+
+# @backward-compat { version 155 }
+# The 13 homepage-settings strings live in preferences.ftl (canonical).
+# The newtab XPI still needs them in its bundled webext-glue/**/newtab.ftl
+# for the pre-155 fallback path in AboutPreferences.sys.mjs. Once 155
+# reaches Release, that fallback and this extract step can both be removed.
+PREFERENCES_EXTRACT_IDS = (
+    "home-homepage-title",
+    "home-homepage-new-windows",
+    "home-homepage-new-tabs",
+    "home-homepage-custom-homepage-button",
+    "home-custom-homepage-card-header",
+    "home-custom-homepage-address",
+    "home-custom-homepage-address-button",
+    "home-custom-homepage-no-results",
+    "home-custom-homepage-delete-address-button",
+    "home-custom-homepage-replace-with-prompt",
+    "home-custom-homepage-current-pages-button",
+    "home-custom-homepage-bookmarks-button",
+    "home-prefs-homepage-extension-option",
+)
+
+# @backward-compat { version 155 }
+# The l10n repo mirrors browser/locales/en-US/** under <locale>/browser/**,
+# so the "browser" component name is duplicated for files that themselves
+# live under a "browser/" subdirectory locally (see browser/locales/l10n.toml).
+PREFERENCES_FTL_ANCESTRY = Path("browser", "browser", "preferences")
+PREFERENCES_FTL_NAME = "preferences.ftl"
+LOCAL_PREFERENCES_EN_US_PATH = Path(
+    "browser", "locales", "en-US", "browser", "preferences", "preferences.ftl"
+)
 
 # We query whattrainisitnow.com to get some key dates for both beta and
 # release in order to compute whether or not strings have been available on
@@ -142,6 +177,41 @@ def watch(command_context):
     )
 
 
+# @backward-compat { version 155 }
+def _extract_preferences_messages(preferences_path):
+    """Return a serialized Fluent block containing the IDs in
+    PREFERENCES_EXTRACT_IDS from preferences_path, or an empty string if the
+    file is missing or has none of the target IDs."""
+    try:
+        source = Path(preferences_path).read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return ""
+    resource = fluent_parse(source)
+    wanted = set(PREFERENCES_EXTRACT_IDS)
+    picked = [
+        entry
+        for entry in resource.body
+        if isinstance(entry, Message) and entry.id.name in wanted
+    ]
+    if not picked:
+        return ""
+    return fluent_serialize(Resource(body=picked))
+
+
+# @backward-compat { version 155 }
+def _append_extract_to_webext_glue(webext_glue_ftl_path, extract_block):
+    """Append the extract block, with a header comment, to a webext-glue newtab.ftl file."""
+    if not extract_block:
+        return
+    header = (
+        "\n## Below strings are extracted from preferences.ftl by\n"
+        "## ./mach newtab update-locales - edit them in preferences.ftl.\n\n"
+    )
+    with open(webext_glue_ftl_path, "a", encoding="utf-8") as handle:
+        handle.write(header)
+        handle.write(extract_block)
+
+
 @SubCommand(
     "newtab",
     "update-locales",
@@ -187,6 +257,15 @@ def update_locales(command_context):
             destination_file.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(fluent_file_abs_path, destination_file)
 
+            # @backward-compat { version 155 }
+            # Inject the homepage-settings strings sourced from preferences.ftl
+            # so the newtab XPI still has them for the pre-155 fallback path.
+            locale_preferences_path = (
+                root_dir / locale / PREFERENCES_FTL_ANCESTRY / PREFERENCES_FTL_NAME
+            )
+            extract_block = _extract_preferences_messages(locale_preferences_path)
+            _append_extract_to_webext_glue(destination_file, extract_block)
+
         # Now clean up the temporary directory.
         shutil.rmtree(clone_dir)
 
@@ -199,10 +278,25 @@ def update_locales(command_context):
     dest_en_ftl_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(LOCAL_EN_US_PATH, dest_en_ftl_path)
 
+    # @backward-compat { version 155 }
+    # Same as above, for the local en-US preferences.ftl.
+    en_us_extract = _extract_preferences_messages(LOCAL_PREFERENCES_EN_US_PATH)
+    _append_extract_to_webext_glue(dest_en_ftl_path, en_us_extract)
+
     # Step 4.5: Now compute the commit dates of each of the strings inside of
     # LOCAL_EN_US_PATH.
     print("Computing local message commit dates…")
     message_dates = get_message_dates(LOCAL_EN_US_PATH)
+
+    # @backward-compat { version 155 }
+    # The en-US source now also carries the preferences.ftl extract (see
+    # above), so its commit dates need to come from preferences.ftl's own
+    # history, or display_report() will KeyError on those message ids.
+    message_dates.update({
+        message_id: date
+        for message_id, date in get_message_dates(LOCAL_PREFERENCES_EN_US_PATH).items()
+        if message_id in PREFERENCES_EXTRACT_IDS
+    })
 
     # Step 5: Now compare that en-US Fluent file with all of the ones we just
     # cloned and create a report with how many strings are still missing.
@@ -687,7 +781,6 @@ def process_yaml_file(main_yaml, compare_yaml, yaml_type: YamlType, temp_dir_pat
     # Remove $tags if present to avoid invalid tag lint error
     if "$tags" in new_yaml:
         del new_yaml["$tags"]
-    new_yaml["no_lint"] = ["COMMON_PREFIX"]
 
     yaml_content = yaml.dump(new_yaml, sort_keys=False)
     print(yaml_content)
@@ -698,60 +791,6 @@ def process_yaml_file(main_yaml, compare_yaml, yaml_type: YamlType, temp_dir_pat
         f.write(yaml_content)
 
     return file_path
-
-
-def get_new_metrics(main_yaml, compare_yaml):
-    """Compare main and comparison YAML files to find new metrics.
-
-    This function compares the metrics defined in the main branch against those in the comparison branch
-    (beta or release) and returns only the metrics that are new in the main branch.
-
-    Args:
-        main_yaml: The YAML content from the main branch containing metric definitions
-        compare_yaml: The YAML content from the comparison branch (beta/release) containing metric definitions
-
-    Returns:
-        dict: A dictionary containing only the metrics that are new in the main branch
-    """
-    new_metrics_yaml = {}
-    for category in main_yaml:
-        if category.startswith("$"):
-            new_metrics_yaml[category] = main_yaml[category]
-            continue
-        if category not in compare_yaml:
-            new_metrics_yaml[category] = main_yaml[category]
-            continue
-        new_metrics = {}
-        for metric in main_yaml[category]:
-            if metric not in compare_yaml[category]:
-                new_metrics[metric] = main_yaml[category][metric]
-        if new_metrics:
-            new_metrics_yaml[category] = new_metrics
-    return new_metrics_yaml
-
-
-def get_new_pings(main_yaml, compare_yaml):
-    """Compare main and comparison YAML files to find new pings.
-
-    This function compares the pings defined in the main branch against those in the comparison branch
-    (beta or release) and returns only the pings that are new in the main branch.
-
-    Args:
-        main_yaml: The YAML content from the main branch containing ping definitions
-        compare_yaml: The YAML content from the comparison branch (beta/release) containing ping definitions
-
-    Returns:
-        dict: A dictionary containing only the pings that are new in the main branch
-    """
-    new_pings_yaml = {}
-    for ping in main_yaml:
-        if ping.startswith("$"):
-            new_pings_yaml[ping] = main_yaml[ping]
-            continue
-        if ping not in compare_yaml:
-            new_pings_yaml[ping] = main_yaml[ping]
-            continue
-    return new_pings_yaml
 
 
 def check_existing_metrics(main_yaml, compare_yaml):
@@ -827,8 +866,8 @@ def check_existing_metrics(main_yaml, compare_yaml):
     "newtab",
     "trainhop-recipe",
     description="""Generates the appropriate trainhop recipe for the Nimbus
-newtabTrainhopAddon feature, given a Taskcluster shipping task group URL from
-ship-it""",
+newtabTrainhopAddonDeployment feature, given a Taskcluster shipping task group
+URL from ship-it""",
 )
 @CommandArgument(
     "taskcluster_group_url", help="The shipping Taskcluster task group URL from ship-it"

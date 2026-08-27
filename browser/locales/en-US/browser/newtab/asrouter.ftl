@@ -180,12 +180,6 @@ mr2022-background-update-toast-primary-button-label = Open { -brand-shorter-name
 # exceeding characters will be truncated.
 mr2022-background-update-toast-secondary-button-label = Remind Me Later
 
-## Cookie Banner Handling CFR
-
-cookie-banner-blocker-onboarding-header = { -brand-short-name } just refused a cookie banner for you
-cookie-banner-blocker-onboarding-body = Less distractions, less cookies tracking you on this site.
-cookie-banner-blocker-onboarding-learn-more = Learn more
-
 ## These strings are used in the Fox doodle Pin/set default spotlights
 
 july-jam-headline = We’ve got you covered

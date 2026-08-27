@@ -658,42 +658,15 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
       Processor&& aProcessor) const {
     mozilla::dom::AutoJSAPI jsapi;
     if (!jsapi.Init(mImplObj)) {
-#if defined(EARLY_BETA_OR_EARLIER)
-      if constexpr (std::is_same_v<ArrayT, JS::ArrayBufferView>) {
-        if (!mImplObj) {
-          MOZ_CRASH("Null mImplObj");
-        }
-        if (!xpc::NativeGlobal(mImplObj)) {
-          MOZ_CRASH("Null xpc::NativeGlobal(mImplObj)");
-        }
-        if (!xpc::NativeGlobal(mImplObj)->GetGlobalJSObject()) {
-          MOZ_CRASH("Null xpc::NativeGlobal(mImplObj)->GetGlobalJSObject()");
-        }
-      }
-#endif
       MOZ_CRASH("Failed to get JSContext");
     }
-#if defined(EARLY_BETA_OR_EARLIER)
-    if constexpr (std::is_same_v<ArrayT, JS::ArrayBufferView>) {
-      JS::Rooted<JSObject*> view(jsapi.cx(),
-                                 js::UnwrapArrayBufferView(mImplObj));
-      if (!view) {
-        if (JSObject* unwrapped = js::CheckedUnwrapStatic(mImplObj)) {
-          if (!js::UnwrapArrayBufferView(unwrapped)) {
-            MOZ_CRASH(
-                "Null "
-                "js::UnwrapArrayBufferView(js::CheckedUnwrapStatic(mImplObj))");
-          }
-          view = unwrapped;
-        } else {
-          MOZ_CRASH("Null js::CheckedUnwrapStatic(mImplObj)");
-        }
-      }
-    }
-#endif
     JS::AutoBrittleMode abm(jsapi.cx());
     if (!JS::EnsureNonInlineArrayBufferOrView(jsapi.cx(), mImplObj)) {
-      MOZ_CRASH("small oom when moving inline data out-of-line");
+      // Fails on (small) OOM, or when trying to modify a buffer when its length
+      // is already pinned. Brittle mode, set just above, will cause the former
+      // to crash before returning false, but that is for diagnostic purposes
+      // only and could be removed at any time.
+      MOZ_CRASH("failed to make ArrayBuffer data be stored separately");
     }
     LengthPinner pinner(this);
 

@@ -17,7 +17,7 @@ inline BooleanObject* BooleanObject::create(
   if (!obj) {
     return nullptr;
   }
-  obj->setPrimitiveValue(b);
+  obj->initPrimitiveValue(b);
   return obj;
 }
 

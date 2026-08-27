@@ -15,32 +15,20 @@
 const DUMP_AND_QUIT_TOPIC = "profiler-dump-and-quit";
 
 /**
- * Gather a profile, write it as a CI artifact in MOZ_UPLOAD_DIR, and report an
- * unmissable failure naming the artifact (in the "profile uploaded in <file>"
- * form the dashboards recognize) so the profile can be associated with the
- * failure.
+ * Gather a profile and write it as a CI artifact in MOZ_UPLOAD_DIR, returning a
+ * message naming the artifact (in the "profile uploaded in <file>" form the
+ * dashboards recognize) so the profile can be associated with the failure.
  *
  * Requires MOZ_UPLOAD_DIR to be set and the profiler to be active; callers are
- * expected to check those conditions.
+ * expected to check those conditions (see shouldSaveFailureProfile).
  *
- * @param {string} testName Test named in the reported failure.
- * @param {object} logger StructuredLogger used to report the failure.
  * @param {string} profileName Names the profile artifact file (only its
- *   basename is used); defaults to testName.
- * @param {boolean} testRunning Whether a test is running. When true the failure
- *   is reported as that test's status; when false (e.g. at shutdown) it is
- *   reported as a top-level error instead, since a per-test status would be tied
- *   to a test that has already ended and wouldn't reach the failure summary.
+ *   basename is used).
+ * @returns {Promise<string>} The message to report.
  */
-export async function uploadProfileArtifact(
-  testName,
-  logger,
-  profileName = testName,
-  testRunning = true
-) {
+export async function saveProfileToUploadDir(profileName) {
   let basename = profileName.replace(/.*\//, "");
   let uploadDir = Services.env.get("MOZ_UPLOAD_DIR");
-  let message;
   try {
     // The same test can fail more than once in a run (it was retried, or it is
     // referenced from several manifests), reusing the same upload directory.
@@ -67,11 +55,53 @@ export async function uploadProfileArtifact(
         await Services.profiler.getProfileDataAsGzippedArrayBuffer();
       await IOUtils.write(path, new Uint8Array(profile));
     }
-    message = `profile uploaded in ${filename}`;
+    return `profile uploaded in ${filename}`;
   } catch (e) {
     // If the profile is large, we may encounter out of memory errors.
-    message = `failed to upload profile: ${e}`;
+    return `failed to upload profile: ${e}`;
   }
+}
+
+/**
+ * The conditions under which a failing test's profile should be saved, shared by
+ * all harnesses: the profiler must be active, there must be an upload directory,
+ * and shutdown profiling (from --profiler) must not already be saving a profile.
+ *
+ * @returns {boolean} Whether a failing test's profile should be saved.
+ */
+export function shouldSaveFailureProfile() {
+  return (
+    Services.profiler.IsActive() &&
+    Services.env.exists("MOZ_UPLOAD_DIR") &&
+    !Services.env.exists("MOZ_PROFILER_SHUTDOWN")
+  );
+}
+
+/**
+ * Gather a profile, write it as a CI artifact in MOZ_UPLOAD_DIR, and report an
+ * unmissable failure naming the artifact (in the "profile uploaded in <file>"
+ * form the dashboards recognize) so the profile can be associated with the
+ * failure.
+ *
+ * Requires MOZ_UPLOAD_DIR to be set and the profiler to be active; callers are
+ * expected to check those conditions.
+ *
+ * @param {string} testName Test named in the reported failure.
+ * @param {object} logger StructuredLogger used to report the failure.
+ * @param {string} profileName Names the profile artifact file (only its
+ *   basename is used); defaults to testName.
+ * @param {boolean} testRunning Whether a test is running. When true the failure
+ *   is reported as that test's status; when false (e.g. at shutdown) it is
+ *   reported as a top-level error instead, since a per-test status would be tied
+ *   to a test that has already ended and wouldn't reach the failure summary.
+ */
+export async function uploadProfileArtifact(
+  testName,
+  logger,
+  profileName = testName,
+  testRunning = true
+) {
+  let message = await saveProfileToUploadDir(profileName);
   if (testRunning) {
     logger.testStatus(testName, null, "FAIL", "PASS", message);
   } else {

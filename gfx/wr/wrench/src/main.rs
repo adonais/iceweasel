@@ -11,6 +11,13 @@ extern crate serde;
 #[macro_use]
 extern crate tracy_rs;
 
+/// App units per device pixel that wrench declares for its display lists.
+/// WebRender normalizes items by their accumulated external scroll offset in whole
+/// app units on this grid, so declaring the same value Gecko uses at dpr 1.0 means
+/// wrench exercises the same arithmetic rather than a bypass. Yaml coordinates are
+/// therefore quantized to 1/60 px (bug 2059570).
+pub const AU_PER_DEV_PX: f32 = 60.0;
+
 mod angle;
 mod blob;
 #[cfg(target_os = "windows")]
@@ -581,12 +588,16 @@ impl RenderNotifier for Notifier {
         Box::new(Notifier { tx: self.tx.clone() })
     }
 
+    // Both sends can race with teardown: subcommands that end with
+    // renderer.deinit() rather than Wrench::shut_down() drop the receiver
+    // before the render backend thread notifies its last events. A consumer
+    // that has gone away is not an error, so don't unwrap.
     fn wake_up(&self, composite_needed: bool) {
-        self.tx.send(NotifierEvent::WakeUp { composite_needed }).unwrap();
+        let _ = self.tx.send(NotifierEvent::WakeUp { composite_needed });
     }
 
     fn shut_down(&self) {
-        self.tx.send(NotifierEvent::ShutDown).unwrap();
+        let _ = self.tx.send(NotifierEvent::ShutDown);
     }
 
     fn new_frame_ready(&self, _: DocumentId, _: FramePublishId, params: &FrameReadyParams) {
@@ -649,6 +660,7 @@ struct ShowState {
 /// Describes the WrenchThing to build in resumed(). The LoadCapture variant
 /// needs a live Wrench to execute, so it cannot be built in build_app().
 enum ThingToBuild {
+    Yaml(YamlFrameReader),
     Ready(Box<dyn WrenchThing>),
     LoadCapture(PathBuf),
 }
@@ -672,12 +684,16 @@ struct WrenchApp {
     verbose: bool,
     no_scissor: bool,
     no_batch_global: bool,
+    color_target_init: bool,
     precache: bool,
     dump_shader_source: Option<String>,
     profiler_ui: Option<String>,
 
     // -- Subcommand --
     subcommand: String,
+
+    /// Set by `--compositor-clips`, overriding the default of each subcommand.
+    compositor_clips: Option<bool>,
 
     // Reftest
     reftest_specific: Option<PathBuf>,
@@ -789,6 +805,11 @@ impl ApplicationHandler for WrenchApp {
         println!("OpenGL version {}, {}", gl.get_string(gl::VERSION), gl.get_string(gl::RENDERER));
         println!("hidpi factor: {}", window.hidpi_factor());
 
+        let init_target_dbg = self.color_target_init || matches!(
+            self.subcommand.as_str(),
+            "reftest"
+        );
+
         let needs_frame_notifier = matches!(
             self.subcommand.as_str(),
             "perf" | "reftest" | "png" | "rawtest" | "test_invalidation"
@@ -818,10 +839,12 @@ impl ApplicationHandler for WrenchApp {
             self.verbose,
             self.no_scissor,
             self.no_batch_global,
+            init_target_dbg,
             self.precache,
             self.dump_shader_source.clone(),
             notifier,
             layer_compositor,
+            self.compositor_clips,
         );
 
         if let Some(ui_str) = &self.profiler_ui {
@@ -838,7 +861,16 @@ impl ApplicationHandler for WrenchApp {
 
         match self.subcommand.as_str() {
             "show" => {
+                // Displaying a yaml file mirrors what reftests do, so like
+                // reftests it exercises the quad-shader clip path rather than
+                // the compositor clip fast path. Recordings and captures are
+                // replayed as-is.
+                let mut is_yaml = false;
                 let thing: Box<dyn WrenchThing> = match self.thing_to_build.take() {
+                    Some(ThingToBuild::Yaml(reader)) => {
+                        is_yaml = true;
+                        Box::new(reader) as Box<dyn WrenchThing>
+                    }
                     Some(ThingToBuild::Ready(t)) => t,
                     Some(ThingToBuild::LoadCapture(path)) => {
                         let mut documents = wrench.api.load_capture(path, None);
@@ -852,6 +884,9 @@ impl ApplicationHandler for WrenchApp {
 
                 let mut debug_flags = DebugFlags::empty();
                 debug_flags.set(DebugFlags::DISABLE_BATCHING, self.show_no_batch);
+                let compositor_clips = self.compositor_clips.unwrap_or(!is_yaml);
+                debug_flags.set(DebugFlags::DISABLE_COMPOSITOR_CLIPS, !compositor_clips);
+                wrench.set_compositor_clips_enabled(compositor_clips);
 
                 if cfg!(target_os = "android") {
                     debug_flags.toggle(DebugFlags::PROFILER_DBG);
@@ -886,8 +921,11 @@ impl ApplicationHandler for WrenchApp {
             }
             "png" => {
                 let reader = self.png_reader.take().unwrap();
-                png::png(&mut wrench, self.png_surface, &mut window, reader, rx.unwrap(), self.png_output_path.clone());
-                wrench.renderer.deinit();
+                let rx = rx.unwrap();
+                png::png(&mut wrench, self.png_surface, &mut window, reader, &rx, self.png_output_path.clone());
+                // shut_down() keeps the receiver alive until the render backend
+                // has acknowledged shutdown, which deinit() alone does not.
+                wrench.shut_down(rx);
                 event_loop.exit();
             }
             "reftest" => {
@@ -907,22 +945,24 @@ impl ApplicationHandler for WrenchApp {
             }
             "perf" => {
                 wrench.rebuild_display_lists = true;
+                let rx = rx.unwrap();
                 let harness = PerfHarness::new(
                     &mut wrench,
                     &mut window,
-                    rx.unwrap(),
+                    &rx,
                     self.perf_warmup_frames,
                     self.perf_sample_count,
                 );
                 let base_manifest = Path::new(&self.perf_benchmark);
                 harness.run(base_manifest, &self.perf_filename, self.perf_as_csv);
-                wrench.renderer.deinit();
+                wrench.shut_down(rx);
                 event_loop.exit();
             }
             "test_invalidation" => {
-                let harness = test_invalidation::TestHarness::new(&mut wrench, &mut window, rx.unwrap());
+                let rx = rx.unwrap();
+                let harness = test_invalidation::TestHarness::new(&mut wrench, &mut window, &rx);
                 let num_failures = harness.run();
-                wrench.renderer.deinit();
+                wrench.shut_down(rx);
                 self.exit_code = num_failures as i32;
                 event_loop.exit();
             }
@@ -1162,8 +1202,14 @@ fn build_app(args: clap::ArgMatches, proxy: Option<EventLoopProxy<()>>) -> Wrenc
     let verbose = args.is_present("verbose");
     let no_scissor = args.is_present("no_scissor");
     let no_batch_global = args.is_present("no_batch");
+    let color_target_init = args.is_present("color_target_init");
     let precache = args.is_present("precache");
     let profiler_ui = args.value_of("profiler_ui").map(String::from);
+    let compositor_clips = args.value_of("compositor_clips").map(|s| match s {
+        "true" | "1" | "yes" | "on" => true,
+        "false" | "0" | "no" | "off" => false,
+        _ => panic!("Unexpected --compositor-clips value {}", s),
+    });
 
     let opengles_version = (3u8, 0u8);
     let opengl_version = (3u8, 2u8);
@@ -1207,7 +1253,7 @@ fn build_app(args: clap::ArgMatches, proxy: Option<EventLoopProxy<()>>) -> Wrenc
         } else if input_path.as_path().is_dir() {
             ThingToBuild::LoadCapture(input_path)
         } else {
-            ThingToBuild::Ready(Box::new(YamlFrameReader::new_from_show_args(m)) as Box<dyn WrenchThing>)
+            ThingToBuild::Yaml(YamlFrameReader::new_from_show_args(m))
         };
         (Some(thing), no_block, no_batch)
     } else {
@@ -1257,8 +1303,8 @@ fn build_app(args: clap::ArgMatches, proxy: Option<EventLoopProxy<()>>) -> Wrenc
     WrenchApp {
         size, vsync, angle, software, using_compositor, gl_request, headless,
         res_path, use_optimized_shaders, rebuild, no_subpixel_aa, verbose,
-        no_scissor, no_batch_global, precache, dump_shader_source, profiler_ui,
-        subcommand, reftest_specific, reftest_fuzz,
+        no_scissor, no_batch_global, color_target_init, precache, dump_shader_source, profiler_ui,
+        subcommand, compositor_clips, reftest_specific, reftest_fuzz,
         thing_to_build, show_no_block, show_no_batch,
         png_reader, png_surface, png_output_path,
         perf_benchmark, perf_filename, perf_as_csv, perf_warmup_frames, perf_sample_count,
@@ -1343,6 +1389,11 @@ fn run_headless(args: clap::ArgMatches) -> i32 {
         sw_ctx,
     };
 
+    let init_target_dbg = app.color_target_init || matches!(
+        app.subcommand.as_str(),
+        "reftest"
+    );
+
     let needs_frame_notifier = matches!(
         app.subcommand.as_str(),
         "perf" | "reftest" | "png" | "rawtest" | "test_invalidation"
@@ -1366,10 +1417,12 @@ fn run_headless(args: clap::ArgMatches) -> i32 {
         app.verbose,
         app.no_scissor,
         app.no_batch_global,
+        init_target_dbg,
         app.precache,
         app.dump_shader_source.clone(),
         notifier,
         None,
+        app.compositor_clips,
     );
 
     if let Some(ui_str) = &app.profiler_ui {
@@ -1386,8 +1439,11 @@ fn run_headless(args: clap::ArgMatches) -> i32 {
     match app.subcommand.as_str() {
         "png" => {
             let reader = app.png_reader.take().unwrap();
-            png::png(&mut wrench, app.png_surface, &mut window, reader, rx.unwrap(), app.png_output_path.clone());
-            wrench.renderer.deinit();
+            let rx = rx.unwrap();
+            png::png(&mut wrench, app.png_surface, &mut window, reader, &rx, app.png_output_path.clone());
+            // shut_down() keeps the receiver alive until the render backend has
+            // acknowledged shutdown, which deinit() alone does not.
+            wrench.shut_down(rx);
             0
         }
         "reftest" => {
@@ -1407,22 +1463,24 @@ fn run_headless(args: clap::ArgMatches) -> i32 {
         }
         "perf" => {
             wrench.rebuild_display_lists = true;
+            let rx = rx.unwrap();
             let harness = PerfHarness::new(
                 &mut wrench,
                 &mut window,
-                rx.unwrap(),
+                &rx,
                 app.perf_warmup_frames,
                 app.perf_sample_count,
             );
             let base_manifest = Path::new(&app.perf_benchmark);
             harness.run(base_manifest, &app.perf_filename, app.perf_as_csv);
-            wrench.renderer.deinit();
+            wrench.shut_down(rx);
             0
         }
         "test_invalidation" => {
-            let harness = test_invalidation::TestHarness::new(&mut wrench, &mut window, rx.unwrap());
+            let rx = rx.unwrap();
+            let harness = test_invalidation::TestHarness::new(&mut wrench, &mut window, &rx);
             let num_failures = harness.run();
-            wrench.renderer.deinit();
+            wrench.shut_down(rx);
             num_failures as i32
         }
         "compare_perf" => {

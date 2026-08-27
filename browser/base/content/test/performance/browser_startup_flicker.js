@@ -41,6 +41,10 @@ add_task(async function () {
         {
           name: "Shadow around active tab should not flicker on macOS (bug 1960967)",
           condition(r) {
+            if (Services.prefs.getBoolPref("browser.nova.enabled", false)) {
+              // The Nova redesign does not have a shadow around the active tab.
+              return false;
+            }
             const tabRect = tabBoundingRect
               ? tabBoundingRect
               : (tabBoundingRect = gBrowser.tabContainer

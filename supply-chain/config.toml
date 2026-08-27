@@ -43,6 +43,14 @@ notes = "This is the upstream code not yet released plus a local fix"
 audit-as-crates-io = true
 notes = "This is upstream plus a warning fix from bug 1823866."
 
+[policy.cssparser]
+audit-as-crates-io = true
+notes = "Upstream not yet published changes"
+
+[policy.cssparser-macros]
+audit-as-crates-io = true
+notes = "Upstream not yet published changes"
+
 [policy.encoding_rs]
 audit-as-crates-io = true
 notes = "This is upstream plus a build fix for bug 2033279."
@@ -63,6 +71,18 @@ notes = "Used for testing."
 [policy.gkrust-shared]
 dependency-criteria = { tokio-reactor = [], tokio-threadpool = [] }
 notes = "The dependencies on tokio-reactor and tokio-threadpools are just a hack to pin the version used by audioipc-{client,server}. Suppress vetting on those for the same reasons behind the policy entries."
+
+[policy."gl_generator:0.14.0@git:71c792dbfe0ec5caeb242fc90937e19098386342"]
+audit-as-crates-io = true
+notes = "This is upstream plus a build fix from rust-windowing/gl-rs#566. Can be removed once PR is merged upstream and gleam is updated to include the fix."
+
+[policy."gleam:0.15.1@git:68ca4e5cc31135b843af07ff213a94b9ddce64cf"]
+audit-as-crates-io = true
+notes = "This is upstream plus servo/gleam#235. Can be removed once PR is merged upstream."
+
+[policy.glean-sym]
+audit-as-crates-io = false
+notes = "crates.io release is a placeholder for the moment. glean-sym is consumed via git"
 
 [policy.gluesmith]
 criteria = "safe-to-run"
@@ -120,21 +140,13 @@ notes = "Patched version of upstream"
 audit-as-crates-io = true
 notes = "Patched version of upstream"
 
-[policy.jxl]
-audit-as-crates-io = true
-notes = "Vendored from libjxl/jxl-rs git, a few commits past the 0.4.3 tag."
-
-[policy.jxl_macros]
-audit-as-crates-io = true
-notes = "Vendored from libjxl/jxl-rs git, a few commits past the 0.4.3 tag."
-
 [policy.jxl_simd]
 audit-as-crates-io = true
-notes = "Vendored from libjxl/jxl-rs git, a few commits past the 0.4.3 tag, with a local Mac/x86_64 workaround patched in (see bug 2043090) and path-sourced via a [patch] block in the root Cargo.toml."
+notes = "Upstream 0.5.1 with a local Mac/x86_64 workaround patched in (see bug 2043090) and path-sourced via a [patch.crates-io] entry in the root Cargo.toml."
 
-[policy.jxl_transforms]
+[policy."khronos_api:3.1.0@git:71c792dbfe0ec5caeb242fc90937e19098386342"]
 audit-as-crates-io = true
-notes = "Vendored from libjxl/jxl-rs git, a few commits past the 0.4.3 tag."
+notes = "Vendored from same repository as gl_generator."
 
 [policy.l10nregistry]
 dependency-criteria = { fluent-testing = "safe-to-run", tokio = "safe-to-run" }
@@ -238,6 +250,14 @@ audit-as-crates-io = false
 
 [policy.peek-poke-derive]
 audit-as-crates-io = false
+
+[policy."process-backend:0.0.0@git:45f5459790d264098346343f0ad58d008c386fa5"]
+audit-as-crates-io = false
+notes = """
+This was originally intended to be a minidump-writer internal crate (and thus
+audited as part of minidump-writer), however an author accidentally published
+it publicly (so it is on crates.io now).
+"""
 
 [policy.pulse]
 audit-as-crates-io = false
@@ -630,10 +650,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.quick-error]]
 version = "1.2.3"
-criteria = "safe-to-deploy"
-
-[[exemptions.remove_dir_all]]
-version = "0.5.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.replace_with]]

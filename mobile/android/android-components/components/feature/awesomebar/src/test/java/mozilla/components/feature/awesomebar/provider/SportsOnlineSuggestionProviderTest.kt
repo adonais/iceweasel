@@ -9,11 +9,11 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
-import mozilla.components.concept.awesomebar.AwesomeBar
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionCategory
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionDate
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatus
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatusType
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportItem
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionCategory
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionDate
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionStatus
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionStatusType
 import mozilla.components.feature.search.SearchUseCases.SearchUseCase
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
@@ -97,7 +97,7 @@ class SportsOnlineSuggestionProviderTest {
 
         val suggestion = results.single()
         assertNotNull(suggestion.onSuggestionClicked)
-        suggestion.onSuggestionClicked!!.invoke()
+        suggestion.onSuggestionClicked.invoke()
 
         verify(searchUseCase).invoke("test query")
     }
@@ -353,7 +353,7 @@ class SportsOnlineSuggestionProviderTest {
 
     @Test
     fun `parseTeam returns team with name and score`() = runTest {
-        val team = AwesomeBar.SportItem.Team(
+        val team = SportItem.Team(
             key = "MIN",
             name = "Minnesota Wild",
             colors = listOf("0E4431"),
@@ -369,7 +369,7 @@ class SportsOnlineSuggestionProviderTest {
 
     @Test
     fun `parseTeam returns null for blank team name`() = runTest {
-        val team = AwesomeBar.SportItem.Team(
+        val team = SportItem.Team(
             key = "MIN",
             name = "   ",
             colors = listOf("0E4431"),
@@ -426,7 +426,7 @@ class SportsOnlineSuggestionProviderTest {
     }
 }
 
-/** Convenience factory for creating sample [AwesomeBar.SportItem] objects for tests. */
+/** Convenience factory for creating sample [SportItem] objects for tests. */
 private fun sampleSportItem(
     query: String = "NHL Winnipeg Jets at Minnesota Wild 28 Oct 2025",
     sport: String = "NHL",
@@ -434,9 +434,9 @@ private fun sampleSportItem(
     date: String = "2025-10-29T00:00:00+00:00",
     status: String = "Final - Over Time",
     statusType: String = "past",
-    homeTeam: AwesomeBar.SportItem.Team = sampleHomeTeam,
-    awayTeam: AwesomeBar.SportItem.Team = sampleAwayTeam,
-) = AwesomeBar.SportItem(
+    homeTeam: SportItem.Team = sampleHomeTeam,
+    awayTeam: SportItem.Team = sampleAwayTeam,
+) = SportItem(
     query = query,
     sport = sport,
     sportCategory = sportCategory,
@@ -448,14 +448,14 @@ private fun sampleSportItem(
     touched = "2025-10-29T12:00:00+00:00",
 )
 
-private val sampleHomeTeam = AwesomeBar.SportItem.Team(
+private val sampleHomeTeam = SportItem.Team(
     key = "MIN",
     name = "Minnesota Wild",
     colors = listOf("0E4431", "AC1A2E", "EAAA00", "DDC9A3"),
     score = 3,
     icon = null,
 )
-private val sampleAwayTeam = AwesomeBar.SportItem.Team(
+private val sampleAwayTeam = SportItem.Team(
     key = "WPG",
     name = "Winnipeg Jets",
     colors = listOf("041E42", "004A98", "A2AAAD", "A6192E"),

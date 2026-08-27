@@ -140,7 +140,7 @@ details[data-folder-kind="place-container"] > summary,
 details[data-folder-kind="tags-root"] > summary,
 .bookmark-folder-label[data-folder-kind="tags-root"] {
   &::before {
-    background-image: url("chrome://browser/skin/places/folder-smart.svg");
+    background-image: url("chrome://global/skin/icons/folder.svg");
   }
 }
 

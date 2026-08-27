@@ -19,3 +19,4 @@ description: You MUST use this skill when working with HTML, JS, CSS and other f
 - Toolkit code may be shared with Android, as well as desktop versions of Thunderbird, so do not assume that code from the `browser/` directory is available for use from there - if it must be used, make sure that the `toolkit/` code can recover if it is not available.
 - Ensure that your changes are accessible and work well with assistive technologies. Use semantic HTML elements, ARIA attributes, and test with screen readers and keyboard navigation.
 - Ensure that your changes are performant and do not cause jank or slow down the browser. Use performance profiling tools to identify and fix any performance issues.
+- When touching Firefox front-end code, read `docs/performance/bestpractices.md` to learn more about performance best practices and how to avoid common pitfalls (for example, forcing synchronous layout flushes on hot paths).

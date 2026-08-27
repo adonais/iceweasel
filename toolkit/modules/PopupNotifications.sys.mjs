@@ -515,6 +515,11 @@ PopupNotifications.prototype = {
    *        persistWhileVisible:
    *                     A boolean. If true, a visible notification will always
    *                     persist across location changes.
+   *        lowerPanelLevel:
+   *                     A boolean. If true, the panel's popup level is lowered
+   *                     to "parent" so a popup hosted inside the notification
+   *                     (such as an autocomplete dropdown) can stack above the
+   *                     panel instead of behind it.
    *        persistent:  A boolean. If true, the notification will always
    *                     persist even across tab and app changes (but not across
    *                     location changes), until the user accepts or rejects
@@ -1293,6 +1298,23 @@ PopupNotifications.prototype = {
     });
   },
 
+  /**
+   * Lowers the panel's popup level to "parent" when a notification hosts its
+   * own popup (e.g. the autocomplete dropdown in the password doorhanger), so
+   * that popup can stack above the panel. The level is only read when the
+   * popup widget is created, so changing the attribute recreates the widget.
+   *
+   * @param {Array} notificationsToShow
+   *        The notifications about to be shown in the panel.
+   */
+  _updatePanelLevel(notificationsToShow) {
+    if (notificationsToShow.some(n => n.options.lowerPanelLevel)) {
+      this.panel.setAttribute("level", "parent");
+    } else {
+      this.panel.removeAttribute("level");
+    }
+  },
+
   _showPanel: function PopupNotifications_showPanel(
     notificationsToShow,
     anchorElement
@@ -1338,6 +1360,14 @@ PopupNotifications.prototype = {
     }
 
     if (this.isPanelOpen && this._currentAnchorElement == anchorElement) {
+      // isPanelOpen is also true while the panel is animating open, in which
+      // case a popupshown listener is still pending. It holds the notifications
+      // that were current when the panel started opening, some of which we may
+      // just have replaced, and firing "shown" for those would let their
+      // callbacks overwrite the panel contents. We fire "shown" for the current
+      // notifications right here, so the pending listener has nothing left to do.
+      this._clearPopupshownListener();
+
       notificationsToShow.forEach(function (n) {
         // If the panel is already open remember the time the notification was
         // shown for the security delay.
@@ -1352,6 +1382,8 @@ PopupNotifications.prototype = {
       } else {
         this.panel.removeAttribute("noautohide");
       }
+
+      this._updatePanelLevel(notificationsToShow);
 
       // Let tests know that the panel was updated and what notifications it was
       // updated with so that tests can wait for the correct notifications to be
@@ -1385,6 +1417,8 @@ PopupNotifications.prototype = {
       } else {
         this.panel.setAttribute("noautofocus", "true");
       }
+
+      this._updatePanelLevel(notificationsToShow);
 
       notificationsToShow.forEach(function (n) {
         // Record that the notification was actually displayed on screen.

@@ -867,7 +867,7 @@ PendingDBLookup::HandleEvent(const nsACString& tables) {
   // Blocklisting trumps allowlisting.
   nsAutoCString blockList;
   Preferences::GetCString(PREF_DOWNLOAD_BLOCK_TABLE, blockList);
-  if ((mLookupType != LookupType::AllowlistOnly) &&
+  if ((mLookupType != LookupType::AllowlistOnly) && !blockList.IsEmpty() &&
       FindInReadable(blockList, tables)) {
     mPendingLookup->mBlocklistCount++;
     mozilla::glean::application_reputation::local.AccumulateSingleSample(
@@ -880,7 +880,7 @@ PendingDBLookup::HandleEvent(const nsACString& tables) {
 
   nsAutoCString allowList;
   Preferences::GetCString(PREF_DOWNLOAD_ALLOW_TABLE, allowList);
-  if ((mLookupType != LookupType::BlocklistOnly) &&
+  if ((mLookupType != LookupType::BlocklistOnly) && !allowList.IsEmpty() &&
       FindInReadable(allowList, tables)) {
     mPendingLookup->mAllowlistCount++;
     mozilla::glean::application_reputation::local.AccumulateSingleSample(

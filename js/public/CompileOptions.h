@@ -118,22 +118,7 @@ class JS_PUBLIC_API PrefableCompileOptions {
  public:
   PrefableCompileOptions()
       : sourcePragmas_(true),
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-        explicitResourceManagement_(
-            JS::Prefs::experimental_explicit_resource_management()),
-#endif
-        sourcePhaseImports_(JS::Prefs::experimental_source_phase_imports()) {
-  }
-
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-  bool explicitResourceManagement() const {
-    return explicitResourceManagement_;
-  }
-  PrefableCompileOptions& setExplicitResourceManagement(bool enabled) {
-    explicitResourceManagement_ = enabled;
-    return *this;
-  }
-#endif
+        sourcePhaseImports_(JS::Prefs::experimental_source_phase_imports()) {}
 
   bool sourcePhaseImports() const { return sourcePhaseImports_; }
   PrefableCompileOptions& setSourcePhaseImports(bool enabled) {
@@ -153,9 +138,6 @@ class JS_PUBLIC_API PrefableCompileOptions {
   void dumpWith(Printer& print) const {
 #  define PrintFields_(Name) print(#Name, Name)
     PrintFields_(sourcePragmas_);
-#  ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-    PrintFields_(explicitResourceManagement_);
-#  endif
     PrintFields_(sourcePhaseImports_);
 #  undef PrintFields_
   }
@@ -166,12 +148,6 @@ class JS_PUBLIC_API PrefableCompileOptions {
 
   // The context has specified that source pragmas should be parsed.
   bool sourcePragmas_ : 1;
-
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-  // The context has specified that explicit resource management syntax
-  // should be parsed.
-  bool explicitResourceManagement_ : 1;
-#endif
 
   bool sourcePhaseImports_ : 1;
 };
@@ -351,11 +327,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   }
 
   bool sourcePragmas() const { return prefableOptions_.sourcePragmas(); }
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-  bool explicitResourceManagement() const {
-    return prefableOptions_.explicitResourceManagement();
-  }
-#endif
   bool sourcePhaseImports() const {
     return prefableOptions_.sourcePhaseImports();
   }

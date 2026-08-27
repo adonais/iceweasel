@@ -1047,7 +1047,8 @@ already_AddRefed<GMPParent> GeckoMediaPluginServiceParent::CreateGMPParent() {
     NS_WARNING("Loading media plugin despite lack of sandboxing.");
   }
 #endif
-  RefPtr<GMPParent> gmpParent = new GMPParent();
+  nsCOMPtr<nsISerialEventTarget> gmpThread = GetGMPThread();
+  RefPtr<GMPParent> gmpParent = new GMPParent(gmpThread);
   return gmpParent.forget();
 }
 

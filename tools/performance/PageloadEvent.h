@@ -106,6 +106,9 @@ class PageloadEventData {
   // Define ETLD separately since we want a special setter for it.
   mozilla::Maybe<nsCString> mDomain;
 
+  // First load of mDomain today; set in the parent from browsing history.
+  bool mIsFirstDailyLoad = false;
+
   // Number of page loads after which a normal pageload ping is sent.
   static uint32_t sPageLoadEventCounter;
 
@@ -118,6 +121,9 @@ class PageloadEventData {
   bool HasDomain() const {
     return mDomain.isSome() && !mDomain.value().IsEmpty();
   }
+  const nsACString& GetDomain() const { return mDomain.ref(); }
+
+  void SetIsFirstDailyLoad(bool aValue) { mIsFirstDailyLoad = aValue; }
 
   bool HasLoadTime() const { return loadTime.isSome(); }
 

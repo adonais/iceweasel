@@ -264,24 +264,6 @@ static RangeBehaviour GetRangeBehaviour(
       return RangeBehaviour::CollapseDefaultRangeAndCrossShadowBoundaryRanges;
     }
 
-    if (const CrossShadowBoundaryRange* crossShadowBoundaryRange =
-            aRange->GetCrossShadowBoundaryRange()) {
-      // Check if the existing-other-side boundary in
-      // aRange::mCrossShadowBoundaryRange has the same root
-      // as aNewRoot. If this is the case, it means
-      // aRange::mCrossShadowBoundaryRange can be used to represent this
-      // cross-boundary selection, meanwhile we collapse the default range since
-      // this is a cross-boundary selection.
-      const RangeBoundary& otherSideExistingBoundary =
-          aIsSetStart ? crossShadowBoundaryRange->EndRef()
-                      : crossShadowBoundaryRange->StartRef();
-      const nsINode* otherSideRoot =
-          RangeUtils::ComputeRootNode(otherSideExistingBoundary.GetContainer());
-      if (aNewRoot == otherSideRoot) {
-        return RangeBehaviour::CollapseDefaultRange;
-      }
-    }
-
     // Different root, but same document. So we only collapse the
     // default range if boundaries are allowed to cross shadow boundary.
     return aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes
@@ -1663,28 +1645,27 @@ PrependChild(nsINode* aContainer, nsINode* aChild) {
 
 // Helper function for CutContents, making sure that the current node wasn't
 // removed by mutation events (bug 766426)
-static bool ValidateCurrentNode(nsRange* aRange, RangeSubtreeIterator& aIter) {
+static bool ValidateNodeInRange(nsRange* aRange, nsINode* aNode) {
   bool before, after;
-  nsCOMPtr<nsINode> node = aIter.GetCurrentNode();
-  if (!node) {
+  if (!aNode) {
     // We don't have to worry that the node was removed if it doesn't exist,
     // e.g., the iterator is done.
     return true;
   }
 
-  nsresult rv = RangeUtils::CompareNodeToRange(node, aRange, &before, &after);
+  nsresult rv = RangeUtils::CompareNodeToRange(aNode, aRange, &before, &after);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return false;
   }
 
   if (before || after) {
-    if (node->IsCharacterData()) {
+    if (aNode->IsCharacterData()) {
       // If we're dealing with the start/end container which is a character
       // node, pretend that the node is in the range.
-      if (before && node == aRange->GetStartContainer()) {
+      if (before && aNode == aRange->GetStartContainer()) {
         before = false;
       }
-      if (after && node == aRange->GetEndContainer()) {
+      if (after && aNode == aRange->GetEndContainer()) {
         after = false;
       }
     }
@@ -1880,24 +1861,27 @@ void nsRange::CutContents(DocumentFragment** aFragment,
   RangeSubtreeIterator iter;
 
   aRv = iter.Init(this, AllowRangeCrossShadowBoundary::Yes);
-  if (aRv.Failed()) {
+  if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
 
   if (iter.IsDone()) {
     // There's nothing for us to delete.
     aRv = CollapseRangeAfterDelete(this);
-    if (!aRv.Failed() && aFragment) {
+    if (NS_WARN_IF(aRv.Failed())) {
+      return;
+    }
+    if (aFragment) {
       retval.forget(aFragment);
     }
     return;
   }
 
-  iter.First();
-
   // With the exception of text nodes that contain one of the range
   // end points, the subtree iterator should only give us back subtrees
   // that are completely contained between the range's end points.
+
+  iter.First();
 
   while (!iter.IsDone()) {
     nsCOMPtr<nsINode> nodeToResult;
@@ -1910,7 +1894,7 @@ void nsRange::CutContents(DocumentFragment** aFragment,
 
     iter.Next();
     nsCOMPtr<nsINode> nextNode = iter.GetCurrentNode();
-    while (nextNode && nextNode->IsInclusiveDescendantOf(node)) {
+    while (nextNode && nextNode->IsInclusiveFlatTreeDescendantOf(node)) {
       iter.Next();
       nextNode = iter.GetCurrentNode();
     }
@@ -1934,7 +1918,7 @@ void nsRange::CutContents(DocumentFragment** aFragment,
         // its caret and that appears as some numbers of mutations.  Therefore,
         // this expensive validation needs to run if the accessible caret is now
         // enabled.
-        if (guard.Mutated(0) && !ValidateCurrentNode(this, iter)) {
+        if (guard.Mutated(0) && !ValidateNodeInRange(this, nextNode)) {
           aRv.Throw(NS_ERROR_UNEXPECTED);
           return;
         }
@@ -1969,6 +1953,18 @@ void nsRange::CutContents(DocumentFragment** aFragment,
               false, "The container shouldn't be iterated due to out of range");
           continue;  // Just ignore the illegal case in the release channel.
         }
+      } else if (node->IsShadowRoot()) {
+        // If there is nothing to copy in the shadow root, it's fine to
+        // continue.
+        if ((node == endRef.GetContainer() && endRef.IsStartOfContainer()) ||
+            (node == startRef.GetContainer() && startRef.IsEndOfContainer())) {
+          continue;
+        }
+        // Otherwise, we need to handle all the children.
+        MOZ_ASSERT_IF(node == startRef.GetContainer(),
+                      startRef.IsStartOfContainer());
+        MOZ_ASSERT_IF(node == endRef.GetContainer(), endRef.IsEndOfContainer());
+        nodeToResult = node;
       } else {
         // The current node which is the same as the start container or the end
         // container of the range is not a CharacterData nor an element but the
@@ -2018,18 +2014,12 @@ void nsRange::CutContents(DocumentFragment** aFragment,
     // Set the result to document fragment if we have 'retval'.
     if (retval) {
       nsCOMPtr<nsINode> oldCommonAncestor = commonAncestor;
-      if (!iter.IsDone()) {
-        // Setup the parameters for the next iteration of the loop.
-        if (!nextNode) {
-          aRv.Throw(NS_ERROR_UNEXPECTED);
-          return;
-        }
-
+      if (nextNode) {
         // Get node's and nextNode's common parent. Do this before moving
         // nodes from original DOM to result fragment.
         commonAncestor =
             nsContentUtils::GetClosestCommonInclusiveAncestor(node, nextNode);
-        if (!commonAncestor) {
+        if (NS_WARN_IF(!commonAncestor)) {
           aRv.Throw(NS_ERROR_UNEXPECTED);
           return;
         }
@@ -2038,7 +2028,7 @@ void nsRange::CutContents(DocumentFragment** aFragment,
         while (parentCounterNode && parentCounterNode != commonAncestor) {
           ++parentCount;
           parentCounterNode = parentCounterNode->GetParentNode();
-          if (!parentCounterNode) {
+          if (NS_WARN_IF(!parentCounterNode)) {
             aRv.Throw(NS_ERROR_UNEXPECTED);
             return;
           }
@@ -2046,11 +2036,17 @@ void nsRange::CutContents(DocumentFragment** aFragment,
       }
 
       // Clone the parent hierarchy between commonAncestor and node.
+      // XXX CloneParentsBetween() is not aware of shadow DOM boundaries nor
+      // assigned <slot>s. The spec doesn't say anything about shadow DOM:
+      // https://dom.spec.whatwg.org/#concept-range-extract
+      // It uses inclusive ancestor, not shadow inclusive ancestor, nor flat
+      // tree. Therefore, if `node` is in a shadow of the tree containing
+      // oldCommonAncestor, this may clone an odd tree.
       nsCOMPtr<nsINode> closestAncestor, farthestAncestor;
       aRv = CloneParentsBetween(oldCommonAncestor, node,
                                 getter_AddRefs(closestAncestor),
                                 getter_AddRefs(farthestAncestor));
-      if (aRv.Failed()) {
+      if (NS_WARN_IF(aRv.Failed())) {
         return;
       }
 
@@ -2083,37 +2079,49 @@ void nsRange::CutContents(DocumentFragment** aFragment,
       // Finally, if there is accessible caret, its mutations are also counted.
       // Therefore, we often need to run the expensive validation here.
       if (NS_WARN_IF(guard.Mutated(isCloneNode ? 1 : 2) &&
-                     !ValidateCurrentNode(this, iter))) {
+                     !ValidateNodeInRange(this, nextNode))) {
         aRv.Throw(NS_ERROR_UNEXPECTED);
         return;
       }
     } else if (nodeToResult) {
-      if (const nsCOMPtr<nsINode> parent = nodeToResult->GetParentNode()) {
-        nsMutationGuard guard;
-        parent->RemoveChild(*nodeToResult, aRv);
-        if (MOZ_UNLIKELY(aRv.Failed())) {
-          return;
+      MOZ_ASSERT(!retval);
+      nsMutationGuard guard;
+      uint32_t expectedMutation = 0;
+      if (nodeToResult->IsShadowRoot()) {
+        // If the node is a shadow root, we cannot remove the node since it
+        // never has the parent node. Instead, we should delete the all nodes in
+        // them. Then, it looks like that the nodes in the range are removed.
+        expectedMutation = nodeToResult->GetChildCount();
+        nodeToResult->RemoveAllChildren(true);
+      } else {
+        if (const nsCOMPtr<nsINode> parent = nodeToResult->GetParentNode()) {
+          expectedMutation = 1;
+          parent->RemoveChild(*nodeToResult, aRv);
+          if (NS_WARN_IF(aRv.Failed())) {
+            return;
+          }
         }
-        // When removing the node from document, DevTools may break on the
-        // removal and the user may modify the DOM.  Additionally, when the
-        // removing node contains subdocuments, its `unload` and `beforeunload`
-        // are fired synchronously.  Then, the unloading is also counted as
-        // mutations.  Finally, if there is accessible caret, its mutations are
-        // also counted.  Therefore, we often need to run the expensive
-        // validation here.
-        if (NS_WARN_IF(guard.Mutated(1) && !ValidateCurrentNode(this, iter))) {
-          aRv.Throw(NS_ERROR_UNEXPECTED);
-          return;
-        }
+      }
+      // When removing the node from document, DevTools may break on the
+      // removal and the user may modify the DOM.  Additionally, when the
+      // removing node contains subdocuments, its `unload` and
+      // `beforeunload` are fired synchronously.  Then, the unloading is
+      // also counted as mutations.  Finally, if there is accessible caret,
+      // its mutations are also counted.  Therefore, we often need to run
+      // the expensive validation here.
+      if (NS_WARN_IF(guard.Mutated(expectedMutation) &&
+                     !ValidateNodeInRange(this, nextNode))) {
+        aRv.Throw(NS_ERROR_UNEXPECTED);
+        return;
       }
     }
 
-    if (!iter.IsDone() && retval) {
+    if (nextNode && retval) {
       // Find the equivalent of commonAncestor in the cloned tree.
-      nsCOMPtr<nsINode> newCloneAncestor = nodeToResult;
+      nsINode* newCloneAncestor = nodeToResult;
       for (uint32_t i = parentCount; i; --i) {
         newCloneAncestor = newCloneAncestor->GetParentNode();
-        if (!newCloneAncestor) {
+        if (NS_WARN_IF(!newCloneAncestor)) {
           aRv.Throw(NS_ERROR_UNEXPECTED);
           return;
         }
@@ -2750,8 +2758,8 @@ already_AddRefed<DocumentFragment> nsRange::CreateContextualFragment(
     return nullptr;
   }
 
-  return nsContentUtils::CreateContextualFragment(mStart.GetContainer(),
-                                                  aFragment, false, aRv);
+  return nsContentUtils::CreateContextualFragment(
+      mStart.GetContainer(), aFragment, false, Nothing(), aRv);
 }
 
 already_AddRefed<DocumentFragment> nsRange::CreateContextualFragment(
@@ -2774,8 +2782,8 @@ already_AddRefed<DocumentFragment> nsRange::CreateContextualFragment(
     return nullptr;
   }
 
-  return nsContentUtils::CreateContextualFragment(mStart.GetContainer(),
-                                                  *compliantString, false, aRv);
+  return nsContentUtils::CreateContextualFragment(
+      mStart.GetContainer(), *compliantString, false, Nothing(), aRv);
 }
 
 nsresult nsRange::GetUsedFontFaces(nsLayoutUtils::UsedFontFaceList& aResult,

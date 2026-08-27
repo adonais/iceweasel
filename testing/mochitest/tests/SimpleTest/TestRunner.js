@@ -903,6 +903,23 @@ TestRunner.addAssertionCount = function (count) {
   }
 };
 
+// On failure, save a profile of the test as a CI artifact (the plain-mochitest
+// counterpart of browser-test.js's notifyProfilerOfTestEnd). The profiler runs
+// in the parent process, so gather and write the profile there via
+// SpecialPowers, then return the message for the content-side structured logger
+// to report.
+TestRunner._saveFailureProfile = function (testURL) {
+  return SpecialPowers.spawnChrome([testURL], async profileName => {
+    const { shouldSaveFailureProfile, saveProfileToUploadDir } =
+      ChromeUtils.importESModule(
+        "resource://testing-common/TestProfilerArtifact.sys.mjs"
+      );
+    return shouldSaveFailureProfile()
+      ? await saveProfileToUploadDir(profileName)
+      : null;
+  });
+};
+
 TestRunner.testUnloaded = function (result, runtime) {
   // If we're in a debug build, check assertion counts.  This code is
   // similar to the code in Tester_nextTest in browser-test.js used
@@ -981,17 +998,43 @@ TestRunner.testUnloaded = function (result, runtime) {
       }
     }
 
-    TestRunner.structuredLogger.testEnd(
-      TestRunner.currentTestURL,
-      result,
-      "PASS",
-      TestRunner._currentTestTimedOut
-        ? "Test timed out"
-        : "Finished in " + runtime + "ms",
-      { runtime }
-    );
+    // Save the failing test's profile (and log where it went) before testEnd so
+    // the dashboards associate the artifact with this test. Guard the whole step
+    // so a problem saving the profile can never stop the run from proceeding.
+    (async function () {
+      try {
+        if (result != "PASS") {
+          let message = await TestRunner._saveFailureProfile(
+            TestRunner.currentTestURL
+          );
+          if (message) {
+            TestRunner.structuredLogger.testStatus(
+              TestRunner.currentTestURL,
+              null,
+              "FAIL",
+              "PASS",
+              message
+            );
+          }
+        }
+      } catch (e) {
+        TestRunner.structuredLogger.info(
+          "Failed to save failure profile: " + e
+        );
+      }
 
-    TestRunner.doNextTest();
+      TestRunner.structuredLogger.testEnd(
+        TestRunner.currentTestURL,
+        result,
+        "PASS",
+        TestRunner._currentTestTimedOut
+          ? "Test timed out"
+          : "Finished in " + runtime + "ms",
+        { runtime }
+      );
+
+      TestRunner.doNextTest();
+    })();
   });
 };
 

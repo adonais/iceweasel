@@ -482,6 +482,39 @@ TEST(AudioSessionManager, Interrupt_TransientMovesSelectedToInterruptedAndBack)
   }
 }
 
+TEST(AudioSessionManager, Interrupt_TransientSurvivesTheSuspensionItCauses)
+{
+  // Interrupting a session suspends its audible sources, which makes the
+  // browsing context inaudible. That inaudibility must not be mistaken for the
+  // page going quiet on its own: the session stays Interrupted until focus
+  // returns, so the restore has something to re-activate.
+  for (AudioSessionType type : kAllAudioSessionTypesExceptAuto) {
+    for (ControlType control : kBothControlTypes) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBc = 97;
+
+      controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                            control, type);
+      ASSERT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+
+      controller->InterruptAudioSession(AudioSessionInterruptKind::Transient);
+      ASSERT_EQ(StateOf(controller, kBc), AudioSessionState::Interrupted);
+
+      // The interruption's own suspension reports the sources as inaudible.
+      controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eInaudible,
+                                            control, type);
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Interrupted);
+      EXPECT_NE(controller->GetAudioSessionRecordForTesting(kBc), nullptr);
+
+      // Focus returns and the sources resume, so the context is audible again.
+      controller->RestoreAudioSession();
+      controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                            control, type);
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+    }
+  }
+}
+
 TEST(AudioSessionManager, Interrupt_PermanentIsNotRestorable)
 {
   // A permanent audio-focus loss moves the selected session to Inactive and

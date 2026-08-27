@@ -153,6 +153,8 @@ struct DefaultJitOptions {
   bool js_regexp_buffer_boundaries;
   bool regexp_possessive_quantifier;
   bool regexp_optimization;
+  bool regexp_masked_dispatch;
+  bool regexp_simd_in_rc;
   bool regexp_peephole_optimization;
   bool regexp_unroll;
   bool regexp_quick_check;

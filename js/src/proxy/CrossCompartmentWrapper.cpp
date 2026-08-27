@@ -33,14 +33,14 @@ using namespace js;
 
 #define NOTHING (true)
 
-static bool MarkAtoms(JSContext* cx, jsid id) {
-  cx->markId(id);
+static bool RecordReferences(JSContext* cx, jsid id) {
+  cx->recordRefToId(id);
   return true;
 }
 
-static bool MarkAtoms(JSContext* cx, HandleIdVector ids) {
+static bool RecordReferences(JSContext* cx, HandleIdVector ids) {
   for (size_t i = 0; i < ids.length(); i++) {
-    cx->markId(ids[i]);
+    cx->recordRefToId(ids[i]);
   }
   return true;
 }
@@ -48,7 +48,7 @@ static bool MarkAtoms(JSContext* cx, HandleIdVector ids) {
 bool CrossCompartmentWrapper::getOwnPropertyDescriptor(
     JSContext* cx, HandleObject wrapper, HandleId id,
     MutableHandle<mozilla::Maybe<PropertyDescriptor>> desc) const {
-  PIERCE(cx, wrapper, MarkAtoms(cx, id),
+  PIERCE(cx, wrapper, RecordReferences(cx, id),
          Wrapper::getOwnPropertyDescriptor(cx, wrapper, id, desc),
          cx->compartment()->wrap(cx, desc));
 }
@@ -58,20 +58,21 @@ bool CrossCompartmentWrapper::defineProperty(JSContext* cx,
                                              Handle<PropertyDescriptor> desc,
                                              ObjectOpResult& result) const {
   Rooted<PropertyDescriptor> desc2(cx, desc);
-  PIERCE(cx, wrapper, MarkAtoms(cx, id) && cx->compartment()->wrap(cx, &desc2),
+  PIERCE(cx, wrapper,
+         RecordReferences(cx, id) && cx->compartment()->wrap(cx, &desc2),
          Wrapper::defineProperty(cx, wrapper, id, desc2, result), NOTHING);
 }
 
 bool CrossCompartmentWrapper::ownPropertyKeys(
     JSContext* cx, HandleObject wrapper, MutableHandleIdVector props) const {
   PIERCE(cx, wrapper, NOTHING, Wrapper::ownPropertyKeys(cx, wrapper, props),
-         MarkAtoms(cx, props));
+         RecordReferences(cx, props));
 }
 
 bool CrossCompartmentWrapper::delete_(JSContext* cx, HandleObject wrapper,
                                       HandleId id,
                                       ObjectOpResult& result) const {
-  PIERCE(cx, wrapper, MarkAtoms(cx, id),
+  PIERCE(cx, wrapper, RecordReferences(cx, id),
          Wrapper::delete_(cx, wrapper, id, result), NOTHING);
 }
 
@@ -136,14 +137,14 @@ bool CrossCompartmentWrapper::isExtensible(JSContext* cx, HandleObject wrapper,
 
 bool CrossCompartmentWrapper::has(JSContext* cx, HandleObject wrapper,
                                   HandleId id, bool* bp) const {
-  PIERCE(cx, wrapper, MarkAtoms(cx, id), Wrapper::has(cx, wrapper, id, bp),
-         NOTHING);
+  PIERCE(cx, wrapper, RecordReferences(cx, id),
+         Wrapper::has(cx, wrapper, id, bp), NOTHING);
 }
 
 bool CrossCompartmentWrapper::hasOwn(JSContext* cx, HandleObject wrapper,
                                      HandleId id, bool* bp) const {
-  PIERCE(cx, wrapper, MarkAtoms(cx, id), Wrapper::hasOwn(cx, wrapper, id, bp),
-         NOTHING);
+  PIERCE(cx, wrapper, RecordReferences(cx, id),
+         Wrapper::hasOwn(cx, wrapper, id, bp), NOTHING);
 }
 
 static bool WrapReceiver(JSContext* cx, HandleObject wrapper,
@@ -171,7 +172,8 @@ bool CrossCompartmentWrapper::get(JSContext* cx, HandleObject wrapper,
   RootedValue receiverCopy(cx, receiver);
   {
     AutoRealm call(cx, wrappedObject(wrapper));
-    if (!MarkAtoms(cx, id) || !WrapReceiver(cx, wrapper, &receiverCopy)) {
+    if (!RecordReferences(cx, id) ||
+        !WrapReceiver(cx, wrapper, &receiverCopy)) {
       return false;
     }
 
@@ -189,7 +191,7 @@ bool CrossCompartmentWrapper::set(JSContext* cx, HandleObject wrapper,
   RootedValue valCopy(cx, v);
   RootedValue receiverCopy(cx, receiver);
   PIERCE(cx, wrapper,
-         MarkAtoms(cx, id) && cx->compartment()->wrap(cx, &valCopy) &&
+         RecordReferences(cx, id) && cx->compartment()->wrap(cx, &valCopy) &&
              WrapReceiver(cx, wrapper, &receiverCopy),
          Wrapper::set(cx, wrapper, id, valCopy, receiverCopy, result), NOTHING);
 }
@@ -198,13 +200,13 @@ bool CrossCompartmentWrapper::getOwnEnumerablePropertyKeys(
     JSContext* cx, HandleObject wrapper, MutableHandleIdVector props) const {
   PIERCE(cx, wrapper, NOTHING,
          Wrapper::getOwnEnumerablePropertyKeys(cx, wrapper, props),
-         MarkAtoms(cx, props));
+         RecordReferences(cx, props));
 }
 
 bool CrossCompartmentWrapper::enumerate(JSContext* cx, HandleObject wrapper,
                                         MutableHandleIdVector props) const {
   PIERCE(cx, wrapper, NOTHING, Wrapper::enumerate(cx, wrapper, props),
-         MarkAtoms(cx, props));
+         RecordReferences(cx, props));
 }
 
 bool CrossCompartmentWrapper::call(JSContext* cx, HandleObject wrapper,
@@ -341,7 +343,7 @@ RegExpShared* CrossCompartmentWrapper::regexp_toShared(
 
   // Get an equivalent RegExpShared associated with the current compartment.
   Rooted<JSAtom*> source(cx, re->getSource());
-  cx->markAtom(source);
+  cx->recordRef(source);
   return cx->zone()->regExps().get(cx, source, re->getFlags());
 }
 

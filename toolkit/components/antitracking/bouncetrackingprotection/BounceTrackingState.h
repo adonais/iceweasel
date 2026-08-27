@@ -6,6 +6,7 @@
 #define mozilla_BounceTrackingState_h
 
 #include "BounceTrackingRecord.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/OriginAttributes.h"
@@ -78,14 +79,14 @@ class BounceTrackingState : public nsIWebProgressListener,
   // record, or append a client-side redirect to the current bounce tracking
   // record.
   // Should only be called for top level content navigations.
+  // aLoadId is the navigation's load identifier
+  // (nsDocShellLoadState::GetLoadIdentifier). A single logical navigation can
+  // reach this method more than once (speculative parent load, process switch,
+  // or a re-open of the same load) all carrying the same load id; only the
+  // first call for a given id advances the state machine.
   [[nodiscard]] nsresult OnStartNavigation(
       nsIPrincipal* aTriggeringPrincipal,
-      const bool aHasValidUserGestureActivation);
-
-  // Whether the given BrowsingContext should hold a BounceTrackingState
-  // instance to monitor bounce tracking navigations.
-  static bool ShouldCreateBounceTrackingStateForBC(
-      dom::CanonicalBrowsingContext* aBrowsingContext);
+      const bool aHasValidUserGestureActivation, uint64_t aLoadId);
 
   // Whether the given principal should be tracked for bounce tracking.
   static bool ShouldTrackPrincipal(nsIPrincipal* aPrincipal);
@@ -129,6 +130,12 @@ class BounceTrackingState : public nsIWebProgressListener,
   // Record to keep track of extended navigation data. Reset on extended
   // navigation end.
   RefPtr<BounceTrackingRecord> mBounceTrackingRecord;
+
+  // Load id of the most recent navigation OnStartNavigation ran the state
+  // machine for. Used to ignore duplicate calls for the same logical
+  // navigation, which happen because one navigation can span multiple
+  // DocumentLoadListeners across process switches and speculative loads.
+  Maybe<uint64_t> mLastStartedLoadId;
 
   // Timer to wait to wait for a client redirect after a navigation ends.
   RefPtr<nsITimer> mClientBounceDetectionTimeout;

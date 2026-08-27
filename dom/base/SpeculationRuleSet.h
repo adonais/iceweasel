@@ -9,6 +9,7 @@
 #include "mozilla/ResultVariant.h"
 #include "mozilla/UniquePtr.h"
 #include "nsStringFwd.h"
+#include "nsTArrayForwardDeclare.h"
 
 class nsIGlobalObject;
 class nsIURI;
@@ -19,6 +20,8 @@ class ErrorResult;
 
 namespace mozilla::dom {
 
+class Document;
+class Element;
 class PrefetchCandidates;
 enum class SpeculationRuleParseError;
 
@@ -37,7 +40,10 @@ class SpeculationRuleSet final {
   static void ReportParseError(nsIGlobalObject* aGlobal,
                                SpeculationRuleParseError aError);
 
-  void ConsiderLoads(PrefetchCandidates* aCandidates);
+  void ConsiderLoads(PrefetchCandidates* aCandidates,
+                     const nsTArray<const Element*>& aLinks);
+
+  void SetUseCounters(Document& aDocument) const;
 };
 
 }  // namespace mozilla::dom

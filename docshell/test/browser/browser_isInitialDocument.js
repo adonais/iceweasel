@@ -29,7 +29,7 @@ add_task(async function new_about_blank_tab() {
 
 add_task(async function iframe_initial_about_blank() {
   await BrowserTestUtils.withNewTab(
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/document-builder.sjs?html=com",
     async browser => {
       info("Create an iframe without any explicit location");
@@ -85,7 +85,7 @@ add_task(async function iframe_initial_about_blank() {
         await new Promise(resolve => {
           iframe.addEventListener("load", resolve, { once: true });
           iframe.src =
-            // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+            // eslint-disable-next-line sdl/no-insecure-url
             "http://example.org/document-builder.sjs?html=org-iframe";
           content.document.body.appendChild(iframe);
         });
@@ -172,13 +172,13 @@ add_task(async function window_open() {
   }
 
   await BrowserTestUtils.withNewTab(
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/document-builder.sjs?html=com",
     async browser => {
       info("Use window.open() with cross-origin document");
       await testWindowOpen({
         browser,
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         args: ["http://example.org/document-builder.sjs?html=org-popup"],
         isCrossOrigin: true,
         willLoad: true,
@@ -187,7 +187,7 @@ add_task(async function window_open() {
       info("Use window.open() with same-origin document");
       await testWindowOpen({
         browser,
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         args: ["http://example.com/document-builder.sjs?html=com-popup"],
         isCrossOrigin: false,
         willLoad: true,
@@ -214,7 +214,7 @@ add_task(async function window_open() {
 
 add_task(async function document_open() {
   await BrowserTestUtils.withNewTab(
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/document-builder.sjs?html=com",
     async browser => {
       is(browser.browsingContext.currentWindowGlobal.isInitialDocument, false);

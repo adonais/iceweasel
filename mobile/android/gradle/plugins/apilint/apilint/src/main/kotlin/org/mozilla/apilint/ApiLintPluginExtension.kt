@@ -37,7 +37,7 @@ abstract class ApiLintPluginExtension @Inject constructor(objects: ObjectFactory
         jsonResultFileName.convention("apilint-result.json")
         skipClassesRegex.convention(emptyList())
         helpCommand.convention { variantName ->
-            "\$ ./gradlew apiUpdateFile${variantName}"
+            "\$ ./mach gradle apiUpdateFile$variantName"
         }
     }
 

@@ -168,7 +168,7 @@ export class SidebarState {
    * @returns {XULElement}
    */
   get #pinnedTabsItemsWrapper() {
-    return this.#pinnedTabsContainerEl.shadowRoot.querySelector(
+    return this.#pinnedTabsContainerEl?.shadowRoot?.querySelector(
       "[part=items-wrapper]"
     );
   }
@@ -276,13 +276,9 @@ export class SidebarState {
         case "panelOpen":
           // we need to know if we have a command value before finalizing panelOpen
           break;
-        case "expandedPinnedTabsHeight":
-        case "collapsedPinnedTabsHeight":
-          this.updatePinnedTabsHeight();
-          break;
-        case "expandedToolsHeight":
-        case "collapsedToolsHeight":
-          this.updateToolsHeight();
+        case "pinnedTabsHeight":
+        case "toolsHeight":
+          this.#props[key] = value;
           break;
         default:
           this[key] = value;
@@ -632,7 +628,7 @@ export class SidebarState {
   }
 
   set pinnedTabsDragActive(active) {
-    this.#props.pinnedDragActive = active;
+    this.#props.pinnedTabsDragActive = active;
 
     let itemsWrapperHeight =
       this.#controllerGlobal.windowUtils.getBoundsWithoutFlushing(
@@ -791,17 +787,38 @@ export class SidebarState {
    * height (if available).
    */
   updatePinnedTabsHeight() {
-    if (!lazy.verticalTabsEnabled) {
-      if (this.#pinnedTabsContainerEl) {
-        this.#pinnedTabsContainerEl.style.height = "";
-      }
+    if (!this.#pinnedTabsContainerEl || this.pinnedTabsDragActive) {
       return;
     }
-    if (this.launcherExpanded && this.expandedPinnedTabsHeight) {
-      this.#pinnedTabsContainerEl.style.height = `${this.expandedPinnedTabsHeight}px`;
-    } else if (!this.launcherExpanded && this.collapsedPinnedTabsHeight) {
-      this.#pinnedTabsContainerEl.style.height = `${this.collapsedPinnedTabsHeight}px`;
+    if (!lazy.verticalTabsEnabled) {
+      this.#pinnedTabsContainerEl.style.height = "";
+      return;
     }
+    const preferredHeight = this.launcherExpanded
+      ? this.expandedPinnedTabsHeight
+      : this.collapsedPinnedTabsHeight;
+    if (!preferredHeight) {
+      // Nothing stored for this state, so clear any height left over from the
+      // other state and let the container size itself to its contents.
+      this.#pinnedTabsContainerEl.style.height = "";
+      return;
+    }
+    const itemsWrapper = this.#pinnedTabsItemsWrapper;
+    const itemsWrapperHeight = itemsWrapper
+      ? this.#controllerGlobal.windowUtils.getBoundsWithoutFlushing(
+          itemsWrapper
+        ).height
+      : 0;
+    if (!itemsWrapperHeight) {
+      // The pinned tabs have no layout to clamp the stored height to, so leave
+      // the container's height alone until they do.
+      return;
+    }
+    // Clamp for display only, never overwriting the user's saved preference.
+    this.#pinnedTabsContainerEl.style.height = `${Math.min(
+      preferredHeight,
+      itemsWrapperHeight
+    )}px`;
   }
 
   /**

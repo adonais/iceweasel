@@ -58,6 +58,9 @@ DISALLOWED_PREFS = {
     "security.turn_off_all_security_so_that_viruses_can_take_over_this_computer": (
         "this pref is automation-only and is unsafe to enable outside tests"
     ),
+    "security.sandbox.content.level": (
+        "changing this value can lower the security of clients"
+    ),
 }
 
 

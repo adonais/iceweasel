@@ -21,7 +21,7 @@ PR_BEGIN_EXTERN_C
 ** zero is returned.
 */
 NSPR_API(PRFloat64)
-PR_strtod(const char *s00, char **se);
+PR_strtod(const char* s00, char** se);
 
 /*
 ** PR_cnvtf()
@@ -29,7 +29,8 @@ PR_strtod(const char *s00, char **se);
 ** prcsn - number of digits of precision to generate floating
 ** point value.
 */
-NSPR_API(void) PR_cnvtf(char *buf, PRIntn bufsz, PRIntn prcsn, PRFloat64 fval);
+NSPR_API(void)
+PR_cnvtf(char* buf, PRIntn bufsz, PRIntn prcsn, PRFloat64 fval);
 
 /*
 ** PR_dtoa() converts double to a string.
@@ -42,8 +43,9 @@ NSPR_API(void) PR_cnvtf(char *buf, PRIntn bufsz, PRIntn prcsn, PRFloat64 fval);
 **     0 ==> shortest string that yields d when read in
 **           and rounded to nearest.
 */
-NSPR_API(PRStatus) PR_dtoa(PRFloat64 d, PRIntn mode, PRIntn ndigits,
-                           PRIntn *decpt, PRIntn *sign, char **rve, char *buf, PRSize bufsize);
+NSPR_API(PRStatus)
+PR_dtoa(PRFloat64 d, PRIntn mode, PRIntn ndigits, PRIntn* decpt, PRIntn* sign,
+        char** rve, char* buf, PRSize bufsize);
 
 PR_END_EXTERN_C
 

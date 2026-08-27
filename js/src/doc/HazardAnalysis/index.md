@@ -98,3 +98,10 @@ For more complicated cases, ask on the Matrix channel (see [spidermonkey.dev][sp
 [rooting]: https://searchfox.org/firefox-main/source/js/public/RootingAPI.h
 [spidermonkey]: https://spidermonkey.dev/
 [CFG]: CFG.md
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+CFG
+```

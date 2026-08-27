@@ -183,15 +183,17 @@ class NeqoHttp3Conn final {
 
   nsresult WebTransportSendDatagram(uint64_t aSessionId,
                                     nsTArray<uint8_t>& aData,
-                                    uint64_t aTrackingId) {
-    return neqo_http3conn_webtransport_send_datagram(this, aSessionId, &aData,
-                                                     aTrackingId);
+                                    uint64_t aTrackingId, uint64_t aSendGroupId,
+                                    int64_t aSendOrder) {
+    return neqo_http3conn_webtransport_send_datagram(
+        this, aSessionId, &aData, aTrackingId, aSendGroupId, aSendOrder);
   }
 
   nsresult ConnectUdpSendDatagram(uint64_t aSessionId, nsTArray<uint8_t>& aData,
-                                  uint64_t aTrackingId) {
-    return neqo_http3conn_connect_udp_send_datagram(this, aSessionId, &aData,
-                                                    aTrackingId);
+                                  uint64_t aTrackingId, uint64_t aSendGroupId,
+                                  int64_t aSendOrder) {
+    return neqo_http3conn_connect_udp_send_datagram(
+        this, aSessionId, &aData, aTrackingId, aSendGroupId, aSendOrder);
   }
 
   nsresult WebTransportMaxDatagramSize(uint64_t aSessionId, uint64_t* aResult) {
@@ -199,10 +201,37 @@ class NeqoHttp3Conn final {
                                                          aResult);
   }
 
-  nsresult WebTransportSetSendOrder(uint64_t aSessionId,
-                                    Maybe<int64_t> aSendOrder) {
+  nsresult WebTransportSetSendOrder(uint64_t aSessionId, int64_t aSendOrder) {
     return neqo_http3conn_webtransport_set_sendorder(this, aSessionId,
-                                                     aSendOrder.ptrOr(nullptr));
+                                                     &aSendOrder);
+  }
+
+  nsresult WebTransportSetSendGroup(uint64_t aSessionId,
+                                    uint64_t aSendGroupId) {
+    return neqo_http3conn_webtransport_set_sendgroup(this, aSessionId,
+                                                     aSendGroupId);
+  }
+
+  nsresult RegisterWebTransportSendGroup(uint64_t aSessionId,
+                                         uint64_t aGroupId) {
+    return neqo_http3conn_webtransport_register_send_group(this, aSessionId,
+                                                           aGroupId);
+  }
+  nsresult GetWebTransportSessionProtocol(uint64_t aSessionId,
+                                          nsACString& aProtocol) {
+    return neqo_http3conn_webtransport_session_protocol(this, aSessionId,
+                                                        &aProtocol);
+  }
+
+  nsresult ExportWebTransportKeyingMaterial(
+      uint64_t aSessionId, const nsTArray<uint8_t>& aLabel,
+      const nsTArray<uint8_t>& aContext, nsTArray<uint8_t>& aKeyingMaterial) {
+    constexpr uint32_t kKeyingMaterialLength = 32;
+    aKeyingMaterial.SetLength(kKeyingMaterialLength);
+    return neqo_http3conn_export_keying_material(
+        this, aSessionId, aLabel.Elements(), aLabel.Length(),
+        aContext.Elements(), aContext.Length(), aKeyingMaterial.Elements(),
+        kKeyingMaterialLength);
   }
 
  private:

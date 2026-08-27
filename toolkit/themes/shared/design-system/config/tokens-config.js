@@ -576,14 +576,19 @@ function formatNovaNewtabTokens({ mediaQuery, args }) {
  */
 const shouldSkipToken = ({ overrideIdentifier, componentName, token }) => {
   // Skip any tokens that belong to a set of overrides.
-  if (
-    !overrideIdentifier &&
-    (OVERRIDE_IDENTIFIERS.some(({ name }) =>
-      token.name.includes(`-${name}-`)
-    ) ||
-      token.override)
-  ) {
-    return true;
+  try {
+    if (
+      !overrideIdentifier &&
+      (OVERRIDE_IDENTIFIERS.some(({ name }) =>
+        token.name.includes(`-${name}-`)
+      ) ||
+        token.override)
+    ) {
+      return true;
+    }
+  } catch (e) {
+    console.error(token);
+    throw e;
   }
 
   // Ignore base/default tokens if a set of overrides is specified.

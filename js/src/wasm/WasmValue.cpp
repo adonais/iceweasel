@@ -795,21 +795,21 @@ bool wasm::ToWebAssemblyValue(JSContext* cx, HandleValue val, ValType type,
 
 template <typename Debug = NoDebug>
 bool ToJSValue_i8(JSContext* cx, int8_t src, MutableHandleValue dst) {
-  dst.set(Int32Value(src));
+  dst.setInt32(src);
   Debug::print(src);
   return true;
 }
 
 template <typename Debug = NoDebug>
 bool ToJSValue_i16(JSContext* cx, int16_t src, MutableHandleValue dst) {
-  dst.set(Int32Value(src));
+  dst.setInt32(src);
   Debug::print(src);
   return true;
 }
 
 template <typename Debug = NoDebug>
 bool ToJSValue_i32(JSContext* cx, int32_t src, MutableHandleValue dst) {
-  dst.set(Int32Value(src));
+  dst.setInt32(src);
   Debug::print(src);
   return true;
 }
@@ -822,21 +822,21 @@ bool ToJSValue_i64(JSContext* cx, int64_t src, MutableHandleValue dst) {
   if (!bi) {
     return false;
   }
-  dst.set(BigIntValue(bi));
+  dst.setBigInt(bi);
   Debug::print(src);
   return true;
 }
 
 template <typename Debug = NoDebug>
 bool ToJSValue_f32(JSContext* cx, float src, MutableHandleValue dst) {
-  dst.set(DoubleValue(src));
+  dst.setDouble(src);
   Debug::print(src);
   return true;
 }
 
 template <typename Debug = NoDebug>
 bool ToJSValue_f64(JSContext* cx, double src, MutableHandleValue dst) {
-  dst.set(DoubleValue(src));
+  dst.setDouble(src);
   Debug::print(src);
   return true;
 }
@@ -874,7 +874,7 @@ bool ToJSValue_lossless(JSContext* cx, const void* src, MutableHandleValue dst,
   if (!srcGlobal) {
     return false;
   }
-  dst.set(ObjectValue(*srcGlobal.get()));
+  dst.setObject(*srcGlobal.get());
   return true;
 }
 

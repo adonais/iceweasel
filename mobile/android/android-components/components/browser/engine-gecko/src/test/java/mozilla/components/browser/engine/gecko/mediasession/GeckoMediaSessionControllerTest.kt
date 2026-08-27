@@ -4,6 +4,7 @@
 
 package mozilla.components.browser.engine.gecko.mediasession
 
+import mozilla.components.concept.engine.mediasession.MediaSession
 import mozilla.components.support.test.mock
 import org.junit.Test
 import org.mockito.Mockito.times
@@ -45,5 +46,17 @@ class GeckoMediaSessionControllerTest {
 
         controller.muteAudio(true)
         verify(geckoViewMediaSession, times(1)).muteAudio(true)
+
+        controller.onSystemAudioFocusChanged(MediaSession.SystemAudioFocusChange.GAIN)
+        verify(geckoViewMediaSession, times(1))
+            .notifySystemAudioFocusChange(GeckoViewMediaSession.SYSTEM_AUDIO_FOCUS_GAIN)
+
+        controller.onSystemAudioFocusChanged(MediaSession.SystemAudioFocusChange.TRANSIENT_LOSS)
+        verify(geckoViewMediaSession, times(1))
+            .notifySystemAudioFocusChange(GeckoViewMediaSession.SYSTEM_AUDIO_FOCUS_TRANSIENT_LOSS)
+
+        controller.onSystemAudioFocusChanged(MediaSession.SystemAudioFocusChange.PERMANENT_LOSS)
+        verify(geckoViewMediaSession, times(1))
+            .notifySystemAudioFocusChange(GeckoViewMediaSession.SYSTEM_AUDIO_FOCUS_PERMANENT_LOSS)
     }
 }

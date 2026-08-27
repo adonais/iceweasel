@@ -16,7 +16,7 @@ PEPPERONI_CSS = (
 )
 ADD_TO_CART_CSS = "button[data-id=add-to-cart]"
 CHECKOUT_CSS = "a[data-id=checkout]"
-GOOD_CSS = "input[name=policyCheck]"
+GOOD_CSS = "[name='contactInfo.firstName']"
 BAD_TEXT = "Looks like we left this page in the oven too long"
 CART_CSS = "a[href*='/order/cart']"
 CHECKOUT_CSS = "a[href*='/order/checkout']"

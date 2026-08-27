@@ -72,9 +72,6 @@ size_t JSObject2WrappedJSMap::SizeOfWrappedJS(
 /***************************************************************************/
 // implement Native2WrappedNativeMap...
 
-Native2WrappedNativeMap::Native2WrappedNativeMap()
-    : mMap(XPC_NATIVE_MAP_LENGTH) {}
-
 size_t Native2WrappedNativeMap::SizeOfIncludingThis(
     mozilla::MallocSizeOf mallocSizeOf) const {
   size_t n = mallocSizeOf(this);
@@ -87,9 +84,6 @@ size_t Native2WrappedNativeMap::SizeOfIncludingThis(
 
 /***************************************************************************/
 // implement IID2NativeInterfaceMap...
-
-IID2NativeInterfaceMap::IID2NativeInterfaceMap()
-    : mMap(XPC_NATIVE_INTERFACE_MAP_LENGTH) {}
 
 size_t IID2NativeInterfaceMap::SizeOfIncludingThis(
     mozilla::MallocSizeOf mallocSizeOf) const {
@@ -104,9 +98,6 @@ size_t IID2NativeInterfaceMap::SizeOfIncludingThis(
 /***************************************************************************/
 // implement ClassInfo2NativeSetMap...
 
-ClassInfo2NativeSetMap::ClassInfo2NativeSetMap()
-    : mMap(XPC_NATIVE_SET_MAP_LENGTH) {}
-
 size_t ClassInfo2NativeSetMap::ShallowSizeOfIncludingThis(
     mozilla::MallocSizeOf mallocSizeOf) {
   size_t n = mallocSizeOf(this);
@@ -116,9 +107,6 @@ size_t ClassInfo2NativeSetMap::ShallowSizeOfIncludingThis(
 
 /***************************************************************************/
 // implement ClassInfo2WrappedNativeProtoMap...
-
-ClassInfo2WrappedNativeProtoMap::ClassInfo2WrappedNativeProtoMap()
-    : mMap(XPC_NATIVE_PROTO_MAP_LENGTH) {}
 
 size_t ClassInfo2WrappedNativeProtoMap::SizeOfIncludingThis(
     mozilla::MallocSizeOf mallocSizeOf) const {
@@ -174,8 +162,6 @@ bool NativeSetHasher::match(Key key, Lookup lookup) {
   }
   return !Addition || Addition == *(CurrentInTable++);
 }
-
-NativeSetMap::NativeSetMap() : mSet(XPC_NATIVE_SET_MAP_LENGTH) {}
 
 size_t NativeSetMap::SizeOfIncludingThis(
     mozilla::MallocSizeOf mallocSizeOf) const {

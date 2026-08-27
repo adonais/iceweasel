@@ -16,18 +16,14 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import mozilla.components.browser.icons.IconRequest
-import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.ktx.android.view.putCompoundDrawablesRelativeWithIntrinsicBounds
 import mozilla.components.support.ktx.kotlin.tryGetHostFromUrl
 import org.mozilla.focus.R
-import org.mozilla.focus.cookiebannerreducer.CookieBannerReducerItem
-import org.mozilla.focus.cookiebannerreducer.CookieBannerReducerStore
 import org.mozilla.focus.databinding.DialogTrackingProtectionSheetBinding
 import org.mozilla.focus.engine.EngineSharedPreferencesListener.TrackerChanged
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.ext.installedDate
 import org.mozilla.focus.ext.settings
-import org.mozilla.focus.ui.theme.FocusTheme
 import java.text.NumberFormat
 import java.util.Locale
 import com.google.android.material.R as materialR
@@ -64,9 +60,6 @@ interface TrackingProtectionPanelInteractor {
 
     /** Called when the user taps the connection security info row. */
     fun showConnectionInfo()
-
-    /** Called when the user taps the cookie banner exception row. */
-    fun showCookieBannerExceptionsDetailsPanel()
 }
 
 /**
@@ -75,7 +68,6 @@ interface TrackingProtectionPanelInteractor {
 class TrackingProtectionPanel(
     context: Context,
     private val lifecycleOwner: LifecycleOwner,
-    private val cookieBannerReducerStore: CookieBannerReducerStore,
     private val siteInfo: SiteSecurityInfo,
     private val interactor: TrackingProtectionPanelInteractor,
 ) : BottomSheetDialog(context) {
@@ -91,7 +83,6 @@ class TrackingProtectionPanel(
         updateTrackingProtection()
         updateTrackersBlocked()
         updateTrackersState()
-        updateCookieBannerException()
         setListeners()
     }
 
@@ -115,33 +106,6 @@ class TrackingProtectionPanel(
             binding.siteFavicon,
             IconRequest(siteInfo.tabUrl, isPrivate = true),
         )
-    }
-
-    private fun updateCookieBannerException() {
-        binding.cookieBannerException.apply {
-            setContent {
-                FocusTheme {
-                    val cookieBannerExceptionStatus =
-                        cookieBannerReducerStore.observeAsComposableState { state ->
-                            state.cookieBannerReducerStatus
-                        }.value
-                    val shouldShowCookieBannerItem =
-                        cookieBannerReducerStore.observeAsComposableState { state ->
-                            state.shouldShowCookieBannerItem
-                        }.value
-
-                    binding.cookieBannerException.isVisible = shouldShowCookieBannerItem == true
-
-                    if (cookieBannerExceptionStatus != null) {
-                        CookieBannerReducerItem(
-                            cookieBannerReducerStatus = cookieBannerExceptionStatus,
-                            preferenceOnClickListener = { interactor.showCookieBannerExceptionsDetailsPanel() },
-                        )
-                    }
-                }
-            }
-            isTransitionGroup = true
-        }
     }
 
     private fun updateConnectionState() {

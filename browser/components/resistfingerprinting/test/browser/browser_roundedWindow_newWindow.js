@@ -5,9 +5,6 @@
 
 const CC = Components.Constructor;
 
-let gMaxAvailWidth;
-let gMaxAvailHeight;
-
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -15,12 +12,6 @@ add_setup(async function () {
       ["privacy.resistFingerprinting", true],
     ],
   });
-
-  // Calculate the maximum available size.
-  let maxAvailSize = await calcMaximumAvailSize();
-
-  gMaxAvailWidth = maxAvailSize.maxAvailWidth;
-  gMaxAvailHeight = maxAvailSize.maxAvailHeight;
 });
 
 add_task(async function test_new_window() {
@@ -33,32 +24,40 @@ add_task(async function test_new_window() {
     TEST_PATH + "file_dummy.html"
   );
 
-  await SpecialPowers.spawn(
-    tab.linkedBrowser,
-    [{ gMaxAvailWidth, gMaxAvailHeight }],
-    async function (input) {
-      is(
-        content.screen.width,
-        input.gMaxAvailWidth,
-        "The screen.width has a correct rounded value"
-      );
-      is(
-        content.screen.height,
-        input.gMaxAvailHeight,
-        "The screen.height has a correct rounded value"
-      );
-      is(
-        content.innerWidth,
-        input.gMaxAvailWidth,
-        "The window.innerWidth has a correct rounded value"
-      );
-      is(
-        content.innerHeight,
-        input.gMaxAvailHeight,
-        "The window.innerHeight has a correct rounded value"
-      );
-    }
-  );
+  // When resisting fingerprinting, the content window can't observe the real
+  // screen: screen and screen.avail are collapsed onto the content viewport, so
+  // screen.width/height, screen.availWidth/Height and innerWidth/Height all
+  // report the same value. We assert that invariant instead of an exact pixel
+  // size, because the actual size depends on how much space the chrome leaves
+  // for the content area, which varies by platform and by chrome configuration
+  // (e.g. browser.nova.enabled), see bug 2054792.
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    let { screen } = content;
+
+    is(
+      screen.width,
+      content.innerWidth,
+      "screen.width is spoofed to the content viewport width"
+    );
+    is(
+      screen.height,
+      content.innerHeight,
+      "screen.height is spoofed to the content viewport height"
+    );
+    is(
+      screen.availWidth,
+      screen.width,
+      "screen.availWidth is spoofed to screen.width"
+    );
+    is(
+      screen.availHeight,
+      screen.height,
+      "screen.availHeight is spoofed to screen.height"
+    );
+
+    Assert.greater(screen.width, 0, "The spoofed width is positive");
+    Assert.greater(screen.height, 0, "The spoofed height is positive");
+  });
 
   BrowserTestUtils.removeTab(tab);
   await BrowserTestUtils.closeWindow(win);

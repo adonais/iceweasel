@@ -263,15 +263,27 @@ bool DMABufSurface::UseDmaBufGL(GLContext* aGLContext) {
     return false;
   }
 
-  static bool useDmabufGL = [&]() {
-    if (!aGLContext->IsExtensionSupported(gl::GLContext::OES_EGL_image)) {
-      gfxCriticalNote << "DMABufSurface::UseDmaBufGL(): no OES_EGL_image.";
-      return false;
-    }
-    return true;
-  }();
+  // dma-buf is only used with hardware GL rendering.
+  if (gfx::gfxVars::UseSoftwareWebRender()) {
+    gfxCriticalNote << "DMABufSurface::UseDmaBufGL(): refusing dma-buf with "
+                       "software rendering.";
+    return false;
+  }
 
-  return useDmabufGL;
+  // Checked per context (not cached): mGL and the snapshot context can differ.
+  if (!aGLContext->IsExtensionSupported(gl::GLContext::OES_EGL_image)) {
+    gfxCriticalNote << "DMABufSurface::UseDmaBufGL(): no OES_EGL_image.";
+    return false;
+  }
+
+  const auto& egl = gl::GLContextEGL::Cast(aGLContext)->mEgl;
+  if (!egl->IsExtensionSupported(EGLExtension::EXT_image_dma_buf_import)) {
+    gfxCriticalNote
+        << "DMABufSurface::UseDmaBufGL(): no EXT_image_dma_buf_import.";
+    return false;
+  }
+
+  return true;
 }
 
 bool DMABufSurface::UseDmaBufExportExtension(GLContext* aGLContext) {
@@ -545,7 +557,7 @@ void DMABufSurface::FenceSet() {
       egl->IsExtensionSupported(EGLExtension::ANDROID_native_fence_sync)) {
     FenceDeleteLocked(lock);
 
-    mSync = egl->fCreateSync(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr);
+    mSync = egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr);
     if (mSync) {
       auto rawFd = egl->fDupNativeFenceFDANDROID(mSync);
       mSyncFd = new gfx::FileHandleWrapper(UniqueFileHandle(rawFd));
@@ -566,7 +578,8 @@ void DMABufSurface::FenceWait(RefPtr<gl::GLContext> aGL,
 
   const EGLint attribs[] = {LOCAL_EGL_SYNC_NATIVE_FENCE_FD_ANDROID,
                             syncFd.get(), LOCAL_EGL_NONE};
-  EGLSync sync = egl->fCreateSync(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
+  EGLSync sync =
+      egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
   if (!sync) {
     gfxCriticalNoteOnce << "CreateSync failed";
     int rawFd = syncFd.get();
@@ -1120,6 +1133,7 @@ bool DMABufSurfaceRGBA::ImportSurfaceDescriptor(
   mBufferModifier = desc.modifier()[0];
   mUID = desc.uid();
   mPID = desc.pid();
+  mHDRMetadata = mozilla::gfx::HDRMetadata();
 
   LOGDMABUF(
       "DMABufSurfaceRGBA::ImportSurfaceDescriptor() UID %d size %d x %d\n",
@@ -1194,7 +1208,7 @@ bool DMABufSurfaceRGBA::Serialize(
       mColorRange, mozilla::gfx::ColorSpace2::UNKNOWN,
       mozilla::gfx::TransferFunction::Default, 0, fenceFDs, mUID,
       mCanRecycle ? getpid() : 0, refCountFDs,
-      /* semaphoreFd */ nullptr, /* semaphoreFdIsSyncFd */ false);
+      /* semaphoreFd */ nullptr, /* semaphoreFdIsSyncFd */ false, mHDRMetadata);
   return true;
 }
 
@@ -2070,6 +2084,7 @@ bool DMABufSurfaceYUV::ImportSurfaceDescriptor(
   mGbmBufferFlags = aDesc.flags();
   mUID = aDesc.uid();
   mPID = aDesc.pid();
+  mHDRMetadata = aDesc.hdrMetadata();
 
   LOGDMABUF("DMABufSurfaceYUV::ImportSurfaceDescriptor() UID %d", mUID);
 
@@ -2147,7 +2162,7 @@ bool DMABufSurfaceYUV::Serialize(
       height, widthBytes, heightBytes, format, strides, offsets,
       GetYUVColorSpace(), mColorRange, mColorPrimaries, mTransferFunction,
       mWPChromaLocation, fenceFDs, mUID, mCanRecycle ? getpid() : 0,
-      refCountFDs, mSemaphoreFd, mSemaphoreFdIsSyncFd);
+      refCountFDs, mSemaphoreFd, mSemaphoreFdIsSyncFd, mHDRMetadata);
   return true;
 }
 

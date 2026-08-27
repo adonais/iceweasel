@@ -71,8 +71,6 @@ const intermittently_loaded_scripts = {
     // Session store.
     "resource://gre/modules/sessionstore/SessionHistory.sys.mjs",
 
-    // Cookie banner handling.
-    "resource://gre/actors/CookieBannerChild.sys.mjs",
     "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 
     // Canonical URL detection behind pref `browser.tabs.notes.enabled`

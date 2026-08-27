@@ -276,7 +276,7 @@ void FileReaderSync::ReadAsDataURL(Blob& aBlob, nsAString& aResult,
 
   scratchResult.Append(encodedData);
 
-  aResult = scratchResult;
+  aResult = std::move(scratchResult);
 }
 
 nsresult FileReaderSync::ConvertStream(nsIInputStream* aStream,

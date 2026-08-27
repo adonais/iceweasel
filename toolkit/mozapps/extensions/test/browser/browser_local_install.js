@@ -16,7 +16,7 @@ const XPI_INCOMPATIBLE_ID = "incompatible-xpi@tests.mozilla.org";
 // retrieving updates from HTTP (which is restored in a
 // `registerCleanupFunction()` or at the end of the task).
 //
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 const BASE_URL = "http://fake-updates.example.com";
 
 const server = AddonTestUtils.createHttpServer({

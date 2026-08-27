@@ -16,7 +16,8 @@ EnumSet<ValidatePrincipalOptions> PrincipalValidationOptions() {
   EnumSet<ValidatePrincipalOptions> options;
   if (StaticPrefs::dom_indexedDB_testing_allowContentSystem() &&
       xpc::IsInAutomation()) {
-    options += ValidatePrincipalOptions::AllowSystem;
+    options += ValidatePrincipalOptions::AllowNotLoadedOrigin;
+    options += ValidatePrincipalOptions::AlwaysAllowSystem;
   }
   return options;
 }

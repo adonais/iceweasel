@@ -158,7 +158,8 @@ function resolveSupportUrl(supportPage) {
  * default to suppressed (show: false)
  *
  * @param {string} toolName
- * @param {object} [body] - tool result body
+ * @param {object} [body] - tool result body. A `pending` body means the tool
+ *   is still running, so the in-progress label is used for the row.
  * @returns {{ show: boolean, label: ActionLogLabel | null, pendingLabel: ActionLogLabel | null, link: ActionLogLabelLink | null }}
  */
 export function getActionLogConfigForTool(toolName, body) {
@@ -166,7 +167,8 @@ export function getActionLogConfigForTool(toolName, body) {
   if (!cfg) {
     return { show: false, label: null, pendingLabel: null, link: null };
   }
-  const label = typeof cfg.label === "function" ? cfg.label(body) : cfg.label;
+  const completedLabel =
+    typeof cfg.label === "function" ? cfg.label(body) : cfg.label;
   const link = cfg.link
     ? {
         l10nName: cfg.link.l10nName,
@@ -177,6 +179,11 @@ export function getActionLogConfigForTool(toolName, body) {
   if (pendingLabel && link) {
     pendingLabel = { ...pendingLabel, link };
   }
+  // A still-running tool carries a `pending` placeholder body; show its
+  // in-progress label on the row rather than the completed one.
+  const label = body?.pending
+    ? (pendingLabel ?? completedLabel)
+    : completedLabel;
   return {
     show: true,
     label,

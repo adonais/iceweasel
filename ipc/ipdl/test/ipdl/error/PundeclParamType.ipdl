@@ -1,0 +1,8 @@
+//error: argument typename `FARGLEGARGLE' of message `Msg' has not been declared
+
+[ChildProc=any]
+protocol PundeclParamType {
+
+child: async Msg(FARGLEGARGLE p);
+
+};

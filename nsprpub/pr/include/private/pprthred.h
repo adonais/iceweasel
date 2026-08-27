@@ -30,9 +30,9 @@ PR_BEGIN_EXTERN_C
 ** This call is not normally needed unless you create your own native
 ** thread. PR_Init does this automatically for the primordial thread.
 */
-NSPR_API(PRThread*) PR_AttachThread(PRThreadType type,
-                                    PRThreadPriority priority,
-                                    PRThreadStack *stack);
+NSPR_API(PRThread*)
+PR_AttachThread(PRThreadType type, PRThreadPriority priority,
+                PRThreadStack* stack);
 
 /*
 ** Detach the nspr thread from the currently executing native thread.
@@ -45,22 +45,24 @@ NSPR_API(PRThread*) PR_AttachThread(PRThreadType type,
 **
 ** This call returns after the nspr thread object is destroyed.
 */
-NSPR_API(void) PR_DetachThread(void);
+NSPR_API(void)
+PR_DetachThread(void);
 
 /*
 ** Get the id of the named thread. Each thread is assigned a unique id
 ** when it is created or attached.
 */
-NSPR_API(PRUint32) PR_GetThreadID(PRThread *thread);
+NSPR_API(PRUint32)
+PR_GetThreadID(PRThread* thread);
 
 /*
 ** Set the procedure that is called when a thread is dumped. The procedure
 ** will be applied to the argument, arg, when called. Setting the procedure
 ** to NULL effectively removes it.
 */
-typedef void (*PRThreadDumpProc)(PRFileDesc *fd, PRThread *t, void *arg);
-NSPR_API(void) PR_SetThreadDumpProc(
-    PRThread* thread, PRThreadDumpProc dump, void *arg);
+typedef void (*PRThreadDumpProc)(PRFileDesc* fd, PRThread* t, void* arg);
+NSPR_API(void)
+PR_SetThreadDumpProc(PRThread* thread, PRThreadDumpProc dump, void* arg);
 
 /*
 ** Get this thread's affinity mask.  The affinity mask is a 32 bit quantity
@@ -70,31 +72,35 @@ NSPR_API(void) PR_SetThreadDumpProc(
 **
 ** Returns 0 on success, -1 on failure.
 */
-NSPR_API(PRInt32) PR_GetThreadAffinityMask(PRThread *thread, PRUint32 *mask);
+NSPR_API(PRInt32)
+PR_GetThreadAffinityMask(PRThread* thread, PRUint32* mask);
 
 /*
 ** Set this thread's affinity mask.
 **
 ** Returns 0 on success, -1 on failure.
 */
-NSPR_API(PRInt32) PR_SetThreadAffinityMask(PRThread *thread, PRUint32 mask );
+NSPR_API(PRInt32)
+PR_SetThreadAffinityMask(PRThread* thread, PRUint32 mask);
 
 /*
 ** Set the default CPU Affinity mask.
 **
 */
-NSPR_API(PRInt32) PR_SetCPUAffinityMask(PRUint32 mask);
+NSPR_API(PRInt32)
+PR_SetCPUAffinityMask(PRUint32 mask);
 
 /*
 ** Show status of all threads to standard error output.
 */
-NSPR_API(void) PR_ShowStatus(void);
+NSPR_API(void)
+PR_ShowStatus(void);
 
 /*
 ** Set thread recycle mode to on (1) or off (0)
 */
-NSPR_API(void) PR_SetThreadRecycleMode(PRUint32 flag);
-
+NSPR_API(void)
+PR_SetThreadRecycleMode(PRUint32 flag);
 
 /*---------------------------------------------------------------------------
 ** THREAD PRIVATE FUNCTIONS FOR GARBAGE COLLECTIBLE THREADS
@@ -111,49 +117,53 @@ NSPR_API(void) PR_SetThreadRecycleMode(PRUint32 flag);
 ** Same as PR_CreateThread except that the thread is marked as garbage
 ** collectible.
 */
-NSPR_API(PRThread*) PR_CreateThreadGCAble(PRThreadType type,
-        void (*start)(void *arg),
-        void *arg,
-        PRThreadPriority priority,
-        PRThreadScope scope,
-        PRThreadState state,
-        PRUint32 stackSize);
+NSPR_API(PRThread*)
+PR_CreateThreadGCAble(PRThreadType type, void (*start)(void* arg), void* arg,
+                      PRThreadPriority priority, PRThreadScope scope,
+                      PRThreadState state, PRUint32 stackSize);
 
 /*
 ** Same as PR_AttachThread except that the thread being attached is marked as
 ** garbage collectible.
 */
-NSPR_API(PRThread*) PR_AttachThreadGCAble(PRThreadType type,
-        PRThreadPriority priority,
-        PRThreadStack *stack);
+NSPR_API(PRThread*)
+PR_AttachThreadGCAble(PRThreadType type, PRThreadPriority priority,
+                      PRThreadStack* stack);
 
 /*
 ** Mark the thread as garbage collectible.
 */
-NSPR_API(void) PR_SetThreadGCAble(void);
+NSPR_API(void)
+PR_SetThreadGCAble(void);
 
 /*
 ** Unmark the thread as garbage collectible.
 */
-NSPR_API(void) PR_ClearThreadGCAble(void);
+NSPR_API(void)
+PR_ClearThreadGCAble(void);
 
 /*
-** This routine prevents all other GC able threads from running. This call is needed by
+** This routine prevents all other GC able threads from running. This call is
+* needed by
 ** the garbage collector.
 */
-NSPR_API(void) PR_SuspendAll(void);
+NSPR_API(void)
+PR_SuspendAll(void);
 
 /*
-** This routine unblocks all other GC able threads that were suspended from running by
+** This routine unblocks all other GC able threads that were suspended from
+* running by
 ** PR_SuspendAll(). This call is needed by the garbage collector.
 */
-NSPR_API(void) PR_ResumeAll(void);
+NSPR_API(void)
+PR_ResumeAll(void);
 
 /*
 ** Return the thread stack pointer of the given thread.
 ** Needed by the garbage collector.
 */
-NSPR_API(void *) PR_GetSP(PRThread *thread);
+NSPR_API(void*)
+PR_GetSP(PRThread* thread);
 
 /*
 ** Save the registers that the GC would find interesting into the thread
@@ -168,7 +178,8 @@ NSPR_API(void *) PR_GetSP(PRThread *thread);
 **
 ** This function simply calls the internal function _MD_HomeGCRegisters().
 */
-NSPR_API(PRWord *) PR_GetGCRegisters(PRThread *t, int isCurrent, int *np);
+NSPR_API(PRWord*)
+PR_GetGCRegisters(PRThread* t, int isCurrent, int* np);
 
 /*
 ** (Get|Set)ExecutionEnvironent
@@ -178,8 +189,10 @@ NSPR_API(PRWord *) PR_GetGCRegisters(PRThread *t, int isCurrent, int *np);
 **
 ** There's no locking required around these calls.
 */
-NSPR_API(void*) GetExecutionEnvironment(PRThread *thread);
-NSPR_API(void) SetExecutionEnvironment(PRThread* thread, void *environment);
+NSPR_API(void*)
+GetExecutionEnvironment(PRThread* thread);
+NSPR_API(void)
+SetExecutionEnvironment(PRThread* thread, void* environment);
 
 /*
 ** Enumeration function that applies "func(thread,i,arg)" to each active
@@ -188,17 +201,17 @@ NSPR_API(void) SetExecutionEnvironment(PRThread* thread, void *environment);
 ** stops, returning the failure value from PR_EnumerateThreads.
 ** Needed by the garbage collector.
 */
-typedef PRStatus (PR_CALLBACK *PREnumerator)(PRThread *t, int i, void *arg);
-NSPR_API(PRStatus) PR_EnumerateThreads(PREnumerator func, void *arg);
+typedef PRStatus(PR_CALLBACK* PREnumerator)(PRThread* t, int i, void* arg);
+NSPR_API(PRStatus)
+PR_EnumerateThreads(PREnumerator func, void* arg);
 
 /*
 ** Signature of a thread stack scanning function. It is applied to every
 ** contiguous group of potential pointers within a thread. Count denotes the
 ** number of pointers.
 */
-typedef PRStatus
-(PR_CALLBACK *PRScanStackFun)(PRThread* t,
-                              void** baseAddr, PRUword count, void* closure);
+typedef PRStatus(PR_CALLBACK* PRScanStackFun)(PRThread* t, void** baseAddr,
+                                              PRUword count, void* closure);
 
 /*
 ** Applies scanFun to all contiguous groups of potential pointers
@@ -207,8 +220,8 @@ typedef PRStatus
 ** is aborted, and the status value is returned.
 */
 NSPR_API(PRStatus)
-PR_ThreadScanStackPointers(PRThread* t,
-                           PRScanStackFun scanFun, void* scanClosure);
+PR_ThreadScanStackPointers(PRThread* t, PRScanStackFun scanFun,
+                           void* scanClosure);
 
 /*
 ** Calls PR_ThreadScanStackPointers for every thread.
@@ -231,7 +244,8 @@ PR_GetStackSpaceLeft(PRThread* t);
 /*
 ** Get a pointer to the primordial CPU.
 */
-NSPR_API(struct _PRCPU *) _PR_GetPrimordialCPU(void);
+NSPR_API(struct _PRCPU*)
+_PR_GetPrimordialCPU(void);
 
 /*---------------------------------------------------------------------------
 ** THREAD SYNCHRONIZATION PRIVATE FUNCTIONS
@@ -244,40 +258,45 @@ NSPR_API(struct _PRCPU *) _PR_GetPrimordialCPU(void);
 ** This may fail if memory is tight or if some operating system resource
 ** is low.
 */
-NSPR_API(PRMonitor*) PR_NewNamedMonitor(const char* name);
+NSPR_API(PRMonitor*)
+PR_NewNamedMonitor(const char* name);
 
 /*
 ** Test and then lock the lock if it's not already locked by some other
 ** thread. Return PR_FALSE if some other thread owned the lock at the
 ** time of the call.
 */
-NSPR_API(PRBool) PR_TestAndLock(PRLock *lock);
+NSPR_API(PRBool)
+PR_TestAndLock(PRLock* lock);
 
 /*
 ** Test and then enter the mutex associated with the monitor if it's not
 ** already entered by some other thread. Return PR_FALSE if some other
 ** thread owned the mutex at the time of the call.
 */
-NSPR_API(PRBool) PR_TestAndEnterMonitor(PRMonitor *mon);
+NSPR_API(PRBool)
+PR_TestAndEnterMonitor(PRMonitor* mon);
 
 /*
 ** Return the number of times that the current thread has entered the
 ** mutex. Returns zero if the current thread has not entered the mutex.
 */
-NSPR_API(PRIntn) PR_GetMonitorEntryCount(PRMonitor *mon);
+NSPR_API(PRIntn)
+PR_GetMonitorEntryCount(PRMonitor* mon);
 
 /*
 ** Just like PR_CEnterMonitor except that if the monitor is owned by
 ** another thread NULL is returned.
 */
-NSPR_API(PRMonitor*) PR_CTestAndEnterMonitor(void *address);
+NSPR_API(PRMonitor*)
+PR_CTestAndEnterMonitor(void* address);
 
 /*---------------------------------------------------------------------------
 ** PLATFORM-SPECIFIC INITIALIZATION FUNCTIONS
 ---------------------------------------------------------------------------*/
 
 /* I think PR_GetMonitorEntryCount is useless. All you really want is this... */
-#define PR_InMonitor(m)     (PR_GetMonitorEntryCount(m) > 0)
+#define PR_InMonitor(m) (PR_GetMonitorEntryCount(m) > 0)
 
 /*---------------------------------------------------------------------------
 ** Special X-Lock hack for client

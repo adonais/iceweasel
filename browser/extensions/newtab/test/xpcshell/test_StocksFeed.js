@@ -637,6 +637,64 @@ add_task(async function test_scheduled_retry_bails_after_teardown() {
   sandbox.restore();
 });
 
+add_task(async function test_expire_cache_clears_snapshot_and_refetches() {
+  const sandbox = sinon.createSandbox();
+  // An empty Merino result drives the error path on the forced refetch.
+  const fetchStub = stubFeed(sandbox, { fetchResult: [] });
+  const feed = new StocksFeed();
+  const setSpy = sandbox.spy(feed.cache, "set");
+  feed.store = {
+    dispatch: sinon.spy(),
+    getState: () => ({
+      Prefs: {
+        values: {
+          "widgets.stocks.enabled": true,
+          "widgets.system.stocks.enabled": true,
+        },
+      },
+    }),
+  };
+  // Pretend an earlier successful fetch left tickers in memory.
+  feed.tickers = [{ ticker: "SPY" }];
+  feed.lastUpdated = 500;
+
+  await feed.onAction({
+    type: actionTypes.DISCOVERY_STREAM_DEV_EXPIRE_CACHE,
+  });
+
+  Assert.ok(setSpy.calledWith("stocks", {}), "clears the saved snapshot");
+  Assert.equal(fetchStub.callCount, 1, "refetches after expiring the cache");
+  const [update] = feed.store.dispatch.getCalls().at(-1).args;
+  Assert.equal(update.data.error, true, "a failing refetch shows the error");
+  Assert.deepEqual(update.data.tickers, [], "old tickers are cleared");
+  sandbox.restore();
+});
+
+add_task(
+  async function test_expire_cache_clears_snapshot_while_disabled_without_fetch() {
+    const sandbox = sinon.createSandbox();
+    const fetchStub = stubFeed(sandbox, { fetchResult: [] });
+    const feed = new StocksFeed();
+    const setSpy = sandbox.spy(feed.cache, "set");
+    feed.store = {
+      dispatch: sinon.spy(),
+      getState: () => ({
+        Prefs: { values: { "widgets.stocks.enabled": false } },
+      }),
+    };
+    feed.tickers = [{ ticker: "SPY" }];
+
+    await feed.onAction({
+      type: actionTypes.DISCOVERY_STREAM_DEV_EXPIRE_CACHE,
+    });
+
+    Assert.ok(setSpy.calledWith("stocks", {}), "still clears the snapshot");
+    Assert.equal(feed.tickers.length, 0, "still clears in-memory tickers");
+    Assert.ok(!fetchStub.called, "does not fetch while disabled");
+    sandbox.restore();
+  }
+);
+
 add_task(async function test_success_cancels_pending_retry() {
   const sandbox = sinon.createSandbox();
   const feed = new StocksFeed();

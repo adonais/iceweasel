@@ -202,6 +202,7 @@ load 1234726-1.svg
 load 1258920.html
 load 1322537-1.html
 load 1322537-2.html
+load 1322643.svg
 load 1322852.html
 load 1348564.svg
 load 1402013.html
@@ -273,7 +274,9 @@ load 1836831.html
 load 1840195-1.html
 load 1848851.html
 load 1882921-1.html
+load 1932954.html
 asserts(5-20) load 1941838.html
 load 1953296.html
 load 1982067-1.html
 skip-if(isDebugBuild&&Android) load 1993379-1.html # bug 1467887
+load 1906769-1.html

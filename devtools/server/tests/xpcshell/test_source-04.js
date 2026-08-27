@@ -19,9 +19,12 @@ add_task(
       debuggee2.__name = "debuggee2.js";
       server.disallowNewThreadGlobals();
 
-      // Load first copy of the source file. The first call to "loadSubScript" will
+      // Load first copy of the source file. The first call to "loadSubScriptWithOptions" will
       // create a ScriptSourceObject and a JSScript which references it.
-      loadSubScript(SOURCE_URL, debuggee1);
+      loadSubScriptWithOptions(SOURCE_URL, {
+        target: debuggee1,
+        allowUnsafeURL: true,
+      });
 
       await promise;
 
@@ -48,7 +51,7 @@ add_task(
       Assert.equal(pausedOne, true);
 
       // Load second copy of the source file. The second call will attempt to
-      // re-use JSScript objects because that is what loadSubScript does for
+      // re-use JSScript objects because that is what loadSubScriptWithOptions does for
       // instances of the same file that are loaded in the system principal in
       // the same compartment.
       //
@@ -56,7 +59,10 @@ add_task(
       // of the time a Debugger.Source will only have a single Debugger.Script
       // associated with a given function, but in the context of explicitly
       // cloned JSScripts, this is not the case, and we need to handle that.
-      loadSubScript(SOURCE_URL, debuggee2);
+      loadSubScriptWithOptions(SOURCE_URL, {
+        target: debuggee2,
+        allowUnsafeURL: true,
+      });
 
       // Ensure that the breakpoint was properly applied to the JSScipt loaded
       // in the second global.

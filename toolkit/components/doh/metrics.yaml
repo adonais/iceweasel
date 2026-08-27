@@ -21,6 +21,7 @@ doh:
       - https://bugzil.la/1603779
       - https://bugzil.la/1654714
       - https://bugzil.la/2037081
+      - https://bugzil.la/2050056
     data_reviews:
       - https://bugzil.la/1573840
       - https://bugzil.la/1631609
@@ -68,7 +69,7 @@ doh:
         type: string
       platform:
         description: >
-          Comma-separated list of platform attributes that would cause split-horizon issues (vpn, proxy, nrpt)
+          Comma-separated list of platform attributes that would cause split-horizon issues (vpn, proxy, nrpt, privateDns)
         type: string
 
   state_enabled:
@@ -339,11 +340,13 @@ networking:
       present" 7: "enterprise-enabled" 8: "vpn" 9: "proxy" 10: "nrpt" 11:
       "parental" 12: "modifiedRoots" 13: "thirdPartyRoots" 14: "google"
       15: "youtube" 16: "zscaler" 17: "canary" 18: "ignored"
+      19: "privateDns"
       This metric was generated to correspond to the Legacy Telemetry
       scalar networking.doh_heuristics_result.
     bugs:
       - https://bugzil.la/1784258
       - https://bugzil.la/2037081
+      - https://bugzil.la/2050056
     data_reviews:
       - https://bugzil.la/1784258
     notification_emails:
@@ -361,6 +364,7 @@ networking:
     bugs:
       - https://bugzil.la/1784258
       - https://bugzil.la/2037081
+      - https://bugzil.la/2050056
     data_reviews:
       - https://bugzil.la/1784258
     notification_emails:

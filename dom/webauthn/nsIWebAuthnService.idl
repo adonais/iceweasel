@@ -32,7 +32,7 @@ interface nsIWebAuthnAutoFillEntry: nsISupports
     readonly attribute Array<uint8_t> credentialId;
 };
 
-[scriptable, uuid(e236a9b4-a26f-11ed-b6cc-07a9834e19b1)]
+[scriptable, uuid(3dde2d1b-bef6-40e1-a781-a058eb50c570)]
 interface nsIWebAuthnService : nsISupports
 {
     // IsUserVerifyingPlatformAuthenticatorAvailable
@@ -110,6 +110,12 @@ interface nsIWebAuthnService : nsISupports
         in boolean hasUserVerification,
         in boolean isUserConsenting,
         in boolean isUserVerified);
+
+    // Returns true if a virtual authenticator identified by the given id is
+    // stored in the Virtual Authenticator Database. WebDriver uses this to
+    // raise an "invalid argument" error for commands that reference an unknown
+    // authenticatorId.
+    boolean hasVirtualAuthenticator(in ACString authenticatorId);
 
     // Removes a previously-added virtual authenticator, as identified by its
     // id. See

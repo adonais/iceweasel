@@ -1,0 +1,11 @@
+//error: lexically invalid characters `~SomeMsg();
+
+[ChildProc=any]
+protocol PdtorReserved {
+
+    // it's an error to use old-style dtor syntax
+
+child:
+    ~SomeMsg();
+
+};

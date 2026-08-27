@@ -1,0 +1,18 @@
+{
+  "description": "A vendored version of eslint-plugin-sdl with just the rule that we need",
+  "bugs": {
+    "url": "https://bugzilla.mozilla.org/enter_bug.cgi??component=Lint%20and%20Formatting&product=Developer%20Infrastructure"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mozilla-firefox/firefox"
+  },
+  "main": "index.mjs",
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "notes(private)": "We don't want to publish to npm, so this is marked as private",
+  "private": true
+}

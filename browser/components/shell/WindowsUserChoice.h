@@ -28,6 +28,34 @@
 bool CheckBrowserUserChoiceHashes();
 
 /*
+ * Check whether the UserChoice Protection Driver (UCPD) service is currently
+ * running. Running does not imply that it locks the UserChoice keys, as that
+ * varies by version and is verified by CanRenameUserChoiceAssociationKey().
+ *
+ * @return true if the service exists and is running, false otherwise.
+ */
+bool IsUserChoiceProtectionDriverRunning();
+
+/*
+ * Check whether a UserChoice write for aExt would currently be permitted by
+ * renaming its association key to a temporary name and back.
+ *
+ * A rename is used as the probe because it is the step SetUserChoiceRegistry()
+ * in the WDBA depends on to reach a locked UserChoice subkey, and because it
+ * leaves the subkey untouched. Writing to it instead would bump its last write
+ * time, invalidating the sibling Hash value (see GenerateUserChoiceHash()) and
+ * prompting Windows to reset the current default.
+ *
+ * @param aExt  Association to probe, either a protocol (L"http") or a file
+ *              extension (L".pdf").
+ *
+ * @return true if the association key was renamed and renamed back, false
+ *   otherwise. False if the rename back failed, in which case aExt has no
+ *   association key.
+ */
+bool CanRenameUserChoiceAssociationKey(const wchar_t* aExt);
+
+/*
  * Result from CheckUserChoiceHash()
  *
  * NOTE: Currently the only positive result is OK_V1 , but the enum

@@ -14,9 +14,6 @@ namespace mozilla::intl {
 
 #if USE_RUST_UNICODE_BIDI
 using namespace ffi;
-
-Bidi::Bidi() = default;
-Bidi::~Bidi() = default;
 #else
 Bidi::Bidi() { mBidi = ubidi_open(); }
 Bidi::~Bidi() { ubidi_close(mBidi.GetMut()); }

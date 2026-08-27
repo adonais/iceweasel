@@ -59,6 +59,7 @@ ScriptLoadContext::ScriptLoadContext(
       mInCompilingList(false),
       mWasCompiledOMT(false),
       mIsPreload(false),
+      mIsCoalescedModulePreload(false),
       mUnreportedPreloadError(NS_OK),
       mLineNo(1),
       mColumnNo(0),
@@ -89,6 +90,36 @@ void ScriptLoadContext::MaybeUnblockOnload() {
   if (mLoadBlockedDocument) {
     mLoadBlockedDocument->UnblockOnload(false);
     mLoadBlockedDocument = nullptr;
+  }
+}
+
+void ScriptLoadContext::NotifyPreloadCoalescingResult() {
+  MOZ_ASSERT(mIsCoalescedModulePreload);
+
+  if (HasStopped()) {
+    return;
+  }
+
+  MOZ_ASSERT(!Channel());
+
+  JS::loader::ModuleLoadRequest* request = mRequest->AsModuleRequest();
+  MOZ_ASSERT(request->IsTopLevel());
+
+  if (request->mModuleScript) {
+    // Fetching produced a module script, even if it has a parse error.
+    NotifyStop(NS_OK);
+    MOZ_ASSERT(HasStopped());
+  } else if (request->IsFinished()) {
+    // The fetch failed, or the request was canceled before it finished. Either
+    // way there will be no module script, so this is the element's last chance
+    // to hear about the load.
+    NotifyStop(NS_ERROR_FAILURE);
+    MOZ_ASSERT(HasStopped());
+  } else {
+    // The top-level module is still being fetched.
+    // The result of the fetch will be notified via
+    // ModuleLoaderBase::ResumeWaitingRequests or Cancel.
+    MOZ_ASSERT(request->IsFetching());
   }
 }
 

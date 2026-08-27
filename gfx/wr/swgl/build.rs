@@ -57,6 +57,10 @@ fn process_imports(
             }
         } else if line.starts_with("#version ") || line.starts_with("#extension ") {
             // ignore
+        } else if line.trim_ascii_start().find('#').is_some() {
+            let processed = line.replace("__VERSION__", "__SWGL_GLSL_VERSION__");
+            output.push_str(&processed);
+            output.push('\n');
         } else {
             output.push_str(line);
             output.push('\n');
@@ -69,7 +73,7 @@ fn translate_shader(
     shader_dir: &str,
     suppressed_env_vars: &mut Option<Vec<EnvVarGuard>>,
 ) {
-    let mut imported = String::from("#define SWGL 1\n#define __VERSION__ 150\n");
+    let mut imported = String::from("#define SWGL 1\n#define __SWGL_GLSL_VERSION__ 150\n");
     let _ = writeln!(
         imported,
         "#define WR_MAX_VERTEX_TEXTURE_WIDTH {}U",

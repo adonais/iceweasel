@@ -757,7 +757,7 @@ nsresult SheetLoadData::VerifySheetReadyToParse(nsresult aStatus,
     }
     mLoader->mReporter->AddConsoleReport(
         flag, "CSS Loader"_ns, PropertiesFile::CSS_PROPERTIES, referrerSpec, 0,
-        0, errorMessage, {sheetUri, contentType16});
+        0, errorMessage, {std::move(sheetUri), std::move(contentType16)});
     if (flag == nsIScriptError::errorFlag) {
       LOG_WARN(
           ("  Ignoring sheet with improper MIME type %s", contentType.get()));

@@ -33,7 +33,6 @@ plugins {
     id 'org.mozilla.conventions.mach-tasks'
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.dependency.analysis)
-    alias(libs.plugins.detekt)
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.ksp)
     alias(libs.plugins.spotless)
@@ -304,7 +303,7 @@ afterEvaluate {
 
 subprojects { project ->
     // Perform spotless lint in GeckoView projects only.
-    // Sync with spotless_projects in mobile/android/geckoview/gradle.configure.
+    // Sync with spotless_projects in mobile/android/gradle.configure.
     def projectName = project.getName()
     if (projectName.startsWith('geckoview')
             || projectName == 'annotations'
@@ -399,7 +398,7 @@ tasks.named("ktlintFormat").configure {
     mobileProjects.each { dependsOn "${it}:ktlintFormat" }
 }
 tasks.named("detekt").configure {
-    // NOTE: We are replacing the default 'detekt' task.
+    group = "verification"
     description = "Runs detekt on all mobile projects."
     mobileProjects.each { dependsOn "${it}:detekt" }
 }

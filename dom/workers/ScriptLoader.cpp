@@ -188,6 +188,18 @@ nsresult ChannelFromScriptURL(
       rv = loadInfo->SetCspEventListener(cspEventListener);
       NS_ENSURE_SUCCESS(rv, rv);
     }
+
+    // Bug 2048884: copy the owning BrowsingContext id so requests initiated by
+    // the worker report the correct frameId. This does not apply to shared or
+    // service workers, which have no reference frame.
+    if (aWorkerPrivate) {
+      uint64_t bcID = aWorkerPrivate->AssociatedBrowsingContextID();
+      if (bcID) {
+        nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+        rv = loadInfo->SetAssociatedBrowsingContextID(bcID);
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+    }
   }
 
   if (aReferrerInfo) {

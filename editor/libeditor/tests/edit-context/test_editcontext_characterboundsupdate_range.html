@@ -1,0 +1,36 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that characterboundsupdate is fired with a range near the selection.</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/EventUtils.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div></div>
+<script>
+'use strict';
+
+const host = document.querySelector('div');
+const editContext = new EditContext({text: 'hello'});
+host.editContext = editContext;
+
+add_task(async () => {
+  await SimpleTest.promiseFocus();
+  let characterBoundsUpdateFired = false;
+  // In particular, focusing the EditContext shouldn't request the range 0-1 for mFirstCharRect.
+  editContext.oncharacterboundsupdate = e => {
+    ok(e.rangeStart >= 2, 'characterboundsupdate range should be near the selection.');
+    ok(e.rangeEnd <= 5, 'characterboundsupdate range should be near the selection.');
+    characterBoundsUpdateFired = true;
+  };
+  editContext.updateSelection(3, 3);
+  host.focus();
+  synthesizeKey('a');
+  ok(characterBoundsUpdateFired, 'Should fire characterboundsupdate when text is inputted into EditContext.');
+});
+
+</script>
+</body>
+</html>

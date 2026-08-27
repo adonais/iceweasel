@@ -26,6 +26,8 @@ namespace dom {
 class Animation;
 class Document;
 class Element;
+class OwningTimelineRangeOffsetOrCSSNumericValueOrCSSKeywordValueOrUTF8String;
+struct AnimationRange;
 struct KeyframeAnimationOptions;
 }  // namespace dom
 
@@ -75,6 +77,19 @@ class AnimationUtils {
   static bool ApplyKeyframeAnimationRange(
       const dom::KeyframeAnimationOptions& aOptions, dom::Animation* aAnimation,
       ErrorResult& aRv);
+
+  // Parses a rangeStart/rangeEnd value. Returns false, having thrown a
+  // TypeError on aRv, if the value doesn't parse.
+  static bool SetAnimationRangeStart(
+      const dom::
+          OwningTimelineRangeOffsetOrCSSNumericValueOrCSSKeywordValueOrUTF8String&
+              aValue,
+      dom::AnimationRange& aRange, ErrorResult& aRv);
+  static bool SetAnimationRangeEnd(
+      const dom::
+          OwningTimelineRangeOffsetOrCSSNumericValueOrCSSKeywordValueOrUTF8String&
+              aValue,
+      dom::AnimationRange& aRange, ErrorResult& aRv);
 
   // Fills a non-nullable CSSNumberish dictionary field from a millisecond
   // value, converting to percent (0..100) when |aProgressBased| is true

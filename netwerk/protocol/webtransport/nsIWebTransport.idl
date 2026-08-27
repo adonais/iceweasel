@@ -58,10 +58,17 @@ interface nsIWebTransport : nsISupports {
                     in unsigned long aSecurityFlags,
                     in WebTransportSessionEventListener aListener,
                     in const_MaybeClientInfoRef aClientInfo,
+                    in Array<AString> aProtocols,
                     in nsIWebTransport_HTTPVersion aVersion);
 
   // Asynchronously get stats.
   void getStats();
+
+  // Export keying material using TLS exporter (RFC 5705).
+  // Returns the exported keying material in the output array.
+  void exportKeyingMaterial(in Array<uint8_t> aLabel,
+                           in Array<uint8_t> aContext,
+                           out Array<uint8_t> aKeyingMaterial);
 
   // Close the session.
   void closeSession(in uint32_t aErrorCode,
@@ -71,11 +78,19 @@ interface nsIWebTransport : nsISupports {
   void createOutgoingBidirectionalStream(in nsIWebTransportStreamCallback aListener);
   void createOutgoingUnidirectionalStream(in nsIWebTransportStreamCallback aListener);
 
-  void sendDatagram(in Array<uint8_t> aData, in uint64_t aTrackingId);
+  void sendDatagram(in Array<uint8_t> aData, in uint64_t aTrackingId,
+                    in uint64_t aSendGroupId, in int64_t aSendOrder);
 
   void getMaxDatagramSize();
 
   uint64_t getHttpChannelID();
+
+  // Get the negotiated protocol (subprotocol) for the session.
+  // Returns empty string if no protocol was negotiated.
+  ACString getNegotiatedProtocol();
+
+  // Register a send group with a caller-provided ID.
+  void registerSendGroup(in uint64_t groupId);
 
   // This can be only called after onSessionReady().
   // After this point, we can retarget the underlying WebTransportSessionProxy
@@ -92,6 +107,7 @@ interface WebTransportSessionEventListener : nsISupports {
   void onSessionClosed(in boolean aCleanly,
                        in uint32_t aErrorCode,
                        in ACString aReason);
+  void onDraining();
 
   // When a new stream has been received.
   void onIncomingBidirectionalStreamAvailable(in nsIWebTransportBidirectionalStream aStream);

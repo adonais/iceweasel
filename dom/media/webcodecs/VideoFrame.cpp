@@ -1990,54 +1990,61 @@ already_AddRefed<Promise> VideoFrame::CopyTo(
     }
   }
 
-  return ProcessTypedArraysFixed(aDestination, [&](const Span<uint8_t>& aData) {
-    if (aData.size_bytes() < layout.mAllocationSize) {
-      p->MaybeRejectWithTypeError("Destination buffer is too small");
-      return p.forget();
-    }
+  Sequence<PlaneLayout> planeLayouts;
+  nsCString errorMessage;
+  bool ok =
+      ProcessTypedArraysFixed(aDestination, [&](const Span<uint8_t>& aData) {
+        if (aData.size_bytes() < layout.mAllocationSize) {
+          errorMessage.Assign("Destination buffer is too small");
+          return false;
+        }
 
-    Sequence<PlaneLayout> planeLayouts;
+        nsTArray<Format::Plane> planes = mResource->mFormat->Planes();
+        MOZ_ASSERT(layout.mComputedLayouts.Length() == planes.Length());
 
-    nsTArray<Format::Plane> planes = mResource->mFormat->Planes();
-    MOZ_ASSERT(layout.mComputedLayouts.Length() == planes.Length());
+        // TODO: These jobs can be run in a thread pool (bug 1780656) to unblock
+        // the current thread.
+        for (size_t i = 0; i < layout.mComputedLayouts.Length(); ++i) {
+          ComputedPlaneLayout& l = layout.mComputedLayouts[i];
+          uint32_t destinationOffset = l.mDestinationOffset;
 
-    // TODO: These jobs can be run in a thread pool (bug 1780656) to unblock
-    // the current thread.
-    for (size_t i = 0; i < layout.mComputedLayouts.Length(); ++i) {
-      ComputedPlaneLayout& l = layout.mComputedLayouts[i];
-      uint32_t destinationOffset = l.mDestinationOffset;
+          PlaneLayout* pl = planeLayouts.AppendElement(fallible);
+          if (!pl) {
+            errorMessage.Assign("Out of memory");
+            return false;
+          }
+          pl->mOffset = l.mDestinationOffset;
+          pl->mStride = l.mDestinationStride;
 
-      PlaneLayout* pl = planeLayouts.AppendElement(fallible);
-      if (!pl) {
-        p->MaybeRejectWithTypeError("Out of memory");
-        return p.forget();
-      }
-      pl->mOffset = l.mDestinationOffset;
-      pl->mStride = l.mDestinationStride;
+          // Copy pixels of `size` starting from `origin` on planes[i] to
+          // `aDestination`.
+          gfx::IntPoint origin(
+              l.mSourceLeftBytes / mResource->mFormat->SampleBytes(planes[i]),
+              l.mSourceTop);
+          gfx::IntSize size(
+              l.mSourceWidthBytes / mResource->mFormat->SampleBytes(planes[i]),
+              l.mSourceHeight);
+          if (!mResource->CopyPlaneInto(
+                  planes[i], {origin, size}, aData.From(destinationOffset),
+                  static_cast<size_t>(l.mDestinationStride))) {
+            errorMessage.Assign(
+                nsPrintfCString("Failed to copy image data in %s plane",
+                                mResource->mFormat->PlaneName(planes[i])));
+            return false;
+          }
+        }
 
-      // Copy pixels of `size` starting from `origin` on planes[i] to
-      // `aDestination`.
-      gfx::IntPoint origin(
-          l.mSourceLeftBytes / mResource->mFormat->SampleBytes(planes[i]),
-          l.mSourceTop);
-      gfx::IntSize size(
-          l.mSourceWidthBytes / mResource->mFormat->SampleBytes(planes[i]),
-          l.mSourceHeight);
-      if (!mResource->CopyPlaneInto(
-              planes[i], {origin, size}, aData.From(destinationOffset),
-              static_cast<size_t>(l.mDestinationStride))) {
-        p->MaybeRejectWithTypeError(
-            nsPrintfCString("Failed to copy image data in %s plane",
-                            mResource->mFormat->PlaneName(planes[i])));
-        return p.forget();
-      }
-    }
+        MOZ_ASSERT(layout.mComputedLayouts.Length() == planes.Length());
+        return true;
+      });
 
-    MOZ_ASSERT(layout.mComputedLayouts.Length() == planes.Length());
-
+  if (ok) {
     p->MaybeResolve(planeLayouts);
-    return p.forget();
-  });
+  } else {
+    p->MaybeRejectWithTypeError(errorMessage);
+  }
+
+  return p.forget();
 }
 
 // https://w3c.github.io/webcodecs/#dom-videoframe-clone

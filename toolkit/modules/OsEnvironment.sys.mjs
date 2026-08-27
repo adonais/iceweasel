@@ -8,8 +8,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   WindowsRegistry: "resource://gre/modules/WindowsRegistry.sys.mjs",
-  WindowsVersionInfo:
-    "resource://gre/modules/components-utils/WindowsVersionInfo.sys.mjs",
 });
 
 export let OsEnvironment = {
@@ -24,17 +22,8 @@ export let OsEnvironment = {
         "AicEnabled"
       ),
     windowsVersionHasAppSourcesFeature: () => {
-      let windowsVersion = parseFloat(Services.sysinfo.getProperty("version"));
-      if (isNaN(windowsVersion)) {
-        throw new Error("Unable to parse Windows version");
-      }
-      if (windowsVersion < 10) {
-        return false;
-      }
-
       // The App Sources feature was added in Windows 10, build 15063.
-      const { buildNumber } = lazy.WindowsVersionInfo.get();
-      return buildNumber >= 15063;
+      return Services.sysinfo.isWindows10BuildOrLater(15063);
     },
   },
 

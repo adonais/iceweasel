@@ -83,6 +83,6 @@ List common mistakes and their solutions:
 
 Provide links to related documentation and examples:
 
-- [Related Component Documentation](../path/to/docs/index.rst)
+- [Related Component Documentation](../path/to/docs/index.md)
 - Example implementation: [Bug XXXXXX](https://bugzilla.mozilla.org/show_bug.cgi?id=XXXXXX)
 - Relevant source code: {searchfox}`the ProfilesDataStoreService code <toolkit/profile/ProfilesDatastoreService.sys.mjs>`

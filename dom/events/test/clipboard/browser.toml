@@ -29,8 +29,16 @@ skip-if = [
 ]
 
 ["browser_document_command_paste_contextmenu_suppression.js"]
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2057876
+]
 
 ["browser_document_command_paste_contextmenu_suppression_ext.js"]
+
+["browser_document_command_paste_contextmenu_suppression_key.js"]
+skip-if = [
+  "headless",
+]
 
 ["browser_navigator_clipboard_clickjacking.js"]
 support-files = ["simple_navigator_clipboard_keydown.html"]

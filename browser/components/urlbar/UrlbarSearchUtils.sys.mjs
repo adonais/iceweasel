@@ -23,6 +23,7 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   separatePrivateDefaultUIEnabled: {
     pref: "browser.search.separatePrivateDefault.ui.enabled",
@@ -283,7 +284,7 @@ class SearchUtils {
       }
     } else if (searchMode.source) {
       scalarKey =
-        lazy.UrlbarUtils.getResultSourceName(searchMode.source) || "other";
+        lazy.UrlbarShared.getResultSourceName(searchMode.source) || "other";
       scalarKey += searchMode.restrictType ? `_${searchMode.restrictType}` : "";
     }
 

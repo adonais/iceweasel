@@ -178,6 +178,13 @@ inline constexpr Vector<T> VectorOf(T* start, size_t size) {
   return {start, size};
 }
 
+// Construct a Vector spanning the elements of a container.
+template <typename Container>
+inline constexpr auto VectorOf(Container&& c)
+    -> Vector<std::remove_pointer_t<decltype(c.data())>> {
+  return VectorOf(c.data(), c.size());
+}
+
 class DefaultAllocator {
  public:
   using Policy = js::SystemAllocPolicy;
@@ -238,12 +245,21 @@ class SmallVector {
     }
   }
 
+  void push_back(const T& val) {
+    js::AutoEnterOOMUnsafeRegion oomUnsafe;
+    if (!inner_.append(val)) {
+      oomUnsafe.crash("Irregexp SmallVector push_back");
+    }
+  }
+
   void resize(size_t new_size) {
     js::AutoEnterOOMUnsafeRegion oomUnsafe;
     if (!inner_.resize(new_size)) {
       oomUnsafe.crash("Irregexp SmallVector resize");
     }
   }
+
+  void resize_no_init(size_t new_size) { resize(new_size); }
 
   template <typename OT, size_t OSize, class OAllocator>
   void insert(T* position, SmallVector<OT, OSize, OAllocator>& other) {

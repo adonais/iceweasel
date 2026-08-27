@@ -1,0 +1,13 @@
+<script>
+class CrashEl2 extends HTMLElement {
+  static get observedAttributes() { return ['data-x']; }
+  attributeChangedCallback() {
+    try {
+      document.body?.appendChild(this);
+    } catch(e) {}
+  }
+}
+customElements.define('crash-el2', CrashEl2);
+</script>
+<body>
+<crash-el2 data-x="1"></crash-el2>

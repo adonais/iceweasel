@@ -44,7 +44,7 @@ function handleRequest(request, response) {
     response.setStatusLine(request.httpVersion, 302, "Found");
     response.setHeader(
       "Location",
-      "http://example.org/tests/dom/webauthn/tests/webauthn-wellknown.sjs?direct" // eslint-disable-line @microsoft/sdl/no-insecure-url
+      "http://example.org/tests/dom/webauthn/tests/webauthn-wellknown.sjs?direct" // eslint-disable-line sdl/no-insecure-url
     );
     return;
   }
@@ -53,7 +53,7 @@ function handleRequest(request, response) {
     response.setStatusLine(request.httpVersion, 302, "Found");
     response.setHeader(
       "Location",
-      "http://example.org/tests/dom/webauthn/tests/webauthn-wellknown.sjs?http_to_https" // eslint-disable-line @microsoft/sdl/no-insecure-url
+      "http://example.org/tests/dom/webauthn/tests/webauthn-wellknown.sjs?http_to_https" // eslint-disable-line sdl/no-insecure-url
     );
     return;
   }

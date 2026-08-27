@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import {
+  classMap,
   html,
   ifDefined,
   nothing,
@@ -19,8 +20,8 @@ import "chrome://global/content/elements/panel-list.mjs";
  * This component is agnostic to the data it displays - consumers control
  * all logic including filtering, truncation, and special item handling.
  *
- * @typedef {{id: string, label: string, icon?: string, l10nId?: string}} ListItem
- * @typedef {{items: ListItem[], headerL10nId?: string}} ItemGroup
+ * @typedef {{id: string, label: string, icon?: string, l10nId?: string, description?: string, descriptionL10nId?: string}} ListItem
+ * @typedef {{items: ListItem[], headerL10nId?: string, header?: string}} ItemGroup
  * @property {ItemGroup[]} groups - Grouped list items to display
  * @property {string} placeholderL10nId - Fluent ID for empty state message
  * @property {object} anchor - Positioning anchor {left, top, width, height}
@@ -37,6 +38,7 @@ export class SmartwindowPanelList extends MozLitElement {
     placeholderL10nId: { type: String },
     alwaysOpen: { type: Boolean },
     sidebarMode: { type: Boolean, reflect: true },
+    selectedItemId: { type: String },
   };
 
   #panelList = null;
@@ -49,19 +51,72 @@ export class SmartwindowPanelList extends MozLitElement {
     this.placeholderL10nId = "";
     this.alwaysOpen = false;
     this.sidebarMode = false;
+    this.selectedItemId = null;
+  }
+
+  willUpdate(changedProperties) {
+    // Reset the active selection to the first item
+    // so there is always a highlighted default.
+    if (changedProperties.has("groups")) {
+      const [first] = this.#selectableItems();
+      const firstId = first?.id ?? null;
+      if (this.selectedItemId !== firstId) {
+        this.selectedItemId = firstId;
+      }
+    }
+  }
+
+  #selectableItems() {
+    return this.groups.flatMap(group => group.items ?? []);
+  }
+
+  /**
+   * Moves the active selection
+   *
+   * @param {number} delta
+   */
+  moveSelection(delta) {
+    const items = this.#selectableItems();
+    if (!items.length) {
+      return;
+    }
+    const current = items.findIndex(item => item.id === this.selectedItemId);
+    const start = current === -1 ? 0 : current;
+    const next = (start + delta + items.length) % items.length;
+    this.selectedItemId = items[next].id;
+  }
+
+  /**
+   * @returns {object|null} The currently selected item
+   */
+  getSelectedItem() {
+    return (
+      this.#selectableItems().find(item => item.id === this.selectedItemId) ??
+      null
+    );
   }
 
   get #hasCustomItems() {
     const itemsHost = this.#panelList ?? this;
     return [...itemsHost.children].some(
-      element => element.localName !== "panel-item"
+      element =>
+        element.localName !== "panel-item" &&
+        !element.classList.contains("panel-item-container")
     );
+  }
+
+  get #isCommandMode() {
+    return this.getAttribute("data-triggered-by") === "inline-command";
   }
 
   firstUpdated() {
     this.#panelList = this.shadowRoot.querySelector("panel-list");
     this.#panelList.addEventListener("shown", () => {
-      if (this.sidebarMode) {
+      // The command palette sizes/positions to the smartbar and
+      // should recompute as soon as it opens
+      if (this.#isCommandMode) {
+        this.#reposition();
+      } else if (this.sidebarMode) {
         this.#clampToViewport();
       }
     });
@@ -120,6 +175,14 @@ export class SmartwindowPanelList extends MozLitElement {
       } else {
         topOffset = anchorRect.bottom;
       }
+      // Command mode spans the full width of its anchor (the smartbar) and
+      // left-aligns to it
+      if (this.#isCommandMode) {
+        panelEl.style.width = `${anchorRect.width}px`;
+        panelEl.style.left = `${anchorRect.left + window.scrollX}px`;
+      } else {
+        panelEl.style.width = "";
+      }
       panelEl.style.top = `${topOffset + window.scrollY}px`;
       this.#clampToViewport();
     });
@@ -159,7 +222,9 @@ export class SmartwindowPanelList extends MozLitElement {
   }
 
   handlePanelClick(e) {
-    const panelItem = e.target.closest("panel-item");
+    const panelItem =
+      e.target.closest("panel-item") ??
+      e.target.closest(".panel-item-container")?.querySelector("panel-item");
     if (panelItem && !panelItem.classList.contains("panel-section-header")) {
       const event = new CustomEvent("item-selected", {
         detail: {
@@ -194,7 +259,7 @@ export class SmartwindowPanelList extends MozLitElement {
   }
 
   #renderAnchor() {
-    if (!this.anchor) {
+    if (!this.anchor || this.anchor instanceof Element) {
       return null;
     }
 
@@ -229,6 +294,16 @@ export class SmartwindowPanelList extends MozLitElement {
     ></panel-item>`;
   }
 
+  #renderPlainHeader(header) {
+    return html`<panel-item
+      disabled
+      role="presentation"
+      class="panel-section-header"
+    >
+      ${header}
+    </panel-item>`;
+  }
+
   #computeItemStyles(item) {
     const styles = {};
 
@@ -239,16 +314,41 @@ export class SmartwindowPanelList extends MozLitElement {
     return styles;
   }
 
-  #renderItem(item) {
-    return html`<panel-item
+  #renderItem(item, isSelected = false) {
+    const hasDescription = !!item.description || !!item.descriptionL10nId;
+    const panelItem = html`<panel-item
       .itemId=${item.id}
-      .itemLabel=${item.label}
-      icon=${ifDefined(item.icon ? "true" : undefined)}
+      .itemLabel=${item.label ?? ""}
+      icon=${ifDefined(!hasDescription && item.icon ? "true" : undefined)}
+      class=${ifDefined(isSelected && !hasDescription ? "selected" : undefined)}
       data-l10n-id=${ifDefined(item.l10nId)}
-      style=${styleMap(this.#computeItemStyles(item))}
+      style=${styleMap(hasDescription ? {} : this.#computeItemStyles(item))}
     >
       ${item.l10nId ? "" : item.label}
     </panel-item>`;
+
+    if (!hasDescription) {
+      return panelItem;
+    }
+
+    return html`<div
+      class=${classMap({ "panel-item-container": true, selected: isSelected })}
+    >
+      ${item.icon
+        ? html`<span class="panel-item-icon" aria-hidden="true">
+            <img class="panel-item-icon-image" src=${item.icon} alt="" />
+          </span>`
+        : ""}
+      <div class="panel-item-text">
+        ${panelItem}
+        <div
+          class="panel-item-description"
+          data-l10n-id=${ifDefined(item.descriptionL10nId)}
+        >
+          ${item.descriptionL10nId ? "" : item.description}
+        </div>
+      </div>
+    </div>`;
   }
 
   #renderGroup(group) {
@@ -256,12 +356,23 @@ export class SmartwindowPanelList extends MozLitElement {
       return null;
     }
 
+    let header = null;
+    if (group.headerL10nId) {
+      header = this.#renderGroupHeader(group.headerL10nId);
+    } else if (group.header) {
+      header = this.#renderPlainHeader(group.header);
+    }
+
     return html`
-      ${group.headerL10nId ? this.#renderGroupHeader(group.headerL10nId) : null}
+      ${header}
       ${repeat(
         group.items,
         item => item.id,
-        item => this.#renderItem(item)
+        item =>
+          this.#renderItem(
+            item,
+            this.#isCommandMode && item.id === this.selectedItemId
+          )
       )}
     `;
   }
@@ -282,6 +393,18 @@ export class SmartwindowPanelList extends MozLitElement {
     return this.#isEmpty() ? this.#renderEmptyState() : this.#renderGroups();
   }
 
+  #renderCommandFooter() {
+    if (!this.#isCommandMode || this.#hasCustomItems || this.#isEmpty()) {
+      return nothing;
+    }
+    return html`<panel-item
+      disabled
+      role="note"
+      class="panel-section-header panel-command-footer"
+      data-l10n-id="smartbar-command-coming-soon"
+    ></panel-item>`;
+  }
+
   render() {
     return html`
       <link
@@ -293,7 +416,7 @@ export class SmartwindowPanelList extends MozLitElement {
         @click=${this.handlePanelClick}
         @keydown=${this.handleKeyDown}
       >
-        ${this.#renderContent()}
+        ${this.#renderContent()} ${this.#renderCommandFooter()}
       </panel-list>
     `;
   }

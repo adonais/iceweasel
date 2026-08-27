@@ -19,11 +19,11 @@ $ pandoc -t rst https://github.com/mdn/archived-content/tree/main/files/en-us/mo
 ```
 
 4. In the new doc.rst, identify the images and wget/curl them into `img/`.
-5. Verify the rst syntax using [./mach lint -l rst]
+5. Verify the syntax using [./mach lint -l md]
 6) If relevant, remove unbreakable spaces (rendered with a "!" on Phabricator)
 
 ```shell
 sed -i -e 's/\xc2\xa0/ /g' doc.rst
 ```
 
-[./mach lint -l rst]: /tools/lint/linters/rstlinter.html
+[./mach lint -l md]: /code-quality/lint/linters/md.md

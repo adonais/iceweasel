@@ -10,9 +10,10 @@ use neqo_common::Bytes;
 use neqo_common::{event::Provider, qdebug, qerror, qinfo, qtrace, Datagram, Header};
 use nss_rs::{generate_ech_keys, init_db, AllowZeroRtt, AntiReplay};
 use neqo_http3::{
-    ConnectUdpRequest, ConnectUdpServerEvent, Error, Http3OrWebTransportStream, Http3Parameters,
-    Http3Server, Http3ServerEvent, SessionAcceptAction, StreamId, WebTransportRequest,
-    WebTransportServerEvent,
+    connect_udp::{ServerEvent as ConnectUdpServerEvent, ServerSession as ConnectUdpRequest},
+    webtransport::{ServerEvent as WebTransportServerEvent, ServerSession as WebTransportRequest},
+    Error, Http3OrWebTransportStream, Http3Parameters, Http3Server, Http3ServerEvent,
+    SessionAcceptAction, StreamId,
 };
 use neqo_transport::server::ConnectionRef;
 use neqo_transport::{

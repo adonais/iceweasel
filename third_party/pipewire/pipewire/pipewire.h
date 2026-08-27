@@ -5,14 +5,12 @@
 #ifndef PIPEWIRE_H
 #define PIPEWIRE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <spa/support/plugin.h>
 
+// IWYU pragma: begin_exports
 #include <pipewire/array.h>
 #include <pipewire/client.h>
+#include <pipewire/conf.h>
 #include <pipewire/context.h>
 #include <pipewire/device.h>
 #include <pipewire/buffers.h>
@@ -36,9 +34,15 @@ extern "C" {
 #include <pipewire/filter.h>
 #include <pipewire/thread-loop.h>
 #include <pipewire/data-loop.h>
+#include <pipewire/timer-queue.h>
 #include <pipewire/type.h>
 #include <pipewire/utils.h>
 #include <pipewire/version.h>
+// IWYU pragma: end_exports
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** \defgroup pw_pipewire Initialization
  * Initializing PipeWire and loading SPA modules.

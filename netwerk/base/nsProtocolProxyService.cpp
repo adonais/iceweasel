@@ -1354,7 +1354,7 @@ const char* nsProtocolProxyService::ExtractProxyInfo(const char* start,
     }
 
     if (!urlHost.IsEmpty()) {
-      pi->mHost = urlHost;
+      pi->mHost = std::move(urlHost);
 
       int32_t tPort;
       if (NS_SUCCEEDED(pacURI->GetPort(&tPort)) && tPort != -1) {

@@ -7,6 +7,7 @@ task-defaults:
     worker:
         max-run-time: 1800
     run:
+        clone-with: hg
         script: build-llvm-symbolizer.sh
         toolchain-artifact: public/build/llvm-symbolizer.tar.zst
 
@@ -15,6 +16,7 @@ linux32-llvm-symbolizer-21:
     treeherder:
         symbol: TL32(llvm-symbolizer-21)
     run:
+        clone-with: hg
         arguments:
             - i686-unknown-linux-gnu
             - build/build-clang/clang-21.json
@@ -39,6 +41,7 @@ linux64-llvm-symbolizer-21:
     treeherder:
         symbol: TL(llvm-symbolizer-21)
     run:
+        clone-with: hg
         arguments:
             - x86_64-unknown-linux-gnu
             - build/build-clang/clang-21.json
@@ -63,6 +66,7 @@ macosx64-llvm-symbolizer-21:
     treeherder:
         symbol: TM(llvm-symbolizer-21)
     run:
+        clone-with: hg
         arguments:
             - x86_64-apple-darwin
             - build/build-clang/clang-21.json
@@ -87,6 +91,7 @@ macosx64-aarch64-llvm-symbolizer-21:
     treeherder:
         symbol: TMA64(llvm-symbolizer-21)
     run:
+        clone-with: hg
         arguments:
             - aarch64-apple-darwin
             - build/build-clang/clang-21.json
@@ -111,6 +116,7 @@ win64-llvm-symbolizer-21:
     treeherder:
         symbol: TW64(llvm-symbolizer-21)
     run:
+        clone-with: hg
         arguments:
             - x86_64-pc-windows-msvc
             - build/build-clang/clang-21.json
@@ -135,6 +141,7 @@ linux32-llvm-symbolizer-22:
     treeherder:
         symbol: TL32(llvm-symbolizer-22)
     run:
+        clone-with: hg
         arguments:
             - i686-unknown-linux-gnu
             - build/build-clang/clang-22.json
@@ -155,6 +162,7 @@ linux64-llvm-symbolizer-22:
     treeherder:
         symbol: TL(llvm-symbolizer-22)
     run:
+        clone-with: hg
         arguments:
             - x86_64-unknown-linux-gnu
             - build/build-clang/clang-22.json
@@ -175,6 +183,7 @@ macosx64-llvm-symbolizer-22:
     treeherder:
         symbol: TM(llvm-symbolizer-22)
     run:
+        clone-with: hg
         arguments:
             - x86_64-apple-darwin
             - build/build-clang/clang-22.json
@@ -195,6 +204,7 @@ macosx64-aarch64-llvm-symbolizer-22:
     treeherder:
         symbol: TMA64(llvm-symbolizer-22)
     run:
+        clone-with: hg
         arguments:
             - aarch64-apple-darwin
             - build/build-clang/clang-22.json
@@ -215,6 +225,7 @@ win64-llvm-symbolizer-22:
     treeherder:
         symbol: TW64(llvm-symbolizer-22)
     run:
+        clone-with: hg
         arguments:
             - x86_64-pc-windows-msvc
             - build/build-clang/clang-22.json
@@ -237,6 +248,7 @@ linux32-llvm-symbolizer-trunk:
     treeherder:
         symbol: TL32(llvm-symbolizer-trunk)
     run:
+        clone-with: hg
         arguments:
             - i686-unknown-linux-gnu
             - build/build-clang/clang-trunk.json
@@ -263,6 +275,7 @@ linux64-llvm-symbolizer-trunk:
     treeherder:
         symbol: TL(llvm-symbolizer-trunk)
     run:
+        clone-with: hg
         arguments:
             - x86_64-unknown-linux-gnu
             - build/build-clang/clang-trunk.json
@@ -289,6 +302,7 @@ macosx64-llvm-symbolizer-trunk:
     treeherder:
         symbol: TM(llvm-symbolizer-trunk)
     run:
+        clone-with: hg
         arguments:
             - x86_64-apple-darwin
             - build/build-clang/clang-trunk.json
@@ -315,6 +329,7 @@ macosx64-aarch64-llvm-symbolizer-trunk:
     treeherder:
         symbol: TMA64(llvm-symbolizer-trunk)
     run:
+        clone-with: hg
         arguments:
             - aarch64-apple-darwin
             - build/build-clang/clang-trunk.json
@@ -341,6 +356,7 @@ win64-llvm-symbolizer-trunk:
     treeherder:
         symbol: TW64(llvm-symbolizer-trunk)
     run:
+        clone-with: hg
         arguments:
             - x86_64-pc-windows-msvc
             - build/build-clang/clang-trunk.json

@@ -64,7 +64,7 @@ export class RemoteSettingsServer {
     }
     this.#server.start(-1);
 
-    this.#url = new URL("http://localhost/v1");
+    this.#url = new URL("http://localhost/v2");
     this.#url.port = this.#server.identity.primaryPort;
 
     this.#originalServerPrefValue = Services.prefs.getCharPref(
@@ -285,7 +285,7 @@ export class RemoteSettingsServer {
   get #routes() {
     return [
       {
-        spec: "/v1",
+        spec: "/v2",
         response: () => ({
           body: {
             capabilities: {
@@ -298,7 +298,7 @@ export class RemoteSettingsServer {
       },
 
       {
-        spec: "/v1/buckets/monitor/collections/changes/changeset",
+        spec: "/v2/buckets/monitor/collections/changes/changeset",
         response: () => ({
           body: {
             timestamp: this.#lastModified,
@@ -312,7 +312,7 @@ export class RemoteSettingsServer {
       },
 
       {
-        spec: "/v1/buckets/$bucket/collections/$collection/changeset",
+        spec: "/v2/buckets/$bucket/collections/$collection/changeset",
         response: ({ bucket, collection }, request) => {
           let records = this.#getRecords(bucket, collection, request);
           return !records
@@ -325,6 +325,11 @@ export class RemoteSettingsServer {
                       {
                         signature: "",
                         x5u: "",
+                        // The signature type. ECDSA P384 is the only type
+                        // supported by both the Rust client (which requires
+                        // this field and skips signatures with any other
+                        // mode) and the JS one (RemoteSettingsClient.sys.mjs).
+                        mode: "p384ecdsa",
                       },
                     ],
                   },
@@ -336,25 +341,11 @@ export class RemoteSettingsServer {
       },
 
       {
-        spec: "/v1/buckets/$bucket/collections/$collection/records",
-        response: ({ bucket, collection }, request) => {
-          let records = this.#getRecords(bucket, collection, request);
-          return !records
-            ? lazy.HTTP_404
-            : {
-                body: {
-                  data: records,
-                },
-              };
-        },
-      },
-
-      {
         specs: [
           // The Rust remote settings client doesn't include "v1" in attachment
           // URLs, but the JS client does.
           "/attachments/$bucket/$collection/$filename",
-          "/v1/attachments/$bucket/$collection/$filename",
+          "/v2/attachments/$bucket/$collection/$filename",
         ],
         response: ({ bucket, collection, filename }) => {
           return {

@@ -12,9 +12,6 @@
 ChromeUtils.defineESModuleGetters(this, {
   AppMenuNotifications: "resource://gre/modules/AppMenuNotifications.sys.mjs",
   HttpServer: "resource://testing-common/httpd.sys.mjs",
-  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  UrlbarProviderSearchTips:
-    "moz-src:///browser/components/urlbar/UrlbarProviderSearchTips.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
@@ -48,11 +45,11 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       [
-        `browser.urlbar.tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`,
+        `browser.urlbar.tipShownCount.${UrlbarShared.SEARCH_TIP_TYPE.ONBOARD}`,
         0,
       ],
       [
-        `browser.urlbar.tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.REDIRECT}`,
+        `browser.urlbar.tipShownCount.${UrlbarShared.SEARCH_TIP_TYPE.REDIRECT}`,
         0,
       ],
       // Set following prefs so tips are actually shown.
@@ -96,7 +93,7 @@ add_task(async function pickButton_onboard() {
     url: "about:newtab",
     waitForLoad: false,
   });
-  await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.ONBOARD, false);
+  await checkTip(window, UrlbarShared.SEARCH_TIP_TYPE.ONBOARD, false);
 
   // Click the tip button.
   let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
@@ -106,10 +103,8 @@ add_task(async function pickButton_onboard() {
   });
   gURLBar.blur();
 
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`
-    ),
+  await UrlbarTestUtils.waitForPrefValue(
+    `tipShownCount.${UrlbarShared.SEARCH_TIP_TYPE.ONBOARD}`,
     MAX_SHOWN_COUNT,
     "Onboarding tips are disabled after tip button is picked."
   );
@@ -128,7 +123,7 @@ add_task(async function pickButton_redirect() {
     await withDNSRedirect("www.google.com", "/", async url => {
       BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, url);
       await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-      await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.REDIRECT, false);
+      await checkTip(window, UrlbarShared.SEARCH_TIP_TYPE.REDIRECT, false);
 
       // Click the tip button.
       let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
@@ -140,10 +135,8 @@ add_task(async function pickButton_redirect() {
     });
   });
 
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.REDIRECT}`
-    ),
+  await UrlbarTestUtils.waitForPrefValue(
+    `tipShownCount.${UrlbarShared.SEARCH_TIP_TYPE.REDIRECT}`,
     MAX_SHOWN_COUNT,
     "Redirect tips are disabled after tip button is picked."
   );
@@ -161,7 +154,7 @@ add_task(async function clickInInput_onboard() {
     url: "about:newtab",
     waitForLoad: false,
   });
-  await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.ONBOARD, false);
+  await checkTip(window, UrlbarShared.SEARCH_TIP_TYPE.ONBOARD, false);
 
   // Click in the input.
   await UrlbarTestUtils.promisePopupClose(window, () => {
@@ -169,10 +162,8 @@ add_task(async function clickInInput_onboard() {
   });
   gURLBar.blur();
 
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`
-    ),
+  await UrlbarTestUtils.waitForPrefValue(
+    `tipShownCount.${UrlbarShared.SEARCH_TIP_TYPE.ONBOARD}`,
     MAX_SHOWN_COUNT,
     "Onboarding tips are disabled after tip button is picked."
   );
@@ -191,7 +182,7 @@ add_task(async function openLocation_onboard() {
     url: "about:newtab",
     waitForLoad: false,
   });
-  await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.ONBOARD, false);
+  await checkTip(window, UrlbarShared.SEARCH_TIP_TYPE.ONBOARD, false);
 
   // Trigger the open location command.
   await UrlbarTestUtils.promisePopupClose(window, () => {
@@ -199,10 +190,8 @@ add_task(async function openLocation_onboard() {
   });
   gURLBar.blur();
 
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`
-    ),
+  await UrlbarTestUtils.waitForPrefValue(
+    `tipShownCount.${UrlbarShared.SEARCH_TIP_TYPE.ONBOARD}`,
     MAX_SHOWN_COUNT,
     "Onboarding tips are disabled after tip button is picked."
   );
@@ -220,7 +209,7 @@ add_task(async function clickInInput_redirect() {
     await withDNSRedirect("www.google.com", "/", async url => {
       BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, url);
       await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-      await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.REDIRECT, false);
+      await checkTip(window, UrlbarShared.SEARCH_TIP_TYPE.REDIRECT, false);
 
       // Click in the input.
       await UrlbarTestUtils.promisePopupClose(window, () => {
@@ -230,10 +219,8 @@ add_task(async function clickInInput_redirect() {
     });
   });
 
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.REDIRECT}`
-    ),
+  await UrlbarTestUtils.waitForPrefValue(
+    `tipShownCount.${UrlbarShared.SEARCH_TIP_TYPE.REDIRECT}`,
     MAX_SHOWN_COUNT,
     "Redirect tips are disabled after tip button is picked."
   );
@@ -250,7 +237,7 @@ add_task(async function openLocation_redirect() {
     await withDNSRedirect("www.google.com", "/", async url => {
       BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, url);
       await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-      await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.REDIRECT, false);
+      await checkTip(window, UrlbarShared.SEARCH_TIP_TYPE.REDIRECT, false);
 
       // Trigger the open location command.
       await UrlbarTestUtils.promisePopupClose(window, () => {
@@ -260,10 +247,8 @@ add_task(async function openLocation_redirect() {
     });
   });
 
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.REDIRECT}`
-    ),
+  await UrlbarTestUtils.waitForPrefValue(
+    `tipShownCount.${UrlbarShared.SEARCH_TIP_TYPE.REDIRECT}`,
     MAX_SHOWN_COUNT,
     "Redirect tips are disabled after tip button is picked."
   );
@@ -279,7 +264,7 @@ add_task(async function pickingTipDoesNotDisableOtherKinds() {
     url: "about:newtab",
     waitForLoad: false,
   });
-  await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.ONBOARD, false);
+  await checkTip(window, UrlbarShared.SEARCH_TIP_TYPE.ONBOARD, false);
 
   // Click the tip button.
   let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
@@ -289,10 +274,8 @@ add_task(async function pickingTipDoesNotDisableOtherKinds() {
   });
 
   gURLBar.blur();
-  Assert.equal(
-    UrlbarPrefs.get(
-      `tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`
-    ),
+  await UrlbarTestUtils.waitForPrefValue(
+    `tipShownCount.${UrlbarShared.SEARCH_TIP_TYPE.ONBOARD}`,
     MAX_SHOWN_COUNT,
     "Onboarding tips are disabled after tip button is picked."
   );
@@ -308,11 +291,11 @@ add_task(async function pickingTipDoesNotDisableOtherKinds() {
     url: "about:newtab",
     waitForLoad: false,
   });
-  await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.NONE);
+  await checkTip(window, UrlbarShared.SEARCH_TIP_TYPE.NONE);
 
   // We should still show redirect tips.
   await withDNSRedirect("www.google.com", "/", async url => {
-    await checkTab(window, url, UrlbarProviderSearchTips.TIP_TYPE.REDIRECT);
+    await checkTab(window, url, UrlbarShared.SEARCH_TIP_TYPE.REDIRECT);
   });
 
   BrowserTestUtils.removeTab(tab2);
@@ -332,7 +315,7 @@ add_task(async function notification() {
     await withDNSRedirect("www.google.com", "/", async url => {
       BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, url);
       await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-      await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.NONE);
+      await checkTip(window, UrlbarShared.SEARCH_TIP_TYPE.NONE);
       box.removeNotification(note, true);
     });
   });
@@ -344,7 +327,7 @@ add_task(async function tabSwitch() {
   let tab = BrowserTestUtils.addTab(gBrowser, "about:newtab");
   tipsProviderInstance.disableTipsForCurrentSession = false;
   await BrowserTestUtils.switchTab(gBrowser, tab);
-  await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.ONBOARD);
+  await checkTip(window, UrlbarShared.SEARCH_TIP_TYPE.ONBOARD);
   BrowserTestUtils.removeTab(tab);
   resetSearchTipsProvider();
 });
@@ -357,7 +340,7 @@ add_task(async function ignoreEndsEngagement() {
     await withDNSRedirect("www.google.com", "/", async url => {
       BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, url);
       await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-      await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.REDIRECT, false);
+      await checkTip(window, UrlbarShared.SEARCH_TIP_TYPE.REDIRECT, false);
       // We're just looking for any target outside the Urlbar.
       let spring = gURLBar.inputField
         .closest("#nav-bar")
@@ -372,9 +355,12 @@ add_task(async function ignoreEndsEngagement() {
         EventUtils.synthesizeMouseAtCenter(spring, {});
         AccessibilityUtils.resetEnv();
       });
-      Assert.equal(
-        tipsProviderInstance.showedTipTypeInCurrentEngagement,
-        UrlbarProviderSearchTips.TIP_TYPE.NONE,
+      // onSearchSessionEnd resets the engagement's tip state and can complete
+      // asynchronously, so wait for it.
+      await TestUtils.waitForCondition(
+        () =>
+          tipsProviderInstance.showedTipTypeInCurrentEngagement ==
+          UrlbarShared.SEARCH_TIP_TYPE.NONE,
         "The engagement should have ended after the tip was ignored."
       );
     });
@@ -402,7 +388,7 @@ async function doPasteAndGoTest(searchString, expectedURL) {
     url: "about:newtab",
     waitForLoad: false,
   });
-  await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.ONBOARD, false);
+  await checkTip(window, UrlbarShared.SEARCH_TIP_TYPE.ONBOARD, false);
 
   await SimpleTest.promiseClipboardChange(searchString, () => {
     clipboardHelper.copyString(searchString);
@@ -435,7 +421,7 @@ async function doPasteAndGoTest(searchString, expectedURL) {
 add_task(async function noActionWhenDisabled() {
   await setDefaultEngine("Bing");
   await withDNSRedirect("www.bing.com", "/", async url => {
-    await checkTab(window, url, UrlbarProviderSearchTips.TIP_TYPE.REDIRECT);
+    await checkTab(window, url, UrlbarShared.SEARCH_TIP_TYPE.REDIRECT);
   });
 
   await SpecialPowers.pushPrefEnv({

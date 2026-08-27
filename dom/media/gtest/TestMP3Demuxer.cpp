@@ -4,6 +4,7 @@
 
 #include <gtest/gtest.h>
 
+#include <climits>
 #include <vector>
 
 #include "MP3Demuxer.h"
@@ -627,3 +628,26 @@ TEST_F(MP3DemuxerTest, Seek) {
     }
   }
 }
+
+namespace mozilla {
+
+TEST_F(MP3DemuxerTest, SeekOffsetSurvivesFrameLengthOverflow) {
+  // The stream resource does not clamp virtual seek offsets to the file size.
+  auto& demuxer = *mTargets[1].mDemuxer;
+  const int64_t firstFrameOffset = demuxer.GetResourceOffset();
+  const double firstFrameLength = demuxer.LastFrame().Length();
+  static constexpr int64_t kFrameSize = INT64_MAX / 2 + 10;
+  demuxer.UpdateState(MediaByteRange{0, kFrameSize});
+  demuxer.UpdateState(MediaByteRange{0, kFrameSize});
+
+  const double expectedAverage =
+      (firstFrameLength + 2.0 * static_cast<double>(kFrameSize)) / 3.0;
+  demuxer.Seek(demuxer.Duration(3));
+
+  const double expectedOffset = firstFrameOffset + 2.0 * expectedAverage;
+  // The incremental and closed-form means differ by a few ULPs.
+  EXPECT_DOUBLE_EQ(static_cast<double>(demuxer.GetResourceOffset()),
+                   expectedOffset);
+}
+
+}  // namespace mozilla

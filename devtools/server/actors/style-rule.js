@@ -426,9 +426,6 @@ class StyleRuleActor extends Actor {
         // Indicates whether StyleRuleActor implements and can use the setRuleText method.
         // It cannot use it if the stylesheet was programmatically mutated via the CSSOM.
         canSetRuleText: this.canSetRuleText,
-        // @backward-compat { version 153 } `getCssExplainersData` was added in 153, so
-        // this trait can be removed once it's in release.
-        hasGetCssExplainersData: true,
       },
     };
 

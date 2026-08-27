@@ -17,6 +17,12 @@ async function openMenuAndWaitForPopup(menu) {
   return popup;
 }
 
+async function closeMenuAndWaitForPopupHidden(popup) {
+  let popupHidden = BrowserTestUtils.waitForPopupEvent(popup, "hidden");
+  popup.hidePopup();
+  await popupHidden;
+}
+
 function findNode(guid, view) {
   for (let node of view.childNodes) {
     console.log("visiting node", node, node._placesNode?.bookmarkGuid);
@@ -114,6 +120,8 @@ add_task(async function test() {
     "Toolbar shortcut popup is empty"
   );
 
+  await closeMenuAndWaitForPopupHidden(folderAPopup);
+
   // Also insert a toolbar shortcut in the bookmarks menu and check the
   // previously inserted recursive toolbar shortcut there.
   info("Test native bookmarks menu");
@@ -150,5 +158,7 @@ add_task(async function test() {
       shortcutInMenuPopup.hasAttribute("emptyplacesresult"),
       "Toolbar shortcut popup is empty"
     );
+
+    await closeMenuAndWaitForPopupHidden(bookmarksPopup);
   }
 });

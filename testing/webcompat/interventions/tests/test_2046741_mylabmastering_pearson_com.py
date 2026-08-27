@@ -36,6 +36,7 @@ async def maybe_dismiss_popup_notice(client):
         pass
 
 
+@pytest.mark.only_platforms("android")
 @pytest.mark.asyncio
 @pytest.mark.with_interventions
 async def test_enabled(client):
@@ -46,6 +47,7 @@ async def test_enabled(client):
     assert not client.find_css(MODAL_CSS, is_displayed=True)
 
 
+@pytest.mark.only_platforms("android")
 @pytest.mark.asyncio
 @pytest.mark.without_interventions
 async def test_disabled(client):

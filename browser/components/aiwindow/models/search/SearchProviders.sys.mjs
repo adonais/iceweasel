@@ -21,7 +21,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 const DEFAULT_SEARCH_QUERY_ENDPOINT =
-  "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net/v1/search";
+  "https://mlpa-prod-prod-mozilla.freetls.fastly.net/v1/search";
 const REQUEST_TIMEOUT_MS = 15000;
 
 /**

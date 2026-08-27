@@ -7282,6 +7282,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsSuspendedGenerator() {
 
   MOZ_ASSERT(argsLength() == 1);
 
+  if (!arg(0).isObject()) {
+    return AttachDecision::NoAction;
+  }
+
   initializeInputOperand();
 
   // Stack layout here is (bottom to top):
@@ -7290,11 +7294,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsSuspendedGenerator() {
   //  0: Arg <-- Top of stack.
   // We only care about the argument.
   ValOperandId valId = loadArgumentIntrinsic(ArgumentKind::Arg0);
+  ObjOperandId objId = writer.guardToObject(valId);
 
-  // Check whether the argument is a suspended generator.
-  // We don't need guards, because IsSuspendedGenerator returns
-  // false for values that are not generator objects.
-  writer.callIsSuspendedGeneratorResult(valId);
+  // Check whether the argument is a suspended generator. We don't need to
+  // guard its class, because IsSuspendedGenerator returns false for objects
+  // that are not generator objects.
+  writer.isSuspendedGeneratorResult(objId);
 
   trackAttached("IsSuspendedGenerator");
   return AttachDecision::Attach;
@@ -13117,10 +13122,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
     case InlinableNative::IntrinsicGuardToIteratorRange:
 #endif
     case InlinableNative::IntrinsicGuardToAsyncIteratorHelper:
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case InlinableNative::IntrinsicGuardToAsyncDisposableStack:
     case InlinableNative::IntrinsicGuardToDisposableStack:
-#endif
       return tryAttachGuardToClass(native);
     case InlinableNative::IntrinsicSubstringKernel:
       return tryAttachSubstringKernel();

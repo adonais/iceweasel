@@ -21,6 +21,9 @@ https_first_disabled = true # Bug 1737265
 
 ["browser_auth.js"]
 https_first_disabled = true # Bug 1737265
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2057897 (frequent intermittent timeout on linux 22.04 wayland jobs)
+]
 
 ["browser_block_fullscreen_prompt.js"]
 https_first_disabled = true # Bug 1737265

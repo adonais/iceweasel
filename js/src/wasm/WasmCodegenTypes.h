@@ -167,7 +167,8 @@ enum class TrapMachineInsn {
   // Any kind of atomic r-m-w or CAS memory transaction, but not including
   // Load-Linked or Store-Checked style insns -- those count as plain LoadX
   // and StoreX.
-  Atomic
+  Atomic,
+  INVALID
 };
 using TrapMachineInsnVector =
     mozilla::Vector<TrapMachineInsn, 0, SystemAllocPolicy>;
@@ -216,33 +217,137 @@ const char* ToString(Trap trap);
 const char* ToString(TrapMachineInsn tmi);
 #endif
 
-// This holds an assembler buffer offset, which indicates the offset of a
-// faulting instruction, and is used for the construction of TrapSites below.
-// It is wrapped up as a new type only to avoid getting it confused with any
-// other uint32_t or with CodeOffset.
+// FaultingCodeRange records the assembler buffer offsets associated with a
+// faulting instruction.  It is used for the construction of TrapSites and
+// associated StackMaps.  It carries both the starting offset and the starting
+// offset of the next instruction; hence, implicitly, the length of this
+// instruction.
+//
+// For targets with fixed length instructions (everything except x86 and x64),
+// the constructor takes only a single offset value, for the start of the
+// instruction, since it would be pointless to (implicitly) specify the length
+// at every call.
+//
+// For targets with variable length instructions (x86, x64) the constructor
+// takes offsets both for the start and the end (+1) of the instruction.  This
+// forces callers to (implicitly) specify length info at every call; it is
+// literally impossible to create a FaultingCodeRange without that.
+//
+// The representation is a bit unusual because the most important requirement is
+// that constructors `FaultingCodeRange(uint32_t, uint32_t)` and
+// `FaultingCodeRange(uint32_t)` are simple enough that they can be optimized
+// away in the case where the assembler is used to create an instruction but the
+// resulting FaultingCodeRange is ignored.  Hence the burden of
+// error/consistency checking is placed on the (infrequently used) access
+// routines rather than the constructors.
 
-class FaultingCodeOffset {
-  static constexpr uint32_t INVALID = UINT32_MAX;
-  uint32_t offset_;
+class FaultingCodeRange {
+  // Definitions that summarise the range of instruction lengths in the code we
+  // generate.  This will need to be updated if we start creating
+  // variable-length insns for one of the architectures currently defined here
+  // as fixed-length.
+ private:
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+  // These are variable-length-insn targets.
+  static constexpr uint32_t kMinInsnLength = 1;
+  static constexpr uint32_t kMaxInsnLength = 15;
+#elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) ||    \
+    defined(JS_CODEGEN_RISCV64) || defined(JS_CODEGEN_MIPS64) || \
+    defined(JS_CODEGEN_LOONG64)
+  // These are fixed-length-insn targets, at least for the code we generate.  In
+  // particular, ARM-Thumb2 has both insn lengths 2 and 4, but we don't generate
+  // that.  Same for the RiscV compressed-instruction extension.
+  static constexpr uint32_t kMinInsnLength = 4;
+  static constexpr uint32_t kMaxInsnLength = 4;
+#elif defined(JS_CODEGEN_NONE)
+  // Bogus, but it doesn't matter.
+  static constexpr uint32_t kMinInsnLength = 1;
+  static constexpr uint32_t kMaxInsnLength = 1;
+#else
+#  error "Unknown architecture"
+#endif
+  static_assert(kMinInsnLength >= 1);
+  static_assert(kMinInsnLength <= kMaxInsnLength);
 
  public:
-  FaultingCodeOffset() : offset_(INVALID) {}
-  explicit FaultingCodeOffset(uint32_t offset) : offset_(offset) {
-    MOZ_ASSERT(offset != INVALID);
-  }
-  bool isValid() const { return offset_ != INVALID; }
-  uint32_t get() const {
-    MOZ_ASSERT(isValid());
-    return offset_;
-  }
-};
-static_assert(sizeof(FaultingCodeOffset) == 4);
+  static constexpr uint32_t minInsnLength() { return kMinInsnLength; }
+  static constexpr uint32_t maxInsnLength() { return kMaxInsnLength; }
 
-// And this holds two such offsets.  Needed for 64-bit integer transactions on
+  // The representation.  We store the start and end assembler offsets, with the
+  // end offset not being part of the range.
+ private:
+  static constexpr uint32_t INVALID_OFFSET = UINT32_MAX;
+  uint32_t startOffset_ = INVALID_OFFSET;
+  uint32_t endOffset_ = INVALID_OFFSET;
+
+ public:
+  // Invariants
+  bool isValid() const {
+    return
+        // Both offsets must be valid
+        startOffset_ != INVALID_OFFSET && endOffset_ != INVALID_OFFSET &&
+        // The length must be at least 1 ..
+        startOffset_ < endOffset_ &&
+        // .. and within the limits defined above
+        endOffset_ - startOffset_ >= kMinInsnLength &&
+        endOffset_ - startOffset_ <= kMaxInsnLength;
+  }
+
+  // Constructors.
+  inline FaultingCodeRange() { MOZ_ASSERT(!isValid()); }
+
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+  // Make a FaultingCodeRange from two offsets.  This is only valid on targets
+  // with variable-length instructions.
+  inline FaultingCodeRange(uint32_t startOffset, uint32_t endOffset)
+      : startOffset_(startOffset), endOffset_(endOffset) {
+    static_assert(kMinInsnLength < kMaxInsnLength);
+    // Requirements on the caller
+    MOZ_ASSERT(startOffset != INVALID_OFFSET && endOffset != INVALID_OFFSET);
+    // If the assembler OOMd, we may have endOffset <= startOffset, but we
+    // tolerate that and later throw out any attempt to query the resulting
+    // FaultingCodeRange.
+  }
+#else
+  // Make a FaultingCodeRange from one offset.  This is only valid on targets
+  // with fixed-length instructions.
+  inline explicit FaultingCodeRange(uint32_t startOffset)
+      : startOffset_(startOffset), endOffset_(startOffset + kMinInsnLength) {
+    static_assert(kMinInsnLength == kMaxInsnLength);
+    // Requirement on the caller
+    MOZ_ASSERT(startOffset != INVALID_OFFSET);
+  }
+#endif
+
+  // Accessors
+  uint32_t offset() const {
+    MOZ_ASSERT(isValid());
+    return startOffset_;
+  }
+  uint32_t length() const {
+    MOZ_ASSERT(isValid());
+    return endOffset_ - startOffset_;
+  }
+  uint32_t resumeOffset() const {
+    MOZ_ASSERT(isValid());
+    return endOffset_;
+  }
+
+  // Be careful with these.  If the creating MacroAssembler OOM'd, they will
+  // likely fail `isValid()`.
+  uint32_t offsetUnchecked() const { return startOffset_; }
+  uint32_t resumeOffsetUnchecked() const { return endOffset_; }
+
+  // Shim to ease migration from FaultingCodeOffset.  This should be removed
+  // eventually.
+  uint32_t get() const { return offset(); }
+};
+static_assert(sizeof(FaultingCodeRange) == 8);
+
+// And this holds two such ranges.  Needed for 64-bit integer transactions on
 // 32-bit targets.
-using FaultingCodeOffsetPair =
-    std::pair<FaultingCodeOffset, FaultingCodeOffset>;
-static_assert(sizeof(FaultingCodeOffsetPair) == 8);
+using FaultingCodeRangePair = std::pair<FaultingCodeRange, FaultingCodeRange>;
+static_assert(sizeof(FaultingCodeRangePair) == 16);
 
 // The bytecode offsets of all the callers of a function that has been inlined.
 // See CallSiteDesc/TrapSiteDesc for uses of this.
@@ -455,7 +560,7 @@ class TrapSitesForKind {
   }
 
   [[nodiscard]]
-  bool append(TrapMachineInsn insn, uint32_t pcOffset,
+  bool append(TrapMachineInsn insn, FaultingCodeRange fcr,
               const TrapSiteDesc& desc) {
     MOZ_ASSERT(desc.bytecodeOffset.isValid());
 
@@ -483,7 +588,7 @@ class TrapSitesForKind {
 #ifdef DEBUG
     machineInsns_.infallibleAppend(insn);
 #endif
-    pcOffsets_.infallibleAppend(pcOffset);
+    pcOffsets_.infallibleAppend(fcr.offsetUnchecked());
     bytecodeOffsets_.infallibleAppend(desc.bytecodeOffset);
 
     return true;
@@ -621,9 +726,9 @@ class TrapSites {
   }
 
   [[nodiscard]]
-  bool append(Trap trap, TrapMachineInsn insn, uint32_t pcOffset,
+  bool append(Trap trap, TrapMachineInsn insn, FaultingCodeRange fcr,
               const TrapSiteDesc& desc) {
-    return array_[trap].append(insn, pcOffset, desc);
+    return array_[trap].append(insn, fcr, desc);
   }
 
   [[nodiscard]]

@@ -276,6 +276,8 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "tabGroupDragToCreate",
   pref: "browser.tabs.dragDrop.createGroup.enabled",
+  deps: ["tabGroups"],
+  visible: ({ tabGroups }) => !!tabGroups.value,
 });
 if (lazy.AppConstants.platform === "win") {
   /**
@@ -785,7 +787,7 @@ SettingGroupManager.registerGroups({
   recommendations: {
     l10nId: "recommendations-group",
     headingLevel: 2,
-    iconSrc: "chrome://browser/skin/trending.svg",
+    iconSrc: "chrome://browser/skin/lightning-bolt.svg",
     items: [
       {
         id: "cfrRecommendations",

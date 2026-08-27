@@ -39,7 +39,7 @@
 }
 
 .chat-assistant-loader__nl-icon {
-  background-image: url("chrome://browser/skin/smart-window.svg");
+  background-image: url("chrome://browser/content/aiwindow/assets/smart-window.svg");
 }
 
 .chat-assistant-loader__text,

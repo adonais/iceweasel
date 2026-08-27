@@ -44,6 +44,7 @@ const Template = ({
   iconSrc,
   disabled,
   readonly,
+  invalid,
   l10nId,
   description,
   supportPage,
@@ -58,6 +59,7 @@ const Template = ({
     iconsrc=${ifDefined(iconSrc || null)}
     ?disabled=${disabled}
     ?readonly=${readonly}
+    ?invalid=${invalid}
     data-l10n-id=${l10nId}
     support-page=${ifDefined(supportPage || null)}
     accesskey=${ifDefined(accessKey || null)}
@@ -79,6 +81,7 @@ Default.args = {
   iconSrc: "",
   disabled: false,
   readonly: false,
+  invalid: false,
   l10nId: "moz-input-text-label",
   supportPage: "",
   accessKey: "",
@@ -123,6 +126,14 @@ Readonly.args = {
   ...Default.args,
   l10nId: "moz-input-text-description",
   readonly: true,
+};
+
+export const Invalid = Template.bind({});
+Invalid.args = {
+  ...Default.args,
+  l10nId: "moz-input-text-description",
+  value: "Invalid value",
+  invalid: true,
 };
 
 export const WithAccesskey = Template.bind({});

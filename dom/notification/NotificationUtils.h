@@ -13,6 +13,7 @@
 #include "nsStringFwd.h"
 
 enum class nsresult : uint32_t;
+class nsIAlertCallbacks;
 class nsIAlertNotification;
 class nsIPrincipal;
 class nsINotificationStorage;
@@ -95,7 +96,7 @@ void UnregisterNotification(nsIPrincipal* aPrincipal, const nsString& aId);
 // The cleanup happens when this is globally the first call, or always if
 // dom.webnotifications.testing.force_storage_cleanup.enabled is set.
 nsresult ShowAlertWithCleanup(nsIAlertNotification* aAlert,
-                              nsIObserver* aAlertListener);
+                              nsIAlertCallbacks* aAlertCallbacks);
 
 nsresult RemovePermission(nsIPrincipal* aPrincipal);
 nsresult OpenSettings(nsIPrincipal* aPrincipal);

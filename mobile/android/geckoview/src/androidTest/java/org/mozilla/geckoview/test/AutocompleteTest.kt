@@ -50,6 +50,9 @@ class AutocompleteTest : BaseSessionTest() {
 
     val acceptDelay: Long = 100
 
+    // Controls how long a selection prompt is kept open after its field blurs.
+    private val dismissDelayPref = "geckoview.autocomplete.selection_dismiss_delay_ms"
+
     // This is a utility to delete previous credit card and address information.
     // Some credit card tests may not use fetched data since pop up is opened
     // before fetching it.
@@ -460,6 +463,187 @@ class AutocompleteTest : BaseSessionTest() {
         sessionRule.waitForResult(promptHandled)
         mainSession.evaluateJS("document.querySelector('#name').blur()")
         sessionRule.waitForResult(result)
+    }
+
+    @Test
+    fun creditCardSelectCoalescesAcrossSameTypeFields() {
+        // Workaround to fetch and open prompt
+        clearData()
+
+        // Keep the coalesce window open long enough that the deferred dismissal
+        // can't fire mid-test, so focusing the second field deterministically
+        // coalesces into the existing prompt regardless of how slow the
+        // autocomplete search is on the device.
+        sessionRule.setPrefsUntilTestEnd(mapOf(dismissDelayPref to 60000))
+
+        // Moving focus between two credit card fields should keep the existing
+        // selection prompt alive instead of dismissing and reopening it, which
+        // would flicker. The delegate should therefore see a single
+        // onCreditCardSelect and no dismissal while focus moves between fields.
+        val savedCC = arrayOf(
+            CreditCard.Builder()
+                .guid("test-guid1")
+                .name("Peter Parker")
+                .number("1234-1234-1234-1234")
+                .expirationMonth("04")
+                .expirationYear("22")
+                .build(),
+        )
+
+        mainSession.loadTestPath(CC_FORM_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
+            @AssertCalled
+            override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>>? {
+                return GeckoResult.fromValue(savedCC)
+            }
+        })
+
+        var promptDismissed = false
+        val dismissed = GeckoResult<PromptDelegate.PromptResponse>()
+        val promptInstanceDelegate = object : PromptDelegate.PromptInstanceDelegate {
+            override fun onPromptDismiss(prompt: PromptDelegate.BasePrompt) {
+                promptDismissed = true
+                dismissed.complete(prompt.dismiss())
+            }
+        }
+
+        val promptOpened = GeckoResult<Void>()
+        mainSession.delegateUntilTestEnd(object : PromptDelegate {
+            // Coalescing means focusing the second field must not open a second
+            // prompt; a regression that dismisses + reopens calls this twice.
+            @AssertCalled(count = 1)
+            override fun onCreditCardSelect(
+                session: GeckoSession,
+                prompt: AutocompleteRequest<CreditCardSelectOption>,
+            ): GeckoResult<PromptDelegate.PromptResponse>? {
+                prompt.setDelegate(promptInstanceDelegate)
+                Handler(Looper.getMainLooper()).postDelayed({
+                    promptOpened.complete(null)
+                }, acceptDelay)
+                // Leave the prompt open; do not confirm.
+                return GeckoResult()
+            }
+        })
+
+        // Open the prompt on the first credit card field.
+        mainSession.evaluateJS("document.querySelector('#name').focus()")
+        sessionRule.waitForResult(promptOpened)
+
+        // Move focus to a second credit card field and let its autocomplete
+        // cycle run. With coalescing, no second prompt opens and the existing
+        // one is not dismissed. The window is large, so the dismissal cannot
+        // fire here regardless of timing.
+        val settled = GeckoResult<Void>()
+        mainSession.evaluateJS("document.querySelector('#number').focus()")
+        Handler(Looper.getMainLooper()).postDelayed({
+            settled.complete(null)
+        }, acceptDelay * 5)
+        sessionRule.waitForResult(settled)
+
+        assertThat(
+            "The prompt should stay open while focus moves between same-type fields",
+            promptDismissed,
+            equalTo(false),
+        )
+
+        // Shrink the window so the dismissal is immediate, then confirm focus
+        // leaving the field still dismisses the (single) prompt.
+        sessionRule.setPrefsUntilTestEnd(mapOf(dismissDelayPref to 0))
+        mainSession.evaluateJS("document.querySelector('#number').blur()")
+        sessionRule.waitForResult(dismissed)
+    }
+
+    @Test
+    fun addressSelectCoalescesAcrossSameTypeFields() {
+        // Workaround to fetch and open prompt
+        clearData()
+
+        // Keep the coalesce window open long enough that the deferred dismissal
+        // can't fire mid-test, so focusing the second field deterministically
+        // coalesces into the existing prompt regardless of how slow the
+        // autocomplete search is on the device.
+        sessionRule.setPrefsUntilTestEnd(mapOf(dismissDelayPref to 60000))
+
+        // As with credit cards, moving focus between two address fields should
+        // keep the existing prompt rather than flickering.
+        val savedAddress = Address.Builder()
+            .guid("test-guid")
+            .name("Peter Parker")
+            .givenName("Peter")
+            .familyName("Parker")
+            .streetAddress("20 Ingram Street, Forest Hills Gardens, Queens")
+            .postalCode("11375")
+            .country("US")
+            .email("spiderman@newyork.com")
+            .tel("+1 180090021")
+            .organization("")
+            .build()
+
+        mainSession.loadTestPath(ADDRESS_FORM_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
+            @AssertCalled
+            override fun onAddressFetch(): GeckoResult<Array<Address>>? {
+                return GeckoResult.fromValue(arrayOf(savedAddress))
+            }
+        })
+
+        var promptDismissed = false
+        val dismissed = GeckoResult<PromptDelegate.PromptResponse>()
+        val promptInstanceDelegate = object : PromptDelegate.PromptInstanceDelegate {
+            override fun onPromptDismiss(prompt: PromptDelegate.BasePrompt) {
+                promptDismissed = true
+                dismissed.complete(prompt.dismiss())
+            }
+        }
+
+        val promptOpened = GeckoResult<Void>()
+        mainSession.delegateUntilTestEnd(object : PromptDelegate {
+            // Coalescing means focusing the second field must not open a second
+            // prompt; a regression that dismisses + reopens calls this twice.
+            @AssertCalled(count = 1)
+            override fun onAddressSelect(
+                session: GeckoSession,
+                prompt: AutocompleteRequest<AddressSelectOption>,
+            ): GeckoResult<PromptDelegate.PromptResponse>? {
+                prompt.setDelegate(promptInstanceDelegate)
+                Handler(Looper.getMainLooper()).postDelayed({
+                    promptOpened.complete(null)
+                }, acceptDelay)
+                // Leave the prompt open; do not confirm.
+                return GeckoResult()
+            }
+        })
+
+        // Open the prompt on the first address field.
+        mainSession.evaluateJS("document.querySelector('#givenName').focus()")
+        sessionRule.waitForResult(promptOpened)
+
+        // Move focus to a second address field and let its autocomplete cycle
+        // run. With coalescing, no second prompt opens and the existing one is
+        // not dismissed. The window is large, so the dismissal cannot fire here
+        // regardless of timing.
+        val settled = GeckoResult<Void>()
+        mainSession.evaluateJS("document.querySelector('#streetAddress').focus()")
+        Handler(Looper.getMainLooper()).postDelayed({
+            settled.complete(null)
+        }, acceptDelay * 5)
+        sessionRule.waitForResult(settled)
+
+        assertThat(
+            "The prompt should stay open while focus moves between same-type fields",
+            promptDismissed,
+            equalTo(false),
+        )
+
+        // Shrink the window so the dismissal is immediate, then confirm focus
+        // leaving the field still dismisses the (single) prompt.
+        sessionRule.setPrefsUntilTestEnd(mapOf(dismissDelayPref to 0))
+        mainSession.evaluateJS("document.querySelector('#streetAddress').blur()")
+        sessionRule.waitForResult(dismissed)
     }
 
     @Test

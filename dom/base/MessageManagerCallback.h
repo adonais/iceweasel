@@ -7,9 +7,13 @@
 
 #include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/ProcessIsolation.h"
 #include "nsError.h"
 #include "nsStringFwd.h"
 #include "nsTArrayForwardDeclare.h"
+
+class nsIDOMProcessParent;
+class nsIPrincipal;
 
 namespace mozilla {
 
@@ -52,6 +56,8 @@ class MessageManagerCallback {
 
   virtual void DoGetRemoteType(nsACString& aRemoteType,
                                ErrorResult& aError) const;
+
+  virtual nsIDOMProcessParent* ProcessParent() { return nullptr; }
 };
 
 }  // namespace ipc

@@ -1,0 +1,12 @@
+---
+review-context-toml:
+    description: Validate review-context.toml against the review context schema
+    include:
+        - review-context.toml
+    extensions:
+        - .toml
+    support-files:
+        - 'tools/lint/python/review_context_schema.py'
+        - 'tools/lint/python/review_context_toml.py'
+    type: external
+    payload: python.review_context_toml:lint

@@ -59,6 +59,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
     typedArray[0] = undefined;
   });
 
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

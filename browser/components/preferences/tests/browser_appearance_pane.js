@@ -119,13 +119,31 @@ add_task(async function test_related_settings_tabs_browsing_link_navigates() {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
+// Mirrors isAutoTouchModeAvailable() in appearance.mjs: the auto-touch-mode
+// checkbox is only offered on Linux (GTK) and on tablet-capable Windows devices,
+// so the checkbox stays hidden everywhere else regardless of the selected
+// density. The visibility tests skip where it returns false rather than assert
+// against a permanently hidden checkbox, which would pass without testing
+// anything.
+function autoTouchModeAvailable() {
+  if (AppConstants.MOZ_WIDGET_GTK) {
+    return true;
+  }
+  if (AppConstants.platform != "win") {
+    return false;
+  }
+  return Cc["@mozilla.org/windows-ui-utils;1"].getService(Ci.nsIWindowsUIUtils)
+    .isTabletCapable;
+}
+
 async function withWindowDensityPane(callback) {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.nova.enabled", true]],
   });
   // browser.uidensity is a sticky pref, so any user value set during the test
-  // outlives pushPrefEnv. Restore the default (no user value, i.e. automatic)
-  // when we're done.
+  // outlives pushPrefEnv. Start each task from the default (no user value, i.e.
+  // automatic) and restore it when we're done.
+  Services.prefs.clearUserPref("browser.uidensity");
   registerCleanupFunction(() =>
     Services.prefs.clearUserPref("browser.uidensity")
   );
@@ -203,9 +221,6 @@ add_task(async function test_window_density_radio_reflects_pref() {
       { pref: 2, expected: "touch", desc: "touch density maps to touch" },
     ];
 
-    // Assert against the setting model rather than the rendered radio group:
-    // the auto/standard boundary doesn't change the underlying int (both 0),
-    // so the pref observer won't re-render the DOM, but get() still maps it.
     for (let { pref, expected, desc } of cases) {
       if (pref === null) {
         Services.prefs.clearUserPref("browser.uidensity");
@@ -213,6 +228,10 @@ add_task(async function test_window_density_radio_reflects_pref() {
         Services.prefs.setIntPref("browser.uidensity", pref);
       }
       is(control.setting.value, expected, desc);
+      await TestUtils.waitForCondition(
+        () => control.controlEl.value === expected,
+        `radio group renders "${expected}": ${desc}`
+      );
     }
   });
 });
@@ -257,19 +276,22 @@ add_task(async function test_window_density_radio_updates_pref() {
   });
 });
 
-// When the density is overridden (e.g. forced to touch by tablet mode via
-// browser.touchmode.auto), picking an explicit density must also clear the
-// override so the choice takes effect (bug 2053782). "auto" should leave the
-// auto-touch behavior in place.
+// Picking an explicit density in about:preferences must leave the user's
+// browser.touchmode.auto choice untouched, even when the density is currently
+// overridden (e.g. forced to touch by tablet mode). gUIDensity.getCurrentDensity
+// already respects an explicit compact/touch value over the auto-touch pref, and
+// the auto-touch pref is the standard density's own opt-in, so selecting a
+// density should never rewrite it.
 add_task(
-  async function test_window_density_clears_override_on_explicit_choice() {
+  async function test_window_density_preserves_auto_touch_on_explicit_choice() {
     await withWindowDensityPane(async ({ win }) => {
       let control = getSettingControl("uiDensity", win);
       await control.updateComplete;
 
       let gUIDensity = win.browsingContext.topChromeWindow.gUIDensity;
       let originalGetCurrentDensity = gUIDensity.getCurrentDensity;
-      // Simulate tablet mode's touch override without needing a real tablet.
+      // Simulate tablet mode's touch override without needing a real tablet, so
+      // that any re-introduced clear-on-override logic would trigger here.
       gUIDensity.getCurrentDensity = () => ({
         mode: gUIDensity.MODE_TOUCH,
         overridden: true,
@@ -277,6 +299,7 @@ add_task(
       registerCleanupFunction(() => {
         gUIDensity.getCurrentDensity = originalGetCurrentDensity;
         Services.prefs.clearUserPref("browser.touchmode.auto");
+        Services.prefs.clearUserPref("browser.uidensity");
       });
 
       let selectOption = value => selectDensityOption(control, value);
@@ -286,33 +309,115 @@ add_task(
       is(
         Services.prefs.getIntPref("browser.uidensity"),
         1,
-        "Selecting compact while overridden sets browser.uidensity to 1"
-      );
-      is(
-        Services.prefs.getBoolPref("browser.touchmode.auto"),
-        false,
-        "Selecting compact while overridden clears the auto-touch override"
-      );
-
-      Services.prefs.setBoolPref("browser.touchmode.auto", true);
-      await selectOption("touch");
-      is(
-        Services.prefs.getBoolPref("browser.touchmode.auto"),
-        false,
-        "Selecting touch while overridden clears the auto-touch override"
-      );
-
-      Services.prefs.setBoolPref("browser.touchmode.auto", true);
-      await selectOption("auto");
-      is(
-        Services.prefs.getBoolPref("browser.touchmode.auto"),
-        true,
-        "Selecting automatic leaves the auto-touch behavior in place"
+        "Selecting compact sets browser.uidensity to 1"
       );
       ok(
-        !Services.prefs.prefHasUserValue("browser.uidensity"),
-        "Selecting automatic clears the browser.uidensity user value"
+        Services.prefs.getBoolPref("browser.touchmode.auto"),
+        "Selecting compact leaves browser.touchmode.auto untouched"
       );
+
+      await selectOption("touch");
+      ok(
+        Services.prefs.getBoolPref("browser.touchmode.auto"),
+        "Selecting touch leaves browser.touchmode.auto untouched"
+      );
+
+      await selectOption("standard");
+      ok(
+        Services.prefs.getBoolPref("browser.touchmode.auto"),
+        "Selecting standard leaves browser.touchmode.auto untouched"
+      );
+    });
+  }
+);
+
+// Assert the nested auto-touch checkbox's visibility. Only meaningful where
+// auto-touch is available; callers skip otherwise.
+async function assertAutoTouchCheckboxVisibility(win, expectVisible, desc) {
+  let checkbox = getSettingControl("uiDensityAutoTouchMode", win);
+  ok(checkbox, `auto-touch checkbox setting-control exists (${desc})`);
+  await TestUtils.waitForCondition(
+    () => checkbox.hidden === !expectVisible,
+    `auto-touch checkbox ${expectVisible ? "shown" : "hidden"}: ${desc}`
+  );
+  if (expectVisible) {
+    is_element_visible(checkbox, desc);
+  } else {
+    is_element_hidden(checkbox, desc);
+  }
+}
+
+// The "Use touch spacing for tablet mode" checkbox is nested under the Standard
+// density option and should only be shown while that option is selected.
+add_task(async function test_window_density_auto_touch_checkbox_visibility() {
+  if (!autoTouchModeAvailable()) {
+    info(
+      "Auto-touch mode is unavailable on this device, so the checkbox is " +
+        "always hidden and there is nothing to assert. Note that this leaves " +
+        "the shown path uncovered here; Linux (GTK) is where it runs."
+    );
+    return;
+  }
+  await withWindowDensityPane(async ({ win }) => {
+    let control = getSettingControl("uiDensity", win);
+    await control.updateComplete;
+
+    let selectOption = value => selectDensityOption(control, value);
+    let assertVisibility = (standardSelected, desc) =>
+      assertAutoTouchCheckboxVisibility(win, standardSelected, desc);
+
+    // The pane opens on automatic in a fresh profile.
+    await assertVisibility(false, "automatic hides the checkbox on load");
+
+    // Switch automatic to standard, with the int fixed at 0: the checkbox has to
+    // appear the first time Standard is selected.
+    await selectOption("standard");
+    await assertVisibility(true, "standard shows the checkbox");
+
+    // Switch standard to automatic, again with the int fixed at 0.
+    await selectOption("auto");
+    await assertVisibility(false, "automatic hides the checkbox");
+
+    await selectOption("compact");
+    await assertVisibility(false, "compact hides the checkbox");
+
+    await selectOption("standard");
+    await assertVisibility(true, "standard shows the checkbox again");
+
+    await selectOption("touch");
+    await assertVisibility(false, "touch hides the checkbox");
+  });
+});
+
+// The checkbox must also follow the density changing from outside the pane (for
+// example from another window), which has no radio click to piggyback on.
+add_task(
+  async function test_window_density_auto_touch_checkbox_follows_pref_changes() {
+    if (!autoTouchModeAvailable()) {
+      info(
+        "Auto-touch mode is unavailable on this device, so the checkbox is " +
+          "always hidden and there is nothing to assert. Note that this " +
+          "leaves the shown path uncovered here; Linux (GTK) is where it runs."
+      );
+      return;
+    }
+    await withWindowDensityPane(async ({ win }) => {
+      let control = getSettingControl("uiDensity", win);
+      await control.updateComplete;
+      let assertVisibility = (standardSelected, desc) =>
+        assertAutoTouchCheckboxVisibility(win, standardSelected, desc);
+
+      Services.prefs.setIntPref("browser.uidensity", 0);
+      await assertVisibility(true, "explicit standard shows the checkbox");
+
+      Services.prefs.clearUserPref("browser.uidensity");
+      await assertVisibility(false, "cleared pref hides the checkbox");
+
+      Services.prefs.setIntPref("browser.uidensity", 2);
+      await assertVisibility(false, "touch hides the checkbox");
+
+      Services.prefs.setIntPref("browser.uidensity", 0);
+      await assertVisibility(true, "standard shows the checkbox");
     });
   }
 );

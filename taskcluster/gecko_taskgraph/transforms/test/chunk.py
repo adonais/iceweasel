@@ -50,6 +50,39 @@ def set_test_verify_chunks(config, tasks):
         yield task
 
 
+def _wpt_task_should_run(test_name, input_paths):
+    """Return whether a web-platform-tests task should run for the given set of
+    test paths.
+
+    A task is associated with a subsuite when a subsuite name (a key of
+    WPT_SUBSUITES) appears as a substring of ``test_name``. That subsuite's path
+    prefixes then determine which tests it owns, matched by prefix against both
+    the standard and mozilla-specific wpt test roots. A subsuite task runs when
+    at least one path falls under one of its prefixes; the general
+    (non-subsuite) task runs when at least one path falls outside every subsuite
+    prefix.
+    """
+    task_subsuite = next((key for key in WPT_SUBSUITES if key in test_name), None)
+    subsuite_paths = WPT_SUBSUITES.get(task_subsuite) or [
+        path for paths in WPT_SUBSUITES.values() for path in paths
+    ]
+
+    for path in input_paths:
+        matched = any(
+            path.startswith("testing/web-platform/tests/" + subsuite_path)
+            or path.startswith("testing/web-platform/mozilla/tests/" + subsuite_path)
+            for subsuite_path in subsuite_paths
+        )
+        if task_subsuite:
+            if matched:
+                # This is a subsuite task, and a path matched it
+                return True
+        elif not matched:
+            # This is a non-subsuite task, and a path matched no subsuite
+            return True
+    return False
+
+
 @transforms.add
 def set_test_manifests(config, tasks):
     """Determine the set of test manifests that should run in this task."""
@@ -116,24 +149,9 @@ def set_test_manifests(config, tasks):
             input_paths = mh_test_paths[task["attributes"]["unittest_suite"]]
             remaining_manifests = []
 
-            # if we have web-platform tests incoming, just yield task
-            found_wpt = False
-            for m in input_paths:
-                if m.startswith("testing/web-platform/tests/"):
-                    found_subsuite = [
-                        key for key in WPT_SUBSUITES if key in task["test-name"]
-                    ]
-                    if found_subsuite:
-                        if any(
-                            test_subsuite in m
-                            for test_subsuite in WPT_SUBSUITES[found_subsuite[0]]
-                        ):
-                            yield task
-                    else:
-                        yield task
-                    found_wpt = True
-                    break
-            if found_wpt:
+            if "web-platform-tests" in task["test-name"]:
+                if _wpt_task_should_run(task["test-name"], input_paths):
+                    yield task
                 continue
 
             # input paths can exist in other directories (i.e. [../../dir/test.js])

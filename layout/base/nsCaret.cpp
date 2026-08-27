@@ -280,11 +280,7 @@ nsRect nsCaret::GetGeometryForFrame(nsIFrame* aFrame, int32_t aFrameOffset,
 
   // on RTL frames the right edge of mCaretRect must be equal to framePos
   if (aFrame->StyleVisibility()->mDirection == StyleDirection::Rtl) {
-    if (vertical) {
-      inlineOffset -= caretMetrics.mCaretWidth;
-    } else {
-      inlineOffset -= caretMetrics.mCaretWidth;
-    }
+    inlineOffset -= caretMetrics.mCaretWidth;
   }
 
   if (vertical) {

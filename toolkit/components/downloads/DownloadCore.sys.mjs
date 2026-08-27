@@ -435,6 +435,7 @@ Download.prototype = {
 
     // Restart the progress and speed calculations from scratch.
     this._lastProgressTimeMs = 0;
+    this._progressThrottleTimer?.cancel();
 
     // This function propagates progress from the DownloadSaver object, unless
     // it comes in late from a download attempt that was replaced by a new one.
@@ -615,6 +616,7 @@ Download.prototype = {
           // Update the status properties, unless a new attempt already started.
           if (this._currentAttempt == currentAttempt || !this._currentAttempt) {
             this._currentAttempt = null;
+            this._progressThrottleTimer?.cancel();
             this.stopped = true;
             this.speed = 0;
             if (!this._batch || Download._updateBatch(this._batch)) {
@@ -1227,6 +1229,8 @@ Download.prototype = {
     this._finalized = true;
     let promise;
 
+    this._progressThrottleTimer?.cancel();
+
     if (aRemovePartialData) {
       // Cancel the download, in case it is currently in progress, then remove
       // any partially downloaded data.  The removal operation waits for
@@ -1283,6 +1287,18 @@ Download.prototype = {
   _lastProgressTimeMs: 0,
 
   /**
+   * A timer that activates when the throttle would run out, ensuring that progress
+   * events aren't dropped. Should be null if no timers are currently pending.
+   */
+  _progressThrottleTimer: null,
+
+  /**
+   * The number of bytes that should be indicated by the throttle timer when it
+   * wakes up.
+   */
+  _throttledCurrentBytes: 0,
+
+  /**
    * Updates progress notifications based on the number of bytes transferred.
    *
    * The number of bytes transferred is not updated unless enough time passed
@@ -1321,6 +1337,9 @@ Download.prototype = {
     let currentTimeMs = Date.now();
     let intervalMs = currentTimeMs - this._lastProgressTimeMs;
     if (intervalMs >= kProgressUpdateIntervalMs) {
+      this._progressThrottleTimer?.cancel();
+      this._progressThrottleTimer = null;
+
       // Don't compute the speed unless we started throttling notifications.
       if (this._lastProgressTimeMs != 0) {
         // Calculate the speed in bytes per second.
@@ -1356,6 +1375,28 @@ Download.prototype = {
 
       if (this.hasProgress && this.target && !this.target.partFileExists) {
         this.target.refreshPartFileState();
+      }
+    } else if (this.hasProgress) {
+      this._throttledCurrentBytes = aCurrentBytes;
+      if (this._progressThrottleTimer == null) {
+        // Make sure that the progress is updated even if no more bytes
+        // arrive for a while.
+        this._progressThrottleTimer = Cc["@mozilla.org/timer;1"].createInstance(
+          Ci.nsITimer
+        );
+        this._progressThrottleTimer.initWithCallback(
+          () => {
+            if (!this._finalized) {
+              this._setBytes(
+                this._throttledCurrentBytes,
+                this.totalBytes,
+                this.hasPartialData
+              );
+            }
+          },
+          kProgressUpdateIntervalMs - intervalMs,
+          Ci.nsITimer.TYPE_ONE_SHOT
+        );
       }
     }
 

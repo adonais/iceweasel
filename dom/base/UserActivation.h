@@ -142,6 +142,12 @@ class UserActivation final : public nsISupports, public nsWrapperCache {
   static bool IsHandlingKeyboardInput();
 
   /**
+   * Returns true if the current code is being executed as a result of
+   * a keyboard input and the keyboard input is associated with paste actions.
+   */
+  static bool IsHandlingKeyboardInputWithPasteActions();
+
+  /**
    * Returns true if the event is considered as user interaction event. I.e.,
    * enough obvious input to allow to open popup, etc. Otherwise, returns false.
    */
@@ -188,6 +194,10 @@ class MOZ_RAII AutoHandlingUserInputStatePusher final {
  protected:
   EventMessage mMessage;
   bool mIsHandlingUserInput;
+
+  // True if there are paste commands associated with the previous keyboard
+  // event when a nested event loop is spun.
+  bool mPreviousHandlingKeyboardEventHasAssociatedPasteCommands;
 };
 
 }  // namespace mozilla::dom

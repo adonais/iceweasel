@@ -73,8 +73,12 @@ DEFINES['OTS_SYNTHESIZE_MISSING_GVAR'] = 1
 
 USE_LIBS += [
     'brotli',
-    'woff2',
 ]
+
+if not CONFIG['MOZ_WASM_SANDBOXING_WOFF2']:
+    USE_LIBS += [
+        'woff2',
+    ]
 
 LOCAL_INCLUDES += [
     '!/security/rlbox',

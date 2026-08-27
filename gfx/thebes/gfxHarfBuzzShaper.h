@@ -186,7 +186,7 @@ class gfxHarfBuzzShaper : public gfxFontShaper {
   };
 
   struct CmapCache
-      : public mozilla::MruCache<uint32_t, CmapCacheData, CmapCache, 251> {
+      : public mozilla::MruCache<uint32_t, CmapCacheData, CmapCache, 256> {
     static mozilla::HashNumber Hash(const uint32_t& aKey) { return aKey; }
     static bool Match(const uint32_t& aKey, const CmapCacheData& aData) {
       return aKey == aData.mCodepoint;
@@ -201,7 +201,7 @@ class gfxHarfBuzzShaper : public gfxFontShaper {
   };
 
   struct WidthCache
-      : public mozilla::MruCache<uint32_t, WidthCacheData, WidthCache, 251> {
+      : public mozilla::MruCache<uint32_t, WidthCacheData, WidthCache, 256> {
     static mozilla::HashNumber Hash(const hb_codepoint_t& aKey) { return aKey; }
     static bool Match(const uint32_t& aKey, const WidthCacheData& aData) {
       return aKey == aData.mGlyphId;

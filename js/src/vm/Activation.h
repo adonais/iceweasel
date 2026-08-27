@@ -297,10 +297,10 @@ class LiveSavedFrameCache {
   };
 
   using EntryVector = Vector<Entry, 0, SystemAllocPolicy>;
-  EntryVector* frames;
+  EntryVector* frames{nullptr};
 
  public:
-  explicit LiveSavedFrameCache() : frames(nullptr) {}
+  explicit LiveSavedFrameCache() = default;
 
   LiveSavedFrameCache(LiveSavedFrameCache&& rhs) : frames(rhs.frames) {
     MOZ_ASSERT(this != &rhs, "self-move disallowed");
@@ -406,6 +406,11 @@ class MOZ_STACK_CLASS Activation {
   // callFunctionWithAsyncStack.
   bool asyncCallIsExplicit_;
 
+  // True if this activation was entered to resume a suspended generator or
+  // async function/module. Used by js::CanSkipAwait to permit the await fast
+  // path only for a resumed async frame.
+  bool enteredForGeneratorResume_ = false;
+
   enum Kind : bool { Interpreter, Jit };
   Kind kind_;
 
@@ -451,6 +456,9 @@ class MOZ_STACK_CLASS Activation {
 
   bool asyncCallIsExplicit() const { return asyncCallIsExplicit_; }
 
+  bool enteredForGeneratorResume() const { return enteredForGeneratorResume_; }
+  void setEnteredForGeneratorResume() { enteredForGeneratorResume_ = true; }
+
   inline LiveSavedFrameCache* getLiveSavedFrameCache(JSContext* cx);
   void clearLiveSavedFrameCache() { frameCache_.clear(); }
 
@@ -495,8 +503,8 @@ class InterpreterActivation : public Activation {
                               MaybeConstruct constructing);
   inline void popInlineFrame(InterpreterFrame* frame);
 
-  inline bool resumeGeneratorFrame(JS::Handle<JSFunction*> callee,
-                                   JS::Handle<JSObject*> envChain);
+  inline bool pushInlineGeneratorResumeFrame(JS::Handle<JSFunction*> callee,
+                                             JS::Handle<JSObject*> envChain);
 
   InterpreterFrame* current() const { return regs_.fp(); }
   InterpreterRegs& regs() { return regs_; }

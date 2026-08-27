@@ -30,6 +30,17 @@ https_first_disabled = true
 
 ["browser_inputField_contextmenu_reintegration.js"]
 
+["browser_inputHistory.js"]
+https_first_disabled = true
+support-files = [
+  "../browser/searchSuggestionEngine.xml",
+  "../browser/searchSuggestionEngine.sjs",
+]
+
+["browser_inputHistory_autofill.js"]
+
+["browser_inputHistory_emptystring.js"]
+
 ["browser_originToAdaptive.js"]
 
 ["browser_paste.js"]

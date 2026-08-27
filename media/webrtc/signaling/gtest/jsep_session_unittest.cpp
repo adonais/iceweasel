@@ -4818,13 +4818,12 @@ TEST_F(JsepSessionTest, TestExtmapZeroId) {
   auto result = mSessionAns->SetRemoteDescription(kJsepSdpOffer, sdp);
   ASSERT_TRUE(result.mError == Some(dom::PCError::OperationError));
   ASSERT_EQ(
-      "Description contains invalid extension id 0 on level 0 which is"
-      " unsupported until 2-byte rtp header extensions are supported in"
-      " webrtc.org",
+      "Description contains invalid extension id 0 on level 0 (valid range is"
+      " 1-255)",
       mSessionAns->GetLastError());
 }
 
-TEST_F(JsepSessionTest, TestExtmapInvalidId) {
+TEST_F(JsepSessionTest, TestExtmapValidId15) {
   AddTracks(*mSessionAns, "video");
 
   std::string sdp =
@@ -4842,12 +4841,7 @@ TEST_F(JsepSessionTest, TestExtmapInvalidId) {
       "a=rtpmap:100 VP8/90000\r\n"
       "a=extmap:15 urn:ietf:params:rtp-hdrext:toffset\r\n";
   auto result = mSessionAns->SetRemoteDescription(kJsepSdpOffer, sdp);
-  ASSERT_TRUE(result.mError == Some(dom::PCError::OperationError));
-  ASSERT_EQ(
-      "Description contains invalid extension id 15 on level 0 which is"
-      " unsupported until 2-byte rtp header extensions are supported in"
-      " webrtc.org",
-      mSessionAns->GetLastError());
+  ASSERT_FALSE(result.mError.isSome());
 }
 
 TEST_F(JsepSessionTest, TestExtmapDuplicateId) {
@@ -4870,8 +4864,118 @@ TEST_F(JsepSessionTest, TestExtmapDuplicateId) {
       "a=extmap:2 "
       "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time\r\n";
   auto result = mSessionAns->SetRemoteDescription(kJsepSdpOffer, sdp);
-  ASSERT_TRUE(result.mError == Some(dom::PCError::OperationError));
+  ASSERT_TRUE(result.mError == Some(dom::PCError::InvalidAccessError));
   ASSERT_EQ("Description contains duplicate extension id 2 on level 0",
+            mSessionAns->GetLastError());
+}
+
+TEST_F(JsepSessionTest, TestInvalidExtmapId256) {
+  AddTracks(*mSessionAns, "video");
+
+  std::string sdp =
+      "v=0\r\n"
+      "o=- 6 2 IN IP4 1r\r\n"
+      "t=0 0a\r\n"
+      "a=ice-ufrag:Xp\r\n"
+      "a=ice-pwd:he\r\n"
+      "a=setup:actpass\r\n"
+      "a=fingerprint:sha-256 "
+      "DC:FC:25:56:2B:88:77:2F:E4:FA:97:4E:2E:F1:D6:34:A6:A0:11:E2:E4:38:B3:98:"
+      "08:D2:F7:9D:F5:E2:C1:15\r\n"
+      "m=video 9 UDP/TLS/RTP/SAVPF 100\r\n"
+      "c=IN IP4 0\r\n"
+      "a=rtpmap:100 VP8/90000\r\n"
+      "a=extmap:256 urn:ietf:params:rtp-hdrext:toffset\r\n";
+  auto result = mSessionAns->SetRemoteDescription(kJsepSdpOffer, sdp);
+  ASSERT_TRUE(result.mError == Some(dom::PCError::OperationError));
+  ASSERT_EQ(
+      "Description contains invalid extension id 256 on level 0 (valid range "
+      "is 1-255)",
+      mSessionAns->GetLastError());
+}
+
+TEST_F(JsepSessionTest, TestValidTwoByteExtmapIds) {
+  AddTracks(*mSessionAns, "video");
+
+  // Test ID=15 (boundary - first two-byte ID)
+  std::string sdp15 =
+      "v=0\r\n"
+      "o=- 6 2 IN IP4 1r\r\n"
+      "t=0 0a\r\n"
+      "a=ice-ufrag:XpXX\r\n"
+      "a=ice-pwd:AAAA+BBBB+CCCC+DDDD+EE\r\n"
+      "a=setup:actpass\r\n"
+      "a=fingerprint:sha-256 "
+      "DC:FC:25:56:2B:88:77:2F:E4:FA:97:4E:2E:F1:D6:34:A6:A0:11:E2:E4:38:B3:98:"
+      "08:D2:F7:9D:F5:E2:C1:15\r\n"
+      "m=video 9 UDP/TLS/RTP/SAVPF 100\r\n"
+      "c=IN IP4 0\r\n"
+      "a=rtpmap:100 VP8/90000\r\n"
+      "a=extmap:15 urn:ietf:params:rtp-hdrext:toffset\r\n";
+  auto result15 = mSessionAns->SetRemoteDescription(kJsepSdpOffer, sdp15);
+  ASSERT_FALSE(result15.mError.isSome());
+
+  // Test ID=255 (maximum valid ID)
+  std::string sdp255 = sdp15;
+  // Find and replace "a=extmap:15" with "a=extmap:255"
+  size_t pos = sdp255.find("a=extmap:15");
+  ASSERT_NE(pos, std::string::npos);
+  sdp255.replace(pos, strlen("a=extmap:15"), "a=extmap:255");
+  auto result255 = mSessionAns->SetRemoteDescription(kJsepSdpOffer, sdp255);
+  ASSERT_FALSE(result255.mError.isSome());
+
+  // Test ID=256 (invalid - should fail)
+  std::string sdp256 = sdp15;
+  pos = sdp256.find("a=extmap:15");
+  ASSERT_NE(pos, std::string::npos);
+  sdp256.replace(pos, strlen("a=extmap:15"), "a=extmap:256");
+  auto result256 = mSessionAns->SetRemoteDescription(kJsepSdpOffer, sdp256);
+  ASSERT_TRUE(result256.mError == Some(dom::PCError::OperationError));
+}
+
+TEST_F(JsepSessionTest, TestMidLengthAtLimit) {
+  AddTracks(*mSessionAns, "video");
+
+  // 16 characters is the RTCP-SDES maximum and must be accepted.
+  std::string sdp =
+      "v=0\r\n"
+      "o=- 6 2 IN IP4 1r\r\n"
+      "t=0 0a\r\n"
+      "a=ice-ufrag:XpXX\r\n"
+      "a=ice-pwd:AAAA+BBBB+CCCC+DDDD+EE\r\n"
+      "a=setup:actpass\r\n"
+      "a=fingerprint:sha-256 "
+      "DC:FC:25:56:2B:88:77:2F:E4:FA:97:4E:2E:F1:D6:34:A6:A0:11:E2:E4:38:B3:98:"
+      "08:D2:F7:9D:F5:E2:C1:15\r\n"
+      "m=video 9 UDP/TLS/RTP/SAVPF 100\r\n"
+      "c=IN IP4 0\r\n"
+      "a=mid:0123456789ABCDEF\r\n"
+      "a=rtpmap:100 VP8/90000\r\n";
+  auto result = mSessionAns->SetRemoteDescription(kJsepSdpOffer, sdp);
+  ASSERT_FALSE(result.mError.isSome());
+}
+
+TEST_F(JsepSessionTest, TestMidLengthTooLong) {
+  AddTracks(*mSessionAns, "video");
+
+  // 17 characters exceeds the RTCP-SDES maximum and must be rejected.
+  std::string sdp =
+      "v=0\r\n"
+      "o=- 6 2 IN IP4 1r\r\n"
+      "t=0 0a\r\n"
+      "a=ice-ufrag:XpXX\r\n"
+      "a=ice-pwd:AAAA+BBBB+CCCC+DDDD+EE\r\n"
+      "a=setup:actpass\r\n"
+      "a=fingerprint:sha-256 "
+      "DC:FC:25:56:2B:88:77:2F:E4:FA:97:4E:2E:F1:D6:34:A6:A0:11:E2:E4:38:B3:98:"
+      "08:D2:F7:9D:F5:E2:C1:15\r\n"
+      "m=video 9 UDP/TLS/RTP/SAVPF 100\r\n"
+      "c=IN IP4 0\r\n"
+      "a=mid:0123456789ABCDEFG\r\n"
+      "a=rtpmap:100 VP8/90000\r\n";
+  auto result = mSessionAns->SetRemoteDescription(kJsepSdpOffer, sdp);
+  ASSERT_TRUE(result.mError == Some(dom::PCError::OperationError));
+  ASSERT_EQ("Invalid description, mid length greater than 16",
             mSessionAns->GetLastError());
 }
 
@@ -6382,7 +6486,7 @@ TEST_F(JsepSessionTest, SetLocalAnswerInHaveLocalOffer) {
   // SetLocalDescription call fails.
   JsepSession::Result result =
       mSessionOff->SetLocalDescription(kJsepSdpAnswer, offer);
-  ASSERT_EQ(dom::PCError::InvalidModificationError, *result.mError);
+  ASSERT_EQ(dom::PCError::InvalidStateError, *result.mError);
   ASSERT_EQ(kJsepStateHaveLocalOffer, mSessionOff->GetState());
 }
 
@@ -6414,7 +6518,7 @@ TEST_F(JsepSessionTest, SetLocalOfferInHaveRemoteOffer) {
   // SetLocalDescription call fails.
   JsepSession::Result result =
       mSessionAns->SetLocalDescription(kJsepSdpOffer, offer);
-  ASSERT_EQ(dom::PCError::InvalidModificationError, *result.mError);
+  ASSERT_EQ(dom::PCError::InvalidStateError, *result.mError);
   ASSERT_EQ(kJsepStateHaveRemoteOffer, mSessionAns->GetState());
 }
 

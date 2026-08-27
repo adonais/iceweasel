@@ -120,6 +120,10 @@ class MFMediaEngineStream
   void ReplySampleRequestIfPossible();
   bool ShouldServeSamples() const;
 
+  // Return a strong reference to the parent source, thread-safe.
+  Microsoft::WRL::ComPtr<MFMediaSource> GetParentSource() const;
+  void SetParentSource(MFMediaSource* aParentSource);
+
   void NotifyNewData(MediaRawData* aSample);
   void NotifyEndOfStreamInternal();
 
@@ -145,8 +149,12 @@ class MFMediaEngineStream
 
   // IMFMediaEventQueue is thread-safe.
   Microsoft::WRL::ComPtr<IMFMediaEventQueue> mMediaEventQueue;
-  Microsoft::WRL::ComPtr<IMFStreamDescriptor> mStreamDescriptor;
-  Microsoft::WRL::ComPtr<MFMediaSource> mParentSource;
+  Mutex mDescriptorMutex{"MFMediaEngineStream::mDescriptorMutex"};
+  Microsoft::WRL::ComPtr<IMFStreamDescriptor> mStreamDescriptor
+      MOZ_GUARDED_BY(mDescriptorMutex);
+  mutable Mutex mParentSourceMutex{"MFMediaEngineStream::mParentSourceMutex"};
+  Microsoft::WRL::ComPtr<MFMediaSource> mParentSource
+      MOZ_GUARDED_BY(mParentSourceMutex);
 
   // This an unique ID retrieved from the IMFStreamDescriptor.
   DWORD mStreamDescriptorId = 0;

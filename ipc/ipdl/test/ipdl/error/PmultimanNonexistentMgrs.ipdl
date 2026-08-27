@@ -1,0 +1,10 @@
+//error: protocol `PStarsky' referenced as |manager| of `PmultimanNonexistentMgrs' has not been declared
+//error: protocol `PHutch' referenced as |manager| of `PmultimanNonexistentMgrs' has not been declared
+
+protocol PmultimanNonexistentMgrs {
+    manager PStarsky or PHutch;
+
+child:
+    async Dummy();
+    async __delete__();
+};

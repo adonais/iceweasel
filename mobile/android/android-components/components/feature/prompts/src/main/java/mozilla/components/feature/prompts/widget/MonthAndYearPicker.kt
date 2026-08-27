@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.prompts.widget
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.widget.NumberPicker
 import android.widget.ScrollView
@@ -18,7 +17,6 @@ import java.util.Calendar
 /**
  * UI widget that allows to select a month and a year.
  */
-@SuppressLint("ViewConstructor") // This view is only instantiated in code
 internal class MonthAndYearPicker @JvmOverloads constructor(
     context: Context,
     private val selectedDate: Calendar = now(),

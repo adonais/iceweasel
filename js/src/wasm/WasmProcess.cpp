@@ -108,6 +108,11 @@ bool wasm::InCompiledCode(void* pc) {
 #  if defined(__riscv)
 // On riscv64, Sv39 is not enough for huge memory, so we require at least Sv48.
 static const size_t MinAddressBitsForHugeMemory = 47;
+#  elif defined(__loongarch__) && (__loongarch_grlen == 64)
+// On loong64 silicon, there are two addressing modes observed: 40b VA on
+// Loongson 3B6000M/2K3000, and 48b VA on various other models.  Only enable
+// huge memory on the latter.
+static const size_t MinAddressBitsForHugeMemory = 47;
 #  else
 /*
  * Some 64 bit systems greatly limit the range of available virtual memory. We

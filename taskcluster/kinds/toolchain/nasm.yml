@@ -7,6 +7,7 @@ task-defaults:
     worker:
         max-run-time: 1800
     run:
+        clone-with: hg
         toolchain-artifact: public/build/nasm.tar.zst
 
 win64-nasm:
@@ -16,6 +17,7 @@ win64-nasm:
     treeherder:
         symbol: TW64(nasm)
     run:
+        clone-with: hg
         script: build-nasm.sh
         arguments: ['win64']
     fetches:
@@ -31,6 +33,7 @@ macosx64-nasm:
     treeherder:
         symbol: TM(nasm)
     run:
+        clone-with: hg
         script: build-nasm.sh
         arguments: ['macosx64']
     fetches:
@@ -47,6 +50,7 @@ macosx64-aarch64-nasm:
     treeherder:
         symbol: TMA64(nasm)
     run:
+        clone-with: hg
         script: build-nasm.sh
         arguments: ['macosx64-aarch64']
     fetches:
@@ -63,6 +67,7 @@ linux64-nasm:
     treeherder:
         symbol: TL(nasm)
     run:
+        clone-with: hg
         script: build-nasm.sh
         arguments: ['linux64']
     fetches:
@@ -77,6 +82,7 @@ linux64-nasm-2.14.02:
     treeherder:
         symbol: TL(nasm-2.14.02)
     run:
+        clone-with: hg
         script: build-nasm.sh
         arguments: ['linux64']
     fetches:

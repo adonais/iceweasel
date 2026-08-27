@@ -25,6 +25,8 @@ import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.concept.engine.mediasession.MediaSession
 import mozilla.components.concept.engine.mediasession.MediaSession.PlaybackState.PAUSED
 import mozilla.components.concept.engine.mediasession.MediaSession.PlaybackState.PLAYING
+import mozilla.components.feature.media.MediaNimbus
+import mozilla.components.feature.media.ext.MS_PER_SECOND
 import mozilla.components.feature.media.ext.getArtistOrUrl
 import mozilla.components.feature.media.ext.getNonPrivateIcon
 import mozilla.components.feature.media.ext.getTitleOrUrl
@@ -112,6 +114,14 @@ internal class MediaSessionServiceDelegate(
 
     @VisibleForTesting
     internal var isTransientAudioFocusLoss: Boolean = false
+
+    // On a track change the page often keeps reporting the previous track's positionState for a
+    // short while before pushing a fresh one. While that stale value persists we report a position
+    // of 0 instead of the outgoing track's position. hasTrackedMedia lets the very first update
+    // through, where a non-zero start position is legitimate.
+    private var hasTrackedMedia: Boolean = false
+    private var lastTitle: String? = null
+    private var stalePositionState: MediaSession.PositionState? = null
 
     fun onCreate() {
         logger.debug("Service created")
@@ -277,24 +287,57 @@ internal class MediaSessionServiceDelegate(
 
     @VisibleForTesting
     internal fun updateMediaSession(sessionState: SessionState) {
-        mediaSession.setPlaybackState(sessionState.mediaSessionState?.toPlaybackState())
+        val mss = sessionState.mediaSessionState
+        val improvementsEnabled = MediaNimbus.features.mediaNotificationImprovements.value().enabled
+
+        val resetPosition: Boolean = if (improvementsEnabled) {
+            val newTitle = mss?.metadata?.title
+            val currentPositionState = mss?.positionState
+            if (hasTrackedMedia && newTitle != lastTitle) {
+                stalePositionState = currentPositionState
+            }
+            hasTrackedMedia = true
+            lastTitle = newTitle
+            if (stalePositionState != null && currentPositionState == stalePositionState) {
+                true
+            } else {
+                stalePositionState = null
+                false
+            }
+        } else {
+            false
+        }
+
+        mediaSession.setPlaybackState(mss?.toPlaybackState(resetPosition))
         mediaSession.isActive = true
+        val durationMs = if (improvementsEnabled) {
+            val duration =
+                mss?.positionState?.duration?.takeIf { it > 0 }
+                    ?: mss?.elementMetadata?.duration?.takeIf { it > 0 }
+
+            duration?.times(MS_PER_SECOND)?.toLong() ?: -1L
+        } else {
+            -1L
+        }
         notificationScope?.launch {
             mediaSession.setMetadata(
                 MediaMetadataCompat.Builder()
                     .putString(
                         MediaMetadataCompat.METADATA_KEY_TITLE,
-                        sessionState.getTitleOrUrl(context, sessionState.mediaSessionState?.metadata?.title),
+                        sessionState.getTitleOrUrl(context, mss?.metadata?.title),
                     )
                     .putString(
                         MediaMetadataCompat.METADATA_KEY_ARTIST,
-                        sessionState.getArtistOrUrl(sessionState.mediaSessionState?.metadata?.artist),
+                        sessionState.getArtistOrUrl(mss?.metadata?.artist),
                     )
                     .putBitmap(
                         MediaMetadataCompat.METADATA_KEY_ART,
-                        sessionState.getNonPrivateIcon(sessionState.mediaSessionState?.metadata?.getArtwork),
+                        sessionState.getNonPrivateIcon(mss?.metadata?.getArtwork),
                     )
-                    .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, -1)
+                    .putLong(
+                        MediaMetadataCompat.METADATA_KEY_DURATION,
+                        durationMs,
+                    )
                     .build(),
             )
         }

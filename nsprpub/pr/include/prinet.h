@@ -33,8 +33,8 @@
 
 #if defined(XP_UNIX)
 #include <sys/types.h>
-#include <sys/socket.h>     /* AF_INET */
-#include <netinet/in.h>         /* INADDR_ANY, ..., ntohl(), ... */
+#include <sys/socket.h> /* AF_INET */
+#include <netinet/in.h> /* INADDR_ANY, ..., ntohl(), ... */
 #ifdef XP_UNIX
 #ifdef AIX
 /*

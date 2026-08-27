@@ -120,10 +120,7 @@ with only_when(compile_environment):
         if not basic_doodad:
             return Namespace(enabled=False)
         header_name = "doodad_" + target.cpu + ".h"
-        return Namespace(
-            enabled=True,
-            header_name=header_name
-        )
+        return Namespace(enabled=True, header_name=header_name)
 
     with only_when(advanced_doodad.enabled):
         set_config("DOODAD_ARCH_HEADER", advanced_doodad.header_name)

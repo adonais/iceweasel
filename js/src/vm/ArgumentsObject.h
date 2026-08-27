@@ -155,10 +155,10 @@ static_assert(JIT_ARGS_LENGTH_MAX <= ARGS_LENGTH_MAX,
  */
 class ArgumentsObject : public NativeObject {
  public:
-  static const uint32_t INITIAL_LENGTH_SLOT = 0;
-  static const uint32_t DATA_SLOT = 1;
-  static const uint32_t MAYBE_CALL_SLOT = 2;
-  static const uint32_t CALLEE_SLOT = 3;
+  JS_DEFINE_TYPED_SLOT(0, INITIAL_LENGTH_SLOT, Int32);
+  JS_DEFINE_TYPED_SLOT(1, DATA_SLOT, Private);
+  JS_DEFINE_TYPED_SLOT(2, MAYBE_CALL_SLOT, Object, Undefined);
+  JS_DEFINE_TYPED_SLOT(3, CALLEE_SLOT, Object);
 
   static const uint32_t LENGTH_OVERRIDDEN_BIT = 0x1;
   static const uint32_t ITERATOR_OVERRIDDEN_BIT = 0x2;
@@ -187,7 +187,7 @@ class ArgumentsObject : public NativeObject {
 
   ArgumentsData* data() const {
     return reinterpret_cast<ArgumentsData*>(
-        getFixedSlot(DATA_SLOT).toPrivate());
+        getFixedSlotTyped(DATA_SLOT).toPrivate());
   }
 
   RareArgumentsData* maybeRareData() const { return data()->rareData; }
@@ -268,14 +268,15 @@ class ArgumentsObject : public NativeObject {
    * current value of arguments.length!
    */
   uint32_t initialLength() const {
-    uint32_t argc = uint32_t(getFixedSlot(INITIAL_LENGTH_SLOT).toInt32()) >>
-                    PACKED_BITS_COUNT;
+    uint32_t argc =
+        uint32_t(getFixedSlotTyped(INITIAL_LENGTH_SLOT).toInt32()) >>
+        PACKED_BITS_COUNT;
     MOZ_ASSERT(argc <= ARGS_LENGTH_MAX);
     return argc;
   }
 
   bool hasFlags(uint32_t flags) const {
-    const Value& v = getFixedSlot(INITIAL_LENGTH_SLOT);
+    const Value& v = getFixedSlotTyped(INITIAL_LENGTH_SLOT);
     return v.toInt32() & flags;
   }
 
@@ -283,9 +284,9 @@ class ArgumentsObject : public NativeObject {
   bool hasOverriddenLength() const { return hasFlags(LENGTH_OVERRIDDEN_BIT); }
 
   void markLengthOverridden() {
-    uint32_t v =
-        getFixedSlot(INITIAL_LENGTH_SLOT).toInt32() | LENGTH_OVERRIDDEN_BIT;
-    setFixedSlot(INITIAL_LENGTH_SLOT, Int32Value(v));
+    uint32_t v = getFixedSlotTyped(INITIAL_LENGTH_SLOT).toInt32() |
+                 LENGTH_OVERRIDDEN_BIT;
+    setFixedSlotTyped(INITIAL_LENGTH_SLOT, Int32Value(v));
   }
 
   // Create the default "length" property and set LENGTH_OVERRIDDEN_BIT.
@@ -297,9 +298,9 @@ class ArgumentsObject : public NativeObject {
   }
 
   void markIteratorOverridden() {
-    uint32_t v =
-        getFixedSlot(INITIAL_LENGTH_SLOT).toInt32() | ITERATOR_OVERRIDDEN_BIT;
-    setFixedSlot(INITIAL_LENGTH_SLOT, Int32Value(v));
+    uint32_t v = getFixedSlotTyped(INITIAL_LENGTH_SLOT).toInt32() |
+                 ITERATOR_OVERRIDDEN_BIT;
+    setFixedSlotTyped(INITIAL_LENGTH_SLOT, Int32Value(v));
   }
 
   // Create the default @@iterator property and set ITERATOR_OVERRIDDEN_BIT.
@@ -314,9 +315,9 @@ class ArgumentsObject : public NativeObject {
   bool hasOverriddenElement() const { return hasFlags(ELEMENT_OVERRIDDEN_BIT); }
 
   void markElementOverridden() {
-    uint32_t v =
-        getFixedSlot(INITIAL_LENGTH_SLOT).toInt32() | ELEMENT_OVERRIDDEN_BIT;
-    setFixedSlot(INITIAL_LENGTH_SLOT, Int32Value(v));
+    uint32_t v = getFixedSlotTyped(INITIAL_LENGTH_SLOT).toInt32() |
+                 ELEMENT_OVERRIDDEN_BIT;
+    setFixedSlotTyped(INITIAL_LENGTH_SLOT, Int32Value(v));
   }
 
  private:
@@ -409,9 +410,9 @@ class ArgumentsObject : public NativeObject {
   bool anyArgIsForwarded() const { return hasFlags(FORWARDED_ARGUMENTS_BIT); }
 
   void markArgumentForwarded() {
-    uint32_t v =
-        getFixedSlot(INITIAL_LENGTH_SLOT).toInt32() | FORWARDED_ARGUMENTS_BIT;
-    setFixedSlot(INITIAL_LENGTH_SLOT, Int32Value(v));
+    uint32_t v = getFixedSlotTyped(INITIAL_LENGTH_SLOT).toInt32() |
+                 FORWARDED_ARGUMENTS_BIT;
+    setFixedSlotTyped(INITIAL_LENGTH_SLOT, Int32Value(v));
   }
 
   /*
@@ -443,9 +444,11 @@ class ArgumentsObject : public NativeObject {
   static size_t objectMoved(JSObject* dst, JSObject* src);
 
   /* For jit use: */
-  static size_t getDataSlotOffset() { return getFixedSlotOffset(DATA_SLOT); }
+  static size_t getDataSlotOffset() {
+    return getFixedSlotOffsetTyped(DATA_SLOT);
+  }
   static size_t getInitialLengthSlotOffset() {
-    return getFixedSlotOffset(INITIAL_LENGTH_SLOT);
+    return getFixedSlotOffsetTyped(INITIAL_LENGTH_SLOT);
   }
 
   static Value MagicEnvSlotValue(uint32_t slot) {
@@ -484,19 +487,19 @@ class MappedArgumentsObject : public ArgumentsObject {
   static const JSClass class_;
 
   JSFunction& callee() const {
-    return getFixedSlot(CALLEE_SLOT).toObject().as<JSFunction>();
+    return getFixedSlotTyped(CALLEE_SLOT).toObject().as<JSFunction>();
   }
 
   bool hasOverriddenCallee() const { return hasFlags(CALLEE_OVERRIDDEN_BIT); }
 
   void markCalleeOverridden() {
-    uint32_t v =
-        getFixedSlot(INITIAL_LENGTH_SLOT).toInt32() | CALLEE_OVERRIDDEN_BIT;
-    setFixedSlot(INITIAL_LENGTH_SLOT, Int32Value(v));
+    uint32_t v = getFixedSlotTyped(INITIAL_LENGTH_SLOT).toInt32() |
+                 CALLEE_OVERRIDDEN_BIT;
+    setFixedSlotTyped(INITIAL_LENGTH_SLOT, Int32Value(v));
   }
 
   static size_t getCalleeSlotOffset() {
-    return getFixedSlotOffset(CALLEE_SLOT);
+    return getFixedSlotOffsetTyped(CALLEE_SLOT);
   }
 
   // Create the default "callee" property and set CALLEE_OVERRIDDEN_BIT.

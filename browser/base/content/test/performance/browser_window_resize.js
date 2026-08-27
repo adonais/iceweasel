@@ -81,7 +81,7 @@ add_task(async function () {
     guid: PlacesUtils.bookmarks.toolbarGuid,
     children: Array(BOOKMARKS_COUNT)
       .fill("")
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       .map((_, i) => ({ url: `http://test.places.${i}.x/` })),
   });
 

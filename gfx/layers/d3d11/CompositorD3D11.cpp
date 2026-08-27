@@ -100,8 +100,6 @@ CompositorD3D11::CompositorD3D11(widget::CompositorWidget* aWidget)
   mUseMutexOnPresent = StaticPrefs::gfx_use_mutex_on_present_AtStartup();
 }
 
-CompositorD3D11::~CompositorD3D11() {}
-
 template <typename VertexType>
 void CompositorD3D11::SetVertexBuffer(ID3D11Buffer* aBuffer) {
   UINT size = sizeof(VertexType);

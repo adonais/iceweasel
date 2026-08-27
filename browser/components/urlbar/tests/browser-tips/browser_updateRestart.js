@@ -40,7 +40,7 @@ add_task(async function test() {
   // Picking the tip should attempt to restart the browser.
   await doUpdateTest({
     searchString: SEARCH_STRINGS.UPDATE,
-    tip: UrlbarProviderInterventions.TIP_TYPE.UPDATE_RESTART,
+    tip: UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_RESTART,
     title: /^The latest .+ is downloaded and ready to install\.$/,
     button: "Restart to Update",
     awaitCallback: awaitAppRestartRequest,

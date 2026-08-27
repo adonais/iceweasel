@@ -315,6 +315,12 @@ void NodeController::DropPeer(NodeName aNodeName) {
 
 void NodeController::ContactRemotePeer(const NodeName& aNode,
                                        UniquePtr<Event> aEvent) {
+  // Any attempt to contact a remote peer during CleanUp() is doomed to fail.
+  if (XRE_GetAsyncIOEventTarget()->IsOnCurrentThread() &&
+      MessageLoop::current() && !MessageLoop::current()->IsAcceptingTasks()) {
+    return;
+  }
+
   // On Windows and macOS, messages holding HANDLEs or mach ports must be
   // relayed via the broker process so it can transfer ownership.
   bool needsRelay = false;

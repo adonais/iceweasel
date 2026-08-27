@@ -17,6 +17,7 @@
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 
+#import <AVFoundation/AVFoundation.h>
 #import <Cocoa/Cocoa.h>
 
 @class SpeechDelegate;
@@ -31,7 +32,7 @@ using namespace mozilla;
 
 class SpeechTaskCallback final : public nsISpeechTaskCallback {
  public:
-  SpeechTaskCallback(nsISpeechTask* aTask, NSSpeechSynthesizer* aSynth,
+  SpeechTaskCallback(nsISpeechTask* aTask, AVSpeechSynthesizer* aSynth,
                      const nsTArray<size_t>& aOffsets);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -50,14 +51,14 @@ class SpeechTaskCallback final : public nsISpeechTaskCallback {
   float GetTimeDurationFromStart();
 
   nsCOMPtr<nsISpeechTask> mTask;
-  NSSpeechSynthesizer* mSpeechSynthesizer;
+  AVSpeechSynthesizer* mSpeechSynthesizer;
   SpeechDelegate* mDelegate;
   TimeStamp mStartingTime;
   uint32_t mCurrentIndex;
   nsTArray<size_t> mOffsets;
 };
 
-@interface SpeechDelegate : NSObject <NSSpeechSynthesizerDelegate> {
+@interface SpeechDelegate : NSObject <AVSpeechSynthesizerDelegate> {
  @private
   SpeechTaskCallback* mCallback;
 }
@@ -72,23 +73,17 @@ class SpeechTaskCallback final : public nsISpeechTaskCallback {
   return self;
 }
 
-- (void)speechSynthesizer:(NSSpeechSynthesizer*)aSender
-            willSpeakWord:(NSRange)aRange
-                 ofString:(NSString*)aString {
+- (void)speechSynthesizer:(AVSpeechSynthesizer*)aSender
+    willSpeakRangeOfSpeechString:(NSRange)aRange
+                       utterance:(AVSpeechUtterance*)aUtterance {
   mCallback->OnWillSpeakWord(aRange.location, aRange.length);
 }
 
-- (void)speechSynthesizer:(NSSpeechSynthesizer*)aSender
-        didFinishSpeaking:(BOOL)aFinishedSpeaking {
+- (void)speechSynthesizer:(AVSpeechSynthesizer*)aSender
+    didFinishSpeechUtterance:(AVSpeechUtterance*)aUtterance {
   mCallback->OnDidFinishSpeaking();
 }
 
-- (void)speechSynthesizer:(NSSpeechSynthesizer*)aSender
-    didEncounterErrorAtIndex:(NSUInteger)aCharacterIndex
-                    ofString:(NSString*)aString
-                     message:(NSString*)aMessage {
-  mCallback->OnError(aCharacterIndex);
-}
 @end
 
 NS_IMPL_CYCLE_COLLECTION(SpeechTaskCallback, mTask);
@@ -102,7 +97,7 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(SpeechTaskCallback)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(SpeechTaskCallback)
 
 SpeechTaskCallback::SpeechTaskCallback(nsISpeechTask* aTask,
-                                       NSSpeechSynthesizer* aSynth,
+                                       AVSpeechSynthesizer* aSynth,
                                        const nsTArray<size_t>& aOffsets)
     : mTask(aTask),
       mSpeechSynthesizer(aSynth),
@@ -123,7 +118,7 @@ NS_IMETHODIMP
 SpeechTaskCallback::OnCancel() {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  [mSpeechSynthesizer stopSpeaking];
+  [mSpeechSynthesizer stopSpeakingAtBoundary:AVSpeechBoundaryImmediate];
   return NS_OK;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
@@ -133,7 +128,7 @@ NS_IMETHODIMP
 SpeechTaskCallback::OnPause() {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  [mSpeechSynthesizer pauseSpeakingAtBoundary:NSSpeechImmediateBoundary];
+  [mSpeechSynthesizer pauseSpeakingAtBoundary:AVSpeechBoundaryImmediate];
   if (!mTask) {
     // When calling pause() on child porcess, it may not receive end event
     // from chrome process yet.
@@ -165,9 +160,8 @@ NS_IMETHODIMP
 SpeechTaskCallback::OnVolumeChanged(float aVolume) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  [mSpeechSynthesizer setObject:[NSNumber numberWithFloat:aVolume]
-                    forProperty:NSSpeechVolumeProperty
-                          error:nil];
+  // XXX: You cannot change the volume mid-utterance.
+
   return NS_OK;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
@@ -240,7 +234,7 @@ RegisterVoicesRunnable::Run() {
     return rv;
   }
 
-  for (OSXVoice voice : mVoices) {
+  for (const OSXVoice& voice : mVoices) {
     rv = registry->AddVoice(mSpeechService, voice.mUri, voice.mName,
                             voice.mLocale, true, false);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -276,29 +270,39 @@ EnumVoicesRunnable::Run() {
 
   AutoTArray<OSXVoice, 64> list;
 
-  NSArray* voices = [NSSpeechSynthesizer availableVoices];
-  NSString* defaultVoice = [NSSpeechSynthesizer defaultVoice];
+  NSArray* voices = [[AVSpeechSynthesisVoice speechVoices]
+      filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(
+                                                   id voice,
+                                                   NSDictionary* bindings) {
+        if (@available(macOS 14.0, *)) {
+          // Filter out novelty voices
+          if ([voice voiceTraits] ==
+              AVSpeechSynthesisVoiceTraitIsNoveltyVoice) {
+            return NO;
+          }
+        }
 
-  for (NSString* voice in voices) {
+        // Filter out eloquence voices since they don't seem to work.
+        return ![[voice identifier] containsString:@"com.apple.eloquence"];
+      }]];
+  AVSpeechSynthesisVoice* defualtVoice = [AVSpeechSynthesisVoice
+      voiceWithLanguage:[AVSpeechSynthesisVoice currentLanguageCode]];
+
+  for (AVSpeechSynthesisVoice* voice in voices) {
     OSXVoice item;
 
-    NSDictionary* attr = [NSSpeechSynthesizer attributesForVoice:voice];
-
     nsAutoString identifier;
-    nsCocoaUtils::GetStringForNSString([attr objectForKey:NSVoiceIdentifier],
-                                       identifier);
+    nsCocoaUtils::GetStringForNSString([voice identifier], identifier);
 
-    nsCocoaUtils::GetStringForNSString([attr objectForKey:NSVoiceName],
-                                       item.mName);
+    nsCocoaUtils::GetStringForNSString([voice name], item.mName);
 
-    nsCocoaUtils::GetStringForNSString(
-        [attr objectForKey:NSVoiceLocaleIdentifier], item.mLocale);
+    nsCocoaUtils::GetStringForNSString([voice language], item.mLocale);
     item.mLocale.ReplaceChar('_', '-');
 
     item.mUri.AssignLiteral("urn:moz-tts:osx:");
     item.mUri.Append(identifier);
 
-    if ([voice isEqualToString:defaultVoice]) {
+    if ([[voice identifier] isEqualToString:[defualtVoice identifier]]) {
       item.mIsDefault = true;
     }
 
@@ -361,28 +365,7 @@ OSXSpeechSynthesizerService::Speak(const nsAString& aText,
   MOZ_ASSERT(StringBeginsWith(aUri, u"urn:moz-tts:osx:"_ns),
              "OSXSpeechSynthesizerService doesn't allow this voice URI");
 
-  NSSpeechSynthesizer* synth = [[NSSpeechSynthesizer alloc] init];
-  // strlen("urn:moz-tts:osx:") == 16
-  NSString* identifier = nsCocoaUtils::ToNSString(Substring(aUri, 16));
-  [synth setVoice:identifier];
-
-  // default rate is 180-220
-  [synth setObject:[NSNumber numberWithInt:aRate * 200]
-       forProperty:NSSpeechRateProperty
-             error:nil];
-  // volume allows 0.0-1.0
-  [synth setObject:[NSNumber numberWithFloat:aVolume]
-       forProperty:NSSpeechVolumeProperty
-             error:nil];
-  // Use default pitch value to calculate this
-  NSNumber* defaultPitch = [synth objectForProperty:NSSpeechPitchBaseProperty
-                                              error:nil];
-  if (defaultPitch) {
-    int newPitch = [defaultPitch intValue] * (aPitch / 2 + 0.5);
-    [synth setObject:[NSNumber numberWithInt:newPitch]
-         forProperty:NSSpeechPitchBaseProperty
-               error:nil];
-  }
+  AVSpeechSynthesizer* synth = [[AVSpeechSynthesizer alloc] init];
 
   nsAutoString escapedText;
   // We need to map the the offsets from the given text to the escaped text.
@@ -416,8 +399,24 @@ OSXSpeechSynthesizerService::Speak(const nsAString& aText,
   NS_ENSURE_SUCCESS(rv, rv);
 
   NSString* text = nsCocoaUtils::ToNSString(escapedText);
-  BOOL success = [synth startSpeakingString:text];
-  NS_ENSURE_TRUE(success, NS_ERROR_FAILURE);
+
+  AVSpeechUtterance* utterance =
+      [AVSpeechUtterance speechUtteranceWithString:text];
+
+  // strlen("urn:moz-tts:osx:") == 16
+  NSString* identifier = nsCocoaUtils::ToNSString(Substring(aUri, 16));
+  AVSpeechSynthesisVoice* voice =
+      [AVSpeechSynthesisVoice voiceWithIdentifier:identifier];
+
+  [utterance setVoice:voice];
+
+  [utterance setPitchMultiplier:aPitch];
+
+  [utterance setRate:[utterance rate] * aRate];
+
+  [utterance setVolume:aVolume];
+
+  [synth speakUtterance:utterance];
 
   aTask->DispatchStart();
   return NS_OK;

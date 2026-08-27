@@ -19,7 +19,7 @@
             document.body.appendChild(frame);
             await new Promise(r => {
                 frame.onload = r;
-                // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+                // eslint-disable-next-line sdl/no-insecure-url
                 frame.contentWindow.location = "http://example.net/tests/docshell/test/dummy_page.html";
             });
 

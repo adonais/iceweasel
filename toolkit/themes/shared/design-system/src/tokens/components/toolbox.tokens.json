@@ -27,6 +27,7 @@
       "comment": "This gradient is only used for Nova",
       "value": {
         "default": "linear-gradient(96deg, color-mix({toolbox.background.color.gradient-leading} 50%, transparent) 39.84%, color-mix({toolbox.background.color.gradient-trailing} 50%, transparent) 101.72%)",
+        "nativeTheme": "image(transparent)",
         "forcedColors": "image(transparent)"
       }
     }

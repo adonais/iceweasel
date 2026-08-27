@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Testing Shift+Option+Arrow paragraph selection on macOS</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/EventUtils.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css">
+</head>
+<body>
+<div id="display">
+  <textarea id="textarea"></textarea>
+  <div id="editable" contenteditable>x<br>x<br>x</div>
+</div>
+<div id="content" style="display: none">
+</div>
+<pre id="test">
+</pre>
+
+<script class="testbody" type="application/javascript">
+// Shift+Option+ArrowDown/ArrowUp is mapped to a character selection command
+// followed by a paragraph selection command, because the paragraph command on
+// its own cannot cross a paragraph boundary. These tests check that a press
+// extends the selection by exactly one paragraph, and in particular that the
+// leading character step does not make a press skip a whole paragraph when
+// that paragraph is only one character long.
+SimpleTest.waitForExplicitFinish();
+
+function selectDown() {
+  synthesizeKey("KEY_ArrowDown", { altKey: true, shiftKey: true });
+}
+
+function selectUp() {
+  synthesizeKey("KEY_ArrowUp", { altKey: true, shiftKey: true });
+}
+
+function checkTextarea(aTextarea, aExpectedStart, aExpectedEnd, aDescription) {
+  is(aTextarea.selectionStart, aExpectedStart,
+     aDescription + ": selection should start at " + aExpectedStart);
+  is(aTextarea.selectionEnd, aExpectedEnd,
+     aDescription + ": selection should end at " + aExpectedEnd);
+}
+
+function testDownwardInTextarea() {
+  const textarea = document.getElementById("textarea");
+  textarea.value = "x\nx\nx";
+  textarea.focus();
+  textarea.setSelectionRange(0, 0);
+
+  selectDown();
+  checkTextarea(textarea, 0, 1,
+                "Shift+Option+ArrowDown from the start of a one character " +
+                "paragraph should select only that paragraph");
+
+  selectDown();
+  checkTextarea(textarea, 0, 3,
+                "A second Shift+Option+ArrowDown should extend across the " +
+                "next paragraph");
+
+  selectDown();
+  checkTextarea(textarea, 0, 5,
+                "A third Shift+Option+ArrowDown should extend to the end of " +
+                "the last paragraph");
+
+  selectDown();
+  checkTextarea(textarea, 0, 5,
+                "Shift+Option+ArrowDown at the end of the value should not " +
+                "change the selection");
+}
+
+function testUpwardInTextarea() {
+  const textarea = document.getElementById("textarea");
+  textarea.value = "x\nx\nx";
+  textarea.focus();
+  textarea.setSelectionRange(5, 5);
+
+  selectUp();
+  checkTextarea(textarea, 4, 5,
+                "Shift+Option+ArrowUp from the end of a one character " +
+                "paragraph should select only that paragraph");
+
+  selectUp();
+  checkTextarea(textarea, 2, 5,
+                "A second Shift+Option+ArrowUp should extend across the " +
+                "previous paragraph");
+
+  selectUp();
+  checkTextarea(textarea, 0, 5,
+                "A third Shift+Option+ArrowUp should extend to the start of " +
+                "the value");
+}
+
+function testEmptyParagraphInTextarea() {
+  const textarea = document.getElementById("textarea");
+  textarea.value = "x\n\nx";
+  textarea.focus();
+  textarea.setSelectionRange(2, 2);
+
+  selectDown();
+  checkTextarea(textarea, 2, 4,
+                "Shift+Option+ArrowDown from an empty paragraph should " +
+                "extend to the end of the following paragraph");
+}
+
+function testDownwardInContentEditable() {
+  const editable = document.getElementById("editable");
+  editable.focus();
+  const selection = window.getSelection();
+  selection.collapse(editable.firstChild, 0);
+
+  const countSelectedCharacters = () => {
+    return (selection.toString().match(/x/g) || []).length;
+  };
+
+  selectDown();
+  is(countSelectedCharacters(), 1,
+     "Shift+Option+ArrowDown should select the single character of the first " +
+     "line only");
+
+  selectDown();
+  is(countSelectedCharacters(), 2,
+     "A second Shift+Option+ArrowDown should select two characters");
+
+  selectDown();
+  is(countSelectedCharacters(), 3,
+     "A third Shift+Option+ArrowDown should select three characters");
+}
+
+function runTests() {
+  testDownwardInTextarea();
+  testUpwardInTextarea();
+  testEmptyParagraphInTextarea();
+  testDownwardInContentEditable();
+  SimpleTest.finish();
+}
+
+SimpleTest.waitForFocus(runTests);
+</script>
+</body>
+</html>

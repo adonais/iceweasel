@@ -183,6 +183,14 @@ already_AddRefed<DOMSVGTransform> DOMSVGTransformList::IndexedGetter(
   return nullptr;
 }
 
+void DOMSVGTransformList::IndexedSetter(uint32_t aIndex,
+                                        DOMSVGTransform& aNewValue,
+                                        ErrorResult& aRv) {
+  // Need to take a ref to the return value so it does not leak.
+  RefPtr<DOMSVGTransform> ignored = ReplaceItem(aNewValue, aIndex, aRv);
+  (void)ignored;
+}
+
 already_AddRefed<DOMSVGTransform> DOMSVGTransformList::InsertItemBefore(
     DOMSVGTransform& newItem, uint32_t index, ErrorResult& error) {
   if (IsAnimValList()) {

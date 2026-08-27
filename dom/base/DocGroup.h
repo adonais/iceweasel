@@ -14,11 +14,15 @@
 #include "nsTHashSet.h"
 #include "nsThreadUtils.h"
 
+class JSObject;
+
 namespace mozilla {
 class AbstractThread;
 namespace dom {
 
+class CustomElementConstructor;
 class CustomElementReactionsStack;
+class CustomElementRegistry;
 class JSExecutionManager;
 class MediaSource;
 
@@ -64,6 +68,45 @@ class DocGroup final {
   mozilla::dom::DOMArena* ArenaAllocator() { return mArena; }
 
   mozilla::dom::CustomElementReactionsStack* CustomElementReactionsStack();
+
+  // https://html.spec.whatwg.org/#active-custom-element-constructor-map
+  // Per-agent map from constructors to CustomElementRegistry, keyed by the
+  // constructor function (its callable), matching the spec's use of NewTarget.
+  // Returns the registry currently active for aConstructor, or null.
+  CustomElementRegistry* GetActiveConstructorRegistry(JSObject* aConstructor);
+
+  // Scope aRegistry for aConstructor. The spec swaps out registires in the
+  // active-custom-element-constructor-map, during construction/upgrade -
+  // allowing it to temporarily override the current entry without clobbering
+  // previous entries. It does so to avoid reentrant constructors clobbering the
+  // registry map.
+  // We can use AutoActiveConstructorRegistry to scope-guard this by
+  // automatically restoring the previous registry (or removing the entry when
+  // null) during destruction.
+  class MOZ_STACK_CLASS AutoActiveConstructorRegistry final {
+   public:
+    // This inserts aRegistry into the ActiveConstructorRegistry, keyed by
+    // aConstructor. The previous entry is retained, so that it can be restored
+    // on destruction.
+    AutoActiveConstructorRegistry(DocGroup* aDocGroup,
+                                  CustomElementConstructor* aConstructor,
+                                  CustomElementRegistry* aRegistry);
+
+    // This restores the preivous registry (mPreviousRegistry) that was
+    // discovered during construction. If there was no previous, the entry is
+    // deleted from the map.
+    ~AutoActiveConstructorRegistry();
+
+    AutoActiveConstructorRegistry(const AutoActiveConstructorRegistry&) =
+        delete;
+    AutoActiveConstructorRegistry& operator=(
+        const AutoActiveConstructorRegistry&) = delete;
+
+   private:
+    DocGroup* mDocGroup;
+    RefPtr<CustomElementConstructor> mConstructor;
+    RefPtr<CustomElementRegistry> mPreviousRegistry;
+  };
 
   // Adding documents to a DocGroup should be done through
   // BrowsingContextGroup::AddDocument (which in turn calls
@@ -111,10 +154,17 @@ class DocGroup final {
 
   DocGroupKey mKey;
 
-  nsTArray<Document*> mDocuments;
+  nsTHashSet<Document*> mDocuments;
   RefPtr<mozilla::dom::CustomElementReactionsStack> mReactionsStack;
   nsTArray<RefPtr<HTMLSlotElement>> mSignalSlotList;
   RefPtr<BrowsingContextGroup> mBrowsingContextGroup;
+
+  // https://html.spec.whatwg.org/#active-custom-element-constructor-map
+  struct ActiveConstructorEntry {
+    RefPtr<mozilla::dom::CustomElementConstructor> mConstructor;
+    RefPtr<mozilla::dom::CustomElementRegistry> mRegistry;
+  };
+  AutoTArray<ActiveConstructorEntry, 2> mActiveConstructorMap;
 
   // MediaSource URLs (with the `blob:` scheme) which have been created by
   // documents in this DocGroup.

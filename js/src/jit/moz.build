@@ -220,6 +220,7 @@ elif CONFIG["JS_CODEGEN_LOONG64"]:
         "loong64/Architecture-loong64.cpp",
         "loong64/Assembler-loong64.cpp",
         "loong64/CodeGenerator-loong64.cpp",
+        "loong64/disasm/Disasm-loong64.cpp",
         "loong64/Lowering-loong64.cpp",
         "loong64/MacroAssembler-loong64.cpp",
         "loong64/MoveEmitter-loong64.cpp",

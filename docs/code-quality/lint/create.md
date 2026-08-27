@@ -116,11 +116,10 @@ Could not find ruff! Install ruff and try again.
 
 
 def lint(paths, config, **lintargs):
-    binary = which('ruff')
+    binary = which("ruff")
     if not binary:
         print(RUFF_NOT_FOUND)
         return 1
-
 
     cmd = ["ruff", "check", "--force-exclude", "--format=json"] + paths
     output = subprocess.run(cmd, stdout=subprocess.PIPE, env=os.environ).output
@@ -219,16 +218,19 @@ As an example, the {searchfox}`ruff test <tools/lint/test/test_ruff.py>` looks l
 
 ```python
 import mozunit
-LINTER = 'ruff'
+
+LINTER = "ruff"
+
 
 def test_lint_ruff(lint, paths):
-    results = lint(paths('bad.py'))
+    results = lint(paths("bad.py"))
     assert len(results) == 2
-    assert results[0].rule == 'F401'
-    assert results[1].rule == 'E501'
+    assert results[0].rule == "F401"
+    assert results[1].rule == "E501"
     assert results[1].lineno == 5
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     mozunit.main()
 ```
 
@@ -271,8 +273,8 @@ fixed = 0
 
 
 def test_lint_codespell_fix(lint, create_temp_file):
-# Typo has been fixed in the contents to avoid triggering warning
-# 'informations' ----> 'information'
+    # Typo has been fixed in the contents to avoid triggering warning
+    # 'informations' ----> 'information'
     contents = """This is a file with some typos and information.
 But also testing false positive like optin (because this isn't always option)
 or stuff related to our coding style like:
@@ -280,7 +282,7 @@ aparent (aParent).
 but detects mistakes like mozilla
 """.lstrip()
 
-    path = create_temp_file(contents, "ignore.rst")
+    path = create_temp_file(contents, "ignore.md")
     lint([path], fix=True)
 
     assert fixed == 2
@@ -313,6 +315,7 @@ linted. In the case of `ruff`, it might look like:
 ```python
 import subprocess
 from shutil import which
+
 
 def setup(root, **lintargs):
     # This is a simple example. Please look at the actual source for better examples.

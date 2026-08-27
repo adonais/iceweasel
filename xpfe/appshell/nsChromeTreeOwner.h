@@ -41,10 +41,8 @@ class nsChromeTreeOwner : public nsIDocShellTreeOwner,
   virtual ~nsChromeTreeOwner();
 
   void AppWindow(mozilla::AppWindow* aAppWindow);
-  mozilla::AppWindow* AppWindow();
 
- protected:
-  mozilla::AppWindow* mAppWindow;
+  mozilla::AppWindow* mAppWindow = nullptr;
 };
 
 #endif /* nsChromeTreeOwner_h_ */

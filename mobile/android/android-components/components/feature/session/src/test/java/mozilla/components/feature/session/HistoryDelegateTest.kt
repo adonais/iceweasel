@@ -91,10 +91,81 @@ class HistoryDelegateTest {
         assertTrue(storage.canAddUriCalled)
     }
 
+    @Test
+    fun `hasVisitedSince returns true when the host was visited in the window`() = runTest {
+        val storage = TestHistoryStorage()
+        storage.detailedVisits = listOf(visit("https://www.mozilla.org/en-US/"))
+        val delegate = HistoryDelegate(lazy { storage })
+
+        assertTrue(delegate.hasVisitedSince("mozilla.org", 1000L, 5000L))
+    }
+
+    @Test
+    fun `hasVisitedSince matches subdomains of the eTLD+1`() = runTest {
+        val storage = TestHistoryStorage()
+        storage.detailedVisits = listOf(visit("https://support.mozilla.org/"))
+        val delegate = HistoryDelegate(lazy { storage })
+
+        assertTrue(delegate.hasVisitedSince("mozilla.org", 1000L, 5000L))
+    }
+
+    @Test
+    fun `hasVisitedSince returns false when only other hosts were visited`() = runTest {
+        val storage = TestHistoryStorage()
+        storage.detailedVisits = listOf(
+            visit("https://www.firefox.com/"),
+            visit("https://notmozilla.org/"),
+        )
+        val delegate = HistoryDelegate(lazy { storage })
+
+        assertFalse(delegate.hasVisitedSince("mozilla.org", 1000L, 5000L))
+    }
+
+    @Test
+    fun `hasVisitedSince returns false when there are no visits`() = runTest {
+        val storage = TestHistoryStorage()
+        val delegate = HistoryDelegate(lazy { storage })
+
+        assertFalse(delegate.hasVisitedSince("mozilla.org", 1000L, 5000L))
+    }
+
+    @Test
+    fun `hasVisitedSince queries a half-open window ending before the upper bound`() = runTest {
+        val storage = TestHistoryStorage()
+        val delegate = HistoryDelegate(lazy { storage })
+
+        delegate.hasVisitedSince("mozilla.org", 1000L, 5000L)
+
+        assertEquals(1000L, storage.detailedVisitsStart)
+        assertEquals(4999L, storage.detailedVisitsEnd)
+    }
+
+    @Test
+    fun `hasVisitedSince returns false without querying for an empty window`() = runTest {
+        val storage = TestHistoryStorage()
+        val delegate = HistoryDelegate(lazy { storage })
+
+        assertFalse(delegate.hasVisitedSince("mozilla.org", 5000L, 5000L))
+        assertEquals(null, storage.detailedVisitsStart)
+    }
+
+    private fun visit(url: String) = VisitInfo(
+        url = url,
+        title = null,
+        visitTime = 0L,
+        visitType = VisitType.LINK,
+        previewImageUrl = null,
+        isRemote = false,
+    )
+
     private class TestHistoryStorage : HistoryStorage, AutocompleteProvider {
         var getVisitedListCalled = false
         var getVisitedPlainCalled = false
         var canAddUriCalled = false
+
+        var detailedVisits: List<VisitInfo> = emptyList()
+        var detailedVisitsStart: Long? = null
+        var detailedVisitsEnd: Long? = null
 
         override suspend fun warmUp() {
             fail()
@@ -121,8 +192,9 @@ class HistoryDelegateTest {
         }
 
         override suspend fun getDetailedVisits(start: Long, end: Long, excludeTypes: List<VisitType>): List<VisitInfo> {
-            fail()
-            return emptyList()
+            detailedVisitsStart = start
+            detailedVisitsEnd = end
+            return detailedVisits
         }
 
         override suspend fun getVisitsPaginated(offset: Long, count: Long, excludeTypes: List<VisitType>): List<VisitInfo> {

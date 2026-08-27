@@ -243,7 +243,7 @@ function serveOnce(html, statusCode = 200) {
   server.start(-1);
 
   let { primaryHost, primaryPort } = server.identity;
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   const url = `http://${primaryHost}:${primaryPort}/page.html`;
   info("Server listening for: " + url);
 

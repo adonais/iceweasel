@@ -7,8 +7,8 @@
 #ifndef mozilla_ToString_h
 #define mozilla_ToString_h
 
-#include <string>
 #include <sstream>
+#include <string>
 
 namespace mozilla {
 

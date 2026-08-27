@@ -53,13 +53,19 @@ this.tart = class extends ExtensionAPI {
     let win = target.documentGlobal;
     if (!this.loadedWindows.has(win)) {
       let { baseURI } = this.extension;
-      Services.scriptloader.loadSubScript(
+      Services.scriptloader.loadSubScriptWithOptions(
         baseURI.resolve("/content/Profiler.js"),
-        win
+        {
+          target: win,
+          allowUnsafeURL: true,
+        }
       );
-      Services.scriptloader.loadSubScript(
+      Services.scriptloader.loadSubScriptWithOptions(
         baseURI.resolve("/content/tart.js"),
-        win
+        {
+          target: win,
+          allowUnsafeURL: true,
+        }
       );
       this.loadedWindows.add(win);
     }

@@ -17,11 +17,13 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
-  EmbeddingsGenerator: "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs",
+  embeddingsGeneratorFactory:
+    "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs",
   PlacesSemanticHistoryDatabase:
     "resource://gre/modules/PlacesSemanticHistoryDatabase.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
+  RegionLocaleMap: "moz-src:///toolkit/modules/RegionLocaleMap.sys.mjs",
 });
 
 /**
@@ -66,11 +68,9 @@ ChromeUtils.defineLazyGetter(lazy, "PAGES_FRECENCY_FIELD", () => {
 
 // This list is based on the current model capabilities. It is a Map-like list
 // of regions where English is predominant, and a common language is latin-based.
-// Each country code is assigned to an array of supported BCP 47 language tags,
-// a tag can end with "-*" to match any variants (match at the start).
-// The list of supported region and locales is loaded from the
-// places.semanticHistory.supportedRegions string pref, and this is used as a
-// fallback if we fail to parse the pref.
+// See RegionLocaleMap for the format. The list of supported regions and locales
+// is loaded from the places.semanticHistory.supportedRegions string pref, and
+// this is used as a fallback if we fail to parse the pref.
 /** @type {[string, string[]][]} */
 const ENABLED_REGIONS_DEFAULT = [
   ["AU", ["en-*"]],
@@ -80,6 +80,7 @@ const ENABLED_REGIONS_DEFAULT = [
   ["NZ", ["en-*"]],
   ["PH", ["en-*"]],
   ["US", ["en-*"]],
+  ["FR", ["en-*", "fr-*"]],
 ];
 const FAILSAFE_THROTTLE_ID = "failsafe";
 const SOFT_THROTTLE_ID = "soft";
@@ -90,20 +91,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "places.semanticHistory.supportedRegions",
   JSON.stringify(ENABLED_REGIONS_DEFAULT),
   null,
-  val => {
-    try {
-      return new Map(JSON.parse(val));
-    } catch (ex) {
-      lazy.logger.debug("Invalid json in supportedRegions pref.");
-      // Supposing a user may empty the pref to disable the feature, as they
-      // don't know it should be a JSON string, we'll treat that as an empty
-      // Map, so the feature is disabled.
-      if (val === "") {
-        return new Map();
-      }
-      return new Map(ENABLED_REGIONS_DEFAULT);
-    }
-  }
+  json =>
+    lazy.RegionLocaleMap.fromJSON(json, {
+      fallback: ENABLED_REGIONS_DEFAULT,
+      onInvalid: () =>
+        lazy.logger.debug("Invalid json in supportedRegions pref."),
+    })
 );
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -232,7 +225,7 @@ class PlacesSemanticHistoryManager {
       return;
     }
 
-    this.embedder = lazy.EmbeddingsGenerator.forPlaces();
+    this.embedder = lazy.embeddingsGeneratorFactory.forPlaces();
     this.semanticDB = new lazy.PlacesSemanticHistoryDatabase({
       embeddingSize: this.embedder.embeddingSize,
       fileName: "places_semantic.sqlite",
@@ -443,27 +436,14 @@ class PlacesSemanticHistoryManager {
   }
 
   /**
-   * Check if the given locale is supported for Semantic History Search.
+   * Check if the given locale is supported for Semantic History Search in the
+   * home region.
    *
    * @param {string} appLocale BCP 47 language tag.
    * @returns {boolean} Whether the locale is supported.
    */
   #isSupportedLocale(appLocale) {
-    // Per BCP-47 comparisons must be performend in a case-insensitive manner.
-    appLocale = appLocale.toLowerCase();
-    let supportedLocales = lazy.supportedRegions.get(lazy.Region.home) ?? [];
-    for (let localePattern of supportedLocales) {
-      localePattern = localePattern.toLowerCase();
-      if (
-        localePattern.endsWith("*") &&
-        appLocale.startsWith(localePattern.replace(/-?\*$/, ""))
-      ) {
-        return true;
-      } else if (localePattern == appLocale) {
-        return true;
-      }
-    }
-    return false;
+    return lazy.supportedRegions.matches(lazy.Region.home, appLocale);
   }
 
   handlePlacesEvents(events) {

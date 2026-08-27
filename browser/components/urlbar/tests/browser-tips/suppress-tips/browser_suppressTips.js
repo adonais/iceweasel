@@ -9,8 +9,6 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   LaterRun: "resource:///modules/LaterRun.sys.mjs",
-  UrlbarProviderSearchTips:
-    "moz-src:///browser/components/urlbar/UrlbarProviderSearchTips.sys.mjs",
 });
 
 const LAST_UPDATE_THRESHOLD_HOURS = 24;
@@ -21,7 +19,7 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       [
-        `browser.urlbar.tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`,
+        `browser.urlbar.tipShownCount.${UrlbarShared.SEARCH_TIP_TYPE.ONBOARD}`,
         0,
       ],
     ],
@@ -109,11 +107,7 @@ add_task(async function profileAge() {
     "browser.laterrun.bookkeeping.updateAppliedTime",
     secondsBasedOnNow(LAST_UPDATE_THRESHOLD_HOURS + 0.5)
   );
-  await checkTab(
-    window,
-    "about:newtab",
-    UrlbarProviderSearchTips.TIP_TYPE.ONBOARD
-  );
+  await checkTab(window, "about:newtab", UrlbarShared.SEARCH_TIP_TYPE.ONBOARD);
 
   // To suppress the tip by profile creation.
   Services.prefs.setIntPref(

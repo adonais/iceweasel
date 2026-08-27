@@ -70,10 +70,6 @@ bool CSSMozDocumentRule::Match(const Document* aDoc, nsIURI* aDocURI,
     }
     case DocumentMatchingFunction::PlainTextDocument:
       return aDoc->IsHTMLOrXHTML() && aDoc->AsHTMLDocument()->IsPlainText();
-    case DocumentMatchingFunction::UnobservableDocument: {
-      const BrowsingContext* bc = aDoc->GetBrowsingContext();
-      return bc && bc->IsTop() && !bc->HasOpener();
-    }
   }
   MOZ_ASSERT_UNREACHABLE("Unknown matching function");
   return false;

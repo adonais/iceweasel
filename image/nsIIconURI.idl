@@ -66,7 +66,22 @@ interface nsIMozIconURI : nsIURI
   /// contentType: A valid mime type, or the empty string.
   readonly attribute ACString contentType;
 
-  /// fileExtension: The file extension of the file which we are looking up.
+  /// fileExtension: The extension of the file we are looking up, prefixed with
+  /// a period, so that it is a placeholder file name rather than a bare
+  /// extension ("dummy.html" yields ".html"). A lone "." means the name ends in
+  /// a period and so has no extension; the empty string means there is no
+  /// extension to report.
+  ///
+  /// The period is deliberate: callers typically want an icon for a file that
+  /// does not exist, and the OS APIs that produce the icon take a file name
+  /// rather than an extension, so this value is meant to be usable directly as
+  /// a stand-in for one.
+  ///
+  /// Beware that this is not the convention used elsewhere in the tree.
+  /// nsIURL.fileExtension and the nsIMIMEService extension lookups all expect
+  /// a bare extension with no period, so the period has to be stripped when
+  /// handing this value to them. Forgetting to is easy to miss, because a
+  /// period-prefixed extension usually just quietly fails to match.
   readonly attribute ACString fileExtension;
 };
 

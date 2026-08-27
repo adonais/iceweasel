@@ -4,6 +4,7 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <RadioButton xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/radio_button"
     android:layout_width="match_parent"
     android:layout_height="@dimen/preference_row_height"
@@ -15,4 +16,5 @@
     android:paddingEnd="@dimen/preference_padding_horizontal"
     android:paddingStart="@dimen/preference_padding_horizontal"
     android:paddingTop="@dimen/preference_padding_vertical"
-    android:textAlignment="viewStart"/>
+    android:textAlignment="viewStart"
+    tools:ignore="Overdraw" />

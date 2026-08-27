@@ -17,15 +17,24 @@ add_setup(async function setup() {
 // keyword.enabled=false should have no effect on icon and label.
 add_task(async function test_keyword_disabled() {
   await SpecialPowers.pushPrefEnv({
-    set: [["keyword.enabled", false]],
+    set: [
+      ["keyword.enabled", false],
+      // The switcher's icon needs the engine store populated before the window
+      // first renders, which the message path can't do: the store's snapshot
+      // arrives from the parent, so the fallback icon shows until then
+      // (bug 2059513). An input picks its transport at construction, so setting
+      // the pref here applies to the window opened below.
+      ["browser.urlbar.ipc.chromeMessagePassing", false],
+    ],
   });
   let win = await BrowserTestUtils.openNewBrowserWindow();
 
   // Getting the icon is async, so wait until the icon is set.
-  await TestUtils.waitForCondition(
-    async () =>
-      SearchbarTestUtils.getSearchModeSwitcherIcon(win) ==
-      (await SearchService.defaultEngine.getIconURL())
+  await TestUtils.waitForCondition(async () =>
+    SearchbarTestUtils.searchModeSwitcherIconIs(
+      win,
+      await SearchService.defaultEngine.getIconURL()
+    )
   );
 
   Assert.ok(
@@ -35,7 +44,7 @@ add_task(async function test_keyword_disabled() {
   );
 
   Assert.equal(
-    document
+    win.document
       .querySelector("#searchbar-new .searchmode-switcher")
       .getAttribute("data-l10n-id"),
     "urlbar-searchmode-button3",

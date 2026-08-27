@@ -6,7 +6,9 @@
 
 #include "MediaControlUtils.h"
 #include "MediaController.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Uptime.h"
+#include "mozilla/glean/DomMediaMetrics.h"
 
 #undef LOG
 #define LOG(msg, ...)                            \
@@ -19,6 +21,14 @@
               "AudioSessionManager={}, " msg, fmt::ptr(this), ##__VA_ARGS__)
 
 namespace mozilla::dom {
+
+static void RecordInterruptOutcome(const nsACString& aOutcome,
+                                   const nsACString& aCause) {
+  glean::media_audio_focus::InterruptOutcomeExtra extra;
+  extra.outcome.emplace(aOutcome);
+  extra.cause.emplace(aCause);
+  glean::media_audio_focus::interrupt_outcome.Record(Some(std::move(extra)));
+}
 
 AudioSessionManager::AudioSessionManager(MediaController* aController)
     : mController(aController) {
@@ -50,6 +60,12 @@ void AudioSessionManager::SetTypeOverride(uint64_t aBrowsingContextId,
 }
 
 void AudioSessionManager::NotifyAudibilityChanged(uint64_t aBrowsingContextId) {
+  if (mInterruptedBcIds.Contains(aBrowsingContextId)) {
+    // The interruption suspended these sources, so the audibility change it
+    // caused must not be mistaken for the page going quiet.
+    LOG("NotifyAudibilityChanged bc={} held: interrupted", aBrowsingContextId);
+    return;
+  }
   const bool bcIsAudibleNow = mController->IsBcAudible(aBrowsingContextId);
   auto existing = mAudioSessions.Lookup(aBrowsingContextId);
   const bool bcWasAudible =
@@ -81,6 +97,9 @@ void AudioSessionManager::NotifyAudibilityChanged(uint64_t aBrowsingContextId) {
 }
 
 void AudioSessionManager::NotifyBcDiscarded(uint64_t aBrowsingContextId) {
+  if (mInterruptedBcIds.Contains(aBrowsingContextId)) {
+    RecordInterruptOutcome("unresolved_at_teardown"_ns, "system_transient"_ns);
+  }
   RemoveInterruptedBcId(aBrowsingContextId);
   if (mAudioSessions.Remove(aBrowsingContextId)) {
     LOG("NotifyBcDiscarded bc={}", aBrowsingContextId);
@@ -92,6 +111,9 @@ void AudioSessionManager::NotifyBcDiscarded(uint64_t aBrowsingContextId) {
 void AudioSessionManager::InterruptAudioSessions(
     AudioSessionInterruptKind aKind) {
   const bool permanent = aKind == AudioSessionInterruptKind::Permanent;
+  glean::media_audio_focus::interrupt_count
+      .Get(permanent ? "system_permanent"_ns : "system_transient"_ns)
+      .Add(1);
   // A system audio-focus loss interrupts every active session in the tab,
   // regardless of audio-session type. Exclusivity (spec section 5.4) governs
   // only how sessions mix with one another, not immunity from a system
@@ -140,6 +162,7 @@ void AudioSessionManager::InterruptAudioSessions(
     }
     if (permanent) {
       SetAudioSessionState(bcId, AudioSessionState::Inactive);
+      RecordInterruptOutcome("ended_permanent"_ns, "system_permanent"_ns);
     } else {
       AddInterruptedBcId(bcId);
       SetAudioSessionState(bcId, AudioSessionState::Interrupted);
@@ -168,6 +191,7 @@ void AudioSessionManager::RestoreAudioSessions() {
     }
     LOG("RestoreAudioSessions bc={}", bcId);
     SetAudioSessionState(bcId, AudioSessionState::Active);
+    RecordInterruptOutcome("recovered"_ns, "system_transient"_ns);
   }
 }
 
@@ -309,6 +333,9 @@ void AudioSessionManager::UpdateAllAudioSessionStates(uint64_t aUpdatedBcId) {
   for (const uint64_t bcId : toInactivate) {
     InactivateAudioSession(bcId);
   }
+  if (!toInactivate.IsEmpty()) {
+    glean::media_audio_session::inactivated_by_arbitration.Add(1);
+  }
 }
 
 bool AudioSessionManager::IsBcAutoTyped(uint64_t aBrowsingContextId) const {
@@ -341,6 +368,23 @@ Maybe<AudioSessionType> AudioSessionManager::GetSelectedAudioSessionType()
 }
 
 void AudioSessionManager::UpdateSelectedAudioSession() {
+  // Record the arbitration probes on any exit path when the selected session
+  // changed, without altering the selection algorithm below.
+  const Maybe<uint64_t> prevSelected = mSelectedAudioSessionBcId;
+  auto recordSelectedChanged = MakeScopeExit([&] {
+    if (mSelectedAudioSessionBcId == prevSelected) {
+      return;
+    }
+    glean::media_audio_session::selected_changed.Add(1);
+    if (mSelectedAudioSessionBcId &&
+        IsBcAutoTyped(*mSelectedAudioSessionBcId)) {
+      glean::media_audio_session::effective_auto_type
+          .Get(AudioSessionTypeToGleanLabel(
+              EffectiveTypeForBc(*mSelectedAudioSessionBcId)))
+          .Add(1);
+    }
+  });
+
   // https://w3c.github.io/audio-session/#audio-session-update-selected-audio-session-algorithm
   //
   // Step 1: let activeAudioSessions be the records whose state is `active`

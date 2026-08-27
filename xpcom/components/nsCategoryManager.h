@@ -72,12 +72,12 @@ class CategoryNode {
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
  private:
-  CategoryNode() : mLock("CategoryLeaf") {}
+  CategoryNode() = default;
 
   void* operator new(size_t aSize, CategoryAllocator* aArena);
 
   nsTHashtable<CategoryLeaf> mTable MOZ_GUARDED_BY(mLock);
-  mozilla::Mutex mLock;
+  mozilla::Mutex mLock{"CategoryLeaf"};
 };
 
 /**

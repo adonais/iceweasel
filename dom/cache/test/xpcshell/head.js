@@ -25,9 +25,7 @@ function cacheClientDirName() {
 }
 
 // services required be initialized in order to run CacheStorage
-var ss = Cc["@mozilla.org/storage/service;1"].createInstance(
-  Ci.mozIStorageService
-);
+var ss = Services.storage;
 var sts = Cc["@mozilla.org/network/stream-transport-service;1"].getService(
   Ci.nsIStreamTransportService
 );

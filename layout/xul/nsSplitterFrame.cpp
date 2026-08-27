@@ -32,6 +32,7 @@
 #include "nsFlexContainerFrame.h"
 #include "nsFrameList.h"
 #include "nsGkAtoms.h"
+#include "nsGridContainerFrame.h"
 #include "nsHTMLParts.h"
 #include "nsIDOMEventListener.h"
 #include "nsLayoutUtils.h"
@@ -257,7 +258,7 @@ void nsSplitterFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 }
 
 static bool IsValidParentBox(nsIFrame* aFrame) {
-  return aFrame->IsFlexContainerFrame();
+  return aFrame->IsFlexContainerFrame() || aFrame->IsGridContainerFrame();
 }
 
 static nsIFrame* GetValidParentBox(nsIFrame* aChild) {
@@ -278,11 +279,33 @@ void nsSplitterFrame::Reflow(nsPresContext* aPresContext,
                                     aStatus);
 }
 
-static bool SplitterIsHorizontal(const nsIFrame* aParentBox) {
-  // If our parent is horizontal, the splitter is vertical and vice-versa.
-  MOZ_ASSERT(aParentBox->IsFlexContainerFrame());
-  const FlexboxAxisInfo info(aParentBox);
-  return !info.mIsRowOriented;
+static bool SplitterIsHorizontal(const nsIFrame* aParentBox,
+                                 const Element* aSplitterElement) {
+  if (aParentBox->IsFlexContainerFrame()) {
+    // If our parent is horizontal, the splitter is vertical and vice-versa.
+    const FlexboxAxisInfo info(aParentBox);
+    return !info.mIsRowOriented;
+  }
+
+  static Element::AttrValuesArray strings[] = {nsGkAtoms::horizontal,
+                                               nsGkAtoms::vertical, nullptr};
+  switch (aSplitterElement->FindAttrValueIn(
+      kNameSpaceID_None, nsGkAtoms::orient, strings, eCaseMatters)) {
+    // When the splitter has orient=horizontal, it means that the elements to
+    // resize are on its left/right, so the splitter itself is a vertical line.
+    case 0:
+      return false;
+    // When the splitter has orient=vertical, it means that the elements to
+    // resize are on top/bottom of it, so the splitter itself is a horizontal
+    // line.
+    case 1:
+      return true;
+    default:
+      break;
+  }
+
+  MOZ_ASSERT_UNREACHABLE("Non Flex Items should have a 'orient' attribute");
+  return false;
 }
 
 NS_IMETHODIMP
@@ -618,6 +641,14 @@ bool nsSplitterFrameInner::CollectChildInfos() {
         case ResizeType::Farthest:
           break;
       }
+
+      // When the splitter is not in a flex container, we're only supporting
+      // sibling resize
+      if (!mParentBox->IsFlexContainerFrame() &&
+          resizeType != ResizeType::Sibling) {
+        return false;
+      }
+
       return true;
     }();
 
@@ -668,13 +699,19 @@ bool nsSplitterFrameInner::CollectChildInfos() {
   }
 
   const bool reverseDirection = [&] {
+    const bool rtl =
+        mParentBox->StyleVisibility()->mDirection == StyleDirection::Rtl;
+
+    if (mParentBox->IsGridContainerFrame()) {
+      return isHorizontal && rtl;
+    }
+
     MOZ_ASSERT(mParentBox->IsFlexContainerFrame());
     const FlexboxAxisInfo info(mParentBox);
     if (!info.mIsRowOriented) {
       return info.mIsMainAxisReversed;
     }
-    const bool rtl =
-        mParentBox->StyleVisibility()->mDirection == StyleDirection::Rtl;
+
     return info.mIsMainAxisReversed != rtl;
   }();
 
@@ -978,7 +1015,7 @@ void nsSplitterFrameInner::UpdateState() {
 }
 
 void nsSplitterFrameInner::EnsureOrient() {
-  mOuter->mIsHorizontal = SplitterIsHorizontal(mParentBox);
+  mOuter->mIsHorizontal = SplitterIsHorizontal(mParentBox, SplitterElement());
 }
 
 void nsSplitterFrameInner::AdjustChildren(nsPresContext* aPresContext) {

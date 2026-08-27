@@ -96,8 +96,18 @@ bool ModuleLoader::CanStartLoad(ModuleLoadRequest* aRequest, nsresult* aRvOut) {
   return true;
 }
 
+void ModuleLoader::DisallowImportMapsForModuleFetch(
+    ModuleLoadRequest* aRequest) {
+  if (!aRequest->GetScriptLoadContext()->IsPreload() &&
+      !StaticPrefs::dom_multiple_import_maps_enabled()) {
+    LOG(("ScriptLoadRequest (%p): Disallow further import maps.", aRequest));
+    DisallowImportMaps();
+  }
+}
+
 nsresult ModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
   if (aRequest->IsRetrievedFromMemoryCache()) {
+    DisallowImportMapsForModuleFetch(aRequest);
     GetScriptLoader()->EmulateNetworkEvents(aRequest, Nothing());
     SetModuleFetchStarted(aRequest);
     return aRequest->OnFetchComplete(NS_OK);
@@ -129,13 +139,7 @@ nsresult ModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
       aRequest, securityFlags, Nothing() /* aCharsetForPreload */);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // https://html.spec.whatwg.org/multipage/webappapis.html#fetch-an-import()-module-script-graph
-  // Step 1. Disallow further import maps given settings object.
-  if (!aRequest->GetScriptLoadContext()->IsPreload() &&
-      !StaticPrefs::dom_multiple_import_maps_enabled()) {
-    LOG(("ScriptLoadRequest (%p): Disallow further import maps.", aRequest));
-    DisallowImportMaps();
-  }
+  DisallowImportMapsForModuleFetch(aRequest);
 
   LOG(("ScriptLoadRequest (%p): Start fetching module", aRequest));
 

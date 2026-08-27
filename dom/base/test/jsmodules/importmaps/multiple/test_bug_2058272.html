@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+<title>Test dynamic import from a module shared by two preloaded graphs</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<body>
+<script>
+  SimpleTest.waitForExplicitFinish();
+
+  // A trivial module used as the dynamic import target.
+  const INNER = "data:text/javascript,export default 1";
+
+  // The leaf of the first preloaded graph. It performs a dynamic import when it
+  // runs.
+  const LEAF_BODY =
+    'import("' + INNER + '").then(' +
+    '() => { window.postMessage("shared-ok", "*"); }, ' +
+    '(e) => { window.postMessage("shared-fail:" + e, "*"); });' +
+    'export default 3;';
+  const LEAF = "data:text/javascript," + encodeURIComponent(LEAF_BODY);
+
+  // The node shared by both graphs. It statically imports LEAF.
+  const SHARED_BODY = 'import "' + LEAF + '"; export default 2;';
+  const SHARED = "data:text/javascript," + encodeURIComponent(SHARED_BODY);
+
+  // The __second assignment makes FIRST and SECOND non-identifical.
+  const FIRST_BODY = 'import "' + SHARED + '";';
+  const FIRST = "data:text/javascript," + encodeURIComponent(FIRST_BODY);
+  const SECOND_BODY = 'import "' + SHARED + '"; window.__second = 1;';
+  const SECOND = "data:text/javascript," + encodeURIComponent(SECOND_BODY);
+
+  window.addEventListener("message", (e) => {
+    is(e.data, "shared-ok",
+       "Dynamic import from a module shared by two preload graphs should succeed.");
+    ok(window.__second == 1, "The promoted top-level module should have run.");
+    SimpleTest.finish();
+  });
+
+  // Preload FIRST (FIRST -> SHARED -> LEAF) to completion. LEAF's specifier
+  // resolution record is recorded against FIRST's preloaded resolved set.
+  //
+  // Then preload SECOND (SECOND -> SHARED). SHARED is already fetched, so its
+  // subtree is not re-walked and LEAF's record never lands in SECOND's set.
+  //
+  // Then injects the <script type="module" src="SECOND>.
+  // The SECOND module graph doesn't contain the LEAF node.
+  const linkFirst = document.createElement("link");
+  linkFirst.rel = "modulepreload";
+  linkFirst.href = FIRST;
+
+  linkFirst.addEventListener("load", () => {
+    const linkSecond = document.createElement("link");
+    linkSecond.rel = "modulepreload";
+    linkSecond.href = SECOND;
+
+    linkSecond.addEventListener("load", () => {
+      const s = document.createElement("script");
+      s.type = "module";
+      s.src = SECOND;
+      document.body.appendChild(s);
+    });
+
+    document.head.appendChild(linkSecond);
+  });
+
+  document.head.appendChild(linkFirst);
+</script>
+</body>

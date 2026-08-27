@@ -449,8 +449,6 @@ JSObject* CreateGenerator(JSContext* cx, HandleFunction, HandleScript,
                                  const jsbytecode* pc);
 [[nodiscard]] bool FinalSuspend(JSContext* cx, HandleObject obj,
                                 const jsbytecode* pc);
-[[nodiscard]] bool InterpretResume(JSContext* cx, HandleObject obj,
-                                   Value* stackValues, MutableHandleValue rval);
 [[nodiscard]] bool DebugAfterYield(JSContext* cx, BaselineFrame* frame);
 [[nodiscard]] bool GeneratorThrowOrReturn(
     JSContext* cx, BaselineFrame* frame,

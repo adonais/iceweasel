@@ -73,7 +73,7 @@ class ProfileBufferChunkManagerSingle final : public ProfileBufferChunkManager {
     return std::move(mInitialChunk);
   }
 
-  void RequestChunk(std::function<void(UniquePtr<ProfileBufferChunk>)>&&
+  void RequestChunk(MoveOnlyFunction<void(UniquePtr<ProfileBufferChunk>)>&&
                         aChunkReceiver) final {
     MOZ_ASSERT(mUser, "Not registered yet");
     // Simple retrieval.

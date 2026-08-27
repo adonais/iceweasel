@@ -32,7 +32,6 @@
 #include "mozilla/dom/PBackgroundLSSnapshot.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
-#include "mozilla/dom/quota/ScopedLogExtraInfo.h"
 #include "nsBaseHashtable.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
@@ -376,9 +375,8 @@ nsresult LSSnapshot::SetItem(const nsAString& aKey, const nsAString& aValue,
     }
 
     {
-      quota::ScopedLogExtraInfo scope{
-          quota::ScopedLogExtraInfo::kTagContextTainted,
-          "dom::localstorage::LSSnapshot::SetItem::UpdateUsage"_ns};
+      QM_SCOPED_CONTEXT(
+          "dom::localstorage::LSSnapshot::SetItem::UpdateUsage"_ns);
       GECKO_TRACE_SCOPE("dom::localstorage",
                         "LSSnapshot::SetItem::UpdateUsage");
       QM_TRY(MOZ_TO_RESULT(UpdateUsage(delta)), QM_PROPAGATE, QM_NO_CLEANUP,

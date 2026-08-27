@@ -68,7 +68,14 @@ async function resetToolsHeight() {
   await BrowserTestUtils.waitForMutationCondition(
     SidebarController.sidebarMain.buttonsWrapper,
     { attributes: true, attributeFilter: ["overflowing"] },
-    () => !SidebarController.sidebarMain.shouldShowOverflowButton
+    () => !SidebarController.sidebarMain.shouldShowOverflowButton,
+    {
+      msg: "Tools stopped overflowing",
+      // resizeTools drives the resize a frame at a time, which runs past a
+      // minute under tsan. That leaves no room under the harness timeout for a
+      // bound of our own, so let the harness be the one that gives up.
+      timeout: Infinity,
+    }
   );
 }
 

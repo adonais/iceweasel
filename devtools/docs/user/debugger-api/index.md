@@ -71,3 +71,18 @@ Watermark:
 Changeset:
 
 : [ffa775dd5bd4](https://hg.mozilla.org/mozilla-central/rev/ffa775dd5bd4)
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+debugger/index
+debugger.environment/index
+debugger.frame/index
+debugger.memory/index
+debugger.object/index
+debugger.script/index
+debugger.source/index
+tutorial-allocation-log-tree/index
+tutorial-breakpoint/index
+```

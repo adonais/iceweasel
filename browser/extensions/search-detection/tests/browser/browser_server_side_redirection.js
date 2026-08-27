@@ -9,19 +9,8 @@ const { AddonTestUtils } = ChromeUtils.importESModule(
 const { SearchService } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/search/SearchService.sys.mjs"
 );
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
 
 AddonTestUtils.initMochitest(this);
-
-const TELEMETRY_EVENTS_FILTERS = {
-  category: "addonsSearchDetection",
-  method: "etld_change",
-};
-
-// The search-detection built-in add-on records events in the parent process.
-const TELEMETRY_TEST_UTILS_OPTIONS = { clear: true, process: "parent" };
 
 const REDIRECT_SJS =
   "browser/browser/extensions/search-detection/tests/browser/redirect.sjs?q={searchTerms}";
@@ -47,7 +36,6 @@ const testServerSideRedirect = async ({
   tabURL,
 }) => {
   Services.fog.testResetFOG();
-  Services.telemetry.clearEvents();
 
   const searchEngineName = "test search engine";
   // Load a default search engine because the add-on we are testing here
@@ -91,30 +79,22 @@ const testServerSideRedirect = async ({
     "test search engine unregistered"
   );
 
-  TelemetryTestUtils.assertEvents(
-    expectedEvents,
-    TELEMETRY_EVENTS_FILTERS,
-    TELEMETRY_TEST_UTILS_OPTIONS
-  );
-
   let events = Glean.addonsSearchDetection.etldChangeOther.testGetValue();
   if (!expectedEvents.length) {
-    Assert.equal(null, events);
+    Assert.equal(events, null, "expected no recorded events");
   } else {
-    Assert.equal(expectedEvents.length, events.length);
-    for (let index = 0; index < events.length; index++) {
-      Assert.equal(expectedEvents[index].value, events[index].extra.value);
-      Assert.equal(
-        expectedEvents[index].extra.addonId,
-        events[index].extra.addonId
+    for (let index = 0; index < expectedEvents.length; index++) {
+      Assert.deepEqual(
+        events[index]?.extra,
+        expectedEvents[index].extra,
+        `event at index ${index} has the expected extra properties`
       );
-      Assert.equal(
-        expectedEvents[index].extra.addonVersion,
-        events[index].extra.addonVersion
-      );
-      Assert.equal(expectedEvents[index].extra.from, events[index].extra.from);
-      Assert.equal(expectedEvents[index].extra.to, events[index].extra.to);
     }
+    Assert.equal(
+      events.length,
+      expectedEvents.length,
+      "got the expected number of recorded events"
+    );
   }
 };
 
@@ -124,9 +104,8 @@ add_task(function test_redirect_final() {
     searchURL: SEARCH_URL_WWW,
     expectedEvents: [
       {
-        object: "other",
-        value: "server",
         extra: {
+          value: "server",
           addonId: TEST_SEARCH_ENGINE_ADDON_ID,
           addonVersion: TEST_SEARCH_ENGINE_ADDON_VERSION,
           from: "example.com",
@@ -143,9 +122,8 @@ add_task(function test_redirect_two_hops() {
     searchURL: SEARCH_URL_TEST2,
     expectedEvents: [
       {
-        object: "other",
-        value: "server",
         extra: {
+          value: "server",
           addonId: TEST_SEARCH_ENGINE_ADDON_ID,
           addonVersion: TEST_SEARCH_ENGINE_ADDON_VERSION,
           from: "example.com",
@@ -162,9 +140,8 @@ add_task(function test_redirect_three_hops() {
     searchURL: SEARCH_URL_TEST1,
     expectedEvents: [
       {
-        object: "other",
-        value: "server",
         extra: {
+          value: "server",
           addonId: TEST_SEARCH_ENGINE_ADDON_ID,
           addonVersion: TEST_SEARCH_ENGINE_ADDON_VERSION,
           from: "example.com",
@@ -195,9 +172,8 @@ add_task(function test_redirect_chain_does_not_start_on_first_request() {
     tabURL: `http://mochi.test:8888/browser/browser/extensions/search-detection/tests/browser/redirect.sjs?q={searchTerms}`,
     expectedEvents: [
       {
-        object: "other",
-        value: "server",
         extra: {
+          value: "server",
           addonId: TEST_SEARCH_ENGINE_ADDON_ID,
           addonVersion: TEST_SEARCH_ENGINE_ADDON_VERSION,
           // We expect this and not `mochi.test` because we do not monitor
@@ -212,7 +188,7 @@ add_task(function test_redirect_chain_does_not_start_on_first_request() {
 });
 
 add_task(async function test_two_extensions_reported() {
-  Services.telemetry.clearEvents();
+  Services.fog.testResetFOG();
 
   const searchEngines = [];
   for (const [addonId, addonVersion, isDefault] of [
@@ -254,30 +230,38 @@ add_task(async function test_two_extensions_reported() {
 
   await Promise.all(searchEngines.map(engine => engine.unload()));
 
-  TelemetryTestUtils.assertEvents(
-    [
-      {
-        object: "other",
+  const expectedEvents = [
+    {
+      extra: {
         value: "server",
-        extra: {
-          addonId: "1-addon@guid",
-          addonVersion: "1.2",
-          from: "example.com",
-          to: "example.net",
-        },
+        addonId: "1-addon@guid",
+        addonVersion: "1.2",
+        from: "example.com",
+        to: "example.net",
       },
-      {
-        object: "other",
+    },
+    {
+      extra: {
         value: "server",
-        extra: {
-          addonId: "2-addon@guid",
-          addonVersion: "3.4",
-          from: "example.com",
-          to: "example.net",
-        },
+        addonId: "2-addon@guid",
+        addonVersion: "3.4",
+        from: "example.com",
+        to: "example.net",
       },
-    ],
-    TELEMETRY_EVENTS_FILTERS,
-    TELEMETRY_TEST_UTILS_OPTIONS
+    },
+  ];
+
+  const events = Glean.addonsSearchDetection.etldChangeOther.testGetValue();
+  for (let index = 0; index < expectedEvents.length; index++) {
+    Assert.deepEqual(
+      events[index]?.extra,
+      expectedEvents[index].extra,
+      `event at index ${index} has the expected extra properties`
+    );
+  }
+  Assert.equal(
+    events.length,
+    expectedEvents.length,
+    "got the expected number of recorded events"
   );
 });

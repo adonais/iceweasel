@@ -70,9 +70,24 @@ async function testSteps() {
 
   info("Verifying origin estimation");
 
+  // A persisted origin is exempt from group-limit eviction and is bound by the
+  // global limit instead, so it reports its own origin usage (400, not the 700
+  // group total) against that global limit.
   await verifyOriginEstimation(
     getPrincipal("https://foo2.example2.com"),
-    1000,
+    400,
+    globalLimitBytes
+  );
+
+  info("Writing to an unrelated group");
+
+  await fillOrigin(getPrincipal("https://foo1.example3.com"), 500);
+
+  info("Verifying the persisted origin does not observe the unrelated write");
+
+  await verifyOriginEstimation(
+    getPrincipal("https://foo2.example2.com"),
+    400,
     globalLimitBytes
   );
 

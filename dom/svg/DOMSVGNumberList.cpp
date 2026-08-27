@@ -178,6 +178,13 @@ already_AddRefed<DOMSVGNumber> DOMSVGNumberList::IndexedGetter(
   return nullptr;
 }
 
+void DOMSVGNumberList::IndexedSetter(uint32_t aIndex, DOMSVGNumber& aNewValue,
+                                     ErrorResult& aRv) {
+  // Need to take a ref to the return value so it does not leak.
+  RefPtr<DOMSVGNumber> ignored = ReplaceItem(aNewValue, aIndex, aRv);
+  (void)ignored;
+}
+
 already_AddRefed<DOMSVGNumber> DOMSVGNumberList::InsertItemBefore(
     DOMSVGNumber& aItem, uint32_t index, ErrorResult& aRv) {
   if (IsAnimValList()) {

@@ -97,6 +97,8 @@ run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_altsvc_lna.js"]
 
+["test_altsvc_proxy_dns_leak.js"]
+
 ["test_altsvc_pref.js"]
 skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && msix",
@@ -569,9 +571,6 @@ skip-if = [
 
 ["test_content_decoding_error_telemetry.js"]
 run-sequentially = ["true"]
-skip-if = [
-  "artifact", # Bug 2040417 - known limitation of FOG ping testing APIs
-]
 
 ["test_content_encoding_gzip.js"]
 
@@ -862,6 +861,12 @@ skip-if = [
 
 ["test_happy_eyeballs_ip_preference.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
+
+["test_happy_eyeballs_local_addr_retry.js"]
+skip-if = [
+  "os == 'android'",
+  "os == 'win' && msix",
+]
 
 ["test_happy_eyeballs_tcp_fallback.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
@@ -1456,6 +1461,8 @@ run-if = [
 
 ["test_no_cookies_after_last_pb_exit.js"]
 
+["test_no_vary_search_revalidation.js"]
+
 ["test_no_vary_search_telemetry.js"]
 
 ["test_node_execute.js"]
@@ -1559,6 +1566,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86' && socketprocess_networking",
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && socketprocess_networking",
 ]
+
+["test_proxy_auth_securityInfo.js"]
 
 ["test_proxy_cancel.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
@@ -1992,6 +2001,8 @@ run-sequentially = ["true"] # node server exceptions dont replay well
 run-sequentially = ["true"] # node server exceptions dont replay well
 
 ["test_websocket_offline.js"]
+
+["test_websocket_protocol_handler.js"]
 
 ["test_websocket_proxy.js"]
 head = "head_cookies.js head_channels.js head_cache.js head_http3.js http3_proxy_common.js"

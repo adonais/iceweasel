@@ -130,7 +130,7 @@ NS_IMETHODIMP
 WebBrowserPersistLocalDocument::GetTitle(nsAString& aTitle) {
   nsAutoString titleBuffer;
   mDocument->GetTitle(titleBuffer);
-  aTitle = titleBuffer;
+  aTitle = std::move(titleBuffer);
   return NS_OK;
 }
 

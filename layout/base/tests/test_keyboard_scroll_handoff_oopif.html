@@ -1,0 +1,17 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Test cross-process main-thread keyboard scroll handoff to the embedder</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<pre id="test">
+<script>
+SimpleTest.waitForExplicitFinish();
+window.open("window_keyboard_scroll_handoff_oopif.html");
+</script>
+</pre>
+</body>
+</html>

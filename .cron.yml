@@ -45,7 +45,7 @@ jobs:
       run-on-projects:
           - mozilla-beta
       when:
-          - {weekday: "Friday", hour: 7, minute: 0}
+          - {weekday: "Wednesday", hour: 7, minute: 0}
 
     - name: merge-main-to-beta-dry-run
       job:
@@ -58,7 +58,7 @@ jobs:
       run-on-projects:
           - mozilla-central
       when:
-          - {weekday: "Friday", hour: 7, minute: 0}
+          - {weekday: "Wednesday", hour: 7, minute: 0}
 
     - name: nightly-desktop
       job:
@@ -234,7 +234,7 @@ jobs:
           - mozilla-central
           - mozilla-beta
           - mozilla-release
-          - mozilla-esr140
+          - mozilla-esr153
       when:
           by-project:
               # No default branch
@@ -247,7 +247,7 @@ jobs:
               mozilla-release:
                   - {hour: 7, minute: 0}
                   - {hour: 19, minute: 0}
-              mozilla-esr140:
+              mozilla-esr153:
                   - {hour: 7, minute: 0}
                   - {hour: 19, minute: 0}
 
@@ -540,3 +540,24 @@ jobs:
           - mozilla-release
       when:
           - {hour: 2, minute: 0}
+
+    - name: bhr-aggregate
+      job:
+          type: decision-task
+          treeherder-symbol: bhr
+          target-tasks-method: bhr_aggregate
+      run-on-projects:
+          - mozilla-central
+      when:
+          - {hour: 10, minute: 0}
+
+    - name: devtools-backward-compat
+      job:
+          type: decision-task
+          treeherder-symbol: DTbc
+          target-tasks-method: devtools_backward_compat
+      run-on-projects:
+          - mozilla-central
+      # Replaces manual smoke tests from the DevTools release checklist.
+      when:
+          - {hour: 8, minute: 0}

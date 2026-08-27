@@ -43,3 +43,11 @@ cluster. If you are interested in obtaining this advanced access, read
 - {ref}`crash-reporter`
 - {ref}`crash-manager`
 - {ref}`crash-ping`
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+searching_crash_reports
+uploading_symbol
+```

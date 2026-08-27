@@ -68,7 +68,7 @@ use crate::applicable_declarations::ApplicableDeclarationBlock;
 use crate::bloom::StyleBloom;
 use crate::computed_value_flags::ComputedValueFlags;
 use crate::context::{CascadeInputs, SharedStyleContext, StyleContext};
-use crate::dom::{SendElement, TElement};
+use crate::dom::{SendElement, TElement, TNode};
 use crate::properties::ComputedValues;
 use crate::selector_map::RelevantAttributes;
 use crate::style_resolver::{PrimaryStyle, ResolvedElementStyles};
@@ -82,19 +82,21 @@ use std::marker::PhantomData;
 use std::mem;
 use std::ops::Deref;
 use std::ptr::NonNull;
+use thin_vec::ThinVec;
 use uluru::LRUCache;
 
 mod checks;
 
-/// The amount of nodes that the style sharing candidate cache should hold at
-/// most.
+/// The amount of nodes that the style sharing candidate cache should hold at most.
 ///
-/// The cache size was chosen by measuring style sharing and resulting
-/// performance on a few pages; sizes up to about 32 were giving good sharing
-/// improvements (e.g. 3x fewer styles having to be resolved than at size 8) and
-/// slight performance improvements.  Sizes larger than 32 haven't really been
-/// tested.
+/// The cache size was chosen by measuring style sharing and resulting performance on a few pages;
+/// sizes up to about 32 were giving good sharing improvements (e.g. 3x fewer styles having to be
+/// resolved than at size 8) and slight performance improvements.  Sizes larger than 32 haven't
+/// really been tested.
 pub const SHARING_CACHE_SIZE: usize = 32;
+
+/// The max amount of DOM depths we keep around to share styles across. See bug 2052731.
+const SHARING_MAX_LEVELS: usize = 8;
 
 /// Opaque pointer type to compare ComputedValues identities.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -160,24 +162,28 @@ impl PartialEq for RevalidationResult {
     }
 }
 
-/// Some data we want to avoid recomputing all the time while trying to share
-/// style.
+/// We use this as an inline capacity for the class_list member below, but also as a reasonable cap
+/// to avoid sorting too large class lists.
+const REASONABLE_CLASS_LIST_SIZE: usize = 5;
+
+/// Some data we want to avoid recomputing all the time while trying to share style.
 #[derive(Debug, Default)]
 pub struct ValidationData {
     /// The class list of this element.
     ///
-    /// TODO(emilio): Maybe check whether rules for these classes apply to the
-    /// element?
-    class_list: Option<SmallVec<[AtomIdent; 5]>>,
+    /// TODO(emilio): Maybe check whether rules for these classes apply to the element?
+    /// TODO(emilio): Maybe this should be another ThinVec... But classes are definitely more common
+    /// than everything else on this struct.
+    class_list: Option<SmallVec<[AtomIdent; REASONABLE_CLASS_LIST_SIZE]>>,
 
     /// The part list of this element.
     ///
     /// TODO(emilio): Maybe check whether rules with these part names apply to
     /// the element?
-    part_list: Option<SmallVec<[AtomIdent; 5]>>,
+    part_list: Option<ThinVec<AtomIdent>>,
 
     /// The list of presentational attributes of the element.
-    pres_hints: Option<SmallVec<[ApplicableDeclarationBlock; 5]>>,
+    pres_hints: Option<ThinVec<ApplicableDeclarationBlock>>,
 
     /// The pointer identity of the parent ComputedValues.
     parent_style_identity: Option<OpaqueComputedValues>,
@@ -200,12 +206,13 @@ impl ValidationData {
         E: TElement,
     {
         self.pres_hints.get_or_insert_with(|| {
-            let mut pres_hints = SmallVec::new();
+            // This should basically never spill.
+            let mut pres_hints = SmallVec::<[_; 5]>::new();
             element.synthesize_presentational_hints_for_legacy_attributes(
                 VisitedHandlingMode::AllLinksUnvisited,
                 &mut pres_hints,
             );
-            pres_hints
+            ThinVec::from_iter(pres_hints.drain(..))
         })
     }
 
@@ -218,10 +225,10 @@ impl ValidationData {
             return &[];
         }
         self.part_list.get_or_insert_with(|| {
-            let mut list = SmallVec::<[_; 5]>::new();
+            let mut list = ThinVec::new();
             element.each_part(|p| list.push(p.clone()));
             // See below for the reasoning.
-            if !list.spilled() {
+            if list.len() <= REASONABLE_CLASS_LIST_SIZE {
                 list.sort_unstable_by_key(|a| a.get_hash());
             }
             list
@@ -234,13 +241,12 @@ impl ValidationData {
         E: TElement,
     {
         self.class_list.get_or_insert_with(|| {
-            let mut list = SmallVec::<[_; 5]>::new();
+            let mut list = SmallVec::<[_; REASONABLE_CLASS_LIST_SIZE]>::new();
             element.each_class(|c| list.push(c.clone()));
-            // Assuming there are a reasonable number of classes (we use the
-            // inline capacity as "reasonable number"), sort them to so that
-            // we don't mistakenly reject sharing candidates when one element
-            // has "foo bar" and the other has "bar foo".
-            if !list.spilled() {
+            // Assuming there are a reasonable number of classes, sort them to so that we don't
+            // mistakenly reject sharing candidates when one element has "foo bar" and the other has
+            // "bar foo".
+            if list.len() <= REASONABLE_CLASS_LIST_SIZE {
                 list.sort_unstable_by_key(|a| a.get_hash());
             }
             list
@@ -287,12 +293,10 @@ impl ValidationData {
             let bloom_to_use = if bloom_known_valid {
                 debug_assert_eq!(bloom.current_parent(), element.traversal_parent());
                 Some(bloom.filter())
+            } else if bloom.current_parent() == element.traversal_parent() {
+                Some(bloom.filter())
             } else {
-                if bloom.current_parent() == element.traversal_parent() {
-                    Some(bloom.filter())
-                } else {
-                    None
-                }
+                None
             };
             stylist.match_revalidation_selectors(
                 element,
@@ -310,21 +314,12 @@ impl ValidationData {
 /// Note that this information is stored in TLS and cleared after the traversal,
 /// and once here, the style information of the element is immutable, so it's
 /// safe to access.
-///
-/// Important: If you change the members/layout here, You need to do the same for
-/// FakeCandidate below.
 #[derive(Debug)]
-pub struct StyleSharingCandidate<E: TElement> {
+pub struct StyleSharingCandidate<E> {
     /// The element.
     element: E,
     validation_data: ValidationData,
     considered_nontrivial_scoped_style: bool,
-}
-
-struct FakeCandidate {
-    _element: usize,
-    _validation_data: ValidationData,
-    _may_contain_scoped_style: bool,
 }
 
 impl<E: TElement> Deref for StyleSharingCandidate<E> {
@@ -481,15 +476,6 @@ impl<E: TElement> StyleSharingTarget<E> {
         let bloom_filter = &context.thread_local.bloom_filter;
         let selector_caches = &mut context.thread_local.selector_caches;
 
-        if cache.dom_depth != bloom_filter.matching_depth() {
-            debug!(
-                "Can't share style, because DOM depth changed from {:?} to {:?}, element: {:?}",
-                cache.dom_depth,
-                bloom_filter.matching_depth(),
-                self.element
-            );
-            return None;
-        }
         debug_assert_eq!(
             bloom_filter.current_parent(),
             self.element.traversal_parent()
@@ -505,12 +491,15 @@ impl<E: TElement> StyleSharingTarget<E> {
 }
 
 struct SharingCacheBase<Candidate> {
+    /// The DOM depth of the candidates in this cache, if any.
+    dom_depth: usize,
     entries: LRUCache<Candidate, SHARING_CACHE_SIZE>,
 }
 
 impl<Candidate> Default for SharingCacheBase<Candidate> {
     fn default() -> Self {
         Self {
+            dom_depth: 0,
             entries: LRUCache::default(),
         }
     }
@@ -519,6 +508,7 @@ impl<Candidate> Default for SharingCacheBase<Candidate> {
 impl<Candidate> SharingCacheBase<Candidate> {
     fn clear(&mut self) {
         self.entries.clear();
+        self.dom_depth = 0
     }
 
     fn is_empty(&self) -> bool {
@@ -558,28 +548,29 @@ impl<E: TElement> SharingCache<E> {
 /// [1] https://github.com/rust-lang/rust/issues/42763
 /// [2] https://github.com/rust-lang/rust/issues/13707
 type SharingCache<E> = SharingCacheBase<StyleSharingCandidate<E>>;
-type TypelessSharingCache = SharingCacheBase<FakeCandidate>;
+type TypelessSharingCache = SharingCacheBase<StyleSharingCandidate<usize>>;
 
 thread_local! {
     // See the comment on bloom.rs about why do we leak this.
-    static SHARING_CACHE_KEY: &'static AtomicRefCell<TypelessSharingCache> =
+    static SHARING_CACHE_KEY: &'static AtomicRefCell<[TypelessSharingCache; SHARING_MAX_LEVELS]> =
         Box::leak(Default::default());
 }
 
-/// An LRU cache of the last few nodes seen, so that we can aggressively try to
-/// reuse their styles.
+/// A set of LRU caches of the last few nodes seen, one per DOM depth, so that we can try to
+/// aggressively try to share their styles.
 ///
-/// Note that this cache is flushed every time we steal work from the queue, so
-/// storing nodes here temporarily is safe.
+/// We key the candidates by DOM depth, because sharing requires an identical inheritance parent
+/// (see `test_candidate`), which in practice means the candidates worth testing are the ones at the
+/// target's own depth.
+///
+/// Note that these caches only live for the duration of one traversal so storing nodes here
+/// temporarily is safe.
 pub struct StyleSharingCache<E: TElement> {
-    /// The LRU cache, with the type cast away to allow persisting the allocation.
-    cache_typeless: AtomicRefMut<'static, TypelessSharingCache>,
+    /// The per-depth LRU caches, with the type cast away to allow persisting the allocation across
+    /// traversals.
+    cache_typeless: AtomicRefMut<'static, [TypelessSharingCache; SHARING_MAX_LEVELS]>,
     /// Bind this structure to the lifetime of E, since that's what we effectively store.
     marker: PhantomData<SendElement<E>>,
-    /// The DOM depth we're currently at.  This is used as an optimization to
-    /// clear the cache when we change depths, since we know at that point
-    /// nothing in the cache will match.
-    dom_depth: usize,
 }
 
 impl<E: TElement> Drop for StyleSharingCache<E> {
@@ -589,14 +580,8 @@ impl<E: TElement> Drop for StyleSharingCache<E> {
 }
 
 impl<E: TElement> StyleSharingCache<E> {
-    #[allow(dead_code)]
-    fn cache(&self) -> &SharingCache<E> {
-        let base: &TypelessSharingCache = &*self.cache_typeless;
-        unsafe { mem::transmute(base) }
-    }
-
-    fn cache_mut(&mut self) -> &mut SharingCache<E> {
-        let base: &mut TypelessSharingCache = &mut *self.cache_typeless;
+    fn cache_mut_at(&mut self, index: usize) -> &mut SharingCache<E> {
+        let base: &mut TypelessSharingCache = &mut self.cache_typeless[index % SHARING_MAX_LEVELS];
         unsafe { mem::transmute(base) }
     }
 
@@ -617,12 +602,10 @@ impl<E: TElement> StyleSharingCache<E> {
             mem::align_of::<TypelessSharingCache>()
         );
         let cache = SHARING_CACHE_KEY.with(|c| c.borrow_mut());
-        debug_assert!(cache.is_empty());
-
+        debug_assert!(cache.iter().all(|c| c.is_empty()));
         StyleSharingCache {
             cache_typeless: cache,
             marker: PhantomData,
-            dom_depth: 0,
         }
     }
 
@@ -675,16 +658,18 @@ impl<E: TElement> StyleSharingCache<E> {
             "Inserting into cache: {:?} with parent {:?}",
             element, parent
         );
+        debug_assert_eq!(element.as_node().depth(), dom_depth);
 
-        if self.dom_depth != dom_depth {
+        let cache = self.cache_mut_at(dom_depth);
+        if cache.dom_depth != dom_depth {
             debug!(
                 "Clearing cache because depth changed from {:?} to {:?}, element: {:?}",
-                self.dom_depth, dom_depth, element
+                cache.dom_depth, dom_depth, element
             );
-            self.clear();
-            self.dom_depth = dom_depth;
+            cache.clear();
+            cache.dom_depth = dom_depth;
         }
-        self.cache_mut().insert(
+        cache.insert(
             *element,
             validation_data_holder,
             style
@@ -694,9 +679,11 @@ impl<E: TElement> StyleSharingCache<E> {
         );
     }
 
-    /// Clear the style sharing candidate cache.
+    /// Clear the style sharing candidate cache (all depths).
     pub fn clear(&mut self) {
-        self.cache_mut().clear();
+        for c in &mut *self.cache_typeless {
+            c.clear();
+        }
     }
 
     /// Attempts to share a style with another node.
@@ -728,7 +715,18 @@ impl<E: TElement> StyleSharingCache<E> {
             return None;
         }
 
-        self.cache_mut().entries.lookup(|candidate| {
+        let dom_depth = bloom_filter.matching_depth();
+        debug_assert_eq!(target.element.as_node().depth(), dom_depth);
+        let cache = self.cache_mut_at(dom_depth);
+        if cache.dom_depth != dom_depth {
+            debug!(
+                "{:?} Cannot share style: cache holds depth {:?}, not {:?}",
+                target.element, cache.dom_depth, dom_depth
+            );
+            return None;
+        }
+
+        cache.entries.lookup(|candidate| {
             Self::test_candidate(
                 target,
                 candidate,
@@ -749,6 +747,7 @@ impl<E: TElement> StyleSharingCache<E> {
         shared_context: &SharedStyleContext,
     ) -> Option<ResolvedElementStyles> {
         debug_assert!(target.matches_user_and_content_rules());
+        debug_assert!(candidate.element.matches_user_and_content_rules());
 
         // Check that we have the same parent, or at least that the parents
         // share styles and permit sharing across their children. The latter
@@ -831,13 +830,6 @@ impl<E: TElement> StyleSharingCache<E> {
             return None;
         }
 
-        if target.matches_user_and_content_rules()
-            != candidate.element.matches_user_and_content_rules()
-        {
-            trace!("Miss: User and Author Rules");
-            return None;
-        }
-
         // It's possible that there are no styles for either id.
         if checks::may_match_different_id_rules(shared, target.element, candidate.element) {
             trace!("Miss: ID Attr");
@@ -906,12 +898,19 @@ impl<E: TElement> StyleSharingCache<E> {
         inherited: &ComputedValues,
         inputs: &CascadeInputs,
         target: E,
+        dom_depth: usize,
     ) -> Option<PrimaryStyle> {
+        debug_assert_eq!(target.as_node().depth(), dom_depth);
         if shared_context.options.disable_style_sharing_cache {
             return None;
         }
 
-        self.cache_mut().entries.lookup(|candidate| {
+        let cache = self.cache_mut_at(dom_depth);
+        if cache.dom_depth != dom_depth {
+            return None;
+        }
+
+        cache.entries.lookup(|candidate| {
             debug_assert_ne!(candidate.element, target);
             if !candidate.parent_style_identity().eq(inherited) {
                 return None;

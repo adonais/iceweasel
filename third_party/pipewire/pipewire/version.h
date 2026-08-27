@@ -16,7 +16,7 @@ extern "C" {
 /** Return the version of the header files. Keep in mind that this is
 a macro and not a function, so it is impossible to get the pointer of
 it. */
-#define pw_get_headers_version() ("1.4.2")
+#define pw_get_headers_version() ("1.6.8")
 
 /** Return the version of the library the current application is
  * linked to. */
@@ -35,10 +35,10 @@ bool pw_check_library_version(int major, int minor, int micro);
 #define PW_MAJOR 1
 
 /** The minor version of PipeWire. \since 0.2.0 */
-#define PW_MINOR 4
+#define PW_MINOR 6
 
 /** The micro version of PipeWire. \since 0.2.0 */
-#define PW_MICRO 2
+#define PW_MICRO 8
 
 /** Evaluates to TRUE if the PipeWire library version is equal or
  * newer than the specified. \since 0.2.0 */

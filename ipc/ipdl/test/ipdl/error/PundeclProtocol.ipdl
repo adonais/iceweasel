@@ -1,0 +1,9 @@
+//error: protocol `Pundeclared', managed by `PundeclProtocol', has not been declared
+
+[ChildProc=any]
+protocol PundeclProtocol {
+    manages Pundeclared;
+
+child:
+    async Pundeclared();
+};

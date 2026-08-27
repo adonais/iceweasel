@@ -54,7 +54,7 @@ class CodeGeneratorRiscv64 : public CodeGeneratorShared {
     Label bail;
     UseScratchRegisterScope temps(&masm);
     Register scratch = temps.Acquire();
-    masm.andi(scratch, reg, 0xFF);
+    masm.zext_b(scratch, reg);
     masm.ma_b(scratch, scratch, &bail, Assembler::Zero, LongJump);
     bailoutFrom(&bail, snapshot);
   }

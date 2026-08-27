@@ -194,8 +194,8 @@ NS_IMPL_ISUPPORTS(ConnectionEstablisher, nsITransportEventSink,
 
 ConnectionEstablisher::ConnectionEstablisher(nsHttpConnectionInfo* aConnInfo,
                                              const NetAddr& aAddr,
-                                             uint32_t aCaps)
-    : mConnInfo(aConnInfo), mAddr(aAddr), mCaps(aCaps) {
+                                             uint32_t aCaps, bool aAllow1918)
+    : mConnInfo(aConnInfo), mAddr(aAddr), mCaps(aCaps), mAllow1918(aAllow1918) {
   LOG(("ConnectionEstablisher ctor:%p", this));
 }
 
@@ -375,9 +375,8 @@ NS_IMPL_ISUPPORTS_INHERITED(TCPConnectionEstablisher, ConnectionEstablisher,
 TCPConnectionEstablisher::TCPConnectionEstablisher(
     nsHttpConnectionInfo* aConnInfo, NetAddr aAddr, uint32_t aCaps,
     bool aSpeculative, bool aAllow1918)
-    : ConnectionEstablisher(aConnInfo, aAddr, aCaps),
-      mSpeculative(aSpeculative),
-      mAllow1918(aAllow1918) {}
+    : ConnectionEstablisher(aConnInfo, aAddr, aCaps, aAllow1918),
+      mSpeculative(aSpeculative) {}
 
 TCPConnectionEstablisher::~TCPConnectionEstablisher() {
   // mSocketTransport / mStreamOut / mStreamIn must be released on the
@@ -392,8 +391,23 @@ TCPConnectionEstablisher::~TCPConnectionEstablisher() {
   }
 }
 
+bool ConnectionEstablisher::RefuseIfLocalAddress() {
+  if (mAllow1918 || !mAddr.IsIPAddrLocal()) {
+    return false;
+  }
+  LOG(
+      ("ConnectionEstablisher::RefuseIfLocalAddress %p refusing speculative "
+       "connection to local address [%s]",
+       this, mAddr.ToString().get()));
+  mRefusedForLocalAddress = true;
+  return true;
+}
+
 bool TCPConnectionEstablisher::Start(DoneCallback&& aCallback) {
   mCallback = std::move(aCallback);
+  if (RefuseIfLocalAddress()) {
+    return false;
+  }
   mAddrRecord = new SingleDNSAddrRecord(mAddr, mDnsMetadata);
 
   nsresult rv = CreateAndConfigureSocketTransport();
@@ -679,8 +693,8 @@ TCPConnectionEstablisher::OnOutputStreamReady(nsIAsyncOutputStream* aOut) {
 
 UDPConnectionEstablisher::UDPConnectionEstablisher(
     nsHttpConnectionInfo* aConnInfo, NetAddr aAddr, uint32_t aCaps,
-    bool /* aSpeculative */, bool /* aAllow1918 */)
-    : ConnectionEstablisher(aConnInfo, aAddr, aCaps) {
+    bool /* aSpeculative */, bool aAllow1918)
+    : ConnectionEstablisher(aConnInfo, aAddr, aCaps, aAllow1918) {
   LOG(("UDPConnectionEstablisher ctor:%p", this));
 }
 
@@ -691,6 +705,9 @@ UDPConnectionEstablisher::~UDPConnectionEstablisher() {
 bool UDPConnectionEstablisher::Start(DoneCallback&& aCallback) {
   LOG(("UDPConnectionEstablisher::Start %p", this));
   mCallback = std::move(aCallback);
+  if (RefuseIfLocalAddress()) {
+    return false;
+  }
   mAddrRecord = new SingleDNSAddrRecord(mAddr, mDnsMetadata);
 
   nsresult rv = CreateAndConfigureUDPConn();

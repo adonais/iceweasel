@@ -279,13 +279,20 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
   // Create the compositor table
   std::unique_ptr<SMILCompositorTable> currentCompositorTable(
       new SMILCompositorTable(0));
-  nsTArray<RefPtr<SVGAnimationElement>> animElems(
-      mAnimationElementTable.Count());
+
+  // Compositors hold raw pointers to animation functions owned by their
+  // animation elements, and composing can run script, so keep those elements
+  // alive for as long as the table refers to them (bug 1347168). Elements that
+  // didn't contribute an entry aren't referenced by the table, so there's no
+  // need to hold those: a document full of animation elements with no target
+  // produces no entries and so does no refcounting here at all.
+  nsTArray<RefPtr<SVGAnimationElement>> animElems;
 
   for (SVGAnimationElement* animElem : mAnimationElementTable.Keys()) {
     SampleTimedElement(animElem, &activeContainers);
-    AddAnimationToCompositorTable(animElem, currentCompositorTable.get());
-    animElems.AppendElement(animElem);
+    if (AddAnimationToCompositorTable(animElem, currentCompositorTable.get())) {
+      animElems.AppendElement(animElem);
+    }
   }
   activeContainers.Clear();
 
@@ -479,13 +486,14 @@ void SMILAnimationController::SampleTimedElement(
 }
 
 /*static*/
-void SMILAnimationController::AddAnimationToCompositorTable(
+bool SMILAnimationController::AddAnimationToCompositorTable(
     SVGAnimationElement* aElement, SMILCompositorTable* aCompositorTable) {
   // Add a compositor to the hash table if there's not already one there
   SMILTargetIdentifier key;
-  if (!GetTargetIdentifierForAnimation(aElement, key))
+  if (!GetTargetIdentifierForAnimation(aElement, key)) {
     // Something's wrong/missing about animation's target; skip this animation
-    return;
+    return false;
+  }
 
   SMILAnimationFunction& func = aElement->AnimationFunction();
 
@@ -497,21 +505,26 @@ void SMILAnimationController::AddAnimationToCompositorTable(
     // to its list of animation functions.
     SMILCompositor* result = aCompositorTable->PutEntry(key);
     result->AddAnimationFunction(&func);
-
-  } else if (func.HasChanged()) {
-    // Look up the compositor for our target, and force it to skip the
-    // "nothing's changed so don't bother compositing" optimization for this
-    // sample. |func| is inactive, but it's probably *newly* inactive (since
-    // it's got HasChanged() == true), so we need to make sure to recompose
-    // its target.
-    SMILCompositor* result = aCompositorTable->PutEntry(key);
-    result->ToggleForceCompositing();
-
-    // We've now made sure that |func|'s inactivity will be reflected as of
-    // this sample. We need to clear its HasChanged() flag so that it won't
-    // trigger this same clause in future samples (until it changes again).
-    func.ClearHasChanged();
+    return true;
   }
+
+  if (!func.HasChanged()) {
+    return false;
+  }
+
+  // Look up the compositor for our target, and force it to skip the
+  // "nothing's changed so don't bother compositing" optimization for this
+  // sample. |func| is inactive, but it's probably *newly* inactive (since
+  // it's got HasChanged() == true), so we need to make sure to recompose
+  // its target.
+  SMILCompositor* result = aCompositorTable->PutEntry(key);
+  result->ToggleForceCompositing();
+
+  // We've now made sure that |func|'s inactivity will be reflected as of
+  // this sample. We need to clear its HasChanged() flag so that it won't
+  // trigger this same clause in future samples (until it changes again).
+  func.ClearHasChanged();
+  return true;
 }
 
 static inline bool IsTransformAttribute(const Element* aElement,

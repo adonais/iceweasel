@@ -23,7 +23,7 @@ preview so they are translated and included in release builds.
 ## Prerequisites
 
 It is assumed that you are already familiar with Fluent. If not,
-you can read more about it in the [Fluent tutorial](../../l10n/fluent/tutorial.rst).
+you can read more about it in the [Fluent tutorial](../../l10n/fluent/tutorial.md).
 
 It is also assumed that what you're working on will either be disabled by
 default, held to Nightly, or be part of an English-only experiment.
@@ -157,6 +157,6 @@ strings still appear as you would expect.
 
 ## See Also
 
-- [Fluent for Firefox Developers](../../l10n/fluent/tutorial.rst)
+- [Fluent for Firefox Developers](../../l10n/fluent/tutorial.md)
 - [A commit that created some preview strings](https://hg.mozilla.org/mozilla-central/rev/2f605492e2ba)
   - [A commit that later moved those strings out of preview](https://github.com/mozilla-firefox/firefox/commit/74b69afbf45d3e97d4a4f8ed64bae3f976640ce3)

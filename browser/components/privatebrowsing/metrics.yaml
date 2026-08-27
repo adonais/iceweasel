@@ -82,8 +82,6 @@ aboutprivatebrowsing:
       - emz@mozilla.com
       - tihuang@mozilla.com
     expires: 160
-    no_lint:
-      - COMMON_PREFIX
 
   click_promo_link:
     type: event
@@ -96,8 +94,6 @@ aboutprivatebrowsing:
     data_reviews: *aboutprivatebrowsing_click_data_reviews
     notification_emails: *aboutprivatebrowsing_click_emails
     expires: 160
-    no_lint:
-      - COMMON_PREFIX
 
   click_dismiss_button:
     type: event
@@ -110,5 +106,3 @@ aboutprivatebrowsing:
     data_reviews: *aboutprivatebrowsing_click_data_reviews
     notification_emails: *aboutprivatebrowsing_click_emails
     expires: 160
-    no_lint:
-      - COMMON_PREFIX

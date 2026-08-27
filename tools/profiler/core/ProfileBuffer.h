@@ -215,7 +215,10 @@ class ProfileBuffer final {
 #endif
 
   // GetStreamingParametersForThreadCallback:
-  //   (ProfilerThreadId) -> Maybe<StreamingParametersForThread>
+  //   (ProfilerThreadId, uint64_t aEntryPosition)
+  //       -> Maybe<StreamingParametersForThread>
+  // aEntryPosition is the buffer position of the sample being dispatched, used
+  // to pick the right thread when OS thread ids have been recycled.
   template <typename GetStreamingParametersForThreadCallback>
   ProfilerThreadId DoStreamSamplesAndMarkersToJSON(
       mozilla::FailureLatch& aFailureLatch,

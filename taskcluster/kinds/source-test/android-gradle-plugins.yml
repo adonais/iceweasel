@@ -24,6 +24,7 @@ task-defaults:
             - linux64-embedded-uniffi-bindgen
             - linux64-nimbus-fml
     run:
+        clone-with: hg
         using: mach-gradle
 
 apilint:
@@ -31,25 +32,31 @@ apilint:
     treeherder:
         symbol: android(apilint)
     run:
+        clone-with: hg
         gradle-project: mobile/android/gradle/plugins/apilint
         gradle-args:
             - test
     when:
         files-changed:
-            - "mobile/android/gradle/plugins/apilint/**"
-            - "mobile/android/gradle/mozconfig.gradle"
+            - "gradle/libs.versions.toml"
+            - "gradle/wrapper/gradle-wrapper.properties"
             - "mobile/android/gradle/mach_env.gradle"
+            - "mobile/android/gradle/mozconfig.gradle"
+            - "mobile/android/gradle/plugins/apilint/**"
 
 ac-dependencies:
     description: "Android Components dependencies plugin tests"
     treeherder:
         symbol: android(ac-deps)
     run:
+        clone-with: hg
         gradle-project: mobile/android/android-components/plugins/dependencies
         gradle-args:
             - test
     when:
         files-changed:
+            - "gradle/libs.versions.toml"
+            - "gradle/wrapper/gradle-wrapper.properties"
             - "mobile/android/android-components/plugins/dependencies/**"
-            - "mobile/android/gradle/mozconfig.gradle"
             - "mobile/android/gradle/mach_env.gradle"
+            - "mobile/android/gradle/mozconfig.gradle"

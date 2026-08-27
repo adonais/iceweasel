@@ -320,7 +320,7 @@ class ToolboxHostManager {
     newIframe.docShellIsActive = true;
 
     if (destroyPreviousHost) {
-      this.destroyHost();
+      this.destroyHost({ newHostType: hostType });
     }
 
     if (
@@ -467,10 +467,12 @@ class ToolboxHostManager {
   /**
    * Destroy the current host, and remove event listeners from its frame.
    *
+   * @param {object} options
+   * @param {string} options.newHostType: The new host type when this is called from `switchHost`
    * @return {promise} to be resolved when the host is destroyed.
    */
-  destroyHost() {
-    return this.host.destroy();
+  destroyHost(options = {}) {
+    return this.host.destroy({ newHostType: options.newHostType });
   }
 }
 

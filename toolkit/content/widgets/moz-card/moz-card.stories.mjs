@@ -73,6 +73,80 @@ const Template = ({
   </main>
 `;
 
+const TemplateWithImage = ({
+  l10nId,
+  content,
+  type,
+  spacing,
+  headingLevel,
+  iconSrc,
+  expanded,
+}) => html`
+  <style>
+    main {
+      max-width: 400px;
+    }
+  </style>
+  <main>
+    <moz-card
+      type=${ifDefined(type)}
+      spacing=${ifDefined(spacing)}
+      headingLevel=${ifDefined(headingLevel)}
+      iconSrc=${ifDefined(iconSrc)}
+      data-l10n-id=${ifDefined(l10nId)}
+      expanded=${ifDefined(expanded)}
+    >
+      <img
+        src="https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/newtab-wallpapers-v2/e1108381-5c19-4cb4-a630-69f9e45503fb.avif"
+        alt
+        slot="cover-image"
+      />
+      <div>${content}</div>
+    </moz-card>
+  </main>
+`;
+
+const TemplateWithLightDOMStyling = ({
+  l10nId,
+  content,
+  type,
+  spacing,
+  headingLevel,
+  iconSrc,
+  expanded,
+}) => html`
+  <style>
+    main {
+      max-width: 400px;
+    }
+
+    .custom-cover-image {
+      width: 100%;
+      height: 215px;
+      border-radius: var(--border-radius-small);
+    }
+  </style>
+  <main>
+    <moz-card
+      type=${ifDefined(type)}
+      spacing=${ifDefined(spacing)}
+      headingLevel=${ifDefined(headingLevel)}
+      iconSrc=${ifDefined(iconSrc)}
+      data-l10n-id=${ifDefined(l10nId)}
+      expanded=${ifDefined(expanded)}
+    >
+      <picture slot="cover-image">
+        <img
+          src="https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/newtab-wallpapers-v2/e1108381-5c19-4cb4-a630-69f9e45503fb.avif"
+          alt
+          class="custom-cover-image"
+        />
+      </picture>
+      <div>${content}</div>
+    </moz-card>
+  </main>
+`;
+
 export const WithHeading = Template.bind({});
 WithHeading.args = {
   l10nId: "moz-card-heading",
@@ -152,4 +226,18 @@ WithHeadingIcon.args = {
   In a eros ac dolor hendrerit varius et at mauris.`,
   type: "default",
   iconSrc: "chrome://global/skin/icons/settings.svg",
+};
+
+export const WithImage = TemplateWithImage.bind({});
+WithImage.args = {
+  l10nId: "moz-card-heading",
+  content:
+    'Using an img tag with `slot="cover-image"` will use some default styles that can be overridden with CSS custom properties.',
+};
+
+export const WithCustomImage = TemplateWithLightDOMStyling.bind({});
+WithCustomImage.args = {
+  l10nId: "moz-card-heading",
+  content:
+    "Custom content can be put into the cover-image slot, but you need to bring your own styles.",
 };

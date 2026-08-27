@@ -33,6 +33,11 @@ logins = { version = "0.1", features = ["keydb", "allow_empty_passwords", "ignor
 init_rust_components = { version = "0.1", features = ["keydb"] }
 breach-alerts = { version = "0.1" }
 
+rc_crypto = { path = "../../../../third_party/application-services/components/support/rc_crypto", optional = true }
+
+mozilla-central-workspace-hack = { version = "0.1", features = ["gkrust-uniffi-components"], optional = true }
+
 [features]
 # Should we depend on xpcom crates?
 xpcom = []
+mozbuild = ["dep:rc_crypto"]

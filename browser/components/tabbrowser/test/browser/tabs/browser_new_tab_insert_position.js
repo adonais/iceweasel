@@ -54,7 +54,7 @@ async function openRelatedTab(openerTab) {
   gBrowser.selectTabAtIndex(openerIndex);
   let newTabPromise = BrowserTestUtils.waitForNewTab(
     gBrowser,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/#linkclick",
     true
   );
@@ -66,7 +66,7 @@ async function openRelatedTab(openerTab) {
   let openTab = await newTabPromise;
   is(
     openTab.linkedBrowser.currentURI.spec,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/#linkclick",
     "Middle click should open site to correct url."
   );
@@ -109,7 +109,7 @@ const sessData = {
     },
   ],
 };
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 const urlbarURL = "http://example.com/#urlbar";
 
 async function doTest(
@@ -144,7 +144,7 @@ async function doTest(
   // Create a *opener* tab page which has a link to "example.com".
   let pageURL = getRootDirectory(gTestPath).replace(
     "chrome://mochitests/content",
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com"
   );
   pageURL = `${pageURL}file_new_tab_page.html`;
@@ -167,7 +167,7 @@ async function doTest(
 
   let newTabPromise = BrowserTestUtils.waitForNewTab(
     gBrowser,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/#linkclick",
     true
   );
@@ -179,7 +179,7 @@ async function doTest(
   let openTab = await newTabPromise;
   is(
     openTab.linkedBrowser.currentURI.spec,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/#linkclick",
     "Middle click should open site to correct url."
   );

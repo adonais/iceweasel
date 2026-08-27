@@ -2341,7 +2341,7 @@ bool TelemetryEntryKey(CacheEntry const* entry, nsAutoCString& key) {
 
   if (entry->GetStorageID().IsEmpty()) {
     // Hopefully this will be const-copied, saves some memory
-    key = entryKey;
+    key = std::move(entryKey);
   } else {
     key.Assign(entry->GetStorageID());
     key.Append(':');

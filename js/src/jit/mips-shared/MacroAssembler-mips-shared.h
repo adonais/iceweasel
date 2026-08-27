@@ -94,9 +94,9 @@ class MacroAssemblerMIPSShared : public Assembler {
   void ma_ctz(Register rd, Register rs);
 
   // load
-  FaultingCodeOffset ma_load(Register dest, const BaseIndex& src,
-                             LoadStoreSize size = SizeWord,
-                             LoadStoreExtension extension = SignExtend);
+  FaultingCodeRange ma_load(Register dest, const BaseIndex& src,
+                            LoadStoreSize size = SizeWord,
+                            LoadStoreExtension extension = SignExtend);
   void ma_load_unaligned(Register dest, const BaseIndex& src,
                          LoadStoreSize size = SizeWord,
                          LoadStoreExtension extension = SignExtend);
@@ -108,9 +108,9 @@ class MacroAssemblerMIPSShared : public Assembler {
                          LoadStoreSize size, LoadStoreExtension extension);
 
   // store
-  FaultingCodeOffset ma_store(Register data, const BaseIndex& dest,
-                              LoadStoreSize size = SizeWord,
-                              LoadStoreExtension extension = SignExtend);
+  FaultingCodeRange ma_store(Register data, const BaseIndex& dest,
+                             LoadStoreSize size = SizeWord,
+                             LoadStoreExtension extension = SignExtend);
   void ma_store(Imm32 imm, const BaseIndex& dest, LoadStoreSize size = SizeWord,
                 LoadStoreExtension extension = SignExtend);
   void ma_store_unaligned(Register data, const Address& dest,
@@ -172,11 +172,11 @@ class MacroAssemblerMIPSShared : public Assembler {
   // fp instructions
   void ma_lis(FloatRegister dest, float value);
 
-  FaultingCodeOffset ma_sd(FloatRegister src, BaseIndex address);
-  FaultingCodeOffset ma_ss(FloatRegister src, BaseIndex address);
+  FaultingCodeRange ma_sd(FloatRegister src, BaseIndex address);
+  FaultingCodeRange ma_ss(FloatRegister src, BaseIndex address);
 
-  FaultingCodeOffset ma_ld(FloatRegister dest, const BaseIndex& src);
-  FaultingCodeOffset ma_ls(FloatRegister dest, const BaseIndex& src);
+  FaultingCodeRange ma_ld(FloatRegister dest, const BaseIndex& src);
+  FaultingCodeRange ma_ls(FloatRegister dest, const BaseIndex& src);
 
   // FP branches
   void ma_bc1s(FloatRegister lhs, FloatRegister rhs, Label* label,
@@ -214,18 +214,18 @@ class MacroAssemblerMIPSShared : public Assembler {
   void minMaxFloat32(FloatRegister srcDest, FloatRegister other, bool handleNaN,
                      bool isMax);
 
-  FaultingCodeOffset loadDouble(const Address& addr, FloatRegister dest);
-  FaultingCodeOffset loadDouble(const BaseIndex& src, FloatRegister dest);
+  FaultingCodeRange loadDouble(const Address& addr, FloatRegister dest);
+  FaultingCodeRange loadDouble(const BaseIndex& src, FloatRegister dest);
 
-  FaultingCodeOffset loadFloat32(const Address& addr, FloatRegister dest);
-  FaultingCodeOffset loadFloat32(const BaseIndex& src, FloatRegister dest);
+  FaultingCodeRange loadFloat32(const Address& addr, FloatRegister dest);
+  FaultingCodeRange loadFloat32(const BaseIndex& src, FloatRegister dest);
 
-  FaultingCodeOffset loadFloat16(const Address& addr, FloatRegister dest,
-                                 Register) {
+  FaultingCodeRange loadFloat16(const Address& addr, FloatRegister dest,
+                                Register) {
     MOZ_CRASH("Not supported for this target");
   }
-  FaultingCodeOffset loadFloat16(const BaseIndex& src, FloatRegister dest,
-                                 Register) {
+  FaultingCodeRange loadFloat16(const BaseIndex& src, FloatRegister dest,
+                                Register) {
     MOZ_CRASH("Not supported for this target");
   }
 

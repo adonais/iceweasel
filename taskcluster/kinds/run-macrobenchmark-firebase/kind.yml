@@ -5,6 +5,7 @@
 loader: taskgraph.loader.transform:loader
 
 transforms:
+    - taskgraph.transforms.task_context
     # While not a build, the build optimization works well for these tasks.
     - gecko_taskgraph.transforms.build_schedules:transforms
     - gecko_taskgraph.transforms.job:transforms
@@ -21,6 +22,13 @@ task-defaults:
         build_platform: android
         build-type: debug
         retrigger: true
+    task-context:
+        from-parameters:
+            level: level
+        substitution-fields:
+            - routes
+            - scopes
+            - extra.notify
     worker-type: b-linux-medium
     worker:
         docker-image: {in-tree: android-ui-tests}
@@ -40,10 +48,145 @@ task-defaults:
         kind: test
         tier: 1
     run:
+        clone-with: hg
         using: run-commands
         dummy-secrets:
             - content: "faketoken"
               path: .adjust_token
+    routes:
+        by-level:
+            '3':
+                - notify.slack-channel.C099TSHR7GB.on-failed
+            'default': []
+    scopes:
+        by-level:
+            '3':
+                - queue:route:notify.slack-channel.C099TSHR7GB.on-failed
+                - notify:slack-channel:C099TSHR7GB
+            'default': []
+    extra:
+        notify:
+            by-level:
+                '3':
+                    slackText: 'https://firefox-ci-tc.services.mozilla.com/tasks/${{status.taskId}} | ${{task.metadata.name}} | ${{task.metadata.source}}'
+                    slackBlocks: |
+                        [
+                          {{
+                            "type": "header",
+                            "text": {{
+                              "type": "plain_text",
+                              "text": "firefox-android :firefox: ${{task.metadata.name}} :x:\n "
+                            }}
+                          }},
+                          {{
+                            "type": "table",
+                            "rows": [
+                              [
+                                {{
+                                  "type": "rich_text",
+                                  "elements": [
+                                    {{
+                                      "type": "rich_text_section",
+                                      "elements": [
+                                        {{
+                                          "type": "text",
+                                          "text": "Task",
+                                          "style": {{ "bold": true }}
+                                        }}
+                                      ]
+                                    }}
+                                  ]
+                                }},
+                                {{
+                                  "type": "rich_text",
+                                  "elements": [
+                                    {{
+                                      "type": "rich_text_section",
+                                      "elements": [
+                                        {{
+                                          "type": "link",
+                                          "url": "https://firefox-ci-tc.services.mozilla.com/tasks/${{status.taskId}}",
+                                          "text": "Taskcluster"
+                                        }}
+                                      ]
+                                    }}
+                                  ]
+                                }}
+                              ],
+                              [
+                                {{
+                                  "type": "rich_text",
+                                  "elements": [
+                                    {{
+                                      "type": "rich_text_section",
+                                      "elements": [
+                                        {{
+                                          "type": "text",
+                                          "text": "Owner",
+                                          "style": {{ "bold": true }}
+                                        }}
+                                      ]
+                                    }}
+                                  ]
+                                }},
+                                {{
+                                  "type": "raw_text",
+                                  "text": "${{task.metadata.owner}}"
+                                }}
+                              ],
+                              [
+                                {{
+                                  "type": "rich_text",
+                                  "elements": [
+                                    {{
+                                      "type": "rich_text_section",
+                                      "elements": [
+                                        {{
+                                          "type": "text",
+                                          "text": "Source",
+                                          "style": {{ "bold": true }}
+                                        }}
+                                      ]
+                                    }}
+                                  ]
+                                }},
+                                {{
+                                  "type": "rich_text",
+                                  "elements": [
+                                    {{
+                                      "type": "rich_text_section",
+                                      "elements": [
+                                        {{
+                                          "type": "link",
+                                          "url": "${{task.payload.env.GECKO_BASE_REPOSITORY}}/rev/${{task.payload.env.GECKO_HEAD_REV}}",
+                                          "text": "Commit"
+                                        }},
+                                        {{
+                                          "type": "text",
+                                          "text": " "
+                                        }},
+                                        {{
+                                          "type": "emoji",
+                                          "name": "hg"
+                                        }}
+                                      ]
+                                    }}
+                                  ]
+                                }}
+                              ]
+                            ]
+                          }},
+                          {{
+                            "type": "context",
+                            "elements": [
+                              {{
+                                "type": "mrkdwn",
+                                "text": ":android: Refer to https://mozilla-hub.atlassian.net/wiki/x/SwCjZw for more information on baseline profiles."
+                              }}
+                            ]
+                          }}
+                        ]
+                'default': {}
 
 tasks:
     fenix:
@@ -59,6 +202,7 @@ tasks:
                 - artifact: target.noarch.apk
                   extract: false
         run:
+            clone-with: hg
             secrets:
                 - name: project/gecko/level-any/firefox-android/fenix/firebase
                   key: firebaseToken

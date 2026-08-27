@@ -13,6 +13,7 @@ import android.util.TypedValue
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
 import androidx.core.net.toUri
+import mozilla.components.support.ktx.android.content.pixelSizeFor
 import mozilla.components.support.ktx.kotlin.stripCommonSubdomains
 import org.mozilla.focus.R
 import org.mozilla.focus.shortcut.IconGenerator.generateAdaptiveLauncherIcon
@@ -45,8 +46,7 @@ object IconGenerator {
      * https://developer.android.com/guide/practices/ui_guidelines/icon_design_adaptive.html
      */
     private fun generateAdaptiveLauncherIcon(context: Context, character: Char): Bitmap {
-        val res = context.resources
-        val adaptiveIconDimen = res.getDimensionPixelSize(R.dimen.adaptive_icon_drawable_dimen)
+        val adaptiveIconDimen = context.pixelSizeFor(R.dimen.adaptive_icon_drawable_dimen)
 
         val bitmap = createBitmap(adaptiveIconDimen, adaptiveIconDimen)
         val canvas = Canvas(bitmap)

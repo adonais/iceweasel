@@ -42,6 +42,15 @@ ChromeUtils.defineESModuleGetters(
   { global: "current" }
 );
 
+/**
+ * How long to keep reading after finish_reason for the trailing usage chunk.
+ * Only reached when a server stops talking without closing the stream, and must
+ * stay under browser.ml.modelCacheTimeout or the engine is reaped mid-drain.
+ *
+ * @type {number}
+ */
+const TOOL_CALL_DRAIN_TIMEOUT_MS = 2000;
+
 export class OpenAIPipeline {
   #errorFactory = null;
   #options = null;
@@ -215,55 +224,98 @@ export class OpenAIPipeline {
       port,
     } = args;
 
+    const createStartTime = ChromeUtils.now();
     const stream = await client.chat.completions.create(completionParams);
+    let lastChunkTime = ChromeUtils.now();
+    ChromeUtils.addProfilerMarker(
+      "MLEngine:OpenAI",
+      createStartTime,
+      "Stream opened"
+    );
 
     let streamOutput = "";
     let toolAcc = new Map();
     let sawToolCallsFinish = false;
     let usage = null;
+    let chunkIndex = 0;
 
-    for await (const chunk of stream) {
-      const choice = chunk?.choices?.[0];
-      const delta = choice?.delta ?? {};
+    // Armed once finish_reason arrives, so a server that never closes the
+    // stream cannot hold the engine open. Aborting the request interrupts the
+    // pending read, which the stream generator treats as a clean end.
+    let drainTimeoutId = null;
 
-      // Normal text tokens
-      if (delta.content) {
-        streamOutput += delta.content;
-        this.#sendProgress({
-          content: delta.content,
-          requestId,
-          inferenceProgressCallback,
-          port,
-          isDone: false,
-        });
+    try {
+      for await (const chunk of stream) {
+        const chunkTime = ChromeUtils.now();
+        const choice = chunk?.choices?.[0];
+        const delta = choice?.delta ?? {};
+
+        // Chunk 0 measures stream open to first chunk; later ones the gap.
+        let chunkKind = "empty";
+        if (delta.content) {
+          chunkKind = "content";
+        } else if (delta.tool_calls) {
+          chunkKind = "tool_calls";
+        } else if (chunk?.usage) {
+          chunkKind = "usage";
+        }
+        ChromeUtils.addProfilerMarker(
+          "MLEngine:OpenAI",
+          lastChunkTime,
+          `Raw chunk #${chunkIndex} ${chunkKind}`
+        );
+        chunkIndex++;
+        lastChunkTime = chunkTime;
+
+        // Normal text tokens
+        if (delta.content) {
+          streamOutput += delta.content;
+          this.#sendProgress({
+            content: delta.content,
+            requestId,
+            inferenceProgressCallback,
+            port,
+            isDone: false,
+          });
+        }
+
+        if (Array.isArray(delta.tool_calls) && delta.tool_calls.length) {
+          toolAcc = this.#mergeToolDeltas(toolAcc, delta.tool_calls);
+        }
+
+        if (chunk?.usage) {
+          usage = chunk.usage;
+        }
+
+        // If the model signals it wants tools now
+        if (choice?.finish_reason === "tool_calls") {
+          sawToolCallsFinish = true;
+          const toolCalls = this.#finalizeToolCalls(toolAcc);
+
+          // Emit the completed tool calls to the caller so they can execute
+          // them.
+          this.#sendProgress({
+            content: "", // no user-visible text here
+            requestId,
+            inferenceProgressCallback,
+            port,
+            isDone: false,
+            toolCalls,
+          });
+
+          // Keep reading: the usage chunk arrives after finish_reason.
+          drainTimeoutId ??= setTimeout(() => {
+            ChromeUtils.addProfilerMarker(
+              "MLEngine:OpenAI",
+              {},
+              "Tool-call drain timed out; cancelling"
+            );
+            stream.controller.abort();
+          }, TOOL_CALL_DRAIN_TIMEOUT_MS);
+        }
       }
-
-      if (Array.isArray(delta.tool_calls) && delta.tool_calls.length) {
-        toolAcc = this.#mergeToolDeltas(toolAcc, delta.tool_calls);
-      }
-
-      if (chunk?.usage) {
-        usage = chunk.usage;
-      }
-
-      // If the model signals it wants tools now
-      if (choice?.finish_reason === "tool_calls") {
-        sawToolCallsFinish = true;
-        const toolCalls = this.#finalizeToolCalls(toolAcc);
-
-        // Emit the completed tool calls to the caller so they can execute them.
-        this.#sendProgress({
-          content: "", // no user-visible text here
-          requestId,
-          inferenceProgressCallback,
-          port,
-          isDone: false,
-          toolCalls,
-        });
-
-        // Typically end this assistant turn here.
-        break;
-      }
+    } finally {
+      clearTimeout(drainTimeoutId);
     }
 
     // Final message: does not carry full content to avoid duplication
@@ -306,7 +358,13 @@ export class OpenAIPipeline {
       port,
     } = args;
 
+    const createStartTime = ChromeUtils.now();
     const completion = await client.chat.completions.create(completionParams);
+    ChromeUtils.addProfilerMarker(
+      "MLEngine:OpenAI",
+      createStartTime,
+      "Completion received"
+    );
     const message = completion.choices[0].message;
     const output = message.content || "";
     const toolCalls = message.tool_calls || null;
@@ -378,6 +436,7 @@ export class OpenAIPipeline {
       const tools = request.tools || [];
 
       const completionParams = {
+        ...request.inferenceParams,
         model: modelId,
         messages: request.args,
         stream,

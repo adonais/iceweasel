@@ -353,30 +353,42 @@ class HistoryInView extends ViewPage {
   }
 
   #emptyMessageTemplate() {
+    const nova = Services.prefs.getBoolPref("browser.nova.enabled", false);
     let descriptionHeader;
     let descriptionLabels;
     let descriptionLink;
     if (Services.prefs.getBoolPref(NEVER_REMEMBER_HISTORY_PREF, false)) {
       // History pref set to never remember history
-      descriptionHeader = "firefoxview-dont-remember-history-empty-header-2";
+      descriptionHeader = nova
+        ? "firefoxview-dont-remember-history-empty-header-3"
+        : "firefoxview-dont-remember-history-empty-header-2";
       descriptionLabels = [
-        "firefoxview-dont-remember-history-empty-description-one",
+        nova
+          ? "firefoxview-dont-remember-history-empty-description-2"
+          : "firefoxview-dont-remember-history-empty-description-one",
       ];
       descriptionLink = {
         url: "about:preferences#privacy",
         name: "history-settings-url-two",
       };
     } else {
-      descriptionHeader = "firefoxview-history-empty-header";
-      descriptionLabels = [
-        "firefoxview-history-empty-description",
-        "firefoxview-history-empty-description-two",
-      ];
+      descriptionHeader = nova
+        ? "firefoxview-history-empty-header-2"
+        : "firefoxview-history-empty-header";
+      descriptionLabels = nova
+        ? ["firefoxview-history-empty-description-2"]
+        : [
+            "firefoxview-history-empty-description",
+            "firefoxview-history-empty-description-two",
+          ];
       descriptionLink = {
         url: "about:preferences#privacy",
         name: "history-settings-url",
       };
     }
+    let asset = nova
+      ? "chrome://browser/skin/sidebar/kit-page-history.svg"
+      : "chrome://browser/content/firefoxview/history-empty.svg";
     return html`
       <fxview-empty-state
         headerLabel=${descriptionHeader}
@@ -384,7 +396,7 @@ class HistoryInView extends ViewPage {
         .descriptionLink=${descriptionLink}
         class="empty-state history"
         ?isSelectedTab=${this.selectedTab}
-        mainImageUrl="chrome://browser/content/firefoxview/history-empty.svg"
+        mainImageUrl=${asset}
       >
       </fxview-empty-state>
     `;

@@ -16,7 +16,7 @@ var m = g.parseModule(`
   import source emptyMod from "empty.wasm";
   globalThis.emptyMod = emptyMod;
 `);
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);
 drainJobQueue();
 

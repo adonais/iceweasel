@@ -602,6 +602,7 @@ ImageTestCase PerfRgbLosslessJXLTestCase();
 ImageTestCase PerfRgbAlphaLosslessJXLTestCase();
 ImageTestCase PerfRgbLossyJXLTestCase();
 ImageTestCase PerfRgbAlphaLossyJXLTestCase();
+ImageTestCase ProgressiveAlphaMultiGroupJXLTestCase();
 #endif
 
 ImageTestCase ExifResolutionTestCase();

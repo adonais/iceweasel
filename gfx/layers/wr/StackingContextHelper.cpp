@@ -20,6 +20,7 @@ using namespace gfx;
 StackingContextHelper::StackingContextHelper()
     : mBuilder(nullptr),
       mScale(1.0f, 1.0f),
+      mRasterScaleIsDegenerate(false),
       mAffectsClipPositioning(false),
       mDeferredTransformItem(nullptr) {}
 
@@ -42,8 +43,9 @@ MatrixScales ChooseScale(nsIFrame* aContainerFrame,
                          nsDisplayItem* aContainerItem,
                          const nsRect& aVisibleRect, float aXScale,
                          float aYScale, const Matrix& aTransform2d,
-                         bool aCanDraw2D) {
+                         bool aCanDraw2D, bool* aOutDegenerate) {
   MatrixScales scale;
+  *aOutDegenerate = false;
   // XXX Should we do something for 3D transforms?
   if (aCanDraw2D && !aContainerFrame->Combines3DTransformWithAncestors() &&
       !aContainerFrame->HasPerspective()) {
@@ -103,9 +105,13 @@ MatrixScales ChooseScale(nsIFrame* aContainerFrame,
       }
     }
     // If the scale factors are too small, just use 1.0. The content is being
-    // scaled out of sight anyway.
+    // scaled out of sight anyway. Report this to the caller: 1.0 is only a
+    // placeholder to keep the rest of the pipeline well-behaved, and anything
+    // that sizes a buffer from untransformed bounds must skip this content
+    // rather than take the placeholder at face value (bug 1906769).
     if (fabs(scale.xScale) < 1e-8 || fabs(scale.yScale) < 1e-8) {
       scale = MatrixScales(1.0, 1.0);
+      *aOutDegenerate = true;
     }
   } else {
     scale = MatrixScales(1.0, 1.0);
@@ -127,6 +133,7 @@ StackingContextHelper::StackingContextHelper(
     const LayoutDeviceRect& aBounds)
     : mBuilder(&aBuilder),
       mScale(1.0f, 1.0f),
+      mRasterScaleIsDegenerate(false),
       mDeferredTransformItem(aParams.mDeferredTransformItem) {
   MOZ_ASSERT(!aContainerItem || aContainerItem->CreatesStackingContextHelper());
 
@@ -143,11 +150,18 @@ StackingContextHelper::StackingContextHelper(
 
       int32_t apd = aContainerFrame->PresContext()->AppUnitsPerDevPixel();
       nsRect r = LayoutDevicePixel::ToAppUnits(aBounds, apd);
+      bool degenerate = false;
       mScale = ChooseScale(aContainerFrame, aContainerItem, r,
                            aParentSC.mScale.xScale, aParentSC.mScale.yScale,
                            transform2d,
-                           /* aCanDraw2D = */ true);
+                           /* aCanDraw2D = */ true, &degenerate);
+      // ChooseScale composes with the parent's (possibly placeholder) scale,
+      // so a degenerate ancestor stays degenerate here.
+      mRasterScaleIsDegenerate =
+          degenerate || aParentSC.mRasterScaleIsDegenerate;
     } else {
+      // Deliberately discards the inherited scale, so the ancestor's degenerate
+      // state does not carry over either.
       mScale = gfx::MatrixScales(1.0f, 1.0f);
       mInheritedTransform = gfx::Matrix::Scaling(1.f, 1.f);
     }
@@ -170,6 +184,7 @@ StackingContextHelper::StackingContextHelper(
     mInheritedTransform = transform * aParentSC.mInheritedTransform;
     mScale =
         ScaleFactor<UnknownUnits, UnknownUnits>(resolution) * aParentSC.mScale;
+    mRasterScaleIsDegenerate = aParentSC.mRasterScaleIsDegenerate;
 
     MOZ_ASSERT(!aParams.mAnimated);
     mSnappingSurfaceTransform = transform * aParentSC.mSnappingSurfaceTransform;
@@ -191,6 +206,7 @@ StackingContextHelper::StackingContextHelper(
 
     mInheritedTransform = transform * aParentSC.mInheritedTransform;
     mScale = aParentSC.mScale * resolution;
+    mRasterScaleIsDegenerate = aParentSC.mRasterScaleIsDegenerate;
 
     MOZ_ASSERT(!aParams.mAnimated);
     mSnappingSurfaceTransform = transform * aParentSC.mSnappingSurfaceTransform;
@@ -198,6 +214,7 @@ StackingContextHelper::StackingContextHelper(
   } else {
     mInheritedTransform = aParentSC.mInheritedTransform;
     mScale = aParentSC.mScale;
+    mRasterScaleIsDegenerate = aParentSC.mRasterScaleIsDegenerate;
   }
 
   // Content is always rasterized in screen (device) space. We used to rasterize

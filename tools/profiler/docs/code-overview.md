@@ -250,7 +250,7 @@ continue, see [bug 1681416](https://bugzilla.mozilla.org/show_bug.cgi?id=1681416
 
 ### Platform support
 
-Mozilla officially supports the Profiler on [tier-1 platforms](https://firefox-source-docs.mozilla.org/contributing/build/supported.html):
+Mozilla officially supports the Profiler on [tier-1 platforms](https://firefox-source-docs.mozilla.org/build/buildsystem/supported-configurations.html):
 Windows, macos, Linux and Android.
 There is also some code (markers recording) running on tier 2-3 platforms (e.g., for FreeBSD), but
 the team at Mozilla is not obligated to maintain it; we do try to keep it

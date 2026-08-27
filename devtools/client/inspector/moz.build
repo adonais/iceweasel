@@ -9,6 +9,7 @@ DIRS += [
     "compatibility",
     "components",
     "computed",
+    "emulation",
     "extensions",
     "flexbox",
     "fonts",

@@ -424,8 +424,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-block: var(--space-small) var(--space-medium);
-
+      margin-block: var(--space-small) var(--space-large);
     }
 
     .section-title {
@@ -504,11 +503,7 @@
   grid-column: 1 / -1;
 
   .section-title {
-    font-size: var(--font-size-heading-large);
-
-    @include at-content-cols(12) {
-      font-size: var(--font-size-heading-xlarge);
-    }
+    font-size: var(--font-size-heading-medium);
   }
 }
 

@@ -7,11 +7,11 @@
 #ifndef mozilla_IntegerRange_h
 #define mozilla_IntegerRange_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/ReverseIterator.h"
-
 #include <iterator>
 #include <type_traits>
+
+#include "mozilla/Assertions.h"
+#include "mozilla/ReverseIterator.h"
 
 namespace mozilla {
 

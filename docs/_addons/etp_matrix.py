@@ -128,12 +128,6 @@ OTHER_PRIVACY_PREFS = {
     ],
     "Other Privacy Features": [
         (
-            "Cookie Banner UI",
-            "cookiebanners.ui.desktop.enabled",
-            None,
-            "Shows cookie banner reduction controls in Firefox settings.",
-        ),
-        (
             "Strip on Share",
             "privacy.query_stripping.strip_on_share.enabled",
             None,

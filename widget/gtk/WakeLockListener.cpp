@@ -1127,6 +1127,21 @@ nsresult WakeLockListener::Callback(const nsAString& topic,
   bool shouldLock = state.EqualsLiteral("locked-background") ||
                     state.EqualsLiteral("locked-foreground");
 
+  // A backgrounded video-playing lock must not hold a system suspend inhibitor
+  // (Bug 2057365).
+  //
+  // A muted autoplay video in a background tab/subframe still takes the
+  // "video-playing" wake lock, because that lock is gated on having an audio
+  // track, not on being audible. GTK then escalates a backgrounded video lock
+  // to a GNOME SUSPEND inhibitor, blocking system sleep with no user-visible
+  // signal (the tab shows no sound indicator). GTK is the only backend that
+  // does this -- macOS/Windows/Android all release the video lock once it is
+  // backgrounded. Genuinely audible background playback is covered by the
+  // separate "audio-playing" topic, so holding no inhibitor here is safe.
+  if (backgroundLock && topic.Equals(u"video-playing"_ns)) {
+    shouldLock = false;
+  }
+
   // If there's a switch between lock types (background / foreground) we need to
   // un-inhibit a complementary one.
   SetState(topic, !backgroundLock, /* aInhibited */ false);

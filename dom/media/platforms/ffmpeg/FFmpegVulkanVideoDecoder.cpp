@@ -146,8 +146,15 @@ namespace {
 
 // Cached instance-level Vulkan function pointers, shared across all decoders
 // for the lifetime of the process as long as the VkInstance doesn't change.
+// Keyed by (VkInstance, generation): the shared VkInstance is destroyed
+// once no decoder references it, and VkInstance is loader-owned heap
+// memory a later-created instance could, in principle, reuse the address
+// of. Keying on the address alone risks serving stale pointers from the
+// old, freed instance. Unconfirmed in practice; see
+// VulkanDeviceHolder::Generation().
 struct InstanceFunctionCache {
   VkInstance mInstance = VK_NULL_HANDLE;
+  uint64_t mGeneration = 0;
   PFN_vkGetDeviceProcAddr mGetDeviceProcAddr = nullptr;
   PFN_vkGetPhysicalDeviceProperties mGetPhysicalDeviceProperties = nullptr;
   PFN_vkGetPhysicalDeviceQueueFamilyProperties
@@ -171,9 +178,11 @@ constinit static StaticDataMutex<InstanceFunctionCache> sInstanceFnCache{
 
 void FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::
     LoadInstanceFunctions(PFN_vkGetInstanceProcAddr aGetProcAddr,
-                          VkInstance aInst, VkPhysicalDevice aPhysDev) {
+                          VkInstance aInst, VkPhysicalDevice aPhysDev,
+                          uint64_t aGeneration) {
   auto cache = sInstanceFnCache.Lock();
-  if (cache->mInstance == aInst && cache->mGetDeviceProcAddr) {
+  if (cache->mInstance == aInst && cache->mGeneration == aGeneration &&
+      cache->mGetDeviceProcAddr) {
     mGetDeviceProcAddr = cache->mGetDeviceProcAddr;
     mGetPhysicalDeviceProperties = cache->mGetPhysicalDeviceProperties;
     mGetPhysicalDeviceQueueFamilyProperties =
@@ -189,6 +198,11 @@ void FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::
     mInstanceFunctions = cache->mFnPtrs.Clone();
     return;
   }
+
+  FFMPEGV_LOG(
+      "[VULKAN] (Re)loading instance functions for instance {} (gen {}, "
+      "previously cached: instance {} gen {})",
+      (void*)aInst, aGeneration, (void*)cache->mInstance, cache->mGeneration);
 
   mInstanceFunctions.Clear();
   auto load = [&]<typename T>(T& fn, const char* name) {
@@ -213,6 +227,7 @@ void FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::
        "vkGetPhysicalDeviceExternalSemaphoreProperties");
 
   cache->mInstance = aInst;
+  cache->mGeneration = aGeneration;
   cache->mGetDeviceProcAddr = mGetDeviceProcAddr;
   cache->mGetPhysicalDeviceProperties = mGetPhysicalDeviceProperties;
   cache->mGetPhysicalDeviceQueueFamilyProperties =
@@ -245,7 +260,7 @@ void FFmpegVideoDecoder<
   load(mFreeCommandBuffers, "vkFreeCommandBuffers");
   load(mBeginCommandBuffer, "vkBeginCommandBuffer");
   load(mEndCommandBuffer, "vkEndCommandBuffer");
-  load(mGetDeviceQueue, "vkGetDeviceQueue");
+  load(mGetDeviceQueue2, "vkGetDeviceQueue2");
   load(mQueueSubmit, "vkQueueSubmit");
   load(mCmdPipelineBarrier, "vkCmdPipelineBarrier");
   load(mCmdCopyImage, "vkCmdCopyImage");
@@ -289,6 +304,7 @@ void FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitDrmModifiers(
     const nsTArray<uint64_t>* aCompositorMods, VkImageUsageFlags aImageUsages) {
   mDrmModifiers.clear();
   mExportRequiresDedicatedByModifier.Clear();
+  mForcedNvidiaBlockLinear = false;
 
   FFMPEGV_LOG("[VULKAN] Compositor {} modifier(s) for intersection",
               aCompositorMods ? aCompositorMods->Length() : 0);
@@ -432,11 +448,30 @@ void FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitDrmModifiers(
     FFMPEGV_LOG("[VULKAN] No suitable modifiers found, using LINEAR");
   }
 
-  // NVIDIA: query may not expose tiled modifiers, add known-working one if RDD
-  // and GPU share the same device (only when we had a real compositor list).
+  // NVIDIA: Vulkan may under-report / fail validation for tiled modifiers on
+  // older drivers. If negotiation left only LINEAR, force a known-working one
+  // when the compositor already advertises it
   if (aCompositorMods && mNegotiatedCompositorDecoderVendorID == 0x10de &&
-      mDecoderMatchesCompositor && mDrmModifiers[0] == DRM_FORMAT_MOD_LINEAR) {
-    mDrmModifiers[0] = DRM_FORMAT_MOD_NVIDIA_BLOCK_LINEAR_2D(0, 1, 2, 6, 4);
+      mDecoderMatchesCompositor && mDrmModifiers.size() == 1 &&
+      mDrmModifiers[0] == DRM_FORMAT_MOD_LINEAR) {
+    // TU102 (Turing) starts at deviceID 0x1E00; everything below is Fermi-Volta
+    // (including GV100). 0xfe is not a valid kind on Turing+.
+    const uint64_t nvidiaMod =
+        mNegotiatedCompositorDecoderDeviceID < 0x1E00
+            ? DRM_FORMAT_MOD_NVIDIA_BLOCK_LINEAR_2D(0, 1, 0, 0xfe, 1)
+            : DRM_FORMAT_MOD_NVIDIA_BLOCK_LINEAR_2D(0, 1, 2, 6, 1);
+    FFMPEGV_LOG(
+        "[VULKAN] ImageFormatProperties2 left only LINEAR; considering NVIDIA "
+        "BL override 0x{:x} (deviceID=0x{:x})",
+        (unsigned long long)nvidiaMod, mNegotiatedCompositorDecoderDeviceID);
+    if (aCompositorMods->Contains(nvidiaMod)) {
+      mDrmModifiers[0] = nvidiaMod;
+      // ImageFormatProperties2 failed for YCbCr tiled mods; keep BL for the
+      // copy path but do not attempt direct decode export.
+      mForcedNvidiaBlockLinear = true;
+      FFMPEGV_LOG("[VULKAN] Using forced NVIDIA BL modifier 0x{:x}",
+                  (unsigned long long)nvidiaMod);
+    }
   }
 
   FFMPEGV_LOG("[VULKAN] Using {} modifiers, first=0x{:x}", mDrmModifiers.size(),
@@ -665,10 +700,11 @@ bool FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::
 bool FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitCtx(
     VkDevice aDevice, VkPhysicalDevice aPhysDev,
     PFN_vkGetInstanceProcAddr aGetProcAddr, VkInstance aInstance,
-    uint32_t aCopyQueueFamilyIndex) {
+    uint64_t aGeneration, uint32_t aCopyQueueFamilyIndex,
+    VkDeviceQueueCreateFlags aQueueCreateFlags) {
   // Load instance-level functions once
   if (!mGetDeviceProcAddr) {
-    LoadInstanceFunctions(aGetProcAddr, aInstance, aPhysDev);
+    LoadInstanceFunctions(aGetProcAddr, aInstance, aPhysDev, aGeneration);
   }
 
   // Reload mDevice-level functions when mDevice changes
@@ -751,7 +787,19 @@ bool FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitCtx(
         FFMPEGV_LOG("Failed to create Vulkan command pool for queue {}", qi);
         return false;
       }
-      mGetDeviceQueue(aDevice, mQueueFamilyIndex, qi, &mCopyQueue[qi]);
+      VkDeviceQueueInfo2 queueInfo = {};
+      queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2;
+      queueInfo.flags = aQueueCreateFlags;
+      queueInfo.queueFamilyIndex = mQueueFamilyIndex;
+      queueInfo.queueIndex = qi;
+      mGetDeviceQueue2(aDevice, &queueInfo, &mCopyQueue[qi]);
+      if (mCopyQueue[qi] == VK_NULL_HANDLE) {
+        FFMPEGV_LOG(
+            "vkGetDeviceQueue2 returned NULL (family={}, index={}, "
+            "flags=0x{:x})",
+            mQueueFamilyIndex, qi, static_cast<unsigned>(aQueueCreateFlags));
+        return false;
+      }
       VkCommandBufferAllocateInfo cmdAllocInfo = {};
       cmdAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
       cmdAllocInfo.commandPool = mCopyCmdPool[qi];

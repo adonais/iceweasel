@@ -5,6 +5,8 @@
 ChromeUtils.defineESModuleGetters(this, {
   CustomizableUITestUtils:
     "resource://testing-common/CustomizableUITestUtils.sys.mjs",
+  OpenSearchManager:
+    "moz-src:///browser/components/search/OpenSearchManager.sys.mjs",
   SearchbarTestUtils: "resource://testing-common/UrlbarTestUtils.sys.mjs",
 });
 
@@ -39,6 +41,14 @@ async function test_opensearch(shouldWork) {
       engineElement,
       null,
       "There should be no search engines available to add"
+    );
+    // The engine is still discovered so it remains usable for a one-off
+    // contextual search; only installing it is prevented.
+    ok(
+      OpenSearchManager.getEngines(tab.linkedBrowser).some(
+        e => e.title == "newEngine"
+      ),
+      "The engine is still discovered for contextual search"
     );
   }
   popup.hide();

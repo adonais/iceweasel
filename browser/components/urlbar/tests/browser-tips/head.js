@@ -502,7 +502,7 @@ async function awaitNoTip(searchString, win = window) {
  *
  * @param {window} win
  *   A browser window.
- * @param {UrlbarProviderSearchTips.TIP_TYPE} expectedTip
+ * @param {Values<typeof UrlbarShared.SEARCH_TIP_TYPE>} expectedTip
  *   The expected search tip.  Pass a falsey value (like zero) for none.
  * @param {boolean} closeView
  *   If true, this function closes the urlbar view before returning.
@@ -526,13 +526,13 @@ async function checkTip(win, expectedTip, closeView = true) {
   let title;
   let name = SearchService.defaultEngine.name;
   switch (expectedTip) {
-    case UrlbarProviderSearchTips.TIP_TYPE.ONBOARD:
+    case UrlbarShared.SEARCH_TIP_TYPE.ONBOARD:
       heuristic = true;
       title =
         `Type less, find more: Search ${name} right from your ` +
         `address bar.`;
       break;
-    case UrlbarProviderSearchTips.TIP_TYPE.REDIRECT:
+    case UrlbarShared.SEARCH_TIP_TYPE.REDIRECT:
       heuristic = false;
       title =
         `Start your search in the address bar to see suggestions from ` +
@@ -594,7 +594,7 @@ function makeTipResult({
  *   A browser window.
  * @param {string} url
  *   The URL to load in a new foreground tab.
- * @param {UrlbarProviderSearchTips.TIP_TYPE} expectedTip
+ * @param {Values<typeof UrlbarShared.SEARCH_TIP_TYPE>} expectedTip
  *   The expected search tip.  Pass a falsey value (like zero) for none.
  * @param {boolean} reset
  *   If true, the search tips provider will be reset before this function
@@ -689,10 +689,10 @@ async function withDNSRedirect(domain, path, callback) {
 
 function resetSearchTipsProvider() {
   Services.prefs.clearUserPref(
-    `browser.urlbar.tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`
+    `browser.urlbar.tipShownCount.${UrlbarShared.SEARCH_TIP_TYPE.ONBOARD}`
   );
   Services.prefs.clearUserPref(
-    `browser.urlbar.tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.REDIRECT}`
+    `browser.urlbar.tipShownCount.${UrlbarShared.SEARCH_TIP_TYPE.REDIRECT}`
   );
   ProvidersManager.getInstanceForSap("urlbar").getProvider(
     "UrlbarProviderSearchTips"

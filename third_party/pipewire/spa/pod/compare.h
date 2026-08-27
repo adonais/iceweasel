@@ -5,10 +5,6 @@
 #ifndef SPA_POD_COMPARE_H
 #define SPA_POD_COMPARE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdarg.h>
 #include <errno.h>
 #include <stdint.h>
@@ -19,6 +15,10 @@ extern "C" {
 #include <spa/param/props.h>
 #include <spa/pod/iter.h>
 #include <spa/pod/builder.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef SPA_API_POD_COMPARE
  #ifdef SPA_API_IMPL
@@ -51,19 +51,19 @@ SPA_API_POD_COMPARE int spa_pod_compare_value(uint32_t type, const void *r1, con
 	case SPA_TYPE_Double:
 		return SPA_CMP(*(double *)r1, *(double *)r2);
 	case SPA_TYPE_String:
-		return strcmp((char *)r1, (char *)r2);
-	case SPA_TYPE_Bytes:
-		return memcmp((char *)r1, (char *)r2, size);
+		return strncmp((char *)r1, (char *)r2, size);
 	case SPA_TYPE_Rectangle:
 	{
 		const struct spa_rectangle *rec1 = (struct spa_rectangle *) r1,
 		    *rec2 = (struct spa_rectangle *) r2;
-		if (rec1->width == rec2->width && rec1->height == rec2->height)
-			return 0;
-		else if (rec1->width < rec2->width || rec1->height < rec2->height)
+		uint64_t a1, a2;
+		a1 = ((uint64_t) rec1->width) * rec1->height;
+		a2 = ((uint64_t) rec2->width) * rec2->height;
+		if (a1 < a2)
 			return -1;
-		else
+		if (a1 > a2)
 			return 1;
+		return SPA_CMP(rec1->width, rec2->width);
 	}
 	case SPA_TYPE_Fraction:
 	{
@@ -75,9 +75,16 @@ SPA_API_POD_COMPARE int spa_pod_compare_value(uint32_t type, const void *r1, con
 		return SPA_CMP(n1, n2);
 	}
 	default:
-		break;
+		return memcmp(r1, r2, size);
 	}
 	return 0;
+}
+
+SPA_API_POD_COMPARE int spa_pod_memcmp(const struct spa_pod *a,
+				  const struct spa_pod *b)
+{
+	return ((a == b) || (a && b && SPA_POD_SIZE(a) == SPA_POD_SIZE(b) &&
+	    memcmp(a, b, SPA_POD_SIZE(b)) == 0)) ? 0 : 1;
 }
 
 SPA_API_POD_COMPARE int spa_pod_compare(const struct spa_pod *pod1,
@@ -96,10 +103,13 @@ SPA_API_POD_COMPARE int spa_pod_compare(const struct spa_pod *pod1,
 	if (n_vals1 != n_vals2)
 		return -EINVAL;
 
-	if (SPA_POD_TYPE(pod1) != SPA_POD_TYPE(pod2))
+	if (pod1->type != pod2->type)
 		return -EINVAL;
 
-	switch (SPA_POD_TYPE(pod1)) {
+	if (n_vals1 < 1)
+		return -EINVAL; /* empty choice */
+
+	switch (pod1->type) {
 	case SPA_TYPE_Struct:
 	{
 		const struct spa_pod *p1, *p2;
@@ -146,21 +156,106 @@ SPA_API_POD_COMPARE int spa_pod_compare(const struct spa_pod *pod1,
 		break;
 	}
 	case SPA_TYPE_Array:
-	{
-		if (SPA_POD_BODY_SIZE(pod1) != SPA_POD_BODY_SIZE(pod2))
-			return -EINVAL;
-		res = memcmp(SPA_POD_BODY(pod1), SPA_POD_BODY(pod2), SPA_POD_BODY_SIZE(pod2));
+		res = spa_pod_memcmp(pod1, pod2);
 		break;
-	}
 	default:
-		if (SPA_POD_BODY_SIZE(pod1) != SPA_POD_BODY_SIZE(pod2))
+		if (pod1->size != pod2->size)
 			return -EINVAL;
-		res = spa_pod_compare_value(SPA_POD_TYPE(pod1),
+		if (pod1->size < spa_pod_type_size(pod1->type))
+			return -EINVAL;
+		res = spa_pod_compare_value(pod1->type,
 				SPA_POD_BODY(pod1), SPA_POD_BODY(pod2),
-				SPA_POD_BODY_SIZE(pod1));
+				pod1->size);
 		break;
 	}
 	return res;
+}
+
+SPA_API_POD_COMPARE int spa_pod_compare_is_compatible_flags(uint32_t type, const void *r1,
+		const void *r2, uint32_t size SPA_UNUSED)
+{
+	switch (type) {
+	case SPA_TYPE_Int:
+		return ((*(int32_t *) r1) & (*(int32_t *) r2)) != 0;
+	case SPA_TYPE_Long:
+		return ((*(int64_t *) r1) & (*(int64_t *) r2)) != 0;
+	default:
+		return -ENOTSUP;
+	}
+	return 0;
+}
+
+
+SPA_API_POD_COMPARE int spa_pod_compare_is_step_of(uint32_t type, const void *r1,
+		const void *r2, uint32_t size)
+{
+	switch (type) {
+	case SPA_TYPE_Int:
+		if (*(int32_t *)r2 < 1)
+			return -EINVAL;
+		return *(int32_t *) r1 % *(int32_t *) r2 == 0;
+	case SPA_TYPE_Long:
+		if (*(int64_t *)r2 < 1)
+			return -EINVAL;
+		return *(int64_t *) r1 % *(int64_t *) r2 == 0;
+	case SPA_TYPE_Rectangle:
+	{
+		const struct spa_rectangle *rec1 = (struct spa_rectangle *) r1,
+		    *rec2 = (struct spa_rectangle *) r2;
+
+		if (rec2->width < 1 || rec2->height < 1)
+			return -EINVAL;
+
+		return (rec1->width % rec2->width == 0 &&
+		    rec1->height % rec2->height == 0);
+	}
+	default:
+		return -ENOTSUP;
+	}
+	return 0;
+}
+
+SPA_API_POD_COMPARE int spa_pod_compare_is_in_range(uint32_t type, const void *v,
+		const void *min, const void *max, const void *step, uint32_t size SPA_UNUSED)
+{
+	if (spa_pod_compare_value(type, v, min, size) < 0 ||
+	    spa_pod_compare_value(type, v, max, size) > 0)
+		return 0;
+	if (step != NULL)
+		return spa_pod_compare_is_step_of(type, v, step, size);
+	return 1;
+}
+
+SPA_API_POD_COMPARE int spa_pod_compare_is_valid_choice(uint32_t type, uint32_t size,
+		const void *val, const void *vals, uint32_t n_vals, uint32_t choice)
+{
+	switch (choice) {
+	case SPA_CHOICE_None:
+		if (spa_pod_compare_value(type, val, vals, size) == 0)
+			return 1;
+		return 0;
+	case SPA_CHOICE_Enum:
+	{
+		const void *next = vals;
+		for (uint32_t i = 1; i < n_vals; i++) {
+			next = SPA_PTROFF(next, size, void);
+			if (spa_pod_compare_value(type, val, next, size) == 0)
+				return 1;
+		}
+		return 0;
+	}
+	case SPA_CHOICE_Range:
+	case SPA_CHOICE_Step:
+	{
+		void *min = SPA_PTROFF(vals,size,void);
+		void *max = SPA_PTROFF(min,size,void);
+		void *step = choice == SPA_CHOICE_Step ? SPA_PTROFF(max,size,void) : NULL;
+		return spa_pod_compare_is_in_range(type, val, min, max, step, size);
+	}
+	case SPA_CHOICE_Flags:
+		return 1;
+	}
+	return 0;
 }
 
 /**

@@ -78,6 +78,7 @@ class CompileRuntime {
   const void* mainContextPtr();
   const void* addressOfJitActivation();
   const void* addressOfJitStackLimit();
+  const void* addressOfJitStackLimitNoInterrupt();
   const void* addressOfInterruptBits();
   const void* addressOfRealm();
   const void* addressOfZone();

@@ -484,6 +484,63 @@ add_task(async function test_copyFromPref_missing_source_throws() {
   );
 });
 
+add_task(async function test_set_rs_granted_pref() {
+  const RS_GRANTED_PREF = "rs.granted.pref";
+  MessagingSystemAllowlists._setForTest({ setPref: [RS_GRANTED_PREF] });
+  registerCleanupFunction(() => {
+    MessagingSystemAllowlists._resetForTest();
+    Services.prefs.clearUserPref(RS_GRANTED_PREF);
+  });
+
+  const action = {
+    type: "SET_PREF",
+    data: {
+      pref: {
+        name: RS_GRANTED_PREF,
+        value: true,
+      },
+    },
+  };
+
+  await SMATestUtils.executeAndValidateAction(action);
+
+  Assert.ok(
+    Services.prefs.getBoolPref(RS_GRANTED_PREF),
+    "Pref granted only via the Remote Settings allowlist was set under its real name"
+  );
+});
+
+add_task(async function test_rs_granted_pref_not_honored_onImpression() {
+  const RS_GRANTED_PREF = "rs.granted.pref.on.impression";
+  MessagingSystemAllowlists._setForTest({ setPref: [RS_GRANTED_PREF] });
+  registerCleanupFunction(() => {
+    MessagingSystemAllowlists._resetForTest();
+    Services.prefs.clearUserPref(`messaging-system-action.${RS_GRANTED_PREF}`);
+  });
+
+  const action = {
+    type: "SET_PREF",
+    data: {
+      pref: {
+        name: RS_GRANTED_PREF,
+        value: true,
+      },
+      onImpression: true,
+    },
+  };
+
+  await SMATestUtils.executeAndValidateAction(action);
+
+  Assert.ok(
+    !Services.prefs.prefHasUserValue(RS_GRANTED_PREF),
+    "Remote Settings allowlist does not apply to onImpression prefs"
+  );
+  Assert.ok(
+    Services.prefs.getBoolPref(`messaging-system-action.${RS_GRANTED_PREF}`),
+    "Pref was namespaced instead of set under its real name"
+  );
+});
+
 add_task(async function test_copyFromPref_overwrite_same_type() {
   const sourcePrefName = "messaging-system-action.source.overwrite.string";
   Services.prefs.setStringPref(sourcePrefName, "new");

@@ -10,6 +10,7 @@ task-defaults:
         max-run-time: 1800
     worker-type: b-linux-docker-amd
     run:
+        clone-with: hg
         script: build-pkgconf.sh
         toolchain-artifact: public/build/pkgconf.tar.zst
     fetches:
@@ -20,6 +21,7 @@ linux64-pkgconf:
     treeherder:
         symbol: TL(pkgconf)
     run:
+        clone-with: hg
         arguments: ['x86_64-unknown-linux-gnu']
     fetches:
         toolchain:
@@ -30,6 +32,7 @@ linux64-aarch64-pkgconf:
     treeherder:
         symbol: TLA64(pkgconf)
     run:
+        clone-with: hg
         arguments: ['aarch64-unknown-linux-gnu']
     fetches:
         toolchain:
@@ -40,6 +43,7 @@ macosx64-pkgconf:
     treeherder:
         symbol: TM(pkgconf)
     run:
+        clone-with: hg
         arguments: ['x86_64-apple-darwin']
     fetches:
         toolchain:
@@ -50,6 +54,7 @@ macosx64-aarch64-pkgconf:
     treeherder:
         symbol: TMA64(pkgconf)
     run:
+        clone-with: hg
         arguments: ['aarch64-apple-darwin']
     fetches:
         toolchain:
@@ -60,6 +65,7 @@ win64-pkgconf:
     treeherder:
         symbol: TW64(pkgconf)
     run:
+        clone-with: hg
         arguments: ['x86_64-pc-windows-gnu']
     fetches:
         toolchain:

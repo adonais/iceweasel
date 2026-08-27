@@ -18,6 +18,8 @@ tags = "os_integration"
 
 ["browser_containers_name_input.js"]
 
+["browser_containers_reorder.js"]
+
 ["browser_privacy_allowListPreference.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1984525

@@ -74,11 +74,8 @@ extern PropertyName* EnvironmentCoordinateNameSlow(JSScript* script,
  *    |   |   |
  *    |   |   +--VarEnvironmentObject   See VarScope in Scope.h.
  *    |   |   |
- *    |   |   +--(DisposableEnvironmentObject)
+ *    |   |   +--DisposableEnvironmentObject
  *    |   |   |   |                     Environment for `using x = ...`
- *    |   |   |   |                     (exists only when
- *    |   |   |   |                      ENABLE_EXPLICIT_RESOURCE_MANAGEMENT is
- *    |   |   |   |                      defined)
  *    |   |   |   |
  *    |   |   |   +--ModuleEnvironmentObject
  *    |   |   |   |
@@ -535,7 +532,7 @@ class EnvironmentObject : public NativeObject {
  protected:
   // The enclosing environment. Either another EnvironmentObject, a
   // GlobalObject, or a non-syntactic environment object.
-  static const uint32_t ENCLOSING_ENV_SLOT = 0;
+  JS_DEFINE_TYPED_SLOT(0, ENCLOSING_ENV_SLOT, Object, Null);
 
   inline void setAliasedBinding(uint32_t slot, const Value& v);
 
@@ -545,11 +542,11 @@ class EnvironmentObject : public NativeObject {
   // derive EnvironmentObject (they have completely different layouts), the
   // enclosing environment of an EnvironmentObject is necessarily non-null.
   JSObject& enclosingEnvironment() const {
-    return getReservedSlot(ENCLOSING_ENV_SLOT).toObject();
+    return getReservedSlotTyped(ENCLOSING_ENV_SLOT).toObject();
   }
 
   void initEnclosingEnvironment(JSObject* enclosing) {
-    initReservedSlot(ENCLOSING_ENV_SLOT, ObjectOrNullValue(enclosing));
+    initReservedSlotTyped(ENCLOSING_ENV_SLOT, ObjectOrNullValue(enclosing));
   }
 
   static bool nonExtensibleIsFixedSlot(EnvironmentCoordinate ec) {
@@ -576,10 +573,12 @@ class EnvironmentObject : public NativeObject {
 
   // For JITs.
   static size_t offsetOfEnclosingEnvironment() {
-    return getFixedSlotOffset(ENCLOSING_ENV_SLOT);
+    return getFixedSlotOffsetTyped(ENCLOSING_ENV_SLOT);
   }
 
-  static uint32_t enclosingEnvironmentSlot() { return ENCLOSING_ENV_SLOT; }
+  static uint32_t enclosingEnvironmentSlot() {
+    return ENCLOSING_ENV_SLOT.index();
+  }
 
   const char* typeString() const;
 
@@ -588,10 +587,9 @@ class EnvironmentObject : public NativeObject {
 #endif /* defined(DEBUG) || defined(JS_JITSPEW) */
 };
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 class DisposableEnvironmentObject : public EnvironmentObject {
  protected:
-  static constexpr uint32_t DISPOSABLE_RESOURCE_STACK_SLOT = 1;
+  JS_DEFINE_TYPED_SLOT(1, DISPOSABLE_RESOURCE_STACK_SLOT, Object, Undefined);
 
  public:
   static constexpr uint32_t RESERVED_SLOTS = 2;
@@ -608,14 +606,13 @@ class DisposableEnvironmentObject : public EnvironmentObject {
 
   // For JITs
   static size_t offsetOfDisposeCapability() {
-    return getFixedSlotOffset(DISPOSABLE_RESOURCE_STACK_SLOT);
+    return getFixedSlotOffsetTyped(DISPOSABLE_RESOURCE_STACK_SLOT);
   }
 };
-#endif
 
 class CallObject : public EnvironmentObject {
  protected:
-  static constexpr uint32_t CALLEE_SLOT = 1;
+  JS_DEFINE_TYPED_SLOT(1, CALLEE_SLOT, Object);
 
   static CallObject* create(JSContext* cx, HandleScript script,
                             HandleObject enclosing, gc::Heap heap,
@@ -665,17 +662,19 @@ class CallObject : public EnvironmentObject {
                                             const Value& v);
 
   JSFunction& callee() const {
-    return getReservedSlot(CALLEE_SLOT).toObject().as<JSFunction>();
+    return getReservedSlotTyped(CALLEE_SLOT).toObject().as<JSFunction>();
   }
 
   /* For jit access. */
-  static size_t offsetOfCallee() { return getFixedSlotOffset(CALLEE_SLOT); }
+  static size_t offsetOfCallee() {
+    return getFixedSlotOffsetTyped(CALLEE_SLOT);
+  }
 
-  static size_t calleeSlot() { return CALLEE_SLOT; }
+  static size_t calleeSlot() { return CALLEE_SLOT.index(); }
 };
 
 class VarEnvironmentObject : public EnvironmentObject {
-  static constexpr uint32_t SCOPE_SLOT = 1;
+  JS_DEFINE_TYPED_SLOT(1, SCOPE_SLOT, PrivateGCThing);
 
   static VarEnvironmentObject* createInternal(JSContext* cx,
                                               Handle<SharedShape*> shape,
@@ -686,7 +685,7 @@ class VarEnvironmentObject : public EnvironmentObject {
                                       HandleObject enclosing, gc::Heap heap);
 
   void initScope(Scope* scope) {
-    initReservedSlot(SCOPE_SLOT, PrivateGCThingValue(scope));
+    initReservedSlotTyped(SCOPE_SLOT, PrivateGCThingValue(scope));
   }
 
  public:
@@ -706,7 +705,7 @@ class VarEnvironmentObject : public EnvironmentObject {
                                                       Handle<VarScope*> scope);
 
   Scope& scope() const {
-    Value v = getReservedSlot(SCOPE_SLOT);
+    Value v = getReservedSlotTyped(SCOPE_SLOT);
     MOZ_ASSERT(v.isPrivateGCThing());
     Scope& s = *static_cast<Scope*>(v.toGCThing());
     MOZ_ASSERT(s.is<VarScope>() || s.is<EvalScope>());
@@ -717,17 +716,9 @@ class VarEnvironmentObject : public EnvironmentObject {
   bool isForNonStrictEval() const { return scope().kind() == ScopeKind::Eval; }
 };
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 class ModuleEnvironmentObject : public DisposableEnvironmentObject {
-#else
-class ModuleEnvironmentObject : public EnvironmentObject {
-#endif
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-  static constexpr uint32_t MODULE_SLOT =
-      DisposableEnvironmentObject::RESERVED_SLOTS;
-#else
-  static constexpr uint32_t MODULE_SLOT = 1;
-#endif
+  JS_DEFINE_TYPED_SLOT(DisposableEnvironmentObject::RESERVED_SLOTS, MODULE_SLOT,
+                       Object);
 
   static const ObjectOps objectOps_;
   static const JSClassOps classOps_;
@@ -737,15 +728,11 @@ class ModuleEnvironmentObject : public EnvironmentObject {
 
   static const JSClass class_;
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   // While there are only 3 reserved slots, this needs to be set to 4, given
   // there are some code expect the number of fixed slot to be same as the
   // number of reserved slots for the lexical environments (bug 1913864).
   static constexpr uint32_t RESERVED_SLOTS =
       DisposableEnvironmentObject::RESERVED_SLOTS + 2;
-#else
-  static constexpr uint32_t RESERVED_SLOTS = 2;
-#endif
 
   static constexpr ObjectFlags OBJECT_FLAGS = {ObjectFlag::NotExtensible,
                                                ObjectFlag::QualifiedVarObj};
@@ -802,7 +789,7 @@ class WasmInstanceEnvironmentObject : public EnvironmentObject {
   // meaningful way. However, it is an invariant of DebugEnvironments that
   // environments kept in those maps have live scopes, thus this strong
   // reference.
-  static constexpr uint32_t SCOPE_SLOT = 1;
+  JS_DEFINE_TYPED_SLOT(1, SCOPE_SLOT, PrivateGCThing);
 
  public:
   static const JSClass class_;
@@ -813,7 +800,7 @@ class WasmInstanceEnvironmentObject : public EnvironmentObject {
   static WasmInstanceEnvironmentObject* createHollowForDebug(
       JSContext* cx, Handle<WasmInstanceScope*> scope);
   WasmInstanceScope& scope() const {
-    Value v = getReservedSlot(SCOPE_SLOT);
+    Value v = getReservedSlotTyped(SCOPE_SLOT);
     MOZ_ASSERT(v.isPrivateGCThing());
     return *static_cast<WasmInstanceScope*>(v.toGCThing());
   }
@@ -824,7 +811,7 @@ class WasmFunctionCallObject : public EnvironmentObject {
   // meaningful way. However, it is an invariant of DebugEnvironments that
   // environments kept in those maps have live scopes, thus this strong
   // reference.
-  static constexpr uint32_t SCOPE_SLOT = 1;
+  JS_DEFINE_TYPED_SLOT(1, SCOPE_SLOT, PrivateGCThing);
 
  public:
   static const JSClass class_;
@@ -837,7 +824,7 @@ class WasmFunctionCallObject : public EnvironmentObject {
   static WasmFunctionCallObject* createHollowForDebug(
       JSContext* cx, HandleObject enclosing, Handle<WasmFunctionScope*> scope);
   WasmFunctionScope& scope() const {
-    Value v = getReservedSlot(SCOPE_SLOT);
+    Value v = getReservedSlotTyped(SCOPE_SLOT);
     MOZ_ASSERT(v.isPrivateGCThing());
     return *static_cast<WasmFunctionScope*>(v.toGCThing());
   }
@@ -846,34 +833,22 @@ class WasmFunctionCallObject : public EnvironmentObject {
 // Abstract base class for environments that can contain let/const bindings,
 // plus a few other kinds of environments, such as `catch` blocks, that have
 // similar behavior.
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 class LexicalEnvironmentObject : public DisposableEnvironmentObject {
-#else
-class LexicalEnvironmentObject : public EnvironmentObject {
-#endif
  protected:
   // Global and non-syntactic lexical environments need to store a 'this'
   // object and all other lexical environments have a fixed shape and store a
   // backpointer to the LexicalScope.
   //
   // Since the two sets are disjoint, we only use one slot to save space.
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-  static constexpr uint32_t THIS_VALUE_OR_SCOPE_SLOT =
-      DisposableEnvironmentObject::RESERVED_SLOTS;
-#else
-  static constexpr uint32_t THIS_VALUE_OR_SCOPE_SLOT = 1;
-#endif
+  JS_DEFINE_TYPED_SLOT(DisposableEnvironmentObject::RESERVED_SLOTS,
+                       THIS_VALUE_OR_SCOPE_SLOT, Object, PrivateGCThing);
 
  public:
   static const JSClass class_;
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   // See comment on RESERVED_SLOTS in ModuleEnvironmentObject.
   static constexpr uint32_t RESERVED_SLOTS =
       DisposableEnvironmentObject::RESERVED_SLOTS + 2;
-#else
-  static constexpr uint32_t RESERVED_SLOTS = 2;
-#endif
 
  protected:
   static LexicalEnvironmentObject* create(JSContext* cx,
@@ -903,7 +878,7 @@ class ScopedLexicalEnvironmentObject : public LexicalEnvironmentObject {
   static constexpr ObjectFlags OBJECT_FLAGS = {ObjectFlag::NotExtensible};
 
   Scope& scope() const {
-    Value v = getReservedSlot(THIS_VALUE_OR_SCOPE_SLOT);
+    Value v = getReservedSlotTyped(THIS_VALUE_OR_SCOPE_SLOT);
     MOZ_ASSERT(!isExtensible() && v.isPrivateGCThing());
     return *static_cast<Scope*>(v.toGCThing());
   }
@@ -911,7 +886,7 @@ class ScopedLexicalEnvironmentObject : public LexicalEnvironmentObject {
   bool isClassBody() const { return scope().kind() == ScopeKind::ClassBody; }
 
   void initScope(Scope* scope) {
-    initReservedSlot(THIS_VALUE_OR_SCOPE_SLOT, PrivateGCThingValue(scope));
+    initReservedSlotTyped(THIS_VALUE_OR_SCOPE_SLOT, PrivateGCThingValue(scope));
   }
 };
 
@@ -1023,7 +998,7 @@ class ExtensibleLexicalEnvironmentObject : public LexicalEnvironmentObject {
   void initThisObject(JSObject* obj) {
     MOZ_ASSERT(isGlobal() || !isSyntactic());
     JSObject* thisObj = GetThisObject(obj);
-    initReservedSlot(THIS_VALUE_OR_SCOPE_SLOT, ObjectValue(*thisObj));
+    initReservedSlotTyped(THIS_VALUE_OR_SCOPE_SLOT, ObjectValue(*thisObj));
   }
 };
 
@@ -1042,7 +1017,7 @@ class GlobalLexicalEnvironmentObject
   void setWindowProxyThisObject(JSObject* obj);
 
   static constexpr size_t offsetOfThisValueSlot() {
-    return getFixedSlotOffset(THIS_VALUE_OR_SCOPE_SLOT);
+    return getFixedSlotOffsetTyped(THIS_VALUE_OR_SCOPE_SLOT);
   }
 };
 
@@ -1076,12 +1051,13 @@ NonSyntacticLexicalEnvironmentObject* CreateNonSyntacticEnvironmentChain(
 
 // With environment objects on the run-time environment chain.
 class WithEnvironmentObject : public EnvironmentObject {
-  static constexpr uint32_t OBJECT_SLOT = 1;
-  static constexpr uint32_t THIS_SLOT = 2;
+  JS_DEFINE_TYPED_SLOT(1, OBJECT_SLOT, Object);
+  JS_DEFINE_TYPED_SLOT(2, THIS_SLOT, Object);
   // For syntactic with-environments this slot stores the js::Scope*.
   // For non-syntactic with-environments it stores a boolean indicating whether
   // we need to look up and use Symbol.unscopables.
-  static constexpr uint32_t SCOPE_OR_SUPPORT_UNSCOPABLES_SLOT = 3;
+  JS_DEFINE_TYPED_SLOT(3, SCOPE_OR_SUPPORT_UNSCOPABLES_SLOT, PrivateGCThing,
+                       Boolean);
 
  public:
   static const JSClass class_;
@@ -1117,13 +1093,13 @@ class WithEnvironmentObject : public EnvironmentObject {
   // For syntactic with environment objects, the with scope.
   WithScope& scope() const;
 
-  static constexpr size_t objectSlot() { return OBJECT_SLOT; }
+  static constexpr size_t objectSlot() { return OBJECT_SLOT.index(); }
 
-  static constexpr size_t thisSlot() { return THIS_SLOT; }
+  static constexpr size_t thisSlot() { return THIS_SLOT.index(); }
 
   // For JITs.
   static constexpr size_t offsetOfThisSlot() {
-    return getFixedSlotOffset(THIS_SLOT);
+    return getFixedSlotOffsetTyped(THIS_SLOT);
   }
 };
 
@@ -1148,7 +1124,7 @@ class WithEnvironmentObject : public EnvironmentObject {
 // ES6 'const' bindings induce a runtime error when assigned to outside
 // of initialization, regardless of strictness.
 class RuntimeLexicalErrorObject : public EnvironmentObject {
-  static const unsigned ERROR_SLOT = 1;
+  JS_DEFINE_TYPED_SLOT(1, ERROR_SLOT, Int32);
 
  public:
   static const unsigned RESERVED_SLOTS = 2;
@@ -1158,7 +1134,7 @@ class RuntimeLexicalErrorObject : public EnvironmentObject {
                                            HandleObject enclosing,
                                            unsigned errorNumber);
 
-  unsigned errorNumber() { return getReservedSlot(ERROR_SLOT).toInt32(); }
+  unsigned errorNumber() { return getReservedSlotTyped(ERROR_SLOT).toInt32(); }
 };
 
 /****************************************************************************/
@@ -1420,13 +1396,13 @@ class DebugEnvironmentProxy : public ProxyObject {
    * The enclosing environment on the dynamic environment chain. This slot is
    * analogous to the ENCLOSING_ENV_SLOT of a EnvironmentObject.
    */
-  static const unsigned ENCLOSING_SLOT = 0;
+  JS_DEFINE_TYPED_SLOT(0, ENCLOSING_SLOT, Object, Undefined);
 
   /*
    * NullValue or a dense array holding the unaliased variables of a function
    * frame that has been popped.
    */
-  static const unsigned SNAPSHOT_SLOT = 1;
+  JS_DEFINE_TYPED_SLOT(1, SNAPSHOT_SLOT, Object, Null, Undefined);
 
  public:
   static DebugEnvironmentProxy* create(JSContext* cx, EnvironmentObject& env,
@@ -1586,13 +1562,11 @@ inline bool JSObject::is<js::EnvironmentObject>() const {
          is<js::RuntimeLexicalErrorObject>();
 }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 template <>
 inline bool JSObject::is<js::DisposableEnvironmentObject>() const {
   return is<js::LexicalEnvironmentObject>() ||
          is<js::ModuleEnvironmentObject>();
 }
-#endif
 
 template <>
 inline bool JSObject::is<js::ScopedLexicalEnvironmentObject>() const {

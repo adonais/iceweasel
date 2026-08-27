@@ -30,6 +30,22 @@ interface Animation : EventTarget {
   [SetterThrows]
   attribute CSSNumberish? currentTime;
 
+  // https://drafts.csswg.org/web-animations-2/#dom-animation-rangestart
+  // The spec type is
+  //   (TimelineRangeOffset or CSSNumericValue or CSSKeywordValue or DOMString),
+  // but WebIDL forbids an attribute whose union has a dictionary member
+  // (TimelineRangeOffset), so we type these as `any` and do the union
+  // conversion/serialization by hand (the setter accepts the same four types,
+  // matching KeyframeAnimationOptions rangeStart/rangeEnd). The getter returns a
+  // TimelineRangeOffset or the string "normal".
+  // TODO: After the spec issue is resolved, revisit this issue:
+  // https://github.com/w3c/csswg-drafts/issues/14205
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=2057261
+  [Pref="layout.css.scroll-driven-animations.enabled", Throws]
+  attribute any rangeStart;
+  [Pref="layout.css.scroll-driven-animations.enabled", Throws]
+  attribute any rangeEnd;
+
   readonly attribute double?            overallProgress;
            attribute double             playbackRate;
   [BinaryName="playStateFromJS"]

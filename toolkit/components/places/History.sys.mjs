@@ -1137,56 +1137,54 @@ var fetchAnnotatedPages = async function (db, annotations) {
 // Inner implementation of History.fetchMany.
 var fetchMany = async function (db, guidOrURLs) {
   let resultsMap = new Map();
-  for (let chunk of lazy.PlacesUtils.chunkArray(guidOrURLs, db.variableLimit)) {
-    let urls = [];
-    let guids = [];
-    for (let v of chunk) {
-      if (URL.isInstance(v)) {
-        urls.push(v);
-      } else {
-        guids.push(v);
-      }
+  let urls = [];
+  let guids = [];
+  for (let v of guidOrURLs) {
+    if (URL.isInstance(v)) {
+      urls.push(v);
+    } else {
+      guids.push(v);
     }
-    let wheres = [];
-    let params = [];
-    if (urls.length) {
-      wheres.push(`
-        (
-          url_hash IN(${lazy.PlacesUtils.sqlBindPlaceholders(
-            urls,
-            "hash(",
-            ")"
-          )}) AND
-          url IN(${lazy.PlacesUtils.sqlBindPlaceholders(urls)})
-        )`);
-      let hrefs = urls.map(u => u.href);
-      params = [...params, ...hrefs, ...hrefs];
-    }
-    if (guids.length) {
-      wheres.push(`guid IN(${lazy.PlacesUtils.sqlBindPlaceholders(guids)})`);
-      params = [...params, ...guids];
-    }
+  }
+  let wheres = [];
+  let params = {};
+  if (urls.length) {
+    wheres.push(`
+      (
+        url_hash IN (SELECT hash(value) FROM carray(:urls)) AND
+        url IN carray(:urls)
+      )`);
+    params.urls = urls.map(u => u.href);
+  }
+  if (guids.length) {
+    wheres.push(`guid IN carray(:guids)`);
+    params.guids = guids;
+  }
+  if (!wheres.length) {
+    return resultsMap;
+  }
 
-    let rows = await db.executeCached(
-      `
-      SELECT h.id, guid, url, title, frecency
-      FROM moz_places h
-      WHERE ${wheres.join(" OR ")}
-    `,
-      params
-    );
-    for (let row of rows) {
-      let pageInfo = {
-        guid: row.getResultByName("guid"),
-        url: new URL(row.getResultByName("url")),
-        frecency: row.getResultByName("frecency"),
-        title: row.getResultByName("title") || "",
-      };
-      if (guidOrURLs.includes(pageInfo.guid)) {
-        resultsMap.set(pageInfo.guid, pageInfo);
-      } else {
-        resultsMap.set(pageInfo.url.href, pageInfo);
-      }
+  let rows = await db.executeCached(
+    `
+    SELECT h.id, guid, url, title, frecency
+    FROM moz_places h
+    WHERE ${wheres.join(" OR ")}
+  `,
+    params
+  );
+  let guidSet = new Set(guids);
+  for (let row of rows) {
+    let pageInfo = {
+      placeId: row.getResultByName("id"),
+      guid: row.getResultByName("guid"),
+      url: new URL(row.getResultByName("url")),
+      frecency: row.getResultByName("frecency"),
+      title: row.getResultByName("title") || "",
+    };
+    if (guidSet.has(pageInfo.guid)) {
+      resultsMap.set(pageInfo.guid, pageInfo);
+    } else {
+      resultsMap.set(pageInfo.url.href, pageInfo);
     }
   }
   return resultsMap;

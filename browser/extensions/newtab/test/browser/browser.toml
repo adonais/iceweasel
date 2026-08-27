@@ -68,6 +68,7 @@ skip-if = [
 
 ["browser_newtab_last_LinkMenu.js"]
 skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && nova", # Bug 2057871
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && socketprocess_networking", # Bug 1945649
 ]
 

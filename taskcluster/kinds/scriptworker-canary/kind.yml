@@ -22,6 +22,7 @@ task-defaults:
         env:
             MOZBUILD_STATE_PATH: /builds/worker/workspace
     run:
+        clone-with: hg
         sparse-profile: push-to-try
 
 tasks:

@@ -39,7 +39,6 @@ tasks:
                     try:
                         by-behavior:
                             main-to-beta: staging-firefox-beta
-                            early-to-late-beta: staging-firefox-beta
                             beta-to-release: staging-firefox-release
                             release-to-esr: staging-firefox-esr153
                             bump-main: staging-firefox-main
@@ -47,7 +46,6 @@ tasks:
                     default:
                         by-behavior:
                             main-to-beta: firefox-beta
-                            early-to-late-beta: firefox-beta
                             beta-to-release: firefox-release
                             release-to-esr: firefox-esr153
                             bump-main: firefox-main
@@ -98,14 +96,6 @@ tasks:
                                     version-bump: "minor"
                                     new-suffix: "esr"
                               to-branch: 'esr153'
-                    early-to-late-beta:
-                        - early-to-late-beta:
-                              fetch-version-from: "browser/config/version.txt"
-                              replacements:
-                                  - - build/defines.sh
-                                    - EARLY_BETA_OR_EARLIER=1
-                                    - EARLY_BETA_OR_EARLIER=
-                              to-branch: 'beta'
                     main-to-beta:
                         - uplift:
                               fetch-version-from: "browser/config/version.txt"

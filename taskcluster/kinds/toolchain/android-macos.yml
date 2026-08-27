@@ -12,6 +12,7 @@ macosx64-jdk-repack:
     treeherder:
         symbol: TL(jdk-macos)
     run:
+        clone-with: hg
         using: toolchain-script
         script: repack-jdk-macos.sh
         resources:
@@ -24,6 +25,7 @@ macosx64-android-sdk-repack:
     treeherder:
         symbol: TL(android-sdk-macos)
     run:
+        clone-with: hg
         using: toolchain-script
         script: repack-android-sdk-macos.sh
         resources:
@@ -39,6 +41,7 @@ macosx64-android-avd-arm64-repack:
     treeherder:
         symbol: TL(avd-arm64-macos)
     run:
+        clone-with: hg
         using: toolchain-script
         script: repack-android-avd-macos.sh
         arguments:
@@ -57,6 +60,7 @@ macosx64-android-system-image-arm64-repack:
     treeherder:
         symbol: TL(arm64-avd-img-macos)
     run:
+        clone-with: hg
         using: toolchain-script
         script: repack-android-system-images-macos.sh
         arguments:

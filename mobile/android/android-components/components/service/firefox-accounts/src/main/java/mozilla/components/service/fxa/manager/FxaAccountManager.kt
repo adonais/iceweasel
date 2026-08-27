@@ -33,18 +33,14 @@ import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.concept.sync.Profile
 import mozilla.components.concept.sync.SyncConfig
 import mozilla.components.concept.sync.SyncEngine
-import mozilla.components.service.fxa.AccessTokenUnexpectedlyWithoutKey
 import mozilla.components.service.fxa.AccountManagerException
 import mozilla.components.service.fxa.AccountStorage
 import mozilla.components.service.fxa.FxaAuthData
 import mozilla.components.service.fxa.FxaDeviceSettingsCache
-import mozilla.components.service.fxa.FxaSyncScopedKeyMissingException
 import mozilla.components.service.fxa.SecureAbove22AccountStorage
 import mozilla.components.service.fxa.ServerConfig
 import mozilla.components.service.fxa.SharedPrefAccountStorage
 import mozilla.components.service.fxa.StorageWrapper
-import mozilla.components.service.fxa.SyncAuthInfoCache
-import mozilla.components.service.fxa.asSyncAuthInfo
 import mozilla.components.service.fxa.emitSyncFailedFact
 import mozilla.components.service.fxa.into
 import mozilla.components.service.fxa.sync.SyncManager
@@ -221,18 +217,6 @@ open class FxaAccountManager(
         when (val s = state) {
             // All good, request a sync.
             FxaState.Connected -> {
-                // Make sure auth cache is populated before we try to sync.
-                try {
-                    updateSyncAuthInfoCache()
-                } catch (e: AccessTokenUnexpectedlyWithoutKey) {
-                    crashReporter?.submitCaughtException(
-                        AccountManagerException.MissingKeyFromSyncScopedAccessToken("syncNow"),
-                    )
-                    processQueue(Event.Account.AccessTokenKeyError)
-                    // No point in trying to sync now.
-                    return@withContext
-                }
-
                 // Access to syncManager is guarded by `this`.
                 synchronized(this@FxaAccountManager) {
                     checkNotNull(syncManager == null) {
@@ -402,8 +386,7 @@ open class FxaAccountManager(
         val wasInAuthIssues = state == FxaState.AuthIssues
         processQueue(Event.Account.WebChannelPasswordChange(jsonPayload))
         if (state == FxaState.Connected) {
-            SyncAuthInfoCache(context).clear()
-            authenticationSideEffects("WebChannelPasswordChange")
+            authenticationSideEffects()
             if (wasInAuthIssues) {
                 notifyObservers { onAuthenticated(account, AuthType.Recovered) }
             }
@@ -574,7 +557,7 @@ open class FxaAccountManager(
             }
             FxaState.Connected -> when (via) {
                 is Event.Account.Start -> {
-                    if (authenticationSideEffects("CompletingAuthentication:accountRestored")) {
+                    if (authenticationSideEffects()) {
                         notifyObservers { onAuthenticated(account, AuthType.Existing) }
                         refreshProfile(ignoreCache = false)
                     } else {
@@ -582,7 +565,7 @@ open class FxaAccountManager(
                     }
                 }
                 is Event.Progress.AuthData -> {
-                    if (authenticationSideEffects("CompletingAuthentication:AuthData")) {
+                    if (authenticationSideEffects()) {
                         notifyObservers { onAuthenticated(account, via.authData.authType) }
                         refreshProfile(ignoreCache = false)
                     } else {
@@ -590,9 +573,6 @@ open class FxaAccountManager(
                     }
                 }
                 is Event.Account.AuthenticationError, Event.Account.AccessTokenKeyError -> {
-                    // Clear our access token cache; it'll be re-populated as part of the
-                    // regular state machine flow.
-                    SyncAuthInfoCache(context).clear()
                     // Should we also call authenticationSideEffects here?
                     // (https://bugzilla.mozilla.org/show_bug.cgi?id=1865086)
                     notifyObservers { onAuthenticated(account, AuthType.Recovered) }
@@ -601,7 +581,6 @@ open class FxaAccountManager(
                 else -> Unit
             }
             FxaState.AuthIssues -> {
-                SyncAuthInfoCache(context).clear()
                 notifyObservers { onAuthenticationProblems() }
             }
             else -> Unit
@@ -616,50 +595,8 @@ open class FxaAccountManager(
         // Even though we might not have Sync enabled, clear out sync-related storage
         // layers as well; if they're already empty (unused), nothing bad will happen
         // and extra overhead is quite small.
-        SyncAuthInfoCache(context).clear()
         SyncEnginesStorage(context).clear()
         clearSyncState(context)
-    }
-
-    private suspend fun updateSyncAuthInfoCache() {
-        // Update cached sync auth info only if we have a syncConfig (e.g. sync is enabled)...
-        if (syncConfig == null) {
-            return
-        }
-
-        val accessToken = try {
-            account.getAccessToken(SCOPE_SYNC)
-        } catch (e: FxaSyncScopedKeyMissingException) {
-            // We received an access token, but no sync key which means we can't really use the
-            // connected FxA account.  Throw an exception so that the account transitions to the
-            // `AuthenticationProblem` state.  Things should be fixed when the user re-logs in.
-            //
-            // This used to be thrown when the android-components code noticed the issue in
-            // `asSyncAuthInfo()`.  However, the application-services code now also checks for this
-            // and throws its own error.  To keep the flow above this the same, we catch the
-            // app-services exception and throw the android-components one.
-            //
-            // Eventually, we should remove AccessTokenUnexpectedlyWithoutKey and have the higher
-            // functions catch `FxaSyncScopedKeyMissingException` directly
-            // (https://bugzilla.mozilla.org/show_bug.cgi?id=1869862)
-            throw AccessTokenUnexpectedlyWithoutKey()
-        }
-        val tokenServerUrl = if (accessToken != null) {
-            // Only try to get the endpoint if we have an access token.
-            account.getTokenServerEndpointURL()
-        } else {
-            null
-        }
-
-        if (accessToken != null && tokenServerUrl != null) {
-            SyncAuthInfoCache(context).setToCache(accessToken.asSyncAuthInfo(tokenServerUrl))
-        } else {
-            // At this point, SyncAuthInfoCache may be entirely empty. In this case, we won't be
-            // able to sync via the background worker. We will attempt to populate SyncAuthInfoCache
-            // again in `syncNow` (in response to a direct user action) and after application restarts.
-            logger.warn("Couldn't populate SyncAuthInfoCache. Sync may not work.")
-            logger.warn("Is null? - accessToken: ${accessToken == null}, tokenServerUrl: ${tokenServerUrl == null}")
-        }
     }
 
     private fun persistDeclinedEngines(declinedEngines: Set<SyncEngine>) {
@@ -693,22 +630,7 @@ open class FxaAccountManager(
      * Populates caches necessary for the sync worker (sync auth info and FxA device).
      * @return 'true' on success, 'false' on failure, indicating that sync won't work.
      */
-    private suspend fun authenticationSideEffects(operation: String): Boolean {
-        // Make sure our SyncAuthInfo cache is hot, background sync worker needs it to function.
-        try {
-            updateSyncAuthInfoCache()
-        } catch (e: AccessTokenUnexpectedlyWithoutKey) {
-            crashReporter?.submitCaughtException(
-                AccountManagerException.MissingKeyFromSyncScopedAccessToken(operation),
-            )
-            // Since we don't know what's causing a missing key for the SCOPE_SYNC access tokens, we
-            // do not attempt to recover here. If this is a persistent state for an account, a recovery
-            // will just enter into a loop that our circuit breaker logic is unlikely to catch, due
-            // to recovery attempts likely being made on startup.
-            // See https://github.com/mozilla-mobile/android-components/issues/8527
-            return false
-        }
-
+    private suspend fun authenticationSideEffects(): Boolean {
         // Sync workers also need to know about the current FxA device.
         FxaDeviceSettingsCache(context).setToCache(
             DeviceSettings(
@@ -824,7 +746,6 @@ open class FxaAccountManager(
      */
     public fun simulateTemporaryAuthTokenIssue() {
         account.simulateTemporaryAuthTokenIssue()
-        SyncAuthInfoCache(context).clear()
         CoroutineScope(coroutineContext).launch {
             refreshProfile(true)
         }
@@ -843,7 +764,6 @@ open class FxaAccountManager(
      */
     public fun simulatePermanentAuthTokenIssue() {
         account.simulatePermanentAuthTokenIssue()
-        SyncAuthInfoCache(context).clear()
         CoroutineScope(coroutineContext).launch {
             refreshProfile(true)
         }

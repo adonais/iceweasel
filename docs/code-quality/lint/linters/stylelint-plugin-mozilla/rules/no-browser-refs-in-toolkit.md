@@ -1,4 +1,4 @@
-# no-browser-refs-in-toolkit
+# no-browser-refs-in-toolkit (stylelint)
 
 This rule prevents toolkit code from importing browser-specific CSS or SVG files.
 It is applied to both `@import` statements and CSS property values using the `url` function.
@@ -8,7 +8,7 @@ where browser code is not necessarily available. Browser code can depend on tool
 code should never depend on browser code, since toolkit code can be used in
 other applications/contexts where browser code may not be available.
 
-See additional documentation for more information on [internal URLs](/toolkit/internal-urls.html).
+See additional documentation for more information on [internal URLs](/toolkit/internal-urls.md).
 
 ## Rule Scope
 

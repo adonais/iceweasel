@@ -245,6 +245,7 @@ class ReverseSearchInput extends Component {
         autoFocus: true,
         placeholder: l10n.getStr("webconsole.reverseSearch.input.placeHolder"),
         className: "reverse-search-input devtools-monospace",
+        dir: "auto",
         onKeyDown: this.onInputKeyDown,
         onInput: ({ target }) =>
           dispatch(actions.reverseSearchInputChange(target.value)),

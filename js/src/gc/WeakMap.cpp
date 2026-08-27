@@ -15,7 +15,7 @@ using namespace js::gc;
 
 void js::gc::MarkSymbolForWeakMapReadBarrier(JS::Zone* zone, JS::Symbol* sym) {
   MOZ_ASSERT(zone && !zone->isAtomsZone());
-  zone->runtimeFromMainThread()->gc.atomMarking.inlinedMarkAtom(zone, sym);
+  zone->runtimeFromMainThread()->gc.atomReferences.inlinedRecordRef(zone, sym);
 }
 
 WeakMapBase::WeakMapBase(JSObject* memOf, Zone* zone)
@@ -117,10 +117,8 @@ bool WeakMapBase::addEphemeronEdgesForEntry(MarkColor mapColor,
     }
   }
 
-  if (value || key->zone()->isAtomsZone()) {
-    if (!addEphemeronEdge(mapColor, key, value)) {
-      return false;
-    }
+  if (value && !addEphemeronEdge(mapColor, key, value)) {
+    return false;
   }
 
   return true;

@@ -8,17 +8,24 @@
 "use strict";
 
 add_task(async function testHorizontalScrolling() {
+  const toolboxBorderWidth = Services.prefs.getBoolPref("browser.nova.enabled")
+    ? 2
+    : 0;
   // Ensure having the default fixed height, as it can impact the number of displayed lines
-  await pushPref("devtools.toolbox.footer.height", 250);
+  await pushPref("devtools.toolbox.footer.height", 250 + toolboxBorderWidth);
 
   // Also set a precise size for side panels, as it can impact the number of displayed columns
-  await pushPref("devtools.debugger.start-panel-size", 300);
-  await pushPref("devtools.debugger.end-panel-size", 300);
+  await pushPref(
+    "devtools.debugger.start-panel-size",
+    300 + toolboxBorderWidth
+  );
+  await pushPref("devtools.debugger.end-panel-size", 300 + toolboxBorderWidth);
 
   // Strengthen the test by ensuring we always use the same Firefox window size.
   // Note that the inner size is the important one as that's the final space available for DevTools.
   // The outer size will be different based on OS/Environment.
-  const expectedWidth = 1280;
+  const expectedWidth =
+    1280 + (Services.prefs.getBoolPref("browser.nova.enabled") ? 14 : 0);
   const expectedHeight = 1040;
   if (
     window.innerWidth != expectedWidth ||
@@ -118,6 +125,7 @@ add_task(async function testHorizontalScrolling() {
     isScrolledPositionVisible(dbg, 2, lastColumn - 1),
     "The 2nd line, column before the last is visible"
   );
+
   ok(
     !isScrolledPositionVisible(dbg, 2, lastColumn),
     "The last column is hidden"
@@ -138,7 +146,7 @@ add_task(async function testHorizontalScrolling() {
   );
   ok(
     !isScrolledPositionVisible(dbg, 2, lastColumn),
-    "The last colunm is still hidden"
+    "The last column is still hidden"
   );
 
   info(

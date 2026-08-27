@@ -10,7 +10,7 @@
  */
 
 dictionary ViewTimelineOptions {
-  Element subject;
+  required Element subject;
   ScrollAxis axis = "block";
   // The spec expects to use CSSKeywordValue. However, per the spec issue, Blink
   // and WebKit would like to support the string in the sequence as well, so we
@@ -24,12 +24,12 @@ dictionary ViewTimelineOptions {
 [Exposed=Window, Pref="layout.css.scroll-driven-animations.enabled"]
 interface ViewTimeline : ScrollTimeline {
   [Throws]
-  constructor(optional ViewTimelineOptions options = {});
+  constructor(ViewTimelineOptions options);
   // FIXME: The spec expects that this is not nullable, but ViewTimelineOptions
   // may not provide a subject, and both Blink and WebKit make this attribute
   // nullable, so we follow others for now.
   // https://github.com/w3c/csswg-drafts/issues/9584
-  readonly attribute Element? subject;
+  readonly attribute Element subject;
   [GetterThrows]
   readonly attribute CSSNumericValue? startOffset;
   [GetterThrows]

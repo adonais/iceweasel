@@ -11,6 +11,7 @@ import android.os.Looper.getMainLooper
 import androidx.annotation.OptIn
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.ExperimentalAndroidComponentsApi
+import mozilla.components.browser.engine.gecko.autofill.RuntimeAddressStructureAccessor
 import mozilla.components.browser.engine.gecko.ext.getAntiTrackingPolicy
 import mozilla.components.browser.engine.gecko.mediaquery.toGeckoValue
 import mozilla.components.browser.engine.gecko.preferences.GeckoPreferenceAccessor
@@ -345,11 +346,6 @@ class GeckoEngineTest {
             CookiePolicy.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS.id,
         )
 
-        assertEquals(contentBlockingSettings.cookieBannerMode, EngineSession.CookieBannerHandlingMode.DISABLED.mode)
-        assertEquals(contentBlockingSettings.cookieBannerModePrivateBrowsing, EngineSession.CookieBannerHandlingMode.DISABLED.mode)
-        assertEquals(contentBlockingSettings.cookieBannerDetectOnlyMode, engine.settings.cookieBannerHandlingDetectOnlyMode)
-        assertEquals(contentBlockingSettings.cookieBannerGlobalRulesEnabled, engine.settings.cookieBannerHandlingGlobalRules)
-        assertEquals(contentBlockingSettings.cookieBannerGlobalRulesSubFramesEnabled, engine.settings.cookieBannerHandlingGlobalRulesSubFrames)
         assertEquals(contentBlockingSettings.queryParameterStrippingEnabled, engine.settings.queryParameterStripping)
         assertEquals(contentBlockingSettings.queryParameterStrippingPrivateBrowsingEnabled, engine.settings.queryParameterStrippingPrivateBrowsing)
         assertEquals(contentBlockingSettings.queryParameterStrippingAllowList[0], engine.settings.queryParameterStrippingAllowList)
@@ -712,108 +708,6 @@ class GeckoEngineTest {
     }
 
     @Test
-    fun `setCookieBannerMode is only invoked when the value is changed`() {
-        val mockRuntime = mock<GeckoRuntime>()
-        val settings = spy(ContentBlocking.Settings.Builder().build())
-        whenever(mockRuntime.settings).thenReturn(mock())
-        whenever(mockRuntime.settings.contentBlocking).thenReturn(settings)
-
-        val engine = GeckoEngine(testContext, runtime = mockRuntime)
-        val policy = EngineSession.CookieBannerHandlingMode.REJECT_ALL
-
-        engine.settings.cookieBannerHandlingMode = policy
-
-        verify(mockRuntime.settings.contentBlocking).setCookieBannerMode(policy.mode)
-
-        reset(settings)
-
-        engine.settings.cookieBannerHandlingMode = policy
-
-        verify(mockRuntime.settings.contentBlocking, never()).setCookieBannerMode(policy.mode)
-    }
-
-    @Test
-    fun `setCookieBannerModePrivateBrowsing is only invoked when the value is changed`() {
-        val mockRuntime = mock<GeckoRuntime>()
-        val settings = spy(ContentBlocking.Settings.Builder().build())
-        whenever(mockRuntime.settings).thenReturn(mock())
-        whenever(mockRuntime.settings.contentBlocking).thenReturn(settings)
-
-        val engine = GeckoEngine(testContext, runtime = mockRuntime)
-        val policy = EngineSession.CookieBannerHandlingMode.REJECT_OR_ACCEPT_ALL
-
-        engine.settings.cookieBannerHandlingModePrivateBrowsing = policy
-
-        verify(mockRuntime.settings.contentBlocking).setCookieBannerModePrivateBrowsing(policy.mode)
-
-        reset(settings)
-
-        engine.settings.cookieBannerHandlingModePrivateBrowsing = policy
-
-        verify(mockRuntime.settings.contentBlocking, never()).setCookieBannerModePrivateBrowsing(policy.mode)
-    }
-
-    @Test
-    fun `setCookieBannerHandlingDetectOnlyMode is only invoked when the value is changed`() {
-        val mockRuntime = mock<GeckoRuntime>()
-        val settings = spy(ContentBlocking.Settings.Builder().build())
-        whenever(mockRuntime.settings).thenReturn(mock())
-        whenever(mockRuntime.settings.contentBlocking).thenReturn(settings)
-
-        val engine = GeckoEngine(testContext, runtime = mockRuntime)
-
-        engine.settings.cookieBannerHandlingDetectOnlyMode = true
-
-        verify(mockRuntime.settings.contentBlocking).setCookieBannerDetectOnlyMode(true)
-
-        reset(settings)
-
-        engine.settings.cookieBannerHandlingDetectOnlyMode = true
-
-        verify(mockRuntime.settings.contentBlocking, never()).setCookieBannerDetectOnlyMode(true)
-    }
-
-    @Test
-    fun `setCookieBannerHandlingGlobalRules is only invoked when the value is changed`() {
-        val mockRuntime = mock<GeckoRuntime>()
-        val settings = spy(ContentBlocking.Settings.Builder().build())
-        whenever(mockRuntime.settings).thenReturn(mock())
-        whenever(mockRuntime.settings.contentBlocking).thenReturn(settings)
-
-        val engine = GeckoEngine(testContext, runtime = mockRuntime)
-
-        engine.settings.cookieBannerHandlingGlobalRules = true
-
-        verify(mockRuntime.settings.contentBlocking).setCookieBannerGlobalRulesEnabled(true)
-
-        reset(settings)
-
-        engine.settings.cookieBannerHandlingGlobalRules = true
-
-        verify(mockRuntime.settings.contentBlocking, never()).setCookieBannerGlobalRulesEnabled(true)
-    }
-
-    @Test
-    fun `setCookieBannerHandlingGlobalRulesSubFrames is only invoked when the value is changed`() {
-        val mockRuntime = mock<GeckoRuntime>()
-        val settings = spy(ContentBlocking.Settings.Builder().build())
-        whenever(mockRuntime.settings).thenReturn(mock())
-        whenever(mockRuntime.settings.contentBlocking).thenReturn(settings)
-
-        val engine = GeckoEngine(testContext, runtime = mockRuntime)
-
-        engine.settings.cookieBannerHandlingGlobalRulesSubFrames = true
-
-        verify(mockRuntime.settings.contentBlocking).setCookieBannerGlobalRulesSubFramesEnabled(true)
-
-        reset(settings)
-
-        engine.settings.cookieBannerHandlingGlobalRulesSubFrames = true
-
-        verify(mockRuntime.settings.contentBlocking, never()).setCookieBannerGlobalRulesSubFramesEnabled(true)
-    }
-
-    @Test
     fun `setQueryParameterStripping is only invoked when the value is changed`() {
         val mockRuntime = mock<GeckoRuntime>()
         val settings = spy(ContentBlocking.Settings.Builder().build())
@@ -871,13 +765,6 @@ class GeckoEngineTest {
         engine.settings.emailTrackerBlockingPrivateBrowsing = true
 
         verify(mockRuntime.settings.contentBlocking, never()).setEmailTrackerBlockingPrivateBrowsing(true)
-    }
-
-    @Test
-    fun `Cookie banner handling settings are aligned`() {
-        assertEquals(ContentBlocking.CookieBannerMode.COOKIE_BANNER_MODE_DISABLED, EngineSession.CookieBannerHandlingMode.DISABLED.mode)
-        assertEquals(ContentBlocking.CookieBannerMode.COOKIE_BANNER_MODE_REJECT, EngineSession.CookieBannerHandlingMode.REJECT_ALL.mode)
-        assertEquals(ContentBlocking.CookieBannerMode.COOKIE_BANNER_MODE_REJECT_OR_ACCEPT, EngineSession.CookieBannerHandlingMode.REJECT_OR_ACCEPT_ALL.mode)
     }
 
     @Test
@@ -1073,9 +960,6 @@ class GeckoEngineTest {
         engine.settings.trackingProtectionPolicy = TrackingProtectionPolicy.none()
 
         assertEquals(CookiePolicy.ACCEPT_ALL.id, contentBlockingSettings.cookieBehavior)
-
-        assertEquals(EngineSession.CookieBannerHandlingMode.DISABLED.mode, contentBlockingSettings.cookieBannerMode)
-        assertEquals(EngineSession.CookieBannerHandlingMode.DISABLED.mode, contentBlockingSettings.cookieBannerModePrivateBrowsing)
     }
 
     @Test
@@ -1908,6 +1792,119 @@ class GeckoEngineTest {
     }
 
     @Test
+    fun `WHEN an action popup is toggled in private browsing mode THEN the popup session is private`() {
+        val runtime = mock<GeckoRuntime>()
+        whenever(runtime.settings).thenReturn(mock())
+        val extId = "test-webext"
+        val extUrl = "resource://android/assets/extensions/test"
+
+        val extensionController: WebExtensionController = mock()
+        whenever(runtime.webExtensionController).thenReturn(extensionController)
+
+        val engine = GeckoEngine(context, runtime = runtime)
+        val webExtensionsDelegate: WebExtensionDelegate = mock()
+        whenever(webExtensionsDelegate.isInPrivateBrowsing()).thenReturn(true)
+        engine.registerWebExtensionDelegate(webExtensionsDelegate)
+
+        val result = GeckoResult<GeckoWebExtension>()
+        whenever(extensionController.ensureBuiltIn(extUrl, extId)).thenReturn(result)
+        engine.installBuiltInWebExtension(extId, extUrl)
+        val extension = mockNativeWebExtension(
+            extId,
+            extUrl,
+            metaData = mockNativeWebExtensionMetaData(allowedInPrivateBrowsing = true),
+        )
+        result.complete(extension)
+
+        shadowOf(getMainLooper()).idle()
+
+        val actionDelegateCaptor = argumentCaptor<org.mozilla.geckoview.WebExtension.ActionDelegate>()
+        verify(extension).setActionDelegate(actionDelegateCaptor.capture())
+
+        val browserAction: org.mozilla.geckoview.WebExtension.Action = mock()
+        actionDelegateCaptor.value.onTogglePopup(extension, browserAction)
+
+        // The popup's engine session must be private, matching the current browsing mode.
+        val engineSessionCaptor = argumentCaptor<EngineSession>()
+        verify(webExtensionsDelegate).onToggleActionPopup(any(), engineSessionCaptor.capture(), any(), eq(true))
+        assertTrue((engineSessionCaptor.value as GeckoEngineSession).geckoSession.settings.usePrivateMode)
+    }
+
+    @Test
+    fun `WHEN a popup is toggled in private browsing mode for an extension without private access THEN no popup session is opened`() {
+        val runtime = mock<GeckoRuntime>()
+        whenever(runtime.settings).thenReturn(mock())
+        val extId = "test-webext"
+        val extUrl = "resource://android/assets/extensions/test"
+
+        val extensionController: WebExtensionController = mock()
+        whenever(runtime.webExtensionController).thenReturn(extensionController)
+
+        val engine = GeckoEngine(context, runtime = runtime)
+        val webExtensionsDelegate: WebExtensionDelegate = mock()
+        whenever(webExtensionsDelegate.isInPrivateBrowsing()).thenReturn(true)
+        engine.registerWebExtensionDelegate(webExtensionsDelegate)
+
+        val result = GeckoResult<GeckoWebExtension>()
+        whenever(extensionController.ensureBuiltIn(extUrl, extId)).thenReturn(result)
+        engine.installBuiltInWebExtension(extId, extUrl)
+        val extension = mockNativeWebExtension(
+            extId,
+            extUrl,
+            metaData = mockNativeWebExtensionMetaData(allowedInPrivateBrowsing = false),
+        )
+        result.complete(extension)
+
+        shadowOf(getMainLooper()).idle()
+
+        val actionDelegateCaptor = argumentCaptor<org.mozilla.geckoview.WebExtension.ActionDelegate>()
+        verify(extension).setActionDelegate(actionDelegateCaptor.capture())
+
+        val browserAction: org.mozilla.geckoview.WebExtension.Action = mock()
+        actionDelegateCaptor.value.onTogglePopup(extension, browserAction)
+
+        verify(webExtensionsDelegate, never()).onToggleActionPopup(any(), any(), any(), anyBoolean())
+    }
+
+    @Test
+    fun `WHEN a popup is toggled outside private browsing mode for an extension without private access THEN a non-private popup session is opened`() {
+        val runtime = mock<GeckoRuntime>()
+        whenever(runtime.settings).thenReturn(mock())
+        val extId = "test-webext"
+        val extUrl = "resource://android/assets/extensions/test"
+
+        val extensionController: WebExtensionController = mock()
+        whenever(runtime.webExtensionController).thenReturn(extensionController)
+
+        val engine = GeckoEngine(context, runtime = runtime)
+        val webExtensionsDelegate: WebExtensionDelegate = mock()
+        whenever(webExtensionsDelegate.isInPrivateBrowsing()).thenReturn(false)
+        engine.registerWebExtensionDelegate(webExtensionsDelegate)
+
+        val result = GeckoResult<GeckoWebExtension>()
+        whenever(extensionController.ensureBuiltIn(extUrl, extId)).thenReturn(result)
+        engine.installBuiltInWebExtension(extId, extUrl)
+        val extension = mockNativeWebExtension(
+            extId,
+            extUrl,
+            metaData = mockNativeWebExtensionMetaData(allowedInPrivateBrowsing = false),
+        )
+        result.complete(extension)
+
+        shadowOf(getMainLooper()).idle()
+
+        val actionDelegateCaptor = argumentCaptor<org.mozilla.geckoview.WebExtension.ActionDelegate>()
+        verify(extension).setActionDelegate(actionDelegateCaptor.capture())
+
+        val browserAction: org.mozilla.geckoview.WebExtension.Action = mock()
+        actionDelegateCaptor.value.onTogglePopup(extension, browserAction)
+
+        val engineSessionCaptor = argumentCaptor<EngineSession>()
+        verify(webExtensionsDelegate).onToggleActionPopup(any(), engineSessionCaptor.capture(), any(), eq(false))
+        assertFalse((engineSessionCaptor.value as GeckoEngineSession).geckoSession.settings.usePrivateMode)
+    }
+
+    @Test
     fun `web extension delegate notified of page actions from built-in extensions`() {
         val runtime = mock<GeckoRuntime>()
         val extId = "test-webext"
@@ -1971,7 +1968,7 @@ class GeckoEngineTest {
         tabDelegateCaptor.value.onNewTab(extension, createTabDetails)
 
         val extensionCaptor = argumentCaptor<WebExtension>()
-        verify(webExtensionsDelegate).onNewTab(extensionCaptor.capture(), any(), eq(false), eq(""))
+        verify(webExtensionsDelegate).onNewTab(extensionCaptor.capture(), any(), eq(false), eq(""), eq(false))
         assertEquals(extId, extensionCaptor.value.id)
     }
 
@@ -2075,7 +2072,7 @@ class GeckoEngineTest {
         tabDelegateCaptor.value.onNewTab(extension, createTabDetails)
 
         val extensionCaptor = argumentCaptor<WebExtension>()
-        verify(webExtensionsDelegate).onNewTab(extensionCaptor.capture(), any(), eq(false), eq(""))
+        verify(webExtensionsDelegate).onNewTab(extensionCaptor.capture(), any(), eq(false), eq(""), eq(false))
         assertEquals(extId, extensionCaptor.value.id)
     }
 
@@ -5170,12 +5167,14 @@ class GeckoEngineTest {
 
     @Test
     fun `WHEN getAddressStructure is called THEN addressStructureAccessor should be called`() {
-        var getAddressStructureCalled = false
-        val engine = GeckoEngine(testContext, runtime = runtime, addressStructureAccessor = { region, success, error ->
-            getAddressStructureCalled = true
-        })
+        val addressStructureAccessor = mock<RuntimeAddressStructureAccessor>()
+        val engine = GeckoEngine(
+            testContext,
+            runtime = runtime,
+            addressStructureAccessor = addressStructureAccessor,
+        )
         engine.getAddressStructure("JP", { _ -> }, { _ -> })
-        assertTrue("AddressStructureAccessor should be called,", getAddressStructureCalled)
+        verify(addressStructureAccessor).getAddressStructure(eq("JP"), any(), any())
     }
 
     @Test

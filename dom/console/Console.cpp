@@ -150,7 +150,7 @@ class ConsoleCallData final {
     nsAutoString addonId;
     aPrincipal->GetAddonId(addonId);
 
-    mAddonId = addonId;
+    mAddonId = std::move(addonId);
   }
 
   void AssertIsOnOwningThread() const {

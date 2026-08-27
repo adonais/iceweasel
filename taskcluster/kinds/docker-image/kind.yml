@@ -433,6 +433,9 @@ tasks:
     periodic-updates:
         symbol: I(file)
         parent: debian12-base
+    bhr-aggregate:
+        symbol: I(bhr)
+        parent: debian13-base
     webrender:
         symbol: I(webrender)
         parent: debian12-base

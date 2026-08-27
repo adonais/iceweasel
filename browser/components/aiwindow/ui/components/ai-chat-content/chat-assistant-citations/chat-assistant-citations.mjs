@@ -8,6 +8,7 @@ import {
   repeat,
 } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
+import { SmartwindowOverflowRowMixin } from "chrome://browser/content/aiwindow/components/SmartwindowOverflowRow.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
 // eslint-disable-next-line import/no-unassigned-import
@@ -30,18 +31,39 @@ import "chrome://browser/content/aiwindow/components/smartwindow-panel-list.mjs"
  *
  * @property {Citation[]} citations - The sources to display.
  */
-export class ChatAssistantCitations extends MozLitElement {
+export class ChatAssistantCitations extends SmartwindowOverflowRowMixin(
+  MozLitElement
+) {
   static properties = {
     citations: { type: Array, attribute: false },
     isPanelOpen: { type: Boolean, state: true },
-    maxVisible: { type: Number, attribute: false },
   };
 
   constructor() {
     super();
     this.citations = [];
     this.isPanelOpen = false;
-    this.maxVisible = 3;
+  }
+
+  /**
+   * @returns {string} Selector for the citations row.
+   */
+  get overflowContainerSelector() {
+    return ".citations";
+  }
+
+  /**
+   * @returns {string} Selector for the “+n more” button.
+   */
+  get overflowTriggerSelector() {
+    return ".citations-more";
+  }
+
+  /**
+   * @returns {Citation[]} The items the row measures against.
+   */
+  get overflowItems() {
+    return this.citations ?? [];
   }
 
   #panel() {
@@ -97,50 +119,48 @@ export class ChatAssistantCitations extends MozLitElement {
       return nothing;
     }
 
-    const visibleCount =
-      this.citations.length > this.maxVisible
-        ? this.maxVisible - 1
-        : this.maxVisible;
-    const citationsVisible = this.citations.slice(0, visibleCount);
+    const visibleCount = Math.min(this.visibleCount, this.citations.length);
     const citationsOverflow = this.citations.slice(visibleCount);
+    const hasOverflow = !!citationsOverflow.length;
 
     return html`
       <link
         rel="stylesheet"
+        href="chrome://browser/content/aiwindow/components/smartwindow-overflow-row.css"
+      />
+      <link
+        rel="stylesheet"
         href="chrome://browser/content/aiwindow/components/chat-assistant-citations.css"
       />
-      <div class="citations" role="list">
-        ${citationsVisible.map(
-          citation =>
-            html`<span role="listitem"
+      <div class="citations smartwindow-overflow-row" role="list">
+        ${this.citations.map(
+          (citation, index) =>
+            html`<span role="listitem" ?data-overflow=${index >= visibleCount}
               >${this.#renderPill(citation, { showTitle: true })}</span
             >`
         )}
-        ${citationsOverflow.length
-          ? html`
-              <moz-button
-                type="ghost"
-                .ariaHasPopup=${"menu"}
-                .ariaExpanded=${String(this.isPanelOpen)}
-                data-l10n-id="smartwindow-assistant-citations-more-label"
-                data-l10n-args=${JSON.stringify({
-                  count: citationsOverflow.length,
-                })}
-                @click=${this.#onToggleClick}
-              ></moz-button>
-              <smartwindow-panel-list
-                @shown=${() => (this.isPanelOpen = true)}
-                @hidden=${() => (this.isPanelOpen = false)}
-                @AIChatContent:OpenLink=${this.#onPanelOpenLink}
-              >
-                ${repeat(
-                  citationsOverflow,
-                  citation => citation.url,
-                  citation =>
-                    this.#renderPill(citation, { itemRole: "menuitem" })
-                )}
-              </smartwindow-panel-list>
-            `
+        <moz-button
+          class="citations-more"
+          type="ghost"
+          ?data-overflow=${!hasOverflow}
+          .ariaHasPopup=${"menu"}
+          .ariaExpanded=${String(this.isPanelOpen)}
+          data-l10n-id="smartwindow-assistant-citations-more-label"
+          data-l10n-args=${JSON.stringify({ count: citationsOverflow.length })}
+          @click=${this.#onToggleClick}
+        ></moz-button>
+        ${hasOverflow
+          ? html`<smartwindow-panel-list
+              @shown=${() => (this.isPanelOpen = true)}
+              @hidden=${() => (this.isPanelOpen = false)}
+              @AIChatContent:OpenLink=${this.#onPanelOpenLink}
+            >
+              ${repeat(
+                citationsOverflow,
+                citation => citation.url,
+                citation => this.#renderPill(citation, { itemRole: "menuitem" })
+              )}
+            </smartwindow-panel-list>`
           : nothing}
       </div>
     `;

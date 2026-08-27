@@ -107,6 +107,7 @@ class WebRtcAudioRecord {
   private final @Nullable SamplesReadyCallback audioSamplesReadyCallback;
   private final boolean isAcousticEchoCancelerSupported;
   private final boolean isNoiseSuppressorSupported;
+  private final ThreadUtils.ThreadChecker threadChecker = new ThreadUtils.ThreadChecker();
 
   /**
    * Audio thread which keeps calling ByteBuffer.read() waiting for audio
@@ -206,6 +207,7 @@ class WebRtcAudioRecord {
       @Nullable AudioRecordStateCallback stateCallback,
       @Nullable SamplesReadyCallback audioSamplesReadyCallback,
       boolean isAcousticEchoCancelerSupported, boolean isNoiseSuppressorSupported) {
+    threadChecker.detachThread();
     if (isAcousticEchoCancelerSupported && !WebRtcAudioEffects.isAcousticEchoCancelerSupported()) {
       throw new IllegalArgumentException("HW AEC not supported");
     }
@@ -263,18 +265,27 @@ class WebRtcAudioRecord {
 
   @CalledByNative
   private boolean enableBuiltInAEC(boolean enable) {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "enableBuiltInAEC(" + enable + ")");
     return effects.setAEC(enable);
   }
 
   @CalledByNative
   private boolean enableBuiltInNS(boolean enable) {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "enableBuiltInNS(" + enable + ")");
     return effects.setNS(enable);
   }
 
   @CalledByNative
   private int initRecording(int sampleRate, int channels) {
+    try {
+      threadChecker.checkIsOnValidThread();
+    } catch (IllegalStateException e) {
+      reportWebRtcAudioRecordInitError("threadChecker.checkIsOnValidThread failed: " +
+                                       e.getMessage());
+      return -1;
+    }
     Logging.d(TAG, "initRecording(sampleRate=" + sampleRate + ", channels=" + channels + ")");
     if (audioRecord != null) {
       reportWebRtcAudioRecordInitError("InitRecording called twice without StopRecording.");
@@ -282,7 +293,12 @@ class WebRtcAudioRecord {
     }
     final int bytesPerFrame = channels * getBytesPerSample(audioFormat);
     final int framesPerBuffer = sampleRate / BUFFERS_PER_SECOND;
-    byteBuffer = ByteBuffer.allocateDirect(bytesPerFrame * framesPerBuffer);
+    try {
+      byteBuffer = ByteBuffer.allocateDirect(bytesPerFrame * framesPerBuffer);
+    } catch (OutOfMemoryError | RuntimeException e) {
+      reportWebRtcAudioRecordInitError("allocateDirect failed: " + e.getMessage());
+      return -1;
+    }
     if (!byteBuffer.hasArray()) {
       reportWebRtcAudioRecordInitError("ByteBuffer does not have backing array.");
       return -1;
@@ -332,6 +348,11 @@ class WebRtcAudioRecord {
       reportWebRtcAudioRecordInitError(e.getMessage());
       releaseAudioResources();
       return -1;
+    } catch (Throwable t) {
+      reportWebRtcAudioRecordInitError("InitRecording error: " +
+                                       t.getClass().getSimpleName() + ": " + t.getMessage());
+      releaseAudioResources();
+      return -1;
     }
     if (audioRecord == null || audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
       reportWebRtcAudioRecordInitError("Creation or initialization of audio recorder failed.");
@@ -373,6 +394,7 @@ class WebRtcAudioRecord {
 
   @CalledByNative
   private boolean startRecording() {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "startRecording");
     assertTrue(audioRecord != null);
     assertTrue(audioThread == null);
@@ -397,6 +419,7 @@ class WebRtcAudioRecord {
 
   @CalledByNative
   private boolean stopRecording() {
+    threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "stopRecording");
     assertTrue(audioThread != null);
     if (future != null) {

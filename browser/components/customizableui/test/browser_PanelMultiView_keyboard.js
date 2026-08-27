@@ -8,7 +8,7 @@
  */
 
 const kEmbeddedDocUrl =
-  'data:text/html,<textarea id="docTextarea">value</textarea><button id="docButton"></button>';
+  getRootDirectory(gTestPath) + "file_embedded_document.html";
 
 let gAnchor;
 let gPanel;

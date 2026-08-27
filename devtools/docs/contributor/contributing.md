@@ -1,4 +1,4 @@
-# Contributing
+# Contributing to DevTools
 
 Thank you for taking the time to contribute! There are several areas where you can help: code, UX, bugs, talking about the DevTools, etc...
 

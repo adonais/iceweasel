@@ -298,6 +298,7 @@ class DebugTargetInfo extends PureComponent {
       },
       dom.input({
         className: "devtools-textinput debug-target-url-input",
+        dir: "auto",
         onChange: this.onChange,
         onFocus: this.onFocus,
         defaultValue: url,

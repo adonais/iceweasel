@@ -63,8 +63,6 @@ MozExternalRefCountType RefMessageBodyService::Release() {
   return 0;
 }
 
-RefMessageBodyService::~RefMessageBodyService() = default;
-
 const nsID RefMessageBodyService::Register(
     already_AddRefed<RefMessageBody> aBody, ErrorResult& aRv) {
   RefPtr<RefMessageBody> body = aBody;

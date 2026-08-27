@@ -14,13 +14,17 @@
       // Owner page for the shared worker. Relays worker port messages to the
       // test over a BroadcastChannel and navigates itself into/out of bfcache
       // on command, which freezes/thaws the shared worker.
+      // The token isolates this run from other runs of the test that share the
+      // same browser (test-verify / chaos mode). It scopes the SharedWorker and
+      // the BroadcastChannel names, and is carried on to the nav page.
+      const token = new URLSearchParams(location.search).get("token");
       const bc = SpecialPowers.wrap(BroadcastChannel).unpartitionedTestingChannel(
-        "remoteDebugger_freeze_syncloop"
+        "remoteDebugger_freeze_syncloop_" + token
       );
 
       const worker = new SharedWorker(
         "remoteDebugger_freeze_syncloop_worker.js",
-        "remoteDebugger_freeze_syncloop"
+        "remoteDebugger_freeze_syncloop_" + token
       );
       worker.port.onmessage = event => {
         bc.postMessage({ from: "worker", data: event.data });
@@ -34,7 +38,8 @@
         } else if (command == "freeze") {
           // Navigate away so this page enters bfcache and the shared worker is
           // frozen while it is parked in its synchronous XHR.
-          window.location = "remoteDebugger_freeze_syncloop_nav.html";
+          window.location =
+            "remoteDebugger_freeze_syncloop_nav.html?token=" + encodeURIComponent(token);
         }
       };
 

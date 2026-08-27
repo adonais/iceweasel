@@ -16,6 +16,8 @@ files_changed:
 - widget/windows/tests/gtest/TestJumpListBuilder.cpp
 filters:
 - target_tasks_method
+head_git_repository: https://github.com/mozilla-firefox/firefox
+head_git_rev: 4b4e59946a3db5ddf42ea730fc44c22a99877303
 head_ref: 45d7400ced7eab36c5e094eabc83333b77bd5212
 head_repository: https://hg.mozilla.org/mozilla-central
 head_rev: 45d7400ced7eab36c5e094eabc83333b77bd5212

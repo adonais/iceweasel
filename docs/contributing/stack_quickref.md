@@ -25,6 +25,8 @@ This is also sometimes called "stack of revisions", "stack of commits" or "serie
 
 For the overall quick reference guide, see the {ref}`Firefox Contributors Quick Reference <Firefox Contributors' Quick Reference>`
 
+For background on why Firefox uses stacks and how the Phabricator workflow differs from GitHub, see {ref}`Phabricator vs GitHub`.
+
 ## Visualize the stack
 
 ```shell

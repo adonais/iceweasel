@@ -1569,7 +1569,7 @@ class IMEStateOnFocusMoveTester {
       description: "designMode editor",
       createElement: aDocument => {
         const iframe = aDocument.createElement("iframe");
-        iframe.srcdoc = "<!doctype html><html><body></body></html>";
+        iframe.src = "about:blank";
         iframe.addEventListener(
           "load",
           () => (iframe.contentDocument.designMode = "on"),

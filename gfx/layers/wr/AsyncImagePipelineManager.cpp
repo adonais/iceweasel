@@ -191,7 +191,7 @@ void AsyncImagePipelineManager::RemoveAsyncImagePipeline(
   if (auto entry = mAsyncImagePipelines.Lookup(id)) {
     const auto& holder = entry.Data();
     wr::Epoch epoch = GetNextImageEpoch();
-    aTxn.ClearDisplayList(epoch, aPipelineId);
+    aTxn.ClearDisplayList(epoch, mIdNamespace, aPipelineId);
     for (wr::ImageKey key : holder->mKeys) {
       aTxn.DeleteImage(key);
     }
@@ -452,7 +452,8 @@ void AsyncImagePipelineManager::ApplyAsyncImageForPipeline(
   }
 
   aPipeline->mIsChanged = false;
-  aPipeline->mDLBuilder.Begin();
+  // A single image at integral coordinates: no normalization to be exact about.
+  aPipeline->mDLBuilder.Begin(AppUnitsPerCSSPixel());
 
   float opacity = 1.0f;
   wr::StackingContextParams params;
@@ -517,8 +518,9 @@ void AsyncImagePipelineManager::ApplyAsyncImageForPipeline(
 
   wr::BuiltDisplayList dl;
   aPipeline->mDLBuilder.End(dl);
-  aSceneBuilderTxn.SetDisplayList(aEpoch, aPipelineId, dl.dl_desc, dl.dl_items,
-                                  dl.dl_spatial_tree);
+
+  aSceneBuilderTxn.SetDisplayList(aEpoch, mIdNamespace, aPipelineId, dl.dl_desc,
+                                  dl.dl_items, dl.dl_spatial_tree);
 }
 
 void AsyncImagePipelineManager::ApplyAsyncImageForPipeline(
@@ -607,11 +609,12 @@ void AsyncImagePipelineManager::SetEmptyDisplayList(
   wr::Epoch epoch = GetNextImageEpoch();
   wr::DisplayListBuilder builder(aPipelineId,
                                  mApi->GetCapabilities().mBackendType);
-  builder.Begin();
+  // As above: nothing here is normalized by a scroll offset.
+  builder.Begin(AppUnitsPerCSSPixel());
 
   wr::BuiltDisplayList dl;
   builder.End(dl);
-  txn.SetDisplayList(epoch, aPipelineId, dl.dl_desc, dl.dl_items,
+  txn.SetDisplayList(epoch, mIdNamespace, aPipelineId, dl.dl_desc, dl.dl_items,
                      dl.dl_spatial_tree);
 }
 

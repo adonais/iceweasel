@@ -1,5 +1,5 @@
 # Configuration for rumdl (https://github.com/rvben/rumdl).
-# Used by `./mach lint --linter rumdl`.
+# Used by `./mach lint --linter md`.
 
 [global]
 disable = [

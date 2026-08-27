@@ -6,9 +6,9 @@
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StyleColorInlines.h"
-#include "mozilla/dom/BindingDeclarations.h"
 #include "nsIFrame.h"
 #include "nsStyleStruct.h"
+#include "nsStyleUtil.h"
 
 namespace mozilla {
 

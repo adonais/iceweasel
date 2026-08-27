@@ -453,6 +453,28 @@ interface nsIWindowsShellService : nsIShellService
   boolean checkBrowserUserChoiceHashes();
 
   /*
+   * Check whether the UserChoice Protection Driver (UCPD) service is currently
+   * running. Running does not imply that it locks the UserChoice keys, as that
+   * varies by version and is verified by CanRenameUserChoiceAssociationKey().
+   *
+   * @return true if the service is running, false otherwise.
+   */
+  boolean isUserChoiceProtectionDriverRunning();
+
+  /*
+   * Check whether a UserChoice write for aAssociation would currently be
+   * permitted by renaming its association key to a temporary name and back.
+   *
+   * @param aAssociation
+   *        Association to probe, either a protocol ("http") or a file
+   *        extension (".pdf").
+   *
+   * @return true if the association key was renamed and renamed back, false
+   *   otherwise.
+   */
+  boolean canRenameUserChoiceAssociationKey(in AString aAssociation);
+
+  /*
    * Retrieves the application-defined, explicit Application User Model ID
    * for the current process. This function is only to be used on
    * Windows for testing purposes

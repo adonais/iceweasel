@@ -117,7 +117,6 @@ set_define("MOZ_STATIC_JS", static_js)
 # ===================================================
 option(
     "--enable-decorators",
-    default=False,
     help="Enable experimental JS Decorators support",
 )
 
@@ -131,29 +130,10 @@ def enable_decorators(value):
 set_config("ENABLE_DECORATORS", enable_decorators)
 set_define("ENABLE_DECORATORS", enable_decorators)
 
-# Enable explicit resource management
-# ===================================================
-option(
-    "--disable-explicit-resource-management",
-    default=True,
-    help="{Enable|Disable} explicit resource management",
-)
-
-
-@depends("--disable-explicit-resource-management")
-def enable_explicit_resource_management(value):
-    if value:
-        return True
-
-
-set_config("ENABLE_EXPLICIT_RESOURCE_MANAGEMENT", enable_explicit_resource_management)
-set_define("ENABLE_EXPLICIT_RESOURCE_MANAGEMENT", enable_explicit_resource_management)
-
 # Portable Baseline Intepreter
 # =======================================================
 option(
     "--enable-portable-baseline-interp",
-    default=False,
     help="{Enable|Disable} the portable baseline interpreter",
 )
 set_define(
@@ -168,7 +148,6 @@ set_config(
 # Option to always force PBL tier.
 option(
     "--enable-portable-baseline-interp-force",
-    default=False,
     help="{Enable|Disable} forcing use of the portable baseline interpreter",
 )
 
@@ -184,7 +163,6 @@ set_config(
 # Enable ahead-of-time-known preloaded IC bodies.
 option(
     "--enable-aot-ics",
-    default=False,
     help="{Enable|Disable} including ahead-of-time corpus of CacheIR IC bodies",
 )
 
@@ -200,7 +178,6 @@ set_config(
 # Force-on the option for AOT ICs.
 option(
     "--enable-aot-ics-force",
-    default=False,
     help="{Enable|Disable} forcing the AOT ICs option on without additional configuration",
 )
 
@@ -216,7 +193,6 @@ set_config(
 # Enforce AOT ICs (testing only): abort if a new IC (not in AOT corpus) is encountered.
 option(
     "--enable-aot-ics-enforce",
-    default=False,
     help="{Enable|Disable} enforcing that only AOT IC corpus is used, crashing otherwise (TEST ONLY)",
 )
 
@@ -563,6 +539,23 @@ set_define("JS_DISASM_RISCV64", jit_disasm_riscv)
 
 
 @depends("--enable-jit", "--enable-jitspew", simulator, target, moz_debug)
+def jit_disasm_loong64(jit_enabled, spew, simulator, target, debug):
+    if not jit_enabled:
+        return
+
+    if simulator and (debug or spew):
+        if getattr(simulator, "loong64", None):
+            return True
+
+    if target.cpu == "loongarch64" and (debug or spew):
+        return True
+
+
+set_config("JS_DISASM_LOONG64", jit_disasm_loong64)
+set_define("JS_DISASM_LOONG64", jit_disasm_loong64)
+
+
+@depends("--enable-jit", "--enable-jitspew", simulator, target, moz_debug)
 def jit_disasm_arm64(jit_enabled, spew, simulator, target, debug):
     if not jit_enabled:
         return
@@ -684,7 +677,6 @@ set_define(
 
 option(
     "--wasm-no-experimental",
-    default=False,
     help="Force disable all wasm experimental features for testing",
 )
 
@@ -1021,7 +1013,6 @@ set_define("ENABLE_WASM_MEMORY_CONTROL", wasm_memory_control)
 
 option(
     "--disable-wasm-branch-hinting",
-    default=True,
     help="{Enable|Disable} WebAssembly branch hinting",
 )
 
@@ -1085,7 +1076,6 @@ set_define("ENABLE_WASM_CUSTOM_PAGE_SIZES", wasm_custom_page_sizes)
 
 option(
     "--enable-gc-concurrent-marking",
-    default=False,
     help="{Enable|Disable} experimental support for GC concurrent marking",
 )
 
@@ -1109,29 +1099,19 @@ set_define("JS_GC_CONCURRENT_MARKING", gc_concurrent_marking)
 # ===========================
 
 
-@depends(milestone.is_nightly)
-def default_wasm_compact_imports(is_nightly):
-    if is_nightly:
-        return True
-
-
 option(
-    "--enable-wasm-compact-imports",
-    default=default_wasm_compact_imports,
+    "--disable-wasm-compact-imports",
     help="{Enable|Disable} WebAssembly compact import section support",
 )
 
-
-@depends("--enable-wasm-compact-imports", "--wasm-no-experimental")
-def wasm_compact_imports(value, no_experimental):
-    if no_experimental or not value:
-        return
-
-    return True
-
-
-set_config("ENABLE_WASM_COMPACT_IMPORTS", wasm_compact_imports)
-set_define("ENABLE_WASM_COMPACT_IMPORTS", wasm_compact_imports)
+set_config(
+    "ENABLE_WASM_COMPACT_IMPORTS",
+    depends_if("--enable-wasm-compact-imports")(lambda x: True),
+)
+set_define(
+    "ENABLE_WASM_COMPACT_IMPORTS",
+    depends_if("--enable-wasm-compact-imports")(lambda x: True),
+)
 
 
 # Support for the WebAssembly component model.
@@ -1329,7 +1309,6 @@ set_define(
 
 option(
     "--disable-wasm-resizable-arraybuffer",
-    default=True,
     help="{Enable|Disable} resizable ArrayBuffer in WASM",
 )
 

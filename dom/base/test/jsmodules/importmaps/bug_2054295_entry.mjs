@@ -1,0 +1,85 @@
+import dep from "./bug_2054295_dep.mjs";
+
+export const value = dep;
+
+// The rest of this file is padding: ScriptLoader only compiles a script
+// off-thread (and therefore only blocks onload for it) when its source is at
+// least OffThreadMinimumTextLength (5000) characters long.
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789
+// the quick brown fox jumps over the lazy dog 0123456789 0123456789

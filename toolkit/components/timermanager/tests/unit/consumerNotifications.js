@@ -142,7 +142,7 @@ ChromeUtils.defineLazyGetter(this, "gCompReg", function () {
 });
 
 const gTest0TimerCallback = {
-  notify: function T0CB_notify() {
+  notify() {
     // This can happen when another notification fails and this timer having
     // time to fire so check other timers are successful.
     do_throw("gTest0TimerCallback notify method should not have been called");
@@ -151,13 +151,13 @@ const gTest0TimerCallback = {
 };
 
 const gTest0Factory = {
-  createInstance: function T0F_createInstance(aIID) {
+  createInstance(aIID) {
     return gTest0TimerCallback.QueryInterface(aIID);
   },
 };
 
 const gTest1TimerCallback = {
-  notify: function T1CB_notify() {
+  notify() {
     // This can happen when another notification fails and this timer having
     // time to fire so check other timers are successful.
     do_throw("gTest1TimerCallback notify method should not have been called");
@@ -166,13 +166,13 @@ const gTest1TimerCallback = {
 };
 
 const gTest1Factory = {
-  createInstance: function T1F_createInstance(aIID) {
+  createInstance(aIID) {
     return gTest1TimerCallback.QueryInterface(aIID);
   },
 };
 
 const gTest2TimerCallback = {
-  notify: function T2CB_notify() {
+  notify() {
     // This can happen when another notification fails and this timer having
     // time to fire so check other timers are successful.
     do_throw("gTest2TimerCallback notify method should not have been called");
@@ -181,7 +181,7 @@ const gTest2TimerCallback = {
 };
 
 const gTest2Factory = {
-  createInstance: function T2F_createInstance(aIID) {
+  createInstance(aIID) {
     return gTest2TimerCallback.QueryInterface(aIID);
   },
 };
@@ -191,13 +191,13 @@ const gTest3TimerCallback = {
 };
 
 const gTest3Factory = {
-  createInstance: function T3F_createInstance(aIID) {
+  createInstance(aIID) {
     return gTest3TimerCallback.QueryInterface(aIID);
   },
 };
 
 const gTest4TimerCallback = {
-  notify: function T4CB_notify() {
+  notify() {
     Services.catMan.deleteCategoryEntry(
       CATEGORY_UPDATE_TIMER,
       TESTS[4].desc,
@@ -210,13 +210,13 @@ const gTest4TimerCallback = {
 };
 
 const gTest4Factory = {
-  createInstance: function T4F_createInstance(aIID) {
+  createInstance(aIID) {
     return gTest4TimerCallback.QueryInterface(aIID);
   },
 };
 
 const gTest5TimerCallback = {
-  notify: function T5CB_notify() {
+  notify() {
     Services.catMan.deleteCategoryEntry(
       CATEGORY_UPDATE_TIMER,
       TESTS[5].desc,
@@ -229,13 +229,13 @@ const gTest5TimerCallback = {
 };
 
 const gTest5Factory = {
-  createInstance: function T5F_createInstance(aIID) {
+  createInstance(aIID) {
     return gTest5TimerCallback.QueryInterface(aIID);
   },
 };
 
 const gTest6TimerCallback = {
-  notify: function T6CB_notify() {
+  notify() {
     Services.catMan.deleteCategoryEntry(
       CATEGORY_UPDATE_TIMER,
       TESTS[6].desc,
@@ -248,13 +248,13 @@ const gTest6TimerCallback = {
 };
 
 const gTest6Factory = {
-  createInstance: function T6F_createInstance(aIID) {
+  createInstance(aIID) {
     return gTest6TimerCallback.QueryInterface(aIID);
   },
 };
 
 const gTest7TimerCallback = {
-  notify: function T7CB_notify() {
+  notify() {
     Services.catMan.deleteCategoryEntry(
       CATEGORY_UPDATE_TIMER,
       TESTS[7].desc,
@@ -267,13 +267,13 @@ const gTest7TimerCallback = {
 };
 
 const gTest7Factory = {
-  createInstance: function T7F_createInstance(aIID) {
+  createInstance(aIID) {
     return gTest7TimerCallback.QueryInterface(aIID);
   },
 };
 
 const gTest8TimerCallback = {
-  notify: function T8CB_notify() {
+  notify() {
     TESTS[8].notified = true;
     TESTS[8].notifyTime = Date.now();
     executeSoon(function () {
@@ -284,13 +284,13 @@ const gTest8TimerCallback = {
 };
 
 const gTest8Factory = {
-  createInstance: function T8F_createInstance(aIID) {
+  createInstance(aIID) {
     return gTest8TimerCallback.QueryInterface(aIID);
   },
 };
 
 const gTest9TimerCallback = {
-  notify: function T9CB_notify() {
+  notify() {
     TESTS[9].notified = true;
     TESTS[9].notifyTime = Date.now();
     executeSoon(function () {
@@ -301,7 +301,7 @@ const gTest9TimerCallback = {
 };
 
 const gTest10TimerCallback = {
-  notify: function T9CB_notify() {
+  notify() {
     // The timer should have been unregistered before this could
     // be called.
     do_throw("gTest10TimerCallback notify method should not have been called");
@@ -310,7 +310,7 @@ const gTest10TimerCallback = {
 };
 
 const gTest9Factory = {
-  createInstance: function T9F_createInstance(aIID) {
+  createInstance(aIID) {
     return gTest9TimerCallback.QueryInterface(aIID);
   },
 };

@@ -1,23 +1,33 @@
 From: Byron Campen <docfaraday@gmail.com>
-Date: Tue, 19 May 2026 16:37:00 -0500
-Subject: Bug 2040478 - (fix-de183fb028) Remove this include of override code
- that is gone. r?mjf
+Date: Tue, 26 May 2026 14:02:00 -0500
+Subject: Bug 2040478 - (fix-d1ae1e9ad4) Explicitly convert these to a
+ std::string r?mjf
 
-It appears that this override code is no longer necessary.
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/dbd090975384251d83d3554677efcbb0e133feab
+Our toolchain does not yet support implicit conversion from string_view to string
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/1eae5aad7a7622115d156dea2dc974416046cd42
 ---
- call/call.h | 1 -
- 1 file changed, 1 deletion(-)
+ call/payload_type_picker.cc | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/call/call.h b/call/call.h
-index e97a8ee4ec..53a1cf0636 100644
---- a/call/call.h
-+++ b/call/call.h
-@@ -27,7 +27,6 @@
- #include "api/video/video_stream_encoder_settings.h"
- #include "call/audio_receive_stream.h"
- #include "call/audio_send_stream.h"
--#include "call/call_basic_stats.h"
- #include "call/call_config.h"
- #include "call/flexfec_receive_stream.h"
- #include "call/packet_receiver.h"
+diff --git a/call/payload_type_picker.cc b/call/payload_type_picker.cc
+index 46cb5dc259..28cab659e8 100644
+--- a/call/payload_type_picker.cc
++++ b/call/payload_type_picker.cc
+@@ -368,7 +368,7 @@ void PayloadTypeRecorder::Rollback() {
+ RTCError RtpHeaderExtensionRecorder::AddMapping(RtpHeaderExtensionId id,
+                                                 absl::string_view uri,
+                                                 bool encrypt) {
+-  auto it = uri_to_id_.find(std::pair{uri, encrypt});
++  auto it = uri_to_id_.find(std::pair{std::string(uri), encrypt});
+   if (it != uri_to_id_.end()) {
+     if (it->second != id) {
+       RTC_HISTOGRAM_BOOLEAN(
+@@ -391,7 +391,7 @@ RTCError RtpHeaderExtensionRecorder::AddMapping(RtpHeaderExtensionId id,
+ RTCErrorOr<RtpHeaderExtensionId> RtpHeaderExtensionRecorder::LookupId(
+     absl::string_view uri,
+     bool encrypt) const {
+-  auto it = uri_to_id_.find(std::pair{uri, encrypt});
++  auto it = uri_to_id_.find(std::pair{std::string(uri), encrypt});
+   if (it == uri_to_id_.end()) {
+     return RTCError(RTCErrorType::INVALID_PARAMETER,
+                     "No ID found for extension");

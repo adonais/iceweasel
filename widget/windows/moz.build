@@ -51,12 +51,12 @@ EXPORTS.mozilla += [
 ]
 
 EXPORTS.mozilla.widget += [
-    "AudioSession.h",
     "CompositorWidgetChild.h",
     "CompositorWidgetParent.h",
     "InProcessWinCompositorWidget.h",
     "JumpListBuilder.h",
     "nsWindowLoggedMessages.h",
+    "WinAudioSession.h",
     "WinCompositorWidget.h",
     "WinCompositorWindowThread.h",
     "WindowsSMTCProvider.h",
@@ -69,7 +69,6 @@ EXPORTS.mozilla.widget += [
 ]
 
 UNIFIED_SOURCES += [
-    "AudioSession.cpp",
     "CompositorWidgetChild.cpp",
     "DirectManipulationOwner.cpp",
     "GfxInfo.cpp",
@@ -111,6 +110,7 @@ UNIFIED_SOURCES += [
     "TSFStaticSink.cpp",
     "TSFTextStore.cpp",
     "TSFTextStoreBase.cpp",
+    "WinAudioSession.cpp",
     "WinCompositorWindowThread.cpp",
     "WindowHook.cpp",
     "WindowsConsole.cpp",

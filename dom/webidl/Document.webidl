@@ -41,6 +41,14 @@ dictionary ElementCreationOptions {
   DOMString pseudo;
 };
 
+/* https://dom.spec.whatwg.org/#dictdef-importnodeoptions */
+dictionary ImportNodeOptions {
+  [Pref="dom.scoped-custom-element-registries.enabled"]
+  CustomElementRegistry customElementRegistry;
+
+  boolean selfOnly = false;
+};
+
 /* https://dom.spec.whatwg.org/#interface-document */
 [Exposed=Window]
 interface Document : Node {
@@ -92,7 +100,7 @@ interface Document : Node {
   ProcessingInstruction createProcessingInstruction(DOMString target, DOMString data);
 
   [CEReactions, Throws, Func="IsNotUAWidget"]
-  Node importNode(Node node, optional boolean deep = false);
+  Node importNode(Node node, optional (boolean or ImportNodeOptions) options = false);
   [CEReactions, Throws, Func="IsNotUAWidget"]
   Node adoptNode(Node node);
 

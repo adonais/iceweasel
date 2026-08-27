@@ -9,6 +9,14 @@ interface nsIRequestObserver;
 interface nsIInterfaceRequestor;
 interface nsIRequestContext;
 
+%{C++
+#include "mozilla/FunctionRef.h"
+
+using nsLoadGroupRequestVisitor = mozilla::FunctionRef<bool(nsIRequest*)>;
+%}
+
+native nsLoadGroupRequestVisitor(nsLoadGroupRequestVisitor);
+
 /**
  * A load group maintains a collection of nsIRequest objects.
  * This is used in lots of places where groups of requests need to be tracked.
@@ -64,6 +72,14 @@ interface nsILoadGroup : nsIRequest
      * Enumerator element type: nsIRequest.
      */
     readonly attribute nsISimpleEnumerator requests;
+
+    /**
+     * Calls aVisitor for each request in the group, stopping when it returns
+     * false. Unlike `requests` this doesn't copy the group, so aVisitor must
+     * not add or remove requests.
+     */
+    [noscript, notxpcom, nostdcall]
+    void visitRequests(in nsLoadGroupRequestVisitor aVisitor);
 
     /**
     * Sum total of content length of all pending keepalive

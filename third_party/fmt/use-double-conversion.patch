@@ -73,7 +73,7 @@ diff --git a/include/fmt/format.h b/include/fmt/format.h
 +  double_conversion::StringBuilder builder(buf.data(), buf.size());
 +  // Negative precision defaults to 6.
 +  if (precision == -1) { precision = 6; }
-+  bool success;
++  bool success = false;
 +  if (specs.type() == presentation_type::exp) {
 +      success = converter.ToExponential(value, precision, &builder);
 +  } else if (specs.type() == presentation_type::fixed) {

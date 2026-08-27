@@ -209,6 +209,14 @@ def mozconfigContents = mozconfigFile ? readFileContents(mozconfigFile) : ""
     }
 }
 
+// Expose `secretSettings.*` overrides from local.properties to debug builds
+// Example entry secretSettings.pref_key_use_scroll_data_for_dynamic_toolbar=true
+localProperties.each { key, value ->
+    if (key.toString().startsWith("secretSettings.")) {
+        gradle.ext."localProperties.$key" = value
+    }
+}
+
 def topsrcdirValue = topsrcdir
 def mozconfigEnvValue = mozconfigEnv
 def mozObjdirEnvValue = mozObjdirEnv

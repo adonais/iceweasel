@@ -40,14 +40,14 @@ uint32_t SipccSdp::GetBandwidth(const std::string& type) const {
 }
 
 const SdpMediaSection& SipccSdp::GetMediaSection(const size_t level) const {
-  if (level > mMediaSections.size()) {
+  if (level >= mMediaSections.size()) {
     MOZ_CRASH();
   }
   return *mMediaSections[level];
 }
 
 SdpMediaSection& SipccSdp::GetMediaSection(const size_t level) {
-  if (level > mMediaSections.size()) {
+  if (level >= mMediaSections.size()) {
     MOZ_CRASH();
   }
   return *mMediaSections[level];

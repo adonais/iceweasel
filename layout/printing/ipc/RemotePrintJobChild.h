@@ -29,8 +29,7 @@ class RemotePrintJobChild final : public PRemotePrintJobChild,
 
   void ActorDestroy(ActorDestroyReason aWhy) final;
 
-  nsresult InitializePrint(const nsString& aDocumentTitle,
-                           uint64_t aBrowsingContextId,
+  nsresult InitializePrint(const nsString& aDocumentTitle, dom::WindowContext*,
                            const int32_t& aStartPage, const int32_t& aEndPage);
 
   mozilla::ipc::IPCResult RecvPrintInitializationResult(

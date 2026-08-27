@@ -726,8 +726,9 @@ void nsVideoFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   if (!clipAxes.isEmpty()) {
     nsRect clipRect;
     nsRectCornerRadii radii;
+    nsMargin inset;
     const bool haveRadii =
-        ComputeOverflowClipRectRelativeToSelf(clipAxes, clipRect, radii);
+        ComputeOverflowClipRectRelativeToSelf(clipAxes, clipRect, radii, inset);
     // NOTE: If we're displaying a poster image (instead of video data), we can
     // trust the nsImageFrame to constrain its drawing to its content rect
     // (which happens to be the same as our content rect).
@@ -737,7 +738,7 @@ void nsVideoFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     if (haveRadii || canOverflowWithoutRadii) {
       clipState.ClipContainingBlockDescendants(
           clipRect + aBuilder->ToReferenceFrame(this),
-          haveRadii ? &radii : nullptr);
+          haveRadii ? &radii : nullptr, haveRadii ? &inset : nullptr);
     }
   }
 

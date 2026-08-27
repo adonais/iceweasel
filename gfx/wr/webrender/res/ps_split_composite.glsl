@@ -101,10 +101,10 @@ void main(void) {
         max_uv - vec2(0.5)
     ) / texture_size.xyxy;
 
-    vec2 f = (local_pos - ph.local_rect.p0) / rect_size(ph.local_rect);
+    vec2 f = (local_pos - ph.pattern_rect.p0) / rect_size(ph.pattern_rect);
     f = get_image_quad_uv(ph.user_data.x, f);
     vec2 uv = mix(uv0, uv1, f);
-    float perspective_interpolate = float(ph.user_data.y);
+    float perspective_interpolate = 1.0;
 
     vUv = uv / texture_size * mix(gl_Position.w, 1.0, perspective_interpolate);
     vPerspective.x = perspective_interpolate;

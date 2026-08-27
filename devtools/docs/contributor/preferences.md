@@ -1,4 +1,4 @@
-# Preferences
+# DevTools preferences
 
 This documentation aims at giving an overview of the preferences API used in DevTools, it
 is not an actual documentation about the list of preferences available in DevTools.

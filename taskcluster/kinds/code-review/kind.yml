@@ -40,6 +40,7 @@ tasks:
                 in-tree: debian12-base
             max-run-time: 600
         run:
+            clone-with: hg
             using: run-task
             checkout: false
             command: /bin/true

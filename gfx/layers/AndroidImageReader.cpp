@@ -54,9 +54,23 @@ Maybe<SurfaceDescriptor> AndroidImageReaderImage::GetDesc() {
   return Nothing();
 }
 
-void AndroidImageReaderImage::OnSetCurrent() {}
+void AndroidImageReaderImage::OnSetCurrent() {
+  auto* imageReaderMap = layers::GpuProcessAndroidImageReaderMap::Get();
+  if (!imageReaderMap) {
+    return;
+  }
 
-bool AndroidImageReaderImage::MaybeReleaseFrameToCodec(bool aRender) {
+  RefPtr<AndroidImageReader> imageReader =
+      imageReaderMap->GetImageReader(mImageReaderId);
+  if (!imageReader) {
+    return;
+  }
+
+  imageReader->MaybeRenderFirstFrame(mFrameId);
+}
+
+bool AndroidImageReaderImage::MaybeReleaseFrameToCodec(
+    const MonitorAutoLock& aProofOfLock, bool aRender) {
   if (!mSetCurrentCallback) {
     return false;
   }
@@ -384,6 +398,15 @@ bool AndroidImageReader::UpdateTexImageWithReadback(
   return true;
 }
 
+void AndroidImageReader::MaybeRenderFirstFrame(
+    AndroidMediaCodecFrameId aFrameId) {
+  MonitorAutoLock lock(mMonitor);
+  if (mCurrentImage) {
+    return;
+  }
+  DoUpdateTexImage(lock, aFrameId);
+}
+
 bool AndroidImageReader::DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
                                           AndroidMediaCodecFrameId aFrameId) {
   MOZ_ASSERT(static_cast<int32_t>(mAcquiredImageCount) <= mMaxImageCount);
@@ -482,6 +505,7 @@ bool AndroidImageReader::DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
 
   mCurrentImage = new AndroidImageWrapper(this, image, nativeBuffer, size,
                                           format, std::move(fence));
+  mCurrentFrameId = aFrameId;
 
   MOZ_ASSERT(static_cast<int32_t>(mAcquiredImageCount) <= mMaxImageCount);
 
@@ -524,7 +548,7 @@ bool AndroidImageReader::MaybeReleaseFrameToCodec(
     return false;
   }
 
-  bool ret = it->second->MaybeReleaseFrameToCodec(aRender);
+  bool ret = it->second->MaybeReleaseFrameToCodec(aProofOfLock, aRender);
   mPendingFrames.erase(it);
 
   return ret;

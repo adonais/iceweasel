@@ -116,7 +116,7 @@ data class SitePermissionsRules constructor(
     /**
      * Converts a [SitePermissionsRules] object into a [SitePermissions] .
      */
-    fun toSitePermissions(origin: String, savedAt: Long = System.currentTimeMillis()): SitePermissions {
+    fun toSitePermissions(origin: String): SitePermissions {
         return SitePermissions(
             origin = origin,
             location = location.toStatus(),
@@ -130,7 +130,6 @@ data class SitePermissionsRules constructor(
             crossOriginStorageAccess = crossOriginStorageAccess.toStatus(),
             localDeviceAccess = localDeviceAccess.toStatus(),
             localNetworkAccess = localNetworkAccess.toStatus(),
-            savedAt = savedAt,
         )
     }
 }

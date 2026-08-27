@@ -184,50 +184,42 @@ void NativeMenuMac::OnMenuWillOpen(dom::Element* aPopupElement) {
   }
 
   // Our caller isn't keeping us alive, so make sure we stay alive throughout
-  // this function in case one of the observer notifications destroys us.
+  // this function in case one of the notifications destroys us.
   RefPtr<NativeMenuMac> kungFuDeathGrip(this);
 
-  for (NativeMenu::Observer* observer : mObservers.Clone()) {
-    observer->OnNativeSubMenuWillOpen(aPopupElement);
-  }
+  OnSubMenuWillOpen(aPopupElement);
 }
 
 void NativeMenuMac::OnMenuDidOpen(dom::Element* aPopupElement) {
   // Our caller isn't keeping us alive, so make sure we stay alive throughout
-  // this function in case one of the observer notifications destroys us.
+  // this function in case one of the notifications destroys us.
   RefPtr<NativeMenuMac> kungFuDeathGrip(this);
 
-  for (NativeMenu::Observer* observer : mObservers.Clone()) {
-    if (aPopupElement == mElement) {
-      observer->OnNativeMenuOpened();
-    } else {
-      observer->OnNativeSubMenuDidOpen(aPopupElement);
-    }
+  if (aPopupElement == mElement) {
+    OnOpened();
+  } else {
+    OnSubMenuDidOpen(aPopupElement);
   }
 }
 
 void NativeMenuMac::OnMenuWillActivateItem(dom::Element* aPopupElement,
                                            dom::Element* aMenuItemElement) {
   // Our caller isn't keeping us alive, so make sure we stay alive throughout
-  // this function in case one of the observer notifications destroys us.
+  // this function in case one of the notifications destroys us.
   RefPtr<NativeMenuMac> kungFuDeathGrip(this);
 
-  for (NativeMenu::Observer* observer : mObservers.Clone()) {
-    observer->OnNativeMenuWillActivateItem(aMenuItemElement);
-  }
+  OnWillActivateItem(aMenuItemElement);
 }
 
 void NativeMenuMac::OnMenuClosed(dom::Element* aPopupElement) {
   // Our caller isn't keeping us alive, so make sure we stay alive throughout
-  // this function in case one of the observer notifications destroys us.
+  // this function in case one of the notifications destroys us.
   RefPtr<NativeMenuMac> kungFuDeathGrip(this);
 
-  for (NativeMenu::Observer* observer : mObservers.Clone()) {
-    if (aPopupElement == mElement) {
-      observer->OnNativeMenuClosed();
-    } else {
-      observer->OnNativeSubMenuClosed(aPopupElement);
-    }
+  if (aPopupElement == mElement) {
+    OnClosed();
+  } else {
+    OnSubMenuClosed(aPopupElement);
   }
 }
 

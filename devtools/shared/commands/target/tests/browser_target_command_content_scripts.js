@@ -13,6 +13,8 @@ add_task(async function test_contentScript() {
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
 
   await pushPref("devtools.debugger.show-content-scripts", true);
+  // We use a commands object for the main process
+  await pushPref("devtools.chrome.enabled", true);
 
   const extension = ExtensionTestUtils.loadExtension({
     manifest: {

@@ -1,4 +1,5 @@
 diff --git a/js/src/irregexp/imported/regexp-parser.cc b/js/src/irregexp/imported/regexp-parser.cc
+index f5378218b962..47d11672f177 100644
 --- a/imported/regexp-parser.cc
 +++ b/imported/regexp-parser.cc
 @@ -10,6 +10,7 @@
@@ -9,11 +10,14 @@ diff --git a/js/src/irregexp/imported/regexp-parser.cc b/js/src/irregexp/importe
  #include "unicode/uniset.h"
  #include "unicode/unistr.h"
  #include "unicode/usetiter.h"
-@@ -2074,7 +2075,9 @@
-     return LookupPropertyValueName(UCHAR_GENERAL_CATEGORY, "Unassigned",
-                                    !negate, result, nullptr, flags, zone);
+@@ -2369,7 +2370,12 @@ bool LookupSpecialPropertyValueName(const char* name,
+                                          !negate, result, nullptr, flags, zone)
+         .success;
    } else {
 -    return false;
++    if constexpr (mode == ParseMode::kVerifySyntax) {
++      return mozilla_properties_glue_has_property(name);
++    }
 +    return mozilla_properties_glue_add_property_ranges(
 +        static_cast<void*>(result), static_cast<void*>(zone), name, negate,
 +        IsUnicodeSets(flags) && IsIgnoreCase(flags));

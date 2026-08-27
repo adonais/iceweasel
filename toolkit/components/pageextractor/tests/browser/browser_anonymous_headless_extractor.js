@@ -43,7 +43,7 @@ function setupHeadlessExtractionTest(body) {
 
   server.start(-1);
   const { primaryHost, primaryPort } = server.identity;
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   const url = `http://${primaryHost}:${primaryPort}/page.html`;
   const uri = Services.io.newURI(url);
 
@@ -169,7 +169,7 @@ add_task(async function test_anonymous_fetch_channel_config() {
 add_task(async function test_anonymous_fetch_rejects_non_loopback_http() {
   await Assert.rejects(
     PageExtractorParent.getHeadlessExtractor({
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       urlString: "http://example.com/page.html",
       callback: async pageExtractor => pageExtractor.getText(),
       anonymousFetch: true,

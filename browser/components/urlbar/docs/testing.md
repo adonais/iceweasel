@@ -171,14 +171,14 @@ the view, and etc.
 
 ### BrowserTestUtils
 
-[BrowserTestUtils.sys.mjs](../../testing/browser-chrome/browsertestutils.html)
+[BrowserTestUtils.sys.mjs](../../testing/browser-chrome/browsertestutils.md)
 is useful for browser window testing. This file contains methods that can help
 with opening tabs, waiting for certain events to happen in the window, opening
 new or private windows, and etc.
 
 ### TestUtils
 
-[TestUtils.sys.mjs](../../testing/testutils.html) is useful for general
+[TestUtils.sys.mjs](../../testing/testutils.md) is useful for general
 purpose testing and does not depend on the browser window. This file contains
 methods that are useful when waiting for a condition to return true, waiting for
 a specific preference to change, and etc.

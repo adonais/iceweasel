@@ -15,7 +15,7 @@ offThreadCompileModuleToStencil(`
 `);
 let stencil = finishOffThreadStencil();
 let mod = instantiateModuleStencil(stencil);
-moduleLink(mod);
+moduleLoadAndLink(mod);
 moduleEvaluate(mod);
 assertEq(hitCount, 4);
 

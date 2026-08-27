@@ -23,9 +23,9 @@ XPCOMUtils.defineLazyServiceGetters(this, {
 AddonTestUtils.init(this);
 AddonTestUtils.overrideCertDB();
 
-Services.scriptloader.loadSubScript(
+Services.scriptloader.loadSubScriptWithOptions(
   Services.io.newFileURI(do_get_file("head_dnr.js")).spec,
-  this
+  { target: this, allowUnsafeURL: true }
 );
 
 const EXT_ID = "test-dnr-store-startup-cache@test-extension";

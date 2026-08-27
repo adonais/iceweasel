@@ -157,9 +157,9 @@ bool MessageManagerFuzzer::MutateValue(
     unsigned short int aRecursionCounter) {
   if (aValue.isInt32()) {
     if (FuzzingTraits::Sometimes(DefaultMutationProbability() * 2)) {
-      aOutMutationValue.set(JS::Int32Value(RandomNumericLimit<int>()));
+      aOutMutationValue.setInt32(RandomNumericLimit<int>());
     } else {
-      aOutMutationValue.set(JS::Int32Value(RandomInteger<int>()));
+      aOutMutationValue.setInt32(RandomInteger<int>());
     }
     MSGMGR_FUZZER_LOG("%*s! Mutated value of type |int32|: '%d' to '%d'",
                       aRecursionCounter * 4, "", aValue.toInt32(),
@@ -168,7 +168,7 @@ bool MessageManagerFuzzer::MutateValue(
   }
 
   if (aValue.isDouble()) {
-    aOutMutationValue.set(JS::DoubleValue(RandomFloatingPoint<double>()));
+    aOutMutationValue.setDouble(RandomFloatingPoint<double>());
     MSGMGR_FUZZER_LOG("%*s! Mutated value of type |double|: '%f' to '%f'",
                       aRecursionCounter * 4, "", aValue.toDouble(),
                       aOutMutationValue.toDouble());
@@ -176,7 +176,7 @@ bool MessageManagerFuzzer::MutateValue(
   }
 
   if (aValue.isBoolean()) {
-    aOutMutationValue.set(JS::BooleanValue(bool(RandomIntegerRange(0, 2))));
+    aOutMutationValue.setBoolean(bool(RandomIntegerRange(0, 2)));
     MSGMGR_FUZZER_LOG("%*s! Mutated value of type |boolean|: '%d' to '%d'",
                       aRecursionCounter * 4, "", aValue.toBoolean(),
                       aOutMutationValue.toBoolean());
@@ -189,7 +189,7 @@ bool MessageManagerFuzzer::MutateValue(
       return false;
     }
     JSString* str = JS_NewStringCopyZ(aCx, x.get());
-    aOutMutationValue.set(JS::StringValue(str));
+    aOutMutationValue.setString(str);
     JS::Rooted<JSString*> rootedValue(aCx, aValue.toString());
     JS::UniqueChars valueChars = JS_EncodeStringToUTF8(aCx, rootedValue);
     MSGMGR_FUZZER_LOG("%*s! Mutated value of type |string|: '%s' to '%s'",

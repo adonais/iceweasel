@@ -58,6 +58,9 @@ export const SponsorLabel = ({
   sponsor,
   context,
   newSponsoredLabel,
+  // @nova-cleanup(remove-conditional): Delete this prop and keep only the
+  // source-wrapper branch below; the classic FluentOrText label goes away, along
+  // with the now-unused FluentOrText import and the classList variable.
   novaEnabled,
 }) => {
   const classList = `story-sponsored-label ${newSponsoredLabel || ""} clamp`;

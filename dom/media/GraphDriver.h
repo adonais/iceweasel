@@ -116,7 +116,8 @@ struct GraphInterface : public nsISupports {
         mSwitchedRunnable = nullptr;
       }
     };
-    Variant<Undefined, StillProcessing, Stop, SwitchDriver> mResult;
+    Variant<Undefined, StillProcessing, Stop, SwitchDriver> mResult{
+        Undefined()};
 
     explicit IterationResult(StillProcessing&& aArg)
         : mResult(std::move(aArg)) {}
@@ -124,7 +125,7 @@ struct GraphInterface : public nsISupports {
     explicit IterationResult(SwitchDriver&& aArg) : mResult(std::move(aArg)) {}
 
    public:
-    IterationResult() : mResult(Undefined()) {}
+    IterationResult() = default;
     IterationResult(const IterationResult&) = delete;
     IterationResult(IterationResult&&) = default;
 
@@ -393,7 +394,7 @@ class MediaTrackGraphInitThreadRunnable;
  */
 class ThreadedDriver : public GraphDriver {
   class IterationWaitHelper {
-    Monitor mMonitor MOZ_UNANNOTATED;
+    Monitor mMonitor MOZ_UNANNOTATED{"IterationWaitHelper::mMonitor"};
     // The below members are guarded by mMonitor.
 
     // Whether another iteration is required either to process control
@@ -404,7 +405,7 @@ class ThreadedDriver : public GraphDriver {
     TimeStamp mWakeTime;
 
    public:
-    IterationWaitHelper() : mMonitor("IterationWaitHelper::mMonitor") {}
+    IterationWaitHelper() = default;
 
     /**
      * If another iteration is needed we wait for aDuration, otherwise we wait

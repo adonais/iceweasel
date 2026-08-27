@@ -5,6 +5,7 @@
 import base64
 import hashlib
 import struct
+import sys
 import tempfile
 import unittest
 
@@ -250,6 +251,38 @@ class TestScreenCaptureContent(WindowManagerMixin, ScreenCaptureTestCase):
         after = self.marionette.screenshot(full=False)
         self.assertNotEqual(before, after)
         self.assertGreater(self.page_y_offset, 0)
+
+    def assert_readback_viewport(self, screenshot):
+        # The captured region is the composited content area, which can differ
+        # from the content viewport by a device pixel due to rounding.
+        width, height = self.get_image_dimensions(screenshot)
+        expected_width, expected_height = self.scale(self.viewport_dimensions)
+        self.assertAlmostEqual(width, expected_width, delta=2)
+        self.assertAlmostEqual(height, expected_height, delta=2)
+
+    @unittest.skipIf(sys.platform.startswith("darwin"), "Not supported on MacOS")
+    def test_readback_viewport(self):
+        self.marionette.navigate(short)
+        with self.marionette.using_prefs({"remote.screenshot.use_readback": True}):
+            screenshot = self.marionette.screenshot(full=False)
+        self.assert_readback_viewport(screenshot)
+
+    @unittest.skipIf(sys.platform.startswith("darwin"), "Not supported on MacOS")
+    def test_readback_full_page_degrades_to_viewport(self):
+        # Readback can only return composited pixels, so a full-document
+        # capture degrades to the viewport instead of the scroll dimensions.
+        self.marionette.navigate(long)
+        with self.marionette.using_prefs({"remote.screenshot.use_readback": True}):
+            screenshot = self.marionette.screenshot()
+        self.assert_readback_viewport(screenshot)
+
+    @unittest.skipIf(sys.platform.startswith("darwin"), "Not supported on MacOS")
+    def test_readback_element_degrades_to_viewport(self):
+        self.marionette.navigate(box)
+        el = self.marionette.find_element(By.TAG_NAME, "div")
+        with self.marionette.using_prefs({"remote.screenshot.use_readback": True}):
+            screenshot = self.marionette.screenshot(element=el)
+        self.assert_readback_viewport(screenshot)
 
     def test_formats(self):
         self.marionette.navigate(box)

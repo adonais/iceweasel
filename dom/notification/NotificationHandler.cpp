@@ -12,6 +12,7 @@
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
+#include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "xpcprivate.h"
 
@@ -42,6 +43,14 @@ nsresult RespondOnClick(nsIPrincipal* aPrincipal, const nsAString& aScope,
 nsresult OpenWindowFor(nsIPrincipal* aPrincipal) {
   nsAutoCString origin;
   MOZ_TRY(aPrincipal->GetOriginNoSuffix(origin));
+
+  if (!StringBeginsWith(origin, "https://"_ns)) {
+    // We expect only secure context origins for web notifications.
+    // (Simple https check is sufficient for this case, as we do not expect
+    // chrome script nor webextensions to hit this path as they are expected to
+    // use different APIs that do not involve service workers.)
+    return NS_ERROR_INVALID_ARG;
+  }
 
   // XXX: We should be able to just pass nsIPrincipal directly
   mozilla::ipc::PrincipalInfo info{};
@@ -82,13 +91,6 @@ NS_IMETHODIMP NotificationHandler::RespondOnClick(
 
   nsAutoCString origin;
   MOZ_TRY(aPrincipal->GetOrigin(origin));
-  if (!StringBeginsWith(origin, "https://"_ns)) {
-    // We expect only secure context origins for web notifications.
-    // (Simple https check is sufficient for this case, as we do not expect
-    // chrome script nor webextensions to hit this path as they are expected to
-    // use different APIs that do not involve service workers.)
-    return NS_ERROR_INVALID_ARG;
-  }
 
   bool isPrivate = aPrincipal->GetIsInPrivateBrowsing();
   nsCOMPtr<nsINotificationStorage> storage = GetNotificationStorage(isPrivate);
@@ -130,6 +132,14 @@ NS_IMETHODIMP NotificationHandler::RespondOnClick(
 
           nsAutoString scope;
           MOZ_TRY(entry->GetServiceWorkerRegistrationScope(scope));
+
+          nsCOMPtr<nsIURI> scopeURI;
+          MOZ_TRY(NS_NewURI(getter_AddRefs(scopeURI), scope));
+
+          ServiceWorkerScopeIsValid(principal, scopeURI, aRv);
+          if (aRv.Failed()) {
+            return NS_OK;
+          }
 
           IPCNotification notification =
               MOZ_TRY(NotificationStorageEntry::ToIPC(*entry));

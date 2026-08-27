@@ -16,7 +16,6 @@ EXTRA_JS_MODULES["components-utils"] = [
     "mozjexl.sys.mjs",
     "Sampling.sys.mjs",
     "WindowsInstallsInfo.sys.mjs",
-    "WindowsVersionInfo.sys.mjs",
 ]
 
 XPCOM_MANIFESTS += [

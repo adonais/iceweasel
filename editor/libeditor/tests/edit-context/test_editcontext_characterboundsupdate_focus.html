@@ -1,0 +1,53 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that characterboundsupdate is fired when EditContext editor is focused.</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div></div>
+<script>
+'use strict';
+
+const host = document.querySelector('div');
+const editContext = new EditContext();
+host.editContext = editContext;
+
+function check(func, expectFire, message) {
+  let fired = false;
+  editContext.addEventListener('characterboundsupdate', e => {
+    editContext.updateCharacterBounds(e.rangeStart,
+      new Array(e.rangeEnd - e.rangeStart).fill(new DOMRect(1,1,1,1)));
+    fired = true;
+  }, {once: true});
+  func();
+  is(fired, expectFire, `Should${expectFire ? " " : " not "} fire characterboundsupdate when ${message}.`);
+}
+
+check(() => {
+  editContext.updateText(0, 0, 'hello');
+}, false, 'text is updated while EditContext is not active');
+check(() => {
+  editContext.updateSelection(3, 3);
+}, false, 'selection is updated while EditContext is not active');
+check(() => {
+  host.focus();
+}, true, 'EditContext becomes active due to focusing');
+check(() => {
+  host.blur();
+  host.focus();
+}, false, 'EditContext is refocused without text or selection or position changing');
+host.blur();
+check(() => {
+  editContext.updateText(0, 0, 'something');
+}, false, 'text is updated after EditContext is blurred');
+check(() => {
+  host.focus();
+}, true, 'EditContext becomes active again after text was changed while it was unfocused');
+
+
+</script>
+</body>
+</html>

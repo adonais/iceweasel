@@ -84,7 +84,7 @@ index 12405e1646..b5148dff8c 100644
  // Base extension class for RTP header extensions which are strings.
  // Subclasses must defined kId and kUri static constexpr members.
 diff --git a/modules/rtp_rtcp/source/rtp_packet.cc b/modules/rtp_rtcp/source/rtp_packet.cc
-index 234b8e9c59..f76fc11b20 100644
+index 3fc8044d55..ef78a45945 100644
 --- a/modules/rtp_rtcp/source/rtp_packet.cc
 +++ b/modules/rtp_rtcp/source/rtp_packet.cc
 @@ -194,7 +194,9 @@ void RtpPacket::ZeroMutableExtensions() {
@@ -138,10 +138,10 @@ index 7293a99aee..5de673c258 100644
    RTC_CHECK_NOTREACHED();
  }
 diff --git a/test/fuzzers/rtp_packet_fuzzer.cc b/test/fuzzers/rtp_packet_fuzzer.cc
-index a49bf15938..81c7a5428e 100644
+index 21479a54ae..4d914ccdfd 100644
 --- a/test/fuzzers/rtp_packet_fuzzer.cc
 +++ b/test/fuzzers/rtp_packet_fuzzer.cc
-@@ -88,11 +88,13 @@ void FuzzOneInput(FuzzDataHelper fuzz_data) {
+@@ -89,11 +89,13 @@ void FuzzOneInput(FuzzDataHelper fuzz_data) {
          packet.GetExtension<AudioLevelExtension>(&audio_level);
          break;
        }
@@ -155,7 +155,7 @@ index a49bf15938..81c7a5428e 100644
        case kRtpExtensionAbsoluteSendTime:
          uint32_t sendtime;
          packet.GetExtension<AbsoluteSendTime>(&sendtime);
-@@ -182,11 +184,13 @@ void FuzzOneInput(FuzzDataHelper fuzz_data) {
+@@ -183,11 +185,13 @@ void FuzzOneInput(FuzzDataHelper fuzz_data) {
          CorruptionDetectionMessage message;
          packet.GetExtension<CorruptionDetectionExtension>(&message);
          break;

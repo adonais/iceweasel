@@ -45,6 +45,7 @@ function testValues(trimmedProtocol, notTrimmedProtocol) {
 add_task(async function () {
   const PREF_TRIM_URLS = "browser.urlbar.trimURLs";
   const PREF_TRIM_HTTPS = "browser.urlbar.trimHttps";
+  const PREF_TRIM_WWW = "browser.urlbar.trimWww";
   const PREF_SCOTCHBONNET = "browser.urlbar.scotchBonnet.enableOverride";
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
@@ -53,11 +54,13 @@ add_task(async function () {
     BrowserTestUtils.removeTab(tab);
     Services.prefs.clearUserPref(PREF_TRIM_URLS);
     Services.prefs.clearUserPref(PREF_TRIM_HTTPS);
+    Services.prefs.clearUserPref(PREF_TRIM_WWW);
     Services.prefs.clearUserPref(PREF_SCOTCHBONNET);
     gURLBar.setURI();
   });
 
   Services.prefs.setBoolPref(PREF_TRIM_HTTPS, false);
+  Services.prefs.setBoolPref(PREF_TRIM_WWW, false);
   Services.prefs.setBoolPref(PREF_SCOTCHBONNET, false);
 
   // Avoid search service sync init warnings due to URIFixup, when running the
@@ -70,6 +73,24 @@ add_task(async function () {
   Services.prefs.setBoolPref(PREF_TRIM_HTTPS, true);
   testValues("https://", "http://");
   Services.prefs.setBoolPref(PREF_TRIM_HTTPS, false);
+
+  // With trimWww on, the "www." prefix should also be stripped, independently
+  // of which protocol is trimmed. Because the bare domain can resolve to a
+  // different host, focusing the urlbar restores the full URL (hence the
+  // on-focus target is the untrimmed value, not the bare domain).
+  Services.prefs.setBoolPref(PREF_TRIM_WWW, true);
+  testVal("http://www.mozilla.org/", "http://www.mozilla.org/");
+  // ww. and www2. are not affected: the trim only matches a literal "www.".
+  testVal("http://www2.mozilla.org/", "www2.mozilla.org");
+  testVal("http://wwwfoo.mozilla.org/", "wwwfoo.mozilla.org");
+  // www. on a subdomain (not at the start of the host) is not stripped.
+  testVal("http://foo.www.mozilla.org/", "foo.www.mozilla.org");
+  // www. trimming combines with protocol trimming.
+  Services.prefs.setBoolPref(PREF_TRIM_HTTPS, true);
+  testVal("https://www.mozilla.org/", "https://www.mozilla.org/");
+  testVal("http://www.mozilla.org/", "http://www.mozilla.org");
+  Services.prefs.setBoolPref(PREF_TRIM_HTTPS, false);
+  Services.prefs.setBoolPref(PREF_TRIM_WWW, false);
 
   // Behaviour for hosts with no dots depends on the whitelist:
   let fixupWhitelistPref = "browser.fixup.domainwhitelist.localhost";

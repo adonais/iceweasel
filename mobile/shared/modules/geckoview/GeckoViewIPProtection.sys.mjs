@@ -180,6 +180,20 @@ export const GeckoViewIPProtection = {
         break;
       }
       case "GeckoView:IPProtection:Activate": {
+        // When the proxy is already active, an Activate request is treated as a
+        // request to switch the connection to the given country.
+        if (lazy.IPPProxyManager.state === "active") {
+          const { switched, error } =
+            lazy.IPPProxyManager.switch(aData?.country) ?? {};
+          if (error) {
+            aCallback.onError(error);
+          } else if (switched) {
+            aCallback.onSuccess();
+          } else {
+            aCallback.onError("generic-error");
+          }
+          break;
+        }
         lazy.IPPProxyManager.start(
           aData?.userAction ?? true,
           aData?.inPrivateBrowsing ?? false,

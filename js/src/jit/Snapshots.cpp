@@ -582,12 +582,6 @@ RValueAllocation SnapshotReader::readAllocation() {
   return RValueAllocation::read(allocReader_);
 }
 
-SnapshotWriter::SnapshotWriter()
-    // Based on the measurements made in Bug 962555 comment 20, this length
-    // should be enough to prevent the reallocation of the hash table for at
-    // least half of the compilations.
-    : allocMap_(32) {}
-
 RecoverReader::RecoverReader(SnapshotReader& snapshot, const uint8_t* recovers,
                              uint32_t size)
     : reader_(nullptr, nullptr),

@@ -64,6 +64,10 @@ const bootstrap = {
     ReactDOM.render(provider, this._root);
     message.post(window, "init:done");
 
+    this.mql = window.matchMedia("(max-width: 800px)");
+    this.mql.addEventListener("change", this.onNarrowMediaQueryChange);
+    this.onNarrowMediaQueryChange({ matches: this.mql.matches });
+
     this.destroy = this.destroy.bind(this);
     window.addEventListener("unload", this.destroy, { once: true });
   },
@@ -73,6 +77,9 @@ const bootstrap = {
 
     // Prevents any further action from being dispatched
     this.store.dispatch(START_IGNORE_ACTION);
+
+    this.mql.removeEventListener("change", this.onNarrowMediaQueryChange);
+    this.mql = null;
 
     // unmount to stop async action and renders after destroy
     ReactDOM.unmountComponentAtNode(this._root);
@@ -96,6 +103,13 @@ const bootstrap = {
       return Promise.resolve();
     }
     return this.store.dispatch(action);
+  },
+
+  onNarrowMediaQueryChange({ matches }) {
+    window.postMessage(
+      { type: "narrow-media-query-change", isNarrowLayout: matches },
+      "*"
+    );
   },
 };
 

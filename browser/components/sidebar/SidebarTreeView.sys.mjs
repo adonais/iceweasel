@@ -8,9 +8,10 @@
  * @typedef {object} TreeViewNode
  *
  * @property {"card-summary" | "folder" | "row" | "separator" | "empty-folder"} type
- * @property {Element} [list] - The parent <tab-list>.
- * @property {Element} [card] - The parent <moz-card>.
+ * @property {Element} [list] - The parent `<tab-list>`.
+ * @property {Element} [card] - The parent `<moz-card>`.
  * @property {object} [item] - The object from `tabItems`.
+ * @property {number} [index] - The item's index within its list's `tabItems`.
  * @property {Element} domNode - The rendered DOM element, or null if not rendered.
  */
 
@@ -43,6 +44,20 @@ export class SidebarTreeView {
    */
   #selectionAnchor = { list: null, guid: null };
 
+  /**
+   * The node the user last navigated to.
+   *
+   * @type {TreeViewNode}
+   */
+  #activeNode = null;
+
+  /**
+   * The node that currently owns the single tab stop.
+   *
+   * @type {TreeViewNode}
+   */
+  #tabStopNode = null;
+
   constructor(host, { multiSelect = true } = {}) {
     this.host = host;
     host.addController(this);
@@ -56,6 +71,7 @@ export class SidebarTreeView {
     this.host.addEventListener("set-anchor", this);
     this.host.addEventListener("shift-select", this);
     this.host.addEventListener("focus-row", this);
+    this.host.addEventListener("folder-toggle", this);
   }
 
   hostDisconnected() {
@@ -63,6 +79,7 @@ export class SidebarTreeView {
     this.host.removeEventListener("set-anchor", this);
     this.host.removeEventListener("shift-select", this);
     this.host.removeEventListener("focus-row", this);
+    this.host.removeEventListener("folder-toggle", this);
   }
 
   /**
@@ -78,7 +95,17 @@ export class SidebarTreeView {
   }
 
   hostUpdated() {
-    delete this._treeNodes;
+    this.#invalidateCachedTreeNodes();
+    this.#updateTabStop();
+    const listsToUpdate = new Set(
+      this.treeNodes
+        .values()
+        .map(node => node.list)
+        .filter(list => !!list?.rootVirtualListEl)
+    );
+    for (const list of listsToUpdate) {
+      list.requestVirtualListUpdate();
+    }
   }
 
   /**
@@ -100,7 +127,18 @@ export class SidebarTreeView {
       case "focus-row":
         this.#handleFocusRow(event);
         break;
+      case "folder-toggle":
+        this.#invalidateCachedTreeNodes();
+        break;
     }
+  }
+
+  /**
+   * Clear the cached list of tree nodes, when the cache no longer matches what
+   * is shown in the DOM (i.e. after toggling a folder or rebuilding the tree).
+   */
+  #invalidateCachedTreeNodes() {
+    this._treeNodes = null;
   }
 
   #setAnchor(list, guid) {
@@ -247,7 +285,6 @@ export class SidebarTreeView {
     const node = this.#findNode(this.treeNodes, from);
     const expandStateChanged = node && this.host.setExpanded(node, false);
     if (expandStateChanged) {
-      delete this._treeNodes;
       return;
     }
 
@@ -283,33 +320,48 @@ export class SidebarTreeView {
     const node = this.#findNode(this.treeNodes, header);
     const expandStateChanged = node && this.host.setExpanded(node, true);
     if (expandStateChanged) {
-      delete this._treeNodes;
       return;
     }
     this.#navigate({ direction: "down", keepSelection: true, from: header });
   }
 
   /**
-   * Focus the DOM element corresponding to a tree view node.
+   * Focus the DOM element corresponding to a tree view node, making it the
+   * active tab stop.
    *
    * @param {TreeViewNode} node
    */
   #focusNode(node) {
     const el = node.domNode;
-    if (el) {
-      this.#focusElement(el);
+    if (!el) {
+      return;
     }
+    const prevList =
+      this.#tabStopNode?.type !== "card-summary"
+        ? this.#tabStopNode?.list
+        : null;
+    this.#activeNode = node;
+    const newList = node.type !== "card-summary" ? node.list : null;
+    if (newList) {
+      newList.activeIndex = node.index;
+    }
+    this.#updateTabStop();
+    prevList?.requestVirtualListUpdate();
+    newList?.requestVirtualListUpdate();
+    el.focus({ preventScroll: true });
+    el.scrollIntoView({ block: "nearest" });
   }
 
   /**
-   * Move focus to an element without scrolling the page, then nudge it into
-   * view if the element is offscreen.
+   * Find and focus the node corresponding to this element.
    *
    * @param {Element} element
    */
   #focusElement(element) {
-    element.focus({ preventScroll: true });
-    element.scrollIntoView({ block: "nearest" });
+    const node = this.#findNode(this.treeNodes, element);
+    if (node) {
+      this.#focusNode(node);
+    }
   }
 
   /**
@@ -549,4 +601,56 @@ export class SidebarTreeView {
     this.#clearSelection();
     this.#resetAnchor();
   }
+
+  resetActiveNode() {
+    this.#activeNode = null;
+    this.host.requestUpdate();
+  }
+
+  /**
+   * Whether the row identified by (list, guid) currently owns the tab stop.
+   *
+   * @param {Element} list
+   * @param {string} guid
+   * @returns {boolean}
+   */
+  isActiveNode(list, guid) {
+    return isSameNode(this.#tabStopNode, { list, item: { guid } });
+  }
+
+  /**
+   * Resolve which node owns the single tab stop and reflect it to the DOM.
+   */
+  #updateTabStop() {
+    const nodes = this.treeNodes;
+    let newTabStop = this.#activeNode;
+    if (!newTabStop || !nodes.some(node => isSameNode(node, newTabStop))) {
+      // Tab stop defaults to the first card header.
+      newTabStop = nodes[0];
+    }
+    this.#tabStopNode = newTabStop;
+
+    // Update tabindex for card headers. (Should be -1 unless actively selected.)
+    const cardHeaders = nodes.filter(({ type }) => type === "card-summary");
+    for (const header of cardHeaders) {
+      header.card.summaryTabIndex = isSameNode(header, newTabStop) ? 0 : -1;
+    }
+  }
+}
+
+/**
+ * Check whether two nodes are equal.
+ *
+ * @param {TreeViewNode} a
+ * @param {TreeViewNode} b
+ * @returns {boolean}
+ */
+function isSameNode(a, b) {
+  if (!a || !b) {
+    return false;
+  }
+  if (a.type === "card-summary" || b.type === "card-summary") {
+    return a.type === b.type && a.card === b.card;
+  }
+  return a.list === b.list && a.item?.guid === b.item?.guid;
 }

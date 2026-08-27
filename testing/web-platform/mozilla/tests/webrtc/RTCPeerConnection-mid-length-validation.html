@@ -1,0 +1,66 @@
+<!doctype html>
+<meta charset=utf-8>
+<meta name="timeout" content="long">
+<title>RTCPeerConnection MID Length Validation (Mozilla-specific)</title>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="/webrtc/RTCPeerConnection-helper.js"></script>
+<script>
+'use strict';
+
+// This test is in the mozilla subdirectory because it tests behavior that is not
+// mandated by the WebRTC specification: the spec does not require a specific MID
+// length limit. RFC 8285 actually allows longer MID values in RTP headers when
+// two-byte header extensions are used; the 16-byte maximum comes from RTCP-SDES,
+// and the WebRTC spec recommends very short MID values. Browsers converge on a
+// 16-byte maximum, so this test is expected to pass in Chrome and Safari as well.
+
+// The MID length limit is enforced while parsing a description. A locally
+// generated MID cannot be changed via setLocalDescription, so the limit is
+// exercised by delivering a MID of the desired length in a remote offer.
+// Builds an otherwise-valid single-m-section offer whose MID (and matching
+// BUNDLE tag) is set to |mid|.
+async function offerSdpWithMid(mid) {
+  const pc = new RTCPeerConnection();
+  pc.addTransceiver('audio');
+  const offer = await pc.createOffer();
+  pc.close();
+  return offer.sdp
+    .replace(/a=group:BUNDLE [^\r\n]+/, `a=group:BUNDLE ${mid}`)
+    .replace(/a=mid:[^\r\n]+/, `a=mid:${mid}`);
+}
+
+promise_test(async t => {
+  const pc = new RTCPeerConnection();
+  t.add_cleanup(() => pc.close());
+
+  const mid16 = '0123456789ABCDEF'; // exactly 16 characters
+  const sdp = await offerSdpWithMid(mid16);
+
+  await pc.setRemoteDescription({type: 'offer', sdp});
+  // Should succeed without throwing
+}, 'MID with 16 bytes should be accepted (maximum for RTCP-SDES)');
+
+promise_test(async t => {
+  const pc = new RTCPeerConnection();
+  t.add_cleanup(() => pc.close());
+
+  const mid17 = '0123456789ABCDEFG'; // 17 characters
+  const sdp = await offerSdpWithMid(mid17);
+
+  return promise_rejects_dom(t, 'OperationError',
+        pc.setRemoteDescription({type: 'offer', sdp}));
+}, 'MID with 17 bytes should be rejected (exceeds 16-byte limit for RTCP-SDES)');
+
+promise_test(async t => {
+  const pc = new RTCPeerConnection();
+  t.add_cleanup(() => pc.close());
+
+  const midNormal = 'audio-1'; // 7 characters
+  const sdp = await offerSdpWithMid(midNormal);
+
+  await pc.setRemoteDescription({type: 'offer', sdp});
+  // Should succeed without throwing
+}, 'MID with normal length should be accepted');
+
+</script>

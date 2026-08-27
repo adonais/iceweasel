@@ -52,6 +52,14 @@ class TreeWalker final : public nsISupports, public nsTraversal {
   nsCOMPtr<nsINode> mCurrentNode;
 
   /*
+   * Implements NextNode. NodePtr is nsINode* when no filter is set, in which
+   * case the walk cannot run script and needs no strong references, and
+   * nsCOMPtr<nsINode> otherwise.
+   */
+  template <typename NodePtr>
+  already_AddRefed<nsINode> NextNodeInternal(ErrorResult& aResult);
+
+  /*
    * Implements FirstChild and LastChild which only vary in which direction
    * they search.
    * @param aReversed Controls whether we search forwards or backwards

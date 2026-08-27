@@ -459,7 +459,6 @@ bool WebGLContext::EnsureDefaultFB() {
     return true;
   }
 
-  const bool depthStencil = mOptions.depth || mOptions.stencil;
   auto attemptSize = gfx::IntSize{mRequestedSize.x, mRequestedSize.y};
 
   while (attemptSize.width || attemptSize.height) {
@@ -469,14 +468,15 @@ bool WebGLContext::EnsureDefaultFB() {
     [&]() {
       if (mOptions.antialias) {
         MOZ_ASSERT(!mDefaultFB);
-        mDefaultFB = gl::MozFramebuffer::Create(gl, attemptSize, mMsaaSamples,
-                                                depthStencil);
+        mDefaultFB = gl::MozFramebuffer::Create(
+            gl, attemptSize, mMsaaSamples, mOptions.depth, mOptions.stencil);
         if (mDefaultFB) return;
         if (mOptionsFrozen) return;
       }
 
       MOZ_ASSERT(!mDefaultFB);
-      mDefaultFB = gl::MozFramebuffer::Create(gl, attemptSize, 0, depthStencil);
+      mDefaultFB = gl::MozFramebuffer::Create(gl, attemptSize, 0,
+                                              mOptions.depth, mOptions.stencil);
     }();
 
     if (mDefaultFB) break;
@@ -1393,6 +1393,15 @@ bool WebGLContext::PushRemoteTexture(
   Maybe<layers::SurfaceDescriptor> desc;
   if (surf) {
     desc = surf->ToSurfaceDescriptor();
+    // Move surface's GpuFence to the SurfaceDescriptor. Done here rather than
+    // in SharedSurface_MacIOSurface::ToSurfaceDescriptor() as we know this
+    // surface will not be sent cross process, but that's not true for all
+    // callers of SharedSurface::ToSurfaceDescriptor().
+    if (desc && desc->type() ==
+                    layers::SurfaceDescriptor::TSurfaceDescriptorMacIOSurface) {
+      auto& ioDesc = desc->get_SurfaceDescriptorMacIOSurface();
+      ioDesc.gpuFence() = surf->TakeGpuFence();
+    }
   }
   if (!desc) {
     if (surf && surf->mDesc.type != gl::SharedSurfaceType::Basic) {
@@ -1978,7 +1987,7 @@ const gl::MozFramebuffer* WebGLContext::GetDefaultFBForRead(
 
   if (!mResolvedDefaultFB) {
     mResolvedDefaultFB =
-        gl::MozFramebuffer::Create(gl, mDefaultFB->mSize, 0, false);
+        gl::MozFramebuffer::Create(gl, mDefaultFB->mSize, 0, false, false);
     if (!mResolvedDefaultFB) {
       gfxCriticalNote << FuncName() << ": Failed to create mResolvedDefaultFB.";
       return nullptr;
@@ -2450,7 +2459,7 @@ Maybe<webgl::IndexedName> webgl::ParseIndexed(const std::string& str) {
   const auto index =
       std::stoull(str.substr(firstDigit, closeBracket - firstDigit));
   std::string name = str.substr(0, openBracket);
-  return Some(webgl::IndexedName{name, index});
+  return Some(webgl::IndexedName{std::move(name), index});
 }
 
 // ExplodeName("foo.bar[3].x") -> ["foo", ".", "bar", "[", "3", "]", ".", "x"]

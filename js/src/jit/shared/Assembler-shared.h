@@ -43,7 +43,7 @@
 #  define JS_CODELABEL_LINKMODE
 #endif
 
-using js::wasm::FaultingCodeOffset;
+using js::wasm::FaultingCodeRange;
 
 namespace js {
 namespace jit {
@@ -640,6 +640,14 @@ class MemoryAccessDesc {
   }
 };
 
+// Zero-extend an index from signed Int32 to Int64.
+//
+// Describes when an index register must be zero-extended to 64-bit before
+// performing memory accesses. Used for architectures which implicitly
+// sign-extend registers to 64-bit when performing 32-bit operations, e.g.
+// MIPS64/LOONG64/RISCV64.
+enum class ZeroExtendIndex : bool { No, Yes };
+
 }  // namespace wasm
 
 namespace jit {
@@ -709,19 +717,19 @@ class AssemblerShared {
     enoughMemory_ &= callSites_.append(desc, retAddr.offset());
     enoughMemory_ &= callSiteTargets_.emplaceBack(std::forward<Args>(args)...);
   }
-  void append(wasm::Trap trap, wasm::TrapMachineInsn insn, uint32_t pcOffset,
-              const wasm::TrapSiteDesc& desc) {
-    enoughMemory_ &= trapSites_.append(trap, insn, pcOffset, desc);
+  // Append the specified trap to our collection thereof; make no attempt to
+  // verify that `fcr` or `insn` is correct.  Don't call this directly; use
+  // MacroAssembler::appendAndVerify instead.
+  void appendNoVerify(wasm::Trap trap, wasm::TrapMachineInsn insn,
+                      FaultingCodeRange fcr, const wasm::TrapSiteDesc& desc) {
+    enoughMemory_ &= trapSites_.append(trap, insn, fcr, desc);
 #ifdef JS_JITSPEW
     if (JitSpewEnabled(JitSpew_Codegen)) {
-      JitSpew(jit::JitSpew_Codegen, "%06x  # <-- @ w::TrapSiteDesc, kind = %s",
-              pcOffset, NameOfTrap(trap));
+      JitSpew(
+          jit::JitSpew_Codegen, "%06x,%06x  # <-- @ w::TrapSiteDesc, kind = %s",
+          fcr.offsetUnchecked(), fcr.resumeOffsetUnchecked(), NameOfTrap(trap));
     }
 #endif
-  }
-  void append(const wasm::MemoryAccessDesc& access, wasm::TrapMachineInsn insn,
-              FaultingCodeOffset pcOffset) {
-    append(wasm::Trap::OutOfBounds, insn, pcOffset.get(), access.trapDesc());
   }
   void append(wasm::SymbolicAccess access) {
     enoughMemory_ &= symbolicAccesses_.append(access);

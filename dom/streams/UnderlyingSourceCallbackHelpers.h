@@ -271,6 +271,13 @@ class InputToReadableStreamAlgorithms
   void ErrorPropagation(JSContext* aCx, ReadableStream* aStream,
                         nsresult aError);
 
+  // Builds the JS error value used to error the stream when the input stream
+  // closes with a failure status other than NS_BASE_STREAM_CLOSED. The default
+  // is a generic TypeError; subclasses may override to map specific nsresults
+  // to more meaningful errors (e.g. a named DOMException).
+  virtual void BuildErrorValue(JSContext* aCx, nsresult aError,
+                               JS::MutableHandle<JS::Value> aErrorValue);
+
   // Common methods
 
   bool IsClosed() { return !mInput; }

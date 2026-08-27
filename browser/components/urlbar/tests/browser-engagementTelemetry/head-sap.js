@@ -5,6 +5,10 @@
 
 /* import-globals-from head.js */
 
+// The `input` option of the test functions below is the string searched for in
+// the session the sap is asserted on. Tests that need a specific kind of result,
+// for example a Suggest result, pass a string matching it.
+
 async function doSapTest(testFn, { private: isPrivate } = {}) {
   if (isPrivate) {
     await doTest(async function () {
@@ -25,10 +29,15 @@ async function doSapTest(testFn, { private: isPrivate } = {}) {
   }
 }
 
-async function doUrlbarNewTabTest({ trigger, assert, private: isPrivate }) {
+async function doUrlbarNewTabTest({
+  trigger,
+  assert,
+  private: isPrivate,
+  input = "x",
+}) {
   await doSapTest(
     async function (win) {
-      await openPopup("x", UrlbarTestUtils, win);
+      await openPopup(input, UrlbarTestUtils, win);
       await trigger(win);
       await assert();
     },
@@ -36,10 +45,15 @@ async function doUrlbarNewTabTest({ trigger, assert, private: isPrivate }) {
   );
 }
 
-async function doUrlbarTest({ trigger, assert, private: isPrivate }) {
+async function doUrlbarTest({
+  trigger,
+  assert,
+  private: isPrivate,
+  input = "x",
+}) {
   await doSapTest(
     async function (win) {
-      await openPopup("x", UrlbarTestUtils, win);
+      await openPopup(input, UrlbarTestUtils, win);
       await doEnter({}, win);
       await openPopup("y", UrlbarTestUtils, win);
       await trigger(win);
@@ -49,7 +63,12 @@ async function doUrlbarTest({ trigger, assert, private: isPrivate }) {
   );
 }
 
-async function doSearchbarTest({ trigger, assert, private: isPrivate }) {
+async function doSearchbarTest({
+  trigger,
+  assert,
+  private: isPrivate,
+  input = "x",
+}) {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.search.widget.new", true]],
   });
@@ -60,7 +79,7 @@ async function doSearchbarTest({ trigger, assert, private: isPrivate }) {
       await cuiTestUtils.addSearchBar();
 
       try {
-        await openPopup("x", SearchbarTestUtils, win);
+        await openPopup(input, SearchbarTestUtils, win);
         await doEnter({}, win);
         await openPopup("y", SearchbarTestUtils, win);
         await trigger(win);
@@ -75,7 +94,12 @@ async function doSearchbarTest({ trigger, assert, private: isPrivate }) {
   await SpecialPowers.popPrefEnv();
 }
 
-async function doHandoffTest({ trigger, assert, private: isPrivate }) {
+async function doHandoffTest({
+  trigger,
+  assert,
+  private: isPrivate,
+  input = "x",
+}) {
   await doSapTest(
     async function (win) {
       const browser = win.gBrowser.selectedBrowser;
@@ -101,7 +125,7 @@ async function doHandoffTest({ trigger, assert, private: isPrivate }) {
         handoffUI.shadowRoot.querySelector(".fake-editable").click();
       });
       await onFocus;
-      EventUtils.synthesizeKey("x", {}, win);
+      EventUtils.sendString(input, win);
       await UrlbarTestUtils.promiseSearchComplete(win);
       await trigger(win);
       await assert();
@@ -110,7 +134,12 @@ async function doHandoffTest({ trigger, assert, private: isPrivate }) {
   );
 }
 
-async function doUrlbarAddonpageTest({ trigger, assert, private: isPrivate }) {
+async function doUrlbarAddonpageTest({
+  trigger,
+  assert,
+  private: isPrivate,
+  input = "x",
+}) {
   const extensionData = {
     files: {
       "page.html": "<!DOCTYPE html>hello",
@@ -127,7 +156,7 @@ async function doUrlbarAddonpageTest({ trigger, assert, private: isPrivate }) {
       const onLoad = BrowserTestUtils.browserLoaded(browser);
       BrowserTestUtils.startLoadingURIString(browser, extensionURL);
       await onLoad;
-      await openPopup("x", UrlbarTestUtils, win);
+      await openPopup(input, UrlbarTestUtils, win);
       await trigger(win);
       await assert();
     },

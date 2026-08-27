@@ -79,6 +79,15 @@ exports.CommandsFactory = {
     client,
     enableWindowGlobalThreadActors = false,
   } = {}) {
+    if (
+      (!client || client.isLocalClient) &&
+      !Services.prefs.getBoolPref("devtools.chrome.enabled")
+    ) {
+      throw new Error(
+        "Unable to instantiate a parent process command without devtools.chrome.enabled pref set to true"
+      );
+    }
+
     if (!client) {
       client = await createLocalClient();
     }

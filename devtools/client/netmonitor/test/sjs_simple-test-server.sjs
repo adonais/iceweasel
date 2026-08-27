@@ -8,6 +8,7 @@ function handleRequest(request, response) {
   response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   response.setHeader("Pragma", "no-cache");
   response.setHeader("Expires", "0");
+  response.setHeader("No-Vary-Search", "key-order");
 
   response.setHeaderNoCheck("Set-Cookie", "bob=true; Max-Age=10; HttpOnly");
   response.setHeaderNoCheck("Set-Cookie", "tom=cool; Max-Age=10; HttpOnly");

@@ -765,7 +765,7 @@ void Serial::ForgetPort(const nsAString& aPortId) {
         nsString portId(aPortId);
         NS_DispatchToMainThread(NS_NewRunnableFunction(
             "Serial::ForgetPort cross-context",
-            [tsRef = std::move(tsRef), portId]() {
+            [tsRef = std::move(tsRef), portId = std::move(portId)]() {
               RefPtr<Serial> windowSerial =
                   FindWindowSerialForWorkerPrivate(tsRef->Private());
               if (windowSerial) {

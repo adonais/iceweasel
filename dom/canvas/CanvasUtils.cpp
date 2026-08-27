@@ -359,7 +359,7 @@ bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
     nsPIDOMWindowOuter* win = aDocument->GetWindow();
     if (RefPtr<dom::BrowserChild> browserChild =
             dom::BrowserChild::GetFrom(win)) {
-      browserChild->SendShowCanvasPermissionPrompt(origin,
+      browserChild->SendShowCanvasPermissionPrompt(std::move(origin),
                                                    hidePermissionDoorhanger);
     }
   };

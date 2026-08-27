@@ -7,7 +7,7 @@ const DONE = -2;
   let m = parseModule('');
   assertEq(m.status, "New");
 
-  moduleLink(m);
+  moduleLoadAndLink(m);
   assertEq(m.asyncEvaluationOrder, UNSET);
   assertEq(m.status, "Linked");
 
@@ -19,7 +19,7 @@ const DONE = -2;
 {
   let m = parseModule('await 1;');
 
-  moduleLink(m);
+  moduleLoadAndLink(m);
   assertEq(m.asyncEvaluationOrder, UNSET);
 
   moduleEvaluate(m);
@@ -34,7 +34,7 @@ const DONE = -2;
 {
   let m = parseModule('await 1; throw 2;');
 
-  moduleLink(m);
+  moduleLoadAndLink(m);
   moduleEvaluate(m).catch(() => 0);
   assertEq(m.status, "EvaluatingAsync");
   assertEq(m.asyncEvaluationOrder, 0);
@@ -47,7 +47,7 @@ const DONE = -2;
 
 {
   let m = parseModule('throw 1; await 2;');
-  moduleLink(m);
+  moduleLoadAndLink(m);
   moduleEvaluate(m).catch(() => 0);
   assertEq(m.status, "EvaluatingAsync");
   assertEq(m.asyncEvaluationOrder, 0);
@@ -63,7 +63,7 @@ const DONE = -2;
   let a = registerModule('a', parseModule(''));
   let b = registerModule('b', parseModule('import {} from "a"; await 1;'));
 
-  moduleLink(b);
+  moduleLoadAndLink(b);
   moduleEvaluate(b);
   assertEq(a.status, "Evaluated");
   assertEq(a.asyncEvaluationOrder, UNSET);
@@ -82,7 +82,7 @@ const DONE = -2;
   let a = registerModule('a', parseModule('await 1;'));
   let b = registerModule('b', parseModule('import {} from "a";'));
 
-  moduleLink(b);
+  moduleLoadAndLink(b);
   moduleEvaluate(b);
   assertEq(a.status, "EvaluatingAsync");
   assertEq(a.asyncEvaluationOrder, 0);
@@ -104,7 +104,7 @@ const DONE = -2;
   let b = registerModule('b', parseModule('await 2;'));
   let c = registerModule('c', parseModule('import {} from "a"; import {} from "b";'));
 
-  moduleLink(c);
+  moduleLoadAndLink(c);
   moduleEvaluate(c);
   assertEq(a.status, "EvaluatingAsync");
   assertEq(a.asyncEvaluationOrder, 0);
@@ -128,7 +128,7 @@ const DONE = -2;
   let a = registerModule('a', parseModule('throw 1;'));
   let b = registerModule('b', parseModule('import {} from "a"; await 2;'));
 
-  moduleLink(b);
+  moduleLoadAndLink(b);
   moduleEvaluate(b).catch(() => 0);
   assertEq(a.status, "Evaluated");
   assertEq(a.asyncEvaluationOrder, UNSET);
@@ -143,7 +143,7 @@ const DONE = -2;
   let a = registerModule('a', parseModule('throw 1; await 2;'));
   let b = registerModule('b', parseModule('import {} from "a";'));
 
-  moduleLink(b);
+  moduleLoadAndLink(b);
   moduleEvaluate(b).catch(() => 0);
   assertEq(a.asyncEvaluationOrder, 0);
   assertEq(a.status, "EvaluatingAsync");
@@ -164,7 +164,7 @@ const DONE = -2;
   let a = registerModule('a', parseModule('await 1; throw 2;'));
   let b = registerModule('b', parseModule('import {} from "a";'));
 
-  moduleLink(b);
+  moduleLoadAndLink(b);
   moduleEvaluate(b).catch(() => 0);
   assertEq(a.status, "EvaluatingAsync");
   assertEq(a.asyncEvaluationOrder, 0);

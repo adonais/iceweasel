@@ -143,8 +143,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
   OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
   PhoneNumber: "resource://gre/modules/shared/PhoneNumber.sys.mjs",
-  Store:
-    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAutofill.sys.mjs",
 });
 
 const CryptoHash = Components.Constructor(
@@ -154,11 +152,6 @@ const CryptoHash = Components.Constructor(
 );
 
 const STORAGE_SCHEMA_VERSION = 1;
-
-// File name of the Application Services `autofill` SQLite store within the
-// profile directory. It is the sibling of the JSON profile that backs
-// addresses/credit cards (autofill-profiles.json).
-const AUTOFILL_STORE_FILE_NAME = "autofill.sqlite";
 
 // NOTE: It's likely this number can never change.
 // Please talk to the sync team before changing this!
@@ -1992,18 +1985,6 @@ export class FormAutofillStorageBase {
 
   getPassports() {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
-  }
-
-  /**
-   * @returns {Promise<Store>}
-   */
-  get rustStore() {
-    if (!this._rustStore) {
-      this._rustStore = lazy.Store.init(
-        PathUtils.join(PathUtils.profileDir, AUTOFILL_STORE_FILE_NAME)
-      );
-    }
-    return this._rustStore;
   }
 
   /**

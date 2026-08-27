@@ -27,6 +27,9 @@ struct CSSPropertyId;
 class ErrorResult;
 struct StyleNumericType;
 struct StyleNumericValue;
+template <typename T>
+struct StyleOptional;
+struct StyleUnitValue;
 
 namespace dom {
 
@@ -101,6 +104,11 @@ class CSSNumericValue : public CSSStyleValue {
   static already_AddRefed<CSSNumericValue> Parse(const GlobalObject& aGlobal,
                                                  const nsACString& aCssText,
                                                  ErrorResult& aRv);
+  // As above, but taking the parent directly so callers outside binding entry
+  // points can reuse the parsing.
+  static already_AddRefed<CSSNumericValue> Parse(nsISupports* aParent,
+                                                 const nsACString& aCssText,
+                                                 ErrorResult& aRv);
 
   // end of CSSNumbericValue Web IDL declarations
 
@@ -157,6 +165,11 @@ class CSSNumericValue : public CSSStyleValue {
                              nsACString& aDest) const;
 
   StyleNumericValue ToStyleNumericValue() const;
+
+  // Step 1-3 of:
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-to
+  StyleOptional<StyleUnitValue> ToStyleUnitValue(const nsACString& aUnit,
+                                                 ErrorResult& aRv) const;
 
  protected:
   virtual ~CSSNumericValue() = default;

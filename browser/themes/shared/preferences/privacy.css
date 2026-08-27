@@ -42,7 +42,7 @@
 }
 
 .loopback-network-icon {
-  list-style-image: url(chrome://browser/skin/notification-icons/local-host.svg);
+  list-style-image: url(chrome://global/skin/icons/local-host.svg);
 }
 
 .local-network-icon {

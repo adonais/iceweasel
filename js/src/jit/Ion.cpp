@@ -167,9 +167,13 @@ bool JitRuntime::generateTrampolines(JSContext* cx) {
   generateInvalidator(masm, &bailoutTail);
   rangeRecorder.recordOffset("Trampoline: Invalidator");
 
-  JitSpew(JitSpew_Codegen, "# Emitting EnterJIT sequence");
-  generateEnterJIT(cx, masm);
-  rangeRecorder.recordOffset("Trampoline: EnterJIT");
+  JitSpew(JitSpew_Codegen, "# Emitting EnterJIT [Normal] trampoline");
+  generateEnterJIT(cx, masm, EnterJitMode::Normal);
+  rangeRecorder.recordOffset("Trampoline: EnterJIT [Normal]");
+
+  JitSpew(JitSpew_Codegen, "# Emitting EnterJIT [GeneratorResume] trampoline");
+  generateEnterJIT(cx, masm, EnterJitMode::GeneratorResume);
+  rangeRecorder.recordOffset("Trampoline: EnterJIT [GeneratorResume]");
 
   JitSpew(JitSpew_Codegen, "# Emitting Pre Barrier for Value");
   valuePreBarrierOffset_ = generatePreBarrier(cx, masm, MIRType::Value);
@@ -385,13 +389,24 @@ void jit::LinkIonScript(JSContext* cx, HandleScript calleeScript) {
 
 uint8_t* jit::LazyLinkTopActivation(JSContext* cx,
                                     LazyLinkExitFrameLayout* frame) {
-  RootedScript calleeScript(
-      cx, ScriptFromCalleeToken(frame->jsFrame()->calleeToken()));
+  JitFrameLayout* jsFrame = frame->jsFrame();
+  RootedScript calleeScript(cx, ScriptFromCalleeToken(jsFrame->calleeToken()));
 
   LinkIonScript(cx, calleeScript);
 
   MOZ_ASSERT(calleeScript->hasBaselineScript());
   MOZ_ASSERT(calleeScript->jitCodeRaw());
+
+  // Enter the Baseline code instead of Ion code in two cases:
+  //
+  // * The caller is resuming a suspended generator: the Ion prologue doesn't
+  //   support this.
+  // * The caller pushed a trial-inlining ICScript for us: it's only used by
+  //   Baseline code.
+  FrameDescriptor descriptor = jsFrame->descriptor();
+  if (descriptor.isResumingGenerator() || descriptor.hasInlinedICScript()) {
+    return calleeScript->baselineScript()->method()->raw();
+  }
 
   return calleeScript->jitCodeRaw();
 }

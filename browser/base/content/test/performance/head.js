@@ -302,7 +302,7 @@ async function ensureSearchIconVisible() {
     await TestUtils.waitForCondition(
       () =>
         UrlbarTestUtils.getSearchModeSwitcherIcon(window) !=
-        UrlbarUtils.ICON.SEARCH_GLASS
+        UrlbarShared.ICON.SEARCH_GLASS
     );
   }
 }
@@ -434,7 +434,7 @@ async function addDummyHistoryEntries(searchStr = "") {
 
   for (let i = 0; i < NUM_VISITS; ++i) {
     visits.push({
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       uri: `http://example.com/urlbar-reflows-${i}`,
       title: `Reflow test for URL bar entry #${i} - ${searchStr}`,
     });
@@ -1015,8 +1015,9 @@ async function runUrlbarTest(
   URLBar.focus();
   URLBar.value = SEARCH_TERM;
 
+  let BACKGROUND_LEFT, BACKGROUND_RIGHT;
   let SHADOW_OVERFLOW_LEFT, SHADOW_OVERFLOW_RIGHT, SHADOW_OVERFLOW_TOP;
-  let INLINE_MARGIN, VERTICAL_OFFSET;
+  let VERTICAL_OFFSET;
 
   let testFn = async function () {
     let popup = URLBar.view;
@@ -1068,11 +1069,28 @@ async function runUrlbarTest(
       await waitExtra();
     }
 
+    await UrlbarTestUtils.promisePopupClose(win);
+    URLBar.value = "";
+  };
+
+  // Measure geometry once, outside of withPerfObserver, so the forced layout
+  // and style reads below aren't counted as unexpected reflows during the
+  // observed openings. This opens the panel, measures, then closes it.
+  let measureGeometry = async function () {
+    if (keyed) {
+      EventUtils.synthesizeKey("ows-10"[0], {}, win);
+    } else {
+      await UrlbarTestUtils.promiseAutocompleteResultPopup({
+        window: win,
+        waitForFocus: SimpleTest.waitForFocus,
+        value: URLBar.value,
+      });
+    }
+    await UrlbarTestUtils.promiseSearchComplete(win);
+
     let shadowElem = win.document.querySelector("#urlbar > .urlbar-background");
     let shadow = getComputedStyle(shadowElem).boxShadow;
-
-    let inlineElem = win.document.querySelector("#urlbar");
-    let inlineMargin = getComputedStyle(inlineElem).marginInlineStart;
+    let backgroundRect = shadowElem.getBoundingClientRect();
 
     let offsetElem = win.document.querySelector("#urlbar-container");
     let verticalOffset = getComputedStyle(offsetElem).paddingTop;
@@ -1111,23 +1129,24 @@ async function runUrlbarTest(
     SHADOW_OVERFLOW_RIGHT = overflow.right + FUZZ_FACTOR;
     SHADOW_OVERFLOW_TOP = overflow.top + FUZZ_FACTOR;
 
-    // Margin applied to the breakout-extend urlbar
-    INLINE_MARGIN = -extractPixelValue(inlineMargin); // Flip symbol since this CSS value is negative.
     // The popover positioning requires this offset
     VERTICAL_OFFSET = -extractPixelValue(verticalOffset); // Flip symbol since this CSS value is positive.
 
+    BACKGROUND_LEFT = Math.floor(backgroundRect.left);
+    BACKGROUND_RIGHT = Math.ceil(backgroundRect.right);
+
     await UrlbarTestUtils.promisePopupClose(win);
-    URLBar.value = "";
+    URLBar.value = SEARCH_TERM;
   };
 
   let urlbarRect = URLBar.getBoundingClientRect();
+  await measureGeometry();
   await testFn();
   let expectedRects = {
     filter: rects => {
       const referenceRect = {
-        x1: Math.floor(urlbarRect.left) - INLINE_MARGIN - SHADOW_OVERFLOW_LEFT,
-        x2:
-          Math.floor(urlbarRect.right) + INLINE_MARGIN + SHADOW_OVERFLOW_RIGHT,
+        x1: BACKGROUND_LEFT - SHADOW_OVERFLOW_LEFT,
+        x2: BACKGROUND_RIGHT + SHADOW_OVERFLOW_RIGHT,
         y1: Math.floor(urlbarRect.top) + VERTICAL_OFFSET - SHADOW_OVERFLOW_TOP,
       };
 
@@ -1312,8 +1331,8 @@ async function checkLoadedScripts({
 // window for some reason. See bug 1445161. This function allows to deal with
 // that in a central place.
 function isLikelyFocusChange(rects, frame) {
-  if (rects.length >= 3 && rects.every(r => r.y2 < 100)) {
-    // There are at least 4 areas that changed near the top of the screen.
+  if (rects.length >= 2 && rects.every(r => r.y2 < 100)) {
+    // There are at least 2 areas that changed near the top of the screen.
     // Note that we need a bit more leeway than the titlebar height, because on
     // OSX other toolbarbuttons in the navigation toolbar also get disabled
     // state.
@@ -1323,6 +1342,19 @@ function isLikelyFocusChange(rects, frame) {
     rects.every(r => r.y1 == 0 && r.x1 == 0 && r.w == frame.width && r.y2 < 100)
   ) {
     // Full-width rect in the top of the titlebar.
+    return true;
+  }
+  // Treat a full-window change as a likely focus change under nova.
+  // With the nova floating chrome, the window background is visible in the gaps
+  // around the toolbox and content areas. When the window's active state changes,
+  // we see a repaint across the whole window (not just the titlebar.)
+  if (
+    Services.prefs.getBoolPref("browser.nova.enabled", false) &&
+    rects.length &&
+    rects.every(
+      r => r.x1 == 0 && r.y1 == 0 && r.w >= frame.width && r.h >= frame.height
+    )
+  ) {
     return true;
   }
   return false;

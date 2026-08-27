@@ -67,7 +67,9 @@
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    gap: var(--space-medium);
+    // Combines with the grid's --space-medium row gap for --space-large spacing
+    // below the header, matching the sections header.
+    margin-block: var(--space-small) var(--space-xsmall);
 
     // Helper class around the <h1> element to position the FeatureHighlight message
     .widgets-title-container-text {
@@ -80,6 +82,10 @@
       display: flex;
       align-items: center;
       gap: var(--space-medium);
+
+      @include at-content-cols(12) {
+        gap: var(--space-large);
+      }
     }
 
     .widgets-title-actions {
@@ -96,13 +102,10 @@
 
     // @nova-cleanup(remove-conditional): Make default, remove .nova-enabled selector
     .nova-enabled & {
-      font-size: var(--font-size-heading-large);
+      font-size: var(--font-size-heading-medium);
       font-weight: var(--font-weight-heading);
       color: var(--newtab-contextual-text-primary-color);
-
-      @include at-content-cols(12) {
-        font-size: var(--font-size-heading-xlarge);
-      }
+      margin-block: 0;
 
       @include wallpaper-contrast-fix;
     }
@@ -189,6 +192,19 @@
     grid-template-columns: repeat(auto-fill, var(--col-width));
     grid-auto-rows: var(--row-height);
     gap: var(--space-medium);
+
+    @include widget-size-transition-tokens;
+  }
+
+  .nova-enabled &.is-animating-height {
+    overflow: hidden;
+    transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nova-enabled &.is-animating-height {
+      transition: none;
+    }
   }
 
   // Classic layout (when Nova is disabled)

@@ -21,6 +21,13 @@ def _get_source_root():
         return None, None
 
 
+def _resolve_root(root):
+    # `setup` and `lint` must agree on the root, or they end up looking for
+    # (and building) the binary in two different target directories.
+    src_root, _ = _get_source_root()
+    return src_root or root
+
+
 def _get_mozcheck_target_dir(root, topobjdir):
     if topobjdir:
         return os.path.join(topobjdir, "mozcheck")
@@ -31,13 +38,24 @@ def _get_mozcheck_target_dir(root, topobjdir):
 
 
 def _find_mozcheck_binary(log, root, topobjdir=None):
-    fetches = os.environ.get("MOZ_FETCHES_DIR")
     exe = ".exe" if sys.platform == "win32" else ""
 
-    if fetches:
-        path = os.path.join(fetches, "mozcheck", "mozcheck" + exe)
-        if os.path.isfile(path):
-            return path
+    # Locate or fetch the prebuilt mozcheck binary for this host, the same way
+    # clang-tidy, gn, cargo-vet, etc. do (see bootstrap_path in
+    # build/moz.configure/bootstrap.configure). This also covers the case
+    # where a prebuilt binary is already available via MOZ_FETCHES_DIR, in CI.
+    try:
+        from mozbuild.bootstrap import bootstrap_toolchain
+
+        binary = bootstrap_toolchain(f"mozcheck/mozcheck{exe}")
+    except (Exception, SystemExit) as e:
+        # moz.configure's `die()`, used when a toolchain can't be found or
+        # fetched, raises SystemExit rather than a regular Exception.
+        binary = None
+        if log:
+            log.warning(f"Failed to fetch prebuilt mozcheck: {e}")
+    if binary:
+        return binary
 
     target_dir = _get_mozcheck_target_dir(root, topobjdir)
     target_binary = os.path.join(target_dir, "release", "mozcheck" + exe)
@@ -46,17 +64,11 @@ def _find_mozcheck_binary(log, root, topobjdir=None):
 
     crate_dir = os.path.join(root, "tools", "lint", "mozcheck")
 
-    cargo = "cargo"
-    if fetches:
-        candidate = os.path.join(fetches, "rustc", "bin", "cargo")
-        if os.path.isfile(candidate) or os.path.isfile(candidate + ".exe"):
-            cargo = candidate
-
     if log:
         log.info("Building mozcheck from source...")
     try:
         subprocess.run(
-            [cargo, "build", "--release", "--target-dir", target_dir],
+            ["cargo", "build", "--release", "--target-dir", target_dir],
             cwd=crate_dir,
             check=True,
             capture_output=True,
@@ -73,22 +85,21 @@ def _find_mozcheck_binary(log, root, topobjdir=None):
 
 
 def setup(root, **lintargs):
+    # Resolve the binary once, here in the parent process, rather than letting
+    # every mozlint worker race to fetch or build it (bug 2058685).
     log = lintargs.get("log")
-    _find_mozcheck_binary(log, root, lintargs.get("topobjdir"))
+    _find_mozcheck_binary(log, _resolve_root(root), lintargs.get("topobjdir"))
 
 
 def lint(paths, config, fix=None, **lintargs):
     log = lintargs["log"]
-    root = lintargs["root"]
-    src_root, _ = _get_source_root()
-    if src_root:
-        root = src_root
+    root = _resolve_root(lintargs["root"])
     binary = _find_mozcheck_binary(log, root, lintargs.get("topobjdir"))
     if not binary:
         raise LintException(
             "mozcheck binary is unavailable: could not locate a prebuilt "
             "binary (MOZ_FETCHES_DIR/mozcheck) and the source build failed. "
-            "Ensure the linter task fetches the linux64-mozcheck toolchain, "
+            "Ensure the linter task fetches the relevant mozcheck toolchain, "
             "or that cargo is available locally."
         )
 

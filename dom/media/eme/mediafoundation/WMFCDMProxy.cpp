@@ -60,7 +60,7 @@ WMFCDMProxy::WMFCDMProxy(dom::MediaKeys* aKeys, const nsAString& aKeySystem,
   MOZ_ASSERT(NS_IsMainThread());
 }
 
-WMFCDMProxy::~WMFCDMProxy() {}
+WMFCDMProxy::~WMFCDMProxy() = default;
 
 void WMFCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
                        const nsAString& aTopLevelOrigin,

@@ -242,6 +242,8 @@ static bool IsScrollLinkedEffectiveProperty(
     case eCSSProperty_left:
     case eCSSProperty_bottom:
     case eCSSProperty_right:
+    case eCSSProperty_width:
+    case eCSSProperty_height:
     case eCSSProperty_margin:
     case eCSSProperty_margin_top:
     case eCSSProperty_margin_left:

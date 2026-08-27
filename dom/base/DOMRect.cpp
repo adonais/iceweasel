@@ -91,6 +91,12 @@ bool DOMRectReadOnly::ReadStructuredClone(JSStructuredCloneReader* aReader) {
 #undef ReadDouble
 }
 
+std::ostream& operator<<(std::ostream& aStream, const DOMRectReadOnly& aRect) {
+  return aStream << "{x=" << aRect.X() << ", y=" << aRect.Y()
+                 << ", width=" << aRect.Width() << ", height=" << aRect.Height()
+                 << "}";
+}
+
 // -----------------------------------------------------------------------------
 
 JSObject* DOMRect::WrapObject(JSContext* aCx,

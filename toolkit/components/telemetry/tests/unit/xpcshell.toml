@@ -183,9 +183,6 @@ run-if = [
 run-if = [
   "os == 'win' && !msix", # Disabled for MSIX due to https://bugzilla.mozilla.org/show_bug.cgi?id=1807929,
 ]
-skip-if = [
-  "artifact", # disabled for artifact for bug 1982870.
-]
 
 ["test_UninstallPing.js"]
 support-files = ["file_UninstallPing.worker.js"]
@@ -197,9 +194,6 @@ run-if = [
 tags = "coverage"
 run-if = [
   "appname == 'firefox'",
-]
-skip-if = [
-  "artifact", # See bug 1945662.
 ]
 
 ["test_UserInteraction.js"]

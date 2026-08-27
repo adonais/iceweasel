@@ -27,11 +27,12 @@ import time
 import uuid
 from datetime import timedelta
 
+from client_metrics import HyperLogLog
 from heuristics import apply_hang_signature_heuristics
 from profile_processor import ProfileProcessor
 from symbolication import UNSYMBOLICATED, symbolicate_modules
 
-_BQ_TABLE = "moz-fx-data-shared-prod.firefox_desktop_stable.hang_report_v1"
+_BQ_TABLE = "mozdata.firefox_desktop.hang_report"
 _MAX_SAMPLE_SLICES = 10000
 
 # Project/dataset where query results are materialized before being read back.
@@ -63,7 +64,65 @@ DEFAULT_CONFIG = {
     "use_minimal_sample_table": False,
     "post_sample_size": 1.0,
     "exclude_modules": False,
+    # Compute per-signature distinct affected-client counts via HyperLogLog.
+    # Reads client_id (locally only); only counts and mergeable sketches are
+    # emitted, never ids. See client_metrics.py.
+    "client_metrics": False,
 }
+
+# Frontend signature key. Each frame is "funcName<FIELD_SEP>libName" where
+# libName is the module name with a trailing ".pdb" stripped (matching
+# profile_processor.get_default_lib), frames joined leaf -> root. The
+# symbolicated stack is root -> leaf, so we reverse it.
+#
+# This has to stay byte-for-byte identical to canonicalKey in the dashboard,
+# which lives outside this repo and is what joins these counts to a displayed
+# hang:
+# https://github.com/skylarkning/bhr-dashboard/blob/main/src/processing/signatureKey.ts
+_SIG_FIELD_SEP = "\x1f"
+_SIG_FRAME_SEP = "\x1e"
+
+
+def _signature_key(symbolicated_stack):
+    frames = []
+    for name, lib in reversed(symbolicated_stack):
+        lib_name = lib[:-4] if lib.endswith(".pdb") else lib
+        frames.append(f"{name}{_SIG_FIELD_SEP}{lib_name}")
+    return _SIG_FRAME_SEP.join(frames)
+
+
+def _compute_affected_clients(symbolicated):
+    """Distinct affected clients per signature (HyperLogLog), plus the day total.
+
+    `symbolicated` hangs carry client_id as their last element (appended by
+    process_hangs under --client-metrics). Keyed by the frontend signature key
+    so the dashboard can join the counts to each hang row.
+
+    Emits both the day's distinct-client estimate and the mergeable HLL sketch
+    (sparse) per signature and for the day total. The secondary roll-up job
+    unions these register-wise across a trailing window to report the share of
+    users a signature affected over 7 / 28 / 365 days. Only counts and sketches
+    (never client ids) are emitted, so cross-day counting stays privacy-safe.
+    """
+    by_key = {}
+    day_total = HyperLogLog()
+    for hang in symbolicated:
+        client_id = hang[-1]
+        if client_id is None:
+            continue
+        day_total.add(client_id)
+        key = _signature_key(hang[0])
+        hll = by_key.get(key)
+        if hll is None:
+            hll = by_key[key] = HyperLogLog()
+        hll.add(client_id)
+    return {
+        "totalDistinct": day_total.count(),
+        "totalSketch": day_total.serialize(),
+        "bySignature": {key: hll.count() for key, hll in by_key.items()},
+        "sketchBySignature": {key: hll.serialize() for key, hll in by_key.items()},
+    }
+
 
 # Top-level ping fields fetched from BigQuery. Returned in `slash/key` form
 # because downstream code (process_hangs, process_module, etc.) expects this
@@ -77,13 +136,18 @@ _BASE_PROPERTIES = (
 )
 
 
-def _properties_for(exclude_modules):
+def _properties_for(exclude_modules, client_metrics=False):
+    properties = list(_BASE_PROPERTIES)
     if exclude_modules:
-        return list(_BASE_PROPERTIES) + ["metrics/object/hangs_reports"]
-    return list(_BASE_PROPERTIES) + [
-        "metrics/object/hangs_modules",
-        "metrics/object/hangs_reports",
-    ]
+        properties.append("metrics/object/hangs_reports")
+    else:
+        properties += [
+            "metrics/object/hangs_modules",
+            "metrics/object/hangs_reports",
+        ]
+    if client_metrics:
+        properties.append("client_info/client_id")
+    return properties
 
 
 def get_prop(val, prop):
@@ -135,7 +199,7 @@ def compute_sample_slices(sample_size):
     return int(max(min(raw, _MAX_SAMPLE_SLICES), 1))
 
 
-def build_query_sql(date, end_date, sample_slices):
+def build_query_sql(date, end_date, sample_slices, client_metrics=False):
     """Build the BigQuery SQL string. Pure function — no client needed.
 
     Exposed (rather than inlined into get_data) so tests can verify the
@@ -158,13 +222,16 @@ def build_query_sql(date, end_date, sample_slices):
     submission_end = end_date + timedelta(days=5)
     date_str = date.strftime("%Y%m%d")
     end_date_str = end_date.strftime("%Y%m%d")
+    client_id_field = (
+        ",\n        client_info.client_id AS client_id" if client_metrics else ""
+    )
     return f"""
     SELECT
       STRUCT(
         client_info.os AS os,
         client_info.os_version AS os_version,
         client_info.architecture AS architecture,
-        client_info.app_build AS app_build
+        client_info.app_build AS app_build{client_id_field}
       ) AS client_info,
       STRUCT(
         STRUCT(
@@ -224,7 +291,14 @@ def _query_bigquery(sql, billing_project):
     return client.list_rows(destination)
 
 
-def get_data(date, sample_size, billing_project, end_date=None, exclude_modules=False):
+def get_data(
+    date,
+    sample_size,
+    billing_project,
+    end_date=None,
+    exclude_modules=False,
+    client_metrics=False,
+):
     """Stream BHR pings from BigQuery, filtered to the active build-date window.
 
     Args:
@@ -243,8 +317,8 @@ def get_data(date, sample_size, billing_project, end_date=None, exclude_modules=
         end_date = date
 
     sample_slices = compute_sample_slices(sample_size)
-    sql = build_query_sql(date, end_date, sample_slices)
-    properties = _properties_for(exclude_modules)
+    sql = build_query_sql(date, end_date, sample_slices, client_metrics=client_metrics)
+    properties = _properties_for(exclude_modules, client_metrics=client_metrics)
 
     # The build-date window is filtered in SQL (see build_query_sql), so every
     # row that comes back is already in-window. Here we only drop rows that are
@@ -390,6 +464,11 @@ def process_hangs(ping, config):
             build_date,
             platform,
         )
+        # Under --client-metrics, carry the ping's client_id as the last element
+        # so the affected-clients pass can attribute the hang. Stripped again
+        # before group_hangs, which unpacks the 8-element aggregation row.
+        if config.get("client_metrics"):
+            row = row + (ping["client_info/client_id"],)
         result.append(row)
 
     return result
@@ -399,18 +478,20 @@ def symbolicate_stacks(stack, symbol_map):
     """Replace (module, offset) frames with (symbol, lib_name) frames.
 
     symbol_map is the dict returned by symbolication.symbolicate_modules,
-    keyed by (module, offset). A frame with no module, no map entry, or a
-    None symbol falls back to the UNSYMBOLICATED sentinel. Ported verbatim
-    from python_mozetl, including the tuple() coercion on the lookup key
-    and the processed[0] is not None guard.
+    keyed by (module, offset). Each value is a LIST of (symbol, lib_name)
+    frames: usually one, but more than one when the address resolves inside
+    inlined code, in which case the whole inlined chain is spliced into the
+    stack in place (outer-first) so equivalent hangs dedup (bug 2052961). A
+    frame with no module, no map entry, or a None leading symbol falls back to
+    the UNSYMBOLICATED sentinel.
     """
     symbolicated = []
     for module, offset in stack:
         if module is not None:
             debug_name = module[0]
             processed = symbol_map.get((tuple(module), offset), None)
-            if processed is not None and processed[0] is not None:
-                symbolicated.append(processed)
+            if processed and processed[0][0] is not None:
+                symbolicated.extend(processed)
             else:
                 symbolicated.append((UNSYMBOLICATED, debug_name))
         else:
@@ -554,6 +635,7 @@ def aggregate(
         billing_project,
         end_date=end_date,
         exclude_modules=config["exclude_modules"],
+        client_metrics=config["client_metrics"],
     ):
         if not ping_is_valid(ping):
             continue
@@ -568,6 +650,16 @@ def aggregate(
     _phase(f"Resolved {len(symbol_map)} (module, offset) frames.")
     symbolicated = [symbolicate_hang(hang, symbol_map) for hang in hangs]
 
+    # Affected-client counts, computed before the client_id is stripped off
+    # (group_hangs and ProfileProcessor consume the 8-element row).
+    affected_clients = None
+    if config["client_metrics"]:
+        affected_clients = _compute_affected_clients(symbolicated)
+        _phase(
+            f"Affected clients (day, distinct HLL): {affected_clients['totalDistinct']}"
+        )
+        symbolicated = [hang[:8] for hang in symbolicated]
+
     # Aggregate by signature and build the columnar profile.
     grouped = group_hangs(symbolicated, config)
     _phase(f"Aggregated into {len(grouped)} hang signatures.")
@@ -575,6 +667,9 @@ def aggregate(
     processor = ProfileProcessor(config)
     processor.ingest(grouped, {date_str: 1.0})
     profile = processor.process_into_profile()
+
+    if affected_clients is not None:
+        profile["affectedClients"] = affected_clients
 
     base = "hangs_" + output_tag
     written = write_file(f"{base}_{date_str}", profile, output_dir)

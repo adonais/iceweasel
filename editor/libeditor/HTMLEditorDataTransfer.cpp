@@ -301,7 +301,7 @@ nsresult HTMLEditor::InsertHTMLAsAction(const nsAString& aInString,
     return NS_ERROR_FAILURE;
   }
 
-  if (editingHost->IsContentEditablePlainTextOnly()) {
+  if (!IsPlaintextMailComposer() && !IsStyleEditable(editingHost)) {
     nsAutoString plaintextString;
     nsresult rv = nsContentUtils::ConvertToPlainText(
         aInString, plaintextString, nsIDocumentEncoder::OutputLFLineBreak,
@@ -936,11 +936,16 @@ Result<EditActionResult, nsresult> HTMLEditor::HTMLWithContextInserter::Run(
     return EditActionResult::HandledResult();
   }
 
+  MOZ_ASSERT(insertNodeResult.HasCaretPointSuggestion());
+  EditorDOMPoint pointToPutCaret = insertNodeResult.UnwrapCaretPoint();
+
   if (MOZ_LIKELY(insertNodeResult.GetNewNode()->IsInComposedDoc())) {
     const auto afterLastInsertedContent =
         EditorRawDOMPoint(insertNodeResult.GetNewNode())
             .NextPointOrAfterContainer<EditorDOMPoint>();
     if (MOZ_LIKELY(afterLastInsertedContent.IsInContentNode())) {
+      AutoTrackDOMPoint trackPointToPutCaret(mHTMLEditor.RangeUpdaterRef(),
+                                             &pointToPutCaret);
       nsresult rv = mHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(
           afterLastInsertedContent,
           // When user inserting content, the web app may expect that nothing
@@ -956,15 +961,17 @@ Result<EditActionResult, nsresult> HTMLEditor::HTMLWithContextInserter::Run(
     }
   }
 
-  MOZ_ASSERT(insertNodeResult.HasCaretPointSuggestion());
-  rv = insertNodeResult.SuggestCaretPointTo(
-      mHTMLEditor, {SuggestCaret::AndIgnoreTrivialError});
-  if (NS_FAILED(rv)) {
-    NS_WARNING("CaretPoint::SuggestCaretPointTo() failed");
-    return Err(rv);
+  if (NS_WARN_IF(!pointToPutCaret.IsSetAndValidInComposedDoc())) {
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
-  NS_WARNING_ASSERTION(rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-                       "CaretPoint::SuggestCaretPointTo() failed, but ignored");
+  rv = mHTMLEditor.CollapseSelectionTo(pointToPutCaret);
+  if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    NS_WARNING(
+        "EditorBase::CollapseSelectionTo() caused destroying the editor");
+    return Err(NS_ERROR_EDITOR_DESTROYED);
+  }
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "EditorBase::CollapseSelectionTo() failed, but ignored");
 
   // If we didn't start from an `<a href>` element, we should not keep
   // caret in the link to make users type something outside the link.
@@ -980,10 +987,9 @@ Result<EditActionResult, nsresult> HTMLEditor::HTMLWithContextInserter::Run(
 
     // Note that the caret point may be outside the found link. So, let's check
     // it before trying to split the link.
-    if (linkElement->IsInclusiveDescendantOf(
-            insertNodeResult.CaretPointRef().GetContainer())) [[likely]] {
-      nsresult rv = MoveCaretOutsideOfLink(*linkElement,
-                                           insertNodeResult.CaretPointRef());
+    if (linkElement->IsInclusiveDescendantOf(pointToPutCaret.GetContainer()))
+        [[likely]] {
+      nsresult rv = MoveCaretOutsideOfLink(*linkElement, pointToPutCaret);
       if (NS_FAILED(rv)) {
         NS_WARNING(
             "HTMLEditor::HTMLWithContextInserter::MoveCaretOutsideOfLink() "
@@ -1555,8 +1561,7 @@ void HTMLEditor::HTMLTransferablePreparer::AddDataFlavorsInBestOrder(
   // This should only happen in html editors, not plaintext
   // Note that if you add more flavors here you will need to add them
   // to DataTransfer::GetExternalClipboardFormats as well.
-  if (!mHTMLEditor.IsPlaintextMailComposer() &&
-      !(mEditingHost && mEditingHost->IsContentEditablePlainTextOnly())) {
+  if (mHTMLEditor.IsStyleEditable(mEditingHost)) {
     DebugOnly<nsresult> rvIgnored =
         aTransferable.AddDataFlavor(kNativeHTMLMime);
     NS_WARNING_ASSERTION(
@@ -2154,9 +2159,7 @@ nsresult HTMLEditor::InsertFromTransferableAtSelection(
     CopyASCIItoUTF16(bestFlavor, flavor);
     const SafeToInsertData safeToInsertData = IsSafeToInsertData(nullptr);
 
-    const bool isPlaintextEditor =
-        IsPlaintextMailComposer() ||
-        aEditingHost.IsContentEditablePlainTextOnly();
+    const bool isPlaintextEditor = !IsStyleEditable(&aEditingHost);
 
     if (bestFlavor.EqualsLiteral(kFileMime) ||
         bestFlavor.EqualsLiteral(kJPEGImageMime) ||
@@ -2320,8 +2323,7 @@ nsresult HTMLEditor::InsertFromDataTransfer(
   const bool hasPrivateHTMLFlavor =
       types->Contains(NS_LITERAL_STRING_FROM_CSTRING(kHTMLContext));
 
-  const bool isPlaintextEditor = IsPlaintextMailComposer() ||
-                                 aEditingHost.IsContentEditablePlainTextOnly();
+  const bool isPlaintextEditor = !IsStyleEditable(&aEditingHost);
   const SafeToInsertData safeToInsertData =
       IsSafeToInsertData(aSourcePrincipal);
 
@@ -2884,8 +2886,7 @@ bool HTMLEditor::CanPaste(nsIClipboard::ClipboardType aClipboardType) const {
   }
 
   // Use the flavors depending on the current editor mask
-  if (IsPlaintextMailComposer() ||
-      editingHost->IsContentEditablePlainTextOnly()) {
+  if (!IsStyleEditable(editingHost)) {
     AutoTArray<nsCString, std::size(textEditorFlavors)> flavors;
     flavors.AppendElements<const char*>(Span<const char*>(textEditorFlavors));
     bool haveFlavors;
@@ -2927,13 +2928,12 @@ bool HTMLEditor::CanPasteTransferable(nsITransferable* aTransferable) {
   // Use the flavors depending on the current editor mask
   const char** flavors;
   size_t length;
-  if (IsPlaintextMailComposer() ||
-      editingHost->IsContentEditablePlainTextOnly()) {
-    flavors = textEditorFlavors;
-    length = std::size(textEditorFlavors);
-  } else {
+  if (IsStyleEditable(editingHost)) {
     flavors = textHtmlEditorFlavors;
     length = std::size(textHtmlEditorFlavors);
+  } else {
+    flavors = textEditorFlavors;
+    length = std::size(textEditorFlavors);
   }
 
   for (size_t i = 0; i < length; i++, flavors++) {
@@ -2972,8 +2972,7 @@ nsresult HTMLEditor::HandlePasteAsQuotation(
     return NS_ERROR_FAILURE;
   }
 
-  if (IsPlaintextMailComposer() ||
-      editingHost->IsContentEditablePlainTextOnly()) {
+  if (!IsStyleEditable(editingHost)) {
     nsresult rv =
         PasteAsPlaintextQuotation(aClipboardType, aDataTransfer, *editingHost);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -3362,8 +3361,7 @@ nsresult HTMLEditor::InsertAsQuotation(const nsAString& aQuotedText,
     return NS_ERROR_FAILURE;
   }
 
-  if (IsPlaintextMailComposer() ||
-      editingHost->IsContentEditablePlainTextOnly()) {
+  if (!IsStyleEditable(editingHost)) {
     AutoEditActionDataSetter editActionData(*this, EditAction::eInsertText);
     MOZ_ASSERT(!aQuotedText.IsVoid());
     editActionData.SetData(aQuotedText);
@@ -3467,7 +3465,7 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
   }
 
   RefPtr<Element> containerSpanElement;
-  if (!aEditingHost.IsContentEditablePlainTextOnly()) {
+  if (IsPlaintextMailComposer() || IsStyleEditable(&aEditingHost)) {
     // Wrap the inserted quote in a <span> so we can distinguish it. If we're
     // inserting into the <body>, we use a <span> which is displayed as a block
     // and sized to the screen using 98 viewport width units.
@@ -3679,8 +3677,7 @@ NS_IMETHODIMP HTMLEditor::InsertAsCitedQuotation(const nsAString& aQuotedText,
   }
 
   // Don't let anyone insert HTML when we're in plaintext mode.
-  if (IsPlaintextMailComposer() ||
-      editingHost->IsContentEditablePlainTextOnly()) {
+  if (!IsStyleEditable(editingHost)) {
     NS_ASSERTION(
         !aInsertHTML,
         "InsertAsCitedQuotation: trying to insert html into plaintext editor");
@@ -4374,7 +4371,9 @@ nsresult HTMLEditor::HTMLWithContextInserter::FragmentParser::ParseFragment(
   nsresult rv = nsContentUtils::ParseFragmentHTML(
       aFragStr, fragment,
       aContextLocalName ? aContextLocalName : nsGkAtoms::body,
-      kNameSpaceID_XHTML, false, true);
+      kNameSpaceID_XHTML, false, true,
+      nsContentUtils::kParseFragmentPrivilegedDefaultSanitization,
+      mozilla::Nothing());
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "nsContentUtils::ParseFragmentHTML() failed");
   if (aSafeToInsertData == SafeToInsertData::No) {

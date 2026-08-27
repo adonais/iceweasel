@@ -21,6 +21,15 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/IPPStartupCache.sys.mjs",
 });
 
+ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
+  console.createInstance({
+    prefix: "IPPFxaActivateAuthProvider",
+    maxLogLevel: Services.prefs.getBoolPref("browser.ipProtection.log", false)
+      ? "Debug"
+      : "Warn",
+  })
+);
+
 /**
  * FxA implementation of IPPAuthProvider that uses the direct token activation
  * flow by calling Guardian's POST /api/v1/fpn/activate endpoint with the FxA
@@ -121,7 +130,7 @@ class IPPFxaActivateAuthProviderSingleton extends IPPAuthProvider {
       }
       return { entitlement: entitlement ?? null };
     } catch (error) {
-      return { error: error.message };
+      return { error: error?.message ?? error };
     }
   }
 
@@ -165,6 +174,14 @@ class IPPFxaActivateAuthProviderSingleton extends IPPAuthProvider {
   }
 
   async enroll() {
+    if (!this.signInWatcher.isSignedIn) {
+      // The token request below fails if the account is genuinely signed out,
+      // so a stale watcher is reported rather than treated as fatal.
+      lazy.logConsole.warn(
+        "enroll() called while the sign-in watcher reports signed out."
+      );
+      Glean.ipprotection.error.record({ source: "AuthProvider:SignInDesync" });
+    }
     this.#isEnrolling = true;
     this.dispatchEvent(new CustomEvent("IPPAuthProvider:StateChanged"));
     try {
@@ -177,7 +194,7 @@ class IPPFxaActivateAuthProviderSingleton extends IPPAuthProvider {
       this._setEntitlement(entitlement ?? null);
       return { isEnrolledAndEntitled: true, error: null };
     } catch (error) {
-      return { isEnrolledAndEntitled: false, error: error?.message ?? null };
+      return { isEnrolledAndEntitled: false, error: error?.message ?? error };
     } finally {
       this.#isEnrolling = false;
       lazy.IPProtectionService.updateState();

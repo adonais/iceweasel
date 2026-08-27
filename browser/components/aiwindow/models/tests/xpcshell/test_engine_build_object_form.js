@@ -24,8 +24,7 @@ const PREF_ENDPOINT = "browser.smartwindow.endpoint";
 const PREF_CUSTOM_ENDPOINT = "browser.smartwindow.customEndpoint";
 const PREF_MODEL = "browser.smartwindow.model";
 
-const DEFAULT_ENDPOINT =
-  "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net/v1";
+const DEFAULT_ENDPOINT = "https://mlpa-prod-prod-mozilla.freetls.fastly.net/v1";
 
 registerCleanupFunction(() => {
   for (const pref of [

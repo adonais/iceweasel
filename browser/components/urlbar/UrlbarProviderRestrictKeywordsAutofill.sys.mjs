@@ -7,10 +7,7 @@
  * search mode.
  */
 
-import {
-  UrlbarProvider,
-  UrlbarUtils,
-} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -36,10 +33,10 @@ export class UrlbarProviderRestrictKeywordsAutofill extends UrlbarProvider {
   }
 
   /**
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof lazy.UrlbarShared.PROVIDER_TYPE>}
    */
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
+    return lazy.UrlbarShared.PROVIDER_TYPE.HEURISTIC;
   }
 
   getPriority() {
@@ -185,7 +182,7 @@ export class UrlbarProviderRestrictKeywordsAutofill extends UrlbarProvider {
           queryContext.searchString +
           autofillKeyword.substr(queryContext.searchString.length);
         let value = keywordPreservingUserCase + " ";
-        let icon = UrlbarUtils.LOCAL_SEARCH_MODES.find(
+        let icon = lazy.UrlbarShared.LOCAL_SEARCH_MODES.find(
           mode => mode.restrict == token
         )?.icon;
 
@@ -206,8 +203,8 @@ export class UrlbarProviderRestrictKeywordsAutofill extends UrlbarProvider {
             providesSearchMode: true,
           },
           highlights: {
-            l10nRestrictKeywords: UrlbarUtils.HIGHLIGHT.TYPED,
-            autofillKeyword: UrlbarUtils.HIGHLIGHT.TYPED,
+            l10nRestrictKeywords: lazy.UrlbarShared.HIGHLIGHT.TYPED,
+            autofillKeyword: lazy.UrlbarShared.HIGHLIGHT.TYPED,
           },
         });
       }

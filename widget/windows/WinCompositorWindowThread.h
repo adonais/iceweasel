@@ -46,7 +46,7 @@ class WinCompositorWindowThread final {
 
  private:
   explicit WinCompositorWindowThread(base::Thread* aThread);
-  ~WinCompositorWindowThread() {}
+  ~WinCompositorWindowThread() = default;
 
   void ShutDownTask();
 

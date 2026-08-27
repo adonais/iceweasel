@@ -4,7 +4,7 @@
 "use strict";
 
 const AUTH_ROUTE =
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   "http://example.com/browser/browser/base/content/test/about/basic_auth_route.sjs";
 
 // From appstrings.properties

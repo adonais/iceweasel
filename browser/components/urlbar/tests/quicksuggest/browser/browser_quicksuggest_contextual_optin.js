@@ -64,15 +64,16 @@ add_task(async function accept() {
   });
   Assert.ok(UrlbarPrefs.get("quicksuggest.online.enabled"));
 
-  info(
-    "Check whether the contextual opt-in result was removed from last query"
-  );
-  let { queryContext } = gURLBar.controller._lastQueryContextWrapper;
-  Assert.ok(
-    !queryContext.results.some(
-      r => r.providerName == "UrlbarProviderQuickSuggestContextualOptIn"
-    )
-  );
+  info("The contextual opt-in should no longer be offered after opting in");
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({ window, value: "" });
+  for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
+    let { result: r } = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
+    Assert.notEqual(
+      r.providerName,
+      "UrlbarProviderQuickSuggestContextualOptIn",
+      "Opt-in result should not be shown after opting in"
+    );
+  }
 });
 
 add_task(async function dismiss() {
@@ -360,7 +361,15 @@ async function makeImpression() {
     result.providerName,
     "UrlbarProviderQuickSuggestContextualOptIn"
   );
+  let before = UrlbarPrefs.get("quicksuggest.contextualOptIn.impressionCount");
   await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
+  // The abandonment fires the provider's onImpression, which counts the
+  // impression; that round-trips over the actor on the message path.
+  await TestUtils.waitForCondition(
+    () =>
+      UrlbarPrefs.get("quicksuggest.contextualOptIn.impressionCount") > before,
+    "Waiting for the impression to be counted"
+  );
 }
 
 add_task(async function nimbus() {

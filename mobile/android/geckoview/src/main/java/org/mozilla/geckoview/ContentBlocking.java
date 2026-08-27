@@ -276,40 +276,6 @@ public class ContentBlocking {
       }
 
       /**
-       * Set the Cookie Banner Handling Mode.
-       *
-       * @param mode The mode of the Cookie Banner Handling one of the {@link CBCookieBannerMode}.
-       * @return The Builder instance.
-       */
-      public @NonNull Builder cookieBannerHandlingMode(final @CBCookieBannerMode int mode) {
-        getSettings().setCookieBannerMode(mode);
-        return this;
-      }
-
-      /**
-       * When set to true, enable the use of global CookieBannerRules.
-       *
-       * @param enabled A boolean indicating whether to enable the use of global CookieBannerRules.
-       * @return The Builder instance.
-       */
-      public @NonNull Builder cookieBannerGlobalRulesEnabled(final boolean enabled) {
-        getSettings().setCookieBannerGlobalRulesEnabled(enabled);
-        return this;
-      }
-
-      /**
-       * When set to true, enable the use of global CookieBannerRules in sub-frames.
-       *
-       * @param enabled A boolean indicating whether to enable the use of global CookieBannerRules
-       *     in sub-frames.
-       * @return The Builder instance.
-       */
-      public @NonNull Builder cookieBannerGlobalRulesSubFramesEnabled(final boolean enabled) {
-        getSettings().setCookieBannerGlobalRulesSubFramesEnabled(enabled);
-        return this;
-      }
-
-      /**
        * When set to true, query parameter stripping is enabled in normal mode.
        *
        * @param enabled A boolean indicating whether to query parameter stripping enabled in normal
@@ -353,30 +319,6 @@ public class ContentBlocking {
        */
       public @NonNull Builder queryParameterStrippingStripList(final @NonNull String... list) {
         getSettings().setQueryParameterStrippingStripList(list);
-        return this;
-      }
-
-      /**
-       * Set the Cookie Banner Handling Mode for private browsing.
-       *
-       * @param mode The mode of the Cookie Banner Handling one of the {@link CBCookieBannerMode}.
-       * @return The Builder instance.
-       */
-      public @NonNull Builder cookieBannerHandlingModePrivateBrowsing(
-          final @CBCookieBannerMode int mode) {
-        getSettings().setCookieBannerModePrivateBrowsing(mode);
-        return this;
-      }
-
-      /**
-       * When set to true, cookie banners are detected and detection events are dispatched, but they
-       * will not be handled.
-       *
-       * @param enabled A boolean indicating whether to enable cookie banner detect only mode.
-       * @return The Builder instance.
-       */
-      public @NonNull Builder cookieBannerHandlingDetectOnlyMode(final boolean enabled) {
-        getSettings().setCookieBannerDetectOnlyMode(enabled);
         return this;
       }
 
@@ -586,23 +528,6 @@ public class ContentBlocking {
 
     /* package */ final Pref<Boolean> mAllowListConvenienceTrackingProtection =
         new Pref<Boolean>("privacy.trackingprotection.allow_list.convenience.enabled", true);
-
-    /* package */ final Pref<Integer> mCbhMode =
-        new Pref<Integer>(
-            "cookiebanners.service.mode", CookieBannerMode.COOKIE_BANNER_MODE_DISABLED);
-    /* package */ final Pref<Integer> mCbhModePrivateBrowsing =
-        new Pref<Integer>(
-            "cookiebanners.service.mode.privateBrowsing",
-            CookieBannerMode.COOKIE_BANNER_MODE_REJECT);
-
-    /* package */ final Pref<Boolean> mChbDetectOnlyMode =
-        new Pref<Boolean>("cookiebanners.service.detectOnly", false);
-    /* package */
-    final Pref<Boolean> mCbhGlobalRulesEnabled =
-        new Pref<Boolean>("cookiebanners.service.enableGlobalRules", false);
-
-    final Pref<Boolean> mCbhGlobalRulesSubFramesEnabled =
-        new Pref<Boolean>("cookiebanners.service.enableGlobalRules.subFrames", false);
 
     /* package */ final Pref<Boolean> mQueryParameterStrippingEnabled =
         new Pref<Boolean>("privacy.query_stripping.enabled", false);
@@ -1232,63 +1157,6 @@ public class ContentBlocking {
     }
 
     /**
-     * Set the Cookie Banner Handling Mode to the new provided {@link CBCookieBannerMode} value.
-     *
-     * @param mode Integer indicating the new mode.
-     * @return This Settings instance.
-     */
-    public @NonNull Settings setCookieBannerMode(final @CBCookieBannerMode int mode) {
-      mCbhMode.commit(mode);
-      return this;
-    }
-
-    /**
-     * When set to true, cookie banners are detected and detection events are dispatched, but they
-     * will not be handled. Requires the service to be enabled for the desired mode via
-     * setCookieBannerMode.
-     *
-     * @param enabled A boolean indicating whether to enable cookie banners.
-     * @return This Settings instance.
-     */
-    public @NonNull Settings setCookieBannerDetectOnlyMode(final boolean enabled) {
-      mChbDetectOnlyMode.commit(enabled);
-      return this;
-    }
-
-    /**
-     * Enables/disables the use of global CookieBannerRules, which apply to all sites. This enable
-     * handling of CMPs across sites without the use of site-specific rules.
-     *
-     * @param enabled A boolean indicating whether or not to enable.
-     * @return This Settings instance.
-     */
-    public @NonNull Settings setCookieBannerGlobalRulesEnabled(final boolean enabled) {
-      mCbhGlobalRulesEnabled.commit(enabled);
-      return this;
-    }
-
-    /**
-     * Indicates if global CookieBannerRules is enabled or not.
-     *
-     * @return Indicates if global CookieBannerRule is enabled or disabled.
-     */
-    public boolean getCookieBannerGlobalRulesEnabled() {
-      return mCbhGlobalRulesEnabled.get();
-    }
-
-    /**
-     * Whether global rules are allowed to run in sub-frames. Running query selectors in every
-     * sub-frame may negatively impact performance, but is required for some CMPs.
-     *
-     * @param enabled A boolean indicating whether or not to enable.
-     * @return This Settings instance.
-     */
-    public @NonNull Settings setCookieBannerGlobalRulesSubFramesEnabled(final boolean enabled) {
-      mCbhGlobalRulesSubFramesEnabled.commit(enabled);
-      return this;
-    }
-
-    /**
      * Indicates if email tracker blocking is enabled in private mode.
      *
      * @return Indicates if email tracker blocking is enabled or disabled in private mode.
@@ -1343,61 +1211,10 @@ public class ContentBlocking {
     /**
      * Indicates if query parameter stripping is enabled in private mode.
      *
-     * @return Indicates if global CookieBannerRules is enabled or disabled in sub-frames.
+     * @return Indicates if query parameter stripping is enabled or disabled in private mode.
      */
     public boolean getQueryParameterStrippingPrivateBrowsingEnabled() {
       return mQueryParameterStrippingPrivateBrowsingEnabled.get();
-    }
-
-    /**
-     * Indicates if global CookieBannerRules is enabled or not in sub-frames.
-     *
-     * @return Indicates if global CookieBannerRules is enabled or disabled in sub-frames.
-     */
-    public boolean getCookieBannerGlobalRulesSubFramesEnabled() {
-      return mCbhGlobalRulesSubFramesEnabled.get();
-    }
-
-    /**
-     * Indicates if cookie banner handling detect only mode is enabled.
-     *
-     * @return boolean indicating if the cookie banner handling detect only mode setting is enabled.
-     */
-    public boolean getCookieBannerDetectOnlyMode() {
-      return mChbDetectOnlyMode.get();
-    }
-
-    /**
-     * Gets the current cookie banner handling mode.
-     *
-     * @return int the current cookie banner handling mode, one of the {@link CBCookieBannerMode}.
-     */
-    @SuppressLint("WrongConstant")
-    public @CBCookieBannerMode int getCookieBannerMode() {
-      return mCbhMode.get();
-    }
-
-    /**
-     * Set the Cookie Banner Handling Mode for private browsing to the new provided {@link
-     * CBCookieBannerMode} value.
-     *
-     * @param mode Integer indicating the new mode.
-     * @return This Settings instance.
-     */
-    public @NonNull Settings setCookieBannerModePrivateBrowsing(
-        final @CBCookieBannerMode int mode) {
-      mCbhModePrivateBrowsing.commit(mode);
-      return this;
-    }
-
-    /**
-     * Gets the current cookie banner handling mode for private browsing.
-     *
-     * @return int the current cookie banner handling mode, one of the {@link CBCookieBannerMode}.
-     */
-    @SuppressLint("WrongConstant")
-    public @CBCookieBannerMode int getCookieBannerModePrivateBrowsing() {
-      return mCbhModePrivateBrowsing.get();
     }
 
     /** Parcelable creator for ContentBlocking Settings instances. */
@@ -2567,32 +2384,6 @@ public class ContentBlocking {
     // TODO: There are more reasons why cookies may be blocked.
     return CookieBehavior.ACCEPT_ALL;
   }
-
-  // Cookie Banner Handling feature.
-
-  /** Cookie banner handling mode constants. */
-  public static class CookieBannerMode {
-    /** Do not enable handling cookie banners. */
-    public static final int COOKIE_BANNER_MODE_DISABLED = 0;
-
-    /** Only handle banners where selecting "reject all" is possible. */
-    public static final int COOKIE_BANNER_MODE_REJECT = 1;
-
-    /** Reject cookies when possible otherwise accept the cookies. */
-    public static final int COOKIE_BANNER_MODE_REJECT_OR_ACCEPT = 2;
-
-    /** Protected constructor for CookieBannerMode. */
-    protected CookieBannerMode() {}
-  }
-
-  /** Content blocking cookie banner mode type definitions. */
-  @Retention(RetentionPolicy.SOURCE)
-  @IntDef({
-    CookieBannerMode.COOKIE_BANNER_MODE_DISABLED,
-    CookieBannerMode.COOKIE_BANNER_MODE_REJECT,
-    CookieBannerMode.COOKIE_BANNER_MODE_REJECT_OR_ACCEPT,
-  })
-  public @interface CBCookieBannerMode {}
 
   /** Modes for Bounce Tracking Protection. */
   public static class BounceTrackingProtectionMode {

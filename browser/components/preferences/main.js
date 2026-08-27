@@ -126,7 +126,6 @@ Preferences.addAll([
 if (AppConstants.HAVE_SHELL_SERVICE) {
   Preferences.addAll([
     { id: "browser.shell.checkDefaultBrowser", type: "bool" },
-    { id: "pref.general.disable_button.default_browser", type: "bool" },
   ]);
 }
 
@@ -397,7 +396,8 @@ Preferences.addSetting({
   visible: () =>
     DefaultBrowserHelper.canCheck &&
     DefaultBrowserHelper.isBrowserDefault &&
-    Services.policies.isAllowed("setDefaultBrowser"),
+    Services.policies.isAllowed("setDefaultBrowser") &&
+    !Services.prefs.prefIsLocked("pref.general.disable_button.default_browser"),
 });
 
 Preferences.addSetting({
@@ -406,7 +406,8 @@ Preferences.addSetting({
   visible: () =>
     DefaultBrowserHelper.canCheck &&
     !DefaultBrowserHelper.isBrowserDefault &&
-    Services.policies.isAllowed("setDefaultBrowser"),
+    Services.policies.isAllowed("setDefaultBrowser") &&
+    !Services.prefs.prefIsLocked("pref.general.disable_button.default_browser"),
   onUserClick: (e, { alwaysCheckDefault }) => {
     if (!DefaultBrowserHelper.canCheck) {
       return;
@@ -585,7 +586,14 @@ SettingGroupManager.registerGroups({
 function initSettingGroup(id) {
   /** @type {SettingGroup[]} */
   let groups = document.querySelectorAll(`setting-group[groupid=${id}]`);
-  const config = SettingGroupManager.get(id);
+  let config;
+  try {
+    config = SettingGroupManager.get(id);
+  } catch (e) {
+    // Downstream browsers (e.g. Tor) may exclude extensions that
+    // register some setting groups. Treat missing as no-op, not error.
+    config = null;
+  }
   for (let group of groups) {
     if (group && config) {
       let sectionEnabled = srdSectionEnabled(id);
@@ -1781,7 +1789,7 @@ class HandlerListItem {
         actionIconClass ? null : this.handlerInfoWrapper.actionIconSrcset,
       ],
     ]);
-    const selectedItem = this.node.querySelector("[selected=true]");
+    const selectedItem = this.node.querySelector("[selected]");
     if (!selectedItem) {
       console.error("No selected item for " + this.handlerInfoWrapper.type);
       return;

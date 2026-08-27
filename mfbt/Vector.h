@@ -121,14 +121,14 @@ inline size_t GrowEltsByDoubling(size_t aOldElts, size_t aIncr) {
 
 // Fallback version.
 template <typename AP, size_t EltSize>
-static size_t ComputeGrowth(size_t aOldElts, size_t aIncr, int) {
+size_t ComputeGrowth(size_t aOldElts, size_t aIncr, int) {
   return GrowEltsByDoubling<EltSize>(aOldElts, aIncr);
 }
 
 // If the AllocPolicy provides its own computeGrowth<EltSize> implementation,
 // use that.
 template <typename AP, size_t EltSize>
-static size_t ComputeGrowth(
+size_t ComputeGrowth(
     size_t aOldElts, size_t aIncr,
     decltype(std::declval<AP>().template computeGrowth<EltSize>(0, 0),
              bool()) aOverloadSelector) {
@@ -558,6 +558,22 @@ class MOZ_NON_PARAM MOZ_GSL_OWNER Vector final : private AllocPolicy {
   bool empty() const { return mLength == 0; }
 
   size_t capacity() const { return mTail.mCapacity; }
+
+#ifdef DEBUG
+  /**
+   * True unless mBegin is stale relative to this vector's own address.
+   * usingInlineStorage() reports whether mBegin points at this vector's own
+   * embedded storage; that self-reference goes stale if a struct embedding this
+   * vector is relocated via a raw byte copy that skips the struct's move
+   * constructor, e.g. by nsTArray's default (memmove) element-relocation
+   * strategy. (To fix that particular case, use
+   * MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR on the element type so nsTArray
+   * uses its move constructor instead.)
+   */
+  bool isStorageConsistent() const {
+    return usingInlineStorage() == (mTail.mCapacity == kInlineCapacity);
+  }
+#endif
 
   T* begin() {
     MOZ_ASSERT(!mEntered);

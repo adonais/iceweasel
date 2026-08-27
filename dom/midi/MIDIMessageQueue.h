@@ -27,7 +27,7 @@ class MIDIMessage;
  */
 class MIDIMessageQueue {
  public:
-  MIDIMessageQueue();
+  MIDIMessageQueue() = default;
   ~MIDIMessageQueue() = default;
   // Adds an array of possibly out-of-order messages to our queue.
   void Add(nsTArray<MIDIMessage>& aMsg);
@@ -47,7 +47,7 @@ class MIDIMessageQueue {
   // Array of messages to be sent.
   nsTArray<MIDIMessage> mMessageQueue;
   // Mutex for coordinating cross thread array access.
-  Mutex mMutex MOZ_UNANNOTATED;
+  Mutex mMutex MOZ_UNANNOTATED{"MIDIMessageQueue::mMutex"};
 };
 
 }  // namespace dom

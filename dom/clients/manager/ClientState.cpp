@@ -38,8 +38,6 @@ ClientWindowState& ClientWindowState::operator=(ClientWindowState&& aRight) {
   return *this;
 }
 
-ClientWindowState::~ClientWindowState() = default;
-
 mozilla::dom::VisibilityState ClientWindowState::VisibilityState() const {
   return mData->visibilityState();
 }
@@ -81,8 +79,6 @@ ClientWorkerState& ClientWorkerState::operator=(ClientWorkerState&& aRight) {
   mData = std::move(aRight.mData);
   return *this;
 }
-
-ClientWorkerState::~ClientWorkerState() = default;
 
 StorageAccess ClientWorkerState::GetStorageAccess() const {
   return mData->storageAccess();

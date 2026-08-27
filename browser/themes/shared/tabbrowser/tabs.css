@@ -10,11 +10,16 @@
   &[uidensity="compact"] {
     --tab-min-height: 28px;
     --tab-inline-padding: 6px;
-    --tab-group-line-toolbar-border-distance: 0;
+    --tab-group-line-toolbar-border-distance: 0px;
+    --tab-collapsed-split-pill-offset: 2px;
   }
   --tab-group-label-size: var(--tab-min-height);
   &[uidensity="touch"] {
     --tab-group-label-size: var(--tab-min-height);
+  }
+
+  @media (-moz-native-theme) {
+    --tab-box-shadow-selected: var(--box-shadow-level-1);
   }
 
   @media not -moz-pref("browser.nova.enabled") {
@@ -29,11 +34,7 @@
       --tab-group-label-size: 27px;
     }
   }
-  @media -moz-pref("browser.nova.enabled") {
-    &[uidensity="compact"] {
-      --tab-block-margin: 4px;
-    }
-  }
+
   --tab-group-counter-size: 24px;
   --split-view-padding-block: 2px;
   --split-view-tab-padding-inline: 2px;
@@ -47,6 +48,7 @@
   /* Collapsed tabs should be square, so set width to match the min height */
   --tab-collapsed-background-width: var(--tab-min-height);
   --tab-collapsed-width: calc(var(--tab-collapsed-background-width) + 2 * var(--tab-inner-inline-margin));
+  --tab-collapsed-split-pill-offset: 0px;
   --tab-pinned-min-width-expanded: calc(var(--tab-pinned-expanded-background-width) + 2 * var(--tab-pinned-margin-inline-expanded));
   --tab-note-icon-end-margin: var(--dimension-4);
   --tab-selected-color-scheme: var(--toolbar-color-scheme);
@@ -71,6 +73,17 @@
   --tab-vertical-scrollbar-color: auto;
   @media (-moz-platform: macos) {
     --tab-vertical-scrollbar-color: color-mix(in srgb, currentColor 26%, transparent) transparent;
+  }
+
+  @media -moz-pref("browser.nova.enabled") {
+    --tab-group-label-padding: 8px;
+    --tab-context-line-block-offset: 3px;
+    --tab-context-line-collapsed-width: 12px;
+
+    &[uidensity="compact"] {
+      --tab-margin-block: 4px;
+      --tab-context-line-block-offset: 2px;
+    }
   }
 
   @media not -moz-pref("browser.nova.enabled") {
@@ -916,10 +929,6 @@ tab-split-view-wrapper[dragtarget] {
   outline: var(--tab-outline);
   outline-offset: var(--tab-outline-offset);
 
-  @media -moz-pref("browser.nova.enabled") {
-    border: 1px solid transparent;
-  }
-
   .tabbrowser-tab:hover > .tab-stack > &:not([selected], [multiselected]) {
     background-color: var(--tab-background-color-hover);
     outline-color: var(--tab-hover-outline-color);
@@ -931,11 +940,14 @@ tab-split-view-wrapper[dragtarget] {
     box-shadow: var(--tab-box-shadow-selected);
   }
 
-  &:is([selected]:not([multiselected])) {
+  @media -moz-pref("browser.nova.enabled") {
+    border: 1px solid transparent;
+    background-clip: border-box;
+
     /* The below lines are required for dark, light, and
       system themes to achieve the gradient border appearance */
-    @media (not (prefers-contrast)) and (-moz-pref("browser.nova.enabled")) {
-      :root[theme-in-app] & {
+    @media not ((prefers-contrast) or (-moz-native-theme)) {
+      :root[theme-in-app] &:is([selected]:not([multiselected])) {
         background:
           var(--tab-border-color-accent) border-box border-area,
           var(--tab-background-color-selected) padding-box;
@@ -1037,6 +1049,101 @@ tab-split-view-wrapper[dragtarget] {
 #tabbrowser-tabs[tablist-has-focus] .tabbrowser-tab.tablist-keyboard-focus > .tab-stack > .tab-background {
   outline: var(--focus-outline);
   outline-offset: var(--focus-outline-inset);
+}
+
+/* Container stroke indicator. Colors come from the --identity-* custom
+   properties set by the container color classes in usercontext.css. */
+@media not -moz-pref("browser.nova.enabled") {
+  .tabbrowser-tab[usercontextid] > .tab-stack > .tab-background > .tab-context-line {
+    background-color: var(--identity-icon-color);
+    height: 2px;
+    border-radius: var(--border-radius-xsmall);
+    margin: 0 calc(var(--tab-border-radius) / 2);
+    position: relative;
+
+    #tabbrowser-tabs[orient="vertical"] & {
+      height: auto;
+      width: 2px;
+      margin: calc(var(--tab-border-radius) / 2) 0;
+    }
+  }
+}
+
+@media -moz-pref("browser.nova.enabled") {
+  #tabbrowser-tabs[orient="horizontal"] tab-split-view-wrapper {
+    --tab-context-line-block-offset: 1px;
+  }
+
+  :root[uidensity="compact"] #tabbrowser-tabs[orient="vertical"] tab-split-view-wrapper {
+    --tab-context-line-block-offset: 1px;
+    --tab-context-line-collapsed-width: 8px;
+  }
+
+  .tabbrowser-tab {
+    anchor-scope: --tab-pill, --tab-favicon;
+  }
+
+  .tab-background {
+    anchor-name: --tab-pill;
+  }
+
+  .tab-icon-stack {
+    anchor-name: --tab-favicon;
+  }
+
+  .tabbrowser-tab[usercontextid] > .tab-stack > .tab-background > .tab-context-line {
+    position: absolute;
+    position-anchor: --tab-pill;
+    background-color: var(--identity-stroke-color);
+    border-radius: var(--border-radius-xsmall);
+    width: auto;
+    height: 2px;
+    inset-inline: anchor(start) anchor(end);
+    inset-block: anchor(start) auto;
+    margin-inline: 12px;
+    margin-block-start: var(--tab-context-line-block-offset);
+  }
+
+  :is(#tabbrowser-tabs[orient="horizontal"], :root:not([sidebar-expand-on-hover]) #tabbrowser-tabs[orient="vertical"][expanded])
+    .tabbrowser-tab[usercontextid]:not([visuallyselected], [multiselected], [pinned])
+    > .tab-stack
+    > .tab-background
+    > .tab-context-line {
+    mask-image: linear-gradient(to left, transparent, black var(--tab-label-mask-size));
+
+    &:-moz-locale-dir(rtl) {
+      mask-image: linear-gradient(to right, transparent, black var(--tab-label-mask-size));
+    }
+  }
+
+  /* Pinned tabs have no label or close button, so center a short stroke over
+     the favicon, inset by 1px on each side. */
+  .tabbrowser-tab[usercontextid][pinned] > .tab-stack > .tab-background > .tab-context-line {
+    width: calc(var(--icon-size) - 2px);
+    margin-inline: auto;
+  }
+
+  /* Expanded vertical mode lays pinned tabs out in a wide grid, so the stroke
+     runs across the whole pill instead. */
+  :root:not([sidebar-expand-on-hover])
+    #tabbrowser-tabs[orient="vertical"][expanded]
+    .tabbrowser-tab[usercontextid][pinned]
+    > .tab-stack
+    > .tab-background
+    > .tab-context-line {
+    width: auto;
+    margin-inline: calc(var(--tab-border-radius) / 2);
+  }
+
+  /* Collapsed vertical tabs are icon-only, pinned or not, so they all get the
+     same short stroke. It hangs off the favicon rather than the pill, so that
+     expanding the sidebar on hover doesn't stretch or move it. */
+  #tabbrowser-tabs[orient="vertical"]:not([expanded]) .tabbrowser-tab[usercontextid] > .tab-stack > .tab-background > .tab-context-line,
+  :root[sidebar-expand-on-hover] #tabbrowser-tabs[orient="vertical"] .tabbrowser-tab[usercontextid] > .tab-stack > .tab-background > .tab-context-line {
+    width: var(--tab-context-line-collapsed-width);
+    inset-inline: anchor(--tab-favicon start) auto;
+    margin-inline-start: calc((var(--icon-size) - var(--tab-context-line-collapsed-width)) / 2);
+  }
 }
 
 /* Pinned tabs */
@@ -1228,10 +1335,6 @@ tab-group > tab-split-view-wrapper {
   .tab-group-line {
     inset-block-end: calc(var(--tab-group-line-toolbar-border-distance) - var(--tab-margin-block) - var(--split-view-padding-block));
 
-    :root[uidensity="compact"] & {
-      inset-block-end: calc(-1 * var(--tab-block-margin) - var(--split-view-padding-block));
-    }
-
     @media not -moz-pref("browser.nova.enabled") {
       inset-inline-start: calc(var(--space-small) * -2);
     }
@@ -1247,6 +1350,8 @@ tab-group > tab-split-view-wrapper {
     }
   }
 
+  /* Small-ish subtree, but probably should be removed */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   &:has(tab:is([muted], [soundplaying], [activemedia-blocked])) {
     min-width: 200px;
   }
@@ -1340,14 +1445,14 @@ tab-group > tab-split-view-wrapper {
   .tabbrowser-tab {
     padding-block: 0 !important;
 
+    :root[uidensity="compact"] & {
+      --tab-collapsed-background-width: 24px;
+      --tab-min-height: 24px;
+    }
+
     .tab-background {
       margin-inline: var(--space-xxsmall);
       margin-block: 0;
-
-      :root[uidensity="compact"] & {
-        --tab-collapsed-background-width: 24px;
-        --tab-min-height: 24px;
-      }
     }
 
     .tab-content {
@@ -1561,7 +1666,7 @@ tab-group > tab-split-view-wrapper {
     overflow: visible;
 
     .tab-background {
-      margin-inline: auto;
+      margin-inline: var(--tab-collapsed-split-pill-offset);
       margin-block: 0;
     }
 
@@ -1569,6 +1674,8 @@ tab-group > tab-split-view-wrapper {
       padding-inline: unset;
       width: var(--tab-collapsed-background-width);
       justify-content: center;
+      margin-inline: var(--tab-collapsed-split-pill-offset);
+
       background-position-y: 4px !important;
       background-position-x: left calc(var(--tab-inline-padding) + var(--icon-size) - 10px) !important;
       &:-moz-locale-dir(rtl) {
@@ -2102,6 +2209,44 @@ tab-group {
   --panel-width: 22em;
   font: menu;
 
+  @media -moz-pref("browser.nova.enabled") {
+    > .panel-header {
+      justify-content: start;
+      text-align: start;
+    }
+
+    /* Clip the header in the edit modal for a11y. */
+    &:not(.tab-group-editor-mode-create) > .panel-header {
+      position: absolute;
+      overflow: hidden;
+      clip-path: inset(50%);
+      width: 0;
+      height: 0;
+      min-height: 0;
+      pointer-events: none;
+    }
+
+    /* Hide all toolbarseperators except the tab group suggestions one.
+     * Remove this rule and the toolbarseparators post-Nova (Bug 2056954). */
+    toolbarseparator:not(#tab-group-suggestions-separator) {
+      display: none;
+    }
+
+    &.tab-group-editor-mode-create .tab-group-editor-swatches {
+      padding-top: 0;
+    }
+
+    /* Clip the name label in the edit modal for a11y. */
+    &:not(.tab-group-editor-mode-create) > .tab-group-editor-name > label {
+      position: absolute;
+      overflow: hidden;
+      clip-path: inset(50%);
+      width: 0;
+      height: 0;
+      pointer-events: none;
+    }
+  }
+
   &.tab-group-editor-panel-expanded {
     --panel-width: 25em;
   }
@@ -2115,7 +2260,10 @@ tab-group {
     display: flex;
     flex-direction: column;
     margin: var(--panel-menuitem-margin);
-    padding-top: var(--panel-menuitem-padding-block);
+
+    @media not -moz-pref("browser.nova.enabled") {
+      padding-top: var(--panel-menuitem-padding-block);
+    }
 
     > label {
       margin-inline: 0;
@@ -2155,7 +2303,10 @@ tab-group {
     background-clip: content-box;
     background-color: var(--tabgroup-swatch-color);
     @media -moz-pref("browser.nova.enabled") {
+      width: 20px;
+      height: 20px;
       background-color: var(--tabgroup-swatch-color);
+      border-radius: var(--border-radius-circle);
     }
 
     input:checked + & {
@@ -2347,7 +2498,9 @@ tab-group {
   &::part(scrollbox) {
     scrollbar-width: thin;
     scrollbar-color: var(--tab-vertical-scrollbar-color);
-    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    /* A wheel notch, an arrow key and a scrollbar arrow button move rows. */
+    -moz-line-scroll-amount: var(--tab-height-with-margin-padding);
   }
 }
 
@@ -2360,6 +2513,15 @@ tab-group {
   padding: 0 calc(var(--tab-inline-padding) - var(--tab-inner-inline-margin));
   width: var(--tab-collapsed-background-width);
   margin-inline: var(--tab-inner-inline-margin);
+  position: relative;
+
+  /* Extend the click target across the inline margins (Fitts's law) */
+  &::before {
+    content: "";
+    position: absolute;
+    block-size: 100%;
+    inset-inline: calc(-1 * var(--tab-inner-inline-margin));
+  }
 
   #tabbrowser-tabs[orient="vertical"]:not([expanded]) & > .toolbarbutton-text {
     display: none;
@@ -2428,7 +2590,9 @@ tab-group {
   &::part(scrollbox) {
     scrollbar-width: thin;
     scrollbar-color: var(--tab-vertical-scrollbar-color);
-    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    /* A wheel notch, an arrow key and a scrollbar arrow button move rows. */
+    -moz-line-scroll-amount: var(--tab-height-with-margin-padding);
   }
 
   .tabbrowser-tab:not(:hover) > .tab-stack > .tab-background:not([selected], [multiselected]) {
@@ -2699,7 +2863,7 @@ tab-group {
 
   /* The below lines are required for dark, light, and
       system themes to achieve the gradient border appearance */
-  @media (not (prefers-contrast)) and (-moz-pref("browser.nova.enabled")) {
+  @media -moz-pref("browser.nova.enabled") and (not ((prefers-contrast) or (-moz-native-theme))) {
     :root[theme-in-app] & {
       border: 1px solid transparent;
       background:
@@ -3056,6 +3220,9 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
   color: var(--color-accent-primary);
   width: auto;
   padding: 0;
+  @media -moz-pref("browser.nova.enabled") {
+    padding-block-start: var(--space-medium);
+  }
 
   &:hover {
     --button-border-color-ghost-hover: var(--border-color-selected);

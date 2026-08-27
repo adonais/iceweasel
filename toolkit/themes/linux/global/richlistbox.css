@@ -17,12 +17,12 @@ richlistbox[disabled] {
   color: GrayText;
 }
 
-richlistitem[selected="true"] {
+richlistitem[selected] {
   background-color: -moz-cellhighlight;
   color: -moz-cellhighlighttext;
 }
 
-richlistbox:where(:focus) > richlistitem[selected="true"] {
+richlistbox:where(:focus) > richlistitem[selected] {
   background-color: SelectedItem;
   color: SelectedItemText;
 }
@@ -34,12 +34,12 @@ richlistbox.theme-listbox:focus > richlistitem[current="true"] {
   outline-offset: calc(-1 * var(--default-focusring-width));
 }
 
-richlistbox[seltype="multiple"]:focus > richlistitem[current="true"][selected="true"],
-richlistbox.theme-listbox:focus > richlistitem[current="true"][selected="true"] {
+richlistbox[seltype="multiple"]:focus > richlistitem[current="true"][selected],
+richlistbox.theme-listbox:focus > richlistitem[current="true"][selected] {
   outline-color: #f3d982; /* TODO: find a suitable system color */
 }
 
-richlistbox.theme-listbox:not(:focus) > richlistitem[selected="true"] {
+richlistbox.theme-listbox:not(:focus) > richlistitem[selected] {
   background-color: -moz-cellhighlight;
   color: -moz-cellhighlighttext;
 }

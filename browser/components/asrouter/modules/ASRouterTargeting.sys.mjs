@@ -81,6 +81,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
   SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
+  SmartTabGroupingManager:
+    "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
   TargetingContext: "resource://messaging-system/targeting/Targeting.sys.mjs",
   TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
   TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
@@ -422,6 +424,12 @@ export const QueryCache = {
     ),
     isDefaultBrowser: new CachedTargetingGetter(
       "isDefaultBrowser",
+      null,
+      FRECENT_SITES_UPDATE_INTERVAL,
+      ShellService
+    ),
+    isOneClickSetDefaultEnabled: new CachedTargetingGetter(
+      "isOneClickSetDefaultEnabled",
       null,
       FRECENT_SITES_UPDATE_INTERVAL,
       ShellService
@@ -886,6 +894,11 @@ const TargetingGetters = {
   get isDefaultBrowserUncached() {
     return ShellService.isDefaultBrowser();
   },
+  get isOneClickSetDefaultEnabled() {
+    return QueryCache.getters.isOneClickSetDefaultEnabled
+      .get()
+      .catch(() => null);
+  },
   get devToolsOpenedCount() {
     return lazy.devtoolsSelfXSSCount;
   },
@@ -992,6 +1005,9 @@ const TargetingGetters = {
   },
   get hasActiveAIWindow() {
     return !!lazy.AIWindow?.hasActiveAIWindows?.();
+  },
+  get isSmartTabGroupingAllowed() {
+    return !!lazy.SmartTabGroupingManager?.isAllowed;
   },
   get hasAccessedFxAPanel() {
     return lazy.hasAccessedFxAPanel;
@@ -1654,6 +1670,32 @@ const TargetingGetters = {
       }
       const mostRecent = Math.max(...crashes.map(c => c.date));
       return Math.floor((Date.now() - mostRecent) / (24 * 60 * 60 * 1000));
+    });
+  },
+
+  /**
+   * The number of crashes the user has experienced in the last 24 hours, as
+   * recorded in the dump files corresponding to submitted crashes.
+   *
+   * @returns {Promise<number>}
+   */
+  get crashCountInLastDay() {
+    return QueryCache.getters.crashData.get().then(crashes => {
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+      return crashes.filter(c => c.date >= cutoff).length;
+    });
+  },
+
+  /**
+   * The number of crashes the user has experienced in the last 7 days, as
+   * recorded in the dump files corresponding to submitted crashes.
+   *
+   * @returns {Promise<number>}
+   */
+  get crashCountInLastWeek() {
+    return QueryCache.getters.crashData.get().then(crashes => {
+      const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      return crashes.filter(c => c.date >= cutoff).length;
     });
   },
 

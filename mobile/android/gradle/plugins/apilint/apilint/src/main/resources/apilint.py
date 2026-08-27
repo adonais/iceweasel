@@ -54,19 +54,19 @@ def format(fg=None, bg=None, bright=False, bold=False, dim=False, reset=False):
         codes.append("0")
     else:
         if not fg is None:
-            codes.append("3%d" % (fg))
+            codes.append(f"3{fg}")
         if not bg is None:
             if not bright:
-                codes.append("4%d" % (bg))
+                codes.append(f"4{bg}")
             else:
-                codes.append("10%d" % (bg))
+                codes.append(f"10{bg}")
         if bold:
             codes.append("1")
         elif dim:
             codes.append("2")
         else:
             codes.append("22")
-    return "\033[%sm" % (";".join(codes))
+    return "\033[{}m".format(";".join(codes))
 
 
 def ident(raw):
@@ -165,7 +165,7 @@ class Field:
         else:
             self.value = None
 
-        self.ident = "field %s %s = %s;" % (self.typ.ident(), self.name, self.value)
+        self.ident = f"field {self.typ.ident()} {self.name} = {self.value};"
 
     def __hash__(self):
         return hash(self.raw)
@@ -296,7 +296,7 @@ class Method:
         for r in self.arguments(raw):
             self.args.append(Argument(clazz, self, r, location, blame, imports))
 
-        self.ident = "method %s %s(%s);" % (
+        self.ident = "method {} {}({});".format(
             self.typ.ident(),
             self.name,
             ", ".join(x.typ.ident() for x in self.args),
@@ -410,7 +410,7 @@ class Class:
             self.fullname = raw[raw.index("enum") + 1]
             self.isEnum = True
         else:
-            raise ValueError("Funky class type %s" % (self.raw))
+            raise ValueError(f"Funky class type {self.raw}")
 
         if "extends" in raw:
             self.extends = Type(
@@ -484,9 +484,9 @@ def _parse_stream(f, api_map, clazz_cb=None):
     imports = {}
 
     re_blame = re.compile(r"^([a-z0-9]{7,}) \(<([^>]+)>.+?\) (.+?)$")
-    for raw in f:
+    for source_line in f:
         line += 1
-        raw = raw.rstrip()
+        raw = source_line.rstrip()
         match = re_blame.match(raw)
         if match is not None:
             blame = match.groups()[0:2]
@@ -533,21 +533,11 @@ class Failure:
         self.detail = detail
 
         if error:
-            self.head = "Error %s" % (rule) if rule else "Error"
-            dump = "%s%s:%s %s" % (
-                format(fg=RED, bg=BLACK, bold=True),
-                self.head,
-                format(reset=True),
-                msg,
-            )
+            self.head = f"Error {rule}" if rule else "Error"
+            dump = f"{format(fg=RED, bg=BLACK, bold=True)}{self.head}:{format(reset=True)} {msg}"
         else:
-            self.head = "Warning %s" % (rule) if rule else "Warning"
-            dump = "%s%s:%s %s" % (
-                format(fg=YELLOW, bg=BLACK, bold=True),
-                self.head,
-                format(reset=True),
-                msg,
-            )
+            self.head = f"Warning {rule}" if rule else "Warning"
+            dump = f"{format(fg=YELLOW, bg=BLACK, bold=True)}{self.head}:{format(reset=True)} {msg}"
 
         self.location = clazz.location
         blame = clazz.blame
@@ -561,7 +551,7 @@ class Failure:
         dump += "\n    in " + repr(clazz.pkg)
         dump += "\n    at line " + repr(self.location)
         if blame is not None:
-            dump += "\n    last modified by %s in %s" % (blame[1], blame[0])
+            dump += f"\n    last modified by {blame[1]} in {blame[0]}"
 
         self.dump = dump
 
@@ -598,7 +588,7 @@ failures = {}
 def _fail(clazz, detail, error, rule, msg):
     """Records an API failure to be processed later."""
 
-    sig = "%s-%s-%s" % (clazz.fullname, repr(detail), msg)
+    sig = f"{clazz.fullname}-{repr(detail)}-{msg}"
     sig = sig.replace(" deprecated ", " ")
 
     failures[sig] = Failure(sig, clazz, detail, error, rule, msg)
@@ -803,7 +793,7 @@ def verify_actions(clazz):
                             clazz,
                             f,
                             "C4",
-                            "Inconsistent action value; expected '%s'" % (expected),
+                            f"Inconsistent action value; expected '{expected}'",
                         )
 
 
@@ -846,7 +836,7 @@ def verify_extras(clazz):
                             clazz,
                             f,
                             "C4",
-                            "Inconsistent extra value; expected '%s'" % (expected),
+                            f"Inconsistent extra value; expected '{expected}'",
                         )
 
 
@@ -1132,8 +1122,7 @@ def verify_helper_classes(clazz):
                         clazz,
                         f,
                         "C4",
-                        "Inconsistent interface constant; expected '%s'"
-                        % (clazz.fullname),
+                        f"Inconsistent interface constant; expected '{clazz.fullname}'",
                     )
 
     if "extends android.content.ContentProvider" in clazz.raw:
@@ -1148,8 +1137,7 @@ def verify_helper_classes(clazz):
                         clazz,
                         f,
                         "C4",
-                        "Inconsistent interface constant; expected '%s'"
-                        % (clazz.fullname),
+                        f"Inconsistent interface constant; expected '{clazz.fullname}'",
                     )
 
     if "extends android.content.BroadcastReceiver" in clazz.raw:
@@ -1306,7 +1294,7 @@ def verify_boolean(clazz):
                     clazz,
                     m,
                     "M6",
-                    "Symmetric method for %s must be named %s" % (trigger, expected),
+                    f"Symmetric method for {trigger} must be named {expected}",
                 )
 
     for m in clazz.methods:
@@ -1542,7 +1530,7 @@ def verify_overload_args(clazz):
             res = set()
             for i in range(len(args)):
                 a = args[i]
-                res.add("%s#%d" % (a, count[a]))
+                res.add(f"{a}#{count[a]}")
                 count[a] += 1
             return res
 
@@ -1562,8 +1550,9 @@ def verify_overload_args(clazz):
                     clazz,
                     m,
                     "M2",
-                    "Expected common arguments [%s] at beginning of overloaded method"
-                    % (", ".join(common_args)),
+                    "Expected common arguments [{}] at beginning of overloaded method".format(
+                        ", ".join(common_args)
+                    ),
                 )
             elif not locked_sig:
                 locked_sig = sig
@@ -1572,8 +1561,9 @@ def verify_overload_args(clazz):
                     clazz,
                     m,
                     "M2",
-                    "Expected consistent argument ordering between overloads: %s..."
-                    % (", ".join(locked_sig)),
+                    "Expected consistent argument ordering between overloads: {}...".format(
+                        ", ".join(locked_sig)
+                    ),
                 )
 
 
@@ -2197,7 +2187,7 @@ def verify_services(clazz):
                     clazz,
                     f,
                     "C4",
-                    "Inconsistent service value; expected '%s'" % (expected),
+                    f"Inconsistent service value; expected '{expected}'",
                 )
 
 
@@ -2244,8 +2234,7 @@ def verify_icu(clazz):
                     clazz,
                     m,
                     None,
-                    "Type %s should be replaced with richer ICU type %s"
-                    % (arg, better[arg]),
+                    f"Type {arg} should be replaced with richer ICU type {better[arg]}",
                 )
 
 
@@ -2479,8 +2468,9 @@ def verify_packages(api, allowed_packages):
                 clazz,
                 m,
                 "GV7",
-                "Class %s is not allowed. Allowed packages: %s."
-                % (typ, ".*, ".join(allowed_packages) + ".*"),
+                "Class {} is not allowed. Allowed packages: {}.".format(
+                    typ, ".*, ".join(allowed_packages) + ".*"
+                ),
             )
 
     def check_member(m, extra_types):
@@ -2503,8 +2493,9 @@ def verify_packages(api, allowed_packages):
                 clazz,
                 None,
                 "GV7",
-                "Class %s is not allowed. Allowed packages: %s."
-                % (clazz.typ, ".*, ".join(allowed_packages) + ".*"),
+                "Class {} is not allowed. Allowed packages: {}.".format(
+                    clazz.typ, ".*, ".join(allowed_packages) + ".*"
+                ),
             )
         if clazz.extends is not None:
             check_type(None, clazz.extends, extra_types)
@@ -2661,8 +2652,7 @@ def show_deprecations_at_birth(cur, prev):
                 error(clazz, i, None, "Found API deprecation at birth")
 
     print(
-        "%s Deprecated at birth %s\n"
-        % ((format(fg=WHITE, bg=BLUE, bold=True), format(reset=True)))
+        f"{format(fg=WHITE, bg=BLUE, bold=True)} Deprecated at birth {format(reset=True)}\n"
     )
     for f in sorted(failures):
         print(failures[f])
@@ -2892,8 +2882,7 @@ if __name__ == "__main__":
 
     if compat_fail and len(compat_fail) != 0:
         print(
-            "%s API compatibility issues %s\n"
-            % ((format(fg=WHITE, bg=BLUE, bold=True), format(reset=True)))
+            f"{format(fg=WHITE, bg=BLUE, bold=True)} API compatibility issues {format(reset=True)}\n"
         )
         failures = []
         for f in sorted(compat_fail):
@@ -2903,8 +2892,7 @@ if __name__ == "__main__":
 
     if len(cur_fail) != 0:
         print(
-            "%s API style issues %s\n"
-            % ((format(fg=WHITE, bg=BLUE, bold=True), format(reset=True)))
+            f"{format(fg=WHITE, bg=BLUE, bold=True)} API style issues {format(reset=True)}\n"
         )
         for f in sorted(cur_fail):
             print(cur_fail[f])
@@ -2916,12 +2904,11 @@ if __name__ == "__main__":
 
     if args["show_noticed"] and (len(cur_noticed) != 0 or len(removed) != 0):
         print(
-            "%s API changes noticed %s\n"
-            % ((format(fg=WHITE, bg=BLUE, bold=True), format(reset=True)))
+            f"{format(fg=WHITE, bg=BLUE, bold=True)} API changes noticed {format(reset=True)}\n"
         )
         for f in sorted(cur_noticed.keys()):
             print(f)
         for f in sorted(removed.keys()):
-            print("%s removed API" % f)
+            print(f"{f} removed API")
         print("")
         sys.exit(10)

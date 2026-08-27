@@ -6,7 +6,10 @@
   /* import-globals-from ../head_common.js */
   let commonFile = do_get_file("../head_common.js", false);
   let uri = Services.io.newFileURI(commonFile);
-  Services.scriptloader.loadSubScript(uri.spec, this);
+  Services.scriptloader.loadSubScriptWithOptions(uri.spec, {
+    target: this,
+    allowUnsafeURL: true,
+  });
 }
 
 // Put any other stuff relative to this test folder below.

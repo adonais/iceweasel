@@ -38,7 +38,7 @@ interface nsIUpdateTimerManager : nsISupports
    *
    * via a manifest entry. The values are as follows:
    *   contractID : the contract ID for the component.
-   *   method     : the method used to instantiate the interface. This should be
+   *   method     : the method used to instantiate the interface. This must be
    *                either getService or createInstance depending on your
    *                component.
    *   id         : the id that identifies the interval, used for persistence.

@@ -2,12 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/BloomFilter.h"
 #include "mozilla/UniquePtr.h"
-
-#include <stddef.h>
-#include <stdint.h>
 
 using mozilla::BitBloomFilter;
 using mozilla::CountingBloomFilter;

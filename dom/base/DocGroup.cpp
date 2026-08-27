@@ -102,6 +102,51 @@ DocGroup::CustomElementReactionsStack() {
   return mReactionsStack;
 }
 
+CustomElementRegistry* DocGroup::GetActiveConstructorRegistry(
+    JSObject* aConstructor) {
+  MOZ_ASSERT(aConstructor);
+  for (auto& entry : mActiveConstructorMap) {
+    if (entry.mConstructor->CallableOrNull() == aConstructor) {
+      return entry.mRegistry;
+    }
+  }
+  return nullptr;
+}
+
+DocGroup::AutoActiveConstructorRegistry::AutoActiveConstructorRegistry(
+    DocGroup* aDocGroup, CustomElementConstructor* aConstructor,
+    CustomElementRegistry* aRegistry)
+    : mDocGroup(aDocGroup), mConstructor(aConstructor) {
+  MOZ_ASSERT(mDocGroup);
+  MOZ_ASSERT(mConstructor);
+  JSObject* callable = mConstructor->CallableOrNull();
+  for (auto& entry : mDocGroup->mActiveConstructorMap) {
+    if (entry.mConstructor->CallableOrNull() == callable) {
+      mPreviousRegistry = std::move(entry.mRegistry);
+      entry.mRegistry = aRegistry;
+      return;
+    }
+  }
+  mDocGroup->mActiveConstructorMap.AppendElement(
+      ActiveConstructorEntry{mConstructor, aRegistry});
+}
+
+DocGroup::AutoActiveConstructorRegistry::~AutoActiveConstructorRegistry() {
+  JSObject* callable = mConstructor->CallableOrNull();
+  for (auto it = mDocGroup->mActiveConstructorMap.rbegin();
+       it != mDocGroup->mActiveConstructorMap.rend(); ++it) {
+    if (it->mConstructor->CallableOrNull() == callable) {
+      if (mPreviousRegistry) {
+        it->mRegistry = std::move(mPreviousRegistry);
+      } else {
+        mDocGroup->mActiveConstructorMap.RemoveElementAt(
+            std::prev(it.base()).GetIndex());
+      }
+      return;
+    }
+  }
+}
+
 void DocGroup::AddDocument(Document* aDocument) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!mDocuments.Contains(aDocument));
@@ -114,13 +159,13 @@ void DocGroup::AddDocument(Document* aDocument) {
   MOZ_ASSERT_IF(
       aDocument->GetBrowsingContext(),
       aDocument->GetBrowsingContext()->Group() == mBrowsingContextGroup);
-  mDocuments.AppendElement(aDocument);
+  mDocuments.Insert(aDocument);
 }
 
 void DocGroup::RemoveDocument(Document* aDocument) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mDocuments.Contains(aDocument));
-  mDocuments.RemoveElement(aDocument);
+  mDocuments.Remove(aDocument);
 
   if (mDocuments.IsEmpty()) {
     mBrowsingContextGroup = nullptr;

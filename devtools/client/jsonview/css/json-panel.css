@@ -17,6 +17,12 @@
 }
 
 .jsonParseError {
-  color: var(--theme-text-color-error);
-  background-color: var(--theme-toolbar-error-background);
+  color: var(--theme-error-color);
+  background-color: var(--theme-error-background);
+}
+
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+tr:has(.jsonlLineError) {
+  color: var(--theme-error-color);
+  background-color: var(--theme-error-background);
 }

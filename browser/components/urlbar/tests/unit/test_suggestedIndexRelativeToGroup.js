@@ -17,20 +17,20 @@ const MAX_RESULTS = 10;
 const RESULT_GROUPS = {
   children: [
     {
-      group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+      group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
       flexChildren: true,
       children: [
         {
           flex: 1,
-          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
         },
         {
           flex: 1,
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
         },
         {
           flex: 1,
-          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
         },
       ],
     },
@@ -61,13 +61,13 @@ add_task(async function test() {
   //   Describes the suggestedIndex results the test provider should return.
   //   Properties:
   //     * {number} suggestedIndex
-  //     * {UrlbarUtils.RESULT_GROUP} group
+  //     * {UrlbarShared.RESULT_GROUP} group
   //       This will force the result to have the given group.
   // * {array} expected
   //   Describes the expected results the muxer should return, i.e., the search
   //   results. Each object in the array describes a slice of expected results.
   //   The size of the slice is defined by the `count` property.
-  //     * {UrlbarUtils.RESULT_GROUP} group
+  //     * {UrlbarShared.RESULT_GROUP} group
   //       The expected group of the results in the slice.
   //     * {number} count
   //       The number of results in the slice.
@@ -87,24 +87,24 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: 0,
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
         },
       ],
       expected: [
         {
-          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
           count: 4,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
           suggestedIndex: 0,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
           count: 2,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           // The muxer will remove the first 4 remote suggestions because they
           // dupe the earlier form history.
           offset: 4,
@@ -118,24 +118,24 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: -1,
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
         },
       ],
       expected: [
         {
-          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
           count: 4,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
           count: 2,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
           suggestedIndex: -1,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           // The muxer will remove the first 4 remote suggestions because they
           // dupe the earlier form history.
           offset: 4,
@@ -149,24 +149,24 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: 0,
-          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
         },
       ],
       expected: [
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
           suggestedIndex: 0,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
           count: 3,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
           count: 3,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           // The muxer will remove the first 3 remote suggestions because they
           // dupe the earlier form history.
           offset: 3,
@@ -180,27 +180,27 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: -1,
-          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
         },
       ],
       expected: [
         {
-          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
           count: 3,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
           count: 3,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           // The muxer will remove the first 3 remote suggestions because they
           // dupe the earlier form history.
           offset: 3,
           count: 3,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
           suggestedIndex: -1,
         },
       ],
@@ -211,32 +211,32 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: 0,
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
         },
         {
           suggestedIndex: -1,
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
         },
       ],
       expected: [
         {
-          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
           count: 4,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
           suggestedIndex: 0,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
           count: 1,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
           suggestedIndex: -1,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           // The muxer will remove the first 4 remote suggestions because they
           // dupe the earlier form history.
           offset: 4,
@@ -250,35 +250,35 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: 0,
-          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
         },
         {
           suggestedIndex: -1,
-          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
         },
       ],
       expected: [
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
           suggestedIndex: 0,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
           count: 3,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
           count: 3,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           // The muxer will remove the first 3 remote suggestions because they
           // dupe the earlier form history.
           offset: 3,
           count: 2,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
           suggestedIndex: -1,
         },
       ],
@@ -289,32 +289,32 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: 0,
-          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
         },
         {
           suggestedIndex: 0,
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
         },
       ],
       expected: [
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
           suggestedIndex: 0,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
           count: 3,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
           suggestedIndex: 0,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
           count: 2,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           // The muxer will remove the first 3 remote suggestions because they
           // dupe the earlier form history.
           offset: 3,
@@ -329,16 +329,16 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: -1,
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
         },
       ],
       expected: [
         {
-          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
           count: 9,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
           suggestedIndex: -1,
         },
       ],
@@ -351,12 +351,12 @@ add_task(async function test() {
         children: [
           {
             flex: 2,
-            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+            group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           },
           {
             flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
-            children: [{ group: UrlbarUtils.RESULT_GROUP.GENERAL }],
+            group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+            children: [{ group: UrlbarShared.RESULT_GROUP.GENERAL }],
           },
         ],
       },
@@ -364,16 +364,16 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: -1,
-          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
         },
       ],
       expected: [
         {
-          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           count: 9,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
           suggestedIndex: -1,
         },
       ],
@@ -385,19 +385,19 @@ add_task(async function test() {
         children: [
           {
             maxResultCount: 1,
-            children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
+            children: [{ group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST }],
           },
           {
             flexChildren: true,
             children: [
               {
                 flex: 2,
-                group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+                group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
               },
               {
                 flex: 1,
-                group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
-                children: [{ group: UrlbarUtils.RESULT_GROUP.GENERAL }],
+                group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
+                children: [{ group: UrlbarShared.RESULT_GROUP.GENERAL }],
               },
             ],
           },
@@ -409,7 +409,7 @@ add_task(async function test() {
           type: UrlbarShared.RESULT_TYPE.SEARCH,
           source: UrlbarShared.RESULT_SOURCE.SEARCH,
           heuristic: true,
-          group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
+          group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST,
           payload: {
             engine: "test",
             suggestion: "foo",
@@ -432,26 +432,26 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: -1,
-          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
         },
       ],
       expected: [
         {
-          group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
+          group: UrlbarShared.RESULT_GROUP.HEURISTIC_TEST,
           count: 1,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.SUGGESTED_INDEX,
+          group: UrlbarShared.RESULT_GROUP.SUGGESTED_INDEX,
           suggestedIndex: 1,
           resultSpan: 2,
           count: 1,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           count: 6,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          group: UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
           suggestedIndex: -1,
         },
       ],
@@ -463,16 +463,16 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: -1,
-          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
         },
       ],
       expected: [
         {
-          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
           count: 1,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
           count: 1,
         },
         // The suggestedIndex result should not be added.
@@ -485,20 +485,20 @@ add_task(async function test() {
       suggestedIndexResults: [
         {
           suggestedIndex: -1,
-          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
         },
       ],
       expected: [
         {
-          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+          group: UrlbarShared.RESULT_GROUP.FORM_HISTORY,
           count: 1,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          group: UrlbarShared.RESULT_GROUP.GENERAL,
           count: 1,
         },
         {
-          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          group: UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
           suggestedIndex: -1,
         },
       ],

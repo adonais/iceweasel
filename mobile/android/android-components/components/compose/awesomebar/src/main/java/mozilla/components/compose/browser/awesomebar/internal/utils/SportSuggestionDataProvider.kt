@@ -5,12 +5,12 @@
 package mozilla.components.compose.browser.awesomebar.internal.utils
 
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionCategory
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionDate
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionState
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatus
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatusType
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionTeam
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionCategory
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionDate
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionState
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionStatus
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionStatusType
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionTeam
 
 internal class SportSuggestionDataProvider : PreviewParameterProvider<SportSuggestionPreviewModel> {
 

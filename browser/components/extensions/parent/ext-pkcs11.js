@@ -164,12 +164,15 @@ this.pkcs11 = class extends ExtensionAPI {
           }
           let rv = [];
           for (let slot of module.slots) {
-            let token = slot.getToken();
             let slotobj = {
               name: slot.name,
               token: null,
             };
-            if (slot.status != 1 /* SLOT_NOT_PRESENT */) {
+            if (
+              slot.status != Ci.nsIPKCS11Slot.SLOT_DISABLED &&
+              slot.status != Ci.nsIPKCS11Slot.SLOT_NOT_PRESENT
+            ) {
+              let token = slot.getToken();
               slotobj.token = {
                 name: token.tokenName,
                 manufacturer: token.tokenManID,

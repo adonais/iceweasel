@@ -25,9 +25,9 @@ add_setup(async function () {
   gOverride.addIPOverride("example.net", "127.0.0.1");
   gServer = new HttpServer();
   gServer.start(-1);
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   gServerURL = `http://test1.example.com:${gServer.identity.primaryPort}/`;
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   gRedirectedURL = `http://example.net:${gServer.identity.primaryPort}/redir`;
   gServer.identity.add(
     "http",
@@ -46,7 +46,7 @@ add_setup(async function () {
 
     if (gCaptivePortalState == "captive-redirect") {
       response.setStatusLine(request.httpVersion, 302, "Moved Temporarily");
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       response.setHeader("Location", gRedirectedURL);
       response.write("redirecting");
     }

@@ -5,6 +5,7 @@
 package org.mozilla.focus.searchsuggestions
 
 import android.app.Application
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -37,6 +38,7 @@ sealed class State {
 /**
  * ViewModel for managing search suggestions.
  */
+@Stable
 class SearchSuggestionsViewModel(application: Application) : AndroidViewModel(application) {
     private val preferences: SearchSuggestionsPreferences = SearchSuggestionsPreferences(application)
 

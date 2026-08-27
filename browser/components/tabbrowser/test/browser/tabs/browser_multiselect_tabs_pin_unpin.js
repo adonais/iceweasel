@@ -29,7 +29,7 @@ add_task(async function test() {
   is(menuItemUnpinSelectedTabs.hidden, true, "Unpin Selected Tabs is hidden");
 
   // Check the context menu with a multiselected and unpinned tab
-  updateTabContextMenu(tab2);
+  await openTabContextMenu(tab2);
   ok(!tab2.pinned, "Tab2 is unpinned");
   is(menuItemPinTab.hidden, true, "Pin Tab is hidden");
   is(menuItemUnpinTab.hidden, true, "Unpin Tab is hidden");
@@ -38,7 +38,7 @@ add_task(async function test() {
 
   let tab1Pinned = BrowserTestUtils.waitForEvent(tab1, "TabPinned");
   let tab2Pinned = BrowserTestUtils.waitForEvent(tab2, "TabPinned");
-  menuItemPinSelectedTabs.click();
+  await BrowserTestUtils.activateMenuItem(menuItemPinSelectedTabs);
   await tab1Pinned;
   await tab2Pinned;
 
@@ -50,7 +50,7 @@ add_task(async function test() {
   is(tab3._tPos, 2, "Tab3 should still be third after pinning");
 
   // Check the context menu with a multiselected and pinned tab
-  updateTabContextMenu(tab2);
+  await openTabContextMenu(tab2);
   ok(tab2.pinned, "Tab2 is pinned");
   is(menuItemPinTab.hidden, true, "Pin Tab is hidden");
   is(menuItemUnpinTab.hidden, true, "Unpin Tab is hidden");
@@ -59,7 +59,7 @@ add_task(async function test() {
 
   let tab1Unpinned = BrowserTestUtils.waitForEvent(tab1, "TabUnpinned");
   let tab2Unpinned = BrowserTestUtils.waitForEvent(tab2, "TabUnpinned");
-  menuItemUnpinSelectedTabs.click();
+  await BrowserTestUtils.activateMenuItem(menuItemUnpinSelectedTabs);
   await tab1Unpinned;
   await tab2Unpinned;
 

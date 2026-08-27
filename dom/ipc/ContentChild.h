@@ -11,6 +11,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/GetFilesHelper.h"
+#include "mozilla/dom/LoadedOriginSet.h"
 #include "mozilla/dom/PContentChild.h"
 #include "mozilla/dom/ProcessActor.h"
 #include "mozilla/dom/RemoteType.h"
@@ -400,6 +401,8 @@ class ContentChild final : public PContentChild,
   // Call RemoteTypePrefix() on the result to remove URIs if you want to use
   // this for telemetry.
   const nsACString& GetRemoteType() const override;
+
+  mozilla::ipc::IPCResult RecvAddLoadedOrigin(nsIPrincipal* aPrincipal);
 
   mozilla::ipc::IPCResult RecvInitRemoteWorkerService(
       Endpoint<PRemoteWorkerServiceChild>&& aEndpoint,
@@ -958,6 +961,9 @@ inline nsISupports* ToSupports(mozilla::dom::ContentChild* aContentChild) {
 
 // Threadsafe getter for the current process's RemoteType.
 nsCString CurrentRemoteType();
+
+// Threadsafe getter for the current process's loaded origins.
+already_AddRefed<LoadedOriginSet> CurrentLoadedOriginSet();
 
 }  // namespace dom
 }  // namespace mozilla

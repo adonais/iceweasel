@@ -184,8 +184,12 @@ ExtensionManager = {
       const registeredContentScripts =
         this.registeredContentScripts.get(policy);
 
-      for (let [scriptId, options] of getData(extension, "contentScripts") ||
-        []) {
+      // Reuse the extension's map directly in the parent, else read from cpmm.
+      const dynamicContentScripts =
+        extension.registeredContentScripts ??
+        getData(extension, "contentScripts");
+
+      for (let [scriptId, options] of dynamicContentScripts ?? []) {
         const script = new WebExtensionContentScript(policy, options);
 
         // If the script is a userScript, add the additional userScriptOptions

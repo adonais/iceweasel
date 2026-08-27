@@ -2,14 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
+#include <iterator>
+#include <vector>
 
+#include "gtest/gtest.h"
 #include "mozilla/Algorithm.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ResultVariant.h"
-
-#include <iterator>
-#include <vector>
 
 using namespace mozilla;
 using std::begin;

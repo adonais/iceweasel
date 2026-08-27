@@ -7,6 +7,8 @@ var { XPCOMUtils } = ChromeUtils.importESModule(
 );
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  ContextualIdentityService:
+    "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
   PageWireframes: "resource:///modules/sessionstore/PageWireframes.sys.mjs",
   SponsorProtection:
     "moz-src:///browser/components/newtab/SponsorProtection.sys.mjs",
@@ -50,6 +52,12 @@ export default class TabHoverPanelSet {
       this,
       "_prefDisableAutohide",
       "ui.popup.disable_autohide",
+      false
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "_novaEnabled",
+      "browser.nova.enabled",
       false
     );
 
@@ -208,6 +216,18 @@ export default class TabHoverPanelSet {
     if (this.#activePanel == panel) {
       this.#activePanel = null;
     }
+  }
+
+  forceReset() {
+    for (let panel of [this.tabPanel, this.tabGroupPanel, this.tabNotePanel]) {
+      this.#clearDeactivateTimer(panel);
+      panel.onBeforeHide();
+      panel.panelElement.hidePopup();
+    }
+    // Reset last: TabNotePanel.onBeforeHide re-arms the zero-delay timer, so the
+    // opener must be cleared after all panels have been hidden.
+    this.panelOpener.reset();
+    this.#activePanel = null;
   }
 
   shouldActivate() {
@@ -525,9 +545,9 @@ class TabPanel extends HoverPanel {
       tab.linkedBrowser,
       thumbnailCanvas
     )
-      .then(() => {
+      .then(captured => {
         // in case we've changed tabs after capture started, ensure we still want to show the thumbnail
-        if (this.#tab == tab && this.#hasValidThumbnailState(tab)) {
+        if (captured && this.#tab == tab && this.#hasValidThumbnailState(tab)) {
           this.#thumbnailElement = thumbnailCanvas;
           this.#updatePreview();
         }
@@ -573,6 +593,40 @@ class TabPanel extends HoverPanel {
       : "";
   }
 
+  #updateContainerIndicator() {
+    const indicator = this.panelElement.querySelector(
+      ".tab-preview-container-indicator"
+    );
+
+    for (let className of [...indicator.classList]) {
+      if (
+        className.startsWith("identity-color-") ||
+        className.startsWith("identity-icon-")
+      ) {
+        indicator.classList.remove(className);
+      }
+    }
+
+    const userContextId = this.#tab?.userContextId;
+    const identity = userContextId
+      ? lazy.ContextualIdentityService.getPublicIdentityFromId(userContextId)
+      : null;
+    if (!identity) {
+      indicator.hidden = true;
+      return;
+    }
+
+    if (identity.color) {
+      indicator.classList.add(`identity-color-${identity.color}`);
+    }
+    if (identity.icon) {
+      indicator.classList.add(`identity-icon-${identity.icon}`);
+    }
+    indicator.querySelector(".tab-preview-container-label").textContent =
+      lazy.ContextualIdentityService.getUserContextLabel(userContextId);
+    indicator.hidden = false;
+  }
+
   /**
    * Opens the tab note menu in the context of the current tab. Since only
    * one panel should be open at a time, this also closes the tab hover preview
@@ -595,6 +649,8 @@ class TabPanel extends HoverPanel {
       this.#displayTitle;
     this.panelElement.querySelector(".tab-preview-uri").textContent =
       this.#displayURI;
+
+    this.#updateContainerIndicator();
 
     if (this.win.gBrowser.showPidAndActiveness) {
       this.panelElement.querySelector(".tab-preview-pid").textContent =
@@ -641,7 +697,7 @@ class TabPanel extends HoverPanel {
         thumbnailContainer.appendChild(this.#thumbnailElement);
       }
       this.panelElement.dispatchEvent(
-        new CustomEvent("previewThumbnailUpdated", {
+        new CustomEvent("TabPreviewThumbnailUpdated", {
           detail: {
             thumbnail: this.#thumbnailElement,
           },
@@ -650,6 +706,10 @@ class TabPanel extends HoverPanel {
     }
 
     this.#movePanel();
+
+    this.panelElement.dispatchEvent(
+      new CustomEvent("TabPreviewUpdated", { bubbles: true })
+    );
   }
 
   #movePanel() {
@@ -786,6 +846,10 @@ class TabGroupPanel extends HoverPanel {
       fragment.appendChild(tabbutton);
     }
     this.panelContent.replaceChildren(fragment);
+
+    this.panelElement.dispatchEvent(
+      new CustomEvent("TabGroupPreviewUpdated", { bubbles: true })
+    );
   }
 
   handleEvent(event) {
@@ -845,24 +909,29 @@ class TabGroupPanel extends HoverPanel {
   }
 
   get popupOptions() {
-    if (!this.win.gBrowser.tabContainer.verticalMode) {
+    // With Nova enabled, offset the panel by the border-radius (16px).
+
+    const nova = this.panelSet._novaEnabled;
+
+    if (this.win.gBrowser.tabContainer.verticalMode) {
       return {
-        position: "bottomleft topleft",
+        position: this.win.SidebarController._positionStart
+          ? "topright topleft"
+          : "topleft topright",
         x: 0,
-        y: 0,
+        y: nova ? -16 : -5,
       };
     }
-    if (!this.win.SidebarController._positionStart) {
-      return {
-        position: "topleft topright",
-        x: 0,
-        y: -5,
-      };
+
+    if (!nova) {
+      return { position: "bottomleft topleft", x: 0, y: 0 };
     }
+
+    const rtl = this.win.RTL_UI;
     return {
-      position: "topright topleft",
-      x: 0,
-      y: -5,
+      position: rtl ? "bottomright topright" : "bottomleft topleft",
+      x: rtl ? 16 : -16,
+      y: 0,
     };
   }
 
@@ -1052,6 +1121,10 @@ class TabNotePanel extends HoverPanel {
     );
 
     this.#movePanel();
+
+    this.panelElement.dispatchEvent(
+      new CustomEvent("TabNotePreviewUpdated", { bubbles: true })
+    );
   }
 
   #movePanel() {
@@ -1215,5 +1288,22 @@ class TabPreviewPanelTimedFunction {
 
   get delayActive() {
     return this.#timer !== null;
+  }
+
+  get zeroDelayActive() {
+    return !!this.#useZeroDelay;
+  }
+
+  reset() {
+    if (this.#timer) {
+      this.#win.clearTimeout(this.#timer);
+      this.#timer = null;
+    }
+    if (this.#useZeroDelay) {
+      this.#win.clearTimeout(this.#useZeroDelay);
+      this.#useZeroDelay = null;
+    }
+    this.#target = null;
+    this.#from = null;
   }
 }

@@ -111,7 +111,7 @@ void AnimationEventDispatcher::Disconnect() {
 void AnimationEventDispatcher::QueueEvent(AnimationEventInfo&& aEvent) {
   const bool wasEmpty = mPendingEvents.IsEmpty();
   mPendingEvents.AppendElement(std::move(aEvent));
-  mIsSorted = !wasEmpty;
+  mIsSorted = wasEmpty;
   if (wasEmpty) {
     ScheduleDispatch();
   }

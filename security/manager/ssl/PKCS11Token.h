@@ -13,6 +13,16 @@
 #include "nsString.h"
 #include "pk11func.h"
 
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#  include "mozilla/psm/PPKCS11Module.h"
+#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
+
+// Helper function to change the password on a PK11SlotInfo.
+// If no password was already set, `oldPassword` should be empty.
+nsresult DoChangePassword(const mozilla::UniquePK11SlotInfo& slot,
+                          const nsACString& oldPassword,
+                          const nsACString& newPassword);
+
 class PKCS11Token : public nsIPKCS11Token {
  public:
   NS_DECL_ISUPPORTS
@@ -22,6 +32,10 @@ class PKCS11Token : public nsIPKCS11Token {
 
   PKCS11Token() = default;
   nsresult Init();
+
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+  nsresult GetTokenInfo(mozilla::psm::TokenInfo& tokenInfo);
+#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 
  protected:
   virtual ~PKCS11Token() = default;
@@ -43,5 +57,22 @@ class PKCS11Token : public nsIPKCS11Token {
   nsresult GetAttributeHelper(const nsACString& attribute,
                               /*out*/ nsACString& xpcomOutParam);
 };
+
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+class RemotePKCS11Token : public nsIPKCS11Token {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIPKCS11TOKEN
+
+  explicit RemotePKCS11Token(const mozilla::psm::TokenInfo& tokenInfo)
+      : mTokenInfo(tokenInfo) {}
+
+ protected:
+  virtual ~RemotePKCS11Token() = default;
+
+ private:
+  mozilla::psm::TokenInfo mTokenInfo;
+};
+#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 
 #endif  // PKCS11Token_h

@@ -24,7 +24,7 @@ When a print job starts, [`nsPrintJob::SetupToPrintContent`](https://searchfox.o
 In-process iframes embedded in the document are also initialized here in the same way.
 
 For a parent process document, `NotifyOfPrintDocument` calls [`PdfStructTreeBuilder::Init`](https://searchfox.org/firefox-main/rev/2e7b2a02b5198ae72c06debc5cc1c2ac527fd742/accessible/pdf/PdfStructTreeBuilder.cpp#36) directly.
-For remote documents in content processes, after the local accessibility tree is built, `NotifyOfPrintDocument` arranges for `PdfStructTreeBuilder::Init(browsingContext)` to be called in the parent process (see the next section on IPC).
+For remote documents in content processes, after the local accessibility tree is built, `NotifyOfPrintDocument` arranges for `PdfStructTreeBuilder::Init(windowContext)` to be called in the parent process (see the next section on IPC).
 
 ## IPC: Remote Top Level Documents and OOP Iframes
 
@@ -71,12 +71,12 @@ The struct tree alone is not sufficient: each drawing command in the content str
 ### Layout: Emitting `nsDisplayAccessibleId`
 
 During display list construction for a print document, [`nsIFrame::BuildDisplayListForChild`](https://searchfox.org/firefox-main/rev/2e7b2a02b5198ae72c06debc5cc1c2ac527fd742/layout/generic/nsIFrame.cpp#4238) calls the local helper [`MaybeAddAccId`](https://searchfox.org/firefox-main/rev/2e7b2a02b5198ae72c06debc5cc1c2ac527fd742/layout/generic/nsIFrame.cpp#4223) for each child frame.
-`MaybeAddAccId` calls [`PdfStructTreeBuilder::GetAccId(frame)`](https://searchfox.org/firefox-main/rev/2e7b2a02b5198ae72c06debc5cc1c2ac527fd742/accessible/pdf/PdfStructTreeBuilder.cpp#105) which looks up the `Accessible` for the frame's content node and returns a `{browsingContextId, accessibleId}` pair.
+`MaybeAddAccId` calls [`PdfStructTreeBuilder::GetAccId(frame)`](https://searchfox.org/firefox-main/rev/2e7b2a02b5198ae72c06debc5cc1c2ac527fd742/accessible/pdf/PdfStructTreeBuilder.cpp#105) which looks up the `Accessible` for the frame's content node and returns a `{innerWindowId, accessibleId}` pair.
 If one is found, an [`nsDisplayAccessibleId`](https://searchfox.org/firefox-main/rev/2e7b2a02b5198ae72c06debc5cc1c2ac527fd742/layout/painting/nsDisplayList.h#6854) display item is prepended to the content list for that frame.
 
 ### Painting: The `DrawTarget::AccessibleId` Command
 
-[`nsDisplayAccessibleId::Paint`](https://searchfox.org/firefox-main/rev/2e7b2a02b5198ae72c06debc5cc1c2ac527fd742/layout/painting/nsDisplayList.cpp#8737) calls [`DrawTarget::AccessibleId(browsingContextId, accId)`](https://searchfox.org/firefox-main/rev/2e7b2a02b5198ae72c06debc5cc1c2ac527fd742/gfx/2d/2D.h#1459).
+[`nsDisplayAccessibleId::Paint`](https://searchfox.org/firefox-main/rev/2e7b2a02b5198ae72c06debc5cc1c2ac527fd742/layout/painting/nsDisplayList.cpp#8737) calls [`DrawTarget::AccessibleId(innerWindowId, accId)`](https://searchfox.org/firefox-main/rev/2e7b2a02b5198ae72c06debc5cc1c2ac527fd742/gfx/2d/2D.h#1459).
 For parent process content rendered directly to a `DrawTargetSkia` backed by an SkPDF canvas, [`DrawTargetSkia::AccessibleId`](https://searchfox.org/firefox-main/rev/2e7b2a02b5198ae72c06debc5cc1c2ac527fd742/gfx/2d/DrawTargetSkia.cpp#2259) translates the Gecko IDs to a SkPDF integer via [`PdfStructTreeBuilder::GetPdfId`](https://searchfox.org/firefox-main/rev/2e7b2a02b5198ae72c06debc5cc1c2ac527fd742/accessible/pdf/PdfStructTreeBuilder.cpp#88), then calls `SkPDF::SetNodeId(mCanvas, pdfId)`.
 All drawing commands issued to the canvas after this point are tagged with that node in the PDF.
 

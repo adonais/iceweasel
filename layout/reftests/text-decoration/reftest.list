@@ -125,3 +125,8 @@ pref(layout.css.always_underline_links,true) == always-underline-links.html alwa
 == overline-thickness-rounding-1.html overline-thickness-rounding-1-ref.html
 == line-through-thickness-rounding-1.html line-through-thickness-rounding-1-ref.html
 == underline-thickness-rounding-dppx2-1.html underline-thickness-rounding-dppx2-1-ref.html # needs drawSnapshot; headless SWGL (no widget layers) makes drawWindow fail at forced DPR 2.0
+
+# Bug 2059455: a wrapped link's underline must survive the clip that restricts
+# each line's decoration to its own text range. The phase the bug needs only
+# exists at a device pixel ratio of 1 (as in CI); elsewhere the test just passes.
+!= wrapped-link-underline-phase.html wrapped-link-underline-phase-notref.html

@@ -14,10 +14,11 @@
 #include "mozilla/net/ChannelEventQueue.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/WebSocketChannel.h"
-#include "nsComponentManagerUtils.h"
 #include "nsIAuthPromptProvider.h"
 #include "nsICookieJarSettings.h"
 #include "nsIPrincipal.h"
+#include "nsIWebSocketProtocolHandler.h"
+#include "nsServiceManagerUtils.h"
 
 using namespace mozilla::ipc;
 
@@ -63,6 +64,7 @@ mozilla::ipc::IPCResult WebSocketChannelParent::RecvAsyncOpen(
   nsresult rv;
   nsCOMPtr<nsILoadInfo> loadInfo;
   nsCOMPtr<nsIURI> uri;
+  nsCOMPtr<nsIWebSocketProtocolHandler> wsHandler;
   nsCString origin;
   OriginAttributes originAttributes;
 
@@ -93,13 +95,12 @@ mozilla::ipc::IPCResult WebSocketChannelParent::RecvAsyncOpen(
     }
   }
 
-  if (aSecure) {
-    mChannel =
-        do_CreateInstance("@mozilla.org/network/protocol;1?name=wss", &rv);
-  } else {
-    mChannel =
-        do_CreateInstance("@mozilla.org/network/protocol;1?name=ws", &rv);
-  }
+  wsHandler = do_GetService(aSecure ? "@mozilla.org/network/protocol;1?name=wss"
+                                    : "@mozilla.org/network/protocol;1?name=ws",
+                            &rv);
+  if (NS_FAILED(rv)) goto fail;
+
+  rv = wsHandler->NewWebSocketChannel(getter_AddRefs(mChannel));
   if (NS_FAILED(rv)) goto fail;
 
   rv = mChannel->SetSerial(mSerial);

@@ -646,6 +646,11 @@ class DesktopInstance(GeckoInstance):
         # Enable output for dump() and chrome console API
         "browser.dom.window.dump.enabled": True,
         "devtools.console.stdout.chrome": True,
+        # Don't open the downloads panel every time a download begins.
+        # The first download ever run in a new profile will still open the panel,
+        # but because "browser.download.panel.shown" is set to true,
+        # this preference is going to act as the first download already happened.
+        "browser.download.focusPanelOnOpen": False,
         # Indicate that the download panel has been shown once so that whichever
         # download test runs first doesn"t show the popup inconsistently
         "browser.download.panel.shown": True,

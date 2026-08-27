@@ -198,7 +198,7 @@ void js::gc::MarkingTracerT<opts>::eagerlyMarkChildren(JSRope* rope) {
     if constexpr (hasOption(gc::MarkingOptions::ConcurrentMarking)) {
       gc::MemoryAcquireFence<opts>(this->runtime());
       uint32_t flags = rope->getFlagsForTracing();
-      if (!StringFlags::isRope(flags)) {
+      if (!StringFlags::isRope(flags) || StringFlags::isBeingFlattened(flags)) {
         shouldMark = false;
       }
     }

@@ -105,14 +105,12 @@ def load_moz_yaml(filename, verify=True, require_license_file=True):
     if manifest["schema"] == "1":
         schema = _schema_1()
         schema_additional = _schema_1_additional
-        schema_transform = _schema_1_transform
     else:
         raise MozYamlVerifyError(filename, "Unsupported manifest schema")
 
     try:
-        schema(manifest)
+        manifest = schema(manifest)
         schema_additional(filename, manifest, require_license_file=require_license_file)
-        manifest = schema_transform(manifest)
     except (voluptuous.Error, ValueError) as e:
         raise MozYamlVerifyError(filename, e)
 
@@ -221,6 +219,7 @@ def _schema_1():
             "release-artifact": All(str, Length(min=1)),
             "flavor": Match(r"^(regular|rust|individual-files)$"),
             "skip-vendoring-steps": Unique([str]),
+            "tolerate-git-fsck-errors": Boolean(),
             "vendor-directory": All(str, Length(min=1)),
             "patches": Unique([str]),
             "keep": Unique([str]),
@@ -425,22 +424,6 @@ def _schema_1_additional(filename, manifest, require_license_file=True):
                     break
         if not has_schema:
             raise ValueError("Not simple YAML")
-
-
-# Do type conversion for the few things that need it.
-# Everythig is parsed as a string to (a) not cause problems with revisions that
-# are only numerals and (b) not strip leading zeros from the numbers if we just
-# converted them to string
-def _schema_1_transform(manifest):
-    if "updatebot" in manifest:
-        if "tasks" in manifest["updatebot"]:
-            for i in range(len(manifest["updatebot"]["tasks"])):
-                if "enabled" in manifest["updatebot"]["tasks"][i]:
-                    val = manifest["updatebot"]["tasks"][i]["enabled"]
-                    manifest["updatebot"]["tasks"][i]["enabled"] = (
-                        val.lower() == "true" or val.lower() == "yes"
-                    )
-    return manifest
 
 
 class VendoringActions:

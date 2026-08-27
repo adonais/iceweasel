@@ -44,7 +44,7 @@ RUN apt-get update && \
       zip \
       zstd
 
-RUN pip3 install taskcluster==98.0.0
+RUN pip3 install taskcluster==102.0.1
 
 RUN locale-gen "$LANG"
 
@@ -57,7 +57,7 @@ RUN chown -R worker:worker ${HOME}/.config
 USER worker:worker
 
 ENV GOOGLE_SDK_DOWNLOAD ./gcloud.tar.gz
-ENV GOOGLE_SDK_VERSION 561
+ENV GOOGLE_SDK_VERSION 577
 
 ENV TEST_TOOLS /builds/worker/test-tools
 ENV PATH ${PATH}:${TEST_TOOLS}:${TEST_TOOLS}/google-cloud-sdk/bin
@@ -77,7 +77,8 @@ RUN curl -L https://github.com/Flank/flank/releases/download/v${FLANK_VERSION}/f
     && chmod +x ${FLANK_DOWNLOAD}
 
 # Used in taskcluster/scripts/tests/parse-junit-results.py for parsing and displaying JUnit XML results
-RUN pip3 install junitparser==4.0.2 beautifultable==1.1.0
+# junitparser 5.x requires Python >=3.10 (satisfied by ubuntu2204-base)
+RUN pip3 install junitparser==5.0.1 beautifultable==1.1.0
 
 # Used for env var ingest in testrail.py
 RUN pip3 install python-dotenv==1.2.2

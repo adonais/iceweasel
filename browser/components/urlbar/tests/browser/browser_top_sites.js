@@ -138,6 +138,11 @@ add_task(async function topSitesShown() {
         result.title,
         "The Top Site title and the result title shoud match."
       );
+      Assert.equal(
+        result.element.row.getAttribute("type"),
+        "top_site",
+        "The Top Site row should have the expected 'type'."
+      );
     }
     await UrlbarTestUtils.promisePopupClose(window, () => {
       gURLBar.blur();
@@ -176,6 +181,12 @@ add_task(async function selectSearchTopSite() {
     amazonSearch.result.payload.keyword,
     "@amazon",
     "First result should have the Amazon keyword."
+  );
+
+  Assert.equal(
+    amazonSearch.getAttribute("type"),
+    "search_engine",
+    "The search row should have the expected 'type'."
   );
 
   let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
@@ -223,10 +234,20 @@ add_task(async function topSitesBookmarksAndTabs() {
     "The example.com Top Site should be the first result."
   );
 
-  Assert.equal(
+  Assert.notEqual(
     exampleResult.source,
-    UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
+    UrlbarShared.RESULT_SOURCE.TABS,
     "The example.com Top Site should not appear in the view as an open tab result since it is the current tab."
+  );
+  Assert.notEqual(
+    exampleResult.type,
+    UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+    "The example.com Top Site should not be a TAB_SWITCH"
+  );
+  Assert.equal(
+    exampleResult.element.row.getAttribute("type"),
+    "history",
+    "The example.com Top Site row should have the expected 'type'"
   );
 
   let youtubeResult = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
@@ -239,6 +260,11 @@ add_task(async function topSitesBookmarksAndTabs() {
     youtubeResult.source,
     UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     "The YouTube Top Site should appear in the view as a bookmark result."
+  );
+  Assert.equal(
+    youtubeResult.element.row.getAttribute("type"),
+    "bookmark",
+    "The YouTube Top Site row should have the expected 'type'"
   );
   await UrlbarTestUtils.promisePopupClose(window, () => {
     gURLBar.blur();
@@ -332,15 +358,25 @@ add_task(async function topSitesPinned() {
     "The example.com Top Site should be the first result."
   );
 
-  Assert.equal(
+  Assert.notEqual(
     exampleResult.source,
-    UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
+    UrlbarShared.RESULT_SOURCE.TABS,
     "The example.com Top Site should not appear in the view as an open tab result since it is the current tab."
+  );
+  Assert.notEqual(
+    exampleResult.type,
+    UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+    "The example.com Top Site should not be a TAB_SWITCH"
   );
 
   Assert.ok(
     exampleResult.element.row.hasAttribute("pinned"),
     "The example.com Top Site should have the pinned property."
+  );
+  Assert.equal(
+    exampleResult.element.row.getAttribute("type"),
+    "history",
+    "The example.com Top Site row should have the expected 'type'"
   );
 
   await UrlbarTestUtils.promisePopupClose(window, () => {
@@ -389,10 +425,20 @@ add_task(async function topSitesBookmarksAndTabsDisabled() {
     "http://example.com/",
     "The example.com Top Site should be the second result."
   );
-  Assert.equal(
+  Assert.notEqual(
     exampleResult.source,
-    UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
+    UrlbarShared.RESULT_SOURCE.TABS,
     "The example.com Top Site should appear as a normal result even though it's open in a tab."
+  );
+  Assert.notEqual(
+    exampleResult.type,
+    UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+    "The example.com Top Site should not be a TAB_SWITCH even though it's open in a tab."
+  );
+  Assert.equal(
+    exampleResult.element.row.getAttribute("type"),
+    "history",
+    "The example.com Top Site row should have the expected 'type'"
   );
 
   let youtubeResult = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
@@ -405,6 +451,11 @@ add_task(async function topSitesBookmarksAndTabsDisabled() {
     youtubeResult.source,
     UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     "The YouTube Top Site should appear as a normal result even though it's bookmarked."
+  );
+  Assert.equal(
+    youtubeResult.element.row.getAttribute("type"),
+    "top_site",
+    "The YouTube Top Site row should have the expected 'type'"
   );
   await UrlbarTestUtils.promisePopupClose(window, () => {
     gURLBar.blur();

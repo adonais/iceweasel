@@ -8,7 +8,10 @@ add_task(
   threadFrontTest(
     async ({ threadFront, debuggee }) => {
       const promise = waitForNewSource(threadFront, SOURCE_URL);
-      loadSubScript(SOURCE_URL, debuggee);
+      loadSubScriptWithOptions(SOURCE_URL, {
+        target: debuggee,
+        allowUnsafeURL: true,
+      });
       const { source } = await promise;
       const sourceFront = threadFront.source(source);
 

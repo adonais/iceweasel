@@ -1,6 +1,7 @@
 // reparsing modules should work.
 
 const g = newGlobal({newCompartment: true});
+g.moduleLoadAndLink = moduleLoadAndLink;
 const dbg = new Debugger;
 const gw = dbg.addDebuggee(g);
 
@@ -24,7 +25,7 @@ f = g.eval(`
           import * as name from "m2";
           import "m3";
       \`));
-  moduleLink(m4);
+  moduleLoadAndLink(m4);
 `);
 
 for (const script of scripts) {

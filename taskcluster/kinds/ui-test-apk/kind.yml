@@ -59,6 +59,7 @@ task-defaults:
                 focus: focus-android-all/opt
                 default: ''
     run:
+        clone-with: hg
         using: run-commands
         dummy-secrets:
             - content: "faketoken"
@@ -307,13 +308,13 @@ tasks:
         treeherder:
             symbol: fenix-debug(robo-arm)
 
-    fenix-experimental-arm-debug:
+    fenix-tae-arm-debug:
         attributes:
             build-type: fenix-debug-firebase
         task-context:
             from-object:
                 app-name: fenix
-        description: Run Fenix tests using experimental POM design
+        description: Run TAE (test automation efficiency) user journey tests on ARM devices
         dependencies:
             signed-apk-debug-apk: signing-apk-fenix-debug
             signed-apk-android-test: signing-apk-fenix-android-test-debug
@@ -327,9 +328,9 @@ tasks:
         optimization:
             skip-unless-backstop: null
         run-on-projects: [trunk]
-        flank-config: fenix/arm-experimental-api-tests.yml
+        flank-config: fenix/arm-tae-tests.yml
         treeherder:
-            symbol: fenix-debug(experimental-arm)
+            symbol: fenix-debug(tae-arm)
 
     fenix-tae-behavior-arm-debug:
         attributes:
@@ -337,7 +338,7 @@ tasks:
         task-context:
             from-object:
                 app-name: fenix
-        description: Run TAE behavior factory tests on ARM devices
+        description: Run TAE (test automation efficiency) behavior factory tests on ARM devices
         dependencies:
             signed-apk-debug-apk: signing-apk-fenix-debug
             signed-apk-android-test: signing-apk-fenix-android-test-debug
@@ -354,6 +355,54 @@ tasks:
         flank-config: fenix/arm-tae-behavior-tests.yml
         treeherder:
             symbol: fenix-debug(tae-behavior-arm)
+
+    fenix-tae-interaction-arm-debug:
+        attributes:
+            build-type: fenix-debug-firebase
+        task-context:
+            from-object:
+                app-name: fenix
+        description: Run TAE (test automation efficiency) interaction factory tests on ARM devices
+        dependencies:
+            signed-apk-debug-apk: signing-apk-fenix-debug
+            signed-apk-android-test: signing-apk-fenix-android-test-debug
+        fetches:
+            signed-apk-debug-apk:
+                - artifact: target.arm64-v8a.apk
+                  extract: false
+            signed-apk-android-test:
+                - artifact: target.noarch.apk
+                  extract: false
+        optimization:
+            skip-unless-backstop: null
+        run-on-projects: [trunk]
+        flank-config: fenix/arm-tae-interaction-tests.yml
+        treeherder:
+            symbol: fenix-debug(tae-interaction-arm)
+
+    fenix-tae-reachability-arm-debug:
+        attributes:
+            build-type: fenix-debug-firebase
+        task-context:
+            from-object:
+                app-name: fenix
+        description: Run TAE (test automation efficiency) reachability factory tests on ARM devices
+        dependencies:
+            signed-apk-debug-apk: signing-apk-fenix-debug
+            signed-apk-android-test: signing-apk-fenix-android-test-debug
+        fetches:
+            signed-apk-debug-apk:
+                - artifact: target.arm64-v8a.apk
+                  extract: false
+            signed-apk-android-test:
+                - artifact: target.noarch.apk
+                  extract: false
+        optimization:
+            skip-unless-backstop: null
+        run-on-projects: [trunk]
+        flank-config: fenix/arm-tae-reachability-tests.yml
+        treeherder:
+            symbol: fenix-debug(tae-reachability-arm)
 
     fenix-arm-debug-smoke:
         attributes:

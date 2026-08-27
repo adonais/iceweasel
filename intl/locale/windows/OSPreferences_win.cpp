@@ -21,7 +21,7 @@ using namespace ABI::Windows::System::UserProfile;
 
 using namespace mozilla::intl;
 
-OSPreferences::OSPreferences() {}
+OSPreferences::OSPreferences() = default;
 
 bool OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList) {
   MOZ_ASSERT(aLocaleList.IsEmpty());

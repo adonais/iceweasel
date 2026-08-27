@@ -42,7 +42,6 @@
 #include "nsINode.h"
 #include "nsIObserverService.h"
 #include "nsIPrefBranch.h"
-#include "nsIProtocolHandler.h"
 #include "nsIProtocolProxyService.h"
 #include "nsIProxiedChannel.h"
 #include "nsIProxyInfo.h"
@@ -76,11 +75,11 @@ using namespace mozilla::net;
 namespace mozilla::net {
 
 NS_IMPL_ISUPPORTS(WebSocketChannel, nsIWebSocketChannel, nsIHttpUpgradeListener,
-                  nsIRequestObserver, nsIStreamListener, nsIProtocolHandler,
-                  nsIInputStreamCallback, nsIOutputStreamCallback,
-                  nsITimerCallback, nsIDNSListener, nsIProtocolProxyCallback,
-                  nsIInterfaceRequestor, nsIChannelEventSink,
-                  nsIThreadRetargetableRequest, nsIObserver, nsINamed)
+                  nsIRequestObserver, nsIStreamListener, nsIInputStreamCallback,
+                  nsIOutputStreamCallback, nsITimerCallback, nsIDNSListener,
+                  nsIProtocolProxyCallback, nsIInterfaceRequestor,
+                  nsIChannelEventSink, nsIThreadRetargetableRequest,
+                  nsIObserver, nsINamed)
 
 // We implement RFC 6455, which uses Sec-WebSocket-Version: 13 on the wire.
 #define SEC_WEBSOCKET_VERSION "13"
@@ -1147,8 +1146,8 @@ class OutboundMessage {
     }
 
     mDeflated = true;
-    mMsg.as<pString>().mOrigValue = mMsg.as<pString>().mValue;
-    mMsg.as<pString>().mValue = temp;
+    mMsg.as<pString>().mOrigValue = std::move(mMsg.as<pString>().mValue);
+    mMsg.as<pString>().mValue = std::move(temp);
     return true;
   }
 
@@ -2913,7 +2912,7 @@ nsresult WebSocketChannel::DoAdmissionDNS() {
   nsCString path;
   rv = mURI->GetFilePath(path);
   NS_ENSURE_SUCCESS(rv, rv);
-  mPath = path;
+  mPath = std::move(path);
   rv = mURI->GetPort(&mPort);
   NS_ENSURE_SUCCESS(rv, rv);
   if (mPort == -1) mPort = (mEncrypted ? kDefaultWSSPort : kDefaultWSPort);
@@ -4077,7 +4076,7 @@ WebSocketChannel::OnStartRequest(nsIRequest* aRequest) {
       if (NS_SUCCEEDED(rv)) {
         LOG(("WebsocketChannel::OnStartRequest: subprotocol %s confirmed",
              respProtocol.get()));
-        mProtocol = respProtocol;
+        mProtocol = std::move(respProtocol);
       } else {
         LOG(
             ("WebsocketChannel::OnStartRequest: "

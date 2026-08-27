@@ -1,0 +1,6 @@
+<!doctype html>
+<html class="test-wait">
+<script>
+  SpecialPowers.wrap(window); // Shouldn't throw
+  document.documentElement.className = "";
+</script>

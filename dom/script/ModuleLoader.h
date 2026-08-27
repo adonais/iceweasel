@@ -98,6 +98,8 @@ class ModuleLoader final : public JS::loader::ModuleLoaderBase {
                             ModuleLoadRequest* aRequest,
                             JS::MutableHandle<JSObject*> aModuleOut);
 
+  void DisallowImportMapsForModuleFetch(ModuleLoadRequest* aRequest);
+
  private:
   const Kind mKind;
 };

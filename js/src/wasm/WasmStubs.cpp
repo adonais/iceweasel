@@ -3052,6 +3052,8 @@ static bool GenerateDebugStub(MacroAssembler& masm, Label* throwLabel,
     masm.addToStackPtr(Imm32(ShadowStackSpace));
   }
 
+  // Memory can moving-grow during debugging, so we need to update the HeapReg.
+  // InstanceReg is still live here because it is non-volatile.
   MOZ_ASSERT(NonVolatileRegs.has(InstanceReg));
   masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
 

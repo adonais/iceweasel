@@ -86,6 +86,28 @@ add_task(function test_getActionLogConfigForTool_search_the_web_link() {
   );
 });
 
+add_task(
+  function test_getActionLogConfigForTool_pending_body_uses_pending_label() {
+    const pending = getActionLogConfigForTool(SEARCH_THE_WEB, {
+      pending: true,
+    });
+    Assert.equal(
+      pending.label?.l10nId,
+      "action-log-searching-web-with-exa",
+      "A pending body surfaces the in-progress label on the row"
+    );
+
+    const completed = getActionLogConfigForTool(SEARCH_THE_WEB, {
+      could_answer: true,
+    });
+    Assert.equal(
+      completed.label?.l10nId,
+      "action-log-searched-web-with-exa",
+      "A completed body surfaces the completed label on the row"
+    );
+  }
+);
+
 add_task(function test_getActionLogConfigForTool_no_link_by_default() {
   const cfg = getActionLogConfigForTool(GET_OPEN_TABS, []);
   Assert.strictEqual(cfg.link, null, "Tools without a link config return null");

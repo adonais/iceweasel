@@ -159,11 +159,12 @@ devtools.jar:
     skin/images/command-chevron.svg (themes/images/command-chevron.svg)
     skin/images/command-accented.svg (themes/images/command-accented.svg)
     skin/images/command-bidi.svg (themes/images/command-bidi.svg)
-    skin/images/rules-view-light-mode-simulation.svg (themes/images/rules-view-light-mode-simulation.svg)
-    skin/images/rules-view-dark-mode-simulation.svg (themes/images/rules-view-dark-mode-simulation.svg)
-    skin/images/rules-view-print-simulation.svg (themes/images/rules-view-print-simulation.svg)
+    skin/images/rules-view-light-mode-emulation.svg (themes/images/rules-view-light-mode-emulation.svg)
+    skin/images/rules-view-dark-mode-emulation.svg (themes/images/rules-view-dark-mode-emulation.svg)
     skin/images/back.svg (themes/images/back.svg)
     skin/images/forward.svg (themes/images/forward.svg)
+    skin/images/rules-view-reduced-motion-emulation.svg (themes/images/rules-view-reduced-motion-emulation.svg)
+    skin/images/rules-view-no-preference-motion-emulation.svg (themes/images/rules-view-no-preference-motion-emulation.svg)
     skin/markup.css (themes/markup.css)
 
     # shared

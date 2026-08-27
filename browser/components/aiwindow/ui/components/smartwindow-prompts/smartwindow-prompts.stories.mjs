@@ -22,12 +22,34 @@ const samplePrompts = [
   { text: "Compare tabs", type: "chat" },
 ];
 
-const Template = ({ mode, swPrompts }) => html`
+const previewIconPrompts = [
+  {
+    text: "Pick up your Tokyo trip",
+    type: "resume",
+    previewIcons: [
+      { iconSrc: "chrome://branding/content/about-logo.svg" },
+      { iconSrc: "chrome://branding/content/about-logo.svg" },
+    ],
+  },
+  {
+    text: "Continue shopping",
+    type: "resume",
+    previewIcons: [
+      { iconSrc: "chrome://branding/content/about-logo.svg" },
+      { iconSrc: "chrome://branding/content/about-logo.svg" },
+      { iconSrc: "chrome://branding/content/about-logo.svg" },
+      { iconSrc: "chrome://branding/content/about-logo.svg" },
+    ],
+  },
+  { text: "Improve your writing", type: "chat" },
+];
+
+const Template = ({ mode, prompts }) => html`
   <div style="width: 100%; min-height: 400px; padding: 20px;">
     <smartwindow-prompts
       .mode=${mode}
-      .swPrompts=${swPrompts}
-      @prompt-selected=${e => {
+      .prompts=${prompts}
+      @SmartWindowPrompt:prompt-selected=${e => {
         alert(`Selected: ${e.detail.text} (type: ${e.detail.type})`);
       }}
     ></smartwindow-prompts>
@@ -37,11 +59,17 @@ const Template = ({ mode, swPrompts }) => html`
 export const SidebarMode = Template.bind({});
 SidebarMode.args = {
   mode: "sidebar",
-  swPrompts: samplePrompts,
+  prompts: samplePrompts,
 };
 
 export const FullpageMode = Template.bind({});
 FullpageMode.args = {
   mode: "fullpage",
-  swPrompts: samplePrompts,
+  prompts: samplePrompts,
+};
+
+export const FullpageWithFavicons = Template.bind({});
+FullpageWithFavicons.args = {
+  mode: "fullpage",
+  prompts: previewIconPrompts,
 };

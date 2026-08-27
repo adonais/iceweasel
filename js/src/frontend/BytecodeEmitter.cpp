@@ -1064,11 +1064,9 @@ restart:
       MOZ_CRASH("Decorators are not supported yet");
 #endif
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case ParseNodeKind::UsingDecl:
     case ParseNodeKind::AwaitUsingDecl:
       MOZ_CRASH("Using declarations are not supported yet");
-#endif
 
     // Most other binary operations (parsed as lists in SpiderMonkey) may
     // perform conversions triggering side effects.  Math operations perform
@@ -2443,11 +2441,9 @@ bool BytecodeEmitter::emitScript(ParseNode* body) {
 
     switchToMain();
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     if (!emitterScope.prepareForModuleDisposableScopeBody(this)) {
       return false;
     }
-#endif
 
     if (topLevelAwait) {
       if (!topLevelAwait->prepareForBody()) {
@@ -2465,11 +2461,9 @@ bool BytecodeEmitter::emitScript(ParseNode* body) {
     }
   }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   if (!emitterScope.emitModuleDisposableScopeBodyEnd(this)) {
     return false;
   }
-#endif
 
   if (topLevelAwait) {
     if (!topLevelAwait->emitEndModule()) {
@@ -2524,7 +2518,6 @@ BytecodeEmitter::createImmutableScriptData() {
       bytecodeSection().tryNoteList().span());
 }
 
-#if defined(ENABLE_DECORATORS) || defined(ENABLE_EXPLICIT_RESOURCE_MANAGEMENT)
 bool BytecodeEmitter::emitCheckIsCallable() {
   // This emits code to check if the value at the top of the stack is
   // callable. The value is left on the stack.
@@ -2545,7 +2538,6 @@ bool BytecodeEmitter::emitCheckIsCallable() {
   return emitCall(JSOp::Call, 1);
   //              [stack] VAL ISCALLABLE_RESULT
 }
-#endif
 
 bool BytecodeEmitter::getNslots(uint32_t* nslots) const {
   uint64_t nslots64 =
@@ -4265,7 +4257,6 @@ bool BytecodeEmitter::emitSingleDeclaration(ListNode* declList, NameNode* decl,
     }
   }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   if (declList->isKind(ParseNodeKind::UsingDecl)) {
     if (!innermostEmitterScope()->prepareForDisposableAssignment(
             UsingHint::Sync)) {
@@ -4279,7 +4270,6 @@ bool BytecodeEmitter::emitSingleDeclaration(ListNode* declList, NameNode* decl,
       return false;
     }
   }
-#endif
 
   if (!noe.emitAssignment()) {
     //              [stack] V
@@ -5288,21 +5278,14 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitLexicalScope(
     kind = lexicalScope->kind();
   }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   BlockKind blockKind = BlockKind::Other;
   if (body->isKind(ParseNodeKind::ForStmt) &&
       body->as<ForNode>().head()->isKind(ParseNodeKind::ForOf)) {
     MOZ_ASSERT(kind == ScopeKind::Lexical);
     blockKind = BlockKind::ForOf;
   }
-#endif
 
-  if (!lse.emitScope(kind, lexicalScope->scopeBindings()
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-                               ,
-                     blockKind
-#endif
-                     )) {
+  if (!lse.emitScope(kind, lexicalScope->scopeBindings(), blockKind)) {
     return false;
   }
 
@@ -5835,7 +5818,6 @@ bool BytecodeEmitter::emitInitializeForInOrOfTarget(TernaryNode* forHead) {
       MOZ_ASSERT(bytecodeSection().stackDepth() >= 1);
     }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     if (declarationList->isKind(ParseNodeKind::UsingDecl)) {
       if (!innermostEmitterScope()->prepareForDisposableAssignment(
               UsingHint::Sync)) {
@@ -5849,7 +5831,6 @@ bool BytecodeEmitter::emitInitializeForInOrOfTarget(TernaryNode* forHead) {
         return false;
       }
     }
-#endif
 
     if (!noe.emitAssignment()) {
       return false;
@@ -5889,7 +5870,6 @@ bool BytecodeEmitter::emitForOf(ForNode* forOfLoop,
   // Certain builtins (e.g. Array.from) are implemented in self-hosting
   // as for-of loops.
   auto selfHostedIter = getSelfHostedIterFor(forHeadExpr);
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   ForOfEmitter::HeadUsingDeclarationKind headUsingDeclKind =
       ForOfEmitter::HeadUsingDeclarationKind::None;
   if (forOfHead->kid1()->isKind(ParseNodeKind::UsingDecl)) {
@@ -5897,14 +5877,9 @@ bool BytecodeEmitter::emitForOf(ForNode* forOfLoop,
   } else if (forOfHead->kid1()->isKind(ParseNodeKind::AwaitUsingDecl)) {
     headUsingDeclKind = ForOfEmitter::HeadUsingDeclarationKind::Async;
   }
-#endif
 
-  ForOfEmitter forOf(this, headLexicalEmitterScope, selfHostedIter, iterKind
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-                     ,
-                     headUsingDeclKind
-#endif
-  );
+  ForOfEmitter forOf(this, headLexicalEmitterScope, selfHostedIter, iterKind,
+                     headUsingDeclKind);
 
   if (!forOf.emitIterated()) {
     //              [stack]
@@ -5925,12 +5900,9 @@ bool BytecodeEmitter::emitForOf(ForNode* forOfLoop,
   if (headLexicalEmitterScope) {
     DebugOnly<ParseNode*> forOfTarget = forOfHead->kid1();
     MOZ_ASSERT(forOfTarget->isKind(ParseNodeKind::LetDecl) ||
-               forOfTarget->isKind(ParseNodeKind::ConstDecl)
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-               || forOfTarget->isKind(ParseNodeKind::UsingDecl) ||
-               forOfTarget->isKind(ParseNodeKind::AwaitUsingDecl)
-#endif
-    );
+               forOfTarget->isKind(ParseNodeKind::ConstDecl) ||
+               forOfTarget->isKind(ParseNodeKind::UsingDecl) ||
+               forOfTarget->isKind(ParseNodeKind::AwaitUsingDecl));
   }
 
   if (!forOf.emitInitialize(forOfHead->pn_pos.begin)) {
@@ -6668,20 +6640,26 @@ bool BytecodeEmitter::emitAwaitInInnermostScope(UnaryNode* awaitNode) {
 }
 
 bool BytecodeEmitter::emitAwaitInScope(EmitterScope& currentScope) {
-  if (!emit1(JSOp::CanSkipAwait)) {
-    //              [stack] VALUE CANSKIP
-    return false;
-  }
+  // Emit the CanSkipAwait fast path if this is a function script. The await
+  // can't be skipped for modules: during InnerModuleEvaluation, we must yield
+  // execution so other modules in the same module graph can run.
+  mozilla::Maybe<InternalIfEmitter> ifCanSkip;
+  if (sc->isFunctionBox()) {
+    if (!emit1(JSOp::CanSkipAwait)) {
+      //            [stack] VALUE CANSKIP
+      return false;
+    }
 
-  if (!emit1(JSOp::MaybeExtractAwaitValue)) {
-    //              [stack] VALUE_OR_RESOLVED CANSKIP
-    return false;
-  }
+    if (!emit1(JSOp::MaybeExtractAwaitValue)) {
+      //            [stack] VALUE_OR_RESOLVED CANSKIP
+      return false;
+    }
 
-  InternalIfEmitter ifCanSkip(this);
-  if (!ifCanSkip.emitThen(IfEmitter::ConditionKind::Negative)) {
-    //              [stack] VALUE_OR_RESOLVED
-    return false;
+    ifCanSkip.emplace(this);
+    if (!ifCanSkip->emitThen(IfEmitter::ConditionKind::Negative)) {
+      //            [stack] VALUE_OR_RESOLVED
+      return false;
+    }
   }
 
   if (sc->asSuspendableContext()->needsPromiseResult()) {
@@ -6708,11 +6686,12 @@ bool BytecodeEmitter::emitAwaitInScope(EmitterScope& currentScope) {
     return false;
   }
 
-  if (!ifCanSkip.emitEnd()) {
-    return false;
+  if (ifCanSkip.isSome()) {
+    if (!ifCanSkip->emitEnd()) {
+      return false;
+    }
+    MOZ_ASSERT(ifCanSkip->popped() == 0);
   }
-
-  MOZ_ASSERT(ifCanSkip.popped() == 0);
 
   return true;
 }
@@ -7637,21 +7616,6 @@ bool BytecodeEmitter::emitSelfHostedResumeGenerator(CallNode* callNode) {
   return true;
 }
 
-bool BytecodeEmitter::emitSelfHostedForceInterpreter() {
-  // JSScript::hasForceInterpreterOp() relies on JSOp::ForceInterpreter being
-  // the first bytecode op in the script.
-  MOZ_ASSERT(bytecodeSection().code().empty());
-
-  if (!emit1(JSOp::ForceInterpreter)) {
-    return false;
-  }
-  if (!emit1(JSOp::Undefined)) {
-    return false;
-  }
-
-  return true;
-}
-
 bool BytecodeEmitter::emitSelfHostedAllowContentIter(CallNode* callNode) {
   ListNode* argsList = callNode->args();
 
@@ -8449,7 +8413,6 @@ bool BytecodeEmitter::emitOptionalCall(CallNode* callNode, OptionalEmitter& oe,
   return true;
 }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 bool BytecodeEmitter::emitSelfHostedDisposeResources(CallNode* callNode,
                                                      DisposalKind kind) {
   ListNode* argsList = callNode->args();
@@ -8526,7 +8489,6 @@ bool BytecodeEmitter::emitSelfHostedDisposeResources(CallNode* callNode,
 
   return true;
 }
-#endif
 
 bool BytecodeEmitter::emitCallOrNew(CallNode* callNode, ValueUsage valueUsage) {
   /*
@@ -8547,9 +8509,8 @@ bool BytecodeEmitter::emitCallOrNew(CallNode* callNode, ValueUsage valueUsage) {
 
   if (calleeNode->isKind(ParseNodeKind::Name) &&
       emitterMode == BytecodeEmitter::SelfHosting && op == JSOp::Call) {
-    // Calls to "forceInterpreter", "callFunction",
-    // "callContentFunction", or "resumeGenerator" in self-hosted
-    // code generate inline bytecode.
+    // Calls to "callFunction", "callContentFunction", or "resumeGenerator" in
+    // self-hosted code generate inline bytecode.
     //
     // NOTE: The list of special instruction names has to be kept in sync with
     // "js/src/builtin/.eslintrc.js".
@@ -8566,9 +8527,6 @@ bool BytecodeEmitter::emitCallOrNew(CallNode* callNode, ValueUsage valueUsage) {
     }
     if (calleeName == TaggedParserAtomIndex::WellKnown::resumeGenerator()) {
       return emitSelfHostedResumeGenerator(callNode);
-    }
-    if (calleeName == TaggedParserAtomIndex::WellKnown::forceInterpreter()) {
-      return emitSelfHostedForceInterpreter();
     }
     if (calleeName == TaggedParserAtomIndex::WellKnown::allowContentIter()) {
       return emitSelfHostedAllowContentIter(callNode);
@@ -8626,7 +8584,6 @@ bool BytecodeEmitter::emitCallOrNew(CallNode* callNode, ValueUsage valueUsage) {
     if (calleeName == TaggedParserAtomIndex::WellKnown::IteratorClose()) {
       return emitSelfHostedIteratorClose(callNode);
     }
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     if (calleeName ==
         TaggedParserAtomIndex::WellKnown::DisposeResourcesAsync()) {
       return emitSelfHostedDisposeResources(callNode, DisposalKind::Async);
@@ -8635,7 +8592,6 @@ bool BytecodeEmitter::emitCallOrNew(CallNode* callNode, ValueUsage valueUsage) {
         TaggedParserAtomIndex::WellKnown::DisposeResourcesSync()) {
       return emitSelfHostedDisposeResources(callNode, DisposalKind::Sync);
     }
-#endif
 #ifdef DEBUG
     if (calleeName ==
             TaggedParserAtomIndex::WellKnown::UnsafeGetReservedSlot() ||
@@ -12931,14 +12887,12 @@ bool BytecodeEmitter::emitTree(
         return false;
       }
       break;
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case ParseNodeKind::AwaitUsingDecl:
     case ParseNodeKind::UsingDecl:
       if (!emitDeclarationList(&pn->as<ListNode>())) {
         return false;
       }
       break;
-#endif
 
     case ParseNodeKind::ImportDecl:
       MOZ_ASSERT(sc->isModuleContext());

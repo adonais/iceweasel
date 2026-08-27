@@ -116,7 +116,7 @@ class VideoSegment : public MediaSegmentBase<VideoSegment, VideoChunk> {
   VideoSegment(const VideoSegment&) = delete;
   VideoSegment& operator=(const VideoSegment&) = delete;
 
-  ~VideoSegment();
+  ~VideoSegment() = default;
 
   void AppendFrame(const VideoChunk& aChunk,
                    const Maybe<bool>& aForceBlack = Nothing(),

@@ -19,7 +19,7 @@ import org.mozilla.focus.utils.SupportUtils
  */
 class IntentReceiverActivity : Activity() {
     private val intentProcessor by lazy {
-        IntentProcessor(this, components.tabsUseCases, components.customTabsUseCases)
+        IntentProcessor(this, components.tabsUseCases, components.customTabsUseCases, components.searchUseCases)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

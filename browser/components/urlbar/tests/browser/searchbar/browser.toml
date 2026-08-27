@@ -20,7 +20,11 @@ prefs = [
 
 ["browser_searchbar_a11y.js"]
 
+["browser_searchbar_actionLabels.js"]
+
 ["browser_searchbar_addEngine.js"]
+
+["browser_searchbar_addEngineBadge.js"]
 
 ["browser_searchbar_context.js"]
 
@@ -31,6 +35,8 @@ prefs = [
 ["browser_searchbar_keyboard_navigation.js"]
 
 ["browser_searchbar_mouseNavigation.js"]
+
+["browser_searchbar_queryContextCache.js"]
 
 ["browser_searchbar_telemetry.js"]
 

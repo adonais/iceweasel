@@ -94,6 +94,15 @@ Maybe<uint32_t> ping_result_check(const nsACString& aKey, ping_entry_t aEntry) {
   return Nothing();
 }
 
+const char* GetPingNameById(uint32_t aId) {
+  for (ping_entry_t entry : sPingByNameLookupEntries) {
+    if (static_cast<uint32_t>(GLEAN_PING_ID(entry) == aId)) {
+      return GetPingName(entry);
+    }
+  }
+  return nullptr;
+}
+
 #undef GLEAN_PING_INDEX_BITS
 #undef GLEAN_PING_ID
 #undef GLEAN_PING_INDEX

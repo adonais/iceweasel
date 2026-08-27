@@ -105,6 +105,15 @@ class SimpleMap {
     return mMap.Length();
   }
 
+  // Iterate through all elements of the map and call the function F.
+  template <typename F>
+  void Enumerate(F&& aCallback) {
+    Policy guard(mLock);
+    for (const auto& element : mMap) {
+      aCallback(element.first, element.second);
+    }
+  }
+
  private:
   // Return the index of the first element matching aKey, or Nothing() if not
   // found.

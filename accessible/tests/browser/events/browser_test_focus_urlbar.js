@@ -55,7 +55,7 @@ class TipTestProvider extends UrlbarProvider {
     return "TipTestProvider";
   }
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.PROFILE;
+    return UrlbarShared.PROVIDER_TYPE.PROFILE;
   }
   async isActive() {
     return true;
@@ -79,13 +79,13 @@ async function runTests() {
   });
 
   await PlacesTestUtils.addVisits([
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example1.com/blah",
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example2.com/blah",
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example1.com/",
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example2.com/",
   ]);
 
@@ -301,20 +301,20 @@ async function runTipTests() {
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
       source: UrlbarShared.RESULT_SOURCE.HISTORY,
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       payload: { url: "http://mozilla.org/a" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.TIP,
       source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       payload: {
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         helpUrl: "http://example.com/",
         type: "test",
         titleL10n: { id: "urlbar-search-tips-confirm" },
         buttons: [
           {
-            // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+            // eslint-disable-next-line sdl/no-insecure-url
             url: "http://example.com/",
             l10n: { id: "urlbar-search-tips-confirm" },
           },
@@ -324,13 +324,13 @@ async function runTipTests() {
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
       source: UrlbarShared.RESULT_SOURCE.HISTORY,
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       payload: { url: "http://mozilla.org/b" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
       source: UrlbarShared.RESULT_SOURCE.HISTORY,
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       payload: { url: "http://mozilla.org/c" },
     }),
   ];

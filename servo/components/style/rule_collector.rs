@@ -151,14 +151,23 @@ where
             Origin::Author => CascadeLevel::same_tree_author_normal(),
         };
 
-        let cascade_data = self.stylist.cascade_data().borrow_for_origin(origin);
-        let map = match cascade_data.normal_rules(&self.pseudo_elements) {
-            Some(m) => m,
-            None => return,
-        };
-
         self.in_tree(None, |collector| {
-            collector.collect_rules_in_map(map, cascade_level, cascade_data);
+            let cascade_data = collector.stylist.cascade_data().borrow_for_origin(origin);
+            // Element-backed pseudo-elements (e.g. ::picker), also apply UA rules that target
+            // underlying element directly (like [popover] rules).
+            if origin == Origin::UserAgent && collector.is_element_backed_pseudo_element() {
+                if let Some(map) = cascade_data.normal_rules(&[]) {
+                    collector.collect_rules_in_map_with_target(
+                        map,
+                        cascade_level,
+                        cascade_data,
+                        collector.element,
+                    );
+                }
+            }
+            if let Some(map) = cascade_data.normal_rules(&collector.pseudo_elements) {
+                collector.collect_rules_in_map(map, cascade_level, cascade_data);
+            }
         });
     }
 

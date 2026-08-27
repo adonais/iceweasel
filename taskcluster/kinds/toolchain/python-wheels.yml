@@ -22,6 +22,7 @@ linux64-2204-dbus-python:
         fetch:
             - dbus-python-1.3.2
     run:
+        clone-with: hg
         arguments:
             - -Csetup-args=-Ddoc=false
             - -Csetup-args=-Dtests=false
@@ -37,6 +38,7 @@ linux64-2404-dbus-python:
         fetch:
             - dbus-python-1.3.2
     run:
+        clone-with: hg
         arguments:
             - -Csetup-args=-Ddoc=false
             - -Csetup-args=-Dtests=false
@@ -52,6 +54,7 @@ linux64-aarch64-2404-dbus-python:
         fetch:
             - dbus-python-1.3.2
     run:
+        clone-with: hg
         arguments:
             - -Csetup-args=-Ddoc=false
             - -Csetup-args=-Dtests=false
@@ -61,6 +64,22 @@ linux64-aarch64-2404-dbus-python:
         docker-image: {in-tree: ubuntu2404-arm64-build-python-wheels}
     worker-type: b-linux-aarch64
 
+linux64-python3.9-dbus-python:
+    treeherder:
+        symbol: TL(py3.9-dbus-python)
+    use-python: "3.9"
+    fetches:
+        fetch:
+            - dbus-python-1.3.2
+    run:
+        arguments:
+            - -Csetup-args=-Ddoc=false
+            - -Csetup-args=-Dtests=false
+            - -Csetup-args=-Dinstalled_tests=false
+        toolchain-artifact: public/build/dbus_python-1.3.2-cp39-cp39-linux_x86_64.whl
+    worker:
+        docker-image: {in-tree: ubuntu2204-build-python-wheels}
+
 linux-python-dbusmock:
     treeherder:
         symbol: TL(py-python-dbusmock)
@@ -68,6 +87,7 @@ linux-python-dbusmock:
         fetch:
             - python-dbusmock-0.32.2
     run:
+        clone-with: hg
         toolchain-artifact: public/build/python_dbusmock-0.32.2-py3-none-any.whl
     worker:
         docker-image: {in-tree: ubuntu2404-build-python-wheels}
@@ -79,6 +99,7 @@ linux64-2204-pygobject:
         fetch:
             - pygobject-3.48.2
     run:
+        clone-with: hg
         toolchain-artifact: public/build/pygobject-3.48.2-cp310-cp310-linux_x86_64.whl
     worker:
         docker-image: {in-tree: ubuntu2204-build-python-wheels}
@@ -90,6 +111,7 @@ linux64-2404-pygobject:
         fetch:
             - pygobject-3.56.3
     run:
+        clone-with: hg
         toolchain-artifact: public/build/pygobject-3.56.3-cp312-cp312-linux_x86_64.whl
     worker:
         docker-image: {in-tree: ubuntu2404-build-python-wheels}
@@ -101,6 +123,7 @@ linux64-2204-pycairo:
         fetch:
             - pycairo-1.29.0
     run:
+        clone-with: hg
         toolchain-artifact: public/build/pycairo-1.29.0-cp310-cp310-linux_x86_64.whl
     worker:
         docker-image: {in-tree: ubuntu2204-build-python-wheels}
@@ -112,6 +135,7 @@ linux64-2404-pycairo:
         fetch:
             - pycairo-1.29.0
     run:
+        clone-with: hg
         toolchain-artifact: public/build/pycairo-1.29.0-cp312-cp312-linux_x86_64.whl
     worker:
         docker-image: {in-tree: ubuntu2404-build-python-wheels}

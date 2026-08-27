@@ -207,7 +207,7 @@ VideoProcessorD3D11::VideoProcessorD3D11(ID3D11Device* aDevice,
       mVideoContext(aVideoContext),
       mVideoContext1(aVideoContext1) {}
 
-VideoProcessorD3D11::~VideoProcessorD3D11() {}
+VideoProcessorD3D11::~VideoProcessorD3D11() = default;
 
 HRESULT VideoProcessorD3D11::Init(const gfx::IntSize& aSize) {
   if (mSize == aSize) {

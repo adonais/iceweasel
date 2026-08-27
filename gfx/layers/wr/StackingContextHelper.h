@@ -44,6 +44,15 @@ class MOZ_RAII StackingContextHelper {
   // Export the inherited scale
   gfx::MatrixScales GetInheritedScale() const { return mScale; }
 
+  // True if the raster scale that applies to this stacking context is too
+  // small for its content to cover a device pixel. GetInheritedScale() reports
+  // 1.0 in that case rather than the real (near-zero) scale, so callers that
+  // size a rasterization buffer from untransformed bounds must not use it:
+  // those bounds are in a coordinate space that can be arbitrarily large (up
+  // to nscoord saturation), and scaling them by 1.0 asks for an enormous
+  // buffer. Such content is scaled out of sight, so skip it. See bug 1906769.
+  bool HasDegenerateRasterScale() const { return mRasterScaleIsDegenerate; }
+
   const gfx::Matrix& GetInheritedTransform() const {
     return mInheritedTransform;
   }
@@ -76,6 +85,7 @@ class MOZ_RAII StackingContextHelper {
   // transforms do *not* create a new snapping surface, so that for example the
   // existence of a non-animated identity transform does not affect snapping.
   gfx::Matrix mSnappingSurfaceTransform;
+  bool mRasterScaleIsDegenerate;
   bool mAffectsClipPositioning;
   Maybe<wr::WrSpatialId> mReferenceFrameId;
   Maybe<wr::SpaceAndClipChainHelper> mSpaceAndClipChainHelper;

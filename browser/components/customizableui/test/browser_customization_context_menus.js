@@ -11,13 +11,22 @@ const isOSX = Services.appinfo.OS === "Darwin";
 const overflowButton = document.getElementById("nav-bar-overflow-button");
 const overflowPanel = document.getElementById("widget-overflow");
 
+function promiseSizemodeChange(expectedSizemode) {
+  return BrowserTestUtils.waitForEvent(
+    window,
+    "sizemodechange",
+    false,
+    () => document.documentElement.getAttribute("sizemode") == expectedSizemode
+  );
+}
+
 // Right-click on the stop/reload button should
 // show a context menu with options to move it.
 add_task(async function home_button_context() {
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
   let stopReloadButton = document.getElementById("stop-reload-button");
-  EventUtils.synthesizeMouse(stopReloadButton, 2, 2, {
+  EventUtils.synthesizeMouseAtCenter(stopReloadButton, {
     type: "contextmenu",
     button: 2,
   });
@@ -50,7 +59,7 @@ add_task(async function sidebar_button_context() {
   let shownPromise = popupShown(contextMenu);
   CustomizableUI.addWidgetToArea("sidebar-button", "nav-bar");
   let sidebarButton = document.getElementById("sidebar-button");
-  EventUtils.synthesizeMouse(sidebarButton, 2, 2, {
+  EventUtils.synthesizeMouseAtCenter(sidebarButton, {
     type: "contextmenu",
     button: 2,
   });
@@ -134,6 +143,22 @@ add_task(async function titlebar_spacer_context() {
     return;
   }
 
+  // The pre-tabs titlebar spacer is only shown in a restored window (see
+  // browser-shared.css), but the window may start out maximized on CI
+  // machines with a small screen. Force a restored window for this check,
+  // and put the window back the way we found it afterwards.
+  let oldSizemode = document.documentElement.getAttribute("sizemode");
+  if (oldSizemode != "normal") {
+    Assert.equal(
+      oldSizemode,
+      "maximized",
+      "Should have normal or maximized window."
+    );
+    let sizemodePromise = promiseSizemodeChange("normal");
+    window.restore();
+    await sizemodePromise;
+  }
+
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
   let spacer = document.querySelector(
@@ -163,6 +188,12 @@ add_task(async function titlebar_spacer_context() {
   let hiddenPromise = popupHidden(contextMenu);
   contextMenu.hidePopup();
   await hiddenPromise;
+
+  if (oldSizemode != "normal") {
+    let sizemodePromise = promiseSizemodeChange(oldSizemode);
+    window.maximize();
+    await sizemodePromise;
+  }
 });
 
 // Right-click on an empty bit of extra toolbar should
@@ -284,7 +315,7 @@ add_task(async function context_within_panel() {
   let shownContextPromise = popupShown(contextMenu);
   let newWindowButton = document.getElementById("new-window-button");
   ok(newWindowButton, "new-window-button was found");
-  EventUtils.synthesizeMouse(newWindowButton, 2, 2, {
+  EventUtils.synthesizeMouseAtCenter(newWindowButton, {
     type: "contextmenu",
     button: 2,
   });
@@ -318,7 +349,7 @@ add_task(async function context_home_button_in_customize_mode() {
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
   let stopReloadButton = document.getElementById("wrapper-stop-reload-button");
-  EventUtils.synthesizeMouse(stopReloadButton, 2, 2, {
+  EventUtils.synthesizeMouseAtCenter(stopReloadButton, {
     type: "contextmenu",
     button: 2,
   });
@@ -352,7 +383,7 @@ add_task(async function context_click_in_palette() {
   );
   let shownPromise = popupShown(contextMenu);
   let openFileButton = document.getElementById("wrapper-open-file-button");
-  EventUtils.synthesizeMouse(openFileButton, 2, 2, {
+  EventUtils.synthesizeMouseAtCenter(openFileButton, {
     type: "contextmenu",
     button: 2,
   });
@@ -381,7 +412,7 @@ add_task(async function context_click_in_customize_mode() {
   );
   let shownPromise = popupShown(contextMenu);
   let newWindowButton = document.getElementById("wrapper-new-window-button");
-  EventUtils.synthesizeMouse(newWindowButton, 2, 2, {
+  EventUtils.synthesizeMouseAtCenter(newWindowButton, {
     type: "contextmenu",
     button: 2,
   });
@@ -422,10 +453,8 @@ add_task(async function context_click_customize_mode_panel_not_opened() {
   let newWindowButton = this.otherWin.document.getElementById(
     "wrapper-new-window-button"
   );
-  EventUtils.synthesizeMouse(
+  EventUtils.synthesizeMouseAtCenter(
     newWindowButton,
-    2,
-    2,
     { type: "contextmenu", button: 2 },
     this.otherWin
   );
@@ -534,7 +563,7 @@ add_task(async function context_after_customization_panel() {
   let shownContextPromise = popupShown(contextMenu);
   let newWindowButton = document.getElementById("new-window-button");
   ok(newWindowButton, "new-window-button was found");
-  EventUtils.synthesizeMouse(newWindowButton, 2, 2, {
+  EventUtils.synthesizeMouseAtCenter(newWindowButton, {
     type: "contextmenu",
     button: 2,
   });
@@ -636,7 +665,7 @@ add_task(async function flexible_space_context_menu() {
   ok(lastSpring, "we added a spring");
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
-  EventUtils.synthesizeMouse(lastSpring, 2, 2, {
+  EventUtils.synthesizeMouseAtCenter(lastSpring, {
     type: "contextmenu",
     button: 2,
   });
@@ -673,7 +702,7 @@ add_task(async function downloads_button_context() {
   let shownPromise = popupShown(contextMenu);
   CustomizableUI.addWidgetToArea("downloads-button", "nav-bar");
   let downloadsButton = document.getElementById("downloads-button");
-  EventUtils.synthesizeMouse(downloadsButton, 2, 2, {
+  EventUtils.synthesizeMouseAtCenter(downloadsButton, {
     type: "contextmenu",
     button: 2,
   });
@@ -713,7 +742,7 @@ add_task(async function flexible_space_context_menu_customize_mode() {
   ok(lastSpring, "we added a spring");
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
-  EventUtils.synthesizeMouse(lastSpring, 2, 2, {
+  EventUtils.synthesizeMouseAtCenter(lastSpring, {
     type: "contextmenu",
     button: 2,
   });

@@ -18,6 +18,8 @@ describe("Smart Window telemetry", () => {
       set: [
         ["browser.preferences.aiControls", true],
         ["browser.smartwindow.enabled", true],
+        // TODO: Bug 2053495 - Refactor tests upon pref removal
+        ["browser.smartwindow.mistralRelease", false],
         ["browser.smartwindow.tos.consentTime", 1770830464],
       ],
     });

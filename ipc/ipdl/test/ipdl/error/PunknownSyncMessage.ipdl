@@ -1,0 +1,7 @@
+//error: Unknown sync IPC message PunknownSyncMessage::Msg
+
+[ChildProc=any]
+sync protocol PunknownSyncMessage {
+parent:
+    sync Msg();
+};

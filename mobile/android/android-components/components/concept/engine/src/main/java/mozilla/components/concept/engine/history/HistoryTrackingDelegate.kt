@@ -35,6 +35,17 @@ interface HistoryTrackingDelegate {
     suspend fun getVisited(uris: List<String>): List<Boolean>
 
     /**
+     * An engine needs to know whether [host] (an eTLD+1) was visited within the
+     * half-open time window [afterEpochMillis, beforeEpochMillis), in
+     * milliseconds since the Unix epoch.
+     */
+    suspend fun hasVisitedSince(
+        host: String,
+        afterEpochMillis: Long,
+        beforeEpochMillis: Long,
+    ): Boolean = false
+
+    /**
      * An engine needs to know a list of all visited URIs.
      */
     suspend fun getVisited(): List<String>

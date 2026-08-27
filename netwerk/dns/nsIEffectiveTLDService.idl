@@ -223,6 +223,10 @@ interface nsIEffectiveTLDService : nsISupports
      * "mozilla.org" as |aHost|, this will return true.  It would return false
      * the other way around.
      *
+     * Both arguments must be bare hostnames; a scheme, port or path will not
+     * be stripped and will simply fail to match. The comparison is exact, so
+     * callers are responsible for passing already-normalized hosts.
+     *
      * @param aInput The host to be analyzed.
      * @param aHost  The host to compare to.
      */

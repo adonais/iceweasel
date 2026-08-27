@@ -1,7 +1,11 @@
 [DEFAULT]
 
 ["test_context_properties_allowed_domains.html"]
-support-files = ["file_context_fill_fallback_red.html"]
+support-files = [
+  "file_context_fill_fallback_red.html",
+  "file_green_reference.html",
+  "file_red_reference.html",
+]
 
 ["test_disabled_chrome.html"]
 support-files = [

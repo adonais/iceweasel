@@ -1,7 +1,4 @@
 [DEFAULT]
-skip-if = [
-	"debug && standalone", # TODO bug 2048260: Drop skip-if = standalone
-]
 tags = "webextensions"
 prefs = [
   # We don't want to reset this at the end of the test, so that we don't have
@@ -63,6 +60,9 @@ support-files = ["head_unified_extensions.js"]
 ["browser_ext_browserAction_popup_resize.js"]
 
 ["browser_ext_browserAction_popup_resize_bottom.js"]
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && debug && nova", # Bug 2057843
+]
 
 ["browser_ext_browserAction_simple.js"]
 

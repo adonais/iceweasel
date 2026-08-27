@@ -3,7 +3,7 @@
     "@base": {
       "value": {
         "light": "{color.gray.30}",
-        "dark": "{color.gray.45}",
+        "dark": "{color.gray.40}",
         "forcedColors": "CanvasText"
       }
     },
@@ -17,7 +17,7 @@
       "@base": {
         "value": {
           "light": "{color.gray.20}",
-          "dark": "{color.gray.55}",
+          "dark": "{color.gray.50}",
           "forcedColors": "CanvasText"
         }
       }
@@ -26,14 +26,28 @@
       "@base": {
         "value": {
           "light": "{color.gray.35}",
-          "dark": "{color.gray.50}",
+          "dark": "{color.gray.40}",
+          "forcedColors": "ButtonText"
+        }
+      },
+      "hover": {
+        "value": {
+          "light": "{color.gray.45}",
+          "dark": "{color.gray.20}",
+          "forcedColors": "SelectedItem"
+        }
+      },
+      "active": {
+        "value": {
+          "light": "{color.gray.50}",
+          "dark": "{color.gray.15}",
           "forcedColors": "ButtonText"
         }
       },
       "disabled": {
         "value": {
           "light": "{color.gray.25}",
-          "dark": "{color.gray.60}",
+          "dark": "{color.gray.55}",
           "forcedColors": "GrayText"
         }
       }

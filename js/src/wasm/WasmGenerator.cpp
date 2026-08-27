@@ -211,6 +211,9 @@ bool ModuleGenerator::linkCallSites() {
   AutoCreatedBy acb(*masm_, "linkCallSites");
 
   masm_->haltingAlign(CodeAlignment);
+  if (masm_->oom()) {
+    return false;
+  }
 
   // Create far jumps for calls that have relative offsets that may otherwise
   // go out of range. This method is called both between function bodies (at a
@@ -487,6 +490,9 @@ bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
   // overall module when the code was appended.
 
   masm_->haltingAlign(CodeAlignment);
+  if (masm_->oom()) {
+    return false;
+  }
   const size_t offsetInModule = masm_->size();
   if (code.bytes.length() != 0 &&
       !masm_->appendRawCode(code.bytes.begin(), code.bytes.length())) {
@@ -727,6 +733,9 @@ bool ModuleGenerator::finishTask(CompileTask* task) {
   AutoCreatedBy acb(*masm_, "ModuleGenerator::finishTask");
 
   masm_->haltingAlign(CodeAlignment);
+  if (masm_->oom()) {
+    return false;
+  }
 
   if (!linkCompiledCode(task->output)) {
     return false;

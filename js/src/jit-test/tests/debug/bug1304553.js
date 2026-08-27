@@ -17,5 +17,5 @@ let m = parseModule(`
                         f(i);
                     actual;
                     `);
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);

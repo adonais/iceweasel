@@ -12,7 +12,6 @@ prefs = [
   # Required for the eval in invokeContentTask in shared-head.js
   "security.allow_eval_with_system_principal=true",
   # Required for CSS positioning
-  "layout.css.anchor-positioning.enabled=true",
   "accessibility.anchorPositionedAsDetails.enabled=true",
   # Required for hint popovers
   "dom.element.popoverhint.enabled=true",

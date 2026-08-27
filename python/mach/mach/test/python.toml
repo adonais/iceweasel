@@ -1,6 +1,8 @@
 [DEFAULT]
 subsuite = "mach"
 
+["test_batch_paths.py"]
+
 ["test_commands.py"]
 
 ["test_conditions.py"]

@@ -19,9 +19,21 @@ moz-card {
 }
 
 /* Add spacing between fieldset legend text and fields */
-login-origin-field,
-login-password-field {
+moz-input-url,
+moz-input-password,
+.origin-field-readonly {
   margin-block-start: var(--space-medium);
+}
+
+.origin-field-readonly {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+}
+
+.origin-field-readonly .origin-input {
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 origin-warning,
@@ -36,6 +48,12 @@ password-warning.invalid-input {
 
 .field-container {
   position: relative;
+}
+
+.field-description {
+  margin-block: var(--space-small) 0;
+  font-size: var(--font-size-small);
+  color: var(--text-color-deemphasized);
 }
 
 .remove-login-card {

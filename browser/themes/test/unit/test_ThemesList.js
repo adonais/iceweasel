@@ -14,7 +14,7 @@ const { AddonTestUtils } = ChromeUtils.importESModule(
 const { TestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TestUtils.sys.mjs"
 );
-const { getThemesList, TESTING_XPI_BASE_URL } = ChromeUtils.importESModule(
+const { getThemesList } = ChromeUtils.importESModule(
   "moz-src:///browser/themes/ThemesList.sys.mjs"
 );
 
@@ -349,47 +349,51 @@ add_task(async function test_updateThemeState_enable_noSourceUri_logsError() {
   Services.prefs.clearUserPref("extensions.getAddons.get.url");
 });
 
-// TODO(Bug 2053220): restrict this test task to non-release channels
-// along with restricting use of the related about:config pref.
-add_task(async function test_updateThemeState_enable_installViaTestingUrl() {
-  const THEME_ID = "nova-sun@mozilla.org";
-  const server = AddonTestUtils.createHttpServer();
-  const port = server.identity.primaryPort;
-  const xpi = AddonTestUtils.createTempWebExtensionFile({
-    manifest: {
-      name: "Nova Sun",
-      version: "1.0",
-      theme: {},
-      browser_specific_settings: { gecko: { id: THEME_ID } },
-    },
-  });
-  server.registerFile(`/${THEME_ID}.xpi`, xpi);
+add_task(
+  async function test_updateThemeState_enable_amoLookupServerError_returnsFalse() {
+    const THEME_ID = "nova-sun@mozilla.org";
 
-  Services.prefs.setCharPref(TESTING_XPI_BASE_URL, `http://localhost:${port}`);
+    const server = AddonTestUtils.createHttpServer({ hosts: ["example.com"] });
+    server.registerPathHandler("/addons.json", (request, response) => {
+      response.setStatusLine(request.httpVersion, 504, "Gateway Timeout");
+    });
+    Services.prefs.setCharPref(
+      "extensions.getAddons.get.url",
+      "http://example.com/addons.json"
+    );
 
-  const manager = await getThemesList({
-    installSource: TEST_INSTALL_SOURCE,
-  });
-  const result = await manager.updateThemeState(THEME_ID, true);
-  Assert.strictEqual(
-    result,
-    true,
-    "returns true after install via testing xpiBaseUrl"
-  );
+    const manager = await getThemesList({
+      installSource: TEST_INSTALL_SOURCE,
+    });
+    const stopListening = TestUtils.listenForConsoleMessages();
+    const result = await manager.updateThemeState(THEME_ID, true);
+    const consoleMessages = await stopListening();
 
-  const addon = await AddonManager.getAddonByID(THEME_ID);
-  Assert.ok(
-    addon?.isActive,
-    "Theme installed and enabled via testing xpiBaseUrl"
-  );
-  await addon.uninstall();
-  Services.prefs.clearUserPref(TESTING_XPI_BASE_URL);
-});
+    Assert.strictEqual(
+      result,
+      false,
+      "updateThemeState resolves to false (not rejected) when AMO returns an error status"
+    );
+    Assert.ok(
+      consoleMessages.some(
+        msg =>
+          msg.wrappedJSObject.level === "error" &&
+          msg.wrappedJSObject.arguments?.[0]?.includes(
+            "Error on downloading or installing the theme"
+          )
+      ),
+      "console.error fired with the expected message"
+    );
+
+    const addon = await AddonManager.getAddonByID(THEME_ID);
+    Assert.equal(addon, null, "No install was attempted");
+    Services.prefs.clearUserPref("extensions.getAddons.get.url");
+  }
+);
 
 add_task(async function test_updateThemeState_installListener() {
   const THEME_ID = "nova-sun@mozilla.org";
-  const server = AddonTestUtils.createHttpServer();
-  const port = server.identity.primaryPort;
+  const server = AddonTestUtils.createHttpServer({ hosts: ["example.com"] });
   const xpi = AddonTestUtils.createTempWebExtensionFile({
     manifest: {
       name: "Nova Sun",
@@ -398,9 +402,30 @@ add_task(async function test_updateThemeState_installListener() {
       browser_specific_settings: { gecko: { id: THEME_ID } },
     },
   });
-  server.registerFile(`/${THEME_ID}.xpi`, xpi);
+  server.registerFile("/theme.xpi", xpi);
+  AddonTestUtils.registerJSON(server, "/addons.json", {
+    page_size: 1,
+    page_count: 1,
+    count: 1,
+    next: null,
+    previous: null,
+    results: [
+      {
+        guid: THEME_ID,
+        name: "Nova Sun",
+        type: "statictheme",
+        current_version: {
+          version: "1.0",
+          files: [{ platform: "all", url: "http://example.com/theme.xpi" }],
+        },
+      },
+    ],
+  });
 
-  Services.prefs.setCharPref(TESTING_XPI_BASE_URL, `http://localhost:${port}`);
+  Services.prefs.setCharPref(
+    "extensions.getAddons.get.url",
+    "http://example.com/addons.json"
+  );
 
   const firedEvents = [];
   let installEndedAddon = null;
@@ -433,5 +458,5 @@ add_task(async function test_updateThemeState_installListener() {
 
   const addon = await AddonManager.getAddonByID(THEME_ID);
   await addon.uninstall();
-  Services.prefs.clearUserPref(TESTING_XPI_BASE_URL);
+  Services.prefs.clearUserPref("extensions.getAddons.get.url");
 });

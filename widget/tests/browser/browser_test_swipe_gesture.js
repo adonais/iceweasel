@@ -1344,6 +1344,331 @@ add_task(async () => {
   await SpecialPowers.popPrefEnv();
 });
 
+// -- Custom Swipe Gestures Begin -- //
+
+add_task(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      // Reversed swipe gestures.
+      ["browser.gesture.swipe.left", "Browser:ForwardOrForwardDuplicate"],
+      ["browser.gesture.swipe.right", "Browser:BackOrBackDuplicate"],
+      ["widget.disable-swipe-tracker", false],
+      ["widget.swipe.velocity-twitch-tolerance", 0.0000001],
+      ["widget.swipe.success-velocity-contribution", 0.5],
+    ],
+  });
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:mozilla",
+    true /* waitForLoad */
+  );
+
+  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, "about:about");
+  await BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    "about:about"
+  );
+
+  ok(gBrowser.webNavigation.canGoBack);
+
+  const goBackNavigationPromise = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    "about:mozilla"
+  );
+  await panRightToLeft(tab.linkedBrowser, 100, 100, 2);
+  await goBackNavigationPromise;
+
+  is(
+    tab.linkedBrowser.currentURI.spec,
+    "about:mozilla",
+    "Reversed swipe gesture can trigger a go-back swipe-to-navigation."
+  );
+
+  ok(gBrowser.webNavigation.canGoForward);
+
+  const goForwardNavigationPromise = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    "about:about"
+  );
+  await panLeftToRight(tab.linkedBrowser, 100, 100, 2);
+  await goForwardNavigationPromise;
+
+  is(
+    tab.linkedBrowser.currentURI.spec,
+    "about:about",
+    "Reversed swipe gesture can trigger a go-forward swipe-to-navigation."
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      // The same swipe gestures.
+      ["browser.gesture.swipe.left", "Browser:ForwardOrForwardDuplicate"],
+      ["browser.gesture.swipe.right", "Browser:ForwardOrForwardDuplicate"],
+      ["widget.disable-swipe-tracker", false],
+      ["widget.swipe.velocity-twitch-tolerance", 0.0000001],
+      ["widget.swipe.success-velocity-contribution", 0.5],
+    ],
+  });
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:mozilla",
+    true /* waitForLoad */
+  );
+
+  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, "about:about");
+  await BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    "about:about"
+  );
+
+  gBrowser.goBack();
+  await BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    "about:mozilla"
+  );
+
+  // Test for going forward by swipe from the LEFT.
+
+  ok(gBrowser.webNavigation.canGoForward);
+
+  const goForwardNavigationPromise1 = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    "about:about"
+  );
+  await panLeftToRight(tab.linkedBrowser, 100, 100, 2);
+  await goForwardNavigationPromise1;
+
+  is(
+    tab.linkedBrowser.currentURI.spec,
+    "about:about",
+    "Swipe gesture from the left can trigger a go-forward swipe-to-navigation."
+  );
+
+  // Test for going forward by swipe from the RIGHT.
+
+  gBrowser.goBack();
+  await BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    "about:mozilla"
+  );
+
+  ok(gBrowser.webNavigation.canGoForward);
+
+  const goForwardNavigationPromise2 = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    "about:about"
+  );
+  await panRightToLeft(tab.linkedBrowser, 100, 100, 2);
+  await goForwardNavigationPromise2;
+
+  is(
+    tab.linkedBrowser.currentURI.spec,
+    "about:about",
+    "Swipe gesture from the right can trigger a go-forward swipe-to-navigation."
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      // One swipe is reserved for a command other than navigation.
+      ["browser.gesture.swipe.left", "cmd_scrollTop"],
+      ["browser.gesture.swipe.right", "Browser:BackOrBackDuplicate"],
+      ["widget.disable-swipe-tracker", false],
+      ["widget.swipe.velocity-twitch-tolerance", 0.0000001],
+      ["widget.swipe.success-velocity-contribution", 0.5],
+    ],
+  });
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:mozilla",
+    true /* waitForLoad */
+  );
+
+  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, "about:about");
+  await BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    "about:about"
+  );
+
+  ok(gBrowser.webNavigation.canGoBack);
+
+  // The direction bound to a command other than navigation shouldn't navigate
+  // even though the other direction is bound to a navigation command.
+  await panLeftToRight(tab.linkedBrowser, 100, 100, 2);
+  await waitForWhile();
+
+  is(
+    tab.linkedBrowser.currentURI.spec,
+    "about:about",
+    "Swipe gesture bound to a command other than navigation doesn't navigate."
+  );
+
+  const goBackNavigationPromise = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    "about:mozilla"
+  );
+  await panRightToLeft(tab.linkedBrowser, 100, 100, 2);
+  await goBackNavigationPromise;
+
+  is(
+    tab.linkedBrowser.currentURI.spec,
+    "about:mozilla",
+    "Swipe gesture can trigger a go-back swipe-to-navigation."
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      // Neither swipe is reserved for navigation.
+      ["browser.gesture.swipe.left", "cmd_scrollTop"],
+      ["browser.gesture.swipe.right", "cmd_scrollBottom"],
+      ["widget.disable-swipe-tracker", false],
+      ["widget.swipe.velocity-twitch-tolerance", 0.0000001],
+      ["widget.swipe.success-velocity-contribution", 0.5],
+    ],
+  });
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:mozilla",
+    true /* waitForLoad */
+  );
+
+  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, "about:about");
+  await BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    "about:about"
+  );
+
+  ok(gBrowser.webNavigation.canGoBack);
+
+  await panRightToLeft(tab.linkedBrowser, 100, 100, 2);
+  await waitForWhile();
+
+  is(
+    tab.linkedBrowser.currentURI.spec,
+    "about:about",
+    "Swipe gesture doesn't trigger a go-back swipe-to-navigation if no swipe " +
+      "is bound to a navigation command."
+  );
+
+  await panLeftToRight(tab.linkedBrowser, 100, 100, 2);
+  await waitForWhile();
+
+  is(
+    tab.linkedBrowser.currentURI.spec,
+    "about:about",
+    "Swipe gesture doesn't trigger any swipe-to-navigation if no swipe is " +
+      "bound to a navigation command."
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});
+
+// The same test as the reversed swipe gestures above, but on RTL where the
+// physical direction of each command is reversed.
+add_task(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      // Reversed swipe gestures.
+      ["browser.gesture.swipe.left", "Browser:ForwardOrForwardDuplicate"],
+      ["browser.gesture.swipe.right", "Browser:BackOrBackDuplicate"],
+      ["widget.disable-swipe-tracker", false],
+      ["widget.swipe.velocity-twitch-tolerance", 0.0000001],
+      ["widget.swipe.success-velocity-contribution", 0.5],
+      // RTL.
+      ["intl.l10n.pseudo", "bidi"],
+    ],
+  });
+
+  const newWin = await BrowserTestUtils.openNewBrowserWindow();
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    newWin.gBrowser,
+    "about:mozilla",
+    true /* waitForLoad */
+  );
+
+  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, "about:about");
+  await BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    "about:about"
+  );
+
+  // Make sure that our gesture support stuff has been initialized in the new
+  // browser window.
+  await TestUtils.waitForCondition(() => {
+    return newWin.gHistorySwipeAnimation.active;
+  });
+
+  ok(newWin.gBrowser.webNavigation.canGoBack);
+
+  // `browser.gesture.swipe.right` is a left-to-right pan on RTL.
+  const goBackNavigationPromise = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    "about:mozilla"
+  );
+  await panLeftToRight(tab.linkedBrowser, 100, 100, 2);
+  await goBackNavigationPromise;
+
+  is(
+    tab.linkedBrowser.currentURI.spec,
+    "about:mozilla",
+    "Reversed swipe gesture can trigger a go-back swipe-to-navigation on RTL."
+  );
+
+  ok(newWin.gBrowser.webNavigation.canGoForward);
+
+  const goForwardNavigationPromise = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    "about:about"
+  );
+  await panRightToLeft(tab.linkedBrowser, 100, 100, 2);
+  await goForwardNavigationPromise;
+
+  is(
+    tab.linkedBrowser.currentURI.spec,
+    "about:about",
+    "Reversed swipe gesture can trigger a go-forward swipe-to-navigation on RTL."
+  );
+
+  await BrowserTestUtils.closeWindow(newWin);
+  await SpecialPowers.popPrefEnv();
+});
+
+// -- Custom Swipe Gestures End -- //
+
 // NOTE: This test listens wheel events so that it causes an overscroll issue
 // (bug 1800022). To avoid the bug, we need to run this test case at the end
 // of this file.

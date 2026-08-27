@@ -33,6 +33,15 @@ skip-if = [
   "os == 'android'",
 ]
 
+["test_gamepad_user_activation.html"]
+support-files = ["test_gamepad_user_activation_iframe.html"]
+
+["test_gamepad_user_activation_background_tab.html"]
+# Android doesn't switch tabs on window.focus()
+skip-if = [
+  "os == 'android'",
+]
+
 ["test_gamepad_multitouch_crossorigin.html"]
 support-files = ["test_gamepad_multitouch_crossorigin_iframe.html"]
 

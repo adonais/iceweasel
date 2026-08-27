@@ -6,42 +6,93 @@ use std::collections::{hash_map::Entry, HashMap};
 
 use thin_vec::ThinVec;
 use url::Url;
+use urlpattern::UrlPatternMatchInput;
 
 use crate::{
-    Eagerness, PrefetchCandidate, PrefetchCandidates, SpeculationRule, SpeculationRuleSet,
+    Eagerness, Element, Predicate, PrefetchCandidate, PrefetchCandidates, ReferrerPolicy,
+    SpeculationRule, SpeculationRuleSet,
 };
 
+impl Predicate {
+    // https://html.spec.whatwg.org/#dr-predicate-matches
+    pub fn matches(&self, element: &Element) -> bool {
+        match self {
+            Self::Conjunction(clauses) => clauses.iter().all(|clause| clause.matches(element)),
+            Self::Disjunction(clauses) => clauses.iter().any(|clause| clause.matches(element)),
+            Self::Negation(clause) => !clause.matches(element),
+            Self::UrlPattern(patterns) => patterns.iter().any(|pattern| {
+                pattern
+                    .test(UrlPatternMatchInput::Url(match element.href_url() {
+                        Some(url) => url,
+                        None => return false,
+                    }))
+                    .unwrap_or(false)
+            }),
+            // TODO(avandolder): selectors, once they are parsed, need to be
+            // matched against the element here.
+            Self::Selector(_selectors) => false,
+        }
+    }
+}
+
 impl SpeculationRule {
-    pub fn consider_speculative_loads(&self, candidates: &mut ThinVec<PrefetchCandidate>) {
+    pub fn consider_speculative_loads(
+        &self,
+        candidates: &mut ThinVec<PrefetchCandidate>,
+        elements: &[&Element],
+    ) {
         // https://html.spec.whatwg.org/#inner-consider-speculative-loads-steps
         // Step 3.1.1-3.1.2.
         // We do not currently implement cross-origin prefetch, and so do not implement
         // cross-origin prefetch IP anonymization.
         let anonymization_policy = None;
 
-        // Step 3.1.3.
-        candidates.extend(self.urls.iter().map(|url| PrefetchCandidate {
-            url: url.clone(),
-            no_vary_search_hint: self.no_vary_search_hint.clone(),
-            eagerness: self.eagerness,
-            // Computing a speculative load referrer policy given rule and a null link
-            // is equivalent to just using the rule's referrer policy.
-            referrer_policy: self.referrer_policy,
-            tags: self.tags.iter().cloned().collect(),
-            anonymization_policy: anonymization_policy.clone(),
-        }));
-
-        // TODO(avandolder): Step 3.1.4, handling predicate speculation rules.
+        // Step 3.1.4.
+        if let Some(predicate) = &self.predicate {
+            candidates.extend(elements.iter().filter_map(|&element| {
+                if !predicate.matches(&element) {
+                    return None;
+                }
+                Some(PrefetchCandidate {
+                    no_vary_search_hint: self.no_vary_search_hint.clone(),
+                    eagerness: self.eagerness,
+                    referrer_policy: if self.referrer_policy == ReferrerPolicy::Empty {
+                        element.referrer_policy()
+                    } else {
+                        self.referrer_policy
+                    },
+                    tags: self.tags.iter().cloned().collect(),
+                    anonymization_policy: anonymization_policy.clone(),
+                    url: element.href_url()?,
+                })
+            }));
+        } else {
+            // Step 3.1.3.
+            candidates.extend(self.urls.iter().map(|url| PrefetchCandidate {
+                url: url.clone(),
+                no_vary_search_hint: self.no_vary_search_hint.clone(),
+                eagerness: self.eagerness,
+                // Computing a speculative load referrer policy given rule and a null link
+                // is equivalent to just using the rule's referrer policy.
+                referrer_policy: self.referrer_policy,
+                tags: self.tags.iter().cloned().collect(),
+                anonymization_policy: anonymization_policy.clone(),
+            }));
+        }
     }
 }
 
 impl SpeculationRuleSet {
-    pub fn consider_speculative_loads(&self, candidates: &mut ThinVec<PrefetchCandidate>) {
+    pub fn consider_speculative_loads(
+        &self,
+        candidates: &mut ThinVec<PrefetchCandidate>,
+        elements: &[&Element],
+    ) {
         // https://html.spec.whatwg.org/#inner-consider-speculative-loads-steps
         // Step 3.1.
         self.0
             .iter()
-            .for_each(|rule| rule.consider_speculative_loads(candidates));
+            .for_each(|rule| rule.consider_speculative_loads(candidates, elements));
     }
 }
 

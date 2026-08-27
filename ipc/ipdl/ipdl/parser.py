@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
+
 from ply import lex, yacc
 
 from ipdl.ast import *
@@ -118,29 +119,27 @@ def locFromTok(p, num):
 
 # -----------------------------------------------------------------------------
 
-reserved = set(
-    (
-        "async",
-        "both",
-        "child",
-        "class",
-        "from",
-        "include",
-        "manager",
-        "manages",
-        "namespace",
-        "nullable",
-        "or",
-        "parent",
-        "protocol",
-        "returns",
-        "struct",
-        "sync",
-        "union",
-        "UniquePtr",
-        "using",
-    )
-)
+reserved = set((
+    "async",
+    "both",
+    "child",
+    "class",
+    "from",
+    "include",
+    "manager",
+    "manages",
+    "namespace",
+    "nullable",
+    "or",
+    "parent",
+    "protocol",
+    "returns",
+    "struct",
+    "sync",
+    "union",
+    "UniquePtr",
+    "using",
+))
 tokens = [
     "COLONCOLON",
     "ID",

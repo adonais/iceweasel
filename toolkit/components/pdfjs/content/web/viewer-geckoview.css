@@ -13,32 +13,268 @@
  * limitations under the License.
  */
 
+:root{
+  --button-primary-bg-color:var(
+    --button-background-color-primary,
+    light-dark(#0060df, #0df)
+  );
+  --button-primary-fg-color:var(
+    --button-text-color-primary,
+    light-dark(#fbfbfe, #15141a)
+  );
+  --button-primary-border-color:var(--button-primary-bg-color);
+  --button-primary-active-bg-color:var(
+    --button-background-color-primary-active,
+    light-dark(#054096, #aaf2ff)
+  );
+  --button-primary-active-fg-color:var(--button-primary-fg-color);
+  --button-primary-active-border-color:var(--button-primary-active-bg-color);
+  --button-primary-hover-bg-color:var(
+    --button-background-color-primary-hover,
+    light-dark(#0250bb, #80ebff)
+  );
+  --button-primary-hover-fg-color:var(--button-primary-fg-color);
+  --button-primary-hover-border-color:var(--button-primary-hover-bg-color);
+  --button-primary-disabled-bg-color:var(--button-primary-bg-color);
+  --button-primary-disabled-border-color:var(--button-primary-border-color);
+  --button-primary-disabled-fg-color:var(--button-primary-fg-color);
+
+  --button-secondary-bg-color:var(
+    --button-background-color,
+    light-dark(rgb(21 20 26 / 0.07), rgb(251 251 254 / 0.07))
+  );
+  --button-secondary-fg-color:var(--text-color, light-dark(#15141a, #fbfbfe));
+  --button-secondary-border-color:var(
+    --button-border-color,
+    var(--button-secondary-bg-color)
+  );
+  --button-secondary-active-bg-color:var(
+    --button-background-color-active,
+    light-dark(rgb(21 20 26 / 0.21), rgb(251 251 254 / 0.21))
+  );
+  --button-secondary-active-fg-color:var(--button-secondary-fg-color);
+  --button-secondary-active-border-color:var(--button-secondary-bg-color);
+  --button-secondary-hover-bg-color:var(
+    --button-background-color-hover,
+    light-dark(rgb(21 20 26 / 0.14), rgb(251 251 254 / 0.14))
+  );
+  --button-secondary-hover-fg-color:var(--button-secondary-fg-color);
+  --button-secondary-hover-border-color:var(--button-secondary-hover-bg-color);
+  --button-secondary-disabled-bg-color:var(--button-secondary-bg-color);
+  --button-secondary-disabled-border-color:var(
+    --button-secondary-border-color
+  );
+  --button-secondary-disabled-fg-color:var(--button-secondary-fg-color);
+  --button-disabled-opacity:0.4;
+  --hover-filter:brightness(0.9);
+
+  @media (prefers-color-scheme: dark){
+    --button-disabled-opacity:0.6;
+    --hover-filter:brightness(1.4);
+  }
+
+  @media screen and (forced-colors: active){
+    --button-primary-bg-color:var(
+      --button-background-color-primary,
+      ButtonText
+    );
+    --button-primary-fg-color:var(--button-text-color-primary, ButtonFace);
+    --button-primary-border-color:var(
+      --button-border-color-primary,
+      ButtonText
+    );
+    --button-primary-active-bg-color:var(
+      --button-background-color-primary-active,
+      SelectedItem
+    );
+    --button-primary-active-fg-color:var(
+      --button-text-color-primary-active,
+      HighlightText
+    );
+    --button-primary-active-border-color:var(
+      --button-border-color-primary-active,
+      ButtonText
+    );
+    --button-primary-hover-bg-color:var(
+      --button-background-color-primary-hover,
+      SelectedItem
+    );
+    --button-primary-hover-fg-color:var(
+      --button-text-color-primary-hover,
+      HighlightText
+    );
+    --button-primary-hover-border-color:var(
+      --button-border-color-primary-hover,
+      SelectedItem
+    );
+    --button-primary-disabled-bg-color:var(
+      --button-background-color-primary-disabled,
+      GrayText
+    );
+    --button-primary-disabled-fg-color:var(
+      --button-text-color-primary-disabled,
+      ButtonFace
+    );
+    --button-primary-disabled-border-color:var(
+      --button-border-color-primary-disabled,
+      GrayText
+    );
+
+    --button-secondary-bg-color:var(--button-background-color, ButtonFace);
+    --button-secondary-fg-color:var(--button-text-color, ButtonText);
+    --button-secondary-border-color:var(--button-border-color, ButtonText);
+    --button-secondary-active-bg-color:var(
+      --button-background-color-active,
+      HighlightText
+    );
+    --button-secondary-active-fg-color:var(
+      --button-text-color-active,
+      SelectedItem
+    );
+    --button-secondary-active-border-color:var(
+      --button-border-color-active,
+      ButtonText
+    );
+    --button-secondary-hover-bg-color:var(
+      --button-background-color-hover,
+      HighlightText
+    );
+    --button-secondary-hover-fg-color:var(
+      --button-text-color-hover,
+      SelectedItem
+    );
+    --button-secondary-hover-border-color:var(
+      --button-border-color-hover,
+      SelectedItem
+    );
+    --button-secondary-disabled-fg-color:var(
+      --button-text-color-disabled,
+      GrayText
+    );
+    --button-secondary-disabled-border-color:var(
+      --button-border-color-disabled,
+      GrayText
+    );
+    --button-disabled-opacity:1;
+    --hover-filter:none;
+  }
+}
+
+.primaryButton,
+.secondaryButton{
+  border-radius:var(--button-border-radius, 4px);
+  border:1px solid;
+  font:menu;
+  font-weight:var(--button-font-weight, 590);
+  font-size:var(--button-font-size, 13px);
+  padding:var(--button-padding, 4px 16px);
+  width:auto;
+  min-height:var(--button-min-height, 32px);
+
+  &:hover{
+    cursor:pointer;
+    filter:var(--hover-filter);
+  }
+
+  > span{
+    color:inherit;
+    font:inherit;
+  }
+
+  &:disabled{
+    pointer-events:none;
+  }
+}
+
+.primaryButton{
+  color:var(--button-primary-fg-color);
+  background-color:var(--button-primary-bg-color);
+  border-color:var(--button-primary-border-color);
+  opacity:1;
+
+  &:hover{
+    color:var(--button-primary-hover-fg-color);
+    background-color:var(--button-primary-hover-bg-color);
+    border-color:var(--button-primary-hover-border-color);
+  }
+
+  &:active{
+    color:var(--button-primary-active-fg-color);
+    background-color:var(--button-primary-active-bg-color);
+    border-color:var(--button-primary-active-border-color);
+  }
+
+  &:disabled{
+    background-color:var(--button-primary-disabled-bg-color);
+    border-color:var(--button-primary-disabled-border-color);
+    color:var(--button-primary-disabled-fg-color);
+    opacity:var(--button-disabled-opacity);
+  }
+}
+
+.secondaryButton{
+  color:var(--button-secondary-fg-color);
+  background-color:var(--button-secondary-bg-color);
+  border-color:var(--button-secondary-border-color);
+
+  &:hover{
+    color:var(--button-secondary-hover-fg-color);
+    background-color:var(--button-secondary-hover-bg-color);
+    border-color:var(--button-secondary-hover-border-color);
+  }
+
+  &:active{
+    color:var(--button-secondary-active-fg-color);
+    background-color:var(--button-secondary-active-bg-color);
+    border-color:var(--button-secondary-active-border-color);
+  }
+
+  &:disabled{
+    background-color:var(--button-secondary-disabled-bg-color);
+    border-color:var(--button-secondary-disabled-border-color);
+    color:var(--button-secondary-disabled-fg-color);
+    opacity:var(--button-disabled-opacity);
+  }
+}
+
 .messageBar{
   --closing-button-icon:url(images/messageBar_closingButton.svg);
   --message-bar-close-button-color:var(--text-primary-color);
   --message-bar-close-button-color-hover:var(--text-primary-color);
-  --message-bar-close-button-border-radius:4px;
+  --message-bar-close-button-border-radius:var(--border-radius-small, 4px);
   --message-bar-close-button-border:none;
-  --message-bar-close-button-hover-bg-color:light-dark(
-    rgb(21 20 26 / 0.14),
-    rgb(251 251 254 / 0.14)
+  --message-bar-close-button-hover-bg-color:var(
+    --button-background-color-hover,
+    light-dark(rgb(21 20 26 / 0.14), rgb(251 251 254 / 0.14))
   );
-  --message-bar-close-button-active-bg-color:light-dark(
-    rgb(21 20 26 / 0.21),
-    rgb(251 251 254 / 0.21)
+  --message-bar-close-button-active-bg-color:var(
+    --button-background-color-active,
+    light-dark(rgb(21 20 26 / 0.21), rgb(251 251 254 / 0.21))
   );
-  --message-bar-close-button-focus-bg-color:light-dark(
-    rgb(21 20 26 / 0.07),
-    rgb(251 251 254 / 0.07)
+  --message-bar-close-button-focus-bg-color:var(
+    --button-background-color,
+    light-dark(rgb(21 20 26 / 0.07), rgb(251 251 254 / 0.07))
   );
 
   @media screen and (forced-colors: active){
-    --message-bar-close-button-color:ButtonText;
-    --message-bar-close-button-border:1px solid ButtonText;
-    --message-bar-close-button-hover-bg-color:ButtonText;
-    --message-bar-close-button-active-bg-color:ButtonText;
-    --message-bar-close-button-focus-bg-color:ButtonText;
-    --message-bar-close-button-color-hover:HighlightText;
+    --message-bar-close-button-color:var(--button-text-color, ButtonText);
+    --message-bar-close-button-border:1px solid var(--button-border-color, ButtonText);
+    --message-bar-close-button-hover-bg-color:var(
+      --button-background-color-hover,
+      SelectedItemText
+    );
+    --message-bar-close-button-active-bg-color:var(
+      --button-background-color-hover,
+      SelectedItemText
+    );
+    --message-bar-close-button-focus-bg-color:var(
+      --button-background-color-hover,
+      SelectedItemText
+    );
+    --message-bar-close-button-color-hover:var(
+      --button-text-color-hover,
+      SelectedItem
+    );
   }
 
   display:flex;
@@ -49,8 +285,7 @@
   align-items:center;
   gap:8px;
   user-select:none;
-
-  border-radius:4px;
+  border-radius:var(--border-radius-small, 4px);
 
   border:1px solid var(--message-bar-border-color);
   background:var(--message-bar-bg-color);
@@ -130,8 +365,6 @@
 }
 
 #editorUndoBar{
-  --text-primary-color:light-dark(#15141a, #fbfbfe);
-
   --message-bar-icon:url(images/messageBar_info.svg);
   --message-bar-icon-color:light-dark(#0060df, #73a7f3);
   --message-bar-bg-color:light-dark(#deeafc, #003070);
@@ -141,41 +374,10 @@
     rgb(255 255 255 / 0.08)
   );
 
-  --undo-button-bg-color:light-dark(
-    rgb(21 20 26 / 0.07),
-    rgb(255 255 255 / 0.08)
-  );
-  --undo-button-bg-color-hover:light-dark(
-    rgb(21 20 26 / 0.14),
-    rgb(255 255 255 / 0.14)
-  );
-  --undo-button-bg-color-active:light-dark(
-    rgb(21 20 26 / 0.21),
-    rgb(255 255 255 / 0.21)
-  );
-
-  --undo-button-border:1px solid light-dark(#0060df, #0df);
-
-  --undo-button-fg-color:var(--message-bar-fg-color);
-  --undo-button-fg-color-hover:var(--undo-button-fg-color);
-  --undo-button-fg-color-active:var(--undo-button-fg-color);
-
   @media screen and (forced-colors: active){
-    --text-primary-color:CanvasText;
-
     --message-bar-icon-color:CanvasText;
     --message-bar-bg-color:Canvas;
     --message-bar-border-color:CanvasText;
-
-    --undo-button-bg-color:ButtonText;
-    --undo-button-bg-color-hover:SelectedItem;
-    --undo-button-bg-color-active:SelectedItem;
-
-    --undo-button-fg-color:ButtonFace;
-    --undo-button-fg-color-hover:SelectedItemText;
-    --undo-button-fg-color-active:SelectedItemText;
-
-    --undo-button-border:none;
   }
 
   position:fixed;
@@ -197,26 +399,8 @@
   }
 
   #editorUndoBarUndoButton{
-    border-radius:4px;
-    font-weight:590;
-    line-height:19.5px;
-    color:var(--undo-button-fg-color);
-    border:var(--undo-button-border);
-    padding:4px 16px;
     margin-inline-start:8px;
-    height:32px;
-
-    background-color:var(--undo-button-bg-color);
-
-    &:hover{
-      background-color:var(--undo-button-bg-color-hover);
-      color:var(--undo-button-fg-color-hover);
-    }
-
-    &:active{
-      background-color:var(--undo-button-bg-color-active);
-      color:var(--undo-button-fg-color-active);
-    }
+    border-color:var(--color-accent-primary, light-dark(#0060df, #0df));
   }
 
   > div{
@@ -225,116 +409,31 @@
 }
 
 .dialog{
-  --dialog-bg-color:light-dark(white, #1c1b22);
-  --dialog-border-color:light-dark(white, #1c1b22);
+  --dialog-bg-color:var(--background-color-canvas, light-dark(white, #1c1b22));
+  --dialog-border-color:var(
+    --background-color-canvas,
+    light-dark(white, #1c1b22)
+  );
   --dialog-shadow:0 2px 14px 0 light-dark(rgb(58 57 68 / 0.2), #15141a);
-  --text-primary-color:light-dark(#15141a, #fbfbfe);
   --text-secondary-color:light-dark(#5b5b66, #cfcfd8);
-  --hover-filter:brightness(0.9);
-  --link-fg-color:light-dark(#0060df, #0df);
-  --link-hover-fg-color:light-dark(#0250bb, #80ebff);
   --separator-color:light-dark(#f0f0f4, #52525e);
-
-  --textarea-border-color:#8f8f9d;
+  --textarea-border-color:var(--border-color-interactive, #8f8f9d);
   --textarea-bg-color:light-dark(white, #42414d);
   --textarea-fg-color:var(--text-secondary-color);
-
-  --radio-bg-color:light-dark(#f0f0f4, #2b2a33);
-  --radio-checked-bg-color:light-dark(#fbfbfe, #15141a);
-  --radio-border-color:#8f8f9d;
-  --radio-checked-border-color:light-dark(#0060df, #0df);
-
-  --button-secondary-bg-color:light-dark(
-    rgb(21 20 26 / 0.07),
-    rgb(251 251 254 / 0.07)
-  );
-  --button-secondary-fg-color:var(--text-primary-color);
-  --button-secondary-border-color:var(--button-secondary-bg-color);
-  --button-secondary-active-bg-color:light-dark(
-    rgb(21 20 26 / 0.21),
-    rgb(251 251 254 / 0.21)
-  );
-  --button-secondary-active-fg-color:var(--button-secondary-fg-color);
-  --button-secondary-active-border-color:var(--button-secondary-bg-color);
-  --button-secondary-hover-bg-color:light-dark(
-    rgb(21 20 26 / 0.14),
-    rgb(251 251 254 / 0.14)
-  );
-  --button-secondary-hover-fg-color:var(--button-secondary-fg-color);
-  --button-secondary-hover-border-color:var(--button-secondary-hover-bg-color);
-  --button-secondary-disabled-bg-color:var(--button-secondary-bg-color);
-  --button-secondary-disabled-border-color:var(
-    --button-secondary-border-color
-  );
-  --button-secondary-disabled-fg-color:var(--button-secondary-fg-color);
-
-  --button-primary-bg-color:light-dark(#0060df, #0df);
-  --button-primary-fg-color:light-dark(#fbfbfe, #15141a);
-  --button-primary-border-color:var(--button-primary-bg-color);
-  --button-primary-active-bg-color:light-dark(#054096, #aaf2ff);
-  --button-primary-active-fg-color:var(--button-primary-fg-color);
-  --button-primary-active-border-color:var(--button-primary-active-bg-color);
-  --button-primary-hover-bg-color:light-dark(#0250bb, #80ebff);
-  --button-primary-hover-fg-color:var(--button-primary-fg-color);
-  --button-primary-hover-border-color:var(--button-primary-hover-bg-color);
-  --button-primary-disabled-bg-color:var(--button-primary-bg-color);
-  --button-primary-disabled-border-color:var(--button-primary-border-color);
-  --button-primary-disabled-fg-color:var(--button-primary-fg-color);
-  --button-disabled-opacity:0.4;
 
   --input-text-bg-color:light-dark(white, #42414d);
   --input-text-fg-color:var(--text-primary-color);
 
-  @media (prefers-color-scheme: dark){
-    --hover-filter:brightness(1.4);
-    --button-disabled-opacity:0.6;
-  }
-
   @media screen and (forced-colors: active){
-    --dialog-bg-color:Canvas;
-    --dialog-border-color:CanvasText;
+    --dialog-bg-color:var(--background-color-canvas, Canvas);
+    --dialog-border-color:var(--border-color, CanvasText);
     --dialog-shadow:none;
-    --text-primary-color:CanvasText;
     --text-secondary-color:CanvasText;
-    --hover-filter:none;
-    --link-fg-color:LinkText;
-    --link-hover-fg-color:LinkText;
     --separator-color:CanvasText;
 
     --textarea-border-color:ButtonBorder;
     --textarea-bg-color:Field;
     --textarea-fg-color:ButtonText;
-
-    --radio-bg-color:ButtonFace;
-    --radio-checked-bg-color:ButtonFace;
-    --radio-border-color:ButtonText;
-    --radio-checked-border-color:ButtonText;
-
-    --button-secondary-bg-color:ButtonFace;
-    --button-secondary-fg-color:ButtonText;
-    --button-secondary-border-color:ButtonText;
-    --button-secondary-active-bg-color:HighlightText;
-    --button-secondary-active-fg-color:SelectedItem;
-    --button-secondary-active-border-color:ButtonText;
-    --button-secondary-hover-bg-color:HighlightText;
-    --button-secondary-hover-fg-color:SelectedItem;
-    --button-secondary-hover-border-color:SelectedItem;
-    --button-secondary-disabled-fg-color:GrayText;
-    --button-secondary-disabled-border-color:GrayText;
-
-    --button-primary-bg-color:ButtonText;
-    --button-primary-fg-color:ButtonFace;
-    --button-primary-border-color:ButtonText;
-    --button-primary-active-bg-color:SelectedItem;
-    --button-primary-active-fg-color:HighlightText;
-    --button-primary-active-border-color:ButtonText;
-    --button-primary-hover-bg-color:SelectedItem;
-    --button-primary-hover-fg-color:HighlightText;
-    --button-primary-hover-border-color:SelectedItem;
-    --button-primary-disabled-bg-color:GrayText;
-    --button-primary-disabled-fg-color:ButtonFace;
-    --button-primary-disabled-border-color:GrayText;
-    --button-disabled-opacity:1;
 
     --input-text-bg-color:Field;
     --input-text-fg-color:FieldText;
@@ -344,7 +443,7 @@
   font-size:13px;
   font-weight:400;
   line-height:150%;
-  border-radius:4px;
+  border-radius:var(--border-radius-medium, 4px);
   padding:12px 16px;
   border:1px solid var(--dialog-border-color);
   background:var(--dialog-bg-color);
@@ -386,6 +485,11 @@
       gap:12px;
       align-self:flex-end;
     }
+    input:is([type="checkbox"], [type="radio"]){
+      accent-color:var(--color-accent-primary, light-dark(#0060df, #0df));
+      width:var(--checkbox-size, 16px);
+      height:var(--checkbox-size, 16px);
+    }
 
     .radio{
       display:flex;
@@ -398,25 +502,6 @@
         gap:8px;
         align-self:stretch;
         align-items:center;
-
-        input{
-          appearance:none;
-          box-sizing:border-box;
-          width:16px;
-          height:16px;
-          border-radius:50%;
-          background-color:var(--radio-bg-color);
-          border:1px solid var(--radio-border-color);
-
-          &:hover{
-            filter:var(--hover-filter);
-          }
-
-          &:checked{
-            background-color:var(--radio-checked-bg-color);
-            border:4px solid var(--radio-checked-border-color);
-          }
-        }
       }
 
       > .radioLabel{
@@ -435,14 +520,15 @@
     }
 
     button:not(:is(.toggle-button, .closeButton, .clearInputButton)){
-      border-radius:4px;
-      border:1px solid;
+      border-radius:var(--button-border-radius, 4px);
+      border-width:1px;
+      border-style:solid;
       font:menu;
-      font-weight:590;
-      font-size:13px;
-      padding:4px 16px;
+      font-weight:var(--button-font-weight, 590);
+      font-size:var(--button-font-size, 13px);
+      padding:var(--button-padding, 4px 16px);
       width:auto;
-      height:32px;
+      min-height:var(--button-min-height, 32px);
 
       &:hover{
         cursor:pointer;
@@ -453,58 +539,6 @@
         color:inherit;
         font:inherit;
       }
-
-      &.secondaryButton{
-        color:var(--button-secondary-fg-color);
-        background-color:var(--button-secondary-bg-color);
-        border-color:var(--button-secondary-border-color);
-
-        &:hover{
-          color:var(--button-secondary-hover-fg-color);
-          background-color:var(--button-secondary-hover-bg-color);
-          border-color:var(--button-secondary-hover-border-color);
-        }
-
-        &:active{
-          color:var(--button-secondary-active-fg-color);
-          background-color:var(--button-secondary-active-bg-color);
-          border-color:var(--button-secondary-active-border-color);
-        }
-
-        &:disabled{
-          background-color:var(--button-secondary-disabled-bg-color);
-          border-color:var(--button-secondary-disabled-border-color);
-          color:var(--button-secondary-disabled-fg-color);
-          opacity:var(--button-disabled-opacity);
-        }
-      }
-
-      &.primaryButton{
-        color:var(--button-primary-fg-color);
-        background-color:var(--button-primary-bg-color);
-        border-color:var(--button-primary-border-color);
-        opacity:1;
-
-        &:hover{
-          color:var(--button-primary-hover-fg-color);
-          background-color:var(--button-primary-hover-bg-color);
-          border-color:var(--button-primary-hover-border-color);
-        }
-
-        &:active{
-          color:var(--button-primary-active-fg-color);
-          background-color:var(--button-primary-active-bg-color);
-          border-color:var(--button-primary-active-border-color);
-        }
-
-        &:disabled{
-          background-color:var(--button-primary-disabled-bg-color);
-          border-color:var(--button-primary-disabled-border-color);
-          color:var(--button-primary-disabled-fg-color);
-          opacity:var(--button-disabled-opacity);
-        }
-      }
-
       &:disabled{
         pointer-events:none;
       }
@@ -524,7 +558,7 @@
       resize:none;
       margin:0;
       box-sizing:border-box;
-      border-radius:4px;
+      border-radius:var(--border-radius-small, 4px);
       border:1px solid var(--textarea-border-color);
       background:var(--textarea-bg-color);
       color:var(--textarea-fg-color);
@@ -1509,8 +1543,11 @@
   --page-border:9px solid transparent;
   --spreadHorizontalWrapped-margin-LR:-3.5px;
   --loading-icon-delay:400ms;
-  --focus-ring-color:light-dark(#0060df, #0df);
-  --focus-ring-outline:2px solid var(--focus-ring-color);
+  --focus-ring-color:var(--focus-outline-color, light-dark(#0060df, #0df));
+  --focus-ring-outline:var(--focus-outline-width, 2px) solid var(--focus-ring-color);
+  --text-primary-color:var(--text-color, light-dark(#15141a, #fbfbfe));
+  --link-fg-color:var(--link-color, light-dark(#0060df, #0df));
+  --link-hover-fg-color:var(--link-color-hover, light-dark(#0250bb, #80ebff));
   --new-badge-bg:light-dark(#070, #37b847);
   --new-badge-color:light-dark(#fff, #15141a);
   --new-badge-border-color:light-dark(#fbfbfe / 40%, #15141a / 40%);
@@ -1520,7 +1557,10 @@
     --page-margin:8px auto -1px;
     --page-border:1px solid CanvasText;
     --spreadHorizontalWrapped-margin-LR:3.5px;
-    --focus-ring-color:CanvasText;
+    --focus-ring-color:var(--focus-outline-color, CanvasText);
+    --text-primary-color:var(--text-color, CanvasText);
+    --link-fg-color:var(--link-color, LinkText);
+    --link-hover-fg-color:var(--link-color-hover, LinkText);
     --new-badge-bg:AccentColor;
     --new-badge-color:ButtonFace;
     --new-badge-border-color:CanvasText;
@@ -1704,12 +1744,6 @@
   --field-bg-color:light-dark(rgb(255 255 255), rgb(64 64 68));
   --field-border-color:light-dark(rgb(187 187 188), rgb(115 115 115));
   --doorhanger-bg-color:light-dark(rgb(255 255 255), rgb(74 74 79));
-  --dialog-button-border:none;
-  --dialog-button-bg-color:light-dark(rgb(12 12 13 / 0.1), rgb(92 92 97));
-  --dialog-button-hover-bg-color:light-dark(
-    rgb(12 12 13 / 0.3),
-    rgb(115 115 115)
-  );
 
   --toolbar-bg-color:light-dark(#f9f9fb, #2b2a33);
   --toolbar-divider-color:light-dark(#e0e0e6, #5b5b66);
@@ -1722,9 +1756,6 @@
 
 @media screen and (forced-colors: active){
   :root{
-    --dialog-button-border:1px solid Highlight;
-    --dialog-button-hover-bg-color:Highlight;
-    --dialog-button-hover-color:ButtonFace;
     --field-border-color:ButtonText;
     --main-color:CanvasText;
   }
@@ -1772,40 +1803,6 @@ body{
 
 #viewerContainer.noToolbar{
   inset-block-start:0;
-}
-
-.dialogButton{
-  border:none;
-  background:none;
-  width:28px;
-  height:28px;
-  outline:none;
-}
-
-.dialogButton:is(:hover, :focus-visible){
-  background-color:var(--dialog-button-hover-bg-color);
-}
-
-.dialogButton:is(:hover, :focus-visible) > span{
-  color:var(--dialog-button-hover-color);
-}
-
-.dialogButton[disabled]{
-  opacity:0.5;
-}
-
-.dialogButton{
-  min-width:16px;
-  margin:2px 1px;
-  padding:2px 6px 0;
-  border:none;
-  border-radius:2px;
-  color:var(--main-color);
-  font-size:12px;
-  line-height:14px;
-  user-select:none;
-  cursor:default;
-  box-sizing:border-box;
 }
 
 .toolbarField{
@@ -1881,19 +1878,6 @@ body{
       mask-image:var(--toolbarButton-download-icon);
     }
   }
-}
-
-:is(.toolbarButton .dialogButton)[disabled]{
-  opacity:0.5;
-}
-
-.dialogButton{
-  width:auto;
-  margin:3px 4px 2px !important;
-  padding:2px 11px;
-  color:var(--main-color);
-  background-color:var(--dialog-button-bg-color);
-  border:var(--dialog-button-border) !important;
 }
 
 dialog{

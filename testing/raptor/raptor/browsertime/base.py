@@ -23,7 +23,7 @@ from logger.logger import RaptorLogger
 from manifestparser.util import evaluate_list_from_string
 from perftest import GECKO_PROFILER_APPS, TRACE_APPS, Perftest
 from results import BrowsertimeResultsHandler
-from utils import bool_from_str
+from utils import bool_from_str, view_gecko_profile_from_raptor
 
 LOG = RaptorLogger(component="raptor-browsertime")
 
@@ -852,16 +852,13 @@ class Browsertime(Perftest, metaclass=ABCMeta):
                     )
         bt_timeout = bt_timeout * iterations
 
-        # if geckoProfile enabled, give browser more time for profiling
-        if self.config["gecko_profile"] is True:
-            bt_timeout += 5 * 60
-
-        # if etw profiling enabled and instantiated, give browser more time for profiling
-        if self.config.get("etw_profile") and self.etw_profiler:
-            bt_timeout += 5 * 60
-
-        # if simpleperf enabled, give browser more time for profiling
-        if self.config["simpleperf"] is True:
+        if any([
+            self.config.get("gecko_profile"),
+            self.config.get("etw_profile") and self.etw_profiler,
+            self.config.get("samply_profile") and self.samply_profiler,
+            self.config.get("perf_profile") and self.perf_profiler,
+            self.config.get("simpleperf"),
+        ]):
             bt_timeout += 5 * 60
 
         return bt_timeout
@@ -994,8 +991,22 @@ class Browsertime(Perftest, metaclass=ABCMeta):
             else:
                 raise Exception("ETW profiling is not supported in local runs")
 
+        if self.config.get("samply_profile"):
+            self._init_samply_profiling(test)
+
+        samply_started = False
+        if self.config.get("samply_profile") and self.samply_profiler:
+            try:
+                samply_started = self.samply_profiler.start()
+            except Exception as e:
+                LOG.warning(f"Failed to start Samply profiling: {e}")
+                self.samply_profiler = None
+
         if self.config.get("simpleperf"):
             self._init_simpleperf_profiling(test)
+
+        if self.config.get("perf_profile"):
+            self._init_perf_profiling(test)
 
         # timeout is a single page-load timeout value (ms) from the test INI
         # this will be used for btime --timeouts.pageLoad
@@ -1077,6 +1088,14 @@ class Browsertime(Perftest, metaclass=ABCMeta):
             except Exception as e:
                 LOG.warning(f"Failed to start ETW profiling: {e}")
                 self.etw_profiler = None  # Disable profiler to skip stop() later
+
+        perf_started = False
+        if self.config.get("perf_profile") and self.perf_profiler:
+            try:
+                perf_started = self.perf_profiler.start()
+            except Exception as e:
+                LOG.warning(f"Failed to start perf profiling: {e}")
+                self.perf_profiler = None
 
         browsertime_test_failed = False
         try:
@@ -1258,11 +1277,15 @@ class Browsertime(Perftest, metaclass=ABCMeta):
                     browsertime_log_fp.close()
                 except Exception:
                     pass
+
+            profile_to_view = None
+            is_local = self.config.get("run_local")
+
             if etw_started and self.etw_profiler:
                 try:
+                    self.etw_profiler.stop()
                     # Additionally upload kernel and user ETL files
                     # for debugging if test fails
-                    self.etw_profiler.stop()
                     self.etw_profiler.upload_etl(debug=browsertime_test_failed)
                     self.etw_profiler.symbolicate()
                     self.etw_profiler.post_process_profiles()
@@ -1271,3 +1294,49 @@ class Browsertime(Perftest, metaclass=ABCMeta):
                     LOG.info("ETW profiling has completed successfully")
                 except Exception as e:
                     LOG.error(f"Failed to finalize ETW profiling: {e}")
+
+            if samply_started and self.samply_profiler:
+                try:
+                    self.samply_profiler.stop()
+                    processed_profiles = self.samply_profiler.post_process_profiles()
+                    if is_local:
+                        profile_to_view = self.samply_profiler.archive(
+                            processed_profiles
+                        )
+                    self.samply_profiler.clean()
+                    LOG.info("Samply profiling has completed successfully")
+                except Exception as e:
+                    LOG.error(f"Failed to finalize Samply profiling: {e}")
+
+            if perf_started and self.perf_profiler:
+                try:
+                    self.perf_profiler.stop()
+                    self.perf_profiler.symbolicate()
+                    processed_profiles = self.perf_profiler.post_process_profiles()
+                    if is_local:
+                        profile_to_view = self.perf_profiler.archive(processed_profiles)
+                    LOG.info("Perf profiling has completed successfully")
+                except Exception as e:
+                    LOG.error(f"Failed to stop perf profiling: {e}")
+                finally:
+                    self.perf_profiler.clean()
+                    perf_started = False
+
+            if is_local and profile_to_view and profile_to_view.exists():
+                # Enable profile viewing (view_gecko_profile_from_raptor())
+                os.environ["RAPTOR_LATEST_PROFILE"] = str(profile_to_view)
+
+            # Serve profile before propagating the exception
+            if (
+                browsertime_test_failed
+                and profile_to_view
+                and profile_to_view.exists()
+                and is_local
+                and os.environ.get("DISABLE_PROFILE_LAUNCH", "0") != "1"
+            ):
+                try:
+                    LOG.info("Viewing failure profile")
+                    os.environ["RAPTOR_LATEST_PROFILE"] = str(profile_to_view)
+                    view_gecko_profile_from_raptor()
+                except Exception as e:
+                    LOG.error(f"Failed to view {profile_to_view}: {e}")

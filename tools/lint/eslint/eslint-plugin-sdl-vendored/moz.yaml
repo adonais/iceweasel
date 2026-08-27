@@ -1,0 +1,31 @@
+# Version of this schema
+schema: 1
+
+bugzilla:
+  product: Developer Infrastructure
+  component: Lint and Formatting
+
+origin:
+  name: eslint-plugin-sdl
+  description: >
+    ESLint Plugin focused on common security issues and misconfigurations.
+
+  url: https://github.com/microsoft/eslint-plugin-sdl
+
+  release: 3196a29da75f029c44e5b89d03601415597064ef (2025-02-20T13:03:35Z).
+  revision: 3196a29da75f029c44e5b89d03601415597064ef
+
+  license: MIT
+  license-file: LICENSE
+
+vendoring:
+  url: https://github.com/microsoft/eslint-plugin-sdl
+  source-hosting: github
+  tracking: commit
+  vendor-directory: tools/lint/eslint/eslint-plugin-sdl-vendored/vendor
+  flavor: "individual-files"
+  individual-files:
+    - upstream: lib/rules/no-insecure-url.js
+      destination: no-insecure-url.js
+    - upstream: LICENSE
+      destination: LICENSE

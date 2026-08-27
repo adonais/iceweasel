@@ -160,7 +160,7 @@ struct PackedCollatorOptions {
 };
 
 CollatorOptions js::intl::CollatorObject::getOptions() const {
-  const auto& slot = getFixedSlot(OPTIONS_SLOT);
+  const auto& slot = getFixedSlotTyped(OPTIONS_SLOT);
   if (slot.isUndefined()) {
     return {};
   }
@@ -168,7 +168,7 @@ CollatorOptions js::intl::CollatorObject::getOptions() const {
 }
 
 void js::intl::CollatorObject::setOptions(const CollatorOptions& options) {
-  setFixedSlot(OPTIONS_SLOT, PackedCollatorOptions::pack(options));
+  setFixedSlotTyped(OPTIONS_SLOT, PackedCollatorOptions::pack(options));
 }
 
 static constexpr std::string_view UsageToString(CollatorOptions::Usage usage) {

@@ -2423,10 +2423,10 @@ class ShowProfileSelectorObserver final : public nsIObserver {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
-  ShowProfileSelectorObserver() {}
+  ShowProfileSelectorObserver() = default;
 
  protected:
-  ~ShowProfileSelectorObserver() {}
+  ~ShowProfileSelectorObserver() = default;
 };
 
 NS_IMPL_ISUPPORTS(ShowProfileSelectorObserver, nsIObserver);
@@ -2786,6 +2786,13 @@ static nsresult ProfileMissingDialog(nsINativeAppSupport* aNative) {
   }
 #  endif  // MOZ_BACKGROUNDTASKS
 
+  if (gfxPlatform::IsHeadless()) {
+    // Nothing can dismiss a modal dialog in headless mode, so report the
+    // failure on stderr and exit instead of spinning in the event loop.
+    Output(true, "Could not find profile folder.\n");
+    return NS_ERROR_ABORT;
+  }
+
   nsresult rv;
 
   ScopedXPCOMStartup xpcom;
@@ -2851,6 +2858,12 @@ static nsresult ProfileEncryptionMismatchDialog(const char* aMsgKey,
     return NS_ERROR_ABORT;
   }
 #  endif  // MOZ_BACKGROUNDTASKS
+
+  if (gfxPlatform::IsHeadless()) {
+    // Nothing can dismiss a modal dialog in headless mode.
+    Output(true, "Profile encryption state does not match launching build.\n");
+    return NS_ERROR_ABORT;
+  }
 
   nsresult rv;
 
@@ -5233,6 +5246,19 @@ int XREMain::XRE_mainStartup(bool* aExitFlag,
       if (!disableWaylandProxy && XRE_IsParentProcess() && waylandEnabled) {
         auto* proxyLog = getenv("WAYLAND_PROXY_LOG");
         WaylandProxy::SetVerbose(proxyLog && *proxyLog);
+
+#    ifdef NIGHTLY_BUILD
+        bool captureProtocolErrors = true;
+#    else
+        bool captureProtocolErrors = false;
+#    endif
+        // MOZ_WAYLAND_PROTOCOL_ERROR_DETAILS=0 turns capture off on Nightly;
+        // any other non-empty value turns it on elsewhere.
+        if (auto* errorDetails = getenv("MOZ_WAYLAND_PROTOCOL_ERROR_DETAILS")) {
+          captureProtocolErrors = *errorDetails && *errorDetails != '0';
+        }
+        WaylandProxy::SetCaptureProtocolErrors(captureProtocolErrors);
+
         WaylandProxy::SetThreadStartCallback(
             [] { PROFILER_REGISTER_THREAD("WaylandProxy"); });
         WaylandProxy::SetThreadStopCallback(
@@ -6268,13 +6294,6 @@ nsresult XREMain::XRE_mainRun() {
         tempArgv[i] = strdup(gArgv[i]);
       }
       CommandLineServiceMac::SetupMacCommandLine(gArgc, tempArgv, false);
-
-      // All startup URLs have been consumed by SetupMacCommandLine. From this
-      // point, any URLs received via Apple Events (application:openURLs:) will
-      // be handled immediately by nsICommandLineRunner instead of being
-      // buffered. See bug 2036237.
-      StartupURLCollectionComplete();
-
       rv = cmdLine->Init(gArgc, tempArgv, workingDir,
                          nsICommandLine::STATE_INITIAL_LAUNCH);
       free(tempArgv);
@@ -6840,7 +6859,11 @@ bool XRE_UseNativeEventProcessing() {
     case GeckoProcessType_GMPlugin:
       return mozilla::gmp::GMPProcessChild::UseNativeEventProcessing();
     case GeckoProcessType_Content:
+#if defined(XP_DARWIN)
+      return false;
+#else
       return StaticPrefs::dom_ipc_useNativeEventProcessing_content();
+#endif  // defined (XP_DARWIN)
     default:
       return true;
   }

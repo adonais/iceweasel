@@ -23,13 +23,7 @@ interface SVGAElement : SVGGraphicsElement {
   attribute DOMString referrerPolicy;
   [PutForwards=value]
   readonly attribute DOMTokenList relList;
-  [SetterThrows]
-  attribute DOMString hreflang;
-  [SetterThrows]
-  attribute DOMString type;
-
-  [Throws, Pref="svg.SVGAElement.text.enabled"]
-  attribute DOMString text;
 };
 
 SVGAElement includes SVGURIReference;
+SVGAElement includes HyperlinkElementUtils;

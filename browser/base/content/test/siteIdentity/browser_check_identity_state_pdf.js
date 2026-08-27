@@ -75,7 +75,7 @@ add_task(async function test_pdf_http() {
     ) + "file_pdf.pdf";
 
   await testIdentityMode(
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://" + PDF_URI_NOSCHEME,
     expectedIdentity,
     `Identity should be ${expectedIdentity} for a PDF served via HTTP.`

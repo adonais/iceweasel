@@ -715,11 +715,10 @@ nsIFrame* ScrollAnchorContainer::FindAnchorIn(nsIFrame* aFrame) const {
     // Skip child lists that contain out-of-flow frames, we'll visit them by
     // following placeholders in the in-flow lists so that we visit these
     // frames in DOM order.
-    // XXX do we actually need to exclude FrameChildListID::OverflowOutOfFlow
-    // too?
+    // XXX do we actually need to exclude FrameChildListID::OverflowFloats too?
     if (listID == FrameChildListID::Absolute ||
         listID == FrameChildListID::Float ||
-        listID == FrameChildListID::OverflowOutOfFlow) {
+        listID == FrameChildListID::OverflowFloats) {
       continue;
     }
 

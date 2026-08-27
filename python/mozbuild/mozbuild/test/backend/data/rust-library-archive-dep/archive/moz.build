@@ -1,0 +1,9 @@
+# Any copyright is dedicated to the Public Domain.
+# http://creativecommons.org/publicdomain/zero/1.0/
+
+SOURCES += ["frob1.c"]
+
+BUILD_STATIC_LIB_ARCHIVE = True
+DIST_INSTALL = True
+
+Library("frob")

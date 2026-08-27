@@ -55,6 +55,7 @@ files_changed:
 - widget/windows/nsNativeThemeWin.cpp
 filters:
 - target_tasks_method
+head_git_repository: https://github.com/mozilla-firefox/firefox
 head_git_rev: f594acb4e221939ee193159d529203b889830861
 head_ref: 44e4e213379b4264a44d0103ef2c3d07db295a04
 head_repository: https://hg.mozilla.org/mozilla-central

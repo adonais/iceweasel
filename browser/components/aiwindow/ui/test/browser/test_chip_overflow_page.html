@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Smart Window chip overflow test</title>
+    <style>
+      #wide {
+        inline-size: 900px;
+      }
+      #narrow {
+        inline-size: 400px;
+      }
+    </style>
+    <link rel="stylesheet" href="chrome://global/skin/in-content/common.css" />
+    <script type="module" src="test_chip_overflow.mjs"></script>
+    <link rel="localization" href="browser/aiWindowContent.ftl" />
+  </head>
+  <body>
+    <div id="wide">
+      <website-chip-container id="wide-chips"></website-chip-container>
+    </div>
+    <div id="narrow">
+      <website-chip-container id="narrow-chips"></website-chip-container>
+    </div>
+  </body>
+</html>

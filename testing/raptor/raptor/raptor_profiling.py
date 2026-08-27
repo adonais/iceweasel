@@ -11,6 +11,7 @@ import json
 import os
 import platform
 import subprocess
+import zipfile
 from pathlib import Path
 
 import mozfile
@@ -307,6 +308,33 @@ class RaptorProfiling:
         raise FileNotFoundError(
             f"Profile post-process failed. Unprocessed profile not found: {self.profile}"
         )
+
+    def archive(self, profiles):
+        """Archive profile file(s) into a zip file."""
+        if not profiles:
+            raise ValueError("No profile(s) to archive")
+
+        test_name = self.test_config.get("name", "test")
+        archive_path = self.upload_dir / f"profiles_{test_name}.zip"
+
+        try:
+            mode = zipfile.ZIP_DEFLATED
+        except RuntimeError:
+            mode = zipfile.ZIP_STORED
+
+        with zipfile.ZipFile(archive_path, "w", mode) as zipf:
+            for profile in profiles:
+                profile_path = Path(profile)
+                if not profile_path.is_file():
+                    LOG.warning(f"Profile not found, skipping: {profile_path}")
+                    continue
+                zipf.write(profile_path, arcname=profile_path.name)
+                LOG.info(f"Added to archive: {profile_path.name}")
+
+        LOG.info(
+            f"Archive created successfully: {archive_path} ({archive_path.stat().st_size} bytes)"
+        )
+        return archive_path
 
     def clean(self):
         """Clean up temp profile directory created during initialization."""

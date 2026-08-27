@@ -2,17 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <tuple>
+
 #include "TelemetryFixture.h"
-#include "TelemetryTestHelpers.h"
-#include "core/TelemetryEvent.h"
 #include "gtest/gtest.h"
-#include "js/Array.h"               // JS::GetArrayLength
-#include "js/PropertyAndElement.h"  // JS_GetElement, JS_GetProperty
-#include "js/TypeDecls.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/Telemetry.h"
+#include "mozilla/glean/DomSecurityMetrics.h"
+#include "mozilla/glean/fog_ffi_generated.h"
 #include "nsContentSecurityManager.h"
 #include "nsContentSecurityUtils.h"
 #include "nsContentUtils.h"
@@ -22,7 +20,6 @@
 #include "nsStringFwd.h"
 
 using namespace mozilla;
-using namespace TelemetryTestHelpers;
 
 extern Atomic<bool, mozilla::Relaxed> sJSHacksChecked;
 extern Atomic<bool, mozilla::Relaxed> sJSHacksPresent;
@@ -30,6 +27,10 @@ extern Atomic<bool, mozilla::Relaxed> sCSSHacksChecked;
 extern Atomic<bool, mozilla::Relaxed> sCSSHacksPresent;
 
 TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
+  // Reset FOG to clear any events recorded by other tests.
+  const nsCString empty;
+  mozilla::glean::impl::fog_test_reset(&empty, &empty);
+
   // Enable telemetry pref.
   bool prefDefault = Preferences::GetBool(
       "dom.security.unexpected_system_load_telemetry_enabled");
@@ -61,19 +62,6 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
     nsCString remoteType;
     testResults expected;
   };
-
-  AutoJSContextWithGlobal cx(mCleanGlobal);
-  // Make sure we don't look at events from other tests.
-  (void)mTelemetry->ClearEvents();
-
-  // required for telemetry lookups
-  constexpr auto category = "security"_ns;
-  constexpr auto method = "unexpectedload"_ns;
-  constexpr auto object = "systemprincipal"_ns;
-  constexpr auto extraKeyContenttype = "contenttype"_ns;
-  constexpr auto extraKeyRemotetype = "remotetype"_ns;
-  constexpr auto extraKeyFiledetails = "filedetails"_ns;
-  constexpr auto extraKeyRedirects = "redirects"_ns;
 
   // some cases from TestFilenameEvalParser
   // no need to replicate all scenarios?!
@@ -148,7 +136,19 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
        {"other"_ns, "TYPE_SCRIPT"_ns, "web"_ns, "unknown"_ns, ""_ns}},
   };
 
-  int i = 0;
+  // Returns the value recorded for a given extra key, or an empty string if the
+  // key is absent. The list of extra key/value pairs can be in any order.
+  auto extraValue = [](const nsTArray<std::tuple<nsCString, nsCString>>& aExtra,
+                       const nsACString& aKey) -> nsCString {
+    for (const auto& entry : aExtra) {
+      if (std::get<0>(entry).Equals(aKey)) {
+        return std::get<1>(entry);
+      }
+    }
+    return nsCString();
+  };
+
+  uint32_t i = 0;
   for (auto const& currentTest : myTestCases) {
     nsresult rv;
     nsCOMPtr<nsIURI> uri;
@@ -199,102 +199,38 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
     nsContentSecurityManager::MeasureUnexpectedPrivilegedLoads(
         mockLoadInfo, uri, currentTest.remoteType);
 
-    // let's inspect the recorded events
-
-    JS::Rooted<JS::Value> eventsSnapshot(cx.GetJSContext());
-    GetEventSnapshot(cx.GetJSContext(), &eventsSnapshot);
-
-    ASSERT_TRUE(EventPresent(cx.GetJSContext(), eventsSnapshot, category,
-                             method, object))
+    // let's inspect the recorded Glean events
+    auto optEvents =
+        mozilla::glean::security::unexpected_load.TestGetValue().unwrap();
+    ASSERT_TRUE(optEvents.isSome())
     << "Test event with value and extra must be present.";
 
-    // Convert eventsSnapshot into array/object
-    JSContext* aCx = cx.GetJSContext();
-    JS::Rooted<JSObject*> arrayObj(aCx, &eventsSnapshot.toObject());
+    auto events = optEvents.extract();
+    ASSERT_EQ(i + 1, events.Length())
+        << "Each recorded test case must add exactly one event.";
 
-    JS::Rooted<JS::Value> eventRecord(aCx);
-    ASSERT_TRUE(JS_GetElement(aCx, arrayObj, i++, &eventRecord))
-    << "Must be able to get record.";  // record is already undefined :-/
+    auto const& record = events[i];
+    EXPECT_STREQ("security", record.mCategory.get());
+    EXPECT_STREQ("unexpected_load", record.mName.get());
 
-    ASSERT_TRUE(!eventRecord.isUndefined())
-    << "eventRecord should not be undefined";
+    // The filename's type is recorded in the `value` extra key.
+    EXPECT_STREQ(currentTest.expected.fileinfo.get(),
+                 extraValue(record.mExtra, "value"_ns).get())
+        << "Reported value/fileinfo must equal expected value.";
+    EXPECT_STREQ(currentTest.expected.extraValueContenttype.get(),
+                 extraValue(record.mExtra, "contenttype"_ns).get())
+        << "Reported contenttype must equal expected value.";
+    EXPECT_STREQ(currentTest.expected.extraValueRemotetype.get(),
+                 extraValue(record.mExtra, "remotetype"_ns).get())
+        << "Reported remotetype must equal expected value.";
+    EXPECT_STREQ(currentTest.expected.extraValueFiledetails.get(),
+                 extraValue(record.mExtra, "filedetails"_ns).get())
+        << "Reported filedetails must equal expected value.";
+    EXPECT_STREQ(currentTest.expected.extraValueRedirects.get(),
+                 extraValue(record.mExtra, "redirects"_ns).get())
+        << "Reported redirects must equal expected value.";
 
-    JS::Rooted<JSObject*> recordArray(aCx, &eventRecord.toObject());
-    uint32_t recordLength;
-    ASSERT_TRUE(JS::GetArrayLength(aCx, recordArray, &recordLength))
-    << "Event record array must have length.";
-    ASSERT_TRUE(recordLength == 6)
-    << "Event record must have 6 elements.";
-
-    JS::Rooted<JS::Value> str(aCx);
-    nsAutoJSString jsStr;
-    // The fileinfo string is at index 4
-    ASSERT_TRUE(JS_GetElement(aCx, recordArray, 4, &str))
-    << "Must be able to get value.";
-    ASSERT_TRUE(jsStr.init(aCx, str))
-    << "Value must be able to be init'd to a jsstring.";
-
-    ASSERT_STREQ(NS_ConvertUTF16toUTF8(jsStr).get(),
-                 currentTest.expected.fileinfo.get())
-        << "Reported fileinfo '" << NS_ConvertUTF16toUTF8(jsStr).get()
-        << " 'equals expected value: " << currentTest.expected.fileinfo.get();
-
-    // Extra is at index 5
-    JS::Rooted<JS::Value> obj(aCx);
-    ASSERT_TRUE(JS_GetElement(aCx, recordArray, 5, &obj))
-    << "Must be able to get extra data";
-    JS::Rooted<JSObject*> extraObj(aCx, &obj.toObject());
-    // looking at remotetype extra for content type
-    JS::Rooted<JS::Value> extraValC(aCx);
-    ASSERT_TRUE(
-        JS_GetProperty(aCx, extraObj, extraKeyContenttype.get(), &extraValC))
-    << "Must be able to get the extra key's value for contenttype";
-    ASSERT_TRUE(jsStr.init(aCx, extraValC))
-    << "Extra value contenttype must be able to be init'd to a jsstring.";
-    ASSERT_STREQ(NS_ConvertUTF16toUTF8(jsStr).get(),
-                 currentTest.expected.extraValueContenttype.get())
-        << "Reported value for extra contenttype '"
-        << NS_ConvertUTF16toUTF8(jsStr).get()
-        << "' should equals supplied value"
-        << currentTest.expected.extraValueContenttype.get();
-    // and again for remote type
-    JS::Rooted<JS::Value> extraValP(aCx);
-    ASSERT_TRUE(
-        JS_GetProperty(aCx, extraObj, extraKeyRemotetype.get(), &extraValP))
-    << "Must be able to get the extra key's value for remotetype";
-    ASSERT_TRUE(jsStr.init(aCx, extraValP))
-    << "Extra value remotetype must be able to be init'd to a jsstring.";
-    ASSERT_STREQ(NS_ConvertUTF16toUTF8(jsStr).get(),
-                 currentTest.expected.extraValueRemotetype.get())
-        << "Reported value for extra remotetype '"
-        << NS_ConvertUTF16toUTF8(jsStr).get()
-        << "' should equals supplied value: "
-        << currentTest.expected.extraValueRemotetype.get();
-    // repeating the same for filedetails extra
-    JS::Rooted<JS::Value> extraValF(aCx);
-    ASSERT_TRUE(
-        JS_GetProperty(aCx, extraObj, extraKeyFiledetails.get(), &extraValF))
-    << "Must be able to get the extra key's value for filedetails";
-    ASSERT_TRUE(jsStr.init(aCx, extraValF))
-    << "Extra value filedetails must be able to be init'd to a jsstring.";
-    ASSERT_STREQ(NS_ConvertUTF16toUTF8(jsStr).get(),
-                 currentTest.expected.extraValueFiledetails.get())
-        << "Reported value for extra filedetails '"
-        << NS_ConvertUTF16toUTF8(jsStr).get() << "'should equals supplied value"
-        << currentTest.expected.extraValueFiledetails.get();
-    // checking the extraKeyRedirects match
-    JS::Rooted<JS::Value> extraValRedirects(aCx);
-    ASSERT_TRUE(JS_GetProperty(aCx, extraObj, extraKeyRedirects.get(),
-                               &extraValRedirects))
-    << "Must be able to get the extra value for redirects";
-    ASSERT_TRUE(jsStr.init(aCx, extraValRedirects))
-    << "Extra value redirects must be able to be init'd to a jsstring";
-    ASSERT_STREQ(NS_ConvertUTF16toUTF8(jsStr).get(),
-                 currentTest.expected.extraValueRedirects.get())
-        << "Reported value for extra redirect '"
-        << NS_ConvertUTF16toUTF8(jsStr).get()
-        << "' should equals supplied value: "
-        << currentTest.expected.extraValueRedirects.get();
+    i++;
   }
 
   // Re-store JS/CSS hacks detection state

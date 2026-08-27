@@ -51,8 +51,13 @@ namespace jit {
 
 bool Assembler::FLAG_riscv_debug = false;
 
-// Size of the instruction stream, in bytes.
+// Size of the instruction stream, in bytes.  Note this doesn't take
+// into account the size of any un-flushed constant pools.
 size_t Assembler::size() const { return m_buffer.size(); }
+
+// Returns the size of the buffer we can currently read, hence ignoring any
+// un-flushed data in currently-under-construction constant pool(s).
+size_t Assembler::readableSize() const { return m_buffer.size(); }
 
 bool Assembler::swapBuffer(wasm::Bytes& bytes) {
   // For now, specialize to the one use case. As long as wasm::Bytes is a
@@ -994,18 +999,6 @@ int32_t Assembler::branchOffset(Label* L, OffsetSize bits,
     return offset;
   }
 
-  // Keep track of short-range branches targeting unbound labels. We may need
-  // to insert veneers in PatchShortRangeBranchToVeneer() below.
-  if (bits < OffsetSize::kOffset32) {
-    // This is the last possible branch target.
-    BufferOffset deadline(next_instr_offset.getOffset() +
-                          ImmBranchMaxForwardOffset(bits));
-    DEBUG_PRINTF("\tregisterBranchDeadline %d type %d\n", deadline.getOffset(),
-                 OffsetSizeToImmBranchRangeType(bits));
-    m_buffer.registerBranchDeadline(OffsetSizeToImmBranchRangeType(bits),
-                                    deadline);
-  }
-
   // The label is unbound and previously unused: Store the offset in the label
   // itself for patching by bind().
   if (!L->used()) {
@@ -1064,12 +1057,21 @@ int32_t Assembler::branchOffset(Label* L) {
   return branchOffset(L, OffsetSize::kOffset32, next_instr_offset);
 }
 
-int32_t Assembler::branchOffset(Label* L, OffsetSize bits) {
+void Assembler::registerBranchDeadline(Label* L, OffsetSize bits,
+                                       BufferOffset next_instr_offset) {
   MOZ_ASSERT(bits < OffsetSize::kOffset32);
 
-  // One instruction (jal, branch, etc), possibly one new deadline.
-  BufferOffset next_instr_offset = nextInstrOffset(1, 1);
-  return branchOffset(L, bits, next_instr_offset);
+  // Keep track of short-range branches targeting unbound labels. We may need
+  // to insert veneers in PatchShortRangeBranchToVeneer() below.
+  if (!L->bound()) {
+    // This is the last possible branch target.
+    BufferOffset deadline(next_instr_offset.getOffset() +
+                          ImmBranchMaxForwardOffset(bits));
+    DEBUG_PRINTF("\tregisterBranchDeadline %d type %d\n", deadline.getOffset(),
+                 OffsetSizeToImmBranchRangeType(bits));
+    m_buffer.registerBranchDeadline(OffsetSizeToImmBranchRangeType(bits),
+                                    deadline);
+  }
 }
 
 Assembler::Condition Assembler::InvertCondition(Condition cond) {
@@ -1320,11 +1322,8 @@ void Assembler::retarget(Label* label, Label* target) {
 }
 
 bool Assembler::appendRawCode(const uint8_t* code, size_t numBytes) {
-  if (m_buffer.oom()) {
-    return false;
-  }
-  m_buffer.putBytes(numBytes, code);
-  return !m_buffer.oom();
+  flush();
+  return m_buffer.appendRawCode(code, numBytes);
 }
 
 void Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled) {

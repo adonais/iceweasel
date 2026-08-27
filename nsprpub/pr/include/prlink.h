@@ -15,7 +15,7 @@ PR_BEGIN_EXTERN_C
 typedef struct PRLibrary PRLibrary;
 
 typedef struct PRStaticLinkTable {
-    const char *name;
+    const char* name;
     void (*fp)(void);
 } PRStaticLinkTable;
 
@@ -26,7 +26,8 @@ typedef struct PRStaticLinkTable {
 ** The string provided as 'path' is copied. The caller can do whatever is
 ** convenient with the argument when the function is complete.
 */
-NSPR_API(PRStatus) PR_SetLibraryPath(const char *path);
+NSPR_API(PRStatus)
+PR_SetLibraryPath(const char* path);
 
 /*
 ** Return a character string which contains the path used to search for
@@ -36,7 +37,8 @@ NSPR_API(PRStatus) PR_SetLibraryPath(const char *path);
 ** The storage is allocated by the runtime and becomes the responsibilty
 ** of the caller.
 */
-NSPR_API(char*) PR_GetLibraryPath(void);
+NSPR_API(char*)
+PR_GetLibraryPath(void);
 
 /*
 ** Given a directory name "dir" and a library name "lib" construct a full
@@ -49,13 +51,15 @@ NSPR_API(char*) PR_GetLibraryPath(void);
 ** The storage for the result is allocated by the runtime and becomes the
 ** responsibility of the caller.
 */
-NSPR_API(char*) PR_GetLibraryName(const char *dir, const char *lib);
+NSPR_API(char*)
+PR_GetLibraryName(const char* dir, const char* lib);
 
 /*
 **
 ** Free the memory allocated, for the caller, by PR_GetLibraryName
 */
-NSPR_API(void) PR_FreeLibraryName(char *mem);
+NSPR_API(void)
+PR_FreeLibraryName(char* mem);
 
 /*
 ** Given a library "name" try to load the library. The argument "name"
@@ -69,7 +73,8 @@ NSPR_API(void) PR_FreeLibraryName(char *mem);
 **
 ** This increments the reference count of the library.
 */
-NSPR_API(PRLibrary*) PR_LoadLibrary(const char *name);
+NSPR_API(PRLibrary*)
+PR_LoadLibrary(const char* name);
 
 /*
 ** Each operating system has its preferred way of specifying
@@ -103,22 +108,22 @@ typedef struct PRLibSpec {
     PRLibSpecType type;
     union {
         /* if type is PR_LibSpec_Pathname */
-        const char *pathname;
+        const char* pathname;
 
         /* if type is PR_LibSpec_MacNamedFragment */
         struct {
-            const struct FSSpec *fsspec;
-            const char *name;
-        } mac_named_fragment;      /* obsolete (for Mac OS Classic) */
+            const struct FSSpec* fsspec;
+            const char* name;
+        } mac_named_fragment; /* obsolete (for Mac OS Classic) */
 
         /* if type is PR_LibSpec_MacIndexedFragment */
         struct {
-            const struct FSSpec *fsspec;
+            const struct FSSpec* fsspec;
             PRUint32 index;
-        } mac_indexed_fragment;    /* obsolete (for Mac OS Classic) */
+        } mac_indexed_fragment; /* obsolete (for Mac OS Classic) */
 
         /* if type is PR_LibSpec_PathnameU */
-        const PRUnichar *pathname_u; /* supported only on Win32 */
+        const PRUnichar* pathname_u; /* supported only on Win32 */
     } value;
 } PRLibSpec;
 
@@ -128,22 +133,21 @@ typedef struct PRLibSpec {
 ** Flags not supported by the underlying OS are ignored.
 */
 
-#define PR_LD_LAZY   0x1  /* equivalent to RTLD_LAZY on Unix */
-#define PR_LD_NOW    0x2  /* equivalent to RTLD_NOW on Unix */
-#define PR_LD_GLOBAL 0x4  /* equivalent to RTLD_GLOBAL on Unix */
-#define PR_LD_LOCAL  0x8  /* equivalent to RTLD_LOCAL on Unix */
+#define PR_LD_LAZY 0x1   /* equivalent to RTLD_LAZY on Unix */
+#define PR_LD_NOW 0x2    /* equivalent to RTLD_NOW on Unix */
+#define PR_LD_GLOBAL 0x4 /* equivalent to RTLD_GLOBAL on Unix */
+#define PR_LD_LOCAL 0x8  /* equivalent to RTLD_LOCAL on Unix */
 /* The following is equivalent to LOAD_WITH_ALTERED_SEARCH_PATH on Windows */
-#define PR_LD_ALT_SEARCH_PATH  0x10
+#define PR_LD_ALT_SEARCH_PATH 0x10
 /*                0x8000     reserved for NSPR internal use */
 
 /*
 ** Load the specified library, in the manner specified by 'flags'.
 */
 
-NSPR_API(PRLibrary *)
-PR_LoadLibraryWithFlags(
-    PRLibSpec libSpec,    /* the shared library */
-    PRIntn flags          /* flags that affect the loading */
+NSPR_API(PRLibrary*)
+PR_LoadLibraryWithFlags(PRLibSpec libSpec, /* the shared library */
+                        PRIntn flags       /* flags that affect the loading */
 );
 
 /*
@@ -155,7 +159,8 @@ PR_LoadLibraryWithFlags(
 **
 ** This function decrements the reference count of the library.
 */
-NSPR_API(PRStatus) PR_UnloadLibrary(PRLibrary *lib);
+NSPR_API(PRStatus)
+PR_UnloadLibrary(PRLibrary* lib);
 
 /*
 ** Given the name of a procedure, return the address of the function that
@@ -165,7 +170,8 @@ NSPR_API(PRStatus) PR_UnloadLibrary(PRLibrary *lib);
 **
 ** This function does not modify the reference count of the library.
 */
-NSPR_API(void*) PR_FindSymbol(PRLibrary *lib, const char *name);
+NSPR_API(void*)
+PR_FindSymbol(PRLibrary* lib, const char* name);
 
 /*
 ** Similar to PR_FindSymbol, except that the return value is a pointer to
@@ -176,7 +182,8 @@ NSPR_API(void*) PR_FindSymbol(PRLibrary *lib, const char *name);
 ** This function does not modify the reference count of the library.
 */
 typedef void (*PRFuncPtr)(void);
-NSPR_API(PRFuncPtr) PR_FindFunctionSymbol(PRLibrary *lib, const char *name);
+NSPR_API(PRFuncPtr)
+PR_FindFunctionSymbol(PRLibrary* lib, const char* name);
 
 /*
 ** Finds a symbol in one of the currently loaded libraries. Given the
@@ -188,8 +195,8 @@ NSPR_API(PRFuncPtr) PR_FindFunctionSymbol(PRLibrary *lib, const char *name);
 **
 ** This increments the reference count of the library.
 */
-NSPR_API(void*) PR_FindSymbolAndLibrary(const char *name,
-                                        PRLibrary* *lib);
+NSPR_API(void*)
+PR_FindSymbolAndLibrary(const char* name, PRLibrary** lib);
 
 /*
 ** Similar to PR_FindSymbolAndLibrary, except that the return value is
@@ -199,8 +206,8 @@ NSPR_API(void*) PR_FindSymbolAndLibrary(const char *name,
 **
 ** This increments the reference count of the library.
 */
-NSPR_API(PRFuncPtr) PR_FindFunctionSymbolAndLibrary(const char *name,
-        PRLibrary* *lib);
+NSPR_API(PRFuncPtr)
+PR_FindFunctionSymbolAndLibrary(const char* name, PRLibrary** lib);
 
 /*
 ** Register a static link table with the runtime under the name
@@ -213,8 +220,8 @@ NSPR_API(PRFuncPtr) PR_FindFunctionSymbolAndLibrary(const char *name,
 **
 ** This increments the reference count of the library.
 */
-NSPR_API(PRLibrary*) PR_LoadStaticLibrary(
-    const char *name, const PRStaticLinkTable *table);
+NSPR_API(PRLibrary*)
+PR_LoadStaticLibrary(const char* name, const PRStaticLinkTable* table);
 
 /*
 ** Return the pathname of the file that the library "name" was loaded
@@ -222,7 +229,8 @@ NSPR_API(PRLibrary*) PR_LoadStaticLibrary(
 **
 ** The caller is responsible for freeing the result with PR_Free.
 */
-NSPR_API(char *) PR_GetLibraryFilePathname(const char *name, PRFuncPtr addr);
+NSPR_API(char*)
+PR_GetLibraryFilePathname(const char* name, PRFuncPtr addr);
 
 PR_END_EXTERN_C
 

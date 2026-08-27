@@ -74,6 +74,9 @@ function setup_initial_values(id, ivalprop, prereqprop) {
 function test_property(property)
 {
   var info = gCSSProperties[property];
+  if ("subproperties" in info && info.subproperties.length == 0) {
+    return;
+  }
 
   var keywords = ["initial"];
   if (!info.inherited)

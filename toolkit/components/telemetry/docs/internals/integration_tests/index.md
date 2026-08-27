@@ -98,6 +98,7 @@ import unittest
 
 from telemetry_harness.testcase import TelemetryTestCase
 
+
 class TestMainPingExample(TelemetryTestCase):
     """Example tests for the telemetry main ping."""
 

@@ -7,6 +7,7 @@
 const { logTest } = require("./utils/profiling");
 
 const EAGERNESS_LEVELS = ["immediate", "eager", "moderate", "conservative"];
+const SOURCES = ["document", "list"];
 
 // Drive the click so each eagerness level gets a fair chance to fire and
 // complete its prefetch before navigation. `dwellMs` is the settle/hold
@@ -58,15 +59,24 @@ module.exports = logTest(
           `expected one of ${EAGERNESS_LEVELS.join(", ")}`
       );
     }
+    const source = context.options.browsertime.source || "document";
+    if (!SOURCES.includes(source)) {
+      throw new Error(
+        `speculation-rules-prefetch: unsupported source "${source}"; ` +
+          `expected one of ${SOURCES.join(", ")}`
+      );
+    }
     // Covers each level's trigger latency plus the 500 ms backend stall.
     const dwellMs = Number(context.options.browsertime.dwell_ms ?? 1000);
 
     context.log.info(
-      `speculation-rules-prefetch: button=${buttonId}, ` +
+      `speculation-rules-prefetch: button=${buttonId}, source=${source}, ` +
         `eagerness=${eagerness}, dwell_ms=${dwellMs}`
     );
 
-    await commands.navigate(`${serverUrl}/landing.html?eagerness=${eagerness}`);
+    await commands.navigate(
+      `${serverUrl}/landing.html?eagerness=${eagerness}&source=${source}`
+    );
     await commands.wait.byTime(250);
 
     await commands.measure.start();

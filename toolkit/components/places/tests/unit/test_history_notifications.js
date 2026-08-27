@@ -22,7 +22,7 @@ add_task(async function locked() {
   let promiseComplete = promiseTopicObserved(
     NS_PLACES_INIT_COMPLETE_TOPIC
   ).then(() => (resolved = true));
-  let history = Cc["@mozilla.org/browser/nav-history-service;1"].createInstance(
+  let history = Cc["@mozilla.org/browser/nav-history-service;1"].getService(
     Ci.nsINavHistoryService
   );
   // The notification shouldn't happen until something tries to use the database.

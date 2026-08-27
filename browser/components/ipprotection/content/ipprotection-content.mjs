@@ -325,12 +325,14 @@ export default class IPProtectionContentElement extends MozLitElement {
   errorTemplate() {
     const isNetworkError = this.state.error === ERRORS.NETWORK;
     const isCatastrophicError = this.state.error === ERRORS.CATASTROPHIC;
+    const isRestrictedGeoError = this.state.error === ERRORS.VPN_UNAVAILABLE;
 
     let headerL10nId = "ipprotection-connection-status-generic-error-title-1";
     let descriptionL10nId =
       "ipprotection-connection-status-generic-error-description";
     let errorType = ERRORS.GENERIC;
     let imageSrc = null;
+    let supportSlug = null;
 
     if (isNetworkError) {
       headerL10nId = "ipprotection-connection-status-network-error-title-1";
@@ -346,12 +348,19 @@ export default class IPProtectionContentElement extends MozLitElement {
       errorType = ERRORS.CATASTROPHIC;
       imageSrc =
         "chrome://browser/content/ipprotection/assets/states/ipprotection-error.svg";
+    } else if (isRestrictedGeoError) {
+      headerL10nId = "ipprotection-connection-status-blocked-error-title-1";
+      descriptionL10nId =
+        "ipprotection-connection-status-blocked-error-description-1";
+      errorType = ERRORS.VPN_UNAVAILABLE;
+      supportSlug = LINKS.NO_ACCESS_SUPPORT_SLUG;
     }
 
     return html`
       <ipprotection-status-box
         .headerL10nId=${headerL10nId}
         .descriptionL10nId=${descriptionL10nId}
+        .descriptionSupportSlug=${ifDefined(supportSlug)}
         .type=${errorType}
       >
         ${imageSrc

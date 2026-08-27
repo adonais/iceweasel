@@ -46,7 +46,6 @@ object AppReducer : Reducer<AppState, AppAction> {
             is AppAction.ShowOnboardingSecondScreen -> showOnBoardingSecondScreen(state)
             is AppAction.OpenCrashList -> openCrashlist(state)
             is AppAction.ShowSearchWidgetSnackBar -> showSearchWidgetSnackBarChanged(state, action)
-            is AppAction.ShowCookieBannerCfrChange -> showCookieBannerCfrChanged(state, action)
             is AppAction.UpdateIsPinningSupported -> updateIsPinningSupported(state, action)
         }
     }
@@ -258,16 +257,6 @@ private fun showTrackingProtectionCfrChanged(
     return state.copy(showTrackingProtectionCfrForTab = action.value)
 }
 
-/**
- * The state of cookie banner CFR changed
- */
-private fun showCookieBannerCfrChanged(
-    state: AppState,
-    action: AppAction.ShowCookieBannerCfrChange,
-): AppState {
-    return state.copy(showCookieBannerCfr = action.value)
-}
-
 private fun openSitePermissionOptionsScreen(
     state: AppState,
     action: AppAction.OpenSitePermissionOptionsScreen,
@@ -316,7 +305,6 @@ private val settingsParentMap = mapOf(
     Screen.Settings.Page.Mozilla to Screen.Settings.Page.Start,
     Screen.Settings.Page.PrivacyExceptions to Screen.Settings.Page.Privacy,
     Screen.Settings.Page.SitePermissions to Screen.Settings.Page.Privacy,
-    Screen.Settings.Page.CookieBanner to Screen.Settings.Page.Privacy,
     Screen.Settings.Page.SecretSettings to Screen.Settings.Page.Advanced,
     Screen.Settings.Page.SearchList to Screen.Settings.Page.Search,
     Screen.Settings.Page.SearchAutocomplete to Screen.Settings.Page.Search,

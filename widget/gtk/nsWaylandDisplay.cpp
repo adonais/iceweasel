@@ -1062,10 +1062,14 @@ void nsWaylandDisplay::SessionManagerInit() {
 // below.
 
 // 32% of crashes - Example: "unknown object (4278190083), message error(ous)"
+// This is the one pattern where libwayland has already thrown the compositor's
+// error text away, so add what wayland-proxy captured. That string is empty
+// when nothing was captured. See bug 2039706.
 MOZ_NEVER_INLINE static void WlLogHandler_UnknownObject(const char* error) {
-  MOZ_CRASH_UNSAFE_PRINTF("(%s) %s Proxy: %s",
+  MOZ_CRASH_UNSAFE_PRINTF("(%s) %s Proxy: %s Compositor error: %s",
                           GetDesktopEnvironmentIdentifier().get(), error,
-                          WaylandProxy::GetState());
+                          WaylandProxy::GetState(),
+                          WaylandProxy::GetLastProtocolError());
 }
 
 // 20% of crashes - Example: "wp_viewport#296: error 2: source rectangle out
@@ -1345,6 +1349,19 @@ void nsWaylandDisplay::Init() {
   if (!GetFractionalScaleManager()) {
     NS_WARNING("Missing wp_fractional_scale_v1 wayland protocol!");
   }
+}
+
+bool nsWaylandDisplay::IsTFSupported(int aTF) {
+  if (aTF < sColorTransfersNum) {
+    return mSupportedTransfer[aTF] == aTF;
+  } else {
+    NS_WARNING("Unknow color transfer function!");
+    return false;
+  }
+}
+
+bool nsWaylandDisplay::IsSetMDCVSupported() {
+  return mColorManagerSupportedFeature.mDisplayPrimaries;
 }
 
 }  // namespace mozilla::widget

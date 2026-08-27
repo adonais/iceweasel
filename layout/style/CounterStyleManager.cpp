@@ -432,7 +432,7 @@ static bool HebrewToText(CounterValue aOrdinal, nsAString& aResult) {
     outputSep = true;
   } while (aOrdinal >= 1);
 
-  aResult = allText;
+  aResult = std::move(allText);
   return true;
 }
 

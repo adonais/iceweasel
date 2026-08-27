@@ -55,7 +55,7 @@ that you don't get warnings about undefined or unused variables.
 
 ## Enabling new rules and adding plugins
 
-Please see [this page for enabling new rules](eslint/enabling-rules.html).
+Please see [this page for enabling new rules](eslint/enabling-rules.md).
 
 ## Common Issues and How To Solve Them
 
@@ -168,8 +168,8 @@ This is a tier-2 task that is run once a day at midnight UTC via a cron job.
 
 It currently runs the ESLint rules plus two additional rules:
 
-- [valid-ci-uses](eslint-plugin-mozilla/valid-ci-uses.html)
-- [valid-services-property](eslint-plugin-mozilla/valid-services-property.html)
+- [valid-ci-uses](eslint-plugin-mozilla/rules/valid-ci-uses.md)
+- [valid-services-property](eslint-plugin-mozilla/rules/valid-services-property.md)
 
 These are two rules that both require build artifacts.
 
@@ -192,16 +192,17 @@ For test harness issues, file bugs in Developer Infrastructure :: Lint and Forma
 
 eslint-plugin-mozilla
 eslint-plugin-spidermonkey-js
+eslint/enabling-rules
 ```
 
 [difficult for eslint to handle]: https://bugzilla.mozilla.org/show_bug.cgi?id=1379669
 [eslint's documentation]: https://eslint.org/docs/user-guide/configuring
-[eslint-plugin-mozilla]: eslint-plugin-mozilla.html
-[eslint-plugin-spidermonkey-js]: eslint-plugin-spidermonkey-js.html
+[eslint-plugin-mozilla]: eslint-plugin-mozilla.md
+[eslint-plugin-spidermonkey-js]: eslint-plugin-spidermonkey-js.md
 [eslint.org's rule list]: https://eslint.org/docs/rules/
 [informed that it is a module]: https://searchfox.org/mozilla-central/rev/9399e5832979755cd340383f4ca4069dd5fc7774/browser/base/content/.eslintrc.js
 [patterns in .eslintrc.js]: https://searchfox.org/mozilla-central/rev/9399e5832979755cd340383f4ca4069dd5fc7774/.eslintrc.js#24-38
 [prettier]: https://prettier.io/
 [prettier ignore docs]: https://prettier.io/docs/en/ignore.html
 [seek help]: ../index.html#getting-help
-[usage guide]: ../usage.html
+[usage guide]: ../usage.md

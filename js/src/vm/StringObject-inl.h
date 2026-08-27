@@ -22,7 +22,7 @@ namespace js {
   }
 
   MOZ_ASSERT(obj->lookup(cx, NameToId(cx->names().length))->slot() ==
-             LENGTH_SLOT);
+             LENGTH_SLOT.index());
 
   obj->setStringThis(str);
 

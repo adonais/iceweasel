@@ -12,6 +12,8 @@
 #include <fcntl.h>
 #include <atomic>
 #include <memory>
+#include <mutex>
+#include <string>
 
 class ProxiedConnection;
 
@@ -63,6 +65,27 @@ class WaylandProxy {
   static void AddState(unsigned aState);
   static const char* GetState();
 
+  // Keep the text of the compositor's wl_display.error messages, so the crash
+  // handler can report the real reason.
+  //
+  // Needed because libwayland throws the error text away when the error refers
+  // to a server-allocated object we have already destroyed (the "unknown
+  // object" case). See bug 2039706.
+  //
+  // Must be called before Create(): the scanner tracks Wayland message
+  // boundaries from the first byte the proxy forwards, so turning capture on
+  // later starts it in the middle of a message, and the protocol has no marker
+  // to resync on.
+  static void SetCaptureProtocolErrors(bool aEnable);
+  static bool CaptureProtocolErrors() { return sCaptureProtocolErrors; }
+  // Record the latest wl_display.error message and print it to stderr. Called
+  // on the proxy thread.
+  static void SetLastProtocolError(const char* aMessage);
+  // Return the latest captured wl_display.error message, or an empty string if
+  // none was captured. The result is strdup'd and owned by the caller. Called
+  // on the main thread from the crash handler.
+  static const char* GetLastProtocolError();
+
   ~WaylandProxy();
 
  private:
@@ -112,6 +135,10 @@ class WaylandProxy {
   // while graceful shutdown proceeds on the main thread.
   static std::atomic<bool> sCompositorGone;
   static std::atomic<unsigned> sProxyStateFlags;
+
+  static bool sCaptureProtocolErrors;
+  static std::mutex sLastProtocolErrorMutex;
+  static std::string sLastProtocolError;
 };
 
 #endif  // _wayland_proxy_h_

@@ -182,12 +182,16 @@ impl<I: Internable> Default for DataStore<I> {
 
 impl<I: Internable> DataStore<I> {
     /// Apply any updates from the scene builder thread to
-    /// this data store.
+    /// this data store. Returns the (insertion, removal) counts, which the
+    /// caller aggregates across every interner into `INTERN_INSERTIONS` /
+    /// `INTERN_REMOVALS`.
     pub fn apply_updates(
         &mut self,
         update_list: UpdateList<I::Key>,
         profile: &mut TransactionProfile,
-    ) {
+    ) -> (usize, usize) {
+        let counts = (update_list.insertions.len(), update_list.removals.len());
+
         for insertion in update_list.insertions {
             self.items
                 .entry(insertion.index)
@@ -199,6 +203,8 @@ impl<I: Internable> DataStore<I> {
         }
 
         profile.set(I::PROFILE_COUNTER, self.items.len());
+
+        counts
     }
 }
 
@@ -376,6 +382,29 @@ impl<I: Internable> Interner<I> {
         self.current_epoch = Epoch(self.current_epoch.0 + 1);
 
         update_list
+    }
+
+    /// Ensure that `store` has an entry for every item currently interned.
+    ///
+    /// The interner (scene builder thread) and the data store (render backend
+    /// thread) are serialized independently and at slightly different points
+    /// when saving a capture. As a result the data store snapshot can lag the
+    /// interner by a scene build: an item interned on the last frame is present
+    /// in the interner's map but its insertion hasn't been applied to the saved
+    /// data store yet. When such a capture is loaded and the scene is rebuilt,
+    /// re-interning that item returns the existing handle without emitting a new
+    /// insertion, leaving the data store slot empty. Reconstruct the missing
+    /// slots from the interned keys so the loaded frame is self-consistent.
+    #[cfg(feature = "replay")]
+    pub fn reconcile_datastore(&self, store: &mut DataStore<I>) {
+        for (key, details) in self.map.iter() {
+            if store.items.len() <= details.index {
+                store.items.resize_with(details.index + 1, || None);
+            }
+            if store.items[details.index].is_none() {
+                store.items[details.index] = Some(key.clone().into());
+            }
+        }
     }
 }
 

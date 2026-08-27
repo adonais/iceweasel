@@ -59,7 +59,7 @@ splitter.devtools-horizontal-splitter,
 
   box-sizing: border-box;
 
-  z-index: var(--browser-stack-z-index-devtools-splitter, 1);
+  z-index: 1;
 
   /* opt-out of forced colors because the transparent borders are turned into
      opaque ones in High Contrast Mode. --devtools-splitter-color has specific value
@@ -79,16 +79,13 @@ splitter.devtools-horizontal-splitter {
   cursor: ns-resize;
 }
 
+/* Specific style for split console splitter */
 #toolbox-deck ~ splitter.devtools-horizontal-splitter {
   min-height: var(--devtools-emphasized-horizontal-splitter-min-height);
-}
 
-/**
- * Emphasized splitter has the hover style.
- * This emphasized splitter affect splitter console only.
- */
-#toolbox-deck ~ splitter.devtools-horizontal-splitter:hover {
-  background-color: var(--theme-emphasized-splitter-color-hover);
+  &:hover {
+    background-color: var(--theme-emphasized-splitter-color-hover);
+  }
 }
 
 .devtools-side-splitter {
@@ -103,7 +100,51 @@ splitter.devtools-horizontal-splitter {
   cursor: ew-resize;
 }
 
-/* Specific style for content page|devtools toolbox splitters */
-splitter:is(.devtools-horizontal-splitter, .devtools-side-splitter):focus-visible {
-  outline: auto;
+/* Specific style for content page|devtools toolbox splitters (keep `splitter` tagName
+   to have a higher specificity than default rules */
+splitter.devtools-toolbox-splitter {
+  --splitter-size: 4px;
+  --min-splitter-size: 1px;
+  --negative-margin: calc(-1 * var(--splitter-size));
+
+  appearance: none;
+  transition: background-color 0.5s ease-in-out;
+  margin: 0;
+  z-index: var(--browser-container-z-index-devtools-splitter);
+
+  /* override default <splitter> style */
+  border-width: 0;
+  background-color: transparent;
+
+  &:hover {
+    background-color: var(--focus-outline-color);
+  }
+
+  &:focus-visible {
+    outline: auto;
+  }
+
+  :root[uidensity="compact"] & {
+    --splitter-size: 2px;
+  }
+
+  &.for-bottom-host {
+    height: var(--splitter-size);
+    min-height: var(--min-splitter-size);
+    margin-block-end: var(--negative-margin);
+  }
+
+  &.for-side-host {
+    width: var(--splitter-size);
+    min-width: var(--min-splitter-size);
+
+    /* we don't want to use logical properties here, as when in RTL, the toolbox is still
+       docked to the right/left , and we want to update the actual right/left margin */
+    &.docked-right {
+      margin-right: var(--negative-margin);
+    }
+    &.docked-left {
+      margin-left: var(--negative-margin);
+    }
+  }
 }

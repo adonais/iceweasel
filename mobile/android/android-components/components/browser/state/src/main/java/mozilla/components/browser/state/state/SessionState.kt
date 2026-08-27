@@ -4,7 +4,6 @@
 
 package mozilla.components.browser.state.state
 
-import mozilla.components.concept.engine.EngineSession.CookieBannerHandlingStatus
 import mozilla.components.support.utils.EXTRA_ACTIVITY_REFERRER_CATEGORY
 import mozilla.components.support.utils.EXTRA_ACTIVITY_REFERRER_PACKAGE
 import mozilla.components.support.utils.SafeIntent
@@ -16,7 +15,6 @@ import mozilla.components.support.utils.SafeIntent
  * @property content the [ContentState] of this session.
  * @property trackingProtection the [TrackingProtectionState] of this session.
  * @property translationsState the [TranslationsState] of this session.
- * @property cookieBanner Indicates the state of cookie banner for this session.
  * @property engineState the [EngineState] of this session.
  * @property extensionState a map of extension id and web extension states
  * specific to this [SessionState].
@@ -33,7 +31,6 @@ interface SessionState {
     val content: ContentState
     val trackingProtection: TrackingProtectionState
     val translationsState: TranslationsState
-    val cookieBanner: CookieBannerHandlingStatus
     val engineState: EngineState
     val extensionState: Map<String, WebExtensionState>
     val mediaSessionState: MediaSessionState?
@@ -54,7 +51,6 @@ interface SessionState {
         extensionState: Map<String, WebExtensionState> = this.extensionState,
         mediaSessionState: MediaSessionState? = this.mediaSessionState,
         contextId: String? = this.contextId,
-        cookieBanner: CookieBannerHandlingStatus = this.cookieBanner,
     ): SessionState
 
     /**

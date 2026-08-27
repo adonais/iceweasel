@@ -310,6 +310,15 @@ add_task(async function test_notificationReshowTabSwitch() {
  * the PopupNotifications panel position is updated.
  */
 add_task(async function test_notificationWindowMove() {
+  // Wayland clients can't position their own toplevel windows, so
+  // gtk_window_move() is a no-op there: the panel is never repositioned and
+  // the "popuppositioned" this test waits on never fires. See
+  // browser_popup_linux_move.js for the same limitation.
+  if (Services.appinfo.isWayland) {
+    ok(true, "Skipping test on Wayland because windows can't be moved.");
+    return;
+  }
+
   let screenX, screenY;
 
   await runPopupNotificationSecurityDelayTest({

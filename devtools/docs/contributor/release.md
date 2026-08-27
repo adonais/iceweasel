@@ -31,6 +31,18 @@ Try to file a specific bug for each backward compatibility code you are removing
 
 ## Smoke test remote debugging
 
+### Automated tests
+
+We are currently switching backward compatibility tests to automated CI jobs.
+See the [DevTools Backward Compatitility Tests](tests/backward-compat-tests.md)
+documentation.
+
+The DevTools backward compatibility job was added in [Bug 2053559](https://bugzilla.mozilla.org/show_bug.cgi?id=2053559).
+
+The automated job currently only covers testing Desktop Firefox. Once we are
+confident the job works correctly and [Android coverage has been added](https://bugzilla.mozilla.org/show_bug.cgi?id=2062545),
+the manual smoke tests steps below should be removed.
+
 ### Setup
 
 We will run the remote debugging smoke tests twice. Once to exercise backward compatibility, and once without backward compatibility (same version). The tests to run are the same in both cases (see Tests section).

@@ -146,7 +146,7 @@ class SpeechDispatcherCallback final : public nsISpeechTaskCallback {
                            SpeechDispatcherService* aService)
       : mTask(aTask), mService(aService) {}
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(SpeechDispatcherCallback,
                                            nsISpeechTaskCallback)
 

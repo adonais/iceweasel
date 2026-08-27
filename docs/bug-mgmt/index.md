@@ -1,30 +1,11 @@
 # Bug Handling
 
-## Guides
-
 ```{toctree}
-:glob: true
 :maxdepth: 1
 
-guides/*
-```
-
-## Policies
-
-```{toctree}
-:glob: true
-:maxdepth: 1
-
-policies/*
-```
-
-## Processes
-
-```{toctree}
-:glob: true
-:maxdepth: 1
-
-processes/*
+guides/index
+policies/index
+processes/index
 ```
 
 ## Related documentation

@@ -120,10 +120,36 @@ this.contextualIdentities = class extends ExtensionAPIPersistent {
     };
   }
 
+  siteAssociationEventRegistrar() {
+    return ({ fire }) => {
+      let topic = "contextual-identity-site-association-changed";
+      let observer = subject => {
+        let { site, userContextId } = subject.wrappedJSObject;
+        let changeInfo = { site };
+        if (userContextId) {
+          changeInfo.cookieStoreId =
+            getCookieStoreIdForContainer(userContextId);
+        }
+        fire.async(changeInfo);
+      };
+
+      Services.obs.addObserver(observer, topic);
+      return {
+        unregister() {
+          Services.obs.removeObserver(observer, topic);
+        },
+        convert(_fire) {
+          fire = _fire;
+        },
+      };
+    };
+  }
+
   PERSISTENT_EVENTS = {
     onCreated: this.eventRegistrar("contextual-identity-created"),
     onUpdated: this.eventRegistrar("contextual-identity-updated"),
     onRemoved: this.eventRegistrar("contextual-identity-deleted"),
+    onSiteAssociationChanged: this.siteAssociationEventRegistrar(),
   };
 
   onStartup() {
@@ -327,6 +353,68 @@ this.contextualIdentities = class extends ExtensionAPIPersistent {
           return convertedIdentity;
         },
 
+        async setSiteAssociation(details) {
+          checkAPIEnabled();
+          let containerId = getContainerForCookieStoreId(details.cookieStoreId);
+          if (!containerId) {
+            throw new ExtensionError(
+              `Invalid contextual identity: ${details.cookieStoreId}`
+            );
+          }
+
+          let site = ContextualIdentityService.normalizeSite(details.site);
+          if (!site) {
+            throw new ExtensionError(`Invalid site: ${details.site}`);
+          }
+
+          ContextualIdentityService.setSiteAssociation(site, containerId);
+        },
+
+        async removeSiteAssociation(details) {
+          checkAPIEnabled();
+          ContextualIdentityService.removeSiteAssociation(details.site);
+        },
+
+        async getSiteAssociation(details) {
+          checkAPIEnabled();
+          let site = ContextualIdentityService.normalizeSite(details.site);
+          if (!site) {
+            throw new ExtensionError(`Invalid site: ${details.site}`);
+          }
+
+          let containerId = ContextualIdentityService.getSiteAssociation(site);
+          if (!containerId) {
+            return null;
+          }
+
+          return {
+            site,
+            cookieStoreId: getCookieStoreIdForContainer(containerId),
+          };
+        },
+
+        async querySiteAssociations(details) {
+          checkAPIEnabled();
+          let filterId = 0;
+          if (details.cookieStoreId) {
+            filterId = getContainerForCookieStoreId(details.cookieStoreId);
+            if (!filterId) {
+              throw new ExtensionError(
+                `Invalid contextual identity: ${details.cookieStoreId}`
+              );
+            }
+          }
+
+          return ContextualIdentityService.getSiteAssociations(filterId).map(
+            association => ({
+              site: association.site,
+              cookieStoreId: getCookieStoreIdForContainer(
+                association.userContextId
+              ),
+            })
+          );
+        },
+
         onCreated: new EventManager({
           context,
           module: "contextualIdentities",
@@ -345,6 +433,13 @@ this.contextualIdentities = class extends ExtensionAPIPersistent {
           context,
           module: "contextualIdentities",
           event: "onRemoved",
+          extensionApi: this,
+        }).api(),
+
+        onSiteAssociationChanged: new EventManager({
+          context,
+          module: "contextualIdentities",
+          event: "onSiteAssociationChanged",
           extensionApi: this,
         }).api(),
       },

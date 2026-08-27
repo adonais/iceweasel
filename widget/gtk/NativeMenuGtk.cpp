@@ -436,10 +436,7 @@ void NativeMenuGtk::OnUnmap() {
   mMenuModel->DidHide();
 
   FireEvent(eXULPopupHidden);
-
-  for (NativeMenu::Observer* observer : mObservers.Clone()) {
-    observer->OnNativeMenuClosed();
-  }
+  OnClosed();
 }
 
 void NativeMenuGtk::ActivateItem(dom::Element* aItemElement, Modifiers,

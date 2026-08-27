@@ -1598,14 +1598,6 @@ function createTestHTTPServer() {
  *        Arguments to be passed to DevToolsServer.registerModule
  */
 async function registerActorInContentProcess(url, options) {
-  function convertChromeToFile(uri) {
-    return Cc["@mozilla.org/chrome/chrome-registry;1"]
-      .getService(Ci.nsIChromeRegistry)
-      .convertChromeURL(Services.io.newURI(uri)).spec;
-  }
-  // chrome://mochitests URI is registered only in the parent process, so convert these
-  // URLs to file:// one in order to work in the content processes
-  url = url.startsWith("chrome://mochitests") ? convertChromeToFile(url) : url;
   return SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [{ url, options }],

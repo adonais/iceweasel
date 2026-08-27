@@ -48,8 +48,7 @@ namespace jit {
 // non-argument Values the VM wrapper should pop from the stack. This is used
 // for tail calls for Baseline ICs. This list must be sorted on the name field.
 #define VMFUNCTION_LIST(_)                                                     \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(_(AddDisposableResourceToCapability,         \
-                                    js::AddDisposableResourceToCapability))    \
+  _(AddDisposableResourceToCapability, js::AddDisposableResourceToCapability)  \
   _(AddOrUpdateSparseElementHelper, js::AddOrUpdateSparseElementHelper)        \
   _(ArgumentsObjectCreateForInlinedIon,                                        \
     js::ArgumentsObject::createForInlinedIon)                                  \
@@ -134,8 +133,7 @@ namespace jit {
   _(CreateBigIntFromUint64, js::jit::CreateBigIntFromUint64)                   \
   _(CreateGenerator, js::jit::CreateGenerator)                                 \
   _(CreateGeneratorFromFrame, js::jit::CreateGeneratorFromFrame)               \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(                                             \
-      _(CreateSuppressedError, js::CreateSuppressedError))                     \
+  _(CreateSuppressedError, js::CreateSuppressedError)                          \
   _(CreateThisFromIC, js::jit::CreateThisFromIC)                               \
   _(CreateThisFromICWithAllocSite, js::jit::CreateThisFromICWithAllocSite)     \
   _(CreateThisFromIon, js::jit::CreateThisFromIon)                             \
@@ -224,7 +222,6 @@ namespace jit {
   _(InitRestParameter, js::jit::InitRestParameter)                             \
   _(Int32ToString, js::Int32ToString<js::CanGC>)                               \
   _(Int32ToStringWithBase, js::Int32ToStringWithBase<js::CanGC>)               \
-  _(InterpretResume, js::jit::InterpretResume)                                 \
   _(InterruptCheck, js::jit::InterruptCheck)                                   \
   _(InvokeFunction, js::jit::InvokeFunction)                                   \
   _(IonBinaryArithICUpdate, js::jit::IonBinaryArithIC::update)                 \

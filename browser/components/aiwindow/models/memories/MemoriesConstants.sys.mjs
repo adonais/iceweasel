@@ -26,15 +26,45 @@ export const MEMORY_TYPES = Object.freeze([
 /**
  * Memory strength constants
  */
-export const INITIAL_MEMORY_TYPE_STRENGTH = Object.freeze({
-  [MEMORY_TYPE_DURABLE_MEMORY]: 100,
-  [MEMORY_TYPE_LONG_TERM_MEMORY]: 50,
-  [MEMORY_TYPE_SHORT_TERM_MEMORY]: 10,
-});
-export const MEMORY_EVIDENCE_WEIGHT = 0.2;
-export const MEMORY_LIFETIME_ACCESSED_WEIGHT = 0.2;
-export const MEMORY_MERGE_COUNT_WEIGHT = 0.2;
-export const MEMORY_USER_REQUEST_MODIFIER = 5;
+export const MEMORY_STRENGTH_EVIDENCE_WEIGHT = 0.3;
+export const MEMORY_STRENGTH_EVIDENCE_CAP = 10;
+export const MEMORY_STRENGTH_LIFETIME_ACCESSED_WEIGHT = 5;
+export const MEMORY_STRENGTH_LIFETIME_ACCESSED_HALFLIFE = 21;
+export const MEMORY_STRENGTH_MERGE_COUNT_WEIGHT = 4.5;
+export const MEMORY_STRENGTH_MERGE_COUNT_HALFLIFE = 45;
+export const MEMORY_STRENGTH_FLOOR = 4;
+export const MEMORY_STRENGTH_USER_REQUEST_MODIFIER = 11;
+export const MEMORY_STRENGTH_PRECISION = 100;
+
+export const MEMORY_TYPE_SHORT_TERM_TO_LONG_TERM_AGE_THRESHOLD = 14;
+export const MEMORY_TYPE_SHORT_TERM_TO_LONG_TERM_STRENGTH_THRESHOLD = 20;
+export const MEMORY_TYPE_LONG_TERM_TO_DURABLE_AGE_THRESHOLD = 45;
+export const MEMORY_TYPE_LONG_TERM_TO_DURABLE_STRENGTH_THRESHOLD = 40;
+
+// Promotion ladder for memory types, ordered strongest-first
+export const MEMORY_TYPE_TIERS = Object.freeze([
+  Object.freeze({
+    type: MEMORY_TYPE_DURABLE_MEMORY,
+    minStrength: MEMORY_TYPE_LONG_TERM_TO_DURABLE_STRENGTH_THRESHOLD,
+    minAgeDays: MEMORY_TYPE_LONG_TERM_TO_DURABLE_AGE_THRESHOLD,
+  }),
+  Object.freeze({
+    type: MEMORY_TYPE_LONG_TERM_MEMORY,
+    minStrength: MEMORY_TYPE_SHORT_TERM_TO_LONG_TERM_STRENGTH_THRESHOLD,
+    minAgeDays: MEMORY_TYPE_SHORT_TERM_TO_LONG_TERM_AGE_THRESHOLD,
+  }),
+]);
+
+/**
+ * Memory merge constants
+ */
+export const MEMORY_MERGE_MIN_MEMORY_COUNT = 5;
+
+/**
+ * Memory generation constants
+ */
+export const MAX_SESSIONS_FIRST_RUN = 50;
+export const MAX_SESSIONS_DELTA_RUN = 30;
 
 /**
  * Memory frecency constants
@@ -48,9 +78,11 @@ export const MEMORY_FRECENCY_DAY_HALFLIFE = 3;
 export const MEMORY_SENSITIVITY_CATEGORY_NOT_SENSITIVE = "not_sensitive";
 export const MEMORY_SENSITIVITY_CATEGORY_SENSITIVE = "sensitive";
 export const MEMORY_SENSIVITITY_CATEGORIES = Object.freeze([
-  MEMORY_SENSITIVITY_CATEGORY_NOT_SENSITIVE,
   MEMORY_SENSITIVITY_CATEGORY_SENSITIVE,
+  MEMORY_SENSITIVITY_CATEGORY_NOT_SENSITIVE,
 ]);
+
+export const MEMORY_DECAY_THRESHOLD = 0.05;
 
 /**
  * Memory categories
@@ -102,7 +134,8 @@ export const INTENTS_LIST = [
  * Memory retrieval constants
  */
 export const DEFAULT_RELEVANT_MEMORIES_TOP_K = 5;
-export const DEFAULT_RELEVANT_MEMORIES_SIMILARITY_THRESHOLD = 0.22;
+export const DEFAULT_RELEVANT_MEMORIES_SIMILARITY_THRESHOLD = 0.04;
+export const DEFAULT_RELEVANT_MEMORIES_MESSAGE_COUNT = 3;
 
 // if generate memories is enabled. This is used by
 // - MemoriesScheduler

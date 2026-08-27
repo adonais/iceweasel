@@ -11,13 +11,13 @@ ChromeUtils.defineESModuleGetters(this, {
 AddonTestUtils.init(this);
 AddonTestUtils.overrideCertDB();
 
-Services.scriptloader.loadSubScript(
+Services.scriptloader.loadSubScriptWithOptions(
   Services.io.newFileURI(do_get_file("head_dnr.js")).spec,
-  this
+  { target: this, allowUnsafeURL: true }
 );
-Services.scriptloader.loadSubScript(
+Services.scriptloader.loadSubScriptWithOptions(
   Services.io.newFileURI(do_get_file("head_dnr_static_rules.js")).spec,
-  this
+  { target: this, allowUnsafeURL: true }
 );
 
 async function dropDNRStartupCache(dnrStore, extension) {

@@ -57,12 +57,14 @@ support-files = [
   "clear2.gif",
   "clear2.webp",
   "clear2-results.gif",
+  "corrupt.jxl",
   "damon.jpg",
   "error-early.png",
   "filter-final.svg",
   "filter.svg",
   "finite-apng.png",
   "first-frame-padding.gif",
+  "green.jxl",
   "green.png",
   "green-background.html",
   "grey.png",
@@ -243,6 +245,8 @@ skip-if = [
   "http2",
   "http3",
 ]
+
+["test_jxl_telemetry.html"]
 
 ["test_mq_dynamic_svg.html"]
 

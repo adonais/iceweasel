@@ -1,0 +1,13 @@
+//error: cycle(s) detected in manager/manages hierarchy: `Pcyclecheck_Parent -> Pcyclecheck_Child -> Pcyclecheck_Grandchild -> Pcyclecheck_Parent'
+
+include protocol Pcyclecheck_Child;
+
+[ChildProc=any]
+protocol Pcyclecheck_Parent {
+    manages Pcyclecheck_Child;
+
+child:
+    async Pcyclecheck_Child();
+    async __delete__();
+};
+

@@ -104,36 +104,6 @@ contentblocking:
     expires: never
     telemetry_mirror: CONTENTBLOCKING_TRACKERS_BLOCKED_COUNT
 
-  canvas_fingerprinting_per_tab:
-    type: labeled_custom_distribution
-    description: >
-      Type of canvas fingerprinter detected (keyed by known_fingerprinting_text
-      or unknown), 0 = none
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram CANVAS_FINGERPRINTING_PER_TAB.
-    labels:
-      - "known_text"
-      - "unknown"
-      - "unknown_matched"
-      - "known_text_matched"
-    range_min: 0
-    range_max: 8
-    bucket_count: 9
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1847990
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1912169
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1946406
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1847990
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1912169
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1946406
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: 160
-    telemetry_mirror: CANVAS_FINGERPRINTING_PER_TAB
-
   canvas_fingerprinting_per_tab2:
     type: labeled_counter
     description: >
@@ -228,9 +198,6 @@ contentblocking:
     type: labeled_counter
     description: >
       Whether a probable font fingerprinting attempt was detected
-
-      This metric was generated to correspond to the Legacy Telemetry boolean
-      histogram FONT_FINGERPRINTING_PER_TAB.
     labels:
       - "false"
       - "true"
@@ -245,7 +212,6 @@ contentblocking:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: 160
-    telemetry_mirror: h#FONT_FINGERPRINTING_PER_TAB
 
   storage_access_granted_count:
     type: labeled_counter

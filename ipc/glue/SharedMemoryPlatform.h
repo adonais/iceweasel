@@ -50,10 +50,12 @@ class Platform {
    * This is used when handles are read from IPC.
    *
    * @param aHandle The handle to check.
+   * @param aSize The claimed size of the handle, as read from IPC.  Mappings
+   * that extend past this point could misbehave or fail.
    *
    * @returns Whether the handle is safe to map.
    */
-  static bool IsSafeToMap(const PlatformHandle& aHandle);
+  static bool IsSafeToMap(const PlatformHandle& aHandle, uint64_t aSize);
 
   /**
    * Clone a handle.

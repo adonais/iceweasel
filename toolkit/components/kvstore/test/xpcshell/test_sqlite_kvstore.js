@@ -3,10 +3,9 @@
 
 "use strict";
 
-const { KeyValueService, SQLiteKeyValueService, KeyValueImporter } =
-  ChromeUtils.importESModule(
-    "moz-src:///toolkit/components/kvstore/kvstore.sys.mjs"
-  );
+const { SQLiteKeyValueService, KeyValueImporter } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/kvstore/kvstore.sys.mjs"
+);
 
 add_setup(async function setup() {
   do_get_profile();
@@ -25,6 +24,11 @@ async function allEntries(db) {
 async function allKeys(db) {
   let entries = await allEntries(db);
   return entries.map(({ key }) => key);
+}
+
+async function copyRkvFixture(fixtureName, destDir) {
+  const src = do_get_file("data/" + fixtureName + ".bin");
+  await IOUtils.copy(src.path, PathUtils.join(destDir, "data.safe.bin"));
 }
 
 add_task(async function getOrCreate() {
@@ -716,14 +720,7 @@ add_task(async function keysWithWhitespace() {
 
 add_task(async function importFromRkv() {
   const databaseDir = await makeDatabaseDir("importFromRkv");
-
-  const oldFooDB = await KeyValueService.getOrCreate(databaseDir, "foo");
-  await oldFooDB.put("bool-key", true);
-  await oldFooDB.put("double-key", 56.78);
-
-  const oldBarDB = await KeyValueService.getOrCreate(databaseDir, "bar");
-  await oldBarDB.put("int-key", 1234);
-  await oldBarDB.put("string-key", "Héllo, wőrld!");
+  await copyRkvFixture("rkv-foo-bar", databaseDir);
 
   const newFooDB = await SQLiteKeyValueService.getOrCreate(databaseDir, "foo");
   const newBarDB = await SQLiteKeyValueService.getOrCreate(databaseDir, "bar");
@@ -772,14 +769,7 @@ add_task(async function importFromRkv() {
 
 add_task(async function importAllFromRkv() {
   const databaseDir = await makeDatabaseDir("importAllFromRkv");
-
-  const oldFooDB = await KeyValueService.getOrCreate(databaseDir, "foo");
-  await oldFooDB.put("bool-key", true);
-  await oldFooDB.put("double-key", 56.78);
-
-  const oldBarDB = await KeyValueService.getOrCreate(databaseDir, "bar");
-  await oldBarDB.put("int-key", 1234);
-  await oldBarDB.put("string-key", "Héllo, wőrld!");
+  await copyRkvFixture("rkv-foo-bar", databaseDir);
 
   const importer = SQLiteKeyValueService.createImporter(
     SQLiteKeyValueService.Importer.RKV_SAFE_MODE,
@@ -808,14 +798,12 @@ add_task(async function importAllFromRkv() {
 
 add_task(async function importOrErrorFromRkv() {
   const databaseDir = await makeDatabaseDir("importOrErrorFromRkv");
+  await copyRkvFixture("rkv-foo-bool-int", databaseDir);
 
-  const oldFooDB = await KeyValueService.getOrCreate(databaseDir, "foo");
-  await oldFooDB.put("bool-key", true);
-  await oldFooDB.put("int-key", 1234);
-
+  // Pre-populate the SQLite database with the same values as the rkv fixture.
   const newFooDB = await SQLiteKeyValueService.getOrCreate(databaseDir, "foo");
-  await oldFooDB.put("bool-key", true);
-  await oldFooDB.put("int-key", 1234);
+  await newFooDB.put("bool-key", true);
+  await newFooDB.put("int-key", 1234);
 
   const importer = SQLiteKeyValueService.createImporter(
     SQLiteKeyValueService.Importer.RKV_SAFE_MODE,
@@ -839,10 +827,9 @@ add_task(async function importOrErrorFromRkv() {
 
 add_task(async function importOrIgnoreFromRkv() {
   const databaseDir = await makeDatabaseDir("importOrIgnoreFromRkv");
+  await copyRkvFixture("rkv-foo-int", databaseDir);
 
-  const oldFooDB = await KeyValueService.getOrCreate(databaseDir, "foo");
-  await oldFooDB.put("int-key", 1234);
-
+  // Pre-populate the SQLite database with a different value.
   const newFooDB = await SQLiteKeyValueService.getOrCreate(databaseDir, "foo");
   await newFooDB.put("int-key", 5678);
 
@@ -866,10 +853,9 @@ add_task(async function importOrIgnoreFromRkv() {
 
 add_task(async function importOrReplaceFromRkv() {
   const databaseDir = await makeDatabaseDir("importOrReplaceFromRkv");
+  await copyRkvFixture("rkv-foo-int", databaseDir);
 
-  const oldFooDB = await KeyValueService.getOrCreate(databaseDir, "foo");
-  await oldFooDB.put("int-key", 1234);
-
+  // Pre-populate the SQLite database with a different value.
   const newFooDB = await SQLiteKeyValueService.getOrCreate(databaseDir, "foo");
   await newFooDB.put("int-key", 5678);
 
@@ -893,14 +879,7 @@ add_task(async function importOrReplaceFromRkv() {
 
 add_task(async function importFromRkvAndKeep() {
   const databaseDir = await makeDatabaseDir("importFromRkvAndKeep");
-
-  const oldFooDB = await KeyValueService.getOrCreate(databaseDir, "foo");
-  await oldFooDB.put("bool-key", true);
-  await oldFooDB.put("double-key", 56.78);
-
-  const oldBarDB = await KeyValueService.getOrCreate(databaseDir, "bar");
-  await oldBarDB.put("int-key", 1234);
-  await oldBarDB.put("string-key", "Héllo, wőrld!");
+  await copyRkvFixture("rkv-foo-bar", databaseDir);
 
   const importer = SQLiteKeyValueService.createImporter(
     SQLiteKeyValueService.Importer.RKV_SAFE_MODE,
@@ -911,27 +890,41 @@ add_task(async function importFromRkvAndKeep() {
 
   await importer.import();
 
-  Assert.deepEqual(await allEntries(oldFooDB), [
+  // Verify data was imported correctly.
+  const fooDB = await SQLiteKeyValueService.getOrCreate(databaseDir, "foo");
+  Assert.deepEqual(await allEntries(fooDB), [
     { key: "bool-key", value: true },
     { key: "double-key", value: 56.78 },
   ]);
+  await fooDB.close();
 
-  Assert.deepEqual(await allEntries(oldBarDB), [
+  // Verify the rkv source data was kept by re-importing into a fresh
+  // destination directory.
+  const destDir = await makeDatabaseDir("importFromRkvAndKeep-verify");
+  const reimporter = SQLiteKeyValueService.createImporter(
+    SQLiteKeyValueService.Importer.RKV_SAFE_MODE,
+    destDir
+  );
+  reimporter.addPath(databaseDir).addAllDatabases();
+  await reimporter.import();
+
+  const verifyFooDB = await SQLiteKeyValueService.getOrCreate(destDir, "foo");
+  Assert.deepEqual(await allEntries(verifyFooDB), [
+    { key: "bool-key", value: true },
+    { key: "double-key", value: 56.78 },
+  ]);
+  const verifyBarDB = await SQLiteKeyValueService.getOrCreate(destDir, "bar");
+  Assert.deepEqual(await allEntries(verifyBarDB), [
     { key: "int-key", value: 1234 },
     { key: "string-key", value: "Héllo, wőrld!" },
   ]);
+  await verifyFooDB.close();
+  await verifyBarDB.close();
 });
 
 add_task(async function importFromRkvAndDelete() {
   const databaseDir = await makeDatabaseDir("importFromRkvAndDelete");
-
-  const oldFooDB = await KeyValueService.getOrCreate(databaseDir, "foo");
-  await oldFooDB.put("bool-key", true);
-  await oldFooDB.put("double-key", 56.78);
-
-  const oldBarDB = await KeyValueService.getOrCreate(databaseDir, "bar");
-  await oldBarDB.put("int-key", 1234);
-  await oldBarDB.put("string-key", "Héllo, wőrld!");
+  await copyRkvFixture("rkv-foo-bar", databaseDir);
 
   const importer = SQLiteKeyValueService.createImporter(
     SQLiteKeyValueService.Importer.RKV_SAFE_MODE,
@@ -944,8 +937,30 @@ add_task(async function importFromRkvAndDelete() {
 
   await importer.import();
 
-  Assert.deepEqual(await allEntries(oldFooDB), []);
-  Assert.deepEqual(await allEntries(oldBarDB), []);
+  // Verify data was imported correctly.
+  const fooDB = await SQLiteKeyValueService.getOrCreate(databaseDir, "foo");
+  Assert.deepEqual(await allEntries(fooDB), [
+    { key: "bool-key", value: true },
+    { key: "double-key", value: 56.78 },
+  ]);
+  await fooDB.close();
+
+  // Verify the rkv source data was deleted by re-importing into a fresh
+  // destination directory. The rkv databases should be empty after cleanup.
+  const destDir = await makeDatabaseDir("importFromRkvAndDelete-verify");
+  const reimporter = SQLiteKeyValueService.createImporter(
+    SQLiteKeyValueService.Importer.RKV_SAFE_MODE,
+    destDir
+  );
+  reimporter.addPath(databaseDir).addAllDatabases();
+  await reimporter.import();
+
+  const verifyFooDB = await SQLiteKeyValueService.getOrCreate(destDir, "foo");
+  Assert.deepEqual(await allEntries(verifyFooDB), []);
+  const verifyBarDB = await SQLiteKeyValueService.getOrCreate(destDir, "bar");
+  Assert.deepEqual(await allEntries(verifyBarDB), []);
+  await verifyFooDB.close();
+  await verifyBarDB.close();
 });
 
 add_task(async function importFromMultipleRkvDirs() {
@@ -956,17 +971,9 @@ add_task(async function importFromMultipleRkvDirs() {
   const barDatabaseDir = PathUtils.join(destinationDir, "bar");
   await IOUtils.makeDirectory(barDatabaseDir);
 
-  const oldBazDB = await KeyValueService.getOrCreate(destinationDir, "baz");
-  await oldBazDB.put("bool-key", true);
-
-  const oldQuxDB = await KeyValueService.getOrCreate(fooDatabaseDir, "qux");
-  await oldQuxDB.put("double-key", 56.78);
-
-  const oldBlargDB = await KeyValueService.getOrCreate(fooDatabaseDir, "blarg");
-  await oldBlargDB.put("int-key", 1234);
-
-  const oldBorkDB = await KeyValueService.getOrCreate(barDatabaseDir, "bork");
-  await oldBorkDB.put("string-key", "Héllo, wőrld!");
+  await copyRkvFixture("rkv-baz-bool", destinationDir);
+  await copyRkvFixture("rkv-qux-double-blarg-int", fooDatabaseDir);
+  await copyRkvFixture("rkv-bork-string", barDatabaseDir);
 
   const importer = SQLiteKeyValueService.createImporter(
     SQLiteKeyValueService.Importer.RKV_SAFE_MODE,
@@ -1022,20 +1029,41 @@ add_task(async function importFromMultipleRkvDirs() {
     { key: "string-key", value: "Héllo, wőrld!" },
   ]);
 
-  Assert.deepEqual(await allKeys(oldBazDB), ["bool-key"]);
-  Assert.deepEqual(await allKeys(oldQuxDB), []);
-  Assert.deepEqual(await allKeys(oldBlargDB), ["int-key"]);
-  Assert.deepEqual(await allKeys(oldBorkDB), []);
+  // Verify cleanup policies: re-import from the rkv sources into a fresh
+  // destination. baz (KEEP) and blarg (KEEP) should still have data,
+  // while qux (DELETE) and bork (DELETE) should be empty.
+  const verifyDir = await makeDatabaseDir("importFromMultipleRkvDirs-verify");
+  const reimporter = SQLiteKeyValueService.createImporter(
+    SQLiteKeyValueService.Importer.RKV_SAFE_MODE,
+    verifyDir
+  );
+  reimporter.addPath(destinationDir).addAllDatabases();
+  reimporter.addPath(fooDatabaseDir).addAllDatabases();
+  reimporter.addPath(barDatabaseDir).addAllDatabases();
+  await reimporter.import();
+
+  const vBazDB = await SQLiteKeyValueService.getOrCreate(verifyDir, "baz");
+  Assert.deepEqual(await allKeys(vBazDB), ["bool-key"]);
+  const vQuxDB = await SQLiteKeyValueService.getOrCreate(verifyDir, "qux");
+  Assert.deepEqual(await allKeys(vQuxDB), []);
+  const vBlargDB = await SQLiteKeyValueService.getOrCreate(verifyDir, "blarg");
+  Assert.deepEqual(await allKeys(vBlargDB), ["int-key"]);
+  const vBorkDB = await SQLiteKeyValueService.getOrCreate(verifyDir, "bork");
+  Assert.deepEqual(await allKeys(vBorkDB), []);
 
   await newBazDB.close();
   await newQuxDB.close();
   await newBlargDB.close();
   await newBorkDB.close();
+  await vBazDB.close();
+  await vQuxDB.close();
+  await vBlargDB.close();
+  await vBorkDB.close();
 });
 
 add_task(async function importOrErrorFromMultipleRkvDirs() {
   const destinationDir = await makeDatabaseDir(
-    "importOrReplaceFromMultipleRkvDirs"
+    "importOrErrorFromMultipleRkvDirs"
   );
 
   const fooDatabaseDir = PathUtils.join(destinationDir, "foo");
@@ -1043,13 +1071,8 @@ add_task(async function importOrErrorFromMultipleRkvDirs() {
   const barDatabaseDir = PathUtils.join(destinationDir, "bar");
   await IOUtils.makeDirectory(barDatabaseDir);
 
-  const oldFooBazDB = await KeyValueService.getOrCreate(fooDatabaseDir, "baz");
-  await oldFooBazDB.put("bool-key", true);
-  await oldFooBazDB.put("double-key", 56.78);
-
-  const oldBarBazDB = await KeyValueService.getOrCreate(barDatabaseDir, "baz");
-  await oldBarBazDB.put("double-key", 12.34);
-  await oldBarBazDB.put("string-key", "Héllo, wőrld!");
+  await copyRkvFixture("rkv-baz-bool-double", fooDatabaseDir);
+  await copyRkvFixture("rkv-baz-double-string", barDatabaseDir);
 
   const importer = SQLiteKeyValueService.createImporter(
     SQLiteKeyValueService.Importer.RKV_SAFE_MODE,
@@ -1083,7 +1106,7 @@ add_task(async function importOrErrorFromMultipleRkvDirs() {
 
 add_task(async function importOrIgnoreFromMultipleRkvDirs() {
   const destinationDir = await makeDatabaseDir(
-    "importOrReplaceFromMultipleRkvDirs"
+    "importOrIgnoreFromMultipleRkvDirs"
   );
 
   const fooDatabaseDir = PathUtils.join(destinationDir, "foo");
@@ -1091,15 +1114,8 @@ add_task(async function importOrIgnoreFromMultipleRkvDirs() {
   const barDatabaseDir = PathUtils.join(destinationDir, "bar");
   await IOUtils.makeDirectory(barDatabaseDir);
 
-  const oldFooBazDB = await KeyValueService.getOrCreate(fooDatabaseDir, "baz");
-  await oldFooBazDB.put("bool-key", true);
-  await oldFooBazDB.put("double-key", 56.78);
-  await oldFooBazDB.put("int-key", 1234);
-
-  const oldBarBazDB = await KeyValueService.getOrCreate(barDatabaseDir, "baz");
-  await oldBarBazDB.put("double-key", 12.34);
-  await oldBarBazDB.put("int-key", 5678);
-  await oldBarBazDB.put("string-key", "Héllo, wőrld!");
+  await copyRkvFixture("rkv-baz-bool-double-int", fooDatabaseDir);
+  await copyRkvFixture("rkv-baz-double-int-string", barDatabaseDir);
 
   const importer = SQLiteKeyValueService.createImporter(
     SQLiteKeyValueService.Importer.RKV_SAFE_MODE,
@@ -1143,15 +1159,8 @@ add_task(async function importOrReplaceFromMultipleRkvDirs() {
   const barDatabaseDir = PathUtils.join(destinationDir, "bar");
   await IOUtils.makeDirectory(barDatabaseDir);
 
-  const oldFooBazDB = await KeyValueService.getOrCreate(fooDatabaseDir, "baz");
-  await oldFooBazDB.put("bool-key", true);
-  await oldFooBazDB.put("double-key", 56.78);
-  await oldFooBazDB.put("int-key", 1234);
-
-  const oldBarBazDB = await KeyValueService.getOrCreate(barDatabaseDir, "baz");
-  await oldBarBazDB.put("double-key", 12.34);
-  await oldBarBazDB.put("int-key", 5678);
-  await oldBarBazDB.put("string-key", "Héllo, wőrld!");
+  await copyRkvFixture("rkv-baz-bool-double-int", fooDatabaseDir);
+  await copyRkvFixture("rkv-baz-double-int-string", barDatabaseDir);
 
   const importer = SQLiteKeyValueService.createImporter(
     SQLiteKeyValueService.Importer.RKV_SAFE_MODE,

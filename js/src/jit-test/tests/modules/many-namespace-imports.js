@@ -11,5 +11,5 @@ for (let i = 0; i < count; i++) {
 }
 let b = registerModule('b', parseModule(s));
 
-moduleLink(b);
+moduleLoadAndLink(b);
 moduleEvaluate(b);

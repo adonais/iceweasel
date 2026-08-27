@@ -126,7 +126,7 @@ add_task(async function test_no_fallback_for_non_nssFailure2_gErrorCode() {
   });
   registerCleanupFunction(() => SpecialPowers.popPrefEnv());
 
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   const { browser, tab } = await openErrorTab("http://example.com:25");
   registerCleanupFunction(() => BrowserTestUtils.removeTab(tab));
 
@@ -160,7 +160,7 @@ add_task(async function test_denied_port_access_intro_text() {
   registerCleanupFunction(() => SpecialPowers.popPrefEnv());
 
   // Port 25 (SMTP) is on Firefox's blocked port list.
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   const { browser, tab } = await openErrorTab("http://example.com:25");
   registerCleanupFunction(() => BrowserTestUtils.removeTab(tab));
 

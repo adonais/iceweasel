@@ -348,7 +348,9 @@ async function requestFinished(request) {
 function loadSubscript(path) {
   let file = do_get_file(path, false);
   let uri = Services.io.newFileURI(file);
-  Services.scriptloader.loadSubScript(uri.spec);
+  Services.scriptloader.loadSubScriptWithOptions(uri.spec, {
+    allowUnsafeURL: true,
+  });
 }
 
 async function readUsageFromUsageFile(usageFile) {

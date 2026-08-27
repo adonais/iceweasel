@@ -440,7 +440,7 @@ export class SearchOneOffs {
       return;
     }
 
-    const addEngines = lazy.OpenSearchManager.getEngines(
+    const addEngines = lazy.OpenSearchManager.getInstallableEngines(
       this.window.gBrowser.selectedBrowser
     );
 

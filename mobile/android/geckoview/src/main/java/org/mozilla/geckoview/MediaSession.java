@@ -6,6 +6,7 @@ package org.mozilla.geckoview;
 
 import android.util.Log;
 import androidx.annotation.AnyThread;
+import androidx.annotation.IntDef;
 import androidx.annotation.LongDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -161,6 +162,58 @@ public class MediaSession {
     final GeckoBundle bundle = new GeckoBundle(1);
     bundle.putBoolean("mute", mute);
     mSession.getEventDispatcher().dispatch(MUTE_AUDIO_EVENT, bundle);
+  }
+
+  /** The platform regained audio focus; resume what an interruption silenced. */
+  public static final int SYSTEM_AUDIO_FOCUS_GAIN = 0;
+
+  /** The platform took audio focus transiently (e.g. a call); resumable on gain. */
+  public static final int SYSTEM_AUDIO_FOCUS_TRANSIENT_LOSS = 1;
+
+  /** The platform took audio focus for good; the interruption is not resumed. */
+  public static final int SYSTEM_AUDIO_FOCUS_PERMANENT_LOSS = 2;
+
+  /**
+   * The permitted values for {@link #notifySystemAudioFocusChange}: one of {@link
+   * #SYSTEM_AUDIO_FOCUS_GAIN}, {@link #SYSTEM_AUDIO_FOCUS_TRANSIENT_LOSS}, or {@link
+   * #SYSTEM_AUDIO_FOCUS_PERMANENT_LOSS}.
+   */
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    SYSTEM_AUDIO_FOCUS_GAIN,
+    SYSTEM_AUDIO_FOCUS_TRANSIENT_LOSS,
+    SYSTEM_AUDIO_FOCUS_PERMANENT_LOSS
+  })
+  public @interface SystemAudioFocusChange {}
+
+  /**
+   * Route a system audio-focus change to the tab's Audio Session interrupt. A transient or
+   * permanent loss suspends the tab's audible sources (media elements, Web Audio, and Web Speech);
+   * a gain resumes what the interruption silenced. The user transport ({@link #pause}/{@link
+   * #play}) is a separate control surface for controllable media.
+   *
+   * @param change One of {@link #SYSTEM_AUDIO_FOCUS_GAIN}, {@link
+   *     #SYSTEM_AUDIO_FOCUS_TRANSIENT_LOSS}, or {@link #SYSTEM_AUDIO_FOCUS_PERMANENT_LOSS}.
+   */
+  public void notifySystemAudioFocusChange(final @SystemAudioFocusChange int change) {
+    if (DEBUG) {
+      Log.d(LOGTAG, "notifySystemAudioFocusChange=" + change);
+    }
+    final String reason;
+    switch (change) {
+      case SYSTEM_AUDIO_FOCUS_TRANSIENT_LOSS:
+        reason = "system-transient";
+        break;
+      case SYSTEM_AUDIO_FOCUS_PERMANENT_LOSS:
+        reason = "system-permanent";
+        break;
+      default:
+        reason = "gain";
+        break;
+    }
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("reason", reason);
+    mSession.getEventDispatcher().dispatch(SYSTEM_AUDIO_FOCUS_EVENT, bundle);
   }
 
   /** Implement this delegate to receive media session events. */
@@ -591,6 +644,7 @@ public class MediaSession {
   private static final String SEEK_TO_EVENT = "GeckoView:MediaSession:SeekTo";
   private static final String MUTE_AUDIO_EVENT = "GeckoView:MediaSession:MuteAudio";
   private static final String AUDIO_SESSION_TYPE_EVENT = "GeckoView:MediaSession:AudioSessionType";
+  private static final String SYSTEM_AUDIO_FOCUS_EVENT = "GeckoView:MediaSession:SystemAudioFocus";
 
   /* package */ static class Handler extends GeckoSessionHandler<MediaSession.Delegate> {
 

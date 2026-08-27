@@ -7,6 +7,8 @@ worker implementation they operate on, and take the same three parameters, for
 consistency.
 """
 
+import dataclasses
+
 from taskgraph.transforms.run.common import CACHES, add_cache
 from taskgraph.util import json
 from taskgraph.util.keyed_by import evaluate_keyed_by
@@ -40,10 +42,21 @@ def generic_worker_add_artifacts(config, job, taskdesc):
     add_artifacts(config, job, taskdesc, path=path)
 
 
+def clone_type(config, job):
+    if (
+        config.params["repository_type"] == "hg"
+        and config.params.get("head_git_repository")
+        and config.params.get("head_git_rev")
+        and job["run"]["clone-with"] == "git"
+    ):
+        return "git"
+    return config.params["repository_type"]
+
+
 def get_cache_name(config, job):
     cache_name = "checkouts"
 
-    if config.params["repository_type"] == "git":
+    if clone_type(config, job) == "git":
         # Ensure tasks cloning git don't try to use an hg cache or vice versa.
         cache_name += "-git"
 
@@ -65,6 +78,24 @@ def get_cache_name(config, job):
             cache_name += "-hg58"
 
     return cache_name
+
+
+def _rewrite_repo_configs_for_git_mirror(config, repo_configs):
+    rewritten = {}
+    for prefix, repo_config in repo_configs.items():
+        if repo_config.type == "hg" and repo_config.prefix == "gecko":
+            rewritten[prefix] = dataclasses.replace(
+                repo_config,
+                base_repository=config.params["head_git_repository"],
+                head_repository=config.params["head_git_repository"],
+                head_rev=config.params["head_git_rev"],
+                head_ref=None,
+                type="git",
+                ssh_secret_name=None,
+            )
+        else:
+            rewritten[prefix] = repo_config
+    return rewritten
 
 
 def support_vcs_checkout(config, job, taskdesc, repo_configs):
@@ -100,12 +131,15 @@ def support_vcs_checkout(config, job, taskdesc, repo_configs):
     # Use some Gecko specific logic to determine cache name.
     CACHES["checkout"]["cache_name"] = get_cache_name
 
+    # Re-write repo configs to point to head_git_repository / head_git_rev if requested
+    # and available
+    clone_with = clone_type(config, job)
+    if config.params["repository_type"] == "hg" and clone_with == "git":
+        repo_configs = _rewrite_repo_configs_for_git_mirror(config, repo_configs)
+
     env = taskdesc["worker"].setdefault("env", {})
-    env.update({
-        "HG_STORE_PATH": hgstore,
-        "REPOSITORIES": json.dumps({
-            repo.prefix: repo.name for repo in repo_configs.values()
-        }),
+    env["REPOSITORIES"] = json.dumps({
+        repo.prefix: repo.name for repo in repo_configs.values()
     })
     for repo_config in repo_configs.values():
         env.update({
@@ -136,10 +170,13 @@ def support_vcs_checkout(config, job, taskdesc, repo_configs):
             "Can't checkout from comm-* repository if not given a repository."
         )
 
-    # Give task access to hgfingerprint secret so it can pin the certificate
-    # for hg.mozilla.org.
-    taskdesc["scopes"].append("secrets:get:project/taskcluster/gecko/hgfingerprint")
-    taskdesc["scopes"].append("secrets:get:project/taskcluster/gecko/hgmointernal")
+    if clone_with == "hg":
+        taskdesc["worker"]["env"]["HG_STORE_PATH"] = hgstore
+
+        # Give task access to hgfingerprint secret so it can pin the certificate
+        # for hg.mozilla.org.
+        taskdesc["scopes"].append("secrets:get:project/taskcluster/gecko/hgfingerprint")
+        taskdesc["scopes"].append("secrets:get:project/taskcluster/gecko/hgmointernal")
 
     # only some worker platforms have taskcluster-proxy enabled
     if job["worker"]["implementation"] in ("docker-worker",):

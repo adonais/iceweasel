@@ -611,6 +611,15 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
                              const Maybe<nsAutoString>& aCharsetForPreload);
 
   /**
+   * Register a <link rel=modulepreload> request that opened no channel with the
+   * PreloadService, so that the element with the same URL coalesces onto it and
+   * gets its load/error event dispatched. A request that did open a channel is
+   * registered by StartLoadInternal instead, and its event is fired by
+   * ScriptLoadHandler once that channel stops.
+   */
+  void NotifyPreloadCoalescing(ModuleLoadRequest* aRequest);
+
+  /**
    * Abort the current stream, and re-start with a new load request from scratch
    * without requesting any alternate data. Returns NS_BINDING_RETARGETED on
    * success, as this error code is used to abort the input stream.

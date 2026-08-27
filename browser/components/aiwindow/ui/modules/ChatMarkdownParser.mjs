@@ -51,6 +51,34 @@ for (const [element, { element: wrapper }] of Object.entries(
   ) => `${renderer.renderToken(tokens, index, options)}</${wrapper}>`;
 }
 
+// A link the model invented has nowhere to point once its hallucinated URL
+// token is stripped from the message, leaving `[label]()`. Markdown reads that
+// as a link with an empty destination and renders an anchor that goes nowhere,
+// so drop the anchor and keep the label as plain text.
+function hasDestination(token) {
+  return Boolean(token?.attrGet("href")?.trim());
+}
+
+md.renderer.rules.link_open = (tokens, index, options, _env, renderer) =>
+  hasDestination(tokens[index])
+    ? renderer.renderToken(tokens, index, options)
+    : "";
+
+md.renderer.rules.link_close = (tokens, index, options, _env, renderer) => {
+  // Markdown links can't nest, so the nearest preceding `link_open` is the
+  // one this token closes.
+  let lastOpenLinkToken = null;
+  for (let i = index - 1; i >= 0; i--) {
+    if (tokens[i].type === "link_open") {
+      lastOpenLinkToken = tokens[i];
+      break;
+    }
+  }
+  return lastOpenLinkToken && !hasDestination(lastOpenLinkToken)
+    ? ""
+    : renderer.renderToken(tokens, index, options);
+};
+
 /**
  * Parse markdown to HTML.
  *

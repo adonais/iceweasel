@@ -168,6 +168,16 @@ add_task(async function test_init_empty_state() {
     "Default last_history_memory_ts should be 0"
   );
   equal(meta.last_chat_memory_ts, 0, "Default last_chat_memory_ts should be 0");
+  equal(
+    meta.last_session_memory_ts,
+    0,
+    "Default last_session_memory_ts should be 0"
+  );
+  equal(
+    meta.last_generation_run_ts,
+    0,
+    "Default last_generation_run_ts should be 0"
+  );
 });
 
 add_task(async function test_addMemory() {
@@ -502,6 +512,18 @@ add_task(async function test_updateMeta_and_persistence_roundtrip() {
     "last_chat_memory_ts should be updated"
   );
 
+  const generationTime = now + 2000;
+  await MemoryStore.updateMeta({
+    last_generation_run_ts: generationTime,
+  });
+
+  meta = await MemoryStore.getMeta();
+  equal(
+    meta.last_generation_run_ts,
+    generationTime,
+    "updateMeta should update last_generation_run_ts"
+  );
+
   // Force a write to disk.
   await MemoryStore.testOnlyFlush();
 
@@ -524,6 +546,11 @@ add_task(async function test_updateMeta_and_persistence_roundtrip() {
     meta2.last_chat_memory_ts,
     chatTime,
     "last_chat_memory_ts should survive roundtrip to disk"
+  );
+  equal(
+    meta2.last_generation_run_ts,
+    generationTime,
+    "last_generation_run_ts should survive roundtrip to disk"
   );
 
   const memories = await FreshStore.getMemories();
@@ -1130,7 +1157,8 @@ add_task(
 
 /**
  * Tests that getRelevantMemories properly invalidates cache when memories are updated.
- * Cache should be reused when memories haven't changed, but invalidated when updated_at changes.
+ * Cache should be reused when memories haven't changed, but invalidated when a
+ * memory's identity (id or summary) changes.
  */
 add_task(async function test_getRelevantMemories_cache_invalidation() {
   await deleteAllMemories();
@@ -1180,11 +1208,8 @@ add_task(async function test_getRelevantMemories_cache_invalidation() {
     const memories = await MemoryStore.getMemories({
       includeSoftDeleted: true,
     });
-    // Explicitly set a different timestamp to ensure cache invalidation
-    const originalTimestamp = memories[0].updated_at;
     await MemoryStore.updateMemory(memories[0].id, {
       memory_summary: "Loves drinking coffee and tea",
-      updated_at: originalTimestamp + 1000, // Explicitly different timestamp
     });
 
     await MemoryStore.getRelevantMemories("coffee");

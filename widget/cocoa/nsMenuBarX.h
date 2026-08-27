@@ -30,12 +30,15 @@ class Element;
 
 // ApplicationMenuDelegate is used to receive Cocoa notifications.
 @interface ApplicationMenuDelegate : NSObject <NSMenuDelegate> {
-  nsMenuBarX* mApplicationMenu;       // weak ref
-  NSMenuItem* mSetAsDefaultMenuItem;  // weak ref
+  nsMenuBarX* mApplicationMenu;        // weak ref
+  NSMenuItem* mSetAsDefaultMenuItem;   // weak ref
+  NSMenuItem* mReferralsPageMenuItem;  // weak ref
 }
 - (id)initWithApplicationMenu:(nsMenuBarX*)aApplicationMenu;
 - (NSMenuItem*)setAsDefaultMenuItem;
 - (void)setSetAsDefaultMenuItem:(NSMenuItem*)menuItem;
+- (NSMenuItem*)referralsPageMenuItem;
+- (void)setReferralsPageMenuItem:(NSMenuItem*)menuItem;
 @end
 
 // Objective-C class used for menu items to allow Gecko to override their
@@ -91,6 +94,7 @@ class nsMenuBarX : public nsMenuParentX,
   RefPtr<nsIContent> mAboutItemContent;
   RefPtr<nsIContent> mPrefItemContent;
   RefPtr<nsIContent> mSetAsDefaultItemContent;
+  RefPtr<nsIContent> mReferralsPageItemContent;
   RefPtr<nsIContent> mAccountItemContent;
   RefPtr<nsIContent> mQuitItemContent;
 

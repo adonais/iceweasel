@@ -342,10 +342,10 @@ function createHTTPProxy() {
   });
 
   return [
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     `http://test1.example.com:${server.identity.primaryPort}`,
     `localhost:${proxyServer.identity.primaryPort}`,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     `http://example.com:${server.identity.primaryPort}`,
   ];
 }

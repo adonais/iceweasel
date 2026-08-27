@@ -7,9 +7,10 @@
 #ifndef mozilla_Alignment_h
 #define mozilla_Alignment_h
 
-#include "mozilla/Attributes.h"
 #include <cstddef>
 #include <cstdint>
+
+#include "mozilla/Attributes.h"
 
 namespace mozilla {
 

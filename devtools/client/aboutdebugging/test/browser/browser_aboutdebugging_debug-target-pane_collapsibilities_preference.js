@@ -19,11 +19,17 @@ add_task(async function () {
   const { document, tab, window } = await openAboutDebugging();
   await selectThisFirefoxPage(document, window.AboutDebugging.store);
 
-  info("Collapse all pane");
+  info("Collapse all panes");
   for (const { title } of TARGET_PANES) {
     const debugTargetPaneEl = getDebugTargetPane(title, document);
     await toggleCollapsibility(debugTargetPaneEl);
+    await assertDebugTargetCollapsed(
+      getDebugTargetPane(title, document),
+      title
+    );
   }
+  // Wait for the state to be updated
+  await wait(1000);
 
   info("Check preference of collapsibility after closing about:debugging page");
   await removeTab(tab);

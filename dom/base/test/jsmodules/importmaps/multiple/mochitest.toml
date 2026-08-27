@@ -2,3 +2,5 @@
 prefs = ["dom.multiple_import_maps.enabled=true"]
 
 ["test_bug_2054717.html"]
+
+["test_bug_2058272.html"]

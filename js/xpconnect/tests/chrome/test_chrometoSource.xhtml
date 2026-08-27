@@ -34,7 +34,7 @@ is(src.charAt(src.length - 1), "}", "out of line XUL source should end with '}'"
 src = checkFromESM.toSource();
 isnot(src.indexOf("catch"), -1, "ESM should have source");
 var ns = {};
-Services.scriptloader.loadSubScript(base + "file_expandosharing.js", ns);
+Services.scriptloader.loadSubScriptWithOptions(base + "file_expandosharing.js", { target: ns, allowUnsafeURL: true });
 src = ns.checkFromESM.toSource();
 isnot(src.indexOf("catch"), -1, "subscript should have source");
 
@@ -44,18 +44,18 @@ var resolvedBase = reg.convertChromeURL(NetUtil.newURI(base)).spec;
 ns = {
   base,
 };
-Services.scriptloader.loadSubScript(resolvedBase + "subscript.js", ns);
+Services.scriptloader.loadSubScriptWithOptions(resolvedBase + "subscript.js", { target: ns, allowUnsafeURL: true });
 src = ns.checkFromESM.toSource();
 isnot(src.indexOf("catch"), -1, "subscript of a subscript should have source");
 
 ns = {};
-Services.scriptloader.loadSubScript(resolvedBase + "utf8_subscript.js", ns);
+Services.scriptloader.loadSubScriptWithOptions(resolvedBase + "utf8_subscript.js", { target: ns, allowUnsafeURL: true });
 src = ns.f.toSource();
 isnot(src.indexOf("return 42;"), -1, "encoded subscript should have correct source");
 
 ns = {};
 Services.scriptloader.loadSubScriptWithOptions(resolvedBase + "utf8_subscript.js",
-                                               {target: ns, ignoreCache: true});
+                                               {target: ns, ignoreCache: true, allowUnsafeURL: true});
 src = ns.f.toSource();
 isnot(src.indexOf("return 42;"), -1, "encoded subscript should have correct source");
   ]]></script>

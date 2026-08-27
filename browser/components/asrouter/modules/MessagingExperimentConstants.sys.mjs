@@ -27,7 +27,6 @@ export const MESSAGING_EXPERIMENTS_DEFAULT_FEATURES = [
   "infobar",
   "moments-page",
   "pbNewtab",
-  "setToDefaultPrompt",
   "spotlight",
   "featureCallout",
   "fxms_bmb_button",

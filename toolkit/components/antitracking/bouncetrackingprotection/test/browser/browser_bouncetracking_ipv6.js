@@ -15,7 +15,7 @@ const { HttpServer } = ChromeUtils.importESModule(
 
 let defined = {};
 ChromeUtils.defineLazyGetter(defined, "IPV6_ORIGIN", function () {
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   return `http://[::1]:${gHttpServer.identity.primaryPort}`;
 });
 

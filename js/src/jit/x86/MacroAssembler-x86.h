@@ -12,7 +12,7 @@
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmCodegenTypes.h"
 
-using js::wasm::FaultingCodeOffsetPair;
+using js::wasm::FaultingCodeRangePair;
 
 namespace js {
 namespace jit {
@@ -634,16 +634,18 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
   void movePtr(ImmPtr imm, Register dest) { movl(imm, dest); }
   void movePtr(wasm::SymbolicAddress imm, Register dest) { mov(imm, dest); }
   void movePtr(ImmGCPtr imm, Register dest) { movl(imm, dest); }
-  FaultingCodeOffset loadPtr(const Address& address, Register dest) {
-    FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
+  FaultingCodeRange loadPtr(const Address& address, Register dest) {
+    auto before = currentOffset();
     movl(Operand(address), dest);
-    return fco;
+    auto after = currentOffset();
+    return FaultingCodeRange(before, after);
   }
   void loadPtr(const Operand& src, Register dest) { movl(src, dest); }
-  FaultingCodeOffset loadPtr(const BaseIndex& src, Register dest) {
-    FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
+  FaultingCodeRange loadPtr(const BaseIndex& src, Register dest) {
+    auto before = currentOffset();
     movl(Operand(src), dest);
-    return fco;
+    auto after = currentOffset();
+    return FaultingCodeRange(before, after);
   }
   void loadPtr(AbsoluteAddress address, Register dest) {
     movl(Operand(address), dest);
@@ -654,51 +656,58 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
   void load32(AbsoluteAddress address, Register dest) {
     movl(Operand(address), dest);
   }
-  FaultingCodeOffsetPair load64(const Address& address, Register64 dest) {
-    FaultingCodeOffset fco1, fco2;
+  FaultingCodeRangePair load64(const Address& address, Register64 dest) {
     bool highBeforeLow = address.base == dest.low;
+    auto before = currentOffset();
+    auto mid = before;
     if (highBeforeLow) {
-      fco1 = FaultingCodeOffset(currentOffset());
       movl(Operand(HighWord(address)), dest.high);
-      fco2 = FaultingCodeOffset(currentOffset());
+      mid = currentOffset();
       movl(Operand(LowWord(address)), dest.low);
     } else {
-      fco1 = FaultingCodeOffset(currentOffset());
       movl(Operand(LowWord(address)), dest.low);
-      fco2 = FaultingCodeOffset(currentOffset());
+      mid = currentOffset();
       movl(Operand(HighWord(address)), dest.high);
     }
-    return FaultingCodeOffsetPair(fco1, fco2);
+    auto after = currentOffset();
+    MOZ_ASSERT(before < mid);
+    FaultingCodeRange fcr1 = FaultingCodeRange(before, mid);
+    FaultingCodeRange fcr2 = FaultingCodeRange(mid, after);
+    return FaultingCodeRangePair(fcr1, fcr2);
   }
-  FaultingCodeOffsetPair load64(const BaseIndex& address, Register64 dest) {
+  FaultingCodeRangePair load64(const BaseIndex& address, Register64 dest) {
     // If you run into this, relax your register allocation constraints.
     MOZ_RELEASE_ASSERT(
         !((address.base == dest.low || address.base == dest.high) &&
           (address.index == dest.low || address.index == dest.high)));
-    FaultingCodeOffset fco1, fco2;
     bool highBeforeLow = address.base == dest.low || address.index == dest.low;
+    auto before = currentOffset();
+    auto mid = before;
     if (highBeforeLow) {
-      fco1 = FaultingCodeOffset(currentOffset());
       movl(Operand(HighWord(address)), dest.high);
-      fco2 = FaultingCodeOffset(currentOffset());
+      mid = currentOffset();
       movl(Operand(LowWord(address)), dest.low);
     } else {
-      fco1 = FaultingCodeOffset(currentOffset());
       movl(Operand(LowWord(address)), dest.low);
-      fco2 = FaultingCodeOffset(currentOffset());
+      mid = currentOffset();
       movl(Operand(HighWord(address)), dest.high);
     }
-    return FaultingCodeOffsetPair(fco1, fco2);
+    auto after = currentOffset();
+    MOZ_ASSERT(before < mid);
+    FaultingCodeRange fcr1 = FaultingCodeRange(before, mid);
+    FaultingCodeRange fcr2 = FaultingCodeRange(mid, after);
+    return FaultingCodeRangePair(fcr1, fcr2);
   }
   template <typename T>
   void load64Unaligned(const T& address, Register64 dest) {
     load64(address, dest);
   }
   template <typename T>
-  FaultingCodeOffset storePtr(ImmWord imm, T address) {
-    FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
+  FaultingCodeRange storePtr(ImmWord imm, T address) {
+    auto before = currentOffset();
     movl(Imm32(imm.value), Operand(address));
-    return fco;
+    auto after = currentOffset();
+    return FaultingCodeRange(before, after);
   }
   template <typename T>
   void storePtr(ImmPtr imm, T address) {
@@ -708,15 +717,17 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
   void storePtr(ImmGCPtr imm, T address) {
     movl(imm, Operand(address));
   }
-  FaultingCodeOffset storePtr(Register src, const Address& address) {
-    FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
+  FaultingCodeRange storePtr(Register src, const Address& address) {
+    auto before = currentOffset();
     movl(src, Operand(address));
-    return fco;
+    auto after = currentOffset();
+    return FaultingCodeRange(before, after);
   }
-  FaultingCodeOffset storePtr(Register src, const BaseIndex& address) {
-    FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
+  FaultingCodeRange storePtr(Register src, const BaseIndex& address) {
+    auto before = currentOffset();
     movl(src, Operand(address));
-    return fco;
+    auto after = currentOffset();
+    return FaultingCodeRange(before, after);
   }
   void storePtr(Register src, const Operand& dest) { movl(src, dest); }
   void storePtr(Register src, AbsoluteAddress address) {
@@ -729,12 +740,15 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
     movw(src, Operand(address));
   }
   template <typename T>
-  FaultingCodeOffsetPair store64(Register64 src, const T& address) {
-    FaultingCodeOffset fco1 = FaultingCodeOffset(currentOffset());
+  FaultingCodeRangePair store64(Register64 src, const T& address) {
+    auto before = currentOffset();
     movl(src.low, Operand(LowWord(address)));
-    FaultingCodeOffset fco2 = FaultingCodeOffset(currentOffset());
+    auto mid = currentOffset();
     movl(src.high, Operand(HighWord(address)));
-    return FaultingCodeOffsetPair(fco1, fco2);
+    auto after = currentOffset();
+    FaultingCodeRange fcr1 = FaultingCodeRange(before, mid);
+    FaultingCodeRange fcr2 = FaultingCodeRange(mid, after);
+    return FaultingCodeRangePair(fcr1, fcr2);
   }
   void store64(Imm64 imm, Address address) {
     movl(imm.low(), Operand(LowWord(address)));

@@ -55,3 +55,17 @@ You probably want to see the value of variables or expressions, either during ex
 
 - {ref}`Keyboard shortcuts <keyboard-shortcuts-debugger>`
 - {doc}`Source map errors <source_map_errors/index>`
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+break_on_dom_mutation/index
+how_to/index
+set_a_logpoint/index
+set_an_xhr_breakpoint/index
+set_event_listener_breakpoints/index
+source_map_errors/index
+ui_tour/index
+using_the_debugger_map_scopes_feature/index
+```

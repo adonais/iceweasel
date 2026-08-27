@@ -164,10 +164,10 @@ void FontFace::SetWeight(const nsACString& aValue, ErrorResult& aRv) {
   mImpl->SetWeight(aValue, aRv);
 }
 
-void FontFace::GetStretch(nsACString& aResult) { mImpl->GetStretch(aResult); }
+void FontFace::GetWidth(nsACString& aResult) { mImpl->GetWidth(aResult); }
 
-void FontFace::SetStretch(const nsACString& aValue, ErrorResult& aRv) {
-  mImpl->SetStretch(aValue, aRv);
+void FontFace::SetWidth(const nsACString& aValue, ErrorResult& aRv) {
+  mImpl->SetWidth(aValue, aRv);
 }
 
 void FontFace::GetUnicodeRange(nsACString& aResult) {

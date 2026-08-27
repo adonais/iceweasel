@@ -127,6 +127,8 @@ support-files = ["file_pdf_binary_octet_stream.pdf"]
 ["browser_mailto_handler_picker.js"]
 support-files = ["blank_webmail.html"]
 
+["browser_mailto_user_activation.js"]
+
 ["browser_open_internal_choice_persistence.js"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1776017
@@ -170,10 +172,8 @@ support-files = ["protocol_custom_sandbox_helper.sjs"]
 ["browser_save_filenames.js"]
 support-files = ["save_filenames.html"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1776018
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1776018
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1776018
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1776018
+  "os == 'linux' && display == 'x11'", # Bug 1776018
+  "os == 'linux' && display == 'wayland'", # Bug 1776018
 ]
 
 ["browser_shows_where_to_save_dialog.js"]

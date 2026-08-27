@@ -960,11 +960,18 @@ class ProfileChunkedBuffer {
     // `RequestedChunkHolder`, so it's guaranteed to live until it's invoked,
     // even if this `ProfileChunkedBuffer` changes its `ChunkManager` or is
     // destroyed.
-    mChunkManager->RequestChunk(
+    auto chunkReceiver =
         [requestedChunkHolder = RefPtr<RequestedChunkRefCountedHolder>(
              mRequestedChunkHolder)](UniquePtr<ProfileBufferChunk> aChunk) {
           requestedChunkHolder->AddRequestedChunk(std::move(aChunk));
-        });
+        };
+    // Requesting a chunk must not allocate, see
+    // `ProfileBufferChunkManager::RequestChunk()`, so the receiver must fit in
+    // `MoveOnlyFunction`'s inline storage, which holds two pointers. Requiring
+    // that it stays within one keeps some margin.
+    static_assert(sizeof(chunkReceiver) <= sizeof(void*),
+                  "The chunk receiver should only capture one RefPtr");
+    mChunkManager->RequestChunk(std::move(chunkReceiver));
   }
 
   [[nodiscard]] bool HandleRequestedChunk_IsPending(

@@ -8,7 +8,7 @@
 If you're trying to test privileged browser code, write a browser mochitest instead;
 if you are testing web platform code, use a wpt test, or a "plain" mochitest if you are unable to use a wpt test.**
 
-(introduction)=
+(chrome-tests-introduction)=
 
 ## Introduction
 

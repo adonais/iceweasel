@@ -495,7 +495,7 @@ template <typename F>
 
   JS::SetGCZeal(cx, mode, 0);
   JS::PrepareZoneForGC(cx, js::GetContextZone(cx));
-  JS::SliceBudget budget{JS::TimeBudget(BudgetMS)};
+  JS::SliceBudget budget(mozilla::TimeDuration::FromMilliseconds(BudgetMS));
   JS::StartIncrementalGC(cx, JS::GCOptions(), JS::GCReason::DEBUG_GC, budget);
   CHECK(JS::IsIncrementalGCInProgress(cx));
 

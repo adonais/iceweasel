@@ -1,5 +1,3 @@
-(mozinfo)=
-
 # mozinfo
 
 `mozinfo` is a solution for representing a subset of build
@@ -64,7 +62,7 @@ buildapp
 
 : The path to the XUL application being built.
 
-  For desktop Firefox, this is `browser`. For Fennec, it's
+  For desktop Firefox, this is `browser`. For Fenix, it's
   `mobile/android`.
 
 crashreporter

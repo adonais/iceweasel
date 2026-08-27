@@ -7,6 +7,7 @@ import {
   MODEL_FEATURES,
   openAIEngine,
   renderPrompt,
+  makeJSONSchemaBlob,
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
 import { Schedule } from "moz-src:///browser/components/aiwindow/models/agents/Schedule.sys.mjs";
 
@@ -78,6 +79,8 @@ export class Monitor {
    * @param {string[]} options.watchUrls - URLs of the pages being monitored.
    * @param {Schedule} options.schedule - Schedule config.
    * @param {boolean} [options.enabled] - Whether the monitor should run.
+   * @param {boolean} [options.notificationsMuted] - Whether desktop
+   *   notifications are suppressed while the monitor keeps running.
    * @param {string} [options.createdAt] - Creation timestamp.
    * @param {string} [options.updatedAt] - Last update timestamp.
    * @param {string} [options.lastRunTime] - Last run timestamp.
@@ -91,6 +94,7 @@ export class Monitor {
     watchUrls,
     schedule,
     enabled = true,
+    notificationsMuted = false,
     createdAt,
     updatedAt,
     lastRunTime,
@@ -113,6 +117,7 @@ export class Monitor {
     this.watchUrls = trimAndFilterWatchUrls(watchUrls);
     this.schedule = schedule;
     this.enabled = enabled;
+    this.notificationsMuted = !!notificationsMuted;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
     this.lastRunTime = lastRunTime;
@@ -142,6 +147,7 @@ export class Monitor {
       watchUrls: savedMonitor.watchUrls,
       schedule: Schedule.fromJSON(savedMonitor.schedule),
       enabled: savedMonitor.enabled,
+      notificationsMuted: savedMonitor.notificationsMuted,
       createdAt: savedMonitor.createdAt,
       updatedAt: savedMonitor.updatedAt,
       lastRunTime: savedMonitor.lastRunTime,
@@ -239,7 +245,10 @@ export class Monitor {
           this,
           manual,
           MONITOR_PROMPT_VERSION,
+          historyEntry.status === "error",
           historyEntry.status === "error"
+            ? categorizeError(historyEntry.resultExplanation)
+            : null
         );
       }
     }
@@ -304,7 +313,12 @@ export class Monitor {
           openAIEngine.getFxAccountToken(),
           signal
         ),
-        responseFormat: { type: "json_schema", schema: MONITOR_RESULT_SCHEMA },
+        inferenceParams: {
+          response_format: makeJSONSchemaBlob(
+            "MonitorResult",
+            MONITOR_RESULT_SCHEMA
+          ),
+        },
         tools: [],
       }),
       signal
@@ -399,6 +413,7 @@ export class Monitor {
       watchUrls: this.watchUrls.slice(),
       schedule: { ...this.schedule },
       enabled: this.enabled,
+      notificationsMuted: this.notificationsMuted,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
       lastRunTime: this.lastRunTime,
@@ -553,12 +568,18 @@ export function trimAndFilterWatchUrls(urls) {
   return urls.map(url => String(url ?? "").trim()).filter(isAllowedWatchUrl);
 }
 
-function isAllowedWatchUrl(urlString) {
+export function isAllowedWatchUrl(urlString) {
   const url = URL.parse(urlString);
   return !!url && ["http:", "https:"].includes(url.protocol);
 }
 
-function recordMonitorRunTelemetry(monitor, manual, promptVersion, failed) {
+function recordMonitorRunTelemetry(
+  monitor,
+  manual,
+  promptVersion,
+  failed,
+  errorCode = null
+) {
   const extra = {
     monitors: lazy.MonitorAgent._monitorCountForTelemetry(),
     urls: monitor.watchUrls.length,
@@ -569,17 +590,56 @@ function recordMonitorRunTelemetry(monitor, manual, promptVersion, failed) {
     enabled: monitor.enabled,
   };
 
+  // Record run type (manual vs scheduled)
   if (manual) {
     Glean.smartWindow.monitorRunManual.record(extra);
   } else {
     Glean.smartWindow.monitorRunScheduled.record(extra);
   }
-  if (failed) {
-    Glean.smartWindow.monitorFailure.record(extra);
+
+  // Record completion with success/failure status
+  const completeExtra = {
+    ...extra,
+    success: !failed,
+  };
+  if (failed && errorCode) {
+    completeExtra.error_code = errorCode;
   }
+  Glean.smartWindow.monitorComplete.record(completeExtra);
 }
 
 export function monitorAgeMs(monitor) {
   const createdAt = Date.parse(monitor.createdAt);
   return Number.isFinite(createdAt) ? Math.max(0, Date.now() - createdAt) : 0;
+}
+
+/**
+ * Categorizes an error into a safe, predefined code for telemetry.
+ *
+ * Raw error messages are never returned to avoid accidentally including
+ * sensitive information in telemetry.
+ *
+ * @param {Error|string} error - The error to categorize.
+ * @returns {string} A safe telemetry error code.
+ */
+export function categorizeError(error) {
+  const message = (error?.message ?? String(error)).toLowerCase();
+
+  const categories = [
+    ["network_error", ["network", "fetch failed", "failed to connect"]],
+    ["timeout", ["timeout"]],
+    ["rate_limit", ["rate limit", "quota"]],
+    ["auth_error", ["authentication", "unauthorized"]],
+    ["content_extraction_error", ["extract", "parse"]],
+    ["interrupted", ["interrupt", "abort"]],
+    ["model_error", ["model api", "api error", "api endpoint"]],
+  ];
+
+  for (const [code, patterns] of categories) {
+    if (patterns.some(pattern => message.includes(pattern))) {
+      return code;
+    }
+  }
+
+  return "unknown_error";
 }

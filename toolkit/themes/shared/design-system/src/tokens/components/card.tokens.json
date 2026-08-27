@@ -39,6 +39,40 @@
       }
     }
   },
+  "cover": {
+    "image": {
+      "border": {
+        "radius": {
+          "value": "{border.radius.medium}"
+        }
+      },
+      "height": {
+        "default": {
+          "value": "160px"
+        }
+      },
+      "padding": {
+        "@base": {
+          "value": "{space.small}"
+        },
+        "compact": {
+          "value": "{space.xsmall}"
+        }
+      },
+      "object": {
+        "fit": {
+          "default": {
+            "value": "cover"
+          }
+        },
+        "position": {
+          "default": {
+            "value": "center"
+          }
+        }
+      }
+    }
+  },
   "focus": {
     "outline": {
       "value": "{focus.outline.@base}"

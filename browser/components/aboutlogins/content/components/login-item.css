@@ -322,8 +322,5 @@ login-command-button {
 .action-buttons {
   display: flex;
   flex-direction: row;
-}
-
-.action-buttons .form-actions-row {
-  margin-inline: 0 5px;
+  column-gap: var(--space-small);
 }

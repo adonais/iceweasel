@@ -65,8 +65,8 @@ if (is_ios || is_mac) {
     }
   }
 
-  # TODO(bugs.webrtc.org/9627): Remove this when unused. Targets should depend on base_objc
-  # or helpers_objc directly instead.
+  # TODO(bugs.webrtc.org/9627): Remove this when unused. Targets should depend
+  # on base_objc or helpers_objc directly instead.
   rtc_library("common_objc") {
     visibility = [ "*" ]
 
@@ -1190,7 +1190,6 @@ if (is_ios || is_mac) {
         "../rtc_base:threading",
         "../rtc_base:timeutils",
         "../rtc_base/system:plan_b_only",
-        "../stats:rtc_stats",
         "../system_wrappers:metrics",
       ]
 
@@ -1774,11 +1773,11 @@ if (is_ios || is_mac) {
         ":wrapped_native_codec_objc",
         "../api:make_ref_counted",
         "../api/environment",
+        "../api/video:adapted_video_track_source",
         "../api/video:video_frame",
         "../api/video:video_rtp_headers",
         "../api/video_codecs:video_codecs_api",
         "../common_video",
-        "../media:adapted_video_track_source",
         "../media:codec",
         "../media:rtc_audio_video",
         "../media:rtc_media_base",

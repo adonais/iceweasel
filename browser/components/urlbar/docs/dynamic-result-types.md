@@ -549,7 +549,7 @@ Highlighting for dynamic result types is a fairly automated process. The text
 that you want to highlight must be present as a property in your result
 payload. Instead of setting the property to a string value as you normally
 would, set it to an array with two elements, where the first element is the text
-and the second element is a `UrlbarUtils.HIGHLIGHT` value, like the `title`
+and the second element is a `UrlbarShared.HIGHLIGHT` value, like the `title`
 payload property in the following example:
 
 ```javascript
@@ -559,7 +559,7 @@ let result = new UrlbarResult({
   payload: {
     title: [
       "Some result title",
-      UrlbarUtils.HIGHLIGHT.TYPED,
+      UrlbarShared.HIGHLIGHT.TYPED,
     ],
     // *more payload properties*
   }
@@ -591,15 +591,15 @@ automatically find the elements corresponding to the payload property, set their
 `textContent` to the text value in the array, and apply the appropriate
 highlighting, as described next.
 
-There are two possible `UrlbarUtils.HIGHLIGHT` values. Each controls how
+There are two possible `UrlbarShared.HIGHLIGHT` values. Each controls how
 highlighting is performed:
 
-`UrlbarUtils.HIGHLIGHT.TYPED`
+`UrlbarShared.HIGHLIGHT.TYPED`
 
 : Substrings in the payload text that match the user's search string will be
   emphasized.
 
-`UrlbarUtils.HIGHLIGHT.SUGGESTED`
+`UrlbarShared.HIGHLIGHT.SUGGESTED`
 
 : If the user's search string appears in the payload text, then the remainder of
   the text following the matching substring will be emphasized.

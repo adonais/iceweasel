@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !getBuildConfiguration("explicit-resource-management"); --enable-explicit-resource-management
-
 globalThis.disposed = false;
 
 const m = parseModule(`
@@ -11,7 +9,7 @@ const m = parseModule(`
   throw new Error("err");
 `);
 
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m).catch(() => 0);
 drainJobQueue();
 

@@ -148,21 +148,21 @@ export class BookmarkList {
       this.#bookmarkCount.set(urlHash, 0);
     }
     const db = await lazy.PlacesUtils.promiseDBConnection();
-    for (const chunk of lazy.PlacesUtils.chunkArray(urls, db.variableLimit)) {
-      // Note that this query does not *explicitly* filter out tags, but we
-      // should not expect to find any, unless the db is somehow malformed.
-      const sql = `SELECT b.guid, p.url_hash
+    // Note that this query does not *explicitly* filter out tags, but we
+    // should not expect to find any, unless the db is somehow malformed.
+    const rows = await db.executeCached(
+      `SELECT b.guid, p.url_hash
         FROM moz_bookmarks b
         JOIN moz_places p
         ON b.fk = p.id
-        WHERE p.url_hash IN (${Array(chunk.length).fill("?").join(",")})`;
-      const rows = await db.executeCached(sql, chunk);
-      for (const row of rows) {
-        this.#cacheBookmark(
-          row.getResultByName("guid"),
-          row.getResultByName("url_hash")
-        );
-      }
+        WHERE p.url_hash IN carray(:urls)`,
+      { urls }
+    );
+    for (const row of rows) {
+      this.#cacheBookmark(
+        row.getResultByName("guid"),
+        row.getResultByName("url_hash")
+      );
     }
   }
 

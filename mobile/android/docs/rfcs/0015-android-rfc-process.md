@@ -1,8 +1,10 @@
-# Summary
+# Android RFC process
+
+## Summary
 
 Define a lightweight RFC ("request for comments") process for proposing and discussing "substantial" changes and for building consensus across Android, including `android-components`, GeckoView, Fenix, and Focus.
 
-# Rationale
+## Rationale
 
 The existing RFC process (and its update) is not serving the team. Few team members view the existing process as a part of the day-to-day life of the team, as evidenced by the fact that 2025 has been a year of change within the Android team and yet 0 RFCs have been proposed.
 
@@ -17,7 +19,7 @@ In response, we propose relatively minor changes to the existing process.
 * Acknowledge that the stakeholders of record have changed.  The Android technical stewards are responsible for the technical evolution of Firefox for Android, and as such we are the stakeholders in the RFC process.
 * De-emphasize code review tooling as the "RFC interface".  We will focus less on review requests in Phabricator and review from all engineers in favour of early conversations and internal documents.  We intend to continue to land RFCs that are adopted into `firefox-main` and `firefox-source-docs`, following successful patterns from GeckoView and `application-services`.
 
-# Motivation
+## Motivation
 
 The existing workflow of opening and reviewing pull requests is fully sufficient for many smaller changes.
 
@@ -36,7 +38,7 @@ A change is substantial if it
 
 There is a tension between pursuing any RFC process and experimenting at small scales to prove out technical approaches. We encourage potential RFC authors to experiment within bounded areas to gain understanding of a problem space and possible solutions before, or concurrently to, starting the RFC process.
 
-# Guide-level explanation
+## Guide-level explanation
 
 The high-level process of creating an RFC is:
 
@@ -58,6 +60,6 @@ After the feedback phase has concluded:
 
 Once the RFC is accepted, implementation may begin.
 
-# Drawbacks
+## Drawbacks
 
 * Writing an RFC is an additional overhead and may feel slower or cumbersome. To drive down this cost, we ask for multiple documents for multiple audiences: a lightweight brief or 1-pager to understand the problem area and gauge interest before committing to a full RFC.

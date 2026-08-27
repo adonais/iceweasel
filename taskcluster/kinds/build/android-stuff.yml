@@ -7,6 +7,7 @@ task-defaults:
         android-stuff: "true"
     run-on-repo-type: [hg]
     run:
+        clone-with: hg
         mozconfig-variant: null
 
 android-geckoview-docs/opt:
@@ -33,6 +34,7 @@ android-geckoview-docs/opt:
               type: file
         max-run-time: 7200
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         config:

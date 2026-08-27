@@ -599,4 +599,46 @@ describe("ContentSection", () => {
       });
     });
   });
+
+  describe("web notifications toggle", () => {
+    function renderWith({ mayHave = true, enabled = false } = {}) {
+      return mount(
+        <ContentSection
+          {...DEFAULT_PROPS}
+          mayHaveWebNotifications={mayHave}
+          enabledSections={{
+            ...DEFAULT_PROPS.enabledSections,
+            webNotificationsEnabled: enabled,
+          }}
+        />
+      );
+    }
+
+    it("renders the web notifications toggle under the shortcuts section", () => {
+      wrapper = renderWith();
+      assert.isTrue(wrapper.find("#web-notifications-toggle").exists());
+    });
+
+    it("does not offer the toggle when the feature gate is off", () => {
+      wrapper = renderWith({ mayHave: false });
+      assert.isFalse(wrapper.find("#web-notifications-toggle").exists());
+    });
+
+    it("reflects webNotificationsEnabled in the toggle pressed state", () => {
+      wrapper = renderWith({ enabled: true });
+      assert.isTrue(wrapper.find("#web-notifications-toggle").prop("pressed"));
+    });
+
+    it("writes the user pref when toggled", () => {
+      wrapper = renderWith();
+      wrapper.instance().onPreferenceSelect({
+        target: {
+          nodeName: "MOZ-TOGGLE",
+          pressed: true,
+          dataset: { preference: "showWebNotifications" },
+        },
+      });
+      assert.calledWith(DEFAULT_PROPS.setPref, "showWebNotifications", true);
+    });
+  });
 });

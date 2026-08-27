@@ -443,7 +443,11 @@ class SnapshotWriter {
   // useful as value allocations are repeated frequently.
   using RVA = RValueAllocation;
   using RValueAllocMap = HashMap<RVA, uint32_t, RVA::Hasher, SystemAllocPolicy>;
-  RValueAllocMap allocMap_;
+
+  // Based on the measurements made in Bug 962555 comment 20, this length
+  // should be enough to prevent the reallocation of the hash table for at
+  // least half of the compilations.
+  RValueAllocMap allocMap_{32};
 
   // This is only used to assert sanity.
   uint32_t allocWritten_ = 0;
@@ -452,7 +456,7 @@ class SnapshotWriter {
   SnapshotOffset lastStart_;
 
  public:
-  SnapshotWriter();
+  SnapshotWriter() = default;
 
   SnapshotOffset startSnapshot(RecoverOffset recoverOffset, BailoutKind kind);
 #ifdef TRACK_SNAPSHOTS

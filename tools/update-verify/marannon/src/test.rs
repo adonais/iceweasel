@@ -259,6 +259,10 @@ fn run_test(
     let mut diff_file = artifact_dir.to_path_buf();
     diff_file.push(format!("{}.summary.log", test.full_id()));
 
+    let updater_dir = updater
+        .parent()
+        .ok_or_else(|| anyhow!("Couldn't determine update-settings.ini dir!"))?;
+
     let mut cmd = Command::new("/bin/bash");
     cmd.arg(check_updates)
         .arg(target_platform)
@@ -275,12 +279,13 @@ fn run_test(
         // a usable `update-settings.ini` file that the updater requires
         // this file is always located in the same dir as the `updater`
         // binary. `check_updates.sh` ignores this option on other platforms.
-        .arg(
-            updater
-                .parent()
-                .ok_or_else(|| anyhow!("Couldn't determine update-settings.ini dir!"))?,
-        )
+        .arg(updater_dir)
         .arg(product)
+        // Prior to https://bugzilla.mozilla.org/show_bug.cgi?id=1434033, which
+        // shipped with 67.0, the updater is not linked with RPATH set to
+        // $ORIGIN. This means that the updater cannot find the libraries
+        // it needs to run without this being set explicitly.
+        .env("LD_LIBRARY_PATH", updater_dir)
         .current_dir(test_dir);
     let command_result = runner.run(cmd)?;
     let result = match command_result.exit_code {

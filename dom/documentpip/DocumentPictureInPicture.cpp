@@ -11,6 +11,7 @@
 #include "mozilla/dom/DocumentPictureInPictureEvent.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/widget/Screen.h"
+#include "nsCRT.h"
 #include "nsContentUtils.h"
 #include "nsDocShell.h"
 #include "nsDocShellLoadState.h"
@@ -290,6 +291,8 @@ already_AddRefed<Promise> DocumentPictureInPicture::RequestWindow(
 
   // 8. Possibly close last opened window
   if (RefPtr<nsPIDOMWindowInner> lastOpenedWindow = mLastOpenedWindow) {
+    // Hack: Clean up synchronously before we open the next window
+    OnPiPClosed();
     lastOpenedWindow->Close();
   }
 
@@ -314,14 +317,22 @@ already_AddRefed<Promise> DocumentPictureInPicture::RequestWindow(
   // 9. Optionally, close any existing PIP windows
   // I think it's useful to have multiple PiP windows from different top pages.
 
+  // Mark opener as controlling PiP before opening, since window creation
+  // can change activeness and the opener must be active when setting the flag.
+  MOZ_ASSERT(!bc->GetControlsDocumentPiP());
+  nsresult rv = bc->SetControlsDocumentPiP(true);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+
   // 10. Create a new top-level traversable for target _blank
   // 15. aOptions.mDisallowReturnToOpener
   // 16. Configure PIP to float on top via window features
   RefPtr<BrowsingContext> pipTraversable;
-  nsresult rv = OpenPiPWindowUtility(
+  rv = OpenPiPWindowUtility(
       ownerWin->GetOuterWindow(), extent, bc->UsePrivateBrowsing(),
       aOptions.mDisallowReturnToOpener, getter_AddRefs(pipTraversable));
   if (NS_FAILED(rv)) {
+    rv = bc->SetControlsDocumentPiP(false);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
     aRv.ThrowUnknownError("Failed to create PIP window");
     return nullptr;
   }
@@ -332,10 +343,6 @@ already_AddRefed<Promise> DocumentPictureInPicture::RequestWindow(
 
   // 12. Set PIP's IsDocumentPIP flag
   rv = pipTraversable->SetIsDocumentPiP(true);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-
-  MOZ_ASSERT(!bc->GetControlsDocumentPiP());
-  rv = bc->SetControlsDocumentPiP(true);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   // 16. Set mLastOpenedWindow

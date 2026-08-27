@@ -1,0 +1,15 @@
+{
+  "label": "waimaie.meituan.com",
+  "bugs": {
+    "2056260": {
+      "issue": "firefox-blocked-completely",
+      "matches": ["*://waimaie.meituan.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "ua_string": ["add_Chrome"]
+    }
+  ]
+}

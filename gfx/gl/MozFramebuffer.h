@@ -26,7 +26,8 @@ class DepthAndStencilBuffer final : public SupportsWeakPtr {
 
   static RefPtr<DepthAndStencilBuffer> Create(GLContext* const gl,
                                               const gfx::IntSize& size,
-                                              const uint32_t samples);
+                                              const uint32_t samples,
+                                              bool depth, bool stencil);
 
   RefPtr<GLContext> gl() const { return mWeakGL.get(); }
 
@@ -58,13 +59,14 @@ class MozFramebuffer final {
   // Create a new framebuffer with the specified properties.
   static UniquePtr<MozFramebuffer> Create(GLContext* gl,
                                           const gfx::IntSize& size,
-                                          uint32_t samples, bool depthStencil);
+                                          uint32_t samples, bool depth,
+                                          bool stencil);
 
   // Create a new framebuffer backed by an existing texture or buffer.
   // Assumes that gl is the current context.
   static UniquePtr<MozFramebuffer> CreateForBacking(
-      GLContext* gl, const gfx::IntSize& size, uint32_t samples,
-      bool depthStencil, GLenum colorTarget, GLuint colorName);
+      GLContext* gl, const gfx::IntSize& size, uint32_t samples, bool depth,
+      bool stencil, GLenum colorTarget, GLuint colorName);
 
   // Create a new framebuffer backed by an existing texture or buffer.
   // Use the same GLContext, size, and samples as framebufferToShareWith.

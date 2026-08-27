@@ -110,7 +110,12 @@ static float GetGtkTextScaleFactor() {
   if (!s) {
     return 1.0f;
   }
-  return float(gdk_screen_get_resolution(s) / 96.0);
+  // A non-positive resolution means "unset", not a real DPI.
+  const gdouble resolution = gdk_screen_get_resolution(s);
+  if (resolution <= 0.0) {
+    return 1.0f;
+  }
+  return float(resolution / 96.0);
 }
 
 static bool sCSDAvailable;
@@ -1273,8 +1278,8 @@ static void GetSystemFontInfo(GtkStyleContext* aStyle, nsString* aFontName,
   aFontStyle->weight =
       FontWeight::FromInt(pango_font_description_get_weight(desc));
 
-  // FIXME: Set aFontStyle->stretch correctly!
-  aFontStyle->stretch = FontStretch::NORMAL;
+  // FIXME: Set aFontStyle->width correctly!
+  aFontStyle->width = FontWidth::NORMAL;
 
   float size = float(pango_font_description_get_size(desc)) / PANGO_SCALE;
 

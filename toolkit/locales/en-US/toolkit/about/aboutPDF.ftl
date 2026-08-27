@@ -13,6 +13,8 @@ about-pdf-dropzone-invalid-file = This file isn’t supported. Choose a PDF to c
 about-pdf-dropzone-error-generic = The upload didn’t go through. Try again later.
 about-pdf-browse-files =
   .label = Browse files
+# Title of the system file picker opened by the “Browse files” button.
+about-pdf-file-picker-title = Open PDF
 about-pdf-promo =
   .heading = Make { -brand-short-name } your go-to PDF editor
   .message = Open PDFs in { -brand-short-name } and handle the basics in one place, from highlights and signatures to merged files and comments.

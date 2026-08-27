@@ -473,6 +473,22 @@ void ReportDeliver::EndpointRespondedWithRemove(
 }
 
 /* static */
+void ReportDeliver::RemoveGlobalEndpoints(uintptr_t aGlobalKey) {
+  if (NS_IsMainThread()) {
+    if (gReportDeliver) {
+      gReportDeliver->mGlobalsEndpointLists.Remove(aGlobalKey);
+    }
+  } else {
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "ReportDeliver::RemoveGlobalEndpoints", [aGlobalKey]() {
+          if (gReportDeliver) {
+            gReportDeliver->mGlobalsEndpointLists.Remove(aGlobalKey);
+          }
+        }));
+  }
+}
+
+/* static */
 void ReportDeliver::Fetch(const ReportData& aReportData) {
   if (aReportData.mFailures >
       StaticPrefs::dom_reporting_delivering_maxFailures()) {

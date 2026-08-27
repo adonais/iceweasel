@@ -68,12 +68,6 @@ interface nsIRemoteTab : nsISupports
   readonly attribute boolean hasPresented;
 
   /**
-   * Ensures that the content process which has this remote tab has all of the
-   * permissions required to load a document with the given principal.
-   */
-  void transmitPermissionsForPrincipal(in nsIPrincipal aPrincipal);
-
-  /**
    * Similar to `nsIDocShell.createAboutBlankDocumentViewer` but on a remote
    * frame.  The docShell must not yet have navigated away from the initial
    * about:blank document when this method is called.

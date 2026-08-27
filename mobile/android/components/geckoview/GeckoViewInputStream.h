@@ -7,11 +7,12 @@
 
 #include "mozilla/java/GeckoViewInputStreamWrappers.h"
 #include "mozilla/java/ContentInputStreamWrappers.h"
+#include "mozilla/Mutex.h"
 #include "nsIAndroidContentInputStream.h"
 #include "nsIInputStream.h"
 
 class GeckoViewInputStream : public nsIAndroidContentInputStream {
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIINPUTSTREAM
   NS_DECL_NSIANDROIDCONTENTINPUTSTREAM
 
@@ -27,8 +28,11 @@ class GeckoViewInputStream : public nsIAndroidContentInputStream {
   virtual ~GeckoViewInputStream() = default;
 
  private:
-  mozilla::java::GeckoViewInputStream::GlobalRef mInstance;
-  bool mClosed{false};
+  mutable mozilla::Mutex mMutex{"GeckoViewInputStream"};
+
+  mozilla::java::GeckoViewInputStream::GlobalRef MOZ_GUARDED_BY(
+      mMutex) mInstance;
+  bool mClosed MOZ_GUARDED_BY(mMutex) = false;
 };
 
 class GeckoViewContentInputStream final : public GeckoViewInputStream {

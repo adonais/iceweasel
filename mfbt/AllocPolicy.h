@@ -10,12 +10,12 @@
 #ifndef mozilla_AllocPolicy_h
 #define mozilla_AllocPolicy_h
 
+#include <cstddef>
+#include <cstdlib>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedArithmetic.h"
 #include "mozilla/Likely.h"
-
-#include <cstddef>
-#include <cstdlib>
 
 namespace mozilla {
 

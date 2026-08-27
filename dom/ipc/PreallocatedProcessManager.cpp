@@ -53,7 +53,7 @@ class PreallocatedProcessManagerImpl final : public nsIObserver {
   static StaticRefPtr<PreallocatedProcessManagerImpl> sSingleton;
 
   PreallocatedProcessManagerImpl();
-  ~PreallocatedProcessManagerImpl();
+  ~PreallocatedProcessManagerImpl() = default;
 
   void Init();
 
@@ -115,7 +115,6 @@ PreallocatedProcessManagerImpl::PreallocatedProcessManagerImpl()
 // Note: mPreallocatedProcesses may not be null, but all processes should
 // be dead (IsDead==true).  We block Erase() when our observer sees
 // shutdown starting.
-PreallocatedProcessManagerImpl::~PreallocatedProcessManagerImpl() = default;
 
 void PreallocatedProcessManagerImpl::Init() {
   Preferences::AddStrongObserver(this, "dom.ipc.processPrelaunch.enabled");

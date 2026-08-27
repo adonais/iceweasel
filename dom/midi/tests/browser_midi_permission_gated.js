@@ -29,6 +29,7 @@ const { HttpServer } = ChromeUtils.importESModule(
 );
 ChromeUtils.defineESModuleGetters(this, {
   AddonTestUtils: "resource://testing-common/AddonTestUtils.sys.mjs",
+  AppMenuNotifications: "resource://gre/modules/AppMenuNotifications.sys.mjs",
 });
 
 /* import-globals-from ../../../toolkit/mozapps/extensions/test/xpinstall/helpers_addons_install_dialogs.js */
@@ -836,6 +837,14 @@ add_task(async function testMIDIAccessGrantedUseCounter() {
   let dialogPromise = waitForInstallDialog();
   addonInstallPanel.childNodes[0].button.click();
   let installDialog = await dialogPromise;
+  // This is the last add-on installed by this file, so its post install dialog
+  // has to be accepted before the end of the task: once the file is over,
+  // alwaysAcceptAddonPostInstallDialogs has stopped accepting them and the
+  // dialog would stay open for the next test file.
+  let postInstallDialogShown = BrowserTestUtils.waitForEvent(
+    PanelUI.notificationPanel,
+    "popupshown"
+  );
   installDialog.button.click();
 
   let allowResolved = await SpecialPowers.spawn(
@@ -867,6 +876,15 @@ add_task(async function testMIDIAccessGrantedUseCounter() {
     afterAllow.grantedDoc,
     afterDeny.grantedDoc + 1,
     "midiaccess_granted document counter incremented when permission granted"
+  );
+
+  info("Wait for the post install dialog to be shown and accepted");
+  await postInstallDialogShown;
+  await BrowserTestUtils.waitForPopupEvent(PanelUI.notificationPanel, "hidden");
+  is(
+    AppMenuNotifications.activeNotification,
+    null,
+    "the post install dialog has been accepted"
   );
 });
 

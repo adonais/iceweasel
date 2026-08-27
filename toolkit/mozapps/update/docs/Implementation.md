@@ -16,7 +16,7 @@ Very broadly speaking application update follows these steps:
 3.  Users download, install, and run Firefox. We ensure, on installation, that
     we delete any pending updates so that they are not improperly installed at
     startup. Note that the instance of Firefox that runs may be a regular,
-    [interactive instance of Firefox](InAppUpdateProcess.rst) or an instance of
+    [interactive instance of Firefox](InAppUpdateProcess.md) or an instance of
     the [Background Update Task](Concepts.md#background-update). In either case,
     the process is quite similar.
 4.  An update check is initiated. This can either happen via a timer, or be

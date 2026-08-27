@@ -391,6 +391,12 @@ class Simulator {
   inline double readD(uint64_t addr, SimInstruction* instr);
   inline void writeD(uint64_t addr, double value, SimInstruction* instr);
 
+  template <typename T>
+  using AmoOp = T (*)(SharedMem<T*> addr, T val);
+
+  template <typename T>
+  void AtomicMemoryHelper(AmoOp<T> f, SimInstruction* instr);
+
   inline int32_t loadLinkedW(uint64_t addr, SimInstruction* instr);
   inline int storeConditionalW(uint64_t addr, int32_t value,
                                SimInstruction* instr);

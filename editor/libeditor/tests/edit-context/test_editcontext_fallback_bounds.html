@@ -67,6 +67,45 @@ const tests = [
     checkRect(result, controlBounds,
               formatMessage('Text rect should fall back to control bounds if text is empty and there are no selection bounds.'));
   },
+  function useFirstCharacterBoundIfRequestedBeforeFirst() {
+    const bounds = new Array(5).fill().map((_, i) => new DOMRect(i, 20, 1, 1));
+    editContext.updateCharacterBounds(3, bounds);
+    const result = synthesizeQueryTextRect(2, 1);
+    ok(result.succeeded, formatMessage('QueryTextRect should succeed.'));
+    checkRect(result, bounds[0],
+              formatMessage('Text rect should fall back to first available character bound if requested range is before character bounds.'));
+  },
+  function useLastCharacterBoundIfRequestedAfterLast() {
+    const bounds = new Array(5).fill().map((_, i) => new DOMRect(i, 20, 1, 1));
+    editContext.updateCharacterBounds(3, bounds);
+    const result = synthesizeQueryTextRect(9, 1);
+    ok(result.succeeded, formatMessage('QueryTextRect should succeed.'));
+    checkRect(result, bounds[4],
+              formatMessage('Text rect should fall back to last available character bound if requested range is after character bounds.'));
+  },
+  function useSelectionBoundsIfCloserThanCharacterBounds() {
+    const bounds = new Array(5).fill().map((_, i) => new DOMRect(i, 20, 1, 1));
+    editContext.updateCharacterBounds(1, bounds);
+    editContext.updateSelection(10, 10);
+    const selectionBounds = new DOMRect(100, 100, 10, 10);
+    editContext.updateSelectionBounds(selectionBounds);
+    const result = synthesizeQueryTextRect(9, 1);
+    ok(result.succeeded, formatMessage('QueryTextRect should succeed.'));
+    checkRect(result, selectionBounds,
+              formatMessage('Text rect should fall back to selection bounds if requested range is closer to selection than character bounds.'));
+  },
+  function emptyTextUsesSelectionBounds() {
+    const selectionBounds = new DOMRect(100, 200, 300, 400);
+    editContext.updateText(0, editContext.text.length, '');
+    editContext.updateSelectionBounds(selectionBounds);
+    const rect = queryTextRectArray(0, 1)[0];
+    checkRect(rect, selectionBounds,
+              formatMessage('With empty text, querying text rect array should give selection bounds.'));
+    const result = synthesizeQueryTextRect(0, 1);
+    ok(result.succeeded, formatMessage('QueryTextRect should succeed.'));
+    checkRect(result, selectionBounds,
+              formatMessage('With empty text, querying text rect should give selection bounds.'));
+  },
 ];
 
 // DOM-based EditContext only:

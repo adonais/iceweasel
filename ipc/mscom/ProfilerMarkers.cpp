@@ -31,7 +31,7 @@ class ProfilerMarkerChannelHook final : public IChannelHook {
   ~ProfilerMarkerChannelHook() = default;
 
  public:
-  ProfilerMarkerChannelHook() : mRefCnt(0) {}
+  ProfilerMarkerChannelHook() = default;
 
   // IUnknown
   STDMETHODIMP QueryInterface(REFIID aIid, void** aOutInterface) override;
@@ -91,7 +91,7 @@ class ProfilerMarkerChannelHook final : public IChannelHook {
   void BuildMarkerName(REFIID aIid, nsACString& aOutMarkerName);
 
  private:
-  mozilla::Atomic<ULONG> mRefCnt;
+  mozilla::Atomic<ULONG> mRefCnt{0};
 };
 
 HRESULT ProfilerMarkerChannelHook::QueryInterface(REFIID aIid,

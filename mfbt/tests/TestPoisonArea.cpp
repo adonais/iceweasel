@@ -90,11 +90,10 @@
 #ifdef _WIN32
 #  include <windows.h>
 #else
-#  include <sys/types.h>
-#  include <unistd.h>
-#  include <sys/wait.h>
-
 #  include <sys/mman.h>
+#  include <sys/types.h>
+#  include <sys/wait.h>
+#  include <unistd.h>
 #  ifndef MAP_ANON
 #    ifdef MAP_ANONYMOUS
 #      define MAP_ANON MAP_ANONYMOUS

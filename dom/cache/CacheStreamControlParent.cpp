@@ -118,7 +118,7 @@ mozilla::ipc::IPCResult CacheStreamControlParent::RecvOpenStream(
     const nsID& aStreamId, OpenStreamResolver&& aResolver) {
   NS_ASSERT_OWNINGTHREAD(CacheStreamControlParent);
 
-  OpenStream(aStreamId, [aResolver, self = RefPtr{this}](
+  OpenStream(aStreamId, [aResolver = std::move(aResolver), self = RefPtr{this}](
                             nsCOMPtr<nsIInputStream>&& aStream) {
     Maybe<IPCStream> stream;
     if (self->CanSend() &&

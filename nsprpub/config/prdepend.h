@@ -10,4 +10,4 @@
 
 #error "Do not include this header file."
 
-//   release: NSPR_4_39_RTM (2026-05-05T14:48:55+02:00).
+//   release: NSPR_4_40_RTM (2026-08-05T13:57:49+09:00).

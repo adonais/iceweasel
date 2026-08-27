@@ -43,6 +43,9 @@ class DefaultDateTimeProvider : DateTimeProvider {
         return ZoneId.systemDefault()
     }
 
+    // DefaultDateTimeProvider is the sanctioned wrapper around System.currentTimeMillis(): the whole
+    // point of DateTimeProvider is to be the single injectable seam, so this call is intentional.
+    @Suppress("NoSystemCurrentTimeMillis")
     override fun currentTimeMillis(): Long {
         return System.currentTimeMillis()
     }

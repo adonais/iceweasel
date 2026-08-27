@@ -306,6 +306,23 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
       mStorage->GetOrCreateStateGlobal(aBounceTrackingState);
   MOZ_ASSERT(globalState);
 
+  // The storage partition we're about to write bounce trackers into is keyed by
+  // the BounceTrackingState's cached OriginAttributes. Assert it still matches
+  // the tab's current top BrowsingContext, so that if a tab's userContextId
+  // were ever to change during its lifetime we don't file bounces under a
+  // container the tab no longer lives in. The BrowsingContext may be gone when
+  // recording on tab close during shutdown; in that case there is nothing to
+  // compare against and we skip the check. See Bug 2054941.
+#ifdef DEBUG
+  if (RefPtr<dom::BrowsingContext> bc =
+          aBounceTrackingState->CurrentBrowsingContext()) {
+    MOZ_ASSERT(bc->OriginAttributesRef().EqualsIgnoringFPD(
+                   aBounceTrackingState->OriginAttributesRef()),
+               "BTP: recording bounces under a container that no longer "
+               "matches the tab's BrowsingContext (Bug 2054941).");
+  }
+#endif
+
   nsTArray<nsCString> classifiedHosts;
 
   // For each host in navigable’s bounce tracking record's bounce set:
@@ -383,6 +400,13 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
 
     nsresult rv = props->SetPropertyAsUint64(
         u"browserId"_ns, aBounceTrackingState->GetBrowserId());
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    // Number of hosts classified as bounce trackers in this call. Tests use
+    // this to distinguish a finalization that classified trackers from one that
+    // finalized an empty or fully exempt record.
+    rv = props->SetPropertyAsUint32(u"bounceTrackerCandidateCount"_ns,
+                                    classifiedHosts.Length());
     NS_ENSURE_SUCCESS(rv, rv);
 
     rv = obsSvc->NotifyObservers(
@@ -936,6 +960,7 @@ BounceTrackingProtection::PurgeBounceTrackers() {
           const GenericNonExclusivePromise::ResolveOrRejectValue& aResult) {
         if (aResult.IsReject()) {
           nsresult rv = aResult.RejectValue();
+          self->mPurgeInProgress = false;
           resultPromise->Reject(rv, __func__);
           return;
         }
@@ -965,6 +990,7 @@ BounceTrackingProtection::PurgeBounceTrackers() {
           nsresult rv = self->PurgeBounceTrackersForStateGlobal(
               stateGlobal, bounceTrackingAllowList, clearPromises);
           if (NS_WARN_IF(NS_FAILED(rv))) {
+            self->mPurgeInProgress = false;
             resultPromise->Reject(rv, __func__);
             return;
           }

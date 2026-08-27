@@ -17,6 +17,7 @@
 #include "nsIAsyncShutdown.h"
 #include "nsIObserver.h"
 #include "nsISupportsImpl.h"
+#include "nsITimer.h"
 #include "nsWeakReference.h"
 
 namespace mozilla::places {
@@ -46,9 +47,8 @@ struct PendingQuery final {
  * doesn't exist, or has an outdated schema version, it will queue up requests
  * and await for Places to start up fully.
  *
- * Available in the parent process and in privileged content processes
- * (privilegedabout and privilegedmozilla).  Queue() and GetInstance() are
- * safe to call from any thread.
+ * Available in the parent process only.
+ * Queue() and GetInstance() are safe to call from any thread.
  */
 class ConcurrentConnection final : public nsIObserver,
                                    public nsSupportsWeakReference,
@@ -79,13 +79,6 @@ class ConcurrentConnection final : public nsIObserver,
    * Safe to call from any thread.
    */
   static Maybe<RefPtr<ConcurrentConnection>> GetInstance();
-
-  static bool IsSupportedProcessType();
-
-  /**
-   * Interrupt any ongoing operations on the current connection, if any.
-   */
-  static void MaybeInterrupt();
 
   /**
    * Enqueue a query or a Runnable.
@@ -162,6 +155,8 @@ class ConcurrentConnection final : public nsIObserver,
   nsresult AttachDatabase(const nsString& aFileName,
                           const nsCString& aSchemaName);
 
+  static void PlacesInitFallbackTimerCallback(nsITimer*, void* aClosure);
+
   ~ConcurrentConnection() = default;
 
   // The current state, used to track progress in AsyncShutdown.
@@ -205,6 +200,8 @@ class ConcurrentConnection final : public nsIObserver,
    */
   nsRefPtrDeque<PendingQuery> mPendingQueries;
   nsRefPtrDeque<Runnable> mPendingRunnables;
+
+  nsCOMPtr<nsITimer> mPlacesInitFallbackTimer;
 
   /**
    * Statements caches.

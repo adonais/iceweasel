@@ -44,16 +44,6 @@
         }
       },
       {
-        "name": "getReleaseBranch",
-        "type": "function",
-        "description": "",
-        "parameters": [],
-        "returns": {
-          "type": "string",
-          "description": "The release branch (dev_edition, early_beta_or_earlier, nightly, release_or_beta, or unknown)."
-        }
-      },
-      {
         "name": "isInAutomation",
         "type": "function",
         "description": "",

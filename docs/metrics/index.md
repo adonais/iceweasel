@@ -1,4 +1,4 @@
-# Metrics
+# Firefox metrics
 
 The metrics collected by Firefox using the
 [Glean SDK](https://mozilla.github.io/glean/book/index.html)

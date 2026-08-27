@@ -36,11 +36,12 @@ class TemporaryExtensionInstallSection extends PureComponent {
     return {
       dispatch: PropTypes.func.isRequired,
       temporaryInstallError: PropTypes.object,
+      temporaryInstallErrorCount: PropTypes.number,
     };
   }
 
   renderError() {
-    const { temporaryInstallError } = this.props;
+    const { temporaryInstallError, temporaryInstallErrorCount } = this.props;
 
     if (!temporaryInstallError) {
       return null;
@@ -66,6 +67,7 @@ class TemporaryExtensionInstallSection extends PureComponent {
         level: MESSAGE_LEVEL.ERROR,
         className: "qa-tmp-extension-install-error",
         isCloseable: true,
+        messageId: `tmp-extension-install-error-${temporaryInstallErrorCount}`,
       },
       Localized(
         {

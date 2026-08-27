@@ -272,6 +272,41 @@ add_task(async function test_followup_displayed_telemetry_sends_count() {
           "2",
           "Follow-up displayed event includes the final prompt count"
         );
+        Assert.equal(
+          followUpEvent.extra.resume_prompts,
+          "0",
+          "Follow-up displayed event has zero resume prompts"
+        );
+
+        // Avoid a dangling request when the mock server stops.
+        const sb = sinon.createSandbox();
+        const fetchWithHistoryStub = sb
+          .stub(Chat, "fetchWithHistory")
+          .resolves();
+        try {
+          const aiWindow = browser.contentDocument.querySelector("ai-window");
+          aiWindow.onQuickPromptClicked("Follow up question 1", false);
+
+          const clickEvent = await TestUtils.waitForCondition(
+            () =>
+              Glean.smartWindow.quickPromptClicked
+                .testGetValue()
+                ?.find(e => e.extra.chat_id === conversationId),
+            "Wait for follow-up clicked event"
+          );
+
+          Assert.equal(
+            clickEvent.extra.starter_type,
+            "followup",
+            "Follow-up clicked event includes the starter type"
+          );
+          await TestUtils.waitForCondition(
+            () => fetchWithHistoryStub.calledOnce,
+            "Follow-up click should submit a new request"
+          );
+        } finally {
+          sb.restore();
+        }
       } finally {
         await BrowserTestUtils.closeWindow(win);
       }
@@ -312,12 +347,107 @@ add_task(async function test_prompt_selected_telemetry() {
       "fullpage",
       "prompt selected event includes the location"
     );
+    Assert.equal(
+      events[0].extra.starter_type,
+      "default",
+      "prompt selected event includes the starter type"
+    );
   } finally {
     await SpecialPowers.popPrefEnv();
     if (win) {
       await BrowserTestUtils.closeWindow(win);
     }
     sb.restore();
+  }
+});
+
+add_task(async function test_resume_prompt_click_starter_type_telemetry() {
+  const sb = sinon.createSandbox();
+  try {
+    Services.fog.testResetFOG();
+    sb.stub(openAIEngine, "build").resolves({});
+    sb.stub(Chat, "fetchWithHistory").resolves();
+
+    await testResumeActivityClick(sb, async ({ buttons }) => {
+      buttons[0].click();
+
+      const events = await TestUtils.waitForCondition(
+        () => Glean.smartWindow.quickPromptClicked.testGetValue(),
+        "Wait for quick prompt clicked event"
+      );
+
+      Assert.equal(events.length, 1, "One prompt clicked event was recorded");
+      Assert.equal(
+        events[0].extra.location,
+        "fullpage",
+        "Resume pill click records location fullpage"
+      );
+      Assert.equal(
+        events[0].extra.starter,
+        "true",
+        "Resume pill click records starter true"
+      );
+      Assert.equal(
+        events[0].extra.starter_type,
+        "resume",
+        "Resume pill click records starter_type resume"
+      );
+    });
+  } finally {
+    sb.restore();
+  }
+});
+
+add_task(async function test_fullpage_resume_starters_displayed_telemetry() {
+  const sb = sinon.createSandbox();
+  let win;
+
+  Services.fog.testResetFOG();
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.memories.generateFromConversation", true],
+      ["browser.smartwindow.memories.generateFromHistory", true],
+    ],
+  });
+
+  let resumeActivityStubs;
+  try {
+    resumeActivityStubs = await stubResumeActivityGeneration(sb);
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+    await getPromptButtons(browser);
+
+    const aiWindow = browser.contentDocument.querySelector("ai-window");
+    const promptsEl = aiWindow.shadowRoot.querySelector("smartwindow-prompts");
+    const promptCount = promptsEl.prompts.length;
+    const resumeCount = promptsEl.prompts.filter(
+      prompt => prompt.type === "resume"
+    ).length;
+
+    const events = Glean.smartWindow.quickPromptDisplayed.testGetValue();
+    Assert.greater(
+      events?.length,
+      0,
+      "At least one quick prompt displayed event was recorded"
+    );
+    const lastEvent = events.at(-1);
+    Assert.equal(
+      lastEvent.extra.prompts,
+      String(promptCount),
+      "Displayed event includes the total prompt count"
+    );
+    Assert.equal(
+      lastEvent.extra.resume_prompts,
+      String(resumeCount),
+      "Displayed event includes the resume-pill-only count"
+    );
+  } finally {
+    if (win) {
+      await BrowserTestUtils.closeWindow(win);
+    }
+    sb.restore();
+    await resumeActivityStubs?.cleanup();
+    await SpecialPowers.popPrefEnv();
   }
 });
 

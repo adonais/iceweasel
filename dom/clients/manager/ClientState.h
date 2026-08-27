@@ -50,7 +50,7 @@ class ClientWindowState final {
 
   ClientWindowState& operator=(ClientWindowState&& aRight);
 
-  ~ClientWindowState();
+  ~ClientWindowState() = default;
 
   mozilla::dom::VisibilityState VisibilityState() const;
 
@@ -84,7 +84,7 @@ class ClientWorkerState final {
 
   ClientWorkerState& operator=(ClientWorkerState&& aRight);
 
-  ~ClientWorkerState();
+  ~ClientWorkerState() = default;
 
   StorageAccess GetStorageAccess() const;
 

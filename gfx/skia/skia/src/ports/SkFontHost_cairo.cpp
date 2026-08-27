@@ -403,7 +403,19 @@ public:
         return result;
     }
 
-    void getPostScriptGlyphNames(SkString*) const override {}
+    void getPostScriptGlyphNames(SkString* dstArray) const override
+    {
+        mozilla_LockSharedFTFace(fFTFaceContext, nullptr);
+        if (FT_HAS_GLYPH_NAMES(fFTFace)) {
+            for (FT_Long gID = 0; gID < fFTFace->num_glyphs; ++gID) {
+                char glyphName[128];  // PS limit for names is 127 bytes.
+                if (!FT_Get_Glyph_Name(fFTFace, gID, glyphName, sizeof(glyphName))) {
+                    dstArray[gID] = glyphName;
+                }
+            }
+        }
+        mozilla_UnlockSharedFTFace(fFTFaceContext);
+    }
 
     void getGlyphToUnicodeMap(SkSpan<SkUnichar> dstArray) const override
     {

@@ -45,8 +45,6 @@
 #include "jit/shared/Disassembler-shared.h"
 #include "jit/shared/IonAssemblerBuffer.h"
 
-#define xlen (uint8_t(sizeof(void*) * 8))
-
 namespace js {
 namespace jit {
 
@@ -119,12 +117,12 @@ class AssemblerRiscvBase {
                        Register rd, Register rs1, Register rs2);
   void GenInstrRFrm(uint8_t funct7, BaseOpcode opcode, Register rd,
                     Register rs1, Register rs2, FPURoundingMode frm);
-  BufferOffset GenInstrI(uint8_t funct3, BaseOpcode opcode, Register rd,
-                         Register rs1, int16_t imm12);
+  void GenInstrI(uint8_t funct3, BaseOpcode opcode, Register rd, Register rs1,
+                 int16_t imm12);
   BufferOffset GenInstrI(uint8_t funct3, BaseOpcode opcode, Register rd,
                          Register rs1, int16_t imm12, LabelDoc doc);
-  BufferOffset GenInstrI(uint8_t funct3, BaseOpcode opcode, FPURegister rd,
-                         Register rs1, int16_t imm12);
+  void GenInstrI(uint8_t funct3, BaseOpcode opcode, FPURegister rd,
+                 Register rs1, int16_t imm12);
   void GenInstrIShift(uint8_t funct7, uint8_t funct3, BaseOpcode opcode,
                       Register rd, Register rs1, uint8_t shamt);
   void GenInstrIShiftW(uint8_t funct7, uint8_t funct3, BaseOpcode opcode,
@@ -133,10 +131,11 @@ class AssemblerRiscvBase {
                  int16_t imm12);
   void GenInstrS(uint8_t funct3, BaseOpcode opcode, Register rs1,
                  FPURegister rs2, int16_t imm12);
-  void GenInstrB(uint8_t funct3, BaseOpcode opcode, Register rs1, Register rs2,
-                 int16_t imm12, LabelDoc doc);
+  BufferOffset GenInstrB(uint8_t funct3, BaseOpcode opcode, Register rs1,
+                         Register rs2, int16_t imm12, LabelDoc doc);
   void GenInstrU(BaseOpcode opcode, Register rd, int32_t imm20);
-  void GenInstrJ(BaseOpcode opcode, Register rd, int32_t imm20, LabelDoc doc);
+  BufferOffset GenInstrJ(BaseOpcode opcode, Register rd, int32_t imm20,
+                         LabelDoc doc);
   void GenInstrCR(uint8_t funct4, BaseOpcode opcode, Register rd, Register rs2);
   void GenInstrCA(uint8_t funct6, BaseOpcode opcode, Register rd, uint8_t funct,
                   Register rs2);
@@ -166,8 +165,8 @@ class AssemblerRiscvBase {
                    Register rs1, int8_t imm6);
 
   // ----- Instruction class templates match those in LLVM's RISCVInstrInfo.td
-  void GenInstrBranchCC_rri(uint8_t funct3, Register rs1, Register rs2,
-                            int16_t imm12, LabelDoc doc);
+  BufferOffset GenInstrBranchCC_rri(uint8_t funct3, Register rs1, Register rs2,
+                                    int16_t imm12, LabelDoc doc);
   void GenInstrLoad_ri(uint8_t funct3, Register rd, Register rs1,
                        int16_t imm12);
   void GenInstrStore_rri(uint8_t funct3, Register rs1, Register rs2,

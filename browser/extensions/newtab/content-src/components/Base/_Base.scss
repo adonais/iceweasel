@@ -255,7 +255,11 @@ main.newtab-main {
   }
 }
 
-// @nova-cleanup(remove-conditional): Remove this selector; move color, min-height, and padding-block-start into the default outer wrapper styles.
+// @nova-cleanup(remove-conditional): Rename to .outer-wrapper here and in
+// Base.jsx. Blocked on two things, so split it to its own bug if they are not
+// resolved: .outer-wrapper above still carries classic rules that would start
+// applying once the names merge, and the toolkit theme tests
+// (browser_ext_themes_ntp_colors{,_perwindow}.js) select on .nova-outer-wrapper.
 .nova-outer-wrapper {
   color: var(--newtab-text-primary-color);
   min-height: 100vh;

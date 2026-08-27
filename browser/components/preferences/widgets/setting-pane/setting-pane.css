@@ -7,8 +7,3 @@ section {
   flex-direction: column;
   gap: var(--space-xlarge);
 }
-
-setting-pane > .settings-redesign-promo {
-  display: block;
-  margin-block-end: var(--space-xlarge);
-}

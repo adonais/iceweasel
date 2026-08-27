@@ -6,6 +6,7 @@
 #include "mozAutoDocUpdate.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/Likely.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/Comment.h"
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/DocGroup.h"
@@ -228,6 +229,8 @@ static void AbortNodeInsertion(nsINode* aNode) {
     // Clear form for this element, since it will not actually be
     // inserted.
     formControl->ClearForm(true, true);
+  } else if (auto* image = HTMLImageElement::FromNode(aNode)) {
+    image->ClearForm(true);
   }
 }
 
@@ -409,6 +412,10 @@ nsresult nsHtml5TreeOperation::AppendChildrenToNewParent(
     aNode->RemoveChildNode(child, true, nullptr, nullptr,
                            MutationEffectOnScript::KeepTrustWorthiness);
 
+    if (MOZ_UNLIKELY(aParent->IsInclusiveDescendantOf(child))) {
+      continue;
+    }
+
     ErrorResult rv;
     aParent->AppendChildTo(child, false, rv);
     if (rv.Failed()) {
@@ -580,7 +587,8 @@ void nsHtml5TreeOperation::SetHTMLElementAttributesFast(
 nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
     nsAtom* aName, nsHtml5HtmlAttributes* aAttributes, FromParser aFromParser,
     nsNodeInfoManager* aNodeInfoManager, nsHtml5DocumentBuilder* aBuilder,
-    HTMLContentCreatorFunction aCreator, nsINode* aIntendedParent) {
+    HTMLContentCreatorFunction aCreator, nsINode* aIntendedParent,
+    Maybe<RefPtr<CustomElementRegistry>> aContextRegistry) {
   // https://html.spec.whatwg.org/#create-an-element-for-the-token
   // 1. If the active speculative HTML parser is not null, then return the
   // result of creating a speculative mock element given namespace, token's tag
@@ -612,11 +620,29 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
 
   // 6. Let registry be the result of looking up a custom element registry given
   // intendedParent.
-  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry = Nothing();
-  if (aIntendedParent && aIntendedParent->HasScopedRegistry()) {
-    if (auto* reg = nsContentUtils::GetCustomElementRegistry(aIntendedParent)) {
-      customElementRegistry = Some(reg);
-    }
+  //
+  // (intendedParent may specify its own registry (the common case during
+  // fragment parsing). It might specify a scoped or "null" registry
+  // (Some(nullptr)). Both of these are valid and must be propagated to the
+  // node. In some cases, intendedParent will have an unspecified "global"
+  // registry (Nothing()); in these cases we assume registry from context and
+  // fall back to aContextRegistry).
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry =
+      nsContentUtils::GetCustomElementRegistry(aIntendedParent);
+  if (customElementRegistry.isNothing()) {
+    customElementRegistry = std::move(aContextRegistry);
+  }
+
+  // https://github.com/whatwg/html/pull/12000
+  // https://html.spec.whatwg.org/#create-an-element-for-the-token
+  // Step 6: "If token has a customelementregistry attribute, then set registry
+  // to null." This opts the element (and its descendants, which inherit via
+  // intendedParent) out of all registries, overriding any inherited or context
+  // registry.
+  if (aAttributes &&
+      StaticPrefs::dom_scoped_custom_element_registries_enabled() &&
+      aAttributes->contains(nsHtml5AttributeName::ATTR_CUSTOMELEMENTREGISTRY)) {
+    customElementRegistry = Some(RefPtr<CustomElementRegistry>(nullptr));
   }
 
   // 7. Let definition be the result of looking up a custom element definition
@@ -1096,9 +1122,9 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
           intendedParent ? intendedParent->NodeInfoManager()
                          : mBuilder->GetNodeInfoManager();
 
-      *target =
-          CreateHTMLElement(name, attributes, aOperation.mFromNetwork,
-                            nodeInfoManager, mBuilder, creator, intendedParent);
+      *target = CreateHTMLElement(name, attributes, aOperation.mFromNetwork,
+                                  nodeInfoManager, mBuilder, creator,
+                                  intendedParent, mozilla::Nothing());
       return NS_OK;
     }
 

@@ -6,16 +6,12 @@
 
 #include <algorithm>
 
-CEnumFormatEtc::CEnumFormatEtc() : mRefCnt(0), mCurrentIdx(0) {}
-
 // Constructor used by Clone()
 CEnumFormatEtc::CEnumFormatEtc(nsTArray<FormatEtc>& aArray)
     : mRefCnt(0), mCurrentIdx(0) {
   // a deep copy, calls FormatEtc's copy constructor on each
   mFormatList.AppendElements(aArray);
 }
-
-CEnumFormatEtc::~CEnumFormatEtc() {}
 
 /* IUnknown impl. */
 

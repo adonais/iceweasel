@@ -783,8 +783,6 @@ browser.ui.interaction:
     notification_emails:
       - jsudiaman@mozilla.com
     expires: never
-    no_lint:
-      - COMMON_PREFIX
     labels:
       - search
       - open_in_new_tab
@@ -818,8 +816,6 @@ browser.ui.interaction:
     notification_emails:
       - jsudiaman@mozilla.com
     expires: never
-    no_lint:
-      - COMMON_PREFIX
     labels:
       - search
       - open_in_new_window
@@ -842,8 +838,6 @@ browser.ui.interaction:
     notification_emails:
       - jsudiaman@mozilla.com
     expires: never
-    no_lint:
-      - COMMON_PREFIX
     labels:
       - search
       - open_in_new_tab
@@ -872,8 +866,6 @@ browser.ui.interaction:
     notification_emails:
       - jsudiaman@mozilla.com
     expires: never
-    no_lint:
-      - COMMON_PREFIX
     extra_keys:
       sort_type:
         type: string

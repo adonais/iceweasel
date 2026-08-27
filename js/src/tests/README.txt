@@ -40,7 +40,7 @@ Test262, ECMAScript conformance tests
     1.  File a bug, modeled after bug 1560206, to announce your intent to
         update the test suite.
 
-    2.  Run `test262-update.py`.
+    2.  From `js/src/tests/`, run `test262-update.py`.
 
     3.  Run the tests.
 
@@ -59,7 +59,7 @@ Test262, ECMAScript conformance tests
 
     1.  Delete an entry from `UNSUPPORTED_FEATURES` in `test262-update.py`.
 
-    2.  Run `./test262-update.py --revision $(head -n 1 test262/GIT-INFO | awk '{print $2}')`.
+    2.  From `js/src/tests/`, run `./test262-update.py --revision $(head -n 1 test262/GIT-INFO | awk '{print $2}')`.
 
         (This re-runs the script using the revision of test262 we most recently used,
         instead of the latest revision.)

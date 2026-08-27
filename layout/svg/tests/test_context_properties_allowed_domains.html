@@ -32,19 +32,12 @@
    * Creates an iframe, loads src in it, and waits for the load event
    * for the iframe to fire. Then it snapshots the iframe and returns
    * the snapshot (and removes the iframe from the document, to clean up).
-   *
-   * src can be a URL starting with http, or is otherwise assumed to be
-   * a srcdoc string.
    */
-  async function loadSrcImageAndSnapshot({ src, srcdoc }) {
+  async function loadSrcImageAndSnapshot(src) {
     let frame = document.createElement("iframe");
     document.body.appendChild(frame);
 
-    if (src) {
-      frame.src = src;
-    } else {
-      frame.srcdoc = srcdoc;
-    }
+    frame.src = src;
 
     await waitForLoad(frame);
 
@@ -68,21 +61,13 @@
     // When the context properties are allowed, we expect a green
     // square. When they are not allowed, we expected a red square.
 
-    let redReference = await loadSrcImageAndSnapshot({
-      srcdoc: `<div style="width: 100px; height: 100px; background: red"></div>`,
-    });
+    let redReference = await loadSrcImageAndSnapshot(`file_red_reference.html`);
 
-    let greenReference = await loadSrcImageAndSnapshot({
-      srcdoc: `<div style="width: 100px; height: 100px; background: green"></div>`,
-    });
+    let greenReference = await loadSrcImageAndSnapshot(`file_green_reference.html`);
 
-    let allowedSnapshot = await loadSrcImageAndSnapshot({
-      src: `file_context_fill_fallback_red.html?${ALLOWED_DOMAIN}`
-    });
+    let allowedSnapshot = await loadSrcImageAndSnapshot(`file_context_fill_fallback_red.html?${ALLOWED_DOMAIN}`);
 
-    let disallowedSnapshot = await loadSrcImageAndSnapshot({
-      src: `file_context_fill_fallback_red.html?${DISALLOWED_DOMAIN}`
-    });
+    let disallowedSnapshot = await loadSrcImageAndSnapshot(`file_context_fill_fallback_red.html?${DISALLOWED_DOMAIN}`);
 
     const kNoFuzz = null;
     info("Reference snapshots should look different from each other");

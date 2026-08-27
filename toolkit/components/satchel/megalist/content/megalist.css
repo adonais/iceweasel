@@ -4,8 +4,16 @@
 
 /* Bug 1869845 - Styles in this file are still experimental!  */
 
+/* Use the system font like the other sidebar panels, so rem-based spacing
+ * matches theirs (overriding common.css). Content size is kept via `body`. */
+:root:not(.system-font-size) {
+  font: menu;
+}
+
 body {
   overflow: hidden;
+  background-color: var(--toolbar-background-color);
+  font-size: var(--font-size-root);
 }
 
 .container {
@@ -43,42 +51,6 @@ moz-card {
 
 login-form {
   margin-block-start: var(--space-small);
-}
-
-.search-container {
-  width: 100%;
-  min-height: var(--input-text-min-height);
-  padding-inline: var(--space-small);
-  border: var(--border-width) solid var(--border-color-interactive);
-  border-radius: var(--border-radius-small);
-  box-sizing: border-box;
-  background-color: Field;
-  color: FieldText;
-  cursor: text;
-  display: flex;
-
-  &:focus-within {
-    outline: 1px auto;
-  }
-}
-
-.search-icon {
-  background-image: url(chrome://global/skin/icons/search-textbox.svg);
-  background-position: center;
-  background-repeat: no-repeat;
-  -moz-context-properties: fill;
-  fill: var(--icon-color);
-  width: var(--icon-size);
-  flex-shrink: 0;
-}
-
-.search {
-  border: none;
-  outline: none;
-  margin-inline-start: var(--space-xsmall);
-  background: transparent;
-  width: 100%;
-  text-overflow: ellipsis;
 }
 
 .first-row {

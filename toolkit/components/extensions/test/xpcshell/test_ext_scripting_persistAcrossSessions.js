@@ -797,3 +797,38 @@ add_task(async function test_persisted_scripts_cleared_on_addon_updates() {
 
   await AddonTestUtils.promiseShutdownManager();
 });
+
+// Regression test for bug 2058719: A race condition was possible where
+// policy.contentScripts in the parent missed entries.
+add_task(async function content_scripts_persist_across_restart_race() {
+  await AddonTestUtils.promiseStartupManager();
+
+  function loadExt() {
+    return makeExtension({
+      manifest: { manifest_version: 3 },
+      background() {
+        browser.runtime.onInstalled.addListener(async () => {
+          await browser.scripting.registerContentScripts([
+            { id: "cs", matches: ["<all_urls>"], js: ["cs.js"] },
+          ]);
+          browser.test.notifyPass();
+        });
+      },
+    });
+  }
+
+  let extA = loadExt();
+  let extB = loadExt();
+  await Promise.all([extA.startup(), extA.awaitFinish()]);
+  await Promise.all([extB.startup(), extB.awaitFinish()]);
+
+  await AddonTestUtils.promiseShutdownManager();
+  await AddonTestUtils.promiseStartupManager();
+  await Promise.all([extA.awaitStartup(), extB.awaitStartup()]);
+
+  Assert.equal(extA.extension.policy.contentScripts.length, 1, "A has one cs");
+  Assert.equal(extB.extension.policy.contentScripts.length, 1, "B has one cs");
+
+  await Promise.all([extA.unload(), extB.unload()]);
+  await AddonTestUtils.promiseShutdownManager();
+});

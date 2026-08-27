@@ -236,6 +236,8 @@ val privateColorPalette = darkColorPalette.copy(
     selectedText = NovaColors.Gray45A81,
 )
 
+val oledColorPalette = darkColorPalette
+
 /**
  * Returns a dark Material color scheme mapped from Acorn.
  */
@@ -360,6 +362,23 @@ fun acornPrivateColorScheme(): ColorScheme = darkColorScheme(
     surfaceContainerHighest = NovaColors.VioletDesaturated80,
     surfaceContainerLow = Color(0xFF11042B),
     surfaceContainerLowest = Color(0xFF0D0321),
+)
+
+/**
+ * Returns an OLED dark Material color scheme mapped from Acorn.
+ */
+fun acornOledColorScheme(): ColorScheme = acornDarkColorScheme().copy(
+    primaryContainer = NovaColors.Violet70,
+    secondaryContainer = NovaColors.VioletDesaturated80,
+    background = NovaColors.Black,
+    onBackground = NovaColors.Gray20,
+    surface = NovaColors.Black,
+    onSurface = NovaColors.Gray20,
+    onSurfaceVariant = NovaColors.Gray40,
+    errorContainer = NovaColors.Red80,
+    outline = NovaColors.Gray50,
+    outlineVariant = NovaColors.Gray65,
+    surfaceBright = NovaColors.Gray80,
 )
 
 // M3 color scheme extensions

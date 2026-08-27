@@ -39,4 +39,5 @@ trojan-source:
         - 'tools/lint/mozcheck/**'
     type: external
     payload: mozcheck:lint
+    setup: mozcheck:setup
     check: trojan-source

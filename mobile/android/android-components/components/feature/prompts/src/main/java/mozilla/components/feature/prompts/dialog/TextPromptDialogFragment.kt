@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.prompts.dialog
 
-import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.DialogInterface
 import android.os.Bundle
@@ -71,7 +70,6 @@ internal class TextPromptDialogFragment : AbstractPromptTextDialogFragment(), Te
         feature?.onConfirm(sessionId, promptRequestUID, userSelectionNoMoreDialogs to userSelectionEditText)
     }
 
-    @SuppressLint("InflateParams")
     private fun addLayout(builder: MaterialAlertDialogBuilder): MaterialAlertDialogBuilder {
         val inflater = LayoutInflater.from(requireContext())
         val view = inflater.inflate(R.layout.mozac_feature_text_prompt, null)

@@ -4,7 +4,7 @@
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929440
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt",
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
 ]
 
 ["browser_beforeinput_by_execCommand_in_contentscript.js"]
@@ -77,3 +77,5 @@ skip-if = [
 ]
 
 ["browser_shortcutkey_modifier_conflicts_with_content_accesskey_modifier.js"]
+
+["browser_touch_target_new_session.js"]

@@ -2649,7 +2649,7 @@ void gfxFontGroup::InitTextRunLog(LogModule* aLog, const uint8_t* aString,
   MOZ_LOG(
       aLog, LogLevel::Warning,
       ("(%s) fontgroup: [%s] default: %s lang: %s script: %d "
-       "len %d weight: %g stretch: %g%% style: %s size: %6.2f "
+       "len %d weight: %g width: %g%% style: %s size: %6.2f "
        "%d-byte TEXTRUN [%s] ENDTEXTRUN\n",
        (mStyle.systemFont ? "textrunui" : "textrun"),
        FamilyListToString(mFamilyList).get(),
@@ -2659,7 +2659,7 @@ void gfxFontGroup::InitTextRunLog(LogModule* aLog, const uint8_t* aString,
                    ? "sans-serif"
                    : "none")),
        lang.get(), static_cast<int>(aRun.mScript), aRun.mLength,
-       mStyle.weight.ToFloat(), mStyle.stretch.ToFloat(), styleString.get(),
+       mStyle.weight.ToFloat(), mStyle.width.ToFloat(), styleString.get(),
        mStyle.size, aString ? 1 : 2,
        aTextPtr
            ? NS_ConvertUTF16toUTF8(aTextPtr + aRun.mOffset, aRun.mLength).get()

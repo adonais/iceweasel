@@ -396,14 +396,16 @@ const DownloadsIndicatorView = {
 
     this._currentNotificationType = aType;
 
-    const onNotificationAnimEnd = event => {
-      if (
-        event.animationName !== "downloadsButtonNotification" &&
-        event.animationName !== "downloadsButtonFinishedNotification"
-      ) {
+    let finalized = false;
+    let fallbackTimer = 0;
+
+    const finalize = () => {
+      if (finalized) {
         return;
       }
+      finalized = true;
       anchor.removeEventListener("animationend", onNotificationAnimEnd);
+      anchor.documentGlobal.clearTimeout(fallbackTimer);
 
       requestAnimationFrame(() => {
         anchor.removeAttribute("notification");
@@ -419,7 +421,25 @@ const DownloadsIndicatorView = {
         });
       });
     };
+
+    const onNotificationAnimEnd = event => {
+      if (
+        event.animationName !== "downloadsButtonNotification" &&
+        event.animationName !== "downloadsButtonFinishedNotification"
+      ) {
+        return;
+      }
+      finalize();
+    };
     anchor.addEventListener("animationend", onNotificationAnimEnd);
+
+    // Fallback in case "animationend" never fires and leaves the button stuck.
+    // When changed, also update the animation duration in indicator.css.
+    let durationMs = aType == "finish" ? 2150 : 700;
+    fallbackTimer = anchor.documentGlobal.setTimeout(
+      finalize,
+      durationMs + 250
+    );
   },
 
   // Callback functions from DownloadsIndicatorData

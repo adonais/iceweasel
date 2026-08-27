@@ -35,7 +35,7 @@ bool nsFont::Equals(const nsFont& aOther) const {
 
 nsFont::MaxDifference nsFont::CalcDifference(const nsFont& aOther) const {
   if ((style != aOther.style) || (weight != aOther.weight) ||
-      (stretch != aOther.stretch) || (size != aOther.size) ||
+      (width != aOther.width) || (size != aOther.size) ||
       (sizeAdjust != aOther.sizeAdjust) || (family != aOther.family) ||
       (kerning != aOther.kerning) || (opticalSizing != aOther.opticalSizing) ||
       (synthesisWeight != aOther.synthesisWeight) ||

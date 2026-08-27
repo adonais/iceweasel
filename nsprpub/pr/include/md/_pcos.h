@@ -5,23 +5,22 @@
 #ifndef prpcos_h___
 #define prpcos_h___
 
-#define PR_DLL_SUFFIX       ".dll"
+#define PR_DLL_SUFFIX ".dll"
 
 #include <stdlib.h>
 
-#define DIRECTORY_SEPARATOR         '\\'
-#define DIRECTORY_SEPARATOR_STR     "\\"
-#define PATH_SEPARATOR              ';'
+#define DIRECTORY_SEPARATOR '\\'
+#define DIRECTORY_SEPARATOR_STR "\\"
+#define PATH_SEPARATOR ';'
 
 /*
 ** Routines for processing command line arguments
 */
 PR_BEGIN_EXTERN_C
-extern char *optarg;
+extern char* optarg;
 extern int optind;
-extern int getopt(int argc, char **argv, char *spec);
+extern int getopt(int argc, char** argv, char* spec);
 PR_END_EXTERN_C
-
 
 /*
 ** Definitions of directory structures amd functions
@@ -30,11 +29,12 @@ PR_END_EXTERN_C
 */
 #include <sys/stat.h>
 #include <io.h>
-#include <fcntl.h>          /* O_BINARY */
+#include <fcntl.h> /* O_BINARY */
 
-extern PRStatus _MD_WindowsGetHostName(char *name, PRUint32 namelen);
+extern PRStatus _MD_WindowsGetHostName(char* name, PRUint32 namelen);
 #define _MD_GETHOSTNAME _MD_WindowsGetHostName
-extern PRStatus _MD_WindowsGetSysInfo(PRSysInfo cmd, char *name, PRUint32 namelen);
+extern PRStatus _MD_WindowsGetSysInfo(PRSysInfo cmd, char* name,
+                                      PRUint32 namelen);
 #define _MD_GETSYSINFO _MD_WindowsGetSysInfo
 
 #endif /* prpcos_h___ */

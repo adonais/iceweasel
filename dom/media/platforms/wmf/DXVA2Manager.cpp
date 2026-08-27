@@ -326,7 +326,7 @@ static Atomic<uint32_t> sDXVAVideosCount(0);
 class D3D11DXVA2Manager : public DXVA2Manager {
  public:
   D3D11DXVA2Manager();
-  virtual ~D3D11DXVA2Manager();
+  virtual ~D3D11DXVA2Manager() = default;
 
   HRESULT Init(layers::KnowsCompositor* aKnowsCompositor,
                nsACString& aFailureReason, ID3D11Device* aDevice);
@@ -608,8 +608,6 @@ bool D3D11DXVA2Manager::SupportsConfig(const VideoInfo& aInfo,
 
 D3D11DXVA2Manager::D3D11DXVA2Manager()
     : mZeroCopyUsageInfo(new layers::ZeroCopyUsageInfo) {}
-
-D3D11DXVA2Manager::~D3D11DXVA2Manager() {}
 
 IUnknown* D3D11DXVA2Manager::GetDXVADeviceManager() {
   MutexAutoLock lock(mLock);

@@ -28,7 +28,6 @@ DIRS += [
     "certviewer",
     "cleardata",
     "clearsitedata",
-    "cookiebanners",
     "commandlines",
     "content-classifier",
     "content-classifier/content_classifier_engine",
@@ -110,6 +109,12 @@ if CONFIG["MOZ_BUILD_APP"] != "mobile/android":
         "pictureinpicture",
         "uniffi-js",
         "uniffi-bindgen-gecko-js/components",
+    ]
+
+    # `output_category="uniffi-target"` dependencies for `mach uniffi generate`.
+    DIRS += [
+        "uniffi-bindgen-gecko-js",
+        "uniffi-bindgen-gecko-js/test-fixtures",
     ]
 
 if CONFIG["BUILD_CTYPES"]:

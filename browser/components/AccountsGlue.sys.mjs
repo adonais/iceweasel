@@ -61,7 +61,6 @@ export const AccountsGlue = {
     [
       "fxaccounts:onverified",
       "fxaccounts:device_connected",
-      "fxaccounts:verify_login",
       "fxaccounts:device_disconnected",
       "fxaccounts:commands:open-uri",
       "fxaccounts:commands:close-uri",
@@ -76,9 +75,6 @@ export const AccountsGlue = {
         break;
       case "fxaccounts:device_connected":
         this._onDeviceConnected(data);
-        break;
-      case "fxaccounts:verify_login":
-        this._onVerifyLoginNotification(JSON.parse(data));
         break;
       case "fxaccounts:device_disconnected":
         data = JSON.parse(data);
@@ -366,36 +362,6 @@ export const AccountsGlue = {
       lazy.AlertsService.showAlert(alert, clickCallback);
     } catch (ex) {
       console.error("Error notifying user of closed tab(s) ", ex);
-    }
-  },
-
-  async _onVerifyLoginNotification({ body, title, url }) {
-    let tab;
-    let win = lazy.BrowserWindowTracker.getTopWindow({ private: false });
-    if (!win) {
-      win = await this._openURLInNewWindow(url, false);
-      let tabs = win.gBrowser.tabs;
-      tab = tabs[tabs.length - 1];
-    } else {
-      tab = win.gBrowser.addWebTab(url);
-    }
-    tab.attention = true;
-    let clickCallback = (subject, topic) => {
-      if (topic != "alertclickcallback") {
-        return;
-      }
-      win.gBrowser.selectedTab = tab;
-    };
-
-    try {
-      let alert = new AlertNotification({
-        title,
-        body,
-        textClickable: true,
-      });
-      lazy.AlertsService.showAlert(alert, clickCallback);
-    } catch (ex) {
-      console.error("Error notifying of a verify login event: ", ex);
     }
   },
 

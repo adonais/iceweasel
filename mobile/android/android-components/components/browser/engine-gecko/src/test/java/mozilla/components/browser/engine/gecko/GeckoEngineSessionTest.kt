@@ -20,7 +20,6 @@ import mozilla.components.browser.engine.gecko.util.FakeEngineDownloadDelegate
 import mozilla.components.browser.errorpages.ErrorType
 import mozilla.components.concept.engine.DefaultSettings
 import mozilla.components.concept.engine.EngineSession
-import mozilla.components.concept.engine.EngineSession.CookieBannerHandlingStatus
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags.Companion.EXTERNAL
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags.Companion.LOAD_FLAGS_BYPASS_LOAD_URI_DELEGATE
@@ -102,7 +101,6 @@ import org.mozilla.geckoview.WebRequestError.ERROR_MALFORMED_URI
 import org.mozilla.geckoview.WebRequestError.ERROR_UNKNOWN
 import org.mozilla.geckoview.WebResponse
 import org.robolectric.Shadows.shadowOf
-import java.io.IOException
 import java.security.Principal
 import java.security.cert.X509Certificate
 import kotlin.test.assertIs
@@ -295,7 +293,6 @@ class GeckoEngineSessionTest {
         var observedUserGesture = true
         var observedCanGoBack = false
         var observedCanGoForward = false
-        var cookieBanner = CookieBannerHandlingStatus.HANDLED
         var displaysProduct = false
         var translationsProcessing = true
         engineSession.register(
@@ -308,9 +305,6 @@ class GeckoEngineSessionTest {
                     canGoBack?.let { observedCanGoBack = canGoBack }
                     canGoForward?.let { observedCanGoForward = canGoForward }
                 }
-                override fun onCookieBannerChange(status: CookieBannerHandlingStatus) {
-                    cookieBanner = status
-                }
                 override fun onTranslatePageChange() {
                     translationsProcessing = false
                 }
@@ -322,7 +316,6 @@ class GeckoEngineSessionTest {
         navigationDelegate.value.onLocationChange(mock(), "http://mozilla.org", emptyList(), false)
         assertEquals("http://mozilla.org", observedUrl)
         assertEquals(false, observedUserGesture)
-        assertEquals(CookieBannerHandlingStatus.NO_DETECTED, cookieBanner)
         // TO DO: add a positive test case after a test endpoint is implemented in desktop (Bug 1846341)
         assertEquals(false, displaysProduct)
         assertEquals(false, translationsProcessing)
@@ -2606,36 +2599,6 @@ class GeckoEngineSessionTest {
     }
 
     @Test
-    fun contentDelegateCookieBanner() {
-        val engineSession = GeckoEngineSession(
-            mock(),
-            geckoSessionProvider = geckoSessionProvider,
-        )
-        val delegate = engineSession.createContentDelegate()
-
-        var cookieBannerStatus: CookieBannerHandlingStatus? = null
-        engineSession.register(
-            object : EngineSession.Observer {
-                override fun onCookieBannerChange(status: CookieBannerHandlingStatus) {
-                    cookieBannerStatus = status
-                }
-            },
-        )
-
-        delegate.onCookieBannerDetected(geckoSession)
-
-        assertNotNull(cookieBannerStatus)
-        assertEquals(CookieBannerHandlingStatus.DETECTED, cookieBannerStatus)
-
-        cookieBannerStatus = null
-
-        delegate.onCookieBannerHandled(geckoSession)
-
-        assertNotNull(cookieBannerStatus)
-        assertEquals(CookieBannerHandlingStatus.HANDLED, cookieBannerStatus)
-    }
-
-    @Test
     fun handleLongClick() {
         val engineSession = GeckoEngineSession(
             mock(),
@@ -2787,80 +2750,6 @@ class GeckoEngineSessionTest {
         engineSession.toggleDesktopMode(true, reload = true)
         verify(geckoSession).reload(LoadUrlFlags.NONE)
         verify(geckoSession, never()).load(any())
-    }
-
-    @Test
-    fun `hasCookieBannerRuleForSession should call onSuccess callback for a valid GV response`() {
-        val engineSession = GeckoEngineSession(
-            mock(),
-            geckoSessionProvider = geckoSessionProvider,
-        )
-        var onResultCalled = false
-        var onExceptionCalled = false
-
-        val ruleResult = GeckoResult<Boolean>()
-        whenever(geckoSession.hasCookieBannerRuleForBrowsingContextTree()).thenReturn(ruleResult)
-
-        engineSession.hasCookieBannerRuleForSession(
-            onResult = { onResultCalled = true },
-            onException = { onExceptionCalled = true },
-        )
-
-        ruleResult.complete(true)
-        shadowOf(getMainLooper()).idle()
-
-        assertTrue(onResultCalled)
-        assertFalse(onExceptionCalled)
-    }
-
-    @Test
-    fun `hasCookieBannerRuleForSession should call onError callback in case GV returns an exception`() {
-        val engineSession = GeckoEngineSession(
-            mock(),
-            geckoSessionProvider = geckoSessionProvider,
-        )
-
-        var onResultCalled = false
-        var onExceptionCalled = false
-
-        val ruleResult = GeckoResult<Boolean>()
-        whenever(geckoSession.hasCookieBannerRuleForBrowsingContextTree()).thenReturn(ruleResult)
-
-        engineSession.hasCookieBannerRuleForSession(
-            onResult = { onResultCalled = true },
-            onException = { onExceptionCalled = true },
-        )
-
-        ruleResult.completeExceptionally(IOException())
-        shadowOf(getMainLooper()).idle()
-
-        assertTrue(onExceptionCalled)
-        assertFalse(onResultCalled)
-    }
-
-    @Test
-    fun `hasCookieBannerRuleForSession should call onError callback in case GV returns a null`() {
-        val engineSession = GeckoEngineSession(
-            mock(),
-            geckoSessionProvider = geckoSessionProvider,
-        )
-
-        var onResultCalled = false
-        var onExceptionCalled = false
-
-        val ruleResult = GeckoResult<Boolean>()
-        whenever(geckoSession.hasCookieBannerRuleForBrowsingContextTree()).thenReturn(ruleResult)
-
-        engineSession.hasCookieBannerRuleForSession(
-            onResult = { onResultCalled = true },
-            onException = { onExceptionCalled = true },
-        )
-
-        ruleResult.complete(null)
-        shadowOf(getMainLooper()).idle()
-
-        assertTrue(onExceptionCalled)
-        assertFalse(onResultCalled)
     }
 
     @Test

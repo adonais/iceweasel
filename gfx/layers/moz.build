@@ -287,7 +287,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] in ("cocoa", "uikit"):
         "SurfacePoolCA.mm",
     ]
     SOURCES += [
-        "GpuFenceMTLSharedEvent.cpp",
+        "GpuFenceMTLSharedEvent.mm",
         "MacIOSurfaceHelpers.cpp",
         "MacIOSurfaceImage.cpp",
     ]

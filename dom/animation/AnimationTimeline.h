@@ -120,7 +120,7 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   virtual const ScrollTimeline* AsScrollTimeline() const { return nullptr; }
   virtual bool IsViewTimeline() const { return false; }
   virtual const ViewTimeline* AsViewTimeline() const { return nullptr; }
-  virtual bool IsInactiveTimeline() const { return false; }
+  virtual bool IsUnresolvedTimeline() const { return false; }
 
   // For a monotonic timeline, there is no upper bound on current time, and
   // timeline duration is unresolved. For a non-monotonic (e.g. scroll)

@@ -5,8 +5,8 @@ function f(x) {
   g.keepFailing = "object";
   var y = parseModule("");
   (function () {
-    moduleLink(y);
-    moduleLink(y);
+    moduleLoadAndLink(y);
+    moduleLoadAndLink(y);
   })();
   g(x, g);
 }

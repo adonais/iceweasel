@@ -86,7 +86,7 @@ logger = logging.getLogger(__name__)
                 "description": "How many pushes to backfill the profiling task on.",
             },
             "gecko_profile_interval": {
-                "type": "integer",
+                "type": "number",
                 "default": None,
                 "title": "Sampling interval (ms)",
                 "description": "How often to sample the profiler (in ms).",

@@ -31,45 +31,46 @@ region:
   fetch_time:
     type: timing_distribution
     description: >
-      Time (ms) it takes to fetch the country code
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS.
+      Time (ms) it takes to fetch the country code.
     time_unit: millisecond
+    data_sensitivity:
+      - technical
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061487
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061487
     notification_emails:
       - fx-search-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS
-    no_lint:
-      - COMMON_PREFIX
 
   fetch_result:
     type: custom_distribution
     description: >
-      Result of XHR request fetching the country-code. 0=SUCCESS,
-      1=SUCCESS_WITHOUT_DATA, 2=XHRTIMEOUT, 3=ERROR (rest reserved for
-      finer-grained error codes later)
+      Result of XHR request fetching the country-code.
 
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram SEARCH_SERVICE_COUNTRY_FETCH_RESULT.
+      - `0 = SUCCESS`
+      - `1 = SUCCESS_WITHOUT_DATA`
+      - `2 = XHRTIMEOUT`
+      - `3 = ERROR`
+
+      Other codes are reserved for finer-grained error codes later.
     range_min: 0
     range_max: 8
     bucket_count: 9
     histogram_type: linear
+    data_sensitivity:
+      - technical
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061487
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061487
     notification_emails:
       - fx-search-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SEARCH_SERVICE_COUNTRY_FETCH_RESULT
-    no_lint:
-      - COMMON_PREFIX
 
   home_region:
     type: string

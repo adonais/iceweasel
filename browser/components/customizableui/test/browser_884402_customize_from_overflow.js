@@ -54,7 +54,7 @@ add_task(async function () {
     "true",
     "FxA button is overflowing"
   );
-  EventUtils.synthesizeMouse(fxaButton, 2, 2, {
+  EventUtils.synthesizeMouseAtCenter(fxaButton, {
     type: "contextmenu",
     button: 2,
   });

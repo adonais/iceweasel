@@ -29,7 +29,7 @@ class SourceSurfaceD3D11 : public SourceSurface {
       const gfx::ColorSpace2 aColorSpace, const gfx::ColorRange aColorRange,
       const gfx::TransferFunction aTransferFunction,
       const Maybe<layers::CompositeProcessFencesHolderId> aFencesHolderId);
-  ~SourceSurfaceD3D11();
+  ~SourceSurfaceD3D11() = default;
 
   SurfaceType GetType() const override { return SurfaceType::D3D11_TEXTURE; }
   IntSize GetSize() const override { return mSize; }

@@ -44,7 +44,7 @@ struct HostResolverMarker {
     aWriter.StringProperty("host", aHost);
     aWriter.StringProperty("originSuffix", aOriginSuffix);
     aWriter.IntProperty("qtype", aType);
-    aWriter.StringProperty("flags", nsPrintfCString("0x%x", aFlags));
+    aWriter.IntProperty("flags", aFlags);
   }
   static MarkerSchema MarkerTypeDisplay() {
     using MS = MarkerSchema;
@@ -53,7 +53,7 @@ struct HostResolverMarker {
     schema.AddKeyFormat("host", MS::Format::SanitizedString);
     schema.AddKeyFormat("originSuffix", MS::Format::SanitizedString);
     schema.AddKeyFormat("qtype", MS::Format::Integer);
-    schema.AddKeyFormat("flags", MS::Format::String);
+    schema.AddKeyFormat("flags", MS::Format::Hexadecimal);
     return schema;
   }
 };

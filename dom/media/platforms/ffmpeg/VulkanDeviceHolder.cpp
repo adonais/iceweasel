@@ -4,6 +4,7 @@
 
 #include "VulkanDeviceHolder.h"
 
+#include <atomic>
 #include <cstring>
 
 #include "FFmpegLibWrapper.h"
@@ -16,6 +17,10 @@ namespace mozilla {
 
 constinit static StaticDataMutex<ThreadSafeWeakPtr<VulkanDeviceHolder>>
     sDeviceHolder("VulkanDeviceHolder::sDeviceHolder");
+
+// 0 is reserved to mean "no VulkanDeviceHolder was ever created" so it can't
+// collide with a real generation.
+static std::atomic<uint64_t> sNextGeneration{1};
 
 /* static */
 RefPtr<VulkanDeviceHolder> VulkanDeviceHolder::GetOrCreate(
@@ -57,8 +62,8 @@ RefPtr<VulkanDeviceHolder> VulkanDeviceHolder::GetOrCreate(
 
   RefPtr<VulkanDeviceHolder> instance =
       new VulkanDeviceHolder(aLib, ctx, aDeviceName);
-  FFMPEGP_LOG("VulkanDeviceHolder: created shared VkDevice for {}",
-              aDeviceName);
+  FFMPEGP_LOG("VulkanDeviceHolder: created shared VkDevice for {} (gen {})",
+              aDeviceName, instance->Generation());
 
   auto weakInstance = sDeviceHolder.Lock();
   // A concurrent caller may have created a device while we were unlocked.
@@ -80,13 +85,16 @@ AVBufferRef* VulkanDeviceHolder::Ref() const {
 VulkanDeviceHolder::VulkanDeviceHolder(const FFmpegLibWrapper* aLib,
                                        AVBufferRef* aDeviceContext,
                                        const char* aDeviceName)
-    : mLib(aLib), mDeviceContext(aDeviceContext) {
+    : mLib(aLib),
+      mDeviceContext(aDeviceContext),
+      mGeneration(sNextGeneration.fetch_add(1, std::memory_order_relaxed)) {
   strncpy(mDeviceName, aDeviceName, sizeof(mDeviceName) - 1);
   mDeviceName[sizeof(mDeviceName) - 1] = '\0';
 }
 
 VulkanDeviceHolder::~VulkanDeviceHolder() {
-  FFMPEGP_LOG("VulkanDeviceHolder: destroying shared VkDevice");
+  FFMPEGP_LOG("VulkanDeviceHolder: destroying shared VkDevice (gen {})",
+              mGeneration);
   mLib->av_buffer_unref(&mDeviceContext);
 }
 

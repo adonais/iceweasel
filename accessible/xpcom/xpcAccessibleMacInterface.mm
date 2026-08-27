@@ -274,7 +274,7 @@ bool xpcAccessibleMacInterface::SupportsSelector(SEL aSelector) {
 nsresult xpcAccessibleMacInterface::NSObjectToJsValue(
     id aObj, JSContext* aCx, JS::MutableHandleValue aResult) {
   if (!aObj) {
-    aResult.set(JS::NullValue());
+    aResult.setNull();
   } else if ([aObj isKindOfClass:[NSString class]]) {
     nsAutoString strVal;
     nsCocoaUtils::GetStringForNSString((NSString*)aObj, strVal);

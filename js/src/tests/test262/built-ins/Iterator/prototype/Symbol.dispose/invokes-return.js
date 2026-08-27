@@ -1,4 +1,3 @@
-// |reftest| shell-option(--enable-explicit-resource-management) skip-if(!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('explicit-resource-management'))||!xulRuntime.shell) -- explicit-resource-management is not enabled unconditionally, requires shell-options
 // Copyright (C) 2023 Ron Buckton. All rights reserved.
 // This code is governed by the BSD license found in the LICENSE file.
 /*---
@@ -22,12 +21,15 @@ const IteratorPrototype = Object.getPrototypeOf(
 
 const iter = Object.create(IteratorPrototype);
 var returnCalled = false;
+var argumentCount = 0;
 iter.return = function () {
+  argumentCount = arguments.length;
   returnCalled = true;
   return { done: true };
 };
 
 iter[Symbol.dispose]();
 assert.sameValue(returnCalled, true);
+assert.sameValue(argumentCount, 0);
 
 reportCompare(0, 0);

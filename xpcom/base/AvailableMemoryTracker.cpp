@@ -35,7 +35,7 @@ static int64_t LowMemoryEventsPhysicalDistinguishedAmount() {
 }
 
 class LowEventsReporter final : public nsIMemoryReporter {
-  ~LowEventsReporter() {}
+  ~LowEventsReporter() = default;
 
  public:
   NS_DECL_ISUPPORTS

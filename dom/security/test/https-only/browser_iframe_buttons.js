@@ -16,7 +16,7 @@ add_task(async function test_iframe_buttons() {
 
       await SpecialPowers.spawn(browser, [], async function () {
         const iframe = content.document.getElementById("iframe");
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         iframe.src = "http://nocert.example.com";
 
         await ContentTaskUtils.waitForCondition(

@@ -10,6 +10,8 @@ support-files = [
   "head_address.js",
 ]
 
+["browser_address_capture_before_fields_identified.js"]
+
 ["browser_address_capture_form_removal.js"]
 
 ["browser_address_capture_housenumber.js"]

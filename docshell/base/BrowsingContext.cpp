@@ -77,6 +77,7 @@
 #include "nsIXULRuntime.h"
 
 #include "mozilla/dom/WorkerCommon.h"
+#include "nsExternalHelperAppService.h"
 #include "nsDocShell.h"
 #include "nsDocShellLoadState.h"
 #include "nsFocusManager.h"
@@ -287,7 +288,13 @@ already_AddRefed<BrowsingContext> BrowsingContext::Get(uint64_t aId) {
 /* static */
 already_AddRefed<BrowsingContext> BrowsingContext::GetCurrentTopByBrowserId(
     uint64_t aBrowserId) {
-  return do_AddRef(sCurrentTopByBrowserId->Get(aBrowserId));
+  // The map is cleared on shutdown but callers may still run afterwards (e.g.
+  // during cycle collector teardown), so mirror Get() and null-check it.
+  if (sCurrentTopByBrowserId) {
+    return do_AddRef(sCurrentTopByBrowserId->Get(aBrowserId));
+  }
+
+  return nullptr;
 }
 
 /* static */
@@ -907,6 +914,17 @@ const char* BrowsingContext::BrowsingContextCoherencyChecks(
     COHERENCY_ASSERT(parent->mPrivateBrowsingId == mPrivateBrowsingId);
     COHERENCY_ASSERT(
         parent->mOriginAttributes.EqualsIgnoringFPD(mOriginAttributes));
+  }
+
+  if (aOriginProcess) {
+    if (GetBrowserId() == 0) {
+      return "Content BC must have a nonzero BrowserId";
+    }
+    if (!GetParent()) {
+      uint64_t browserProc =
+          std::get<0>(nsContentUtils::SplitProcessSpecificId(GetBrowserId()));
+      COHERENCY_ASSERT(browserProc == aOriginProcess->ChildID());
+    }
   }
 
   // UseRemoteSubframes and UseRemoteTabs must match.
@@ -2336,8 +2354,6 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
       // is created.
       Canonical()->AttemptSpeculativeLoadInParent(aLoadState);
 
-      cp->TransmitBlobDataIfBlobURL(aLoadState->URI(), mOriginAttributes);
-
 #ifdef ANDROID
       uint32_t appLinkLaunchType = aLoadState->GetAppLinkLaunchType();
       Canonical()->SetAndroidAppLinkLaunchType(appLinkLaunchType);
@@ -2587,6 +2603,16 @@ void BrowsingContext::Navigate(
     WindowContext* context = source->GetWindowContext();
     loadState->SetHasValidUserGestureActivation(
         context && context->HasValidTransientUserGestureActivation());
+
+    // For protocols that would launch without a prompt (e.g. mailto), consume
+    // the transient user gesture activation so a single gesture can't chain
+    // multiple launches. The pre-consume value is already recorded on the load
+    // state above. See bug 299116.
+    nsAutoCString scheme;
+    if (NS_SUCCEEDED(aURI->GetScheme(scheme))) {
+      nsExternalHelperAppService::MaybeConsumeUserActivationForExternalScheme(
+          context, loadState->TriggeringPrincipal(), scheme);
+    }
   };
 
   // aSourceDocument is used for snapshot params and "allowed by sandboxing to

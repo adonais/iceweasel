@@ -74,6 +74,8 @@ class APZCTreeManagerParent final : public PAPZCTreeManagerParent {
 
   bool IsGuidValid(const ScrollableLayerGuid& aGuid);
 
+  bool IsForRootLayer() const;
+
   LayersId mLayersId;
   RefPtr<APZCTreeManager> mTreeManager;
   RefPtr<APZUpdater> mUpdater;

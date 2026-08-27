@@ -16,7 +16,7 @@ using namespace js;
 
 const JSClass ParseRecordObject::class_ = {
     "ParseRecordObject",
-    JSCLASS_HAS_RESERVED_SLOTS(SlotCount),
+    JSCLASS_HAS_RESERVED_SLOTS(SLOT_COUNT),
 };
 
 /* static */
@@ -35,9 +35,9 @@ ParseRecordObject* ParseRecordObject::create(JSContext* cx,
   }
 
   if (parseNode) {
-    obj->initReservedSlot(ParseNodeSlot, StringValue(parseNode));
+    obj->initReservedSlotTyped(PARSE_NODE_SLOT, StringValue(parseNode));
   }
-  obj->initReservedSlot(ValueSlot, val);
+  obj->initReservedSlot(VALUE_SLOT, val);
   return obj;
 }
 

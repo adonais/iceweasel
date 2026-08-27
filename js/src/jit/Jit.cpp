@@ -10,6 +10,7 @@
 #include "jit/JitCommon.h"
 #include "jit/JitRuntime.h"
 #include "js/friend/StackLimits.h"  // js::AutoCheckRecursionLimit
+#include "vm/GeneratorObject.h"
 #include "vm/Interpreter.h"
 #include "vm/JitActivation.h"
 #include "vm/JSContext.h"
@@ -62,6 +63,10 @@ static EnterJitStatus JS_HAZ_JSNATIVE_CALLER EnterJit(JSContext* cx,
   JSObject* envChain;
   CalleeToken calleeToken;
 
+  // Storage for ResumeFrameArgs when resuming a suspended generator or async
+  // function.
+  Value resumeArgv[ResumeFrameArgs::NumSlots];
+
   if (state.isInvoke()) {
     const CallArgs& args = state.asInvoke()->args();
     numActualArgs = args.length();
@@ -82,7 +87,25 @@ static EnterJitStatus JS_HAZ_JSNATIVE_CALLER EnterJit(JSContext* cx,
     maxArgv = args.array();
     envChain = nullptr;
     calleeToken = CalleeToToken(&args.callee().as<JSFunction>(), constructing);
+  } else if (state.isGeneratorResume()) {
+    GeneratorResumeState& resumeState = *state.asGeneratorResume();
+    AbstractGeneratorObject* genObj = resumeState.generator();
+    ResumeFrameArgs::init(resumeArgv, resumeState.resumeValue(),
+                          ObjectValue(*genObj), resumeState.resumeKind(),
+                          genObj->resumeIndex());
+    numActualArgs = 0;
+    constructing = false;
+    maxArgc = std::size(resumeArgv);
+    maxArgv = resumeArgv;
+    envChain = nullptr;
+    if (genObj->isModuleGenerator()) {
+      calleeToken = CalleeToToken(genObj->module().script());
+    } else {
+      calleeToken =
+          CalleeToToken(&genObj->callee(), /* constructing = */ false);
+    }
   } else {
+    MOZ_ASSERT(state.isExecute());
     numActualArgs = 0;
     constructing = false;
     maxArgc = 0;
@@ -91,13 +114,31 @@ static EnterJitStatus JS_HAZ_JSNATIVE_CALLER EnterJit(JSContext* cx,
     calleeToken = CalleeToToken(state.script());
   }
 
+#ifdef ENABLE_PORTABLE_BASELINE_INTERP
+  // This must happen before we mark the generator as running below.
+  if (!pbl::PortablebaselineInterpreterStackCheck(cx, state, numActualArgs)) {
+    return EnterJitStatus::NotEntered;
+  }
+#endif
+
   RootedValue result(cx, Int32Value(numActualArgs));
   {
     AssertRealmUnchanged aru(cx);
     JitActivation activation(cx);
 
+    if (state.isGeneratorResume()) {
+      activation.setEnteredForGeneratorResume();
+
+      // Mark the generator as running. This clobbers the resume index slot so
+      // all code between this point and entering JIT code must be infallible.
+      state.asGeneratorResume()->generator()->setRunning();
+    }
+
 #ifndef ENABLE_PORTABLE_BASELINE_INTERP
-    EnterJitCode enter = cx->runtime()->jitRuntime()->enterJit();
+    EnterJitCode enter =
+        state.isGeneratorResume()
+            ? cx->runtime()->jitRuntime()->enterJitGeneratorResume()
+            : cx->runtime()->jitRuntime()->enterJit();
 
 #  ifdef DEBUG
     nogc.reset();
@@ -110,9 +151,6 @@ static EnterJitStatus JS_HAZ_JSNATIVE_CALLER EnterJit(JSContext* cx,
 #  ifdef DEBUG
     nogc.reset();
 #  endif
-    if (!pbl::PortablebaselineInterpreterStackCheck(cx, state, numActualArgs)) {
-      return EnterJitStatus::NotEntered;
-    }
     unsigned numFormals =
         state.isInvoke() ? state.script()->function()->nargs() : 0;
     if (!pbl::PortableBaselineTrampoline(cx, maxArgc, maxArgv, numFormals,
@@ -169,6 +207,30 @@ EnterJitStatus js::jit::MaybeEnterJit(JSContext* cx, RunState& state) {
   // disabled if this hook might need to be called.
   if (cx->realm()->debuggerObservesNativeCall()) {
     return EnterJitStatus::NotEntered;
+  }
+
+  if (state.isGeneratorResume()) {
+    if (IsPortableBaselineInterpreterEnabled()) {
+      // The Portable Baseline Interpreter does not support resuming a suspended
+      // generator.
+      return EnterJitStatus::NotEntered;
+    }
+
+    JSScript* script = state.script();
+    if (!script->hasJitScript()) {
+      // No JitScript yet: resume in the C++ interpreter.
+      return EnterJitStatus::NotEntered;
+    }
+
+    // Resume must enter Baseline, never Ion (which has no resume support).
+    JitScript* jitScript = script->jitScript();
+    uint8_t* code;
+    if (jitScript->hasIonScript()) {
+      code = jitScript->baselineScript()->method()->raw();
+    } else {
+      code = script->jitCodeRaw();
+    }
+    return EnterJit(cx, state, code);
   }
 
   JSScript* script = state.script();

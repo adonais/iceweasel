@@ -30,6 +30,56 @@ use crate::{
     schema::{Schema, SchemaError},
 };
 
+/// Trait for dispatching blocking store close work to a background thread.
+///
+/// When a `Store` with a `CloseSink` is dropped, the `Drop` impl extracts
+/// the open connections and passes them to the sink for asynchronous closing.
+///
+/// Closing in the same thread where the database was opened avoids race
+/// conditions between opening and closing file handles by custom virtual
+/// file systems and user-defined functions. [`CloseSink::bind`] is called
+/// on the opener thread so that the returned [`BoundCloseSink`] can capture
+/// whatever thread identity is needed to route the close back there.
+///
+/// If the embedder already coordinates that all other threads are done
+/// before closing, explicit close with a dummy `CloseSink` or
+/// a `BoundCloseSink` that closes inline is sufficient.
+pub trait CloseSink: Send + Sync {
+    /// Called on the opener thread when the store is first opened.
+    /// Returns a bound sink that will handle closing this store.
+    fn bind(&self) -> Box<dyn BoundCloseSink>;
+}
+
+/// A per-store close handler created by [`CloseSink::bind`].
+///
+/// The implementation schedules the actual close on the appropriate
+/// thread. A trivial implementation that calls
+/// [`CloseableStore::close`] inline is valid when the caller already
+/// ensures no other threads are accessing the database.
+pub trait BoundCloseSink: Send + Sync {
+    fn schedule_close(&self, closeable: CloseableStore);
+}
+
+/// Holds the extracted connections from a dropped `Store`.
+///
+/// Call [`CloseableStore::close`] on a background I/O thread -- it runs
+/// `PRAGMA optimize` and closes both SQLite connections.
+///
+/// Accessing the database after close violates sqlite3 crash-safety
+/// guarantees and may lead to data corruption
+/// (<https://sqlite.org/howtocorrupt.html>).
+pub struct CloseableStore {
+    store: Arc<OpenStore>,
+}
+
+impl CloseableStore {
+    pub fn close(self) {
+        Arc::into_inner(self.store)
+            .expect("invariant violation")
+            .close();
+    }
+}
+
 /// A persistent store backed by a physical SQLite database.
 ///
 /// Under the hood, a store holds two connections to the same physical database:
@@ -40,11 +90,38 @@ use crate::{
 ///   read from the physical database even if the read-write connection is busy,
 ///   and those reads can be interrupted. Reads on this connection won't see any
 ///   uncommitted changes on the read-write connection.
-#[derive(Debug)]
 pub struct Store {
     path: StorePath,
     state: Mutex<StoreState>,
     waiter: OperationWaiter,
+    close_sink: Mutex<Option<Arc<dyn CloseSink>>>,
+    bound_close_sink: Mutex<Option<Box<dyn BoundCloseSink>>>,
+}
+
+impl std::fmt::Debug for Store {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Store")
+            .field("path", &self.path)
+            .field("state", &self.state)
+            .field("waiter", &self.waiter)
+            .field(
+                "close_sink",
+                &self
+                    .close_sink
+                    .lock()
+                    .ok()
+                    .and_then(|g| g.as_ref().map(|_| "...")),
+            )
+            .field(
+                "bound_close_sink",
+                &self
+                    .bound_close_sink
+                    .lock()
+                    .ok()
+                    .and_then(|g| g.as_ref().map(|_| "...")),
+            )
+            .finish()
+    }
 }
 
 impl Store {
@@ -53,7 +130,32 @@ impl Store {
             path,
             state: Mutex::new(StoreState::Created),
             waiter: OperationWaiter::new(),
+            close_sink: Mutex::new(None),
+            bound_close_sink: Mutex::new(None),
         }
+    }
+
+    /// Sets the close sink for this store. Must be called before the
+    /// store transitions from `Created` to `Open` (i.e., before the
+    /// first operation).
+    pub fn set_close_sink(&self, sink: Arc<dyn CloseSink>) {
+        debug_assert!(
+            self.state
+                .lock()
+                .ok()
+                .is_some_and(|s| matches!(*s, StoreState::Created)),
+            "close sink must be set before the store is opened"
+        );
+        *self.close_sink.lock().unwrap() = Some(sink);
+    }
+
+    /// Returns `true` if this store has a bound close sink that will
+    /// handle closing via [`Store::drop`].
+    pub fn has_bound_close_sink(&self) -> bool {
+        self.bound_close_sink
+            .lock()
+            .ok()
+            .is_some_and(|guard| guard.is_some())
     }
 
     /// Gets or opens both connections to the physical database.
@@ -70,6 +172,9 @@ impl Store {
                 let result = match &*state {
                     StoreState::Created => {
                         let store = Arc::new(OpenStore::new(&self.path)?);
+                        if let Some(sink) = self.close_sink.lock().unwrap().take() {
+                            *self.bound_close_sink.lock().unwrap() = Some(sink.bind());
+                        }
                         *state = StoreState::Open(store);
                         // Advance the state machine, so that the checker can
                         // check the database on first use.
@@ -233,6 +338,21 @@ impl Store {
         let store = Arc::into_inner(store).expect("invariant violation");
 
         store.close();
+    }
+}
+
+impl Drop for Store {
+    fn drop(&mut self) {
+        let Some(sink) = self.bound_close_sink.get_mut().unwrap().take() else {
+            return;
+        };
+        let state = mem::replace(self.state.get_mut().unwrap(), StoreState::Closed);
+        match state {
+            StoreState::Open(store) | StoreState::Maintenance(store) => {
+                sink.schedule_close(CloseableStore { store });
+            }
+            _ => {}
+        }
     }
 }
 

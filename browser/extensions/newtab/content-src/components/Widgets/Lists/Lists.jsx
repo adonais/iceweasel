@@ -40,6 +40,7 @@ const PREF_WIDGETS_LISTS_MAX_LISTITEMS = "widgets.lists.maxListItems";
 const PREF_WIDGETS_LISTS_BADGE_ENABLED = "widgets.lists.badge.enabled";
 const PREF_WIDGETS_LISTS_BADGE_LABEL = "widgets.lists.badge.label";
 const PREF_WIDGETS_LISTS_SIZE = "widgets.lists.size";
+// @nova-cleanup(remove-pref): Delete this const; see getListsWidgetSize below.
 const PREF_NOVA_ENABLED = "nova.enabled";
 const LISTS_EMPTY_STATE_ILLUSTRATION =
   "chrome://newtab/content/data/content/assets/lists-empty-state-comet.svg";
@@ -171,6 +172,10 @@ function Lists({
   const [showCompactCompleted, setShowCompactCompleted] = useState(false);
   const selectedList = useMemo(() => lists[selected], [lists, selected]);
 
+  // @nova-cleanup(remove-pref): Delete novaEnabled and collapse
+  // getListsWidgetSize to just the Nova branch, deleting everything after it
+  // (the PREF_WIDGETS_LISTS_SIZE fallback chain) and the now-unused
+  // PREF_WIDGETS_LISTS_SIZE const.
   const novaEnabled = prefs[PREF_NOVA_ENABLED];
   const listsWidget = WIDGET_REGISTRY.find(w => w.id === "lists");
   const getListsWidgetSize = () => {
@@ -759,6 +764,7 @@ function Lists({
 
   return (
     <article
+      // @nova-cleanup(remove-conditional): Always apply col-4.
       className={`lists widget ${novaEnabled ? "col-4" : ""} ${listsSizeClass} ${isMaximized ? "is-maximized" : ""}${showEmptyState ? " is-empty" : ""}${hasVisibleTasks ? " has-visible-tasks" : ""}${isAddingTask ? " is-adding-task" : ""}${isCelebrating ? " is-celebrating" : ""}`}
       ref={el => {
         widgetRef.current = el;
@@ -878,6 +884,8 @@ function Lists({
             learnMoreL10nId="newtab-widget-lists-menu-learn-more"
             onLearnMore={handleListInteraction}
             sizeSubmenu={
+              // @nova-cleanup(remove-conditional): Drop the novaEnabled check,
+              // keep widgetsMayBeMaximized.
               novaEnabled &&
               widgetsMayBeMaximized && (
                 <SizeSubmenu

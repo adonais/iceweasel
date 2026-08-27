@@ -245,7 +245,7 @@ class DXGIYCbCrTextureData : public TextureData {
  */
 class TextureSourceD3D11 {
  public:
-  TextureSourceD3D11() : mFormatOverride(DXGI_FORMAT_UNKNOWN) {}
+  TextureSourceD3D11() = default;
   virtual ~TextureSourceD3D11() = default;
 
   virtual ID3D11Texture2D* GetD3D11Texture() const { return mTexture; }
@@ -257,7 +257,7 @@ class TextureSourceD3D11 {
   gfx::IntSize mSize;
   RefPtr<ID3D11Texture2D> mTexture;
   RefPtr<ID3D11ShaderResourceView> mSRV;
-  DXGI_FORMAT mFormatOverride;
+  DXGI_FORMAT mFormatOverride{DXGI_FORMAT_UNKNOWN};
 };
 
 /**
@@ -288,7 +288,7 @@ class DataTextureSourceD3D11 : public DataTextureSource,
   DataTextureSourceD3D11(gfx::SurfaceFormat aFormat,
                          TextureSourceProvider* aProvider, TextureFlags aFlags);
 
-  virtual ~DataTextureSourceD3D11();
+  virtual ~DataTextureSourceD3D11() = default;
 
   const char* Name() const override { return "DataTextureSourceD3D11"; }
 

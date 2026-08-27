@@ -14,6 +14,19 @@ file describes one module: ``PUBLIC`` lines map exported names to addresses,
 parses one ``.sym`` blob into a ``{address: symbol}`` dict (plus a sorted
 key list for bisecting). ``process_module`` is the per-module pipeline:
 fetch the ``.sym``, parse it, resolve each requested offset.
+
+``.sym`` files also carry ``INLINE`` / ``INLINE_ORIGIN`` records describing
+functions the compiler inlined into a ``FUNC``. An address inside an inlined
+region has no return address on the native BHR stack, so without these records
+the same source-level call path can appear as two different native stacks
+(depending on each build's inlining decisions) and fail to dedup. ``parse_inlines``
+resolves the inline ranges so a single address expands to the full inlined chain
+``[FUNC, inline@nest0, inline@nest1, ...]`` (outer-first), which lets equivalent
+hangs merge. Because of this, ``process_module`` resolves each offset to a
+*list* of ``(symbol, module_name)`` frames (length 1 when there are no inlines).
+Inlines are parsed in a second pass targeted at only the functions the requested
+offsets landed in, since a debug ``.sym`` holds far more ``INLINE`` records than
+we ever need. See bug 2052961.
 """
 
 import contextlib
@@ -93,6 +106,117 @@ def make_sym_map(data, url=None):
     sym_map.update(public_symbols)
 
     return sorted(sym_map), sym_map
+
+
+def _func_start_address(func_line):
+    """Return the start address of a ``FUNC`` line, or None if unparseable.
+
+    Mirrors the address extraction in make_sym_map (including the ``m`` prefix)
+    so parse_inlines associates INLINE records with the same FUNC addresses.
+    """
+    stripped = func_line.rstrip()
+    fields = stripped.split(" ", 4)
+    m_offset = 1 if len(fields) > 1 and fields[1] == "m" else 0
+    try:
+        return int(fields[1 + m_offset], 16)
+    except (ValueError, IndexError):
+        return None
+
+
+def parse_inlines(data, wanted_func_addrs):
+    """Resolve inline records, but only for the given FUNC start addresses.
+
+    A debug ``.sym`` (e.g. xul) carries a very large number of ``INLINE``
+    records, and parsing/holding them all is expensive in both CPU and memory
+    when only a handful of offsets are queried per module. So this is a second,
+    targeted pass: it fully parses an ``INLINE`` line only when its enclosing
+    ``FUNC`` is in ``wanted_func_addrs`` (the funcs the requested offsets landed
+    in). ``INLINE_ORIGIN`` records are few, so they're all collected and used to
+    resolve origin ids to names.
+
+    Returns ``{func_start_address: [(nest_level, name, [(lo, hi), ...]), ...]}``.
+    """
+    if not wanted_func_addrs:
+        return {}
+
+    inline_origins = {}
+    raw_inlines = {}  # func_start_address -> [(nest_level, origin_id, ranges), ...]
+    current_func_addr = None
+
+    for raw_line in data.splitlines():
+        line = raw_line.decode("utf-8")
+        if line.startswith("FUNC "):
+            current_func_addr = _func_start_address(line)
+        elif line.startswith("PUBLIC "):
+            current_func_addr = None
+        elif line.startswith("INLINE_ORIGIN "):
+            # "INLINE_ORIGIN <id> <name>" (name runs to end of line).
+            fields = line.rstrip().split(" ", 2)
+            if len(fields) < 3:
+                continue
+            try:
+                origin_id = int(fields[1])
+            except ValueError:
+                continue
+            inline_origins[origin_id] = fields[2][:SYMBOL_TRUNCATE_LENGTH]
+        elif line.startswith("INLINE "):
+            # "INLINE <nest_level> <call_site_line> <call_site_file> <origin_id>
+            #  [<address> <size>]+"; the INLINE belongs to the last FUNC seen.
+            # Skip the expensive parse unless this FUNC was actually queried.
+            if current_func_addr not in wanted_func_addrs:
+                continue
+            fields = line.split()
+            if len(fields) < 7:
+                continue
+            try:
+                nest_level = int(fields[1])
+                origin_id = int(fields[4])
+                nums = [int(x, 16) for x in fields[5:]]
+            except ValueError:
+                continue
+            # address/size come in pairs; an inline can have several disjoint
+            # ranges. Ignore a trailing unpaired field defensively.
+            ranges = [
+                (nums[k], nums[k] + nums[k + 1]) for k in range(0, len(nums) - 1, 2)
+            ]
+            if ranges:
+                raw_inlines.setdefault(current_func_addr, []).append((
+                    nest_level,
+                    origin_id,
+                    ranges,
+                ))
+
+    # Resolve origin ids to names now that every INLINE_ORIGIN line is seen.
+    func_inlines = {}
+    for func_addr, records in raw_inlines.items():
+        resolved = [
+            (nest_level, inline_origins[origin_id], ranges)
+            for (nest_level, origin_id, ranges) in records
+            if origin_id in inline_origins
+        ]
+        if resolved:
+            func_inlines[func_addr] = resolved
+
+    return func_inlines
+
+
+def _inline_chain(inlines, address):
+    """Inlined function names covering `address`, outer-first (nest 0 first).
+
+    `inlines` is the enclosing FUNC's resolved records from make_sym_map, each
+    ``(nest_level, name, [(lo, hi), ...])``. We keep the ones whose range covers
+    the address and order them by nest level, so the caller can splice them right
+    after the FUNC frame to rebuild the source-level call chain.
+    """
+    if not inlines or address is None:
+        return []
+    covering = [
+        (nest_level, name)
+        for (nest_level, name, ranges) in inlines
+        if any(lo <= address < hi for (lo, hi) in ranges)
+    ]
+    covering.sort(key=lambda item: item[0])
+    return [name for (_nest, name) in covering]
 
 
 def get_file_url(module, config):
@@ -188,12 +312,15 @@ def decode_response(response):
 
 
 def process_module(module, offsets, config):
+    # Each offset resolves to a LIST of (symbol, module_name) frames: just the
+    # FUNC/PUBLIC symbol when there are no inlines, or the FUNC followed by its
+    # inlined chain (outer-first) when the address sits inside inlined code.
     result = []
     if module is None or module[0] is None:
-        return [((module, offset), (UNSYMBOLICATED, "unknown")) for offset in offsets]
+        return [((module, offset), [(UNSYMBOLICATED, "unknown")]) for offset in offsets]
     if module[0] == "pseudo":
         return [
-            ((module, offset), ("" if offset is None else offset, ""))
+            ((module, offset), [("" if offset is None else offset, "")])
             for offset in offsets
         ]
     file_url = get_file_url(module, config)
@@ -205,28 +332,45 @@ def process_module(module, offsets, config):
 
     if success:
         sorted_keys, sym_map = make_sym_map(response, file_url)
-        response = None
         if not sym_map:
             print(f"Warning: Empty sym map from {file_url}; treating as failure")
             success = False
 
     if success:
+        # Resolve every offset to its symbol address/key first, so inline records
+        # are parsed for just the funcs we actually landed in (see parse_inlines).
+        resolved = {}
+        wanted_func_addrs = set()
         for offset in offsets:
             try:
-                i = bisect(sorted_keys, int(offset, 16))
+                address = int(offset, 16)
+                i = bisect(sorted_keys, address)
                 key = sorted_keys[i - 1] if i else None
-                symbol = sym_map.get(key)
-            except UnicodeEncodeError:
-                symbol = None
-            except ValueError:
-                symbol = None
+            except (UnicodeEncodeError, ValueError):
+                address = None
+                key = None
+            resolved[offset] = (address, key)
+            if key is not None:
+                wanted_func_addrs.add(key)
+
+        func_inlines = parse_inlines(response, wanted_func_addrs)
+        response = None
+
+        for offset in offsets:
+            address, key = resolved[offset]
+            symbol = sym_map.get(key) if key is not None else None
             if symbol is not None:
-                result.append(((module, offset), (symbol, module_name)))
+                frames = [(symbol, module_name)]
+                frames.extend(
+                    (name, module_name)
+                    for name in _inline_chain(func_inlines.get(key), address)
+                )
+                result.append(((module, offset), frames))
             else:
-                result.append(((module, offset), (UNSYMBOLICATED, module_name)))
+                result.append(((module, offset), [(UNSYMBOLICATED, module_name)]))
     else:
         for offset in offsets:
-            result.append(((module, offset), (UNSYMBOLICATED, module_name)))
+            result.append(((module, offset), [(UNSYMBOLICATED, module_name)]))
     return result
 
 
@@ -252,8 +396,9 @@ def symbolicate_modules(frames_by_module, config, max_workers=16):
             on peak memory.
 
     Returns:
-        dict mapping (module, offset) to (symbol, module_name). Missing
-        symbols are represented as (UNSYMBOLICATED, module_name) entries,
+        dict mapping (module, offset) to a list of (symbol, module_name)
+        frames (usually one, more when the address resolves inside inlined
+        code). A failed lookup is a single (UNSYMBOLICATED, module_name) frame,
         matching process_module's failure mode.
     """
     if not frames_by_module:
@@ -263,7 +408,7 @@ def symbolicate_modules(frames_by_module, config, max_workers=16):
     result = {}
     # Track resolved vs unsymbolicated frames separately. Counting every entry
     # as "resolved" hid total symbol-fetch failures behind a healthy-looking
-    # counter: a failed fetch falls back to (UNSYMBOLICATED, ...) but still
+    # counter: a failed fetch falls back to [(UNSYMBOLICATED, ...)] but still
     # counted the same as a real resolution.
     resolved = 0
     unsymbolicated = 0
@@ -279,7 +424,9 @@ def symbolicate_modules(frames_by_module, config, max_workers=16):
         for done, future in enumerate(as_completed(futures), 1):
             for key, value in future.result():
                 result[key] = value
-                if value[0] == UNSYMBOLICATED:
+                # value is a list of frames; a fallback is a single
+                # (UNSYMBOLICATED, module_name) frame.
+                if value[0][0] == UNSYMBOLICATED:
                     unsymbolicated += 1
                 else:
                     resolved += 1

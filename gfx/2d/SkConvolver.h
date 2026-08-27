@@ -68,7 +68,7 @@ class SkConvolutionFilter1D {
   enum { kShiftBits = 14 };
 
   SkConvolutionFilter1D();
-  ~SkConvolutionFilter1D();
+  ~SkConvolutionFilter1D() = default;
 
   // Convert between floating point and our ConvolutionFixed point
   // representation.

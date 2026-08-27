@@ -32,7 +32,9 @@ nsHtml5StringParser::~nsHtml5StringParser() { ClearCaches(); }
 nsresult nsHtml5StringParser::ParseFragment(
     const nsAString& aSourceBuffer, nsIContent* aTargetNode,
     nsAtom* aContextLocalName, int32_t aContextNamespace, bool aQuirks,
-    bool aPreventScriptExecution, bool aAllowDeclarativeShadowRoots) {
+    bool aPreventScriptExecution, bool aAllowDeclarativeShadowRoots,
+    mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+        aCustomElementRegistry) {
   NS_ENSURE_TRUE(aSourceBuffer.Length() <= INT32_MAX, NS_ERROR_OUT_OF_MEMORY);
 
   Document* doc = aTargetNode->OwnerDoc();
@@ -44,6 +46,11 @@ nsresult nsHtml5StringParser::ParseFragment(
   // object itself.
   mTreeBuilder->setFragmentContext(aContextLocalName, aContextNamespace,
                                    aTargetNode, aQuirks);
+
+  // Step 12 of the spec asks to look up the registry from aTargetNode, but this
+  // is often a DocumentFragment which has no registry. So instead it's passed
+  // directly as an arg.
+  mTreeBuilder->SetCustomElementRegistry(std::move(aCustomElementRegistry));
 
 #ifdef DEBUG
   if (!aPreventScriptExecution) {
@@ -63,7 +70,14 @@ nsresult nsHtml5StringParser::ParseFragment(
   // inserted into the input stream."
   // Step 13. "Return root's children, in tree order." (Nodes are appended
   // directly into aTargetNode by the tree builder.)
-  return Tokenize(aSourceBuffer, doc, true, aAllowDeclarativeShadowRoots);
+  nsresult rv =
+      Tokenize(aSourceBuffer, doc, true, aAllowDeclarativeShadowRoots);
+
+  // This parser is a process-wide singleton, so drop the strong reference to
+  // the context's custom element registry now that parsing is done; otherwise
+  // it (and the document it belongs to) would stay pinned until the next parse.
+  mTreeBuilder->SetCustomElementRegistry(mozilla::Nothing());
+  return rv;
 }
 
 nsresult nsHtml5StringParser::ParseDocument(
@@ -74,6 +88,7 @@ nsresult nsHtml5StringParser::ParseDocument(
   NS_ENSURE_TRUE(aSourceBuffer.Length() <= INT32_MAX, NS_ERROR_OUT_OF_MEMORY);
 
   mTreeBuilder->setFragmentContext(nullptr, kNameSpaceID_None, nullptr, false);
+  mTreeBuilder->SetCustomElementRegistry(mozilla::Nothing());
 
   mTreeBuilder->SetPreventScriptExecution(true);
 

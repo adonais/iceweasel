@@ -448,9 +448,9 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
 
   integrity->WaitForManifestLoad()->Then(
       GetCurrentSerialEventTarget(), __func__,
-      [self = RefPtr{this}, channel, integrity = RefPtr{integrity},
-       computedHash = nsCString(computedHash), aStatus, aDataLength,
-       aData](bool) {
+      [self = RefPtr{this}, channel = std::move(channel),
+       integrity = RefPtr{integrity}, computedHash = std::move(computedHash),
+       aStatus, aDataLength, aData](bool) {
         MOZ_LOG_FMT(gWaictLog, LogLevel::Debug,
                     "ScriptLoadHandler::OnStreamComplete: WaitForManifestLoad "
                     "promise resolved");

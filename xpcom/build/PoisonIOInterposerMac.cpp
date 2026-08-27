@@ -282,8 +282,6 @@ FuncData* Functions[] = {&aio_write_data,
                          &writev_data,          &writev_NOCANCEL_UNIX2003_data,
                          &writev_UNIX2003_data, &writev_NOCANCEL_data};
 
-const int NumFunctions = std::size(Functions);
-
 }  // namespace
 
 /******************************** IO Poisoning ********************************/
@@ -313,8 +311,7 @@ void InitPoisonIOInterposer() {
   ReplaceMalloc::InitDebugFd(registry);
 #endif
 
-  for (int i = 0; i < NumFunctions; ++i) {
-    FuncData* d = Functions[i];
+  for (auto d : Functions) {
     if (!d->Function) {
       d->Function = dlsym(RTLD_DEFAULT, d->Name);
     }

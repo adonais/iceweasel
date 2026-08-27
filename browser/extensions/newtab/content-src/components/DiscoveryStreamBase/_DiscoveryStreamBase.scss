@@ -79,7 +79,7 @@ $ds-width: 936px;
 
 // Nova Grid Overrides
 // @nova-cleanup(remove-conditional): Remove .nova-enabled selector and display: contents wrappers
-.nova-enabled .content .ds-layout:not(.discovery-stream) {
+.nova-enabled :is(.content, .content-full-width) .ds-layout:not(.discovery-stream) {
   display: contents;
 
   > div {
@@ -88,7 +88,7 @@ $ds-width: 936px;
 }
 
 // @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior
-.nova-enabled .content .discovery-stream.ds-layout {
+.nova-enabled :is(.content, .content-full-width) .discovery-stream.ds-layout {
   display: contents;
   grid-column: 1 / -1;
 
@@ -119,13 +119,13 @@ $ds-width: 936px;
 // @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior.
 // ds-section-wrapper is the centering grid: auto-fill with 4-column tracks
 // so that section headings and card grids share the same width and alignment.
-.nova-enabled .content .ds-section-wrapper {
+.nova-enabled :is(.content, .content-full-width) .ds-section-wrapper {
   @include nova-centering-grid(4);
 }
 
 // @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior.
 // ds-card-grid-container is the centering grid: auto-fill with 4-column tracks
 // so that ds-header and ds-card-grid share the same width and alignment.
-.nova-enabled .content .ds-card-grid-container {
+.nova-enabled :is(.content, .content-full-width) .ds-card-grid-container {
   @include nova-centering-grid(4);
 }

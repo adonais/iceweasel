@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import sdl from "@microsoft/eslint-plugin-sdl";
+import sdl from "eslint-plugin-sdl";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
 import html from "eslint-plugin-html";
 import importPlugin from "eslint-plugin-import";
@@ -126,7 +126,7 @@ let config = [
       // rule is able to be automatically fixed, then ESLint will remove the
       // inline comment and apply the fix. We don't want this because we have
       // some rules that intentionally need to be turned off in specific cases,
-      // e.g. @microsoft/sdl/no-insecure-url.
+      // e.g. sdl/no-insecure-url.
       reportUnusedDisableDirectives: "off",
     },
     plugins: { lit },
@@ -292,6 +292,31 @@ let config = [
   {
     ...mozilla.configs["flat/general-test"],
     files: wrapPaths({ paths: ["**/test/**", "**/tests/**"] }),
+    plugins: { sdl },
+    rules: {
+      // No using of insecure url, so no http urls.
+      // Note: This is turned off for xpcshell-tests as it is not considered
+      // necessary for xpcshell level tests.
+      "sdl/no-insecure-url": [
+        "error",
+        {
+          exceptions: [
+            "^http:\\/\\/mochi\\.test?.*",
+            "^http:\\/\\/mochi\\.xorigin-test?.*",
+            "^http:\\/\\/localhost?.*",
+            "^http:\\/\\/127\\.0\\.0\\.1?.*",
+            // Exempt xmlns urls
+            "^http:\\/\\/www\\.w3\\.org?.*",
+            "^http:\\/\\/www\\.mozilla\\.org\\/keymaster\\/gatekeeper?.*",
+            // Exempt urls that start with ftp or ws.
+            "^ws:?.*",
+            "^ftp:?.*",
+          ],
+          varExceptions: ["insecure?.*"],
+        },
+      ],
+      ...mozilla.configs["flat/general-test"].rules,
+    },
   },
   {
     ...mozilla.configs["flat/xpcshell-test"],
@@ -299,6 +324,14 @@ let config = [
       paths: testPaths.xpcshell,
       excludedExtensions: ["mjs", "sjs"],
     }),
+    plugins: { sdl },
+    rules: {
+      // No using of insecure url, so no http urls.
+      // Note: This is turned off for xpcshell-tests as it is not considered
+      // necessary for xpcshell level tests.
+      "sdl/no-insecure-url": "off",
+      ...mozilla.configs["flat/xpcshell-test"].rules,
+    },
   },
   {
     name: "no-unused-vars-disable-on-headjs",
@@ -425,9 +458,9 @@ let config = [
     name: "disable-no-insecure-url-for-http-testing",
     // Exempt files with these paths since they have to use http for full coverage
     files: httpTestingPaths,
-    plugins: { "@microsoft/sdl": sdl },
+    plugins: { sdl },
     rules: {
-      "@microsoft/sdl/no-insecure-url": "off",
+      "sdl/no-insecure-url": "off",
     },
   },
   {

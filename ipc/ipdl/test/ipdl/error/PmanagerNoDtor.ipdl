@@ -1,0 +1,11 @@
+//error: destructor declaration `__delete__(...)' required for managed protocol `PmanagedNoDtor'
+
+include protocol PmanagedNoDtor;
+
+protocol PmanagerNoDtor {
+    manages PmanagedNoDtor;
+
+parent:
+    async PmanagedNoDtor();
+    // error: no ctor defined
+};

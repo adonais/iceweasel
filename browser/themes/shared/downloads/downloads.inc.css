@@ -96,10 +96,6 @@
   margin-inline-end: 0.7em;
 }
 
-#downloadsPanel-blockedSubview-buttons {
-  margin-top: 1.5em;
-}
-
 #downloadsSummary {
   background: var(--panel-background-color-dimmed);
   border-top: 1px solid var(--panel-separator-color);
@@ -180,7 +176,7 @@
   border-radius: var(--border-radius-circle);
   --button-background-color-hover: var(--button-background-color-ghost-hover);
   --button-hover-color: var(--button-text-color-ghost-hover);
-  --button-background-color-active: var(--button-background-color-ghost-acitve);
+  --button-background-color-active: var(--button-background-color-ghost-active);
   --button-active-color: var(--button-text-color-ghost-active);
 
   @media not -moz-pref("browser.nova.enabled") {
@@ -254,19 +250,60 @@
 /*** Blocked subview ***/
 #downloadsPanel-blockedSubview-title {
   font-weight: var(--font-weight-heading);
-  margin-bottom: 1.5em;
   @media not -moz-pref("browser.nova.enabled") {
     font-size: calc(100% * var(--downloads-item-font-size-factor));
     font-weight: normal;
+    margin-block-end: var(--space-xlarge);
+  }
+}
+
+#downloadsPanel-blockedSubview-buttons {
+  margin-block-start: var(--space-large);
+  @media not -moz-pref("browser.nova.enabled") {
+    margin-block-start: var(--space-xlarge);
   }
 }
 
 #downloadsPanel-blockedSubview-details1,
 #downloadsPanel-blockedSubview-details2 {
-  margin-bottom: 0.5em;
-  opacity: var(--downloads-item-details-opacity);
+  color: var(--text-color-deemphasized);
+  margin-block-end: 0;
   @media not -moz-pref("browser.nova.enabled") {
+    margin-block-end: var(--space-small);
     font-size: calc(100% * var(--downloads-item-font-size-factor));
+  }
+}
+
+@media -moz-pref("browser.nova.enabled") {
+  #downloadsPanel-blockedSubview {
+    padding: var(--space-small);
+
+    .subviewbutton-back {
+      padding: var(--space-small);
+    }
+
+    > .panel-view-body-unscrollable {
+      padding: var(--space-small);
+    }
+  }
+
+  /* TODO: Bug 2056428 - Post-Nova this should be removed along with the defunct styles
+   * for icons in the blocked subview.
+   */
+  .downloadsPanel-blockedSubview-image {
+    display: none;
+  }
+
+  .downloadsPanel-blockedSubview-title-box {
+    margin-block: var(--space-xsmall);
+  }
+
+  #downloadsPanel-blockedSubview-buttons {
+    justify-content: flex-start;
+
+    .footer-button {
+      padding: var(--space-small) var(--space-xlarge);
+    }
   }
 }
 

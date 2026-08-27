@@ -35,14 +35,25 @@ TEST_VARIANTS = {}
 if os.path.exists(VARIANTS_YML):
     TEST_VARIANTS = load_yaml(VARIANTS_YML)
 
-# Must stay in sync with WPT_SUBSUITES in tools/lint/wpt-subsuite-tagging/__init__.py.
+# Maps each wpt subsuite to the test-path prefixes it owns. A test is bound to
+# a subsuite when its path starts with one of these prefixes. For example, the
+# "webrtc" entry covers webrtc, webrtc-stats, webrtc-encoded-transform, etc. A
+# task is identified as belonging to a subsuite when the subsuite name is a
+# substring of the task name. Tests under one of these prefixes that lack the
+# matching subsuite tag are excluded from all CI jobs, which is an error the
+# wpt-subsuite-tagging linter should catch. On that subject:
+# ******** THIS MUST STAY IN SYNC with WPT_SUBSUITES in
+# tools/lint/wpt-subsuite-tagging/__init__.py.
 WPT_SUBSUITES = {
     "canvas": ["html/canvas"],
     "webgpu": ["webgpu"],
-    "webcodecs": ["webcodecs"],
+    "webcodecs": [
+        "webcodecs",
+        "media-source/mse-for-webcodecs",
+    ],
     "eme": ["encrypted-media"],
+    "webrtc": ["webrtc"],
 }
-# Must stay in sync with WPT_SUBSUITES in tools/lint/wpt-subsuite-tagging/__init__.py.
 
 
 def get_test_tags(config, env):
@@ -135,12 +146,13 @@ def guess_mozinfo_from_task(task, repo="", app_version="", test_tags=[]):
 
         info[tag] = value
 
-    # wpt has canvas and webgpu as tags, lets find those
-    for tag in WPT_SUBSUITES.keys():
-        if tag in task["test-name"]:
-            info[tag] = True
-        else:
-            info[tag] = False
+    # wpt has canvas, webgpu, and webrtc as tags, lets find those
+    if "web-platform-tests" in task["test-name"]:
+        for tag in WPT_SUBSUITES.keys():
+            if tag in task["test-name"]:
+                info[tag] = True
+            else:
+                info[tag] = False
 
     # NOTE: as we are using an array here, frozenset() cannot work with a 'list'
     # this is cast to a string
@@ -416,7 +428,11 @@ class DefaultLoader(BaseManifestLoader):
                         continue
 
                     manifest = t["manifest"]
-                    if any(x in manifest for x in subsuite_paths):
+                    if any(
+                        manifest.startswith("/" + x)
+                        or manifest.startswith("/_mozilla/" + x)
+                        for x in subsuite_paths
+                    ):
                         manifests.add(manifest)
             else:
                 all_subsuite_paths = [
@@ -429,7 +445,11 @@ class DefaultLoader(BaseManifestLoader):
                         continue
 
                     manifest = t["manifest"]
-                    if not any(path in manifest for path in all_subsuite_paths):
+                    if not any(
+                        manifest.startswith("/" + path)
+                        or manifest.startswith("/_mozilla/" + path)
+                        for path in all_subsuite_paths
+                    ):
                         manifests.add(manifest)
 
             return {

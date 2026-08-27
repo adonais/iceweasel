@@ -872,8 +872,9 @@ HttpTransactionParent::Resume() {
       std::function<void()> callOnResume = nullptr;
       std::swap(callOnResume, mCallOnResume);
       neckoTarget->Dispatch(
-          NS_NewRunnableFunction("net::HttpTransactionParent::mCallOnResume",
-                                 [callOnResume]() { callOnResume(); }),
+          NS_NewRunnableFunction(
+              "net::HttpTransactionParent::mCallOnResume",
+              [callOnResume = std::move(callOnResume)]() { callOnResume(); }),
           NS_DISPATCH_NORMAL);
     }
   }

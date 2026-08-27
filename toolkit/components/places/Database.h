@@ -132,6 +132,8 @@ class Database final : public nsIObserver, public nsSupportsWeakReference {
     return mMainConn;
   }
 
+  bool IsConnectionOpen() const { return !!mMainConn; }
+
   /**
    * Dispatches a runnable to the connection async thread, to be serialized
    * with async statements.
@@ -334,6 +336,7 @@ class Database final : public nsIObserver, public nsSupportsWeakReference {
   nsresult MigrateV83Up();
   nsresult MigrateV85Up();
   nsresult MigrateV86Up();
+  nsresult MigrateV87Up();
 
   nsresult UpdateBookmarkRootTitles();
 

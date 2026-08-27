@@ -11,8 +11,7 @@
     android:orientation="horizontal"
     android:clickable="true"
     android:focusable="false"
-    android:gravity="center_vertical"
-    tools:ignore="DisableBaselineAlignment,KeyboardInaccessibleWidget">
+    android:gravity="center_vertical">
 
     <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/label"

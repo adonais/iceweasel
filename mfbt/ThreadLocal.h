@@ -11,8 +11,8 @@
 #  include <pthread.h>
 #endif
 
-#include <type_traits>
 #include <cstdint>
+#include <type_traits>
 
 #include "mozilla/Assertions.h"
 

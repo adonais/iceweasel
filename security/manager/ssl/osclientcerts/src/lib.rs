@@ -22,7 +22,8 @@ use rsclientcerts::manager::{IsSearchingForClientCerts, Manager};
 use rsclientcerts::{
     declare_pkcs11_find_functions, declare_pkcs11_informational_functions,
     declare_pkcs11_session_functions, declare_pkcs11_sign_functions,
-    declare_unsupported_pkcs11_functions, log_with_thread_id,
+    declare_pkcs11_pin_functions, declare_unsupported_pkcs11_functions,
+    log_with_thread_id,
 };
 use std::convert::TryInto;
 use std::os::raw::c_char;
@@ -198,6 +199,7 @@ declare_pkcs11_informational_functions!();
 declare_pkcs11_session_functions!();
 declare_pkcs11_find_functions!();
 declare_pkcs11_sign_functions!();
+declare_pkcs11_pin_functions!();
 declare_unsupported_pkcs11_functions!();
 
 /// To be a valid PKCS #11 module, this list of functions must be supported. At least cryptoki 2.2

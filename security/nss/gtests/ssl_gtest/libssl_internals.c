@@ -612,3 +612,12 @@ SECStatus SSLInt_GetCertificateCompressionAlgorithm(
   }
   return SECFailure;
 }
+
+SECStatus SSLInt_SetEnableEchXtnCompression(PRFileDesc *fd, PRBool enabled) {
+  sslSocket *ss = ssl_FindSocket(fd);
+  if (!ss) {
+    return SECFailure;
+  }
+  ss->opt.enableEchXtnCompression = enabled;
+  return SECSuccess;
+}

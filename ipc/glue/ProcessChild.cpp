@@ -18,6 +18,7 @@
 #endif
 
 #include "nsAppRunner.h"
+#include "nsExceptionHandler.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ipc/IOThread.h"
 #include "mozilla/ipc/ProcessUtils.h"
@@ -80,7 +81,11 @@ static void ReallySleep(int aSeconds) { ::Sleep(aSeconds * 1000); }
 #  endif  // Unix/Win
 static void SleepIfEnv(const char* aName) {
   if (auto* value = PR_GetEnv(aName)) {
+    CrashReporter::RecordAnnotationBool(
+        CrashReporter::Annotation::IntentionalCrashForTesting, true);
     ReallySleep(atoi(value));
+    CrashReporter::UnrecordAnnotation(
+        CrashReporter::Annotation::IntentionalCrashForTesting);
   }
 }
 #else  // not tests
@@ -89,9 +94,8 @@ static void SleepIfEnv(const char* aName) {}
 
 ProcessChild::~ProcessChild() {
 #ifdef NS_FREE_PERMANENT_DATA
-  // In this case, we won't early-exit and we'll wait indefinitely for
-  // child processes to terminate.  This sleep is late enough that, in
-  // content processes, it won't block parent process shutdown, so
+  // debug/*san/ccov: content processes reach ~ProcessChild on normal shutdown.
+  // This sleep is late enough that it won't block parent process shutdown, so
   // we'll get into late IPC shutdown with processes still running.
   SleepIfEnv("MOZ_TEST_CHILD_EXIT_HANG");
 #endif
@@ -111,10 +115,9 @@ void ProcessChild::NotifiedImpendingShutdown() {
 /* static */
 void ProcessChild::QuickExit() {
 #ifndef NS_FREE_PERMANENT_DATA
-  // In this case, we're going to terminate the child process before
-  // we get to ~ProcessChild above (and terminate the parent process
-  // before the shutdown hook in ProcessWatcher).  Instead, blocking
-  // earlier will let us exercise ProcessWatcher's kill timer.
+  // opt: content processes exit here without reaching ~ProcessChild on normal
+  // shutdown (and the parent is terminated before ProcessWatcher's shutdown
+  // hook). Blocking here lets us exercise ProcessWatcher's kill timer.
   SleepIfEnv("MOZ_TEST_CHILD_EXIT_HANG");
 #endif
   AppShutdown::DoImmediateExit();

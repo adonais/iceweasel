@@ -62,6 +62,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
     typedArray[0] = "definately not a number";
   });
 
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

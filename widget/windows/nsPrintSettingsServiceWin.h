@@ -12,7 +12,7 @@ class nsIPrintSettings;
 
 class nsPrintSettingsServiceWin final : public nsPrintSettingsService {
  public:
-  nsPrintSettingsServiceWin() {}
+  nsPrintSettingsServiceWin() = default;
 
   NS_IMETHODIMP SerializeToPrintData(
       nsIPrintSettings* aSettings,

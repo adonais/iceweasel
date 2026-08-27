@@ -196,8 +196,8 @@ into sets of 100 (controlled by the pref
 #### Debugging
 
 For debugging purposes, it's easiest to trigger storage clearing by
-triggering the service directly via the [Browser Console command line](/devtools-user/browser_console/index.rst#browser_console_command_line).
-Note that this is different from the normal [Web Console](/devtools-user/web_console/index.rst)
+triggering the service directly via the [Browser Console command line](/devtools-user/browser_console/index.md#browser-console-command-line).
+Note that this is different from the normal [Web Console](/devtools-user/web_console/index.md)
 you might use to debug a website, and requires the
 `devtools.chrome.enabled` pref to be set to true to use it interactively.
 Once you've enabled the Browser Console you can trigger storage clearing

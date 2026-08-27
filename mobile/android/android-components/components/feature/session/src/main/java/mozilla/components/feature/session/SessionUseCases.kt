@@ -382,6 +382,7 @@ class SessionUseCases(
      */
     class UpdateLastAccessUseCase internal constructor(
         private val store: BrowserStore,
+        private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
     ) {
         /**
          * Updates [TabSessionState.lastAccess] of the tab with the provided ID. Note that this
@@ -392,7 +393,7 @@ class SessionUseCases(
          */
         operator fun invoke(
             tabId: String? = store.state.selectedTabId,
-            lastAccess: Long = System.currentTimeMillis(),
+            lastAccess: Long = currentTimeMillis(),
         ) {
             if (tabId == null) {
                 return

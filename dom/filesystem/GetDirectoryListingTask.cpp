@@ -248,13 +248,13 @@ FileSystemResponseValue GetDirectoryListingTaskParent::GetSuccessRequestResult(
         continue;
       }
 
-      fileData.blob() = ipcBlob;
-      inputs.AppendElement(fileData);
+      fileData.blob() = std::move(ipcBlob);
+      inputs.AppendElement(std::move(fileData));
     } else {
       MOZ_ASSERT(mTargetData[i].mType == FileOrDirectoryPath::eDirectoryPath);
       FileSystemDirectoryListingResponseDirectory directoryData;
       directoryData.directoryRealPath() = mTargetData[i].mPath;
-      inputs.AppendElement(directoryData);
+      inputs.AppendElement(std::move(directoryData));
     }
   }
 

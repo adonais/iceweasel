@@ -95,6 +95,24 @@ rtc_library("timestamp_extrapolator") {
   ]
 }
 
+rtc_library("default_video_jitter_timing") {
+  sources = [
+    "default_video_jitter_timing.cc",
+    "default_video_jitter_timing.h",
+  ]
+  deps = [
+    ":inter_frame_delay_variation_calculator",
+    ":jitter_estimator",
+    ":timestamp_extrapolator",
+    "../../../api:field_trials_view",
+    "../../../api/environment",
+    "../../../api/units:time_delta",
+    "../../../api/units:timestamp",
+    "../../../api/video/timing:video_jitter_timing_interface",
+    "../../../system_wrappers",
+  ]
+}
+
 rtc_library("timing_module") {
   sources = [
     "timing.cc",
@@ -102,16 +120,20 @@ rtc_library("timing_module") {
   ]
   deps = [
     ":decode_time_percentile_filter",
-    ":timestamp_extrapolator",
+    ":default_video_jitter_timing",
     "../../../api:field_trials_view",
+    "../../../api:sequence_checker",
+    "../../../api/units:data_size",
     "../../../api/units:time_delta",
     "../../../api/units:timestamp",
     "../../../api/video:video_frame",
     "../../../api/video:video_rtp_headers",
+    "../../../api/video/timing:video_jitter_timing_interface",
     "../../../rtc_base:checks",
     "../../../rtc_base:logging",
     "../../../rtc_base:macromagic",
     "../../../rtc_base/synchronization:mutex",
+    "../../../rtc_base/system:no_unique_address",
     "../../../system_wrappers",
   ]
 }
@@ -120,6 +142,7 @@ rtc_library("timing_unittests") {
   testonly = true
   sources = [
     "decode_time_percentile_filter_unittest.cc",
+    "default_video_jitter_timing_unittest.cc",
     "frame_delay_variation_kalman_filter_unittest.cc",
     "inter_frame_delay_variation_calculator_unittest.cc",
     "jitter_estimator_unittest.cc",
@@ -129,6 +152,7 @@ rtc_library("timing_unittests") {
   ]
   deps = [
     ":decode_time_percentile_filter",
+    ":default_video_jitter_timing",
     ":frame_delay_variation_kalman_filter",
     ":inter_frame_delay_variation_calculator",
     ":jitter_estimator",
@@ -136,13 +160,16 @@ rtc_library("timing_unittests") {
     ":timestamp_extrapolator",
     ":timing_module",
     "../../../api:field_trials",
+    "../../../api/environment",
     "../../../api/units:data_size",
     "../../../api/units:frequency",
     "../../../api/units:time_delta",
     "../../../api/units:timestamp",
+    "../../../api/video/timing:video_jitter_timing_interface",
     "../../../rtc_base:histogram_percentile_counter",
     "../../../system_wrappers",
     "../../../system_wrappers:metrics",
+    "../../../test:create_test_environment",
     "../../../test:create_test_field_trials",
     "../../../test:test_support",
   ]

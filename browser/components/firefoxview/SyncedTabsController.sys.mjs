@@ -196,8 +196,34 @@ export class SyncedTabsController {
     },
   };
 
+  novaActionMappings = {
+    "sign-in": {
+      header: "firefoxview-syncedtabs-signin-header-3",
+      description: "firefoxview-syncedtabs-signin-description-3",
+      buttonLabel: "firefoxview-syncedtabs-signin-primarybutton-2",
+    },
+    "add-device": {
+      header: "firefoxview-syncedtabs-adddevice-header-3",
+      description: "firefoxview-syncedtabs-adddevice-description-3",
+      descriptionLink: {
+        name: "url",
+        url: "https://support.mozilla.org/kb/how-do-i-set-sync-my-computer#w_connect-additional-devices-to-sync",
+      },
+    },
+    "sync-tabs-disabled": {
+      header: "firefoxview-syncedtabs-synctabs-header-2",
+      description: "firefoxview-syncedtabs-synctabs-description-2",
+      buttonLabel: "firefoxview-tabpickup-synctabs-primarybutton-2",
+    },
+    loading: {
+      header: "firefoxview-syncedtabs-loading-header-2",
+      description: "firefoxview-syncedtabs-loading-description-2",
+    },
+  };
+
   #getMessageCardForState({ error = false, action, errorState }) {
     errorState = errorState || this.errorState;
+    const nova = Services.prefs.getBoolPref("browser.nova.enabled", false);
     let header, description, descriptionLink, buttonLabel, mainImageUrl;
     let descriptionArray;
     if (error) {
@@ -205,24 +231,27 @@ export class SyncedTabsController {
       ({ header, description, link, buttonLabel } =
         SyncedTabsErrorHandler.getFluentStringsForErrorType(errorState));
       action = `${errorState}`;
-      mainImageUrl =
-        "chrome://browser/content/firefoxview/synced-tabs-error.svg";
+      mainImageUrl = nova
+        ? "chrome://browser/skin/sidebar/kit-tabs-devices-error.svg"
+        : "chrome://browser/content/firefoxview/synced-tabs-error.svg";
       descriptionArray = [description];
-      if (errorState == "password-locked") {
+      if (errorState == "password-locked" && !nova) {
         descriptionLink = {};
         // This is ugly, but we need to special case this link so we can
-        // coexist with the old view.
+        // coexist with the old view. TODO remove with nova cleanup
         descriptionArray.push("firefoxview-syncedtab-password-locked-link");
         descriptionLink.name = "syncedtab-password-locked-link";
         descriptionLink.url = link.href;
       }
     } else {
-      header = this.actionMappings[action].header;
-      description = this.actionMappings[action].description;
-      buttonLabel = this.actionMappings[action].buttonLabel;
-      descriptionLink = this.actionMappings[action].descriptionLink;
-      mainImageUrl =
-        "chrome://browser/content/firefoxview/synced-tabs-empty.svg";
+      const mappings = nova ? this.novaActionMappings : this.actionMappings;
+      header = mappings[action].header;
+      description = mappings[action].description;
+      buttonLabel = mappings[action].buttonLabel;
+      descriptionLink = mappings[action].descriptionLink;
+      mainImageUrl = nova
+        ? "chrome://browser/skin/sidebar/kit-tabs-devices.svg"
+        : "chrome://browser/content/firefoxview/synced-tabs-empty.svg";
       descriptionArray = [description];
     }
     return {

@@ -1,7 +1,7 @@
 lfLogBuffer = `
   let c = registerModule('c', parseModule(""));
   let d = registerModule('d', parseModule("import { a } from 'c'; a;"));
-  moduleLink(d);
+  moduleLoadAndLink(d);
 `;
 lfLogBuffer = lfLogBuffer.split('\n');
 var lfCodeBuffer = "";
@@ -18,7 +18,7 @@ function loadFile(lfVarx) {
     try {
         oomTest(function() {
             let m = parseModule(lfVarx);
-            moduleLink(m);
+            moduleLoadAndLink(m);
             moduleEvaluate(m);
         });
     } catch (lfVare) {}

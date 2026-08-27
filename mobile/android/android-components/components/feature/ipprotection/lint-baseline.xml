@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <issues format="6" by="lint 9.2.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.2.1)" variant="all" version="9.2.1">
 
+    <issue
+        id="JUnitAssertNotNull"
+        message="Use kotlin.test.assertNotNull instead of JUnit assertNotNull"
+        errorLine1="            assertNotNull(resultState.locationState.locations.find { it.countryCode == country.code })"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/test/java/mozilla/components/feature/ipprotection/store/IPProtectionReducerTest.kt"
+            line="662"
+            column="13"/>
+    </issue>
+
 </issues>

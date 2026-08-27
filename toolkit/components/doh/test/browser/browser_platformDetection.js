@@ -102,18 +102,36 @@ add_task(async function testPlatformIndications() {
   ]);
 
   mockedLinkService.platformDNSIndications =
+    Ci.nsINetworkLinkService.PRIVATE_DNS_DETECTED;
+  simulateNetworkChange();
+  await ensureNoTRRModeChange(0);
+  await checkHeuristicsTelemetry("disable_doh", "netchange");
+  await assertGleanValues([
+    [Glean.networking.dohHeuristicsAttempts, 5],
+    [Glean.networking.dohHeuristicsPassCount, 1],
+    [Glean.networking.dohHeuristicsResult, Heuristics.Telemetry.privateDns],
+    // Were tripped earlier this session.
+    [Glean.networking.dohHeuristicEverTripped.vpn, true],
+    [Glean.networking.dohHeuristicEverTripped.proxy, true],
+    [Glean.networking.dohHeuristicEverTripped.nrpt, true],
+    [Glean.networking.dohHeuristicEverTripped.privateDns, true],
+    ...allHeuristicsFalseExpectations(["vpn", "proxy", "nrpt", "privateDns"]),
+  ]);
+
+  mockedLinkService.platformDNSIndications =
     Ci.nsINetworkLinkService.NONE_DETECTED;
   simulateNetworkChange();
   await ensureTRRMode(2);
   await checkHeuristicsTelemetry("enable_doh", "netchange");
   await assertGleanValues([
-    [Glean.networking.dohHeuristicsAttempts, 5],
+    [Glean.networking.dohHeuristicsAttempts, 6],
     [Glean.networking.dohHeuristicsPassCount, 2],
     [Glean.networking.dohHeuristicsResult, Heuristics.Telemetry.pass],
     // Were tripped earlier this session.
     [Glean.networking.dohHeuristicEverTripped.vpn, true],
     [Glean.networking.dohHeuristicEverTripped.proxy, true],
     [Glean.networking.dohHeuristicEverTripped.nrpt, true],
-    ...allHeuristicsFalseExpectations(["vpn", "proxy", "nrpt"]),
+    [Glean.networking.dohHeuristicEverTripped.privateDns, true],
+    ...allHeuristicsFalseExpectations(["vpn", "proxy", "nrpt", "privateDns"]),
   ]);
 });

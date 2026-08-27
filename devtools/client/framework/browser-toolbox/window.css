@@ -12,7 +12,7 @@ body {
 /**
  * The main content of the BrowserToolbox runs within an iframe.
  */
-.devtools-toolbox-browsertoolbox-iframe {
+.devtools-toolbox-iframe.browsertoolbox-host {
   border: 0;
   width: 100%;
 }

@@ -22,7 +22,7 @@ class nsNativeAppSupportWin : public nsNativeAppSupportBase {
   void CheckConsole();
 
  private:
-  ~nsNativeAppSupportWin() {}
+  ~nsNativeAppSupportWin() = default;
 };  // nsNativeAppSupportWin
 
 void nsNativeAppSupportWin::CheckConsole() {

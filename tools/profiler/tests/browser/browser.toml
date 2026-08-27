@@ -63,9 +63,8 @@ skip-if = [
 ["browser_test_feature_multiprocess_capture_with_signal.js"]
 support-files = ["do_work_500ms.html"]
 skip-if = [
-  "ccov", #            The signals for the profiler conflict with the ccov signals
-  "os == 'win'", # than these tests, so we're disabling them for now. See Bug 1904897.
-  "debug && verify",
+  "ccov", # The signals for the profiler conflict with the ccov signals
+  "os == 'win'", # Signals are not yet supported on Windows - Bug 1867328
 ]
 
 ["browser_test_feature_nostacksampling.js"]

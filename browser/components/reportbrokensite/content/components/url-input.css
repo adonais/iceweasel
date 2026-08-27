@@ -133,6 +133,8 @@ input:invalid {
   }
 }
 
+/* Small-ish subtree */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 div:has(> input:invalid) + .invalid-message {
   display: block;
 }

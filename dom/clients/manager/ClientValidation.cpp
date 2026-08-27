@@ -6,6 +6,7 @@
 
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/ClientIPCTypes.h"
+#include "mozilla/dom/LoadedOriginSet.h"
 #include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/net/MozURL.h"
@@ -17,7 +18,7 @@ using mozilla::ipc::PrincipalInfo;
 using mozilla::net::MozURL;
 
 bool ClientIsValidPrincipalInfo(const PrincipalInfo& aPrincipalInfo,
-                                const nsACString& aRemoteType) {
+                                LoadedOriginSet* aLoadedOrigins) {
   auto result = mozilla::ipc::PrincipalInfoToPrincipal(aPrincipalInfo);
   if (NS_WARN_IF(result.isErr())) {
     return false;
@@ -26,8 +27,9 @@ bool ClientIsValidPrincipalInfo(const PrincipalInfo& aPrincipalInfo,
 
   // FIXME: Remove the system allowance once for non-inference processes once we
   // can load documents with the system principal into content.
-  if (NS_WARN_IF(!ValidatePrincipalCouldPotentiallyBeLoadedBy(
-          principal, aRemoteType, {ValidatePrincipalOptions::AllowSystem}))) {
+  if (aLoadedOrigins &&
+      NS_WARN_IF(!aLoadedOrigins->ValidatePrincipal(
+          principal, {ValidatePrincipalOptions::AllowSystemIfLoaded}))) {
     return false;
   }
 
@@ -37,43 +39,44 @@ bool ClientIsValidPrincipalInfo(const PrincipalInfo& aPrincipalInfo,
 }
 
 bool IsValidClientOpConstructorArgs(const ClientOpConstructorArgs& aArgs,
-                                    const nsACString& aRemoteType) {
+                                    LoadedOriginSet* aLoadedOrigins) {
   switch (aArgs.type()) {
     case ClientOpConstructorArgs::TClientControlledArgs:
       return ClientIsValidPrincipalInfo(
           aArgs.get_ClientControlledArgs().serviceWorker().principalInfo(),
-          aRemoteType);
+          aLoadedOrigins);
 
     case ClientOpConstructorArgs::TClientNavigateArgs: {
       const ClientNavigateArgs& args = aArgs.get_ClientNavigateArgs();
       return ClientIsValidPrincipalInfo(args.target().principalInfo(),
-                                        aRemoteType) &&
+                                        aLoadedOrigins) &&
              ClientIsValidPrincipalInfo(args.serviceWorker().principalInfo(),
-                                        aRemoteType);
+                                        aLoadedOrigins);
     }
 
     case ClientOpConstructorArgs::TClientPostMessageArgs:
       return ClientIsValidPrincipalInfo(
           aArgs.get_ClientPostMessageArgs().serviceWorker().principalInfo(),
-          aRemoteType);
+          aLoadedOrigins);
 
     case ClientOpConstructorArgs::TClientMatchAllArgs:
       return ClientIsValidPrincipalInfo(
           aArgs.get_ClientMatchAllArgs().serviceWorker().principalInfo(),
-          aRemoteType);
+          aLoadedOrigins);
 
     case ClientOpConstructorArgs::TClientClaimArgs:
       return ClientIsValidPrincipalInfo(
           aArgs.get_ClientClaimArgs().serviceWorker().principalInfo(),
-          aRemoteType);
+          aLoadedOrigins);
 
     case ClientOpConstructorArgs::TClientGetInfoAndStateArgs:
       return ClientIsValidPrincipalInfo(
-          aArgs.get_ClientGetInfoAndStateArgs().principalInfo(), aRemoteType);
+          aArgs.get_ClientGetInfoAndStateArgs().principalInfo(),
+          aLoadedOrigins);
 
     case ClientOpConstructorArgs::TClientOpenWindowArgs:
       return ClientIsValidPrincipalInfo(
-          aArgs.get_ClientOpenWindowArgs().principalInfo(), aRemoteType);
+          aArgs.get_ClientOpenWindowArgs().principalInfo(), aLoadedOrigins);
 
     case ClientOpConstructorArgs::TClientFocusArgs:
     case ClientOpConstructorArgs::TClientEvictBFCacheArgs:

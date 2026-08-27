@@ -146,6 +146,7 @@ if CONFIG["GCC_USE_GNU_LD"]:
 GYP_DIRS += ["nss"]
 GYP_DIRS["nss"].input = "nss/nss.gyp"
 GYP_DIRS["nss"].variables = gyp_vars
+GYP_DIRS["nss"].install_static_libs = ["mozpkix"]
 
 sandbox_vars = {
     # NSS explicitly exports its public symbols
@@ -173,6 +174,10 @@ if CONFIG["OS_TARGET"] == "WINNT":
         if CONFIG["CC_TYPE"] == "clang-cl":
             sandbox_vars["ASFLAGS"] = ["-safeseh"]
 
+    sandbox_vars["DELAYLOAD_DLLS"] = [
+        "advapi32.dll",
+    ]
+
     DELAYLOAD_DLLS += [
         "winmm.dll",
     ]
@@ -191,7 +196,7 @@ GYP_DIRS["nss"].action_overrides = {
 if CONFIG["NSS_EXTRA_SYMBOLS_FILE"]:
     DEFINES["NSS_EXTRA_SYMBOLS_FILE"] = CONFIG["NSS_EXTRA_SYMBOLS_FILE"]
 
-SPHINX_TREES["nss"] = "nss/doc/rst"
+SPHINX_TREES["nss"] = "nss/doc/src"
 
-with Files("nss/doc/rst/**"):
+with Files("nss/doc/src/**"):
     SCHEDULES.exclusive = ["nss"]

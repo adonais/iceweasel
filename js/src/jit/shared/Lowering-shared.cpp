@@ -143,7 +143,8 @@ bool LRecoverInfo::OperandIter::canOptimizeOutIfUnused() {
 #endif
 
 LAllocation LIRGeneratorShared::useRegisterOrIndexConstant(MDefinition* mir,
-                                                           Scalar::Type type) {
+                                                           Scalar::Type type,
+                                                           bool useAtStart) {
   if (CanUseInt32Constant(mir)) {
     MConstant* cst = mir->toConstant();
     int32_t val =
@@ -152,6 +153,9 @@ LAllocation LIRGeneratorShared::useRegisterOrIndexConstant(MDefinition* mir,
     if (ArrayOffsetFitsInInt32(val, type, &offset)) {
       return LAllocation(mir->toConstant());
     }
+  }
+  if (useAtStart) {
+    return useRegisterAtStart(mir);
   }
   return useRegister(mir);
 }

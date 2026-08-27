@@ -1,0 +1,75 @@
+schema: 1
+
+bugzilla:
+  product: Core
+  component: Graphics
+
+origin:
+  name: Pixman
+
+  description: "Pixman: low-level pixel manipulation library"
+
+  url: https://www.pixman.org/
+
+  release: pixman-0.46.4 (2025-07-20T12:14:02-04:00).
+  revision: pixman-0.46.4
+
+  license: 'MIT'
+  license-file: 'COPYING'
+
+vendoring:
+  url: https://gitlab.freedesktop.org/pixman/pixman
+  source-hosting: gitlab
+  tracking: tag
+  vendor-directory: gfx/pixman/pixman
+
+  exclude:
+    - .clang-format
+    - .editorconfig
+    - AUTHORS
+    - CODING_STYLE
+    - NEWS
+    - RELEASING
+    - a64-neon-test.S
+    - arm-simd-test.S
+    - demos
+    - meson.*
+    - neon-test.S
+    - pixman/make-srgb.pl
+    - pixman/pixman-arm-detect-win32.asm
+    - pixman/rounding.txt
+    - release.sh
+    - test
+
+  update-actions:
+    - action: copy-file
+      from: '{vendor_dir}/pixman/pixman-version.h.in'
+      to: '{vendor_dir}/pixman/pixman-version.h'
+    - action: replace-in-file
+      pattern: '@PIXMAN_VERSION_MAJOR@'
+      with: '0'
+      file: '{vendor_dir}/pixman/pixman-version.h'
+    - action: replace-in-file
+      pattern: '@PIXMAN_VERSION_MINOR@'
+      with: '46'
+      file: '{vendor_dir}/pixman/pixman-version.h'
+    - action: replace-in-file
+      pattern: '@PIXMAN_VERSION_MICRO@'
+      with: '4'
+      file: '{vendor_dir}/pixman/pixman-version.h'
+
+  patches:
+    - patches/0000-armasm.patch
+    - patches/0001-export.patch
+    - patches/0002-interp.patch
+    - patches/0003-rename.patch
+    - patches/0004-translation-round-in-wide.patch
+    - patches/0005-edge-saturate.patch
+
+updatebot:
+  maintainer-phab: "#gfx-reviewers"
+  maintainer-bz: jimb@mozilla.com
+  tasks:
+    - type: vendoring
+      enabled: true
+      frequency: 1 week

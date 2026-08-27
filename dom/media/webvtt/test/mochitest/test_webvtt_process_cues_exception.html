@@ -1,0 +1,53 @@
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>WebVTT should recover after an exception while processing cues</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css">
+  <style>
+    #overlay {
+      position: relative;
+      width: 320px;
+      height: 180px;
+    }
+  </style>
+</head>
+<body>
+<div id="overlay"></div>
+<script>
+"use strict";
+
+add_task(function test_process_cues_recovers_after_exception() {
+  const { WebVTT } = SpecialPowers.ChromeUtils.importESModule(
+    "resource://gre/modules/vtt.sys.mjs"
+  );
+
+  let thrownError;
+  try {
+    WebVTT.processCues(window, null, null, null);
+  } catch (error) {
+    thrownError = error;
+  }
+  ok(thrownError, "Processing cues with an invalid overlay should throw");
+  is(
+    WebVTT.isProcessingCues,
+    false,
+    "Cue processing should no longer be active"
+  );
+
+  const cueText = "Caption after processing exception";
+  const cue = new VTTCue(0, 1, cueText);
+  cue.region = new VTTRegion();
+  const overlay = document.getElementById("overlay");
+  WebVTT.processCues(window, [cue], overlay, null);
+  is(overlay.textContent, cueText, "A later cue should still render");
+});
+</script>
+</body>
+</html>

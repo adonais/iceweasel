@@ -1,23 +1,27 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Mon, 6 Apr 2026 14:37:00 -0500
-Subject: Bug 2029247 - (fix-0fc5aeecfb) base-toolchains build fix
+Date: Tue, 7 Apr 2026 18:03:00 -0500
+Subject: Bug 2030139 - (fix-1ccc59d5c9) don't use
+ std::make_unique_for_overwrite for now to fix build error
 
-Upstream was assigning a -2 to a uint16_t.
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/f5dfd2e6901c9d79ee528bf3801ded81b6dd65c9
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a4e2ac07bd6f2deb8fde32b147422c3918c31eca
 ---
- rtc_base/network_constants.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ rtc_base/copy_on_write_buffer.cc | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/rtc_base/network_constants.h b/rtc_base/network_constants.h
-index 0b7ae9d567..8df31b683b 100644
---- a/rtc_base/network_constants.h
-+++ b/rtc_base/network_constants.h
-@@ -40,7 +40,7 @@ constexpr uint16_t kNetworkCostVpn = 1;
+diff --git a/rtc_base/copy_on_write_buffer.cc b/rtc_base/copy_on_write_buffer.cc
+index 68e98ce729..5877f323f6 100644
+--- a/rtc_base/copy_on_write_buffer.cc
++++ b/rtc_base/copy_on_write_buffer.cc
+@@ -28,7 +28,11 @@
+ namespace webrtc {
  
- // Add -2 to the network cost when using network slicing so that e.g. premium 5G
- // slice is preferred over regular 5G, everything else being equal.
--constexpr uint16_t kNetworkCostSlice = -2;
-+constexpr int16_t kNetworkCostSlice = -2;
+ CopyOnWriteBuffer::RawBuffer::RawBuffer(size_t size)
+-    : size_(size), data_(std::make_unique_for_overwrite<uint8_t[]>(size)) {}
++    : size_(size), data_(std::unique_ptr<uint8_t[]>(new uint8_t[size])) {}
++// We should be able to use the form below, but our current compile setup
++// doesn't find std::make_unique_for_overwrite.  See Bug 2030186 to revert
++// this change.
++//     : size_(size), data_(std::make_unique_for_overwrite<uint8_t[]>(size)) {}
  
- // Aliases for correct wrap-around with network slice cost.
- constexpr uint16_t kNetworkCostCellular5GSlice =  // 248
+ scoped_refptr<CopyOnWriteBuffer::RefCountedBuffer>
+ CopyOnWriteBuffer::CreateBuffer(size_t capacity) {

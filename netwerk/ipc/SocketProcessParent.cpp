@@ -354,8 +354,8 @@ mozilla::ipc::IPCResult SocketProcessParent::RecvGeckoTraceExport(
 }
 
 mozilla::ipc::IPCResult SocketProcessParent::RecvSSLTokensCacheData(
-    ByteBuf&& aBuf) {
-  SSLTokensCache::DeserializeFromIPCAsync(std::move(aBuf));
+    nsTArray<SSLTokensCacheRecordInfo>&& aRecords) {
+  SSLTokensCache::ReplaceAllRecords(std::move(aRecords));
   return IPC_OK();
 }
 

@@ -3587,9 +3587,10 @@ void HTMLInputElement::FinishRangeThumbDrag(WidgetGUIEvent* aEvent) {
     PresShell::ReleaseCapturingContent();
   }
   if (aEvent) {
-    nsRangeFrame* rangeFrame = do_QueryFrame(GetPrimaryFrame());
-    SetValueOfRangeForUserEvent(rangeFrame->GetValueAtEventPoint(aEvent),
-                                SnapToTickMarks::Yes);
+    if (nsRangeFrame* rangeFrame = do_QueryFrame(GetPrimaryFrame())) {
+      SetValueOfRangeForUserEvent(rangeFrame->GetValueAtEventPoint(aEvent),
+                                  SnapToTickMarks::Yes);
+    }
   }
   mIsDraggingRange = false;
   FireChangeEventIfNeeded();

@@ -16,6 +16,9 @@ class nsIWidget;
 class nsIPrintSettings;
 
 namespace mozilla {
+namespace dom {
+class WindowContext;
+}  // namespace dom
 namespace gfx {
 class DrawEventRecorder;
 class PrintTarget;
@@ -73,7 +76,7 @@ class nsIDeviceContextSpec : public nsISupports {
 
   NS_IMETHOD BeginDocument(const nsAString& aTitle,
                            const nsAString& aPrintToFileName,
-                           uint64_t aBrowsingContextId, int32_t aStartPage,
+                           mozilla::dom::WindowContext*, int32_t aStartPage,
                            int32_t aEndPage) = 0;
 
   virtual RefPtr<mozilla::gfx::PrintEndDocumentPromise> EndDocument() = 0;

@@ -98,23 +98,35 @@ Further Reading/Useful links:
 
 Not all code can simply wait for the normal train model to be included in a Firefox build.
 There are a variety of reasons for this; critical fixes, security concerns, stabilizing a feature
-that’s already in Beta, shipping high-priority features/enhancements faster, and so on.
+that’s already in Beta, and so on.
 
 In these situations, an uplift can be requested to take a recent landing in firefox-main and
 merge specific bits to the Beta or Release repository outside the standard train model. After the
 request is made, {ref}`Release Management <release-management>` will assess the potential risk and
 make a decision on whether it will be accepted or not.
 
-While uplifts are generally not the preferred way to ship new feature work, it is understood that there
-are times when business needs to do so justify the required effort. Our release process is designed to
-have the flexibility to accommodate these requests, though in general they need to be handled on a case
-by case basis to determine the suitability. Teams are encouraged to reach out to Release Management in
-the `#release-coordination` channel on Slack or `@relman` so their specific needs can be assessed.
+With Firefox shipping every two weeks, the next train is almost always close. As a
+result, uplift criteria are applied strictly and most fixes should simply ride the next
+release rather than being uplifted. Before requesting an uplift, ask two questions:
+
+- Can it wait one cycle? The next major release is rarely more than two weeks out. If
+  waiting is acceptable, ride the train.
+- Can it be disabled instead of fixed? If the problem can be mitigated by turning a
+  feature off via a pref or feature flag, that is preferred to uplifting a fix. This is
+  lower-risk and often needs no uplift at all.
+
+Uplifts are generally not the preferred way to ship new feature work. New or risky work
+should be gated behind a pref / feature flag and ride the trains, not accelerated to
+"catch" a release. Where a genuine business need exists, requests are handled case by
+case, reach out to Release Management in the `#release-coordination` channel on Slack
+or `@relman`.
 
 Factors that will need to be taken into account include:
 
 - Size and scope of patches to be uplifted
+- Whether the change has baked on firefox-main and is verified
 - QA availability to test prior to shipping and during development
+- If the feature could instead be disabled or the reverting the regressor
 - Engineering resources to resolve any conflicts between different development branches
 - String additions/changes which may impact available locales
 
@@ -176,7 +188,7 @@ Further Reading/Useful links:
 ### Enabling/Disabling code (Prefs)
 
 Within Firefox we allow the ability to enable/disable bits of code or entire features using
-{ref}`Preferences <preferences>`. There are many reasons why this is useful. For example:
+{ref}`Preferences <pocket-guide-preferences>`. There are many reasons why this is useful. For example:
 
 - Continual development over multiple release cycles without exposing partially-completed
   features to our users
@@ -355,7 +367,7 @@ when a test or a testsuite can intermittently fail.
 development collaboration tool suite. Read more about [Phabricator as a
 product](https://phacility.com/phabricator/).
 
-(preferences)=
+(pocket-guide-preferences)=
 
 **Preferences** - A preference is any value or defined behavior that can
 be set (e.g. enabled or disabled). Preference changes via user interface

@@ -8,8 +8,6 @@
 
 namespace mozilla::dom {
 
-MIDIMessageQueue::MIDIMessageQueue() : mMutex("MIDIMessageQueue::mMutex") {}
-
 class MIDIMessageTimestampComparator {
  public:
   bool Equals(const MIDIMessage& a, const MIDIMessage& b) const {

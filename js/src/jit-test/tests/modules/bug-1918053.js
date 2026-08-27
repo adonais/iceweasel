@@ -7,7 +7,7 @@ let fooJs = registerModule("foo", parseModule('export const test = true; export 
 let fooJson = registerModule("foo", parseModule('{"test": true}', "", "json"));
 
 let a = registerModule("a", parseModule(`import {test} from "foo"; import json from "foo" with { type: "json" };`));
-moduleLink(a);
+moduleLoadAndLink(a);
 moduleEvaluate(a);
 
 let json = getModuleEnvironmentValue(a, 'json');

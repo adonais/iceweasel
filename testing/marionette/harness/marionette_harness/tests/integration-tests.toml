@@ -48,6 +48,10 @@
 
 ["include:../../../../../extensions/pref/autoconfig/test/marionette/manifest.toml"]
 
+# ipc tests
+
+["include:../../../../../ipc/glue/test/marionette/manifest.toml"]
+
 # js tests
 
 ["include:../../../../../js/xpconnect/tests/marionette/manifest.toml"]

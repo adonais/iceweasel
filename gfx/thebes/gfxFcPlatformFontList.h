@@ -17,6 +17,11 @@
 #include FT_TRUETYPE_TABLES_H
 #include FT_MULTIPLE_MASTERS_H
 
+#ifdef MOZ_FONTATIONS
+#  include "mozilla/MemoryMappedFile.h"
+#  include "mozilla/gfx/fontations_glue_generated.h"
+#endif
+
 #if defined(MOZ_SANDBOX) && defined(XP_LINUX)
 #  include "mozilla/SandboxBroker.h"
 #endif
@@ -74,15 +79,14 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
   // used for data fonts where the fontentry takes ownership
   // of the font data and the FT_Face
   explicit gfxFontconfigFontEntry(const nsACString& aFaceName,
-                                  WeightRange aWeight, StretchRange aStretch,
+                                  WeightRange aWeight, WidthRange aWidth,
                                   SlantStyleRange aStyle,
                                   RefPtr<mozilla::gfx::SharedFTFace>&& aFace);
 
   // used for @font-face local system fonts with explicit patterns
   explicit gfxFontconfigFontEntry(const nsACString& aFaceName,
                                   FcPattern* aFontPattern, WeightRange aWeight,
-                                  StretchRange aStretch,
-                                  SlantStyleRange aStyle);
+                                  WidthRange aWidth, SlantStyleRange aStyle);
 
   gfxFontEntry* Clone() const override;
 
@@ -121,6 +125,12 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
 
   // pattern for a single face of a family
   RefPtr<FcPattern> mFontPattern;
+
+#ifdef MOZ_FONTATIONS
+  void InitSkrifaFont(FcPattern* aPattern);
+  mozilla::Atomic<mozilla::gfx::SkrifaFontRef*> mSkrifaFontFace;
+  mozilla::MemoryMappedFile mSkrifaFontFile;
+#endif
 
   // FTFace - initialized when needed. Once mFTFaceInitialized is true,
   // the face can be accessed without locking.
@@ -278,12 +288,12 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
   already_AddRefed<gfxFontEntry> LookupLocalFont(
       FontVisibilityProvider* aFontVisibilityProvider,
       const nsACString& aFontName, WeightRange aWeightForEntry,
-      StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry) override;
+      WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry) override;
 
   already_AddRefed<gfxFontEntry> MakePlatformFont(
       const nsACString& aFontName, WeightRange aWeightForEntry,
-      StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
-      const uint8_t* aFontData, uint32_t aLength) override;
+      WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry,
+      FontData* aFontData) override;
 
   bool FindAndAddFamiliesLocked(
       FontVisibilityProvider* aFontVisibilityProvider,

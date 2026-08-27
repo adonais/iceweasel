@@ -6,6 +6,7 @@ package mozilla.components.browser.state.engine.middleware
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.InitAction
 import mozilla.components.browser.state.action.LocaleAction
@@ -34,7 +35,6 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import mozilla.components.support.base.log.logger.Logger
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * This middleware is for use with managing any states or resources required for translating a
@@ -294,7 +294,7 @@ class TranslationsMiddleware(
     private suspend fun requestEngineSupport(
         store: Store<BrowserState, BrowserAction>,
     ): Boolean? {
-        return suspendCoroutine { continuation ->
+        return suspendCancellableCoroutine { continuation ->
             engine.isTranslationsEngineSupported(
                 onSuccess = { isEngineSupported ->
                     store.dispatch(
@@ -315,6 +315,10 @@ class TranslationsMiddleware(
                     continuation.resume(null)
                 },
             )
+            continuation.invokeOnCancellation {
+                // cancel the engine support check if the Engine exposes a cancellation API
+                // see https://bugzilla.mozilla.org/show_bug.cgi?id=2056546
+            }
         }
     }
 
@@ -604,7 +608,7 @@ class TranslationsMiddleware(
      * @return The page translate language setting or null.
      */
     private suspend fun getLanguageSetting(pageLanguage: String): LanguageSetting? {
-        return suspendCoroutine { continuation ->
+        return suspendCancellableCoroutine { continuation ->
             engine.getLanguageSetting(
                 languageCode = pageLanguage,
                 onSuccess = { setting ->
@@ -616,6 +620,10 @@ class TranslationsMiddleware(
                     continuation.resume(null)
                 },
             )
+            continuation.invokeOnCancellation {
+                // cancel the language setting request when the Engine exposes a cancellation API.
+                // see https://bugzilla.mozilla.org/show_bug.cgi?id=2056546
+            }
         }
     }
 
@@ -680,7 +688,7 @@ class TranslationsMiddleware(
      * @return The never translate site setting from the [EngineSession] or null.
      */
     private suspend fun getNeverTranslateSiteSetting(engineSession: EngineSession): Boolean? {
-        return suspendCoroutine { continuation ->
+        return suspendCancellableCoroutine { continuation ->
             engineSession.getNeverTranslateSiteSetting(
                 onResult = { setting ->
                     logger.info("Success requesting never translate site settings.")
@@ -691,6 +699,10 @@ class TranslationsMiddleware(
                     continuation.resume(null)
                 },
             )
+            continuation.invokeOnCancellation {
+                // cancel the never-translate-site request when the EngineSession exposes a cancellation API
+                // see https://bugzilla.mozilla.org/show_bug.cgi?id=2056546
+            }
         }
     }
 
@@ -1074,7 +1086,7 @@ class TranslationsMiddleware(
      * @return Null on success, or the [Throwable] reported by the engine on failure.
      */
     private suspend fun setBrowserTranslationsEnabled(isEnabled: Boolean): Throwable? {
-        return suspendCoroutine { continuation ->
+        return suspendCancellableCoroutine { continuation ->
             engine.aiFeatures.setFeatureEnablement(
                 featureId = "translations",
                 isEnabled = isEnabled,
@@ -1087,6 +1099,10 @@ class TranslationsMiddleware(
                     continuation.resume(error)
                 },
             )
+            continuation.invokeOnCancellation {
+                // cancel the feature enablement request when the AIFeaturesRuntime exposes a cancellation API
+                // see https://bugzilla.mozilla.org/show_bug.cgi?id=2056546
+            }
         }
     }
 }

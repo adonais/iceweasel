@@ -8,7 +8,6 @@
   --rdm-shadow-color: light-dark(rgba(155, 155, 155, 0.26), rgba(105, 105, 105, 0.26));
   --theme-tab-toolbar-background: light-dark(#f9f9fa, #0c0c0d);
   --rdm-toolbar-height: 30px;
-  --rdm-toolbar-accomodate-ua-height: 60px;
 
   /**
    * Set background - not only background-color - to properly override the
@@ -26,11 +25,7 @@
 
 .browserContainer.responsive-mode > .rdm-toolbar {
   border: none;
-  position: absolute;
-  z-index: var(--browser-stack-z-index-rdm-toolbar);
   height: var(--rdm-toolbar-height);
-  top: 0;
-  left: 0;
   width: 100%;
 
   /**
@@ -42,18 +37,8 @@
   }
 }
 
-.browserContainer.responsive-mode > .rdm-toolbar.accomodate-ua {
-  height: var(--rdm-toolbar-accomodate-ua-height);
-
-  /**
-   * When the browser window is less than 520 pixels wide, the RDM toolbar
-   * needs extra space to accomdate for the UA input so the .rdm-toolbar is
-   * set to a larger height of --rdm-toolbar-accomodate-ua-height. We also need
-   * to shift the .dialogBox down by the same height so both are visible.
-   */
-  + .browserStack > .dialogStack > .dialogTemplate > .dialogBox {
-    margin-top: var(--rdm-toolbar-accomodate-ua-height);
-  }
+.browserContainer.responsive-mode.accomodate-ua {
+  --rdm-toolbar-height: 60px;
 }
 
 .browserContainer.responsive-mode > .rdm-toolbar.device-modal-opened {
@@ -61,8 +46,6 @@
 }
 
 .browserContainer.responsive-mode > .browserStack {
-  min-height: 0;
-  min-width: 0;
   overflow: auto;
   contain: size;
 
@@ -76,7 +59,7 @@
    * placed correctly as a result of .rdm-screen-box's transform.
    */
   grid-template-columns: 15px 1fr [center-align] var(--rdm-width) 1fr;
-  grid-template-rows: 65px [margin-top-offset] var(--rdm-height) [below-browser] 1fr;
+  grid-template-rows: 10px [margin-top-offset] var(--rdm-height) [below-browser] 1fr;
 }
 
 .browserContainer.responsive-mode > .browserStack > :is(browser, .rdm-screen-box) {

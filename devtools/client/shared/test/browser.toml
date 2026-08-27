@@ -134,6 +134,7 @@ skip-if = [
 ["browser_html_tooltip-01.js"]
 
 ["browser_html_tooltip-02.js"]
+support-files = ["doc_html_tooltip-02-iframe.html"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1721159
 ]

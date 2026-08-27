@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* global RPMCanSetDefaultPDFHandler, RPMGetBoolPref, RPMOpenPDFFile,
+/* global RPMCanSetDefaultPDFHandler, RPMGetBoolPref, RPMPickPDFFile,
    RPMSetDefaultPDFHandler, RPMSetPref */
 
 const PROMO_DISMISSED_PREF = "browser.aboutpdf.promo.dismissed";
@@ -10,23 +10,13 @@ const PROMO_DISMISSED_PREF = "browser.aboutpdf.promo.dismissed";
 const dropzone = document.getElementById("dropzone");
 const dropzoneHint = document.getElementById("dropzone-hint");
 const dropzoneError = document.getElementById("dropzone-error");
-const fileInput = document.getElementById("file-input");
 const browseFiles = document.getElementById("browse-files");
 const promo = document.getElementById("promo");
 const setDefault = document.getElementById("set-default");
 const dismissPromo = document.getElementById("dismiss-promo");
 
 browseFiles.addEventListener("click", () => {
-  fileInput.click();
-});
-
-fileInput.addEventListener("change", () => {
-  const file = fileInput.files[0];
-  // Reset so the same file can be re-selected after an error.
-  fileInput.value = "";
-  if (file) {
-    handleFile(file);
-  }
+  pickFile();
 });
 
 dropzone.addEventListener("dragenter", e => {
@@ -48,11 +38,19 @@ dropzone.addEventListener("dragleave", e => {
 });
 
 dropzone.addEventListener("drop", e => {
-  e.preventDefault();
   dropzone.classList.remove("drag-over");
-  const file = e.dataTransfer?.files[0];
-  if (file) {
-    handleFile(file);
+  // Let native handling open .pdf files with a PDF MIME type; cancel others.
+  const files = e.dataTransfer?.files;
+  if (
+    !files?.length ||
+    ![...files].every(
+      file =>
+        file.type === "application/pdf" &&
+        file.name.toLowerCase().endsWith(".pdf")
+    )
+  ) {
+    e.preventDefault();
+    showError("invalid");
   }
 });
 
@@ -60,7 +58,7 @@ dropzone.addEventListener("drop", e => {
 // through #browse-files which has the real button semantics.
 dropzone.addEventListener("click", e => {
   if (!e.target.closest("#browse-files")) {
-    fileInput.click();
+    pickFile();
   }
 });
 
@@ -106,14 +104,15 @@ async function updatePromoVisibility() {
 
 let processing = false;
 
-async function handleFile(file) {
+// The parent validates the selected file before opening it.
+async function pickFile() {
   if (processing) {
     return;
   }
   processing = true;
   showError(null);
   try {
-    if (!(await RPMOpenPDFFile(file))) {
+    if ((await RPMPickPDFFile()) === "invalid") {
       showError("invalid");
     }
   } catch (e) {
@@ -124,7 +123,7 @@ async function handleFile(file) {
   }
 }
 
-// errorType: null (clear), "invalid" (file type), or "generic" (other failure).
+// errorType: null, "invalid" (not a PDF), or "generic".
 function showError(errorType) {
   if (!errorType) {
     dropzoneError.hidden = true;
@@ -142,8 +141,7 @@ function showError(errorType) {
   dropzoneHint.hidden = errorType === "invalid";
 }
 
-// Enter triggers the picker only when the dropzone itself is hovered and no
-// inner control has focus (which would handle Enter itself).
+// Enter opens the picker while the dropzone is hovered and no control has focus.
 document.addEventListener("keydown", e => {
   if (e.key === "Enter" && dropzone.matches(":hover")) {
     const active = document.activeElement;
@@ -153,7 +151,7 @@ document.addEventListener("keydown", e => {
       active === document.documentElement
     ) {
       e.preventDefault();
-      fileInput.click();
+      pickFile();
     }
   }
 });

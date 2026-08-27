@@ -11,8 +11,11 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIWindowWatcher.h"
+#include "nsIWritablePropertyBag2.h"
 #include "nsNSSCertHelper.h"
 #include "nsNSSComponent.h"
 #include "nsNativeCharsetUtils.h"
@@ -535,6 +538,93 @@ PKCS11ModuleDB::ListRemoteProcessModules() {
         return ListModulesPromise::CreateAndReject(rv, __func__);
       });
 }
+
+RefPtr<PKCS11ModuleDB::TokenInfoPromise> PKCS11ModuleDB::ResetTokenGivenParent(
+    const RefPtr<PKCS11ModuleParent>& parent, SECMODModuleID moduleID,
+    CK_SLOT_ID slotID) {
+  using ReturnType = std::tuple<const nsresult&, TokenInfo&&>;
+  return parent->SendResetToken(moduleID, slotID)
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [](ReturnType rv) {
+            if (NS_FAILED(std::get<0>(rv))) {
+              return TokenInfoPromise::CreateAndReject(std::get<0>(rv),
+                                                       __func__);
+            }
+            return TokenInfoPromise::CreateAndResolve(
+                std::move(std::get<1>(rv)), __func__);
+          },
+          [](ipc::ResponseRejectReason reason) {
+            return TokenInfoPromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                     __func__);
+          });
+}
+
+RefPtr<PKCS11ModuleDB::TokenInfoPromise> PKCS11ModuleDB::LoginTokenGivenParent(
+    const RefPtr<PKCS11ModuleParent>& parent, SECMODModuleID moduleID,
+    CK_SLOT_ID slotID) {
+  using ReturnType = std::tuple<const nsresult&, TokenInfo&&>;
+  return parent->SendLoginToken(moduleID, slotID)
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [](ReturnType rv) {
+            if (NS_FAILED(std::get<0>(rv))) {
+              return TokenInfoPromise::CreateAndReject(std::get<0>(rv),
+                                                       __func__);
+            }
+            return TokenInfoPromise::CreateAndResolve(
+                std::move(std::get<1>(rv)), __func__);
+          },
+          [](ipc::ResponseRejectReason reason) {
+            return TokenInfoPromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                     __func__);
+          });
+}
+
+RefPtr<PKCS11ModuleDB::TokenInfoPromise> PKCS11ModuleDB::LogoutTokenGivenParent(
+    const RefPtr<PKCS11ModuleParent>& parent, SECMODModuleID moduleID,
+    CK_SLOT_ID slotID) {
+  using ReturnType = std::tuple<const nsresult&, TokenInfo&&>;
+  return parent->SendLogoutToken(moduleID, slotID)
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [](ReturnType rv) {
+            if (NS_FAILED(std::get<0>(rv))) {
+              return TokenInfoPromise::CreateAndReject(std::get<0>(rv),
+                                                       __func__);
+            }
+            return TokenInfoPromise::CreateAndResolve(
+                std::move(std::get<1>(rv)), __func__);
+          },
+          [](ipc::ResponseRejectReason reason) {
+            return TokenInfoPromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                     __func__);
+          });
+}
+
+RefPtr<PKCS11ModuleDB::TokenInfoPromise>
+PKCS11ModuleDB::ChangeTokenPasswordGivenParent(
+    const RefPtr<PKCS11ModuleParent>& parent, SECMODModuleID moduleID,
+    CK_SLOT_ID slotID, const nsCString& oldPassword,
+    const nsCString& newPassword) {
+  using ReturnType = std::tuple<const nsresult&, TokenInfo&&>;
+  return parent
+      ->SendChangeTokenPassword(moduleID, slotID, oldPassword, newPassword)
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [](ReturnType rv) {
+            if (NS_FAILED(std::get<0>(rv))) {
+              return TokenInfoPromise::CreateAndReject(std::get<0>(rv),
+                                                       __func__);
+            }
+            return TokenInfoPromise::CreateAndResolve(
+                std::move(std::get<1>(rv)), __func__);
+          },
+          [](ipc::ResponseRejectReason reason) {
+            return TokenInfoPromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                     __func__);
+          });
+}
 #endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 
 NS_IMETHODIMP
@@ -626,6 +716,112 @@ void CollectThirdPartyPKCS11ModuleTelemetry(bool aIsInitialization) {
   }
   mozilla::glean::pkcs11::third_party_modules_loaded.Set(
       thirdPartyModulesLoaded);
+}
+
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+RefPtr<PKCS11ModuleDB::TokenInfoPromise> PKCS11ModuleDB::ResetToken(
+    SECMODModuleID moduleID, CK_SLOT_ID slotID) {
+  if (!mPKCS11ModuleProcessPromise) {
+    return TokenInfoPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
+  }
+  return mPKCS11ModuleProcessPromise->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [moduleID, slotID](const RefPtr<PKCS11ModuleParent>& parent) {
+        MOZ_RELEASE_ASSERT(parent);
+        return ResetTokenGivenParent(parent, moduleID, slotID);
+      },
+      [](nsresult rv) {
+        return TokenInfoPromise::CreateAndReject(rv, __func__);
+      });
+}
+
+RefPtr<PKCS11ModuleDB::TokenInfoPromise> PKCS11ModuleDB::LoginToken(
+    SECMODModuleID moduleID, CK_SLOT_ID slotID) {
+  if (!mPKCS11ModuleProcessPromise) {
+    return TokenInfoPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
+  }
+  return mPKCS11ModuleProcessPromise->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [moduleID, slotID](const RefPtr<PKCS11ModuleParent>& parent) {
+        MOZ_RELEASE_ASSERT(parent);
+        return LoginTokenGivenParent(parent, moduleID, slotID);
+      },
+      [](nsresult rv) {
+        return TokenInfoPromise::CreateAndReject(rv, __func__);
+      });
+}
+
+RefPtr<PKCS11ModuleDB::TokenInfoPromise> PKCS11ModuleDB::LogoutToken(
+    SECMODModuleID moduleID, CK_SLOT_ID slotID) {
+  if (!mPKCS11ModuleProcessPromise) {
+    return TokenInfoPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
+  }
+  return mPKCS11ModuleProcessPromise->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [moduleID, slotID](const RefPtr<PKCS11ModuleParent>& parent) {
+        MOZ_RELEASE_ASSERT(parent);
+        return LogoutTokenGivenParent(parent, moduleID, slotID);
+      },
+      [](nsresult rv) {
+        return TokenInfoPromise::CreateAndReject(rv, __func__);
+      });
+}
+
+RefPtr<PKCS11ModuleDB::TokenInfoPromise> PKCS11ModuleDB::ChangeTokenPassword(
+    SECMODModuleID moduleID, CK_SLOT_ID slotID, const nsCString& oldPassword,
+    const nsCString& newPassword) {
+  if (!mPKCS11ModuleProcessPromise) {
+    return TokenInfoPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
+  }
+  return mPKCS11ModuleProcessPromise->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [moduleID, slotID, oldPassword,
+       newPassword](const RefPtr<PKCS11ModuleParent>& parent) {
+        MOZ_RELEASE_ASSERT(parent);
+        return ChangeTokenPasswordGivenParent(parent, moduleID, slotID,
+                                              oldPassword, newPassword);
+      },
+      [](nsresult rv) {
+        return TokenInfoPromise::CreateAndReject(rv, __func__);
+      });
+}
+#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
+
+void ShowProtectedAuthDialog(const nsCString& tokenName,
+                             const nsString& promptId) {
+  nsCOMPtr<nsIWindowWatcher> ww =
+      do_GetService("@mozilla.org/embedcomp/window-watcher;1");
+  if (!ww) {
+    return;
+  }
+  nsCOMPtr<mozIDOMWindowProxy> activeWindow;
+  if (NS_FAILED(ww->GetActiveWindow(getter_AddRefs(activeWindow))) ||
+      !activeWindow) {
+    return;
+  }
+  // Open a modal informational dialog that auto-closes when authentication
+  // completes. It has only a Cancel button - out-of-band PIN entry on the
+  // device itself is the sole confirmation mechanism.
+  nsCOMPtr<nsIWritablePropertyBag2> dialogArgs =
+      do_CreateInstance("@mozilla.org/hash-property-bag;1");
+  if (!dialogArgs) {
+    return;
+  }
+  if (NS_FAILED(dialogArgs->SetPropertyAsAString(
+          u"tokenName"_ns, NS_ConvertUTF8toUTF16(tokenName)))) {
+    return;
+  }
+  if (NS_FAILED(dialogArgs->SetPropertyAsAString(u"promptId"_ns, promptId))) {
+    return;
+  }
+  // Open the chrome XUL dialog directly via the window watcher.
+  // AutoNoJSAPI ensures that the new window gets a system principal.
+  mozilla::dom::AutoNoJSAPI nojsapi;
+  nsCOMPtr<mozIDOMWindowProxy> newWindow;
+  (void)ww->OpenWindow(activeWindow,
+                       "chrome://pippki/content/protectedAuth.xhtml"_ns,
+                       "_blank"_ns, "centerscreen,chrome,modal,titlebar"_ns,
+                       dialogArgs, getter_AddRefs(newWindow));
 }
 
 }  // namespace psm

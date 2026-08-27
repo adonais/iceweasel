@@ -13,6 +13,7 @@
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Selection.h"
+#include "mozilla/dom/UserActivation.h"
 #include "nsCommandParams.h"
 #include "nsIClipboard.h"
 #include "nsIEditingSession.h"
@@ -445,7 +446,8 @@ nsresult PasteCommand::DoCommand(Command aCommand, EditorBase& aEditorBase,
   // confirmation which are all handled in parent process before sending the
   // paste event.
   if (!nsContentUtils::PrincipalHasPermission(*subjectPrincipal,
-                                              nsGkAtoms::clipboardRead)) {
+                                              nsGkAtoms::clipboardRead) &&
+      !dom::UserActivation::IsHandlingKeyboardInputWithPasteActions()) {
     MOZ_DIAGNOSTIC_ASSERT(StaticPrefs::dom_execCommand_paste_enabled(),
                           "How did we get here?");
     // This will spin the event loop.

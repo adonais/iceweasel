@@ -9,6 +9,8 @@ tags = "os_integration"
 
 ["test_alerts.html"]
 
+["test_alerts_callbacks.html"]
+
 ["test_alerts_noobserve.html"]
 
 ["test_alerts_requireinteraction.html"]

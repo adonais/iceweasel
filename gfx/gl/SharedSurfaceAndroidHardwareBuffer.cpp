@@ -63,7 +63,7 @@ SharedSurface_AndroidHardwareBuffer::Create(const SharedSurfaceDesc& desc) {
 
   const GLenum target = LOCAL_GL_TEXTURE_2D;
   auto fb = MozFramebuffer::CreateForBacking(desc.gl, desc.size, 0, false,
-                                             target, tex->name);
+                                             false, target, tex->name);
   if (!fb) {
     return nullptr;
   }
@@ -106,7 +106,7 @@ void SharedSurface_AndroidHardwareBuffer::ProducerReleaseImpl() {
     mSync = 0;
   }
 
-  mSync = egl->fCreateSync(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr);
+  mSync = egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr);
   MOZ_ASSERT(mSync);
   int rawFd = egl->fDupNativeFenceFDANDROID(mSync);
   if (rawFd >= 0) {
@@ -135,7 +135,8 @@ void SharedSurface_AndroidHardwareBuffer::WaitForBufferOwnership() {
   const EGLint attribs[] = {LOCAL_EGL_SYNC_NATIVE_FENCE_FD_ANDROID,
                             fenceFd.get(), LOCAL_EGL_NONE};
 
-  EGLSync sync = egl->fCreateSync(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
+  EGLSync sync =
+      egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
   if (!sync) {
     gfxCriticalNote << "Failed to create EGLSync from fd";
     return;

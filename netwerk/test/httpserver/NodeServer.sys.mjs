@@ -546,6 +546,105 @@ export class NodeTCPEchoServer extends BaseNodeServer {
   }
 }
 
+// Minimal SOCKS5 remote-DNS forwarding proxy for tests.
+//
+// Completes the SOCKS5 no-auth handshake, then transparently pipes the byte
+// stream (TLS etc. flow end-to-end) to 127.0.0.1 at the requested port. Any
+// requested hostname is "resolved" to loopback, emulating a remote-DNS SOCKS
+// proxy: the client is expected to send the hostname (ATYP=domain), never a
+// pre-resolved IP. The hostnames the proxy receives are recorded in
+// global.socksConns so a test can confirm remote DNS was actually used and
+// that no client-side resolution leaked out of the proxy.
+class NodeSocks5ForwardServerCode {
+  static async startServer(port) {
+    const net = require("net");
+
+    global.socksConns = [];
+    global.server = net.createServer(client => {
+      client.on("error", () => {});
+      // Greeting: VER(0x05) NMETHODS METHODS...
+      client.once("data", greeting => {
+        if (!greeting.length || greeting[0] !== 0x05) {
+          client.end();
+          return;
+        }
+        // Reply: VER=0x05 METHOD=0x00 (no authentication). Firefox only sends
+        // the request after receiving this, so greeting and request never
+        // coalesce into one chunk.
+        client.write(Buffer.from([0x05, 0x00]));
+        client.once("data", req => {
+          // Request: VER CMD RSV ATYP DST.ADDR DST.PORT ; CMD 0x01 = CONNECT.
+          if (req.length < 7 || req[0] !== 0x05 || req[1] !== 0x01) {
+            client.end();
+            return;
+          }
+          const atyp = req[3];
+          let offset = 4;
+          if (atyp === 0x01) {
+            offset = 8; // IPv4
+          } else if (atyp === 0x03) {
+            const len = req[4];
+            const name = req.slice(5, 5 + len).toString("ascii");
+            global.socksConns.push(name);
+            offset = 5 + len;
+          } else if (atyp === 0x04) {
+            offset = 4 + 16; // IPv6
+          } else {
+            client.end();
+            return;
+          }
+          const dstPort = req.readUInt16BE(offset);
+          const upstream = net.connect(dstPort, "127.0.0.1", () => {
+            // Success: VER REP RSV ATYP BND.ADDR(0.0.0.0) BND.PORT(0).
+            client.write(
+              Buffer.from([0x05, 0x00, 0x00, 0x01, 0, 0, 0, 0, 0, 0])
+            );
+            client.pipe(upstream);
+            upstream.pipe(client);
+          });
+          upstream.on("error", () => {
+            try {
+              client.end();
+            } catch (e) {}
+          });
+          client.on("error", () => {
+            try {
+              upstream.end();
+            } catch (e) {}
+          });
+        });
+      });
+    });
+
+    const serverPort = await ADB.listenAndForwardPort(global.server, port);
+    return serverPort;
+  }
+}
+
+export class NodeSocks5ForwardServer extends BaseNodeServer {
+  _protocol = "socks";
+  _version = "socks5";
+
+  /// Starts the SOCKS5 forwarding proxy.
+  async start(port = 0) {
+    this.processId = await NodeServer.fork();
+
+    await this.execute(ADB);
+    await this.execute(NodeSocks5ForwardServerCode);
+
+    this._port = await this.execute(
+      `NodeSocks5ForwardServerCode.startServer(${port})`
+    );
+  }
+
+  /// Hostnames (ATYP=domain) the proxy has been asked to connect to.
+  async connectedHostnames() {
+    return JSON.parse(
+      await this.execute("JSON.stringify(global.socksConns || [])")
+    );
+  }
+}
+
 // TCP Echo server
 
 class NodeTLSEchoServerCode {
@@ -1504,9 +1603,9 @@ export class WebSocketConnection {
 
   static makeWebSocketChan(url) {
     let protocol = url.startsWith("wss:") ? "wss" : "ws";
-    let chan = Cc[
-      `@mozilla.org/network/protocol;1?name=${protocol}`
-    ].createInstance(Ci.nsIWebSocketChannel);
+    let chan = Cc[`@mozilla.org/network/protocol;1?name=${protocol}`]
+      .getService(Ci.nsIWebSocketProtocolHandler)
+      .newWebSocketChannel();
     chan.initLoadInfo(
       null, // aLoadingNode
       Services.scriptSecurityManager.getSystemPrincipal(),
@@ -1664,7 +1763,7 @@ export class NodeServer {
     let req = new XMLHttpRequest({ mozAnon: true, mozSystem: true });
     const serverIP =
       AppConstants.platform == "android" ? "10.0.2.2" : "127.0.0.1";
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     req.open("POST", `http://${serverIP}:${h2Port}${path}`);
     req.channel.QueryInterface(Ci.nsIHttpChannelInternal).bypassProxy = true;
     req.channel.loadFlags |= Ci.nsIChannel.LOAD_BYPASS_URL_CLASSIFIER;

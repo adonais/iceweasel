@@ -28,10 +28,18 @@ default-features = false
 version = "0.62.0"
 features = [
   "ApplicationModel",
+  "Storage",
   "Storage_Search",
   "UI_Shell",
   "UI_StartScreen",
+  "Win32_Foundation",
+  "Win32_Storage_EnhancedStorage",
+  "Win32_Storage_Packaging_Appx",
+  "Win32_Storage_FileSystem",
   "Win32_System_Com",
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_Variant",
   "Win32_UI_Shell",
   "Win32_UI_Shell_Common",
+  "Win32_UI_Shell_PropertiesSystem",
 ]

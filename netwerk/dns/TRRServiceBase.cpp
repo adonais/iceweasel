@@ -83,7 +83,7 @@ void TRRServiceBase::ProcessURITemplate(nsACString& aURI) {
     }
   } while (true);
 
-  aURI = uri;
+  aURI = std::move(uri);
 }
 
 void TRRServiceBase::CheckURIPrefs() {

@@ -244,22 +244,9 @@ def rust_analyzer_config(command_context):
     # if we're building Firefox.
     commtopsrcdir = command_context.substs.get("commtopsrcdir")
 
-    if commtopsrcdir:
-        # Thunderbird uses its own Rust workspace, located in comm/rust/ - we
-        # set it as the main workspace to build a little further below. The
-        # working directory for cargo check commands is the workspace's root.
-        if sys.platform == "win32":
-            cargo_check_command = [sys.executable, "../../mach"]
-        else:
-            # This needs to be an absolute path so the searchfox indexing can
-            # find the mach binary.
-            cargo_check_command = [os.path.join(command_context.topsrcdir, "mach")]
-    elif sys.platform == "win32":
-        cargo_check_command = [sys.executable, "mach"]
-    else:
-        cargo_check_command = ["./mach"]
-
-    cargo_check_command += [
+    cargo_check_command = [
+        sys.executable,
+        mozpath.join(command_context.topsrcdir, "mach"),
         "--log-no-times",
         "cargo",
         "check",

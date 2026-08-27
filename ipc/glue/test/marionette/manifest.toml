@@ -1,0 +1,11 @@
+[DEFAULT]
+run-if = [
+  "buildapp == 'browser'",
+]
+subsuite = "integration"
+tags = "os_integration"
+
+["test_child_shutdown_hang_crash.py"]
+run-if = [
+  "debug", # no crash report in opt QuickExit path, no crash reporter in *san
+]

@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-07-16T14:38:22.699835+00:00'
+updated_at: '2026-08-10T15:43:04.147480+00:00'
 export:
   path: ./docs/mots/index.md
   format: md
@@ -105,6 +105,10 @@ people:
     bmo_id: 310076
     name: Tooru Fujisawa
     nick: arai
+  - &artem
+    bmo_id: 783324
+    name: Artem Popov
+    nick: artem
   - &aryx
     bmo_id: 258347
     name: Sebastian Hengst
@@ -125,6 +129,10 @@ people:
     bmo_id: 272464
     name: Bas Schouten
     nick: bas.schouten
+  - &basti
+    bmo_id: 635633
+    name: Sebastian Streich
+    nick: basti
   - &bc
     bmo_id: 23402
     name: Bob Clary
@@ -809,6 +817,10 @@ people:
     bmo_id: 638884
     name: Mandy Cheang
     nick: mcheang
+  - &mcleinman
+    bmo_id: 723979
+    name: Matt Cleinman
+    nick: mcleinman
   - &mconley
     bmo_id: 403756
     name: Mike Conley
@@ -997,6 +1009,10 @@ people:
     bmo_id: 339062
     name: Luca Greco
     nick: rpl
+  - &rrando
+    bmo_id: 732678
+    name: Rolf Rando
+    nick: rrando
   - &rrelyea
     bmo_id: 11099
     name: Robert Relyea
@@ -1123,6 +1139,10 @@ people:
     bmo_id: 663555
     name: Tarik Eshaq
     nick: teshaq
+  - &tetchart
+    bmo_id: 783580
+    name: Tyler Etchart
+    nick: tetchart
   - &tgiles
     bmo_id: 666930
     name: Tim Giles
@@ -1487,9 +1507,9 @@ modules:
       - *sergesanspaille
     submodules:
 
-      - name: 'Core: Build Config - Fennec'
-        description: Submodule of the build config covering Fennec's build system
-          in mobile/android.
+      - name: 'Core: Build Config - Fenix'
+        description: Submodule of the build config covering Fenix's build system in
+          mobile/android.
         meta:
           group: dev-builds
           components:
@@ -2304,19 +2324,58 @@ modules:
   - machine_name: core_machine_learning
     name: 'Core: Machine Learning'
     description: AI services and local inference
-    includes:
-      - browser/components/genai/
-      - toolkit/components/aboutinference/
-      - toolkit/components/ml/
     meta:
-      components:
-        - Core::Machine Learning
-      review_group: firefox-ai-ml-reviewers
+      owners_emeritus:
+        - *tarek
     owners:
       - *Mardak
-      - *tarek
     peers:
       - *gregtatum
+      - *pdahiya
+      - *rrando
+      - *tetchart
+    submodules:
+      - machine_name: core_machine_learning_frontend
+        name: 'Machine Learning: Frontend'
+        includes:
+          - browser/components/aiwindow/
+          - browser/components/genai/
+        meta:
+          components:
+            - 'Core::Machine Learning: Frontend'
+          review_group: ai-frontend-reviewers
+        owners:
+          - *Mardak
+        peers:
+          - *pdahiya
+
+      - machine_name: core_machine_learning_models
+        name: 'Machine Learning: Models'
+        includes:
+          - browser/components/aiwindow/models/
+          - browser/components/aiwindow/services/
+        meta:
+          components:
+            - 'Core::Machine Learning: General'
+          review_group: ai-models-reviewers
+        owners:
+          - *rrando
+          - *tetchart
+
+      - machine_name: core_machine_learning_platform
+        name: 'Machine Learning: Platform'
+        includes:
+          - toolkit/components/aboutinference/
+          - toolkit/components/ml/
+          - toolkit/components/pageextractor/
+        meta:
+          components:
+            - 'Core::Machine Learning: On Device'
+          review_group: ai-platform-reviewers
+        owners:
+          - *gregtatum
+        peers:
+          - *nordzilla
 
   - name: 'Core: MathML'
     description: MathML is a low-level specification for describing mathematics which
@@ -2890,7 +2949,7 @@ modules:
     meta:
       components:
         - 'Core::Security: RLBox'
-  - name: 'Core: Static analysis & rewriting for C++'
+  - name: Static analysis & rewriting for C++
     description: Tools for checking C++ code looking for problems at compile time,
       plus tools for automated rewriting of C++ code.
     includes:
@@ -2905,7 +2964,7 @@ modules:
         - Ehsan Akhgari
       group: dev-platform
       components:
-        - Core::Rewriting & Analysis
+        - Developer Infrastructure::Source Code Analysis
       review_group: static-analysis-reviewers
     owners:
       - *sergesanspaille
@@ -3044,7 +3103,8 @@ modules:
     description: The View Manager is responsible for handling "heavyweight" rendering
       (some clipping, compositing) and event handling tasks.
     includes:
-      - view/**/*
+      - layout/base/**/*
+      - layout/painting/**/*
     meta:
       owners_emeritus:
         - Robert O'Callahan
@@ -3291,6 +3351,7 @@ modules:
         - Robert O'Callahan
       group: dev-platform
       url: http://www.mozilla.org/ports/gtk/
+      review_group: gtk-reviewers
       components:
         - 'Core::Widget: Gtk'
     owners:
@@ -3798,6 +3859,10 @@ modules:
           - *kpatenio
           - *rking
           - *niklas
+          - *basti
+          - *artem
+          - *mcleinman
+          - *baku
         machine_name: ip_protection
 
       - name: In-product Messaging
@@ -4670,6 +4735,7 @@ modules:
           - *Dexter
           - *janerik
           - *travis
+          - *charlie
         machine_name: telemetry
 
       - name: UI Widgets
@@ -4803,5 +4869,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 7f3f39072cdfe8276ee0338d3431eaadb7fc5ce2
-  export: 52cb1e07a475512694ad2f7c88561e678c8d135c
+  config: 047f362e10b5d3c0d197644c02c888be932b73dd
+  export: b38e97f0df6cea50fe3a137e2bb1a48c1fb3c0f2

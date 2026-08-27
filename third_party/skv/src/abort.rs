@@ -84,6 +84,11 @@ pub struct AbortSignal {
 }
 
 impl AbortSignal {
+    /// Returns whether this signal's controller has been aborted.
+    pub fn is_aborted(&self) -> bool {
+        matches!(&*self.state.lock().unwrap(), AbortState::Aborted)
+    }
+
     /// Consumes this signal and waits for either `f` to complete, or the
     /// signal to fire; whichever happens first.
     pub async fn aborting<T, E, F>(self, f: F) -> Result<T, E>

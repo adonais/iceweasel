@@ -5,7 +5,7 @@
 
 const {
   isBrowsingContextCompatible,
-  isWebContentProcess,
+  isPrivilegedContext,
   isWebdriverSafeNavigationURL,
 } = ChromeUtils.importESModule(
   "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs"
@@ -73,7 +73,7 @@ add_task(async function () {
   await extension.unload();
 });
 
-add_task(async function test_isWebContentProcess() {
+add_task(async function test_isPrivilegedContext() {
   const contentTab = BrowserTestUtils.addTab(gBrowser, TEST_COM_PAGE);
   const contentBrowser = contentTab.linkedBrowser;
   await BrowserTestUtils.browserLoaded(contentBrowser);
@@ -88,14 +88,21 @@ add_task(async function test_isWebContentProcess() {
 
   const parentBrowser = createParentBrowserElement(contentTab, "chrome");
 
-  info("Web content browsing context should be a web content process");
-  is(isWebContentProcess(contentBrowser.browsingContext), true);
-
-  info("Parent process browsing context should not be a web content process");
-  is(isWebContentProcess(parentBrowser.browsingContext), false);
-
-  info("Extension browsing context should not be a web content process");
-  is(isWebContentProcess(sidebarBrowser.browsingContext), false);
+  is(
+    isPrivilegedContext(contentBrowser.browsingContext),
+    false,
+    "Web content browsing context should not be a privileged process"
+  );
+  is(
+    isPrivilegedContext(parentBrowser.browsingContext),
+    true,
+    "Parent process browsing context should be a privileged process"
+  );
+  is(
+    isPrivilegedContext(sidebarBrowser.browsingContext),
+    true,
+    "Extension browsing context should be a privileged process"
+  );
 
   gBrowser.removeTab(contentTab);
   gBrowser.removeTab(extensionTab);

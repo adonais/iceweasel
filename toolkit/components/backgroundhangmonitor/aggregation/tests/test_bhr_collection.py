@@ -127,7 +127,7 @@ def test_query_sql_targets_the_glean_hang_report_table():
     sql = bhr_collection.build_query_sql(
         datetime.date(2026, 5, 1), datetime.date(2026, 5, 1), 1
     )
-    assert "moz-fx-data-shared-prod.firefox_desktop_stable.hang_report_v1" in sql
+    assert "mozdata.firefox_desktop.hang_report" in sql
 
 
 def test_query_sql_filters_build_date_in_sql():
@@ -584,12 +584,30 @@ def test_process_hangs_drops_hangs_on_other_threads():
 def test_symbolicate_stacks_resolves_known_frames():
     stack = [(("xul.pdb", "ABC"), "1000"), (("kernel32.pdb", "XYZ"), "2000")]
     symbol_map = {
-        (("xul.pdb", "ABC"), "1000"): ("nsThread::ProcessNextEvent(bool)", "xul.pdb"),
-        (("kernel32.pdb", "XYZ"), "2000"): ("WaitForSingleObjectEx", "kernel32.pdb"),
+        (("xul.pdb", "ABC"), "1000"): [("nsThread::ProcessNextEvent(bool)", "xul.pdb")],
+        (("kernel32.pdb", "XYZ"), "2000"): [("WaitForSingleObjectEx", "kernel32.pdb")],
     }
     assert bhr_collection.symbolicate_stacks(stack, symbol_map) == [
         ("nsThread::ProcessNextEvent(bool)", "xul.pdb"),
         ("WaitForSingleObjectEx", "kernel32.pdb"),
+    ]
+
+
+def test_symbolicate_stacks_splices_inline_frames():
+    # A single (module, offset) whose symbol map entry carries an inlined chain
+    # expands in place (outer-first), so equivalent hangs dedup (bug 2052961).
+    stack = [(("xul.pdb", "ABC"), "1000"), (("xul.pdb", "ABC"), "2000")]
+    symbol_map = {
+        (("xul.pdb", "ABC"), "1000"): [
+            ("OuterFunc()", "xul"),
+            ("InlinedInner()", "xul"),
+        ],
+        (("xul.pdb", "ABC"), "2000"): [("LeafFunc()", "xul")],
+    }
+    assert bhr_collection.symbolicate_stacks(stack, symbol_map) == [
+        ("OuterFunc()", "xul"),
+        ("InlinedInner()", "xul"),
+        ("LeafFunc()", "xul"),
     ]
 
 
@@ -627,9 +645,9 @@ def test_symbolicate_hang_applies_symbols_then_heuristics():
         "Linux",
     )
     symbol_map = {
-        (("xul.pdb", "ABC"), "1"): ("nsThread::ProcessNextEvent(bool, bool*)", "xul"),
-        (("xul.pdb", "ABC"), "2"): ("HandlerFunc", "xul"),
-        (("xul.pdb", "ABC"), "3"): ("LeafFunc", "xul"),
+        (("xul.pdb", "ABC"), "1"): [("nsThread::ProcessNextEvent(bool, bool*)", "xul")],
+        (("xul.pdb", "ABC"), "2"): [("HandlerFunc", "xul")],
+        (("xul.pdb", "ABC"), "3"): [("LeafFunc", "xul")],
     }
     out = bhr_collection.symbolicate_hang(raw_hang, symbol_map)
     # The heuristic stops at ProcessNextEvent, leaving the two inner frames.
@@ -725,8 +743,8 @@ def test_group_hangs_output_shape_matches_profile_processor_input():
 def test_symbolicate_then_group_full_chain():
     # Two raw hangs whose stacks symbolicate to the same frames should merge.
     symbol_map = {
-        (("xul.pdb", "ABC"), "1"): ("FooFunc", "xul"),
-        (("xul.pdb", "ABC"), "2"): ("BarFunc", "xul"),
+        (("xul.pdb", "ABC"), "1"): [("FooFunc", "xul")],
+        (("xul.pdb", "ABC"), "2"): [("BarFunc", "xul")],
     }
     raw_hangs = [
         _symbolicated_hang([(("xul.pdb", "ABC"), "1"), (("xul.pdb", "ABC"), "2")], 200),

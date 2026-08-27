@@ -12,9 +12,9 @@
 <script>
 'use strict';
 
-async function doTest(rfpEnabled) {
+async function doTest(preference, enabled) {
   await SimpleTest.promiseFocus();
-  await SpecialPowers.pushPrefEnv({ set: [['privacy.resistFingerprinting', rfpEnabled ]] });
+  await SpecialPowers.pushPrefEnv({ set: [[preference, enabled]] });
   // Document::mShouldResistFingerprinting is not updated when pref is set,
   // so we need to create a new document.
   const waitForMessage = new Promise(r => onmessage = e => r(e.data));
@@ -24,16 +24,18 @@ async function doTest(rfpEnabled) {
   document.body.append(iframe);
   const formats = await waitForMessage;
   is(formats.length, 2, 'Expected 2 textformatupdates with 1 format each');
-  is(formats[0], rfpEnabled ? 'thick solid' : 'none none',
-     rfpEnabled ? 'Thick solid underline should always be reported for selected clause when RFP is enabled.'
-                : 'Ordinarily, synthesized composition events have no underline.');
-  is(formats[1], rfpEnabled ? 'thin solid' : 'none none',
-     rfpEnabled ? 'Thin solid underline should always be reported for raw clause when RFP is enabled.'
-                : 'Ordinarily, synthesized composition events have no underline.');
+  is(formats[0], enabled ? 'thick solid' : 'none none',
+     enabled ? `Thick solid underline should always be reported for selected clause when ${preference} is enabled.`
+             : 'Ordinarily, synthesized composition events have no underline.');
+  is(formats[1], enabled ? 'thin solid' : 'none none',
+     enabled ? `Thin solid underline should always be reported for raw clause when ${preference} is enabled.`
+             : 'Ordinarily, synthesized composition events have no underline.');
 }
 
-add_task(() => doTest(false));
-add_task(() => doTest(true));
+add_task(() => doTest('privacy.resistFingerprinting', true));
+add_task(() => doTest('privacy.resistFingerprinting', false));
+add_task(() => doTest('privacy.fingerprintingProtection', true));
+add_task(() => doTest('privacy.fingerprintingProtection', false));
 
 </script>
 </body>

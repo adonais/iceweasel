@@ -41,3 +41,17 @@ fun String.decodeIfNeeded(): String {
     // Apply Desktop parity: replace any remaining or literal '%' with '_'
     return result.replace('%', '_')
 }
+
+/**
+ * Appends the given [extension] to the string if the extension is not empty.
+ *
+ * @param extension The extension to append (without the dot).
+ * @return The string with the extension appended if it's not empty, otherwise the original string.
+ */
+fun String.withExtension(extension: String?): String {
+    return if (extension.isNullOrEmpty()) {
+        this
+    } else {
+        "$this.$extension"
+    }
+}

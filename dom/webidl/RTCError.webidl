@@ -16,8 +16,11 @@ enum RTCErrorDetailType {
   "hardware-encoder-error"
 };
 
+// Current spec does not expose this on Worker, but that will change soon
+// See https://github.com/w3c/webrtc-pc/issues/3092 and
+// https://www.w3.org/2026/03/24-webrtc-minutes.html#51c7
 [Pref="media.peerconnection.enabled",
- Exposed=Window]
+ Exposed=(Window,DedicatedWorker)]
 interface RTCError : DOMException {
   constructor(RTCErrorInit init, optional UTF8String message = "");
   readonly attribute RTCErrorDetailType errorDetail;

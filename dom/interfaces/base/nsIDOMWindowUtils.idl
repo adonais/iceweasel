@@ -1287,20 +1287,17 @@ interface nsIDOMWindowUtils : nsISupports {
   void exitFullscreen([optional] in boolean aDontRestoreViewSize);
 
   /**
-   * If sendQueryContentEvent()'s aAdditionalFlags argument is
-   * SELECTION_SET_FLAG_USE_NATIVE_LINE_BREAK, aOffset and aLength are offset
-   * and length in/of plain text generated from content is created with "\n".
-   * Otherwise, platform dependent.  E.g., on Windows, "\r\n" is used.
-   */
-  const unsigned long SELECTION_SET_FLAG_USE_NATIVE_LINE_BREAK = 0x0000;
-  const unsigned long SELECTION_SET_FLAG_USE_XP_LINE_BREAK     = 0x0001;
-
-  /**
    * If SELECTION_SET_FLAG_REVERSE is set, the selection is set from
    * |aOffset + aLength| to |aOffset|.  Otherwise, it's set from |aOffset| to
    * |aOffset + aLength|.
    */
   const unsigned long SELECTION_SET_FLAG_REVERSE               = 0x0002;
+
+  /**
+   * If SELECTION_EXPAND_TO_CLUSTER_BOUNDARY is set, the selection range
+   * is expanded so that the endpoints are at grapheme cluster boundaries.
+   */
+  const unsigned long SELECTION_EXPAND_TO_CLUSTER_BOUNDARY     = 0x0004;
 
   /**
    * Synthesize a selection set event to the window.

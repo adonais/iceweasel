@@ -25,6 +25,11 @@ trustpanel:
       - monitor-ops@mozilla.com
     expires: never
     extra_keys:
+      trackers_blocked:
+        description: >
+          Whether any trackers were blocked on the page the Trust Panel was opened on.
+          (Which implies that the number of blocked trackers was shown next to the shield icon.)
+        type: boolean
       breach_status:
         description: >
           Whether and what type of breach alert was shown.
@@ -50,3 +55,18 @@ trustpanel:
     data_reviews: *trustpanel_data_reviews
     notification_emails: *trustpanel_emails
     expires: never
+  tracker_count_shown:
+    type: event
+    description: |
+      Event recorded each time the tracker count becomes visible in the URL bar (once per navigation to another hostname).
+    bugs: *trustpanel_bugs
+    data_reviews: *trustpanel_data_reviews
+    notification_emails: *trustpanel_emails
+    expires: never
+    extra_keys:
+      first_visit:
+        description: >
+          Whether this is the user's first visit to the site, triggering the
+          full longform animation, vs. a return visit showing only the
+          shortform count animation.
+        type: boolean

@@ -5,6 +5,7 @@
 import json
 import os
 import subprocess as sp
+import sys
 import tempfile
 import unittest
 from contextlib import contextmanager
@@ -34,7 +35,7 @@ def temp_file_path(suffix=""):
 class ChangelogCheckTest(unittest.TestCase):
     def t(self, changelog, api, expected):
         test = [
-            "python3",
+            sys.executable,
             "src/main/resources/changelog-check.py",
             "--changelog-file",
             f"{FOLDER}/{changelog}",

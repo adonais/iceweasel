@@ -14,9 +14,31 @@
       }
     }
   },
+  "border": {
+    "color": {
+      "@base": {
+        "value": "{border.color.interactive.@base}"
+      },
+      "hover": {
+        "value": "{border.color.interactive.hover}"
+      },
+      "active": {
+        "value": "{border.color.interactive.active}"
+      }
+    }
+  },
   "dot": {
     "background": {
       "color": {
+        "@base": {
+          "value": "{toggle.border.color.@base}"
+        },
+        "hover": {
+          "value": "{toggle.border.color.hover}"
+        },
+        "active": {
+          "value": "{toggle.border.color.active}"
+        },
         "on-pressed": {
           "value": "{background.color.box.@base}"
         }

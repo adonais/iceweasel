@@ -18,8 +18,10 @@ class nsHtml5TreeOpExecutor;
 class nsHtml5DocumentBuilder;
 namespace mozilla {
 class Encoding;
-
+template <typename T>
+class Maybe;
 namespace dom {
+class CustomElementRegistry;
 class Text;
 }  // namespace dom
 }  // namespace mozilla
@@ -623,7 +625,9 @@ class nsHtml5TreeOperation final {
       mozilla::dom::FromParser aFromParser, nsNodeInfoManager* aNodeInfoManager,
       nsHtml5DocumentBuilder* aBuilder,
       mozilla::dom::HTMLContentCreatorFunction aCreator,
-      nsINode* aIntendedParent);
+      nsINode* aIntendedParent,
+      mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+          aContextRegistry);
 
   static nsIContent* CreateSVGElement(
       nsAtom* aName, nsHtml5HtmlAttributes* aAttributes,

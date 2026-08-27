@@ -26,6 +26,7 @@ import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.hardware.camera2.CameraManager
 import android.net.Uri
 import android.os.Build
+import android.service.chooser.ChooserAction
 import androidx.core.content.FileProvider
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
@@ -186,6 +187,52 @@ class ContextTest {
     }
 
     @Test
+    @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
+    fun `shareWithChooserActions attaches a thumbnail preview when a thumbnailUri is provided`() {
+        val context = spy(testContext)
+        val argCaptor = argumentCaptor<Intent>()
+
+        val result = context.shareWithChooserActions(
+            text = "https://mozilla.org",
+            subject = "subject",
+            actions = emptyArray<ChooserAction>(),
+            thumbnailUri = "fakeUri".toUri(),
+        )
+
+        verify(context).startActivity(argCaptor.capture())
+        assertTrue(result)
+
+        @Suppress("DEPRECATION")
+        val shareIntent = argCaptor.value.extras!!.get(EXTRA_INTENT) as Intent
+        assertEquals("subject", shareIntent.extras!!.getString(EXTRA_TITLE))
+        assertEquals(1, shareIntent.clipData!!.itemCount)
+        assertEquals("fakeUri".toUri(), shareIntent.clipData!!.getItemAt(0).uri)
+        assertTrue(shareIntent.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION != 0)
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
+    fun `shareWithChooserActions does not attach a thumbnail preview when thumbnailUri is null`() {
+        val context = spy(testContext)
+        val argCaptor = argumentCaptor<Intent>()
+
+        val result = context.shareWithChooserActions(
+            text = "https://mozilla.org",
+            subject = "subject",
+            actions = emptyArray<ChooserAction>(),
+        )
+
+        verify(context).startActivity(argCaptor.capture())
+        assertTrue(result)
+
+        @Suppress("DEPRECATION")
+        val shareIntent = argCaptor.value.extras!!.get(EXTRA_INTENT) as Intent
+        assertNull(shareIntent.extras!!.getString(EXTRA_TITLE))
+        assertNull(shareIntent.clipData?.getItemAt(0)?.uri)
+        assertTrue(shareIntent.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION == 0)
+    }
+
+    @Test
     @Config(shadows = [ShadowFileProvider::class])
     fun `copyImage will copy the file URI to the clipboard & invoke the confirmation action`() {
         val context = spy(testContext)
@@ -328,6 +375,14 @@ class ContextTest {
 
         val versionName = context.appVersionName
         assertEquals("", versionName)
+    }
+
+    @Test
+    fun `pixelSizeFor returns the same as getDimensionPixelSize`() {
+        assertEquals(
+            testContext.resources.getDimensionPixelSize(android.R.dimen.app_icon_size),
+            testContext.pixelSizeFor(android.R.dimen.app_icon_size),
+        )
     }
 }
 

@@ -6,6 +6,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   FilterAdult: "resource:///modules/FilterAdult.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
@@ -194,7 +195,7 @@ class _InteractionsBlocklist {
     let hostWithoutSuffix = lazy.UrlbarUtils.stripPublicSuffixFromHost(
       url.host
     );
-    let [hostWithSubdomains] = lazy.UrlbarUtils.stripPrefixAndTrim(
+    let [hostWithSubdomains] = lazy.UrlbarShared.stripPrefixAndTrim(
       hostWithoutSuffix,
       {
         stripWww: true,

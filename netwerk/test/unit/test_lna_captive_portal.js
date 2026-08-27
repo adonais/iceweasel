@@ -35,6 +35,7 @@ function lnaHandler(metadata, response) {
 const PREF_CAPTIVE_ENABLED = "network.captive-portal-service.enabled";
 const PREF_CAPTIVE_TESTMODE = "network.captive-portal-service.testMode";
 const PREF_CAPTIVE_ENDPOINT = "captivedetect.canonicalURL";
+const PREF_CAPTIVE_CANONICAL_CONTENT = "captivedetect.canonicalContent";
 const PREF_CAPTIVE_MINTIME = "network.captive-portal-service.minInterval";
 const PREF_CAPTIVE_MAXTIME = "network.captive-portal-service.maxInterval";
 const PREF_DNS_NATIVE_IS_LOCALHOST = "network.dns.native-is-localhost";
@@ -86,6 +87,7 @@ add_setup(async function () {
   lnaServer.start(-1);
 
   // Configure captive portal service
+  Services.prefs.setCharPref(PREF_CAPTIVE_CANONICAL_CONTENT, SUCCESS_STRING);
   Services.prefs.setCharPref(PREF_CAPTIVE_ENDPOINT, cpURI);
   Services.prefs.setIntPref(PREF_CAPTIVE_MINTIME, 50);
   Services.prefs.setIntPref(PREF_CAPTIVE_MAXTIME, 100);
@@ -101,6 +103,7 @@ add_setup(async function () {
     Services.prefs.clearUserPref(PREF_CAPTIVE_ENABLED);
     Services.prefs.clearUserPref(PREF_CAPTIVE_TESTMODE);
     Services.prefs.clearUserPref(PREF_CAPTIVE_ENDPOINT);
+    Services.prefs.clearUserPref(PREF_CAPTIVE_CANONICAL_CONTENT);
     Services.prefs.clearUserPref(PREF_CAPTIVE_MINTIME);
     Services.prefs.clearUserPref(PREF_CAPTIVE_MAXTIME);
     Services.prefs.clearUserPref(PREF_DNS_NATIVE_IS_LOCALHOST);

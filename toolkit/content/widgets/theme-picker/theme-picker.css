@@ -3,6 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :host(:not([hidden])) {
+  --theme-picker-gap-column: var(--space-xlarge);
+
   display: flex;
   flex-direction: column;
   gap: var(--space-large);
@@ -13,7 +15,7 @@ moz-segmented-control {
 }
 
 moz-visual-picker::part(fieldset) {
-  --fieldset-gap-column: var(--space-xlarge);
+  --fieldset-gap-column: var(--theme-picker-gap-column);
 }
 
 moz-visual-picker-item {
@@ -33,10 +35,20 @@ moz-visual-picker-item {
     --visual-picker-item-border-radius: var(--theme-picker-radius-large) var(--theme-picker-radius-large) var(--theme-picker-radius-small)
       var(--theme-picker-radius-large);
   }
+
+  &:hover:not([checked]) {
+    --visual-picker-item-border-width: var(--visual-picker-item-border-width-checked);
+    --visual-picker-item-border-color: color-mix(in srgb, var(--border-color-selected) 40%, transparent);
+
+    @media (forced-colors) {
+      --visual-picker-item-border-color: var(--button-text-color);
+    }
+  }
 }
 
 .theme-preview {
   display: block;
   width: var(--size-item-xlarge);
   height: var(--size-item-xlarge);
+  forced-color-adjust: none;
 }

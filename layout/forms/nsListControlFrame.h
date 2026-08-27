@@ -79,12 +79,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   void OptionsAdded();
 
   /**
-   * Scrolls the given option (or index) into view. Might destroy the frame,
-   * pres shell and other objects.
-   */
-  MOZ_CAN_RUN_SCRIPT void ScrollToIndex(int32_t aIndex);
-
-  /**
    * Returns the HTMLOptionElement for a given index in mContent's collection.
    */
   HTMLOptionElement* GetOption(uint32_t aIndex) const;
@@ -137,23 +131,8 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
 
  protected:
   mozilla::dom::HTMLSelectElement& Select() const;
-
-  /**
-   * @return true if the <option> at aIndex is selectable by the user.
-   */
-  bool IsOptionInteractivelySelectable(int32_t aIndex) const;
-  /**
-   * @return true if aOption in aSelect is selectable by the user.
-   */
-  static bool IsOptionInteractivelySelectable(
-      mozilla::dom::HTMLSelectElement* aSelect,
-      mozilla::dom::HTMLOptionElement* aOption);
-
   MOZ_CAN_RUN_SCRIPT void ScrollToFrame(HTMLOptionElement& aOptElement);
-
- protected:
-  explicit nsListControlFrame(ComputedStyle* aStyle,
-                              nsPresContext* aPresContext);
+  nsListControlFrame(ComputedStyle*, nsPresContext*);
   virtual ~nsListControlFrame();
 
   bool CheckIfAllFramesHere();
@@ -169,10 +148,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   // Dropped down stuff
   void SetComboboxItem(int32_t aIndex);
 
- public:
-  static constexpr int32_t kNothingSelected = -1;
-
- protected:
   nscoord BSizeOfARow() const { return mBSizeOfARow; }
 
   /**

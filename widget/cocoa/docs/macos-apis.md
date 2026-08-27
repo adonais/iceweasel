@@ -54,10 +54,10 @@ or you can [use `-weak_framework`](https://developer.apple.com/library/archive/d
 [like we do for Metal](https://searchfox.org/mozilla-central/rev/9ad88f80aeedcd3cd7d7f63be07f577861727054/toolkit/library/moz.build#301-304):
 
 ```python
-if CONFIG['OS_ARCH'] == 'Darwin':
+if CONFIG["OS_ARCH"] == "Darwin":
     OS_LIBS += [
         # Link to Metal as required by the Metal gfx-hal backend
-        '-weak_framework Metal',
+        "-weak_framework Metal",
     ]
 ```
 

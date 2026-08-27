@@ -14,7 +14,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   evaluate: "chrome://remote/content/marionette/evaluate.sys.mjs",
   event: "chrome://remote/content/shared/webdriver/Event.sys.mjs",
-  executeSoon: "chrome://remote/content/shared/Sync.sys.mjs",
   interaction: "chrome://remote/content/marionette/interaction.sys.mjs",
   json: "chrome://remote/content/marionette/json.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
@@ -91,8 +90,8 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
             win
           );
           break;
-        case "synthesizeMultiTouch":
-          lazy.event.synthesizeMultiTouch(details.eventData, win);
+        case "synthesizeTouchAtPoint":
+          await lazy.event.synthesizeTouchAtPoint(details.eventData, win);
           break;
         case "synthesizeWheelAtPoint":
           await lazy.event.synthesizeWheelAtPoint(
@@ -134,7 +133,7 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
 
     // Wait until the main thread has processed all already queued-up
     // runnables to ensure that dispatched input events have been handled.
-    await new Promise(resolve => lazy.executeSoon(resolve));
+    await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
   }
 
   #getClientRects(options, _context) {
@@ -288,7 +287,7 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
       // Inform the content process that the command has completed. It allows
       // it to process async follow-up tasks before the reply is sent.
       if (waitForNextTick) {
-        await new Promise(resolve => lazy.executeSoon(resolve));
+        await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
       }
 
       const { seenNodeIds, serializedValue, hasSerializedWindows } =

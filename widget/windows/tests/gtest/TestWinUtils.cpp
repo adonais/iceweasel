@@ -270,3 +270,35 @@ TEST(WinUtils, MaybeWriteFileZoneId)
     SetAndTestFileZone(data);
   }
 }
+
+/*****************************************************************************/
+
+TEST(WinUtils, TelemetryPathPrefix)
+{
+  constexpr auto kNoTransform = static_cast<WinUtils::PathTransformFlags>(0);
+
+  struct Case {
+    const char16_t* mInput;
+    const char16_t* mExpected;
+  };
+
+  const Case cases[] = {
+      {u"%SystemRoot%\\System32\\foo.dll", u"%SystemRoot%\\System32\\foo.dll"},
+      {u"%ProgramFiles%\\Vendor\\foo.dll", u"%ProgramFiles%\\Vendor\\foo.dll"},
+      {u"%SystemRoot%", u"%SystemRoot%"},
+      {u"%ProgramFiles% (x86)\\Vendor\\foo.dll",
+       u"%ProgramFiles% (x86)\\Vendor\\foo.dll"},
+      {u"%SystemRoot%.old\\bar.dll", u"bar.dll"},
+      {u"%SystemRoot%Apps\\baz.dll", u"baz.dll"},
+      {u"%ProgramFiles%2\\Vendor\\baz.dll", u"baz.dll"},
+      {u"%ProgramFiles% (x86)Steam\\qux.dll", u"qux.dll"},
+  };
+
+  for (const auto& c : cases) {
+    nsAutoString path(c.mInput);
+    EXPECT_TRUE(WinUtils::PreparePathForTelemetry(path, kNoTransform));
+    EXPECT_STREQ(NS_ConvertUTF16toUTF8(path).get(),
+                 NS_ConvertUTF16toUTF8(nsDependentString(c.mExpected)).get())
+        << "input=" << NS_ConvertUTF16toUTF8(c.mInput).get();
+  }
+}

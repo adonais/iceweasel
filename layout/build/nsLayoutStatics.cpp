@@ -63,7 +63,7 @@
 #include "txMozillaXSLTProcessor.h"
 
 #ifdef XP_WIN
-#  include "mozilla/widget/AudioSession.h"
+#  include "mozilla/widget/WinAudioSession.h"
 #endif
 #include "CubebUtils.h"
 #include "DecoderDoctorLogger.h"

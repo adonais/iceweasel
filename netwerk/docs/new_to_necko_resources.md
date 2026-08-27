@@ -55,16 +55,16 @@ should get familiar with.
 
 [e10s]: https://wiki.mozilla.org/Electrolysis
 [fission]: https://hacks.mozilla.org/2021/05/introducing-firefox-new-site-isolation-security-architecture/
-[gtest]: /gtest/index.html
-[http logging]: /networking/http/logging.html
-[idl]: /xpcom/xpidl.html
-[ipc]: /ipc/index.html
-[ipdl]: /ipc/ipdl.html
-[marionette]: /testing/marionette/index.html
-[mochitest]: /testing/mochitest-plain/index.html
+[gtest]: /gtest/index.md
+[http logging]: /networking/http/logging.md
+[idl]: /xpcom/xpidl.md
+[ipc]: /ipc/index.md
+[ipdl]: /ipc/ipdl.md
+[marionette]: /remote/marionette/index.md
+[mochitest]: /testing/mochitest-plain/index.md
 [nspr]: https://firefox-source-docs.mozilla.org/nspr/about_nspr.html?highlight=nspr
 [nss]: https://firefox-source-docs.mozilla.org/security/nss/legacy/faq/index.html
 [psm]: https://firefox-source-docs.mozilla.org/security/nss/legacy/faq/index.html?highlight=psm
-[web-platform]: /web-platform/index.html
-[webidl]: /toolkit/components/extensions/webextensions/webidl_bindings.html
-[xpcshell]: /testing/xpcshell/index.html
+[web-platform]: /web-platform/index.md
+[webidl]: /toolkit/components/extensions/webextensions/webidl_bindings.md
+[xpcshell]: /testing/xpcshell/index.md

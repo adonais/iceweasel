@@ -67,6 +67,7 @@
     "NSimSun",
     "Palatino Linotype",
     "PMingLiU-ExtB",
+    "Sans Serif Collection",
     "Segoe MDL2 Assets",
     "Segoe Print",
     "Segoe Script",

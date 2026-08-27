@@ -4690,6 +4690,14 @@ bool WarpCacheIRTranspiler::emitIsObjectResult(ValOperandId inputId) {
   return true;
 }
 
+bool WarpCacheIRTranspiler::emitIsSuspendedGeneratorResult(ObjOperandId objId) {
+  MDefinition* obj = getOperand(objId);
+  auto* ins = MIsSuspendedGenerator::New(alloc(), obj);
+  add(ins);
+  pushResult(ins);
+  return true;
+}
+
 bool WarpCacheIRTranspiler::emitIsPackedArrayResult(ObjOperandId objId) {
   MDefinition* obj = getOperand(objId);
 

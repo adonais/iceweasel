@@ -158,24 +158,23 @@ describe("AboutPreferences Feed", () => {
 
       beforeEach(() => {
         sandbox.stub(Services.prefs, "getBoolPref").returns(true);
+        // Default: simulate Firefox 155+ (the preferences component owns
+        // homepage/customHomepage).
+        sandbox.stub(Services.vc, "compare").returns(0);
         registerGroups = sandbox.stub();
         getSettingGroup = sandbox.stub();
         getSettingGroup
-          .withArgs("homepage")
+          .withArgs("home")
           .onFirstCall()
           .throws(new Error("Not yet registered"));
-        getSettingGroup.withArgs("homepage").onSecondCall().returns(true);
+        getSettingGroup.withArgs("home").onSecondCall().returns(true);
         insertFTLIfNeeded = sandbox.stub();
-        // SettingGroupManager lives on the preferences window object.
         globals.set("SettingGroupManager", {
           registerGroups,
           get: getSettingGroup,
         });
         globals.set("MozXULElement", { insertFTLIfNeeded });
-        // Stub the setup methods so we can focus on the routing logic in observe().
         sandbox.stub(instance, "_registerPreferences");
-        sandbox.stub(instance, "_setupHomepageGroup").returns({});
-        sandbox.stub(instance, "_setupCustomHomepageGroup").returns({});
         sandbox.stub(instance, "_setupHomeGroup").returns({});
       });
 
@@ -185,7 +184,25 @@ describe("AboutPreferences Feed", () => {
         assert.calledWith(insertFTLIfNeeded, "browser/newtab/newtab.ftl");
       });
 
-      it("should call SettingGroupManager.registerGroups with homepage, customHomepage, and home", async () => {
+      it("on Firefox 155+, should call registerGroups with home only", async () => {
+        // Default beforeEach stub is 155+.
+        await instance.observe(window);
+
+        assert.calledOnce(registerGroups);
+        assert.hasAllKeys(registerGroups.firstCall.args[0], ["home"]);
+        assert.doesNotHaveAnyKeys(registerGroups.firstCall.args[0], [
+          "homepage",
+          "customHomepage",
+        ]);
+      });
+
+      it("on Firefox <155, should call registerGroups with homepage, customHomepage, and home", async () => {
+        // Override the default 155+ stub with a <155 result, and stub the
+        // setup methods so observe() can run without a real preferences window.
+        Services.vc.compare.restore();
+        sandbox.stub(Services.vc, "compare").returns(-1);
+        sandbox.stub(instance, "_setupHomepageGroup").returns({});
+        sandbox.stub(instance, "_setupCustomHomepageGroup").returns({});
         await instance.observe(window);
 
         assert.calledOnce(registerGroups);

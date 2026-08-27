@@ -13,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.view.Window
+import androidx.annotation.DimenRes
 import androidx.annotation.MainThread
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -142,6 +143,20 @@ inline fun View.onNextGlobalLayout(crossinline callback: () -> Unit) {
     }
     viewTreeObserver.addOnGlobalLayoutListener(listener)
 }
+
+/**
+ * Returns the pixel size for the given dimension resource ID.
+ *
+ * This is a wrapper around `resources.getDimensionPixelSize`, reducing verbosity when accessing
+ * dimension values from a [View].
+ *
+ * @param resId Resource ID of the dimension.
+ * @return The pixel size corresponding to the given dimension resource.
+ */
+@Suppress("Resources.GetDimensionPixelSizeInsteadOfPixelSizeFor")
+fun View.pixelSizeFor(
+    @DimenRes resId: Int,
+) = resources.getDimensionPixelSize(resId)
 
 private fun View.findWindow(): Window? {
     var ctx = context

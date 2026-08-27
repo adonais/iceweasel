@@ -88,6 +88,8 @@ class MainActivity :
     private val creditCardKeyProvider by lazy { creditCardsAddressesStorage.value.crypto }
     private val passwordsKeyProvider by lazy { passwordsStorage.value.crypto }
 
+    // Sample-only code with no injectable clock seam and no time-dependent behavior to test.
+    @Suppress("NoSystemCurrentTimeMillis")
     private val accountManager by lazy {
         FxaAccountManager(
             this,

@@ -33,6 +33,8 @@ class UnknownScriptError(Exception):
 
 
 class ShellScriptData:
+    SUBMETRICS_SUFFIX = "_submetrics"
+
     def open_data(self, data):
         return {
             "name": "shellscript",
@@ -50,6 +52,26 @@ class ShellScriptData:
         return data
 
     merge = transform
+
+    def summary(self, suite):
+        """Use the primary submetric's value as the grouped suite summary.
+
+        Submetric suites are named `<primary>_submetrics` and gather a set of
+        related measurements as subtests, one of which (named `<primary>`) is
+        the representative value for the group. Reporting that subtest's value
+        as the suite summary keeps the grouped suite anchored to a single,
+        meaningful number. Returns None for regular suites so the default
+        summary (mean of the subtests) applies.
+
+        Only available in the Perfherder layer.
+        """
+        if not suite["name"].endswith(self.SUBMETRICS_SUFFIX):
+            return None
+        primary_name = suite["name"][: -len(self.SUBMETRICS_SUFFIX)]
+        for subtest in suite["subtests"]:
+            if subtest["name"] == primary_name:
+                return subtest["value"]
+        return None
 
 
 class ShellScriptRunner(Layer):
@@ -215,12 +237,23 @@ class ShellScriptRunner(Layer):
                     shutil.copytree(testing_dir, output_dir)
                     self.env.set_arg("output", output_dir)
 
-        metadata.add_result({
-            "name": test["name"],
-            "framework": {"name": "mozperftest"},
-            "transformer": "mozperftest.test.shellscript:ShellScriptData",
-            "shouldAlert": True,
-            "results": self.parse_metrics(),
-        })
+        # Route each metric to a suite based on its optional `suite` tag,
+        # defaulting to the test name. Grouping the submetrics and computing a
+        # suite summary value is left to the metrics layer (see ShellScriptData),
+        # keeping this layer focused on running the test and reporting raw data.
+        default_suite = test["name"]
+        suites = {}
+        for m in self.parse_metrics():
+            suite_name = m.pop("suite", default_suite)
+            suites.setdefault(suite_name, []).append(m)
+
+        for suite_name, suite_metrics in suites.items():
+            metadata.add_result({
+                "name": suite_name,
+                "framework": {"name": "mozperftest"},
+                "transformer": "mozperftest.test.shellscript:ShellScriptData",
+                "shouldAlert": True,
+                "results": suite_metrics,
+            })
 
         return metadata

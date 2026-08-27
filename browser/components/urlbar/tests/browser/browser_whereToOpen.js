@@ -60,7 +60,7 @@ add_task(async function openInTab() {
     info(test.desc);
 
     Preferences.set("browser.urlbar.openintab", test.pref);
-    let where = gURLBar._whereToOpen(test.event);
+    let where = gURLBar.controller.whereToOpen(test.event);
     is(where, "tab", "URL would be loaded in a new tab");
   }
 
@@ -90,7 +90,7 @@ add_task(async function keepEmptyTab() {
     info(test.desc);
 
     Preferences.set("browser.urlbar.openintab", test.pref);
-    let where = gURLBar._whereToOpen(test.event);
+    let where = gURLBar.controller.whereToOpen(test.event);
     is(where, "tab", "URL would be loaded in a new tab");
   }
 
@@ -121,7 +121,7 @@ add_task(async function reuseEmptyTab() {
   ]) {
     info(test.desc);
     Preferences.set("browser.urlbar.openintab", test.pref);
-    let where = gURLBar._whereToOpen(test.event);
+    let where = gURLBar.controller.whereToOpen(test.event);
     is(where, "current", "New URL would reuse the current empty tab");
   }
 
@@ -187,7 +187,7 @@ add_task(async function openInCurrentTab() {
       await BrowserTestUtils.openNewForegroundTab(gBrowser, test.url));
 
     Preferences.set("browser.urlbar.openintab", test.pref);
-    let where = gURLBar._whereToOpen(test.event);
+    let where = gURLBar.controller.whereToOpen(test.event);
     is(where, "current", "URL would open in the current tab");
 
     // Clean up.

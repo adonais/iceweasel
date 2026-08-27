@@ -121,12 +121,21 @@ nsIFrame* TouchManager::SetupTarget(WidgetTouchEvent* aEvent,
       doc && doc->RenderingSuppressedForViewTransitions();
 
   nsIFrame* target = aFrame;
+  const bool isNewTouchSession = aEvent->mTouches.Length() == 1;
   for (int32_t i = aEvent->mTouches.Length(); i;) {
     --i;
     dom::Touch* touch = aEvent->mTouches[i];
 
     int32_t id = touch->Identifier();
-    if (TouchManager::HasCapturedTouch(id)) {
+    // Only a multi-touch touchstart continues an existing session. In that
+    // case, already-captured touch points must keep their original targets
+    // rather than being retargeted. A single-touch touchstart always begins a
+    // new touch session, so we never reuse a captured target. If the ID is
+    // still present in the capture list, it is a stale entry from a previous
+    // session whose touchend never arrived. TouchManager::PreHandleEvent()
+    // evicts any captured touches in that case.
+    // XXX Should we evict the stale entry here instead?
+    if (!isNewTouchSession && TouchManager::HasCapturedTouch(id)) {
       // This touch is an old touch, we need to ensure that is not
       // marked as changed and set its target correctly
       touch->mChanged = false;

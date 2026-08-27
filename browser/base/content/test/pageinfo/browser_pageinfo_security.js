@@ -5,7 +5,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const TEST_ORIGIN = "https://example.com";
 const QWAC_1_ORIGIN = "https://1-qwac.example.com";
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 const TEST_HTTP_ORIGIN = "http://example.com";
 const TEST_SUB_ORIGIN = "https://test1.example.com";
 const REMOVE_DIALOG_URL =

@@ -1,8 +1,8 @@
 import pytest
 
-URL = "https://wbte.drcedirect.com/GA/portals/ga"
+URL = "https://wbte.drcedirect.com/BCON/portals/bcon"
 
-SUPPORTED_CSS = "a[href*='GA/portals/ga/ott1']"
+SUPPORTED_CSS = "[aria-label='Online Tools Training']"
 UNSUPPORTED_CSS = "a[href*=chrome]"
 
 

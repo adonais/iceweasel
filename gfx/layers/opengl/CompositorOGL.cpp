@@ -154,18 +154,17 @@ bool AsyncReadbackBufferOGL::MapAndCopyInto(DataSourceSurface* aSurface,
     return false;
   }
 
-  int32_t srcStride = mSize.width * 4;
+  // Swizzle to the destination format and flip vertically in one pass.
   DataSourceSurface::ScopedMap map(aSurface, DataSourceSurface::WRITE);
-  uint8_t* destData = map.GetData();
-  int32_t destStride = map.GetStride();
-  SurfaceFormat destFormat = aSurface->GetFormat();
-  for (int32_t destRow = 0; destRow < aReadSize.height; destRow++) {
-    // Turn srcData upside down during the copy.
-    int32_t srcRow = aReadSize.height - 1 - destRow;
-    const uint8_t* src = &srcData[srcRow * srcStride];
-    uint8_t* dest = &destData[destRow * destStride];
-    SwizzleData(src, srcStride, SurfaceFormat::R8G8B8A8, dest, destStride,
-                destFormat, IntSize(aReadSize.width, 1));
+  if (!map.IsMapped()) {
+    return false;
+  }
+
+  if (!SwizzleYFlipData(srcData, mSize.width * 4, SurfaceFormat::R8G8B8A8,
+                        map.GetData(), map.GetStride(), aSurface->GetFormat(),
+                        aReadSize)) {
+    MOZ_ASSERT_UNREACHABLE("Swizzle not supported?");
+    return false;
   }
 
   mGL->fUnmapBuffer(LOCAL_GL_PIXEL_PACK_BUFFER);
@@ -1497,7 +1496,7 @@ void CompositorOGL::InsertFrameDoneSync() {
 
   EGLSync sync = nullptr;
   if (AndroidHardwareBufferManager::Get()) {
-    sync = egl->fCreateSync(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr);
+    sync = egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr);
   }
   if (sync) {
     int fenceFd = egl->fDupNativeFenceFDANDROID(sync);

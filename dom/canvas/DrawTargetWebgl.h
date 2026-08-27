@@ -234,6 +234,13 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   // Buffer filled with zero data for initializing textures.
   RefPtr<WebGLBuffer> mZeroBuffer;
   size_t mZeroSize = 0;
+  // Buffer used for uploading surfaces. Some drivers internally allocate
+  // buffers for each upload to avoid driver stalls, but the frequent
+  // allocations show up in profiles. Using a large fixed-size buffer helps
+  // avoid allocation overhead.
+  RefPtr<WebGLBuffer> mUploadBuffer;
+  // Offset within mUploadBuffer to use for next upload.
+  size_t mUploadBufferOffset = 0;
   // 1x1 texture with solid white mask for disabling clipping
   RefPtr<WebGLTexture> mNoClipMask;
 
@@ -484,6 +491,7 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   void RemoveTextureMemory(BackingTexture* aTexture);
 
   void ClearZeroBuffer();
+  void ClearUploadBuffer();
   void ClearAllTextures();
   void ClearEmptyTextureMemory();
   void ClearCachesIfNecessary();

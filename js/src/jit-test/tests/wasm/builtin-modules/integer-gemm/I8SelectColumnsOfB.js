@@ -60,6 +60,24 @@ function testOutOfBounds() {
   assertErrorMessage(() => int8_select_columns_of_b(VALID.input, VALID.rows, VALID.cols, VALID.colIndexList, VALID.sizeColIndexList, outOfBound), WebAssembly.RuntimeError, /index out of bounds/);
 }
 
+function testInvalidColumnIndex() {
+  // The bound checks above only cover the location of the colIndexList array,
+  // not the column indices it contains. Each index must be a valid column of B
+  // (< colsB); otherwise SelectColumnsB reads out of bounds of the input matrix
+  // and copies host memory into the output buffer.
+  let colIndex = new Uint32Array(memory.buffer);
+  let base = VALID.colIndexList >> 2;
+
+  for (let wild of [VALID.cols, 0x20000000, 0xffffffff]) {
+    for (let i = 0; i < VALID.sizeColIndexList; i++) colIndex[base + i] = 0;
+    colIndex[base + 3] = wild;
+    assertErrorMessage(() => int8_select_columns_of_b(VALID.input, VALID.rows, VALID.cols, VALID.colIndexList, VALID.sizeColIndexList, VALID.output), WebAssembly.RuntimeError, /index out of bounds/);
+  }
+
+  // Restore valid indices so the successful-call test below still passes.
+  for (let i = 0; i < VALID.sizeColIndexList; i++) colIndex[base + i] = 0;
+}
+
 function testSuccessfulCall() {
   // We just test that with valid arguments the intrinsic executes without any error
   int8_select_columns_of_b(VALID.input, VALID.rows, VALID.cols, VALID.colIndexList, VALID.sizeColIndexList, VALID.output);
@@ -68,6 +86,7 @@ function testSuccessfulCall() {
 testInvalidSize();
 testInvalidAlignment();
 testOutOfBounds();
+testInvalidColumnIndex();
 testSuccessfulCall();
 `
 

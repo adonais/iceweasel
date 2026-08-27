@@ -31,12 +31,12 @@ echo "repo type: $MOZ_REPO"
 
 # we grab the entire firstline description for convenient logging
 if [ "x$MOZ_REPO" == "xgit" ]; then
-LAST_PATCHSTACK_UPDATE_COMMIT=`git log --max-count 1 --oneline \
+LAST_PATCHSTACK_UPDATE_COMMIT=`git log --no-merges --max-count 1 --oneline \
     'third_party/libwebrtc/moz-patch-stack/*.patch'`
 else
 # note: we reverse the output and use tail -1 rather than using head -1
 # because head fails in this context.
-LAST_PATCHSTACK_UPDATE_COMMIT=`hg log -r ::. --template "{node|short} {desc|firstline}\n" \
+LAST_PATCHSTACK_UPDATE_COMMIT=`hg log --no-merges -r ::. --template "{node|short} {desc|firstline}\n" \
     --include "third_party/libwebrtc/moz-patch-stack/*.patch" | tail -1`
 fi
 echo "LAST_PATCHSTACK_UPDATE_COMMIT: $LAST_PATCHSTACK_UPDATE_COMMIT"

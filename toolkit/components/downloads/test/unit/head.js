@@ -439,24 +439,26 @@ function promiseStartExternalHelperAppServiceDownload(aSourceUrl) {
 }
 
 /**
- * Waits for a download to reach half of its progress, in case it has not
- * reached the expected progress already.
+ * Waits for a download to reach a specified progress value. If not
+ * specified, waits until 50% is reached.
  *
  * @param aDownload
  *        The Download object to wait upon.
+ * @param aProgress
+ *        The progress that should be reached.
  *
  * @returns {Promise<void>}
  *   Resolves when the download has reached half of its progress.
  * @rejects Never.
  */
-function promiseDownloadMidway(aDownload) {
+function promiseDownloadMidway(aDownload, aProgress = 50) {
   return new Promise(resolve => {
     // Wait for the download to reach half of its progress.
     let onchange = function () {
       if (
         !aDownload.stopped &&
         !aDownload.canceled &&
-        aDownload.progress == 50
+        aDownload.progress == aProgress
       ) {
         aDownload.onchange = null;
         resolve();

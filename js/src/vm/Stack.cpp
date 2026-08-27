@@ -339,6 +339,14 @@ void InterpreterFrame::trace(JSTracer* trc, Value* sp, jsbytecode* pc) {
     TraceRootRange(trc, argc + isConstructing(), argv_, "fp argv");
   }
 
+  // A resumed generator/async frame stores the resume args (ResumeFrameArgs)
+  // after the formals (for function frames) or before the frame (for module
+  // frames).
+  if (isResumingGenerator()) {
+    TraceRootRange(trc, ResumeFrameArgs::NumSlots, resumeArgs(),
+                   "fp resume-args");
+  }
+
   JSScript* script = this->script();
   size_t nfixed = script->nfixed();
   size_t nlivefixed = script->calculateLiveFixed(pc);
@@ -347,6 +355,11 @@ void InterpreterFrame::trace(JSTracer* trc, Value* sp, jsbytecode* pc) {
     // All locals are live.
     traceValues(trc, 0, sp - slots());
   } else {
+    // Make sure we don't incorrectly clear locals of a frame that's still
+    // resuming before we reach JSOp::AfterYield. Currently nothing can trigger
+    // GC between restoring stack slots and setting the pc.
+    MOZ_ASSERT_IF(isResumingGenerator(), JSOp(*pc) == JSOp::AfterYield);
+
     // Trace operand stack.
     traceValues(trc, nfixed, sp - slots());
 
@@ -416,22 +429,36 @@ InterpreterFrame* InterpreterStack::pushInvokeFrame(
 
 InterpreterFrame* InterpreterStack::pushExecuteFrame(
     JSContext* cx, HandleScript script, HandleObject envChain,
-    AbstractFramePtr evalInFrame) {
+    AbstractFramePtr evalInFrame, bool reserveResumeArgs) {
   LifoAlloc::Mark mark = allocator_.mark();
 
-  unsigned nvars = script->nslots();
-  uint8_t* buffer =
-      allocateFrame(cx, sizeof(InterpreterFrame) + nvars * sizeof(Value));
+  // For a resumed top-level-await module, reserve the resume args
+  // (ResumeFrameArgs) immediately before the frame.
+  size_t nResumeArgs = reserveResumeArgs ? ResumeFrameArgs::NumSlots : 0;
+  size_t nvars = script->nslots();
+  uint8_t* buffer = allocateFrame(
+      cx, (nResumeArgs + nvars) * sizeof(Value) + sizeof(InterpreterFrame));
   if (!buffer) {
     return nullptr;
   }
 
-  InterpreterFrame* fp = reinterpret_cast<InterpreterFrame*>(buffer);
+  Value* args = reinterpret_cast<Value*>(buffer);
+  SetValueRangeToUndefined(args, nResumeArgs);
+  InterpreterFrame* fp =
+      reinterpret_cast<InterpreterFrame*>(buffer + nResumeArgs * sizeof(Value));
   fp->mark_ = mark;
   fp->initExecuteFrame(cx, script, evalInFrame, envChain);
   fp->initLocals();
 
   return fp;
+}
+
+InterpreterFrame* InterpreterStack::pushGeneratorResumeFrame(
+    JSContext* cx, HandleFunction callee, HandleObject envChain) {
+  // Entry frame: no caller frame or pc/sp.
+  return createGeneratorResumeFrame(cx, callee, envChain, /* prev = */ nullptr,
+                                    /* prevpc = */ nullptr,
+                                    /* prevsp = */ nullptr);
 }
 
 /*****************************************************************************/

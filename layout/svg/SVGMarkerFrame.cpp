@@ -109,7 +109,7 @@ void SVGMarkerFrame::PaintMark(gfxContext& aContext,
 
   const SVGViewBox viewBox = marker->GetViewBox();
 
-  if (!viewBox.IsValid()) {
+  if (viewBox.IsEmpty()) {
     // We must disable rendering if the viewBox width or height are zero.
     return;
   }
@@ -165,7 +165,7 @@ SVGBBox SVGMarkerFrame::GetMarkBBoxContribution(const Matrix& aToBBoxUserspace,
 
   const SVGViewBox viewBox = content->GetViewBox();
 
-  if (!viewBox.IsValid()) {
+  if (viewBox.IsEmpty()) {
     return bbox;
   }
 

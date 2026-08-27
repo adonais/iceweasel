@@ -166,7 +166,7 @@ add_task(async function test_website_confirmation_renders() {
 });
 
 /**
- * Test that ai-action-result renders for closed tabs
+ * Test that ai-action-confirmation renders for closed tabs
  */
 add_task(async function test_action_result_renders_for_closed_tabs() {
   const restoreSignIn = skipSignIn();
@@ -215,19 +215,23 @@ add_task(async function test_action_result_renders_for_closed_tabs() {
       const chatContent = content.document.querySelector("ai-chat-content");
 
       await ContentTaskUtils.waitForCondition(
-        () => chatContent.shadowRoot.querySelector("ai-action-result"),
-        "Wait for ai-action-result to render"
+        () => chatContent.shadowRoot.querySelector("ai-action-confirmation"),
+        "Wait for ai-action-confirmation to render"
       );
 
-      const actionResult =
-        chatContent.shadowRoot.querySelector("ai-action-result");
-      Assert.ok(actionResult, "ai-action-result component should be rendered");
+      const actionResult = chatContent.shadowRoot.querySelector(
+        "ai-action-confirmation"
+      );
+      Assert.ok(
+        actionResult,
+        "ai-action-confirmation component should be rendered"
+      );
 
       // Verify location
       const parent = actionResult.parentElement.parentElement;
       Assert.ok(
         parent?.classList.contains("chat-bubble-assistant"),
-        "ai-action-result should be inside assistant message bubble"
+        "ai-action-confirmation should be inside assistant message bubble"
       );
     });
   } finally {
@@ -238,7 +242,7 @@ add_task(async function test_action_result_renders_for_closed_tabs() {
 });
 
 /**
- * Test that ai-action-result renders for restored tabs
+ * Test that ai-action-confirmation renders for restored tabs
  */
 add_task(async function test_action_result_renders_for_restored_tabs() {
   const restoreSignIn = skipSignIn();
@@ -286,22 +290,23 @@ add_task(async function test_action_result_renders_for_restored_tabs() {
       const chatContent = content.document.querySelector("ai-chat-content");
 
       await ContentTaskUtils.waitForCondition(
-        () => chatContent.shadowRoot.querySelector("ai-action-result"),
-        "Wait for ai-action-result for restored tabs"
+        () => chatContent.shadowRoot.querySelector("ai-action-confirmation"),
+        "Wait for ai-action-confirmation for restored tabs"
       );
 
-      const actionResult =
-        chatContent.shadowRoot.querySelector("ai-action-result");
+      const actionResult = chatContent.shadowRoot.querySelector(
+        "ai-action-confirmation"
+      );
       Assert.ok(
         actionResult,
-        "ai-action-result should be rendered for restored tabs"
+        "ai-action-confirmation should be rendered for restored tabs"
       );
 
       // Verify it's in the assistant bubble
       const parent = actionResult.parentElement.parentElement;
       Assert.ok(
         parent?.classList.contains("chat-bubble-assistant"),
-        "ai-action-result should be inside assistant message bubble"
+        "ai-action-confirmation should be inside assistant message bubble"
       );
     });
   } finally {
@@ -388,7 +393,7 @@ add_task(async function test_tab_group_confirmation_renders() {
 });
 
 /**
- * Test that ai-action-result renders for grouped tabs
+ * Test that ai-action-confirmation renders for grouped tabs
  */
 add_task(async function test_action_result_renders_for_grouped_tabs() {
   const restoreSignIn = skipSignIn();
@@ -439,15 +444,16 @@ add_task(async function test_action_result_renders_for_grouped_tabs() {
       const chatContent = content.document.querySelector("ai-chat-content");
 
       await ContentTaskUtils.waitForCondition(
-        () => chatContent.shadowRoot.querySelector("ai-action-result"),
-        "Wait for ai-action-result to render for grouped tabs"
+        () => chatContent.shadowRoot.querySelector("ai-action-confirmation"),
+        "Wait for ai-action-confirmation to render for grouped tabs"
       );
 
-      const actionResult =
-        chatContent.shadowRoot.querySelector("ai-action-result");
+      const actionResult = chatContent.shadowRoot.querySelector(
+        "ai-action-confirmation"
+      );
       Assert.ok(
         actionResult,
-        "ai-action-result should render for grouped tabs"
+        "ai-action-confirmation should render for grouped tabs"
       );
     });
   } finally {
@@ -458,7 +464,7 @@ add_task(async function test_action_result_renders_for_grouped_tabs() {
 });
 
 /**
- * Test that ai-action-result renders for ungrouped tabs
+ * Test that ai-action-confirmation renders for ungrouped tabs
  */
 add_task(async function test_action_result_renders_for_ungrouped_tabs() {
   const restoreSignIn = skipSignIn();
@@ -503,15 +509,16 @@ add_task(async function test_action_result_renders_for_ungrouped_tabs() {
       const chatContent = content.document.querySelector("ai-chat-content");
 
       await ContentTaskUtils.waitForCondition(
-        () => chatContent.shadowRoot.querySelector("ai-action-result"),
-        "Wait for ai-action-result for ungrouped tabs"
+        () => chatContent.shadowRoot.querySelector("ai-action-confirmation"),
+        "Wait for ai-action-confirmation for ungrouped tabs"
       );
 
-      const actionResult =
-        chatContent.shadowRoot.querySelector("ai-action-result");
+      const actionResult = chatContent.shadowRoot.querySelector(
+        "ai-action-confirmation"
+      );
       Assert.ok(
         actionResult,
-        "ai-action-result should render for ungrouped tabs"
+        "ai-action-confirmation should render for ungrouped tabs"
       );
     });
   } finally {

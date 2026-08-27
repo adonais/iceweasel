@@ -6,7 +6,9 @@
 
 #include "DataChannel.h"
 #include "DataChannelLog.h"
+#include "PeerConnectionImpl.h"
 #include "RTCDataChannelDeclarations.h"
+#include "RTCError.h"
 #include "base/basictypes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/EventListenerManager.h"
@@ -15,6 +17,9 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/MessageEvent.h"
 #include "mozilla/dom/MessageEventBinding.h"
+#include "mozilla/dom/PMediaTransport.h"
+#include "mozilla/dom/RTCErrorEvent.h"
+#include "mozilla/dom/RTCErrorEventBinding.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ToJSValue.h"
@@ -71,10 +76,12 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(RTCDataChannel)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(RTCDataChannel,
                                                   DOMEventTargetHelper)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPeerConnection)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(RTCDataChannel,
                                                 DOMEventTargetHelper)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPeerConnection)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_ADDREF_INHERITED(RTCDataChannel, DOMEventTargetHelper)
@@ -83,13 +90,11 @@ NS_IMPL_RELEASE_INHERITED(RTCDataChannel, DOMEventTargetHelper)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(RTCDataChannel)
 NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
 
-RTCDataChannel::RTCDataChannel(const nsACString& aLabel,
-                               const nsAString& aOrigin, bool aOrdered,
-                               Nullable<uint16_t> aMaxLifeTime,
-                               Nullable<uint16_t> aMaxRetransmits,
-                               const nsACString& aProtocol, bool aNegotiated,
-                               already_AddRefed<DataChannel>& aDataChannel,
-                               nsPIDOMWindowInner* aWindow)
+RTCDataChannel::RTCDataChannel(
+    const nsACString& aLabel, const nsAString& aOrigin, bool aOrdered,
+    Nullable<uint16_t> aMaxLifeTime, Nullable<uint16_t> aMaxRetransmits,
+    const nsACString& aProtocol, bool aNegotiated, PeerConnectionImpl* aPc,
+    already_AddRefed<DataChannel>& aDataChannel, nsPIDOMWindowInner* aWindow)
     : DOMEventTargetHelper(aWindow),
       mUuid(nsID::GenerateUUID()),
       mOrigin(aOrigin),
@@ -99,6 +104,7 @@ RTCDataChannel::RTCDataChannel(const nsACString& aLabel,
       mMaxRetransmits(aMaxRetransmits),
       mDataChannelProtocol(aProtocol),
       mNegotiated(aNegotiated),
+      mPeerConnection(aPc),
       mDataChannel(aDataChannel),
       mEventTarget(GetCurrentSerialEventTarget()) {
   DC_INFO(("%p: RTCDataChannel created on main (necko channel %p)", this,
@@ -540,7 +546,7 @@ void RTCDataChannel::AnnounceOpen() {
   }
 }
 
-void RTCDataChannel::AnnounceClosed() {
+void RTCDataChannel::AnnounceClosed(Maybe<RTCErrorParams> aError) {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
   // Let channel be the RTCDataChannel object whose
   // underlying data transport was closed. If
@@ -561,11 +567,21 @@ void RTCDataChannel::AnnounceClosed() {
   // to the RTCDataChannel, which in our case is
   // handled by a self ref in nsDOMDataChannel.
 
-  // If the transport was closed with an error,
-  // fire an event named error using the
-  // RTCErrorEvent interface with its errorDetail
-  // attribute set to "sctp-failure" at channel.
-  // Note: We don't support this yet.
+  // If the transport was closed with an error, fire an event named error using
+  // the RTCErrorEvent interface with its errorDetail attribute set to
+  // "sctp-failure" at channel.
+  // Note: It it easy to plumb the sctpCauseCode and error message through with
+  // RTCErrorParams, so DataChannelConnection also sets errorDetail to
+  // "sctp-failure" when the RTCErrorParams is first created.
+  if (aError) {
+    RTCErrorEventInit init;
+    init.mError = MakeRefPtr<RTCError>(std::move(aError->errorInit()),
+                                       nsCString(std::move(aError->message())));
+    RefPtr<RTCErrorEvent> event =
+        RTCErrorEvent::Constructor(this, u"error"_ns, std::move(init));
+    event->SetTrusted(true);
+    DispatchEvent(*event, IgnoreErrors());
+  }
 
   // Fire an event named close at channel.
   OnSimpleEvent(u"close"_ns);
@@ -906,17 +922,15 @@ void RTCDataChannel::EventListenerRemoved(nsAtom* aType) {
 }
 
 /* static */
-nsresult NS_NewDOMDataChannel(already_AddRefed<DataChannel> aDataChannel,
-                              const nsACString& aLabel,
-                              const nsAString& aOrigin, bool aOrdered,
-                              Nullable<uint16_t> aMaxLifeTime,
-                              Nullable<uint16_t> aMaxRetransmits,
-                              const nsACString& aProtocol, bool aNegotiated,
-                              nsPIDOMWindowInner* aWindow,
-                              RTCDataChannel** aDomDataChannel) {
+nsresult NS_NewDOMDataChannel(
+    already_AddRefed<DataChannel> aDataChannel, const nsACString& aLabel,
+    const nsAString& aOrigin, bool aOrdered, Nullable<uint16_t> aMaxLifeTime,
+    Nullable<uint16_t> aMaxRetransmits, const nsACString& aProtocol,
+    bool aNegotiated, PeerConnectionImpl* aPc, nsPIDOMWindowInner* aWindow,
+    RTCDataChannel** aDomDataChannel) {
   RefPtr domdc = MakeRefPtr<RTCDataChannel>(
       aLabel, aOrigin, aOrdered, aMaxLifeTime, aMaxRetransmits, aProtocol,
-      aNegotiated, aDataChannel, aWindow);
+      aNegotiated, aPc, aDataChannel, aWindow);
 
   nsresult rv = domdc->Init();
   NS_ENSURE_SUCCESS(rv, rv);

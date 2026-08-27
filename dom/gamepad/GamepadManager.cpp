@@ -10,6 +10,8 @@
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Gamepad.h"
 #include "mozilla/dom/GamepadAxisMoveEvent.h"
 #include "mozilla/dom/GamepadButtonEvent.h"
@@ -23,6 +25,7 @@
 #include "nsGlobalWindowInner.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsThreadUtils.h"
 
 using namespace mozilla::ipc;
@@ -393,6 +396,39 @@ bool GamepadManager::AxisMoveIsFirstIntent(nsGlobalWindowInner* aWindow,
   return true;
 }
 
+bool GamepadManager::EventContainsUserGesture(
+    Gamepad* aGamepad, const GamepadChangeEvent& aEvent) {
+  const GamepadChangeEventBody& body = aEvent.body();
+  switch (body.type()) {
+    case GamepadChangeEventBody::TGamepadButtonInformation: {
+      const GamepadButtonInformation& a = body.get_GamepadButtonInformation();
+      // Note: unlike the spec text, this treats an uninitialized button's
+      // default `false` state the same as an explicitly-observed `false`
+      // state, so a gamepad that connects with a button already held down
+      // will count that button's very first `true` report as a gesture
+      // (the spec says it SHOULD NOT, to avoid a pre-held button being
+      // misread as an intentional press). Chrome doesn't implement that
+      // exclusion either: GamepadComparisons::HasUserActivation() in
+      // gamepad_comparisons.cc is a per-poll threshold check on button
+      // value with no per-button history at all, so it's arguably more
+      // permissive than this. No spec issue tracks the unenforced clause.
+      GamepadButton* button = aGamepad->GetButton(a.button());
+      return button && !button->Pressed() && a.pressed();
+    }
+    case GamepadChangeEventBody::TGamepadAxisInformation: {
+      const GamepadAxisInformation& a = body.get_GamepadAxisInformation();
+      double oldValue = 0.0;
+      return aGamepad->GetAxis(a.axis(), &oldValue) &&
+             abs(oldValue) < AXIS_FIRST_INTENT_THRESHOLD_VALUE &&
+             abs(a.value()) >= AXIS_FIRST_INTENT_THRESHOLD_VALUE;
+    }
+    default:
+      // The spec's "contains a gamepad user gesture" is defined only in
+      // terms of buttons and axes.
+      return false;
+  }
+}
+
 bool GamepadManager::MaybeWindowHasSeenGamepad(nsGlobalWindowInner* aWindow,
                                                GamepadHandle aHandle) {
   if (!WindowHasSeenGamepad(aWindow, aHandle)) {
@@ -455,6 +491,18 @@ void GamepadManager::Update(const GamepadChangeEvent& aEvent) {
     return;
   }
 
+  // https://w3c.github.io/gamepad/#dfn-gamepad-user-gesture
+  // This is a property of the incoming hardware event against the
+  // canonical gamepad's state, not of any particular window's view of it,
+  // so compute it once, before SetGamepadByEvent() below overwrites that
+  // state. (Each per-window clone is either seeded from this same
+  // canonical state on first use, or already reflects the pre-event state
+  // from its own prior updates, so re-deriving this per-window would
+  // either see already-updated data or be redundant.)
+  RefPtr<Gamepad> canonicalGamepad = GetGamepad(handle);
+  bool containsUserGesture =
+      canonicalGamepad && EventContainsUserGesture(canonicalGamepad, aEvent);
+
   if (!SetGamepadByEvent(aEvent)) {
     return;
   }
@@ -471,7 +519,7 @@ void GamepadManager::Update(const GamepadChangeEvent& aEvent) {
       continue;
     }
 
-    SetGamepadByEvent(aEvent, listeners[i]);
+    SetGamepadByEvent(aEvent, listeners[i], containsUserGesture);
     MaybeConvertToNonstandardGamepadEvent(aEvent, listeners[i]);
   }
 }
@@ -508,7 +556,8 @@ void GamepadManager::MaybeConvertToNonstandardGamepadEvent(
 }
 
 bool GamepadManager::SetGamepadByEvent(const GamepadChangeEvent& aEvent,
-                                       nsGlobalWindowInner* aWindow) {
+                                       nsGlobalWindowInner* aWindow,
+                                       bool aContainsUserGesture) {
   bool ret = false;
   bool firstTime = false;
 
@@ -571,6 +620,32 @@ bool GamepadManager::SetGamepadByEvent(const GamepadChangeEvent& aEvent,
         break;
     }
     ret = true;
+  }
+
+  // https://html.spec.whatwg.org/multipage/interaction.html#activation-notification
+  // Proposed as a new step of the "update gamepad state" algorithm by
+  // https://github.com/w3c/gamepad/pull/230 (closes
+  // https://github.com/w3c/gamepad/issues/124); not yet merged into the
+  // published spec as of this writing. Run before the [[hasGamepadGesture]]
+  // exposure/connection-event step below. Unlike that one-time latch, this
+  // runs on every occurrence, matching how other activation-triggering
+  // input events behave.
+  //
+  // https://html.spec.whatwg.org/multipage/interaction.html#fully-active-descendant-of-a-top-level-traversable-with-user-attention
+  //   "A top-level traversable has user attention when its system
+  //   visibility state is 'visible', and it either has system focus or
+  //   user agent widgets directly related to it can receive keyboard
+  //   input channeled from the operating system."
+  // The caller already excludes background tabs, but that's only the
+  // visibility half of "user attention": a foreground tab in a window the
+  // OS hasn't focused would still pass it. GetIsActiveBrowserWindow()
+  // covers the focus half, same as the pairing in nsDeviceSensors.cpp and
+  // MediaDevices.cpp.
+  if (aWindow && aContainsUserGesture &&
+      aWindow->GetBrowsingContext()->Top()->GetIsActiveBrowserWindow()) {
+    if (Document* doc = aWindow->GetExtantDoc()) {
+      doc->NotifyUserGestureActivation();
+    }
   }
 
   if (aWindow && firstTime) {

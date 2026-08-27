@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use bzip2::read::BzDecoder;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
@@ -54,10 +55,24 @@ pub(crate) fn prepare_updater(
 }
 
 fn unpack_updater(pkg: &Path, product: &str, output_dir: &Path) -> Result<PathBuf> {
-    let compressed =
-        File::open(pkg).context(format!("couldn't open package: {}", pkg.display()))?;
-    let tar = XzDecoder::new(compressed);
-    let mut archive = Archive::new(tar);
+    let mut file = File::open(pkg).context(format!("couldn't open package: {}", pkg.display()))?;
+    let mut magic = [0u8; 6];
+    file.read(&mut magic)
+        .context(format!("couldn't read from package: {}", pkg.display()))?;
+    file.seek(SeekFrom::Start(0)).context(format!(
+        "couldn't seek to start of package: {}",
+        pkg.display()
+    ))?;
+
+    let decoder: Box<dyn Read> = if magic.starts_with(&[0xfd, b'7', b'z', b'X', b'Z', 0x00]) {
+        Box::new(XzDecoder::new(file))
+    } else if magic.starts_with(b"BZh") {
+        Box::new(BzDecoder::new(file))
+    } else {
+        bail!("Unknown archive format: {}", pkg.display());
+    };
+
+    let mut archive = Archive::new(decoder);
     archive.unpack(output_dir).context(format!(
         "couldn't unpack pkg {} into dir {}",
         pkg.display(),
@@ -72,7 +87,7 @@ fn unpack_updater(pkg: &Path, product: &str, output_dir: &Path) -> Result<PathBu
     if !updater_binary.exists() {
         bail!("updater binary doesn't exist at {updater_path}");
     }
-    return Ok(updater_binary);
+    Ok(updater_binary)
 }
 
 fn replace_certs(cert_dir: &Path, updater: &Path, overrides: &[CertOverride]) -> Result<()> {
@@ -148,6 +163,27 @@ mod tests {
         return fixture_dir().join(item);
     }
 
+    fn make_tar_bz2(product: &str, output: &std::path::Path) {
+        use bzip2::write::BzEncoder;
+        use bzip2::Compression;
+        use tar::Header;
+
+        let file = File::create(output).unwrap();
+        let enc = BzEncoder::new(file, Compression::default());
+        let mut builder = tar::Builder::new(enc);
+
+        let content = b"#!/bin/sh\n";
+        let mut header = Header::new_gnu();
+        header.set_path(format!("{product}/updater")).unwrap();
+        header.set_size(content.len() as u64);
+        header.set_mode(0o755);
+        header.set_cksum();
+        builder.append(&header, &content[..]).unwrap();
+
+        let enc = builder.into_inner().unwrap();
+        enc.finish().unwrap();
+    }
+
     fn make_tar_xz(product: &str, output: &std::path::Path) {
         use tar::Header;
         use xz::write::XzEncoder;
@@ -215,6 +251,32 @@ mod tests {
         let builder = tar::Builder::new(enc);
         let enc = builder.into_inner().unwrap();
         enc.finish().unwrap();
+
+        let result = unpack_updater(&archive, "firefox", &output_dir);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn unpack_updater_success_bz2() {
+        let tmpdir = TempDir::with_prefix("marannon_updater_test").unwrap();
+        let archive = tmpdir.path().join("test.tar.bz2");
+        let output_dir = tmpdir.path().join("output");
+        std::fs::create_dir(&output_dir).unwrap();
+
+        make_tar_bz2("firefox", &archive);
+
+        let result = unpack_updater(&archive, "firefox", &output_dir);
+        assert!(result.is_ok());
+        assert!(std::path::Path::new(&result.unwrap()).exists());
+    }
+
+    #[test]
+    fn unpack_updater_unknown_format() {
+        let tmpdir = TempDir::with_prefix("marannon_updater_test").unwrap();
+        let archive = tmpdir.path().join("test.garbage");
+        let output_dir = tmpdir.path().join("output");
+        std::fs::create_dir(&output_dir).unwrap();
+        std::fs::write(&archive, b"this is not a valid archive").unwrap();
 
         let result = unpack_updater(&archive, "firefox", &output_dir);
         assert!(result.is_err());

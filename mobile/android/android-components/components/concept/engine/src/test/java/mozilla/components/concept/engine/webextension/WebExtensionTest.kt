@@ -31,7 +31,7 @@ class WebExtensionTest {
 
         tabHandler.onUpdateTab(mock(), mock(), false, "")
         tabHandler.onCloseTab(mock(), mock())
-        tabHandler.onNewTab(mock(), mock(), false, "")
+        tabHandler.onNewTab(mock(), mock(), false, "", false)
     }
 
     @Test

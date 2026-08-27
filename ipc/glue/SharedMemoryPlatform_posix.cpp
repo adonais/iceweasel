@@ -31,6 +31,7 @@
 #include "base/eintr_wrapper.h"
 #include "base/string_util.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ProfilerThreadSleep.h"
 #include "mozilla/UniquePtrExtensions.h"
@@ -121,6 +122,20 @@ static Maybe<unsigned> HaveMemfd() {
 #ifdef USE_MEMFD_CREATE
   static const Maybe<unsigned> kHave = []() -> Maybe<unsigned> {
     unsigned flags = MFD_CLOEXEC | MFD_ALLOW_SEALING;
+
+#  ifdef MOZ_VALGRIND
+    // Valgrind allows memfd_create but doesn't understand F_ADD_SEALS.
+    if (RUNNING_ON_VALGRIND) {
+      flags &= ~MFD_ALLOW_SEALING;
+    }
+#  endif
+    // Also allow opting out of seals for testing.
+    if (PR_GetEnv("MOZ_SHM_NO_SEALS")) {
+      flags &= ~MFD_ALLOW_SEALING;
+    }
+
+    // MFD_NOEXEC_SEAL seems to imply MFD_ALLOW_SEALING, but clearing the
+    // MFD_ALLOW_SEALING bit is mostly a signal to callers to not use seals.
 #  ifdef MFD_NOEXEC_SEAL
     flags |= MFD_NOEXEC_SEAL;
 #  endif
@@ -173,6 +188,15 @@ static Maybe<unsigned> HaveMemfd() {
 #endif  // USE_MEMFD_CREATE
 }
 
+[[maybe_unused]]
+static bool MemfdCanSeal(Maybe<unsigned> aMaybeFlags) {
+#ifdef USE_MEMFD_CREATE
+  return aMaybeFlags && (*aMaybeFlags & MFD_ALLOW_SEALING);
+#else
+  return false;
+#endif
+}
+
 bool AppendPosixShmPrefix(std::string* aStr, pid_t aPid) {
   if (HaveMemfd()) {
     return false;
@@ -206,9 +230,10 @@ static Maybe<PlatformHandle> CreateImpl(size_t aSize,
   mozilla::UniqueFileHandle fd;
   mozilla::UniqueFileHandle frozen_fd;
 
+  [[maybe_unused]] auto memfdStatus = HaveMemfd();
 #ifdef USE_MEMFD_CREATE
-  if (auto flags = HaveMemfd()) {
-    fd.reset(memfd_create("mozilla-ipc", *flags));
+  if (memfdStatus) {
+    fd.reset(memfd_create("mozilla-ipc", *memfdStatus));
     if (!fd) {
       // In general it's too late to fall back here -- in a sandboxed
       // child process, shm_open is already blocked.  And it shouldn't
@@ -272,7 +297,7 @@ static Maybe<PlatformHandle> CreateImpl(size_t aSize,
   // Using posix_fallocate will ensure that there's actually space for this
   // file. Otherwise we end up with a sparse file that can give SIGBUS if we
   // run out of space while writing to it.  (This doesn't apply to memfd.)
-  if (!HaveMemfd()) {
+  if (!memfdStatus) {
     int rv;
     // Avoid repeated interruptions of posix_fallocate by the profiler's
     // SIGPROF sampling signal. Indicating "thread sleep" here means we'll
@@ -311,7 +336,7 @@ static Maybe<PlatformHandle> CreateImpl(size_t aSize,
                     strerror(*fallocateError));
       }
       MOZ_LOG_FMT(gSharedMemoryLog, LogLevel::Warning,
-                  "fallocate failed to set shm size: {}",
+                  "ftruncate failed to set shm size: {}",
                   strerror(ftruncate_errno));
       return Nothing();
     }
@@ -320,6 +345,15 @@ static Maybe<PlatformHandle> CreateImpl(size_t aSize,
   if (aFreezable) {
     *aFreezable = std::move(frozen_fd);
   }
+#ifdef USE_MEMFD_CREATE
+  // Freeze the size if possible; see IsSafeToMap below for more details.
+  if (MemfdCanSeal(memfdStatus) &&
+      fcntl(fd.get(), F_ADD_SEALS, F_SEAL_SHRINK | F_SEAL_GROW) != 0) {
+    MOZ_LOG_FMT(gSharedMemoryLog, LogLevel::Warning,
+                "failed to seal size of shm: {}", strerror(errno));
+  }
+#endif
+
   return Some(std::move(fd));
 }
 
@@ -354,14 +388,7 @@ PlatformHandle Platform::CloneHandle(const PlatformHandle& aHandle) {
 
 bool Platform::Freeze(FreezableHandle& aHandle) {
 #ifdef USE_MEMFD_CREATE
-#  ifdef MOZ_VALGRIND
-  // Valgrind allows memfd_create but doesn't understand F_ADD_SEALS.
-  static const bool haveSeals = RUNNING_ON_VALGRIND == 0;
-#  else
-  static const bool haveSeals = true;
-#  endif
-  static const bool useSeals = !PR_GetEnv("MOZ_SHM_NO_SEALS");
-  if (HaveMemfd() && haveSeals && useSeals) {
+  if (MemfdCanSeal(HaveMemfd())) {
     // Seals are added to the file as defense-in-depth.  The primary
     // method of access control is creating a read-only fd (using
     // procfs in this case) and requiring that sandboxes processes not
@@ -380,6 +407,9 @@ bool Platform::Freeze(FreezableHandle& aHandle) {
     // However, Linux 5.1 added F_SEAL_FUTURE_WRITE, which prevents
     // write operations afterwards, but existing writeable mappings
     // are unaffected (similar to ashmem protection semantics).
+    //
+    // The size should have already been sealed in CreateImpl, but
+    // trying to add an already-set seal is harmless.
 
     const int seals = F_SEAL_GROW | F_SEAL_SHRINK | F_SEAL_SEAL;
     int sealError = EINVAL;
@@ -463,6 +493,42 @@ size_t Platform::PageSize() { return sysconf(_SC_PAGESIZE); }
 
 size_t Platform::AllocationGranularity() { return PageSize(); }
 
-bool Platform::IsSafeToMap(const PlatformHandle&) { return true; }
+bool Platform::IsSafeToMap(const PlatformHandle& aHandle, uint64_t aSize) {
+  // In general, mappings can extend beyond the end of the file; accessing that
+  // part of the mapping raises SIGBUS (explicitly specified in POSIX).  This is
+  // a safe crash and doesn't allow exploitation, but it can waste time for
+  // bug-finding efforts, and checking should be relatively cheap.
+  //
+  // If we have memfd and seal support, and it's available at runtime, then
+  // validate that the file size can't decrease.  Since we still support
+  // versions of Linux which don't have memfd (RHEL 7, scheduled for EoL in
+  // 2028-06, uses kernel 3.10), as well as Tier 3 OSes without memfd, those
+  // will simply do a best-effort check of the size.
+#ifdef USE_MEMFD_CREATE
+  if (MemfdCanSeal(HaveMemfd())) {
+    static constexpr int kReqSeals = F_SEAL_SHRINK;
+    int seals = fcntl(aHandle.get(), F_GET_SEALS);
+    if (seals == -1 || (~seals & kReqSeals)) {
+      MOZ_ASSERT(seals != -1 || errno == EINVAL);
+      MOZ_LOG_FMT(gSharedMemoryLog, LogLevel::Warning, "shm is shrinkable??");
+      return false;
+    }
+  }
+#endif
+
+  struct stat st;
+  if (fstat(aHandle.get(), &st) != 0) {
+    MOZ_LOG_FMT(gSharedMemoryLog, LogLevel::Warning, "failed to fstat shm: {}",
+                strerror(errno));
+    return false;
+  }
+  CheckedInt<uint64_t> fileSize(st.st_size);
+  if (!fileSize.isValid() || fileSize.value() < aSize) {
+    MOZ_LOG_FMT(gSharedMemoryLog, LogLevel::Warning,
+                "shm is too short ({} < {})", st.st_size, aSize);
+    return false;
+  }
+  return true;
+}
 
 }  // namespace mozilla::ipc::shared_memory

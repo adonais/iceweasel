@@ -10,7 +10,6 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   GeckoViewPrompter: "resource://gre/modules/GeckoViewPrompter.sys.mjs",
-  NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
 });
 
 const { debug, warn } = GeckoViewUtils.initLogging("FilePickerDelegate");
@@ -108,7 +107,7 @@ export class FilePickerDelegate {
     const filesInWebKitDirectory = [];
 
     for (const info of files) {
-      const { filePath, uri, relativePath, name, type, lastModified } = info;
+      const { filePath, relativePath, type, lastModified } = info;
       if (filePath) {
         const file = await (() => {
           if (this._prompt.domWin) {
@@ -129,27 +128,39 @@ export class FilePickerDelegate {
       }
 
       // File path cannot be resolved, but we know content URI.
-      const input = Cc[
-        "@mozilla.org/network/android-content-input-stream;1"
-      ].createInstance(Ci.nsIAndroidContentInputStream);
-      input.init(Services.io.newURI(uri));
-      const buffer = lazy.NetUtil.readInputStream(input);
-      input.close();
-
-      const file = (() => {
-        if (this._prompt.domWin) {
-          return new this._prompt.domWin.File([buffer], name, {
-            type,
-            lastModified,
-          });
-        }
-        return new File([buffer], name, { type, lastModified });
-      })();
+      const file = this._getDOMFileFromContentUri(info);
       file.setMozRelativePath(relativePath);
       filesInWebKitDirectory.push(file);
     }
 
     this._filesInWebKitDirectory = filesInWebKitDirectory;
+  }
+
+  _getDOMFileFromContentUri(aInfo) {
+    const { uri, name, type, lastModified, size } = aInfo;
+    if (size < 0) {
+      throw Components.Exception(
+        "File size is unknown",
+        Cr.NS_ERROR_NOT_AVAILABLE
+      );
+    }
+
+    const input = Cc[
+      "@mozilla.org/network/android-content-input-stream;1"
+    ].createInstance(Ci.nsIAndroidContentInputStream);
+    input.init(Services.io.newURI(uri));
+    if (this._prompt.domWin) {
+      return this._prompt.domWin.File.createFromNsIInputStream(input, size, {
+        name,
+        type,
+        lastModified,
+      });
+    }
+    return File.createFromNsIInputStream(input, size, {
+      name,
+      type,
+      lastModified,
+    });
   }
 
   get file() {

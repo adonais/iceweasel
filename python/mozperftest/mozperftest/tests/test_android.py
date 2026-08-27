@@ -4,6 +4,7 @@ from unittest import mock
 
 import mozunit
 import pytest
+from mozdevice import ADBError
 
 from mozperftest.environment import SYSTEM
 from mozperftest.system.android import AndroidSetupError, DeviceError
@@ -15,6 +16,13 @@ from mozperftest.tests.support import (
     temp_file,
 )
 from mozperftest.utils import silence
+
+
+@pytest.fixture(autouse=True)
+def _stub_ensure_android_device():
+    # Mocks ensure_android_device so Android tests can run without a device or emulator.
+    with mock.patch("mozperftest.system.android.ensure_android_device"):
+        yield
 
 
 def get_android_device_layer(layers):
@@ -41,6 +49,57 @@ def test_android():
     system = env.layers[SYSTEM]
     with system as android, silence(system):
         android(metadata)
+
+
+@mock.patch("mozperftest.system.VersionProducer", new=mock.MagicMock())
+@mock.patch("mozperftest.system.android.ensure_java_on_path")
+@mock.patch("mozperftest.system.android.ensure_profgen_on_path")
+@mock.patch("mozperftest.system.android.ensure_android_device")
+@mock.patch("mozperftest.system.android.ADBLoggedDevice", new=FakeDevice)
+def test_android_use_emulator_sets_up_emulator(
+    ensure_device, ensure_profgen, ensure_java
+):
+    args = {
+        "app": "fenix",
+        "flavor": "mobile-browser",
+        "android-install-apk": ["this.apk"],
+        "android": True,
+        "android-use-emulator": True,
+        "android-timeout": 30,
+        "android-capture-adb": "stdout",
+        "android-app-name": "org.mozilla.fenix",
+    }
+
+    mach_cmd, metadata, env = get_running_env(**args)
+    system = env.layers[SYSTEM]
+    with system as android, silence(system):
+        android(metadata)
+
+    ensure_device.assert_called_once()
+    ensure_profgen.assert_called_once()
+    ensure_java.assert_called_once()
+
+
+@mock.patch("mozperftest.system.VersionProducer", new=mock.MagicMock())
+@mock.patch("mozperftest.system.android.ensure_android_device")
+@mock.patch("mozperftest.system.android.ADBLoggedDevice", new=FakeDevice)
+def test_android_no_emulator_setup_without_flag(ensure_device):
+    args = {
+        "app": "fenix",
+        "flavor": "mobile-browser",
+        "android-install-apk": ["this.apk"],
+        "android": True,
+        "android-timeout": 30,
+        "android-capture-adb": "stdout",
+        "android-app-name": "org.mozilla.fenix",
+    }
+
+    mach_cmd, metadata, env = get_running_env(**args)
+    system = env.layers[SYSTEM]
+    with system as android, silence(system):
+        android(metadata)
+
+    ensure_device.assert_not_called()
 
 
 @mock.patch("mozperftest.system.VersionProducer", new=mock.MagicMock())
@@ -171,8 +230,13 @@ def test_android_with_perftuning(device, tuner):
     tuner.tune_performance.assert_called()
 
 
+@mock.patch(
+    "mozperftest.system.android.ADBLoggedDevice",
+    new=mock.MagicMock(side_effect=ADBError("no device")),
+)
 def test_android_failure():
-    # no patching so it'll try for real and fail
+    # Device lookup is stubbed as available, but connecting via ADBLoggedDevice
+    # fails, so setup should raise a DeviceError.
     args = {
         "app": "fenix",
         "flavor": "mobile-browser",

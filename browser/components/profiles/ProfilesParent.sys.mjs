@@ -46,6 +46,7 @@ export class ProfilesParent extends JSWindowActorParent {
       profiles: await Promise.all(profiles.map(p => p.toContentSafeObject())),
       profileCreated: await profileAge.created,
       themes,
+      novaEnabled: Services.prefs.getBoolPref("browser.nova.enabled", false),
     };
   }
 

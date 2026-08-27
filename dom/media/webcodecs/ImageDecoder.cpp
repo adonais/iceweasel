@@ -589,6 +589,7 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
   mSourceBuffer = MakeRefPtr<image::SourceBuffer>();
 
   bool transferOwnership = false;
+  bool isBufferSource = false;
   const auto fnSourceBufferFromSpan = [&](const Span<uint8_t>& aData) {
     if (transferOwnership) {
       // 10.2.2.18.2.1 Let [[encoded data]] reference bytes in data
@@ -628,11 +629,6 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
         return;
       }
     }
-    mSourceBuffer->Complete(NS_OK);
-
-    // 10.2.2.18.4. Assign true to [[complete]].
-    // 10.2.2.18.5. Resolve [[completed promise]].
-    OnCompleteSuccess();
   };
 
   if (aInit.mData.IsReadableStream()) {
@@ -655,6 +651,7 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
     }
   } else if (aInit.mData.IsArrayBufferView()) {
     // 10.2.2.18.3.1. Assert that init.data is of type BufferSource.
+    isBufferSource = true;
     const auto& view = aInit.mData.GetAsArrayBufferView();
     bool isShared;
     JS::Rooted<JSObject*> viewObj(aGlobal.Context(), view.Obj());
@@ -697,6 +694,7 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
     }
   } else if (aInit.mData.IsArrayBuffer()) {
     // 10.2.2.18.3.1. Assert that init.data is of type BufferSource.
+    isBufferSource = true;
     const auto& buffer = aInit.mData.GetAsArrayBuffer();
     for (const auto& transferBuffer : aInit.mTransfer) {
       if (buffer.Obj() == transferBuffer.Obj()) {
@@ -729,6 +727,21 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
     MOZ_ASSERT_UNREACHABLE("Unsupported data type!");
     aRv.ThrowNotSupportedError("Unsupported data type");
     return;
+  }
+
+  // For a BufferSource, the data has now been buffered and we are outside any
+  // pinned-length region established by ProcessFixedData. Resolve the promise
+  // here rather than from within the processor lambda, since resolving a
+  // promise can run script (e.g. a `then` accessor on the resolution value's
+  // prototype chain).
+  //
+  // The ReadableStream path (!isBufferSource) completes asynchronously via
+  // ImageDecoderReadRequest and is intentionally skipped.
+  if (isBufferSource) {
+    // 10.2.2.18.4. Assign true to [[complete]].
+    // 10.2.2.18.5. Resolve [[completed promise]].
+    mSourceBuffer->Complete(NS_OK);
+    OnCompleteSuccess();
   }
 
   Maybe<gfx::IntSize> desiredSize;

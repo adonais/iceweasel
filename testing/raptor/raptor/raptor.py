@@ -97,6 +97,8 @@ def main(args=sys.argv[1:]):
             gecko_profile_features=args.gecko_profile_features,
             extra_profiler_run=args.extra_profiler_run,
             etw_profile=args.etw_profile,
+            samply_profile=args.samply_profile,
+            perf_profile=args.perf_profile,
             symbols_path=args.symbols_path,
             host=args.host,
             live_sites=args.live_sites,
@@ -175,7 +177,13 @@ def main(args=sys.argv[1:]):
 
     # when running raptor locally with gecko profiling on, use the view-gecko-profile
     # tool to automatically load the latest gecko profile in profiler.firefox.com
-    if args.gecko_profile and args.run_local:
+    profiling = any([
+        args.gecko_profile,
+        args.simpleperf,
+        args.samply_profile,
+        args.perf_profile,
+    ])
+    if profiling and args.run_local:
         if os.environ.get("DISABLE_PROFILE_LAUNCH", "0") == "1":
             LOG.info(
                 "Not launching profiler.firefox.com because DISABLE_PROFILE_LAUNCH=1"

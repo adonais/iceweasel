@@ -111,8 +111,6 @@ EventListenerManager* nsWindowRoot::GetExistingListenerManager() const {
 void nsWindowRoot::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   aVisitor.mCanHandle = true;
   aVisitor.mForceContentDispatch = true;  // FIXME! Bug 329119
-  // To keep mWindow alive
-  aVisitor.mItemData = static_cast<nsISupports*>(mWindow);
   aVisitor.SetParentTarget(mParent, false);
 
   // We need to handle eFocus and eBlur to set up selection. However, that

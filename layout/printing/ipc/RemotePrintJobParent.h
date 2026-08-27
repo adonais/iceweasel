@@ -8,8 +8,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/CrossProcessPaint.h"
-#include "mozilla/gfx/Point.h"
-#include "mozilla/gfx/RecordedEvent.h"
 #include "mozilla/layout/PRemotePrintJobParent.h"
 #include "mozilla/layout/printing/DrawEventRecorder.h"
 #include "nsCOMArray.h"
@@ -19,8 +17,7 @@ class nsDeviceContext;
 class nsIPrintSettings;
 class nsIWebProgressListener;
 
-namespace mozilla {
-namespace layout {
+namespace mozilla::layout {
 
 class PrintTranslator;
 
@@ -33,7 +30,7 @@ class RemotePrintJobParent final : public PRemotePrintJobParent {
   void ActorDestroy(ActorDestroyReason aWhy) final;
 
   mozilla::ipc::IPCResult RecvInitializePrint(
-      const nsAString& aDocumentTitle, const uint64_t& aBrowsingContextId,
+      const nsAString& aDocumentTitle, const dom::MaybeDiscardedWindowContext&,
       const int32_t& aStartPage, const int32_t& aEndPage) final;
 
   mozilla::ipc::IPCResult RecvProcessPage(const int32_t& aWidthInPoints,
@@ -65,13 +62,13 @@ class RemotePrintJobParent final : public PRemotePrintJobParent {
  private:
   ~RemotePrintJobParent() final;
 
-  void InitializePrint(const nsAString& aDocumentTitle,
-                       const uint64_t& aBrowsingContextId,
+  void InitializePrint(const nsAString& aDocumentTitle, dom::WindowContext*,
                        const int32_t& aStartPage, const int32_t& aEndPage);
 
+  void FailInitialization(nsresult);
+
   nsresult InitializePrintDevice(const nsAString& aDocumentTitle,
-                                 const uint64_t& aBrowsingContextId,
-                                 const int32_t& aStartPage,
+                                 dom::WindowContext*, const int32_t& aStartPage,
                                  const int32_t& aEndPage);
 
   nsresult PrepareNextPageFD(FileDescriptor* aFd);
@@ -94,13 +91,17 @@ class RemotePrintJobParent final : public PRemotePrintJobParent {
   UniquePtr<PrintTranslator> mPrintTranslator;
   nsCOMArray<nsIWebProgressListener> mPrintProgressListeners;
   PRFileDescStream mCurrentPageStream;
-  nsresult mStatus;
+
+  // Once initialized, these identify the page we're printing.
+  uint64_t mInnerWindowId{0};
+  dom::TabId mTabId{0};
+
+  nsresult mStatus = NS_ERROR_UNEXPECTED;
   bool mIsDoingPrinting = false;
-  bool mInitializeReceived =
-      false;  // True after RecvInitializePrint is called.
+  // True after RecvInitializePrint is called.
+  bool mInitializeReceived = false;
 };
 
-}  // namespace layout
-}  // namespace mozilla
+}  // namespace mozilla::layout
 
 #endif  // mozilla_layout_RemotePrintJobParent_h

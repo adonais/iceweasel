@@ -303,7 +303,7 @@ export class LlamaCppPipeline {
         if (skipPrompt && isPrompt) {
           continue;
         }
-        output += chunk;
+        output += chunk.piece ?? "";
         port?.postMessage({
           tokens: chunk.tokens,
           ok: true,

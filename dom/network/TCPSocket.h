@@ -73,7 +73,7 @@ class TCPSocket final : public DOMEventTargetHelper,
                         public nsIProtocolProxyCallback {
  public:
   TCPSocket(nsIGlobalObject* aGlobal, const nsAString& aHost, uint16_t aPort,
-            bool aSsl, bool aUseArrayBuffers);
+            bool aSsl, bool aUseArrayBuffers, uint32_t aConnectionFlags = 0);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(TCPSocket,
@@ -186,6 +186,8 @@ class TCPSocket final : public DOMEventTargetHelper,
   uint16_t mPort;
   // Whether this socket is using a secure transport.
   bool mSsl;
+  // nsISocketTransport connection flags to apply before connecting.
+  uint32_t mConnectionFlags;
 
   // The associated IPC actor in a child process.
   RefPtr<TCPSocketChild> mSocketBridgeChild;

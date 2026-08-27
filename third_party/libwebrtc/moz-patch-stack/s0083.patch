@@ -10,7 +10,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/00c4bd7039dc8992d
  1 file changed, 1 insertion(+)
 
 diff --git a/modules/video_capture/linux/video_capture_v4l2.cc b/modules/video_capture/linux/video_capture_v4l2.cc
-index efb4b1df1a..0e75c72a14 100644
+index 119489b33a..ffcaf54550 100644
 --- a/modules/video_capture/linux/video_capture_v4l2.cc
 +++ b/modules/video_capture/linux/video_capture_v4l2.cc
 @@ -67,6 +67,7 @@ VideoCaptureModuleV4L2::VideoCaptureModuleV4L2(Clock* clock)

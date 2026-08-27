@@ -32,8 +32,6 @@ using namespace mozilla::dom;
 
 NS_IMPL_ISUPPORTS(nsClipboardProxy, nsIClipboard, nsIClipboardProxy)
 
-nsClipboardProxy::nsClipboardProxy() : mClipboardCaps(false, false, false) {}
-
 NS_IMETHODIMP
 nsClipboardProxy::SetData(nsITransferable* aTransferable,
                           nsIClipboardOwner* anOwner,

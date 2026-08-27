@@ -281,4 +281,32 @@ class UriTest {
 
         assertFalse(result)
     }
+
+    @Test
+    fun `GIVEN content resolver query throws IllegalArgumentException WHEN checking readability THEN return false`() {
+        val resolver = mock<ContentResolver>()
+        val uri = "content://media/external/file/37162".toUri()
+
+        doThrow(IllegalArgumentException("Unknown URL"))
+            .`when`(resolver)
+            .query(any(), any<Array<String>>(), any(), any(), any())
+
+        val result = uri.isReadable(resolver)
+
+        assertFalse(result)
+    }
+
+    @Test
+    fun `GIVEN content resolver query throws NullPointerException WHEN checking readability THEN return false`() {
+        val resolver = mock<ContentResolver>()
+        val uri = "content://media/external/file/37162".toUri()
+
+        doThrow(NullPointerException("Attempt to invoke interface method on a null object reference"))
+            .`when`(resolver)
+            .query(any(), any<Array<String>>(), any(), any(), any())
+
+        val result = uri.isReadable(resolver)
+
+        assertFalse(result)
+    }
 }

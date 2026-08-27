@@ -73,9 +73,6 @@ static int FuzzingRunCOLRv1(const uint8_t* data, size_t size) {
   return 0;
 }
 
-int FuzzingInitCOLRv1(int* argc, char*** argv) {
-  Preferences::SetBool("gfx.font_rendering.colr_v1.enabled", true);
-  return 0;
-}
+int FuzzingInitCOLRv1(int* argc, char*** argv) { return 0; }
 
 MOZ_FUZZING_INTERFACE_RAW(FuzzingInitCOLRv1, FuzzingRunCOLRv1, GfxCOLRv1);

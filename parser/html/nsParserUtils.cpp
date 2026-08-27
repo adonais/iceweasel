@@ -114,7 +114,7 @@ nsParserUtils::ParseFragment(const nsAString& aFragment, uint32_t aFlags,
         DocumentFragment(document->NodeInfoManager());
     rv = nsContentUtils::ParseFragmentHTML(aFragment, fragment, nsGkAtoms::body,
                                            kNameSpaceID_XHTML, false, true,
-                                           aFlags);
+                                           aFlags, mozilla::Nothing());
   }
 
   if (scripts_enabled) {

@@ -73,8 +73,8 @@
 #define mozilla_HashTable_h
 
 #include <bit>
-#include <utility>
 #include <type_traits>
+#include <utility>
 
 #include "mozilla/AllocPolicy.h"
 #include "mozilla/Assertions.h"

@@ -14,15 +14,11 @@ const BinaryOutputStream = Components.Constructor(
 const Pipe = Components.Constructor("@mozilla.org/pipe;1", "nsIPipe", "init");
 
 function run_test() {
-  var ios = Cc["@mozilla.org/network/io-service;1"].createInstance(
-    Ci.nsIIOService
-  );
-
-  var baseURI = ios.newURI("http://example.com/", "UTF-8");
+  var baseURI = Services.io.newURI("http://example.com/", "UTF-8");
 
   // This depends on the redirector for about:license having the
   // nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT flag.
-  var aboutLicense = ios.newURI("about:license", "UTF-8", baseURI);
+  var aboutLicense = Services.io.newURI("about:license", "UTF-8", baseURI);
 
   var pipe = new Pipe(false, false, 0, 0, null);
   var output = new BinaryOutputStream(pipe.outputStream);

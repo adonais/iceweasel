@@ -69,6 +69,8 @@ parent:
   sync GetBufferSubData(uint32_t target, uint64_t srcByteOffset, uint64_t byteSize) returns (Shmem ret);
   sync GetFrontBufferSnapshot() returns (FrontBufferSnapshotIpc ret);
   sync ReadPixels(ReadPixelsDesc desc, ReadPixelsBuffer buffer) returns (ReadPixelsResultIpc ret);
+  async ReadPixelsAsync(ReadPixelsDesc desc, uint64_t byteSize)
+      returns (ReadPixelsResultIpc ret);
 
   // -
 

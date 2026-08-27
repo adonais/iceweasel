@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+const src = new OffscreenCanvas(32766, 16);
+const sctx = src.getContext('2d', {willReadFrequently: true});
+sctx.fillStyle = '#336699';
+sctx.fillRect(0, 0, 32766, 16);
+
+const dst = new OffscreenCanvas(32, 32767);
+const ctx = dst.getContext('2d', {willReadFrequently: true});
+ctx.fillRect(0, 0, 32, 32767);
+ctx.beginPath();
+ctx.rect(15, 32754, 16, 13);
+ctx.clip();
+ctx.imageSmoothingEnabled = false;
+ctx.globalCompositeOperation = 'copy';
+ctx.setTransform(0, -1, 1, 0, 15, 65519.75);
+ctx.drawImage(src, 0, 0);
+</script>
+</body>
+</html>

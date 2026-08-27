@@ -37,6 +37,7 @@ newtab-unit-tests:
             - node-modules
             - newtab-node-modules
     run:
+        clone-with: hg
         command: >
             cd /builds/worker/checkouts/gecko &&
             cp -r $MOZ_FETCHES_DIR/node_modules node_modules &&
@@ -72,6 +73,7 @@ newtab-unit-tests-ccov:
             - node-modules
             - newtab-node-modules
     run:
+        clone-with: hg
         command: >
             cd /builds/worker/checkouts/gecko &&
             cp -r $MOZ_FETCHES_DIR/node_modules node_modules &&
@@ -106,6 +108,7 @@ messagingsystem-unit-tests:
             - aboutwelcome-node-modules
             - asrouter-node-modules
     run:
+        clone-with: hg
         command: >
             cd /builds/worker/checkouts/gecko &&
             cp -r $MOZ_FETCHES_DIR/node_modules node_modules &&
@@ -145,6 +148,7 @@ messagingsystem-unit-tests-ccov:
             - aboutwelcome-node-modules
             - asrouter-node-modules
     run:
+        clone-with: hg
         command: >
             cd /builds/worker/checkouts/gecko &&
             cp -r $MOZ_FETCHES_DIR/node_modules node_modules &&
@@ -173,6 +177,7 @@ devtools-tests:
               name: public/code-review/issues.json
               path: /builds/worker/issues.json
     run:
+        clone-with: hg
         command: >
             ./mach devtools-node-test --artifact=/builds/worker/issues.json
     fetches:
@@ -198,6 +203,7 @@ devtools-verify-bundle:
               name: public/code-review/issues.json
               path: /builds/worker/issues.json
     run:
+        clone-with: hg
         command: >
             cd devtools/client/debugger &&
             yarn &&
@@ -218,6 +224,7 @@ eslint-plugin-mozilla:
     worker:
         docker-image: {in-tree: "lint"}
     run:
+        clone-with: hg
         command: >
             cp -r $MOZ_FETCHES_DIR/eslint-plugin-mozilla/node_modules tools/lint/eslint/eslint-plugin-mozilla/node_modules &&
             ./mach configure --disable-compile-environment &&
@@ -237,6 +244,7 @@ stylelint-plugin-mozilla:
     worker:
         docker-image: {in-tree: "lint"}
     run:
+        clone-with: hg
         command: >
             cp -r $MOZ_FETCHES_DIR/stylelint-plugin-mozilla/node_modules tools/lint/stylelint/stylelint-plugin-mozilla/node_modules &&
             ./mach configure --disable-compile-environment &&
@@ -263,6 +271,7 @@ design-tokens-tests:
             default:
                 linux2404-64/opt: build-linux64-shippable/opt
     run:
+        clone-with: hg
         command: >
             cd /builds/worker/checkouts/gecko &&
             rm -rf node_modules &&

@@ -178,10 +178,15 @@ static void GenerateBailoutThunk(MacroAssembler& masm, Label* bailoutTail) {
 // Generates a trampoline for calling Jit compiled code from a C++ function.
 // The trampoline use the EnterJitCode signature, with the standard x64 fastcall
 // calling convention.
-void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
+void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
+                                  EnterJitMode mode) {
   AutoCreatedBy acb(masm, "JitRuntime::generateEnterJIT");
 
-  enterJITOffset_ = startTrampolineCode(masm);
+  if (mode == EnterJitMode::GeneratorResume) {
+    enterJITGeneratorResumeOffset_ = startTrampolineCode(masm);
+  } else {
+    enterJITOffset_ = startTrampolineCode(masm);
+  }
 
   const Register reg_code = IntArgReg0;
   const Register reg_argc = IntArgReg1;
@@ -199,15 +204,19 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   // Save stack pointer as baseline frame.
   masm.movePtr(StackPointer, FramePointer);
 
-  generateEnterJitShared(masm, reg_argc, reg_argv, reg_token, s1, s2, s3);
+  if (mode == EnterJitMode::GeneratorResume) {
+    generateEnterJitResumeShared(masm, reg_argv, reg_token, s1, s2);
+  } else {
+    generateEnterJitShared(masm, reg_argc, reg_argv, reg_token, s1, s2, s3);
 
-  // Push the descriptor.
-  masm.unboxInt32(Address(reg_vp, 0), s3);
-  masm.pushFrameDescriptorForJitCall(FrameType::CppToJSJit, s3, s3);
+    // Push the descriptor.
+    masm.unboxInt32(Address(reg_vp, 0), s3);
+    masm.pushFrameDescriptorForJitCall(FrameType::CppToJSJit, s3, s3);
+  }
 
   CodeLabel returnLabel;
   Label oomReturnLabel;
-  {
+  if (mode != EnterJitMode::GeneratorResume) {
     // Handle Interpreter -> Baseline OSR.
     AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
     MOZ_ASSERT(!regs.has(FramePointer));
@@ -305,7 +314,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   // Call the function with pushing return address to stack.
   masm.callJitNoProfiler(reg_code);
 
-  {
+  if (mode != EnterJitMode::GeneratorResume) {
     // Interpreter -> Baseline OSR will return here.
     masm.bind(&returnLabel);
     masm.addCodeLabel(returnLabel);

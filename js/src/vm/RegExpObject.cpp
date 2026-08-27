@@ -1330,7 +1330,7 @@ JS_PUBLIC_API bool JS::CheckRegExpSyntax(JSContext* cx, const char16_t* chars,
   bool success = irregexp::CheckPatternSyntax(
       cx->tempLifoAlloc(), cx->stackLimitForCurrentPrincipal(),
       dummyTokenStream, source, flags);
-  error.set(UndefinedValue());
+  error.setUndefined();
   if (!success) {
     if (!fc.convertToRuntimeErrorAndClear()) {
       return false;

@@ -173,7 +173,7 @@ function moduleResolutionError(fileName) {
   const mb = registerModule("b", b);
 
   try {
-    moduleLink(ma);
+    moduleLoadAndLink(ma);
   } catch (e) {
     return e.fileName;
   }

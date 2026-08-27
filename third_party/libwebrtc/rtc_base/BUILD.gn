@@ -1738,6 +1738,7 @@ if (!build_with_mozilla) {
     "system:rtc_export",
     "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/base:core_headers",
+    "//third_party/abseil-cpp/absl/base:nullability",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
@@ -2465,7 +2466,6 @@ if (rtc_include_tests) {
         "../api:sequence_checker",
         "../api/crypto:options",
         "../api/environment",
-        "../api/environment:environment_factory",
         "../api/task_queue",
         "../api/task_queue:pending_task_safety_flag",
         "../api/task_queue:task_queue_test",

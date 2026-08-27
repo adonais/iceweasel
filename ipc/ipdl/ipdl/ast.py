@@ -4,7 +4,6 @@
 
 from .util import hash_str
 
-
 NOT_NESTED = 1
 INSIDE_SYNC_NESTED = 2
 INSIDE_CPOW_NESTED = 3
@@ -224,7 +223,7 @@ class UsingStmt(Node):
         Node.__init__(self, loc)
         assert isinstance(cxxTypeSpec, QualifiedId)
         assert cxxHeader is None or isinstance(cxxHeader, str)
-        assert kind is None or kind == "class" or kind == "struct"
+        assert kind is None or kind in {"class", "struct"}
         self.type = cxxTypeSpec
         self.header = cxxHeader
         self.kind = kind

@@ -6,20 +6,20 @@ load(libdir + "asserts.js");
 
 function checkModuleEval(source) {
     let m = parseModule(source);
-    moduleLink(m);
+    moduleLoadAndLink(m);
     moduleEvaluate(m);
     return m;
 }
 
 function checkModuleSyntaxError(source) {
     let m = parseModule(source);
-    assertThrowsInstanceOf(() => moduleLink(m), SyntaxError);
+    assertThrowsInstanceOf(() => moduleLoadAndLink(m), SyntaxError);
 }
 
 let a = registerModule('a', parseModule("export var a = 1; export var b = 2;"));
 let b = registerModule('b', parseModule("export var b = 3; export var c = 4;"));
 let c = registerModule('c', parseModule("export * from 'a'; export * from 'b';"));
-moduleLink(c);
+moduleLoadAndLink(c);
 moduleEvaluate(c);
 
 // Check importing/exporting non-ambiguous name works.
@@ -33,7 +33,7 @@ checkModuleSyntaxError("export { b } from 'c';");
 
 // Check that namespace objects include only non-ambiguous names.
 let m = parseModule("import * as ns from 'c';");
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);
 let ns = c.namespace;
 let names = Object.keys(ns);

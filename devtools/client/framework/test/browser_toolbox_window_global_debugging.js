@@ -8,6 +8,8 @@ const TEST_URL = `data:text/html,<script>window.someInlineSource${Date.now()} = 
 add_task(async function () {
   // Ensure debugging the content processes
   await pushPref("devtools.browsertoolbox.scope", "everything");
+  // We use a commands object for the main process
+  await pushPref("devtools.chrome.enabled", true);
 
   // This is the one test involving enableWindowGlobalThreadActors option.
   // It instructs the Watcher Front to allow debugging sources related to Window Global targets.

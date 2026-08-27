@@ -240,6 +240,41 @@ interface nsIAlertNotification : nsISupports
   nsIAlertAction getAction(in AString aName);
 };
 
+[scriptable, uuid(4b7c7108-0052-4117-881a-eab196d6bf8f)]
+interface nsIAlertCallbacks : nsISupports
+{
+  // Called when the alert is shown.
+  void onAlertShow();
+
+  // Called when the alert is clicked.
+  //
+  // @param aAction The action that was clicked, if any.
+  void onAlertClick([optional] in nsIAlertAction aAction);
+
+  // Called when the alert is dismissed from the foreground and entered the
+  // notification center.
+  // Currently only supported on Windows.
+  void onAlertDismissedFromForeground();
+
+  // Called when the alert is closed by alerts service.
+  //
+  // This hints that the alert is intentionally closed, to disambiguate from
+  // an early alertfinished which is recognized as an error.
+  void onAlertClosed();
+
+  // Called when the alert is finished its lifecycle.
+  //
+  // Usually it indicates the alert is closed. But if this is called before
+  // onAlertShow, it indicates that there was an error.
+  void onAlertFinished();
+
+  // Called when the user requested to open the settings page.
+  void onAlertSettings();
+
+  // Called when the user requested to disable alerts.
+  void onAlertDisable();
+};
+
 [scriptable, uuid(f7a36392-d98b-4141-a7d7-4e46642684e3)]
 interface nsIAlertsService : nsISupports
 {
@@ -271,6 +306,9 @@ interface nsIAlertsService : nsISupports
    */
   void showAlert(in nsIAlertNotification aAlert,
                  [optional] in nsIObserver aAlertListener);
+
+  void showAlertWithCallbacks(in nsIAlertNotification aAlert,
+                              in nsIAlertCallbacks aAlertCallbacks);
 
   /**
    * Close alerts created by the service.

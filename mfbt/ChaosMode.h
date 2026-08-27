@@ -5,10 +5,10 @@
 #ifndef mozilla_ChaosMode_h
 #define mozilla_ChaosMode_h
 
+#include <cstdint>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
-
-#include <cstdint>
 
 namespace mozilla {
 

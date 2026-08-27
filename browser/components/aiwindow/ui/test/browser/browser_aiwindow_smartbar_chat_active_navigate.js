@@ -86,11 +86,11 @@ add_task(async function test_chat_active_url_is_recognized_as_navigate() {
     await submitSmartbar(browser);
 
     const { called, url } = await getStubLoadURLResult(browser);
-    Assert.ok(called, "_loadURL should be called for URL-shaped input");
+    Assert.ok(called, "The load path should run for URL-shaped input");
     Assert.equal(
       url,
       "https://example.com/",
-      "_loadURL should receive the fixed-up URL"
+      "The load should receive the fixed-up URL"
     );
   } finally {
     await BrowserTestUtils.closeWindow(win);
@@ -101,7 +101,7 @@ add_task(async function test_chat_active_url_is_recognized_as_navigate() {
 
 /**
  * Drives the chat-active state then asserts that the given input is treated
- * as a chat prompt (action stays "chat", _loadURL is not called).
+ * as a chat prompt (action stays "chat", the load path does not run).
  *
  * @param {string} input - The value to type into the smartbar.
  */
@@ -142,6 +142,28 @@ async function assertChatInputStaysChat(input) {
 
     const { called } = await getStubLoadURLResult(browser);
     Assert.ok(!called, `_loadURL should NOT be called for input "${input}"`);
+
+    // Answer the second chat turn so it can finish streaming. The mock engine
+    // does not auto-respond; without this the request stays pending forever.
+    await mockEngineManager.respondTo({
+      purpose: "chat",
+      response: "Second response from mock.",
+    });
+
+    // Wait for the second chat turn to finish streaming before tearing down, so
+    // the fire-and-forget #fetchAIResponse request isn't aborted mid-flight,
+    // which would surface as an uncaught rejection.
+    await SpecialPowers.spawn(browser, [], async () => {
+      const aiWindow = content.document.querySelector("ai-window");
+      const inputCta = ContentTaskUtils.querySelectorDeep(
+        aiWindow,
+        "#ai-window-smartbar input-cta"
+      );
+      await ContentTaskUtils.waitForCondition(
+        () => inputCta.getAttribute("action") != "stop",
+        "Smartbar should return to idle before teardown"
+      );
+    });
   } finally {
     await BrowserTestUtils.closeWindow(win);
     restoreSignIn();
@@ -159,7 +181,7 @@ add_task(async function test_chat_active_locked_action_wins_over_chat() {
   try {
     await enterChatActiveState(browser, mockEngineManager);
 
-    await stubLoadURL(browser, { captureURL: true });
+    await stubOpenSERP(browser);
 
     // A plain question would normally chat while suppressed; locking "search"
     // must route the suppressed submit through the manual action instead.
@@ -169,14 +191,15 @@ add_task(async function test_chat_active_locked_action_wins_over_chat() {
 
     await submitSmartbar(browser);
 
-    const { called, url } = await getStubLoadURLResult(browser);
+    const searchResult = await getStubOpenSERPResult(browser);
     Assert.ok(
-      called,
+      searchResult.called,
       "A locked search action should submit as a search even in chat-active mode"
     );
-    Assert.ok(
-      url.includes("cats"),
-      `Search URL should contain the query: ${url}`
+    Assert.equal(
+      searchResult.terms,
+      "tell me about cats",
+      `Should have correct search terms`
     );
   } finally {
     await BrowserTestUtils.closeWindow(win);

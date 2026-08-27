@@ -30,6 +30,7 @@
 #include "nsAppRunner.h"
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIAlertsService.h"
 #include "nsIAlertsServiceRust.h"
 #include "nsIObserverService.h"
 #include "nsIWindowMediator.h"
@@ -373,6 +374,12 @@ ToastNotification::GetManualDoNotDisturb(bool* aRet) {
 NS_IMETHODIMP
 ToastNotification::ShowAlert(nsIAlertNotification* aAlert,
                              nsIObserver* aAlertListener) {
+  return NS_ERROR_NOT_IMPLEMENTED;  // Implemented in nsAlertsService
+}
+
+NS_IMETHODIMP
+ToastNotification::ShowAlertWithCallbacks(nsIAlertNotification* aAlert,
+                                          nsIAlertCallbacks* aAlertCallbacks) {
   NS_ENSURE_ARG(aAlert);
 
   if (mSuppressForScreenSharing) {
@@ -460,7 +467,7 @@ ToastNotification::ShowAlert(nsIAlertNotification* aAlert,
 
   NS_ENSURE_TRUE(mAumid.isSome(), NS_ERROR_UNEXPECTED);
   auto handler = MakeRefPtr<ToastNotificationHandler>(
-      this, mAumid.ref(), aAlert, aAlertListener, name, cookie, title, text,
+      this, mAumid.ref(), aAlert, aAlertCallbacks, name, cookie, title, text,
       hostPort, textClickable, requireInteraction, actions, isSystemPrincipal,
       opaqueRelaunchData, inPrivateBrowsing, isSilent, imagePlacement,
       imagePath);

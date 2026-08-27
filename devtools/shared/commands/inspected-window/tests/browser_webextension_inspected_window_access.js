@@ -100,7 +100,7 @@ add_task(async function test_eval_at_http() {
     set: [["dom.security.https_first", false]],
   });
 
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   const httpUrl = "http://example.com/";
 
   // When running with --use-http3-server, http:-URLs cannot be loaded.

@@ -1,4 +1,4 @@
-/* eslint-disable @microsoft/sdl/no-insecure-url */
+/* eslint-disable sdl/no-insecure-url */
 
 // TODO (Bug 1680996): Investigate why this test takes a long time.
 requestLongerTimeout(2);

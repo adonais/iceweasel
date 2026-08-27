@@ -242,6 +242,9 @@ class DefaultDownloadFileUtils(
         } catch (e: IllegalArgumentException) {
             logger.debug("Invalid URI for deletion: ${e.message}")
             false
+        } catch (e: IllegalStateException) {
+            logger.debug("State error for deletion: ${e.message}")
+            false
         }
     }
 
@@ -364,7 +367,8 @@ class DefaultDownloadFileUtils(
         }
     }
 
-    private fun deleteMediaStoreEntry(contentResolver: ContentResolver, uri: Uri): Boolean {
+    @VisibleForTesting
+    internal fun deleteMediaStoreEntry(contentResolver: ContentResolver, uri: Uri): Boolean {
         logger.debug("Deleting using ContentResolver (MediaStore): $uri")
         return contentResolver.delete(uri, null, null) > 0
     }

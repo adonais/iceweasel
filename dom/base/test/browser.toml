@@ -35,6 +35,7 @@ support-files = [
   "file_use_counter_svg_fill_pattern.svg",
   "file_use_counter_svg_fill_pattern_internal.svg",
   "file_use_counter_svg_fill_pattern_data.svg",
+  "file_use_counter_speculationrules.html",
   "file_webaudio_startstop.html",
   "!/image/test/mochitest/shaver.png",
 ]
@@ -229,6 +230,12 @@ support-files = [
   "file_js_cache_imported1.mjs",
   "file_js_cache_imported2.mjs",
   "file_js_cache_imported3.mjs",
+]
+
+["browser_script_loader_js_cache_module_preload.js"]
+support-files = [
+  "empty.html",
+  "file_js_cache_small.js",
 ]
 
 ["browser_script_loader_js_cache_nonce.js"]

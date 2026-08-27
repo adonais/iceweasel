@@ -153,9 +153,9 @@ The input file (in the above example, that would be `/src/gecko/params/promote_f
 The `parameters.yml` file is downloadable from a previous decision or action task.
 
 [.taskcluster.yml]: https://searchfox.org/mozilla-central/source/.taskcluster.yml
-[kinds]: kinds.html
-[optimization]: optimization.html
-[release promotion]: release-promotion.html
+[kinds]: kinds.md
+[optimization]: optimization/index.md
+[release promotion]: release-promotion.md
 [release promotion projects]: https://searchfox.org/mozilla-central/search?q=RELEASE_PROMOTION_PROJECTS&path=taskcluster/gecko_taskgraph/util/attributes.py
 [releasewarrior docs]: https://github.com/mozilla-releng/releasewarrior-2.0/blob/master/docs/release-promotion/desktop/howto.md#how
 [treeherder]: https://treeherder.mozilla.org

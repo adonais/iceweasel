@@ -5,6 +5,7 @@
 package mozilla.components.feature.ipprotection.store
 
 import mozilla.components.ExperimentalAndroidComponentsApi
+import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
 import mozilla.components.concept.engine.ipprotection.IPProtectionHandler.StateInfo
 import mozilla.components.concept.engine.ipprotection.IPProtectionHandler.StateInfo.Companion.PROXY_STATE_ACTIVATING
 import mozilla.components.concept.engine.ipprotection.IPProtectionHandler.StateInfo.Companion.PROXY_STATE_ACTIVE
@@ -16,9 +17,13 @@ import mozilla.components.feature.ipprotection.buildIPProtectionState
 import mozilla.components.feature.ipprotection.store.state.AccountState
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.Authorized
+import mozilla.components.feature.ipprotection.store.state.Country
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
+import mozilla.components.feature.ipprotection.store.state.LocationState
+import mozilla.components.feature.ipprotection.store.state.Recommended
 import mozilla.components.feature.ipprotection.store.state.Uninitialized
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
@@ -376,6 +381,7 @@ class IPProtectionReducerTest {
             AccountStatus.NeedsAuthentication,
             AccountStatus.Uninitialized,
             AccountStatus.WarmingUp,
+            AccountStatus.NoAccount,
         ).forEach { accountStatus ->
             val state = buildIPProtectionState(
                 accountStatus = accountStatus,
@@ -476,6 +482,34 @@ class IPProtectionReducerTest {
     }
 
     @Test
+    fun `GIVEN the user is signed in WHEN the service reports Ready THEN entitlement is short-circuited`() {
+        val state = buildIPProtectionState(
+            accountStatus = AccountStatus.Authenticated,
+            serviceStatus = ServiceState.Unauthenticated,
+        )
+        val info = StateInfo(serviceState = ServiceState.Ready, proxyState = PROXY_STATE_READY)
+
+        val resultState = iPProtectionReducer(state, IPProtectionAction.EngineStateChanged(info))
+
+        assertEquals(AccountStatus.EnrolledAndEntitled, resultState.accountState.status)
+    }
+
+    @Test
+    fun `GIVEN the user is signed out WHEN the service reports Ready THEN entitlement is not short-circuited`() {
+        val state = buildIPProtectionState(
+            accountStatus = AccountStatus.NoAccount,
+            serviceStatus = ServiceState.Unauthenticated,
+        )
+        // A stale Ready update can intermittently arrive right after sign-out, before the engine
+        // reflects the new account status
+        val info = StateInfo(serviceState = ServiceState.Ready, proxyState = PROXY_STATE_READY)
+
+        val resultState = iPProtectionReducer(state, IPProtectionAction.EngineStateChanged(info))
+
+        assertEquals(AccountStatus.NoAccount, resultState.accountState.status)
+    }
+
+    @Test
     fun `WHEN the engine reports an error message THEN it is surfaced as the last error`() {
         val info = StateInfo(serviceState = ServiceState.Ready, proxyState = PROXY_STATE_ERROR, lastError = "boom")
 
@@ -524,6 +558,7 @@ class IPProtectionReducerTest {
         // These statuses reflect the account manager's authoritative view of the account.
         listOf(
             AccountStatus.WarmingUp,
+            AccountStatus.NoAccount,
             AccountStatus.NeedsAuthentication,
             AccountStatus.NeedsAuthorization,
             AccountStatus.Authenticated,
@@ -604,5 +639,76 @@ class IPProtectionReducerTest {
         val resultState = iPProtectionReducer(initialState, InternalAction.FinishingAuthFlow)
 
         assertEquals(AccountStatus.NeedsAuthentication, resultState.accountState.status)
+    }
+
+    @Test
+    fun `WHEN CountryListChanged is dispatched THEN countries are added to location list and recommended option is preserved`() {
+        val initialState = buildIPProtectionState()
+        val countries = listOf(
+            IPProtectionHandler.Country(code = "DK", available = true),
+            IPProtectionHandler.Country(code = "FR", available = true),
+            IPProtectionHandler.Country(code = "GB", available = false),
+            IPProtectionHandler.Country(code = "US", available = true),
+        )
+
+        assertEquals(LocationState(), initialState.locationState)
+
+        val resultState = iPProtectionReducer(
+            state = initialState,
+            action = IPProtectionAction.CountryListChanged(countries),
+        )
+
+        countries.forEach { country ->
+            assertNotNull(resultState.locationState.locations.find { it.countryCode == country.code })
+        }
+
+        assert(resultState.locationState.locations.contains(Recommended()))
+    }
+
+    @Test
+    fun `WHEN CountrySelected is dispatched THEN user selected country is updated`() {
+        val updatedLocation = Country("JP", available = true)
+        val initialState = buildIPProtectionState()
+
+        assertEquals(Recommended(), initialState.locationState.selectedLocation)
+
+        val resultState = iPProtectionReducer(
+            state = initialState,
+            action = IPProtectionAction.LocationChanged(updatedLocation),
+        )
+
+        assertEquals(updatedLocation, resultState.locationState.selectedLocation)
+    }
+
+    @Test
+    fun `GIVEN an active proxy connection WHEN when user changes the location THEN the feature activates the selected location`() {
+        val updatedLocation = Country("JP", available = true)
+        val initialState = buildIPProtectionState(serviceStatus = ServiceState.Ready, proxyStatus = Authorized.Active)
+
+        assertEquals(Recommended(), initialState.locationState.selectedLocation)
+
+        val resultState = iPProtectionReducer(
+            state = initialState,
+            action = IPProtectionAction.LocationChanged(updatedLocation),
+        )
+
+        assertEquals(updatedLocation, resultState.locationState.selectedLocation)
+        assertEquals(true, resultState.activate)
+    }
+
+    @Test
+    fun `GIVEN no active proxy connection WHEN when user changes the location THEN the feature does not activate the selected location`() {
+        val updatedLocation = Country("JP", available = true)
+        val initialState = buildIPProtectionState(serviceStatus = ServiceState.Ready, proxyStatus = Authorized.Idle)
+
+        assertEquals(Recommended(), initialState.locationState.selectedLocation)
+
+        val resultState = iPProtectionReducer(
+            state = initialState,
+            action = IPProtectionAction.LocationChanged(updatedLocation),
+        )
+
+        assertEquals(updatedLocation, resultState.locationState.selectedLocation)
+        assertEquals(null, resultState.activate)
     }
 }

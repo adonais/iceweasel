@@ -288,7 +288,7 @@ HttpTransactionChild::OnDataAvailable(nsIRequest* aRequest,
   rv = NS_DispatchToMainThread(
       NS_NewRunnableFunction(
           "HttpTransactionChild::OnDataAvailable",
-          [self, offset(aOffset), count(aCount), data(data)]() {
+          [self, offset(aOffset), count(aCount), data = std::move(data)]() {
             nsHttp::SendFunc<nsCString> sendFunc =
                 [self](const nsCString& aData, uint64_t aOffset,
                        uint32_t aCount) {

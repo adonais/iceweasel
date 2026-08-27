@@ -16,7 +16,7 @@
 /**
  * @typedef {object} ToolUpdateData
  * @property {Array<TabSelectionData>} [selectedTabs] - Array of selected tabs
- * @property {string} [operationId] - Operation ID for undo operations
+ * @property {Array<string>} [operationIds] - Undo handles for the action
  * @property {boolean} [wasRestored] - Flag indicating tabs were restored
  * @property {number} [restoredCount] - Number of tabs restored
  * @property {Array<TabSelectionData>} [originalClosedTabs] - Original tabs that were closed
@@ -35,6 +35,9 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AIWindow:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   tabManagementService:
     "moz-src:///browser/components/aiwindow/ui/modules/TabManagementService.sys.mjs",
   ToolUITelemetry:
@@ -67,6 +70,8 @@ export const UI_UPDATE_TYPES = {
   CONFIRMATION_TAB_SELECTION: "confirmation-tab-selection",
   CANCEL_TAB_SELECTION: "cancel-tab-selection",
   CONFIRM_TAB_GROUP_SELECTION: "confirm-tab-group-selection",
+  CONFIRM_OPEN_AND_GROUP_TABS_SELECTION:
+    "confirm-open-and-group-tabs-selection",
   UNDO_TAB_CLOSE: "undo-tab-close",
   UNDO_TAB_GROUP: "undo-tab-group",
   RETRY_PROMPT: "retry-prompt",
@@ -80,6 +85,13 @@ export const CONFIRMATION_UI_TYPES = [
   UI_TYPES.WEBSITE_CONFIRMATION,
   UI_TYPES.TAB_GROUP_CONFIRMATION,
 ];
+
+/**
+ * Description for the message sent back to the model after a tab-selection
+ * confirmation resolves, shared by every action type's confirm handler.
+ */
+const SELECTED_TABS_CONFIRMATION_DESCRIPTION =
+  "User confirmed the requested action. selectedTabs contains the tabs that were acted upon.";
 
 /**
  * Manages the Tool UI updates and orchestrates state changes for tool UI components
@@ -130,13 +142,14 @@ export class ToolUI {
   }
 
   /**
-   * Resolve selected tabs to live tab objects in the given window by
-   * permanentKey
+   * Resolve selected tabs to live tab objects across all active Smart Windows
+   * by permanentKey
    *
    * @param {Array<TabSelectionData>} selectedTabs - Selected tabs
    * @param {Map<string, object>} tokenToKey - token -> permanentKey for this operation
    * @param {ChromeWindow} win - The browser window object
-   * @returns {Array<Tab>|null} Verified tab objects or null if none valid
+   * @returns {Map<ChromeWindow, Array<Tab>>|null} Verified tabs grouped by their
+   *   owning window, or null if none valid
    * @private
    */
   static #verifyAndCollectTabs(selectedTabs = [], tokenToKey = null, win) {
@@ -149,35 +162,51 @@ export class ToolUI {
       return null;
     }
 
+    const candidateWindows = lazy.BrowserWindowTracker.orderedWindows.filter(
+      candidateWin => lazy.AIWindow.isAIWindowActive(candidateWin)
+    );
     const claimedTabs = new Set();
-    const verifiedTabObjects = [];
+    const tabsByWindow = new Map();
+    let verifiedCount = 0;
 
     for (const selectedTab of selectedTabs) {
       const permanentKey =
         selectedTab.token && tokenToKey.get(selectedTab.token);
-      const tab =
-        permanentKey &&
-        win.gBrowser.tabs.find(
-          t => !claimedTabs.has(t) && t.permanentKey === permanentKey
-        );
 
-      if (!tab) {
+      let match = null;
+      if (permanentKey) {
+        for (const candidateWindow of candidateWindows) {
+          const tab = candidateWindow.gBrowser.tabs.find(
+            t => !claimedTabs.has(t) && t.permanentKey === permanentKey
+          );
+          if (tab) {
+            match = { tab, window: candidateWindow };
+            break;
+          }
+        }
+      }
+
+      if (!match) {
         lazy.console.warn(
           `No live tab for selection ${selectedTab.url} (token ${selectedTab.token})`
         );
         continue;
       }
 
-      claimedTabs.add(tab);
-      verifiedTabObjects.push(tab);
+      claimedTabs.add(match.tab);
+      if (!tabsByWindow.has(match.window)) {
+        tabsByWindow.set(match.window, []);
+      }
+      tabsByWindow.get(match.window).push(match.tab);
+      verifiedCount++;
     }
 
-    if (verifiedTabObjects.length === 0) {
+    if (verifiedCount === 0) {
       lazy.console.warn("No valid tabs after verification");
       return null;
     }
 
-    return verifiedTabObjects;
+    return tabsByWindow;
   }
 
   /**
@@ -185,37 +214,118 @@ export class ToolUI {
    *
    * @param {Array<TabSelectionData>} selectedTabs - Selected tabs
    * @param {Map<string, object>} tokenToKey - token -> permanentKey for this operation
-   * @param {ChromeWindow} win - The browser window object
-   * @returns {Promise<{operationId: string, closedTabs: Array, failedTabs: Array}|null>}
+   * @param {ChromeWindow} win - The interacting browser window object
+   * @returns {Promise<{operationIds: string[], requestedCount: number, failedTabs: Array}|null>}
    */
   static async closeSelectedTabs(selectedTabs = [], tokenToKey, win) {
-    const verifiedTabObjects = this.#verifyAndCollectTabs(
+    const tabsByWindow = this.#verifyAndCollectTabs(
       selectedTabs,
       tokenToKey,
       win
     );
-    if (!verifiedTabObjects) {
+    if (!tabsByWindow) {
       return null;
     }
 
-    const activeTab = verifiedTabObjects.find(
-      tab => tab === win.gBrowser.selectedTab
-    );
-    if (activeTab) {
-      activeTab.smartWindowActionSource = "close_current_tab";
+    const operationIds = [];
+    let requestedCount = 0;
+    const failedTabs = [];
+
+    for (const [ownerWindow, tabs] of tabsByWindow) {
+      const activeTab = tabs.find(
+        tab => tab === ownerWindow.gBrowser.selectedTab
+      );
+      if (activeTab) {
+        activeTab.smartWindowActionSource = "close_current_tab";
+      }
+
+      const result = await lazy.tabManagementService.closeTabs({
+        tabs,
+        window: ownerWindow,
+      });
+      requestedCount += result.requestedCount;
+      if (result.failedTabs.length) {
+        failedTabs.push(...result.failedTabs);
+      }
+      if (result.operationId) {
+        operationIds.push(result.operationId);
+      }
     }
 
-    const result = await lazy.tabManagementService.closeTabs({
-      tabs: verifiedTabObjects,
-      window: win,
-    });
-
-    return result;
+    return { operationIds, requestedCount, failedTabs };
   }
 
   /* ========================================================================
    * Tool UI Update Handlers
    * ======================================================================== */
+
+  /**
+   * Finalizes a tab-selection confirmation, shared by close_tabs,
+   * group_tabs, and open_tabs: records prompt-response telemetry, updates
+   * the tool UI with the action result, and resolves the pending tool
+   * confirmation so the conversation can continue.
+   *
+   * @param {object} options
+   * @param {HandlerContext} options.context - Handler context
+   * @param {string} options.actionType - Action type recorded in
+   *   telemetry and updateData (e.g. "close_tabs", "group_tabs")
+   * @param {Array<TabSelectionData>} options.selectedTabs - Tabs the user
+   *   selected/acted on
+   * @param {object} [options.extraUpdateData] - Action-specific fields to
+   *   merge into updateData (e.g. operationId, group, mergedCount)
+   */
+  static #finalizeTabActionConfirmation({
+    context,
+    actionType,
+    selectedTabs,
+    extraUpdateData = {},
+  }) {
+    const {
+      updateData,
+      message,
+      conversation,
+      originalData,
+      mode,
+      toolCallId,
+    } = context;
+
+    lazy.ToolUITelemetry.recordBrowserActionPromptResponse({
+      location: mode,
+      chat_id: conversation?.id || "",
+      message_seq: conversation?.messages?.length || 0,
+      action_type: actionType,
+      prompt_type: "safety_confirmation",
+      response: "confirm",
+      selected: selectedTabs.length,
+      reason: "user_action",
+    });
+
+    const enhancedData = {
+      ...originalData,
+      updateData: {
+        ...updateData,
+        actionTimestamp: Date.now(),
+        actionType,
+        ...extraUpdateData,
+      },
+    };
+
+    conversation.updateToolUI(message, enhancedData, UI_TYPES.AI_ACTION_RESULT);
+
+    const confirmationMessage = {
+      description: SELECTED_TABS_CONFIRMATION_DESCRIPTION,
+      selectedTabs: selectedTabs.map(({ url, title }) => ({ url, title })),
+    };
+
+    const pendingAction = conversation.messages.at(-1)?.content?.body?.action;
+    if (pendingAction) {
+      confirmationMessage.action = pendingAction;
+    }
+    conversation.resolvePendingToolConfirmation(
+      confirmationMessage,
+      toolCallId
+    );
+  }
 
   /**
    * Handler for tab selection confirmation
@@ -225,15 +335,7 @@ export class ToolUI {
    * @private
    */
   static async #handleConfirmationTabSelection(context) {
-    const {
-      updateData,
-      message,
-      conversation,
-      window,
-      originalData,
-      mode,
-      toolCallId,
-    } = context;
+    const { updateData, window, toolCallId } = context;
     const { selectedTabs = [] } = updateData ?? {};
 
     const tokenToKey = this.#tabKeysByToolCall.get(toolCallId);
@@ -247,45 +349,12 @@ export class ToolUI {
       return false;
     }
 
-    // Record telemetry for browser action prompt response
-    lazy.ToolUITelemetry.recordBrowserActionPromptResponse({
-      location: mode,
-      chat_id: conversation?.id || "",
-      message_seq: conversation?.messages?.length || 0,
-      action_type: "close_tabs",
-      prompt_type: "safety_confirmation",
-      response: "confirm",
-      selected: selectedTabs.length,
-      reason: "user_action",
+    this.#finalizeTabActionConfirmation({
+      context,
+      actionType: "close_tabs",
+      selectedTabs,
+      extraUpdateData: { operationIds: result.operationIds },
     });
-
-    // Include the operationId in the update data for potential undo
-    const enhancedData = {
-      ...originalData,
-      updateData: {
-        ...updateData,
-        operationId: result.operationId,
-        actionTimestamp: Date.now(),
-        actionType: "close_tabs",
-      },
-    };
-
-    conversation.updateToolUI(message, enhancedData, UI_TYPES.AI_ACTION_RESULT);
-
-    const confirmationMessage = {
-      description:
-        "User confirmed the requested action. selectedTabs contains the tabs that were acted upon.",
-      selectedTabs: selectedTabs.map(({ url, title }) => ({ url, title })),
-    };
-
-    const pendingAction = conversation.messages.at(-1)?.content?.body?.action;
-    if (pendingAction) {
-      confirmationMessage.action = pendingAction;
-    }
-    conversation.resolvePendingToolConfirmation(
-      confirmationMessage,
-      toolCallId
-    );
     return true;
   }
 
@@ -344,15 +413,7 @@ export class ToolUI {
    * @private
    */
   static async #handleConfirmTabGroupSelection(context) {
-    const {
-      updateData,
-      message,
-      conversation,
-      window,
-      originalData,
-      mode,
-      toolCallId,
-    } = context;
+    const { updateData, window, toolCallId } = context;
     const { selectedTabs = [], tabGroupLabel = "Tab Group" } = updateData ?? {};
 
     const tokenToKey = this.#tabKeysByToolCall.get(toolCallId);
@@ -367,46 +428,56 @@ export class ToolUI {
       return false;
     }
 
-    // Record telemetry for browser action prompt response
-    lazy.ToolUITelemetry.recordBrowserActionPromptResponse({
-      location: mode,
-      chat_id: conversation?.id || "",
-      message_seq: conversation?.messages?.length || 0,
-      action_type: "group_tabs",
-      prompt_type: "safety_confirmation",
-      response: "confirm",
-      selected: selectedTabs.length,
-      reason: "user_action",
-    });
-
-    // Include the group data in the update data
-    const enhancedData = {
-      ...originalData,
-      updateData: {
-        ...updateData,
-        operationId: result.group?.id,
-        actionTimestamp: Date.now(),
-        actionType: "group_tabs",
+    this.#finalizeTabActionConfirmation({
+      context,
+      actionType: "group_tabs",
+      selectedTabs,
+      extraUpdateData: {
+        operationIds: result.group?.id ? [result.group.id] : [],
         group: result.group,
       },
-    };
+    });
+    return true;
+  }
 
-    conversation.updateToolUI(message, enhancedData, UI_TYPES.AI_ACTION_RESULT);
+  /**
+   * Handler for open-and-group tab confirmation. Unlike group_tabs, the
+   * selected tabs do not need to already be open - see
+   * TabManagementService.resolveOrOpenTabs.
+   *
+   * @param {HandlerContext} context - Handler context
+   * @returns {Promise<boolean>} True if successful
+   * @private
+   */
+  static async #handleOpenAndGroupTabsSelection(context) {
+    const { updateData, window, toolCallId } = context;
+    const { selectedTabs = [], tabGroupLabel = "Tab Group" } = updateData ?? {};
 
-    const confirmationMessage = {
-      description:
-        "User confirmed the requested action. selectedTabs contains the tabs that were acted upon.",
-      selectedTabs: selectedTabs.map(({ url, title }) => ({ url, title })),
-    };
-
-    const pendingAction = conversation.messages.at(-1)?.content?.body?.action;
-    if (pendingAction) {
-      confirmationMessage.action = pendingAction;
+    const isSingleTab = selectedTabs.length === 1;
+    const result = isSingleTab
+      ? await this.openOrSwitchToTab({ tab: selectedTabs[0], window })
+      : await this.openAndGroupTabs({
+          tabs: selectedTabs,
+          window,
+          label: tabGroupLabel,
+        });
+    this.clearTabKeys(toolCallId);
+    if (!result?.success) {
+      return false;
     }
-    conversation.resolvePendingToolConfirmation(
-      confirmationMessage,
-      toolCallId
-    );
+
+    this.#finalizeTabActionConfirmation({
+      context,
+      actionType: "open_tabs",
+      selectedTabs,
+      extraUpdateData: {
+        operationIds: result.group?.id ? [result.group.id] : [],
+        group: result.group ?? null,
+        mergedCount: result.mergedCount,
+        switched: isSingleTab ? result.switched : false,
+      },
+    });
+
     return true;
   }
 
@@ -420,43 +491,44 @@ export class ToolUI {
   static async #handleUndoTabGroup(context) {
     const { updateData, message, conversation, window, originalData, mode } =
       context;
-    const { operationId, actionTimestamp } = updateData ?? {};
+    const { operationIds = [], actionTimestamp } = updateData ?? {};
     const undoStartTime = Date.now();
 
-    if (!operationId) {
-      lazy.console.error("ToolUI: No operation ID provided for undo tab group");
+    if (!operationIds.length) {
+      lazy.console.error("ToolUI: No operationIds provided for undo tab group");
       return false;
     }
 
-    // The operationId is the group ID for tab groups
-    const groupId = operationId;
-
-    // Attempt to ungroup the tabs
-    const result = await lazy.tabManagementService.ungroupTabs({
-      groupId,
-      window,
-    });
-
-    if (!result?.success) {
-      lazy.console.error(
-        "ToolUI: Failed to undo tab group:",
-        result?.error || "Unknown error"
-      );
-
-      const timeDelta = actionTimestamp ? undoStartTime - actionTimestamp : 0;
-
-      lazy.ToolUITelemetry.recordBrowserActionUndo({
-        location: mode,
-        chat_id: conversation?.id || "",
-        message_seq: conversation?.messages?.length || 0,
-        action_type: "group_tabs",
-        tabs_restored: 0,
-        time_delta: Math.max(0, timeDelta),
-        result: "error",
-        error: result?.error || "ungroup_failed",
+    const ungroupedTabs = [];
+    for (const groupId of operationIds) {
+      const result = await lazy.tabManagementService.ungroupTabs({
+        groupId,
+        window,
       });
 
-      return false;
+      if (!result?.success) {
+        lazy.console.error(
+          "ToolUI: Failed to undo tab group:",
+          result?.error || "Unknown error"
+        );
+
+        const timeDelta = actionTimestamp ? undoStartTime - actionTimestamp : 0;
+
+        lazy.ToolUITelemetry.recordBrowserActionUndo({
+          location: mode,
+          chat_id: conversation?.id || "",
+          message_seq: conversation?.messages?.length || 0,
+          action_type: "group_tabs",
+          tabs_restored: result?.ungroupedTabs?.length ?? 0,
+          time_delta: Math.max(0, timeDelta),
+          result: "error",
+          error: result?.error || "ungroup_failed",
+        });
+
+        return false;
+      }
+
+      ungroupedTabs.push(...result.ungroupedTabs);
     }
 
     // Calculate time delta from when action completed to when undo was clicked
@@ -468,7 +540,7 @@ export class ToolUI {
       chat_id: conversation?.id || "",
       message_seq: conversation?.messages?.length || 0,
       action_type: "group_tabs",
-      tabs_restored: result.ungroupedTabs.length,
+      tabs_restored: ungroupedTabs.length,
       time_delta: Math.max(0, timeDelta),
       result: "success",
       error: "",
@@ -480,7 +552,7 @@ export class ToolUI {
       updateData: {
         ...updateData,
         wasRestored: true,
-        originalGroupedTabs: result.ungroupedTabs,
+        originalGroupedTabs: ungroupedTabs,
         actionType: "group_tabs", // Preserve the action type
       },
     };
@@ -498,31 +570,33 @@ export class ToolUI {
    * @private
    */
   static async #handleUndoTabClose(context) {
-    const { updateData, message, conversation, window, originalData, mode } =
-      context;
+    const { updateData, message, conversation, originalData, mode } = context;
     const {
-      operationId,
+      operationIds = [],
       selectedTabs = [],
       actionTimestamp,
     } = updateData ?? {};
     const undoStartTime = Date.now();
 
-    if (!operationId) {
-      lazy.console.error("ToolUI: No operationId provided for undo");
-      return false;
-    }
-
-    if (!window) {
-      lazy.console.error("ToolUI: No window provided for undo");
+    if (!operationIds.length) {
+      lazy.console.error("ToolUI: No operationIds provided for undo");
       return false;
     }
 
     try {
-      const { restoredCount, requestedCount, failedTabs } =
-        await lazy.tabManagementService.restoreTabs({
-          operationId,
-          window,
+      let restoredCount = 0;
+      let requestedCount = 0;
+      const failedTabs = [];
+      for (const id of operationIds) {
+        const result = await lazy.tabManagementService.restoreTabs({
+          operationId: id,
         });
+        restoredCount += result.restoredCount;
+        requestedCount += result.requestedCount;
+        if (result.failedTabs.length) {
+          failedTabs.push(...result.failedTabs);
+        }
+      }
 
       lazy.console.log(`Restored ${restoredCount} of ${requestedCount} tabs`);
 
@@ -532,7 +606,7 @@ export class ToolUI {
       let undoResult = "success";
       let errorCode = "";
 
-      if (failedTabs && failedTabs > 0) {
+      if (failedTabs.length) {
         errorCode = "one_or_more_tabs_failed_to_restore";
         undoResult = restoredCount > 0 ? "partial_success" : "error";
       }
@@ -654,22 +728,116 @@ export class ToolUI {
     window: win,
     label,
   }) {
-    const verifiedTabObjects = this.#verifyAndCollectTabs(
-      tabs,
-      tokenToKey,
-      win
-    );
-    if (!verifiedTabObjects) {
+    const tabsByWindow = this.#verifyAndCollectTabs(tabs, tokenToKey, win);
+    if (!tabsByWindow) {
+      return null;
+    }
+
+    // Tabs in tab groups only span a single window
+    let groupWindow = tabsByWindow.has(win) ? win : null;
+    if (!groupWindow) {
+      for (const [ownerWindow, ownerTabs] of tabsByWindow) {
+        if (
+          !groupWindow ||
+          ownerTabs.length > tabsByWindow.get(groupWindow).length
+        ) {
+          groupWindow = ownerWindow;
+        }
+      }
+    }
+
+    const result = await lazy.tabManagementService.createTabGroup({
+      tabs: tabsByWindow.get(groupWindow),
+      window: groupWindow,
+      label,
+    });
+
+    // Report tabs from other windows that were not included
+    for (const [ownerWindow, ownerTabs] of tabsByWindow) {
+      if (ownerWindow === groupWindow) {
+        continue;
+      }
+      for (const tab of ownerTabs) {
+        result.failedTabs.push({ tab, reason: "other-window" });
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Opens the given tabs and groups the result. Unlike createTabGroup, does
+   * not require the tabs to already be open - any selection that matches a
+   * tab already open in the window is reused instead of duplicated (see
+   * TabManagementService.resolveOrOpenTabs).
+   *
+   * @param {object} options
+   * @param {Array<TabSelectionData>} options.tabs - Tabs to open and group
+   * @param {ChromeWindow} options.window - The browser window
+   * @param {string} options.label - Tab group label
+   * @returns {Promise<object|null>} Result of createTabGroup (plus
+   *   mergedCount - how many selected tabs were already open rather than
+   *   newly opened), or null if there were no tabs to open or none resolved
+   *   successfully
+   */
+  static async openAndGroupTabs({ tabs = [], window: win, label }) {
+    if (!tabs.length) {
+      lazy.console.warn("No tabs to open");
+      return null;
+    }
+
+    const { resolvedTabs, mergedCount } =
+      await lazy.tabManagementService.resolveOrOpenTabs({
+        tabs,
+        window: win,
+      });
+
+    if (!resolvedTabs.length) {
       return null;
     }
 
     const result = await lazy.tabManagementService.createTabGroup({
-      tabs: verifiedTabObjects,
+      tabs: resolvedTabs,
       window: win,
       label,
     });
 
-    return result;
+    return { ...result, mergedCount };
+  }
+
+  /**
+   * Resolves a single selected tab: switches to it if it's already open,
+   * otherwise opens it as a new background tab and switches to that -
+   * never navigates the current tab, since that may be the tab hosting
+   * the fullpage conversation itself.
+   *
+   * @param {object} options
+   * @param {TabSelectionData} options.tab - The single selected tab
+   * @param {ChromeWindow} options.window - The browser window
+   * @returns {Promise<{success: boolean, switched: boolean}>}
+   */
+  static async openOrSwitchToTab({ tab, window: win }) {
+    const existingTab = lazy.tabManagementService.findOpenTab({
+      url: tab.url,
+      window: win,
+    });
+
+    if (existingTab) {
+      lazy.tabManagementService.switchToTab({ tab: existingTab, window: win });
+      return { success: true, switched: true };
+    }
+
+    const { openedTabs } = lazy.tabManagementService.openTabs({
+      urls: [tab.url],
+      window: win,
+    });
+
+    if (!openedTabs.length) {
+      return { success: false, switched: false };
+    }
+
+    lazy.tabManagementService.switchToTab({ tab: openedTabs[0], window: win });
+    return { success: true, switched: false };
   }
 
   /**
@@ -740,6 +908,8 @@ export class ToolUI {
       this.#handleCancelTabSelection.bind(this),
     [UI_UPDATE_TYPES.CONFIRM_TAB_GROUP_SELECTION]:
       this.#handleConfirmTabGroupSelection.bind(this),
+    [UI_UPDATE_TYPES.CONFIRM_OPEN_AND_GROUP_TABS_SELECTION]:
+      this.#handleOpenAndGroupTabsSelection.bind(this),
     [UI_UPDATE_TYPES.UNDO_TAB_CLOSE]: this.#handleUndoTabClose.bind(this),
     [UI_UPDATE_TYPES.UNDO_TAB_GROUP]: this.#handleUndoTabGroup.bind(this),
     [UI_UPDATE_TYPES.RETRY_PROMPT]: this.#handleRetryPrompt.bind(this),

@@ -60,6 +60,7 @@ const DYNAMIC_TOOLBAR_PREF_ON_TOP_PREF =
   "devtools.responsive.dynamicToolbar.onTop";
 const DYNAMIC_TOOLBAR_MAX_HEIGHT = 50; // px
 const DYNAMIC_TOOLBAR_SNAP_ANIMATION_DURATION_MS = 120; // ms
+const RESPONSIVE_MODE_CLS = "responsive-mode";
 
 function debug(_msg) {
   // console.log(`RDM manager: ${_msg}`);
@@ -124,6 +125,8 @@ class ResponsiveUI extends EventEmitter {
     this.dynamicToolbarSnapAnimation = null;
     this.mouseScreenYWhilePressed = null;
   }
+
+  #reloadNotificationMessageElement;
 
   get toolWindow() {
     return this.rdmFrame.contentWindow;
@@ -254,16 +257,29 @@ class ResponsiveUI extends EventEmitter {
     );
     this.browserStackEl =
       this.browserContainerEl.querySelector(".browserStack");
+    this.browserSidebarContainerEl = this.browserContainerEl.closest(
+      ".browserSidebarContainer"
+    );
 
-    this.browserContainerEl.classList.add("responsive-mode");
+    this.browserContainerEl.classList.add(RESPONSIVE_MODE_CLS);
+    this.browserSidebarContainerEl.classList.add(RESPONSIVE_MODE_CLS);
 
     this.browserContainerEl.style.setProperty(
       "--rdm-dynamic-toolbar-max-height",
       DYNAMIC_TOOLBAR_MAX_HEIGHT + "px"
     );
 
-    // Prepend the RDM iframe inside of the current tab's browser container.
-    this.browserContainerEl.prepend(rdmFrame);
+    // In split view, notifications are placed inside the browser container. If there are
+    // some notifications displayed, we want the RDM toolbar to be placed after them
+    const notificationBox = this.browserContainerEl.querySelector(
+      ".notificationbox-stack"
+    );
+    if (notificationBox) {
+      notificationBox.after(rdmFrame);
+    } else {
+      // Otherwise, prepend the RDM iframe inside of the current tab's browser container.
+      this.browserContainerEl.prepend(rdmFrame);
+    }
 
     // Put .rdm-screen-box inside the browser stack, as a sibling to the browser.
     this.browserStackEl.append(this.screenBox);
@@ -290,7 +306,7 @@ class ResponsiveUI extends EventEmitter {
 
     // Wait for the frame script to be loaded.
     message.wait(rdmFrame.contentWindow, "script-init").then(async () => {
-      // Notify the frame window that the Resposnive UI manager has begun initializing.
+      // Notify the frame window that the Responsive UI manager has begun initializing.
       // At this point, we can render our React content inside the frame.
       message.post(rdmFrame.contentWindow, "init");
       // Wait for the tools to be rendered above the content. The frame script will
@@ -313,23 +329,6 @@ class ResponsiveUI extends EventEmitter {
 
     this.resizeHandleY = resizeHandleY;
     this.resizeHandleY.addEventListener("mousedown", this.onResizeStart);
-
-    this.resizeToolbarObserver = new this.browserWindow.ResizeObserver(
-      entries => {
-        for (const entry of entries) {
-          // If the toolbar needs extra space for the UA input, then set a class
-          // that will accomodate its height. We should also make sure to keep
-          // the width value we're toggling against in sync with the media-query
-          // in devtools/client/responsive/index.css
-          this.rdmFrame.classList.toggle(
-            "accomodate-ua",
-            entry.contentBoxSize[0].inlineSize <= 800
-          );
-        }
-      }
-    );
-
-    this.resizeToolbarObserver.observe(this.browserStackEl);
   }
 
   /**
@@ -394,16 +393,14 @@ class ResponsiveUI extends EventEmitter {
     // When discarding, the content document may already have been destroyed.
     this.rdmFrame.contentWindow?.removeEventListener("message", this);
 
-    // Remove observers on the stack.
-    this.resizeToolbarObserver.unobserve(this.browserStackEl);
-
     // Cleanup the frame content before disconnecting the frame element.
     this.rdmFrame.contentWindow?.destroy();
 
     this.rdmFrame.remove();
     this.screenBox.remove();
 
-    this.browserContainerEl.classList.remove("responsive-mode");
+    this.browserContainerEl.classList.remove(RESPONSIVE_MODE_CLS);
+    this.browserSidebarContainerEl.classList.remove(RESPONSIVE_MODE_CLS);
     this.browserStackEl.style.removeProperty("--rdm-width");
     this.browserStackEl.style.removeProperty("--rdm-height");
     this.browserStackEl.style.removeProperty("--rdm-zoom");
@@ -420,6 +417,11 @@ class ResponsiveUI extends EventEmitter {
       this.tab.linkedBrowser.browsingContext,
       0
     );
+
+    if (this.#reloadNotificationMessageElement) {
+      this.#reloadNotificationMessageElement.close();
+      this.#reloadNotificationMessageElement = null;
+    }
 
     // Ensure the tab is reloaded if required when exiting RDM so that no emulated
     // settings are left in a customized state.
@@ -459,6 +461,7 @@ class ResponsiveUI extends EventEmitter {
 
     // Destroy local state
     this.browserContainerEl = null;
+    this.browserSidebarContainerEl = null;
     this.browserStackEl = null;
     this.browserWindow = null;
     this.tab = null;
@@ -469,7 +472,6 @@ class ResponsiveUI extends EventEmitter {
     this.resizeHandleX = null;
     this.resizeHandleY = null;
     this.dynamicToolbar = null;
-    this.resizeToolbarObserver = null;
 
     // Destroying the commands will close the devtools client used to speak with responsive emulation actor.
     // The actor handles clearing any overrides itself, so it's not necessary to clear
@@ -508,12 +510,16 @@ class ResponsiveUI extends EventEmitter {
   /**
    * Show one-time notification about reloads for responsive emulation.
    */
-  showReloadNotification() {
+  async showReloadNotification() {
     if (Services.prefs.getBoolPref(RELOAD_NOTIFICATION_PREF, false)) {
-      showNotification(this.browserWindow, this.tab, {
-        msg: l10n.getFormatStr("responsive.reloadNotification.description2"),
-      });
       Services.prefs.setBoolPref(RELOAD_NOTIFICATION_PREF, false);
+      this.#reloadNotificationMessageElement = await showNotification(
+        this.browserWindow,
+        this.tab,
+        {
+          msg: l10n.getFormatStr("responsive.reloadNotification.description2"),
+        }
+      );
     }
   }
 
@@ -603,6 +609,9 @@ class ResponsiveUI extends EventEmitter {
         break;
       case "update-device-modal":
         this.onUpdateDeviceModal(event);
+        break;
+      case "narrow-media-query-change":
+        this.onToolbarDocumentNarrowMediaQueryChange(event);
         break;
     }
   }
@@ -892,6 +901,17 @@ class ResponsiveUI extends EventEmitter {
 
   onUpdateDeviceModal(event) {
     this.rdmFrame.classList.toggle("device-modal-opened", event.data.isOpen);
+  }
+
+  onToolbarDocumentNarrowMediaQueryChange(event) {
+    // If the toolbar needs extra space for the UA input, then set a class
+    // that will accomodate its height. We should also make sure to keep
+    // the width value we're toggling against in sync with the media-query
+    // in devtools/client/responsive/index.css
+    this.browserContainerEl.classList.toggle(
+      "accomodate-ua",
+      event.data.isNarrowLayout
+    );
   }
 
   async hasDeviceState() {

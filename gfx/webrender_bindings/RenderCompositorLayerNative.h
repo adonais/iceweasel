@@ -133,7 +133,7 @@ class RenderCompositorLayerNative : public RenderCompositor {
   gfx::IntRect mVisibleBounds;
   std::unordered_map<wr::NativeSurfaceId, Surface, SurfaceIdHashFn> mSurfaces;
   TimeStamp mBeginFrameTimeStamp;
-  std::deque<RefPtr<layers::GpuFence>> mPendingGpuFeces;
+  std::deque<RefPtr<layers::GpuFence>> mPendingGpuFences;
   // Used when platform does not support to take screenshot with multiple
   // layers. By GetWindowProperties(), it notifies WebRender layer manager to
   // use single layer for taking screenshot. By EnableAsyncScreenshot(), it
@@ -183,11 +183,11 @@ class RenderCompositorLayerNativeOGL : public RenderCompositorLayerNative {
 
   struct BackPressureFences {
     explicit BackPressureFences(
-        std::deque<RefPtr<layers::GpuFence>>&& aGpuFeces)
-        : mGpuFeces(std::move(aGpuFeces)) {}
+        std::deque<RefPtr<layers::GpuFence>>&& aGpuFences)
+        : mGpuFences(std::move(aGpuFences)) {}
 
     GLsync mSync = nullptr;
-    std::deque<RefPtr<layers::GpuFence>> mGpuFeces;
+    std::deque<RefPtr<layers::GpuFence>> mGpuFences;
   };
 
   // Used to apply back-pressure in WaitForGPU().

@@ -4,7 +4,6 @@
 
 package mozilla.components.concept.engine.permission
 
-import android.annotation.SuppressLint
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 import mozilla.components.concept.engine.permission.SitePermissions.Status.NO_DECISION
@@ -13,7 +12,6 @@ import mozilla.components.concept.engine.permission.SitePermissionsStorage.Permi
 /**
  * A site permissions and its state.
  */
-@SuppressLint("ParcelCreator")
 @Parcelize
 data class SitePermissions(
     val origin: String,
@@ -29,7 +27,7 @@ data class SitePermissions(
     val crossOriginStorageAccess: Status = NO_DECISION,
     val localDeviceAccess: Status = NO_DECISION,
     val localNetworkAccess: Status = NO_DECISION,
-    val savedAt: Long,
+    val savedAt: Long = System.currentTimeMillis(),
 ) : Parcelable {
     enum class Status(
         val id: Int,

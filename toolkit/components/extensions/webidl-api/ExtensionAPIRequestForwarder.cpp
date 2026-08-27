@@ -368,7 +368,7 @@ void RequestWorkerRunnable::DeserializeCallerStack(
   if (mStackHolder.isSome()) {
     JS::Rooted<JSObject*> savedFrame(aCx, mStackHolder->get()->ReadStack(aCx));
     MOZ_ASSERT(savedFrame);
-    aRetval.set(JS::ObjectValue(*savedFrame));
+    aRetval.setObject(*savedFrame);
     mStackHolder = Nothing();
   }
 }

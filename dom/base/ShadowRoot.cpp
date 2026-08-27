@@ -21,6 +21,7 @@
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/DirectionalityUtils.h"
+#include "mozilla/dom/DocumentBinding.h"
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementBinding.h"
@@ -797,7 +798,9 @@ nsINode* ShadowRoot::ImportNodeAndAppendChildAt(nsINode& aParentNode,
     return nullptr;
   }
 
-  RefPtr<nsINode> node = OwnerDoc()->ImportNode(aNode, aDeep, rv);
+  BooleanOrImportNodeOptions options;
+  options.SetAsBoolean() = aDeep;
+  RefPtr<nsINode> node = OwnerDoc()->ImportNode(aNode, options, rv);
   if (rv.Failed()) {
     return nullptr;
   }
@@ -1047,7 +1050,7 @@ void ShadowRoot::SetKeepCustomElementRegistryNull() {
 }
 
 /* https://dom.spec.whatwg.org/#shadowroot-custom-element-registry */
-CustomElementRegistry* ShadowRoot::GetCustomElementRegistry() {
+CustomElementRegistry* ShadowRoot::GetCustomElementRegistry() const {
   MOZ_ASSERT(StaticPrefs::dom_scoped_custom_element_registries_enabled());
   switch (GetCustomElementRegistryState()) {
     case CustomElementRegistryState::Global:

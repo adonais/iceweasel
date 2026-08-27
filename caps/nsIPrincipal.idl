@@ -632,6 +632,13 @@ interface nsIPrincipal : nsISupports
     %}
 
     /**
+     * Returns true iff the principal is an addon principal.
+     *
+     * May be called from any thread.
+     */
+    [infallible] readonly attribute boolean isAddonPrincipal;
+
+    /**
      * Returns true iff the principal is either an addon principal or
      * an expanded principal, which contains at least one addon principal.
      *

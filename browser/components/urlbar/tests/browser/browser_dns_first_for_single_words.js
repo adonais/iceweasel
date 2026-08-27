@@ -24,12 +24,13 @@ add_task(async function test() {
    * to the docshell that will first execute a DNS request.
    */
   async function testVal(str, passthrough) {
-    sandbox.stub(gURLBar, "_loadURL").callsFake(url => {
+    sandbox.stub(gURLBar.controller, "loadURL").callsFake(({ url }) => {
       if (passthrough) {
         Assert.equal(url, str, "Should pass the unmodified search string");
       } else {
         Assert.ok(url.startsWith("http"), "Should pass an url");
       }
+      return {};
     });
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,

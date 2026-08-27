@@ -821,6 +821,8 @@ dictionary GPUBlendComponent {
     GPUBlendFactor dstFactor = "zero";
 };
 
+// NOTE: We depend on discriminants for this `enum` to match `wgpu_types::BlendFactor`! See also
+// `ConvertBlendComponent` in `dom/webgpu/Utility.cpp`.
 enum GPUBlendFactor {
     "zero",
     "one",
@@ -835,6 +837,10 @@ enum GPUBlendFactor {
     "src-alpha-saturated",
     "constant",
     "one-minus-constant",
+    "src1",
+    "one-minus-src1",
+    "src1-alpha",
+    "one-minus-src1-alpha",
 };
 
 enum GPUBlendOperation {

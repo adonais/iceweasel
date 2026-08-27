@@ -2,6 +2,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+import os
 import shutil
 import sys
 from datetime import date, timedelta
@@ -21,7 +22,12 @@ from mozperftest.utils import (
     convert_day,
     create_path,
     download_file,
+    ensure_adb_on_path,
+    ensure_android_device,
+    ensure_java_on_path,
+    ensure_profgen_on_path,
     get_adb_device_or_emu,
+    get_adb_path,
     get_multi_tasks_url,
     get_output_dir,
     get_revision_namespace_url,
@@ -31,8 +37,191 @@ from mozperftest.utils import (
     load_class,
     load_class_from_path,
     silence,
+    start_test_emulator,
     temp_dir,
 )
+
+
+def test_get_adb_path_from_sdk_root():
+    with temp_dir() as sdk_root:
+        platform_tools = Path(sdk_root) / "platform-tools"
+        platform_tools.mkdir()
+        adb = platform_tools / "adb"
+        adb.write_text("")
+        with mock.patch.dict(os.environ, {"ANDROID_SDK_ROOT": sdk_root}):
+            assert get_adb_path() == str(adb)
+
+
+def test_get_adb_path_fallback():
+    with mock.patch.dict(os.environ, {}, clear=True):
+        assert get_adb_path() == "adb"
+
+
+def test_ensure_adb_on_path_prepends_platform_tools():
+    with temp_dir() as sdk_root:
+        platform_tools = Path(sdk_root) / "platform-tools"
+        platform_tools.mkdir()
+        with mock.patch.dict(
+            os.environ, {"ANDROID_SDK_ROOT": sdk_root, "PATH": "/usr/bin"}
+        ):
+            ensure_adb_on_path()
+            entries = os.environ["PATH"].split(os.pathsep)
+            assert entries[0] == str(platform_tools)
+            # idempotent: a second call does not add it again
+            ensure_adb_on_path()
+            assert os.environ["PATH"].split(os.pathsep).count(str(platform_tools)) == 1
+
+
+def test_ensure_adb_on_path_no_sdk_root_is_noop():
+    with mock.patch.dict(os.environ, {"PATH": "/usr/bin"}, clear=True):
+        ensure_adb_on_path()
+        assert os.environ["PATH"] == "/usr/bin"
+
+
+def test_ensure_profgen_on_path_prepends_cmdline_tools_bin():
+    with temp_dir() as sdk_root:
+        # profgen ships in a versioned cmdline-tools/<version>/bin directory.
+        cmdline_bin = Path(sdk_root) / "cmdline-tools" / "20.0" / "bin"
+        cmdline_bin.mkdir(parents=True)
+        with mock.patch.dict(
+            os.environ, {"ANDROID_SDK_ROOT": sdk_root, "PATH": "/usr/bin"}
+        ):
+            ensure_profgen_on_path()
+            entries = os.environ["PATH"].split(os.pathsep)
+            assert entries[0] == str(cmdline_bin)
+            # idempotent: a second call does not add it again
+            ensure_profgen_on_path()
+            assert os.environ["PATH"].split(os.pathsep).count(str(cmdline_bin)) == 1
+
+
+def test_ensure_profgen_on_path_no_sdk_root_is_noop():
+    with mock.patch.dict(os.environ, {"PATH": "/usr/bin"}, clear=True):
+        ensure_profgen_on_path()
+        assert os.environ["PATH"] == "/usr/bin"
+
+
+def test_ensure_java_on_path_sets_java_home_macos_layout():
+    with temp_dir() as fetches_dir:
+        # macOS JDK layout: jdk/<version>/Contents/Home/bin/java.
+        java_home = Path(fetches_dir) / "jdk" / "jdk-17" / "Contents" / "Home"
+        java_bin = java_home / "bin"
+        java_bin.mkdir(parents=True)
+        (java_bin / "java").write_text("")
+        with mock.patch.dict(
+            os.environ, {"MOZ_FETCHES_DIR": fetches_dir, "PATH": "/usr/bin"}
+        ):
+            ensure_java_on_path()
+            assert os.environ["JAVA_HOME"] == str(java_home)
+            assert os.environ["PATH"].split(os.pathsep)[0] == str(java_bin)
+
+
+def test_ensure_java_on_path_no_fetches_dir_is_noop():
+    with mock.patch.dict(os.environ, {"PATH": "/usr/bin"}, clear=True):
+        ensure_java_on_path()
+        assert "JAVA_HOME" not in os.environ
+        assert os.environ["PATH"] == "/usr/bin"
+
+
+def _mock_adbhost(devices):
+    # ADBHost is imported inside ensure_android_device from mozdevice, so patch
+    # it there. The emulator decision keys off adbhost.devices().
+    adbhost = mock.MagicMock()
+    adbhost.devices.return_value = devices
+    return adbhost
+
+
+def test_ensure_android_device_when_device_connected():
+    with mock.patch("mozperftest.utils.ensure_adb_on_path"), mock.patch(
+        "mozdevice.ADBHost", return_value=_mock_adbhost([{"state": "device"}])
+    ), mock.patch("mozperftest.utils.start_test_emulator") as start_emulator:
+        ensure_android_device()
+    start_emulator.assert_not_called()
+
+
+def test_ensure_android_device_starts_emulator_when_no_device():
+    with mock.patch("mozperftest.utils.ensure_adb_on_path"), mock.patch(
+        "mozdevice.ADBHost", return_value=_mock_adbhost([])
+    ), mock.patch(
+        "mozperftest.utils.start_test_emulator", return_value=True
+    ) as start_emulator:
+        ensure_android_device()
+    start_emulator.assert_called_once()
+
+
+def test_ensure_android_device_unauthorized_device_starts_emulator():
+    # A device present but not in the "device" state is not ready, so the
+    # emulator is started rather than the device being treated as usable.
+    with mock.patch("mozperftest.utils.ensure_adb_on_path"), mock.patch(
+        "mozdevice.ADBHost", return_value=_mock_adbhost([{"state": "unauthorized"}])
+    ), mock.patch(
+        "mozperftest.utils.start_test_emulator", return_value=True
+    ) as start_emulator:
+        ensure_android_device()
+    start_emulator.assert_called_once()
+
+
+def test_ensure_android_device_no_emulator_raises():
+    from mozdevice import ADBError
+
+    with mock.patch("mozperftest.utils.ensure_adb_on_path"), mock.patch(
+        "mozdevice.ADBHost", return_value=_mock_adbhost([])
+    ), mock.patch("mozperftest.utils.start_test_emulator", return_value=False):
+        with pytest.raises(ADBError):
+            ensure_android_device()
+
+
+def test_ensure_android_device_other_error_reraised():
+    # A genuine adb failure (e.g. a broken adb binary) surfaces from ADBHost and
+    # must propagate instead of silently starting an emulator.
+    from mozdevice import ADBError
+
+    adbhost = mock.MagicMock()
+    adbhost.devices.side_effect = ADBError("adb is not executable.")
+    with mock.patch("mozperftest.utils.ensure_adb_on_path"), mock.patch(
+        "mozdevice.ADBHost", return_value=adbhost
+    ), mock.patch("mozperftest.utils.start_test_emulator") as start_emulator:
+        with pytest.raises(ADBError):
+            ensure_android_device()
+    start_emulator.assert_not_called()
+
+
+def test_start_test_emulator_selects_fetched_avd():
+    # Only the arm64 AVD is present. Selection must not depend on the host
+    # architecture (platform.machine() reports x86_64 under Rosetta), so the
+    # arm64 emulator must be chosen and started.
+    created = {}
+
+    def make(avd_type, verbose=False):
+        emu = mock.MagicMock()
+        emu.is_available.return_value = True
+        emu.check_avd.return_value = avd_type == "arm64"
+        emu.wait_for_start.return_value = True
+        created[avd_type] = emu
+        return emu
+
+    with mock.patch.dict(os.environ, {}), mock.patch(
+        "mozperftest.utils.ON_TRY", True
+    ), mock.patch("mozrunner.devices.android_device.AndroidEmulator", side_effect=make):
+        assert start_test_emulator() is True
+        # macOS perf workers must render with the host GPU; swiftshader
+        # produces static in the screen recordings.
+        assert "-gpu host" in os.environ["MOZ_EMULATOR_COMMAND_ARGS"]
+    # arm64 is probed first and found, so later types are never constructed.
+    assert list(created) == ["arm64"]
+    created["arm64"].start.assert_called_once()
+
+
+def test_start_test_emulator_no_avd_returns_false():
+    def make(avd_type, verbose=False):
+        emu = mock.MagicMock()
+        emu.is_available.return_value = True
+        emu.check_avd.return_value = False
+        return emu
+
+    with mock.patch.dict(os.environ, {}), mock.patch(
+        "mozperftest.utils.ON_TRY", True
+    ), mock.patch("mozrunner.devices.android_device.AndroidEmulator", side_effect=make):
+        assert start_test_emulator() is False
 
 
 def test_silence():

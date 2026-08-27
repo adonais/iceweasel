@@ -1,5 +1,13 @@
 "use strict";
 
+// Nova being enabled changes some of the styling that is being tested here.
+const novaEnabled = Services.prefs.getBoolPref(
+  "browser.nova.enabled",
+  true // If the pref isn't set to false assume Nova styles are enabled by default.
+);
+
+info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
+
 // This test checks whether the sidebar color properties work.
 const LIGHT_SALMON = "#ffa07a";
 
@@ -9,15 +17,6 @@ const { SidebarTestUtils } = ChromeUtils.importESModule(
 );
 SidebarTestUtils.init(this);
 SidebarTestUtils.restoreStateAtCleanup(window);
-
-add_setup(async () => {
-  // withSidebarTree opens the legacy bookmarks sidebar panel and inspects its
-  // tree view, so opt out of the updated bookmarks panel here.
-  // TODO(Bug 2039395): adapt this test to the new bookmarks sidear panel and remove this sidebar.updateBookmarks.enabled pushPrefEnv)
-  await SpecialPowers.pushPrefEnv({
-    set: [["sidebar.updatedBookmarks.enabled", false]],
-  });
-});
 
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref(
@@ -291,6 +290,10 @@ async function check_themes() {
   }
 }
 add_task(async function test_old_sidebar_colors() {
+  if (novaEnabled) {
+    info("SKIP unsupported old sidebar when Nova is enabled");
+    return;
+  }
   await SpecialPowers.pushPrefEnv({
     set: [["sidebar.revamp", false]],
   });
@@ -299,6 +302,10 @@ add_task(async function test_old_sidebar_colors() {
 });
 
 add_task(async function test_old_sidebar_border_color() {
+  if (novaEnabled) {
+    info("SKIP unsupported old sidebar when Nova is enabled");
+    return;
+  }
   await SpecialPowers.pushPrefEnv({
     set: [["sidebar.revamp", false]],
   });
@@ -377,7 +384,9 @@ add_task(async function test_support_sidebar_border_color() {
 
   await extension.startup();
 
-  const sidebarPanel = document.getElementById("sidebar");
+  const sidebarPanel = document.getElementById(
+    novaEnabled ? "sidebar-box" : "sidebar"
+  );
   const sidebarPanelCS = window.getComputedStyle(sidebarPanel);
 
   is(

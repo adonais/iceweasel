@@ -32,6 +32,7 @@ task-defaults:
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
     use-python: default
     run:
+        clone-with: hg
         using: mozharness
         actions: [get-secrets, build]
         script: mozharness/scripts/fx_desktop_build.py
@@ -56,6 +57,7 @@ tasks:
             platform: linux64-shippable/opt
         worker-type: b-linux-docker-amd
         run:
+            clone-with: hg
             config:
                 - builds/releng_base_firefox.py
                 - builds/releng_base_linux_64_builds.py
@@ -115,6 +117,7 @@ tasks:
             platform: linux64-aarch64-shippable/opt
         worker-type: b-linux-docker-amd
         run:
+            clone-with: hg
             config:
                 - builds/releng_base_firefox.py
                 - builds/releng_base_linux_64_builds.py
@@ -162,6 +165,7 @@ tasks:
                   path: checkouts/gecko/security/mac/hardenedruntime/{entitlement_directory}/security-module-helper.xml
                   type: file
         run:
+            clone-with: hg
             using: mozharness
             actions: [get-secrets, build]
             config:
@@ -210,6 +214,7 @@ tasks:
                   path: checkouts/gecko/security/mac/hardenedruntime/{entitlement_directory}/security-module-helper.xml
                   type: file
         run:
+            clone-with: hg
             using: mozharness
             actions: [get-secrets, build]
             config:
@@ -321,6 +326,7 @@ tasks:
                   path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/geckoview_example/outputs/bundle/debug/geckoview_example-debug.aab
                   type: file
         run:
+            clone-with: hg
             config:
                 - builds/releng_base_android_64_builds.py
             custom-build-variant-cfg: x86_64-profile-generate
@@ -377,6 +383,7 @@ tasks:
                   path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/geckoview_example/outputs/bundle/debug/geckoview_example-debug.aab
                   type: file
         run:
+            clone-with: hg
             config:
                 - builds/releng_base_android_64_builds.py
             custom-build-variant-cfg: aarch64-profile-generate
@@ -433,6 +440,7 @@ tasks:
                   path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/geckoview_example/outputs/bundle/debug/geckoview_example-debug.aab
                   type: file
         run:
+            clone-with: hg
             config:
                 - builds/releng_base_android_64_builds.py
             custom-build-variant-cfg: arm-profile-generate
@@ -465,6 +473,7 @@ tasks:
             platform: windows2012-32-shippable/opt
         worker-type: b-linux-docker-amd
         run:
+            clone-with: hg
             options: [append-env-variables-from-configs]
             mozconfig-variant: profile-generate
             config:
@@ -504,6 +513,7 @@ tasks:
             platform: win64-nightlyasrelease/opt
         worker-type: b-linux-docker-amd
         run:
+            clone-with: hg
             options: [append-env-variables-from-configs]
             mozconfig-variant: profile-generate
             config:
@@ -546,6 +556,7 @@ tasks:
             platform: windows2012-64-shippable/opt
         worker-type: b-linux-docker-amd
         run:
+            clone-with: hg
             options: [append-env-variables-from-configs]
             mozconfig-variant: profile-generate
             config:
@@ -586,6 +597,7 @@ tasks:
             platform: windows2012-aarch64-shippable/opt
         worker-type: b-linux-docker-amd
         run:
+            clone-with: hg
             options: [append-env-variables-from-configs]
             mozconfig-variant: profile-generate
             config:

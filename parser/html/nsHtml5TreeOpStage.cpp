@@ -6,10 +6,6 @@
 
 using namespace mozilla;
 
-nsHtml5TreeOpStage::nsHtml5TreeOpStage() : mMutex("nsHtml5TreeOpStage mutex") {}
-
-nsHtml5TreeOpStage::~nsHtml5TreeOpStage() = default;
-
 bool nsHtml5TreeOpStage::MoveOpsFrom(nsTArray<nsHtml5TreeOperation>& aOpQueue) {
   mozilla::MutexAutoLock autoLock(mMutex);
   return !!mOpQueue.AppendElements(std::move(aOpQueue), mozilla::fallible_t());

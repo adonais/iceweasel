@@ -262,12 +262,13 @@ add_task(async function test_renders_action_result_confirmed_state() {
       const chatContent = content.document.querySelector("ai-chat-content");
 
       await ContentTaskUtils.waitForCondition(
-        () => chatContent.shadowRoot.querySelector("ai-action-result"),
-        "Wait for ai-action-result component"
+        () => chatContent.shadowRoot.querySelector("ai-action-confirmation"),
+        "Wait for ai-action-confirmation component"
       );
 
-      const actionResult =
-        chatContent.shadowRoot.querySelector("ai-action-result");
+      const actionResult = chatContent.shadowRoot.querySelector(
+        "ai-action-confirmation"
+      );
       Assert.ok(actionResult, "Action result component should be rendered");
       Assert.ok(
         actionResult.parentElement?.parentElement?.classList.contains(
@@ -338,12 +339,13 @@ add_task(async function test_renders_action_result_restored_state() {
       const chatContent = content.document.querySelector("ai-chat-content");
 
       await ContentTaskUtils.waitForCondition(
-        () => chatContent.shadowRoot.querySelector("ai-action-result"),
-        "Wait for ai-action-result with restored state"
+        () => chatContent.shadowRoot.querySelector("ai-action-confirmation"),
+        "Wait for ai-action-confirmation with restored state"
       );
 
-      const actionResult =
-        chatContent.shadowRoot.querySelector("ai-action-result");
+      const actionResult = chatContent.shadowRoot.querySelector(
+        "ai-action-confirmation"
+      );
       Assert.ok(
         actionResult,
         "Action result should be rendered with restored state"
@@ -428,16 +430,18 @@ add_task(async function test_renders_cancelled_state() {
         const hasConfirmation = chatContent.shadowRoot.querySelector(
           "ai-website-confirmation"
         );
-        const hasActionResult =
-          chatContent.shadowRoot.querySelector("ai-action-result");
+        const hasActionResult = chatContent.shadowRoot.querySelector(
+          "ai-action-confirmation"
+        );
         return !hasConfirmation && !hasActionResult;
       }, "Wait for UI components to be removed after cancellation");
 
       const confirmationAfterCancel = chatContent.shadowRoot.querySelector(
         "ai-website-confirmation"
       );
-      const actionResultAfterCancel =
-        chatContent.shadowRoot.querySelector("ai-action-result");
+      const actionResultAfterCancel = chatContent.shadowRoot.querySelector(
+        "ai-action-confirmation"
+      );
 
       Assert.ok(
         !confirmationAfterCancel && !actionResultAfterCancel,

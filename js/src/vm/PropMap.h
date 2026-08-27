@@ -219,12 +219,12 @@ class MarkingTracerT;
 // Template class for storing a PropMap* and a property index as tagged pointer.
 template <typename T>
 class MapAndIndex {
-  GCData<uintptr_t> data_;
+  GCData<uintptr_t> data_{0};
 
   static constexpr uintptr_t IndexMask = 0b111;
 
  public:
-  MapAndIndex() : data_(0) {}
+  MapAndIndex() = default;
 
   MapAndIndex(const T* map, uint32_t index) : data_(uintptr_t(map) | index) {
     MOZ_ASSERT((uintptr_t(map) & IndexMask) == 0);

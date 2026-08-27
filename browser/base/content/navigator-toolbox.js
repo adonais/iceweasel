@@ -46,6 +46,7 @@ document.addEventListener(
       let element = event.target.closest(`
         #firefox-view-button,
         .content-analysis-indicator,
+        .private-browsing-indicator-button,
         #bookmarks-toolbar-button,
         #PlacesToolbar,
         #import-button,
@@ -97,6 +98,18 @@ document.addEventListener(
         default:
           if (element.classList.contains("content-analysis-indicator")) {
             ContentAnalysis.showPanel(element, PanelUI);
+          } else if (
+            element.classList.contains("private-browsing-indicator-button")
+          ) {
+            let panel = document.getElementById("private-browsing-info-panel");
+            if (panel.state == "open") {
+              panel.hidePopup();
+            } else if (panel.state == "closed") {
+              panel.openPopup(element, {
+                position: "bottomright topright",
+                triggerEvent: event,
+              });
+            }
           } else {
             throw new Error(`Missing case for #${element.id}`);
           }
@@ -104,6 +117,15 @@ document.addEventListener(
     }
     navigatorToolbox.addEventListener("command", onCommand);
     widgetOverflow.addEventListener("command", onCommand);
+
+    // The private browsing info panel's learn-more link opens a SUMO tab but
+    // doesn't close its container, so dismiss the panel when it's clicked.
+    let pbInfoPanel = document.getElementById("private-browsing-info-panel");
+    pbInfoPanel?.addEventListener("click", event => {
+      if (event.target.closest("a[is='moz-support-link']")) {
+        pbInfoPanel.hidePopup();
+      }
+    });
 
     function onMouseDown(event) {
       let element = event.target.closest(`

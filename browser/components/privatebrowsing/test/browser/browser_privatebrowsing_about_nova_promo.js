@@ -5,7 +5,7 @@
 const PROMO_HEADER = "Nova promo header";
 const PROMO_TITLE = "Nova promo body text";
 const PROMO_LINK_TEXT = "Nova learn more";
-const PROMO_IMAGE = "chrome://browser/content/assets/cookie-banners-begone.svg";
+const PROMO_IMAGE = "chrome://browser/content/assets/private-promo-asset.svg";
 
 function novaPromoMessage(contentOverrides = {}) {
   return {
@@ -94,6 +94,18 @@ add_task(async function test_nova_promo_renders() {
         content.document.getElementById("nova-promo-button"),
         null,
         "The button call to action is removed for a link promo"
+      );
+      const closeButton = shadow.querySelector("moz-button.close");
+      ok(closeButton, "The promo has a close button");
+      const closeButtonEl = closeButton.shadowRoot.querySelector("button");
+      await ContentTaskUtils.waitForCondition(
+        () => closeButtonEl.getAttribute("aria-label"),
+        "Close button is localized"
+      );
+      is(
+        closeButtonEl.getAttribute("aria-label"),
+        "Close",
+        "Close button has an accessible name"
       );
 
       // Regardless of the requested "bottom" section style, the Nova promo is
@@ -198,8 +210,8 @@ add_task(async function test_nova_promo_dismiss() {
       content.document.getElementById("nova-promo"),
       "Nova promo is shown before dismissing"
     );
-    content.document.getElementById("nova-dismiss-btn").click();
   });
+  await clickPromoDismissButton(tab1);
 
   let { win: win2, tab: tab2 } = await openTabAndWaitForRender();
 
@@ -275,8 +287,8 @@ add_task(
     win.openTrustedLinkIn(win.BROWSER_NEW_TAB_URL, "tabshifted");
 
     // Dismiss (block) the promo in tab 1.
+    await clickPromoDismissButton(tab1);
     await SpecialPowers.spawn(tab1, [], async function () {
-      content.document.getElementById("nova-dismiss-btn").click();
       await ContentTaskUtils.waitForCondition(
         () => !content.document.querySelector(".nova-promo-wrapper"),
         "The promo is removed from tab 1 after dismissing"

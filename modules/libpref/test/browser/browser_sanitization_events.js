@@ -1,9 +1,5 @@
 "use strict";
 
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
-
 // eslint-disable-next-line
 const ROOT = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
@@ -11,30 +7,7 @@ const ROOT = getRootDirectory(gTestPath).replace(
 );
 const PAGE_URL = ROOT + "file_access_sanitized_pref.html";
 
-async function waitForEventCount(
-  count,
-  process = "content",
-  category = "security",
-  method = "prefUsage"
-) {
-  // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
-  await new Promise(resolve => setTimeout(resolve, 100));
-  let returned_events = await TestUtils.waitForCondition(() => {
-    let events = Services.telemetry.snapshotEvents(
-      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-      false
-    )[process];
-
-    if (!events) {
-      return null;
-    }
-
-    events = events.filter(e => e[1] == category && e[2] == method);
-    dump(`Waiting for ${count} events, got ${events.length}\n`);
-    return events.length >= count ? events : null;
-  }, "waiting for telemetry event count of: " + count);
-  return returned_events;
-}
+const SANITIZED_PREF = "extensions.webextensions.uuids";
 
 add_task(async function sanitized_pref_test() {
   await SpecialPowers.pushPrefEnv({
@@ -44,45 +17,33 @@ add_task(async function sanitized_pref_test() {
     ],
   });
 
-  Services.telemetry.clearEvents();
-
-  TelemetryTestUtils.assertNumberOfEvents(0, { process: "content" });
+  Services.fog.testResetFOG();
 
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: PAGE_URL },
     async function () {}
   );
 
-  // Needed because otherwise we advance too quickly
-  await waitForEventCount(1);
+  // The event is recorded in the content process, so flush child-process data
+  // to the parent before reading it, and wait until our specific pref shows up.
+  let events = await TestUtils.waitForCondition(async () => {
+    await Services.fog.testFlushAllChildren();
+    let recorded = Glean.security.prefUsageContentProcess.testGetValue();
+    return recorded && recorded.some(e => e.extra?.value == SANITIZED_PREF)
+      ? recorded
+      : null;
+  }, `waiting for a pref usage event for '${SANITIZED_PREF}'`);
 
-  let events = TelemetryTestUtils.getEvents(
-    { category: "security", method: "prefUsage", object: "contentProcess" },
-    { process: "content" }
-  );
-
-  let count = 0,
-    foundIt = false;
-  for (let i = 0; i < events.length; i++) {
-    if (events[i].value == "extensions.webextensions.uuids") {
-      foundIt = true;
-      count++;
-    }
-  }
-
-  // We may have more than one event entries because we take two paths in the preference code
-  // in this access pattern, but in other patterns we may only take one of those
-  // paths, so we happen to count it twice this way.  No big deal. Sometimes we even have 4
-  // or 6 based on timing
+  // We may have more than one event entry because we take two paths in the
+  // preference code in this access pattern, but in other patterns we may only
+  // take one of those paths, so we happen to count it twice this way. No big
+  // deal. Sometimes we even have 4 or 6 based on timing.
+  let count = events.filter(e => e.extra?.value == SANITIZED_PREF).length;
   dump(
-    `We found ${events.length} events, ${count} of which were 'extensions.webextensions.uuids'.`
+    `We found ${events.length} events, ${count} of which were '${SANITIZED_PREF}'.\n`
   );
 
-  // eslint-disable-next-line
-  Assert.ok(
-    foundIt,
-    "We did not find an event for 'extensions.webextensions.uuids'"
-  );
+  Assert.greater(count, 0, `We did not find an event for '${SANITIZED_PREF}'`);
 
   await SpecialPowers.popPrefEnv();
 });

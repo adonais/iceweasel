@@ -251,6 +251,13 @@ class ScrollContainerFrame : public nsContainerFrame,
       const;
 
   /**
+   * Returns the set of physical sides toward which the current scroll position
+   * can still move, i.e. those with at least roughly half a screen pixel of
+   * scroll range remaining.
+   */
+  Sides SidesToScrollForUserInputEvents() const;
+
+  /**
    * Return the actual sizes of all possible scrollbars. Returns 0 for scrollbar
    * positions that don't have a scrollbar or where the scrollbar is not
    * visible. Do not call this while this frame's descendants are being

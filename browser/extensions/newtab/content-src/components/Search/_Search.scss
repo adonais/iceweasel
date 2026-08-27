@@ -204,11 +204,15 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
     margin-inline: auto;
     width: calc(4 * var(--col-width) + 3 * var(--space-medium));
 
-    @include at-content-cols(6) {
+    // Keyed off the outer grid, not content-grid: the search is usually hoisted
+    // out of .content, so content-grid is no longer an ancestor. The two are
+    // equivalent — .content is the outer grid minus both side columns and their
+    // gaps, which is exactly the offset at-outer-grid-cols builds in.
+    @include at-outer-grid-cols(6) {
       width: calc(6 * var(--col-width) + 5 * var(--space-medium));
     }
 
-    @include at-content-cols(10) {
+    @include at-outer-grid-cols(10) {
       width: calc(10 * var(--col-width) + 9 * var(--space-medium));
     }
   }

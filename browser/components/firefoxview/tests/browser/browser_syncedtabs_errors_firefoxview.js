@@ -5,6 +5,36 @@ const { LoginTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/LoginTestUtils.sys.mjs"
 );
 
+// Different strings used for Nova UI.
+let isNovaEnabled = Services.prefs.getBoolPref("browser.nova.enabled", false);
+const OFFLINE_HEADER_L10N_ID = isNovaEnabled
+  ? "firefoxview-tabpickup-network-offline-header-2"
+  : "firefoxview-tabpickup-network-offline-header";
+const SYNC_ERROR_HEADER_L10N_ID = isNovaEnabled
+  ? "firefoxview-tabpickup-sync-error-header-2"
+  : "firefoxview-tabpickup-sync-error-header";
+const DISABLED_HEADER_L10N_ID = isNovaEnabled
+  ? "firefoxview-tabpickup-fxa-admin-disabled-header-2"
+  : "firefoxview-tabpickup-fxa-admin-disabled-header";
+const SIGN_IN_DESCRIPTION_L10N_ID = isNovaEnabled
+  ? "firefoxview-syncedtabs-signin-description-3"
+  : "firefoxview-syncedtabs-signin-description-2";
+const SIGN_IN_HEADER_L10N_ID = isNovaEnabled
+  ? "firefoxview-syncedtabs-signin-header-3"
+  : "firefoxview-syncedtabs-signin-header-2";
+const DISCONNECTED_DESCRIPTION_L10N_ID = isNovaEnabled
+  ? "firefoxview-tabpickup-generic-sync-error-description-2"
+  : "firefoxview-tabpickup-sync-disconnected-description";
+const DISCONNECTED_HEADER_L10N_ID = isNovaEnabled
+  ? "firefoxview-tabpickup-sync-error-header-2"
+  : "firefoxview-tabpickup-sync-disconnected-header";
+const PASSWORD_LOCKED_DESCRIPTION_L10N_ID = isNovaEnabled
+  ? "firefoxview-tabpickup-password-locked-description-2"
+  : "firefoxview-tabpickup-password-locked-description";
+const PASSWORD_LOCKED_HEADER_L10N_ID = isNovaEnabled
+  ? "firefoxview-tabpickup-password-locked-header-2"
+  : "firefoxview-tabpickup-password-locked-header";
+
 async function setupWithDesktopDevices(state = UIState.STATUS_SIGNED_IN) {
   const sandbox = setupSyncFxAMocks({
     state,
@@ -72,20 +102,14 @@ add_task(async function test_network_offline() {
       () => syncedTabsComponent.fullyUpdated,
       "The synced tabs component to be fully updated"
     );
-    await TestUtils.waitForCondition(
+    await BrowserTestUtils.waitForMutationCondition(
+      syncedTabsComponent.emptyState,
+      { attributeFilter: ["headerlabel"] },
       () =>
-        syncedTabsComponent.emptyState.shadowRoot.textContent.includes(
-          "Check your internet connection"
-        ),
-      "The expected network offline error message is displayed."
+        syncedTabsComponent.emptyState.getAttribute("headerlabel") ===
+        OFFLINE_HEADER_L10N_ID
     );
 
-    ok(
-      syncedTabsComponent.emptyState
-        .getAttribute("headerlabel")
-        .includes("network-offline"),
-      "Network offline message is shown"
-    );
     syncedTabsComponent.emptyState
       .querySelector("moz-button[data-action='network-offline']")
       .buttonEl.click();
@@ -99,10 +123,9 @@ add_task(async function test_network_offline() {
       "TabsSetupFlowManager.tryToClearError() was called once"
     );
 
-    ok(
-      syncedTabsComponent.emptyState
-        .getAttribute("headerlabel")
-        .includes("network-offline"),
+    Assert.equal(
+      syncedTabsComponent.emptyState.getAttribute("headerlabel"),
+      OFFLINE_HEADER_L10N_ID,
       "Network offline message is still shown"
     );
 
@@ -131,19 +154,12 @@ add_task(async function test_sync_error() {
       () => syncedTabsComponent.fullyUpdated,
       "Waiting for the synced tabs component to be fully updated"
     );
-    await TestUtils.waitForCondition(
+    await BrowserTestUtils.waitForMutationCondition(
+      syncedTabsComponent.emptyState,
+      { attributeFilter: ["headerlabel"] },
       () =>
-        syncedTabsComponent.emptyState.shadowRoot.textContent.includes(
-          "having trouble syncing"
-        ),
-      "Sync error message is shown."
-    );
-
-    ok(
-      syncedTabsComponent.emptyState
-        .getAttribute("headerlabel")
-        .includes("sync-error"),
-      "Correct message should show when there's a sync service error"
+        syncedTabsComponent.emptyState.getAttribute("headerlabel") ===
+        SYNC_ERROR_HEADER_L10N_ID
     );
 
     // Clear the error.
@@ -188,19 +204,12 @@ add_task(async function test_sync_admin_disabled() {
       () => syncedTabsComponent.fullyUpdated,
       "The synced tabs component has finished updating."
     );
-    await TestUtils.waitForCondition(
+    await BrowserTestUtils.waitForMutationCondition(
+      syncedTabsComponent.emptyState,
+      { attributeFilter: ["headerlabel"] },
       () =>
-        syncedTabsComponent.emptyState.shadowRoot.textContent.includes(
-          "disabled"
-        ),
-      "The expected fxa admin disabled error message is displayed."
-    );
-
-    ok(
-      syncedTabsComponent.emptyState
-        .getAttribute("headerlabel")
-        .includes("fxa-admin-disabled"),
-      "Correct message should show when fxa is disabled by an admin"
+        syncedTabsComponent.emptyState.getAttribute("headerlabel") ===
+        DISABLED_HEADER_L10N_ID
     );
   });
 
@@ -257,18 +266,18 @@ add_task(async function test_sync_error_signed_out() {
       () => syncedTabsComponent.fullyUpdated,
       "The synced tabs component has finished updating."
     );
-    await TestUtils.waitForCondition(
+    await BrowserTestUtils.waitForMutationCondition(
+      syncedTabsComponent.emptyState.shadowRoot,
+      { childList: true, subtree: true },
       () =>
-        syncedTabsComponent.emptyState.shadowRoot.textContent.includes(
-          "sign in or sign up for an account"
-        ),
-      "Sign in header is shown."
+        document.l10n.getAttributes(
+          syncedTabsComponent.emptyState.descriptionEls[0]
+        ).id === SIGN_IN_DESCRIPTION_L10N_ID
     );
 
-    ok(
-      syncedTabsComponent.emptyState
-        .getAttribute("headerlabel")
-        .includes("signin-header"),
+    Assert.equal(
+      syncedTabsComponent.emptyState.getAttribute("headerlabel"),
+      SIGN_IN_HEADER_L10N_ID,
       "Sign in message is shown"
     );
   });
@@ -296,21 +305,21 @@ add_task(async function test_sync_disconnected_error() {
       () => syncedTabsComponent.fullyUpdated,
       "The synced tabs component has finished updating."
     );
-    await TestUtils.waitForCondition(
+    await BrowserTestUtils.waitForMutationCondition(
+      syncedTabsComponent.emptyState.shadowRoot,
+      { childList: true, subtree: true },
       () =>
-        syncedTabsComponent.emptyState.shadowRoot.textContent.includes(
-          "allow syncing"
-        ),
-      "The expected synced tabs empty state header is shown."
+        document.l10n.getAttributes(
+          syncedTabsComponent.emptyState.descriptionEls[0]
+        ).id === DISCONNECTED_DESCRIPTION_L10N_ID
     );
 
     info(
       "Waiting for a mutation condition to ensure the right syncing error message"
     );
-    ok(
-      syncedTabsComponent.emptyState
-        .getAttribute("headerlabel")
-        .includes("sync-disconnected-header"),
+    Assert.equal(
+      syncedTabsComponent.emptyState.getAttribute("headerlabel"),
+      DISCONNECTED_HEADER_L10N_ID,
       "Correct message should show when sync's been disconnected error"
     );
 
@@ -350,18 +359,18 @@ add_task(async function test_password_change_disconnect_error() {
       () => syncedTabsComponent.fullyUpdated,
       "The synced tabs component has finished updating."
     );
-    await TestUtils.waitForCondition(
+    await BrowserTestUtils.waitForMutationCondition(
+      syncedTabsComponent.emptyState.shadowRoot,
+      { childList: true, subtree: true },
       () =>
-        syncedTabsComponent.emptyState.shadowRoot.textContent.includes(
-          "sign in or sign up for an account"
-        ),
-      "The expected synced tabs empty state header is shown."
+        document.l10n.getAttributes(
+          syncedTabsComponent.emptyState.descriptionEls[0]
+        ).id === SIGN_IN_DESCRIPTION_L10N_ID
     );
 
-    ok(
-      syncedTabsComponent.emptyState
-        .getAttribute("headerlabel")
-        .includes("signin-header"),
+    Assert.equal(
+      syncedTabsComponent.emptyState.getAttribute("headerlabel"),
+      SIGN_IN_HEADER_L10N_ID,
       "Sign in message is shown"
     );
   });
@@ -387,28 +396,30 @@ add_task(async function test_multiple_errors() {
       "The synced tabs component has finished updating."
     );
     info("Waiting for the primary password error message to be shown");
-    await TestUtils.waitForCondition(
+    await BrowserTestUtils.waitForMutationCondition(
+      syncedTabsComponent.emptyState.shadowRoot,
+      { childList: true, subtree: true },
       () =>
-        syncedTabsComponent.emptyState.shadowRoot.textContent.includes(
-          "enter the Primary Password"
-        ),
-      "The expected synced tabs empty state header is shown."
+        document.l10n.getAttributes(
+          syncedTabsComponent.emptyState.descriptionEls[0]
+        ).id === PASSWORD_LOCKED_DESCRIPTION_L10N_ID
     );
 
-    ok(
-      syncedTabsComponent.emptyState
-        .getAttribute("headerlabel")
-        .includes("password-locked-header"),
+    Assert.equal(
+      syncedTabsComponent.emptyState.getAttribute("headerlabel"),
+      PASSWORD_LOCKED_HEADER_L10N_ID,
       "Password locked message is shown"
     );
 
     const errorLink = syncedTabsComponent.emptyState.shadowRoot.querySelector(
       "a[data-l10n-name=syncedtab-password-locked-link]"
     );
-    ok(
-      errorLink && BrowserTestUtils.isVisible(errorLink),
-      "Error link is visible"
-    );
+    if (!isNovaEnabled) {
+      ok(
+        errorLink && BrowserTestUtils.isVisible(errorLink),
+        "Error link is visible"
+      );
+    }
 
     // Clear the primary password error message
     await LoginTestUtils.primaryPassword.disable();
@@ -419,18 +430,20 @@ add_task(async function test_multiple_errors() {
       () => syncedTabsComponent.fullyUpdated,
       "The synced tabs component has finished updating."
     );
-    await TestUtils.waitForCondition(
+    await BrowserTestUtils.waitForMutationCondition(
+      syncedTabsComponent.emptyState,
+      { attributeFilter: ["headerlabel"] },
       () =>
-        syncedTabsComponent.emptyState.shadowRoot.textContent.includes(
-          "having trouble syncing"
-        ),
-      "The expected synced tabs empty state header is shown."
+        syncedTabsComponent.emptyState.getAttribute("headerlabel") ===
+        SYNC_ERROR_HEADER_L10N_ID
     );
 
-    ok(
-      errorLink && BrowserTestUtils.isHidden(errorLink),
-      "Error link is now hidden"
-    );
+    if (!isNovaEnabled) {
+      ok(
+        errorLink && BrowserTestUtils.isHidden(errorLink),
+        "Error link is now hidden"
+      );
+    }
 
     // Clear the sync error
     Services.obs.notifyObservers(null, "weave:service:sync:finish");

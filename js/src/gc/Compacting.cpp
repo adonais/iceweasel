@@ -74,6 +74,9 @@ IncrementalProgress GCRuntime::compactPhase(SliceBudget& sliceBudget,
   // middle of relocating an arena, invalid JSScript pointers may be
   // accessed. Suppress all sampling until a finer-grained solution can be
   // found. See bug 1295775.
+  // This is the one site that actually relocates JSScripts, so it keeps the
+  // default ProfilerScriptAccess::Deny: ProfilingStackFrame::script() returns
+  // null here so the sampler never observes a script mid-relocation.
   AutoSuppressProfilerSampling suppressSampling(rt->mainContextFromOwnThread());
 
   ZoneList relocatedZones;
@@ -890,7 +893,7 @@ void GCRuntime::clearRelocatedArenas(Arena* arenaList) {
     Zone* zone = arena->zone();
     zone->gcHeapSize.removeBytes(ArenaSize, updateRetainedSize, heapSize);
 
-    // There is no atom marking bitmap index to free.
+    // There is no atom reference bitmap index to free.
     MOZ_ASSERT(!zone->isAtomsZone());
 
     // Release the arena but don't return it to the chunk yet.

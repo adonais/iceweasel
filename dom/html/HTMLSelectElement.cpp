@@ -32,6 +32,7 @@
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/HTMLSlotElementBinding.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/dom/NameSpaceConstants.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/ShadowRootBinding.h"
 #include "mozilla/dom/UnionTypes.h"
@@ -41,10 +42,12 @@
 #include "nsContentCreatorFunctions.h"
 #include "nsContentUtils.h"
 #include "nsError.h"
+#include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsListControlFrame.h"
+#include "nsStyleConsts.h"
 
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
@@ -162,6 +165,10 @@ void HTMLSelectElement::SetupShadowTree() {
   {
     nsAutoString popoverstate;
     picker->SetAttr(kNameSpaceID_None, nsGkAtoms::popover, popoverstate, false);
+    // SetAttr queues AfterSetPopoverAttr asynchronously, but
+    // ShowPopoverInternal needs PopoverAttributeState set immediately.
+    picker->EnsurePopoverData().SetPopoverAttributeState(
+        PopoverAttributeState::Auto);
 
     // A select popover slot, which is a slot element. It is appended to the
     // select popover. It is expected to take all child nodes of the select
@@ -171,6 +178,39 @@ void HTMLSelectElement::SetupShadowTree() {
     picker->AppendChildTo(pickerSlot, false, IgnoreErrors());
   }
   sr->AppendChildTo(picker, false, IgnoreErrors());
+}
+
+bool HTMLSelectElement::IsBaseSelectAppearance() const {
+  RefPtr<const ComputedStyle> style =
+      nsComputedDOMStyle::GetComputedStyleNoFlush(this);
+  if (!style) {
+    return false;
+  }
+  auto appearance = style->StyleDisplay()->EffectiveAppearance();
+  return appearance == StyleAppearance::BaseSelect ||
+         appearance == StyleAppearance::Base;
+}
+
+nsGenericHTMLElement* HTMLSelectElement::GetPickerElement() const {
+  return nsGenericHTMLElement::FromNodeOrNull(
+      FindShadowPseudo(PseudoStyleType::Picker));
+}
+
+void HTMLSelectElement::TogglePickerInternal(bool aIsSourceTouchEvent) {
+  if (IsBaseSelectAppearance()) {
+    if (RefPtr<nsGenericHTMLElement> picker = GetPickerElement()) {
+      IgnoredErrorResult rv;
+      if (picker->PopoverOpen()) {
+        picker->HidePopover(rv);
+      } else {
+        picker->ShowPopoverInternal(this, rv);
+      }
+      return;
+    }
+  }
+  if (!OpenInParentProcess()) {
+    FireDropDownEvent(true, aIsSourceTouchEvent);
+  }
 }
 
 void HTMLSelectElement::GetSlotNameFor(const ShadowRoot& aShadow,
@@ -244,11 +284,15 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mValidity)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOptions)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSelectedOptions)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mListBoxSelection.mStart)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mListBoxSelection.mEnd)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(
     HTMLSelectElement, nsGenericHTMLFormControlElementWithState)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mValidity)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelectedOptions)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mListBoxSelection.mStart)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mListBoxSelection.mEnd)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(
@@ -321,11 +365,7 @@ void HTMLSelectElement::ShowPicker(ErrorResult& aRv) {
     return;
   }
 
-  if (!OpenInParentProcess()) {
-    RefPtr<Document> doc = OwnerDoc();
-    nsContentUtils::DispatchChromeEvent(doc, this, u"mozshowdropdown"_ns,
-                                        CanBubble::eYes, Cancelable::eNo);
-  }
+  TogglePickerInternal();
 }
 
 void HTMLSelectElement::GetAutocomplete(DOMString& aValue) {
@@ -494,7 +534,8 @@ void HTMLSelectElement::SetLength(uint32_t aLength, ErrorResult& aRv) {
       nsContentUtils::ReportToConsole(
           nsIScriptError::warningFlag, "DOM"_ns, OwnerDoc(),
           PropertiesFile::DOM_PROPERTIES,
-          "SelectOptionsLengthAssignmentWarning", {strOptionsLength, strLimit});
+          "SelectOptionsLengthAssignmentWarning",
+          {std::move(strOptionsLength), std::move(strLimit)});
       return;
     }
 
@@ -566,7 +607,8 @@ void HTMLSelectElement::SetSelectedIndex(int32_t aIdx) {
   SetSelectedIndexInternal(aIdx, true);
   // https://html.spec.whatwg.org/#dom-select-selectedindex
   // Step 4: Run update a select's descendant selectedcontent elements.
-  ScheduleSelectedContentUpdateScriptRunner(/* aForceUpdate = */ true);
+  ScheduleSelectedContentUpdate(SelectedContentUpdateMode::ScriptRunner,
+                                /* aForceUpdate = */ true);
 }
 
 void HTMLSelectElement::ScrollToOption(int32_t aIndex) {
@@ -603,7 +645,7 @@ void HTMLSelectElement::SetSelectedIndexInternal(int32_t aIndex, bool aNotify) {
 #ifdef ACCESSIBILITY
     nsCOMPtr<nsIContent> prevOption = GetCurrentOption();
 #endif
-    mListBoxSelection.SetTo(aIndex);
+    mListBoxSelection.SetTo(Item(aIndex));
     if (nsListControlFrame* listBox = GetListBoxFrame()) {
       listBox->InvalidateFocus();
     }
@@ -871,7 +913,8 @@ void HTMLSelectElement::SetValue(const nsAString& aValue) {
   SetSelectedIndexInternal(matchIndex, true);
   // https://html.spec.whatwg.org/#dom-select-value
   // Step 4: Run update a select's descendant selectedcontent elements.
-  ScheduleSelectedContentUpdateScriptRunner(/* aForceUpdate = */ true);
+  ScheduleSelectedContentUpdate(SelectedContentUpdateMode::ScriptRunner,
+                                /* aForceUpdate = */ true);
 }
 
 int32_t HTMLSelectElement::TabIndexDefault() { return 0; }
@@ -992,9 +1035,8 @@ void HTMLSelectElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
 }
 
 // https://html.spec.whatwg.org/#selectedness-setting-algorithm
-// NOTE: PR https://github.com/whatwg/html/pull/12263 rewrites this algorithm.
 void HTMLSelectElement::RunSelectednessSettingAlgorithm(
-    bool aNotify, bool aInsertionOrRemovalSteps, IgnoredOptionList aIgnored) {
+    bool aNotify, bool aSkipSelectedcontentUpdate, IgnoredOptionList aIgnored) {
   // 1. If element has the multiple attribute, then return.
   if (Multiple()) {
     UpdateValueMissingValidityState(aIgnored);
@@ -1008,7 +1050,7 @@ void HTMLSelectElement::RunSelectednessSettingAlgorithm(
   // 4. Let lastSelectedOption be null.
   RefPtr<HTMLOptionElement> lastSelectedOption;
 
-  // 5. For each option in element's list of options:
+  // 5. For each option of element's list of options:
   const uint32_t count = Length();
   for (uint32_t i = 0; i < count; i++) {
     RefPtr<HTMLOptionElement> option = Item(i);
@@ -1049,13 +1091,13 @@ void HTMLSelectElement::RunSelectednessSettingAlgorithm(
   UpdateValueMissingValidityState(aIgnored);
   UpdateValidityElementStates(aNotify);
 
-  // 7. If updateSelectedcontent is true and insertionOrRemovalSteps is false,
-  //    then run update a select's descendant selectedcontent elements given
-  //    element.
-  // NOTE: When called from insertion/removal steps (aInsertionOrRemovalSteps),
-  // the update is handled separately: post-connection steps (for insertion) or
-  // a queued microtask (for removal)
-  if (updateSelectedcontent && !aInsertionOrRemovalSteps) {
+  // 7. If updateSelectedcontent is true and skipSelectedcontentUpdate is
+  //    false, then update a select's descendant selectedcontent elements
+  //    given element.
+  // NOTE: Callers pass true from insertion/removal steps, where the update is
+  // handled separately (post-connection steps for insertion, a queued
+  // microtask for removal).
+  if (updateSelectedcontent && !aSkipSelectedcontentUpdate) {
     ScheduleSelectedContentUpdate();
   }
 }
@@ -1345,7 +1387,7 @@ void HTMLSelectElement::ResetListBoxSelection(bool aAllowScrolling) {
   if (!IsDoneAddingChildren() || IsCombobox()) {
     return;
   }
-  mListBoxSelection.SetTo(kNothingSelected);
+  mListBoxSelection.Clear();
   if (nsListControlFrame* listFrame = GetListBoxFrame()) {
     listFrame->OnSelectionReset();
   }
@@ -1402,7 +1444,7 @@ nsresult HTMLSelectElement::GetValidationMessage(nsAString& aValidationMessage,
       nsresult rv = nsContentUtils::GetMaybeLocalizedString(
           PropertiesFile::DOM_PROPERTIES, "FormValidationSelectMissing",
           OwnerDoc(), message);
-      aValidationMessage = message;
+      aValidationMessage = std::move(message);
       return rv;
     }
     default: {
@@ -1597,17 +1639,15 @@ void HTMLSelectElement::ContentWillBeRemoved(nsIContent* aChild,
   }
   MutatedOptions options;
   const bool anySelected = CollectOptions(*this, aChild, options);
-  if (!options.IsEmpty()) {
-    if (GetListBoxFrame()) {
-      auto index = options[0]->Index();
-      for (size_t i = 0; i < options.Length(); ++i) {
-        RemoveOptionFromListBoxSelection(index);
-      }
+  if (!options.IsEmpty() && !IsCombobox()) {
+    for (auto& option : options) {
+      RemoveOptionFromListBoxSelection(*option);
     }
   }
   if (anySelected) {
     RunSelectednessSettingAlgorithm(/*aNotify=*/true,
-                                    /*aInsertionOrRemovalSteps=*/true, options);
+                                    /*aSkipSelectedcontentUpdate=*/true,
+                                    options);
   }
   if (IsInComposedDoc() && IsCombobox()) {
     OptionValueMightHaveChanged(aChild);
@@ -1691,7 +1731,7 @@ void HTMLSelectElement::ContentAppendedOrInserted(nsIContent* aFirstNewContent,
   if (!options.IsEmpty() &&
       (anySelected || (IsCombobox() && SelectedIndex() < 0))) {
     RunSelectednessSettingAlgorithm(/*aNotify=*/true,
-                                    /*aInsertionOrRemovalSteps=*/true);
+                                    /*aSkipSelectedcontentUpdate=*/true);
   }
 
   if (!anySelected && IsCombobox() && IsInComposedDoc()) {
@@ -1708,7 +1748,7 @@ void HTMLSelectElement::ContentAppendedOrInserted(nsIContent* aFirstNewContent,
   // clone; whether that is the right behavior is tracked in
   // https://github.com/whatwg/html/issues/12509.
   if (!options.IsEmpty() && !mIsUpdatingSelectedContent) {
-    ScheduleSelectedContentUpdateScriptRunner();
+    ScheduleSelectedContentUpdate(SelectedContentUpdateMode::ScriptRunner);
   }
 }
 
@@ -1758,7 +1798,11 @@ class MOZ_RAII AutoIncrementalSearchResetter {
 };
 
 int32_t HTMLSelectElement::GetEndSelectionIndex() const {
-  return IsCombobox() ? SelectedIndex() : mListBoxSelection.mEnd;
+  if (IsCombobox()) {
+    return SelectedIndex();
+  }
+  return mListBoxSelection.mEnd ? mListBoxSelection.mEnd->Index()
+                                : kNothingSelected;
 }
 
 bool HTMLSelectElement::IsOptionInteractivelySelectable(uint32_t aIndex) const {
@@ -1917,11 +1961,11 @@ void HTMLSelectElement::CaptureMouseEvents(bool aGrabMouseEvents) {
   }
 }
 
-Maybe<int32_t> HTMLSelectElement::GetListBoxIndexFromEvent(
+HTMLOptionElement* HTMLSelectElement::GetListBoxOptionFromEvent(
     const WidgetMouseEvent& aEvent) {
   nsListControlFrame* lf = GetListBoxFrame();
   if (NS_WARN_IF(!lf)) {
-    return {};
+    return nullptr;
   }
   if (PresShell::GetCapturingContent() != this) {
     // If we're not capturing, then ignore movement in the border.
@@ -1929,55 +1973,54 @@ Maybe<int32_t> HTMLSelectElement::GetListBoxIndexFromEvent(
         nsLayoutUtils::GetEventCoordinatesRelativeTo(&aEvent, RelativeTo{lf});
     nsRect borderInnerEdge = lf->GetScrollPortRect();
     if (!borderInnerEdge.Contains(pt)) {
-      return {};
+      return nullptr;
     }
   }
 
-  RefPtr<HTMLOptionElement> option;
+  HTMLOptionElement* option = nullptr;
   for (nsIContent* content =
            lf->PresContext()->EventStateManager()->GetEventTargetContent();
        content && !option; content = content->GetParent()) {
     option = HTMLOptionElement::FromNode(content);
   }
 
-  if (!option) {
-    return {};
+  MOZ_ASSERT(!option || option->Index() >= 0);
+  return option;
+}
+
+static HTMLOptionElement* AdjacentOption(const HTMLSelectElement& aSelect,
+                                         HTMLOptionElement& aFrom,
+                                         bool aForward) {
+  auto Step = [&](const nsINode* aNode) {
+    return aForward ? aNode->GetNextNode(&aSelect)
+                    : aNode->GetPrevNode(&aSelect);
+  };
+  for (nsIContent* cur = Step(&aFrom); cur; cur = Step(cur)) {
+    if (auto* opt = HTMLOptionElement::FromNode(cur)) {
+      if (HTMLOptionsCollection::IsValidOption(*opt, aSelect)) {
+        return opt;
+      }
+    }
   }
-  int32_t idx = option->Index();
-  MOZ_ASSERT(idx >= 0);
-  return Some(idx);
+  return nullptr;
 }
 
-static int32_t DecrementAndClamp(int32_t aSelectionIndex, int32_t aLength) {
-  return aLength == 0 ? -1 : std::max(0, aSelectionIndex - 1);
-}
+void HTMLSelectElement::RemoveOptionFromListBoxSelection(
+    HTMLOptionElement& aOption) {
+  NS_ASSERTION(!!mListBoxSelection.mStart == !!mListBoxSelection.mEnd, "");
 
-void HTMLSelectElement::RemoveOptionFromListBoxSelection(int32_t aIndex) {
-  MOZ_ASSERT(aIndex >= 0, "negative <option> index");
-
-  if (mListBoxSelection.mStart != kNothingSelected) {
-    NS_ASSERTION(mListBoxSelection.mEnd != kNothingSelected, "");
-    int32_t numOptions = static_cast<int32_t>(Length());
-    // NOTE: numOptions is the new number of options whereas aIndex is the
-    // unadjusted index of the removed option (hence the <= below).
-    NS_ASSERTION(aIndex <= numOptions, "out-of-bounds <option> index");
-
-    int32_t forward = mListBoxSelection.mEnd - mListBoxSelection.mStart;
-    int32_t* low =
-        forward >= 0 ? &mListBoxSelection.mStart : &mListBoxSelection.mEnd;
-    int32_t* high =
-        forward >= 0 ? &mListBoxSelection.mEnd : &mListBoxSelection.mStart;
-    if (aIndex < *low) {
-      *low = DecrementAndClamp(*low, numOptions);
-    }
-    if (aIndex <= *high) {
-      *high = DecrementAndClamp(*high, numOptions);
-    }
-    if (forward == 0) {
-      *low = *high;
-    }
+  bool startIsLow = mListBoxSelection.mStartIsLow;
+  if (mListBoxSelection.mStart == &aOption &&
+      mListBoxSelection.mEnd == &aOption) {
+    mListBoxSelection.Clear();
+  } else if (mListBoxSelection.mStart == &aOption) {
+    mListBoxSelection.mStart =
+        AdjacentOption(*this, aOption, /* aForward = */ startIsLow);
+  } else if (mListBoxSelection.mEnd == &aOption) {
+    mListBoxSelection.mEnd =
+        AdjacentOption(*this, aOption, /* aForward = */ !startIsLow);
   } else {
-    NS_ASSERTION(mListBoxSelection.mEnd == kNothingSelected, "");
+    return;
   }
 
   if (nsListControlFrame* lf = GetListBoxFrame()) {
@@ -2020,30 +2063,32 @@ void HTMLSelectElement::InitListBoxSelectionRange(int32_t aClickedIndex) {
   //
   // This makes it so that shift click works properly when you first click
   // in a multiple select.
-  int32_t selectedIndex = SelectedIndex();
-  if (selectedIndex >= 0) {
+  int32_t firstSelectedIndex = SelectedIndex();
+  if (firstSelectedIndex >= 0) {
     // Get the end of the contiguous selection
     RefPtr<HTMLOptionsCollection> options = Options();
     NS_ASSERTION(options, "Collection of options is null!");
     uint32_t numOptions = options->Length();
     // Push i to one past the last selected index in the group.
     uint32_t i;
-    for (i = selectedIndex + 1; i < numOptions; i++) {
+    for (i = firstSelectedIndex + 1; i < numOptions; i++) {
       if (!options->ItemAsOption(i)->Selected()) {
         break;
       }
     }
 
-    if (aClickedIndex < selectedIndex) {
+    if (aClickedIndex < firstSelectedIndex) {
       // User clicked before selection, so start selection at end of
       // contiguous selection
-      mListBoxSelection.mStart = i - 1;
-      mListBoxSelection.mEnd = selectedIndex;
+      mListBoxSelection.mStart = Item(i - 1);
+      mListBoxSelection.mEnd = Item(firstSelectedIndex);
+      mListBoxSelection.mStartIsLow = false;
     } else {
       // User clicked after selection, so start selection at start of
       // contiguous selection
-      mListBoxSelection.mStart = selectedIndex;
-      mListBoxSelection.mEnd = i - 1;
+      mListBoxSelection.mStart = Item(firstSelectedIndex);
+      mListBoxSelection.mEnd = Item(i - 1);
+      mListBoxSelection.mStartIsLow = true;
     }
   }
 }
@@ -2060,7 +2105,7 @@ bool HTMLSelectElement::ListBoxSingleSelection(int32_t aClickedIndex,
   } else {
     wasChanged = ExtendedSelection(aClickedIndex, aClickedIndex, true);
   }
-  mListBoxSelection.SetTo(aClickedIndex);
+  mListBoxSelection.SetTo(Item(aClickedIndex));
   ScrollToOption(aClickedIndex);
   if (nsListControlFrame* listBox = GetListBoxFrame()) {
     listBox->InvalidateFocus();
@@ -2086,7 +2131,7 @@ bool HTMLSelectElement::PerformListBoxSelection(int32_t aClickedIndex,
   if (aIsShift) {
     // Make sure shift+click actually does something expected when
     // the user has never clicked on the select
-    if (mListBoxSelection.mStart == kNothingSelected) {
+    if (!mListBoxSelection.mStart) {
       InitListBoxSelectionRange(aClickedIndex);
     }
 
@@ -2094,27 +2139,32 @@ bool HTMLSelectElement::PerformListBoxSelection(int32_t aClickedIndex,
     // Shift *always* works, even if the current option is disabled
     int32_t startIndex;
     int32_t endIndex;
-    if (mListBoxSelection.mStart == kNothingSelected) {
+    if (!mListBoxSelection.mStart) {
       startIndex = aClickedIndex;
-      endIndex = aClickedIndex;
-    } else if (mListBoxSelection.mStart <= aClickedIndex) {
-      startIndex = mListBoxSelection.mStart;
       endIndex = aClickedIndex;
     } else {
-      startIndex = aClickedIndex;
-      endIndex = mListBoxSelection.mStart;
+      int32_t anchorIndex = mListBoxSelection.mStart->Index();
+      if (anchorIndex <= aClickedIndex) {
+        startIndex = anchorIndex;
+        endIndex = aClickedIndex;
+      } else {
+        startIndex = aClickedIndex;
+        endIndex = anchorIndex;
+      }
     }
 
     // Clear only if control was not pressed
     wasChanged = ExtendedSelection(startIndex, endIndex, !aIsControl);
     ScrollToOption(aClickedIndex);
-    if (mListBoxSelection.mStart == kNothingSelected) {
-      mListBoxSelection.mStart = aClickedIndex;
+    if (!mListBoxSelection.mStart) {
+      mListBoxSelection.mStart = Item(aClickedIndex);
     }
 #ifdef ACCESSIBILITY
     nsCOMPtr<nsIContent> prevOption = GetCurrentOption();
 #endif
-    mListBoxSelection.mEnd = aClickedIndex;
+    mListBoxSelection.mEnd = Item(aClickedIndex);
+    mListBoxSelection.mStartIsLow =
+        mListBoxSelection.mStart->Index() <= aClickedIndex;
     if (nsListControlFrame* listBox = GetListBoxFrame()) {
       listBox->InvalidateFocus();
     }
@@ -2145,7 +2195,7 @@ void HTMLSelectElement::UpdateListBoxSelectionAfterKeyEvent(
 #ifdef ACCESSIBILITY
     nsCOMPtr<nsIContent> prevOption = GetCurrentOption();
 #endif
-    mListBoxSelection.SetTo(aNewIndex);
+    mListBoxSelection.SetTo(Item(aNewIndex));
     if (nsListControlFrame* listBox = GetListBoxFrame()) {
       listBox->InvalidateFocus();
     }
@@ -2238,7 +2288,6 @@ nsresult HTMLSelectElement::HandleMouseDown(EventChainPostVisitor& aVisitor) {
   }
 
   if (IsCombobox()) {
-    uint16_t inputSource = mouseEvent->mInputSource;
     if (OpenInParentProcess()) {
       nsCOMPtr<nsIContent> target =
           nsIContent::FromEventTargetOrNull(aVisitor.mEvent->mOriginalTarget);
@@ -2247,16 +2296,17 @@ nsresult HTMLSelectElement::HandleMouseDown(EventChainPostVisitor& aVisitor) {
       }
     }
     const bool isSourceTouchEvent =
-        inputSource == MouseEvent_Binding::MOZ_SOURCE_TOUCH;
-    FireDropDownEvent(!OpenInParentProcess(), isSourceTouchEvent);
+        mouseEvent->mInputSource == MouseEvent_Binding::MOZ_SOURCE_TOUCH;
+    TogglePickerInternal(isSourceTouchEvent);
+    return NS_OK;
+  }
+
+  HTMLOptionElement* option = GetListBoxOptionFromEvent(*mouseEvent);
+  if (!option) {
     return NS_OK;
   }
 
   mButtonDown = true;
-  Maybe<int32_t> selectedIndex = GetListBoxIndexFromEvent(*mouseEvent);
-  if (!selectedIndex) {
-    return NS_OK;
-  }
   CaptureMouseEvents(true);
   bool isControlOrMeta;
 #ifdef XP_MACOSX
@@ -2267,7 +2317,7 @@ nsresult HTMLSelectElement::HandleMouseDown(EventChainPostVisitor& aVisitor) {
   // PerformSelection might destroy the frame, but we only need to record the
   // result onto ourselves, which keeps us alive during event dispatch.
   mListBoxSelectionChangedSinceDragStart = PerformListBoxSelection(
-      *selectedIndex, mouseEvent->IsShift(), isControlOrMeta);
+      option->Index(), mouseEvent->IsShift(), isControlOrMeta);
   return NS_OK;
 }
 
@@ -2313,9 +2363,9 @@ nsresult HTMLSelectElement::HandleMouseMove(EventChainPostVisitor& aVisitor) {
     return NS_OK;
   }
 
-  Maybe<int32_t> selectedIndex = GetListBoxIndexFromEvent(*mouseEvent);
+  HTMLOptionElement* option = GetListBoxOptionFromEvent(*mouseEvent);
   // Don't waste cycles if we already dragged over this item.
-  if (!selectedIndex || *selectedIndex == mListBoxSelection.mEnd) {
+  if (!option || option == mListBoxSelection.mEnd) {
     return NS_OK;
   }
   bool isControlOrMeta;
@@ -2326,7 +2376,7 @@ nsresult HTMLSelectElement::HandleMouseMove(EventChainPostVisitor& aVisitor) {
 #endif
   // Turn SHIFT on when you are dragging, unless control is on.
   const bool wasChanged = PerformListBoxSelection(
-      *selectedIndex, !isControlOrMeta, isControlOrMeta);
+      option->Index(), !isControlOrMeta, isControlOrMeta);
   mListBoxSelectionChangedSinceDragStart |= wasChanged;
   return NS_OK;
 }
@@ -2510,7 +2560,7 @@ nsresult HTMLSelectElement::HandleKeyDown(EventChainPostVisitor& aVisitor) {
        (keyEvent->mKeyCode == NS_VK_UP || keyEvent->mKeyCode == NS_VK_DOWN)) ||
       (dropDownMenuOnSpace && keyEvent->mKeyCode == NS_VK_SPACE &&
        !withinIncrementalSearchTime)) {
-    FireDropDownEvent(!OpenInParentProcess(), false);
+    TogglePickerInternal();
     aVisitor.mEvent->PreventDefault();
     return NS_OK;
   }
@@ -2627,34 +2677,15 @@ class SelectedContentUpdateMicrotask final : public MicroTaskRunnable {
   explicit SelectedContentUpdateMicrotask(HTMLSelectElement* aSelect)
       : mSelect(aSelect) {}
   MOZ_CAN_RUN_SCRIPT void Run(AutoSlowOperation& aAso) override {
-    MOZ_KnownLive(mSelect)->UpdateDescendantSelectedContentElements();
+    MOZ_KnownLive(mSelect)->RunPendingSelectedContentUpdate();
   }
 
  private:
   const RefPtr<HTMLSelectElement> mSelect;
 };
 
-void HTMLSelectElement::ScheduleSelectedContentUpdate() {
-  if (!StaticPrefs::dom_select_customizable_select_enabled()) {
-    return;
-  }
-  if (!IsInComposedDoc()) {
-    return;
-  }
-  if (mSelectedContentUpdatePending) {
-    return;
-  }
-  CycleCollectedJSContext* ccjsc = CycleCollectedJSContext::Get();
-  if (!ccjsc) {
-    return;
-  }
-  mSelectedContentUpdatePending = true;
-  RefPtr<MicroTaskRunnable> task = new SelectedContentUpdateMicrotask(this);
-  ccjsc->DispatchToMicroTask(task.forget());
-}
-
-void HTMLSelectElement::ScheduleSelectedContentUpdateScriptRunner(
-    bool aForceUpdate) {
+void HTMLSelectElement::ScheduleSelectedContentUpdate(
+    SelectedContentUpdateMode aMode, bool aForceUpdate) {
   if (!StaticPrefs::dom_select_customizable_select_enabled()) {
     return;
   }
@@ -2662,14 +2693,31 @@ void HTMLSelectElement::ScheduleSelectedContentUpdateScriptRunner(
     return;
   }
   mSelectedContentUpdatePending = true;
-  nsContentUtils::AddScriptRunner(NewRunnableMethod(
-      "HTMLSelectElement::UpdateDescendantSelectedContentElements", this,
-      &HTMLSelectElement::UpdateDescendantSelectedContentElements));
+  if (aMode == SelectedContentUpdateMode::ScriptRunner) {
+    nsContentUtils::AddScriptRunner(NewRunnableMethod(
+        "HTMLSelectElement::RunPendingSelectedContentUpdate", this,
+        &HTMLSelectElement::RunPendingSelectedContentUpdate));
+    return;
+  }
+  CycleCollectedJSContext* ccjsc = CycleCollectedJSContext::Get();
+  if (!ccjsc) {
+    return;
+  }
+  RefPtr<MicroTaskRunnable> task = new SelectedContentUpdateMicrotask(this);
+  ccjsc->DispatchToMicroTask(task.forget());
+}
+
+void HTMLSelectElement::RunPendingSelectedContentUpdate() {
+  // Multiple schedulers (a synchronous script runner and a coalesced microtask)
+  // can target the same update. Whichever runs first clears the pending flag in
+  // UpdateDescendantSelectedContentElements; the rest become no-ops here so the
+  // clone runs exactly once.
+  if (mSelectedContentUpdatePending) {
+    UpdateDescendantSelectedContentElements();
+  }
 }
 
 // https://html.spec.whatwg.org/#update-a-select's-descendant-selectedcontent-elements
-// NOTE: PR https://github.com/whatwg/html/pull/12263 renames and modifies this
-// to iterate all non-disabled descendant selectedcontent elements.
 void HTMLSelectElement::UpdateDescendantSelectedContentElements() {
   // All schedulers bail while we're updating, so this must never be re-entrant.
   MOZ_ASSERT(!mIsUpdatingSelectedContent);
@@ -2682,8 +2730,8 @@ void HTMLSelectElement::UpdateDescendantSelectedContentElements() {
     return;
   }
 
-  // 2. Let descendantSelectedcontents be select's non-disabled descendant
-  //    selectedcontent elements, in tree order.
+  // 2. Let descendantSelectedcontents be select's descendant selectedcontent
+  //    elements which are not disabled, in tree order.
   AutoTArray<RefPtr<HTMLSelectedContentElement>, 1> elements;
   for (nsIContent* node = GetFirstChild(); node;
        node = node->GetNextNode(this)) {
@@ -2694,7 +2742,7 @@ void HTMLSelectElement::UpdateDescendantSelectedContentElements() {
     }
   }
 
-  // 3. For each selectedcontent in descendantSelectedcontents:
+  // 3. For each selectedcontent of descendantSelectedcontents:
   // Guard against re-entrant scheduling from mutation observer callbacks
   // triggered by our own DOM cloning into selectedcontent elements.
   mIsUpdatingSelectedContent = true;
@@ -2710,19 +2758,18 @@ void HTMLSelectElement::UpdateSelectedContentElement(
     HTMLSelectedContentElement* aSelectedContent) {
   MOZ_ASSERT(aSelectedContent);
   // 1. Let option be the first option in select's list of options whose
-  //    selectedness is true, if any such option exists, otherwise null.
+  //    selectedness is true, if any such option exists; otherwise null.
   const int32_t selectedIndex = SelectedIndex();
   RefPtr<HTMLOptionElement> option =
       selectedIndex >= 0 ? Item(static_cast<uint32_t>(selectedIndex)) : nullptr;
 
-  // 2. If option is null, then run clear a selectedcontent given
-  //    selectedcontent.
+  // 2. If option is null, then clear a selectedcontent given selectedcontent.
   if (!option) {
     aSelectedContent->ClearContent();
     return;
   }
 
-  // 3. Otherwise, run clone an option into a selectedcontent given option and
+  // 3. Otherwise, clone an option into a selectedcontent given option and
   //    selectedcontent.
   CloneOptionIntoSelectedContent(option, aSelectedContent);
 }
@@ -2732,7 +2779,7 @@ void HTMLSelectElement::CloneOptionIntoSelectedContent(
     HTMLOptionElement* aOption, HTMLSelectedContentElement* aSelectedContent) {
   MOZ_ASSERT(aOption);
   MOZ_ASSERT(aSelectedContent);
-  // 1. If selectedcontent is disabled, then return.
+  // 1. If selectedcontent's disabled is true, then return.
   if (aSelectedContent->IsDisabled()) {
     return;
   }

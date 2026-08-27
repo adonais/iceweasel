@@ -1,0 +1,97 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Hit-testing a scrollframe inside a clip-path:polygon() at a non-zero scroll offset (bug 2065054)</title>
+  <script type="application/javascript" src="apz_test_utils.js"></script>
+  <script type="application/javascript" src="apz_test_native_event_utils.js"></script>
+  <script type="application/javascript" src="/tests/SimpleTest/paint_listener.js"></script>
+  <meta name="viewport" content="width=device-width"/>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<style>
+  html, body { margin: 0; }
+  body { height: 3000px; }
+  .clipped {
+    position: absolute;
+    left: 0px;
+    width: 600px;
+    height: 400px;
+    background-color: green;
+    /* A polygon clip-path is emitted as an ImageMaskClip plus a point list.
+       WebRender hit-tests it with polygon_contains_point(), which treats the
+       points as relative to the mask rect's origin. */
+    clip-path: polygon(0px 0px, 90% 0px, 100% 10%, 100% 100%, 0% 100%);
+  }
+  #clipped-top { top: 50px; }
+  #clipped-bottom { top: 1000px; }
+  .scroller {
+    margin-top: 50px;
+    width: 600px;
+    height: 300px;
+    overflow-y: auto;
+    background-color: blue;
+  }
+  .tall { height: 900px; }
+</style>
+</head>
+<body>
+<div class="clipped" id="clipped-top">
+  <div class="scroller" id="scroller-top"><div class="tall"></div></div>
+</div>
+<div class="clipped" id="clipped-bottom">
+  <div class="scroller" id="scroller-bottom"><div class="tall"></div></div>
+</div>
+<script>
+
+async function test() {
+  var config = getHitTestConfig();
+  var utils = config.utils;
+  var layersId = utils.getLayersId();
+  var rootViewId = utils.getViewId(document.scrollingElement);
+
+  var top = document.getElementById("scroller-top");
+  var bottom = document.getElementById("scroller-bottom");
+  utils.setDisplayPortForElement(0, 0, 600, 400, top, 1);
+  utils.setDisplayPortForElement(0, 0, 600, 400, bottom, 1);
+  await promiseApzFlushedRepaints();
+
+  // Control: at a zero scroll offset the polygon's points and the mask rect
+  // agree, so this hit-test succeeds even with the bug. It is here so that a
+  // failure of the scrolled case below can be attributed to the scroll offset
+  // rather than to the geometry of the test.
+  checkHitResult(
+    hitTest({ x: 200, y: 200 }),
+    APZHitResultFlags.VISIBLE,
+    utils.getViewId(top),
+    layersId,
+    "scrollframe under a polygon clip-path at scroll offset 0");
+
+  // Scroll far enough that the root scroll frame has a non-zero external
+  // scroll offset, then hit-test the scrollframe under the second clip-path.
+  window.scrollTo(0, 1000);
+  await promiseApzFlushedRepaints();
+  is(window.scrollY, 1000, "root scrolled to the expected offset");
+
+  // #clipped-bottom is now at y=0, so the scroller spans y=50 to y=350.
+  checkHitResult(
+    hitTest({ x: 200, y: 200 }),
+    APZHitResultFlags.VISIBLE,
+    utils.getViewId(bottom),
+    layersId,
+    "scrollframe under a polygon clip-path at a non-zero scroll offset");
+
+  // A point outside the clip shape (the cut-off top-right corner) must still
+  // fall through to the root scroller, so we know the polygon is being applied
+  // and not just ignored.
+  checkHitResult(
+    hitTest({ x: 590, y: 5 }),
+    APZHitResultFlags.VISIBLE,
+    rootViewId,
+    layersId,
+    "point outside the clip shape falls through to the root scroller");
+}
+
+waitUntilApzStable()
+    .then(test)
+    .then(subtestDone, subtestFailed);
+</script>
+</body></html>

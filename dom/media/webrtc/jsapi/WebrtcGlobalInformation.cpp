@@ -143,7 +143,7 @@ GetStatsPromiseForThisProcess(const nsAString& aPcIdFilter) {
     MOZ_RELEASE_ASSERT(aResult.IsResolve(), "AllSettled should never reject!");
     for (auto& reportResult : aResult.ResolveValue()) {
       if (reportResult.IsResolve()) {
-        reports.AppendElement(*reportResult.ResolveValue());
+        reports.AppendElement(std::move(*reportResult.ResolveValue()));
       }
     }
     return PWebrtcGlobalParent::GetStatsPromise::CreateAndResolve(
@@ -272,9 +272,9 @@ void WebrtcGlobalInformation::GatherHistory() {
       if (result.IsReject()) {
         return;
       }
-      for (const auto& report : result.ResolveValue()) {
+      for (auto& report : result.ResolveValue()) {
         WebrtcGlobalStatsHistory::Record(
-            MakeUnique<RTCStatsReportInternal>(report));
+            MakeUnique<RTCStatsReportInternal>(std::move(report)));
       }
     };
     promise->Then(GetMainThreadSerialEventTarget(), __func__,

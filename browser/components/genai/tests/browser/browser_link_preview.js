@@ -456,7 +456,7 @@ add_task(async function test_fetch_errors() {
   });
   const actor =
     window.browsingContext.currentWindowContext.getActor("LinkPreview");
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   let result = await actor.fetchPageData("http://example.com/");
 
   ok(result.error, "got error from fetching http");

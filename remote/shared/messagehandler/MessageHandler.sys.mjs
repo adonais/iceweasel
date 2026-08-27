@@ -243,6 +243,12 @@ export class MessageHandler extends EventEmitter {
    *     If not explicitly set, the framework will automatically retry if the
    *     destination is likely to be replaced (e.g. browsingContext on the
    *     initial document or loading a document).
+   * @property {boolean=} skipPrivilegeCheck
+   *     Optional. When true, the command is allowed to be forwarded to a
+   *     privileged browsing context even without system access. Defaults to
+   *     false, which prevents the command from reaching a browsing context
+   *     that became privileged after it was dispatched. Should only be set for
+   *     commands that are safe regardless of the context's privilege level.
    */
 
   /**

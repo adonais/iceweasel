@@ -11,11 +11,11 @@
 #ifndef mozilla_FunctionRef_h
 #define mozilla_FunctionRef_h
 
-#include "mozilla/OperatorNewExtensions.h"  // mozilla::NotNull, ::operator new
-
 #include <cstddef>      // std::nullptr_t
 #include <type_traits>  // std::{declval,integral_constant}, std::is_{convertible,same,void}_v, std::{enable_if,remove_cvref}_t
 #include <utility>      // std::forward
+
+#include "mozilla/OperatorNewExtensions.h"  // mozilla::NotNull, ::operator new
 
 // This concept and its implementation are substantially inspired by foonathan's
 // prior art:

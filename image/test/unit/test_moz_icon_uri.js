@@ -37,6 +37,27 @@ function run_test() {
   Assert.equal(iconURI.contentType, "bar");
   Assert.equal(iconURI.fileExtension, ".html");
 
+  // A file name ending in a period has no extension, but we still report the
+  // period, because the value is a placeholder file name rather than a bare
+  // extension. Consumers handing it to an API that wants a bare extension have
+  // to strip the period, and are left with the empty string here.
+  currentSpec = "moz-icon://foo.?size=16";
+  uri = ioService.newURI(currentSpec);
+  iconURI = uri.QueryInterface(Ci.nsIMozIconURI);
+  Assert.equal(iconURI.fileExtension, ".");
+
+  // The file name is allowed to be nothing but a period.
+  currentSpec = "moz-icon://.?size=16";
+  uri = ioService.newURI(currentSpec);
+  iconURI = uri.QueryInterface(Ci.nsIMozIconURI);
+  Assert.equal(iconURI.fileExtension, ".");
+
+  // With no period at all there is no extension to report.
+  currentSpec = "moz-icon://foo?size=16";
+  uri = ioService.newURI(currentSpec);
+  iconURI = uri.QueryInterface(Ci.nsIMozIconURI);
+  Assert.equal(iconURI.fileExtension, "");
+
   // Make sure a valid file name icon URI can be created with a numeric size,
   // and make sure the numeric size is handled properly
   currentSpec = "moz-icon://foo.html?size=3";

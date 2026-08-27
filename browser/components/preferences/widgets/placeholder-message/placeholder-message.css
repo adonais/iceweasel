@@ -27,6 +27,9 @@ img {
   max-width: 100px;
 }
 
+/* Small-ish subtree, but seems it could be replaced with a margin-inline-start
+ * on the support-link? */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .label:has(+ .support-link),
 .description:has(+ .support-link) {
   margin-inline-end: var(--space-xsmall);

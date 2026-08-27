@@ -9,7 +9,7 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 let PUNYCODE_PAGE = "xn--31b1c3b9b.com";
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 let DECODED_PAGE = "http://योगा.com/";
 
 function startServer() {

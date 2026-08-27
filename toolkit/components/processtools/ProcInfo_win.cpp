@@ -49,19 +49,17 @@ nsresult GetCurrentProcessMemoryUsage(uint64_t* aResult) {
 }
 
 int GetCycleTimeFrequencyMHz() {
-  static const int frequency = []() {
-    // Having a constant TSC is required to convert cycle time to actual time.
-    // In automation, having short CPU times reported as 0 is more of a problem
-    // than having an imprecise value. The fallback method can't report CPU
-    // times < 1/64s.
-    if (!mozilla::has_constant_tsc() && !xpc::IsInAutomation()) {
-      return 0;
-    }
+  // Having a constant TSC is required to convert cycle time to actual time.
+  // In automation, having short CPU times reported as 0 is more of a problem
+  // than having an imprecise value. The fallback method can't report CPU
+  // times < 1/64s.
+  // Not cached: a process profiled from startup queries this before
+  // IsInAutomation() becomes true, which would pin it to the fallback for life.
+  if (!mozilla::has_constant_tsc() && !xpc::IsInAutomation()) {
+    return 0;
+  }
 
-    return GetCpuFrequencyMHz();
-  }();
-
-  return frequency;
+  return GetCpuFrequencyMHz();
 }
 
 nsresult GetCpuTimeSinceProcessStartInMs(uint64_t* aResult) {

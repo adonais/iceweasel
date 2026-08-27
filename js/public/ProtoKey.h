@@ -84,8 +84,7 @@
   REAL(EvalError, ERROR_CLASP(JSEXN_EVALERR))                                \
   REAL(RangeError, ERROR_CLASP(JSEXN_RANGEERR))                              \
   REAL(ReferenceError, ERROR_CLASP(JSEXN_REFERENCEERR))                      \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(                                           \
-      REAL(SuppressedError, ERROR_CLASP(JSEXN_SUPPRESSEDERR)))               \
+  REAL(SuppressedError, ERROR_CLASP(JSEXN_SUPPRESSEDERR))                    \
   REAL(SyntaxError, ERROR_CLASP(JSEXN_SYNTAXERR))                            \
   REAL(TypeError, ERROR_CLASP(JSEXN_TYPEERR))                                \
   REAL(URIError, ERROR_CLASP(JSEXN_URIERR))                                  \
@@ -153,10 +152,8 @@
   REAL(Iterator, OCLASP(Iterator))                                           \
   REAL(AsyncIterator, OCLASP(AsyncIterator))                                 \
   REAL(AbstractModuleSource, &js::AbstractModuleSourceObject::class_)        \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(                                           \
-      REAL(DisposableStack, OCLASP(DisposableStack)))                        \
-  IF_EXPLICIT_RESOURCE_MANAGEMENT(                                           \
-      REAL(AsyncDisposableStack, OCLASP(AsyncDisposableStack)))              \
+  REAL(DisposableStack, OCLASP(DisposableStack))                             \
+  REAL(AsyncDisposableStack, OCLASP(AsyncDisposableStack))                   \
   REAL_IF_INTL(Temporal, OCLASP(temporal::Temporal))                         \
   REAL_IF_INTL(Duration, OCLASP(temporal::Duration))                         \
   REAL_IF_INTL(Instant, OCLASP(temporal::Instant))                           \

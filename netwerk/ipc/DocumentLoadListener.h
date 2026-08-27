@@ -410,6 +410,14 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   // is being performed in. For toplevel loads, this will return `nullptr`.
   dom::WindowGlobalParent* GetParentWindowContext() const;
 
+  // Checks for a completed speculation rules prefetch record matching aURI.
+  // If found, copies the prefetch's cookies into the destination partition
+  // and marks the navigation timing as activated from a prefetch.
+  // Only called for document (navigational) loads.
+  // Spec:
+  // https://wicg.github.io/nav-speculation/prefetch.html#create-navigation-params-from-a-prefetch-record
+  void TryActivateFromPrefetch(nsIURI* aURI);
+
   void AddURIVisit(nsIChannel* aChannel, uint32_t aLoadFlags);
   bool HasCrossOriginOpenerPolicyMismatch() const;
   void ApplyPendingFunctions(nsIParentChannel* aChannel) const;
@@ -559,6 +567,11 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   // Indicates if we are loading a javascript URI.
   bool mIsLoadingJSURI = false;
+
+  // Set to true if this load was moved into a container other than the one of
+  // the browsing context it started in, because its URI is bound to that
+  // container. Such a load must be retargeted into a new tab.
+  bool mSwitchedContainer = false;
 
   // Corresponding redirect channel registrar Id for the final channel that
   // we want to use when redirecting the child, or doing a process switch.

@@ -471,11 +471,11 @@ void MacroAssemblerMIPSShared::ma_mod_mask(Register src, Register dest,
 
 // Memory.
 
-FaultingCodeOffset MacroAssemblerMIPSShared::ma_load(
+FaultingCodeRange MacroAssemblerMIPSShared::ma_load(
     Register dest, const BaseIndex& src, LoadStoreSize size,
     LoadStoreExtension extension) {
   UseScratchRegisterScope temps(*this);
-  FaultingCodeOffset fco;
+  FaultingCodeRange fcr;
   if (isLoongson() && ZeroExtend != extension &&
       Imm8::IsInSignedRange(src.offset)) {
     UseScratchRegisterScope temps(*this);
@@ -490,7 +490,7 @@ FaultingCodeOffset MacroAssemblerMIPSShared::ma_load(
       asMasm().ma_dsll(index, src.index, Imm32(shift));
     }
 
-    fco = FaultingCodeOffset(currentOffset());
+    fcr = FaultingCodeRange(currentOffset());
     switch (size) {
       case SizeByte:
         as_gslbx(dest, src.base, index, src.offset);
@@ -507,7 +507,7 @@ FaultingCodeOffset MacroAssemblerMIPSShared::ma_load(
       default:
         MOZ_CRASH("Invalid argument for ma_load");
     }
-    return fco;
+    return fcr;
   }
 
   // dest will be overwritten anyway
@@ -687,17 +687,17 @@ void MacroAssemblerMIPSShared::ma_load_unaligned(
       MOZ_CRASH("Invalid argument for ma_load");
   }
 
-  append(access, wasm::TrapMachineInsnForLoad(byteSize),
-         FaultingCodeOffset(load.getOffset()));
+  asMasm().appendAndVerify(access, wasm::TrapMachineInsnForLoad(byteSize),
+                           FaultingCodeRange(load.getOffset()));
 }
 
-FaultingCodeOffset MacroAssemblerMIPSShared::ma_store(
+FaultingCodeRange MacroAssemblerMIPSShared::ma_store(
     Register data, const BaseIndex& dest, LoadStoreSize size,
     LoadStoreExtension extension) {
   UseScratchRegisterScope temps(*this);
   Register scratch2 = temps.Acquire();
   if (isLoongson() && Imm8::IsInSignedRange(dest.offset)) {
-    FaultingCodeOffset fco;
+    FaultingCodeRange fcr;
     Register index = dest.index;
 
     if (dest.scale != TimesOne) {
@@ -708,7 +708,7 @@ FaultingCodeOffset MacroAssemblerMIPSShared::ma_store(
       asMasm().ma_dsll(index, dest.index, Imm32(shift));
     }
 
-    fco = FaultingCodeOffset(currentOffset());
+    fcr = FaultingCodeRange(currentOffset());
     switch (size) {
       case SizeByte:
         as_gssbx(data, dest.base, index, dest.offset);
@@ -725,7 +725,7 @@ FaultingCodeOffset MacroAssemblerMIPSShared::ma_store(
       default:
         MOZ_CRASH("Invalid argument for ma_store");
     }
-    return fco;
+    return fcr;
   }
 
   asMasm().computeScaledAddress(dest, scratch2);
@@ -921,8 +921,8 @@ void MacroAssemblerMIPSShared::ma_store_unaligned(
     default:
       MOZ_CRASH("Invalid argument for ma_store");
   }
-  append(access, wasm::TrapMachineInsnForStore(byteSize),
-         FaultingCodeOffset(store.getOffset()));
+  asMasm().appendAndVerify(access, wasm::TrapMachineInsnForStore(byteSize),
+                           FaultingCodeRange(store.getOffset()));
 }
 
 // Branches when done from within mips-specific code.
@@ -1398,8 +1398,8 @@ void MacroAssemblerMIPSShared::ma_lis(FloatRegister dest, float value) {
   }
 }
 
-FaultingCodeOffset MacroAssemblerMIPSShared::ma_sd(FloatRegister ft,
-                                                   BaseIndex address) {
+FaultingCodeRange MacroAssemblerMIPSShared::ma_sd(FloatRegister ft,
+                                                  BaseIndex address) {
   UseScratchRegisterScope temps(*this);
   Register scratch2 = temps.Acquire();
   if (isLoongson() && Imm8::IsInSignedRange(address.offset)) {
@@ -1413,17 +1413,17 @@ FaultingCodeOffset MacroAssemblerMIPSShared::ma_sd(FloatRegister ft,
       asMasm().ma_dsll(index, address.index, Imm32(shift));
     }
 
-    FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
+    FaultingCodeRange fcr = FaultingCodeRange(currentOffset());
     as_gssdx(ft, address.base, index, address.offset);
-    return fco;
+    return fcr;
   }
 
   asMasm().computeScaledAddress(address, scratch2);
   return asMasm().ma_sd(ft, Address(scratch2, address.offset));
 }
 
-FaultingCodeOffset MacroAssemblerMIPSShared::ma_ss(FloatRegister ft,
-                                                   BaseIndex address) {
+FaultingCodeRange MacroAssemblerMIPSShared::ma_ss(FloatRegister ft,
+                                                  BaseIndex address) {
   UseScratchRegisterScope temps(*this);
   Register scratch2 = temps.Acquire();
   if (isLoongson() && Imm8::IsInSignedRange(address.offset)) {
@@ -1437,25 +1437,25 @@ FaultingCodeOffset MacroAssemblerMIPSShared::ma_ss(FloatRegister ft,
       asMasm().ma_dsll(index, address.index, Imm32(shift));
     }
 
-    FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
+    FaultingCodeRange fcr = FaultingCodeRange(currentOffset());
     as_gsssx(ft, address.base, index, address.offset);
-    return fco;
+    return fcr;
   }
 
   asMasm().computeScaledAddress(address, scratch2);
   return asMasm().ma_ss(ft, Address(scratch2, address.offset));
 }
 
-FaultingCodeOffset MacroAssemblerMIPSShared::ma_ld(FloatRegister ft,
-                                                   const BaseIndex& src) {
+FaultingCodeRange MacroAssemblerMIPSShared::ma_ld(FloatRegister ft,
+                                                  const BaseIndex& src) {
   UseScratchRegisterScope temps(*this);
   Register scratch2 = temps.Acquire();
   asMasm().computeScaledAddress(src, scratch2);
   return asMasm().ma_ld(ft, Address(scratch2, src.offset));
 }
 
-FaultingCodeOffset MacroAssemblerMIPSShared::ma_ls(FloatRegister ft,
-                                                   const BaseIndex& src) {
+FaultingCodeRange MacroAssemblerMIPSShared::ma_ls(FloatRegister ft,
+                                                  const BaseIndex& src) {
   UseScratchRegisterScope temps(*this);
   Register scratch2 = temps.Acquire();
   asMasm().computeScaledAddress(src, scratch2);
@@ -1662,23 +1662,23 @@ void MacroAssemblerMIPSShared::minMaxFloat32(FloatRegister srcDest,
   bind(&done);
 }
 
-FaultingCodeOffset MacroAssemblerMIPSShared::loadDouble(const Address& address,
-                                                        FloatRegister dest) {
+FaultingCodeRange MacroAssemblerMIPSShared::loadDouble(const Address& address,
+                                                       FloatRegister dest) {
   return asMasm().ma_ld(dest, address);
 }
 
-FaultingCodeOffset MacroAssemblerMIPSShared::loadDouble(const BaseIndex& src,
-                                                        FloatRegister dest) {
+FaultingCodeRange MacroAssemblerMIPSShared::loadDouble(const BaseIndex& src,
+                                                       FloatRegister dest) {
   return asMasm().ma_ld(dest, src);
 }
 
-FaultingCodeOffset MacroAssemblerMIPSShared::loadFloat32(const Address& address,
-                                                         FloatRegister dest) {
+FaultingCodeRange MacroAssemblerMIPSShared::loadFloat32(const Address& address,
+                                                        FloatRegister dest) {
   return asMasm().ma_ls(dest, address);
 }
 
-FaultingCodeOffset MacroAssemblerMIPSShared::loadFloat32(const BaseIndex& src,
-                                                         FloatRegister dest) {
+FaultingCodeRange MacroAssemblerMIPSShared::loadFloat32(const BaseIndex& src,
+                                                        FloatRegister dest) {
   return asMasm().ma_ls(dest, src);
 }
 
@@ -1943,10 +1943,10 @@ void MacroAssembler::comment(const char* msg) { Assembler::comment(msg); }
 // ===============================================================
 // WebAssembly
 
-FaultingCodeOffset MacroAssembler::wasmTrapInstruction() {
-  FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
+FaultingCodeRange MacroAssembler::wasmTrapInstruction() {
+  FaultingCodeRange fcr = FaultingCodeRange(currentOffset());
   as_teq(zero, zero, WASM_TRAP);
-  return fco;
+  return fcr;
 }
 
 void MacroAssembler::wasmTruncateDoubleToInt32(FloatRegister input,
@@ -2220,21 +2220,21 @@ void MacroAssemblerMIPSShared::wasmLoadImpl(
   }
 
   asMasm().memoryBarrierBefore(access.sync());
-  FaultingCodeOffset fco;
+  FaultingCodeRange fcr;
   if (isFloat) {
     if (byteSize == 4) {
-      fco = asMasm().ma_ls(output.fpu(), address);
+      fcr = asMasm().ma_ls(output.fpu(), address);
     } else {
-      fco = asMasm().ma_ld(output.fpu(), address);
+      fcr = asMasm().ma_ld(output.fpu(), address);
     }
   } else {
-    fco = asMasm().ma_load(output.gpr(), address,
+    fcr = asMasm().ma_load(output.gpr(), address,
                            static_cast<LoadStoreSize>(8 * byteSize),
                            isSigned ? SignExtend : ZeroExtend);
   }
-  asMasm().append(access,
-                  wasm::TrapMachineInsnForLoad(Scalar::byteSize(access.type())),
-                  fco);
+  asMasm().appendAndVerify(
+      access, wasm::TrapMachineInsnForLoad(Scalar::byteSize(access.type())),
+      fcr);
 
   asMasm().memoryBarrierAfter(access.sync());
 }
@@ -2275,21 +2275,21 @@ void MacroAssemblerMIPSShared::wasmStoreImpl(
 
   asMasm().memoryBarrierBefore(access.sync());
   // Only the last emitted instruction is a memory access.
-  FaultingCodeOffset fco;
+  FaultingCodeRange fcr;
   if (isFloat) {
     if (byteSize == 4) {
-      fco = asMasm().ma_ss(value.fpu(), address);
+      fcr = asMasm().ma_ss(value.fpu(), address);
     } else {
-      fco = asMasm().ma_sd(value.fpu(), address);
+      fcr = asMasm().ma_sd(value.fpu(), address);
     }
   } else {
-    fco = asMasm().ma_store(value.gpr(), address,
+    fcr = asMasm().ma_store(value.gpr(), address,
                             static_cast<LoadStoreSize>(8 * byteSize),
                             isSigned ? SignExtend : ZeroExtend);
   }
-  asMasm().append(
+  asMasm().appendAndVerify(
       access, wasm::TrapMachineInsnForStore(Scalar::byteSize(access.type())),
-      fco);
+      fcr);
   asMasm().memoryBarrierAfter(access.sync());
 }
 
@@ -2368,16 +2368,16 @@ static void CompareExchange(MacroAssembler& masm,
     masm.memoryBarrierBefore(sync);
     masm.bind(&again);
 
-    if (access) {
-      masm.append(*access, wasm::TrapMachineInsn::Load32,
-                  FaultingCodeOffset(masm.currentOffset()));
-    }
-
+    FaultingCodeRange fcr(masm.currentOffset());
     masm.as_ll(output, scratch2, 0);
     masm.ma_b(output, oldval, &end, Assembler::NotEqual, ShortJump);
     masm.ma_move(scratch, newval);
     masm.as_sc(scratch, scratch2, 0);
     masm.ma_b(scratch, scratch, &again, Assembler::Zero, ShortJump);
+
+    if (access) {
+      masm.appendAndVerify(*access, wasm::TrapMachineInsn::Load32, fcr);
+    }
 
     masm.memoryBarrierAfter(sync);
     masm.bind(&end);
@@ -2399,15 +2399,14 @@ static void CompareExchange(MacroAssembler& masm,
 
   masm.bind(&again);
 
-  if (access) {
-    masm.append(*access, wasm::TrapMachineInsn::Load32,
-                FaultingCodeOffset(masm.currentOffset()));
-  }
-
+  FaultingCodeRange fcr(masm.currentOffset());
   Register scratch = temps.Acquire();
   masm.as_ll(scratch, scratch2, 0);
-
   masm.as_srlv(output, scratch, offsetTemp);
+
+  if (access) {
+    masm.appendAndVerify(*access, wasm::TrapMachineInsn::Load32, fcr);
+  }
 
   switch (nbytes) {
     case 1:
@@ -2526,12 +2525,11 @@ static void AtomicExchange(MacroAssembler& masm,
     masm.memoryBarrierBefore(sync);
     masm.bind(&again);
 
-    if (access) {
-      masm.append(*access, wasm::TrapMachineInsn::Load32,
-                  FaultingCodeOffset(masm.currentOffset()));
-    }
-
+    FaultingCodeRange fcr(masm.currentOffset());
     masm.as_ll(output, scratch2, 0);
+    if (access) {
+      masm.appendAndVerify(*access, wasm::TrapMachineInsn::Load32, fcr);
+    }
     masm.ma_move(scratch, value);
     masm.as_sc(scratch, scratch2, 0);
     masm.ma_b(scratch, scratch, &again, Assembler::Zero, ShortJump);
@@ -2564,13 +2562,13 @@ static void AtomicExchange(MacroAssembler& masm,
 
   masm.bind(&again);
 
-  if (access) {
-    masm.append(*access, wasm::TrapMachineInsn::Load32,
-                FaultingCodeOffset(masm.currentOffset()));
-  }
-
+  FaultingCodeRange fcr(masm.currentOffset());
   Register scratch = temps.Acquire();
   masm.as_ll(output, scratch2, 0);
+  if (access) {
+    masm.appendAndVerify(*access, wasm::TrapMachineInsn::Load32, fcr);
+  }
+
   masm.as_and(scratch, output, maskTemp);
   masm.as_or(scratch, scratch, valueTemp);
 
@@ -2667,12 +2665,11 @@ static void AtomicFetchOp(MacroAssembler& masm,
     masm.memoryBarrierBefore(sync);
     masm.bind(&again);
 
-    if (access) {
-      masm.append(*access, wasm::TrapMachineInsn::Load32,
-                  FaultingCodeOffset(masm.currentOffset()));
-    }
-
+    FaultingCodeRange fcr(masm.currentOffset());
     masm.as_ll(output, scratch2, 0);
+    if (access) {
+      masm.appendAndVerify(*access, wasm::TrapMachineInsn::Load32, fcr);
+    }
 
     switch (op) {
       case AtomicOp::Add:
@@ -2716,15 +2713,13 @@ static void AtomicFetchOp(MacroAssembler& masm,
 
   masm.bind(&again);
 
-  if (access) {
-    masm.append(*access, wasm::TrapMachineInsn::Load32,
-                FaultingCodeOffset(masm.currentOffset()));
-  }
-
+  FaultingCodeRange fcr(masm.currentOffset());
   Register scratch = temps.Acquire();
   masm.as_ll(scratch, scratch2, 0);
   masm.as_srlv(output, scratch, offsetTemp);
-
+  if (access) {
+    masm.appendAndVerify(*access, wasm::TrapMachineInsn::Load32, fcr);
+  }
   switch (op) {
     case AtomicOp::Add:
       masm.as_addu(valueTemp, output, value);
@@ -2852,12 +2847,12 @@ static void AtomicEffectOp(MacroAssembler& masm,
     masm.memoryBarrierBefore(sync);
     masm.bind(&again);
 
-    if (access) {
-      masm.append(*access, wasm::TrapMachineInsn::Load32,
-                  FaultingCodeOffset(masm.currentOffset()));
-    }
-
+    FaultingCodeRange fcr(masm.currentOffset());
     masm.as_ll(scratch, scratch2, 0);
+
+    if (access) {
+      masm.appendAndVerify(*access, wasm::TrapMachineInsn::Load32, fcr);
+    }
 
     switch (op) {
       case AtomicOp::Add:
@@ -2901,14 +2896,14 @@ static void AtomicEffectOp(MacroAssembler& masm,
 
   masm.bind(&again);
 
-  if (access) {
-    masm.append(*access, wasm::TrapMachineInsn::Load32,
-                FaultingCodeOffset(masm.currentOffset()));
-  }
-
+  FaultingCodeRange fcr(masm.currentOffset());
   Register scratch = temps.Acquire();
   masm.as_ll(scratch, scratch2, 0);
   masm.as_srlv(valueTemp, scratch, offsetTemp);
+
+  if (access) {
+    masm.appendAndVerify(*access, wasm::TrapMachineInsn::Load32, fcr);
+  }
 
   switch (op) {
     case AtomicOp::Add:

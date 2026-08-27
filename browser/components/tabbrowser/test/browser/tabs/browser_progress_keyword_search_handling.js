@@ -13,7 +13,7 @@ const kButton = document.getElementById("reload-button");
 const IS_UPGRADING_SCHEMELESS = SpecialPowers.getBoolPref(
   "dom.security.https_first_schemeless"
 );
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 const DEFAULT_URL_SCHEME = IS_UPGRADING_SCHEMELESS ? "https://" : "http://";
 
 add_setup(async function () {

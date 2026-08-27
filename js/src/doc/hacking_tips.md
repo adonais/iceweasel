@@ -7,7 +7,7 @@ This is archived here because it captures valuable documentation that even if po
 ---
 
 
-This page lists a few tips to help you investigate issues related to SpiderMonkey. All tips listed here are dealing with the JavaScript shell obtained at the end of the [build documentation of SpiderMonkey](build.rst). It is separated in 2 parts, one section related to debugging and another section related to drafting optimizations. Many of these tips only apply to debug builds of the JS shell; they will not function in a release build.
+This page lists a few tips to help you investigate issues related to SpiderMonkey. All tips listed here are dealing with the JavaScript shell obtained at the end of the [build documentation of SpiderMonkey](build.md). It is separated in 2 parts, one section related to debugging and another section related to drafting optimizations. Many of these tips only apply to debug builds of the JS shell; they will not function in a release build.
 
 ## Tools
 
@@ -359,7 +359,7 @@ Note: the line 3196, listed above, corresponds to the location of the [Jit spew 
 
 ### Using the Gecko Profiler (browser / xpcshell)
 
-See the section dedicated to [profiling with the Gecko Profiler](/tools/profiler/index.rst). This method of profiling has the advantage of mixing the JavaScript stack with the C++ stack, which is useful for analyzing library function issues.
+See the section dedicated to [profiling with the Gecko Profiler](/tools/profiler/index.md). This method of profiling has the advantage of mixing the JavaScript stack with the C++ stack, which is useful for analyzing library function issues.
 
 One tip is to start looking at a script with an inverted JS stack to locate the most expensive JS function, then to focus on the frame of this JS function, and to remove the inverted stack and look at C++ part of this function to determine from where the cost is coming from.
 

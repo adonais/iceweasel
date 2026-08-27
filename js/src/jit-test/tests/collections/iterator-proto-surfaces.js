@@ -27,9 +27,7 @@ function test(constructor) {
                         "forEach", "some", "every", "find", "includes", "join",
                         "chunks", "windows", "constructor", Symbol.iterator,
                         Symbol.toStringTag];
-    if (getBuildConfiguration("explicit-resource-management")) {
-      expectedKeys.splice(expectedKeys.length - 1, 0, Symbol.dispose);
-    }
+    expectedKeys.splice(expectedKeys.length - 1, 0, Symbol.dispose);
     assertDeepEq(Reflect.ownKeys(proto2), expectedKeys);
     assertEq(proto2[Symbol.iterator](), proto2);
 

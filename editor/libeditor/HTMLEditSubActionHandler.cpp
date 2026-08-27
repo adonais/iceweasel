@@ -263,6 +263,10 @@ void HTMLEditor::OnStartToHandleTopLevelEditSubAction(
 
   // Remember current inline styles for deletion and normal insertion ops
   const bool cacheInlineStyles = [&]() {
+    if (GetEditActionEditContext()) {
+      // EditContext doesn't have styles.
+      return false;
+    }
     switch (aTopLevelEditSubAction) {
       case EditSubAction::eInsertText:
       case EditSubAction::eInsertTextComingFromIME:
@@ -487,7 +491,8 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
         NS_WARNING("There was no selection range");
         return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
       }
-      Element* const editingHost = ComputeEditingHost(LimitInBodyElement::No);
+      const RefPtr<Element> editingHost =
+          ComputeEditingHost(LimitInBodyElement::No);
       if (!editingHost) [[unlikely]] {
         return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
       }
@@ -683,6 +688,12 @@ Result<EditActionResult, nsresult> HTMLEditor::CanHandleHTMLEditSubAction(
 
   if (NS_WARN_IF(Destroyed())) {
     return Err(NS_ERROR_EDITOR_DESTROYED);
+  }
+
+  if (GetEditActionEditContext()) {
+    // For EditContext, we always accept text input, even if the selection
+    // is in a non-editable node.
+    return EditActionResult::IgnoredResult();
   }
 
   // If there is not selection ranges, we should ignore the result.
@@ -1034,11 +1045,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
   if (RefPtr editContext = GetEditActionEditContext()) {
     uint32_t start = editContext->SelectionStart();
     uint32_t end = editContext->SelectionEnd();
-    RefPtr<nsFrameSelection> frameSelection =
-        SelectionRef().GetFrameSelection();
-    if (NS_WARN_IF(!frameSelection)) {
-      return Err(NS_ERROR_FAILURE);
-    }
+    RefPtr<nsFrameSelection> frameSelection = GetEditableFrameSelection();
     if (InsertingTextForComposition(aPurpose)) {
       MOZ_ASSERT(mComposition);
       if (mComposition->GetContainerTextNode()) {
@@ -1062,7 +1069,8 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
     // inserted text when inserting LTR into RTL, for example.
     // However, we don't do this if the web app changed the text next to the
     // caret, since in that case this may not be a simple insertion.
-    if (!editContext->WasTextNextToCaretChangedByTextUpdateHandler()) {
+    if (frameSelection &&
+        !editContext->WasTextNextToCaretChangedByTextUpdateHandler()) {
       frameSelection->SetHint(CaretAssociationHint::Before);
     }
     return EditActionResult::HandledResult();

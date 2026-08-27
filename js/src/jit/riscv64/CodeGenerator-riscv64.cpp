@@ -15,6 +15,7 @@
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
 #include "jit/MIRGraph.h"
+#include "jit/RangeAnalysis.h"
 #include "jit/ReciprocalMulConstants.h"
 
 #include "jit/shared/CodeGenerator-shared-inl.h"
@@ -690,6 +691,16 @@ static mozilla::Maybe<uint64_t> ToAbsoluteAddress(
   return mozilla::Nothing();
 }
 
+template <class Inst>
+static wasm::ZeroExtendIndex ToZeroExtendIndex(const Inst* ins) {
+  // ptr is a GPR and is either a 32-bit value zero-extended to 64-bit, or a
+  // true 64-bit value.
+  if (ins->mir()->base()->type() == MIRType::Int32) {
+    return wasm::ZeroExtendIndex::Yes;
+  }
+  return wasm::ZeroExtendIndex::No;
+}
+
 void CodeGenerator::visitWasmLoadI64(LWasmLoadI64* ins) {
   const MWasmLoad* mir = ins->mir();
   const auto& access = mir->access();
@@ -700,18 +711,10 @@ void CodeGenerator::visitWasmLoadI64(LWasmLoadI64* ins) {
   if (auto address = ToAbsoluteAddress(ins->ptr(), access)) {
     masm.wasmLoadAbsoluteI64(access, memoryBase, address.value(), output);
   } else {
-    UseScratchRegisterScope temps(&masm);
     Register ptr = ToRegister(ins->ptr());
+    auto zeroExtend = ToZeroExtendIndex(ins);
 
-    // See comment in visitWasmLoad re the type of 'base'.
-    if (mir->base()->type() == MIRType::Int32) {
-      Register scratch = temps.Acquire();
-
-      masm.move32ZeroExtendToPtr(ptr, scratch);
-      ptr = scratch;
-    }
-
-    masm.wasmLoadI64(access, memoryBase, ptr, output);
+    masm.wasmLoadI64(access, memoryBase, ptr, output, zeroExtend);
   }
 }
 
@@ -731,18 +734,10 @@ void CodeGenerator::visitWasmStoreI64(LWasmStoreI64* ins) {
   if (auto address = ToAbsoluteAddress(ins->ptr(), access)) {
     masm.wasmStoreAbsoluteI64(access, value, memoryBase, address.value());
   } else {
-    UseScratchRegisterScope temps(&masm);
     Register ptr = ToRegister(ins->ptr());
+    auto zeroExtend = ToZeroExtendIndex(ins);
 
-    // See comment in visitWasmLoad re the type of 'base'.
-    if (mir->base()->type() == MIRType::Int32) {
-      Register scratch = temps.Acquire();
-
-      masm.move32ZeroExtendToPtr(ptr, scratch);
-      ptr = scratch;
-    }
-
-    masm.wasmStoreI64(access, value, memoryBase, ptr);
+    masm.wasmStoreI64(access, value, memoryBase, ptr, zeroExtend);
   }
 }
 
@@ -890,10 +885,13 @@ void CodeGenerator::visitMinMaxD(LMinMaxD* ins) {
 
   MOZ_ASSERT(first == ToFloatRegister(ins->output()));
 
+  const bool handleNaN =
+      !ins->mir()->range() || ins->mir()->range()->canBeNaN();
+
   if (ins->mir()->isMax()) {
-    masm.maxDouble(second, first, true);
+    masm.maxDouble(second, first, handleNaN);
   } else {
-    masm.minDouble(second, first, true);
+    masm.minDouble(second, first, handleNaN);
   }
 }
 
@@ -903,10 +901,13 @@ void CodeGenerator::visitMinMaxF(LMinMaxF* ins) {
 
   MOZ_ASSERT(first == ToFloatRegister(ins->output()));
 
+  const bool handleNaN =
+      !ins->mir()->range() || ins->mir()->range()->canBeNaN();
+
   if (ins->mir()->isMax()) {
-    masm.maxFloat32(second, first, true);
+    masm.maxFloat32(second, first, handleNaN);
   } else {
-    masm.minFloat32(second, first, true);
+    masm.minFloat32(second, first, handleNaN);
   }
 }
 
@@ -1771,29 +1772,37 @@ void CodeGenerator::visitUrshD(LUrshD* ins) {
 }
 
 void CodeGenerator::visitPowHalfD(LPowHalfD* ins) {
-  FloatRegister input = ToFloatRegister(ins->input());
-  FloatRegister output = ToFloatRegister(ins->output());
+  const FloatRegister input = ToFloatRegister(ins->input());
+  const FloatRegister output = ToFloatRegister(ins->output());
   ScratchDoubleScope fpscratch(masm);
 
-  Label done, skip;
+  FloatRegister fsqrtRs1 = input;
 
-  // Masm.pow(-Infinity, 0.5) == Infinity.
-  masm.loadConstantDouble(NegativeInfinity<double>(), fpscratch);
-  masm.BranchFloat64(Assembler::DoubleNotEqualOrUnordered, input, fpscratch,
-                     &skip, ShortJump);
-  {
-    masm.fneg_d(output, fpscratch);
-    masm.jump(&done);
+  Label done, notNegInf;
+  if (!ins->mir()->operandIsNeverNegativeInfinity()) {
+    // Masm.pow(-Infinity, 0.5) == Infinity.
+    masm.loadConstantDouble(NegativeInfinity<double>(), fpscratch);
+    masm.BranchFloat64(Assembler::DoubleNotEqualOrUnordered, input, fpscratch,
+                       &notNegInf, ShortJump);
+    {
+      masm.fneg_d(output, fpscratch);
+      masm.jump(&done);
+    }
+    masm.bind(&notNegInf);
   }
-  masm.bind(&skip);
 
-  // Math.pow(-0, 0.5) == 0 == Math.pow(0, 0.5).
-  // Adding 0 converts any -0 to 0.
-  masm.loadConstantDouble(0.0, fpscratch);
-  masm.fadd_d(output, input, fpscratch);
-  masm.fsqrt_d(output, output);
+  if (!ins->mir()->operandIsNeverNegativeZero()) {
+    // Math.pow(-0, 0.5) == 0 == Math.pow(0, 0.5).
+    // Adding 0 converts any -0 to 0.
+    masm.loadConstantDouble(0.0, fpscratch);
+    masm.fadd_d(output, input, fpscratch);
+    fsqrtRs1 = output;
+  }
+  masm.fsqrt_d(output, fsqrtRs1);
 
-  masm.bind(&done);
+  if (!ins->mir()->operandIsNeverNegativeInfinity()) {
+    masm.bind(&done);
+  }
 }
 
 void CodeGenerator::visitMathD(LMathD* ins) {
@@ -2052,19 +2061,10 @@ void CodeGenerator::visitWasmLoad(LWasmLoad* ins) {
   if (auto address = ToAbsoluteAddress(ins->ptr(), access)) {
     masm.wasmLoadAbsolute(access, memoryBase, address.value(), output);
   } else {
-    UseScratchRegisterScope temps(&masm);
     Register ptr = ToRegister(ins->ptr());
+    auto zeroExtend = ToZeroExtendIndex(ins);
 
-    // ptr is a GPR and is either a 32-bit value zero-extended to 64-bit, or a
-    // true 64-bit value.
-    if (mir->base()->type() == MIRType::Int32) {
-      Register scratch = temps.Acquire();
-
-      masm.move32ZeroExtendToPtr(ptr, scratch);
-      ptr = scratch;
-    }
-
-    masm.wasmLoad(access, memoryBase, ptr, output);
+    masm.wasmLoad(access, memoryBase, ptr, output, zeroExtend);
   }
 }
 
@@ -2084,19 +2084,10 @@ void CodeGenerator::visitWasmStore(LWasmStore* ins) {
   if (auto address = ToAbsoluteAddress(ins->ptr(), access)) {
     masm.wasmStoreAbsolute(access, value, memoryBase, address.value());
   } else {
-    UseScratchRegisterScope temps(&masm);
     Register ptr = ToRegister(ins->ptr());
+    auto zeroExtend = ToZeroExtendIndex(ins);
 
-    // ptr is a GPR and is either a 32-bit value zero-extended to 64-bit, or a
-    // true 64-bit value.
-    if (mir->base()->type() == MIRType::Int32) {
-      Register scratch = temps.Acquire();
-
-      masm.move32ZeroExtendToPtr(ptr, scratch);
-      ptr = scratch;
-    }
-
-    masm.wasmStore(access, value, memoryBase, ptr);
+    masm.wasmStore(access, value, memoryBase, ptr, zeroExtend);
   }
 }
 
@@ -2106,6 +2097,7 @@ void CodeGenerator::visitWasmCompareExchangeHeap(
   Register memoryBase = ToRegister(ins->memoryBase());
   Register ptrReg = ToRegister(ins->ptr());
   BaseIndex srcAddr(memoryBase, ptrReg, TimesOne, mir->access().offset32());
+  auto zeroExtend = ToZeroExtendIndex(ins);
 
   Register oldval = ToRegister(ins->oldValue());
   Register newval = ToRegister(ins->newValue());
@@ -2114,7 +2106,8 @@ void CodeGenerator::visitWasmCompareExchangeHeap(
   Register maskTemp = ToTempRegisterOrInvalid(ins->temp2());
 
   masm.wasmCompareExchange(mir->access(), srcAddr, oldval, newval, valueTemp,
-                           offsetTemp, maskTemp, ToRegister(ins->output()));
+                           offsetTemp, maskTemp, ToRegister(ins->output()),
+                           zeroExtend);
 }
 
 void CodeGenerator::visitWasmAtomicExchangeHeap(LWasmAtomicExchangeHeap* ins) {
@@ -2123,13 +2116,14 @@ void CodeGenerator::visitWasmAtomicExchangeHeap(LWasmAtomicExchangeHeap* ins) {
   Register ptrReg = ToRegister(ins->ptr());
   Register value = ToRegister(ins->value());
   BaseIndex srcAddr(memoryBase, ptrReg, TimesOne, mir->access().offset32());
+  auto zeroExtend = ToZeroExtendIndex(ins);
 
   Register valueTemp = ToTempRegisterOrInvalid(ins->temp0());
   Register offsetTemp = ToTempRegisterOrInvalid(ins->temp1());
   Register maskTemp = ToTempRegisterOrInvalid(ins->temp2());
 
   masm.wasmAtomicExchange(mir->access(), srcAddr, value, valueTemp, offsetTemp,
-                          maskTemp, ToRegister(ins->output()));
+                          maskTemp, ToRegister(ins->output()), zeroExtend);
 }
 
 void CodeGenerator::visitWasmAtomicBinopHeap(LWasmAtomicBinopHeap* ins) {
@@ -2143,10 +2137,11 @@ void CodeGenerator::visitWasmAtomicBinopHeap(LWasmAtomicBinopHeap* ins) {
   Register maskTemp = ToTempRegisterOrInvalid(ins->temp2());
 
   BaseIndex srcAddr(memoryBase, ptrReg, TimesOne, mir->access().offset32());
+  auto zeroExtend = ToZeroExtendIndex(ins);
 
-  masm.wasmAtomicFetchOp(mir->access(), mir->operation(),
-                         ToRegister(ins->value()), srcAddr, valueTemp,
-                         offsetTemp, maskTemp, ToRegister(ins->output()));
+  masm.wasmAtomicFetchOp(
+      mir->access(), mir->operation(), ToRegister(ins->value()), srcAddr,
+      valueTemp, offsetTemp, maskTemp, ToRegister(ins->output()), zeroExtend);
 }
 
 void CodeGenerator::visitWasmAtomicBinopHeapForEffect(
@@ -2161,9 +2156,11 @@ void CodeGenerator::visitWasmAtomicBinopHeapForEffect(
   Register maskTemp = ToTempRegisterOrInvalid(ins->temp2());
 
   BaseIndex srcAddr(memoryBase, ptrReg, TimesOne, mir->access().offset32());
+  auto zeroExtend = ToZeroExtendIndex(ins);
+
   masm.wasmAtomicEffectOp(mir->access(), mir->operation(),
                           ToRegister(ins->value()), srcAddr, valueTemp,
-                          offsetTemp, maskTemp);
+                          offsetTemp, maskTemp, zeroExtend);
 }
 
 void CodeGenerator::visitWasmStackArg(LWasmStackArg* ins) {
@@ -2685,7 +2682,6 @@ void CodeGenerator::visitAtomicTypedArrayElementBinop64(
 
   Register elements = ToRegister(ins->elements());
   Register64 value = ToRegister64(ins->value());
-  Register64 temp = ToRegister64(ins->temp0());
   Register64 out = ToOutRegister64(ins);
 
   Scalar::Type arrayType = ins->mir()->arrayType();
@@ -2694,8 +2690,8 @@ void CodeGenerator::visitAtomicTypedArrayElementBinop64(
   auto dest = ToAddressOrBaseIndex(elements, ins->index(), arrayType);
 
   dest.match([&](const auto& dest) {
-    masm.atomicFetchOp64(Synchronization::Full(), atomicOp, value, dest, temp,
-                         out);
+    masm.atomicFetchOp64(Synchronization::Full(), atomicOp, value, dest,
+                         Register64::Invalid(), out);
   });
 }
 
@@ -2705,7 +2701,6 @@ void CodeGenerator::visitAtomicTypedArrayElementBinopForEffect64(
 
   Register elements = ToRegister(ins->elements());
   Register64 value = ToRegister64(ins->value());
-  Register64 temp = ToRegister64(ins->temp0());
 
   Scalar::Type arrayType = ins->mir()->arrayType();
   AtomicOp atomicOp = ins->mir()->operation();
@@ -2713,7 +2708,8 @@ void CodeGenerator::visitAtomicTypedArrayElementBinopForEffect64(
   auto dest = ToAddressOrBaseIndex(elements, ins->index(), arrayType);
 
   dest.match([&](const auto& dest) {
-    masm.atomicEffectOp64(Synchronization::Full(), atomicOp, value, dest, temp);
+    masm.atomicEffectOp64(Synchronization::Full(), atomicOp, value, dest,
+                          Register64::Invalid());
   });
 }
 
@@ -2754,8 +2750,10 @@ void CodeGenerator::visitWasmCompareExchangeI64(LWasmCompareExchangeI64* ins) {
   uint32_t offset = ins->mir()->access().offset32();
 
   BaseIndex addr(memoryBase, ptr, TimesOne, offset);
+  auto zeroExtend = ToZeroExtendIndex(ins);
+
   masm.wasmCompareExchange64(ins->mir()->access(), addr, oldValue, newValue,
-                             output);
+                             output, zeroExtend);
 }
 
 void CodeGenerator::visitWasmAtomicExchangeI64(LWasmAtomicExchangeI64* ins) {
@@ -2766,7 +2764,10 @@ void CodeGenerator::visitWasmAtomicExchangeI64(LWasmAtomicExchangeI64* ins) {
   uint32_t offset = ins->mir()->access().offset32();
 
   BaseIndex addr(memoryBase, ptr, TimesOne, offset);
-  masm.wasmAtomicExchange64(ins->mir()->access(), addr, value, output);
+  auto zeroExtend = ToZeroExtendIndex(ins);
+
+  masm.wasmAtomicExchange64(ins->mir()->access(), addr, value, output,
+                            zeroExtend);
 }
 
 void CodeGenerator::visitWasmAtomicBinopI64(LWasmAtomicBinopI64* ins) {
@@ -2774,13 +2775,13 @@ void CodeGenerator::visitWasmAtomicBinopI64(LWasmAtomicBinopI64* ins) {
   Register ptr = ToRegister(ins->ptr());
   Register64 value = ToRegister64(ins->value());
   Register64 output = ToOutRegister64(ins);
-  Register64 temp = ToRegister64(ins->temp0());
   uint32_t offset = ins->mir()->access().offset32();
 
   BaseIndex addr(memoryBase, ptr, TimesOne, offset);
+  auto zeroExtend = ToZeroExtendIndex(ins);
 
   masm.wasmAtomicFetchOp64(ins->mir()->access(), ins->mir()->operation(), value,
-                           addr, temp, output);
+                           addr, Register64::Invalid(), output, zeroExtend);
 }
 
 void CodeGenerator::visitSimd128(LSimd128* ins) { MOZ_CRASH("No SIMD"); }

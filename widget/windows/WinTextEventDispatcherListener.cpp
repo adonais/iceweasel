@@ -29,10 +29,6 @@ void WinTextEventDispatcherListener::Shutdown() { sInstance = nullptr; }
 NS_IMPL_ISUPPORTS(WinTextEventDispatcherListener, TextEventDispatcherListener,
                   nsISupportsWeakReference)
 
-WinTextEventDispatcherListener::WinTextEventDispatcherListener() {}
-
-WinTextEventDispatcherListener::~WinTextEventDispatcherListener() {}
-
 NS_IMETHODIMP
 WinTextEventDispatcherListener::NotifyIME(
     TextEventDispatcher* aTextEventDispatcher,

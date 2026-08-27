@@ -67,8 +67,11 @@ formatting string is passed as the *msg* argument, like normal.
 If you were logging to a logger directly, you would do something like:
 
 ```python
-logger.log(logging.INFO, 'My name is {name}',
-    extra={'action': 'my_name', 'params': {'name': 'Gregory'}})
+logger.log(
+    logging.INFO,
+    "My name is {name}",
+    extra={"action": "my_name", "params": {"name": "Gregory"}},
+)
 ```
 
 The JSON logging would produce something like:
@@ -92,8 +95,8 @@ LoggingMixin:
 import logging
 from mach.mixin.logging import LoggingMixin
 
+
 class MyClass(LoggingMixin):
     def foo(self):
-         self.log(logging.INFO, 'foo_start', {'bar': True},
-             'Foo performed. Bar: {bar}')
+        self.log(logging.INFO, "foo_start", {"bar": True}, "Foo performed. Bar: {bar}")
 ```

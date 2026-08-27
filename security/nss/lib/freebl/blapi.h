@@ -328,11 +328,6 @@ extern SECStatus DSA_SignDigestWithSeed(DSAPrivateKey *key,
 ** Diffie Helman key exchange algorithm
 */
 
-/* Generates parameters for Diffie-Helman key generation.
-**  primeLen is the length in bytes of prime P to be generated.
-*/
-extern SECStatus DH_GenParam(int primeLen, DHParams **params);
-
 /* Generates a public and private key, both of which are encoded in a single
 **  DHPrivateKey struct. Params is input, privKey are output.
 **  This is Phase 1 of Diffie Hellman.

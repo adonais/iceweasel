@@ -1,0 +1,19 @@
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+  const cnv = new OffscreenCanvas(256, 35)
+  const frame = new VideoFrame(cnv, {
+    "timestamp": 1859746,
+    "visibleRect": {
+      "width": 19,
+      "height": 29
+    },
+  })
+  const arr = new BigInt64Array(4664)
+  Object.defineProperty(Object.prototype, "then", {
+    async get() {
+      try { await frame.copyTo(arr) } catch (e) {}
+    }
+  })
+  await fetch("/")
+})
+</script>

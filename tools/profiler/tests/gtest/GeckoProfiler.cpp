@@ -7,6 +7,7 @@
 // happens when calling these functions. They don't do much inspection of
 // profiler internals.
 
+#include "mozilla/ProfileChunkedBuffer.h"
 #include "mozilla/ProfilerPlatformMacros.h"
 #include "mozilla/ProfilerThreadPlatformData.h"
 #include "mozilla/ProfilerThreadRegistration.h"
@@ -49,6 +50,7 @@
 #include "NetworkMarker.h"
 #include "platform.h"
 #include "ProfileBuffer.h"
+#include "ProfiledThreadData.h"
 #include "ProfilerControl.h"
 
 #include "js/Initialization.h"
@@ -2529,6 +2531,7 @@ TEST(GeckoProfiler, Markers)
       schema.AddKeyFormat("key with percentage", MS::Format::Percentage);
       schema.AddKeyFormat("key with integer", MS::Format::Integer);
       schema.AddKeyFormat("key with decimal", MS::Format::Decimal);
+      schema.AddKeyFormat("key with hexadecimal", MS::Format::Hexadecimal);
       schema.AddStaticLabelValue("static label", "static value");
       schema.AddKeyFormat("key with unique string", MS::Format::UniqueString);
       schema.AddKeyFormat("key with sanitized string",
@@ -3205,7 +3208,11 @@ TEST(GeckoProfiler, Markers)
                   ts2Double = marker[END_TIME].asDouble();
                   state = State(S_FirstMarker + 1);
                   EXPECT_EQ(typeString, "Text");
-                  EXPECT_EQ_JSON(payload["name"], String, "First Marker");
+                  // The Text marker's "name" field is a unique string.
+                  ASSERT_TRUE(payload["name"].isUInt());
+                  GET_JSON(firstMarkerName,
+                           stringTable[payload["name"].asUInt()], String);
+                  EXPECT_EQ(firstMarkerName.asString(), "First Marker");
 
                 } else if (nameString == "Gtest custom marker") {
                   EXPECT_EQ(state, S_CustomMarker);
@@ -3480,14 +3487,22 @@ TEST(GeckoProfiler, Markers)
                   EXPECT_EQ(typeString, "Text");
                   EXPECT_FALSE(payload["stack"].isNull());
                   EXPECT_TIMING_INTERVAL_AT(ts1Double, ts2Double);
-                  EXPECT_EQ_JSON(payload["name"], String, "");
+                  // The Text marker's "name" field is a unique string.
+                  ASSERT_TRUE(payload["name"].isUInt());
+                  GET_JSON(textName, stringTable[payload["name"].asUInt()],
+                           String);
+                  EXPECT_EQ(textName.asString(), "");
 
                 } else if (nameString == "Text from main thread with stack") {
                   EXPECT_EQ(state, S_TextToMTWithStack);
                   state = State(S_TextToMTWithStack + 1);
                   EXPECT_EQ(typeString, "Text");
                   EXPECT_FALSE(payload["stack"].isNull());
-                  EXPECT_EQ_JSON(payload["name"], String, "");
+                  // The Text marker's "name" field is a unique string.
+                  ASSERT_TRUE(payload["name"].isUInt());
+                  GET_JSON(textName, stringTable[payload["name"].asUInt()],
+                           String);
+                  EXPECT_EQ(textName.asString(), "");
 
                 } else if (nameString ==
                            "Text in registered thread with stack") {
@@ -3500,7 +3515,11 @@ TEST(GeckoProfiler, Markers)
                   state = State(S_RegThread_TextToMTWithStack + 1);
                   EXPECT_EQ(typeString, "Text");
                   EXPECT_FALSE(payload["stack"].isNull());
-                  EXPECT_EQ_JSON(payload["name"], String, "");
+                  // The Text marker's "name" field is a unique string.
+                  ASSERT_TRUE(payload["name"].isUInt());
+                  GET_JSON(textName, stringTable[payload["name"].asUInt()],
+                           String);
+                  EXPECT_EQ(textName.asString(), "");
 
                 } else if (nameString ==
                            "Text in unregistered thread with stack") {
@@ -3513,7 +3532,11 @@ TEST(GeckoProfiler, Markers)
                   state = State(S_UnregThread_TextToMTWithStack + 1);
                   EXPECT_EQ(typeString, "Text");
                   EXPECT_TRUE(payload["stack"].isNull());
-                  EXPECT_EQ_JSON(payload["name"], String, "");
+                  // The Text marker's "name" field is a unique string.
+                  ASSERT_TRUE(payload["name"].isUInt());
+                  GET_JSON(textName, stringTable[payload["name"].asUInt()],
+                           String);
+                  EXPECT_EQ(textName.asString(), "");
                 }
               }  // marker with payload
             }  // for (marker : data)
@@ -3556,7 +3579,7 @@ TEST(GeckoProfiler, Markers)
             ASSERT_TRUE(data[0u].isObject());
             EXPECT_EQ_JSON(data[0u]["key"], String, "name");
             EXPECT_EQ_JSON(data[0u]["label"], String, "Details");
-            EXPECT_EQ_JSON(data[0u]["format"], String, "string");
+            EXPECT_EQ_JSON(data[0u]["format"], String, "unique-string");
 
           } else if (nameString == "NoPayloadUserData") {
             // TODO: Remove this when bug 1646714 lands.
@@ -3678,7 +3701,7 @@ TEST(GeckoProfiler, Markers)
             EXPECT_EQ_JSON(schema["tableLabel"], String, "table label");
             EXPECT_EQ_JSON(schema["colorField"], String, "color");
 
-            ASSERT_EQ(data.size(), 19u);
+            ASSERT_EQ(data.size(), 20u);
 
             ASSERT_TRUE(data[0u].isObject());
             EXPECT_EQ_JSON(data[0u]["key"], String, "key with url");
@@ -3746,37 +3769,42 @@ TEST(GeckoProfiler, Markers)
             EXPECT_EQ_JSON(data[12u]["format"], String, "decimal");
 
             ASSERT_TRUE(data[13u].isObject());
-            EXPECT_EQ_JSON(data[13u]["label"], String, "static label");
-            EXPECT_EQ_JSON(data[13u]["value"], String, "static value");
+            EXPECT_EQ_JSON(data[13u]["key"], String, "key with hexadecimal");
+            EXPECT_TRUE(data[13u]["label"].isNull());
+            EXPECT_EQ_JSON(data[13u]["format"], String, "hexadecimal");
 
             ASSERT_TRUE(data[14u].isObject());
-            EXPECT_EQ_JSON(data[14u]["key"], String, "key with unique string");
-            EXPECT_TRUE(data[14u]["label"].isNull());
-            EXPECT_EQ_JSON(data[14u]["format"], String, "unique-string");
+            EXPECT_EQ_JSON(data[14u]["label"], String, "static label");
+            EXPECT_EQ_JSON(data[14u]["value"], String, "static value");
 
             ASSERT_TRUE(data[15u].isObject());
-            EXPECT_EQ_JSON(data[15u]["key"], String,
-                           "key with sanitized string");
+            EXPECT_EQ_JSON(data[15u]["key"], String, "key with unique string");
             EXPECT_TRUE(data[15u]["label"].isNull());
-            EXPECT_EQ_JSON(data[15u]["format"], String, "sanitized-string");
+            EXPECT_EQ_JSON(data[15u]["format"], String, "unique-string");
 
             ASSERT_TRUE(data[16u].isObject());
-            EXPECT_EQ_JSON(data[16u]["key"], String, "key with label hidden");
-            EXPECT_EQ_JSON(data[16u]["label"], String, "label");
-            EXPECT_EQ_JSON(data[16u]["format"], String, "string");
-            EXPECT_EQ_JSON(data[16u]["hidden"], Bool, true);
+            EXPECT_EQ_JSON(data[16u]["key"], String,
+                           "key with sanitized string");
+            EXPECT_TRUE(data[16u]["label"].isNull());
+            EXPECT_EQ_JSON(data[16u]["format"], String, "sanitized-string");
 
             ASSERT_TRUE(data[17u].isObject());
-            EXPECT_EQ_JSON(data[17u]["key"], String, "key hidden");
-            EXPECT_TRUE(data[17u]["label"].isNull());
+            EXPECT_EQ_JSON(data[17u]["key"], String, "key with label hidden");
+            EXPECT_EQ_JSON(data[17u]["label"], String, "label");
             EXPECT_EQ_JSON(data[17u]["format"], String, "string");
             EXPECT_EQ_JSON(data[17u]["hidden"], Bool, true);
 
             ASSERT_TRUE(data[18u].isObject());
-            EXPECT_EQ_JSON(data[18u]["key"], String, "color");
+            EXPECT_EQ_JSON(data[18u]["key"], String, "key hidden");
             EXPECT_TRUE(data[18u]["label"].isNull());
             EXPECT_EQ_JSON(data[18u]["format"], String, "string");
             EXPECT_EQ_JSON(data[18u]["hidden"], Bool, true);
+
+            ASSERT_TRUE(data[19u].isObject());
+            EXPECT_EQ_JSON(data[19u]["key"], String, "color");
+            EXPECT_TRUE(data[19u]["label"].isNull());
+            EXPECT_EQ_JSON(data[19u]["format"], String, "string");
+            EXPECT_EQ_JSON(data[19u]["hidden"], Bool, true);
 
           } else if (nameString == "markers-gtest-base-unique-string") {
             EXPECT_EQ(display.size(), 2u);
@@ -5361,6 +5389,34 @@ TEST(GeckoProfiler, NoMarkerStacks)
   ASSERT_TRUE(!profiler_get_profile());
 }
 
+TEST(GeckoProfiler, CaptureBacktraceIsRightSized)
+{
+  const char* filters[] = {"GeckoMain"};
+
+  profiler_start(PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL,
+                 ProfilerFeature::StackWalk, filters, std::size(filters), 0);
+
+  mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> backtrace =
+      profiler_capture_backtrace();
+  ASSERT_TRUE(!!backtrace);
+
+  // Stacks are captured into a buffer that can hold the deepest possible stack,
+  // but callers may keep a captured backtrace alive for a long time, so it
+  // should only retain as much memory as the stack actually needed.
+  mozilla::Maybe<size_t> bufferLength = backtrace->BufferLength();
+  ASSERT_TRUE(bufferLength.isSome());
+  EXPECT_LT(
+      *bufferLength,
+      size_t(mozilla::ProfileBufferChunkManager::scExpectedMaximumStackSize));
+
+  // The backtrace should still contain the whole captured stack.
+  mozilla::ProfileChunkedBuffer::State state = backtrace->GetState();
+  EXPECT_GT(state.mRangeEnd, state.mRangeStart);
+  EXPECT_EQ(state.mFailedPutBytes, 0u);
+
+  profiler_stop();
+}
+
 // Microbenchmarks measuring marker insertion speed while the profiler is
 // active, for single- and multi-threaded cases with tiny and large markers.
 namespace {
@@ -5854,5 +5910,64 @@ DEFINE_HISTO_TESTS(GeckoProfilerMarkerBenchNoRecycle, "NoRecycle")
 DEFINE_HISTO_TESTS(GeckoProfilerMarkerBenchRecycle, "Recycle")
 
 #undef DEFINE_HISTO_TESTS
+
+// Verifies that when an OS thread id is recycled across several streaming
+// contexts, ProcessStreamingContext::SelectStreamingContextIndex routes a
+// sample to the context whose lifetime window covers its buffer position,
+// rather than the first context with a matching thread id. Regressions here
+// trip a MOZ_RELEASE_ASSERT in UniqueStacks::LookupFramesForJITAddressFrom
+// BufferPos, so this is exercised directly.
+TEST(GeckoProfiler, SelectStreamingContextIndex)
+{
+  using mozilla::Maybe;
+  using mozilla::Nothing;
+  using mozilla::Some;
+  using mozilla::Vector;
+  using PSC = ProcessStreamingContext;
+
+  const ProfilerThreadId tidA = ProfilerThreadId::FromNumber(1628);
+  const ProfilerThreadId tidOther = ProfilerThreadId::FromNumber(4242);
+  const ProfilerThreadId tidUnknown = ProfilerThreadId::FromNumber(999);
+
+  Vector<PSC::ThreadStreamingId> threadIds;
+  auto add = [&](ProfilerThreadId aTid, Maybe<uint64_t> aEnd) {
+    MOZ_RELEASE_ASSERT(threadIds.append(PSC::ThreadStreamingId{aTid, aEnd}));
+  };
+  auto selected = [&](ProfilerThreadId aTid, uint64_t aPos) -> int64_t {
+    Maybe<size_t> index =
+        PSC::SelectStreamingContextIndex(threadIds, aTid, aPos);
+    return index ? int64_t(*index) : -1;
+  };
+
+  // Two dead threads recycling tidA, with an unrelated thread interleaved.
+  add(tidA, Some(uint64_t(3658413)));   // 0: worker A, window [.., 3658413]
+  add(tidOther, Some(uint64_t(5000)));  // 1: unrelated thread id
+  add(tidA, Some(uint64_t(19904658)));  // 2: worker B, window [.., 19904658]
+
+  // A sample inside worker A's window resolves to A.
+  EXPECT_EQ(selected(tidA, 1000000u), 0);
+  // A sample inside worker B's window resolves to B, not the first match (A).
+  EXPECT_EQ(selected(tidA, 19845062u), 2);
+  // Boundary: exactly at A's unregistration position still belongs to A.
+  EXPECT_EQ(selected(tidA, 3658413u), 0);
+  // Just past A's window belongs to B.
+  EXPECT_EQ(selected(tidA, 3658414u), 2);
+  // The unrelated thread id resolves to its own context.
+  EXPECT_EQ(selected(tidOther, 4000u), 1);
+  // A thread id with no context yields no match.
+  EXPECT_EQ(selected(tidUnknown, 1u), -1);
+  // A position past every window for tidA (no live thread) yields no match.
+  EXPECT_EQ(selected(tidA, 20000000u), -1);
+
+  // A still-registered thread (Nothing() end) owns the latest window, but a
+  // dead thread still owns samples within its own earlier window.
+  const ProfilerThreadId tidLive = ProfilerThreadId::FromNumber(77);
+  add(tidLive, Some(uint64_t(100)));  // 3: dead, window [.., 100]
+  add(tidLive, Nothing());            // 4: still registered
+  EXPECT_EQ(selected(tidLive, 50u), 3);
+  EXPECT_EQ(selected(tidLive, 100u), 3);
+  EXPECT_EQ(selected(tidLive, 101u), 4);
+  EXPECT_EQ(selected(tidLive, 20000000u), 4);
+}
 
 }  // namespace

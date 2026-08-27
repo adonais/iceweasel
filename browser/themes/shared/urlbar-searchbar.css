@@ -8,7 +8,7 @@
 :root {
   --urlbar-container-min-width: 310px;
 
-  --urlbar-basic-component-size: calc(var(--urlbar-min-height) - 2 * var(--urlbar-input-container-padding));
+  --urlbar-basic-component-size: calc(var(--urlbar-height) - 2 * var(--urlbar-input-container-padding));
   --urlbar-icon-padding: calc((var(--urlbar-basic-component-size) - 16px) / 2);
 
   /* Usually we wouldn't need snapping border widths manually, but we use this
@@ -18,8 +18,8 @@
   --urlbar-input-container-padding: round(nearest, var(--space-xxsmall) + var(--urlbar-input-container-border-width-breakout), 1px);
 
   @media not -moz-pref("browser.nova.enabled") {
-    --urlbar-basic-component-size: calc(var(--urlbar-min-height) - 2 * (var(--urlbar-input-container-border-width) + var(--urlbar-input-container-padding)));
-    --urlbar-icon-padding: calc((var(--urlbar-min-height) - 2px /* border */ - 2px /* padding */ - 16px /* icon */) / 2);
+    --urlbar-basic-component-size: calc(var(--urlbar-height) - 2 * (var(--urlbar-input-container-border-width) + var(--urlbar-input-container-padding)));
+    --urlbar-icon-padding: calc((var(--urlbar-height) - 2px /* border */ - 2px /* padding */ - 16px /* icon */) / 2);
     --urlbar-input-container-padding: round(up, 1px, env(hairline));
   }
   @media (max-width: 770px) {
@@ -79,17 +79,17 @@
 #searchbar {
   --urlbar-background-border: var(--urlbar-input-container-border-width) solid var(--toolbar-field-border-color);
   --urlbar-background-border-breakout: var(--urlbar-input-container-border-width) solid transparent;
-  --urlbar-background-border-focused: var(--urlbar-input-container-border-width-breakout) solid var(--focus-outline-color);
+  --urlbar-background-border-focused: var(--urlbar-input-container-border-width-breakout) solid var(--toolbar-field-border-color-focus);
   --urlbar-background-border-radius: var(--urlbarview-border-radius);
-  --urlbar-background-border-top-radius-breakout-compact: min(var(--urlbar-background-border-radius), calc(var(--urlbar-min-height) / 2));
+  --urlbar-background-border-top-radius-breakout-compact: min(var(--urlbar-background-border-radius), calc(var(--urlbar-height) / 2));
   --urlbar-background-box-shadow-breakout: 0 0 14px 0 var(--chrome-box-shadow);
   --urlbar-background-box-shadow-breakout-compact: none;
-  --urlbar-background-inset-breakout: calc(var(--urlbar-min-height) / 2 - var(--urlbarview-border-radius));
+  --urlbar-background-inset-breakout: calc(var(--urlbar-height) / 2 - var(--urlbarview-border-radius));
   --urlbar-background-inset-breakout-compact: 0;
   --urlbar-background-outline-focused: none;
   --urlbar-input-container-border: var(--urlbar-input-container-border-width) solid var(--toolbar-field-border-color);
   --urlbar-input-container-outline-breakout: var(--urlbar-input-container-border-width-breakout) solid var(--toolbar-field-border-color);
-  --urlbar-input-container-outline-breakout-focused: var(--urlbar-input-container-border-width-breakout) solid var(--focus-outline-color);
+  --urlbar-input-container-outline-breakout-focused: var(--urlbar-input-container-border-width-breakout) solid var(--toolbar-field-border-color-focus);
   --urlbar-input-container-outline-offset-breakout: calc(-1 * var(--urlbar-input-container-border-width-breakout));
   --urlbar-margin-block-start-breakout: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2);
   --urlbar-searchmode-switcher-panel-list-min-width: 17em;
@@ -120,9 +120,10 @@ toolbar[inactive="true"] .urlbar,
 #urlbar:not([actiontype="switchtab"], [actiontype="extension"]) > .urlbar-input-container > #urlbar-label-box,
 #urlbar:not([actiontype="switchtab"]) > .urlbar-input-container > #urlbar-label-box > #urlbar-label-switchtab,
 #urlbar:not([actiontype="extension"]) > .urlbar-input-container > #urlbar-label-box > #urlbar-label-extension,
-.urlbar-input-container[pageproxystate="invalid"] > #page-action-buttons > .urlbar-page-action,
-#identity-box.chromeUI ~ #page-action-buttons > .urlbar-page-action:not(#star-button-box, #split-view-button),
+.urlbar-input-container[pageproxystate="invalid"] > #page-action-buttons > .urlbar-page-action:not(#share-button),
+#identity-box.chromeUI ~ #page-action-buttons > .urlbar-page-action:not(#star-button-box, #split-view-button, #share-button),
 #urlbar[usertyping] > .urlbar-input-container > #page-action-buttons > #urlbar-zoom-button,
+#urlbar[usertyping] > .urlbar-input-container > #page-action-buttons > .urlbar-page-action,
 .urlbar:not([usertyping]) > .urlbar-input-container > .urlbar-go-button,
 .urlbar:not(#searchbar-new, [focused]) > .urlbar-input-container > .urlbar-go-button,
 #urlbar-revert-button-container {
@@ -180,7 +181,6 @@ toolbar[inactive="true"] .urlbar,
     /* This is technically not needed, because popover takes care of it, but
      * helps for clarity. */
     position: absolute;
-    height: var(--urlbar-height);
     width: var(--urlbar-width);
 
     &[breakout-extend] {
@@ -198,7 +198,7 @@ toolbar[inactive="true"] .urlbar,
   /* Setting a min-width to let the location & search bars maintain a constant
    * width in case they haven't been resized manually. (bug 965772) */
   min-width: 1px;
-  min-height: var(--urlbar-min-height);
+  min-height: var(--urlbar-height);
   text-shadow: none;
   color: var(--toolbar-field-text-color);
 
@@ -315,7 +315,7 @@ toolbar[inactive="true"] .urlbar,
 
   &:focus-within {
     background-color: var(--urlbar-background-color-focus);
-    outline-color: var(--focus-outline-color);
+    outline-color: var(--toolbar-field-border-color-focus);
     outline-width: var(--urlbar-input-container-border-width-breakout);
     outline-offset: calc(-1 * var(--urlbar-input-container-border-width-breakout));
   }
@@ -351,22 +351,24 @@ toolbar[inactive="true"] .urlbar,
   outline: none;
 }
 
-#urlbar-input {
-  mask-repeat: no-repeat;
-  unicode-bidi: plaintext;
-  text-align: match-parent;
-
+.urlbar-input {
   /* Make the editable line box span the field's full inner height so clicking
      anywhere in the field places the caret. The value equals the input's
      available height so it fills the field without growing it. */
-  line-height: var(--urlbar-min-height);
+  line-height: var(--urlbar-height);
 
   /* Proton's input container has a border on each block edge (the border is
      transparent, so invisible, but it still occupies layout space), so subtract
      it to keep the line box within the field's inner height. */
   @media not -moz-pref("browser.nova.enabled") {
-    line-height: calc(var(--urlbar-min-height) - 2 * var(--urlbar-input-container-border-width));
+    line-height: calc(var(--urlbar-height) - 2 * var(--urlbar-input-container-border-width));
   }
+}
+
+#urlbar-input {
+  mask-repeat: no-repeat;
+  unicode-bidi: plaintext;
+  text-align: match-parent;
 
   /* Align URLs to the right in RTL mode. */
   &:-moz-locale-dir(rtl) {
@@ -424,23 +426,6 @@ toolbar[inactive="true"] .urlbar,
   color: var(--toolbar-field-text-color-focus);
 }
 
-@media -moz-pref("browser.nova.enabled") {
-  .urlbar:not(moz-smartbar) {
-    &[breakout] > .urlbar-input-container {
-      height: var(--urlbar-height);
-    }
-
-    &[breakout][breakout-extend] {
-      height: auto;
-    }
-  }
-}
-
-.urlbar-input::placeholder,
-.searchbar-textbox::placeholder {
-  opacity: 0.69;
-}
-
 #TabsToolbar #searchbar:not(:focus-within) {
   /* The tabs toolbar is usually a different color than the other toolbars, and
      we can't predict it, to avoid a transparent field we enforce a border. */
@@ -491,7 +476,6 @@ toolbar[inactive="true"] .urlbar,
   }
 
   .urlbar[breakout][breakout-extend] {
-    height: auto;
     margin-left: calc(-1 * var(--urlbar-margin-inline));
     width: calc(var(--urlbar-width) + 2 * var(--urlbar-margin-inline));
 
@@ -801,6 +785,11 @@ toolbar[inactive="true"] .urlbar,
     color: var(--urlbar-box-text-color-hover);
     outline-color: var(--toolbarbutton-outline-color-active);
   }
+}
+
+.searchbar-textbox:placeholder-shown::-moz-search-clear-button,
+.urlbar-input:placeholder-shown::-moz-search-clear-button {
+  display: none;
 }
 
 .searchbar-textbox::-moz-search-clear-button,
@@ -1392,6 +1381,18 @@ toolbar[inactive="true"] .urlbar,
     @media (not -moz-pref("browser.urlbar.searchModeSwitcher.featureGate")) and (not -moz-pref("browser.urlbar.scotchBonnet.enableOverride")) {
       display: none;
     }
+  }
+
+  &[addengines]::part(button)::after {
+    content: "";
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    inset-block-start: var(--space-xxsmall);
+    inset-inline-start: var(--icon-size);
+    background: url(chrome://browser/skin/search-indicator-badge-add.svg) no-repeat center;
+    background-size: contain;
+    pointer-events: none;
   }
 }
 

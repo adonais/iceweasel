@@ -94,6 +94,15 @@ add_task(async function testDisabled() {
   extension.sendMessage("check-clicked", false);
   await extension.awaitMessage("next-test");
 
+  // clickBrowserAction had to open the addons panel to reach the widget, and
+  // clicking a disabled browserAction does not close it.
+  let panelHidden = BrowserTestUtils.waitForPopupEvent(
+    gUnifiedExtensions.panel,
+    "hidden"
+  );
+  await gUnifiedExtensions.togglePanel();
+  await panelHidden;
+
   CustomizableUI.addWidgetToArea(widget.id, CustomizableUI.AREA_NAVBAR);
 
   extension.sendMessage("enable");

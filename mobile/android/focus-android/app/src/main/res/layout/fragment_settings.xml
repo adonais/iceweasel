@@ -7,5 +7,4 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@android:id/list_container"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/settings_background" />
+    android:layout_height="match_parent" />

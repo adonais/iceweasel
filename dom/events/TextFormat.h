@@ -47,6 +47,18 @@ class TextFormat final : public nsISupports, public nsWrapperCache {
   enum UnderlineThickness mUnderlineThickness;
 };
 
+std::ostream& operator<<(std::ostream& aStream, UnderlineStyle aStyle);
+std::ostream& operator<<(std::ostream& aStream, UnderlineThickness aThickness);
+std::ostream& operator<<(std::ostream& aStream, const TextFormat& aFormat);
+
 }  // namespace mozilla::dom
+
+template <>
+struct fmt::formatter<mozilla::dom::TextFormat> : fmt::ostream_formatter {};
+template <>
+struct fmt::formatter<mozilla::dom::UnderlineStyle> : fmt::ostream_formatter {};
+template <>
+struct fmt::formatter<mozilla::dom::UnderlineThickness>
+    : fmt::ostream_formatter {};
 
 #endif  // DOM_TEXTFORMAT_H_

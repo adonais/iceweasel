@@ -12,7 +12,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   dom: "chrome://remote/content/shared/DOM.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   event: "chrome://remote/content/shared/webdriver/Event.sys.mjs",
-  executeSoon: "chrome://remote/content/shared/Sync.sys.mjs",
   FilePickerListener:
     "chrome://remote/content/shared/listeners/FilePickerListener.sys.mjs",
   OwnershipModel: "chrome://remote/content/webdriver-bidi/RemoteValue.sys.mjs",
@@ -236,8 +235,8 @@ class InputModule extends WindowGlobalBiDiModule {
             this.messageHandler.window
           );
           break;
-        case "synthesizeMultiTouch":
-          lazy.event.synthesizeMultiTouch(
+        case "synthesizeTouchAtPoint":
+          await lazy.event.synthesizeTouchAtPoint(
             details.eventData,
             this.messageHandler.window
           );
@@ -282,7 +281,7 @@ class InputModule extends WindowGlobalBiDiModule {
 
     // Wait until the main thread has processed all already queued-up
     // runnables to ensure that dispatched input events have been handled.
-    await new Promise(resolve => lazy.executeSoon(resolve));
+    await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
   }
 
   async _getClientRects(options) {

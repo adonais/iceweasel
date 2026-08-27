@@ -44,7 +44,7 @@ AccessibleWrap::AccessibleWrap(nsIContent* aContent, DocAccessible* aDoc)
   }
 }
 
-AccessibleWrap::~AccessibleWrap() {}
+AccessibleWrap::~AccessibleWrap() = default;
 
 mozAccessible* AccessibleWrap::GetNativeObject() {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;

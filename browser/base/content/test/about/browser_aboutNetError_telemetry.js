@@ -6,7 +6,7 @@
 const NET_ERROR_PAGE = "https://does-not-exist.test";
 const BAD_CERT = "https://expired.example.com/";
 const AUTH_ROUTE =
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   "http://example.com/browser/browser/base/content/test/about/basic_auth_route.sjs";
 const HTTP_AUTH_PREFS = [
   ["dom.security.https_first", false],

@@ -1,4 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <issues format="6" by="lint 9.2.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.2.1)" variant="all" version="9.2.1">
 
+    <issue
+        id="RtlCompat"
+        message="Inconsistent alignment specification between `textAlignment` and `gravity` attributes: was `center_vertical`, expected `start`"
+        errorLine1="        android:textAlignment=&quot;viewStart&quot;"
+        errorLine2="                               ~~~~~~~~~">
+        <location
+            file="src/main/res/layout/mozac_browser_menu_web_extension.xml"
+            line="30"
+            column="32"/>
+        <location
+            file="src/main/res/layout/mozac_browser_menu_web_extension.xml"
+            line="29"
+            column="26"
+            message="Incompatible direction here"/>
+    </issue>
+
 </issues>

@@ -826,6 +826,11 @@ impl TestTokenManager {
         }
     }
 
+    pub fn has_virtual_authenticator(&self, authenticator_id: &str) -> Result<bool, nsresult> {
+        let guard = self.state.lock().map_err(|_| NS_ERROR_FAILURE)?;
+        Ok(guard.contains_key(authenticator_id))
+    }
+
     pub fn remove_virtual_authenticator(&self, authenticator_id: &str) -> Result<(), nsresult> {
         let mut guard = self.state.lock().map_err(|_| NS_ERROR_FAILURE)?;
         guard

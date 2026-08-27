@@ -1,0 +1,159 @@
+<!-- Test is adapted from test_dynamic_change_causing_reflow.html, similar ideas/structure/helpers -->
+<!DOCTYPE HTML>
+<html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1986640
+-->
+<head>
+  <meta charset="utf-8">
+  <title>Test for Bug 1986640</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+  <style>
+    #basic::before { content: attr(data-x); }
+    #multi::before { content: "[" attr(data-x) "]"; }
+    #classSwap::before { content: "a"; }
+    #classSwap.swapped::before { content: "b"; }
+    #leadingEmpty::before { content: "" attr(data-x); }
+    #table::before { content: attr(data-x); display: table; }
+  </style>
+</head>
+<body>
+<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=1986640">Mozilla Bug 1986640</a>
+<div id="display">
+  <div id="basic" data-x="one"></div>
+  <div id="multi" data-x="one"></div>
+  <div id="classSwap"></div>
+  <div id="leadingEmpty" data-x="one"></div>
+  <div id="table" data-x="one"></div>
+</div>
+<pre id="test">
+<script>
+"use strict";
+
+/**
+ * A text only change to a generated-content `content` value (i.e. changing an
+ * attribute referenced by `content: attr(...)`) should update the existing
+ * generated text node in place, causing reflow but not frame reconstruction.
+ *
+ * Each testcase has:
+ *   - id: id of the originating element.
+ *   - setup: puts the element in its "before" state.
+ *   - mutate: performs the change we're testing.
+ *   - expectConstruction / expectReflow: whether each is expected.
+ */
+const gTestcases = [
+  // Changing the referenced attribute text should reflow in place, not reframe.
+  {
+    id: "basic",
+    setup: e => e.setAttribute("data-x", "one"),
+    mutate: e => e.setAttribute("data-x", "two"),
+    expectConstruction: false,
+    expectReflow: true,
+  },
+  // Same as above, but with a multi-item content list: "[" attr(data-x) "]".
+  {
+    id: "multi",
+    setup: e => e.setAttribute("data-x", "one"),
+    mutate: e => e.setAttribute("data-x", "two"),
+    expectConstruction: false,
+    expectReflow: true,
+  },
+  // Plain string -> string change, takes the same in-place path.
+  {
+    id: "classSwap",
+    setup: e => e.classList.remove("swapped"),
+    mutate: e => e.classList.add("swapped"),
+    expectConstruction: false,
+    expectReflow: true,
+  },
+  // Setting the attribute to its current value changes nothing.
+  {
+    id: "basic",
+    setup: e => e.setAttribute("data-x", "one"),
+    mutate: e => e.setAttribute("data-x", "one"),
+    expectConstruction: false,
+    expectReflow: false,
+  },
+  // A non-empty string -> empty string change should remove the text node, so this reframes.
+  {
+    id: "basic",
+    setup: e => e.setAttribute("data-x", "one"),
+    mutate: e => e.setAttribute("data-x", ""),
+    expectConstruction: true,
+    expectReflow: true,
+  },
+  // An empty string -> non-empty string adds the text node, so this reframes.
+  {
+    id: "basic",
+    setup: e => e.setAttribute("data-x", ""),
+    mutate: e => e.setAttribute("data-x", "one"),
+    expectConstruction: true,
+    expectReflow: true,
+  },
+  // An unchanged empty string, which has no text node, should not cause errors
+  // while updating text items in place (no reframe).
+  {
+    id: "leadingEmpty",
+    setup: e => e.setAttribute("data-x", "one"),
+    mutate: e => e.setAttribute("data-x", "two"),
+    expectConstruction: false,
+    expectReflow: true,
+  },
+  // A display:table pseudo should still update in place, not reframe.
+  {
+    id: "table",
+    setup: e => e.setAttribute("data-x", "one"),
+    mutate: e => e.setAttribute("data-x", "two"),
+    expectConstruction: false,
+    expectReflow: true,
+  },
+ ];
+
+// Helper to pick "is"/"isnot" and assemble the failure message.
+function checkFinalCount(aFinalCount, aExpectedCount,
+                         aExpectChange, aMsgPrefix, aCountDescription)
+{
+  let compareFunc;
+  let msg = aMsgPrefix;
+  if (aExpectChange) {
+    compareFunc = isnot;
+    msg += "should cause " + aCountDescription;
+  } else {
+    compareFunc = is;
+    msg += "should not cause " + aCountDescription;
+  }
+  compareFunc(aFinalCount, aExpectedCount, msg);
+}
+
+const gUtils = SpecialPowers.getDOMWindowUtils(window);
+
+function runOneTest(aTestcase)
+{
+  const elem = document.getElementById(aTestcase.id);
+  const msgPrefix = "Mutation on #" + aTestcase.id + " ";
+
+  // Set the "before" state and flush layout.
+  aTestcase.setup(elem);
+  let unusedVal = elem.offsetHeight;
+
+  const origFramesConstructed = gUtils.framesConstructed;
+  const origFramesReflowed = gUtils.framesReflowed;
+
+  // Make the change and flush.
+  aTestcase.mutate(elem);
+  unusedVal = elem.offsetHeight;
+
+  checkFinalCount(gUtils.framesConstructed, origFramesConstructed,
+                  aTestcase.expectConstruction, msgPrefix,
+                  "frame construction");
+  checkFinalCount(gUtils.framesReflowed, origFramesReflowed,
+                  aTestcase.expectReflow, msgPrefix,
+                  "reflow");
+}
+
+gTestcases.forEach(runOneTest);
+</script>
+</pre>
+</body>
+</html>

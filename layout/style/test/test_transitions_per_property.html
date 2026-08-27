@@ -168,7 +168,7 @@ var supported_properties = {
                           test_float_aboveOne_transition,
                           /* FIXME: font-size-adjust treats zero specially */
                           /* test_float_zeroToOne_clamped */ ],
-    "font-stretch": [ test_percent_transition, test_percent_clamped ],
+    "font-width": [ test_percent_transition, test_percent_clamped ],
     "font-weight": [ test_font_weight ],
     "column-gap": [ test_grid_gap ],
     "row-gap": [ test_grid_gap ],
@@ -321,7 +321,6 @@ var supported_properties = {
     "y": [ test_length_transition, test_percent_transition,
            test_length_unclamped, test_percent_unclamped ],
     "z-index": [ test_integer_transition, test_pos_integer_or_auto_transition ],
-    "-webkit-line-clamp": [ test_pos_integer_or_none_transition ],
     "-webkit-text-fill-color": [ test_color_transition,
                                  test_currentcolor_transition ],
     "-webkit-text-stroke-color": [ test_color_transition,
@@ -363,8 +362,10 @@ if (IsCSSPropertyPrefEnabled("layout.css.backdrop-filter.enabled")) {
   supported_properties["backdrop-filter"] = [ test_filter_transition ];
 }
 
-if (IsCSSPropertyPrefEnabled("layout.css.font-variations.enabled")) {
-  supported_properties["font-variation-settings"] = [ test_font_variations_transition ];
+supported_properties["font-variation-settings"] = [ test_font_variations_transition ];
+
+if (IsCSSPropertyPrefEnabled("layout.css.line-clamp.enabled")) {
+  supported_properties["line-clamp"] = [ test_pos_integer_or_none_transition ];
 }
 
 supported_properties["contain-intrinsic-width"] = [ test_length_transition, test_auto_with_length_transition ];

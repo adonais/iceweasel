@@ -2,14 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#fxaPairDeviceDialog {
-  padding-bottom: 2em;
-}
-
 #pairTitle {
   font-size: 2.1rem;
   font-weight: var(--font-weight-bold);
-  padding-top: 12px;
   text-align: center;
 }
 

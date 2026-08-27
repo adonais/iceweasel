@@ -8,10 +8,8 @@ use euclid::HomogeneousVector;
 use crate::composite::{CompositeFeatures, CompositorClip};
 use crate::pattern::PatternShaderInput;
 use crate::quad::LayoutOrDeviceRect;
-use crate::segment::EdgeMask;
 use crate::transform::GpuTransformId;
 use crate::internal_types::{FrameVec, FrameMemory};
-use crate::prim_store::VECS_PER_SEGMENT;
 use crate::render_task::RenderTaskAddress;
 use crate::render_task_graph::RenderTaskId;
 use crate::renderer::{GpuBufferAddress, GpuBufferBuilderF, GpuBufferHandle, GpuBufferWriterF, GpuBufferDataF, GpuBufferDataI, GpuBufferWriterI, ShaderColorMode};
@@ -24,7 +22,6 @@ use crate::util::pack_as_float;
 // Contains type that must exactly match the same structures declared in GLSL.
 
 pub const VECS_PER_TRANSFORM: usize = 8;
-pub const VECS_PER_SPECIFIC_BRUSH: usize = 3;
 
 #[derive(Copy, Clone, PartialEq)]
 #[repr(C)]
@@ -192,16 +189,19 @@ pub struct BorderInstanceGpuData {
     pub widths: DeviceSize,
     pub radius: DeviceSize,
     pub shape: f32,
+    pub shape_offset: DeviceSize,
+    pub inset: DeviceSize,
 }
 
 impl BorderInstanceGpuData {
     pub fn write(&self, gpu_buffer_builder: &mut GpuBufferBuilderF) -> GpuBufferAddress {
-        let mut writer = gpu_buffer_builder.write_blocks(5);
+        let mut writer = gpu_buffer_builder.write_blocks(6);
         writer.push_one(self.local_rect);
         writer.push_one(self.color0);
         writer.push_one(self.color1);
         writer.push_one([self.widths.width, self.widths.height, self.radius.width, self.radius.height]);
-        writer.push_one([self.shape, 0.0, 0.0, 0.0]);
+        writer.push_one([self.shape, self.shape_offset.width, self.shape_offset.height, 0.0]);
+        writer.push_one([self.inset.width, self.inset.height, 0.0, 0.0]);
 
         writer.finish()
     }
@@ -227,7 +227,7 @@ pub struct PrimitiveInstanceData {
     data: [i32; 4],
 }
 
-// Keep these in sync with the correspondong #defines in shared.glsl
+// Keep these in sync with the corresponding #defines in shared.glsl
 /// Specifies that an RGB CompositeInstance or ScalingInstance's UV coordinates are normalized.
 const UV_TYPE_NORMALIZED: u32 = 0;
 /// Specifies that an RGB CompositeInstance or ScalingInstance's UV coordinates are not normalized.
@@ -451,8 +451,8 @@ impl PrimitiveHeaders {
         let id = self.headers_float.len();
 
         self.headers_float.push(PrimitiveHeaderF {
-            local_rect: prim_header.local_rect,
-            local_clip_rect: prim_header.local_clip_rect,
+            pattern_rect: prim_header.pattern_rect,
+            bounds: prim_header.bounds,
         });
 
         self.headers_int.push(PrimitiveHeaderI {
@@ -471,8 +471,11 @@ impl PrimitiveHeaders {
 // the common parts around during batching.
 #[derive(Debug)]
 pub struct PrimitiveHeader {
-    pub local_rect: LayoutRect,
-    pub local_clip_rect: LayoutRect,
+    /// Situates the primitive's content. For a text run this is the run
+    /// anchor: only `.min` is read by the shader, the extent is unused.
+    pub pattern_rect: LayoutRect,
+    /// The primitive's coverage rect: the only rect that clips it.
+    pub bounds: LayoutRect,
     pub specific_prim_address: i32,
     pub transform_id: GpuTransformId,
     pub z: ZBufferId,
@@ -486,8 +489,8 @@ pub struct PrimitiveHeader {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct PrimitiveHeaderF {
-    pub local_rect: LayoutRect,
-    pub local_clip_rect: LayoutRect,
+    pub pattern_rect: LayoutRect,
+    pub bounds: LayoutRect,
 }
 
 // i32 parts of a primitive header
@@ -677,10 +680,10 @@ impl GpuBufferDataF for QuadSegment {
 }
 
 
-/// The cooridnate space that the clip geometry (the quad rect) is relative to.
+/// The coordinate space that the clip geometry (the quad rect) is relative to.
 ///
 /// Not to confuse with the coordinate space of the primitive's pattern, for example
-/// the rounded rect, which is alreay relative to clip's spatial node.
+/// the rounded rect, which is already relative to clip's spatial node.
 #[derive(Copy, Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -711,84 +714,6 @@ pub struct MaskInstance {
     pub unused: i32,
 }
 
-
-// Note: This can use up to 12 bits due to how it will
-// be packed in the instance data.
-
-/// Flags that define how the common brush shader
-/// code should process this instance.
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Copy, PartialEq, Eq, Clone, PartialOrd, Ord, Hash, MallocSizeOf)]
-pub struct BrushFlags(u16);
-
-bitflags! {
-    impl BrushFlags: u16 {
-        /// Apply perspective interpolation to UVs
-        const PERSPECTIVE_INTERPOLATION = 1;
-        /// Do interpolation relative to segment rect,
-        /// rather than primitive rect.
-        const SEGMENT_RELATIVE = 2;
-        /// Repeat UVs horizontally.
-        const SEGMENT_REPEAT_X = 4;
-        /// Repeat UVs vertically.
-        const SEGMENT_REPEAT_Y = 8;
-        /// Horizontally follow border-image-repeat: round.
-        const SEGMENT_REPEAT_X_ROUND = 16;
-        /// Vertically follow border-image-repeat: round.
-        const SEGMENT_REPEAT_Y_ROUND = 32;
-        /// Whether to position the repetitions so that the middle tile
-        /// is horizontally centered.
-        const SEGMENT_REPEAT_X_CENTERED = 64;
-        /// Whether to position the repetitions so that the middle tile
-        /// is vertically centered.
-        const SEGMENT_REPEAT_Y_CENTERED = 128;
-        /// Middle (fill) area of a border-image-repeat.
-        const SEGMENT_NINEPATCH_MIDDLE = 256;
-        /// The extra segment data is a texel rect.
-        const SEGMENT_TEXEL_RECT = 512;
-        /// Whether to force the anti-aliasing when the primitive
-        /// is axis-aligned.
-        const FORCE_AA = 1024;
-        /// Specifies UV coordinates are normalized
-        const NORMALIZED_UVS = 2048;
-    }
-}
-
-impl core::fmt::Debug for BrushFlags {
-    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-        if self.is_empty() {
-            write!(f, "{:#x}", Self::empty().bits())
-        } else {
-            bitflags::parser::to_writer(self, f)
-        }
-    }
-}
-
-/// Convenience structure to encode into PrimitiveInstanceData.
-pub struct BrushInstance {
-    pub prim_header_index: PrimitiveHeaderIndex,
-    pub clip_task_address: RenderTaskAddress,
-    pub segment_index: i32,
-    pub edge_flags: EdgeMask,
-    pub brush_flags: BrushFlags,
-    pub resource_address: i32,
-}
-
-impl From<BrushInstance> for PrimitiveInstanceData {
-    fn from(instance: BrushInstance) -> Self {
-        PrimitiveInstanceData {
-            data: [
-                instance.prim_header_index.0,
-                instance.clip_task_address.0,
-                instance.segment_index
-                | ((instance.brush_flags.bits() as i32) << 16)
-                | ((instance.edge_flags.bits() as i32) << 28),
-                instance.resource_address,
-            ]
-        }
-    }
-}
 
 // Texture cache resources can be either a simple rect, or define
 // a polygon within a rect by specifying a UV coordinate for each
@@ -857,42 +782,6 @@ impl ImageSource {
             writer.push_one(to_array(bottom_left));
             writer.push_one(to_array(bottom_right));
         }
-    }
-}
-
-// Must correspond to ImageBrushPrimitiveData in brush_image.glsl
-// Images are drawn as a white color, modulated by the total
-// opacity coming from any collapsed property bindings.
-#[derive(Copy, Clone, Debug)]
-pub struct ImageBrushPrimitiveData {
-    pub color: PremultipliedColorF,
-    pub background_color: PremultipliedColorF,
-    pub stretch_size: LayoutSize,
-}
-
-impl GpuBufferDataF for ImageBrushPrimitiveData {
-    const NUM_BLOCKS: usize = VECS_PER_SPECIFIC_BRUSH;
-    fn write(&self, writer: &mut GpuBufferWriterF) {
-        writer.push_one(self.color);
-        writer.push_one(self.background_color);
-        writer.push_one([self.stretch_size.width, self.stretch_size.height, 0.0, 0.0]);
-    }
-}
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, MallocSizeOf)]
-pub struct BrushSegmentGpuData {
-    pub local_rect: LayoutRect,
-    /// Each brush shader has its own interpretation of this field.
-    pub extra_data: [f32; 4],
-}
-
-impl GpuBufferDataF for BrushSegmentGpuData {
-    const NUM_BLOCKS: usize = VECS_PER_SEGMENT;
-    fn write(&self, writer: &mut GpuBufferWriterF) {
-        writer.push_one(self.local_rect);
-        writer.push_one(self.extra_data);
     }
 }
 

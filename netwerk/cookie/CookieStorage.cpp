@@ -367,7 +367,7 @@ void CookieStorage::RemoveCookie(const nsACString& aBaseDomain,
     cookie = matchIter.Cookie();
 
     // If the old cookie is httponly, make sure we're not coming from script.
-    if (cookie && !aFromHttp && cookie->IsHttpOnly()) {
+    if (!aFromHttp && cookie->IsHttpOnly()) {
       return;
     }
 

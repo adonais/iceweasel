@@ -246,7 +246,11 @@ size_t Platform::AllocationGranularity() {
   return si.dwAllocationGranularity;
 }
 
-bool Platform::IsSafeToMap(const PlatformHandle& aHandle) {
+bool Platform::IsSafeToMap(const PlatformHandle& aHandle, uint64_t) {
+  // On Windows the kernel enforces that a mapping (a.k.a. view) cannot exceed
+  // the size of the file mapping object (a.k.a. section object), which in turn
+  // cannot exceed the size of the underlying file if any.  Thus, we don't need
+  // to check the provided size here, because it will be checked by the OS.
   return IsSectionSafeToMap(aHandle.get());
 }
 

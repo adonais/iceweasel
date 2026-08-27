@@ -57,7 +57,7 @@ async function doExposureTest({
 async function getRowByType(type) {
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     const detail = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
-    const telemetryType = UrlbarUtils.searchEngagementTelemetryType(
+    const telemetryType = UrlbarShared.searchEngagementTelemetryType(
       detail.result
     );
     if (telemetryType === type) {

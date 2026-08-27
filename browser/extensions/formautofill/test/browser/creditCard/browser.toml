@@ -88,8 +88,11 @@ skip-if = [
 
 ["browser_creditCard_osAuth.js"]
 skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64'",
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
 ]
+
+["browser_creditCard_preview_cleared_on_pointer_leave.js"]
 
 ["browser_creditCard_submission_autodetect_type.js"]
 

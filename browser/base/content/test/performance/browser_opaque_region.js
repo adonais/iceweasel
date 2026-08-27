@@ -8,6 +8,18 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
 });
 
+function get_content_area_corner_radius() {
+  let style = getComputedStyle(gBrowser.getBrowserContainer());
+  return Math.max(
+    ...[
+      style.borderTopLeftRadius,
+      style.borderTopRightRadius,
+      style.borderBottomLeftRadius,
+      style.borderBottomRightRadius,
+    ].map(radius => parseFloat(radius) || 0)
+  );
+}
+
 async function assert_opaque_region() {
   // Ensure we've painted.
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -15,27 +27,31 @@ async function assert_opaque_region() {
   let contentRect = document
     .getElementById("tabbrowser-tabbox")
     .getBoundingClientRect();
+  // Add 1 to the corner radius to account for device-pixel snapping.
+  let inset = get_content_area_corner_radius() + 1;
+  let expectedRect = {
+    left: contentRect.left + inset,
+    top: contentRect.top + inset,
+    right: contentRect.right - inset,
+    bottom: contentRect.bottom - inset,
+  };
   let opaqueRegion = window.windowUtils.getWidgetOpaqueRegion();
 
   info(`Got opaque region: ${JSON.stringify(opaqueRegion)}`);
+  info(`Expected to contain: ${JSON.stringify(expectedRect)}`);
   isnot(opaqueRegion.length, 0, "Should have some part of the window opaque");
 
-  let anyContainsContentRect = false;
-  let containsContentRect = opaqueRect => {
+  let containsExpectedRect = opaqueRect => {
     return (
-      opaqueRect.x <= contentRect.x &&
-      opaqueRect.y <= contentRect.y &&
-      opaqueRect.width >= contentRect.width &&
-      opaqueRect.height >= contentRect.height
+      opaqueRect.left <= expectedRect.left &&
+      opaqueRect.top <= expectedRect.top &&
+      opaqueRect.right >= expectedRect.right &&
+      opaqueRect.bottom >= expectedRect.bottom
     );
   };
 
-  for (let opaqueRect of opaqueRegion) {
-    anyContainsContentRect |= containsContentRect(opaqueRect);
-  }
-
   ok(
-    anyContainsContentRect,
+    opaqueRegion.some(containsExpectedRect),
     "The browser area should be considered opaque by widget"
   );
 }

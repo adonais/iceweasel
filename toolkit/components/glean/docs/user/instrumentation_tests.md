@@ -69,7 +69,7 @@ version of those metrics and pings that was current at the time the artifacts we
 This isn't a problem unless:
 * You are changing a metric or ping that is used in instrumentation in the compiled code, or
 * You are using `testSubmission` or
-  `testBeforeNextSubmit` in JavaScript for a ping submitted in the compiled code.
+  `testBeforeNextSubmit` in JavaScript for a ping submitted in the Rust code.
 
 When in doubt, simply test your new test in artifact mode
 (by e.g. passing `--enable-artifact-builds` to `mach try`)

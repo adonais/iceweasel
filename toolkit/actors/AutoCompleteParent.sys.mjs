@@ -392,6 +392,17 @@ export class AutoCompleteParent extends JSWindowActorParent {
   }
 
   async receiveMessage(message) {
+    // Handled before the browser/popup guard below because the delegated
+    // GeckoView prompt must be torn down even when its document (and browser)
+    // is going away. Only sent on GeckoView (see the actor registration).
+    if (
+      AppConstants.MOZ_GECKOVIEW &&
+      message.name == "AutoComplete:DocumentHidden"
+    ) {
+      lazy.GeckoViewAutocomplete.reset(this.manager?.innerWindowId);
+      return false;
+    }
+
     let browser = this.browsingContext.top.embedderElement;
 
     if (

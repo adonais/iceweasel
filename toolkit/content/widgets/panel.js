@@ -249,12 +249,14 @@
           doFocus();
           return;
         }
+        // Walk out of shadow roots as well, so that focus inside a custom
+        // element in the panel is still recognized as focus inside the panel.
         while (currentFocus) {
           if (currentFocus == this) {
             doFocus();
             return;
           }
-          currentFocus = currentFocus.parentNode;
+          currentFocus = currentFocus.parentNode ?? currentFocus.host;
         }
       }
     }

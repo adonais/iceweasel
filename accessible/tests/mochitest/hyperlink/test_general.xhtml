@@ -36,7 +36,7 @@
       const linkedLabelAcc = getAccessible("linkedLabel",
                                            [nsIAccessibleHyperLink]);
       testThis("linkedLabel", linkedLabelAcc, ROLE_LINK, 1,
-               // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+               // eslint-disable-next-line sdl/no-insecure-url
                "Mozilla Foundation home", "http://www.mozilla.org/", 1, 2,
                true);
       testStates(linkedLabelAcc, STATE_LINKED, 0);
@@ -44,7 +44,7 @@
       const labelWithValueAcc = getAccessible("linkLabelWithValue",
                                               [nsIAccessibleHyperLink]);
       testThis("linkLabelWithValue", labelWithValueAcc, ROLE_LINK, 1,
-               // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+               // eslint-disable-next-line sdl/no-insecure-url
                "Mozilla Foundation", "http://www.mozilla.org/", 2, 3, true,
                false, true);
       testStates(labelWithValueAcc, STATE_LINKED, 0);

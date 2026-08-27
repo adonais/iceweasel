@@ -15,7 +15,7 @@ python3 generate_release_doc.py <version> [output_file]
 
 **Arguments:**
 - `<version>`: The version being released (e.g., `3.118` or `3.118.1`)
-- `[output_file]`: Optional. Path where to write the RST file. If not provided, defaults to `doc/rst/releases/nss_<version>.rst`
+- `[output_file]`: Optional. Path where to write the Markdown file. If not provided, defaults to `doc/src/releases/nss_<version>.md`
 
 **Examples:**
 ```bash
@@ -23,7 +23,7 @@ python3 generate_release_doc.py <version> [output_file]
 python3 automation/release/generate_release_doc.py 3.118
 
 # Generate documentation for NSS 3.118.1 with custom output path
-python3 automation/release/generate_release_doc.py 3.118.1 doc/rst/releases/nss_3_118_1.rst
+python3 automation/release/generate_release_doc.py 3.118.1 doc/src/releases/nss_3_118_1.md
 ```
 
 **What it does:**
@@ -78,7 +78,7 @@ For a complete NSS release (e.g., NSS 3.118), follow these steps:
    ```
 
 2. **Update the release notes index** (if needed):
-   - Edit `doc/rst/releases/index.rst` to add the new release at the top of the toctree
+   - Edit `doc/src/releases/index.md` to add the new release at the top of the toctree
    - Update the "latest version" note
 
 3. **Generate the release email:**

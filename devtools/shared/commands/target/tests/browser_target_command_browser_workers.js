@@ -13,6 +13,8 @@ const SERVICE_WORKER_URL = URL_ROOT_SSL + "test_service_worker.js";
 add_task(async function () {
   // Enabled fission's pref as the TargetCommand is almost disabled without it
   await pushPref("devtools.browsertoolbox.scope", "everything");
+  // We use a commands object for the main process
+  await pushPref("devtools.chrome.enabled", true);
 
   // Disable the preloaded process as it creates processes intermittently
   // which forces the emission of RDP requests we aren't correctly waiting for.

@@ -83,19 +83,22 @@ pub enum ErrorType {
     UnsupportedInput,
     /// A given value could not be represented in the type used for it.
     ValueTooLarge,
+    /// An incorrect password was provided.
+    WrongPassword,
 }
 
 impl fmt::Display for ErrorType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let error_type_str = match self {
-            ErrorType::ExternalError => "ExternalError",
-            ErrorType::ExtraInput => "ExtraInput",
-            ErrorType::InvalidArgument => "InvalidArgument",
-            ErrorType::InvalidInput => "InvalidInput",
-            ErrorType::LibraryFailure => "LibraryFailure",
-            ErrorType::TruncatedInput => "TruncatedInput",
-            ErrorType::UnsupportedInput => "UnsupportedInput",
-            ErrorType::ValueTooLarge => "ValueTooLarge",
+            Self::ExternalError => "ExternalError",
+            Self::ExtraInput => "ExtraInput",
+            Self::InvalidArgument => "InvalidArgument",
+            Self::InvalidInput => "InvalidInput",
+            Self::LibraryFailure => "LibraryFailure",
+            Self::TruncatedInput => "TruncatedInput",
+            Self::UnsupportedInput => "UnsupportedInput",
+            Self::ValueTooLarge => "ValueTooLarge",
+            Self::WrongPassword => "WrongPassword",
         };
         write!(f, "{}", error_type_str)
     }

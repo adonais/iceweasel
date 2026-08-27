@@ -5,8 +5,10 @@
 import shlex
 import urllib.parse
 
-from mozrelease.paths import getReleaseInstallerPath, getReleasesDir
-from mozrelease.platforms import updatePlatform2ftp
+import requests
+from mozilla_version.gecko import GeckoVersion
+from mozrelease.paths import getNightlyDir, getReleaseInstallerPath, getReleasesDir
+from mozrelease.platforms import buildPlatform2ftp, updatePlatform2ftp
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import resolve_keyed_by
 
@@ -65,7 +67,12 @@ def skip_for_new_locales_and_platforms(config, jobs):
 @transforms.add
 def resolve_keys(config, jobs):
     for job in jobs:
-        for key in ("cert-overrides", "fetches.toolchain", "archive-prefix"):
+        for key in (
+            "cert-overrides",
+            "fetches.toolchain",
+            "archive-prefix",
+            "last-watershed",
+        ):
             resolve_keyed_by(
                 job,
                 key,
@@ -73,6 +80,9 @@ def resolve_keys(config, jobs):
                 **{
                     "build-platform": job["attributes"]["build_platform"],
                     "project": config.params["project"],
+                    "release-type": config.params["release_type"],
+                    "locale": job["attributes"].get("locale", "en-US"),
+                    "shipping-product": job["attributes"]["shipping_product"],
                 },
             )
 
@@ -88,6 +98,62 @@ def set_treeherder(config, jobs):
 
         th["platform"] = f"{attrs['build_platform']}/{attrs['build_type']}"
         th["symbol"] = th["symbol"].format(**attrs)
+        yield job
+
+
+@transforms.add
+def adjust_locale_watershed(config, jobs):
+    """Adjusts the `last-watershed` for locales that are newer than the last
+    general watershed. eg: if `last-watershed` is 72.0 but `sco` didn't ship
+    91.0, it will be adjusted to 91.0."""
+
+    # cache results to make sure no file is fetched more than once
+    locale_history_cache = {}
+
+    for job in jobs:
+        history_file = job.pop("locale-history-file")
+        if history_file in locale_history_cache:
+            locale_history = locale_history_cache[history_file]
+        else:
+            req = requests.get(history_file)
+            req.raise_for_status()
+            locale_history = req.json()
+            locale_history_cache[history_file] = locale_history
+
+        last_watershed = job["last-watershed"]
+        locale = job["attributes"].get("locale", "en-US")
+        channel = job["attributes"]["update-channel"]
+        # because we're always using the production version of this file, we need to
+        # rewrite the nightly channel on try. (release builds use the real channel
+        # names on try; no need to rewrite them.)
+        if channel == "nightly-try":
+            channel = "nightly"
+
+        if locale == "en-US":
+            # en-US never has different availability than the default
+            # `last-watershed`
+            yield job
+            continue
+
+        # locale does not exist in history; can't do anything
+        # most likely it is a brand new locale that hasn't had its first release yet
+        if not locale_history.get(locale, {}).get("first_release", {}).get(channel):
+            continue
+
+        first_release = locale_history[locale]["first_release"][channel]
+        watershed_version = GeckoVersion.parse(last_watershed["version"])
+        first_version = GeckoVersion.parse(first_release["version"])
+        # we must also check buildid for nightly; locales may be added with the same
+        # version but a newer buildid
+        if channel == "nightly":
+            if (
+                watershed_version <= first_version
+                and last_watershed["buildid"] < first_release["buildid"]
+            ):
+                job["last-watershed"] = first_release
+        elif watershed_version < first_version:
+            job["last-watershed"] = first_release
+
         yield job
 
 
@@ -136,13 +202,14 @@ def add_to_installer(config, jobs):
 def add_additional_fetches_and_command(config, jobs):
     """Adds fetch entries for the "from" installers and partial MARs."""
     for job in jobs:
-        if job["attributes"]["build_platform"].startswith("linux"):
+        build_platform = job["attributes"]["build_platform"]
+        if build_platform.startswith("linux"):
             platform = "linux"
             installer_suffix = "tar.xz"
-        elif job["attributes"]["build_platform"].startswith("mac"):
+        elif build_platform.startswith("mac"):
             platform = "mac"
             installer_suffix = "dmg"
-        elif job["attributes"]["build_platform"].startswith("win"):
+        elif build_platform.startswith("win"):
             platform = "win"
             installer_suffix = "installer.exe"
         else:
@@ -150,8 +217,12 @@ def add_additional_fetches_and_command(config, jobs):
 
         # ideally, this attribute would be set on en-US jobs as well...but it's not, so we have to assume
         locale = job["attributes"].get("locale", "en-US")
+        # the locale identifier is different for japanese depending on the
+        # platform...make sure we translate it for the updater download
+        linux_locale = "ja" if locale == "ja-JP-mac" else locale
         build_target = job["attributes"]["build_target"]
         product = job.pop("product")
+        brand = job["attributes"]["shipping_product"]
 
         cmd = [
             # add dmg tool location to the $PATH. this is not strictly necessary
@@ -195,6 +266,7 @@ def add_additional_fetches_and_command(config, jobs):
 
         archive_prefix = job.pop("archive-prefix")
 
+        tested_identifiers = set()
         fetches = []
         for mar, info in config.params["release_history"][build_target][locale].items():
             if locale == "en-US":
@@ -203,10 +275,6 @@ def add_additional_fetches_and_command(config, jobs):
                 mar_prefix = f"{locale}/"
 
             fetches.append({"artifact": f"{mar_prefix}{mar}"})
-
-            # the locale identifier is different for japanese depending on the
-            # platform...make sure we translate it for the updater download
-            linux_locale = "ja" if locale == "ja-JP-mac" else locale
 
             # URLs for nightlies and releases are significantly different; they
             # can't be constructed in the same manner
@@ -233,7 +301,6 @@ def add_additional_fetches_and_command(config, jobs):
                 # for devedition; this is a necessary distinction for
                 # URL generation (devedition is in a `devedition` directory)
                 # but uses `firefox`/`Firefox` in filenames
-                brand = info["product"].lower()
                 from_installer_url = _get_release_installer_url(
                     brand,
                     product,
@@ -259,6 +326,63 @@ def add_additional_fetches_and_command(config, jobs):
                     f"{identifier}|{from_installer_url}|{linux64_installer_url}|{mar}"
                 )
             )
+            tested_identifiers.add(identifier)
+
+        last_watershed = job.pop("last-watershed")
+        if config.params["release_type"] == "nightly":
+            watershed_identifier = last_watershed["buildid"]
+            # don't add a last watershed test if the build has already been added for
+            # testing earlier; this case comes up for newly added locales
+            if watershed_identifier not in tested_identifiers:
+                nightly_dir = getNightlyDir(
+                    product,
+                    last_watershed["buildid"],
+                    locale,
+                    config.params["project"],
+                    protocol="https",
+                    server=archive_prefix,
+                )
+                version = last_watershed["version"]
+                platform = buildPlatform2ftp(build_platform)
+                linux_suffix = "tar.xz"
+                if GeckoVersion.parse(version) < GeckoVersion.parse("135.0a1"):
+                    installer_suffix = installer_suffix.replace("xz", "bz2")
+                    linux_suffix = "tar.bz2"
+                from_installer_url = f"{nightly_dir}/{product}-{version}.{locale}.{platform}.{installer_suffix}"
+                linux64_installer_url = f"{nightly_dir}/{product}-{version}.{linux_locale}.linux-x86_64.{linux_suffix}"
+                cmd.append("--from")
+                cmd.append(
+                    shlex.quote(
+                        f"{watershed_identifier}|{from_installer_url}|{linux64_installer_url}"
+                    )
+                )
+        else:
+            watershed_identifier = last_watershed["version"]
+            # don't add a last watershed test if the build has already been added for
+            # testing earlier; this case comes up for newly added locales
+            if watershed_identifier not in tested_identifiers:
+                from_installer_url = _get_release_installer_url(
+                    brand,
+                    product,
+                    build_target,
+                    locale,
+                    last_watershed["version"],
+                    archive_prefix,
+                )
+                linux64_installer_url = _get_release_installer_url(
+                    brand,
+                    product,
+                    "Linux_x86_64-gcc3",
+                    linux_locale,
+                    last_watershed["version"],
+                    archive_prefix,
+                )
+                cmd.append("--from")
+                cmd.append(
+                    shlex.quote(
+                        f"{watershed_identifier}|{from_installer_url}|{linux64_installer_url}"
+                    )
+                )
 
         job["fetches"]["partials-signing"] = fetches
         job["run"]["command"] = " ".join(cmd)

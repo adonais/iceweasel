@@ -1,4 +1,4 @@
-# Telemetry
+# DevTools telemetry
 
 We use telemetry to get metrics of usage of the different features and panels in DevTools. This will help us take better, informed decisions when prioritising our work.
 

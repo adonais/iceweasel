@@ -13,14 +13,14 @@ let b = registerModule('b', parseModule(`
     import * as ns0 from "a";
 `));
 
-moduleLink(a);
+moduleLoadAndLink(a);
 moduleEvaluate(a)
   .then(r => {
     // We should not reach here, as we expect an error to be thrown.
     assertEq(false, true);
   })
   .catch(e => assertEq(e instanceof UniqueError, true));
-moduleLink(b);
+moduleLoadAndLink(b);
 moduleEvaluate(b)
   .then(r => {
     // We should not reach here, as we expect an error to be thrown.

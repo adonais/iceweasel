@@ -1357,8 +1357,11 @@ WebVTT.processCues = function(window, cues, overlay, controls) {
     return;
   }
   this.isProcessingCues = true;
-  processCuesInternal(window, cues, overlay, controls);
-  this.isProcessingCues = false;
+  try {
+    processCuesInternal(window, cues, overlay, controls);
+  } finally {
+    this.isProcessingCues = false;
+  }
 };
 
 WebVTT.Parser = function(window, decoder) {

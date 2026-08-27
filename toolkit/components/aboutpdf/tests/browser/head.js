@@ -21,17 +21,16 @@ async function createTempFile(contents, { suffix = ".pdf" } = {}) {
   const file = Services.dirsvc.get("TmpD", Ci.nsIFile);
   file.append(`aboutPDF-test${suffix}`);
   file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, 0o600);
-  const path = file.path;
   const bytes =
     typeof contents === "string"
       ? new TextEncoder().encode(contents)
       : contents;
-  await IOUtils.write(path, bytes);
-  return path;
+  await IOUtils.write(file.path, bytes);
+  return file;
 }
 
-async function safeRemove(path) {
+async function safeRemove(file) {
   try {
-    await IOUtils.remove(path, { ignoreAbsent: true });
+    await IOUtils.remove(file.path, { ignoreAbsent: true });
   } catch {}
 }

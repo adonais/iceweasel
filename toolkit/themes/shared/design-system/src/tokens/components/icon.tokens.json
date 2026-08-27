@@ -62,6 +62,9 @@
     },
     "xlarge": {
       "value": "{dimension.32}"
+    },
+    "xxlarge": {
+      "value": "{size.item.xlarge}"
     }
   }
 }

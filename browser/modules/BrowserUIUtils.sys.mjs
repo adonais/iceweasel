@@ -148,22 +148,43 @@ export var BrowserUIUtils = {
   },
 
   /**
-   * Returns a URL which has been trimmed by removing 'http://' or 'https://',
-   * when the pref 'trimHttps' is set to true, and any trailing slash
-   * (in http/https/ftp urls). Note that a trimmed url may not load the same
-   * page as the original url, so before loading it, it must be passed through
-   * URIFixup, to check trimming doesn't change its destination. We don't run
-   * the URIFixup check here, because trimURL is in the page load path
-   * (see onLocationChange), so it must be fast and simple.
+   * Returns the prefix that trimURL would strip from the start of aURL, e.g.
+   * "https://", "www.", or "https://www.". Returns the empty string if no
+   * prefix would be trimmed. The trailing slash (handled separately by
+   * removeSingleTrailingSlashFromURL) is not included here.
+   *
+   * @param {string} aURL The URL whose trimmable prefix should be returned.
+   * @returns {string} The prefix that would be trimmed.
+   */
+  getTrimmedURLPrefix(aURL) {
+    let prefix = "";
+    if (aURL.startsWith(this.trimURLProtocol)) {
+      prefix = this.trimURLProtocol;
+      aURL = aURL.substring(prefix.length);
+      if (UrlbarPrefs.get("trimWww") && aURL.startsWith("www.")) {
+        prefix += "www.";
+      }
+    }
+    return prefix;
+  },
+
+  /**
+   * Returns a URL which has been trimmed by removing 'http://' or 'https://'
+   * (when the pref 'trimHttps' is set to true), a leading 'www.' (when the
+   * pref 'trimWww' is set to true), and any trailing slash (in http/https/ftp
+   * urls). Note that a trimmed url may not load the same page as the original
+   * url, so before loading it, it must be passed through URIFixup, to check
+   * trimming doesn't change its destination. We don't run the URIFixup check
+   * here, because trimURL is in the page load path (see onLocationChange), so
+   * it must be fast and simple.
    *
    * @param {string} aURL The URL to trim.
    * @returns {string} The trimmed string.
    */
   trimURL(aURL) {
     let url = this.removeSingleTrailingSlashFromURL(aURL);
-    return url.startsWith(this.trimURLProtocol)
-      ? url.substring(this.trimURLProtocol.length)
-      : url;
+    let prefix = this.getTrimmedURLPrefix(url);
+    return prefix ? url.substring(prefix.length) : url;
   },
 };
 

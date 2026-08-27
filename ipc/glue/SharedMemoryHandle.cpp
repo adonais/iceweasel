@@ -90,10 +90,6 @@ bool HandleBase::FromMessageReader(IPC::MessageReader* aReader) {
     aReader->FatalError("Failed to read shared memory PlatformHandle");
     return false;
   }
-  if (handle && !Platform::IsSafeToMap(handle)) {
-    aReader->FatalError("Shared memory PlatformHandle is not safe to map");
-    return false;
-  }
   uint64_t size = 0;
   if (!ReadParam(aReader, &size)) {
     aReader->FatalError("Failed to read shared memory handle size");
@@ -102,6 +98,10 @@ bool HandleBase::FromMessageReader(IPC::MessageReader* aReader) {
   if (handle && !size) {
     aReader->FatalError(
         "Unexpected PlatformHandle for zero-sized shared memory handle");
+    return false;
+  }
+  if (handle && !Platform::IsSafeToMap(handle, size)) {
+    aReader->FatalError("Shared memory PlatformHandle is not safe to map");
     return false;
   }
   mHandle = std::move(handle);

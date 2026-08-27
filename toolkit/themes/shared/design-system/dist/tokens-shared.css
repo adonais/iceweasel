@@ -117,10 +117,12 @@
     --button-border-color-toolbar-disabled: var(--button-border-color-disabled);
     --button-border-color-toolbar-selected: var(--button-border-color-ghost-active);
     --button-border-radius: var(--border-radius-medium);
+    --button-border-width-split: var(--border-width);
     --button-content-alignment: center;
     --button-font-size: var(--font-size-root);
     --button-font-size-small: var(--font-size-small);
     --button-font-weight: var(--font-weight-semibold);
+    --button-gap-split: var(--space-xxsmall);
     --button-icon-fill: currentColor;
     --button-icon-stroke: var(--button-icon-fill);
     --button-min-height: var(--size-item-large);
@@ -138,6 +140,7 @@
     --button-size-icon: var(--button-min-height);
     --button-size-icon-small: var(--button-min-height-small);
     --button-size-icon-large: var(--button-min-height-large);
+    --button-split-separator-background-color: transparent;
     --button-text-color-hover: var(--button-text-color);
     --button-text-color-active: var(--button-text-color);
     --button-text-color-disabled: var(--button-text-color);
@@ -182,6 +185,12 @@
     --card-border-width: var(--border-width);
     --card-box-shadow: var(--box-shadow-level-2);
     --card-box-shadow-hover: var(--box-shadow-level-4);
+    --card-cover-image-border-radius: var(--border-radius-medium);
+    --card-cover-image-height-default: 160px;
+    --card-cover-image-object-fit-default: cover;
+    --card-cover-image-object-position-default: center;
+    --card-cover-image-padding: var(--space-small);
+    --card-cover-image-padding-compact: var(--space-xsmall);
     --card-focus-outline: var(--focus-outline);
     --card-font-size: var(--font-size-root);
     --card-font-size-compact: var(--font-size-small);
@@ -201,22 +210,7 @@
     --card-padding-compact: var(--space-small);
 
     /** checkbox **/
-    --checkbox-background-color: var(--button-background-color);
-    --checkbox-background-color-hover: var(--button-background-color-hover);
-    --checkbox-background-color-active: var(--button-background-color-active);
-    --checkbox-background-color-disabled: var(--button-background-color-disabled);
-    --checkbox-background-color-checked: var(--button-background-color-primary);
-    --checkbox-background-color-checked-hover: var(--button-background-color-primary-hover);
-    --checkbox-background-color-checked-active: var(--button-background-color-primary-active);
-    --checkbox-background-color-checked-disabled: var(--button-background-color-primary-disabled);
-    --checkbox-border-color: var(--border-color-interactive);
-    --checkbox-border-color-checked: var(--checkbox-background-color-checked);
-    --checkbox-border-color-checked-hover: var(--checkbox-background-color-checked-hover);
-    --checkbox-border-color-checked-active: var(--checkbox-background-color-checked-active);
-    --checkbox-border-color-checked-disabled: var(--checkbox-background-color-checked-disabled);
-    --checkbox-border-radius: var(--border-radius-small);
     --checkbox-margin-inline: var(--space-small);
-    --checkbox-opacity-disabled: var(--button-opacity-disabled);
     /* TODO Bug 1876537: Make this em-based, probably? */
     --checkbox-size: var(--size-item-small);
 
@@ -437,6 +431,7 @@
     --icon-size-medium: var(--dimension-20);
     --icon-size-large: var(--dimension-24);
     --icon-size-xlarge: var(--dimension-32);
+    --icon-size-xxlarge: var(--size-item-xlarge);
 
     /** info-bar **/
     --info-bar-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-gray-60));
@@ -448,6 +443,7 @@
     --input-border-color: var(--border-color-interactive);
     --input-folder-gap: var(--space-medium);
     --input-height: var(--size-item-small);
+    --input-search-border-radius: var(--input-text-border-radius);
     --input-text-background-color-disabled: var(--button-background-color-disabled);
     --input-text-border: var(--border-width) solid var(--input-text-border-color);
     --input-text-border-color: var(--border-color);
@@ -500,6 +496,9 @@
     --panel-width: initial;
 
     /** popup **/
+    --popup-background-color: var(--background-color-box);
+    --popup-border-color: light-dark(rgb(240, 240, 244), rgb(82, 82, 94));
+    --popup-border-radius: var(--border-radius-medium);
     --popup-box-shadow: var(--box-shadow-level-3);
 
     /** sidebar **/
@@ -807,11 +806,13 @@
       --background-color-warning: light-dark(var(--color-yellow-10), var(--color-yellow-70));
 
       /** border **/
-      --border-color: light-dark(var(--color-gray-30), var(--color-gray-45));
-      --border-color-deemphasized: light-dark(var(--color-gray-20), var(--color-gray-55));
+      --border-color: light-dark(var(--color-gray-30), var(--color-gray-40));
+      --border-color-deemphasized: light-dark(var(--color-gray-20), var(--color-gray-50));
       --border-color-error: light-dark(var(--color-red-50), var(--color-red-20));
-      --border-color-interactive: light-dark(var(--color-gray-35), var(--color-gray-50));
-      --border-color-interactive-disabled: light-dark(var(--color-gray-25), var(--color-gray-60));
+      --border-color-interactive: light-dark(var(--color-gray-35), var(--color-gray-40));
+      --border-color-interactive-hover: light-dark(var(--color-gray-45), var(--color-gray-20));
+      --border-color-interactive-active: light-dark(var(--color-gray-50), var(--color-gray-15));
+      --border-color-interactive-disabled: light-dark(var(--color-gray-25), var(--color-gray-55));
       --border-color-transparent: transparent;
       --border-radius-xsmall: 4px;
       --border-radius-small: 8px;
@@ -860,9 +861,12 @@
       --button-border-color-primary-selected: var(--button-border-color-primary);
       --button-border-color-selected: var(--button-border-color);
       --button-border-radius: var(--border-radius-xlarge);
+      --button-border-width-split: 0;
+      --button-gap-split: 0;
       --button-opacity-disabled: 0.7;
       --button-padding-inline-small: var(--space-medium);
       --button-size-icon-small: var(--size-item-medium);
+      --button-split-separator-background-color: var(--button-border-color);
       --button-text-color: light-dark(var(--color-violet-90), var(--color-gray-0));
       --button-text-color-destructive: light-dark(var(--color-white), var(--button-text-color-primary));
       --button-text-color-destructive-disabled: var(--button-text-color-destructive);
@@ -882,16 +886,13 @@
       --button-text-color-muted-selected: var(--button-text-color-muted-active);
       --button-text-color-primary: light-dark(var(--color-white), var(--color-gray-70));
       --button-text-color-primary-active: var(--button-text-color-primary);
-      --button-text-color-selected: light-dark(var(--button-text-color), var(--background-color-canvas));
+      --button-text-color-selected: var(--button-text-color);
 
       /** card **/
       --card-border-color: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.04));
       --card-gap: var(--space-medium);
       --card-header-background-color: var(--button-background-color);
       --card-header-border-color: transparent;
-
-      /** checkbox **/
-      --checkbox-border-radius: var(--border-radius-xsmall);
 
       /** color **/
       --color-accent-attention: light-dark(var(--color-green-40), var(--color-green-30));
@@ -1035,17 +1036,22 @@
       /** info-bar **/
       --info-bar-margin-block-end: 0;
 
+      /** input **/
+      --input-search-border-radius: var(--border-radius-circle);
+
       /** page **/
       --page-main-content-width: 664px;
 
       /** panel **/
-      --panel-background-color: var(--background-color-box);
-      --panel-border-color: light-dark(var(--color-gray-10), var(--color-gray-60));
-      --panel-border-radius: var(--border-radius-large);
-      --panel-menuitem-border-radius: var(--button-border-radius);
-      --panel-padding: var(--panel-padding-block);
-      --panel-padding-block: 8px;
+      --panel-background-color: var(--popup-background-color);
+      --panel-border-color: var(--popup-border-color);
+      --panel-border-radius: var(--popup-border-radius);
+      --panel-menuitem-border-radius: var(--border-radius-large);
       --panel-text-color: var(--text-color);
+
+      /** popup **/
+      --popup-border-color: light-dark(var(--color-gray-10), var(--color-gray-65));
+      --popup-border-radius: var(--border-radius-xlarge);
 
       /** size **/
       --size-item-xsmall: 12px;
@@ -1068,7 +1074,7 @@
       --toolbar-field-background-color: var(--toolbar-background-color);
       --toolbar-field-background-color-focus: var(--background-color-box);
       --toolbar-field-border-color: light-dark(var(--color-gray-20), var(--color-gray-60));
-      --toolbar-field-border-color-focus: #ffffff;
+      --toolbar-field-border-color-focus: var(--focus-outline-color);
       --toolbar-field-text-color: light-dark(var(--color-violet-desaturated-70), var(--color-violet-desaturated-10));
       --toolbar-field-text-color-focus: var(--toolbar-field-text-color);
       --toolbar-padding-inline: 6px;
@@ -1084,7 +1090,6 @@
       --toolbarbutton-outline-color-active: transparent;
       --toolbarbutton-outline-color-selected: var(--toolbarbutton-outline-color-active);
       --toolbarbutton-outline-offset: -1px;
-      --toolbarbutton-padding-inner-touch-narrow: 0;
 
       /** toolbox **/
       --toolbox-background-color-gradient-leading: light-dark(var(--color-violet-10), var(--color-violet-desaturated-70));
@@ -1097,7 +1102,6 @@
         color-mix(var(--toolbox-background-color-gradient-trailing) 50%, transparent) 101.72%
       );
       --toolbox-text-color: var(--text-color);
-      --toolbox-text-color-inactive: var(--text-color-deemphasized);
     }
   }
 
@@ -1110,6 +1114,9 @@
         /** text-color **/
         --text-color: CanvasText;
         --text-color-error: inherit;
+
+        /** toolbar **/
+        --toolbar-field-border-color-focus: var(--focus-outline-color);
       }
     }
   }
@@ -1134,6 +1141,8 @@
         --border-color-deemphasized: CanvasText;
         --border-color-error: var(--border-color);
         --border-color-interactive: ButtonText;
+        --border-color-interactive-hover: SelectedItem;
+        --border-color-interactive-active: ButtonText;
         --border-color-interactive-disabled: GrayText;
         --border-color-transparent: CanvasText;
 
@@ -1159,6 +1168,7 @@
         --button-background-color-muted-disabled: var(--button-background-color);
         --button-background-color-muted-selected: var(--button-background-color-ghost-active);
         --button-background-color-primary-disabled: GrayText;
+        --button-background-color-selected: SelectedItem;
         --button-border-color: var(--border-color-interactive);
         --button-border-color-destructive: var(--button-border-color-primary);
         --button-border-color-destructive-selected: var(--button-border-color-destructive-active);
@@ -1215,8 +1225,8 @@
         --icon-color-success: var(--icon-color);
         --icon-color-warning: var(--icon-color);
 
-        /** panel **/
-        --panel-border-color: var(--border-color);
+        /** popup **/
+        --popup-border-color: var(--border-color);
 
         /** table **/
         /* TODO Bug 1821203 - Gray use needs to be consolidated */
@@ -1228,7 +1238,6 @@
         /** toolbar **/
         --toolbar-background-color: Canvas;
         --toolbar-field-border-color: ButtonText;
-        --toolbar-field-border-color-focus: SelectedItem;
         --toolbar-field-text-color: var(--text-color);
 
         /** toolbarbutton **/

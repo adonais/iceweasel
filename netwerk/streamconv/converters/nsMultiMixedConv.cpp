@@ -485,13 +485,13 @@ nsMultiMixedConv::OnStartRequest(nsIRequest* request) {
     nsCString csp;
     rv = httpChannel->GetResponseHeader("content-security-policy"_ns, csp);
     if (NS_SUCCEEDED(rv)) {
-      mRootContentSecurityPolicy = csp;
+      mRootContentSecurityPolicy = std::move(csp);
     }
     nsCString contentDisposition;
     rv = httpChannel->GetResponseHeader("content-disposition"_ns,
                                         contentDisposition);
     if (NS_SUCCEEDED(rv)) {
-      mRootContentDisposition = contentDisposition;
+      mRootContentDisposition = std::move(contentDisposition);
     }
   } else {
     // try asking the channel directly

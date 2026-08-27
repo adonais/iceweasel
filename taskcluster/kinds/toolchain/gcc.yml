@@ -7,6 +7,7 @@ task-defaults:
     worker:
         max-run-time: 3600
     run:
+        clone-with: hg
         resources:
             - 'build/unix/build-gcc/build-gcc.sh'
         toolchain-artifact: public/build/gcc.tar.zst
@@ -19,6 +20,7 @@ linux64-gcc-8:
     treeherder:
         symbol: TL(gcc8)
     run:
+        clone-with: hg
         script: build-gcc-linux.sh
     fetches:
         fetch:
@@ -33,6 +35,7 @@ linux64-gcc-9:
     treeherder:
         symbol: TL(gcc9)
     run:
+        clone-with: hg
         script: build-gcc-linux.sh
     fetches:
         fetch:
@@ -47,6 +50,7 @@ linux64-gcc-10:
     treeherder:
         symbol: TL(gcc10)
     run:
+        clone-with: hg
         script: build-gcc-linux.sh
         toolchain-alias:
             - linux64-gcc
@@ -64,6 +68,7 @@ linux64-gcc-11:
     treeherder:
         symbol: TL(gcc11)
     run:
+        clone-with: hg
         script: build-gcc-linux.sh
     fetches:
         fetch:
@@ -78,6 +83,7 @@ linux64-gcc-14:
     treeherder:
         symbol: TL(gcc14)
     run:
+        clone-with: hg
         script: build-gcc-linux.sh
     fetches:
         fetch:
@@ -92,6 +98,7 @@ linux64-gcc-10-sixgill:
     treeherder:
         symbol: TL(sixgill)
     run:
+        clone-with: hg
         script: build-gcc-sixgill-plugin-linux.sh
         resources:
             - 'taskcluster/scripts/misc/build-gcc-sixgill-plugin-linux.sh'

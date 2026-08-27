@@ -498,6 +498,77 @@ avif:
       - media-alerts@mozilla.com
     expires: never
 
+jxl:
+  decode_result:
+    type: labeled_counter
+    labels:
+      - success
+      - partial_frame
+      - no_frame
+      - decode_error
+      - size_overflow
+      - out_of_memory
+      - pipe_init_error
+      - invalid_frame_duration
+      - write_error
+      - no_basic_info
+    description: >
+      Decode result of a JPEG XL image. Failures are recorded on whichever
+      decode pass first fails (so failures during the metadata or frame-count
+      pass are still captured); successes are recorded only on the
+      pixel-producing decode. success means a complete frame was produced (for
+      an animation, at least one complete frame, even if a later frame was
+      truncated; a hard decode error on any frame is recorded as a failure
+      instead); partial_frame means the decode ended with only a partial
+      (progressive) frame rendered; no_frame means it ended without producing
+      any frame;
+      no_basic_info means there was not enough data to even parse the basic
+      info (image dimensions).
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055229
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055229
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - gfx-telemetry-alerts@mozilla.com
+    expires: never
+
+  hdr:
+    type: labeled_counter
+    labels:
+      - present
+      - absent
+    description: >
+      Whether a successfully decoded JPEG XL image used the HDR (f16) output
+      path.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055229
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055229
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - gfx-telemetry-alerts@mozilla.com
+    expires: never
+
+  animated:
+    type: labeled_counter
+    labels:
+      - present
+      - absent
+    description: >
+      Whether a successfully decoded JPEG XL image is animated.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055229
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055229
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - gfx-telemetry-alerts@mozilla.com
+    expires: never
+
 image_decode:
   time:
     type: timing_distribution
@@ -659,3 +730,18 @@ image_decode:
       - gfx-telemetry-alerts@mozilla.com
     expires: never
     telemetry_mirror: IMAGE_DECODE_SPEED_AVIF
+
+  speed_jxl:
+    type: memory_distribution
+    description: >
+      JPEG XL image decode speed (Kbytes/sec)
+    memory_unit: kilobyte
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055229
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055229
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - gfx-telemetry-alerts@mozilla.com
+    expires: never

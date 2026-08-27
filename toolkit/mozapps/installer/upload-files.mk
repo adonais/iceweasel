@@ -38,10 +38,8 @@ MAKE_PACKAGE = true
 endif
 
 ifeq ($(MOZ_PKG_FORMAT),7Z)
-  MAKE_PACKAGE = $(call py_action,make_7z,'$(MOZ_PKG_DIR)' '$(DIR_SUFFIX)' '$(PACKAGE)')
+MAKE_PACKAGE = $(call py_action,make_7z,'$(MOZ_PKG_DIR)' '$(DIR_SUFFIX)' '$(PACKAGE)')
 endif
-
-INNER_MAKE_PACKAGE = $(MAKE_PACKAGE)
 
 NO_PKG_FILES += \
 	core \
@@ -104,12 +102,6 @@ ifdef MOZ_FOLD_LIBS
   DEFINES += -DMOZ_FOLD_LIBS=1
 endif
 
-# The following target stages files into two directories: one directory for
-# core files, and one for optional extensions based on the information in
-# the MOZ_PKG_MANIFEST file.
-
-PKG_ARG = , '$(pkg)'
-
 ifndef MOZ_PACKAGER_FORMAT
   MOZ_PACKAGER_FORMAT = $(error MOZ_PACKAGER_FORMAT is not set)
 endif
@@ -128,8 +120,6 @@ endif
 empty :=
 space = $(empty) $(empty)
 QUOTED_WILDCARD = $(if $(wildcard $(subst $(space),?,$(1))),'$(1)')
-ESCAPE_SPACE = $(subst $(space),\$(space),$(1))
-ESCAPE_WILDCARD = $(subst $(space),?,$(1))
 
 # This variable defines which OpenSSL algorithm to use to
 # generate checksums for files that we upload
@@ -204,15 +194,3 @@ UPLOAD_FILES += $(call QUOTED_WILDCARD,$(DIST)/$(PKG_PATH)$(XPT_ARTIFACTS_ARCHIV
 ifeq ($(OS_ARCH),Darwin)
 UPLOAD_FILES += $(call QUOTED_WILDCARD,$(DIST)/$(PKG_PATH)$(UPDATE_FRAMEWORK_ARTIFACTS_ARCHIVE_BASENAME).zip)
 endif # Darwin
-
-HG_BUNDLE_FILE = $(DIST)/$(PKG_SRCPACK_PATH)$(PKG_BUNDLE_BASENAME).bundle
-
-HG ?= hg
-CREATE_HG_BUNDLE_CMD  = $(HG) -v -R $(topsrcdir) bundle --base null
-ifdef HG_BUNDLE_REVISION
-  CREATE_HG_BUNDLE_CMD += -r $(HG_BUNDLE_REVISION)
-endif
-CREATE_HG_BUNDLE_CMD += $(HG_BUNDLE_FILE)
-ifdef UPLOAD_HG_BUNDLE
-  SOURCE_UPLOAD_FILES  += $(HG_BUNDLE_FILE)
-endif

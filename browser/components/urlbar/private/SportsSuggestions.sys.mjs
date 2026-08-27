@@ -8,7 +8,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 /**
@@ -192,11 +192,12 @@ export class SportsSuggestions extends RealtimeSuggestProvider {
     let {
       formattedDate,
       formattedTime,
-      parseDateResult: { daysUntil, zonedNow },
-    } = lazy.UrlbarUtils.formatDate(date, {
+      parseDateResult: { daysAgo, zonedNow },
+    } = lazy.UrlbarShared.formatDate(date, {
       // If the item has an icon, the date chiclet won't be shown, so show the
       // absolute date in the bottom part of the row.
-      forceAbsoluteDate: !!item.home_team?.icon || !!item.away_team?.icon,
+      forceMonthAndDayWhenAbsolute:
+        !!item.home_team?.icon || !!item.away_team?.icon,
       includeTimeZone: true,
       capitalizeRelativeDate: true,
     });
@@ -294,7 +295,7 @@ export class SportsSuggestions extends RealtimeSuggestProvider {
           },
         },
       };
-    } else if (daysUntil == 0 && item.status_type == "past") {
+    } else if (daysAgo == 0 && item.status_type == "past") {
       statusUpdate = {
         [`status-${i}`]: {
           l10n: {

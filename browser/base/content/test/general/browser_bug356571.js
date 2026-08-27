@@ -39,7 +39,7 @@ const kCompleteState =
   Ci.nsIWebProgressListener.STATE_IS_NETWORK;
 
 const kDummyPage =
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   "http://example.org/browser/browser/base/content/test/general/dummy_page.html";
 const kURIs = ["bad://www.mozilla.org/", kDummyPage, kDummyPage];
 

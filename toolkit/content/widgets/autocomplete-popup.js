@@ -127,6 +127,17 @@
                 this.mLastMoveTime = Date.now();
                 break;
               }
+              case "mouseout": {
+                if (
+                  this.richlistbox.hasAttribute("pointerselected") &&
+                  !this.richlistbox.contains(event.relatedTarget)
+                ) {
+                  lazy.AutoCompleteParent.getCurrentActor()?.clearAutoCompletePreview();
+                  this.mousedOverIndex = -1;
+                  this._setSelectedIndex(-1, false, true);
+                }
+                break;
+              }
             }
           },
         };
@@ -134,6 +145,7 @@
       this.richlistbox.addEventListener("mousedown", this.listEvents);
       this.richlistbox.addEventListener("mouseup", this.listEvents);
       this.richlistbox.addEventListener("mousemove", this.listEvents);
+      this.richlistbox.addEventListener("mouseout", this.listEvents);
     }
 
     get richlistbox() {
@@ -172,7 +184,7 @@
       this._setSelectedIndex(val, false);
     }
 
-    _setSelectedIndex(val, pointer) {
+    _setSelectedIndex(val, pointer, clearedByPointerLeave = false) {
       const changed = val != this.richlistbox.selectedIndex;
       if (changed) {
         this._previousSelectedIndex = this.richlistbox.selectedIndex;
@@ -218,9 +230,11 @@
       // maximum number of rows we show at once, without a scrollbar.
       if (this.mPopupOpen && this.maxResults > this.maxRows) {
         // when clearing the selection (val == -1, so selectedItem will be
-        // null), we want to scroll back to the top.  see bug #406194
+        // null), we want to scroll back to the top (bug 406194). Except when
+        // the pointer just leaves the panel, keep the scroll position (bug 2057175).
         this.richlistbox.ensureElementIsVisible(
-          this.richlistbox.selectedItem || this.richlistbox.firstElementChild
+          this.richlistbox.selectedItem ||
+            (clearedByPointerLeave ? null : this.richlistbox.firstElementChild)
         );
       }
     }
@@ -632,6 +646,7 @@
         this.richlistbox.removeEventListener("mousedown", this.listEvents);
         this.richlistbox.removeEventListener("mouseup", this.listEvents);
         this.richlistbox.removeEventListener("mousemove", this.listEvents);
+        this.richlistbox.removeEventListener("mouseout", this.listEvents);
         delete this.listEvents;
       }
     }

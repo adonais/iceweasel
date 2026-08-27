@@ -17,9 +17,6 @@ install::
 upload::
 	@$(MAKE) -C browser/installer upload
 
-hg-bundle::
-	@$(MAKE) -C browser/installer hg-bundle
-
 wget-en-US:
 	@$(MAKE) -C browser/locales $@
 

@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.autofill.handler
 
-import android.annotation.SuppressLint
 import android.app.assist.AssistStructure
 import android.content.Context
 import android.service.autofill.FillRequest
@@ -38,7 +37,6 @@ internal class FillRequestHandler(
      * Handles a fill request for the given [AssistStructure] and returns a matching [FillResponse]
      * or `null` if the request could not be handled or the passed in [AssistStructure] is `null`.
      */
-    @SuppressLint("InlinedApi")
     @Suppress("ReturnCount")
     suspend fun handle(
         structure: RawStructure?,

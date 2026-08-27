@@ -345,12 +345,14 @@ export var PlacesTestUtils = Object.freeze({
    * @param {string} [aBookmarkObj.keyword]
    * @param {string} [aBookmarkObj.postData]
    * @param {string[]} [aBookmarkObj.tags]
+   * @param {Date} [aBookmarkObj.dateAdded]
    */
   async addBookmarkWithDetails(aBookmarkObj) {
     await lazy.PlacesUtils.bookmarks.insert({
       parentGuid: lazy.PlacesUtils.bookmarks.unfiledGuid,
       title: aBookmarkObj.title || "A bookmark",
       url: aBookmarkObj.uri,
+      dateAdded: aBookmarkObj.dateAdded,
     });
 
     if (aBookmarkObj.keyword) {

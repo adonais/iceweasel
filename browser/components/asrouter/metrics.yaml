@@ -1196,9 +1196,6 @@ microsurvey.smart_window:
                   contextPageUrl:
                     type: string
                     description: URL of the page in context for user messages.
-              convId:
-                type: string
-                description: ID of the conversation this message belongs to.
               pageUrl:
                 type: string
                 description: URL of the active tab when the user sent this message.

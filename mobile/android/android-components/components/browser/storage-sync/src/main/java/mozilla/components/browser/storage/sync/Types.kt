@@ -6,7 +6,6 @@
 
 package mozilla.components.browser.storage.sync
 
-import mozilla.appservices.places.SyncAuthInfo
 import mozilla.appservices.places.uniffi.BookmarkItem
 import mozilla.appservices.places.uniffi.BookmarkPosition
 import mozilla.appservices.places.uniffi.HistoryMetadataPageMissingBehavior
@@ -33,18 +32,6 @@ import mozilla.components.concept.storage.bookmarks.InsertableBookmarkTreeRoot
 
 // We have type definitions at the concept level, and "external" types defined within Places.
 // In practice these two types are largely the same, and this file is the conversion point.
-
-/**
- * Conversion from our SyncAuthInfo into its "native" version used at the interface boundary.
- */
-internal fun mozilla.components.concept.sync.SyncAuthInfo.into(): SyncAuthInfo {
-    return SyncAuthInfo(
-        kid = this.kid,
-        fxaAccessToken = this.fxaAccessToken,
-        syncKey = this.syncKey,
-        tokenserverURL = this.tokenServerUrl,
-    )
-}
 
 /**
  * Conversion from a generic [FrecencyThresholdOption] into its richer comrade within the 'places' lib.

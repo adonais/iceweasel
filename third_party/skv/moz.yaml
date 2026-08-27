@@ -8,8 +8,8 @@ origin:
   name: skv
   description: A CRUD key-value store interface backed by rusqlite
   url: https://github.com/mozilla/mzkv
-  release: 7633996a868681c44162869038f8fd6cf9c26428 (2026-04-02T10:22:48Z).
-  revision: 7633996a868681c44162869038f8fd6cf9c26428
+  release: 4a921520306b1e75ad382cf29f0ba5b64247f3f4 (2026-07-07T07:50:42Z).
+  revision: 4a921520306b1e75ad382cf29f0ba5b64247f3f4
   license: MPL-2.0
 
 updatebot:

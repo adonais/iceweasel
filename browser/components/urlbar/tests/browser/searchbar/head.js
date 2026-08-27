@@ -28,8 +28,12 @@ add_setup(async () => {
 });
 
 registerCleanupFunction(async () => {
-  document.getElementById("searchbar-new").handleRevert();
+  let searchbar = document.getElementById("searchbar-new");
+  searchbar.handleRevert();
   await SearchbarTestUtils.promisePopupClose(window);
+  // The search bar and its view live as long as the window, so query contexts
+  // cached by this test would be picked up by tests running after it.
+  searchbar.view.queryContextCache.clear();
   await gCUITestUtils.removeSearchBar();
   await SearchbarTestUtils.formHistory.clear();
   Services.prefs.clearUserPref("browser.search.widget.lastUsed");

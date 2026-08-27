@@ -86,6 +86,8 @@ https_first_disabled = true
 
 ["browser_storage_cookies_hostOnly.js"]
 
+["browser_storage_cookies_jar_isolation.js"]
+
 ["browser_storage_cookies_navigation.js"]
 
 ["browser_storage_cookies_partitioned.js"]

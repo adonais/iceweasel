@@ -180,7 +180,9 @@ EncodeSupportSet FFmpegEncoderModule<V>::SupportsCodec(CodecType aCodec) const {
     }
   }
 #endif
-  if (FFmpegDataEncoder<V>::FindSoftwareEncoder(mLib, id)) {
+  if ((XRE_IsParentProcess() || XRE_IsContentProcess() ||
+       StaticPrefs::media_use_remote_encoder_video_software()) &&
+      FFmpegDataEncoder<V>::FindSoftwareEncoder(mLib, id)) {
     supports += EncodeSupport::SoftwareEncode;
   }
   return supports;

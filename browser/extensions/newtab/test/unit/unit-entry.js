@@ -243,12 +243,6 @@ const TEST_GLOBAL = {
       FINGERPRINTERS_ID: 4,
       SOCIAL_ID: 5,
     },
-    nsICookieBannerService: {
-      MODE_DISABLED: 0,
-      MODE_REJECT: 1,
-      MODE_REJECT_OR_ACCEPT: 2,
-      MODE_UNSET: 3,
-    },
     nsIProtocolProxyChannelFilter: {},
   },
   Cu: {
@@ -539,7 +533,6 @@ const TEST_GLOBAL = {
     "newtabInferredPersonalization",
     "newtabWidgets",
     "newtabOhttpImages",
-    "cookieBannerHandling",
   ]),
   TelemetryEnvironment: {
     setExperimentActive() {},
@@ -701,6 +694,11 @@ const TEST_GLOBAL = {
         set() {},
       },
       contextId: {
+        set() {},
+      },
+    },
+    newtabContent: {
+      surfaceId: {
         set() {},
       },
     },

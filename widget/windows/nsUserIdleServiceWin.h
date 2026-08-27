@@ -38,8 +38,8 @@ class nsUserIdleServiceWin : public nsUserIdleService {
   }
 
  protected:
-  nsUserIdleServiceWin() {}
-  virtual ~nsUserIdleServiceWin() {}
+  nsUserIdleServiceWin() = default;
+  virtual ~nsUserIdleServiceWin() = default;
 };
 
 #endif  // nsUserIdleServiceWin_h_

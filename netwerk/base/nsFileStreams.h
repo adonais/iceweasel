@@ -149,7 +149,7 @@ class nsFileInputStream : public nsFileStreamBase,
   // Overrided from nsFileStreamBase
   NS_IMETHOD Seek(int32_t aWhence, int64_t aOffset) override;
 
-  nsFileInputStream() : mLineBuffer(nullptr) {}
+  nsFileInputStream() = default;
 
   static nsresult Create(REFNSIID aIID, void** aResult);
 

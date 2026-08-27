@@ -63,6 +63,7 @@ pid_t gettid_pthread() {
 
 #include "jit/BaselineFrameInfo.h"
 #include "jit/CacheIR.h"
+#include "jit/CompileWrappers.h"
 #include "jit/Jitdump.h"
 #include "jit/JitSpewer.h"
 #include "jit/LIR.h"
@@ -71,7 +72,6 @@ pid_t gettid_pthread() {
 #include "jit/PerfSpewer.h"
 #include "js/ColumnNumber.h"  // JS::LimitedColumnNumberOneOrigin, JS::ColumnNumberOffset
 #include "js/Exception.h"
-#include "js/JitCodeAPI.h"
 #include "js/Printf.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/MutexIDs.h"
@@ -101,7 +101,6 @@ using namespace js::jit;
 
 enum class PerfModeType { None, Function, Source, IR, IROperands, IRGraph };
 
-static std::atomic<bool> geckoProfiling = false;
 static std::atomic<PerfModeType> PerfMode = PerfModeType::None;
 
 // Mutex to guard access to the profiler vectors and jitdump file if perf
@@ -110,9 +109,7 @@ MOZ_RUNINIT static js::Mutex PerfMutex(mutexid::PerfSpewer);
 
 static PersistentRooted<GCVector<JitCode*, 0, js::SystemAllocPolicy>>
     jitCodeVector;
-MOZ_RUNINIT static ProfilerJitCodeVector profilerData;
 
-static bool IsGeckoProfiling() { return geckoProfiling; }
 #ifdef JS_ION_PERF
 constinit static UniqueChars spew_dir;
 static FILE* JitDumpFilePtr = nullptr;
@@ -121,18 +118,7 @@ static char* jitDumpBuffer = nullptr;
 static bool IsPerfProfiling() { return JitDumpFilePtr != nullptr; }
 #endif
 
-AutoLockPerfSpewer::AutoLockPerfSpewer() {
-  // The profiler may re-enter us on the main thread when profiling native
-  // memory allocations and call JS::LookupJitCodeRecord which requires taking
-  // this lock. Therefore suppress the profiler when taking this lock if
-  // running on the main thread.
-  JSContext* cx = TlsContext.get();
-  if (cx) {
-    asps.emplace(cx);
-  }
-
-  PerfMutex.lock();
-}
+AutoLockPerfSpewer::AutoLockPerfSpewer() { PerfMutex.lock(); }
 
 AutoLockPerfSpewer::~AutoLockPerfSpewer() { PerfMutex.unlock(); }
 
@@ -375,24 +361,13 @@ void PerfSpewer::Init() {
 #endif
 }
 
-static void ResetPerfSpewer(AutoLockPerfSpewer& lock, bool enabled) {
-  profilerData.clear();
-  jitCodeVector.clear();
-  geckoProfiling = enabled;
-}
-
-void js::jit::ResetPerfSpewer(bool enabled) {
-  AutoLockPerfSpewer lock;
-  ::ResetPerfSpewer(lock, enabled);
-}
-
 static void DisablePerfSpewer(AutoLockPerfSpewer& lock) {
   fprintf(stderr, "Warning: Disabling PerfSpewer.\n");
 
 #ifdef XP_WIN
   etwCollection = false;
 #endif
-  ResetPerfSpewer(lock, false);
+  jitCodeVector.clear();
   if (PerfMode == PerfModeType::None) {
     return;
   }
@@ -412,56 +387,7 @@ static void DisablePerfSpewer() {
   DisablePerfSpewer(lock);
 }
 
-static bool MaybeCreateProfilerEntry(AutoLockPerfSpewer& lock,
-                                     JS::JitCodeRecord*& outProfilerRecord) {
-  outProfilerRecord = nullptr;
-  if (!IsGeckoProfiling()) {
-    return true;
-  }
-
-  if (!profilerData.growBy(1)) {
-    DisablePerfSpewer(lock);
-    return false;
-  }
-
-  outProfilerRecord = &profilerData.back();
-  return true;
-}
-
-static JS::JitCodeSourceInfo* CreateProfilerSourceEntry(
-    JS::JitCodeRecord* record, AutoLockPerfSpewer& lock) {
-  MOZ_ASSERT(record);
-
-  if (!record->sourceInfo.growBy(1)) {
-    DisablePerfSpewer(lock);
-    return nullptr;
-  }
-  return &record->sourceInfo.back();
-}
-
-// API to lookup JitCode data for the Gecko Profiler.
-JS::JitCodeRecord* JS::LookupJitCodeRecord(uint64_t addr) {
-  if (!JS_IsInitialized()) {
-    return nullptr;
-  }
-
-  AutoLockPerfSpewer lock;
-
-  JS::JitCodeRecord* result = nullptr;
-  for (auto& record : profilerData) {
-    if (addr >= record.code_addr &&
-        addr < record.code_addr + record.instructionSize) {
-      result = &record;
-      break;
-    }
-  }
-
-  return result;
-}
-
-static bool PerfSrcEnabled() {
-  return PerfMode == PerfModeType::Source || IsGeckoProfiling();
-}
+static bool PerfSrcEnabled() { return PerfMode == PerfModeType::Source; }
 
 #ifdef JS_JITSPEW
 static bool PerfIROpsEnabled() { return PerfMode == PerfModeType::IROperands; }
@@ -474,8 +400,14 @@ static bool PerfIREnabled() {
          (PerfMode == PerfModeType::IR);
 }
 
-bool js::jit::PerfEnabled() {
-  return PerfMode != PerfModeType::None || IsGeckoProfiling();
+bool js::jit::PerfEnabled() { return PerfMode != PerfModeType::None; }
+
+bool PerfSpewer::perfEnabled() const {
+  return PerfEnabled() || runtimeProfilingEnabled_;
+}
+
+bool PerfSpewer::perfSrcEnabled() const {
+  return PerfSrcEnabled() || runtimeProfilingEnabled_;
 }
 
 void InlineCachePerfSpewer::recordInstruction(MacroAssembler& masm,
@@ -504,8 +436,9 @@ void IonPerfSpewer::disable() {
   PerfSpewer::disable();
 }
 
-void IonPerfSpewer::startRecording(const wasm::CodeMetadata* wasmCodeMeta) {
-  PerfSpewer::startRecording();
+void IonPerfSpewer::startRecording(CompileRuntime* runtime,
+                                   const wasm::CodeMetadata* wasmCodeMeta) {
+  PerfSpewer::startRecording(runtime);
 #ifdef JS_JITSPEW
   if (PerfIRGraphEnabled()) {
     graphPrinter_.init(irFile_);
@@ -543,7 +476,7 @@ void IonPerfSpewer::recordPass(const char* pass, MIRGraph* graph,
 void IonPerfSpewer::recordInstruction(MacroAssembler& masm, LInstruction* ins) {
   uint32_t offset = masm.currentOffset() - startOffset_;
 
-  if (PerfSrcEnabled()) {
+  if (perfSrcEnabled()) {
     uint32_t line = 0;
     uint32_t column = 0;
     if (MDefinition* mir = ins->mirRaw()) {
@@ -676,7 +609,7 @@ void BaselinePerfSpewer::recordInstruction(
     MacroAssembler& masm, jsbytecode* pc, unsigned line,
     JS::LimitedColumnNumberOneOrigin column, CompilerFrameInfo& frame) {
   uint32_t offset = masm.currentOffset() - startOffset_;
-  if (PerfSrcEnabled()) {
+  if (perfSrcEnabled()) {
     if (!debugInfo_.emplaceBack(offset, line, column.oneOriginValue())) {
       disable();
     }
@@ -768,10 +701,10 @@ const char* InlineCachePerfSpewer::CodeName(uint32_t op) {
 }
 
 void PerfSpewer::CollectJitCodeInfo(UniqueChars& function_name, JitCode* code,
-                                    JS::JitCodeRecord* maybeProfilerRecord,
                                     AutoLockPerfSpewer& lock) {
-  // Hold the JitCode objects here so they are not GC'd during profiling.
-  if (IsGeckoProfiling()) {
+  // Hold the JitCode objects here so they are not GC'd while a perf / ETW
+  // profiling session is active.
+  if (PerfMode != PerfModeType::None) {
     if (!jitCodeVector.append(code)) {
       DisablePerfSpewer(lock);
       return;
@@ -779,12 +712,11 @@ void PerfSpewer::CollectJitCodeInfo(UniqueChars& function_name, JitCode* code,
   }
 
   CollectJitCodeInfo(function_name, reinterpret_cast<void*>(code->raw()),
-                     code->instructionsSize(), maybeProfilerRecord, lock);
+                     code->instructionsSize(), lock);
 }
 
 void PerfSpewer::CollectJitCodeInfo(UniqueChars& function_name, void* code_addr,
                                     uint64_t code_size,
-                                    JS::JitCodeRecord* maybeProfilerRecord,
                                     AutoLockPerfSpewer& lock) {
 #ifdef JS_ION_PERF
   static uint64_t codeIndex = 1;
@@ -853,12 +785,6 @@ void PerfSpewer::CollectJitCodeInfo(UniqueChars& function_name, void* code_addr,
     }
   }
 #endif
-
-  if (IsGeckoProfiling()) {
-    MOZ_ASSERT(maybeProfilerRecord);
-    maybeProfilerRecord->instructionSize = code_size;
-    maybeProfilerRecord->code_addr = uint64_t(code_addr);
-  }
 }
 
 void PerfSpewer::recordOffset(MacroAssembler& masm, const char* msg) {
@@ -904,7 +830,6 @@ void PerfSpewer::recordOpcode(uint32_t offset, JS::UniqueChars&& str) {
 }
 
 void PerfSpewer::saveDebugInfo(const char* filename, uintptr_t base,
-                               JS::JitCodeRecord* maybeProfilerRecord,
                                AutoLockPerfSpewer& lock) {
 #ifdef JS_ION_PERF
   if (IsPerfProfiling()) {
@@ -927,42 +852,6 @@ void PerfSpewer::saveDebugInfo(const char* filename, uintptr_t base,
     }
   }
 #endif
-
-  // Populate profiler record with source info
-  if (maybeProfilerRecord) {
-#ifdef DEBUG
-    uint32_t lastOffset = 0;
-#endif
-    uint32_t lastLine = 0;
-    uint32_t lastColumn = 0;
-
-    for (DebugEntry& entry : debugInfo_) {
-      MOZ_ASSERT(entry.offset >= lastOffset,
-                 "debugInfo_ must be sorted by offset");
-#ifdef DEBUG
-      lastOffset = entry.offset;
-#endif
-
-      // Skip consecutive entries with the same line/column to reduce memory
-      // usage and improve binary search performance.
-      if (entry.line == lastLine && entry.column == lastColumn) {
-        continue;
-      }
-
-      JS::JitCodeSourceInfo* srcInfo =
-          CreateProfilerSourceEntry(maybeProfilerRecord, lock);
-      if (!srcInfo) {
-        return;
-      }
-      srcInfo->offset = entry.offset;
-      srcInfo->lineno = entry.line;
-      srcInfo->colno = JS::LimitedColumnNumberOneOrigin::fromUnlimited(
-          entry.column == 0 ? 1 : entry.column);
-
-      lastLine = entry.line;
-      lastColumn = entry.column;
-    }
-  }
 }
 
 static UniqueChars GetFunctionDesc(const char* tierName, JSContext* cx,
@@ -989,7 +878,6 @@ static UniqueChars GetFunctionDesc(const char* tierName, JSContext* cx,
 }
 
 void PerfSpewer::saveJitCodeDebugInfo(JSScript* script, JitCode* code,
-                                      JS::JitCodeRecord* maybeProfilerRecord,
                                       AutoLockPerfSpewer& lock) {
   MOZ_ASSERT(code);
 
@@ -999,20 +887,17 @@ void PerfSpewer::saveJitCodeDebugInfo(JSScript* script, JitCode* code,
   if (PerfIREnabled()) {
     // We should have generated a debug file to use here.
     MOZ_ASSERT(irFileName_.get());
-    saveDebugInfo(irFileName_.get(), uintptr_t(code->raw()),
-                  maybeProfilerRecord, lock);
+    saveDebugInfo(irFileName_.get(), uintptr_t(code->raw()), lock);
     return;
   }
 
   if (!PerfSrcEnabled() || !script || !script->filename()) {
     return;
   }
-  saveDebugInfo(script->filename(), uintptr_t(code->raw()), maybeProfilerRecord,
-                lock);
+  saveDebugInfo(script->filename(), uintptr_t(code->raw()), lock);
 }
 
 void PerfSpewer::saveWasmCodeDebugInfo(uintptr_t base,
-                                       JS::JitCodeRecord* maybeProfilerRecord,
                                        AutoLockPerfSpewer& lock) {
   // We should be done with the temp IR file, if we were using it.
   MOZ_ASSERT(!irFile_);
@@ -1020,7 +905,7 @@ void PerfSpewer::saveWasmCodeDebugInfo(uintptr_t base,
   if (!PerfIREnabled()) {
     return;
   }
-  saveDebugInfo(irFileName_.get(), base, maybeProfilerRecord, lock);
+  saveDebugInfo(irFileName_.get(), base, lock);
 }
 
 void PerfSpewer::saveJSProfile(JitCode* code, UniqueChars& desc,
@@ -1030,13 +915,9 @@ void PerfSpewer::saveJSProfile(JitCode* code, UniqueChars& desc,
   if (!PerfEnabled()) {
     return;
   }
-  JS::JitCodeRecord* maybeProfilerRecord = nullptr;
-  if (!MaybeCreateProfilerEntry(lock, maybeProfilerRecord)) {
-    return;  // Allocation failure.
-  }
 
-  saveJitCodeDebugInfo(script, code, maybeProfilerRecord, lock);
-  CollectJitCodeInfo(desc, code, maybeProfilerRecord, lock);
+  saveJitCodeDebugInfo(script, code, lock);
+  CollectJitCodeInfo(desc, code, lock);
 }
 
 void PerfSpewer::saveWasmProfile(uintptr_t base, size_t size,
@@ -1046,14 +927,10 @@ void PerfSpewer::saveWasmProfile(uintptr_t base, size_t size,
   if (!PerfEnabled()) {
     return;
   }
-  JS::JitCodeRecord* maybeProfilerRecord = nullptr;
-  if (!MaybeCreateProfilerEntry(lock, maybeProfilerRecord)) {
-    return;  // Allocation failure.
-  }
 
-  saveWasmCodeDebugInfo(base, maybeProfilerRecord, lock);
+  saveWasmCodeDebugInfo(base, lock);
   PerfSpewer::CollectJitCodeInfo(desc, reinterpret_cast<void*>(base),
-                                 uint64_t(size), maybeProfilerRecord, lock);
+                                 uint64_t(size), lock);
 }
 
 void PerfSpewer::disable(AutoLockPerfSpewer& lock) {
@@ -1066,8 +943,13 @@ void PerfSpewer::disable() {
   disable(lock);
 }
 
-void PerfSpewer::startRecording(const wasm::CodeMetadata* wasmCodeMeta) {
+void PerfSpewer::startRecording(CompileRuntime* runtime,
+                                const wasm::CodeMetadata* wasmCodeMeta) {
   MOZ_ASSERT(!irFile_ && !irFileName_);
+
+  // Snapshot the runtime's gecko-profiler state so it's stable for this
+  // compile.
+  runtimeProfilingEnabled_ = runtime && runtime->geckoProfiler().enabled();
 
 #ifdef JS_ION_PERF
   static uint32_t filenameCounter = 0;
@@ -1111,6 +993,7 @@ PerfSpewer::PerfSpewer(PerfSpewer&& other) {
   debugInfo_ = std::move(other.debugInfo_);
   irFileName_ = std::move(other.irFileName_);
   startOffset_ = other.startOffset_;
+  runtimeProfilingEnabled_ = other.runtimeProfilingEnabled_;
 }
 
 PerfSpewer& PerfSpewer::operator=(PerfSpewer&& other) {
@@ -1119,6 +1002,7 @@ PerfSpewer& PerfSpewer::operator=(PerfSpewer&& other) {
   debugInfo_ = std::move(other.debugInfo_);
   irFileName_ = std::move(other.irFileName_);
   startOffset_ = other.startOffset_;
+  runtimeProfilingEnabled_ = other.runtimeProfilingEnabled_;
   return *this;
 }
 
@@ -1172,6 +1056,49 @@ void BaselinePerfSpewer::saveProfile(JSContext* cx, JSScript* script,
     return;
   }
   PerfSpewer::saveJSProfile(code, desc, script);
+}
+
+JitCodeSourceInfoVector PerfSpewer::extractSourceInfo() const {
+  JitCodeSourceInfoVector result;
+  if (debugInfo_.empty()) {
+    // The profiler wasn't enabled at the compile time.
+    return result;
+  }
+
+  // The result array length could be the same or less (due to deduplication
+  // below).
+  if (!result.reserve(debugInfo_.length())) {
+    return JitCodeSourceInfoVector();
+  }
+
+  // Dedup consecutive entries with identical (line, column). Multiple ops
+  // on the same source line are common. This allows us to keep table smaller
+  // with no change on the lookup results.
+#ifdef DEBUG
+  uint32_t lastOffset = 0;
+#endif
+  uint32_t lastLine = 0;
+  uint32_t lastColumn = 0;
+  for (const DebugEntry& entry : debugInfo_) {
+    // The resulting table must stay sorted by nativeOffset. BaselineEntry's
+    // sampler lookup binary-searches it. That holds because recordInstruction
+    // appends in code-emission order.
+    MOZ_ASSERT(entry.offset >= lastOffset,
+               "debugInfo_ must be sorted by offset");
+#ifdef DEBUG
+    lastOffset = entry.offset;
+#endif
+    if (entry.line == lastLine && entry.column == lastColumn) {
+      continue;
+    }
+    result.infallibleEmplaceBack(
+        JitCodeSourceInfo{entry.offset, entry.line,
+                          JS::LimitedColumnNumberOneOrigin::fromUnlimited(
+                              entry.column == 0 ? 1 : entry.column)});
+    lastLine = entry.line;
+    lastColumn = entry.column;
+  }
+  return result;
 }
 
 void BaselineInterpreterPerfSpewer::saveProfile(JitCode* code) {
@@ -1296,17 +1223,12 @@ void js::jit::CollectPerfSpewerJitCodeProfile(JitCode* code, const char* msg) {
   size_t size = code->instructionsSize();
   if (size > 0) {
     AutoLockPerfSpewer lock;
-
-    JS::JitCodeRecord* maybeProfilerRecord = nullptr;
-    if (!MaybeCreateProfilerEntry(lock, maybeProfilerRecord)) {
-      return;  // Allocation failure.
-    }
     UniqueChars desc = JS_smprintf("%s", msg);
     if (!desc) {
       DisablePerfSpewer(lock);
       return;
     }
-    PerfSpewer::CollectJitCodeInfo(desc, code, maybeProfilerRecord, lock);
+    PerfSpewer::CollectJitCodeInfo(desc, code, lock);
   }
 }
 
@@ -1318,18 +1240,13 @@ void js::jit::CollectPerfSpewerJitCodeProfile(uintptr_t base, uint64_t size,
 
   if (size > 0) {
     AutoLockPerfSpewer lock;
-
-    JS::JitCodeRecord* maybeProfilerRecord = nullptr;
-    if (!MaybeCreateProfilerEntry(lock, maybeProfilerRecord)) {
-      return;  // Allocation failure.
-    }
     UniqueChars desc = JS_smprintf("%s", msg);
     if (!desc) {
       DisablePerfSpewer(lock);
       return;
     }
     PerfSpewer::CollectJitCodeInfo(desc, reinterpret_cast<void*>(base), size,
-                                   maybeProfilerRecord, lock);
+                                   lock);
   }
 }
 
@@ -1339,13 +1256,9 @@ void js::jit::CollectPerfSpewerWasmMap(uintptr_t base, uintptr_t size,
     return;
   }
   AutoLockPerfSpewer lock;
-  JS::JitCodeRecord* maybeProfilerRecord = nullptr;
-  if (!MaybeCreateProfilerEntry(lock, maybeProfilerRecord)) {
-    return;  // Allocation failure.
-  }
 
   PerfSpewer::CollectJitCodeInfo(desc, reinterpret_cast<void*>(base),
-                                 uint64_t(size), maybeProfilerRecord, lock);
+                                 uint64_t(size), lock);
 }
 
 void js::jit::PerfSpewerRangeRecorder::appendEntry(UniqueChars& desc) {

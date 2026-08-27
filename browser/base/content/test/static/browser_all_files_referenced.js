@@ -38,8 +38,6 @@ var gExceptionPaths = [
   "chrome://activity-stream/content/data/content/assets/euo-chatbot.svg",
   "chrome://browser/content/assets/moz-vpn.svg",
   "chrome://browser/content/assets/vpn-logo.svg",
-  "chrome://browser/content/assets/focus-promo.png",
-  "chrome://browser/content/assets/klar-qr-code.svg",
   "chrome://browser/content/asrouter/assets/fox-with-box-on-cloud.svg",
   "chrome://browser/content/asrouter/assets/fox-with-devices.svg",
   "chrome://browser/content/asrouter/assets/fox-with-locked-box.svg",
@@ -50,6 +48,10 @@ var gExceptionPaths = [
   "chrome://activity-stream/content/data/content/assets/fox-doodle-backup-restore.svg",
   "chrome://browser/content/asrouter/assets/kit-peek-bottom.svg",
   "chrome://browser/content/asrouter/assets/kit-peek.svg",
+  "chrome://browser/content/asrouter/assets/tabgroups/vert-animated-dark.svg",
+  "chrome://browser/content/asrouter/assets/tabgroups/vert-animated-light.svg",
+  "chrome://browser/content/asrouter/assets/tabgroups/vert-static-dark.svg",
+  "chrome://browser/content/asrouter/assets/tabgroups/vert-static-light.svg",
 
   // toolkit/components/pdfjs/content/build/pdf.js
   "resource://pdf.js/web/images/",

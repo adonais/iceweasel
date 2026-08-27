@@ -4,8 +4,10 @@
 
 #include "AndroidNetworkBlockedReason.h"
 
-#include <cstdint>
 #include <dlfcn.h>
+
+#include <cstdint>
+
 #include "mozilla/Maybe.h"
 #include "private/pprio.h"
 

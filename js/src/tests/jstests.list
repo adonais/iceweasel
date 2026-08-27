@@ -686,6 +686,9 @@ skip script test262/language/module-code/ambiguous-export-bindings/namespace-una
 skip script test262/language/module-code/source-phase-import/reexport-source-binding-namespace-get.js
 skip script test262/language/module-code/source-phase-import/reexport-source-binding-named-import.js
 
+# Bug 2057270 (asyncDispose regression)
+skip script test262/built-ins/AsyncIteratorPrototype/Symbol.asyncDispose/invokes-return.js
+
 # Bug 2045859 (Error stack accessor proposal)
 skip script test262/staging/sm/Error/constructor-proto.js
 skip script test262/staging/sm/Error/prototype.js

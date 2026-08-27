@@ -37,9 +37,14 @@
   position: fixed;
   /* make the dialog style consistent with the other dialogs in Firefox (e.g. `alert()` dialog) */
   box-shadow: var(--popup-box-shadow);
+  outline: 0.5px solid var(--card-border-color);
   border-radius: var(--border-radius-medium);
   overflow: clip;
   padding: 12px;
+
+  @media (prefers-contrast) {
+    outline-color: CanvasText;
+  }
 }
 
 .profiler-dialog__inner--medium {

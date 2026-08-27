@@ -1,0 +1,54 @@
+// This file owns only the shared hover-card frame; each content card owns its
+// own inner styles. A new content variant follows the same split.
+@import 'CardWebNotifications/CardWebNotifications';
+
+.top-sites-hover-card {
+  position: absolute;
+  pointer-events: none;
+  transform: translate(-50%, calc(-1 * var(--space-xsmall)));
+  z-index: 3;
+  padding: var(--space-medium);
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+  inset-block-start: calc(100% + var(--space-xsmall));
+  inset-inline-start: 50%;
+
+  // inset-inline-start flips to the right edge in RTL, but the centering
+  // translate is physical; flip its X so the card stays centered on the tile
+  // instead of being pushed a full half-width off-screen.
+  &:dir(rtl) {
+    transform: translate(50%, calc(-1 * var(--space-xsmall)));
+  }
+
+  .top-site-outer:is(:hover, :focus-within, :focus, .active) & {
+    pointer-events: initial;
+    opacity: 1;
+  }
+
+  // With the pointer active anywhere in the list, a card kept open only by
+  // keyboard focus (its tile not hovered) yields to the hovered tile's card, so
+  // at most one card shows and overlapping cards can't both take the pointer.
+  // Pointer away from the list -> focus alone still shows it, so keyboard-only
+  // users are unaffected.
+  .top-sites-list:hover .top-site-outer:focus-within:not(:hover) & {
+    pointer-events: none;
+    opacity: 0;
+  }
+}
+
+.top-sites-hover-card-inner {
+  box-sizing: border-box;
+  inline-size: var(--size-layout-medium);
+  max-block-size: 60vh;
+  overflow-y: auto;
+  padding: var(--space-small);
+  background: var(--newtab-background-color-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-medium);
+  box-shadow: var(--popup-box-shadow);
+  text-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-medium);
+  cursor: default;
+}

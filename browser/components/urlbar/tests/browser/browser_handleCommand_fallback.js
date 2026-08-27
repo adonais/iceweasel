@@ -7,6 +7,10 @@
  * result.
  */
 
+const { UrlbarParentController } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs"
+);
+
 const TEST_STRINGS = [
   "test",
   "test/",
@@ -48,19 +52,22 @@ add_task(async function () {
 
   async function promiseLoadURL() {
     return new Promise(resolve => {
-      sandbox.stub(gURLBar, "_loadURL").callsFake(function () {
-        sandbox.restore();
-        // The last arguments are optional and apply only to some cases, so we
-        // could not use deepEqual with them.
-        resolve(Array.from(arguments).slice(0, 3));
-      });
+      sandbox
+        .stub(gURLBar.controller, "loadURL")
+        .callsFake(({ url, where }) => {
+          sandbox.restore();
+          // The remaining options are optional and apply only to some cases, so
+          // we could not use deepEqual with them.
+          resolve([url, where]);
+          return {};
+        });
     });
   }
 
   // Run the string through a normal search where the user types the string
-  // and confirms the heuristic result, store the arguments to _loadURL, then
-  // confirm the same string without a view and without an input event, and
-  // compare the arguments.
+  // and confirms the heuristic result, store the load arguments, then confirm
+  // the same string without a view and without an input event, and compare the
+  // arguments.
   for (let value of TEST_STRINGS) {
     info(`Input the value normally and Enter. Value: ${value}`);
     let promise = promiseLoadURL();
@@ -86,10 +93,10 @@ add_task(async function () {
     }
     promise = promiseLoadURL();
     gURLBar.value = value;
-    let spy = sinon.spy(UrlbarUtils, "getHeuristicResultFor");
+    let spy = sinon.spy(gURLBar.controller, "resolveFallbackNavigation");
     EventUtils.synthesizeKey("KEY_Enter");
     spy.restore();
-    Assert.ok(spy.called, "invoked getHeuristicResultFor");
+    Assert.ok(spy.called, "invoked resolveFallbackNavigation");
     Assert.deepEqual(await promise, args, "Check arguments are coherent");
     gURLBar.handleRevert();
   }
@@ -98,34 +105,31 @@ add_task(async function () {
 // This is testing the final fallback case that may happen when we can't
 // get a heuristic result, maybe because the Places database is corrupt.
 add_task(async function no_heuristic_test() {
-  sandbox = sinon.createSandbox();
-
-  let stub = sandbox
-    .stub(UrlbarUtils, "getHeuristicResultFor")
-    .callsFake(async function () {
-      throw new Error("I failed!");
-    });
+  let stub = sinon
+    .stub(UrlbarParentController.prototype, "getHeuristicResult")
+    .rejects(new Error("I failed!"));
 
   registerCleanupFunction(async () => {
-    sandbox.restore();
+    stub.restore();
     await UrlbarTestUtils.formHistory.clear();
   });
 
   async function promiseLoadURL() {
     return new Promise(resolve => {
-      sandbox.stub(gURLBar, "_loadURL").callsFake(function () {
-        sandbox.restore();
-        // The last arguments are optional and apply only to some cases, so we
-        // could not use deepEqual with them.
-        resolve(Array.from(arguments).slice(0, 3));
+      sinon.stub(gURLBar.controller, "loadURL").callsFake(({ url, where }) => {
+        gURLBar.controller.loadURL.restore();
+        // The remaining options are optional and apply only to some cases, so
+        // we could not use deepEqual with them.
+        resolve([url, where]);
+        return {};
       });
     });
   }
 
   // Run the string through a normal search where the user types the string
-  // and confirms the heuristic result, store the arguments to _loadURL, then
-  // confirm the same string without a view and without an input event, and
-  // compare the arguments.
+  // and confirms the heuristic result, store the load arguments, then confirm
+  // the same string without a view and without an input event, and compare the
+  // arguments.
   for (let value of TEST_STRINGS) {
     // To properly testing the original value we must be out of search mode.
     if (gURLBar.searchMode) {
@@ -134,9 +138,10 @@ add_task(async function no_heuristic_test() {
     let promise = promiseLoadURL();
     gURLBar.value = value;
     EventUtils.synthesizeKey("KEY_Enter");
-    Assert.ok(stub.called, "invoked getHeuristicResultFor");
-    // The first argument to _loadURL should always be a valid url, so this
-    // should never throw.
+    // The loaded url should always be a valid url, so this should never throw.
+    // Awaiting it also lets the message path round-trip the fallback before we
+    // check the stub below.
     new URL((await promise)[0]);
+    Assert.ok(stub.called, "invoked getHeuristicResult");
   }
 });

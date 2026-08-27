@@ -3005,3 +3005,65 @@ devtools:
       - devtools-telemetry-alerts@mozilla.com
       - apoirot@mozilla.com
     expires: never
+
+devtools.localmode.mappings:
+  count:
+    type: quantity
+    unit: count
+    description: >
+      Number of Local Mode mappings currently used when opening DevTools.
+    bugs:
+      - https://bugzil.la/2053052
+    data_reviews:
+      - https://bugzil.la/2053052
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - devtools-telemetry-alerts@mozilla.com
+      - apoirot@mozilla.com
+    expires: never
+  add_transient:
+    type: counter
+    description: >
+      Number of times a transient Local Mappings was added
+      from the file:// URL notification.
+    bugs:
+      - https://bugzil.la/2053052
+    data_reviews:
+      - https://bugzil.la/2053052
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - devtools-telemetry-alerts@mozilla.com
+      - apoirot@mozilla.com
+    expires: never
+  add_permanent_from_options:
+    type: counter
+    description: >
+      Number of times a permanent Local Mappings was added
+      from the Settings panel.
+    bugs:
+      - https://bugzil.la/2053052
+    data_reviews:
+      - https://bugzil.la/2053052
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - devtools-telemetry-alerts@mozilla.com
+      - apoirot@mozilla.com
+    expires: never
+  add_permanent_from_notification:
+    type: counter
+    description: >
+      Number of times a permanent Local Mappings was added
+      from the file:// URL notification.
+    bugs:
+      - https://bugzil.la/2053052
+    data_reviews:
+      - https://bugzil.la/2053052
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - devtools-telemetry-alerts@mozilla.com
+      - apoirot@mozilla.com
+    expires: never

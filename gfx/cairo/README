@@ -7,7 +7,6 @@ similar, please see the official tarballs at http://www.cairographics.org/.
 VERSIONS:
 
   cairo (1.18.4)
-  pixman (0.46.4)
 
 ==== Updating and Patching Cairo ====
 
@@ -31,15 +30,3 @@ To change Cairo in Mozilla Central:
 - Submit a patch for review that includes both the changes to
   `gfx/cairo/cairo` as well as the changes to `moz.yaml` and the new
   patch file in `gfx/cairo/patches`.
-
-==== pixman patches ====
-
-pixman-armasm.patch: add an ifdef guard around pixman-config.h include
-
-pixman-export.patch: make sure pixman symbols are not exported in libxul
-
-pixman-interp.patch: use lower quality interpolation by default on mobile
-
-pixman-rename.patch: include pixman-rename.h for renaming of external symbols
-
-pixman-edge-saturate.patch: Saturate when rounding up trapezoid edges

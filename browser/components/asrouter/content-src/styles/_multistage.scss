@@ -103,6 +103,13 @@ html {
   }
 }
 
+.onboardingContainer:has(theme-picker) {
+  .content-tile {
+    max-width: 470px;
+    padding-bottom: var(--space-large);
+  }
+}
+
 .onboardingContainer:has(.pinnable-sites-list) {
   .screen[pos='split'] {
     .section-main {
@@ -427,6 +434,20 @@ html {
     }
   }
 
+  // The preonboarding splash covers the whole window, which already rounds
+  // and clips the dialog to match its own corners, so the splash shouldn't
+  // include rounded corners. Its focus ring is also unncessary, as it is
+  // non-interactable.
+  .screen.TOU_ONBOARDING_LOADING {
+    &:focus-visible {
+      outline: none;
+    }
+
+    .main-content {
+      border-radius: 0;
+    }
+  }
+
   .screen {
     display: flex;
     position: relative;
@@ -466,7 +487,6 @@ html {
     &[pos='center'] {
       background-color: var(--background-color-overlay);
       min-width: $main-section-width;
-      border-radius: var(--border-radius-xlarge, 16px);
 
       &.with-noodles {
         // Adjust for noodles partially extending out from the square modal
@@ -718,6 +738,16 @@ html {
               color: #E0E0E6;
             }
           }
+        }
+      }
+
+      .additional-cta {
+        &.cta-link {
+          background: none;
+          padding: 0;
+          font-weight: normal;
+
+          @include text-link-styles;
         }
       }
 
@@ -1528,6 +1558,16 @@ html {
         [narrow] & {
           @include narrow-split-fullscreen;
         }
+
+        &:has(theme-picker) {
+          // Theme picker breaks early here to avoid the two theme rows
+          // breaking into more than two, and to stay consistent with design
+          @media only screen and (width <= 1338px) {
+            height: 100%;
+
+            @include narrow-split-fullscreen;
+          }
+        }
       }
 
       @mixin narrow-split {
@@ -1776,6 +1816,12 @@ html {
 
       [narrow] & {
         @include narrow-split;
+      }
+
+      &:has(theme-picker) {
+        @media only screen and (width <= 1338px) {
+          @include narrow-split;
+        }
       }
 
       &:where(:not([fullscreen])) {
@@ -2911,7 +2957,7 @@ html {
 
   .secondary-buttons-top-container {
     display: flex;
-    flex-direction: row-reverse;
+    flex-direction: row;
     position: fixed;
     top: 10px;
     inset-inline-end: 10px;
@@ -3229,6 +3275,7 @@ html {
     .link-paragraph,
     .multi-select-container,
     migration-wizard,
+    theme-picker,
     turn-on-scheduled-backups::part(form) {
       transition-delay: 0.9s;
     }
@@ -3249,7 +3296,8 @@ html {
     .tiles-single-select-section,
     .inline-image,
     .link-paragraph,
-    .multi-select-container
+    .multi-select-container,
+    theme-picker
      {
       transition-delay: 0.2s;
     }
@@ -3349,6 +3397,7 @@ html {
       .cta-link,
       .legal-paragraph,
       migration-wizard,
+      theme-picker,
       turn-on-scheduled-backups::part(form),
       .tile-title-container,
       .steps[above-button]:not(.progress-bar) {
@@ -3485,6 +3534,7 @@ html {
       .inline-image,
       .link-paragraph,
       migration-wizard,
+      theme-picker,
       turn-on-scheduled-backups::part(form) {
         opacity: 0;
         translate: 0 var(--translate);
@@ -3527,7 +3577,8 @@ html {
   }
 
   .inline-image,
-  .link-paragraph {
+  .link-paragraph,
+  theme-picker {
     transition: var(--transition);
   }
 

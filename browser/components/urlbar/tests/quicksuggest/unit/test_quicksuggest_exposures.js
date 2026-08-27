@@ -65,7 +65,7 @@ const EXPECTED_BBB_RESULT = makeExpectedResult({
 
 const EXPECTED_WIKIPEDIA_RESULT = {
   ...QuickSuggestTestUtils.wikipediaResult(),
-  exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.NONE,
+  exposureTelemetry: UrlbarShared.EXPOSURE_TELEMETRY.NONE,
 };
 
 add_setup(async function () {
@@ -571,7 +571,7 @@ function makeExpectedResult({ rsSuggestionType, telemetryType = "exposure" }) {
     type: UrlbarShared.RESULT_TYPE.DYNAMIC,
     source: UrlbarShared.RESULT_SOURCE.SEARCH,
     heuristic: false,
-    exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
+    exposureTelemetry: UrlbarShared.EXPOSURE_TELEMETRY.HIDDEN,
     payload: {
       telemetryType,
       rsSuggestionType,

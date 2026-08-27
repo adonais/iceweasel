@@ -276,6 +276,67 @@ def GeneratedFile(name, *names, **kwargs):
 
 
 @template
+def MacOSBundle(output, **kwargs):
+    """Assemble a macOS ``.app`` bundle.
+
+    ``output`` is the bundle path. A ``skeleton`` directory is copied into
+    ``Contents``. Optionally generated ``info_plist`` and ``strings`` are
+    placed in ``Contents`` and ``Contents/Resources/<lproj>``. ``binaries``
+    (``(source, dest_name)`` pairs) are installed into ``Contents/MacOS``.
+
+    ``lproj`` names the localized resources directory under
+    ``Contents/Resources`` (default ``English.lproj``).
+
+    ``extra_files`` is a list of ``(source, dest)`` pairs installed relative
+    to ``Contents``.
+
+    ``stage`` is a directory whose entries are split between
+    ``Contents/MacOS`` and ``Contents/Resources``: ``macos_files`` lists the
+    entries that belong in ``MacOS`` (kept as symlinks) and
+    ``macos_copy_files`` those that must be deep-copied there instead.
+
+    ``moves`` lists ``(name, dest)`` pairs, each moving ``Contents/Resources/name``
+    to ``Contents/dest``.
+
+    ``pkginfo``, if set, is written verbatim to ``Contents/PkgInfo``.
+
+    ``copies`` lists additional paths the assembled bundle is copied to, so an
+    identical bundle needed in several locations is only assembled once."""
+    skeleton = kwargs.pop("skeleton", None)
+    info_plist = kwargs.pop("info_plist", None)
+    strings = kwargs.pop("strings", None)
+    lproj = kwargs.pop("lproj", "English.lproj")
+    binaries = kwargs.pop("binaries", [])
+    extra_files = kwargs.pop("extra_files", [])
+    stage = kwargs.pop("stage", None)
+    macos_files = kwargs.pop("macos_files", None)
+    macos_copy_files = kwargs.pop("macos_copy_files", None)
+    moves = kwargs.pop("moves", [])
+    pkginfo = kwargs.pop("pkginfo", None)
+    copies = kwargs.pop("copies", [])
+    if kwargs:
+        error(f"Unrecognized argument(s) to MacOSBundle: {', '.join(kwargs)}")
+
+    MACOS_BUNDLES += [
+        {
+            "bundle": output,
+            "skeleton": skeleton,
+            "info_plist": info_plist,
+            "strings": strings,
+            "lproj": lproj,
+            "binaries": binaries,
+            "extra_files": extra_files,
+            "stage": stage,
+            "macos_files": macos_files,
+            "macos_copy_files": macos_copy_files,
+            "moves": moves,
+            "pkginfo": pkginfo,
+            "copies": copies,
+        }
+    ]
+
+
+@template
 def LegacyTest(*args, **kwargs):
     """Add one test to LEGACY_RUN_TESTS with the given attributes."""
 

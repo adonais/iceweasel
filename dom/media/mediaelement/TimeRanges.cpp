@@ -19,8 +19,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TimeRanges)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-TimeRanges::TimeRanges() : mParent(nullptr) {}
-
 TimeRanges::TimeRanges(nsISupports* aParent) : mParent(aParent) {}
 
 TimeRanges::TimeRanges(nsISupports* aParent,

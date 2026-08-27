@@ -356,6 +356,9 @@ addAboutKbTask(async function testChange(tab) {
     { shiftKey: true },
   ]);
   await checkInvalid("Backspace", ["KEY_Backspace", {}]);
+  if (!isMac) {
+    await checkInvalid("F10", ["KEY_F10", {}]);
+  }
   await checkInvalid("Enter", ["KEY_Enter", {}]);
   await SpecialPowers.spawn(tab, [], async () => {
     content.focused = ContentTaskUtils.waitForEvent(content.change, "focus");

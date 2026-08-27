@@ -55,7 +55,7 @@ bool RenderAndroidHardwareBufferTextureHost::EnsureLockable() {
                               fenceFd.get(), LOCAL_EGL_NONE};
 
     EGLSync sync =
-        egl->fCreateSync(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
+        egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
     if (sync) {
       // Release fd here, since it is owned by EGLSync
       (void)fenceFd.release();

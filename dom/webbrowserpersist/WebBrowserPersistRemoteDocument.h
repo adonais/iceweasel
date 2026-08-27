@@ -40,12 +40,12 @@ class WebBrowserPersistRemoteDocument final
   Attrs mAttrs;
   RefPtr<dom::SessionHistoryEntry> mSHEntry;
   nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
-  nsCOMPtr<nsIInputStream> mPostData;
   nsCOMPtr<nsIPrincipal> mPrincipal;
+  nsCOMPtr<nsIInputStream> mPostData;
 
   friend class WebBrowserPersistDocumentParent;
   WebBrowserPersistRemoteDocument(WebBrowserPersistDocumentParent* aActor,
-                                  const Attrs& aAttrs,
+                                  Attrs&& aAttrs, nsIPrincipal* aPrincipal,
                                   nsIInputStream* aPostData);
   ~WebBrowserPersistRemoteDocument();
 

@@ -83,7 +83,11 @@ already_AddRefed<Touch> SingleTouchData::ToNewDOMTouch() const {
       LayoutDeviceIntPoint::Truncate(mScreenPoint.x, mScreenPoint.y),
       LayoutDeviceIntPoint::Truncate(mRadius.width, mRadius.height),
       mRotationAngle, mForce);
-  touch->mTilt.emplace(mTiltX, mTiltY);
+  if (mAngle) {
+    touch->mAngle = mAngle;
+  } else {
+    touch->mTilt.emplace(mTiltX, mTiltY);
+  }
   touch->twist = mTwist;
   return touch.forget();
 }
@@ -147,6 +151,13 @@ MultiTouchInput::MultiTouchInput(const WidgetTouchEvent& aTouchEvent)
             domTouch->mRefPoint,
             PixelCastJustification::LayoutDeviceIsScreenForUntransformedEvent),
         ScreenSize((float)radiusX, (float)radiusY), rotationAngle, force);
+
+    if (domTouch->mTilt) {
+      data.mTiltX = domTouch->mTilt->mX;
+      data.mTiltY = domTouch->mTilt->mY;
+    }
+    data.mTwist = domTouch->twist;
+    data.mAngle = domTouch->mAngle;
 
     mTouches.AppendElement(data);
   }

@@ -60,7 +60,8 @@ void XULTooltipElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
         aValue->ToString(value);
       }
       nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-          "XULTooltipElement::AfterSetAttr", [description, value]() {
+          "XULTooltipElement::AfterSetAttr",
+          [description, value = std::move(value)]() {
             Element* descriptionElement = description->AsElement();
             descriptionElement->SetTextContent(value, IgnoreErrors());
           }));

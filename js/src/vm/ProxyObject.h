@@ -8,6 +8,7 @@
 #include "js/Proxy.h"
 #include "js/shadow/Object.h"  // JS::shadow::Object
 #include "vm/JSObject.h"
+#include "vm/NativeObject.h"
 
 namespace js {
 
@@ -84,8 +85,25 @@ class ProxyObject : public JSObject {
     return GetProxyReservedSlot(this, n);
   }
 
+  template <TypedSlotConcept TypedSlot>
+  const Value& reservedSlotTyped(TypedSlot slot) const {
+    const Value& v = GetProxyReservedSlot(this, slot.index());
+    MOZ_ASSERT(slot.isValidType(v.type()),
+               "load from TypedSlot has invalid type");
+    return v;
+  }
+
   void setReservedSlot(size_t n, const Value& extra) {
     SetProxyReservedSlot(this, n, extra);
+  }
+
+  template <TypedSlotConcept TypedSlot>
+  void setReservedSlotTyped(TypedSlot slot, const Value& v) {
+    MOZ_ASSERT(slot.isValidType(this->reservedSlot(slot.index()).type()),
+               "TypedSlot containing invalid type was overwritten");
+    MOZ_ASSERT(slot.isValidType(v.type()),
+               "value type is incompatible with TypedSlot's types");
+    SetProxyReservedSlot(this, slot.index(), v);
   }
 
   gc::AllocKind allocKindForTenure() const;

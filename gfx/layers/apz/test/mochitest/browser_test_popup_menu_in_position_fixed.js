@@ -90,8 +90,7 @@ add_task(async () => {
   // Do a hit test inside the popup.
   checkHitResult(
     hitTest({ x: 50, y: 50 }, popup),
-    // There's a wheel event listener in arrowscrollbox.js which is used for popup.
-    APZHitResultFlags.VISIBLE | APZHitResultFlags.APZ_AWARE_LISTENERS,
+    APZHitResultFlags.VISIBLE,
     SpecialPowers.DOMWindowUtils.getViewId(popup),
     SpecialPowers.DOMWindowUtils.getLayersId(popup),
     "`position:fixed` popup"

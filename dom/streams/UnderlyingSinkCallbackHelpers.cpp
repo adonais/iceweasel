@@ -270,26 +270,30 @@ already_AddRefed<Promise> WritableStreamToOutputAlgorithms::AbortCallbackImpl(
   // https://streams.spec.whatwg.org/#writablestream-set-up
   // Step 3. Let abortAlgorithmWrapper be an algorithm that runs these steps:
 
+  // XXX The close or rather a dedicated abort should be async. For now we have
+  // to always fall back to the Step 3.3 below.
+  mOutput->CloseWithStatus(BuildErrorStatus(aCx, aReason));
+
+  // Step 3.3. Return a promise resolved with undefined.
+  // Wrapper handles this
+  return nullptr;
+}
+
+nsresult WritableStreamToOutputAlgorithms::BuildErrorStatus(
+    JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason) {
   if (aReason.WasPassed() && aReason.Value().isObject()) {
     JS::Rooted<JSObject*> obj(aCx, &aReason.Value().toObject());
     RefPtr<WebTransportError> error;
     UnwrapObject<prototypes::id::WebTransportError, WebTransportError>(
         obj, error, nullptr);
     if (error) {
-      mOutput->CloseWithStatus(net::GetNSResultFromWebTransportError(
-          error->GetStreamErrorCode().Value()));
-      return nullptr;
+      return net::GetNSResultFromWebTransportError(
+          error->GetStreamErrorCode().Value());
     }
   }
 
-  // XXX The close or rather a dedicated abort should be async. For now we have
-  // to always fall back to the Step 3.3 below.
   // XXX how do we know this stream is used by webtransport?
-  mOutput->CloseWithStatus(NS_ERROR_WEBTRANSPORT_CODE_BASE);
-
-  // Step 3.3. Return a promise resolved with undefined.
-  // Wrapper handles this
-  return nullptr;
+  return NS_ERROR_WEBTRANSPORT_CODE_BASE;
 }
 
 void WritableStreamToOutputAlgorithms::ReleaseObjects() { mOutput->Close(); }

@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.prompts.dialog
 
-import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.DialogInterface
 import android.os.Bundle
@@ -87,7 +86,6 @@ internal class AuthenticationDialogFragment : PromptDialogFragment() {
         feature?.onConfirm(sessionId, promptRequestUID, username to password)
     }
 
-    @SuppressLint("InflateParams")
     private fun addLayout(builder: MaterialAlertDialogBuilder): MaterialAlertDialogBuilder {
         val inflater = LayoutInflater.from(requireContext())
         val view = inflater.inflate(R.layout.mozac_feature_prompt_auth_prompt, null)

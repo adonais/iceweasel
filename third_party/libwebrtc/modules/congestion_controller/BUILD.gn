@@ -23,6 +23,7 @@ rtc_library("congestion_controller") {
     "../../api:sequence_checker",
     "../../api/environment",
     "../../api/units:data_rate",
+    "../../api/units:data_size",
     "../../api/units:time_delta",
     "../../api/units:timestamp",
     "../../rtc_base:logging",
@@ -52,6 +53,7 @@ if (rtc_include_tests) {
     deps = [
       ":congestion_controller",
       "../../api:field_trials",
+      "../../api:rtp_header_extension_id",
       "../../api:rtp_parameters",
       "../../api/environment:environment_factory",
       "../../api/test/network_emulation",
@@ -62,6 +64,7 @@ if (rtc_include_tests) {
       "../../api/units:timestamp",
       "../../rtc_base:buffer",
       "../../system_wrappers",
+      "../../test:create_test_environment",
       "../../test:create_test_field_trials",
       "../../test:test_support",
       "../../test/scenario",

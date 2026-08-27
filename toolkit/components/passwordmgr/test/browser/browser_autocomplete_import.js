@@ -190,8 +190,12 @@ add_task(async function import_suggestion_migrate() {
       );
       Assert.ok(importableItem, "Got importable suggestion richlistitem");
 
+      // Wait for the layout to stabilize by waiting for possible reflow;
+      // otherwise, the synthesized mouse event might not be dispatched
+      // correctly.
+      await new Promise(requestAnimationFrame);
       await TestUtils.waitForCondition(
-        () => !importableItem.collapsed,
+        () => !importableItem.collapsed && !EventUtils.isHidden(importableItem),
         "Wait for importable suggestion to show"
       );
 
@@ -208,22 +212,91 @@ add_task(async function import_suggestion_migrate() {
       const callCount = await migratePromise;
       Assert.equal(callCount, 1, "Direct migrate used once");
 
-      const importedItem = await TestUtils.waitForCondition(
-        () => popup.querySelector(`[originaltype="loginWithOrigin"]`),
-        "Wait for imported login to show"
-      );
+      let importedItem;
+      await new Promise(requestAnimationFrame);
+      await TestUtils.waitForCondition(() => {
+        importedItem = popup.querySelector(`[originaltype="loginWithOrigin"]`);
+        return importedItem && !EventUtils.isHidden(importedItem);
+      }, "Wait for imported login to show");
       EventUtils.synthesizeMouseAtCenter(importedItem, {});
 
-      const username = await SpecialPowers.spawn(
-        browser,
-        [],
-        () => content.document.getElementById("form-basic-username").value
-      );
+      // Filling happens in the content process, so the value doesn't land
+      // synchronously with the click.
+      let username;
+      await TestUtils.waitForCondition(async () => {
+        username = await SpecialPowers.spawn(
+          browser,
+          [],
+          () => content.document.getElementById("form-basic-username").value
+        );
+        return username == "import";
+      }, "Wait for the username from the import to be filled in");
       Assert.equal(username, "import", "username from import filled in");
 
       LoginTestUtils.clearData();
     }
   );
+});
+
+/**
+ * Tests that the import suggestion is not shown when Firefox already has a
+ * saved login for the site, even if that login has an empty username (bug
+ * 2052520). Empty-username logins are dropped from the autocomplete match
+ * list on username fields, so the "no saved logins" gate must not rely on
+ * that filtered list.
+ */
+add_task(async function import_suggestion_not_shown_with_empty_username() {
+  // Refresh the suggestion budget so the import suggestion is only ever hidden
+  // by the saved-login gate, not because earlier tasks exhausted the count.
+  // pushPrefEnv restores the previous (exhausted) value afterwards, keeping the
+  // precondition for import_suggestion_not_shown intact.
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["signon.suggestImportCount", 3],
+      ["signon.showAutoCompleteImport", "import"],
+    ],
+  });
+
+  await LoginTestUtils.addLogin({ username: "", password: "pass" });
+
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "https://example.com" + DIRECTORY_PATH + "form_basic.html",
+    },
+    async function (browser) {
+      const popup = document.getElementById("PopupAutoComplete");
+      Assert.ok(popup, "Got popup");
+      // With the login saved, the only entries are the (non-import) footer, so
+      // the popup won't open on focus alone. Force it open like the sibling
+      // import_suggestion_not_shown task does.
+      let opened = false;
+      openACPopup(popup, browser, "#form-basic-username").then(
+        () => (opened = true)
+      );
+      await TestUtils.waitForCondition(() => {
+        EventUtils.synthesizeKey("KEY_ArrowDown");
+        return opened;
+      });
+
+      const footer = popup.querySelector(`[originaltype="loginsFooter"]`);
+      Assert.ok(footer, "Got footer richlistitem");
+      await TestUtils.waitForCondition(
+        () => !EventUtils.isHidden(footer),
+        "Waiting for footer to become visible"
+      );
+
+      Assert.ok(
+        !popup.querySelector(`[originaltype="importableLogins"]`),
+        "No importable suggestion shown when a login is already saved"
+      );
+
+      await closePopup(popup);
+    }
+  );
+
+  LoginTestUtils.clearData();
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function import_suggestion_not_shown() {

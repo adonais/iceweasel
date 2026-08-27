@@ -54,10 +54,6 @@ class WindowsDebugProcessData : public nsIWindowsDebugProcessData {
 NS_IMPL_ISUPPORTS(WindowsDebugProcessData, nsIWindowsDebugProcessData)
 NS_IMPL_ISUPPORTS(WindowsTestDebug, nsIWindowsTestDebug)
 
-WindowsTestDebug::WindowsTestDebug() {}
-
-WindowsTestDebug::~WindowsTestDebug() {}
-
 static nsReturnRef<HMODULE> MakeRestartManager() {
   nsModuleHandle module(::LoadLibraryW(L"Rstrtmgr.dll"));
   (void)NS_WARN_IF(!module);

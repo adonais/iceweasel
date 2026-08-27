@@ -48,7 +48,10 @@ def init(command_context):
     lando.LAUNCH_BROWSER = not mach_context.settings["try"]["nobrowser"]
     push.MAX_HISTORY = mach_context.settings["try"]["maxhistory"]
     push.MACH_TRY_REMOTE = mach_context.settings["try"]["pushremote"]
-    push.GIT_BACKING_ENABLED = mach_context.settings["try"]["gitbacking"]
+    if "GIT_BACKING_ENABLED" in os.environ:
+        push.GIT_BACKING_ENABLED = os.environ.get("GIT_BACKING_ENABLED") == "1"
+    else:
+        push.GIT_BACKING_ENABLED = mach_context.settings["try"]["gitbacking"]
     task_config.SKIP_ARTIFACT_BUILD_CHECK = mach_context.settings["try"]["noartifact"]
 
 

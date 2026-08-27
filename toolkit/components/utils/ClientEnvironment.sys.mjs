@@ -18,8 +18,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TelemetryController: "resource://gre/modules/TelemetryController.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
   WindowsRegistry: "resource://gre/modules/WindowsRegistry.sys.mjs",
-  WindowsVersionInfo:
-    "resource://gre/modules/components-utils/WindowsVersionInfo.sys.mjs",
 });
 
 function getOsVersion() {
@@ -253,7 +251,8 @@ export class ClientEnvironmentBase {
           return null;
         }
 
-        return lazy.WindowsVersionInfo.get({ throwOnError: false }).buildNumber;
+        let build = Number(Services.sysinfo.get("build"));
+        return Number.isInteger(build) ? build : null;
       },
 
       /**

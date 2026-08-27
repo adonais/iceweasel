@@ -18,8 +18,8 @@ flat varying mediump vec2 v_amount;
 flat varying highp mat4 v_color_mat;
 flat varying mediump vec4 v_color_offset;
 
-// The component-transfer function to use for each channel, stored as floats to
-// work around driver bugs with integer varyings (see brush_blend.glsl).
+// The component-transfer function to use for each channel, stored as floats
+// rather than in an ivec4 to work around driver bugs with integer varyings.
 flat varying mediump vec4 v_funcs;
 
 #ifdef WR_VERTEX_SHADER
@@ -27,7 +27,7 @@ flat varying mediump vec4 v_funcs;
 void pattern_vertex(PrimitiveInfo info) {
     // The source maps to the primitive rect; the uv rect is provided via the
     // segment (resolved from the source render task).
-    vec2 f = (info.local_pos - info.local_prim_rect.p0) / rect_size(info.local_prim_rect);
+    vec2 f = (info.local_pos - info.pattern_rect.p0) / rect_size(info.pattern_rect);
     vs_init_sample_color0(f, info.segment.uv_rect);
 
     int filter_mode = info.pattern_input.x;

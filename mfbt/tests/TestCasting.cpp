@@ -2,15 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Casting.h"
-
 #include <stdint.h>
-#include <cstdint>
+
 #include <cmath>
-#include <limits>
-#include <type_traits>
+#include <cstdint>
 #include <iostream>
+#include <limits>
 #include <tuple>
+#include <type_traits>
+
+#include "mozilla/Casting.h"
 
 using mozilla::AssertedCast;
 using mozilla::BitwiseCast;

@@ -1,4 +1,5 @@
 var g = newGlobal({ newCompartment: true });
+g.moduleLoadAndLink = moduleLoadAndLink;
 var dbg = new Debugger(g);
 var armed = false, pc = 0;
 dbg.onEnterFrame = function (frame) {
@@ -24,7 +25,7 @@ g.eval(`
   var child = parseModule("await new Promise(r => { globalThis.__pc = r; }); export let cv = 10;", "child.js");
   registerModule("child", child);
   var parent = parseModule("import { cv } from 'child'; await new Promise(r => { globalThis.__pp = r; }); globalThis.result = cv + 1;", "parent.js");
-  moduleLink(parent);
+  moduleLoadAndLink(parent);
   var ev = moduleEvaluate(parent);
   if (ev && ev.then) ev.then(() => {}, () => {});
 `);

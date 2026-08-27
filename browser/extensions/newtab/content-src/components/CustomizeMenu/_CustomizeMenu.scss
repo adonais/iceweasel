@@ -302,6 +302,24 @@
   display: contents;
 }
 
+.appearance-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-medium);
+
+  h2 {
+    margin: 0;
+    font-weight: var(--font-weight-heading);
+    font-size: var(--font-size-root);
+  }
+
+  // Reduce the swatch gap for both the compact row picker and the full picker
+  // in ThemesManagementPanel (both use the compact-view spacing).
+  theme-picker {
+    --theme-picker-gap-column: var(--space-small);
+  }
+}
+
 .home-section {
   display: grid;
   grid-template-columns: 1fr;
@@ -479,7 +497,8 @@
 }
 
 .sections-mgmt-panel,
-.widgets-mgmt-panel {
+.widgets-mgmt-panel,
+.themes-mgmt-panel {
   // Width of panel minus the margins
   height: 100%;
   inset-inline-start: var(--space-xlarge);
@@ -567,7 +586,11 @@
     &.widgets-mgmt-panel-enter,
     &.widgets-mgmt-panel-exit,
     &.widgets-mgmt-panel-enter-done,
-    &.widgets-mgmt-panel-exit-done {
+    &.widgets-mgmt-panel-exit-done,
+    &.themes-mgmt-panel-enter,
+    &.themes-mgmt-panel-exit,
+    &.themes-mgmt-panel-enter-done,
+    &.themes-mgmt-panel-exit-done {
       transition: transform 300ms;
     }
   }
@@ -575,7 +598,9 @@
   &.sections-mgmt-panel-enter-done,
   &.sections-mgmt-panel-enter-active,
   &.widgets-mgmt-panel-enter-done,
-  &.widgets-mgmt-panel-enter-active {
+  &.widgets-mgmt-panel-enter-active,
+  &.themes-mgmt-panel-enter-done,
+  &.themes-mgmt-panel-enter-active {
     transform: translateX(0);
   }
 }
@@ -677,6 +702,14 @@
 
 .widgets-mgmt-panel-container {
   padding-block: var(--space-medium);
+}
+
+.themes-mgmt-panel {
+  // Match the about:addons themes (paintbrush) icon.
+  .external-link {
+    margin-block-start: var(--space-large);
+    background-image: url('chrome://mozapps/skin/extensions/category-themes.svg');
+  }
 }
 
 // @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior for #shortcuts-section, #widgets-section and #row-selector

@@ -245,7 +245,7 @@ add_task(async function test_tab_matches() {
       makeTabSwitchResult(context, {
         uri: "data:text/html,test",
         title: "data:text/html,test",
-        iconUri: UrlbarUtils.ICON.DEFAULT,
+        iconUri: UrlbarShared.ICON.DEFAULT,
       }),
       makeTabSwitchResult(context, {
         uri: "about:mozilla",

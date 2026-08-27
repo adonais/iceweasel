@@ -45,8 +45,10 @@
               stopwatchid="tabClick">
 # If the name (tabbrowser-arrowscrollbox) or structure of this changes
 # significantly, there is an optimization in
-# DisplayPortUtils::MaybeCreateDisplayPortInFirstScrollFrameEncountered based
-# the current structure that we may want to revisit.
+# DisplayPortUtils::MaybeCreateDisplayPortInFirstScrollFrameEncountered based on
+# the current structure that we may want to revisit. It relies on the
+# arrowscrollbox's own scroll container being a direct child frame, so that it
+# can be given a displayport without walking the tabs inside it.
           <div id="pinned-drop-indicator">
             <html:img id="pinned-drop-indicator-icon" src="chrome://browser/skin/pin.svg" role="presentation" loading="lazy"/>
             <span id="pinned-drop-indicator-text" data-l10n-id="pinned-tabs-drop-indicator"></span>
@@ -83,6 +85,9 @@
                        cui-areatype="toolbar"
                        removable="true"/>
 
+        <toolbarspring cui-areatype="toolbar"
+                       class="chromeclass-toolbar-additional"/>
+
         <toolbarbutton id="alltabs-button"
                        class="toolbarbutton-1 chromeclass-toolbar-additional tabs-alltabs-button"
                        delegatesanchor="true"
@@ -92,8 +97,6 @@
                        removable="true"/>
       </hbox>
     </hbox>
-
-    <hbox class="titlebar-spacer" type="post-tabs"/>
 
 #include private-browsing-indicator.inc.xhtml
 
@@ -189,9 +192,27 @@
             <image id="remote-control-icon"/>
           </box>
 
-          <box id="trust-icon-container" align="center" role="button" data-l10n-id="urlbar-identity-button" urlbar-slot="site-info">
+          <box
+            id="trust-icon-container"
+            align="center"
+            role="button"
+            data-l10n-id="urlbar-identity-button2"
+            data-l10n-args='{"count":0}'
+            data-l10n-attrs="aria-label"
+            urlbar-slot="site-info"
+          >
             <image id="trust-icon"/>
             <label id="trust-label" crop="center" flex="1" data-l10n-id="urlbar-trust-icon-notsecure-label" />
+            <span id="trust-icon-tracker-count-longform-wrapper">
+              <label
+                id="trust-icon-tracker-count-longform"
+                data-l10n-id="urlbar-trust-icon-trackers-blocked-longform-label"
+                data-l10n-args='{"count":0}'
+              />
+            </span>
+            <span id="trust-icon-tracker-count-shortform-wrapper">
+              <label id="trust-icon-tracker-count-shortform" />
+            </span>
           </box>
 
           <!-- Use onclick instead of normal popup= syntax since the popup
@@ -212,10 +233,15 @@
                 class="identity-box"
                 pageproxystate="invalid"
                 urlbar-slot="site-info">
+            <!-- Shown when trustPanel.featureGate is off, or for
+            chromeUI/extensionPage where tracker blocking never runs, so we
+            never update `data-l10n-args`. -->
             <box id="identity-icon-box"
                   role="button"
                   align="center"
-                  data-l10n-id="urlbar-identity-button"
+                  data-l10n-id="urlbar-identity-button2"
+                  data-l10n-args='{"count":0}'
+                  data-l10n-attrs="aria-label"
                   class="identity-box-button">
               <image id="identity-icon"/>
               <label id="identity-icon-label" crop="center" flex="1"/>
@@ -402,6 +428,13 @@
                   data-l10n-id="urlbar-split-view-button"
                   hidden="true">
               <image class="urlbar-icon" id="split-view-button-icon" />
+            </hbox>
+            <hbox id="share-button"
+                  class="urlbar-page-action"
+                  role="button"
+                  data-l10n-id="urlbar-share-button"
+                  hidden="true">
+              <image class="urlbar-icon"/>
             </hbox>
             <hbox id="pageActionButton"
                   class="urlbar-page-action"

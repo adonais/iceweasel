@@ -363,10 +363,6 @@ nsresult nsPropertiesParser::ParseBuffer(const char16_t* aBuffer,
   return NS_OK;
 }
 
-nsPersistentProperties::nsPersistentProperties() : mIn(nullptr), mTable(16) {}
-
-nsPersistentProperties::~nsPersistentProperties() = default;
-
 size_t nsPersistentProperties::SizeOfIncludingThis(
     mozilla::MallocSizeOf aMallocSizeOf) {
   // The memory used by mTable is accounted for in mArena.

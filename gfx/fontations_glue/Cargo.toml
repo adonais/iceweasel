@@ -1,0 +1,20 @@
+[package]
+name = "fontations_glue"
+version = "0.1.0"
+edition = "2021"
+authors = ["AlaskanEmily <emcdonough@mozilla.com>"]
+description = "Rust glue for using Fontations in Gecko."
+license = "MPL-2.0"
+
+[lib]
+path = "lib.rs"
+test = false
+doctest = false
+bench = false
+doc = false
+harness = false
+
+[dependencies]
+nsstring = { path = "../../xpcom/rust/nsstring/" }
+skrifa = { version = "0.44.0" }
+thin-vec = { version = "0.2.1" }

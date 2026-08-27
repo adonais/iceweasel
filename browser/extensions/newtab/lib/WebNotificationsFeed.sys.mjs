@@ -3,39 +3,25 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /**
- * NotificationStoreEntry
- * ---
- * What the platform writes to disk for each web notification — one entry
- * per `(origin, id)` pair under `<profileDir>/notificationstore.json`.
- * This is the raw input shape `normalizeEntry` consumes; everything
- * downstream is derived from it.
- *
- * @typedef {object} NotificationStoreEntry
- * @property {string} id
- * @property {string} [title]
- * @property {string} [body]
- * @property {string} [tag]
- * @property {string} [dir]
- * @property {string} [icon]
- * @property {boolean} [requireInteraction]
- * @property {number} [timestamp]
- */
-
-/**
  * NormalizedNotification
  * ---
  * A single notification as it appears in the slice — what UI consumers
- * actually iterate over to render a card or count an unread. Mostly a
- * pass-through of `NotificationStoreEntry` with `origin` injected, because
- * the on-disk file keeps origin as the outer map key, not on the entry
- * itself, and flat consumers need to recover it.
+ * iterate over to render a card or count a badge. The feed produces this
+ * shape from two sources that it reconciles into one live map: the on-disk
+ * store (Service-Worker-backed, survives restart) and the platform's live
+ * capture observers (which also see transient page `new Notification()`
+ * notifications the disk store never records).
  *
  * @typedef {object} NormalizedNotification
  * @property {string} id
  * @property {string} origin
  * @property {string} [title]
  * @property {string} [body]
- * @property {string} [tag]
+ * @property {string} [tag] The app-chosen tag, present only on entries read
+ *   from the on-disk store: `nsIAlertNotification` reports `id` rather than the
+ *   tag as its name for content principals, so the live capture path cannot
+ *   recover it. Kept in the slice for parity with the on-disk shape; not
+ *   rendered, and not the key anything is closed by.
  * @property {string} [dir]
  * @property {string} [icon]
  * @property {boolean} [requireInteraction]
@@ -43,45 +29,16 @@
  */
 
 /**
- * WebNotificationsUpdatedPayload
- * ---
- * What the feed dispatches when a snapshot finishes successfully. The
- * reducer copies these fields onto the slice verbatim and flips
- * `initialized` to true. If you're a UI consumer you probably want
- * `WebNotificationsSlice` instead — this typedef is for the
- * action-handling layer (reducers, middleware, devtools introspection).
- *
- * @typedef {object} WebNotificationsUpdatedPayload
- * @property {number} lastUpdated
- * @property {{[id: string]: NormalizedNotification}} notifications
- * @property {{[origin: string]: string[]}} byOrigin
- */
-
-/**
- * WebNotificationsError
- * ---
- * Carries why a snapshot didn't make it. Lands on `slice.error` so a
- * debug surface can show "couldn't read notifications: <message>"
- * instead of throwing or silently going stale.
- *
- * @typedef {object} WebNotificationsError
- * @property {string} message - Stringified error.
- */
-
-/**
  * WebNotificationsSlice
  * ---
- * The shape of `state.WebNotifications` that UI consumers actually
- * read. If you're writing a React component or a selector and your
- * code calls `useSelector(s => s.WebNotifications)`, this is the
- * contract you're working against.
+ * The shape of `state.WebNotifications` that UI consumers read.
  *
  * @typedef {object} WebNotificationsSlice
- * @property {boolean} initialized - True after the first successful snapshot.
- * @property {?number} lastUpdated - ms timestamp of the most recent snapshot.
+ * @property {boolean} initialized True after the first snapshot.
+ * @property {?number} lastUpdated ms timestamp of the last change.
  * @property {{[id: string]: NormalizedNotification}} notifications
- * @property {{[origin: string]: string[]}} byOrigin
- * @property {?WebNotificationsError} error - Last snapshot error, if any.
+ * @property {{[origin: string]: string[]}} byOrigin id index, per origin.
+ * @property {?{message: string}} error Last snapshot error, if any.
  */
 
 import {
@@ -89,34 +46,58 @@ import {
   actionTypes as at,
 } from "resource://newtab/common/Actions.mjs";
 
-// The platform persists web notifications to this file in the user's profile.
-// The name is a hardcoded literal in dom/notification/NotificationDB.sys.mjs;
-// renaming it would require profile-data migration, so it's the closest thing
-// to a stable contract we get without a documented API. Reading is purely an
-// observation — there's no file watcher, no reconciliation, no OS effect.
+// The platform persists Service-Worker-backed web notifications to this file in
+// the user's profile. The name is a hardcoded literal in
+// dom/notification/NotificationDB.sys.mjs; renaming it would require
+// profile-data migration, so it is the closest thing to a stable contract we
+// get. Reading it is pure observation — no file watcher, no OS effect.
 const NOTIFICATION_STORE_FILENAME = "notificationstore.json";
 
-// Fields we copy through from a stored entry. Everything else is
-// dropped to keep the IPC payload tight
-const PASSTHROUGH_FIELDS = [
+// Parent-process observer topics fired by toolkit/components/alerts for every
+// web notification shown/closed. The subject is an nsIAlertNotification.
+const TOPIC_SHOWN = "web-notification-shown";
+const TOPIC_CLOSED = "web-notification-closed";
+
+// The feature gate (Nimbus/about:config; decides whether the feature exists at
+// all) and the user preference the customize toggle writes. Both must be set
+// for the feed to observe: the platform reports notifications regardless, but
+// with no observer registered that reporting goes nowhere.
+const PREF_SYSTEM = "system.showWebNotifications";
+const PREF_USER = "showWebNotifications";
+
+const ALERTS_SERVICE = "@mozilla.org/alerts-service;1";
+const NOTIFICATION_STORAGE = "@mozilla.org/notificationStorage;1";
+const NOTIFICATION_HANDLER = "@mozilla.org/notification-handler;1";
+
+// Origins that fire a notification and immediately close it themselves, using it
+// as a bell rather than as a durable item. The feed otherwise mirrors the system
+// and releases on close, which would drop these before they were ever seen (see
+// `_shouldReleaseOnClose`). This is for sites whose close says nothing about the
+// item's fate, not for sites whose notifications are merely short-lived: a site
+// that lets its toast run its course is held up by the system for as long as it
+// asked for, and its close is a real one. Keyed by the origin the notification is
+// delivered under (post-alias app origin), which `alert.principal.origin` reports.
+const STICKY_ORIGINS = new Set(["https://mail.google.com"]);
+
+// Fields copied through from a stored (on-disk) entry. Everything else the
+// platform keeps (page payloads, worker plumbing) is dropped.
+const DISK_PASSTHROUGH_FIELDS = [
   "id",
   "title",
-  "dir",
   "body",
   "tag",
+  "dir",
   "icon",
   "requireInteraction",
   "timestamp",
 ];
 
 /**
- * readNotificationStore
- * ---
  * Reads and parses the platform's persisted notification store. The platform
- * writes this file via atomic rename, so we never observe a torn read. A
- * missing file (first-run profile) resolves to an empty object.
+ * writes it via atomic rename, so we never observe a torn read. A missing file
+ * (first-run profile) resolves to an empty object.
  *
- * @returns {Promise<{[origin: string]: {[id: string]: NotificationStoreEntry}}>}
+ * @returns {Promise<{[origin: string]: {[id: string]: object}}>}
  */
 async function readNotificationStore() {
   const path = PathUtils.join(
@@ -135,21 +116,15 @@ async function readNotificationStore() {
 }
 
 /**
- * normalizeEntry
- * ---
- * Takes a raw on-disk entry and returns the slim shape consumers see in
- * the slice. We pass through the display-relevant fields, drop everything
- * else (page payloads, SW plumbing, anything no UI needs), and inject
- * `origin` because the on-disk store keeps it as the outer map key, not
- * on the entry itself.
+ * Normalizes a raw on-disk entry.
  *
- * @param {NotificationStoreEntry} entry
+ * @param {object} entry
  * @param {string} origin
  * @returns {NormalizedNotification}
  */
-function normalizeEntry(entry, origin) {
+function normalizeDiskEntry(entry, origin) {
   const out = { origin };
-  for (const key of PASSTHROUGH_FIELDS) {
+  for (const key of DISK_PASSTHROUGH_FIELDS) {
     if (entry[key] !== undefined) {
       out[key] = entry[key];
     }
@@ -160,106 +135,370 @@ function normalizeEntry(entry, origin) {
 /**
  * WebNotificationsFeed
  * ---
- * Feed that publishes a snapshot of the platform's persisted web
- * notifications into the newtab Redux slice. Reads `notificationstore.json`
- * directly off disk, normalizes the entries, and dispatches the result.
+ * Publishes a live view of the user's web notifications into the newtab slice.
  *
- * Refresh convention:
- *   - INIT seeds the slice once at feed startup and broadcasts it, so a tab
- *     already open — and, via NewTabInit's full-state reply, every tab opened
- *     afterwards — starts from a snapshot.
- *   - Every later refresh is targeted at a single tab, never broadcast: the feed
- *     re-reads disk and answers just the requesting tab with AlsoToOneContent,
- *     which also runs the main reducer so main state stays warm as the seed for
- *     the next new tab. Blast radius is one tab per event, not a fan-out to
- *     every open page.
- *   - NEW_TAB_LOAD drives a targeted refresh today: (re)loading a tab re-reads
- *     disk for that tab, so "reload to see current counts" works without any UI.
- *   - WEB_NOTIFICATIONS_REQUEST is the entry point content will drive A consumer
- *     dispatches `ac.OnlyToMain({ type: at.WEB_NOTIFICATIONS_REQUEST })` on
- *     mount and on becoming visible; the feed answers that tab only.
- *   - A NotificationDB.save() observer is the eventual true-push that retires
- *     the poll, but it lives in dom/notification/ (platform code, outside this
- *     XPI), so it is non-train-hoppable and rides the release train.
+ * The feed owns the authoritative map in the parent process:
+ *   - Seeding reads `notificationstore.json` (Service-Worker history that
+ *     survives restart) and broadcasts a full snapshot to open tabs.
+ *   - Two platform observers keep it current: a notification being shown adds
+ *     an entry (and broadcasts an ADDED delta); being closed removes it (a
+ *     REMOVED delta). This is the only place transient page notifications are
+ *     ever seen, so they live only for as long as their OS toast does.
+ *   - Content is a pure projection: it dispatches intents (dismiss, click) to
+ *     main and re-renders from the broadcast result, never mutating locally.
  *
- * Default-off via the `feeds.webnotificationsfeed` pref
+ * New tabs need no special handling — the main reducer stays current from the
+ * broadcasts, so NewTabInit hands each new tab an up-to-date snapshot.
+ *
+ * This is a system feed: it is constructed for every profile and does nothing
+ * until the feature gate (`system.showWebNotifications`, or a trainhop
+ * enrollment via `trainhopConfig.webNotifications.enabled`) and the user
+ * preference (`showWebNotifications`) are set. It observes only while they are,
+ * which is what keeps platform capture inert for everyone else — the platform
+ * reports notifications either way, but to no one.
  */
 export class WebNotificationsFeed {
-  /**
-   * Routes one snapshot action: to a single tab when `target` is a port id
-   * (this also runs the main reducer, keeping main state ready for
-   * the next new tab), or to every open tab when it is omitted.
-   *
-   * @param {object} action
-   * @param {string} [target] - Port id of the tab to answer.
-   */
-  _sendToTabs(action, target) {
-    this.store.dispatch(
-      target
-        ? ac.AlsoToOneContent(action, target)
-        : ac.BroadcastToContent(action)
-    );
+  constructor() {
+    /** @type {{[id: string]: NormalizedNotification}} */
+    this._notifications = Object.create(null);
+    /** @type {Map<string, Set<string>>} origin -> set of ids */
+    this._byOrigin = new Map();
+    this._observing = false;
+  }
+
+  _broadcast(action) {
+    this.store.dispatch(ac.BroadcastToContent(action));
+  }
+
+  /** Builds the plain `byOrigin` object the slice expects from the id sets. */
+  _byOriginSnapshot() {
+    const out = Object.create(null);
+    for (const [origin, ids] of this._byOrigin) {
+      out[origin] = [...ids];
+    }
+    return out;
+  }
+
+  /** Inserts a normalized notification into the live map. */
+  _add(notification) {
+    const { id, origin } = notification;
+    this._notifications[id] = notification;
+    let ids = this._byOrigin.get(origin);
+    if (!ids) {
+      ids = new Set();
+      this._byOrigin.set(origin, ids);
+    }
+    ids.add(id);
   }
 
   /**
-   * Snapshots the on-disk notification store and dispatches the normalized
-   * result. INIT omits `target` to seed all tabs; every other trigger passes
-   * the requesting tab's port so the refresh stays scoped to that one tab.
+   * Removes an id from the live map.
    *
-   * @param {string} [target] - Port id from `action.meta.fromTarget`.
-   * @returns {Promise<void>}
+   * @returns {boolean} True if it was present (so callers avoid empty deltas).
    */
-  async _snapshot(target) {
+  _remove(origin, id) {
+    if (!(id in this._notifications)) {
+      return false;
+    }
+    delete this._notifications[id];
+    const ids = this._byOrigin.get(origin);
+    if (ids) {
+      ids.delete(id);
+      if (!ids.size) {
+        this._byOrigin.delete(origin);
+      }
+    }
+    return true;
+  }
+
+  async _seedFromDisk() {
     let raw;
     try {
       raw = await readNotificationStore();
     } catch (e) {
-      this._sendToTabs(
-        {
-          type: at.WEB_NOTIFICATIONS_ERROR,
-          data: { message: String(e) },
-        },
-        target
-      );
+      this._broadcast({
+        type: at.WEB_NOTIFICATIONS_ERROR,
+        data: { message: String(e) },
+      });
       return;
     }
-
-    const notifications = Object.create(null);
-    const byOrigin = Object.create(null);
-
-    // Safe to flat-key by id alone: the platform derives id from a hash of
-    // (origin, tag-or-uuid), so cross-origin collisions are negligible at
-    // any realistic per-user count. Same convention as core notifications
     for (const origin of Object.keys(raw)) {
-      const originIds = [];
       for (const id of Object.keys(raw[origin])) {
-        notifications[id] = normalizeEntry(raw[origin][id], origin);
-        originIds.push(id);
+        this._add(normalizeDiskEntry(raw[origin][id], origin));
       }
-      byOrigin[origin] = originIds;
     }
-
-    this._sendToTabs(
-      {
-        type: at.WEB_NOTIFICATIONS_UPDATED,
-        data: {
-          lastUpdated: Date.now(),
-          notifications,
-          byOrigin,
-        },
+    this._broadcast({
+      type: at.WEB_NOTIFICATIONS_UPDATED,
+      data: {
+        lastUpdated: Date.now(),
+        notifications: { ...this._notifications },
+        byOrigin: this._byOriginSnapshot(),
       },
-      target
+    });
+  }
+
+  /**
+   * Answers a single tab with the current snapshot, without a disk re-read.
+   * Used for an explicit content-side refresh (e.g. on becoming visible).
+   */
+  _answer(target) {
+    this.store.dispatch(
+      ac.AlsoToOneContent(
+        {
+          type: at.WEB_NOTIFICATIONS_UPDATED,
+          data: {
+            lastUpdated: Date.now(),
+            notifications: { ...this._notifications },
+            byOrigin: this._byOriginSnapshot(),
+          },
+        },
+        target
+      )
     );
+  }
+
+  // nsIObserver. The platform already excludes private-browsing notifications,
+  // so anything arriving here is safe to surface.
+  observe(subject, topic) {
+    const alert = subject?.QueryInterface(Ci.nsIAlertNotification);
+    if (!alert) {
+      return;
+    }
+    const origin = alert.principal?.origin;
+    if (!origin) {
+      return;
+    }
+    if (topic === TOPIC_SHOWN) {
+      this._add(this._normalizeAlert(alert, origin));
+      this._broadcast({
+        type: at.WEB_NOTIFICATIONS_ADDED,
+        data: { notification: this._notifications[alert.id] },
+      });
+    } else if (topic === TOPIC_CLOSED) {
+      const existing = this._notifications[alert.id];
+      if (
+        existing &&
+        this._shouldReleaseOnClose(existing) &&
+        this._remove(origin, alert.id)
+      ) {
+        this._broadcast({
+          type: at.WEB_NOTIFICATIONS_REMOVED,
+          data: { removed: [{ origin, id: alert.id }] },
+        });
+      }
+    }
+  }
+
+  /**
+   * Whether a close event should drop a notification from the feed. The feed
+   * mirrors what the system still holds, so a close releases: it is the system
+   * reporting the notification is spent, which is the only judgement available
+   * and a better one than we could make. A close carries no reason we can trust
+   * (on macOS a page calling `close()`, a user swipe, and a toast timeout are
+   * indistinguishable, and a timeout may fire no close at all), and it needs
+   * none — what the site wanted is already reflected in whether a close arrives
+   * at all. `requireInteraction` in particular is honoured by the system, which
+   * holds the toast up until it is addressed; reading it here too would keep a
+   * notification the system has since dismissed.
+   *
+   * Bell origins are the one exception: they close their own notification within
+   * moments of showing it, so mirroring would drop them before they were ever
+   * seen. See `STICKY_ORIGINS`.
+   *
+   * @param {NormalizedNotification} notification
+   * @returns {boolean}
+   */
+  _shouldReleaseOnClose(notification) {
+    return !STICKY_ORIGINS.has(notification.origin);
+  }
+
+  /**
+   * @param {nsIAlertNotification} alert
+   * @param {string} origin
+   * @returns {NormalizedNotification}
+   */
+  _normalizeAlert(alert, origin) {
+    return {
+      id: alert.id,
+      origin,
+      title: alert.title,
+      body: alert.text,
+      dir: alert.dir,
+      icon: alert.imageURL,
+      requireInteraction: alert.requireInteraction,
+      timestamp: Date.now(),
+    };
+  }
+
+  _principalFor(origin) {
+    try {
+      return Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+        origin
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * Replays a notification click: fires the origin's service worker
+   * `notificationclick` (same path a real OS click takes) and, via
+   * `autoClosed`, purges the stored entry. The removal is reflected by the
+   * authoritative map below.
+   */
+  _click({ origin, id }) {
+    const principal = this._principalFor(origin);
+    if (principal) {
+      try {
+        Cc[NOTIFICATION_HANDLER].getService(Ci.nsINotificationHandler)
+          .respondOnClick(principal, id, "", /* autoClosed */ true)
+          .catch(() => {});
+      } catch (e) {}
+    }
+    if (this._remove(origin, id)) {
+      this._broadcast({
+        type: at.WEB_NOTIFICATIONS_REMOVED,
+        data: { removed: [{ origin, id }] },
+      });
+    }
+  }
+
+  /**
+   * Dismisses one notification. Prefers the real close path (closing a still-
+   * showing alert fires the page's `notificationclose` and unpersists it); for
+   * a Service-Worker notification persisted from a previous session there is no
+   * live alert, so it falls back to a storage delete. Either way the entry
+   * leaves the authoritative map.
+   */
+  _dismiss({ origin, id }) {
+    const notification = this._notifications[id];
+    if (!notification) {
+      return;
+    }
+    try {
+      Cc[ALERTS_SERVICE].getService(Ci.nsIAlertsService).closeAlert(
+        id,
+        /* aContextClosed */ false
+      );
+    } catch (e) {}
+    try {
+      Cc[NOTIFICATION_STORAGE].getService(Ci.nsINotificationStorage).delete(
+        origin,
+        id
+      );
+    } catch (e) {}
+    if (this._remove(origin, id)) {
+      this._broadcast({
+        type: at.WEB_NOTIFICATIONS_REMOVED,
+        data: { removed: [{ origin, id }] },
+      });
+    }
+  }
+
+  /** Dismisses every notification, or every one for a single origin. */
+  _dismissAll({ origin } = {}) {
+    const targets = [];
+    for (const id of Object.keys(this._notifications)) {
+      const entry = this._notifications[id];
+      if (!origin || entry.origin === origin) {
+        targets.push({ origin: entry.origin, id });
+      }
+    }
+    for (const target of targets) {
+      this._dismiss(target);
+    }
+  }
+
+  /**
+   * The feature exists (gate) and the user wants it (preference). The gate is
+   * satisfied by either the system pref or a trainhop enrollment, so the
+   * feature can roll out ahead of the release train without the system pref.
+   */
+  get _enabled() {
+    const prefs = this.store.getState().Prefs.values;
+    const systemValue =
+      prefs[PREF_SYSTEM] || prefs.trainhopConfig?.webNotifications?.enabled;
+    return Boolean(systemValue && prefs[PREF_USER]);
+  }
+
+  _startObserving() {
+    if (this._observing) {
+      return;
+    }
+    Services.obs.addObserver(this, TOPIC_SHOWN);
+    Services.obs.addObserver(this, TOPIC_CLOSED);
+    this._observing = true;
+  }
+
+  _stopObserving() {
+    if (!this._observing) {
+      return;
+    }
+    Services.obs.removeObserver(this, TOPIC_SHOWN);
+    Services.obs.removeObserver(this, TOPIC_CLOSED);
+    this._observing = false;
+  }
+
+  /** Drops everything captured so far and tells content the slice is empty. */
+  _clear() {
+    this._notifications = Object.create(null);
+    this._byOrigin.clear();
+    this._broadcast({
+      type: at.WEB_NOTIFICATIONS_UPDATED,
+      data: {
+        lastUpdated: Date.now(),
+        notifications: {},
+        byOrigin: {},
+      },
+    });
+  }
+
+  /**
+   * Brings observation in line with the prefs. The feed is a system feed, so it
+   * is constructed for every profile and sits idle until both prefs are set;
+   * turning the feature off mid-session drops the captured state rather than
+   * leaving content rendering a frozen snapshot.
+   */
+  _updateEnabled() {
+    if (this._enabled) {
+      if (!this._observing) {
+        this._startObserving();
+        this._seedFromDisk();
+      }
+    } else if (this._observing) {
+      this._stopObserving();
+      this._clear();
+    }
   }
 
   onAction(action) {
     switch (action.type) {
       case at.INIT:
-        this._snapshot();
+        this._updateEnabled();
         break;
-      case at.NEW_TAB_LOAD:
+      case at.UNINIT:
+        this._stopObserving();
+        break;
+      case at.PREF_CHANGED:
+        if (
+          action.data.name === PREF_SYSTEM ||
+          action.data.name === PREF_USER ||
+          action.data.name === "trainhopConfig"
+        ) {
+          this._updateEnabled();
+        }
+        break;
       case at.WEB_NOTIFICATIONS_REQUEST:
-        this._snapshot(action.meta?.fromTarget);
+        this._answer(action.meta?.fromTarget);
+        break;
+      case at.WEB_NOTIFICATIONS_CLICK:
+        this._click(action.data);
+        break;
+      case at.WEB_NOTIFICATIONS_DISMISS:
+        this._dismiss(action.data);
+        break;
+      case at.WEB_NOTIFICATIONS_DISMISS_ALL:
+        this._dismissAll(action.data);
         break;
     }
   }

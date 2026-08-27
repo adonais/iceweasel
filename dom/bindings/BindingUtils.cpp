@@ -713,7 +713,7 @@ void TErrorResult<CleanupPolicy>::EnsureUTF8Validity(nsCString& aValue,
   nsCString valid;
   if (NS_SUCCEEDED(UTF_8_ENCODING->DecodeWithoutBOMHandling(aValue, valid,
                                                             aValidUpTo))) {
-    aValue = valid;
+    aValue = std::move(valid);
   } else {
     aValue.SetLength(aValidUpTo);
   }
@@ -2886,7 +2886,7 @@ struct LenientThisPolicyMixin {
     if (!ReportLenientThisUnwrappingFailure(aCx, &aArgs.callee())) {
       return false;
     }
-    aArgs.rval().set(JS::UndefinedValue());
+    aArgs.rval().setUndefined();
     return true;
   }
 };
@@ -3657,17 +3657,6 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   auto scopeExit =
       MakeScopeExit([&]() { (void)rv.MaybeSetPendingException(aCx); });
 
-  // 2. Let registry be null.
-  // 3. If the surrounding agent's active custom element constructor
-  //    map[NewTarget] exists:
-  // 3.1. Set registry to the surrounding agent's active custom element
-  //      constructor map[NewTarget].
-  // 3.2. Remove the surrounding agent's active custom element constructor
-  //      map[NewTarget].
-  // TODO(keithamus): Scoped registries
-
-  // 4. "Otherwise, set registry to the current global object's associated
-  //    Document's custom element registry."
   nsCOMPtr<nsPIDOMWindowInner> window =
       do_QueryInterface(global.GetAsSupports());
   if (!window) {
@@ -3676,8 +3665,6 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     rv.Throw(NS_ERROR_UNEXPECTED);
     return false;
   }
-  RefPtr<mozilla::dom::CustomElementRegistry> registry(
-      window->CustomElements());
 
   // Technically, per spec, a window always has a document.  In Gecko, a
   // sufficiently torn-down window might not, so check for that case.  We're
@@ -3720,6 +3707,26 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
       return false;
     }
     if (newTarget == constructor) {
+      rv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
+      return false;
+    }
+  }
+
+  // 2. "Let registry be null."
+  RefPtr<mozilla::dom::CustomElementRegistry> registry;
+  // 3. "If the surrounding agent's active custom element constructor
+  //    map[NewTarget] exists, then set registry to the surrounding agent's
+  //    active custom element constructor map[NewTarget]."
+  if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+    if (DocGroup* docGroup = doc->GetDocGroup()) {
+      registry = docGroup->GetActiveConstructorRegistry(newTarget);
+    }
+  }
+  // 4. "Otherwise, set registry to the current global object's associated
+  //    Document's custom element registry."
+  if (!registry) {
+    registry = doc->GetCustomElementRegistry();
+    if (!registry) {
       rv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
       return false;
     }
@@ -3879,6 +3886,14 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
         definition->mType, CustomElementData::State::eCustom));
 
     element->SetCustomElementDefinition(definition);
+
+    // https://dom.spec.whatwg.org/#create-an-element-internal
+    // Step 4: "Set element's custom element registry to registry."
+    if (StaticPrefs::dom_scoped_custom_element_registries_enabled() &&
+        registry) {
+      element->SetCustomElementRegistry(registry);
+    }
+
     // 9.10. "Return element."
   } else {
     // 12. "Let element be the last entry in definition's construction stack."

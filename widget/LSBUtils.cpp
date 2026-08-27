@@ -79,11 +79,11 @@ bool GetOSRelease(nsACString& aDistributor, nsACString& aDescription,
   }
   // If NAME is set and only differs from ID in case, use NAME.
   if (seen_id && !name.IsEmpty() && name.EqualsIgnoreCase(aDistributor)) {
-    aDistributor = name;
+    aDistributor = std::move(name);
   }
   // If VERSION_ID is not set but BUILD_ID is, use BUILD_ID.
   if (!seen_version_id && !build_id.IsEmpty()) {
-    aRelease = build_id;
+    aRelease = std::move(build_id);
     seen_version_id = true;
   }
   // Only consider our work done if we've seen at least ID, PRETTY_NAME and

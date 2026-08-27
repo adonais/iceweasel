@@ -26,11 +26,7 @@ SimpleTest.waitForFocus(async () => {
     editingHost.innerHTML = "<b>abc</b>def";
     getSelection().collapse(editingHost.querySelector("b").firstChild, "abc".length);
     await waitForFlushingIMEContentObserver();
-    const ret = windowUtils.sendSelectionSetEvent(
-      3,
-      0,
-      SpecialPowers.Ci.nsIDOMWindowUtils.SELECTION_SET_FLAG_USE_NATIVE_LINE_BREAK
-    );
+    const ret = windowUtils.sendSelectionSetEvent(3, 0);
     ok(
       ret,
       "test_setSelection_when_selection_collapsed_at_end_of_inline_element: eSetSelection event should be succeeded"
@@ -51,11 +47,7 @@ SimpleTest.waitForFocus(async () => {
     editingHost.innerHTML = "<b>abc</b>def";
     getSelection().collapse(editingHost.querySelector("b").nextSibling, 0);
     await waitForFlushingIMEContentObserver();
-    const ret = windowUtils.sendSelectionSetEvent(
-      3,
-      0,
-      SpecialPowers.Ci.nsIDOMWindowUtils.SELECTION_SET_FLAG_USE_NATIVE_LINE_BREAK
-    );
+    const ret = windowUtils.sendSelectionSetEvent(3, 0);
     ok(
       ret,
       "test_setSelection_when_selection_collapsed_after_inline_element: eSetSelection event should be succeeded"
@@ -76,11 +68,7 @@ SimpleTest.waitForFocus(async () => {
     editingHost.innerHTML = "<p style=\"width:1em;height:1em;\"></p>\n";
     getSelection().collapse(editingHost.querySelector("p"), 0);
     await waitForFlushingIMEContentObserver();
-    const ret = windowUtils.sendSelectionSetEvent(
-      kLineBreak.length,
-      0,
-      SpecialPowers.Ci.nsIDOMWindowUtils.SELECTION_SET_FLAG_USE_NATIVE_LINE_BREAK
-    );
+    const ret = windowUtils.sendSelectionSetEvent(kLineBreak.length, 0);
     ok(
       ret,
       "test_setSelection_when_selection_collapsed_in_empty_block_element: eSetSelection event should be succeeded"

@@ -1074,7 +1074,7 @@ inline bool TryToOuterize(JS::MutableHandle<JS::Value> rval) {
   if (js::IsWindow(&rval.toObject())) {
     JSObject* obj = js::ToWindowProxyIfWindow(&rval.toObject());
     MOZ_ASSERT(obj);
-    rval.set(JS::ObjectValue(*obj));
+    rval.setObject(*obj);
   }
 
   return true;
@@ -1303,7 +1303,7 @@ MOZ_ALWAYS_INLINE bool DoGetOrCreateDOMReflector(
   }
 #endif
 
-  rval.set(JS::ObjectValue(*obj));
+  rval.setObject(*obj);
 
   if (JS::GetCompartment(obj) == js::GetContextCompartment(cx)) {
     return TypeNeedsOuterization<T>::value ? TryToOuterize(rval) : true;
@@ -1356,7 +1356,7 @@ inline bool FinishWrapping(JSContext* cx, JS::Handle<JSObject*> obj,
                            JS::MutableHandle<JS::Value> rval) {
   // We can end up here in all sorts of compartments, per comments in
   // WrapNewBindingNonWrapperCachedObject(). Make sure to JS_WrapValue!
-  rval.set(JS::ObjectValue(*obj));
+  rval.setObject(*obj);
   return MaybeWrapObjectValue(cx, rval);
 }
 
@@ -1766,13 +1766,13 @@ inline bool WrapObject(JSContext* cx, const RefPtr<T>& p,
 template <>
 inline bool WrapObject<JSObject>(JSContext* cx, JSObject* p,
                                  JS::MutableHandle<JS::Value> rval) {
-  rval.set(JS::ObjectOrNullValue(p));
+  rval.setObjectOrNull(p);
   return true;
 }
 
 inline bool WrapObject(JSContext* cx, JSObject& p,
                        JS::MutableHandle<JS::Value> rval) {
-  rval.set(JS::ObjectValue(p));
+  rval.setObject(p);
   return true;
 }
 

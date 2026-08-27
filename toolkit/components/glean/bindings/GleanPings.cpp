@@ -72,7 +72,7 @@ already_AddRefed<GleanPing> GleanPings::NamedGetter(const nsAString& aName,
   }
 
   aFound = true;
-  return MakeAndAddRef<GleanPing>(pingId.value());
+  return MakeAndAddRef<GleanPing>(pingId.value(), pingName);
 }
 
 bool GleanPings::NameIsEnumerable(const nsAString& aName) { return false; }

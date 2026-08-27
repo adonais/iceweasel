@@ -42,14 +42,16 @@ class InactiveCssTooltipHelper {
    *   <p data-l10n-id="inactive-css-not-grid-or-flex-container"
    *      data-l10n-args="{&quot;property&quot;:&quot;align-content&quot;}">
    *   </p>
-   *   <p data-l10n-id="inactive-css-not-grid-or-flex-container-fix">
-   *     <span data-l10n-name="link" class="link"></span>
+   *   <p data-l10n-id="inactive-css-not-grid-or-flex-container-fix-1">
+   *   </p>
+   *   <p>
+   *     <a data-l10n-id="devtools-tooltip-learn-more" class="link learn-more-link mdn-link" href="..."></a>
    *   </p>
    * </div>
    *
    * @param {object} data
    *        An object in the following format: {
-   *          fixId: "inactive-css-not-grid-item-fix-2", // Fluent id containing the
+   *          fixId: "inactive-css-not-grid-item-fix-3", // Fluent id containing the
    *                                                     // Inactive CSS fix.
    *          msgId: "inactive-css-not-grid-item", // Fluent id containing the
    *                                               // Inactive CSS message.
@@ -74,18 +76,23 @@ class InactiveCssTooltipHelper {
 
     const templateNode = doc.createElementNS(XHTML_NS, "template");
 
+    const isMdnUrl = documentUrl.hostname === "developer.mozilla.org";
+    const className = `link${isMdnUrl ? " learn-more-link mdn-link" : ""}`;
     // eslint-disable-next-line
     templateNode.innerHTML = `
     <div class="devtools-tooltip-inactive-css">
       <p data-l10n-id="${msgId}"
          data-l10n-args='${JSON.stringify({ property, display, lineCount })}'>
       </p>
-      <p data-l10n-id="${fixId}">
-        <span data-l10n-name="link" class="link"></span>
+      ${fixId ? `<p data-l10n-id="${fixId}"></p>` : ""}
+      <p>
+        <a data-l10n-id="devtools-tooltip-learn-more" class="${className}"></a>
       </p>
     </div>`;
 
-    return doc.importNode(templateNode.content, true);
+    const fragment = doc.importNode(templateNode.content, true);
+    fragment.querySelector(".link").setAttribute("href", this._currentUrl);
+    return fragment;
   }
 
   /**
@@ -96,11 +103,12 @@ class InactiveCssTooltipHelper {
    */
   addTab(event) {
     // The XUL panel swallows click events so handlers can't be added directly
-    // to the link span. As a workaround we listen to all click events in the
-    // panel and if a link span is clicked we proceed.
-    if (event.target.className !== "link") {
+    // to the link. As a workaround we listen to all click events in the
+    // panel and if a link is clicked we proceed.
+    if (!event.target.classList.contains("link")) {
       return;
     }
+    event.preventDefault();
 
     const tooltip = this._currentTooltip;
     tooltip.hide();

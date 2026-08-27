@@ -26,6 +26,9 @@ void nsSplittableFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     // Hook the frame into the flow
     SetPrevInFlow(aPrevInFlow);
     aPrevInFlow->SetNextInFlow(this);
+  } else {
+    mFirstContinuation = this;
+    mFirstInFlow = this;
   }
   nsIFrame::Init(aContent, aParent, aPrevInFlow);
 }
@@ -209,12 +212,13 @@ void nsSplittableFrame::RemoveFromFlow(nsIFrame* aFrame) {
 
 void nsSplittableFrame::UpdateFirstContinuationAndFirstInFlowCache() {
   nsIFrame* oldCachedFirstContinuation = mFirstContinuation;
-  if (nsIFrame* prevContinuation = GetPrevContinuation()) {
-    nsIFrame* newFirstContinuation = prevContinuation->FirstContinuation();
+  if (auto* prevContinuation =
+          static_cast<nsSplittableFrame*>(GetPrevContinuation())) {
+    nsIFrame* newFirstContinuation = prevContinuation->mFirstContinuation;
     if (oldCachedFirstContinuation != newFirstContinuation) {
       // Update the first-continuation cache for us and our next-continuations.
       for (nsSplittableFrame* f = this; f;
-           f = reinterpret_cast<nsSplittableFrame*>(f->GetNextContinuation())) {
+           f = static_cast<nsSplittableFrame*>(f->GetNextContinuation())) {
         f->mFirstContinuation = newFirstContinuation;
       }
     }
@@ -226,35 +230,65 @@ void nsSplittableFrame::UpdateFirstContinuationAndFirstInFlowCache() {
       // next-continuations here, but that would result in overall O(n^2)
       // behavior when a frame list is destroyed from the front. To avoid that
       // pathological behavior, we simply purge the cached values.
-      for (nsSplittableFrame* f = this; f;
-           f = reinterpret_cast<nsSplittableFrame*>(f->GetNextContinuation())) {
+      for (auto* f = static_cast<nsSplittableFrame*>(GetNextContinuation()); f;
+           f = static_cast<nsSplittableFrame*>(f->GetNextContinuation())) {
         f->mFirstContinuation = nullptr;
       }
     }
+    mFirstContinuation = this;
+
+#ifdef DEBUG
+    auto* nextContinuation =
+        static_cast<nsSplittableFrame*>(GetNextContinuation());
+    MOZ_ASSERT(!nextContinuation || !nextContinuation->mFirstContinuation ||
+                   nextContinuation->mFirstContinuation == this,
+               "Our next-continuation caches a stale first-continuation!");
+#endif
   }
 
   nsIFrame* oldCachedFirstInFlow = mFirstInFlow;
-  if (nsIFrame* prevInFlow = GetPrevInFlow()) {
-    nsIFrame* newFirstInFlow = prevInFlow->FirstInFlow();
+  if (auto* prevInFlow = static_cast<nsSplittableFrame*>(GetPrevInFlow())) {
+    nsIFrame* newFirstInFlow = prevInFlow->mFirstInFlow;
     if (oldCachedFirstInFlow != newFirstInFlow) {
       // Update the first-in-flow cache for us and our next-in-flows.
       for (nsSplittableFrame* f = this; f;
-           f = reinterpret_cast<nsSplittableFrame*>(f->GetNextInFlow())) {
+           f = static_cast<nsSplittableFrame*>(f->GetNextInFlow())) {
         f->mFirstInFlow = newFirstInFlow;
       }
     }
   } else {
-    // We become the new first-in-flow due to our prev-in-flow being removed.
-    if (oldCachedFirstInFlow) {
-      // It's tempting to update the first-in-flow cache for our
-      // next-in-flows here, but that would result in overall O(n^2)
-      // behavior when a frame list is destroyed from the front. To avoid that
-      // pathological behavior, we simply purge the cached values.
+    if (GetPrevContinuation()) {
+      // We become the new first-in-flow after changing from fluid to non-fluid.
+      // Update the stale first-in-flow cache for us and all next-in-flows.
+      //
+      // Note that this has no counterpart in the above mFirstContinuation cache
+      // since GetPrevContinuation() does not depend on the
+      // NS_FRAME_IS_FLUID_CONTINUATION bit.
       for (nsSplittableFrame* f = this; f;
-           f = reinterpret_cast<nsSplittableFrame*>(f->GetNextInFlow())) {
-        f->mFirstInFlow = nullptr;
+           f = static_cast<nsSplittableFrame*>(f->GetNextInFlow())) {
+        f->mFirstInFlow = this;
       }
+    } else {
+      // We become the new first-in-flow due to our prev-in-flow being removed.
+      if (oldCachedFirstInFlow) {
+        // It's tempting to update the first-in-flow cache for our
+        // next-in-flows here, but that would result in overall O(n^2)
+        // behavior when a frame list is destroyed from the front. To avoid that
+        // pathological behavior, we simply purge the cached values.
+        for (auto* f = static_cast<nsSplittableFrame*>(GetNextInFlow()); f;
+             f = static_cast<nsSplittableFrame*>(f->GetNextInFlow())) {
+          f->mFirstInFlow = nullptr;
+        }
+      }
+      mFirstInFlow = this;
     }
+
+#ifdef DEBUG
+    auto* nextInFlow = static_cast<nsSplittableFrame*>(GetNextInFlow());
+    MOZ_ASSERT(!nextInFlow || !nextInFlow->mFirstInFlow ||
+                   nextInFlow->mFirstInFlow == this,
+               "Our next-in-flow caches a stale first-in-flow!");
+#endif
   }
 }
 

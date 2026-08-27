@@ -27,7 +27,7 @@ class ProfileUnlockerWin final : public nsIProfileUnlocker {
   void EndSession(DWORD aHandle);
 
  private:
-  ~ProfileUnlockerWin();
+  ~ProfileUnlockerWin() = default;
   nsresult TryToTerminate(RM_UNIQUE_PROCESS& aProcess);
 
  private:

@@ -153,7 +153,7 @@ class SVGNumberList {
  */
 class SVGNumberListAndInfo : public SVGNumberList {
  public:
-  SVGNumberListAndInfo() : mElement(nullptr) {}
+  SVGNumberListAndInfo() = default;
 
   explicit SVGNumberListAndInfo(dom::SVGElement* aElement)
       : mElement(do_GetWeakReference(static_cast<nsINode*>(aElement))) {}
@@ -192,7 +192,7 @@ class SVGNumberListAndInfo : public SVGNumberList {
   // cached baseVal SMILValue. See the comments starting at:
   // https://bugzilla.mozilla.org/show_bug.cgi?id=515116#c15
   // See also https://bugzilla.mozilla.org/show_bug.cgi?id=653497
-  nsWeakPtr mElement;
+  nsWeakPtr mElement{nullptr};
 };
 
 }  // namespace mozilla

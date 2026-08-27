@@ -130,10 +130,6 @@ already_AddRefed<nsISound> nsSound::GetInstance() {
 
 NS_IMPL_ISUPPORTS(nsSound, nsISound, nsIObserver)
 
-nsSound::nsSound() : mInited(false) {}
-
-nsSound::~nsSound() {}
-
 void nsSound::PurgeLastSound() {
   // Halt any currently playing sound.
   if (mSoundPlayer) {

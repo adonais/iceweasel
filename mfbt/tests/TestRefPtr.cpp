@@ -2,10 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/RefPtr.h"
-#include "mozilla/RefCounted.h"
-
 #include <type_traits>
+
+#include "mozilla/RefCounted.h"
+#include "mozilla/RefPtr.h"
 
 using mozilla::RefCounted;
 

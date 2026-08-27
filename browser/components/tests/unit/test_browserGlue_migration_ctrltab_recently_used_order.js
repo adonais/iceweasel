@@ -3,26 +3,19 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-const TOPIC_BROWSERGLUE_TEST = "browser-glue-test";
-const TOPICDATA_BROWSERGLUE_TEST = "force-ui-migration";
 const RECENTLY_USED_ORDER_DEFAULT = false;
 const UI_VERSION = 107;
 
-const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"].getService(
-  Ci.nsIObserver
+const { ProfileDataUpgrader } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/ProfileDataUpgrader.sys.mjs"
 );
 
 add_task(async function has_not_used_ctrl_tab_and_its_off() {
-  Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
   Services.prefs.setBoolPref("browser.engagement.ctrlTab.has-used", false);
   Services.prefs.setBoolPref("browser.ctrlTab.recentlyUsedOrder", false);
 
   // Simulate a migration.
-  gBrowserGlue.observe(
-    null,
-    TOPIC_BROWSERGLUE_TEST,
-    TOPICDATA_BROWSERGLUE_TEST
-  );
+  ProfileDataUpgrader.upgrade(UI_VERSION, UI_VERSION + 1);
 
   Assert.equal(
     RECENTLY_USED_ORDER_DEFAULT,
@@ -31,16 +24,11 @@ add_task(async function has_not_used_ctrl_tab_and_its_off() {
 });
 
 add_task(async function has_not_used_ctrl_tab_and_its_on() {
-  Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
   Services.prefs.setBoolPref("browser.engagement.ctrlTab.has-used", false);
   Services.prefs.setBoolPref("browser.ctrlTab.recentlyUsedOrder", true);
 
   // Simulate a migration.
-  gBrowserGlue.observe(
-    null,
-    TOPIC_BROWSERGLUE_TEST,
-    TOPICDATA_BROWSERGLUE_TEST
-  );
+  ProfileDataUpgrader.upgrade(UI_VERSION, UI_VERSION + 1);
 
   Assert.equal(
     RECENTLY_USED_ORDER_DEFAULT,
@@ -49,16 +37,11 @@ add_task(async function has_not_used_ctrl_tab_and_its_on() {
 });
 
 add_task(async function has_used_ctrl_tab_and_its_off() {
-  Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
   Services.prefs.setBoolPref("browser.engagement.ctrlTab.has-used", true);
   Services.prefs.setBoolPref("browser.ctrlTab.recentlyUsedOrder", false);
 
   // Simulate a migration.
-  gBrowserGlue.observe(
-    null,
-    TOPIC_BROWSERGLUE_TEST,
-    TOPICDATA_BROWSERGLUE_TEST
-  );
+  ProfileDataUpgrader.upgrade(UI_VERSION, UI_VERSION + 1);
 
   Assert.equal(
     false,
@@ -67,16 +50,11 @@ add_task(async function has_used_ctrl_tab_and_its_off() {
 });
 
 add_task(async function has_used_ctrl_tab_and_its_on() {
-  Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
   Services.prefs.setBoolPref("browser.engagement.ctrlTab.has-used", true);
   Services.prefs.setBoolPref("browser.ctrlTab.recentlyUsedOrder", true);
 
   // Simulate a migration.
-  gBrowserGlue.observe(
-    null,
-    TOPIC_BROWSERGLUE_TEST,
-    TOPICDATA_BROWSERGLUE_TEST
-  );
+  ProfileDataUpgrader.upgrade(UI_VERSION, UI_VERSION + 1);
 
   Assert.equal(
     true,
@@ -85,16 +63,11 @@ add_task(async function has_used_ctrl_tab_and_its_on() {
 });
 
 add_task(async function has_used_ctrl_tab_and_its_default() {
-  Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
   Services.prefs.setBoolPref("browser.engagement.ctrlTab.has-used", true);
   Services.prefs.clearUserPref("browser.ctrlTab.recentlyUsedOrder");
 
   // Simulate a migration.
-  gBrowserGlue.observe(
-    null,
-    TOPIC_BROWSERGLUE_TEST,
-    TOPICDATA_BROWSERGLUE_TEST
-  );
+  ProfileDataUpgrader.upgrade(UI_VERSION, UI_VERSION + 1);
 
   // Default had been true
   Assert.equal(

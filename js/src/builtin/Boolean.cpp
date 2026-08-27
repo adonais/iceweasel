@@ -141,8 +141,8 @@ JSObject* BooleanObject::createPrototype(JSContext* cx, JSProtoKey key) {
   if (!booleanProto) {
     return nullptr;
   }
-  booleanProto->setFixedSlot(BooleanObject::PRIMITIVE_VALUE_SLOT,
-                             BooleanValue(false));
+  booleanProto->initFixedSlotTyped(BooleanObject::PRIMITIVE_VALUE_SLOT,
+                                   BooleanValue(false));
   return booleanProto;
 }
 

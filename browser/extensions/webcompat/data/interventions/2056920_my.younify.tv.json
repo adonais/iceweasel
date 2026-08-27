@@ -1,0 +1,15 @@
+{
+  "label": "my.younify.tv",
+  "bugs": {
+    "2056920": {
+      "issue": "firefox-blocked-completely",
+      "matches": ["*://my.younify.tv/services/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "ua_string": ["Chrome_with_FxQuantum"]
+    }
+  ]
+}

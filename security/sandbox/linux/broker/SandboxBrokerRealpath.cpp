@@ -180,7 +180,10 @@ char* SandboxBroker::SymlinkPath(const Policy* policy,
     memcpy(next_token, left, s - left);
     next_token[s - left] = '\0';
     left_len -= s - left;
-    if (p != nullptr) memmove(left, s + 1, left_len + 1);
+    if (p != nullptr) {
+      left_len -= 1;
+      memmove(left, s + 1, left_len + 1);
+    }
     if (resolved[resolved_len - 1] != '/') {
       if (resolved_len + 1 >= PATH_MAX) {
         if (m) free(resolved);

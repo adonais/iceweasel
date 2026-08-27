@@ -167,6 +167,73 @@ TEST_F(Pkcs11AESKeyWrapKwpTest, TestVectors) {
   EXPECT_EQ(count, expected_count);
 }
 
+// KWP (RFC 5649) uses a fixed built-in AIV; sftk_CryptInit must reject any
+// non-NULL mechanism parameter to prevent an over-read in
+// AESKeyWrap_InitContext.
+TEST_F(Pkcs11AESKeyWrapKwpTest, NonNullParamIsRejected) {
+  ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
+  ASSERT_NE(nullptr, slot);
+  ScopedPK11SymKey kek(
+      PK11_KeyGen(slot.get(), CKM_AES_CBC, nullptr, 16, nullptr));
+  ASSERT_NE(nullptr, kek);
+
+  // A valid 8-byte IV — correct length for KW, but KWP must reject it entirely.
+  unsigned char iv[8] = {0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6};
+  SECItem param = {siBuffer, iv, sizeof(iv)};
+
+  std::vector<unsigned char> plaintext(16, 0);
+  std::vector<unsigned char> ciphertext(plaintext.size() + 16);
+  unsigned int out_len = 0;
+
+  SECStatus rv = PK11_Encrypt(
+      kek.get(), CKM_AES_KEY_WRAP_KWP, &param, ciphertext.data(), &out_len,
+      static_cast<unsigned int>(ciphertext.size()), plaintext.data(),
+      static_cast<unsigned int>(plaintext.size()));
+  EXPECT_EQ(SECFailure, rv);
+}
+
+TEST_F(Pkcs11AESKeyWrapKwpTest, WrapUnwrapUnalignedKeyLength) {
+  ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
+  ASSERT_NE(nullptr, slot);
+
+  std::vector<unsigned char> kek_data(16, 0x5a);
+  SECItem kek_item = {siBuffer, kek_data.data(),
+                      static_cast<unsigned int>(kek_data.size())};
+  ScopedPK11SymKey kek(PK11_ImportSymKey(slot.get(), CKM_AES_KEY_WRAP_KWP,
+                                         PK11_OriginUnwrap, CKA_WRAP, &kek_item,
+                                         nullptr));
+  ASSERT_NE(nullptr, kek);
+
+  std::vector<unsigned char> key_data(20);
+  for (size_t i = 0; i < key_data.size(); ++i) {
+    key_data[i] = static_cast<unsigned char>(i + 1);
+  }
+  SECItem key_item = {siBuffer, key_data.data(),
+                      static_cast<unsigned int>(key_data.size())};
+  ScopedPK11SymKey key(PK11_ImportSymKey(slot.get(), CKM_SHA_1_HMAC,
+                                         PK11_OriginUnwrap, CKA_SIGN, &key_item,
+                                         nullptr));
+  ASSERT_NE(nullptr, key);
+
+  std::vector<unsigned char> wrapped(64, 0);
+  SECItem wrapped_item = {siBuffer, wrapped.data(),
+                          static_cast<unsigned int>(wrapped.size())};
+  ASSERT_EQ(SECSuccess, PK11_WrapSymKey(CKM_AES_KEY_WRAP_KWP, nullptr,
+                                        kek.get(), key.get(), &wrapped_item));
+  EXPECT_EQ(32U, wrapped_item.len);
+
+  ScopedPK11SymKey unwrapped(PK11_UnwrapSymKey(kek.get(), CKM_AES_KEY_WRAP_KWP,
+                                               nullptr, &wrapped_item,
+                                               CKM_SHA_1_HMAC, CKA_SIGN, 0));
+  ASSERT_NE(nullptr, unwrapped);
+  ASSERT_EQ(SECSuccess, PK11_ExtractKeyValue(unwrapped.get()));
+  SECItem* value = PK11_GetKeyData(unwrapped.get());
+  ASSERT_NE(nullptr, value);
+
+  EXPECT_EQ(key_data,
+            std::vector<unsigned char>(value->data, value->data + value->len));
+}
+
 // Regression test for integer overflow in AESKeyWrap_EncryptKWP: when
 // inputLen > UINT_MAX - (2 * AES_KEY_WRAP_BLOCK_SIZE - 1), paddedInputLen
 // (which equals inputLen + padLen, see aeskeywrap.c:531) overflows and

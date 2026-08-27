@@ -8,7 +8,7 @@ const g = newGlobal({newCompartment: true});
 const dbg = new Debugger(g);
 
 const m = g.parseModule(`export const x = 1;`);
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);
 drainJobQueue();
 

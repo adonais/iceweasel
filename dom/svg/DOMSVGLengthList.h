@@ -127,12 +127,6 @@ class DOMSVGLengthList final : public nsISupports, public nsWrapperCache {
     return mAList->mAnimVal && !mAList->IsAnimating();
   }
 
-  uint32_t NumberOfItems() const {
-    if (IsAnimValList()) {
-      Element()->FlushAnimations();
-    }
-    return LengthNoFlush();
-  }
   void Clear(ErrorResult& aError);
   already_AddRefed<DOMSVGLength> Initialize(DOMSVGLength& newItem,
                                             ErrorResult& aRv);
@@ -149,8 +143,14 @@ class DOMSVGLengthList final : public nsISupports, public nsWrapperCache {
                                             ErrorResult& aRv) {
     return InsertItemBefore(newItem, LengthNoFlush(), aRv);
   }
-  void IndexedSetter(uint32_t index, DOMSVGLength& newValue, ErrorResult& aRv);
-  uint32_t Length() const { return NumberOfItems(); }
+  void IndexedSetter(uint32_t aIndex, DOMSVGLength& aNewValue,
+                     ErrorResult& aRv);
+  uint32_t Length() const {
+    if (IsAnimValList()) {
+      Element()->FlushAnimations();
+    }
+    return LengthNoFlush();
+  }
 
  private:
   dom::SVGElement* Element() const { return mAList->mElement; }

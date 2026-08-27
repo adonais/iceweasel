@@ -32,7 +32,7 @@ SymbolObject* SymbolObject::create(JSContext* cx, JS::HandleSymbol symbol) {
   if (!obj) {
     return nullptr;
   }
-  obj->setPrimitiveValue(symbol);
+  obj->initPrimitiveValue(symbol);
   return obj;
 }
 

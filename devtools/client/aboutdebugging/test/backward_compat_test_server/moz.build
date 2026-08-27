@@ -1,0 +1,26 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# The backward compatibility harness has to be available from the tests archive,
+# so that testing/mozharness/scripts/devtools_compat.py can provision the server
+# Firefox in CI. It is imported as a package there, hence the underscore in the
+# destination directory. The archive entry lives in ARCHIVE_FILES["common"] in
+# python/mozbuild/mozbuild/action/test_archive.py.
+# See devtools/client/aboutdebugging/documentation/TESTS_BACKWARD_COMPAT.md
+TEST_HARNESS_FILES.testing.devtools_compat += [
+    "__init__.py",
+    "control.py",
+    "downloads.py",
+    "logs.py",
+    "servers.py",
+    "session.py",
+]
+
+TEST_HARNESS_FILES.testing.devtools_compat.fixtures.extension += [
+    "fixtures/extension/background.js",
+    "fixtures/extension/manifest.json",
+]
+
+with Files("**"):
+    BUG_COMPONENT = ("DevTools", "about:debugging")

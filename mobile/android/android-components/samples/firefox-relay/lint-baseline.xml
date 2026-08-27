@@ -1,29 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <issues format="6" by="lint 9.2.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.2.1)" variant="all" version="9.2.1">
 
-    <issue
-        id="IconDuplicates"
-        message="The following unrelated icon files have identical contents: ic_launcher.webp, ic_launcher_round.webp, ic_launcher.webp, ic_launcher_round.webp, ic_launcher.webp, ic_launcher_round.webp, ic_launcher.webp, ic_launcher_round.webp, ic_launcher.webp, ic_launcher_round.webp">
-        <location
-            file="src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp"/>
-        <location
-            file="src/main/res/mipmap-xxxhdpi/ic_launcher.webp"/>
-        <location
-            file="src/main/res/mipmap-xxhdpi/ic_launcher_round.webp"/>
-        <location
-            file="src/main/res/mipmap-xxhdpi/ic_launcher.webp"/>
-        <location
-            file="src/main/res/mipmap-xhdpi/ic_launcher_round.webp"/>
-        <location
-            file="src/main/res/mipmap-xhdpi/ic_launcher.webp"/>
-        <location
-            file="src/main/res/mipmap-mdpi/ic_launcher_round.webp"/>
-        <location
-            file="src/main/res/mipmap-mdpi/ic_launcher.webp"/>
-        <location
-            file="src/main/res/mipmap-hdpi/ic_launcher_round.webp"/>
-        <location
-            file="src/main/res/mipmap-hdpi/ic_launcher.webp"/>
-    </issue>
-
 </issues>

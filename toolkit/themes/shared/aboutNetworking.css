@@ -106,3 +106,42 @@ tbody tr:hover {
   align-items: center;
   gap: var(--space-small);
 }
+
+/** SSL tokens cache **/
+
+.ssltokens-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-medium);
+  margin-bottom: var(--space-small);
+}
+
+.ssltokens-summary progress {
+  width: 150px;
+}
+
+#ssltokens td {
+  vertical-align: top;
+}
+
+.ssltokens-key {
+  overflow-wrap: anywhere;
+}
+
+.ssltokens-token-count-multiple {
+  font-weight: var(--font-weight-bold);
+}
+
+.ssltokens-icon {
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+  vertical-align: middle;
+  margin-inline-end: var(--space-xsmall);
+  -moz-context-properties: fill, stroke;
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+#ssltokens summary {
+  cursor: pointer;
+}

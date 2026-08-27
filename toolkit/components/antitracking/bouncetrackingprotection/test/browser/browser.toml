@@ -24,6 +24,10 @@ support-files = [
 
 ["browser_bouncetracking_fpi.js"]
 
+["browser_bouncetracking_iframe_initiated_load.js"]
+
+["browser_bouncetracking_iframe_popup.js"]
+
 ["browser_bouncetracking_ipv6.js"]
 
 ["browser_bouncetracking_mode_prefs.js"]
@@ -31,6 +35,8 @@ support-files = [
 ["browser_bouncetracking_nimbus.js"]
 
 ["browser_bouncetracking_oa_isolation.js"]
+
+["browser_bouncetracking_parent_initiated_load.js"]
 
 ["browser_bouncetracking_popup.js"]
 
@@ -41,6 +47,8 @@ support-files = [
 ["browser_bouncetracking_schemes.js"]
 
 ["browser_bouncetracking_simple.js"]
+
+["browser_bouncetracking_siteContainer.js"]
 
 ["browser_bouncetracking_tab_close.js"]
 # Bug 1959947: Make this test work for BTP stateless mode.

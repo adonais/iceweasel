@@ -44,9 +44,19 @@
     throw new Error(`Element "${element.tagName}" is not expected to move`);
   };
 
+  // How often to verify that moving-tab mode still has a drag session backing
+  // it.
+  const STALE_DRAG_CHECK_INTERVAL_MS = 1000;
+
+  // How long after a drop moving-tab mode is expected to linger while the drop
+  // animation plays out. Comfortably longer than --tab-dragover-transition.
+  const DROP_ANIMATION_GRACE_MS = 1000;
+
   window.TabDragAndDrop = class {
     #dragTime = 0;
     #pinnedDropIndicatorTimeout = null;
+    #dropAnimationEndTime = 0;
+    #staleDragCheckTimer = null;
 
     constructor(tabbrowserTabs) {
       this._tabbrowserTabs = tabbrowserTabs;
@@ -283,7 +293,7 @@
       let overPinnedDropIndicator =
         this._pinnedDropIndicator.hasAttribute("visible") &&
         this._pinnedDropIndicator.hasAttribute("interactive");
-      this._resetTabsAfterDrop(draggedTab?.ownerDocument);
+      this._resetTabsAfterDrop(draggedTab);
 
       this._tabDropIndicator.hidden = true;
       event.stopPropagation();
@@ -475,6 +485,7 @@
         }
 
         if (shouldTranslate) {
+          this.#dropAnimationEndTime = Date.now() + DROP_ANIMATION_GRACE_MS;
           let translationPromises = [];
           for (let item of movingTabs) {
             item = elementToMove(item);
@@ -679,6 +690,17 @@
             }
           }
 
+          // This load could replace the current session history entry in the
+          // target tab, which may not have had user interaction before. We
+          // consider the drag onto the tab as being user interaction so this
+          // entry is still accessible via the back-button.
+          let activeEntry =
+            targetTab?.linkedBrowser?.browsingContext
+              ?.activeSessionHistoryEntry;
+          if (activeEntry) {
+            activeEntry.hasUserInteraction = true;
+          }
+
           let nextItem = this._tabbrowserTabs.dragAndDropElements[newIndex];
           let tabGroup = isTab(nextItem) && nextItem.group;
           gBrowser.loadTabs(urls, {
@@ -721,7 +743,7 @@
         this._setIsDraggingTabGroup(draggedTab.group, false);
         this._expandGroupOnDrop(draggedTab);
       }
-      this._resetTabsAfterDrop(draggedTab.ownerDocument);
+      this._resetTabsAfterDrop(draggedTab);
 
       if (
         dt.mozUserCancelled ||
@@ -862,6 +884,14 @@
             gBrowser.TabMetrics.METRIC_SOURCE.DRAG_AND_DROP
           ),
         };
+        if (window.fullScreen) {
+          // Detaching from a fullscreen window makes macOS adopt the new
+          // window into its own fullscreen space on its initial show, which
+          // can hang on a synchronous Dock transition (bug 2051071) and isn't
+          // what the user wants for a tab they're dragging to a location. This
+          // flag suppresses that.
+          props.suppressinitialfullscreen = 1;
+        }
         gBrowser.replaceTabsWithWindow(draggedTab, props);
       }
       event.stopPropagation();
@@ -892,6 +922,99 @@
     #setMovingTabMode(movingTab) {
       this._tabbrowserTabs.toggleAttribute("movingtab", movingTab);
       gNavToolbox.toggleAttribute("movingtab", movingTab);
+
+      if (movingTab) {
+        this.#startStaleDragCheck();
+      } else {
+        this.#stopStaleDragCheck();
+      }
+    }
+
+    get #dragSession() {
+      return Cc["@mozilla.org/widget/dragservice;1"]
+        .getService(Ci.nsIDragService)
+        .getCurrentSession(window);
+    }
+
+    /**
+     * Moving-tab mode is only ever left by finishAnimateTabMove, which runs off
+     * the drop and dragend events. Platforms don't reliably deliver those, and
+     * a drag session that outlives its drag leaves the tab strip overlapping
+     * the toolbar and #nav-bar with pointer-events: none, i.e. an unusable
+     * window. Watch for that state and recover from it.
+     */
+    #startStaleDragCheck() {
+      if (this.#staleDragCheckTimer) {
+        return;
+      }
+      this.#staleDragCheckTimer = setInterval(() => {
+        if (!this.#dragSession) {
+          this.#recoverFromStaleDrag();
+        }
+      }, STALE_DRAG_CHECK_INTERVAL_MS);
+      window.addEventListener("mousedown", this.#onMouseDown, {
+        capture: true,
+      });
+    }
+
+    #stopStaleDragCheck() {
+      if (!this.#staleDragCheckTimer) {
+        return;
+      }
+      clearInterval(this.#staleDragCheckTimer);
+      this.#staleDragCheckTimer = null;
+      this.#dropAnimationEndTime = 0;
+      window.removeEventListener("mousedown", this.#onMouseDown, {
+        capture: true,
+      });
+    }
+
+    #onMouseDown = event => {
+      // Pressing the primary button requires having released it first, which
+      // can't happen while the platform is running a drag loop. So this proves
+      // that the drag is over even when the drag session claims otherwise.
+      if (event.button == 0) {
+        this.#recoverFromStaleDrag();
+      }
+    };
+
+    #recoverFromStaleDrag() {
+      // Moving-tab mode legitimately outlives the drop while tabs animate into
+      // their final position, and tearing it down mid-animation snaps the
+      // dragged tab back to where it came from (bug 1957434).
+      if (Date.now() < this.#dropAnimationEndTime) {
+        return;
+      }
+
+      let session = this.#dragSession;
+      let label = session ? "session_live" : "session_ended";
+      if (this.#dropAnimationEndTime) {
+        // A drop did reach us, so the drop animation is what left moving-tab
+        // mode stuck.
+        label += "_after_drop";
+      }
+      Glean.tab.staleDragRecovery[label].add(1);
+
+      // Ending the session as an incomplete drag skips dragend at the source,
+      // which would otherwise take handle_dragend's detach path and tear the
+      // tab into a new window positioned from stale coordinates.
+      session?.endDragSession(false);
+
+      let draggedItem = this._tabbrowserTabs.dragAndDropElements.find(
+        item => item._dragData
+      );
+      if (draggedItem) {
+        this.finishMoveTogetherSelectedTabs(draggedItem);
+        if (isTabGroupLabel(draggedItem)) {
+          this._setIsDraggingTabGroup(draggedItem.group, false);
+          this._expandGroupOnDrop(draggedItem);
+        }
+      }
+      this.finishAnimateTabMove();
+      this._resetTabsAfterDrop(draggedItem);
+      if (draggedItem) {
+        delete draggedItem._dragData;
+      }
     }
 
     _getDropIndex(event) {
@@ -1035,10 +1158,28 @@
 
     _expandGroupOnDrop(draggedTab) {
       if (
-        isTabGroupLabel(draggedTab) &&
-        draggedTab._dragData?.expandGroupOnDrop
+        !isTabGroupLabel(draggedTab) ||
+        !draggedTab._dragData?.expandGroupOnDrop
       ) {
-        draggedTab.group.collapsed = false;
+        return;
+      }
+      let group = draggedTab.group;
+      let periphery = draggedTab.ownerDocument.getElementById(
+        "tabbrowser-arrowscrollbox-periphery"
+      );
+      let releaseReservedSpace = () =>
+        this.#releaseSpaceInScrolledContent(periphery);
+      if (group.collapsed) {
+        // The group's tabs animate back to their full size, so hold on to the
+        // space reserved for them until they get there.
+        group.addEventListener(
+          "TabGroupAnimationComplete",
+          releaseReservedSpace,
+          { once: true }
+        );
+        group.collapsed = false;
+      } else {
+        releaseReservedSpace();
       }
     }
 
@@ -1322,6 +1463,52 @@
       }
     }
 
+    /**
+     * Pads the end of the tab strip so that its scrolled content doesn't shrink
+     * while items are missing from it.
+     *
+     * @param {Element} periphery
+     * @param {number} space
+     */
+    #reserveSpaceInScrolledContent(periphery, space) {
+      if (this._tabbrowserTabs.verticalMode) {
+        periphery.style.marginBlockStart = space + "px";
+      } else {
+        periphery.style.marginInlineStart = space + "px";
+      }
+    }
+
+    /**
+     * @param {Element} periphery
+     */
+    #releaseSpaceInScrolledContent(periphery) {
+      periphery.style.marginBlockStart = "";
+      periphery.style.marginInlineStart = "";
+    }
+
+    /**
+     * @param {Element} element
+     * @returns {number}
+     *   The space the element takes up along the tab strip's axis, margins
+     *   included.
+     */
+    #marginBoxExtent(element) {
+      let rect = window.windowUtils.getBoundsWithoutFlushing(element);
+      let style = window.getComputedStyle(element);
+      if (this._tabbrowserTabs.verticalMode) {
+        return (
+          rect.height +
+          parseFloat(style.marginBlockStart) +
+          parseFloat(style.marginBlockEnd)
+        );
+      }
+      return (
+        rect.width +
+        parseFloat(style.marginInlineStart) +
+        parseFloat(style.marginInlineEnd)
+      );
+    }
+
     /* In order to to drag tabs between both the pinned arrowscrollbox (pinned tab container)
       and unpinned arrowscrollbox (tabbrowser-arrowscrollbox), the dragged tabs need to be
       positioned absolutely. This results in a shift in the layout, filling the empty space.
@@ -1462,11 +1649,18 @@
         !isPinned &&
         this._tabbrowserTabs.arrowScrollbox.hasAttribute("overflowing")
       ) {
-        if (this._tabbrowserTabs.verticalMode) {
-          periphery.style.marginBlockStart = rect.height + "px";
-        } else {
-          periphery.style.marginInlineStart = rect.width + "px";
+        // The dragged element is taken out of the layout below, and the tabs of
+        // a group that is about to collapse shrink to nothing. Letting the
+        // scrolled content shrink along with them would clamp the scroll
+        // position, and could even stop the tab strip from overflowing, either
+        // of which shifts the items that stay put.
+        let missingSpace = this.#marginBoxExtent(tabStripItemElement);
+        if (expandGroupOnDrop) {
+          for (let groupItem of tab.group.tabsAndSplitViews) {
+            missingSpace += this.#marginBoxExtent(groupItem);
+          }
         }
+        this.#reserveSpaceInScrolledContent(periphery, missingSpace);
       } else if (
         isPinned &&
         this._tabbrowserTabs.pinnedTabsContainer.hasAttribute("overflowing")
@@ -2591,8 +2785,13 @@
 
     // Drop
 
-    // If the tab is dropped in another window, we need to pass in the original window document
-    _resetTabsAfterDrop(draggedTabDocument = document) {
+    /**
+     * @param {MozTabbrowserTab|typeof MozTabbrowserTabGroup.labelElement} [draggedTab]
+     *   The dragged item, which still belongs to the window the drag started in
+     *   even if it was dropped in another one.
+     */
+    _resetTabsAfterDrop(draggedTab) {
+      let draggedTabDocument = draggedTab?.ownerDocument ?? document;
       if (this._tabbrowserTabs.expandOnHover) {
         // Re-enable MousePosTracker after dropping
         MousePosTracker.addListener(document.defaultView.SidebarController);
@@ -2636,10 +2835,13 @@
       let periphery = draggedTabDocument.getElementById(
         "tabbrowser-arrowscrollbox-periphery"
       );
-      periphery.style.marginBlockStart = "";
-      periphery.style.marginInlineStart = "";
       periphery.style.left = "";
       periphery.style.top = "";
+      // Space reserved for the tabs of a collapsed tab group is released by
+      // _expandGroupOnDrop once they are back to their full size.
+      if (!draggedTab?._dragData?.expandGroupOnDrop) {
+        this.#releaseSpaceInScrolledContent(periphery);
+      }
       let pinnedTabsContainer = draggedTabDocument.getElementById(
         "pinned-tabs-container"
       );

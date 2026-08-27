@@ -9,8 +9,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="76dp"
     android:layout_height="80dp"
-    android:background="?selectableItemBackground"
-    tools:ignore="Overdraw">
+    android:background="?selectableItemBackground">
 
     <ImageView
         android:id="@+id/app_icon"

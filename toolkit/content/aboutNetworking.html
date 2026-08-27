@@ -44,6 +44,12 @@
           data-l10n-id="about-networking-alt-svc"
         ></span>
       </div>
+      <div class="category category-no-icon" id="category-ssltokens">
+        <span
+          class="category-name"
+          data-l10n-id="about-networking-ssl-tokens"
+        ></span>
+      </div>
       <hr />
       <div class="category category-no-icon" id="category-dnslookuptool">
         <span
@@ -195,6 +201,23 @@
             </tr>
           </thead>
           <tbody id="altsvc_content"></tbody>
+        </table>
+      </div>
+
+      <div id="ssltokens" class="tab" hidden="true">
+        <div id="ssltokens_summary" class="ssltokens-summary"></div>
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th data-l10n-id="about-networking-host"></th>
+              <th data-l10n-id="about-networking-ssl-tokens-partition-key"></th>
+              <th data-l10n-id="about-networking-ssl-tokens-tokens-column"></th>
+              <th data-l10n-id="about-networking-ssl-tokens-expires"></th>
+              <th data-l10n-id="about-networking-ssl-tokens-certificate"></th>
+            </tr>
+          </thead>
+          <tbody id="ssltokens_content"></tbody>
         </table>
       </div>
 

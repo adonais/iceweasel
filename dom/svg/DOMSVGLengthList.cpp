@@ -67,13 +67,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DOMSVGLengthList)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-void DOMSVGLengthList::IndexedSetter(uint32_t index, DOMSVGLength& newValue,
-                                     ErrorResult& aRv) {
-  // Need to take a ref to the return value so it does not leak.
-  RefPtr<DOMSVGLength> ignored = ReplaceItem(newValue, index, aRv);
-  (void)ignored;
-}
-
 JSObject* DOMSVGLengthList::WrapObject(JSContext* cx,
                                        JS::Handle<JSObject*> aGivenProto) {
   return mozilla::dom::SVGLengthList_Binding::Wrap(cx, this, aGivenProto);
@@ -187,6 +180,13 @@ already_AddRefed<DOMSVGLength> DOMSVGLengthList::IndexedGetter(
     return GetItemAt(index);
   }
   return nullptr;
+}
+
+void DOMSVGLengthList::IndexedSetter(uint32_t aIndex, DOMSVGLength& aNewValue,
+                                     ErrorResult& aRv) {
+  // Need to take a ref to the return value so it does not leak.
+  RefPtr<DOMSVGLength> ignored = ReplaceItem(aNewValue, aIndex, aRv);
+  (void)ignored;
 }
 
 already_AddRefed<DOMSVGLength> DOMSVGLengthList::InsertItemBefore(

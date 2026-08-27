@@ -279,7 +279,8 @@ nsresult nsHttpTransaction::Init(
   if (gHttpHandler->HttpActivityDistributorActivated()) {
     nsCString requestBuf(mReqHeaderBuf);
     NS_DispatchToMainThread(NS_NewRunnableFunction(
-        "ObserveHttpActivityWithArgs", [channelId(mChannelId), requestBuf]() {
+        "ObserveHttpActivityWithArgs",
+        [channelId(mChannelId), requestBuf = std::move(requestBuf)]() {
           if (!gHttpHandler) {
             return;
           }

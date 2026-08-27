@@ -368,7 +368,7 @@ class nsAutoRefCnt {
 namespace mozilla {
 class ThreadSafeAutoRefCnt {
  public:
-  constexpr ThreadSafeAutoRefCnt() : mValue(0) {}
+  constexpr ThreadSafeAutoRefCnt() = default;
   constexpr explicit ThreadSafeAutoRefCnt(nsrefcnt aValue) : mValue(aValue) {}
 
   ThreadSafeAutoRefCnt(const ThreadSafeAutoRefCnt&) = delete;
@@ -454,7 +454,7 @@ class ThreadSafeAutoRefCnt {
   static const bool isThreadSafe = true;
 
  private:
-  std::atomic<nsrefcnt> mValue;
+  std::atomic<nsrefcnt> mValue{0};
 };
 
 namespace detail {

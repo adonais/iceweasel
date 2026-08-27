@@ -10,7 +10,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 export const PERMISSION_UI_FEATURE_ID = "webNotificationsPermissionUi";
 
-const ALLOWED_LOGO_SCHEMES = ["chrome:", "resource:", "https:"];
+// Only local schemes: the logo is rendered by the permission prompt in the
+// parent process, and we must not render remote images there. Remote icons
+// would need to go through moz-remote-image (content-process decode) instead.
+const ALLOWED_LOGO_SCHEMES = ["chrome:", "resource:"];
 
 export function isValidLogoUrl(url) {
   if (typeof url !== "string" || !url) {

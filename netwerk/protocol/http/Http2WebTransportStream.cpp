@@ -156,7 +156,7 @@ Http2WebTransportStream::GetReceiveStreamStats() {
 
 bool Http2WebTransportStream::RecvDone() const { return false; }
 
-void Http2WebTransportStream::SetSendOrder(Maybe<int64_t> aSendOrder) {}
+void Http2WebTransportStream::SetSendOrder(int64_t aSendOrder) {}
 
 NS_IMETHODIMP
 Http2WebTransportStream::OnInputStreamReady(nsIAsyncInputStream* aIn) {

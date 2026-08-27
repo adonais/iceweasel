@@ -633,7 +633,7 @@ int SandboxBroker::SymlinkPermissions(const char* aPath,
   // Because we bail on a writable dir, SymlinkPath
   // might not restore the callers' path exactly.
   char pathBufSymlink[kMaxPathLen + 1];
-  strcpy(pathBufSymlink, aPath);
+  base::strlcpy(pathBufSymlink, aPath, sizeof(pathBufSymlink));
 
   nsCString orig =
       ReverseSymlinks(nsDependentCString(pathBufSymlink, aPathLen));

@@ -25,6 +25,7 @@ android-gradle-build:
         max-run-time: 7200
     run-on-repo-type: [hg]
     run:
+        clone-with: hg
         using: run-task
         command: >
             ln -s $MOZ_FETCHES_DIR/android-gradle-dependencies $GECKO_PATH &&

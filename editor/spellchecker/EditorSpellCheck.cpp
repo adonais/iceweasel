@@ -780,9 +780,9 @@ bool EditorSpellCheck::BuildDictionaryList(const nsACString& aDictName,
         equals = aDictName.Equals(dictStr, nsCaseInsensitiveCStringComparator);
         break;
       case DICT_COMPARE_DASHMATCH:
-        equals = nsStyleUtil::DashMatchCompare(
-            NS_ConvertUTF8toUTF16(dictStr), NS_ConvertUTF8toUTF16(aDictName),
-            nsCaseInsensitiveStringComparator);
+        equals = nsStyleUtil::DashMatchCompare(NS_ConvertUTF8toUTF16(dictStr),
+                                               NS_ConvertUTF8toUTF16(aDictName),
+                                               eIgnoreCase);
         break;
     }
     if (equals) {
@@ -987,7 +987,7 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
       for (const auto& dictionary : prefDictionaries) {
         if (nsStyleUtil::DashMatchCompare(NS_ConvertUTF8toUTF16(dictionary),
                                           NS_ConvertUTF8toUTF16(langCode),
-                                          nsTDefaultStringComparator)) {
+                                          eCaseMatters)) {
           MOZ_LOG(sEditorSpellChecker, LogLevel::Debug,
                   ("%s, Trying preference value \"%s\" since it matches "
                    "language code",

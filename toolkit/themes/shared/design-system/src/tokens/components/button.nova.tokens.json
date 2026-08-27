@@ -241,6 +241,13 @@
       }
     }
   },
+  "padding": {
+    "inline": {
+      "small": {
+        "value": "{space.medium}"
+      }
+    }
+  },
   "size": {
     "icon": {
       "small": {
@@ -387,8 +394,7 @@
       },
       "selected": {
         "value": {
-          "light": "{button.text.color.@base}",
-          "dark": "{background.color.canvas}",
+          "default": "{button.text.color.@base}",
           "forcedColors": "SelectedItemText"
         }
       }

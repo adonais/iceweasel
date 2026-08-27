@@ -5,6 +5,9 @@
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
 const lazy = XPCOMUtils.declareLazy({
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   getThemesList: "moz-src:///browser/themes/ThemesList.sys.mjs",
@@ -66,7 +69,12 @@ export class ThemePickerDirectController {
   }
 
   hostConnected() {
+    Services.obs.addObserver(this.updateHost, "look-and-feel-changed");
     this.updateHost();
+  }
+
+  hostDisconnected() {
+    Services.obs.removeObserver(this.updateHost, "look-and-feel-changed");
   }
 
   /**
@@ -100,7 +108,7 @@ export class ThemePickerDirectController {
     await this.themesManager.updateThemeState(themeId, true);
   }
 
-  updateHost() {
+  updateHost = () => {
     this.host.activeThemeId = this.lazy.activeThemeId;
     this.host.nativeTheme = this.lazy.nativeTheme;
     if (this.lazy.systemUsesDark == 0) {
@@ -110,5 +118,10 @@ export class ThemePickerDirectController {
     } else {
       this.host.appearance = "device";
     }
-  }
+    this.host.showNativeThemeOption = AppConstants.platform === "linux";
+    this.host.deviceAppearance = Services.appinfo
+      .contentThemeDerivedColorSchemeIsDark
+      ? "dark"
+      : "light";
+  };
 }

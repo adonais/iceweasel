@@ -314,6 +314,20 @@ TEST_F(UserFontConfigHelperTest, DirsAreIgnored) {
   EXPECT_TRUE(CreateHelperAndCallAddRules());
 }
 
+TEST_F(UserFontConfigHelperTest, PathsWithWildcardsAreIgnored) {
+  const auto* validCharsPath1 = LR"(C:\Users\Moz User\Fonts\FontFile1.ttf)";
+  const auto* validCharsPath2 = LR"(\??\C:\Users\Moz User\Fonts\FontFile2.ttf)";
+  SetUpPaths({validCharsPath1, LR"(C:\Users\Moz User\Font/s\invalid.ttf)",
+              LR"(C:\Users\Moz User\Fonts\*)",
+              LR"(C:\Users\Moz User\Fonts\invalid*)",
+              LR"(C:\Users\Moz User\Fonts\invalid/?)", validCharsPath2});
+
+  EXPECT_READONLY_EQ(validCharsPath1).After(mWinUserFontCall);
+  EXPECT_READONLY_EQ(validCharsPath2).After(mWinUserFontCall);
+
+  EXPECT_TRUE(CreateHelperAndCallAddRules());
+}
+
 TEST_F(UserFontConfigHelperTest, PathsInWindowsUsersFontDirNotAdded) {
   SetUpPaths({
       LR"(C:\Users\Moz User\AppData\Local\Microsoft\Windows\Fonts\FontFile1.ttf)",

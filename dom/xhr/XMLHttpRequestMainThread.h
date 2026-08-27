@@ -795,7 +795,7 @@ class nsXMLHttpRequestXPCOMifier final : public nsIStreamListener,
                                          public nsIInterfaceRequestor,
                                          public nsITimerCallback,
                                          public nsINamed {
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsXMLHttpRequestXPCOMifier,
                                            nsIStreamListener)
 

@@ -12,8 +12,6 @@ with Files("module.ver"):
 with Files("splash.rc"):
     BUG_COMPONENT = ("Core", "Widget: Win32")
 
-with Files("macversion.py"):
-    BUG_COMPONENT = ("Core", "Widget: Cocoa")
 with Files("macbuild/**"):
     BUG_COMPONENT = ("Core", "Widget: Cocoa")
 
@@ -23,6 +21,8 @@ with Files("Makefile.in"):
     BUG_COMPONENT = ("Firefox Build System", "General")
 with Files("generate_channel_prefs.py"):
     BUG_COMPONENT = ("Firefox Build System", "General")
+with Files("generate_info_plist.py"):
+    BUG_COMPONENT = ("Firefox Build System", "General")
 
 with Files("profile/channel-prefs.js"):
     BUG_COMPONENT = ("Firefox", "Installer")
@@ -31,6 +31,9 @@ with Files("profile/firefox.js"):
 
 DIRS += ["distribution"]
 
+# Neither channel-prefs.js nor firefox.exe want to end up in dist/bin/browser.
+DIST_SUBDIR = ""
+
 if CONFIG["MOZ_WIDGET_TOOLKIT"] != "cocoa":
     GeneratedFile(
         "channel-prefs.js",
@@ -38,6 +41,68 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] != "cocoa":
         inputs=["profile/channel-prefs.js"],
     )
     FINAL_TARGET_FILES.defaults.pref += ["!channel-prefs.js"]
+
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+    mac_app_name = CONFIG["MOZ_APP_DISPLAYNAME"]
+    if CONFIG["MOZ_DEBUG"]:
+        mac_app_name += "Debug"
+    GeneratedFile(
+        "Info.plist",
+        script="generate_info_plist.py",
+        inputs=["macbuild/Contents/Info.plist.in"],
+        flags=[mac_app_name],
+        extra_deps=["!/buildid.h"],
+    )
+    GeneratedFile(
+        "InfoPlist.strings",
+        script="/python/mozbuild/mozbuild/action/preprocessor.py",
+        entry_point="generate",
+        inputs=["macbuild/Contents/Resources/English.lproj/InfoPlist.strings.in"],
+        flags=[
+            "-Fsubstitution",
+            "--output-encoding",
+            "utf-16",
+            f"-DMAC_APP_NAME={mac_app_name}",
+        ],
+    )
+    ab_cd = CONFIG["MOZ_UI_LOCALE"]
+    if ab_cd == "zh-TW":
+        lproj_root = ab_cd.replace("-", "_")
+    else:
+        lproj_root = ab_cd.split("-")[0]
+    branding = f"/{CONFIG['MOZ_BRANDING_DIRECTORY']}"
+    extra_files = [
+        (f"{branding}/firefox.icns", "Resources/firefox.icns"),
+        (f"{branding}/document.icns", "Resources/document.icns"),
+        (f"{branding}/Assets.car", "Resources/Assets.car"),
+    ]
+    if CONFIG["MOZ_UPDATER"]:
+        extra_files.append((
+            f"!/{FINAL_TARGET}/org.mozilla.updater",
+            "Library/LaunchServices/org.mozilla.updater",
+        ))
+    MacOSBundle(
+        f"!/dist/{CONFIG['MOZ_MACBUNDLE_NAME']}",
+        skeleton="macbuild/Contents",
+        info_plist="!Info.plist",
+        strings="!InfoPlist.strings",
+        lproj=f"{lproj_root}.lproj",
+        stage=f"!/{FINAL_TARGET}",
+        macos_files="!macbuild/Contents/MacOS-files.txt",
+        macos_copy_files="macbuild/Contents/MacOS-files-copy.in",
+        binaries=[
+            (f"!/{FINAL_TARGET}/{CONFIG['MOZ_APP_NAME']}", CONFIG["MOZ_APP_NAME"])
+        ],
+        extra_files=extra_files,
+        moves=[
+            ("ChannelPrefs.framework", "Frameworks/ChannelPrefs.framework"),
+            (
+                "org.mozilla.dmgInstallHelper",
+                "Library/LaunchServices/org.mozilla.dmgInstallHelper",
+            ),
+        ],
+        pkginfo="APPLMOZB",
+    )
 
 if CONFIG["MOZ_MACBUNDLE_NAME"]:
     DIRS += ["macbuild/Contents"]
@@ -53,6 +118,14 @@ if CONFIG["MOZ_NO_PIE_COMPAT"]:
 else:
     GeckoProgram(CONFIG["MOZ_APP_NAME"], linkage=browser_linkage)
 
+    if CONFIG["OS_ARCH"] != "WINNT" and CONFIG["COMPILE_ENVIRONMENT"]:
+        FINAL_TARGET_FILES += [
+            (
+                f"!/{FINAL_TARGET}/" + CONFIG["MOZ_APP_NAME"] + CONFIG["BIN_SUFFIX"],
+                CONFIG["MOZ_APP_NAME"] + "-bin" + CONFIG["BIN_SUFFIX"],
+            )
+        ]
+
 # Compile the application data (which changes every build due to the build ID)
 # in a separate tiny file so that nsBrowserApp.cpp doesn't need to be
 # recompiled on every no-op build.
@@ -60,9 +133,6 @@ SOURCES += [
     "ApplicationData.cpp",
     "nsBrowserApp.cpp",
 ]
-
-# Neither channel-prefs.js nor firefox.exe want to end up in dist/bin/browser.
-DIST_SUBDIR = ""
 
 LOCAL_INCLUDES += [
     "!/build",

@@ -72,7 +72,7 @@ async function testInteractWithSite(origin, expectRecorded) {
  * Test that we only record user activation for supported schemes.
  */
 add_task(async function test_userActivationSchemes() {
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   await testInteractWithSite("http://example.com", true);
   await testInteractWithSite("https://example.com", true);
 

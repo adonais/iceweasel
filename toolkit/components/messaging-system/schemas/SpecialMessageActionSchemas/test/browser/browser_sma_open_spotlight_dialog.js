@@ -3,23 +3,23 @@
 
 "use strict";
 
-const { OnboardingMessageProvider } = ChromeUtils.importESModule(
-  "resource:///modules/asrouter/OnboardingMessageProvider.sys.mjs"
-);
-
 const { Spotlight } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/Spotlight.sys.mjs"
 );
 
 add_task(async function test_OPEN_SPOTLIGHT_DIALOG() {
-  let pbNewTabMessage = (
-    await OnboardingMessageProvider.getUntranslatedMessages()
-  ).filter(m => m.id === "PB_NEWTAB_FOCUS_PROMO");
-  info(`Testing ${pbNewTabMessage[0].id}`);
+  const spotlightData = {
+    content: {
+      id: "TEST_SPOTLIGHT",
+      template: "multistage",
+      modal: "tab",
+      screens: [],
+    },
+  };
   let showSpotlightStub = sinon.stub(Spotlight, "showSpotlightDialog");
   await SMATestUtils.executeAndValidateAction({
     type: "SHOW_SPOTLIGHT",
-    data: { ...pbNewTabMessage[0].content.promoButton.action.data },
+    data: { ...spotlightData },
   });
 
   Assert.equal(
@@ -30,7 +30,7 @@ add_task(async function test_OPEN_SPOTLIGHT_DIALOG() {
 
   Assert.deepEqual(
     showSpotlightStub.firstCall.args[1],
-    pbNewTabMessage[0].content.promoButton.action.data,
+    spotlightData,
     "Should be called with action.data"
   );
 

@@ -220,7 +220,6 @@ function WrapForValidIteratorReturn() {
   return callContentFunction(returnMethod, iterator);
 }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 /**
  * Explicit Resource Management Proposal
  * 27.1.2.1 %IteratorPrototype% [ @@dispose ] ( )
@@ -241,7 +240,6 @@ function IteratorDispose() {
 
   // Step 4. Return NormalCompletion(empty). (implicit)
 }
-#endif
 
 /**
  * %IteratorHelperPrototype%.next ( )

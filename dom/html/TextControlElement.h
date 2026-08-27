@@ -245,7 +245,6 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   bool NeedToInitializeEditorForEvent(EventChainPreVisitor&) const;
 
   void SetupShadowTree(dom::ShadowRoot&, bool aNotify);
-  Element* FindShadowPseudo(PseudoStyleType) const;
   void UpdatePlaceholder(const nsAttrValue* aOldValue,
                          const nsAttrValue* aNewValue);
   void UpdateTextEditorShadowTree();

@@ -197,7 +197,7 @@ DH_GenParam(int primeLen, DHParams **params)
 {
     if (!vector && PR_SUCCESS != freebl_RunLoaderOnce())
         return SECFailure;
-    return (vector->p_DH_GenParam)(primeLen, params);
+    return SECFailure;
 }
 
 SECStatus

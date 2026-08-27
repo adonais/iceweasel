@@ -2,7 +2,7 @@
 
 add_task(async function starButtonCtrlClick() {
   // Open a unique page.
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   let url = "http://example.com/browser_page_action_star_button";
   await BrowserTestUtils.withNewTab(url, async () => {
     StarUI._createPanelIfNeeded();
@@ -27,7 +27,7 @@ add_task(async function starButtonCtrlClick() {
 });
 
 add_task(async function bookmark() {
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   const url = "http://example.com/browser_page_action_menu";
 
   const win = await BrowserTestUtils.openNewBrowserWindow();
@@ -93,7 +93,7 @@ add_task(async function bookmark() {
 
 add_task(async function bookmarkNoEditDialog() {
   const url =
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/browser_page_action_menu_no_edit_dialog";
 
   await SpecialPowers.pushPrefEnv({

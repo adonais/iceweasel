@@ -1045,7 +1045,10 @@ export var TPS = {
     try {
       this.config = JSON.parse(Services.prefs.getStringPref("tps.config"));
       // parse the test file
-      Services.scriptloader.loadSubScript(file, this);
+      Services.scriptloader.loadSubScriptWithOptions(file, {
+        target: this,
+        allowUnsafeURL: true,
+      });
       this._currentPhase = phase;
       // cleanup phases are in the format `cleanup-${profileName}`.
       if (this._currentPhase.startsWith("cleanup-")) {

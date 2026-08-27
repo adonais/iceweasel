@@ -13,10 +13,8 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { TelemetryReportingPolicy } from "resource://gre/modules/TelemetryReportingPolicy.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
-  CustomizableUI:
-    "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 const PREF_URLBAR_BRANCH = "browser.urlbar.";
@@ -283,6 +281,12 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // Whether addresses and search results typed into the address bar
   // should be opened in new tabs by default.
   ["openintab", false],
+
+  // The cached name of the (private) default engine.
+  // This is used to initialize the placeholder of the
+  // urlbar before the search engine store is ready.
+  ["placeholderName", ""],
+  ["placeholderName.private", ""],
 
   // If disabled, QuickActions will not be included in either the default search
   // mode or the QuickActions search mode.
@@ -620,9 +624,6 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // will be deduplicated.
   ["deduplication.enabled", true],
 
-  // How old history results have to be to be deduplicated.
-  ["deduplication.thresholdDays", 0],
-
   // semanticHistory search query minLength threshold to be enabled.
   ["suggest.semanticHistory.minLength", 5],
 
@@ -643,6 +644,12 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // The number of times the user has been shown the redirect search tip.
   ["tipShownCount.searchTip_redirect", 0],
 
+  // Whether to show the tracker count pill in the urlbar.
+  ["trackerCount.enabled", true],
+
+  // Whether we've ever shown the pill in the address bar with the number of trackers (used to trigger a Feature Callout).
+  ["trackerCountShown", false],
+
   // Feature gate pref for trending suggestions in the urlbar.
   ["trending.featureGate", true],
 
@@ -662,6 +669,9 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
 
   // Remove redundant portions from URLs.
   ["trimURLs", true],
+
+  // Remove leading 'www.' from url displayed in the urlbar.
+  ["trimWww", false],
 
   // Enable the updated design combining the privacy and shield icon
   // and panels in the Urlbar.
@@ -748,6 +758,7 @@ const PREF_URLBAR_DEFAULTS_MAP = new Map(PREF_URLBAR_DEFAULTS);
 const PREF_OTHER_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   ["browser.fixup.dns_first_for_single_words", false],
   ["browser.ml.enable", false],
+  ["browser.nova.enabled", false],
   ["browser.search.openintab", false],
   ["browser.search.suggest.enabled", true],
   ["browser.search.suggest.enabled.private", false],
@@ -790,13 +801,16 @@ const PREF_TYPES = new Map([
   ["string", "Char"],
 ]);
 
+let inParent =
+  Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT;
+
 /**
  * Builds the default result groups and returns the root group.  Result
  * groups determine the composition of results in the muxer, i.e., how they're
  * grouped and sorted.  Each group is an object that looks like this:
  *
  * @typedef {object} ResultGroup
- * @property {Values<typeof lazy.UrlbarUtils.RESULT_GROUP>} [group]
+ * @property {Values<typeof lazy.UrlbarShared.RESULT_GROUP>} [group]
  *     This is defined only on groups without children, and it determines the
  *     result group that the group will contain.
  * @property {number} [maxResultCount]
@@ -844,25 +858,28 @@ function makeDefaultResultGroups({
       {
         maxResultCount: 1,
         children: [
-          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST },
-          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_EXTENSION },
-          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_SEARCH_TIP },
-          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_OMNIBOX },
-          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_ENGINE_ALIAS },
-          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_BOOKMARK_KEYWORD },
-          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_AUTOFILL },
-          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_TOKEN_ALIAS_ENGINE },
+          { group: lazy.UrlbarShared.RESULT_GROUP.HEURISTIC_TEST },
+          { group: lazy.UrlbarShared.RESULT_GROUP.HEURISTIC_EXTENSION },
+          { group: lazy.UrlbarShared.RESULT_GROUP.HEURISTIC_SEARCH_TIP },
+          { group: lazy.UrlbarShared.RESULT_GROUP.HEURISTIC_OMNIBOX },
+          { group: lazy.UrlbarShared.RESULT_GROUP.HEURISTIC_ENGINE_ALIAS },
+          { group: lazy.UrlbarShared.RESULT_GROUP.HEURISTIC_BOOKMARK_KEYWORD },
+          { group: lazy.UrlbarShared.RESULT_GROUP.HEURISTIC_AUTOFILL },
+          {
+            group: lazy.UrlbarShared.RESULT_GROUP.HEURISTIC_TOKEN_ALIAS_ENGINE,
+          },
           {
             group:
-              lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_RESTRICT_KEYWORD_AUTOFILL,
+              lazy.UrlbarShared.RESULT_GROUP
+                .HEURISTIC_RESTRICT_KEYWORD_AUTOFILL,
           },
-          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_HISTORY_URL },
-          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK },
+          { group: lazy.UrlbarShared.RESULT_GROUP.HEURISTIC_HISTORY_URL },
+          { group: lazy.UrlbarShared.RESULT_GROUP.HEURISTIC_FALLBACK },
         ],
       },
       // extensions using the omnibox API
       {
-        group: lazy.UrlbarUtils.RESULT_GROUP.OMNIBOX,
+        group: lazy.UrlbarShared.RESULT_GROUP.OMNIBOX,
       },
     ],
   };
@@ -879,19 +896,19 @@ function makeDefaultResultGroups({
         children: [
           {
             flex: 9,
-            group: lazy.UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: lazy.UrlbarShared.RESULT_GROUP.GENERAL,
             orderBy: "frecency",
           },
           {
             flex: 1,
-            group: lazy.UrlbarUtils.RESULT_GROUP.SEMANTIC_HISTORY,
+            group: lazy.UrlbarShared.RESULT_GROUP.SEMANTIC_HISTORY,
             orderBy: "frecency",
           },
         ],
       }
     : {
         flex: 2,
-        group: lazy.UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: lazy.UrlbarShared.RESULT_GROUP.GENERAL,
         orderBy: "frecency",
       };
 
@@ -909,53 +926,53 @@ function makeDefaultResultGroups({
                 // If `maxHistoricalSearchSuggestions` == 0, the muxer forces
                 // `maxResultCount` to be zero and flex is ignored, per query.
                 flex: 2,
-                group: lazy.UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+                group: lazy.UrlbarShared.RESULT_GROUP.FORM_HISTORY,
               },
               {
                 flex: 99,
-                group: lazy.UrlbarUtils.RESULT_GROUP.RECENT_SEARCH,
+                group: lazy.UrlbarShared.RESULT_GROUP.RECENT_SEARCH,
               },
               {
                 flex: 4,
-                group: lazy.UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+                group: lazy.UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
               },
             ],
           },
           {
-            group: lazy.UrlbarUtils.RESULT_GROUP.TAIL_SUGGESTION,
+            group: lazy.UrlbarShared.RESULT_GROUP.TAIL_SUGGESTION,
           },
         ],
       },
       // general
       {
-        group: lazy.UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+        group: lazy.UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
         children: [
           {
             availableSpan: 3,
-            group: lazy.UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+            group: lazy.UrlbarShared.RESULT_GROUP.INPUT_HISTORY,
           },
           {
             flexChildren: true,
             children: [
               {
                 flex: 1,
-                group: lazy.UrlbarUtils.RESULT_GROUP.REMOTE_TAB,
+                group: lazy.UrlbarShared.RESULT_GROUP.REMOTE_TAB,
               },
               generalChild,
               {
                 // We show relatively many about-page results because they're
                 // only added for queries starting with "about:".
                 flex: 2,
-                group: lazy.UrlbarUtils.RESULT_GROUP.ABOUT_PAGES,
+                group: lazy.UrlbarShared.RESULT_GROUP.ABOUT_PAGES,
               },
               {
                 flex: 99,
-                group: lazy.UrlbarUtils.RESULT_GROUP.RESTRICT_SEARCH_KEYWORD,
+                group: lazy.UrlbarShared.RESULT_GROUP.RESTRICT_SEARCH_KEYWORD,
               },
             ],
           },
           {
-            group: lazy.UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+            group: lazy.UrlbarShared.RESULT_GROUP.INPUT_HISTORY,
           },
         ],
       },
@@ -991,19 +1008,19 @@ function makeSmartBarGroups({
         children: [
           {
             flex: 9,
-            group: lazy.UrlbarUtils.RESULT_GROUP.GENERAL,
+            group: lazy.UrlbarShared.RESULT_GROUP.GENERAL,
             orderBy: "frecency",
           },
           {
             flex: 1,
-            group: lazy.UrlbarUtils.RESULT_GROUP.SEMANTIC_HISTORY,
+            group: lazy.UrlbarShared.RESULT_GROUP.SEMANTIC_HISTORY,
             orderBy: "frecency",
           },
         ],
       }
     : {
         flex: 2,
-        group: lazy.UrlbarUtils.RESULT_GROUP.GENERAL,
+        group: lazy.UrlbarShared.RESULT_GROUP.GENERAL,
         orderBy: "frecency",
       };
 
@@ -1015,7 +1032,7 @@ function makeSmartBarGroups({
         children: [
           {
             availableSpan: 2,
-            group: lazy.UrlbarUtils.RESULT_GROUP.AI,
+            group: lazy.UrlbarShared.RESULT_GROUP.AI,
           },
           {
             flexChildren: true,
@@ -1024,30 +1041,30 @@ function makeSmartBarGroups({
                 // If `maxHistoricalSearchSuggestions` == 0, the muxer forces
                 // `maxResultCount` to be zero and flex is ignored, per query.
                 flex: 2,
-                group: lazy.UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+                group: lazy.UrlbarShared.RESULT_GROUP.FORM_HISTORY,
               },
               {
                 flex: 99,
-                group: lazy.UrlbarUtils.RESULT_GROUP.RECENT_SEARCH,
+                group: lazy.UrlbarShared.RESULT_GROUP.RECENT_SEARCH,
               },
               {
                 flex: 4,
-                group: lazy.UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+                group: lazy.UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION,
               },
             ],
           },
           {
-            group: lazy.UrlbarUtils.RESULT_GROUP.TAIL_SUGGESTION,
+            group: lazy.UrlbarShared.RESULT_GROUP.TAIL_SUGGESTION,
           },
         ],
       },
       // general
       {
-        group: lazy.UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+        group: lazy.UrlbarShared.RESULT_GROUP.GENERAL_PARENT,
         children: [
           {
             availableSpan: 3,
-            group: lazy.UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+            group: lazy.UrlbarShared.RESULT_GROUP.INPUT_HISTORY,
           },
           {
             flexChildren: true,
@@ -1055,18 +1072,18 @@ function makeSmartBarGroups({
               generalChild,
               {
                 flex: 1,
-                group: lazy.UrlbarUtils.RESULT_GROUP.REMOTE_TAB,
+                group: lazy.UrlbarShared.RESULT_GROUP.REMOTE_TAB,
               },
               {
                 // We show relatively many about-page results because they're
                 // only added for queries starting with "about:".
                 flex: 2,
-                group: lazy.UrlbarUtils.RESULT_GROUP.ABOUT_PAGES,
+                group: lazy.UrlbarShared.RESULT_GROUP.ABOUT_PAGES,
               },
             ],
           },
           {
-            group: lazy.UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+            group: lazy.UrlbarShared.RESULT_GROUP.INPUT_HISTORY,
           },
         ],
       },
@@ -1086,11 +1103,11 @@ function makeSmartBarGroups({
       {
         maxResultCount: 1,
         children: [
-          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST },
-          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_AUTOFILL },
-          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_HISTORY_URL },
-          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_AI_CHAT },
-          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK },
+          { group: lazy.UrlbarShared.RESULT_GROUP.HEURISTIC_TEST },
+          { group: lazy.UrlbarShared.RESULT_GROUP.HEURISTIC_AUTOFILL },
+          { group: lazy.UrlbarShared.RESULT_GROUP.HEURISTIC_HISTORY_URL },
+          { group: lazy.UrlbarShared.RESULT_GROUP.HEURISTIC_AI_CHAT },
+          { group: lazy.UrlbarShared.RESULT_GROUP.HEURISTIC_FALLBACK },
         ],
       },
       mainGroup,
@@ -1570,19 +1587,6 @@ class Preferences {
   }
 
   /**
-   * Return whether or not persisted search terms is enabled.
-   *
-   * @returns {boolean} true: if enabled.
-   */
-  isPersistedSearchTermsEnabled() {
-    return (
-      this.getScotchBonnetPref("showSearchTerms.featureGate") &&
-      this.get("showSearchTerms.enabled") &&
-      !lazy.CustomizableUI.getPlacementOfWidget("search-container")
-    );
-  }
-
-  /**
    * @type {Map<string, ResultGroup>}
    * Result groups cached by search access point and params used to build them.
    */
@@ -1604,6 +1608,12 @@ class Preferences {
         this._observerWeakRefs.splice(i, 1);
         continue;
       }
+
+      if (!inParent) {
+        // This is necessary for observers created in non-chrome code.
+        observer = Cu.waiveXrays(observer);
+      }
+
       if (method in observer) {
         try {
           observer[method](changed, ...rest);

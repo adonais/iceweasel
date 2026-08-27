@@ -66,7 +66,7 @@ add_task(async function viewUpdateAppendHidden() {
     UrlbarShared.RESULT_TYPE.TIP,
     "Result at index 1 is a tip"
   );
-  let tipResultSpan = UrlbarUtils.getSpanForResult(
+  let tipResultSpan = UrlbarShared.getSpanForResult(
     tipResult.element.row.result
   );
   Assert.greater(tipResultSpan, 1, "Sanity check: Tip has large result span");

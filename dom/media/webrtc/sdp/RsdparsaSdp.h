@@ -54,11 +54,11 @@ class RsdparsaSdp final : public Sdp {
   void Serialize(std::ostream&) const override;
 
  private:
-  RsdparsaSdp() : mOrigin("", 0, 0, sdp::kIPv4, "") {}
+  RsdparsaSdp() = default;
   RsdparsaSdp(const RsdparsaSdp& aOrig);
 
   RsdparsaSessionHandle mSession;
-  SdpOrigin mOrigin;
+  SdpOrigin mOrigin{"", 0, 0, sdp::kIPv4, ""};
   UniquePtr<RsdparsaSdpAttributeList> mAttributeList;
   std::vector<UniquePtr<RsdparsaSdpMediaSection>> mMediaSections;
 };

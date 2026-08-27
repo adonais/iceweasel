@@ -42,6 +42,7 @@
 #include "api/payload_type.h"
 #include "api/priority.h"
 #include "api/rtc_error.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
 #include "api/rtp_sender_interface.h"
@@ -162,7 +163,8 @@ std::vector<SdpVideoFormat> GetDefaultSupportedFormats(
     // is microseconds.) This parameter MUST be present in the SDP, but
     // we never use the actual value anywhere in our code however.
     // TODO(brandtr): Consider honouring this value in the sender and receiver.
-    flexfec_format.parameters = {{kFlexfecFmtpRepairWindow, "10000000"}};
+    flexfec_format.parameters = {
+        {std::string(kFlexfecFmtpRepairWindow), "10000000"}};
     supported_formats.push_back(flexfec_format);
   }
   return supported_formats;
@@ -826,10 +828,9 @@ std::unique_ptr<VideoMediaReceiveChannelInterface>
 WebRtcVideoEngine::CreateReceiveChannel(const Environment& env,
                                         Call* call,
                                         const MediaConfig& config,
-                                        const VideoOptions& options,
                                         const CryptoOptions& crypto_options) {
   return std::make_unique<WebRtcVideoReceiveChannel>(
-      env, call, config, options, crypto_options, decoder_factory_.get());
+      env, call, config, crypto_options, decoder_factory_.get());
 }
 
 std::vector<Codec> WebRtcVideoEngine::LegacySendCodecs(bool include_rtx) const {
@@ -871,7 +872,7 @@ WebRtcVideoEngine::GetRtpHeaderExtensions(
   std::vector<RtpHeaderExtensionCapability> result;
   // id is *not* incremented for non-default extensions. Conflicting IDs
   // need to be resolved.
-  int id = 1;
+  RtpHeaderExtensionId id(1);
   for (const auto& uri :
        {RtpExtension::kTimestampOffsetUri, RtpExtension::kAbsSendTimeUri,
         RtpExtension::kVideoRotationUri,
@@ -880,11 +881,13 @@ WebRtcVideoEngine::GetRtpHeaderExtensions(
         RtpExtension::kVideoTimingUri, RtpExtension::kColorSpaceUri,
         RtpExtension::kMidUri, RtpExtension::kRidUri,
         RtpExtension::kRepairedRidUri}) {
-    result.emplace_back(uri, id++, RtpTransceiverDirection::kSendRecv);
+    result.emplace_back(uri, id, RtpTransceiverDirection::kSendRecv);
+    id = RtpHeaderExtensionId(id.value() + 1);
   }
-  result.emplace_back(RtpExtension::kCorruptionDetectionUri, id++,
+  result.emplace_back(RtpExtension::kCorruptionDetectionUri, id,
                       /*preferred_encrypt=*/true,
                       RtpTransceiverDirection::kStopped);
+  id = RtpHeaderExtensionId(id.value() + 1);
   for (const auto& uri : {RtpExtension::kAbsoluteCaptureTimeUri}) {
     result.emplace_back(uri, id, RtpTransceiverDirection::kStopped);
   }
@@ -1415,31 +1418,6 @@ WebRtcVideoSendChannel::GetRtpSendParametersCallback() const {
       return RtpParameters();
     return GetRtpSendParameters(ssrc);
   };
-}
-
-bool WebRtcVideoSendChannel::SetOptions(const VideoOptions& options) {
-  RTC_DCHECK_RUN_ON(worker_thread_);
-  default_send_options_ = options;
-  for (auto& kv : send_streams_) {
-    kv.second->SetOptions(options);
-  }
-  return true;
-}
-
-void WebRtcVideoSendChannel::WebRtcVideoSendStream::SetOptions(
-    const VideoOptions& options) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  VideoOptions old_options = parameters_.options;
-  parameters_.options.SetAll(options);
-  if (parameters_.options.is_screencast.value_or(false) !=
-          old_options.is_screencast.value_or(false) &&
-      parameters_.codec_settings) {
-    SetCodec(*parameters_.codec_settings, parameters_.codec_settings_list);
-    old_options.is_screencast = options.is_screencast;
-  }
-  if (parameters_.options != old_options) {
-    ReconfigureEncoder(nullptr);
-  }
 }
 
 RTCError WebRtcVideoSendChannel::SetRtpSendParameters(
@@ -2317,6 +2295,8 @@ WebRtcVideoSendChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   VideoEncoderConfig encoder_config;
   encoder_config.codec_type = PayloadStringToCodecType(codec.name);
   encoder_config.video_format = SdpVideoFormat(codec.name, codec.params);
+  encoder_config.allow_zero_hertz_video =
+      parameters_.options.allow_zero_hertz_video.value_or(false);
 
   bool is_screencast = parameters_.options.is_screencast.value_or(false);
   if (is_screencast) {
@@ -2755,6 +2735,9 @@ void WebRtcVideoSendChannel::WebRtcVideoSendStream::RecreateWebRtcStream() {
     // SVC is used instead of simulcast. Remove unnecessary SSRCs.
     if (config.rtp.ssrcs.size() > 1) {
       config.rtp.ssrcs.resize(1);
+      if (config.rtp.rids.size() > 1) {
+        config.rtp.rids.resize(1);
+      }
       if (config.rtp.rtx.ssrcs.size() > 1) {
         config.rtp.rtx.ssrcs.resize(1);
       }
@@ -2849,7 +2832,6 @@ WebRtcVideoReceiveChannel::WebRtcVideoReceiveChannel(
     const Environment& env,
     Call* absl_nonnull call,
     const MediaConfig& config,
-    const VideoOptions& options,
     const CryptoOptions& crypto_options,
     VideoDecoderFactory* absl_nullable decoder_factory)
     : MediaChannelUtil(call->network_thread(), config.enable_dscp),

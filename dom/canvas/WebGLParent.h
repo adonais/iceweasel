@@ -58,7 +58,9 @@ class WebGLParent : public PWebGLParent, public SupportsWeakPtr {
   IPCResult RecvReadPixels(const webgl::ReadPixelsDesc&,
                            ReadPixelsBuffer&& buffer,
                            webgl::ReadPixelsResultIpc* ret);
-
+  IPCResult RecvReadPixelsAsync(const webgl::ReadPixelsDesc& aDesc,
+                                uint64_t aByteSize,
+                                ReadPixelsAsyncResolver&& aResolve);
   // -
 
   using ObjectId = webgl::ObjectId;

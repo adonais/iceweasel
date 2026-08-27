@@ -71,6 +71,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   SitePermissions: "resource:///modules/SitePermissions.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -1596,6 +1597,7 @@ class DesktopNotificationPermissionPrompt extends PermissionPromptForRequest {
       vars.primaryCtaLabel ||
       vars.secondaryCtaLabel ||
       vars.logoUrl ||
+      vars.useSiteFavicon ||
       vars.headlineL10nId ||
       vars.bodyL10nId ||
       vars.primaryCtaLabelL10nId ||
@@ -1603,9 +1605,62 @@ class DesktopNotificationPermissionPrompt extends PermissionPromptForRequest {
     if (hasContent) {
       this.#treatment = {
         ...vars,
-        logoUrl: lazy.isValidLogoUrl(vars.logoUrl) ? vars.logoUrl : null,
+        logoUrl: await this.#resolveLogoUrl(vars),
       };
     }
+  }
+
+  /**
+   * Resolve the prompt icon from the treatment, in this order: a valid Nimbus
+   * logoUrl (chrome:// or resource:// only), else the requesting site's
+   * own favicon when useSiteFavicon is set, else null (default icon).
+   *
+   * The favicon prefers the persistent page-icon: cache when the site has a
+   * cached favicon (the common case, and the same lookup the site permissions
+   * manager uses). It only falls back to the tab's live in-memory icon when
+   * nothing is cached such as a first-time private-browsing visit, where the
+   * cache is empty but the tab has already loaded the icon. If neither resolves,
+   * returns null and the default favicon is shown.
+   *
+   * @param {object} vars - The Nimbus feature variables.
+   * @returns {Promise<?string>} The icon URL, or null to show the default icon.
+   */
+  async #resolveLogoUrl(vars) {
+    if (lazy.isValidLogoUrl(vars.logoUrl)) {
+      return vars.logoUrl;
+    }
+    if (!vars.useSiteFavicon) {
+      return null;
+    }
+
+    // Primary: page-icon: keyed on the requesting page's URI spec. Only use it
+    // when a favicon is actually cached, so we don't render the default globe
+    // when the live tab icon (below) could show the real one.
+    let pageURI = this.principal.URI;
+    let cachedFavicon = await lazy.PlacesUtils.favicons
+      .getFaviconForPage(pageURI)
+      .catch(() => null);
+    if (cachedFavicon) {
+      return `page-icon:${pageURI.spec}`;
+    }
+
+    // Fallback: the tab's already-loaded icon, populated on page load even when
+    // the persistent cache is empty (first-time private visit). setIcon() only
+    // stores local-scheme URLs (data:/chrome:/resource:) in mIconURL, so this
+    // never makes the consent prompt fetch a remote URL. Require the requester
+    // to be same-origin with the tab's top-level document: mIconURL is that
+    // top-level icon, and we must not render one origin's icon next to another
+    // origin's name in a consent prompt. (The platform already blocks cross-
+    // origin-iframe notification prompts via
+    // dom.webnotifications.allowcrossoriginiframe, default false; this enforces
+    // it locally too.)
+    if (
+      this.browser.mIconURL &&
+      this.browser.contentPrincipal.equals(this.principal)
+    ) {
+      return this.browser.mIconURL;
+    }
+    return null;
   }
 
   /**

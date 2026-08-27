@@ -9,7 +9,7 @@ let a = registerModule('a', parseModule(s));
 
 let b = registerModule('b', parseModule("import * as ns from 'a'"));
 
-moduleLink(b);
+moduleLoadAndLink(b);
 moduleEvaluate(b);
 
 let ns = a.namespace;

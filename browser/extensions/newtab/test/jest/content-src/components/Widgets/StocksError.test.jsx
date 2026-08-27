@@ -3,18 +3,17 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { render, act } from "@testing-library/react";
-import { actionTypes as at } from "common/Actions.mjs";
 import { StocksError } from "content-src/components/Widgets/Stocks/StocksError";
 
 describe("StocksError", () => {
-  let dispatch;
+  let recordError;
   let observerCallbacks;
   let observerInstances;
   // Stable target so the same fake entry can be reused across calls.
   const mockTarget = {};
 
   beforeEach(() => {
-    dispatch = jest.fn();
+    recordError = jest.fn();
     observerCallbacks = [];
     observerInstances = [];
     jest.spyOn(global, "IntersectionObserver").mockImplementation(cb => {
@@ -33,8 +32,8 @@ describe("StocksError", () => {
     jest.restoreAllMocks();
   });
 
-  function renderStocksError(size = "medium") {
-    return render(<StocksError widgetSize={size} dispatch={dispatch} />);
+  function renderStocksError() {
+    return render(<StocksError recordError={recordError} />);
   }
 
   function fireIntersection() {
@@ -44,26 +43,11 @@ describe("StocksError", () => {
     });
   }
 
-  function errorCalls() {
-    return dispatch.mock.calls.filter(
-      ([action]) => action.type === at.WIDGETS_ERROR
-    );
-  }
-
-  it("fires WIDGETS_ERROR once when the error message is seen", () => {
-    renderStocksError("medium");
+  it("records a load_error once when the error message is seen", () => {
+    renderStocksError();
     fireIntersection();
-
-    const calls = errorCalls();
-    expect(calls).toHaveLength(1);
-    expect(calls[0][0].data).toMatchObject({
-      widget_name: "stocks",
-      widget_size: "medium",
-      error_type: "load_error",
-    });
-    expect(calls[0][0].meta).toEqual(
-      expect.objectContaining({ to: "ActivityStream:Main" })
-    );
+    expect(recordError).toHaveBeenCalledTimes(1);
+    expect(recordError).toHaveBeenCalledWith("load_error");
   });
 
   it("marks the error box as an alert for screen readers", () => {
@@ -73,19 +57,16 @@ describe("StocksError", () => {
     );
   });
 
-  it("does not fire WIDGETS_ERROR when the error message never intersects", () => {
+  it("does not record an error when the message never intersects", () => {
     renderStocksError();
-
     expect(observerInstances[0].observe).toHaveBeenCalledTimes(1);
-    expect(errorCalls()).toHaveLength(0);
+    expect(recordError).not.toHaveBeenCalled();
   });
 
-  it("fires WIDGETS_ERROR only once even if the observer reports intersection twice", () => {
+  it("records the error only once even if the observer reports intersection twice", () => {
     renderStocksError();
-
     fireIntersection();
     fireIntersection();
-
-    expect(errorCalls()).toHaveLength(1);
+    expect(recordError).toHaveBeenCalledTimes(1);
   });
 });

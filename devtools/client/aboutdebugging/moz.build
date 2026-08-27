@@ -11,9 +11,14 @@ DIRS += [
     "src",
 ]
 
+TEST_DIRS += ["test/backward_compat_test_server"]
+
 XPCSHELL_TESTS_MANIFESTS += ["test/xpcshell/xpcshell.toml"]
 
-BROWSER_CHROME_MANIFESTS += ["test/browser/browser.toml"]
+BROWSER_CHROME_MANIFESTS += [
+    "test/browser/browser.toml",
+    "test/browser/browser_backward_compat.toml",
+]
 
 
 with Files("**"):

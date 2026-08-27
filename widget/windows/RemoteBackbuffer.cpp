@@ -211,11 +211,7 @@ class SharedImage {
 
 class PresentableSharedImage {
  public:
-  PresentableSharedImage()
-      : mSharedImage(),
-        mDeviceContext(nullptr),
-        mDIBSection(nullptr),
-        mSavedObject(nullptr) {}
+  PresentableSharedImage() = default;
 
   ~PresentableSharedImage() {
     if (mSavedObject) {
@@ -306,10 +302,10 @@ class PresentableSharedImage {
   PresentableSharedImage& operator=(PresentableSharedImage&&) = delete;
 
  private:
-  SharedImage mSharedImage;
-  HDC mDeviceContext;
-  HBITMAP mDIBSection;
-  HGDIOBJ mSavedObject;
+  SharedImage mSharedImage{};
+  HDC mDeviceContext{nullptr};
+  HBITMAP mDIBSection{nullptr};
+  HGDIOBJ mSavedObject{nullptr};
 };
 
 Provider::Provider()

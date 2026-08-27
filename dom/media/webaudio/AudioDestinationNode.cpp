@@ -24,6 +24,7 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/WakeLock.h"
 #include "mozilla/dom/power/PowerManagerService.h"
+#include "mozilla/glean/DomMediaMetrics.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
 #include "nsPIDOMWindowInlines.h"
@@ -412,6 +413,7 @@ class AudioDestinationNode::MediaSharedKeysListener final
         fmt::ptr(this), mBrowsingContextId, willResume);
     if (willResume) {
       ctx->ResumeFromMediaControl();
+      glean::media_audio_focus::resume_decision.Get("web_audio"_ns).Add(1);
     }
     mSuspendedByInterrupt = false;
   }

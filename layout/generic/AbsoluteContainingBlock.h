@@ -211,6 +211,18 @@ class AbsoluteContainingBlock {
    */
   void DrainPushedChildList(const nsIFrame* aDelegatingFrame);
 
+  /**
+   * Move abspos children from aContinuation's absolute containing block into
+   * our absolute child list, reparenting them to aDelegatingFrame.
+   *
+   * @param aDelegatingFrame the frame that owns us.
+   * @param aOnlyFirstInFlows if Yes, only first-in-flow children are moved.
+   */
+  enum class OnlyFirstInFlows : bool { No, Yes };
+  void PullAbsoluteFramesFrom(nsContainerFrame* aDelegatingFrame,
+                              nsIFrame* aContinuation,
+                              OnlyFirstInFlows aOnlyFirstInFlows);
+
   // Stores the abspos frames that have been placed in this containing block.
   nsFrameList mAbsoluteFrames;
 

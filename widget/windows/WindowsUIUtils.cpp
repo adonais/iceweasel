@@ -66,8 +66,10 @@ using namespace mozilla;
 enum class TabletModeState : uint8_t { Unknown, Off, On };
 static TabletModeState sInTabletModeState = TabletModeState::Unknown;
 
-WindowsUIUtils::WindowsUIUtils() = default;
-WindowsUIUtils::~WindowsUIUtils() = default;
+// Cache: whether this device is believed to be capable of entering tablet mode.
+//
+// Meaningful only if `IsWin11OrLater()`.
+static Maybe<bool> sIsTabletCapable = Nothing();
 
 NS_IMPL_ISUPPORTS(WindowsUIUtils, nsIWindowsUIUtils)
 
@@ -186,9 +188,31 @@ bool WindowsUIUtils::GetInWin11TabletMode() {
     return false;
   }
   if (sInTabletModeState == TabletModeState::Unknown) {
-    UpdateInWin11TabletMode();
+    UpdateInWin11TabletMode(TabletModeUpdateReason::LazyQuery);
   }
   return sInTabletModeState == TabletModeState::On;
+}
+
+// Memoized result of the Win11 tablet-capability heuristic. Computing it is a
+// side effect of UpdateInWin11TabletMode(), which latches sIsTabletCapable on
+// its first run.
+static bool GetIsWin11TabletCapable() {
+  MOZ_DIAGNOSTIC_ASSERT(IsWin11OrLater());
+  if (sIsTabletCapable.isNothing()) {
+    WindowsUIUtils::UpdateInWin11TabletMode(
+        WindowsUIUtils::TabletModeUpdateReason::LazyQuery);
+  }
+  return sIsTabletCapable.valueOr(false);
+}
+
+bool WindowsUIUtils::GetIsTabletCapable() {
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+  // Win10 exposes tablet mode as a user-toggleable setting on every device, so
+  // there is nothing to detect.
+  if (!IsWin11OrLater()) {
+    return true;
+  }
+  return GetIsWin11TabletCapable();
 }
 
 NS_IMETHODIMP
@@ -200,6 +224,12 @@ WindowsUIUtils::GetInWin10TabletMode(bool* aResult) {
 NS_IMETHODIMP
 WindowsUIUtils::GetInWin11TabletMode(bool* aResult) {
   *aResult = GetInWin11TabletMode();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+WindowsUIUtils::GetIsTabletCapable(bool* aResult) {
+  *aResult = GetIsTabletCapable();
   return NS_OK;
 }
 
@@ -524,11 +554,6 @@ void WindowsUIUtils::UpdateInWin10TabletMode() {
 #endif
 }
 
-// Cache: whether this device is believed to be capable of entering tablet mode.
-//
-// Meaningful only if `IsWin11OrLater()`.
-static Maybe<bool> sIsTabletCapable = Nothing();
-
 // The UUID of a GPIO pin which indicates whether or not a convertible device is
 // currently in tablet mode. (We copy `DEFINE_GUID`'s implementation here since
 // we can't control `INITGUID`, which the canonical one is conditional on.)
@@ -541,7 +566,7 @@ static Maybe<bool> sIsTabletCapable = Nothing();
     MOZ_GUID_GPIOBUTTONS_LAPTOPSLATE_INTERFACE, 0x317fc439, 0x3f77, 0x41c8,
     0xb0, 0x9e, 0x08, 0xad, 0x63, 0x27, 0x2a, 0xa3);
 
-void WindowsUIUtils::UpdateInWin11TabletMode() {
+void WindowsUIUtils::UpdateInWin11TabletMode(TabletModeUpdateReason aReason) {
   // The OS-level getter itself is threadsafe, but we retain the main-thread
   // restriction to parallel the Win10 getter's (presumed) restriction.
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
@@ -722,6 +747,10 @@ void WindowsUIUtils::UpdateInWin11TabletMode() {
       return;
     }
   } else if (sIsTabletCapable == Some(false)) {
+    if (aReason == TabletModeUpdateReason::LazyQuery) {
+      sInTabletModeState = TabletModeState::Off;
+      return;
+    }
     // We've been in here before, and the heuristic came back false... but
     // somehow, we've just gotten an update for the convertible-slate-mode
     // state.

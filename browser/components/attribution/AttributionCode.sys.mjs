@@ -45,6 +45,8 @@ const ATTR_CODE_VALUE_REGEX = /[a-zA-Z0-9_%\\-\\.\\(\\)]*/;
 const ATTR_CODE_FIELD_SEPARATOR = "%26"; // URL-encoded &
 const ATTR_CODE_KEY_VALUE_SEPARATOR = "%3D"; // URL-encoded =
 const MSCLKID_KEY_PREFIX = "storeBingAd_";
+const REFERRAL_PREFIX = "fxrefer";
+const REFERRAL_SUBMITTED_PREF = "browser.referrals.pingSubmitted";
 const ATTR_CODE_KEYS = [
   "source",
   "medium",
@@ -143,6 +145,11 @@ export var AttributionCode = {
             } else {
               throw new Error("Couldn't parse msstoresignedin");
             }
+          } else if (key === "content" && value.startsWith(REFERRAL_PREFIX)) {
+            // For data privacy, we actually do not want the referral code in
+            // attribution data. Instead we remove it and submit via its own
+            // separate ping (bug 2055255).
+            this.submitReferralCode(value);
           } else {
             parsed[key] = value;
           }
@@ -167,6 +174,24 @@ export var AttributionCode = {
     Glean.browser.attributionErrors.decode_error.add(1);
 
     return {};
+  },
+
+  /**
+   * Transforms the utm_content value "fxrefer0123456789ABCXYZ"
+   * into the referral code 0123456789ABCXYZ and submits via a separate
+   * referrals Glean ping.
+   */
+  submitReferralCode(data) {
+    const referralCode = data.replace(REFERRAL_PREFIX, "");
+    if (
+      !referralCode ||
+      Services.prefs.getBoolPref(REFERRAL_SUBMITTED_PREF, false)
+    ) {
+      return;
+    }
+    Glean.browser.referralCode.set(referralCode);
+    GleanPings.referrals.submit();
+    Services.prefs.setBoolPref(REFERRAL_SUBMITTED_PREF, true);
   },
 
   /**

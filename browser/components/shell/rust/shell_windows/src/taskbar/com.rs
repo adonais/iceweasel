@@ -8,23 +8,24 @@
 //!
 //! Taskband Pin is a COM class implementing the undocumented IPinnedList3
 //! interface that affords pinning and unpinning from the Windows taskbar for
-//! unpackaged Win32 (non-MSIX) applications. Chromium source documents this API
-//! as functional starting with Windows 10 RS5 and ending as of Windows 11 24H2.
+//! unpackaged Win32 (non-MSIX) applications. This API first became available in
+//! Windows 10 RS5.
 //!
 //! ## Pinning
 //!
-//! In Windows 10 and early versions of Windows 11 this API pins without
-//! prompting the user.
+//! Starting with Windows 10 RS5 and early versions of Windows 11 this API pins
+//! without prompting the user.
 //!
-//! Later versions of Windows 11 prior to Windows 11 24H2 instead prompt the
-//! user if they wish to pin with a toast notification.
+//! Later versions of Windows 10 and Windows 11 prior to Windows 11 24H2 instead
+//! prompt the user if they wish to pin with a toast notification.
 //!
 //! For Windows 11 24H2 and later this API reports success even though pinning
 //! is not successful.
 //!
 //! ## Unpinning
 //!
-//! This API can be used to unpin an application past Windows 11 24H2.
+//! This API can be used to unpin an application for every version of Windows
+//! released after Windows 10 RS5.
 //!
 //! ## Requirements
 //!
@@ -43,7 +44,7 @@ use windows::{
 };
 
 use super::PinResult;
-use crate::util::thread::MainThreadGuard;
+use crate::util::thread_guard::MainThreadGuard;
 
 pub(super) enum PinOp {
     Pin,
@@ -160,8 +161,8 @@ impl PinnedListModifyCallerEnum {
     const MAX: Self = Self(i32::MAX);
 }
 
-// Enum to prevent usage of IPinnedList3 methods with incomplete parameter
-// definitions.
+/// Enum to prevent usage of IPinnedList3 methods with incomplete parameter
+/// definitions.
 enum IncompleteDefinition {}
 
 #[interface("0dd79ae2-d156-45d4-9eeb-3b549769e940")]

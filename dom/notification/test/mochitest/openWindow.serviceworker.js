@@ -62,7 +62,7 @@ onmessage = function (event) {
     var promises = [];
     promises.push(testForUrl("about:blank", "TypeError", null, results));
     promises.push(
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       testForUrl("http://example.com", "InvalidAccessError", null, results)
     );
     promises.push(

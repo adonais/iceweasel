@@ -10,3 +10,5 @@ crate-type = ["lib", "staticlib"]
 uniffi_bindings_tests = { path = "../uniffi_bindings_tests" }
 uniffi_bindings_tests_external_types = { path = "../uniffi_bindings_tests_external_types" }
 uniffi_bindings_tests_collision = { path = "../uniffi_bindings_tests_collision" }
+
+mozilla-central-workspace-hack = { version = "0.1", features = ["uniffi-bindgen-gecko-js-test-fixtures"], optional = true }

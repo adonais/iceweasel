@@ -6,6 +6,7 @@
 # (mach). It is packaged as a module because everything is a library.
 
 import argparse
+import io
 import logging
 import os
 import sys
@@ -234,11 +235,6 @@ To see more help for a specific command, run:
         """
         sentry = NoopErrorReporter()
 
-        # If no encoding is defined, we default to UTF-8 because without this
-        # Python 2.7 will assume the default encoding of ASCII. This will blow
-        # up with UnicodeEncodeError as soon as it encounters a non-ASCII
-        # character in a unicode instance. We simply install a wrapper around
-        # the streams and restore once we have finished.
         stdin = sys.stdin if stdin is None else stdin
         stdout = sys.stdout if stdout is None else stdout
         stderr = sys.stderr if stderr is None else stderr
@@ -250,6 +246,10 @@ To see more help for a specific command, run:
         sys.stdin = stdin
         sys.stdout = stdout
         sys.stderr = stderr
+
+        for fh in (sys.stdout, sys.stderr):
+            if isinstance(fh, io.TextIOWrapper):
+                fh.reconfigure(encoding="utf-8", errors="replace")
 
         orig_env = dict(os.environ)
 

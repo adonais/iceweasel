@@ -10,6 +10,15 @@ const BASE_ENGINE_OPTIONS = {
   modelRevision: "main",
 };
 
+/**
+ * How long a streaming turn is allowed to take before the test fails it.
+ * Far below the 120s engine timeout, far above the pipeline's own drain bound,
+ * so a hang is caught quickly without racing a healthy run.
+ *
+ * @type {number}
+ */
+const STREAM_TURN_TIMEOUT_MS = 15000;
+
 const SHARED_TOOLS = [
   {
     type: "function",
@@ -246,6 +255,191 @@ add_task(async function test_openai_client_tools_streaming() {
       "Should stream the expected assistant follow-up"
     );
   } finally {
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+    await stopMockOpenAI(mockServer);
+  }
+});
+
+/**
+ * Consumes a generator to completion, failing with a legible message instead of
+ * hanging until the harness or the 120s engine timeout kills the run.
+ *
+ * @param {AsyncGenerator} generator - The generator to drain.
+ * @param {number} timeoutMs - How long the turn is allowed to take.
+ * @returns {Promise<object[]>} Every chunk yielded before the turn ended.
+ */
+async function collectChunksBounded(generator, timeoutMs) {
+  const TIMED_OUT = Symbol("timed-out");
+  const chunks = [];
+  let timeoutId;
+
+  const collected = (async () => {
+    for await (const chunk of generator) {
+      chunks.push(chunk);
+    }
+  })();
+
+  const outcome = await Promise.race([
+    collected,
+    new Promise(resolve => {
+      // The failure bound itself, not a sleep.
+      // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+      timeoutId = setTimeout(() => resolve(TIMED_OUT), timeoutMs);
+    }),
+  ]);
+  clearTimeout(timeoutId);
+
+  Assert.notStrictEqual(
+    outcome,
+    TIMED_OUT,
+    `The turn ends on its own within ${timeoutMs}ms, so a stalled stream ` +
+      `cannot hold the engine open`
+  );
+
+  return chunks;
+}
+
+/**
+ * A tool_calls turn has to be read to the end of the stream: the usage chunk
+ * arrives after finish_reason, so ending the turn at finish_reason makes the
+ * whole tool round invisible to telemetry.
+ *
+ * Uses startMockOpenAI rather than MockEngineManager because the subject is the
+ * wire protocol itself: only the SSE bytes are mocked.
+ */
+add_task(async function test_openai_tool_call_turn_reports_usage() {
+  const records = [
+    {
+      ...BASE_ENGINE_OPTIONS,
+      id: "5c1f0e64-3a7d-4b28-9f51-2ad0c6e4b7aa",
+    },
+  ];
+  const { cleanup } = await setup({ records });
+  const { server: mockServer, port } = startMockOpenAI();
+
+  const engineInstance = await createEngine({
+    ...BASE_ENGINE_OPTIONS,
+    apiKey: "ollama",
+    baseURL: `http://localhost:${port}/v1`,
+    backend: "openai",
+  });
+
+  try {
+    const chunks = await collectChunksBounded(
+      engineInstance.runWithGenerator({
+        args: [
+          { role: "system", content: "You are a helpful assistant." },
+          { role: "user", content: "Find my open news tabs." },
+        ],
+        tools: SHARED_TOOLS,
+        streamOptions: { enabled: true },
+      }),
+      STREAM_TURN_TIMEOUT_MS
+    );
+
+    const toolCalls = chunks.findLast(
+      chunk => chunk.toolCalls?.length
+    )?.toolCalls;
+    Assert.ok(toolCalls, "The tool calls still reach the caller");
+    Assert.equal(
+      toolCalls[0].function.name,
+      "search_open_tabs",
+      "The tool the model asked for is the one the caller is told about"
+    );
+
+    const usage = chunks.findLast(chunk => chunk.usage)?.usage;
+    Assert.ok(
+      usage,
+      "Usage sent after finish_reason reaches the caller, so a tool round is " +
+        "measurable rather than invisible"
+    );
+    Assert.equal(
+      usage.prompt_tokens,
+      9839,
+      "The prompt token count survives the trip from the wire to the caller"
+    );
+    Assert.equal(
+      usage.prompt_tokens_details.cached_tokens,
+      9800,
+      "The cached token count survives, which is what the prompt cache is " +
+        "judged on"
+    );
+  } finally {
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+    await stopMockOpenAI(mockServer);
+  }
+});
+
+/**
+ * Reading past finish_reason must not mean reading forever. A server that stops
+ * talking after finish_reason and never closes the connection has to be bounded
+ * by the client, otherwise the turn hangs until the engine timeout and the tool
+ * calls the model already asked for are never acted on.
+ *
+ * Uses startMockOpenAI for the same reason as the test above.
+ */
+add_task(async function test_openai_tool_call_drain_is_bounded() {
+  const records = [
+    {
+      ...BASE_ENGINE_OPTIONS,
+      id: "9d4a7b12-6c38-4e5f-b071-8fa2c3e5d604",
+    },
+  ];
+  // The harness default idle timeout is 1s, shorter than the drain itself, so
+  // the engine would be reaped mid-drain. Use the production value instead.
+  const { cleanup } = await setup({
+    records,
+    prefs: [["browser.ml.modelCacheTimeout", 120000]],
+  });
+  const {
+    server: mockServer,
+    port,
+    releaseHeldStreams,
+  } = startMockOpenAI({ holdStreamOpenAfterFinish: true });
+
+  const engineInstance = await createEngine({
+    ...BASE_ENGINE_OPTIONS,
+    apiKey: "ollama",
+    baseURL: `http://localhost:${port}/v1`,
+    backend: "openai",
+  });
+
+  try {
+    const chunks = await collectChunksBounded(
+      engineInstance.runWithGenerator({
+        args: [
+          { role: "system", content: "You are a helpful assistant." },
+          { role: "user", content: "Find my open news tabs." },
+        ],
+        tools: SHARED_TOOLS,
+        streamOptions: { enabled: true },
+      }),
+      STREAM_TURN_TIMEOUT_MS
+    );
+
+    const toolCalls = chunks.findLast(
+      chunk => chunk.toolCalls?.length
+    )?.toolCalls;
+    Assert.ok(
+      toolCalls,
+      "The tool calls reach the caller even though the server never closed " +
+        "the stream"
+    );
+    Assert.equal(
+      toolCalls[0].function.name,
+      "search_open_tabs",
+      "Giving up on the drain does not corrupt the tool call that was already " +
+        "complete"
+    );
+    Assert.equal(
+      toolCalls[0].function.arguments,
+      '{ "type": "news" }',
+      "The arguments accumulated across partial chunks are still intact"
+    );
+  } finally {
+    releaseHeldStreams();
     await EngineProcess.destroyMLEngine();
     await cleanup();
     await stopMockOpenAI(mockServer);

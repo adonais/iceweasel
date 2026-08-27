@@ -794,16 +794,16 @@ bool ToastNotificationHandler::CreateWindowsNotificationFromXml(
   hr = mNotifier->Show(mNotification.Get());
   NS_ENSURE_TRUE(SUCCEEDED(hr), false);
 
-  if (mAlertListener) {
-    mAlertListener->Observe(nullptr, "alertshow", mCookie.get());
+  if (mAlertCallbacks) {
+    mAlertCallbacks->OnAlertShow();
   }
 
   return true;
 }
 
 void ToastNotificationHandler::SendFinished() {
-  if (!mSentFinished && mAlertListener) {
-    mAlertListener->Observe(nullptr, "alertfinished", mCookie.get());
+  if (!mSentFinished && mAlertCallbacks) {
+    mAlertCallbacks->OnAlertFinished();
   }
 
   mSentFinished = true;
@@ -820,7 +820,7 @@ ToastNotificationHandler::OnActivate(
     const ComPtr<IInspectable>& inspectable) {
   MOZ_LOG(sWASLog, LogLevel::Info, ("OnActivate"));
 
-  if (mAlertListener) {
+  if (mAlertCallbacks) {
     // Extract the `action` value from the argument string.
     nsAutoString argumentsString;
     nsAutoString actionString;
@@ -885,9 +885,9 @@ ToastNotificationHandler::OnActivate(
       // don't need to compare with a parsed result.
       SendFinished();
     } else if (actionValue && *actionValue == kAlertActionSettings) {
-      mAlertListener->Observe(nullptr, "alertsettingscallback", mCookie.get());
+      mAlertCallbacks->OnAlertSettings();
     } else if (actionValue && *actionValue == kAlertActionDisable) {
-      mAlertListener->Observe(nullptr, "alertdisablecallback", mCookie.get());
+      mAlertCallbacks->OnAlertDisable();
     } else if (mClickable) {
       // When clicking toast, focus moves to another process, but we want to set
       // focus on Firefox process.
@@ -914,7 +914,7 @@ ToastNotificationHandler::OnActivate(
 
       // Null subject for the default action or an action object for extra
       // actions
-      mAlertListener->Observe(alertAction, "alertclickcallback", mCookie.get());
+      mAlertCallbacks->OnAlertClick(alertAction);
     }
   }
   HandleCloseFromSystem();
@@ -979,11 +979,37 @@ ToastNotificationHandler::FindNotificationByTag(const nsAString& aWindowsTag,
   return nullptr;
 }
 
-// A single toast message can receive multiple dismiss events, at most one for
-// the popup and at most one for the action center. We can't simply count
-// dismiss events as the user may have disabled either popups or action center
-// notifications, therefore we have to check if the toast remains in the history
-// (action center) to determine if the toast is fully dismissed.
+// A single toast message will receive multiple dismiss events: first when it
+// leaves the foreground and second when it leaves the notification center.
+// These correlate to the "notification banner" and "notification center"
+// respectively.
+//
+// We check if the toast remains in the notification history (notification
+// center) to determine if the toast is fully dismissed. This is true even
+// when app notifications are disabled for either or both the banner or
+// notification center. However, it is not true when notifications are
+// generally disabled for the system, user, or app.
+//
+// When notification banners are disabled for the app, the dismiss
+// callback is called after the timeout as though it was shown. When the
+// notification center is disabled for the app, the dismiss callback is called
+// after the foreground dismiss callback is called.
+//
+// When a notification without a timeout (e.g. `scenario=reminder`) is shown
+// when notification banners are disabled, the dismiss callback is called after
+// the normal toast notification banner timeout duration.
+//
+// For both foreground dismiss callback and notification Center dismiss
+// callback:
+//
+// Settings                                     | Both callbacks
+// ---------------------------------------------|----------------
+// Notifications disabled (system, user, app)*  | Not called
+// Do Not Disturb                               | Called
+// (App Notification Settings)                  |----------------
+// Show notification banners: off               | Called
+// Show in notification center: off             | Called
+// Both banners and notification center: off    | Called
 HRESULT
 ToastNotificationHandler::OnDismiss(
     const ComPtr<IToastNotification>& notification,
@@ -1001,6 +1027,9 @@ ToastNotificationHandler::OnDismiss(
   nsAutoString tag(tagPtr, len);
 
   if (FindNotificationByTag(tag, mAumid)) {
+    if (mAlertCallbacks) {
+      mAlertCallbacks->OnAlertDismissedFromForeground();
+    }
     return S_OK;
   }
 

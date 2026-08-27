@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+
 const DOH_DOORHANGER_DECISION_PREF = "doh-rollout.doorhanger-decision";
 const NETWORK_TRR_MODE_PREF = "network.trr.mode";
 
@@ -16,6 +18,7 @@ const ALLOWED_ABOUT_PAGES = new Set([
   "preferences",
   "privatebrowsing",
   "protections",
+  "referrals",
   "settings",
   "welcome",
   "newtab",
@@ -30,15 +33,26 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AIWindow:
     // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
+  AIWindowUI:
+    // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
+  CustomIconManager:
+    // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+    "moz-src:///browser/components/shell/CustomIconManager.sys.mjs",
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
   GenAI: "resource:///modules/GenAI.sys.mjs",
+  ICON_CATALOG:
+    // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+    "moz-src:///browser/components/shell/CustomIconManager.sys.mjs",
   IPProtection:
     // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
     "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
+  MessagingSystemAllowlists:
+    "resource://messaging-system/lib/MessagingSystemAllowlists.sys.mjs",
   MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
   ON_SERVICE_ENABLED_NOTIFICATION:
     "resource://gre/modules/FxAccountsCommon.sys.mjs",
@@ -47,6 +61,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUIUtils: "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+  Referrals: "resource:///modules/referrals/Referrals.sys.mjs",
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
@@ -361,6 +377,7 @@ export const SpecialMessageActions = {
     // Array of prefs that are allowed to be edited by SET_PREF
     const allowedPrefs = [
       "browser.aboutwelcome.didSeeFinalScreen",
+      "browser.sessionstore.newTabOnRestore",
       "browser.smartwindow.enabled",
       "browser.smartwindow.firstrun.hasCompleted",
       "browser.smartwindow.firstrun.modelChoice",
@@ -386,9 +403,6 @@ export const SpecialMessageActions = {
       "browser.firefox-view.feature-tour",
       "browser.pdfjs.feature-tour",
       "browser.newtab.feature-tour",
-      "cookiebanners.service.mode",
-      "cookiebanners.service.mode.privateBrowsing",
-      "cookiebanners.service.detectOnly",
       "datareporting.healthreport.uploadEnabled",
       "datareporting.policy.currentPolicyVersion",
       "datareporting.policy.dataSubmissionPolicyAcceptedVersion",
@@ -418,12 +432,31 @@ export const SpecialMessageActions = {
       "termsofuse.acceptedDate",
     ];
 
-    const allowedPrefsList = onImpression
-      ? allowedSetOnImpressionPrefs
-      : allowedPrefs;
+    // allowedPrefs above is the in-tree baseline. It can be extended off-train
+    // via Remote Settings, but not for onImpression prefs, which stay
+    // deliberately restricted to prefs reviewed in-tree, and not for the prefs
+    // in MessagingSystemBlocklists.sys.mjs, which are filtered out before they
+    // reach this getter. MessagingSystemAllowlists.sys.mjs documents how the
+    // two in-tree lists and the collection resolve against each other. This
+    // check is synchronous and does not wait on the Remote Settings collection
+    // to load (see MessagingSystemAllowlists.ensureInit). Callers that dispatch
+    // SET_PREF outside of ASRouter's own message routing, namely about:welcome
+    // and Spotlight, do not await ASRouter's init sequence, so a pref granted
+    // only through Remote Settings may not be recognized yet if it fires before
+    // the collection has loaded for this session. If that happens the pref is
+    // simply namespaced like any other unlisted pref rather than being set
+    // under its real name. Note this case is unlikely outside of automated
+    // scenarios since user action is required to fire a SET_PREF action in
+    // these scenarios (onImpression prefs are not extendable via this method).
+    const allowedPrefsSet = onImpression
+      ? new Set(allowedSetOnImpressionPrefs)
+      : new Set([
+          ...allowedPrefs,
+          ...lazy.MessagingSystemAllowlists.getAllowedPrefs(),
+        ]);
 
     if (
-      !allowedPrefsList.includes(pref.name) &&
+      !allowedPrefsSet.has(pref.name) &&
       !pref.name.startsWith("messaging-system-action.")
     ) {
       pref.name = `messaging-system-action.${pref.name}`;
@@ -485,7 +518,7 @@ export const SpecialMessageActions = {
     if (!(await lazy.FxAccounts.canConnectAccount())) {
       return false;
     }
-    // In practice, all FxA signin flows will have a "ervice", because that param dictates the
+    // In practice, all FxA signin flows will have a "service", because that param dictates the
     // UI shown by FxA. But to be extra cautious, this code treats it as optional.
     let neededService = data?.extraParams?.service;
     const url = await lazy.FxAccounts.config.promiseConnectAccountURI(
@@ -706,6 +739,30 @@ export const SpecialMessageActions = {
         window.top.gBrowser.selectedTab,
       ]);
     }
+  },
+
+  /**
+   * Change the browser icon to the one identified by `id` via
+   * CustomIconManager. Icon IDs that are not in the catalog are ignored. The
+   * "default" id reverts to the browser's own icon (the no-override state).
+   *
+   * CustomIconManager is only packaged on Windows, so this is a no-op on other
+   * platforms to avoid importing a module that does not exist.
+   *
+   * @param {string} id A key in ICON_CATALOG.
+   */
+  async setBrowserIcon(id) {
+    if (AppConstants.platform !== "win") {
+      return;
+    }
+    if (!lazy.ICON_CATALOG[id]) {
+      return;
+    }
+    if (id === "default") {
+      await lazy.CustomIconManager.revert();
+      return;
+    }
+    await lazy.CustomIconManager.apply(id);
   },
 
   async createAndOpenProfile() {
@@ -1066,6 +1123,11 @@ export const SpecialMessageActions = {
         await lazy.GenAI.summarizeCurrentPage(window, entry);
         break;
       }
+      case "OPEN_ORGANIZE_TABS_PANEL":
+        lazy.AIWindowUI.toggleGroupTabsPanel(window, {
+          source: action.data?.source ?? "message",
+        });
+        break;
       case "OPEN_PANEL": {
         let { anchor_id, widget_id, panel_id, fallback_to_app_menu } =
           action.data;
@@ -1096,9 +1158,39 @@ export const SpecialMessageActions = {
         }
         break;
       }
-      case "IPPROTECTION_ENROLL":
+      case "IPPROTECTION_ENROLL": {
         await lazy.IPProtection.getPanel(window)?.enroll();
         break;
+      }
+      case "SET_BROWSER_ICON": {
+        await this.setBrowserIcon(action.data.id);
+        break;
+      }
+      case "GET_REFERRAL_CODE": {
+        let referralsEnabled = Services.prefs.getBoolPref(
+          "browser.referrals.enabled"
+        );
+        let referralCode = lazy.Referrals.getReferralCode();
+        let aboutPageURL = new URL(`about:referrals`);
+
+        if (!referralsEnabled) {
+          throw new Error(
+            "Cannot generate referral code; referrals disabled by pref"
+          );
+        }
+
+        if (action.data.entrypoint) {
+          aboutPageURL.searchParams.set("entrypoint", action.data.entrypoint);
+        }
+
+        aboutPageURL.searchParams.set("ref_key", referralCode);
+
+        window.openTrustedLinkIn(
+          aboutPageURL.toString(),
+          action.data.where || "tab"
+        );
+        break;
+      }
       default:
         throw new Error(
           `Special message action with type ${action.type} is unsupported.`

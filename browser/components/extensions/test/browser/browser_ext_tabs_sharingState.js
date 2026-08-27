@@ -104,6 +104,7 @@ add_task(async function test_tabs_mediaIndicators() {
   gBrowser.updateBrowserSharing(tab.linkedBrowser, { webRTC: null });
 
   await extension.awaitFinish("done");
+  await dismissTabHideDoorhanger();
   await extension.unload();
 
   BrowserTestUtils.removeTab(tab);

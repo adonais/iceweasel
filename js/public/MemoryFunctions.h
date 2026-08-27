@@ -51,6 +51,7 @@ namespace JS {
   _(CTypeFFIType)                        \
   _(CTypeFFITypeElements)                \
   _(CTypeFunctionInfo)                   \
+  _(CTypeFFICallPlan)                    \
   _(CTypeFieldInfo)                      \
   _(CDataBufferPtr)                      \
   _(CDataBuffer)                         \

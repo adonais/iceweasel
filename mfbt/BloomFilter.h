@@ -12,11 +12,11 @@
 #ifndef mozilla_BloomFilter_h
 #define mozilla_BloomFilter_h
 
-#include "mozilla/Attributes.h"
-#include "mozilla/Likely.h"
-
 #include <cstdint>
 #include <cstring>
+
+#include "mozilla/Attributes.h"
+#include "mozilla/Likely.h"
 
 namespace mozilla {
 

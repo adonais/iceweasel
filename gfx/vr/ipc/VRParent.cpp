@@ -29,8 +29,6 @@ namespace gfx {
 
 using mozilla::ipc::IPCResult;
 
-VRParent::VRParent() : mVRGPUParent(nullptr) {}
-
 IPCResult VRParent::RecvNewGPUVRManager(Endpoint<PVRGPUParent>&& aEndpoint) {
   RefPtr<VRGPUParent> vrGPUParent =
       VRGPUParent::CreateForGPU(std::move(aEndpoint));

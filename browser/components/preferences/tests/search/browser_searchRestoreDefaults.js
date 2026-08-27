@@ -196,7 +196,7 @@ add_task(async function test_removeOutOfOrder() {
   );
   Assert.equal(
     tree.view.rowCount,
-    defaultEngines.length + UrlbarUtils.LOCAL_SEARCH_MODES.length,
+    defaultEngines.length + UrlbarShared.LOCAL_SEARCH_MODES.length,
     "All engines are restored"
   );
 
@@ -258,7 +258,7 @@ add_task(async function test_removeAndRestoreMultiple() {
 
   Assert.equal(
     tree.view.rowCount,
-    defaultEngines.length + UrlbarUtils.LOCAL_SEARCH_MODES.length,
+    defaultEngines.length + UrlbarShared.LOCAL_SEARCH_MODES.length,
     "Should have the correct amount of engines"
   );
 

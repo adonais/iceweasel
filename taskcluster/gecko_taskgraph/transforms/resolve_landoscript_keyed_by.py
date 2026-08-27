@@ -20,6 +20,7 @@ def handle_keyed_by(config, tasks):
         "worker.bump-files",
         "worker-type",
         "worker.actions[].tag.hg-repo-url",
+        "worker.actions[].tag.revision",
         "worker.actions[].version-bump.bump-files",
     ]
     for task in tasks:

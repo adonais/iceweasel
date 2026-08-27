@@ -14,8 +14,6 @@ ChromeUtils.defineESModuleGetters(this, {
   AppMenuNotifications: "resource://gre/modules/AppMenuNotifications.sys.mjs",
   HttpServer: "resource://testing-common/httpd.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  UrlbarProviderSearchTips:
-    "moz-src:///browser/components/urlbar/UrlbarProviderSearchTips.sys.mjs",
 });
 
 // These should match the same consts in UrlbarProviderSearchTips.sys.mjs.
@@ -38,11 +36,11 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       [
-        `browser.urlbar.tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`,
+        `browser.urlbar.tipShownCount.${UrlbarShared.SEARCH_TIP_TYPE.ONBOARD}`,
         0,
       ],
       [
-        `browser.urlbar.tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.REDIRECT}`,
+        `browser.urlbar.tipShownCount.${UrlbarShared.SEARCH_TIP_TYPE.REDIRECT}`,
         0,
       ],
       // Set following prefs so tips are actually shown.
@@ -80,20 +78,12 @@ add_setup(async function () {
 
 // The onboarding tip should be shown on about:newtab.
 add_task(async function newtab() {
-  await checkTab(
-    window,
-    "about:newtab",
-    UrlbarProviderSearchTips.TIP_TYPE.ONBOARD
-  );
+  await checkTab(window, "about:newtab", UrlbarShared.SEARCH_TIP_TYPE.ONBOARD);
 });
 
 // The onboarding tip should be shown on about:home.
 add_task(async function home() {
-  await checkTab(
-    window,
-    "about:home",
-    UrlbarProviderSearchTips.TIP_TYPE.ONBOARD
-  );
+  await checkTab(window, "about:home", UrlbarShared.SEARCH_TIP_TYPE.ONBOARD);
 });
 
 // The redirect tip should be shown for www.google.com when it's the default
@@ -102,7 +92,7 @@ add_task(async function google() {
   await setDefaultEngine("Google");
   for (let domain of GOOGLE_DOMAINS) {
     await withDNSRedirect(domain, "/", async url => {
-      await checkTab(window, url, UrlbarProviderSearchTips.TIP_TYPE.REDIRECT);
+      await checkTab(window, url, UrlbarShared.SEARCH_TIP_TYPE.REDIRECT);
     });
   }
 });
@@ -113,7 +103,7 @@ add_task(async function googleWebhp() {
   await setDefaultEngine("Google");
   for (let domain of GOOGLE_DOMAINS) {
     await withDNSRedirect(domain, "/webhp", async url => {
-      await checkTab(window, url, UrlbarProviderSearchTips.TIP_TYPE.REDIRECT);
+      await checkTab(window, url, UrlbarShared.SEARCH_TIP_TYPE.REDIRECT);
     });
   }
 });
@@ -127,7 +117,7 @@ add_task(async function googleQueryString() {
       await checkTab(
         window,
         `${url}?hl=en`,
-        UrlbarProviderSearchTips.TIP_TYPE.REDIRECT
+        UrlbarShared.SEARCH_TIP_TYPE.REDIRECT
       );
     });
   }
@@ -141,7 +131,7 @@ add_task(async function googleResults() {
       await checkTab(
         window,
         `${url}?q=firefox`,
-        UrlbarProviderSearchTips.TIP_TYPE.NONE
+        UrlbarShared.SEARCH_TIP_TYPE.NONE
       );
     });
   }
@@ -153,7 +143,7 @@ add_task(async function googleNotDefault() {
   await setDefaultEngine("Bing");
   for (let domain of GOOGLE_DOMAINS) {
     await withDNSRedirect(domain, "/", async url => {
-      await checkTab(window, url, UrlbarProviderSearchTips.TIP_TYPE.NONE);
+      await checkTab(window, url, UrlbarShared.SEARCH_TIP_TYPE.NONE);
     });
   }
 });
@@ -164,7 +154,7 @@ add_task(async function googleWebhpNotDefault() {
   await setDefaultEngine("Bing");
   for (let domain of GOOGLE_DOMAINS) {
     await withDNSRedirect(domain, "/webhp", async url => {
-      await checkTab(window, url, UrlbarProviderSearchTips.TIP_TYPE.NONE);
+      await checkTab(window, url, UrlbarShared.SEARCH_TIP_TYPE.NONE);
     });
   }
 });
@@ -174,7 +164,7 @@ add_task(async function googleWebhpNotDefault() {
 add_task(async function bing() {
   await setDefaultEngine("Bing");
   await withDNSRedirect("www.bing.com", "/", async url => {
-    await checkTab(window, url, UrlbarProviderSearchTips.TIP_TYPE.REDIRECT);
+    await checkTab(window, url, UrlbarShared.SEARCH_TIP_TYPE.REDIRECT);
   });
 });
 
@@ -186,7 +176,7 @@ add_task(async function bingQueryString() {
     await checkTab(
       window,
       `${url}?toWww=1`,
-      UrlbarProviderSearchTips.TIP_TYPE.REDIRECT
+      UrlbarShared.SEARCH_TIP_TYPE.REDIRECT
     );
   });
 });
@@ -198,7 +188,7 @@ add_task(async function bingResults() {
     await checkTab(
       window,
       `${url}?q=firefox`,
-      UrlbarProviderSearchTips.TIP_TYPE.NONE
+      UrlbarShared.SEARCH_TIP_TYPE.NONE
     );
   });
 });
@@ -208,7 +198,7 @@ add_task(async function bingResults() {
 add_task(async function bingNotDefault() {
   await setDefaultEngine("Google");
   await withDNSRedirect("www.bing.com", "/", async url => {
-    await checkTab(window, url, UrlbarProviderSearchTips.TIP_TYPE.NONE);
+    await checkTab(window, url, UrlbarShared.SEARCH_TIP_TYPE.NONE);
   });
 });
 
@@ -217,7 +207,7 @@ add_task(async function bingNotDefault() {
 add_task(async function ddg() {
   await setDefaultEngine("DuckDuckGo");
   await withDNSRedirect("duckduckgo.com", "/", async url => {
-    await checkTab(window, url, UrlbarProviderSearchTips.TIP_TYPE.REDIRECT);
+    await checkTab(window, url, UrlbarShared.SEARCH_TIP_TYPE.REDIRECT);
   });
 });
 
@@ -226,7 +216,7 @@ add_task(async function ddg() {
 add_task(async function ddgStart() {
   await setDefaultEngine("DuckDuckGo");
   await withDNSRedirect("start.duckduckgo.com", "/", async url => {
-    await checkTab(window, url, UrlbarProviderSearchTips.TIP_TYPE.REDIRECT);
+    await checkTab(window, url, UrlbarShared.SEARCH_TIP_TYPE.REDIRECT);
   });
 });
 
@@ -235,7 +225,7 @@ add_task(async function ddgStart() {
 add_task(async function ddgNotDefault() {
   await setDefaultEngine("Google");
   await withDNSRedirect("duckduckgo.com", "/", async url => {
-    await checkTab(window, url, UrlbarProviderSearchTips.TIP_TYPE.NONE);
+    await checkTab(window, url, UrlbarShared.SEARCH_TIP_TYPE.NONE);
   });
 });
 
@@ -244,7 +234,7 @@ add_task(async function ddgNotDefault() {
 add_task(async function ddgStartNotDefault() {
   await setDefaultEngine("Google");
   await withDNSRedirect("start.duckduckgo.com", "/", async url => {
-    await checkTab(window, url, UrlbarProviderSearchTips.TIP_TYPE.NONE);
+    await checkTab(window, url, UrlbarShared.SEARCH_TIP_TYPE.NONE);
   });
 });
 
@@ -254,11 +244,7 @@ add_task(async function ddgStartNotDefault() {
 add_task(async function ddgSearchResultsPage() {
   await setDefaultEngine("DuckDuckGo");
   await withDNSRedirect("duckduckgo.com", "/", async url => {
-    await checkTab(
-      window,
-      `${url}?q=test`,
-      UrlbarProviderSearchTips.TIP_TYPE.NONE
-    );
+    await checkTab(window, `${url}?q=test`, UrlbarShared.SEARCH_TIP_TYPE.NONE);
   });
 });
 
@@ -267,7 +253,7 @@ add_task(async function nonEnginePage() {
   await checkTab(
     window,
     "http://example.com/",
-    UrlbarProviderSearchTips.TIP_TYPE.NONE
+    UrlbarShared.SEARCH_TIP_TYPE.NONE
   );
 });
 
@@ -277,28 +263,24 @@ add_task(async function oncePerSession() {
   await checkTab(
     window,
     "about:newtab",
-    UrlbarProviderSearchTips.TIP_TYPE.ONBOARD,
+    UrlbarShared.SEARCH_TIP_TYPE.ONBOARD,
     false
   );
   await checkTab(
     window,
     "about:newtab",
-    UrlbarProviderSearchTips.TIP_TYPE.NONE,
+    UrlbarShared.SEARCH_TIP_TYPE.NONE,
     false
   );
   await withDNSRedirect("www.google.com", "/", async url => {
-    await checkTab(window, url, UrlbarProviderSearchTips.TIP_TYPE.NONE);
+    await checkTab(window, url, UrlbarShared.SEARCH_TIP_TYPE.NONE);
   });
 });
 
 // The one-off search buttons should not be shown when
 // a search tip is shown even though the search string is empty.
 add_task(async function shortcut_buttons_with_tip() {
-  await checkTab(
-    window,
-    "about:newtab",
-    UrlbarProviderSearchTips.TIP_TYPE.ONBOARD
-  );
+  await checkTab(window, "about:newtab", UrlbarShared.SEARCH_TIP_TYPE.ONBOARD);
 });
 
 function waitForBrowserWindowActive(win) {

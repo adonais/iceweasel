@@ -16,6 +16,7 @@ MozAdsContextIdProvider = "Sync"
 MozAdsTelemetry = "FireAndForget"
 
 [autofill.async_wrappers]
+AddressesBridgedEngine = "AsyncWrapped"
 # Store opens the SQLite DB and runs migrations in its constructor, and every
 # method performs DB I/O, so the whole interface (including the constructor) is
 # async-wrapped to keep that work off the main thread (cf. logins LoginStore).

@@ -275,6 +275,32 @@ export class Region {
     }
   }
 
+  /**
+   * Sets the dimensions from a given DOMRect. This will offset the rect
+   * relative to the screenshots container before setting the dimensions.
+   *
+   * @param {DOMRect} rect The DOMRect to set the dimensions from
+   */
+  setDimensionsFromDOMRect(rect) {
+    if (rect == null) {
+      this.resetDimensions();
+      return;
+    }
+
+    // eslint-disable-next-line no-shadow
+    let { scrollX, scrollY } = this.#windowDimensions.dimensions;
+    // eslint-disable-next-line no-shadow
+    let { left, top, right, bottom } = rect;
+    let dims = {
+      left: left + scrollX,
+      top: top + scrollY,
+      right: right + scrollX,
+      bottom: bottom + scrollY,
+    };
+
+    this.dimensions = dims;
+  }
+
   get dimensions() {
     return {
       left: this.left,

@@ -7551,10 +7551,6 @@ JS_PUBLIC_API JS::Scalar::Type JS_GetArrayBufferViewType(JSObject* obj) {
   MOZ_CRASH("invalid ArrayBufferView type");
 }
 
-JS_PUBLIC_API size_t JS_MaxMovableTypedArraySize() {
-  return FixedLengthTypedArrayObject::INLINE_BUFFER_LIMIT;
-}
-
 namespace JS {
 
 const JSClass* const TypedArray_base::fixedLengthClasses =

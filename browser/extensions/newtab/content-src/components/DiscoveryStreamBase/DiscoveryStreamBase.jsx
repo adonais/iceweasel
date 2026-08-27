@@ -343,7 +343,7 @@ export class _DiscoveryStreamBase extends React.PureComponent {
           ])}
 
         {
-          //@nova-cleanup(remove-conditional): Remove this entire block; Base.jsx handles ABOVE_CONTENT_FEED in the Nova layout. */
+          //@nova-cleanup(remove-conditional): Remove this entire block; in the Nova layout Base.jsx passes ABOVE_CONTENT_FEED in via the aboveContentFeed prop below. */
         }
         {!novaEnabled &&
           shouldShowASRouterNewTabMessage(
@@ -361,6 +361,10 @@ export class _DiscoveryStreamBase extends React.PureComponent {
               </MessageWrapper>
             </ErrorBoundary>
           )}
+
+        {/* Nova only: the ABOVE_CONTENT_FEED message, built in Base.jsx. This is
+        the widgets/feed boundary, which only exists inside this component. */}
+        {this.props.aboveContentFeed}
 
         {!!layoutRender.length && (
           <CollapsibleSection

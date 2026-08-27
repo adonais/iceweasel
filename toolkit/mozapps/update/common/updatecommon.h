@@ -26,10 +26,10 @@ class UpdateLog {
   ~UpdateLog() { Finish(); }
 
  protected:
-  UpdateLog();
+  UpdateLog() = default;
   void PrintTimestampPrefix();
 
-  FILE* logFP;
+  FILE* logFP = nullptr;
   NS_tchar mDstFilePath[MAXPATHLEN];
 };
 

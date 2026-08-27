@@ -29,13 +29,13 @@ var gProfiles = {
       document,
       "PanelUI-fxa-menu-profile-buttons"
     );
-    this.fxaMenuProfilesHeaderSeparator = PanelMultiView.getViewNode(
-      document,
-      "PanelUI-fxa-menu-profiles-header-separator"
-    );
     this.fxaMenuProfilesHeaderLabel = PanelMultiView.getViewNode(
       document,
       "PanelUI-fxa-menu-profiles-header-label"
+    );
+    this.fxaMenuProfilesSeparator = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-profiles-separator"
     );
     this.fxaMenuAllProfilesPanel = PanelMultiView.getViewNode(
       document,
@@ -132,13 +132,19 @@ var gProfiles = {
 
   async _onFxaMenuPanelShowing() {
     const container = this.fxaMenuProfileButtonsContainer;
-    const headerSeparator = this.fxaMenuProfilesHeaderSeparator;
     const headerLabel = this.fxaMenuProfilesHeaderLabel;
+    const separator = this.fxaMenuProfilesSeparator;
 
     const hideProfilesSection = () => {
       container.hidden = true;
-      headerSeparator.hidden = true;
       headerLabel.hidden = true;
+      separator.hidden = true;
+    };
+
+    const showProfilesSection = () => {
+      container.hidden = false;
+      headerLabel.hidden = false;
+      separator.hidden = false;
     };
 
     if (!SelectableProfileService?.isEnabled) {
@@ -168,9 +174,7 @@ var gProfiles = {
       createBtn.setAttribute("data-l10n-id", "appmenu-create-profile2");
       container.appendChild(createBtn);
 
-      container.hidden = false;
-      headerSeparator.hidden = false;
-      headerLabel.hidden = false;
+      showProfilesSection();
       return;
     }
 
@@ -215,9 +219,7 @@ var gProfiles = {
       container.appendChild(allBtn);
     }
 
-    container.hidden = false;
-    headerSeparator.hidden = false;
-    headerLabel.hidden = false;
+    showProfilesSection();
   },
 
   async _populateAllProfilesPanel() {

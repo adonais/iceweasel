@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.app.links
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
@@ -159,7 +158,6 @@ class AppLinksInterceptor(
     }
 
     @SuppressWarnings("ReturnCount")
-    @SuppressLint("MissingPermission")
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun handleRedirect(
         redirect: AppLinkRedirect,

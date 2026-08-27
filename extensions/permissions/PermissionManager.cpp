@@ -755,15 +755,6 @@ PermissionManager::PermissionManager()
 PermissionManager::~PermissionManager() {
   MonitorAutoLock lock{mMonitor};
 
-  // NOTE: Make sure to reject each of the promises in mPermissionKeyPromiseMap
-  // before destroying.
-  for (const auto& promise : mPermissionKeyPromiseMap.Values()) {
-    if (promise) {
-      promise->Reject(NS_ERROR_FAILURE, __func__);
-    }
-  }
-  mPermissionKeyPromiseMap.Clear();
-
   if (mThread) {
     mThread->Shutdown();
     mThread = nullptr;
@@ -3757,22 +3748,11 @@ void PermissionManager::SetPermissionsWithKey(
 
   MonitorAutoLock lock{mMonitor};
 
-  RefPtr<GenericNonExclusivePromise::Private> promise;
-  bool foundKey =
-      mPermissionKeyPromiseMap.Get(aPermissionKey, getter_AddRefs(promise));
-  if (promise) {
-    MOZ_ASSERT(foundKey);
-    // NOTE: This will resolve asynchronously, so we can mark it as resolved
-    // now, and be confident that we will have filled in the database before any
-    // callbacks run.
-    promise->Resolve(true, __func__);
-  } else if (foundKey) {
+  if (!mPermissionKeys.EnsureInserted(aPermissionKey)) {
     // NOTE: We shouldn't be sent two InitializePermissionsWithKey for the same
     // key, but it's possible.
     return;
   }
-  mPermissionKeyPromiseMap.InsertOrUpdate(
-      aPermissionKey, RefPtr<GenericNonExclusivePromise::Private>{});
 
   // Add the permissions locally to our process
   for (IPC::Permission& perm : aPerms) {
@@ -3939,11 +3919,7 @@ bool PermissionManager::PermissionAvailableInternal(nsIPrincipal* aPrincipal,
     // NOTE: GetKeyForPermission accepts a null aType.
     GetKeyForPermission(aPrincipal, aType, permissionKey);
 
-    // If we have a pending promise for the permission key in question, we don't
-    // have the permission available, so report a warning and return false.
-    RefPtr<GenericNonExclusivePromise::Private> promise;
-    if (!mPermissionKeyPromiseMap.Get(permissionKey, getter_AddRefs(promise)) ||
-        promise) {
+    if (!mPermissionKeys.Contains(permissionKey)) {
       // Emit a useful diagnostic warning with the permissionKey for the process
       // which hasn't received permissions yet.
       NS_WARNING(nsPrintfCString("This content process hasn't received the "
@@ -3954,55 +3930,6 @@ bool PermissionManager::PermissionAvailableInternal(nsIPrincipal* aPrincipal,
     }
   }
   return true;
-}
-
-void PermissionManager::WhenPermissionsAvailable(nsIPrincipal* aPrincipal,
-                                                 nsIRunnable* aRunnable) {
-  MOZ_ASSERT(aRunnable);
-
-  if (!XRE_IsContentProcess()) {
-    aRunnable->Run();
-    return;
-  }
-
-  MonitorAutoLock lock{mMonitor};
-
-  nsTArray<RefPtr<GenericNonExclusivePromise>> promises;
-  for (auto& pair : GetAllKeysForPrincipal(aPrincipal)) {
-    RefPtr<GenericNonExclusivePromise::Private> promise;
-    if (!mPermissionKeyPromiseMap.Get(pair.first, getter_AddRefs(promise))) {
-      // In this case we have found a permission which isn't available in the
-      // content process and hasn't been requested yet. We need to create a new
-      // promise, and send the request to the parent (if we have not already
-      // done so).
-      promise = new GenericNonExclusivePromise::Private(__func__);
-      mPermissionKeyPromiseMap.InsertOrUpdate(pair.first, RefPtr{promise});
-    }
-
-    if (promise) {
-      promises.AppendElement(std::move(promise));
-    }
-  }
-
-  // If all of our permissions are available, immediately run the runnable. This
-  // avoids any extra overhead during fetch interception which is performance
-  // sensitive.
-  if (promises.IsEmpty()) {
-    aRunnable->Run();
-    return;
-  }
-
-  auto* thread = AbstractThread::MainThread();
-
-  RefPtr<nsIRunnable> runnable = aRunnable;
-  GenericNonExclusivePromise::All(thread, promises)
-      ->Then(
-          thread, __func__, [runnable]() { runnable->Run(); },
-          []() {
-            NS_WARNING(
-                "PermissionManager permission promise rejected. We're "
-                "probably shutting down.");
-          });
 }
 
 void PermissionManager::EnsureReadCompleted() {

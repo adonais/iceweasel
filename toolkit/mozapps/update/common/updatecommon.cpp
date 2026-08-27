@@ -55,8 +55,6 @@ typedef struct _REPARSE_DATA_BUFFER {
 } REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
 #endif
 
-UpdateLog::UpdateLog() : logFP(nullptr) {}
-
 void UpdateLog::Init(NS_tchar* logFilePath) {
   if (logFP) {
     return;

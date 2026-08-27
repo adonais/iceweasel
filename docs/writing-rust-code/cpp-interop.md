@@ -116,12 +116,13 @@ namespaces = ["mozilla", "intl", "ffi"]
 Next, extend the relevant `moz.build` file to invoke cbindgen.
 
 ```python
-if CONFIG['COMPILE_ENVIRONMENT']:
-    CbindgenHeader('unic_langid_ffi_generated.h',
-                   inputs=['/intl/locale/rust/unic-langid-ffi'])
+if CONFIG["COMPILE_ENVIRONMENT"]:
+    CbindgenHeader(
+        "unic_langid_ffi_generated.h", inputs=["/intl/locale/rust/unic-langid-ffi"]
+    )
 
     EXPORTS.mozilla.intl += [
-        '!unic_langid_ffi_generated.h',
+        "!unic_langid_ffi_generated.h",
     ]
 ```
 

@@ -466,6 +466,102 @@ add_task(async function test_fetch_weather_with_geolocation() {
   }
 });
 
+// Bug 2046143: the Nova widget shows the opt-in prompt in place of weather, so
+// the feed must not geolocate + fetch location weather before the user opts in.
+// The gate is scoped to nova.enabled so the legacy widget (which renders its
+// opt-in dialog only over a fetched suggestion) keeps fetching as before.
+add_task(async function test_fetch_weather_optin_gate() {
+  const VALID_GEOLOCATION = {
+    country_code: "DE",
+    region_code: "BE",
+    region: "Berlin",
+    city: "Berlin",
+  };
+
+  const TEST_DATA = [
+    {
+      desc: "nova + region opt-in required, not accepted -> no fetch",
+      values: {
+        "nova.enabled": true,
+        "system.showWeatherOptIn": true,
+        "weather.optInAccepted": false,
+      },
+      shouldFetch: false,
+    },
+    {
+      desc: "nova + trainhop opt-in required, not accepted -> no fetch",
+      values: {
+        "nova.enabled": true,
+        trainhopConfig: { weather: { weatherOptInEnabled: true } },
+        "weather.optInAccepted": false,
+      },
+      shouldFetch: false,
+    },
+    {
+      desc: "nova + opt-in required, accepted -> fetch",
+      values: {
+        "nova.enabled": true,
+        "system.showWeatherOptIn": true,
+        "weather.optInAccepted": true,
+      },
+      shouldFetch: true,
+    },
+    {
+      desc: "nova + non-opt-in region -> fetch",
+      values: {
+        "nova.enabled": true,
+        "system.showWeatherOptIn": false,
+        "weather.optInAccepted": false,
+      },
+      shouldFetch: true,
+    },
+    {
+      desc: "legacy (nova disabled) + opt-in required, not accepted -> still fetch",
+      values: {
+        "nova.enabled": false,
+        "system.showWeatherOptIn": true,
+        "weather.optInAccepted": false,
+      },
+      shouldFetch: true,
+    },
+  ];
+
+  for (let { desc, values, shouldFetch } of TEST_DATA) {
+    info(desc);
+
+    let sandbox = sinon.createSandbox();
+    sandbox.stub(WeatherFeed.prototype, "PersistentCache").returns({
+      set: () => {},
+      get: () => {},
+    });
+
+    let feed = new WeatherFeed();
+    sandbox.stub(feed, "isEnabled").returns(true);
+    feed.store = {
+      dispatch: sinon.spy(),
+      getState() {
+        return { Prefs: { values } };
+      },
+    };
+    feed.merino = feed.MerinoClient();
+
+    let stub = sandbox.stub(feed.merino, "fetchWeatherReport").resolves(null);
+    let cleanupGeolocationStub =
+      GeolocationTestUtils.stubGeolocation(VALID_GEOLOCATION);
+
+    await feed.onAction({ type: actionTypes.SYSTEM_TICK });
+
+    if (shouldFetch) {
+      sinon.assert.calledOnce(stub);
+    } else {
+      sinon.assert.notCalled(stub);
+    }
+
+    await cleanupGeolocationStub();
+    sandbox.restore();
+  }
+});
+
 // Test detecting location using GeolocationUtils.geolocation()
 add_task(async function test_detect_location_with_geolocation() {
   const TEST_DATA = [

@@ -13,7 +13,6 @@
 #include "jit/InlineScriptTree.h"
 #include "jit/JitRuntime.h"
 #include "jit/JitSpewer.h"
-#include "js/JitCodeAPI.h"
 #include "js/Prefs.h"  // JS::Prefs
 #include "js/ProfilingFrameIterator.h"
 #include "js/Vector.h"
@@ -34,7 +33,8 @@ bool IsRealmIndependentBaselineCode(JSScript* script) {
 }
 
 bool AddBaselineJitcodeGlobalEntry(JSContext* cx, JSScript* script,
-                                   JitCode* code) {
+                                   JitCode* code,
+                                   JitCodeSourceInfoVector&& sourceInfo) {
   UniqueChars str = GeckoProfilerRuntime::allocProfileString(cx, script);
   if (!str) {
     return false;
@@ -47,7 +47,8 @@ bool AddBaselineJitcodeGlobalEntry(JSContext* cx, JSScript* script,
   } else {
     uint64_t realmId = script->realm()->creationOptions().profilerRealmID();
     entry = MakeJitcodeGlobalEntry<BaselineEntry>(
-        cx, code, code->raw(), code->rawEnd(), script, std::move(str), realmId);
+        cx, code, code->raw(), code->rawEnd(), script, std::move(str), realmId,
+        std::move(sourceInfo));
   }
   if (!entry) {
     return false;
@@ -74,35 +75,6 @@ JitcodeGlobalEntry::JitcodeGlobalEntry(Kind kind, JitCode* code,
   MOZ_ASSERT(code);
   MOZ_ASSERT(nativeStartAddr);
   MOZ_ASSERT(nativeEndAddr);
-}
-
-static void GetLineInfoFromJitCodeRecord(uint64_t addr, uint32_t* line,
-                                         uint32_t* column) {
-  JS::JitCodeRecord* record = JS::LookupJitCodeRecord(addr);
-  if (!record || record->sourceInfo.empty()) {
-    *line = 0;
-    *column = 0;
-    return;
-  }
-
-  // Calculate offset from the base address
-  uint32_t codeOffset = addr - record->code_addr;
-
-  // Binary search for the largest offset <= codeOffset
-  // We know for sure that sourceInfo is sorted by offset.
-  auto* it = std::upper_bound(
-      record->sourceInfo.begin(), record->sourceInfo.end(), codeOffset,
-      [](uint32_t offset, const JS::JitCodeSourceInfo& info) {
-        return offset < info.offset;
-      });
-
-  // Upper_bound returns first element > codeOffset, so go back one.
-  if (it != record->sourceInfo.begin()) {
-    --it;
-  }
-
-  *line = it->lineno;
-  *column = it->colno.oneOriginValue();
 }
 
 static inline JitcodeRegionEntry RegionAtAddr(const IonEntry& entry, void* ptr,
@@ -206,9 +178,21 @@ uint32_t BaselineEntry::callStackAtAddr(void* ptr, CallStackFrameInfo* results,
 
   results[0].label = str();
   results[0].sourceId = scriptKey().scriptSource->id();
-  uint64_t addr = reinterpret_cast<uint64_t>(ptr);
+  results[0].line = 0;
+  results[0].column = 0;
 
-  GetLineInfoFromJitCodeRecord(addr, &results[0].line, &results[0].column);
+  uintptr_t addr = reinterpret_cast<uintptr_t>(ptr);
+  uintptr_t startAddr = reinterpret_cast<uintptr_t>(nativeStartAddr());
+  MOZ_ASSERT(addr >= startAddr);
+  uint32_t nativeOffset = uint32_t(addr - startAddr);
+
+  // The per-entry table is empty when the profiler was off at compile time.
+  // In that case leave line/column at 0.
+  if (const JitCodeSourceInfo* info =
+          LookupSourceInfo(sourceInfo_, nativeOffset)) {
+    results[0].line = info->line;
+    results[0].column = info->column.oneOriginValue();
+  }
 
   return 1;
 }

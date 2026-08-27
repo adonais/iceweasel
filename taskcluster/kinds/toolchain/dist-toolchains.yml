@@ -8,6 +8,7 @@ task-defaults:
         local-toolchain: true
     worker-type: b-linux-docker-amd
     run:
+        clone-with: hg
         using: toolchain-script
         script: build-dist-toolchains.sh
 
@@ -17,6 +18,7 @@ clang-dist-toolchain:
     worker:
         max-run-time: 1800
     run:
+        clone-with: hg
         arguments: ['clang']
         toolchain-artifact: public/build/clang-dist-toolchain.tar.xz
         toolchain-extract: false
@@ -32,6 +34,7 @@ rustc-dist-toolchain:
     worker:
         max-run-time: 1800
     run:
+        clone-with: hg
         arguments: ['rustc']
         toolchain-artifact: public/build/rustc-dist-toolchain.tar.xz
         toolchain-extract: false

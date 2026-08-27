@@ -260,5 +260,3 @@ bool SelectionManager::SelectionRangeChanged(SelectionType aType,
   }
   return true;
 }
-
-SelectionManager::~SelectionManager() = default;

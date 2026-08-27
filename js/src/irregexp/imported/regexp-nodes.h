@@ -5,6 +5,8 @@
 #ifndef V8_REGEXP_REGEXP_NODES_H_
 #define V8_REGEXP_REGEXP_NODES_H_
 
+#include <optional>
+
 #include "irregexp/imported/regexp-macro-assembler.h"
 
 namespace v8 {
@@ -148,6 +150,139 @@ class EmitResult final {
 #define RETURN_IF_ERROR(stmt) \
   if (EmitResult r = (stmt); V8_UNLIKELY(r.IsError())) return r
 
+// Terminology shared by the three drain-optimization enums below (DrainMode,
+// AtomicLoopKind, ParkedGrant).
+//
+// Greedy loop: a `*` or `+` quantifier that grabs as many characters as it can
+//   up front.  The position it stops at, after consuming that maximal run, is
+//   the loop's "greedy extent".
+//
+// Continuation: whatever the pattern requires after the greedy loop.
+//
+// Drain (drain epilogue): the machinery that runs when the continuation fails.
+//   The loop hands back one iteration at a time, retrying the continuation at
+//   each earlier iteration boundary, and finally restores the position to the
+//   loop entry.  One walk-back over a run of length n is O(n); the cost matters
+//   because the enclosing search loop repeats it at every start position, so a
+//   run the search keeps re-scanning turns the whole match O(n^2).  The
+//   optimizations here prove parts of the drain can never succeed and skip
+//   them.
+//
+// Loop-exit backtrack: the backtrack the loop takes once the drain is
+//   exhausted -- every retry has failed and it unwinds out of the loop.  Its
+//   destination, the "loop-exit backtrack target", is trace->backtrack() (a
+//   sibling alternative, or the outer backtrack handler).  It is distinct from
+//   the interior backtracks the drain itself takes to retry the continuation at
+//   an earlier position (those target the loop body, not trace->backtrack()).
+//   A match never backtracks, so the loop-exit backtrack is always a failure.
+//
+// Parked position: normally a failed attempt must rewind the input position to
+//   where it started.  "Parking" instead leaves it at the greedy extent -- but
+//   only when the loop-exit backtrack target does not care where the position
+//   is (it rescans forward from wherever it lands, or simply fails).  A
+//   ParkedGrant on the trace records that this is allowed.
+//
+// Implicit search loop: an unanchored, non-sticky pattern like /\s+$/ must be
+//   tried at every start position.  V8 implements this by wrapping the whole
+//   pattern in an outer loop that either matches here or advances one character
+//   and retries (a prepended `.*?`; see the search-loop LoopChoiceNode).  This
+//   loop is not written by the user, hence "implicit"; the parking below is
+//   what stops it re-scanning characters an inner loop already consumed.
+//
+// Prefix (only relevant inside that implicit search loop): the fixed run of
+//   characters the trace still must consume on its way to the trailing inner
+//   loop it is about to enter.  For example the body of the search loop for
+//   /\s+$/ is `\s+`, which compiles to `\s\s*`, so the mandatory leading `\s`
+//   is the prefix and `\s*` is the trailing loop.  A "uniform" prefix draws
+//   only from that trailing loop's own character source (its class or literal
+//   character), so restarting the match partway into the prefix cannot behave
+//   any differently.
+
+// How much of the drain epilogue ChoiceNode::EmitFixedLengthLoop emits for a
+// fixed-length greedy loop.  The drain does two independent jobs: it retries
+// the continuation at each earlier iteration boundary, and it restores the
+// input position to the loop entry once fully unwound.
+//
+// kRetryAtEntry and kRestoreOnly reach the loop-exit backtrack in the same
+// state a fully-unwound kFull drain would (position restored to the loop
+// entry), so they are valid regardless of the exit target; only kOmit needs a
+// grant.  See ChooseFixedLengthLoopDrainMode for which mode each loop kind
+// gets.
+enum class DrainMode : uint8_t {
+  // Emit the standard char-by-char drain (retries and restore).
+  kFull,
+  // Interior retries are provably futile but the entry retry is not
+  // (AtomicLoopKind::kBoundary): on continuation failure, restore straight
+  // to the entry marker for a single retry there.
+  kRetryAtEntry,
+  // Every retry is futile, entry included (AtomicLoopKind::kDisjoint); only
+  // the drain's restore job remains: on continuation failure, restore to
+  // the entry marker and take the loop-exit backtrack.
+  kRestoreOnly,
+  // Every retry is futile and the loop-exit backtrack target tolerates the
+  // parked position (see Trace::parked_grant): skip the marker and the entire
+  // epilogue; continuation failure dispatches directly to the outer
+  // backtrack handler.
+  kOmit,
+};
+
+// Classification of `<fixed-length-loop><retreat-insensitive-continuation>`
+// shapes, used by Trace::Flush to skip the per-flush saved-position frame
+// and by ChoiceNode::Emit to reduce or omit the drain epilogue (see
+// DrainMode).  Computed and cached by LoopChoiceNode::atomic_loop_kind.
+enum class AtomicLoopKind : uint8_t {
+  kNone,
+  kAtEnd,     // Continuation is AT_END + ACCEPT; every retry futile.
+  kTotal,     // Continuation always succeeds at the greedy extent (a
+              // nullable-to-ACCEPT chain, e.g. the trailing `;?` of /\w+;?/ or
+              // the `\D*` continuation of the `\d*` loop in /(\d*)(\D*)/), so
+              // the continuation never fails and the drain is 100% dead.
+              // Strictly stronger than kAtEnd (which can fail off the end);
+              // gated identically.
+  kBoundary,  // Continuation starts with \b over a word-character body;
+              // interior retries futile, the entry retry only with a word
+              // character proven immediately before the entry.
+  kDisjoint,  // Continuation's first character set is disjoint from the
+              // body's; every retry futile.
+};
+
+// What a drain-omitted atomic loop's (see AtomicLoopKind) loop-exit backtrack
+// target is known to tolerate.  Carried on the Trace; see Trace::parked_grant
+// for the full contract.
+//
+// The levels are ordered from weakest to strongest permission: each one keeps
+// the previous guarantee and proves one more thing, so a stronger grant lets
+// more of the drain be omitted.  A gate accepts any level at or above the one
+// it needs.
+enum class ParkedGrant : uint8_t {
+  // No permission: the exit target treats the current position as the failed
+  // attempt's start, so the loop-exit backtrack must restore it.
+  kNone,
+  // The exit target tolerates any position -- it is the implicit search loop's
+  // advance-and-retry alternative, which rescans forward or fails -- so the
+  // loop may leave the position parked at the greedy extent.  Valid only with
+  // no pending prefix advance (cp_offset == 0), i.e. a bare `*` trailing loop:
+  // parking otherwise also skips restoring a mandatory prefix, and restart
+  // positions inside that prefix are ones this grant cannot prove futile
+  // (kParkedUniformPrefix can).
+  kParked,
+  // As kParked, but also valid with a mandatory prefix before the trailing loop
+  // -- notably a `+` loop like /\s+$/, whose leading `\s` would otherwise force
+  // the O(n^2) restore.  Sound because the prefix is uniform (see terminology):
+  // a restart skipped inside the run re-runs it and fails at the same
+  // character, and a restart on the run's terminator fails the prefix outright.
+  // See LoopChoiceNode::ComputeSearchBodyParkedGrant.
+  kParkedUniformPrefix,
+  // As kParkedUniformPrefix, and the prefix's last character has actually been
+  // consumed just before the loop entry (Trace::Flush materialized the pending
+  // advance).  The character left of the entry is then a known body-source
+  // character; when the body is word characters (AtomicLoopKind::kBoundary),
+  // that lets a trailing `\b` prove its own entry retry futile too -- unlocking
+  // kOmit for /\w+\b/-shaped loops.  See ChooseFixedLengthLoopDrainMode's
+  // kBoundary case.
+  kParkedNonEmptyUniformPrefix,
+};
+
 class V8_EXPORT_PRIVATE Node : public ZoneObject {
  public:
   explicit Node(Zone* zone)
@@ -266,9 +401,9 @@ class V8_EXPORT_PRIVATE Node : public ZoneObject {
 
   LimitResult LimitVersions(Compiler* compiler, Trace* trace);
 
-  void set_bm_info(bool not_at_start, BoyerMooreLookahead* bm) {
-    bm_info_[not_at_start ? 1 : 0] = bm;
-  }
+  // Caches |bm| as this node's own lookahead, unless |bm| is a transient probe
+  // that opted out of caching (see BoyerMooreLookahead::caches_node_info).
+  void set_bm_info(bool not_at_start, BoyerMooreLookahead* bm);
 
  private:
   static const int kFirstCharBudget = 10;
@@ -382,6 +517,15 @@ class ActionNode : public SeqNode {
   bool IsSimpleAction() const {
     return action_type() == STORE_POSITION ||
            action_type() == RESTORE_POSITION ||
+           action_type() == INCREMENT_REGISTER ||
+           action_type() == SET_REGISTER_FOR_LOOP ||
+           action_type() == CLEAR_CAPTURES;
+  }
+
+  // Register/capture updates only: no input consumed, no repositioning, no
+  // flag changes.
+  bool IsRegisterOnlyAction() const {
+    return action_type() == EATS_AT_LEAST || action_type() == STORE_POSITION ||
            action_type() == INCREMENT_REGISTER ||
            action_type() == SET_REGISTER_FOR_LOOP ||
            action_type() == CLEAR_CAPTURES;
@@ -713,21 +857,74 @@ class ChoiceNode : public Node {
   V8_WARN_UNUSED_RESULT EmitResult EmitOutOfLineContinuation(
       Compiler* compiler, Trace* trace, GuardedAlternative alternative,
       AlternativeGeneration* alt_gen, int preload_characters,
-      bool next_expects_preload);
+      bool next_expects_preload, ParkedGrant parked_grant);
   void SetUpPreLoad(Compiler* compiler, Trace* current_trace,
                     PreloadState* preloads);
   void AssertGuardsMentionRegisters(Trace* trace);
+  // Sets *bm_scan_emitted iff a Boyer-Moore skip-scan was emitted as a
+  // straight-line prelude. Callers can use this to gate alternative scan-loop
+  // strategies that would otherwise conflict.
   int EmitOptimizedUnanchoredSearch(Compiler* compiler, Trace* trace,
-                                    SpecialLoopState* search_loop_state);
+                                    SpecialLoopState* search_loop_state,
+                                    bool* bm_scan_emitted);
+  // Shared structural gate for the inline SkipUntil* scan strategies below.
+  // Returns the body node of the implicit `.*?` lazy-star loop (alt 1 is an
+  // omnivorous Text re-entering this loop) for inspection, skipping past any
+  // EATS_AT_LEAST tags and at most one deferrable ActionNode wrapper (e.g.
+  // STORE_POSITION for capture 0). When *wrapper_out is provided it receives
+  // that wrapper (for callers that emit the body directly and must defer it).
+  // Returns nullptr if `this` is not that shape. The caller computes this once
+  // and passes the result into both EmitSkipUntil* strategies below.
+  Node* MatchLazyStarLoopBody(Compiler* compiler,
+                              ActionNode** wrapper_out = nullptr);
+  // Sibling of EmitOptimizedUnanchoredSearch for the SkipUntilOneOfMasked
+  // peephole pattern. `body`/`wrapper` come from MatchLazyStarLoopBody. If
+  // `body` is a 2-alt Choice of Texts whose first 4 chars yield useful
+  // QuickCheck details, emits the scan op dispatching directly to the two
+  // alternative bodies (with a back-edge re-checking alt 1 at the same
+  // position, mirroring the peephole) and returns the body-emission result;
+  // the caller propagates it and skips EmitChoices. Returns nullopt if `body`
+  // is not that shape, so the caller falls through to the BitInTable strategy.
+  V8_WARN_UNUSED_RESULT std::optional<EmitResult>
+  EmitSkipUntilOneOfMaskedSearch(Compiler* compiler, Trace* trace, Node* body,
+                                 ActionNode* wrapper);
+  // Sibling of EmitOptimizedUnanchoredSearch: accelerates the implicit
+  // unanchored search to the first position where `body` (from
+  // MatchLazyStarLoopBody) can match, via the cheapest applicable SkipUntil*
+  // scan (Char / CharAnd / CharOrChar / BitInTable). Emits a straight-line
+  // prelude; the caller unconditionally falls through to EmitChoices afterwards
+  // (which emits the body at the candidate position), so there is no need to
+  // report back whether the prelude fired.
+  void EmitSkipUntilSearchPrelude(Compiler* compiler, Trace* trace, Node* body);
+  // Emitted from EmitOptimizedUnanchoredSearch (the Boyer-Moore seam). If the
+  // search body is Text(prefix) -> Choice(3 Texts) -- what a shared-prefix
+  // 3-way alternation factors into, e.g. /<script|<style|<link/ -- emits a
+  // SkipUntilOneOfMasked3 that fuses |bm|'s skip-table scan with a 3-way masked
+  // dispatch, routing every exit to one `cont`. Returns true if emitted, so the
+  // caller skips the bare table scan and falls through to EmitChoices.
+  bool EmitOneOfMasked3Search(Compiler* compiler, BoyerMooreLookahead* bm);
+  // For a greedy one-byte character-class body, emit a single SkipUntilChar /
+  // SkipUntilCharOrChar / SkipUntilCharAnd scan over its exit set in place of
+  // the per-iteration body + back-edge (landing on |exit|), and return true.
+  // The caller keeps the surrounding loop frame. False if not fusible.
+  bool MaybeEmitFixedLengthConsumeScan(Compiler* compiler, Label* exit,
+                                       int text_length);
   // Returns nullptr on failure.
   // TODO(jgruber): Consider wrapping the return value in EmitResult.
   V8_WARN_UNUSED_RESULT Trace* EmitFixedLengthLoop(
       Compiler* compiler, Trace* trace, AlternativeGenerationList* alt_gens,
       PreloadState* preloads, SpecialLoopState* fixed_length_loop_state,
-      int text_length, Flags flags);
-  V8_WARN_UNUSED_RESULT EmitResult EmitChoices(
-      Compiler* compiler, AlternativeGenerationList* alt_gens, int first_choice,
-      Trace* trace, PreloadState* preloads, Flags flags);
+      int text_length, Flags flags, DrainMode drain_mode,
+      ParkedGrant body_parked_grant);
+  V8_WARN_UNUSED_RESULT EmitResult
+  EmitChoices(Compiler* compiler, AlternativeGenerationList* alt_gens,
+              int first_choice, Trace* trace, PreloadState* preloads,
+              Flags flags, ParkedGrant body_parked_grant);
+  // Emits the choice as a dispatch over a shared masked quick-check value
+  // when all alternatives agree on the mask; nullopt if not eligible.
+  std::optional<EmitResult> TryEmitMaskedValueDispatch(
+      Compiler* compiler, AlternativeGenerationList* alt_gens, Trace* trace,
+      PreloadState* preload, Flags flags);
 
   // If true, this node is never checked at the start of the input.
   // Allows a new trace to start with at_start() set to false.
@@ -796,6 +993,26 @@ class LoopChoiceNode : public ChoiceNode {
   bool read_backward() const override { return read_backward_; }
   LoopChoiceNode* AsLoopChoiceNode() override { return this; }
   void Accept(NodeVisitor* visitor) override;
+  // The atomic-loop classification of this node (see AtomicLoopKind),
+  // memoized per |flags|: group modifiers (MODIFY_FLAGS) and work-list
+  // re-emission can legitimately emit the same node under different flags.
+  AtomicLoopKind atomic_loop_kind(Flags flags);
+  // The fixed match length of one body iteration, or
+  // kNodeIsTooComplexForFixedLengthLoops.  Meaningful when atomic_loop_kind()
+  // is not kNone (the body is then a fixed-length chain).
+  int FixedLengthBodyIterationLength() {
+    return FixedLengthLoopLengthForAlternative(&alternatives()->at(0));
+  }
+  // True iff this is the implicit `.*?` search loop prepended to unanchored
+  // regexps: exactly two alternatives, the second an unguarded omnivorous
+  // TextNode re-entering this loop.
+  bool IsImplicitSearchLoop(Compiler* compiler);
+  // The ParkedGrant level this node's body alternative may carry: kNone if
+  // this is not the implicit search loop, else kParked, upgraded to
+  // kParkedUniformPrefix when the body is a chain of deferrable actions and
+  // text nodes drawing from a single character source that ends in an
+  // eligible loop over that same source (the `<class>+<AT_END>` expansion).
+  ParkedGrant ComputeSearchBodyParkedGrant(Compiler* compiler);
 
  private:
   // AddAlternative is made private for loop nodes because alternatives
@@ -809,6 +1026,10 @@ class LoopChoiceNode : public ChoiceNode {
   Node* continue_node_;
   bool body_can_be_zero_length_;
   bool read_backward_;
+  // Memo for atomic_loop_kind.
+  bool atomic_loop_kind_valid_ = false;
+  AtomicLoopKind atomic_loop_kind_ = AtomicLoopKind::kNone;
+  Flags atomic_loop_kind_flags_ = {};
 };
 
 class NodeVisitor {

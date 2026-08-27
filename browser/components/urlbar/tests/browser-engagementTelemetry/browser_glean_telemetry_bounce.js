@@ -63,19 +63,20 @@ add_task(async function test_bounce_tab_close() {
       "example.com"
     );
 
-    let browser = window.gBrowser.selectedBrowser;
     await openPopup("test");
     await doEnter();
 
-    let state = gURLBar.controller.input.getBrowserState(browser);
-    state.bounceEventTracking.startTime = 1000;
-
+    // The bounce counts interactions at or after the tracked start time. Anchor
+    // the stubbed interactions around now -- the first is before tracking began
+    // and must be excluded -- so the filter is deterministic without reaching
+    // into the tracking state.
+    let now = Date.now();
     const stub = sinon
       .stub(Interactions, "getRecentInteractionsForBrowser")
       .returns([
-        { created_at: 500, totalViewTime: 300 },
-        { created_at: 1500, totalViewTime: 200 },
-        { created_at: 1700, totalViewTime: 1000 },
+        { created_at: now - 60000, totalViewTime: 300 },
+        { created_at: now + 60000, totalViewTime: 200 },
+        { created_at: now + 120000, totalViewTime: 1000 },
       ]);
 
     await BrowserTestUtils.removeTab(tab);
@@ -111,19 +112,19 @@ add_task(async function test_no_bounce() {
       "example.com"
     );
 
-    let browser = window.gBrowser.selectedBrowser;
     await openPopup("test");
     await doEnter();
 
-    let state = gURLBar.controller.input.getBrowserState(browser);
-    state.bounceEventTracking.startTime = 1000;
-
+    // Anchor the stubbed interactions around now (see test_bounce_tab_close);
+    // the two at or after tracking sum past the bounce threshold, so no bounce
+    // is recorded.
+    let now = Date.now();
     const stub = sinon
       .stub(Interactions, "getRecentInteractionsForBrowser")
       .returns([
-        { created_at: 500, totalViewTime: 3000 },
-        { created_at: 3500, totalViewTime: 8000 },
-        { created_at: 11500, totalViewTime: 5000 },
+        { created_at: now - 60000, totalViewTime: 3000 },
+        { created_at: now + 60000, totalViewTime: 8000 },
+        { created_at: now + 120000, totalViewTime: 5000 },
       ]);
 
     await BrowserTestUtils.removeTab(tab);
@@ -147,15 +148,14 @@ add_task(async function test_bounce_back_button() {
     await openPopup("test");
     await doEnter();
 
-    let state = gURLBar.controller.input.getBrowserState(browser);
-    state.bounceEventTracking.startTime = 1000;
-
+    // Anchor the stubbed interactions around now (see test_bounce_tab_close).
+    let now = Date.now();
     const stub = sinon
       .stub(Interactions, "getRecentInteractionsForBrowser")
       .returns([
-        { created_at: 500, totalViewTime: 300 },
-        { created_at: 1500, totalViewTime: 200 },
-        { created_at: 1700, totalViewTime: 1000 },
+        { created_at: now - 60000, totalViewTime: 300 },
+        { created_at: now + 60000, totalViewTime: 200 },
+        { created_at: now + 120000, totalViewTime: 1000 },
       ]);
 
     gBrowser.goBack();
@@ -197,19 +197,17 @@ add_task(async function test_other_engagement() {
       "example.com"
     );
 
-    let browser = window.gBrowser.selectedBrowser;
     await openPopup("test");
     await doEnter();
 
-    let state = gURLBar.controller.input.getBrowserState(browser);
-    state.bounceEventTracking.startTime = 1000;
-
+    // Anchor the stubbed interactions around now (see test_bounce_tab_close).
+    let now = Date.now();
     const stub = sinon
       .stub(Interactions, "getRecentInteractionsForBrowser")
       .returns([
-        { created_at: 500, totalViewTime: 300 },
-        { created_at: 1500, totalViewTime: 200 },
-        { created_at: 1700, totalViewTime: 1000 },
+        { created_at: now - 60000, totalViewTime: 300 },
+        { created_at: now + 60000, totalViewTime: 200 },
+        { created_at: now + 120000, totalViewTime: 1000 },
       ]);
 
     await PlacesUtils.history.clear();

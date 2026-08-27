@@ -181,13 +181,14 @@ suites:
         description: >
             Standard benchmarks are third-party tests (i.e. Speedometer) that we have integrated
             into Raptor to run per-commit in our production CI. To update any of these benchmarks,
-            see `Updating Benchmark Tests <browsertime.html#updating-benchmark-tests>`_.
+            see [Updating Benchmark Tests](browsertime.md#updating-benchmark-tests).
         tests:
             ares6: ""
             assorted-dom: ""
             jetstream2: ""
             jetstream3: ""
             matrix-react-bench: ""
+            media-capabilities: ""
             motionmark-1-3: ""
             motionmark-htmlsuite-1-3: ""
             speedometer2: ""
@@ -228,7 +229,7 @@ suites:
     custom:
         description: "Browsertime tests that use a custom pageload test script. These use the pageload type, but may have other intentions."
         tests:
-            browsertime: "Used to run vanilla browsertime tests through raptor. For example: `./mach raptor -t browsertime --browsertime-arg url=https://www.sitespeed.io --browsertime-arg iterations=3`"
+            browsertime: "Used to run vanilla Browsertime tests through Raptor. For example: `./mach raptor -t browsertime --browsertime-arg url=https://www.sitespeed.io --browsertime-arg iterations=3`"
             process-switch: "Measures process switch time"
             welcome: "Measures pageload metrics for the first-install about:welcome page"
             idb-open-many-par: "Measures opening many IndexedDB databases in parallel"
@@ -282,6 +283,10 @@ suites:
             prefetch-eager: "Speculation Rules prefetch test (eager eagerness): the inline speculationrules script prefetches the target on the slightest hover, then the link is clicked so a prefetch-capable browser serves the navigation from the prefetch cache."
             prefetch-moderate: "Speculation Rules prefetch test (moderate eagerness): the inline speculationrules script prefetches the target after ~200 ms of sustained hover, then the link is clicked so a prefetch-capable browser serves the navigation from the prefetch cache."
             prefetch-conservative: "Speculation Rules prefetch test (conservative eagerness): the inline speculationrules script prefetches the target on pointerdown, which is held so the prefetch can complete before release navigates, letting a prefetch-capable browser serve the navigation from the prefetch cache."
+            prefetch-list-immediate: "Speculation Rules prefetch test using a list-source rule (immediate eagerness): the inline speculationrules script lists the target URLs explicitly, so a prefetch-capable browser prefetches them as soon as the rules are parsed, then the link is clicked to serve the navigation from the prefetch cache."
+            prefetch-list-eager: "Speculation Rules prefetch test using a list-source rule (eager eagerness): the inline speculationrules script lists the target URLs explicitly; matching links are present so the prefetch can be triggered on the slightest hover (list-rule eagerness is browser-defined), then the link is clicked to serve the navigation from the prefetch cache."
+            prefetch-list-moderate: "Speculation Rules prefetch test using a list-source rule (moderate eagerness): the inline speculationrules script lists the target URLs explicitly; matching links are present so the prefetch can be triggered after ~200 ms of sustained hover (list-rule eagerness is browser-defined), then the link is clicked to serve the navigation from the prefetch cache."
+            prefetch-list-conservative: "Speculation Rules prefetch test using a list-source rule (conservative eagerness): the inline speculationrules script lists the target URLs explicitly; matching links are present so the prefetch can be triggered on pointerdown, which is held so the prefetch can complete before release navigates (list-rule eagerness is browser-defined)."
             tp6-bench: >
                 A pageload benchmark test that quickly runs through a selection of the
                 pages available to produce a single overall metric for fcp, lcp, and

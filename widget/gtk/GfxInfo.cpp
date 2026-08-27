@@ -45,16 +45,13 @@
 #  define GBM_FORMAT_P010 __gbm_fourcc_code('P', '0', '1', '0')
 #endif
 
-// How long we wait for data from glxtest/vaapi test process in milliseconds.
+// How long we wait for data from gfxtest probe processes in milliseconds.
 #define GFX_TEST_TIMEOUT 4000
 #define VAAPI_TEST_TIMEOUT 2000
 #define V4L2_TEST_TIMEOUT 2000
 #define VULKAN_TEST_TIMEOUT 2000
 
-#define GLX_PROBE_BINARY u"glxtest"_ns
-#define VAAPI_PROBE_BINARY u"vaapitest"_ns
-#define V4L2_PROBE_BINARY u"v4l2test"_ns
-#define VULKAN_PROBE_BINARY u"vulkantest"_ns
+#define GFX_PROBE_BINARY u"gfxtest"_ns
 
 namespace mozilla::widget {
 
@@ -710,9 +707,9 @@ bool GfxInfo::FireGLXTestProcess() {
   sGLXTestPipe = pfd[0];
 
   auto pipeID = std::to_string(pfd[1]);
-  const char* args[] = {"-f", pipeID.c_str(),
+  const char* args[] = {"glx", "-f", pipeID.c_str(),
                         IsWaylandEnabled() ? "-w" : nullptr, nullptr};
-  sGLXTestPID = FireTestProcess(GLX_PROBE_BINARY, nullptr, args);
+  sGLXTestPID = FireTestProcess(GFX_PROBE_BINARY, nullptr, args);
   // Set pid to -1 to avoid further test launch.
   if (!sGLXTestPID) {
     sGLXTestPID = -1;
@@ -733,8 +730,8 @@ void GfxInfo::GetDataVAAPI() {
 
   int vaapiPipe = -1;
   int vaapiPID = 0;
-  const char* args[] = {"-d", mDrmRenderDevice.get(), nullptr};
-  vaapiPID = FireTestProcess(VAAPI_PROBE_BINARY, &vaapiPipe, args);
+  const char* args[] = {"vaapi", "-d", mDrmRenderDevice.get(), nullptr};
+  vaapiPID = FireTestProcess(GFX_PROBE_BINARY, &vaapiPipe, args);
   if (!vaapiPID) {
     return;
   }
@@ -830,16 +827,17 @@ void GfxInfo::GetDataVulkan() {
 
   int vulkanPipe = -1;
   int vulkanPID = 0;
-  const char* args[3];
+  const char* args[4];
+  args[0] = "vulkan";
   if (mDrmRenderDevice.IsEmpty()) {
-    args[0] = "-p";
-    args[1] = nullptr;
-  } else {
-    args[0] = "-d";
-    args[1] = mDrmRenderDevice.get();
+    args[1] = "-p";
     args[2] = nullptr;
+  } else {
+    args[1] = "-d";
+    args[2] = mDrmRenderDevice.get();
+    args[3] = nullptr;
   }
-  vulkanPID = FireTestProcess(VULKAN_PROBE_BINARY, &vulkanPipe, args);
+  vulkanPID = FireTestProcess(GFX_PROBE_BINARY, &vulkanPipe, args);
   if (!vulkanPID) {
     gfxCriticalNote << "Failed to start vulkantest process\n";
     return;
@@ -904,8 +902,8 @@ void GfxInfo::V4L2ProbeDevice(nsCString& dev) {
 
   int v4l2Pipe = -1;
   int v4l2PID = 0;
-  const char* args[] = {"-d", dev.get(), nullptr};
-  v4l2PID = FireTestProcess(V4L2_PROBE_BINARY, &v4l2Pipe, args);
+  const char* args[] = {"v4l2", "-d", dev.get(), nullptr};
+  v4l2PID = FireTestProcess(GFX_PROBE_BINARY, &v4l2Pipe, args);
   if (!v4l2PID) {
     gfxCriticalNote << "Failed to start v4l2test process\n";
     return;

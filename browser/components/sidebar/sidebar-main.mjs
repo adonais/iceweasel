@@ -13,6 +13,9 @@ import {
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 
 // eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/sidebar/sidebar-opentabs-preview.mjs";
+
+// eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/sidebar/sidebar-pins-promo.mjs";
 
 const lazy = {};
@@ -100,6 +103,7 @@ export default class SidebarMain extends MozLitElement {
     this._sidebarContainer = document.getElementById("sidebar-container");
     this._contextMenu = document.getElementById("sidebar-context-menu");
     this._toolsOverflowMenu = document.getElementById("sidebar-tools-overflow");
+    this._openTabsPreview = document.querySelector("sidebar-opentabs-preview");
     this._toolsOverflowButtonGroup =
       this._toolsOverflowMenu.querySelector("button-group");
     this._manageExtensionMenuItem = document.getElementById(
@@ -622,6 +626,7 @@ export default class SidebarMain extends MozLitElement {
   }
 
   async showView(view) {
+    this._openTabsPreview?.hide();
     const { currentID, toolsAndExtensions } = window.SidebarController;
     let isToolOpening =
       (!currentID || (currentID && currentID !== view)) &&
@@ -747,6 +752,26 @@ export default class SidebarMain extends MozLitElement {
     return { action, isActiveView, toolsOverflowing, tooltip, actionLabel };
   }
 
+  onEntrypointHover(e, view) {
+    if (view !== "viewOpenTabsSidebar") {
+      return;
+    }
+    if (e.currentTarget.contains(e.relatedTarget)) {
+      return;
+    }
+    this._openTabsPreview?.activate(e.currentTarget);
+  }
+
+  onEntrypointHoverEnd(e, view) {
+    if (view !== "viewOpenTabsSidebar") {
+      return;
+    }
+    if (e.currentTarget.contains(e.relatedTarget)) {
+      return;
+    }
+    this._openTabsPreview?.deactivate();
+  }
+
   entrypointTemplate(action) {
     let buttonValues = this.getEntrypointValues(action);
     return html`${when(
@@ -760,6 +785,9 @@ export default class SidebarMain extends MozLitElement {
           aria-pressed=${buttonValues.isActiveView}
           view=${buttonValues.action.view}
           @click=${async () => await this.showView(buttonValues.action.view)}
+          @mouseover=${e => this.onEntrypointHover(e, buttonValues.action.view)}
+          @mouseout=${e =>
+            this.onEntrypointHoverEnd(e, buttonValues.action.view)}
           title=${buttonValues.tooltip}
           .iconSrc=${buttonValues.action.iconUrl}
           ?extension=${buttonValues.action.view?.includes("-sidebar-action")}

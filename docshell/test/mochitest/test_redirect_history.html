@@ -14,7 +14,7 @@
 
       let tests = new Map([
         ["sameorigin", window.location.origin],
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         ["crossorigin", "http://test1.example.com"],
       ]);
       for (let [kind, origin] of tests) {

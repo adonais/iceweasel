@@ -301,12 +301,8 @@ pub(crate) enum Message<'a> {
     CreateSwapChain {
         device_id: id::DeviceId,
         queue_id: id::QueueId,
-        width: i32,
-        height: i32,
+        desc: wgt::TextureDescriptor<(), Cow<'a, [wgt::TextureFormat]>>,
         format: SurfaceFormat,
-        texture_format: wgt::TextureFormat,
-        usage: wgt::TextureUsages,
-        view_formats: Vec<wgt::TextureFormat>,
         buffer_ids: [id::BufferId; MAX_SWAPCHAIN_BUFFER_COUNT],
         remote_texture_owner_id: RemoteTextureOwnerId,
         use_shared_texture_in_swap_chain: bool,
@@ -380,7 +376,7 @@ enum DeviceAction<'a> {
     ComputePipelineGetBindGroupLayout(id::ComputePipelineId, u32, id::BindGroupLayoutId),
     CreatePipelineLayout(
         id::PipelineLayoutId,
-        wgc::binding_model::PipelineLayoutDescriptor<'a>,
+        wgc::binding_model::PipelineLayoutDescriptor<'a, id::BindGroupLayoutId>,
     ),
     CreateBindGroup(id::BindGroupId, wgc::binding_model::BindGroupDescriptor<'a>),
     CreateShaderModule(id::ShaderModuleId, wgc::Label<'a>, Cow<'a, str>),

@@ -36,7 +36,7 @@ class SVGTextPathElement final : public SVGTextPathElementBase {
   // nsIContent interface
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
-  SVGAnimatedPathSegList* GetAnimPathSegList() override { return &mPath; }
+  SVGAnimatedPathSegList* GetAnimatedPathSegList() override { return &mPath; }
 
   nsStaticAtom* GetPathDataAttrName() const override { return nsGkAtoms::path; }
 

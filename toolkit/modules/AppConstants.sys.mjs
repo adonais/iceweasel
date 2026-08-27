@@ -14,8 +14,6 @@ export var AppConstants = Object.freeze({
   // defines: https://wiki.mozilla.org/Platform/Channel-specific_build_defines
   NIGHTLY_BUILD: @NIGHTLY_BUILD_BOOL@,
 
-  ENABLE_EXPLICIT_RESOURCE_MANAGEMENT: @ENABLE_EXPLICIT_RESOURCE_MANAGEMENT_BOOL@,
-
   RELEASE_OR_BETA: @RELEASE_OR_BETA_BOOL@,
 
   EARLY_BETA_OR_EARLIER: @EARLY_BETA_OR_EARLIER_BOOL@,

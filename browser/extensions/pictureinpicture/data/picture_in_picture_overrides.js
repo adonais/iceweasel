@@ -67,6 +67,12 @@ let AVAILABLE_PIP_OVERRIDES;
       },
     },
 
+    ardmediathek: {
+      "https://www.ardmediathek.de/video/*": {
+        videoWrapperScriptPath: "video-wrappers/ardmediathek.js",
+      },
+    },
+
     arte: {
       "https://*.arte.tv/*": {
         videoWrapperScriptPath: "video-wrappers/videojsWrapper.js",
@@ -101,6 +107,15 @@ let AVAILABLE_PIP_OVERRIDES;
     cbc: {
       "https://*.cbc.ca/*": {
         videoWrapperScriptPath: "video-wrappers/cbc.js",
+      },
+    },
+
+    ceskatelevize: {
+      "https://ct24.ceskatelevize.cz/*": {
+        showHiddenTextTracks: true,
+      },
+      "https://player.ceskatelevize.cz/*": {
+        showHiddenTextTracks: true,
       },
     },
 

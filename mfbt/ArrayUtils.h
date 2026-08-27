@@ -9,11 +9,11 @@
 #ifndef mozilla_ArrayUtils_h
 #define mozilla_ArrayUtils_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
-
 #include <stddef.h>
 #include <stdint.h>
+
+#include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 
 #ifdef __cplusplus
 #  include <algorithm>

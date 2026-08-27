@@ -142,7 +142,9 @@ def handle_missing_files(patch_directory):
             m[0] for m in (re.findall(r"^ D (.*)", line) for line in stdout_lines) if m
         ]
         if len(stdout_lines) != 0:
-            cmd = f"git rm {' '.join(stdout_lines)}"
+            cmd = (
+                f"git -c core.fsmonitor=false -c gc.auto=0 rm {' '.join(stdout_lines)}"
+            )
             run_git(cmd, ".")
     else:
         cmd = f"hg status --no-status --deleted {patch_directory}"
@@ -162,7 +164,9 @@ def handle_unknown_files(patch_directory):
             if m
         ]
         if len(stdout_lines) != 0:
-            cmd = f"git add {' '.join(stdout_lines)}"
+            cmd = (
+                f"git -c core.fsmonitor=false -c gc.auto=0 add {' '.join(stdout_lines)}"
+            )
             run_git(cmd, ".")
     else:
         cmd = f"hg status --no-status --unknown {patch_directory}"
@@ -182,7 +186,7 @@ def handle_modified_files(patch_directory):
         m[0] for m in (re.findall(r"^ M (.*)", line) for line in stdout_lines) if m
     ]
     if len(stdout_lines) != 0:
-        cmd = f"git add {' '.join(stdout_lines)}"
+        cmd = f"git -c core.fsmonitor=false -c gc.auto=0 add {' '.join(stdout_lines)}"
         run_git(cmd, ".")
 
 

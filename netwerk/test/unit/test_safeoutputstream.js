@@ -8,13 +8,13 @@ function write_atomic(file, str) {
     "@mozilla.org/network/atomic-file-output-stream;1"
   ].createInstance(Ci.nsIFileOutputStream);
   stream.init(file, -1, -1, 0);
-  do {
+  while (true) {
     var written = stream.write(str, str.length);
     if (written == str.length) {
       break;
     }
     str = str.substring(written);
-  } while (1);
+  }
   stream.QueryInterface(Ci.nsISafeOutputStream).finish();
   stream.close();
 }
@@ -24,13 +24,13 @@ function write(file, str) {
     "@mozilla.org/network/safe-file-output-stream;1"
   ].createInstance(Ci.nsIFileOutputStream);
   stream.init(file, -1, -1, 0);
-  do {
+  while (true) {
     var written = stream.write(str, str.length);
     if (written == str.length) {
       break;
     }
     str = str.substring(written);
-  } while (1);
+  }
   stream.QueryInterface(Ci.nsISafeOutputStream).finish();
   stream.close();
 }

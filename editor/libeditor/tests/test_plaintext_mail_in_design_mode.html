@@ -1,0 +1,33 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that plaintext mail editor does not allow styling, even in design mode</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div>hello</div>
+<script>
+'use strict';
+
+function getEditor() {
+  const editingSession = SpecialPowers.wrap(window).docShell.editingSession;
+  return editingSession.getEditorForWindow(window);
+}
+
+add_task(async () => {
+  await SimpleTest.promiseFocus();
+  document.designMode = 'on';
+  await new Promise(r => SimpleTest.executeSoon(r));
+  getEditor().flags |=
+    SpecialPowers.Ci.nsIEditor.eEditorMailMask | SpecialPowers.Ci.nsIEditor.eEditorPlaintextMask;
+  const host = document.querySelector('div');
+  getSelection().setBaseAndExtent(host.firstChild, 0, host.firstChild, 3);
+  document.execCommand('bold');
+  is(host.innerHTML, 'hello',
+     'Should not allow formatting for plaintext mail editor, even if design mode is on.');
+});
+</script>
+</body>
+</html>

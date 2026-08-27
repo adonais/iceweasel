@@ -21,16 +21,48 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1513343
       const elements = [
         win.document.querySelector("textarea"),
         win.document.querySelector("input"),
-        win.document.querySelector("shadow-input").shadowRoot.querySelector("input"),
+        win.document.querySelector("shadow-input:not([type])").shadowRoot.querySelector("input"),
         // Intentionally twice to test revealing and un-revealing.
         win.document.querySelector("input[type=password]"),
         win.document.querySelector("input[type=password]"),
+        win.document.querySelector("shadow-input[type=password]").shadowRoot.querySelector("input"),
+        win.document.querySelector("shadow-input[type=password]").shadowRoot.querySelector("input"),
       ];
       for (const element of elements) {
         await testElement(element, win);
       }
+      await testConsecutiveReveals(win);
       win.close();
       SimpleTest.finish();
+    }
+
+    // The context menu is built once per window and then reused, so the reveal
+    // handler has to act on the field from the current right click. Right click
+    // two different fields without tearing the menu down in between.
+    async function testConsecutiveReveals(win) {
+      const fields = [
+        win.document.querySelector("input[type=password]"),
+        win.document.querySelector("shadow-input[type=password]").shadowRoot.querySelector("input"),
+      ];
+
+      for (const element of fields) {
+        element.focus();
+        synthesizeKey("x", {}, win);
+
+        let popupshown = new Promise(r => win.addEventListener("popupshown", r, { once: true }));
+        synthesizeMouseAtCenter(element, {type: "contextmenu"}, win);
+        await popupshown;
+
+        const contextmenu = win.document.getElementById("textbox-contextmenu");
+        const revealPassword = contextmenu.querySelector("#textbox-contextmenu-reveal-password");
+        const wasRevealed = element.revealPassword;
+
+        let popuphidden = new Promise(r => win.addEventListener("popuphidden", r, { once: true }));
+        contextmenu.activateItem(revealPassword);
+        await popuphidden;
+
+        is(element.revealPassword, !wasRevealed, "reveal toggled the field that was right clicked");
+      }
     }
 
     async function testElement(element, win) {

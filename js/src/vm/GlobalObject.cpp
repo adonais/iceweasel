@@ -7,15 +7,11 @@
 #include "jsapi.h"
 #include "jsfriendapi.h"
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-#  include "builtin/AsyncDisposableStackObject.h"
-#endif
+#include "builtin/AsyncDisposableStackObject.h"
 #include "builtin/AtomicsObject.h"
 #include "builtin/BigInt.h"
 #include "builtin/DataViewObject.h"
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-#  include "builtin/DisposableStackObject.h"
-#endif
+#include "builtin/DisposableStackObject.h"
 #ifdef JS_HAS_INTL_API
 #  include "builtin/intl/Collator.h"
 #  include "builtin/intl/DateTimeFormat.h"
@@ -232,12 +228,10 @@ bool GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key) {
     case JSProto_AsyncIterator:
       return !IsAsyncIteratorHelpersEnabled();
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case JSProto_SuppressedError:
     case JSProto_DisposableStack:
     case JSProto_AsyncDisposableStack:
-      return !JS::Prefs::experimental_explicit_resource_management();
-#endif
+      return false;
 
     case JSProto_AbstractModuleSource:
       return !JS::Prefs::experimental_source_phase_imports();

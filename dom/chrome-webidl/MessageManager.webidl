@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+interface nsIDOMProcessParent;
 interface nsIEventTarget;
 interface Principal;
 
@@ -550,5 +551,8 @@ interface ProcessMessageManager : MessageSender
 
   // Whether this is message manager for the current process.
   readonly attribute boolean isInProcess;
+
+  // Returns the corresponding nsIDOMProcessParent
+  readonly attribute nsIDOMProcessParent processParent;
 };
 ProcessMessageManager includes ProcessScriptLoader;

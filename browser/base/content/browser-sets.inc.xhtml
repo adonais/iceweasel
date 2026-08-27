@@ -117,8 +117,10 @@
     <command id="History:RestoreLastClosedTabOrWindowOrSession" />
     <command id="History:SearchHistory" />
 
-    <command id="wrCaptureCmd" disabled="true"/>
-    <command id="wrToggleCaptureSequenceCmd" disabled="true"/>
+    <!-- The keys for these commands are registered dynamically by gGfxUtils
+         when gfx.webrender.debug.enable-capture is set. -->
+    <command id="wrCaptureCmd"/>
+    <command id="wrToggleCaptureSequenceCmd"/>
 #ifdef NIGHTLY_BUILD
     <command id="windowRecordingCmd" />
 #endif
@@ -391,20 +393,6 @@
 #expand    <key id="key_selectTab8" key="8" modifiers="__NUM_SELECT_TAB_MODIFIER__"/>
 #expand    <key id="key_selectLastTab" key="9" modifiers="__NUM_SELECT_TAB_MODIFIER__"/>
 
-    <key id="key_wrCaptureCmd"
-#ifdef XP_MACOSX
-    key="3" modifiers="control,shift"
-#else
-    key="#" modifiers="control"
-#endif
-    command="wrCaptureCmd"/>
-    <key id="key_wrToggleCaptureSequenceCmd"
-#ifdef XP_MACOSX
-    key="6" modifiers="control,shift"
-#else
-    key="^" modifiers="control"
-#endif
-    command="wrToggleCaptureSequenceCmd"/>
 #ifdef NIGHTLY_BUILD
     <key id="key_windowRecordingCmd"
 #ifdef XP_MACOSX

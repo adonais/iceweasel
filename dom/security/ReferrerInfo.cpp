@@ -34,7 +34,6 @@
 #include "nsNetUtil.h"
 #include "nsScriptSecurityManager.h"
 #include "nsStreamUtils.h"
-#include "nsWhitespaceTokenizer.h"
 
 static mozilla::LazyLogModule gReferrerInfoLog("ReferrerInfo");
 #define LOG(msg) MOZ_LOG(gReferrerInfoLog, mozilla::LogLevel::Debug, msg)
@@ -1201,28 +1200,6 @@ static ReferrerPolicy ReferrerPolicyFromAttribute(const Element& aElement) {
   return aElement.GetReferrerPolicyAsEnum();
 }
 
-static bool HasRelNoReferrer(const Element& aElement) {
-  // rel=noreferrer is only supported in <a>, <area>, and <form>
-  if (!aElement.IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area,
-                                    nsGkAtoms::form) &&
-      !aElement.IsSVGElement(nsGkAtoms::a)) {
-    return false;
-  }
-
-  nsAutoString rel;
-  aElement.GetAttr(nsGkAtoms::rel, rel);
-  nsWhitespaceTokenizerTemplate<nsContentUtils::IsHTMLWhitespace> tok(rel);
-
-  while (tok.hasMoreTokens()) {
-    const nsAString& token = tok.nextToken();
-    if (token.LowerCaseEqualsLiteral("noreferrer")) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 NS_IMETHODIMP
 ReferrerInfo::InitWithElement(const Element* aElement) {
   MOZ_ASSERT(!mInitialized);
@@ -1240,7 +1217,7 @@ ReferrerInfo::InitWithElement(const Element* aElement) {
   }
 
   mOriginalPolicy = mPolicy;
-  mSendReferrer = !HasRelNoReferrer(*aElement);
+  mSendReferrer = !nsContentUtils::HasRelNoReferrer(*aElement);
   mOriginalReferrer = aElement->OwnerDoc()->GetDocumentURIAsReferrer();
 
   mInitialized = true;

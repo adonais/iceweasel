@@ -141,8 +141,6 @@ Structure:
     os: {
         name: <string>, // "Windows_NT" or null on failure
         version: <string>, // e.g. "6.1", null on failure
-        servicePackMajor: <number>, // windows only or null on failure
-        servicePackMinor: <number>, // windows only or null on failure
         windowsBuildNumber: <number>, // windows only or null on failure
         windowsUBR: <number>, // windows 10 only or null on failure
         locale: <string>, // "en" or null on failure
@@ -382,9 +380,6 @@ The following is a partial list of [collected preferences](https://searchfox.org
 - `security.tls.version.enable-deprecated`: True if deprecated versions of TLS (1.0 and 1.1) have been enabled by the user. Defaults to false.
 - `privacy.firstparty.isolate`: True if the user has changed the (unsupported, hidden) First Party Isolation preference. Defaults to false.
 - `privacy.resistFingerprinting`: True if the user has changed the (unsupported, hidden) Resist Fingerprinting preference. Defaults to false.
-- `app.normandy.test-prefs.bool`: Test pref that will help troubleshoot uneven unenrollment in experiments. Defaults to false.
-- `app.normandy.test-prefs.integer`: Test pref that will help troubleshoot uneven unenrollment in experiments. Defaults to 0.
-- `app.normandy.test-prefs.string`: Test pref that will help troubleshoot uneven unenrollment in experiments. Defaults to "".
 - `network.trr.mode`: User-set DNS over HTTPS mode. Defaults to 0.
 - `network.trr.strict_native_fallback`: Whether strict fallback mode is enabled for DoH mode 2. Defaults to true on Nightly, false elsewhere.
 - `extensions.InstallTrigger.enabled`: Whether the InstallTrigger property should be enabled (or completely hidden).
@@ -494,8 +489,6 @@ This object contains operating system information.
 
 - `name`: the name of the OS.
 - `version`: a string representing the OS version.
-- `servicePackMajor`: the Windows only major version number for the installed service pack.
-- `servicePackMinor`: the Windows only minor version number for the installed service pack.
 - `windowsBuildNumber`: the Windows build number.
 - `windowsUBR`: the Windows UBR number, only available for Windows >= 10. This value is incremented by Windows cumulative updates patches.
 - `installYear`: the Windows only integer representing the year the OS was installed.

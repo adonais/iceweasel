@@ -19,7 +19,8 @@ template <>
 AVCodecID GetFFmpegEncoderCodecId<LIBAV_VER>(CodecType aCodec) {
 #if LIBAVCODEC_VERSION_MAJOR >= 58
   if (XRE_IsParentProcess() || XRE_IsContentProcess() ||
-      StaticPrefs::media_use_remote_encoder_video()) {
+      StaticPrefs::media_use_remote_encoder_video_software() ||
+      StaticPrefs::media_use_remote_encoder_video_platform()) {
     if (aCodec == CodecType::VP8) {
       return AV_CODEC_ID_VP8;
     }
@@ -42,7 +43,7 @@ AVCodecID GetFFmpegEncoderCodecId<LIBAV_VER>(CodecType aCodec) {
   }
 
   if (XRE_IsParentProcess() || XRE_IsContentProcess() ||
-      StaticPrefs::media_use_remote_encoder_audio()) {
+      StaticPrefs::media_use_remote_encoder_audio_software()) {
     if (aCodec == CodecType::Opus) {
       return AV_CODEC_ID_OPUS;
     }

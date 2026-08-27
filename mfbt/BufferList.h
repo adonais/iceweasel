@@ -5,14 +5,14 @@
 #ifndef mozilla_BufferList_h
 #define mozilla_BufferList_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/MemoryReporting.h"
-#include "mozilla/Vector.h"
-
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <utility>
+
+#include "mozilla/Assertions.h"
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/Vector.h"
 #ifdef DEBUG
 #  include <type_traits>
 #endif
@@ -156,7 +156,13 @@ class BufferList : private AllocPolicy {
     return size;
   }
 
+#ifdef DEBUG
+  bool isStorageConsistent() const { return mSegments.isStorageConsistent(); }
+#endif
+
   void Clear() {
+    MOZ_ASSERT(isStorageConsistent());
+
     if (mOwning) {
       for (Segment& segment : mSegments) {
         this->free_(segment.mData, segment.mCapacity);

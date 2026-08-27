@@ -6,7 +6,7 @@
 set -e
 
 warn_file=$(mktemp)
-sphinx-build --keep-going -b html -w "${warn_file}" "${VCS_PATH}/nss/doc/rst" /tmp/sphinx-doc-out
+sphinx-build --keep-going -b html -w "${warn_file}" "${VCS_PATH}/nss/doc/src" /tmp/sphinx-doc-out
 sphinx_status=$?
 
 failures=0

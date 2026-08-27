@@ -103,8 +103,8 @@ export function navigateToLink(
     const originalEvent = e.detail.originalEvent;
     const isModifierClick =
       lazy.AppConstants.platform == "macosx"
-        ? originalEvent.metaKey
-        : originalEvent.ctrlKey;
+        ? originalEvent?.metaKey
+        : originalEvent?.ctrlKey;
     let where;
 
     if (isModifierClick) {

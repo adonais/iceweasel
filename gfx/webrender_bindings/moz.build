@@ -53,10 +53,12 @@ UNIFIED_SOURCES += [
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] in ("cocoa", "uikit"):
     EXPORTS.mozilla.webrender += [
+        "MetalDeviceManager.h",
         "RenderCompositorNative.h",
         "RenderMacIOSurfaceTextureHost.h",
     ]
     UNIFIED_SOURCES += [
+        "MetalDeviceManager.mm",
         "RenderCompositorNative.cpp",
         "RenderMacIOSurfaceTextureHost.cpp",
     ]

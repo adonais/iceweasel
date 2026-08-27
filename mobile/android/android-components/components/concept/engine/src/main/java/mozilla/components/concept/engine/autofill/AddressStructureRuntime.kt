@@ -4,6 +4,9 @@
 
 package mozilla.components.concept.engine.autofill
 
+import kotlinx.coroutines.CompletableDeferred
+import mozilla.components.concept.engine.CancellableOperation
+
 /**
  * Error that is returned if we got a success value out of a [GeckoResult] that is null.
  */
@@ -26,5 +29,11 @@ interface AddressStructureRuntime {
         countryCode: String,
         onSuccess: (AddressStructure) -> Unit,
         onError: (Throwable) -> Unit,
-    ): Unit = onError(UnsupportedOperationException("getAddressFormLayout is not yet supported"))
+    ): CancellableOperation {
+        onError(UnsupportedOperationException("getAddressFormLayout is not yet supported"))
+
+        return object : CancellableOperation {
+            override fun cancel() = CompletableDeferred(false)
+        }
+    }
 }

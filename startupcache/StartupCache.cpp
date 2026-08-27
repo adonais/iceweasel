@@ -262,7 +262,7 @@ void StartupCache::StartPrefetchMemory() {
     MonitorAutoLock lock(mPrefetchComplete);
     mPrefetchInProgress = true;
   }
-  NS_DispatchBackgroundTask(NewRunnableMethod<uint8_t*, size_t>(
+  NS_DispatchBackgroundTask(NewRunnableMethod<const uint8_t*, size_t>(
       "StartupCache::ThreadedPrefetch", this, &StartupCache::ThreadedPrefetch,
       mCacheData.get<uint8_t>().get(), mCacheData.size()));
 }
@@ -728,7 +728,7 @@ void StartupCache::WaitOnPrefetch() {
   }
 }
 
-void StartupCache::ThreadedPrefetch(uint8_t* aStart, size_t aSize) {
+void StartupCache::ThreadedPrefetch(const uint8_t* aStart, size_t aSize) {
   // Always notify of completion, even if MMAP_FAULT_HANDLER_CATCH()
   // early-returns.
   auto notifyPrefetchComplete = MakeScopeExit([&] {

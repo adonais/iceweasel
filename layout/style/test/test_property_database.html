@@ -81,6 +81,7 @@ for (var prop in gCSSProperties) {
     ok(!("subproperties" in entry),
        "longhand property '" + prop + "' must not have subproperty list");
   } else if (entry.type == CSS_TYPE_TRUE_SHORTHAND ||
+             entry.type == CSS_TYPE_LEGACY_SHORTHAND ||
              entry.type == CSS_TYPE_SHORTHAND_AND_LONGHAND) {
     ok("subproperties" in entry,
        "shorthand property '" + prop + "' must have subproperty list");
@@ -88,7 +89,7 @@ for (var prop in gCSSProperties) {
 
   if ("subproperties" in entry) {
     var good = true;
-    if (entry.subproperties.length < 1) {
+    if (entry.subproperties.length < 1 && prop != "-webkit-line-clamp") {
       info("subproperty list for '" + prop + "' is empty");
       good = false;
     }

@@ -1727,14 +1727,23 @@ export class nsContextMenu {
     this.actor.reloadImage(this.targetIdentifier);
   }
 
-  _canvasToBlobURL(targetIdentifier) {
-    return this.actor.canvasToBlobURL(targetIdentifier);
+  async #canvasToBlobURL(targetIdentifier) {
+    let blobURL = await this.actor.canvasToBlobURL(targetIdentifier);
+
+    if (!ChromeUtils.isBlobURLValid(this.principal, blobURL)) {
+      throw new Error("Invalid blob: URL: " + blobURL);
+    }
+
+    return blobURL;
   }
 
   copyCanvasImage() {
-    this.actor.copyCanvasImage(this.targetIdentifier).then(arrayBuffer => {
-      lazy.BrowserUtils.copyImageToClipboard(arrayBuffer);
-    }, console.error);
+    this.actor
+      .canvasToBlob(this.targetIdentifier)
+      .then(blob => blob.arrayBuffer())
+      .then(arrayBuffer => {
+        lazy.BrowserUtils.copyImageToClipboard(arrayBuffer);
+      }, console.error);
   }
 
   // Change current window to the URL of the image, video, or audio.
@@ -1746,7 +1755,7 @@ export class nsContextMenu {
     let referrerInfo = this.contentData.referrerInfo;
     let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
     if (this.onCanvas) {
-      this._canvasToBlobURL(this.targetIdentifier).then(blobURL => {
+      this.#canvasToBlobURL(this.targetIdentifier).then(blobURL => {
         this.window.openLinkIn(blobURL, where, {
           referrerInfo,
           triggeringPrincipal: systemPrincipal,
@@ -2140,14 +2149,14 @@ export class nsContextMenu {
     let cookieJarSettings = this.contentData.cookieJarSettings;
     if (this.onCanvas) {
       // Bypass cache, since it's a data: URL.
-      this._canvasToBlobURL(this.targetIdentifier).then(blobURL => {
+      this.#canvasToBlobURL(this.targetIdentifier).then(blobURL => {
         this.window.internalSave(
           blobURL,
           null, // originalURL
           null, // document
           "canvas.png",
           null, // content disposition
-          "image/png", // _canvasToBlobURL uses image/png by default.
+          "image/png", // #canvasToBlobURL uses image/png by default.
           true, // bypass cache
           "SaveImageTitle",
           null, // chosen data

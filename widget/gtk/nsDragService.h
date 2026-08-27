@@ -11,19 +11,10 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsBaseDragService.h"
-#include "nsCOMArray.h"
 #include "nsClipboard.h"
-#include "nsIObserver.h"
 #include "nsITimer.h"
 
-class nsICookieJarSettings;
 class nsWindow;
-
-namespace mozilla {
-namespace gfx {
-class SourceSurface;
-}
-}  // namespace mozilla
 
 class DragData final {
  public:
@@ -94,10 +85,9 @@ class DragData final {
 /**
  * GTK native nsIDragSession implementation
  */
-class nsDragSession : public nsBaseDragSession, public nsIObserver {
+class nsDragSession : public nsBaseDragSession {
  public:
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_NSIOBSERVER
 
   // nsIDragSession
   NS_IMETHOD SetCanDrop(bool aCanDrop) override;
@@ -115,7 +105,6 @@ class nsDragSession : public nsBaseDragSession, public nsIObserver {
 
   MOZ_CAN_RUN_SCRIPT nsresult
   EndDragSessionImpl(bool aDoneDrag, uint32_t aKeyModifiers) override;
-  MOZ_CAN_RUN_SCRIPT void EndDragSessionMainThread();
 
   class AutoEventLoop {
     RefPtr<nsDragSession> mSession;
@@ -189,10 +178,6 @@ class nsDragSession : public nsBaseDragSession, public nsIObserver {
   // is the current target drag context contain a list?
   virtual bool IsTargetContextList(void) = 0;
 
-  static gboolean TaskRemoveTempFiles(gpointer data);
-
-  bool RemoveTempFiles();
-
   // We can't overload SetDragAction()/GetDragAction() with
   // the same type of param (int) so use Gtk() suffix.
   void SetDragActionGtk(GdkDragAction aGdkAction);
@@ -241,14 +226,6 @@ class nsDragSession : public nsBaseDragSession, public nsIObserver {
   // or currently running.  It is 0 if no task is scheduled or running.
   guint mTaskSource = 0;
 
-  // stores all temporary files
-  nsCOMArray<nsIFile> mTemporaryFiles;
-  // timer to trigger deletion of temporary files
-  guint mTempFileTimerID;
-  // the url of the temporary file that has been created in the current drag
-  // session
-  nsTArray<nsCString> mTempFileUrls;
-
   // How deep we're nested in event loops
   static int sEventLoopDepth;
 
@@ -256,6 +233,17 @@ class nsDragSession : public nsBaseDragSession, public nsIObserver {
   bool mCanDrop = false;
 
  public:
+  static const char gMozUrlType[];
+  static const char gMimeListType[];
+  static const char gTextUriListType[];
+  static const char gTextPlainUTF8Type[];
+  static const char gXdndDirectSaveType[];
+  static const char gTabDropType[];
+  static const char gPortalFile[];
+  static const char gPortalFileTransfer[];
+  static const char gUTF8STRINGType[];
+  static const char gSTRINGType[];
+
   static GdkAtom sJPEGImageMimeAtom;
   static GdkAtom sJPGImageMimeAtom;
   static GdkAtom sPNGImageMimeAtom;
@@ -281,51 +269,9 @@ class nsDragSession : public nsBaseDragSession, public nsIObserver {
 
   nsDragSession();
 
-  // nsBaseDragSession
-  MOZ_CAN_RUN_SCRIPT virtual nsresult InvokeDragSessionImpl(
-      nsIWidget* aWidget, nsIArray* anArrayTransferables,
-      const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
-      uint32_t aActionType) override;
-
-  // nsIDragSession
-  MOZ_CAN_RUN_SCRIPT NS_IMETHOD InvokeDragSession(
-      nsIWidget* aWidget, nsINode* aDOMNode, nsIPrincipal* aPrincipal,
-      nsIPolicyContainer* aPolicyContainer,
-      nsICookieJarSettings* aCookieJarSettings, nsIArray* anArrayTransferables,
-      uint32_t aActionType, nsContentPolicyType aContentPolicyType) override;
-
   // Methods called from nsWindow to handle responding to GTK drag
   // destination signals
   virtual nsWindow* GetMostRecentDestWindow() = 0;
-
-  //  END PUBLIC API
-
-  // These methods are public only so that they can be called from functions
-  // with C calling conventions.  They are called for drags started with the
-  // invisible widget.
-  void SourceEndDragSession(GdkDragContext* aContext, gint aResult);
-  void SourceDataGet(GtkWidget* widget, GdkDragContext* context,
-                     GtkSelectionData* selection_data, guint32 aTime);
-  bool SourceDataGetText(nsITransferable* aItem, const nsACString& aMIMEType,
-                         bool aNeedToDoConversionToPlainText,
-                         GtkSelectionData* aSelectionData);
-  bool SourceDataGetImage(nsITransferable* aItem,
-                          GtkSelectionData* aSelectionData);
-  bool SourceDataGetXDND(nsITransferable* aItem, GdkDragContext* aContext,
-                         GtkSelectionData* aSelectionData);
-  void SourceDataGetUriList(GdkDragContext* aContext,
-                            GtkSelectionData* aSelectionData,
-                            uint32_t aDragItems);
-  bool SourceDataAppendURLFileItem(nsACString& aURI, nsITransferable* aItem);
-  bool SourceDataAppendURLItem(nsITransferable* aItem, bool aExternalDrop,
-                               nsACString& aURI);
-  void SourceBeginDrag(GdkDragContext* aContext);
-
-  // set the drag icon during drag-begin
-  void SetDragIcon(GdkDragContext* aContext);
-
-  void MarkAsActive() { mActive = true; }
-  bool IsActive() const { return mActive; }
 
  protected:
   virtual ~nsDragSession();
@@ -348,26 +294,6 @@ class nsDragSession : public nsBaseDragSession, public nsIObserver {
   // specific flavor
   RefPtr<DragData> GetDragData(GdkAtom aRequestedFlavor);
   virtual bool GetDragDataImpl(GdkAtom aRequestedFlavor) = 0;
-
-  // attempts to create a semi-transparent drag image. Returns TRUE if
-  // successful, FALSE if not
-  bool SetAlphaPixmap(mozilla::gfx::SourceSurface* aPixbuf,
-                      GdkDragContext* aContext, int32_t aXOffset,
-                      int32_t aYOffset,
-                      const mozilla::LayoutDeviceIntRect& dragRect);
-
-  // source side vars
-
-  // the source of our drags
-  GtkWidget* mHiddenWidget;
-  // Workaround for Bug 1979719. We consider D&D session running only after
-  // first "move" event on Wayland.
-  bool mActive = false;
-
-  // get a list of the sources in gtk's format
-  GtkTargetList* GetSourceList(void);
-
-  nsresult CreateTempFile(nsITransferable* aItem, nsACString& aURI);
 };
 
 /**

@@ -79,6 +79,7 @@ private const val FILE_REGEX = "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}
  * @param versionCode The version code of the application.
  * @param releaseChannel The release channel of the application.
  * @param distributionId The distribution id of the application.
+ * @param startTime the process start time in milliseconds, injectable for testing.
  */
 @Suppress("LargeClass")
 class MozillaSocorroService(
@@ -94,9 +95,9 @@ class MozillaSocorroService(
     private var versionCode: String = DEFAULT_VERSION_CODE,
     private val releaseChannel: String = DEFAULT_RELEASE_CHANNEL,
     private val distributionId: String = DEFAULT_DISTRIBUTION_ID,
+    private val startTime: Long = System.currentTimeMillis(),
 ) : CrashReporterService {
     private val logger = Logger("mozac/MozillaSocorroCrashHelperService")
-    private val startTime = System.currentTimeMillis()
     private val ignoreKeys = hashSetOf("URL", "ServerURL", "StackTraces")
 
     override val id: String = "socorro"

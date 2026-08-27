@@ -6,12 +6,12 @@
 
 #  include "mozilla/TaggedAnonymousMemory.h"
 
-#  include <sys/types.h>
+#  include <stdint.h>
 #  include <sys/mman.h>
 #  include <sys/prctl.h>
 #  include <sys/syscall.h>
+#  include <sys/types.h>
 #  include <unistd.h>
-#  include <stdint.h>
 
 #  include "mozilla/Assertions.h"
 

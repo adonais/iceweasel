@@ -1,4 +1,4 @@
-<html xmlns="http://www.w3.org/1999/xhtml" class="reftest-wait">
+<html xmlns="http://www.w3.org/1999/xhtml" class="reftest-wait reftest-no-flush">
   <head>
     <title>Testcases for SVG fragment identifiers with media fragments</title>
     <style>
@@ -28,7 +28,7 @@ iframe {
       function doTest() {
         document.getElementById("replace").setAttribute("src","fragmentIdentifier-rect-01.svg#svgView(viewBox(0,0,100,100);transform(translate(0,200)))&amp;t=0");
         document.getElementById("remove").setAttribute("src","fragmentIdentifier-rect-01.svg#svgView(viewBox(0,200,100,100))&amp;t=0");
-        document.documentElement.removeAttribute("class");
+        document.documentElement.classList.remove("reftest-wait");
       }
     </script>
   </body>

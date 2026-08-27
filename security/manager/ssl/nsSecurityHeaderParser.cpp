@@ -161,7 +161,10 @@ void nsSecurityHeaderParser::DirectiveValue() {
   }
 }
 
-void nsSecurityHeaderParser::Token() { while (Accept(IsTokenSymbol)); }
+void nsSecurityHeaderParser::Token() {
+  while (Accept(IsTokenSymbol)) {
+  }
+}
 
 void nsSecurityHeaderParser::QuotedString() {
   while (true) {

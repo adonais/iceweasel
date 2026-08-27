@@ -32,7 +32,6 @@
 #include "prtypes.h"
 #include "prinrval.h"
 
-
 PR_BEGIN_EXTERN_C
 
 /**********************************************************************/
@@ -42,8 +41,8 @@ PR_BEGIN_EXTERN_C
 typedef struct PRAlarm PRAlarm;
 typedef struct PRAlarmID PRAlarmID;
 
-typedef PRBool (PR_CALLBACK *PRPeriodicAlarmFn)(
-    PRAlarmID *id, void *clientData, PRUint32 late);
+typedef PRBool(PR_CALLBACK* PRPeriodicAlarmFn)(PRAlarmID* id, void* clientData,
+                                               PRUint32 late);
 
 /**********************************************************************/
 /****************************** FUNCTIONS *****************************/
@@ -67,7 +66,8 @@ typedef PRBool (PR_CALLBACK *PRPeriodicAlarmFn)(
 ** MEMORY:      The object (PRAlarm) and a thread to support notifications.
 ** ALGORITHM:   N/A
 ***********************************************************************/
-NSPR_API(PRAlarm*) PR_CreateAlarm(void);
+NSPR_API(PRAlarm*)
+PR_CreateAlarm(void);
 
 /***********************************************************************
 ** FUNCTION:    PR_DestroyAlarm
@@ -87,7 +87,8 @@ NSPR_API(PRAlarm*) PR_CreateAlarm(void);
 ** MEMORY:      N/A
 ** ALGORITHM:   N/A
 ***********************************************************************/
-NSPR_API(PRStatus) PR_DestroyAlarm(PRAlarm *alarm);
+NSPR_API(PRStatus)
+PR_DestroyAlarm(PRAlarm* alarm);
 
 /***********************************************************************
 ** FUNCTION:    PR_SetAlarm
@@ -125,9 +126,9 @@ NSPR_API(PRStatus) PR_DestroyAlarm(PRAlarm *alarm);
 **              The amount of lateness of one notification is taken into
 **              account on the next in an attempt to avoid long term slew.
 ***********************************************************************/
-NSPR_API(PRAlarmID*) PR_SetAlarm(
-    PRAlarm *alarm, PRIntervalTime period, PRUint32 rate,
-    PRPeriodicAlarmFn function, void *clientData);
+NSPR_API(PRAlarmID*)
+PR_SetAlarm(PRAlarm* alarm, PRIntervalTime period, PRUint32 rate,
+            PRPeriodicAlarmFn function, void* clientData);
 
 /***********************************************************************
 ** FUNCTION:    PR_ResetAlarm
@@ -151,8 +152,8 @@ NSPR_API(PRAlarmID*) PR_SetAlarm(
 ** MEMORY:      N/A.
 ** ALGORITHM:   See PR_SetAlarm().
 ***********************************************************************/
-NSPR_API(PRStatus) PR_ResetAlarm(
-    PRAlarmID *id, PRIntervalTime period, PRUint32 rate);
+NSPR_API(PRStatus)
+PR_ResetAlarm(PRAlarmID* id, PRIntervalTime period, PRUint32 rate);
 
 PR_END_EXTERN_C
 

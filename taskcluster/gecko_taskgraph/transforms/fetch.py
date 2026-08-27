@@ -140,6 +140,7 @@ def make_task(config, jobs):
             },
             "run": {
                 "using": "run-task",
+                "clone-with": "hg",
                 "checkout": False,
                 "command": job["command"],
             },

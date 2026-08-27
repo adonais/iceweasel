@@ -81,9 +81,7 @@ auto WebrtcGlobalStatsHistory::Entry::MakeSdpElementsSince(
   AutoCleanLinkedList<WebrtcGlobalStatsHistory::Entry::SdpElement> result;
   for (auto& sdpHist : aSdpHistory) {
     if (!aSdpAfter || aSdpAfter.value() < sdpHist.mTimestamp) {
-      auto* element = new SdpElement();
-      element->sdp = sdpHist;
-      result.insertBack(element);
+      result.insertBack(new SdpElement(std::move(sdpHist)));
     }
   }
   return result;

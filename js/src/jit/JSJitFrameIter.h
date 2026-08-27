@@ -315,7 +315,7 @@ class RInstructionResults {
 
   RInstructionResults& operator=(RInstructionResults&& rhs);
 
-  ~RInstructionResults();
+  ~RInstructionResults() = default;
 
   [[nodiscard]] bool init(JSContext* cx, uint32_t numResults);
   bool isInitialized() const;

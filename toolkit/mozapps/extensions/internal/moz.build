@@ -9,6 +9,7 @@ EXTRA_JS_MODULES.addons += [
     "crypto-utils.sys.mjs",
     "ProductAddonChecker.sys.mjs",
     "siteperms-addon-utils.sys.mjs",
+    "ThemesBundledLocalization.sys.mjs",
     "XPIDatabase.sys.mjs",
     "XPIExports.sys.mjs",
     "XPIInstall.sys.mjs",

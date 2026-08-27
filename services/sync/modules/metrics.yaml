@@ -34,8 +34,6 @@ synced_tabs:
           was there a filter enabled
         type: string
     telemetry_mirror: Synced_tabs_Click_FxaAvatarMenu
-    no_lint:
-      - COMMON_PREFIX
 
   click_fxa_app_menu:
     type: event
@@ -49,8 +47,6 @@ synced_tabs:
     expires: never
     extra_keys: *synced_tabs_click_extra
     telemetry_mirror: Synced_tabs_Click_FxaAppMenu
-    no_lint:
-      - COMMON_PREFIX
 
   click_synced_tabs_sidebar:
     type: event
@@ -64,8 +60,6 @@ synced_tabs:
     expires: never
     extra_keys: *synced_tabs_click_extra
     telemetry_mirror: Synced_tabs_Click_SyncedTabsSidebar
-    no_lint:
-      - COMMON_PREFIX
 
 fxa_avatar_menu:
   click_account_settings:
@@ -112,8 +106,6 @@ fxa_avatar_menu:
           "manage_devices" (opened device management).
         type: string
     telemetry_mirror: Fxa_avatar_menu_Click_AccountSettings
-    no_lint:
-      - COMMON_PREFIX
 
   click_cad:
     type: event
@@ -128,8 +120,6 @@ fxa_avatar_menu:
     expires: never
     extra_keys: *fxa_avatar_menu_click_extra
     telemetry_mirror: Fxa_avatar_menu_Click_Cad
-    no_lint:
-      - COMMON_PREFIX
 
   click_login:
     type: event
@@ -144,8 +134,6 @@ fxa_avatar_menu:
     expires: never
     extra_keys: *fxa_avatar_menu_click_extra
     telemetry_mirror: Fxa_avatar_menu_Click_Login
-    no_lint:
-      - COMMON_PREFIX
 
   click_send_tab:
     type: event
@@ -182,8 +170,6 @@ fxa_avatar_menu:
           "all_devices" (sent to all devices), or "manage_devices" (opened device management).
         type: string
     telemetry_mirror: Fxa_avatar_menu_Click_SendTab
-    no_lint:
-      - COMMON_PREFIX
 
   send_tab_exposed:
     type: event
@@ -214,8 +200,6 @@ fxa_avatar_menu:
         description: >
           Number of connected devices available to send tabs to
         type: string
-    no_lint:
-      - COMMON_PREFIX
 
   send_tab_opened:
     type: event
@@ -227,8 +211,6 @@ fxa_avatar_menu:
     notification_emails: *fxa_avatar_menu_send_tab_emails
     expires: never
     extra_keys: *fxa_avatar_menu_send_tab_extra
-    no_lint:
-      - COMMON_PREFIX
 
   click_sync_now:
     type: event
@@ -243,8 +225,6 @@ fxa_avatar_menu:
     expires: never
     extra_keys: *fxa_avatar_menu_click_extra
     telemetry_mirror: Fxa_avatar_menu_Click_SyncNow
-    no_lint:
-      - COMMON_PREFIX
 
   click_sync_settings:
     type: event
@@ -259,8 +239,6 @@ fxa_avatar_menu:
     expires: never
     extra_keys: *fxa_avatar_menu_click_extra
     telemetry_mirror: Fxa_avatar_menu_Click_SyncSettings
-    no_lint:
-      - COMMON_PREFIX
 
   click_sync_tabs:
     type: event
@@ -275,8 +253,6 @@ fxa_avatar_menu:
     expires: never
     extra_keys: *fxa_avatar_menu_click_extra
     telemetry_mirror: Fxa_avatar_menu_Click_SyncTabs
-    no_lint:
-      - COMMON_PREFIX
 
   click_sync_tabs_sidebar:
     type: event
@@ -291,8 +267,6 @@ fxa_avatar_menu:
     expires: never
     extra_keys: *fxa_avatar_menu_click_extra
     telemetry_mirror: Fxa_avatar_menu_Click_SyncTabsSidebar
-    no_lint:
-      - COMMON_PREFIX
 
   click_toolbar_icon:
     type: event
@@ -307,8 +281,6 @@ fxa_avatar_menu:
     expires: never
     extra_keys: *fxa_avatar_menu_click_extra
     telemetry_mirror: Fxa_avatar_menu_Click_ToolbarIcon
-    no_lint:
-      - COMMON_PREFIX
 
   click_unver_sync_settings:
     type: event
@@ -323,8 +295,6 @@ fxa_avatar_menu:
     expires: never
     extra_keys: *fxa_avatar_menu_click_extra
     telemetry_mirror: Fxa_avatar_menu_Click_UnverSyncSettings
-    no_lint:
-      - COMMON_PREFIX
 
   click_open_monitor:
     type: event
@@ -339,8 +309,6 @@ fxa_avatar_menu:
     expires: never
     extra_keys: *fxa_avatar_menu_click_extra
     telemetry_mirror: Fxa_avatar_menu_Click_OpenMonitor
-    no_lint:
-      - COMMON_PREFIX
 
   click_open_send:
     type: event
@@ -355,8 +323,6 @@ fxa_avatar_menu:
     expires: never
     extra_keys: *fxa_avatar_menu_click_extra
     telemetry_mirror: Fxa_avatar_menu_Click_OpenSend
-    no_lint:
-      - COMMON_PREFIX
 
   click_monitor_cta:
     type: event
@@ -371,8 +337,6 @@ fxa_avatar_menu:
     expires: never
     extra_keys: *fxa_avatar_menu_click_extra
     telemetry_mirror: Fxa_avatar_menu_Click_MonitorCta
-    no_lint:
-      - COMMON_PREFIX
 
   click_relay_cta:
     type: event
@@ -387,8 +351,6 @@ fxa_avatar_menu:
     expires: never
     extra_keys: *fxa_avatar_menu_click_extra
     telemetry_mirror: Fxa_avatar_menu_Click_RelayCta
-    no_lint:
-      - COMMON_PREFIX
 
   click_vpn_cta:
     type: event
@@ -403,8 +365,6 @@ fxa_avatar_menu:
     expires: never
     extra_keys: *fxa_avatar_menu_click_extra
     telemetry_mirror: Fxa_avatar_menu_Click_VpnCta
-    no_lint:
-      - COMMON_PREFIX
 
   click_sync_cta:
     type: event
@@ -419,8 +379,6 @@ fxa_avatar_menu:
     expires: never
     extra_keys: *fxa_avatar_menu_click_extra
     telemetry_mirror: Fxa_avatar_menu_Click_SyncCta
-    no_lint:
-      - COMMON_PREFIX
 
 fxa_app_menu:
   click_account_settings:
@@ -465,8 +423,6 @@ fxa_app_menu:
           "manage_devices" (opened device management).
         type: string
     telemetry_mirror: Fxa_app_menu_Click_AccountSettings
-    no_lint:
-      - COMMON_PREFIX
 
   click_cad:
     type: event
@@ -481,8 +437,6 @@ fxa_app_menu:
     expires: never
     extra_keys: *fxa_app_menu_click_extra
     telemetry_mirror: Fxa_app_menu_Click_Cad
-    no_lint:
-      - COMMON_PREFIX
 
   click_login:
     type: event
@@ -497,8 +451,6 @@ fxa_app_menu:
     expires: never
     extra_keys: *fxa_app_menu_click_extra
     telemetry_mirror: Fxa_app_menu_Click_Login
-    no_lint:
-      - COMMON_PREFIX
 
   click_send_tab:
     type: event
@@ -535,8 +487,6 @@ fxa_app_menu:
           "all_devices" (sent to all devices), or "manage_devices" (opened device management).
         type: string
     telemetry_mirror: Fxa_app_menu_Click_SendTab
-    no_lint:
-      - COMMON_PREFIX
 
   send_tab_exposed:
     type: event
@@ -567,8 +517,6 @@ fxa_app_menu:
         description: >
           Number of connected devices available to send tabs to
         type: string
-    no_lint:
-      - COMMON_PREFIX
 
   send_tab_opened:
     type: event
@@ -580,8 +528,6 @@ fxa_app_menu:
     notification_emails: *fxa_app_menu_send_tab_emails
     expires: never
     extra_keys: *fxa_app_menu_send_tab_extra
-    no_lint:
-      - COMMON_PREFIX
 
   click_sync_now:
     type: event
@@ -596,8 +542,6 @@ fxa_app_menu:
     expires: never
     extra_keys: *fxa_app_menu_click_extra
     telemetry_mirror: Fxa_app_menu_Click_SyncNow
-    no_lint:
-      - COMMON_PREFIX
 
   click_sync_settings:
     type: event
@@ -612,8 +556,6 @@ fxa_app_menu:
     expires: never
     extra_keys: *fxa_app_menu_click_extra
     telemetry_mirror: Fxa_app_menu_Click_SyncSettings
-    no_lint:
-      - COMMON_PREFIX
 
   click_sync_tabs:
     type: event
@@ -628,8 +570,6 @@ fxa_app_menu:
     expires: never
     extra_keys: *fxa_app_menu_click_extra
     telemetry_mirror: Fxa_app_menu_Click_SyncTabs
-    no_lint:
-      - COMMON_PREFIX
 
   click_sync_tabs_sidebar:
     type: event
@@ -644,8 +584,6 @@ fxa_app_menu:
     expires: never
     extra_keys: *fxa_app_menu_click_extra
     telemetry_mirror: Fxa_app_menu_Click_SyncTabsSidebar
-    no_lint:
-      - COMMON_PREFIX
 
   click_toolbar_icon:
     type: event
@@ -660,8 +598,6 @@ fxa_app_menu:
     expires: never
     extra_keys: *fxa_app_menu_click_extra
     telemetry_mirror: Fxa_app_menu_Click_ToolbarIcon
-    no_lint:
-      - COMMON_PREFIX
 
   click_unver_sync_settings:
     type: event
@@ -676,8 +612,6 @@ fxa_app_menu:
     expires: never
     extra_keys: *fxa_app_menu_click_extra
     telemetry_mirror: Fxa_app_menu_Click_UnverSyncSettings
-    no_lint:
-      - COMMON_PREFIX
 
   click_open_monitor:
     type: event
@@ -692,8 +626,6 @@ fxa_app_menu:
     expires: never
     extra_keys: *fxa_app_menu_click_extra
     telemetry_mirror: Fxa_app_menu_Click_OpenMonitor
-    no_lint:
-      - COMMON_PREFIX
 
   click_open_send:
     type: event
@@ -708,8 +640,6 @@ fxa_app_menu:
     expires: never
     extra_keys: *fxa_app_menu_click_extra
     telemetry_mirror: Fxa_app_menu_Click_OpenSend
-    no_lint:
-      - COMMON_PREFIX
 
   click_monitor_cta:
     type: event
@@ -724,8 +654,6 @@ fxa_app_menu:
     expires: never
     extra_keys: *fxa_app_menu_click_extra
     telemetry_mirror: Fxa_app_menu_Click_MonitorCta
-    no_lint:
-      - COMMON_PREFIX
 
   click_relay_cta:
     type: event
@@ -740,8 +668,6 @@ fxa_app_menu:
     expires: never
     extra_keys: *fxa_app_menu_click_extra
     telemetry_mirror: Fxa_app_menu_Click_RelayCta
-    no_lint:
-      - COMMON_PREFIX
 
   click_vpn_cta:
     type: event
@@ -756,8 +682,6 @@ fxa_app_menu:
     expires: never
     extra_keys: *fxa_app_menu_click_extra
     telemetry_mirror: Fxa_app_menu_Click_VpnCta
-    no_lint:
-      - COMMON_PREFIX
 
   click_sync_cta:
     type: event
@@ -772,8 +696,6 @@ fxa_app_menu:
     expires: never
     extra_keys: *fxa_app_menu_click_extra
     telemetry_mirror: Fxa_app_menu_Click_SyncCta
-    no_lint:
-      - COMMON_PREFIX
 
 tab_context_menu:
   send_tab_exposed:
@@ -793,8 +715,6 @@ tab_context_menu:
         description: >
           Number of connected devices available to send tabs to
         type: string
-    no_lint:
-      - COMMON_PREFIX
 
   send_tab_opened:
     type: event
@@ -806,8 +726,6 @@ tab_context_menu:
     notification_emails: *tab_context_menu_send_tab_emails
     expires: never
     extra_keys: *tab_context_menu_send_tab_extra
-    no_lint:
-      - COMMON_PREFIX
 
   click_send_tab:
     type: event
@@ -829,8 +747,6 @@ tab_context_menu:
           The action selected by the user. Possible values are "device" (sent to specific device),
           "all_devices" (sent to all devices), or "manage_devices" (opened device management).
         type: string
-    no_lint:
-      - COMMON_PREFIX
 
 page_context_menu:
   send_tab_exposed:
@@ -854,8 +770,6 @@ page_context_menu:
         description: >
           The type of content being sent. Possible values are "link" or "page".
         type: string
-    no_lint:
-      - COMMON_PREFIX
 
   send_tab_opened:
     type: event
@@ -867,8 +781,6 @@ page_context_menu:
     notification_emails: *page_context_menu_send_tab_emails
     expires: never
     extra_keys: *page_context_menu_send_tab_extra
-    no_lint:
-      - COMMON_PREFIX
 
   click_send_tab:
     type: event
@@ -894,8 +806,6 @@ page_context_menu:
           The action selected by the user. Possible values are "device" (sent to specific device),
           "all_devices" (sent to all devices), or "manage_devices" (opened device management).
         type: string
-    no_lint:
-      - COMMON_PREFIX
 
 send_tab_toolbar:
   send_tab_opened:
@@ -957,8 +867,6 @@ firefoxview:
         description: >
           Number of connected devices available to send tabs to
         type: string
-    no_lint:
-      - COMMON_PREFIX
 
   send_tab_opened:
     type: event
@@ -970,8 +878,6 @@ firefoxview:
     notification_emails: *firefoxview_send_tab_emails
     expires: never
     extra_keys: *firefoxview_send_tab_extra
-    no_lint:
-      - COMMON_PREFIX
 
   click_send_tab:
     type: event
@@ -993,8 +899,6 @@ firefoxview:
           The action selected by the user. Possible values are "device" (sent to specific device),
           "all_devices" (sent to all devices), or "manage_devices" (opened device management).
         type: string
-    no_lint:
-      - COMMON_PREFIX
 
 deletion.request:
   sync_device_id:
@@ -1062,8 +966,6 @@ sync:
       - sync-dev@mozilla.org
     expires: never
     telemetry_mirror: WEAVE_DEVICE_COUNT_DESKTOP
-    no_lint:
-      - COMMON_PREFIX
 
   device_count_mobile:
     type: custom_distribution
@@ -1085,8 +987,6 @@ sync:
       - sync-dev@mozilla.org
     expires: never
     telemetry_mirror: WEAVE_DEVICE_COUNT_MOBILE
-    no_lint:
-      - COMMON_PREFIX
 
   maintenance_fix_bookmarks:
     type: event

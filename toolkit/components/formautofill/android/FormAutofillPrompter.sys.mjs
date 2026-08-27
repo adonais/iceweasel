@@ -7,6 +7,8 @@
  * the doorhager UI for formautofill related features.
  */
 
+import { AutofillDataTypes } from "resource://gre/modules/shared/AutofillDataTypes.sys.mjs";
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -42,53 +44,36 @@ export let FormAutofillPrompter = {
     };
   },
 
-  async promptToSaveAddress(
-    browser,
-    storage,
-    flowId,
-    { oldRecord, newRecord }
-  ) {
+  async promptToSave(type, browser, storage, flowId, { oldRecord, newRecord }) {
+    const config = {
+      [AutofillDataTypes.ADDRESS]: {
+        message: record =>
+          this._createAddressMessage([lazy.Address.fromGecko(record)]),
+        onSave: value => lazy.GeckoViewAutocomplete.onAddressSave(value),
+      },
+      [AutofillDataTypes.CREDIT_CARD]: {
+        message: record =>
+          this._createMessage([lazy.CreditCard.fromGecko(record)]),
+        onSave: value => lazy.GeckoViewAutocomplete.onCreditCardSave(value),
+      },
+    }[type];
+
+    // Android only supports capturing addresses and credit cards.
+    if (!config) {
+      return;
+    }
+
     if (oldRecord) {
       newRecord = { ...oldRecord, ...newRecord };
     }
 
     const prompt = new lazy.GeckoViewPrompter(browser.documentGlobal);
-    prompt.asyncShowPrompt(
-      this._createAddressMessage([lazy.Address.fromGecko(newRecord)]),
-      result => {
-        const selectedAddress = result?.selection?.value;
-
-        if (!selectedAddress) {
-          return;
-        }
-
-        lazy.GeckoViewAutocomplete.onAddressSave(selectedAddress);
+    prompt.asyncShowPrompt(config.message(newRecord), result => {
+      const selected = result?.selection?.value;
+      if (!selected) {
+        return;
       }
-    );
-  },
-
-  async promptToSaveCreditCard(
-    browser,
-    storage,
-    flowId,
-    { oldRecord, newRecord }
-  ) {
-    if (oldRecord) {
-      newRecord = { ...oldRecord, ...newRecord };
-    }
-
-    const prompt = new lazy.GeckoViewPrompter(browser.documentGlobal);
-    prompt.asyncShowPrompt(
-      this._createMessage([lazy.CreditCard.fromGecko(newRecord)]),
-      result => {
-        const selectedCreditCard = result?.selection?.value;
-
-        if (!selectedCreditCard) {
-          return;
-        }
-
-        lazy.GeckoViewAutocomplete.onCreditCardSave(selectedCreditCard);
-      }
-    );
+      config.onSave(selected);
+    });
   },
 };

@@ -39,6 +39,7 @@ task-defaults:
         chain-of-trust: true
         max-run-time: 7200
     run:
+        clone-with: hg
         using: mozharness
         config:
             - partner_repacks/release_mozilla-release_desktop.py

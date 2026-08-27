@@ -13,12 +13,43 @@ const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
 
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("security.OCSP.enabled");
+  if (gConnectionRejector) {
+    stopConnectionRejector();
+  }
 });
 
 Services.prefs.setIntPref("security.OCSP.enabled", 1);
 
 addCertFromFile(certdb, "bad_certs/evroot.pem", "CTu,,");
 addCertFromFile(certdb, "bad_certs/ev-test-intermediate.pem", ",,");
+
+const SERVER_PORT = 8888;
+
+// For some tests we expect the OCSP responder to fail. http://localhost:8888/
+// How long it takes a connection to a port with no listener to be refused is
+// platform-dependent, and on Windows it is slow enough that the accumulated
+// OCSP fetches push the test over the xpcshell timeout.
+// Keep a socket on the port instead, so that every OCSP fetch
+// that isn't served by the responder fails promptly on all platforms.
+let gConnectionRejector = null;
+
+function startConnectionRejector() {
+  gConnectionRejector = Cc[
+    "@mozilla.org/network/server-socket;1"
+  ].createInstance(Ci.nsIServerSocket);
+  gConnectionRejector.init(SERVER_PORT, true, -1);
+  gConnectionRejector.asyncListen({
+    onSocketAccepted(_socket, transport) {
+      transport.close(Cr.NS_OK);
+    },
+    onStopListening() {},
+  });
+}
+
+function stopConnectionRejector() {
+  gConnectionRejector.close();
+  gConnectionRejector = null;
+}
 
 // For expired.example.com, the platform will make a connection that will fail.
 // Using information gathered at that point, an override will be added and
@@ -128,7 +159,6 @@ function add_one_ev_test(resumed) {
 // clearing the session cache, we should connect successfully again, this time
 // with session resumption. The certificate should again be EV in debug builds.
 function add_resume_ev_test() {
-  const SERVER_PORT = 8888;
   let expectedRequestPaths = ["ev-test"];
   let responseTypes = ["good"];
   // Since we cache OCSP responses, we only ever actually serve one set.
@@ -136,6 +166,7 @@ function add_resume_ev_test() {
   // If we don't wrap this in an `add_test`, the OCSP responder will be running
   // while we are actually running unrelated testcases, which can disrupt them.
   add_test(() => {
+    stopConnectionRejector();
     ocspResponder = startOCSPResponder(
       SERVER_PORT,
       "localhost",
@@ -156,7 +187,10 @@ function add_resume_ev_test() {
   add_one_ev_test(true);
 
   add_test(() => {
-    ocspResponder.stop(run_next_test);
+    ocspResponder.stop(() => {
+      startConnectionRejector();
+      run_next_test();
+    });
   });
 }
 
@@ -277,6 +311,10 @@ function add_resumption_tests() {
 
 function run_test() {
   add_tls_server_setup("BadCertAndPinningServer", "bad_certs");
+  add_test(() => {
+    startConnectionRejector();
+    run_next_test();
+  });
   add_resumption_tests();
   // Enable external session cache and reset the status.
   add_test(function () {

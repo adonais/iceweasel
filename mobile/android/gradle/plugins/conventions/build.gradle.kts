@@ -5,7 +5,8 @@
 plugins {
     `kotlin-dsl`
     alias(libs.plugins.android.lint.plugin)
-    alias(libs.plugins.kotlin.serialization)
+    // kotlin-dsl builds against Gradle's embedded Kotlin, and warns if another version is applied.
+    id("org.jetbrains.kotlin.plugin.serialization") version embeddedKotlinVersion
 }
 
 group = "org.mozilla"

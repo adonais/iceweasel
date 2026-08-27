@@ -51,10 +51,12 @@ internal fun buildIPProtectionState(
     accountStatus: AccountStatus = AccountStatus.Authenticated,
     serviceStatus: ServiceState = ServiceState.Uninitialized,
     proxyStatus: ProxyStatus = Uninitialized,
+    eligibilityStatus: EligibilityStatus = EligibilityStatus.Unknown,
 ): IPProtectionState {
     return IPProtectionState(
         accountState = AccountState(accountStatus),
         serviceStatus = serviceStatus,
         proxyStatus = proxyStatus,
+        eligibilityStatus = eligibilityStatus,
     )
 }

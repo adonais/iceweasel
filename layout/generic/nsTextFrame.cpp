@@ -7208,30 +7208,8 @@ bool nsTextFrame::PaintTextWithSelectionColors(
                                    *aParams.textPaintStyle, rangeStyles[index]);
         if (colors.mHasBackground) {
           if (textDrawer) {
-            nsRectCornerRadii radii;
-            bool hasRadii = false;
-            if (PresContext()->Document()->ChromeRulesEnabled()) {
-              if (auto* style =
-                      aParams.textPaintStyle->GetSelectionPseudoStyle()) {
-                nsSize size = LayoutDeviceRect::ToAppUnits(selectionRect,
-                                                           appUnitsPerDevPixel)
-                                  .Size();
-
-                const auto& borderRadius = style->StyleBorder()->mBorderRadius;
-                const auto& cornerShape = style->StyleBorder()->mCornerShape;
-                hasRadii = nsIFrame::ComputeBorderRadii(
-                    borderRadius, cornerShape, size, size, {}, radii);
-              }
-            }
-
-            if (hasRadii) {
-              textDrawer->AppendSelectionRoundRect(
-                  selectionRect, ToDeviceColor(colors.mBackground), radii,
-                  appUnitsPerDevPixel);
-            } else {
-              textDrawer->AppendSelectionRect(
-                  selectionRect, ToDeviceColor(colors.mBackground));
-            }
+            textDrawer->AppendSelectionRect(selectionRect,
+                                            ToDeviceColor(colors.mBackground));
           } else {
             PaintSelectionBackground(*aParams.context->GetDrawTarget(),
                                      colors.mBackground, aParams.dirtyRect,
@@ -8124,7 +8102,23 @@ void nsTextFrame::DrawTextRunAndDecorations(Range aRange,
     }
     clipRect.emplace(x, y, w, h);
     clipRect->Scale(1 / app);
-    clipRect->Round();
+    // Round the inline axis to nearest: that's the axis the clip exists for,
+    // and it keeps the clips of adjacent ranges tiling exactly, so a decoration
+    // is neither dropped nor drawn twice where two ranges meet. The block axis
+    // only bounds the rect - it spans the ink overflow rect, which contains the
+    // decoration - so round it outward instead. An edge rounded inward there
+    // can land on the device pixel row the line was snapped to, and then the
+    // line is culled entirely rather than trimmed (bug 2059455).
+    gfxRect inlineRounded = *clipRect;
+    inlineRounded.Round();
+    clipRect->RoundOut();
+    if (verticalDec) {
+      clipRect->y = inlineRounded.y;
+      clipRect->height = inlineRounded.height;
+    } else {
+      clipRect->x = inlineRounded.x;
+      clipRect->width = inlineRounded.width;
+    }
   }
 
   typedef gfxFont::Metrics Metrics;
@@ -9726,7 +9720,7 @@ static bool FindFirstLetterRange(const CharacterDataBuffer& aBuffer,
   // after the virama would be acceptable). So results may be imperfect,
   // depending how the font has chosen to implement visible viramas.
   if (usesIndicHalfForms) {
-    while (i + 1 < length &&
+    while (i + 1 < length && iter.GetSkippedOffset() < aTextRun->GetLength() &&
            !aTextRun->IsLigatureGroupStart(iter.GetSkippedOffset())) {
       char32_t c = aBuffer.ScalarValueAt(AssertedCast<uint32_t>(aOffset + i));
       if (intl::UnicodeProperties::GetCombiningClass(c) ==

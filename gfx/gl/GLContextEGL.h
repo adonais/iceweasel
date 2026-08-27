@@ -83,6 +83,7 @@ class GLContextEGL final : public GLContext {
 
   virtual bool IsANGLE() const override { return mEgl->mLib->IsANGLE(); }
   virtual bool IsWARP() const override { return mEgl->mIsWARP; }
+  virtual bool IsD3DANGLE() const override { return mEgl->mLib->IsD3DANGLE(); }
 
   virtual bool BindTexImage() override;
 

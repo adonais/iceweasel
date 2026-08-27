@@ -14,6 +14,8 @@ import mozilla.components.feature.prompts.dialog.KEY_SESSION_ID
 import mozilla.components.feature.prompts.dialog.KEY_SHOULD_DISMISS_ON_LOAD
 import mozilla.components.feature.prompts.dialog.TestPromptFeature
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.assertNotNull
@@ -50,6 +52,30 @@ class AddressSaveDialogFragmentTest {
         assertEquals(promptRequestUID, fragment.promptRequestUID)
         assertEquals(false, fragment.shouldDismissOnLoad)
         assertEquals(address, fragment.address)
+    }
+
+    @Test
+    fun `GIVEN an address with a guid WHEN the fragment is created THEN it prompts to update`() {
+        val fragment = AddressSaveDialogFragment.newInstance(
+            sessionId = sessionId,
+            promptRequestUID = promptRequestUID,
+            shouldDismissOnLoad = false,
+            address = address,
+        )
+
+        assertTrue(fragment.isUpdate)
+    }
+
+    @Test
+    fun `GIVEN an address without a guid WHEN the fragment is created THEN it prompts to save`() {
+        val fragment = AddressSaveDialogFragment.newInstance(
+            sessionId = sessionId,
+            promptRequestUID = promptRequestUID,
+            shouldDismissOnLoad = false,
+            address = address.copy(guid = ""),
+        )
+
+        assertFalse(fragment.isUpdate)
     }
 
     @Test

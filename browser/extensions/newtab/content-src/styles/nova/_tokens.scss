@@ -26,11 +26,13 @@
   --background-color-warning: light-dark(var(--color-yellow-10), var(--color-yellow-70));
 
   /** border **/
-  --border-color: light-dark(var(--color-gray-30), var(--color-gray-45));
-  --border-color-deemphasized: light-dark(var(--color-gray-20), var(--color-gray-55));
+  --border-color: light-dark(var(--color-gray-30), var(--color-gray-40));
+  --border-color-deemphasized: light-dark(var(--color-gray-20), var(--color-gray-50));
   --border-color-error: light-dark(var(--color-red-50), var(--color-red-20));
-  --border-color-interactive: light-dark(var(--color-gray-35), var(--color-gray-50));
-  --border-color-interactive-disabled: light-dark(var(--color-gray-25), var(--color-gray-60));
+  --border-color-interactive: light-dark(var(--color-gray-35), var(--color-gray-40));
+  --border-color-interactive-hover: light-dark(var(--color-gray-45), var(--color-gray-20));
+  --border-color-interactive-active: light-dark(var(--color-gray-50), var(--color-gray-15));
+  --border-color-interactive-disabled: light-dark(var(--color-gray-25), var(--color-gray-55));
   --border-color-transparent: transparent;
   --border-radius-xsmall: 4px;
   --border-radius-small: 8px;
@@ -80,9 +82,12 @@
   --button-border-color-primary-selected: var(--button-border-color-primary);
   --button-border-color-selected: var(--button-border-color);
   --button-border-radius: var(--border-radius-xlarge);
+  --button-border-width-split: 0;
+  --button-gap-split: 0;
   --button-opacity-disabled: 0.7;
   --button-padding-inline-small: var(--space-medium);
   --button-size-icon-small: var(--size-item-medium);
+  --button-split-separator-background-color: var(--button-border-color);
   --button-text-color: light-dark(var(--color-violet-90), var(--color-gray-0));
   --button-text-color-destructive: light-dark(var(--color-white), var(--button-text-color-primary));
   --button-text-color-destructive-disabled: var(--button-text-color-destructive);
@@ -102,16 +107,13 @@
   --button-text-color-muted-selected: var(--button-text-color-muted-active);
   --button-text-color-primary: light-dark(var(--color-white), var(--color-gray-70));
   --button-text-color-primary-active: var(--button-text-color-primary);
-  --button-text-color-selected: light-dark(var(--button-text-color), var(--background-color-canvas));
+  --button-text-color-selected: var(--button-text-color);
 
   /** card **/
   --card-border-color: light-dark(rgba(0, 0, 0, 6%), rgba(255, 255, 255, 4%));
   --card-gap: var(--space-medium);
   --card-header-background-color: var(--button-background-color);
   --card-header-border-color: transparent;
-
-  /** checkbox **/
-  --checkbox-border-radius: var(--border-radius-xsmall);
 
   /** color **/
   --color-accent-attention: light-dark(var(--color-green-40), var(--color-green-30));
@@ -255,17 +257,22 @@
   /** info-bar **/
   --info-bar-margin-block-end: 0;
 
+  /** input **/
+  --input-search-border-radius: var(--border-radius-circle);
+
   /** page **/
   --page-main-content-width: 664px;
 
   /** panel **/
-  --panel-background-color: var(--background-color-box);
-  --panel-border-color: light-dark(var(--color-gray-10), var(--color-gray-60));
-  --panel-border-radius: var(--border-radius-large);
-  --panel-menuitem-border-radius: var(--button-border-radius);
-  --panel-padding: var(--panel-padding-block);
-  --panel-padding-block: 8px;
+  --panel-background-color: var(--popup-background-color);
+  --panel-border-color: var(--popup-border-color);
+  --panel-border-radius: var(--popup-border-radius);
+  --panel-menuitem-border-radius: var(--border-radius-large);
   --panel-text-color: var(--text-color);
+
+  /** popup **/
+  --popup-border-color: light-dark(var(--color-gray-10), var(--color-gray-65));
+  --popup-border-radius: var(--border-radius-xlarge);
 
   /** size **/
   --size-item-xsmall: 12px;
@@ -290,7 +297,7 @@
   --toolbar-field-background-color: var(--toolbar-background-color);
   --toolbar-field-background-color-focus: var(--background-color-box);
   --toolbar-field-border-color: light-dark(var(--color-gray-20), var(--color-gray-60));
-  --toolbar-field-border-color-focus: #FFF;
+  --toolbar-field-border-color-focus: var(--focus-outline-color);
   --toolbar-field-text-color: light-dark(var(--color-violet-desaturated-70), var(--color-violet-desaturated-10));
   --toolbar-field-text-color-focus: var(--toolbar-field-text-color);
   --toolbar-padding-inline: 6px;
@@ -306,7 +313,6 @@
   --toolbarbutton-outline-color-active: transparent;
   --toolbarbutton-outline-color-selected: var(--toolbarbutton-outline-color-active);
   --toolbarbutton-outline-offset: -1px;
-  --toolbarbutton-padding-inner-touch-narrow: 0;
 
   /** toolbox **/
   --toolbox-background-color-gradient-leading: light-dark(var(--color-violet-10), var(--color-violet-desaturated-70));
@@ -316,7 +322,6 @@
   /* This gradient is only used for Nova */
   --toolbox-background-gradient: linear-gradient(96deg, color-mix(var(--toolbox-background-color-gradient-leading) 50%, transparent) 39.84%, color-mix(var(--toolbox-background-color-gradient-trailing) 50%, transparent) 101.72%);
   --toolbox-text-color: var(--text-color);
-  --toolbox-text-color-inactive: var(--text-color-deemphasized);
 }
 
 @media (forced-colors) {
@@ -335,6 +340,8 @@
     --border-color-deemphasized: CanvasText;
     --border-color-error: var(--border-color);
     --border-color-interactive: ButtonText;
+    --border-color-interactive-hover: SelectedItem;
+    --border-color-interactive-active: ButtonText;
     --border-color-interactive-disabled: GrayText;
     --border-color-transparent: CanvasText;
 
@@ -361,6 +368,7 @@
     --button-background-color-muted-disabled: var(--button-background-color);
     --button-background-color-muted-selected: var(--button-background-color-ghost-active);
     --button-background-color-primary-disabled: GrayText;
+    --button-background-color-selected: SelectedItem;
     --button-border-color: var(--border-color-interactive);
     --button-border-color-destructive: var(--button-border-color-primary);
     --button-border-color-destructive-selected: var(--button-border-color-destructive-active);
@@ -417,8 +425,8 @@
     --icon-color-success: var(--icon-color);
     --icon-color-warning: var(--icon-color);
 
-    /** panel **/
-    --panel-border-color: var(--border-color);
+    /** popup **/
+    --popup-border-color: var(--border-color);
 
     /** table **/
 
@@ -431,7 +439,6 @@
     /** toolbar **/
     --toolbar-background-color: Canvas;
     --toolbar-field-border-color: ButtonText;
-    --toolbar-field-border-color-focus: SelectedItem;
     --toolbar-field-text-color: var(--text-color);
 
     /** toolbarbutton **/

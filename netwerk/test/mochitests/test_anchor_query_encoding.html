@@ -18,7 +18,7 @@
 
   add_task(async function test_bug1883033() {
     // Scheme http (getting <a>.href)
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     test_scheme("http://example.invalid/?x=\u00E5", WINDOWS_1251);
 
     // Scheme https (getting <a>.href)

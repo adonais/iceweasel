@@ -1,0 +1,27 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* Layout for rows managed by SmartwindowOverflowRowMixin. Link this sheet
+   in the component it is used with and put the class `smartwindow-overflow-row`
+   on the flex row holding your items. */
+
+.smartwindow-overflow-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: nowrap;
+  position: relative;
+  /* Clip so that the row items don’t spill before measured. */
+  overflow: clip;
+  overflow-clip-margin: var(--focus-outline-width, 2px);
+
+  > [role="listitem"] {
+    flex: 0 0 auto;
+  }
+
+  > [data-overflow] {
+    position: absolute;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}

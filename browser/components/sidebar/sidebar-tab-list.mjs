@@ -31,6 +31,11 @@ export class SidebarTabList extends FxviewTabListBase {
 
   static properties = {
     mediumView: { type: Boolean, reflect: true, attribute: "medium-view" },
+    inactiveWindow: {
+      type: Boolean,
+      reflect: true,
+      attribute: "inactive-window",
+    },
   };
 
   /**
@@ -106,13 +111,7 @@ export class SidebarTabList extends FxviewTabListBase {
   }
 
   itemTemplate = (tabItem, i) => {
-    let tabIndex = -1;
-    if ((this.searchQuery || this.sortOption == "lastvisited") && i == 0) {
-      // Make the first row focusable if there is no header.
-      tabIndex = 0;
-    } else if (!this.searchQuery) {
-      tabIndex = 0;
-    }
+    const tabIndex = this.treeView?.isActiveNode(this, tabItem.guid) ? 0 : -1;
     let time;
     if (tabItem.time) {
       // Some APIs report the timestamp in microseconds (16 digits); the row
@@ -136,6 +135,7 @@ export class SidebarTabList extends FxviewTabListBase {
         .hasPopup=${this.hasPopup}
         .indicators=${tabItem.indicators}
         .mediumView=${this.mediumView}
+        .inactiveWindow=${this.inactiveWindow}
         .primaryL10nArgs=${ifDefined(tabItem.primaryL10nArgs)}
         .primaryL10nId=${tabItem.primaryL10nId}
         role="listitem"
@@ -196,6 +196,11 @@ export class SidebarTabRow extends FxviewTabRowBase {
     current: { type: Boolean, reflect: true },
     indicators: { type: Array },
     mediumView: { type: Boolean, reflect: true, attribute: "medium-view" },
+    inactiveWindow: {
+      type: Boolean,
+      reflect: true,
+      attribute: "inactive-window",
+    },
   };
 
   static queries = {

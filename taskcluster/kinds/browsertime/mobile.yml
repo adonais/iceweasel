@@ -20,6 +20,9 @@ task-defaults:
                     android-hw.*-aarch64.*/.*:
                         upstream-task: signing-apk
                         name: public/build/target.arm64-v8a.apk
+                    android-em-14-arm64.*:
+                        upstream-task: signing-apk
+                        name: public/build/target.arm64-v8a.apk
                     default:
                         upstream-task: signing-apk
                         name: public/build/target.armeabi-v7a.apk
@@ -49,7 +52,11 @@ task-defaults:
     mozharness:
         script: raptor_script.py
         config:
-            - raptor/android_hw_config.py
+            by-test-platform:
+                android-em-14-arm64.*:
+                    - raptor/android_emulator_macosx_config.py
+                default:
+                    - raptor/android_hw_config.py
         extra-options:
             # Bug 1635749, disable window recorder temporarily
             - --browsertime-no-ffwindowrecorder
@@ -66,12 +73,33 @@ task-defaults:
         toolchain:
             by-app:
                 cstm-car-m:
-                    - android-custom-car
-                    - linux64-minidump-stackwalk
-                    - linux64-fix-stacks
+                    by-test-platform:
+                        android-em-14-arm64.*:
+                            - android-custom-car
+                            - android-sdk-macos
+                            - android-system-image-arm64-macos
+                            - android-avd-arm64-macos
+                            - macosx64-jdk-repack
+                            - macosx64-aarch64-minidump-stackwalk
+                            - macosx64-aarch64-fix-stacks
+                            - linux64-hostutils
+                        default:
+                            - android-custom-car
+                            - linux64-minidump-stackwalk
+                            - linux64-fix-stacks
                 default:
-                    - linux64-minidump-stackwalk
-                    - linux64-fix-stacks
+                    by-test-platform:
+                        android-em-14-arm64.*:
+                            - android-sdk-macos
+                            - android-system-image-arm64-macos
+                            - android-avd-arm64-macos
+                            - macosx64-jdk-repack
+                            - macosx64-aarch64-minidump-stackwalk
+                            - macosx64-aarch64-fix-stacks
+                            - linux64-hostutils
+                        default:
+                            - linux64-minidump-stackwalk
+                            - linux64-fix-stacks
     dependencies:
         by-app:
             fenix:
@@ -139,7 +167,10 @@ browsertime-tp6m:
                         by-test-platform:
                             android-hw-a55.*shippable.*: [trunk-only]
                             default: []
-                    default: [mozilla-central]
+                    default:
+                        by-test-platform:
+                            android-hw-a55.*shippable.*: [trunk-only]
+                            default: [mozilla-central]
             default: []
 
 browsertime-tp6m-essential:
@@ -430,7 +461,10 @@ browsertime-benchmark-speedometer3-mobile:
         apps: [geckoview, fenix, chrome-m, cstm-car-m]
     tier:
         by-app:
-            fenix: 1
+            fenix:
+                by-test-platform:
+                    android-em-14-arm64.*: 3
+                    default: 1
             geckoview: 2
             cstm-car-m: 2
             default: 3
@@ -441,12 +475,14 @@ browsertime-benchmark-speedometer3-mobile:
                     android-hw-a55.*shippable.*: [trunk-only]
                     android-hw-p6.*shippable.*: [mozilla-central]
                     android-hw-s24.*shippable.*: [mozilla-central]
+                    android-em-14-arm64.*shippable.*: [autoland]
                     default: []
             geckoview: []
             chrome-m:
                 by-test-platform:
                     android-hw-p6.*shippable.*: [mozilla-central]
                     android-hw-s24.*shippable.*: [mozilla-central]
+                    android-em-14-arm64.*shippable.*: []
                     default: []
             default: []
     treeherder-symbol: Btime(sp3)

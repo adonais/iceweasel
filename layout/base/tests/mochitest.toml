@@ -303,6 +303,14 @@ run-if = [
   "os == 'android'",
 ]
 
+["test_keyboard_scroll_handoff.html"]
+
+["test_keyboard_scroll_handoff_oopif.html"]
+support-files = [
+  "window_keyboard_scroll_handoff_oopif.html",
+  "file_keyboard_scroll_handoff_oopif.html",
+]
+
 ["test_mozPaintCount.html"]
 skip-if = [
   "os == 'android'", # android: Requires plugin support

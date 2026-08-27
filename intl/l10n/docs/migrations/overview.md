@@ -81,8 +81,8 @@ from __future__ import absolute_import
 
 def migrate(ctx):
     """Bug 1552333 - Migrate feature to Fluent, part {index}"""
-    target = 'browser/browser/feature.ftl'
-    reference = 'browser/browser/feature.ftl'
+    target = "browser/browser/feature.ftl"
+    reference = "browser/browser/feature.ftl"
     ctx.add_transforms(
         target,
         reference,

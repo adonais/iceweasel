@@ -41,7 +41,7 @@
         errorLine2="      ~~~~~~~~~~~~">
         <location
             file="src/main/java/org/mozilla/gecko/GeckoAppShell.java"
-            line="502"
+            line="503"
             column="7"/>
     </issue>
 
@@ -63,7 +63,7 @@
         errorLine2="          ~~~~~~">
         <location
             file="src/main/java/org/mozilla/gecko/GeckoNetworkManager.java"
-            line="48"
+            line="50"
             column="11"/>
     </issue>
 

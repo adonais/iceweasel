@@ -11,7 +11,14 @@ from mozdevice import ADBDevice, ADBError
 
 from mozperftest.layers import Layer
 from mozperftest.system.android_perf_tuner import tune_performance
-from mozperftest.utils import MOBILE_APPS, download_file
+from mozperftest.utils import (
+    MOBILE_APPS,
+    download_file,
+    ensure_android_device,
+    ensure_java_on_path,
+    ensure_profgen_on_path,
+    get_adb_path,
+)
 
 HERE = Path(__file__).parent
 
@@ -118,6 +125,15 @@ class AndroidDevice(Layer):
                 "APK to install to the device "
                 "Can be a file, an url or an alias url from "
                 f" {', '.join(_PERMALINKS.keys())}"
+            ),
+        },
+        "use-emulator": {
+            "action": "store_true",
+            "default": False,
+            "help": (
+                "Start the Mozilla test emulator when no device is connected, and "
+                "put the fetched SDK's profgen/JDK on PATH. Only needed on CI "
+                "emulator workers; leave off for physical-device tests."
             ),
         },
     }
@@ -231,6 +247,13 @@ class AndroidDevice(Layer):
                 f"{', '.join(MOBILE_APPS)}"
             )
 
+        # For emulators on CI we start the test emulator if needed and put the SDK's
+        # profgen/JDK on PATH. Physical devices already have this, so we skip it.
+        if self.get_arg("android-use-emulator", False):
+            ensure_android_device(verbose=self.get_arg("verbose", False))
+            ensure_profgen_on_path()
+            ensure_java_on_path()
+
         self.app_name = self.get_arg("android-app-name")
         self.android_activity = self.get_arg("android-activity")
         self.clear_logcat = self.get_arg("clear-logcat")
@@ -259,12 +282,17 @@ class AndroidDevice(Layer):
             ),
         )
         logger.add_handler(handler)
+        adb_path = get_adb_path()
+
         try:
             self.device = ADBLoggedDevice(
-                verbose=self.verbose, timeout=self.get_arg("timeout"), logger=logger
+                verbose=self.verbose,
+                timeout=self.get_arg("timeout"),
+                adb=adb_path,
+                logger=logger,
             )
         except (ADBError, AttributeError) as e:
-            self.error("Could not connect to the phone. Is it connected?")
+            self.error("Could not connect to the Android device or emulator.")
             raise DeviceError(str(e))
 
         if self.clear_logcat:

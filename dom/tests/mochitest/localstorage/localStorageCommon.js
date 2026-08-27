@@ -55,33 +55,34 @@ function localStorageFlushAndReload(callback) {
 
 function localStorageClearAll(callback) {
   if (SpecialPowers.Services.domStorageManager.nextGenLocalStorageEnabled) {
-    let qms = SpecialPowers.Services.qms;
-    let ssm = SpecialPowers.Services.scriptSecurityManager;
+    // Listing every origin in the profile and clearing storage for origins
+    // other than our own are parent process only operations, so this has to
+    // run there rather than in our content process.
+    SpecialPowers.spawnChrome([], async () => {
+      const origins = await new Promise(resolve => {
+        Services.qms.getUsage(request => {
+          resolve(request.resultCode == Cr.NS_OK ? request.result : []);
+        });
+      });
 
-    qms.getUsage(
-      SpecialPowers.wrapCallback(function (request) {
-        if (request.resultCode != SpecialPowers.Cr.NS_OK) {
-          callback();
-          return;
-        }
-
-        let clearRequestCount = 0;
-        for (let item of request.result) {
-          let principal = ssm.createContentPrincipalFromOrigin(item.origin);
-          let clearRequest = qms.clearStoragesForClient(
-            principal,
-            "ls",
-            "default"
-          );
-          clearRequestCount++;
-          clearRequest.callback = SpecialPowers.wrapCallback(function () {
-            if (--clearRequestCount == 0) {
-              callback();
-            }
-          });
-        }
-      })
-    );
+      await Promise.all(
+        origins.map(
+          item =>
+            new Promise(resolve => {
+              const principal =
+                Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+                  item.origin
+                );
+              const request = Services.qms.clearStoragesForClient(
+                principal,
+                "ls",
+                "default"
+              );
+              request.callback = resolve;
+            })
+        )
+      );
+    }).then(callback, callback);
     return;
   }
 

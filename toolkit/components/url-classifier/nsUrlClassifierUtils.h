@@ -53,7 +53,7 @@ class nsUrlClassifierUtils final : public nsIUrlClassifierUtils,
   static bool IsInSafeMode();
 
  private:
-  nsUrlClassifierUtils();
+  nsUrlClassifierUtils() = default;
   ~nsUrlClassifierUtils();
 
   nsresult Init();
@@ -67,7 +67,8 @@ class nsUrlClassifierUtils final : public nsIUrlClassifierUtils,
 
   // The provider lookup table and its mutex.
   ProviderDictType mProviderDict;
-  mozilla::Mutex mProviderDictLock MOZ_UNANNOTATED;
+  mozilla::Mutex mProviderDictLock MOZ_UNANNOTATED{
+      "nsUrlClassifierUtils.mProviderDictLock"};
 };
 
 #endif  // nsUrlClassifierUtils_h_

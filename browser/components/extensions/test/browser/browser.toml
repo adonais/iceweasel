@@ -1,7 +1,4 @@
 [DEFAULT]
-skip-if = [
-	"debug && standalone", # TODO bug 2048260: Drop skip-if = standalone
-]
 tags = "webextensions"
 prefs = [
   # We don't want to reset this at the end of the test, so that we don't have
@@ -23,7 +20,6 @@ support-files = [
 ["browser_AMBrowserExtensionsImport.js"]
 
 ["browser_ext_autocompletepopup.js"]
-disabled = "bug 1438663 # same focus issue as Bug 1438663"
 
 ["browser_ext_autoplayInBackground.js"]
 support-files = ["silence.ogg"]
@@ -56,6 +52,8 @@ skip-if = [
 
 ["browser_ext_commands_update.js"]
 
+["browser_ext_connect_and_move_tabs.js"]
+
 ["browser_ext_find.js"]
 https_first_disabled = true
 
@@ -79,12 +77,6 @@ https_first_disabled = true
 
 ["browser_ext_persistent_storage_permission_indication.js"]
 
-["browser_ext_reload_manifest_cache.js"]
-
-["browser_ext_request_permissions.js"]
-
-["browser_ext_connect_and_move_tabs.js"]
-
 ["browser_ext_port_disconnect_on_crash.js"]
 https_first_disabled = true
 run-if = [
@@ -92,6 +84,10 @@ run-if = [
 ]
 
 ["browser_ext_port_disconnect_on_window_close.js"]
+
+["browser_ext_reload_manifest_cache.js"]
+
+["browser_ext_request_permissions.js"]
 
 ["browser_ext_runtime_getContexts.js"]
 support-files = ["head_devtools.js"]

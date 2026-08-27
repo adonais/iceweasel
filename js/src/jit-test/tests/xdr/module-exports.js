@@ -11,7 +11,7 @@ stencil = compileToStencilXDR("import * as ns from 'a'", {module: true});
 m = instantiateModuleStencilXDR(stencil);
 let b = registerModule('b', m);
 
-moduleLink(b);
+moduleLoadAndLink(b);
 moduleEvaluate(b);
 
 let ns = a.namespace;
@@ -29,7 +29,7 @@ assertEq(c.indirectExportEntries[0].importNameValueType, 'namespace');
 
 stencil = compileToStencilXDR("import { ns } from 'c';", {module: true});
 let d = instantiateModuleStencilXDR(stencil);
-moduleLink(d);
+moduleLoadAndLink(d);
 moduleEvaluate(d);
 let dns = getModuleEnvironmentValue(d, "ns");
 for (let i = 0; i < count; i++)
@@ -46,6 +46,6 @@ assertEq(e.starExportEntries[0].importNameValueType, 'all-but-default');
 
 stencil = compileToStencilXDR("import { e5 } from 'e';", {module: true});
 let f = instantiateModuleStencilXDR(stencil);
-moduleLink(f);
+moduleLoadAndLink(f);
 moduleEvaluate(f);
 assertEq(getModuleEnvironmentValue(f, "e5"), 25);

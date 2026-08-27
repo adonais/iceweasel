@@ -68,12 +68,13 @@ skip-if = [
 
 ["browser_opentabs_recency.js"]
 skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && opt && nova", # Bug 2057846
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt",
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
   "os == 'win' && opt",
-] # macos times out, see bug 1857293, Bug 1875877 - frequent fails on linux and windows opt
+]
 
 ["browser_opentabs_search.js"]
 skip-if = [

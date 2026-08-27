@@ -32,6 +32,8 @@ import mozilla.components.concept.toolbar.AutocompleteDelegate
 import mozilla.components.concept.toolbar.Toolbar
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.utils.NamedThreadFactory
+import mozilla.components.support.ktx.android.content.pixelSizeFor
+import mozilla.components.support.ktx.android.view.pixelSizeFor
 import mozilla.components.support.ktx.android.view.showKeyboard
 import mozilla.components.ui.autocomplete.InlineAutocompleteEditText
 import java.util.concurrent.Executors
@@ -121,7 +123,7 @@ class EditToolbar internal constructor(
 
             setUrlGoneMargin(
                 ConstraintSet.END,
-                context.resources.getDimensionPixelSize(R.dimen.mozac_browser_toolbar_url_gone_margin_end),
+                context.pixelSizeFor(R.dimen.mozac_browser_toolbar_url_gone_margin_end),
             )
 
             setOnDispatchKeyEventPreImeListener { event ->
@@ -366,7 +368,7 @@ class EditToolbar internal constructor(
         } else {
             setUrlGoneMargin(
                 ConstraintSet.END,
-                rootView.resources.getDimensionPixelSize(
+                rootView.pixelSizeFor(
                     R.dimen.mozac_browser_toolbar_url_gone_margin_end,
                 ),
             )

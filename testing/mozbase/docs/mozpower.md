@@ -17,21 +17,18 @@ should be used depending on the detected OS and CPU combination.
 from mozpower import MozPower
 
 mp = MozPower(
-    ipg_measure_duration=600,
-    sampling_rate=1000,
-    output_file_path='tempdir/dataprefix'
+    ipg_measure_duration=600, sampling_rate=1000, output_file_path="tempdir/dataprefix"
 )
 mp.initialize_power_measurements()
 
 # Run test TEST_NAME
 
 mp.finalize_power_measurements(
-    test_name=TEST_NAME,
-    output_dir_path=env['MOZ_UPLOAD_DIR']
+    test_name=TEST_NAME, output_dir_path=env["MOZ_UPLOAD_DIR"]
 )
 
 # Get complete PERFHERDER_DATA
-perfherder_data = mp.get_full_perfherder_data('raptor')
+perfherder_data = mp.get_full_perfherder_data("raptor")
 ```
 
 All the possible known errors that can occur are also provided

@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -41,7 +43,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param title The optional header text shown above the [description].
  * @param footer An optional piece of text with a clickable link.
  * @param illustration Composable slot displayed at the end of the card. Commonly used for illustrations.
- * @param contentSpacing The vertical spacing between the title, message, and actions slots.
+ * @param contentSpacing The vertical spacing between the title/message and the actions slot.
  * @param verticalAlignment Vertical alignment of the text content and the [illustration].
  * Defaults to [Alignment.Bottom].
  * @param colors Defines the color styling for the card. Defaults to
@@ -99,7 +101,7 @@ fun PromoCard(
  * @param message Composable slot displayed below the title. Intended for descriptive or supporting content.
  * @param actions Composable slot below the message, intended for actions such as a link or buttons.
  * @param illustration Composable slot displayed at the end of the card.
- * @param contentSpacing The vertical spacing between the title, message, and actions slots.
+ * @param contentSpacing The vertical spacing between the title/message and the actions slot.
  * @param verticalAlignment Vertical alignment of the text content and the [illustration].
  * Defaults to [Alignment.Bottom].
  * @param colors Defines the color styling for the card. Defaults to [PromoCardColors.promoCardColors].
@@ -122,7 +124,10 @@ fun PromoCard(
     onDismiss: (() -> Unit)? = null,
 ) {
     InfoCardContainer(
-        modifier = modifier,
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentWidth(Alignment.CenterHorizontally)
+            .widthIn(max = AcornTheme.layout.size.containerMaxWidth),
         backgroundColor = colors.backgroundColor,
         elevation = 0.dp,
         contentPadding = PaddingValues(0.dp),
@@ -131,30 +136,39 @@ fun PromoCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = AcornTheme.layout.space.static200),
+                    .padding(
+                        start = AcornTheme.layout.space.static200,
+                        end = if (onDismiss != null) {
+                            AcornTheme.layout.space.static500
+                        } else {
+                            AcornTheme.layout.space.static200
+                        },
+                    ),
                 horizontalArrangement = Arrangement.spacedBy(AcornTheme.layout.space.static200),
                 verticalAlignment = verticalAlignment,
             ) {
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(vertical = AcornTheme.layout.space.static150),
+                        .padding(vertical = AcornTheme.layout.space.static200),
                     verticalArrangement = Arrangement.spacedBy(contentSpacing),
                 ) {
-                    CompositionLocalProvider(
-                        LocalTextStyle provides AcornTheme.typography.headline8.copy(
-                            color = colors.titleTextColor,
-                        ),
-                    ) {
-                        title?.invoke()
-                    }
+                    Column {
+                        CompositionLocalProvider(
+                            LocalTextStyle provides AcornTheme.typography.headline7.copy(
+                                color = colors.titleTextColor,
+                            ),
+                        ) {
+                            title?.invoke()
+                        }
 
-                    CompositionLocalProvider(
-                        LocalTextStyle provides AcornTheme.typography.body2.copy(
-                            color = colors.messageTextColor,
-                        ),
-                    ) {
-                        message?.invoke()
+                        CompositionLocalProvider(
+                            LocalTextStyle provides AcornTheme.typography.body2.copy(
+                                color = colors.messageTextColor,
+                            ),
+                        ) {
+                            message?.invoke()
+                        }
                     }
 
                     CompositionLocalProvider(

@@ -66,6 +66,44 @@ add_task(async function () {
   await removeTab(tab);
 });
 
+/**
+ * Test that a dismissed error message is displayed again when the same error is
+ * triggered by a new user interaction.
+ */
+add_task(async function testClosedErrorDisplayedAgain() {
+  const { document, tab } = await openAboutDebugging();
+
+  await selectConnectPage(document);
+
+  info("Trigger an invalid network location error");
+  addNetworkLocation(TEST_NETWORK_LOCATION_INVALID, document);
+  await waitUntil(() =>
+    document.querySelector(".qa-connect-page__network-form__error-message")
+  );
+
+  info("Dismiss the error message with the close button");
+  const closeButton = document.querySelector(
+    ".qa-connect-page__network-form__error-message .qa-message-button-close-button"
+  );
+  EventUtils.synthesizeMouseAtCenter(closeButton, {}, document.defaultView);
+  await waitUntil(
+    () =>
+      !document.querySelector(".qa-connect-page__network-form__error-message")
+  );
+
+  info("Trigger the same invalid network location error again");
+  addNetworkLocation(TEST_NETWORK_LOCATION_INVALID, document);
+  await waitUntil(() =>
+    document.querySelector(".qa-connect-page__network-form__error-message")
+  );
+  ok(
+    document.querySelector(".qa-connect-page__network-form__error-message"),
+    "The error message is displayed again after being dismissed"
+  );
+
+  await removeTab(tab);
+});
+
 function addNetworkLocation(location, document) {
   info("Setting a value in the network form input");
   const networkLocationInput = document.querySelector(".qa-network-form-input");

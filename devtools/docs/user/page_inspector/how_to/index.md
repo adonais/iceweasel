@@ -1,4 +1,4 @@
-# How to
+# Page Inspector how-tos
 
 Links for various HOW TO's can be found here. These links describe in depth the HOW TO techniques.
 
@@ -21,3 +21,28 @@ Links for various HOW TO's can be found here. These links describe in depth the 
 - {doc}`View background images <view_background_images/index>`
 - {doc}`Visualize transforms <visualize_transforms/index>`
 - {doc}`Work with animations <work_with_animations/index>`
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+debug_scrollable_overflow/index
+edit_css_filters/index
+edit_css_shapes/index
+edit_fonts/index
+examine_and_edit_css/index
+examine_and_edit_html/index
+examine_and_edit_the_box_model/index
+examine_event_listeners/index
+examine_flexbox_layouts/index
+examine_grid_layouts/index
+inspect_and_select_colors/index
+open_the_inspector/index
+reposition_elements_in_the_page/index
+select_an_element/index
+select_and_highlight_elements/index
+use_the_inspector_from_the_web_console/index
+view_background_images/index
+visualize_transforms/index
+work_with_animations/index
+```

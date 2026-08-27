@@ -28,6 +28,7 @@ async def is_iframe_visible(client, in_headless_mode):
         pass
 
     assert iframe
+    await client.stall(2)
     return client.execute_script(
         """
         return arguments[0].getBoundingClientRect().height > 200;

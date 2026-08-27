@@ -413,6 +413,8 @@ DefaultJitOptions::DefaultJitOptions() {
   // example, if a regexp is too long - so we might as well turn these
   // flags on unconditionally.
   SET_DEFAULT(regexp_optimization, true);
+  SET_DEFAULT(regexp_masked_dispatch, true);
+  SET_DEFAULT(regexp_simd_in_rc, true);
   // These can be used to disable some optimizations that simplify regexps.
   // V8 uses them for fuzzing (similar to --ion-gvn=off.)
   SET_DEFAULT(regexp_quick_check, true);

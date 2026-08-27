@@ -172,9 +172,7 @@ int GetEffectiveContentSandboxLevel() {
 
 bool IsContentSandboxEnabled() { return GetEffectiveContentSandboxLevel() > 0; }
 
-bool IsGPUSandboxEnabled() {
-  return Preferences::GetInt("security.sandbox.gpu.level") > 0;
-}
+bool IsGPUSandboxEnabled() { return GetEffectiveGpuSandboxLevel() > 0; }
 
 int GetEffectiveSocketProcessSandboxLevel() {
   if (PR_GetEnv("MOZ_DISABLE_SOCKET_PROCESS_SANDBOX")) {
@@ -195,6 +193,10 @@ int GetEffectiveSocketProcessSandboxLevel() {
 }
 
 int GetEffectiveGpuSandboxLevel() {
+  if (PR_GetEnv("MOZ_DISABLE_GPU_SANDBOX")) {
+    return 0;
+  }
+
   return StaticPrefs::security_sandbox_gpu_level();
 }
 

@@ -1246,7 +1246,7 @@ static bool WasmPromiseReaction(JSContext* cx, unsigned argc, Value* vp) {
   JS::RootedValueArray<2> argv(cx);
   JS::Rooted<JS::Value> rval(cx);
   argv[0].set(callee->getExtendedSlot(CONT_SLOT));
-  argv[1].set(ObjectValue(*promisingPromiseObject));
+  argv[1].setObject(*promisingPromiseObject);
 
   if (Call(cx, UndefinedHandleValue, reactionFunc, argv, &rval)) {
     return true;

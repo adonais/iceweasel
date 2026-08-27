@@ -70,12 +70,13 @@ class WebAppUseCases(
     class GetInstallStateUseCase internal constructor(
         private val store: BrowserStore,
         private val shortcutManager: WebAppShortcutManager,
+        private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
     ) {
         /**
          * @param currentTimeMs the current time against which manifest usage timeouts will be validated
          */
         suspend operator fun invoke(
-            currentTimeMs: Long = System.currentTimeMillis(),
+            currentTimeMs: Long = currentTimeMillis(),
         ): WebAppShortcutManager.WebAppInstallState? {
             val session = store.state.selectedTab ?: return null
             return shortcutManager.getWebAppInstallState(session.content.url, currentTimeMs)

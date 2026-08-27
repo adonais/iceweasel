@@ -316,7 +316,7 @@ better present the data.
 ### \{fmt} Markers
 
 `{fmt}` markers are similar to the text markers, but the string is formatted
-using the [\{fmt}](/xpcom/fmt-in-gecko.html) library.
+using the [\{fmt}](/xpcom/fmt-in-gecko.md) library.
 
 ```cpp
 PROFILER_MARKER_FMT("Marker Name", MEDIA_PLAYBACK, {},

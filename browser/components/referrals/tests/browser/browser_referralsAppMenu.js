@@ -20,6 +20,11 @@ async function withReferralsPref(enabled, task) {
   }
 }
 
+registerCleanupFunction(() => {
+  Services.prefs.unlockPref("browser.referrals.code");
+  Services.prefs.clearUserPref("browser.referrals.code");
+});
+
 add_task(async function test_hidden_when_disabled() {
   await withReferralsPref(false, async () => {
     await gCUITestUtils.openMainMenu();
@@ -56,14 +61,27 @@ add_task(async function test_visible_and_opens_tab_when_enabled() {
       "popuphidden"
     );
 
+    Services.fog.testResetFOG();
     button.click();
 
     // Clicking the item closes the app menu.
     await promiseHidden;
 
     await TestUtils.waitForCondition(
-      () => gBrowser.currentURI.displaySpec === "about:referrals",
+      () =>
+        gBrowser.currentURI.displaySpec === "about:referrals" ||
+        gBrowser.currentURI.displaySpec.startsWith(
+          "https://www.firefox.com/invite"
+        ),
       "Waiting for the referrals tab to be opened"
+    );
+
+    const events = Glean.referrals.entrypointClicked.testGetValue();
+    is(events.length, 1, "One entrypoint_clicked event was recorded");
+    is(
+      events[0].extra.entrypoint,
+      "app_menu",
+      "entrypoint_clicked recorded the app_menu entrypoint"
     );
 
     gBrowser.removeTab(gBrowser.selectedTab);

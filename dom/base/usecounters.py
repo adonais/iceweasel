@@ -15,7 +15,7 @@ def read_conf(conf_filename):
             if not line or line.startswith("//"):
                 # empty line or comment
                 continue
-            m = re.match(r"method ([A-Za-z0-9]+)\.([A-Za-z0-9]+)$", line)
+            m = re.match(r"method ([A-Za-z0-9]+)\.([A-Za-z0-9_]+)$", line)
             if m:
                 interface_name, method_name = m.groups()
                 yield {

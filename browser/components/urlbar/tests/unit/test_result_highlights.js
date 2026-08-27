@@ -22,7 +22,7 @@ add_task(async function test_search_suggestion_normal() {
       {
         title: "test",
         highlights: {
-          title: UrlbarUtils.HIGHLIGHT.SUGGESTED,
+          title: UrlbarShared.HIGHLIGHT.SUGGESTED,
         },
       },
     ],
@@ -57,7 +57,7 @@ add_task(async function test_search_tail() {
         title: "tail",
         tail: "tail",
         highlights: {
-          title: UrlbarUtils.HIGHLIGHT.SUGGESTED,
+          title: UrlbarShared.HIGHLIGHT.SUGGESTED,
         },
       },
     ],
@@ -70,9 +70,6 @@ async function doTest({ context, expected }) {
   let controller = UrlbarTestUtils.newMockController({
     input: {
       isPrivate: context.isPrivate,
-      onFirstResult() {
-        return false;
-      },
       getSearchSource() {
         return "dummy-search-source";
       },

@@ -1456,7 +1456,7 @@ JSObject* NumberObject::createPrototype(JSContext* cx, JSProtoKey key) {
   if (!numberProto) {
     return nullptr;
   }
-  numberProto->setPrimitiveValue(0);
+  numberProto->initPrimitiveValue(0);
   return numberProto;
 }
 

@@ -19,8 +19,7 @@ enum class RTCSctpTransportState : uint8_t;
 class RTCSctpTransport : public DOMEventTargetHelper {
  public:
   explicit RTCSctpTransport(nsPIDOMWindowInner* aWindow,
-                            RTCDtlsTransport& aDtlsTransport,
-                            double aMaxMessageSize,
+                            const Nullable<double> aMaxMessageSize,
                             const Nullable<uint16_t>& aMaxChannels);
 
   // nsISupports
@@ -33,16 +32,18 @@ class RTCSctpTransport : public DOMEventTargetHelper {
                        JS::Handle<JSObject*> aGivenProto) override;
   IMPL_EVENT_HANDLER(statechange)
 
-  RTCDtlsTransport* Transport() const { return mDtlsTransport; }
+  RTCDtlsTransport* GetTransport() const { return mDtlsTransport; }
   RTCSctpTransportState State() const { return mState; }
-  double MaxMessageSize() const { return mMaxMessageSize; }
+  Nullable<double> GetMaxMessageSize() const { return mMaxMessageSize; }
   Nullable<uint16_t> GetMaxChannels() const { return mMaxChannels; }
 
-  void SetTransport(RTCDtlsTransport& aTransport) {
-    mDtlsTransport = &aTransport;
+  // May be null to clear the transport (e.g. rolling back to a
+  // have-remote-offer state in which the RTCDtlsTransport did not yet exist).
+  void SetTransport(RTCDtlsTransport* aTransport) {
+    mDtlsTransport = aTransport;
   }
 
-  void SetMaxMessageSize(double aMaxMessageSize) {
+  void SetMaxMessageSize(const Nullable<double>& aMaxMessageSize) {
     mMaxMessageSize = aMaxMessageSize;
   }
 
@@ -57,7 +58,7 @@ class RTCSctpTransport : public DOMEventTargetHelper {
 
   RTCSctpTransportState mState;
   RefPtr<RTCDtlsTransport> mDtlsTransport;
-  double mMaxMessageSize;
+  Nullable<double> mMaxMessageSize;
   Nullable<uint16_t> mMaxChannels;
 };
 

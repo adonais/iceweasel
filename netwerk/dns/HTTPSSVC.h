@@ -86,8 +86,8 @@ struct SvcFieldValue {
   bool operator==(const SvcFieldValue& aOther) const {
     return mValue == aOther.mValue;
   }
-  SvcFieldValue() : mValue(AsVariant(Nothing{})) {}
-  SvcParamType mValue;
+  SvcFieldValue() = default;
+  SvcParamType mValue{AsVariant(Nothing{})};
 };
 
 struct SVCB {

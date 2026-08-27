@@ -35,7 +35,7 @@ add_task(function test_generates_and_stores_code() {
 
   Assert.equal(
     code.length,
-    10,
+    16,
     "Should generate a code of the expected length"
   );
 

@@ -1474,90 +1474,123 @@ class AssertionSequenceRewriter final {
  public:
   // TODO(jgruber): Consider moving this to a separate AST tree rewriter pass
   // instead of sprinkling rewrites into the AST->Node conversion process.
-  static void MaybeRewrite(ZoneList<Tree*>* terms, Zone* zone) {
-    AssertionSequenceRewriter rewriter(terms, zone);
+  static ZoneList<Tree*>* MaybeRewrite(ZoneList<Tree*>* terms,
+                                       Compiler* compiler) {
+    Zone* zone = compiler->zone();
+    Flags flags = compiler->flags();
 
-    static constexpr int kNoIndex = -1;
-    int from = kNoIndex;
+    bool has_assertion = false;
+    bool needs_flattening = false;
 
     for (int i = 0; i < terms->length(); i++) {
       Tree* t = terms->at(i);
-      if (from == kNoIndex && t->IsAssertion()) {
-        from = i;  // Start a sequence.
-      } else if (from != kNoIndex && !t->IsAssertion()) {
-        // Terminate and process the sequence.
-        if (i - from > 1) rewriter.Rewrite(from, i);
-        from = kNoIndex;
+      if (t->IsAssertion()) {
+        has_assertion = true;
+      } else if (t->IsAlternative() ||
+                 (t->IsGroup() && t->AsGroup()->flags() == flags)) {
+        needs_flattening = true;
       }
     }
 
-    if (from != kNoIndex && terms->length() - from > 1) {
-      rewriter.Rewrite(from, terms->length());
-    }
-  }
+    if (!has_assertion && !needs_flattening) return terms;
 
-  // All assertions are zero width. A consecutive sequence of assertions is
-  // order-independent. There's two ways we can optimize here:
-  // 1. fold all identical assertions.
-  // 2. if any assertion combinations are known to fail (e.g. \b\B), the entire
-  //    sequence fails.
-  void Rewrite(int from, int to) {
-    DCHECK_GT(to, from + 1);
-
-    // Bitfield of all seen assertions.
+    ZoneList<Tree*>* flattened =
+        zone->New<ZoneList<Tree*>>(terms->length(), zone);
     uint32_t seen_assertions = 0;
-    static_assert(static_cast<int>(Assertion::Type::LAST_ASSERTION_TYPE) <
-                  kUInt32Size * kBitsPerByte);
+    int sequence_start_idx = -1;
 
-    for (int i = from; i < to; i++) {
-      Assertion* t = terms_->at(i)->AsAssertion();
-      const uint32_t bit = 1 << static_cast<int>(t->assertion_type());
-
-      if (seen_assertions & bit) {
-        // Fold duplicates.
-        terms_->Set(i, zone_->New<Empty>());
-      }
-
-      seen_assertions |= bit;
+    for (int i = 0; i < terms->length(); i++) {
+      AppendFlattenedAndFold(flattened, terms->at(i), flags, zone,
+                             &seen_assertions, &sequence_start_idx);
     }
 
-    // Collapse failures.
-    const uint32_t always_fails_mask =
-        1 << static_cast<int>(Assertion::Type::BOUNDARY) |
-        1 << static_cast<int>(Assertion::Type::NON_BOUNDARY);
-    if ((seen_assertions & always_fails_mask) == always_fails_mask) {
-      ReplaceSequenceWithFailure(from, to);
-    }
-  }
-
-  void ReplaceSequenceWithFailure(int from, int to) {
-    // Replace the entire sequence with a single node that always fails.
-    // TODO(jgruber): Consider adding an explicit Fail kind. Until then, the
-    // negated '*' (everything) range serves the purpose.
-    ZoneList<CharacterRange>* ranges =
-        zone_->New<ZoneList<CharacterRange>>(0, zone_);
-    ClassRanges* cc = zone_->New<ClassRanges>(zone_, ranges);
-    terms_->Set(from, cc);
-
-    // Zero out the rest.
-    Empty* empty = zone_->New<Empty>();
-    for (int i = from + 1; i < to; i++) terms_->Set(i, empty);
+    return flattened;
   }
 
  private:
-  AssertionSequenceRewriter(ZoneList<Tree*>* terms, Zone* zone)
-      : zone_(zone), terms_(terms) {}
+  // Appends a term to the flattened list, unwrapping same-flag Groups and
+  // Alternatives while folding consecutive assertions in a single pass.
+  //
+  // All assertions are zero width, so a consecutive sequence of assertions is
+  // order-independent. We optimize consecutive assertions by:
+  // 1. Folding all identical assertions (e.g. \b\b -> \b). Duplicate assertions
+  //    are skipped during list construction without creating Empty AST nodes.
+  // 2. Collapsing conflicting assertion combinations (e.g. \b\B) into a single
+  //    failure node (ClassRanges).
+  //
+  // Note some crucial safety invariants:
+  // 1. Concatenation is associative, so nested Alternatives are completely
+  //    redundant and can be flattened: A(BC)D -> ABCD.
+  // 2. Only same-flags groups are flattened (ensuring flag scoping is
+  //    correct).
+  // 3. Quantified groups, capturing groups, and lookarounds are represented
+  //    by Quantifier, Capture, and Lookaround nodes respectively. Since they
+  //    are not Group nodes, they are naturally shielded from flattening here,
+  //    preserving correct syntax and quantifier bindings.
+  static void AppendFlattenedAndFold(ZoneList<Tree*>* list, Tree* term,
+                                     Flags flags, Zone* zone,
+                                     uint32_t* seen_assertions,
+                                     int* sequence_start_idx) {
+    if (term->IsAssertion()) {
+      Assertion* assertion = term->AsAssertion();
+      uint32_t bit = 1 << static_cast<int>(assertion->assertion_type());
 
-  Zone* zone_;
-  ZoneList<Tree*>* terms_;
+      if (*seen_assertions & bit) {
+        // Duplicate assertion! Skip adding it to the list.
+        return;
+      }
+
+      *seen_assertions |= bit;
+
+      const uint32_t always_fails_mask =
+          1 << static_cast<int>(Assertion::Type::BOUNDARY) |
+          1 << static_cast<int>(Assertion::Type::NON_BOUNDARY);
+
+      if ((*seen_assertions & always_fails_mask) == always_fails_mask) {
+        // Replace the current assertion sequence with a single node that always
+        // fails.
+        DCHECK_NE(*sequence_start_idx, -1);
+        list->Rewind(*sequence_start_idx);
+        ZoneList<CharacterRange>* ranges =
+            zone->New<ZoneList<CharacterRange>>(0, zone);
+        list->Add(zone->New<ClassRanges>(zone, ranges), zone);
+        return;
+      }
+
+      if (*sequence_start_idx == -1) {
+        *sequence_start_idx = list->length();
+      }
+      list->Add(term, zone);
+    } else if (term->IsAlternative()) {
+      Alternative* alternative = term->AsAlternative();
+      ZoneList<Tree*>* nodes = alternative->nodes();
+      for (int i = 0; i < nodes->length(); i++) {
+        AppendFlattenedAndFold(list, nodes->at(i), flags, zone, seen_assertions,
+                               sequence_start_idx);
+      }
+    } else if (term->IsGroup()) {
+      Group* group = term->AsGroup();
+      if (group->flags() == flags) {
+        AppendFlattenedAndFold(list, group->body(), flags, zone,
+                               seen_assertions, sequence_start_idx);
+      } else {
+        *seen_assertions = 0;
+        *sequence_start_idx = -1;
+        list->Add(term, zone);
+      }
+    } else {
+      *seen_assertions = 0;
+      *sequence_start_idx = -1;
+      list->Add(term, zone);
+    }
+  }
 };
 
 }  // namespace
 
 Node* Alternative::ToNodeImpl(Compiler* compiler, Node* on_success) {
-  ZoneList<Tree*>* children = nodes();
-
-  AssertionSequenceRewriter::MaybeRewrite(children, compiler->zone());
+  ZoneList<Tree*>* children =
+      AssertionSequenceRewriter::MaybeRewrite(nodes(), compiler);
   TRACE_WITH_NODE("* After assertion sequence rewrite: ", this);
 
   Node* current = on_success;
@@ -1982,6 +2015,27 @@ void CharacterRange::Intersect(const ZoneList<CharacterRange>* lhs,
   }
 
   DCHECK(IsCanonical(intersection));
+}
+
+// static
+bool CharacterRange::Intersects(const ZoneList<CharacterRange>* lhs,
+                                const ZoneList<CharacterRange>* rhs) {
+  DCHECK(CharacterRange::IsCanonical(lhs));
+  DCHECK(CharacterRange::IsCanonical(rhs));
+  int lhs_index = 0;
+  int rhs_index = 0;
+  while (lhs_index < lhs->length() && rhs_index < rhs->length()) {
+    const CharacterRange& lhs_range = lhs->at(lhs_index);
+    const CharacterRange& rhs_range = rhs->at(rhs_index);
+    if (lhs_range.to() < rhs_range.from()) {
+      lhs_index++;
+    } else if (rhs_range.to() < lhs_range.from()) {
+      rhs_index++;
+    } else {
+      return true;
+    }
+  }
+  return false;
 }
 
 namespace {

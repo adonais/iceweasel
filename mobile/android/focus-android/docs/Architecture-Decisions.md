@@ -1,4 +1,4 @@
-# Architecture Decisions
+# Focus architecture decisions
 
 This is a collection of records for "architecturally significant" decisions. [Why?](http://thinkrelevance.com/blog/2011/11/15/documenting-architecture-decisions)
 

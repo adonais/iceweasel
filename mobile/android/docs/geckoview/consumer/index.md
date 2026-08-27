@@ -8,13 +8,13 @@
 *
 ```
 
-- [GeckoView Quick Start Guide](geckoview-quick-start.html): Get
+- [GeckoView Quick Start Guide](geckoview-quick-start.md): Get
   GeckoView up and running inside your application.
-- [Interacting with Web Content](web-extensions.html): Writing Web
+- [Interacting with Web Content](web-extensions.md): Writing Web
   Extensions, running content scripts and interacting with Javascript
   running in a web page.
-- [Working with Site Permissions](permissions.html): Handling and
+- [Working with Site Permissions](permissions.md): Handling and
   responding to requests from websites for permissions, such as
   geolocation, storage, media etc.
-- [Configuring GeckoView for Automation](automation.html): Get GeckoView
+- [Configuring GeckoView for Automation](automation.md): Get GeckoView
   set up on your automation system.

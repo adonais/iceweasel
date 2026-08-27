@@ -20,14 +20,6 @@
 
 namespace mozilla {
 
-// Due to the mixing of parsing and validation during the parse step it is
-// necessary to distinguish between the two types of failures.
-enum class JsepParseTimeExceptionType {
-  None,
-  Operation,
-  InvalidAccess,
-};
-
 // JsepSessionImpl members that have default copy c'tors, to simplify the
 // implementation of the copy c'tor for JsepSessionImpl
 class JsepSessionCopyableStuff {
@@ -216,17 +208,17 @@ class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
   nsresult SetupIds();
   void SetState(JsepSignalingState state);
   // Non-const so it can set mLastError
-  JsepParseTimeExceptionType ParseSdp(const std::string& sdp,
-                                      UniquePtr<Sdp>* parsedp);
+  JsepSession::Result ParseSdp(const std::string& sdp, UniquePtr<Sdp>* parsedp);
   nsresult SetLocalDescriptionOffer(UniquePtr<Sdp> offer);
   nsresult SetLocalDescriptionAnswer(JsepSdpType type, UniquePtr<Sdp> answer);
   nsresult SetRemoteDescriptionOffer(UniquePtr<Sdp> offer);
   nsresult SetRemoteDescriptionAnswer(JsepSdpType type, UniquePtr<Sdp> answer);
-  nsresult ValidateLocalDescription(const Sdp& description, JsepSdpType type);
-  nsresult ValidateRemoteDescription(const Sdp& description);
-  nsresult ValidateOffer(const Sdp& offer);
-  nsresult ValidateAnswer(const Sdp& offer, const Sdp& answer);
-  nsresult CheckRtcpMux(const Sdp& description);
+  JsepSession::Result ValidateLocalDescription(const Sdp& description,
+                                               JsepSdpType type);
+  JsepSession::Result ValidateRemoteDescription(const Sdp& description);
+  JsepSession::Result ValidateOffer(const Sdp& offer);
+  JsepSession::Result ValidateAnswer(const Sdp& offer, const Sdp& answer);
+  JsepSession::Result CheckRtcpMux(const Sdp& description);
   nsresult UpdateTransceiversFromRemoteDescription(const Sdp& remote);
   Maybe<JsepTransceiver> GetTransceiverForLevel(size_t level) const;
   Maybe<JsepTransceiver> GetTransceiverForMid(const std::string& mid) const;

@@ -560,6 +560,7 @@ function relativeTime(timestamp) {
   }
   return new Date(timestamp).toLocaleString();
 }
+const PROVIDER_SECTION_ORDER = ["local", "remote-experiments", "cfr", "panel_local_testing", "other"];
 class ToggleMessageJSON extends (react__WEBPACK_IMPORTED_MODULE_1___default().PureComponent) {
   constructor(props) {
     super(props);
@@ -571,11 +572,12 @@ class ToggleMessageJSON extends (react__WEBPACK_IMPORTED_MODULE_1___default().Pu
   render() {
     let direction = this.props.isCollapsed ? "forward" : "down";
     return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
-      className: "clearButton",
+      className: "message-title-toggle",
+      "aria-expanded": !this.props.isCollapsed,
       onClick: this.handleClick
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
       className: `icon small icon-arrowhead-${direction}`
-    }));
+    }), this.props.children);
   }
 }
 class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().PureComponent) {
@@ -604,8 +606,8 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
       filterGroups: [],
       filterProviders: [],
       filterTemplates: [],
-      filtersCollapsed: true,
       collapsedMessages: [],
+      collapsedProviders: [],
       modifiedMessages: [],
       messageBlockList: [],
       multiProfileMessageBlocklist: [],
@@ -669,23 +671,27 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
   handleUnblock(msg) {
     _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.unblockById(msg.id);
   }
-  resetJSON(msg) {
+
+  // Messages are identified by their index in state.messages rather than by
+  // id, because some messages share the same id
+  messageTextareaId(messageIndex) {
+    return `msg-${messageIndex}-textarea`;
+  }
+  resetJSON(msg, messageIndex) {
     // reset the displayed JSON for the given message
-    let textarea = document.getElementById(`${msg.id}-textarea`);
+    const textarea = document.getElementById(this.messageTextareaId(messageIndex));
     textarea.value = JSON.stringify(msg, null, 2);
     textarea.classList.remove("errorState");
-    // remove the message from the list of modified IDs
-    let index = this.state.modifiedMessages.indexOf(msg.id);
     this.setState(prevState => ({
-      modifiedMessages: [...prevState.modifiedMessages.slice(0, index), ...prevState.modifiedMessages.slice(index + 1)]
+      modifiedMessages: prevState.modifiedMessages.filter(id => id !== messageIndex)
     }));
   }
   resetAllJSON() {
     // reset the displayed JSON for each modified message
-    for (const msgId of this.state.modifiedMessages) {
-      const msg = this.state.messages.find(m => m.id === msgId);
-      const textarea = document.getElementById(`${msgId}-textarea`);
-      if (textarea) {
+    for (const messageIndex of this.state.modifiedMessages) {
+      const msg = this.state.messages[messageIndex];
+      const textarea = document.getElementById(this.messageTextareaId(messageIndex));
+      if (msg && textarea) {
         textarea.value = JSON.stringify(msg, null, 2);
         textarea.classList.remove("errorState");
       }
@@ -694,12 +700,35 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
       modifiedMessages: []
     });
   }
-  showMessage(msg) {
-    if (msg.template === "pb_newtab") {
-      _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.openPBWindow(msg.content);
-    } else {
-      _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.overrideMessage(msg.id).then(state => this.setStateFromParent(state));
+  showMessage(msg, messageIndex) {
+    const isModified = this.state.modifiedMessages.includes(messageIndex);
+    const message = isModified ? JSON.parse(document.getElementById(this.messageTextareaId(messageIndex)).value) : msg;
+    if (message.template === "pb_newtab") {
+      _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.openPBWindow(message.content);
+      return;
     }
+    const request = isModified ? _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.modifyMessageJson(message) : _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.overrideMessage(msg.id);
+    request.then(state => this.setStateFromParent(state));
+  }
+  messageRequiresAnchor(msg) {
+    const anchorTemplates = ["cfr_doorhanger", "bookmarks_bar_button"];
+    return anchorTemplates.includes(msg.template) || !!msg.content?.anchors || !!msg.content?.screens?.some(screenDef => screenDef.anchors);
+  }
+  getProviderLabel(providerId) {
+    if (providerId === "panel_local_testing") {
+      return "Test Messages (PanelTestProvider)";
+    }
+    const provider = this.state.providerPrefs?.find(p => p.id === providerId) || {};
+    if (provider.type === "remote-experiments") {
+      return "Nimbus (messaging-experiments)";
+    }
+    if (provider.type === "local") {
+      return "Local (onboarding)";
+    }
+    if (provider.type === "remote-settings") {
+      return `Remote Settings (${providerId})`;
+    }
+    return providerId;
   }
   async resetMessageState() {
     await Promise.all([_asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.resetMessageImpressions(), _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.resetGroupImpressions(), _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.resetScreenImpressions(), _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.unblockAll()]);
@@ -834,12 +863,12 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
     if (event.target.dataset.provider) {
       stateKey = "filterProviders";
       itemValue = event.target.dataset.provider;
-    } else if (event.target.dataset.group) {
-      stateKey = "filterGroups";
-      itemValue = event.target.dataset.group;
     } else if (event.target.dataset.template) {
       stateKey = "filterTemplates";
       itemValue = event.target.dataset.template;
+    } else if (event.target.dataset.group) {
+      stateKey = "filterGroups";
+      itemValue = event.target.dataset.group;
     } else {
       return;
     }
@@ -921,18 +950,33 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
     }
   }
   renderMessageItem(msg) {
+    const messageIndex = this.state.messages.indexOf(msg);
+    const textareaId = this.messageTextareaId(messageIndex);
     const isBlockedByGroup = this.state.groups.filter(group => msg.groups.includes(group.id)).some(group => !group.enabled);
     const msgProvider = this.state.providers.find(provider => provider.id === msg.provider) || {};
     const isProviderExcluded = msgProvider.exclude && msgProvider.exclude.includes(msg.id);
     const isMessageBlocked = this.state.messageBlockList.includes(msg.id) || this.state.messageBlockList.includes(msg.campaign) || this.state.multiProfileMessageBlocklist.includes(msg.id);
     const isBlocked = isMessageBlocked || isBlockedByGroup || isProviderExcluded;
     const impressions = this.state.messageImpressions[msg.id] ? this.state.messageImpressions[msg.id].length : 0;
-    const isCollapsed = this.state.collapsedMessages.includes(msg.id);
-    const isModified = this.state.modifiedMessages.includes(msg.id);
+    const isCollapsed = this.state.collapsedMessages.includes(messageIndex);
+    const isModified = this.state.modifiedMessages.includes(messageIndex);
+    const previewWarnings = [];
+    if (this.messageRequiresAnchor(msg)) {
+      previewWarnings.push("This message may not render as it anchors to a browser UI element that may not be " + "currently visible.");
+    }
+    if (msg.template === "toast_notification") {
+      previewWarnings.push("Toast notifications are shown and limited to native Windows OS notifications via the system alerts service. ");
+    }
+    if (msg.template === "menu_message") {
+      previewWarnings.push('To preview this message, add "testingTriggerContext" to the JSON set to either ' + '"app_menu" or "pxi_menu" to select which menu it renders in.');
+    }
     const aboutMessagePreviewSupported = ["infobar", "spotlight", "cfr_doorhanger", "feature_callout", "pb_newtab", "sidebar_chatbot_promo"].includes(msg.template);
     let itemClassName = "message-item";
     if (isBlocked) {
       itemClassName += " blocked";
+    }
+    if (isCollapsed) {
+      itemClassName += " collapsed";
     }
     let messageStats = [];
     let messageStatsString;
@@ -951,35 +995,34 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
     }
     return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
       className: itemClassName,
-      key: `${msg.id}-${msg.provider}`
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
-      className: "button-box baseline"
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
+      key: textareaId
+    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement(ToggleMessageJSON, {
+      msgId: messageIndex,
+      toggleJSON: this.toggleJSON,
+      isCollapsed: isCollapsed
+    }, previewWarnings.map(warning => /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
+      key: warning,
+      className: "icon icon-warning preview-warning",
+      role: "img",
+      "aria-label": warning,
+      title: warning
+    })), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
       className: "message-id monospace"
     }, msg.id), " ", /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
       className: "message-stats small-text"
-    }, messageStatsString)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
-      className: "button-box"
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement(ToggleMessageJSON, {
-      msgId: `${msg.id}`,
-      toggleJSON: this.toggleJSON,
-      isCollapsed: isCollapsed
-    }),
-    // eslint-disable-next-line no-nested-ternary
-    isBlocked ? null : isModified ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
-      className: "restore",
-      onClick: () => this.resetJSON(msg)
-    }, "Reset") : /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
+    }, messageStatsString)), isCollapsed ? null : /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
+      className: "button-box message-actions"
+    }, isBlocked ? null : /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
       className: "primary show",
-      onClick: () => this.showMessage(msg)
+      onClick: () => this.showMessage(msg, messageIndex)
     }, "Show"), isBlocked || !isModified ? null : /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
-      className: "primary modify",
-      onClick: () => this.modifyJson(msg)
-    }, "Modify"), aboutMessagePreviewSupported ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement(_CopyButton__WEBPACK_IMPORTED_MODULE_4__.CopyButton, {
+      className: "restore",
+      onClick: () => this.resetJSON(msg, messageIndex)
+    }, "Reset"), aboutMessagePreviewSupported ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement(_CopyButton__WEBPACK_IMPORTED_MODULE_4__.CopyButton, {
       transformer: text => `about:messagepreview?json=${encodeURIComponent(toBinary(text))}`,
       label: "Share",
       copiedLabel: "Copied!",
-      inputSelector: `#${msg.id}-textarea`,
+      inputSelector: `#${textareaId}`,
       className: "share"
     }) : null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
       className: `button${isBlocked ? " primary" : ""}`,
@@ -987,7 +1030,7 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
     }, isBlocked ? "Unblock" : "Block")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("pre", {
       className: isCollapsed ? "collapsed" : "expanded"
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("textarea", {
-      id: `${msg.id}-textarea`,
+      id: textareaId,
       name: msg.id,
       className: "message-textarea",
       disabled: isBlocked,
@@ -999,31 +1042,26 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
         } catch (e) {
           event.target.classList.add("errorState");
         }
-        this.onMessageChanged(msg.id);
+        this.onMessageChanged(messageIndex);
       },
       spellCheck: "false"
     }, JSON.stringify(msg, null, 2))));
   }
-  modifyJson(content) {
-    const message = JSON.parse(document.getElementById(`${content.id}-textarea`).value);
-    if (message.template === "pb_newtab") {
-      _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.openPBWindow(message.content);
-    } else {
-      _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.modifyMessageJson(message).then(state => {
-        this.setStateFromParent(state);
-      });
-    }
+  isAnythingCollapsed() {
+    return this.state.collapsedMessages.length || this.state.collapsedProviders.length;
   }
   toggleAllMessages(messagesToShow) {
-    if (this.state.collapsedMessages.length) {
+    if (this.isAnythingCollapsed()) {
       this.setState({
-        collapsedMessages: []
+        collapsedMessages: [],
+        collapsedProviders: []
       });
     } else {
-      Array.prototype.forEach.call(messagesToShow, msg => {
-        this.setState(prevState => ({
-          collapsedMessages: prevState.collapsedMessages.concat(msg.id)
-        }));
+      const collapsedMessages = messagesToShow.map(msg => this.state.messages.indexOf(msg));
+      const collapsedProviders = [...new Set(messagesToShow.map(msg => msg.provider))];
+      this.setState({
+        collapsedMessages,
+        collapsedProviders
       });
     }
   }
@@ -1032,94 +1070,185 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
     if (this.state.filterProviders.length) {
       messages = messages.filter(msg => this.state.filterProviders.includes(msg.provider));
     }
-    if (this.state.filterGroups.length) {
-      messages = messages.filter(msg => msg.groups?.some(group => this.state.filterGroups.includes(group)) || !msg.groups?.length && this.state.filterGroups.includes("none"));
-    }
     if (this.state.filterTemplates.length) {
       messages = messages.filter(msg => this.state.filterTemplates.includes(msg.template));
     }
+    if (this.state.filterGroups.length) {
+      messages = messages.filter(msg => msg.groups?.some(group => this.state.filterGroups.includes(group)) || !msg.groups?.length && this.state.filterGroups.includes("none"));
+    }
     return messages;
+  }
+  toggleProviderCollapse(providerId) {
+    this.setState(prevState => ({
+      collapsedProviders: prevState.collapsedProviders.includes(providerId) ? prevState.collapsedProviders.filter(id => id !== providerId) : [...prevState.collapsedProviders, providerId]
+    }));
+  }
+  getProviderSortRank(providerId) {
+    const {
+      type
+    } = this.state.providerPrefs?.find(p => p.id === providerId) || {};
+    const key = PROVIDER_SECTION_ORDER.includes(providerId) ? providerId : type;
+    const rank = PROVIDER_SECTION_ORDER.indexOf(key);
+    return rank === -1 ? PROVIDER_SECTION_ORDER.indexOf("other") : rank;
+  }
+  groupMessagesByProvider(messages) {
+    const groups = new Map();
+    for (const msg of messages) {
+      const providerId = msg.provider;
+      if (!groups.has(providerId)) {
+        groups.set(providerId, []);
+      }
+      groups.get(providerId).push(msg);
+    }
+    return [...groups.entries()].sort(([a], [b]) => this.getProviderSortRank(a) - this.getProviderSortRank(b));
   }
   renderMessages() {
     if (!this.state.messages) {
       return null;
     }
     const messagesToShow = this.filterMessages();
-    return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("p", {
-      className: "helpLink"
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
-      className: "icon icon-small-spacer icon-info"
-    }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("ul", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("li", null, "To modify a message, change the JSON and click 'Modify' to see your changes."), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("li", null, "Click \"Reset\" to restore the JSON to the original."), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("li", null, "Click \"Share\" to copy a link to the clipboard that can be used to preview the message by opening the link in Nightly/local builds."))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
-      className: "button-box"
+    return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
+      className: "messages-list"
+    }, this.groupMessagesByProvider(messagesToShow).map(([providerId, msgs]) => {
+      const isProviderCollapsed = this.state.collapsedProviders.includes(providerId);
+      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("section", {
+        className: "messages-provider-section",
+        key: providerId
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("h3", {
+        className: "messages-provider-heading"
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
+        className: "messages-provider-toggle",
+        "aria-expanded": !isProviderCollapsed,
+        onClick: () => this.toggleProviderCollapse(providerId)
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
+        className: `icon small icon-small-spacer icon-arrowhead-${isProviderCollapsed ? "forward" : "down"}`
+      }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", null, this.getProviderLabel(providerId)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
+        className: "message-stats small-text"
+      }, "(", msgs.length, ")"))), isProviderCollapsed ? null : msgs.map(msg => this.renderMessageItem(msg)));
+    })));
+  }
+  removeFilter(stateKey, value) {
+    this.setState(prevState => ({
+      [stateKey]: prevState[stateKey].filter(item => item !== value)
+    }));
+  }
+  renderFilterDropdown({
+    label,
+    stateKey,
+    dataAttr,
+    options
+  }) {
+    const selectedCount = this.state[stateKey].length;
+    const panelId = `filter-panel-${stateKey}`;
+    return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
+      className: "filter-dropdown"
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
-      className: "small no-margins",
-      onClick: () => this.toggleAllMessages(messagesToShow)
+      type: "button",
+      className: "filter-dropdown-toggle",
+      "aria-haspopup": "true",
+      popovertarget: panelId
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
-      className: `icon small icon-small-spacer icon-arrowhead-${this.state.collapsedMessages.length ? "forward" : "down"}`
-    }), this.state.collapsedMessages.length ? "Expand all" : "Collapse all"), this.state.modifiedMessages.length ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
-      className: "small no-margins messages-reset",
+      className: "filter-dropdown-label"
+    }, label, " \xB7 ", selectedCount || "Any"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
+      className: "icon icon-arrowhead-down filter-dropdown-chevron"
+    })), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
+      id: panelId,
+      popover: "auto",
+      className: "filter-dropdown-panel",
+      role: "group",
+      "aria-label": label
+    }, options.map(({
+      value,
+      label: optionLabel
+    }) => /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("label", {
+      key: value,
+      className: "filter-option"
+    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("input", {
+      type: "checkbox",
+      [dataAttr]: value,
+      checked: this.state[stateKey].includes(value),
+      onChange: this.onChangeFilters
+    }), optionLabel))));
+  }
+  renderFilterPills() {
+    const pills = [...this.state.filterTemplates.map(value => ({
+      stateKey: "filterTemplates",
+      value
+    })), ...this.state.filterProviders.map(value => ({
+      stateKey: "filterProviders",
+      value
+    })), ...this.state.filterGroups.map(value => ({
+      stateKey: "filterGroups",
+      value
+    }))];
+    if (!pills.length) {
+      return null;
+    }
+    return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
+      className: "filter-pills"
+    }, pills.map(({
+      stateKey,
+      value
+    }) => /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
+      key: `${stateKey}-${value}`,
+      className: "filter-pill",
+      onClick: () => this.removeFilter(stateKey, value)
+    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", null, stateKey === "filterProviders" ? this.getProviderLabel(value) : value), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
+      className: "icon small icon-dismiss"
+    }))));
+  }
+  renderFilters() {
+    const hasFilters = this.state.filterTemplates.length || this.state.filterGroups.length || this.state.filterProviders.length;
+    const templateOptions = this.state.messages ? [...new Set(this.state.messages.map(message => message.template))].map(template => ({
+      value: template,
+      label: template
+    })) : [];
+    const groupOptions = this.state.groups ? this.state.groups.map(group => ({
+      value: group.id,
+      label: group.id
+    })) : [];
+    const providerOptions = this.state.providers ? this.state.providers.map(provider => ({
+      value: provider.id,
+      label: this.getProviderLabel(provider.id)
+    })) : [];
+    return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
+      className: "filters"
+    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
+      className: "filter-controls"
+    }, this.renderFilterDropdown({
+      label: "Template",
+      stateKey: "filterTemplates",
+      dataAttr: "data-template",
+      options: templateOptions
+    }), this.renderFilterDropdown({
+      label: "Provider",
+      stateKey: "filterProviders",
+      dataAttr: "data-provider",
+      options: providerOptions
+    }), this.renderFilterDropdown({
+      label: "Group",
+      stateKey: "filterGroups",
+      dataAttr: "data-group",
+      options: groupOptions
+    }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
+      className: "filter-actions"
+    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
+      className: "filter-link",
+      onClick: () => this.toggleAllMessages(this.filterMessages())
+    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
+      className: `icon small icon-small-spacer icon-arrowhead-${this.isAnythingCollapsed() ? "forward" : "down"}`
+    }), this.isAnythingCollapsed() ? "Expand all" : "Collapse all"), this.state.modifiedMessages.length ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
+      className: "filter-link messages-reset",
       onClick: this.resetAllJSON
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
       className: "icon small icon-small-spacer icon-undo"
     }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", null, "Reset all JSON")) : null, this.state.messageBlockList.length ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
-      className: "small no-margins unblock-all",
+      className: "filter-link unblock-all",
       onClick: this.unblockAll
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", null, "Unblock all")) : null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
-      className: "small no-margins",
-      onClick: this.resetMessageState
-    }, "Reset FxMS state")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
-      className: "messages-list"
-    }, messagesToShow.map(msg => this.renderMessageItem(msg))));
-  }
-  renderFilters() {
-    return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
-      className: "filters"
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
-      className: "button-box"
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
-      className: "small no-margins",
-      onClick: () => this.setState(prevState => ({
-        filtersCollapsed: !prevState.filtersCollapsed
-      }))
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
-      className: `icon small icon-small-spacer icon-arrowhead-${this.state.filtersCollapsed ? "forward" : "down"}`
-    }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", null, "Filters")), this.state.filterProviders.length || this.state.filterGroups.length || this.state.filterTemplates.length ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
-      className: "small no-margins",
+    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", null, "Unblock all")) : null, hasFilters ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
+      className: "filter-link",
       onClick: this.onClearFilters
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
-      className: "icon small icon-small-spacer icon-dismiss"
-    }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", null, "Clear")) : null), this.state.filtersCollapsed ? null : /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
-      className: "row"
-    }, this.state.messages ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("h3", null, "Templates"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
-      className: "col"
-    }, this.state.messages.map(message => message.template).filter(
-    // eslint-disable-next-line no-shadow
-    (value, index, self) => self.indexOf(value) === index).map(template => /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("label", {
-      key: template
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("input", {
-      type: "checkbox",
-      "data-template": template,
-      checked: this.state.filterTemplates.includes(template),
-      onChange: this.onChangeFilters
-    }), template)))) : null, this.state.groups ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("h3", null, "Groups"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
-      className: "col"
-    }, this.state.groups.map(group => /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("label", {
-      key: group.id
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("input", {
-      type: "checkbox",
-      "data-group": group.id,
-      checked: this.state.filterGroups.includes(group.id),
-      onChange: this.onChangeFilters
-    }), group.id)))) : null, this.state.providers ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("h3", null, "Providers"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
-      className: "col"
-    }, this.state.providers.map(provider => /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("label", {
-      key: provider.id
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("input", {
-      type: "checkbox",
-      "data-provider": provider.id,
-      checked: this.state.filterProviders.includes(provider.id),
-      onChange: this.onChangeFilters
-    }), provider.id)))) : null));
+    }, "Clear all") : null)), this.renderFilterPills());
   }
   renderProviders() {
     const providersConfig = this.state.providerPrefs;
@@ -1444,6 +1573,35 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
     }
     return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("p", null, "No errors");
   }
+  renderResetButton({
+    label,
+    description,
+    onClick,
+    className = ""
+  }) {
+    return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
+      className: `small reset-button ${className}`.trim(),
+      title: description,
+      onClick: onClick
+    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", null, label), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
+      className: "icon small icon-info",
+      "aria-hidden": "true"
+    }));
+  }
+  renderSectionInfo(description, docHref, linkText) {
+    const lines = Array.isArray(description) ? description : [description];
+    return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("p", {
+      className: "helpLink section-info"
+    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
+      className: "icon icon-small-spacer icon-info"
+    }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", null, lines.map((line, index) => /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement((react__WEBPACK_IMPORTED_MODULE_1___default().Fragment), {
+      key: line
+    }, index ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("br", null) : null, line)), " ", docHref ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("a", {
+      target: "_blank",
+      rel: "noopener noreferrer",
+      href: docHref
+    }, linkText) : null));
+  }
   renderSection() {
     const [section] = this.props.location.routes;
     switch (section) {
@@ -1464,17 +1622,23 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
       case "errors":
         return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement((react__WEBPACK_IMPORTED_MODULE_1___default().Fragment), null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("h2", null, "ASRouter errors"), this.renderErrors());
       default:
-        return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement((react__WEBPACK_IMPORTED_MODULE_1___default().Fragment), null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("h2", null, "Message providers", /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
-          className: "small",
-          title: "Restore all provider settings that ship with Firefox",
+        return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement((react__WEBPACK_IMPORTED_MODULE_1___default().Fragment), null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("h2", null, "Message providers", this.renderResetButton({
+          label: "Restore default prefs",
+          description: "Restores all message provider prefs (which providers are enabled and their sources) to the defaults that ship with Firefox. Does not clear impressions or blocks.",
           onClick: this.resetPref
-        }, "Restore default prefs")), this.state.providers ? this.renderProviders() : null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("h2", null, "Message groups", /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
-          className: "small",
+        })), this.renderSectionInfo(["Sources that supply messages to the Firefox Messaging System.", "Includes: local (in-tree), Remote Settings collections, and Nimbus experiments."]), this.state.providers ? this.renderProviders() : null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("h2", null, "Message groups", this.renderResetButton({
+          label: "Reset group impressions",
+          description: "Clears the recorded impression counts for message groups, resetting group-level frequency caps.",
           onClick: this.resetGroupImpressions
-        }, "Reset group impressions")), this.state.groups ? this.renderMessageGroups() : null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("h2", null, "Messages", /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("button", {
-          className: "small",
+        })), this.renderSectionInfo(["When multiple messages point to the same message group configuration, any impression from one of the messages counts against the total allowed for the group.", "A message can show only if all of its groups are enabled and under their caps."]), this.state.groups ? this.renderMessageGroups() : null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("h2", null, "Messages", this.renderResetButton({
+          label: "Reset message impressions",
+          description: "Clears the recorded impression counts for individual messages, resetting per-message frequency caps.",
           onClick: this.resetMessageImpressions
-        }, "Reset message impressions")), this.renderFilters(), this.renderMessages());
+        })), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("p", {
+          className: "helpLink section-info"
+        }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
+          className: "icon icon-small-spacer icon-info"
+        }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", null, "The list of messages currently loaded from all enabled providers.", /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("ul", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("li", null, "Click \"Show\" to preview a message. To preview edits, change the JSON first, then click \"Show\" again."), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("li", null, "Click \"Reset\" to restore the JSON to the original."), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("li", null, "Click \"Share\" to copy a link to the clipboard that can be used to preview the message by opening the link in Nightly/local builds.")))), this.renderFilters(), this.renderMessages());
     }
   }
   render() {
@@ -1506,8 +1670,12 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
       "data-selected": section === "errors" ? "" : null
     }, "Errors")))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("main", {
       className: "main-panel"
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("h1", null, "ASRouter Admin"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("p", {
-      className: "helpLink"
+    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("h1", null, "ASRouter Admin", this.renderResetButton({
+      label: "Reset FxMS state",
+      description: "Resets all Firefox Messaging System user state: clears message, group, and screen impressions and unblocks every message.",
+      onClick: this.resetMessageState
+    })), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("p", {
+      className: "helpLink section-info"
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", {
       className: "icon icon-small-spacer icon-info"
     }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("span", null, "Need help using these tools? Check out our", " ", /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("a", {

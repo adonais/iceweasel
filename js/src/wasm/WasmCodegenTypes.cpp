@@ -145,14 +145,18 @@ void TrapSitesForKind::checkInvariants(const uint8_t* codeBase) const {
     last = pcOffset;
   }
 
-#  if (defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86) ||   \
-       defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_ARM) || \
-       defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_MIPS64))
-  // Check that each trapsite is associated with a plausible instruction.  The
-  // required instruction kind depends on the trapsite kind.
+#  if (defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86) ||        \
+       defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_ARM) ||      \
+       defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_MIPS64) || \
+       defined(JS_CODEGEN_RISCV64))
+  // Check that each trapsite is associated with an instruction that
+  // SummarizeTrapInstruction can identify and can determine the length of.
+  // The required instruction kind depends on the trapsite kind.
   //
-  // NOTE: currently enabled on x86_{32,64}, arm{32,64}, loongson64 and mips64.
-  // Ideally it should be extended to riscv64 too.
+  // NOTE: this functionality used to be optional (DEBUG-only), but that is no
+  // longer the case.  SummarizeTrapInstruction now needs to be able to compute
+  // the length of all trapping instructions on all targets, even for release
+  // builds.  Without it, the trap-handling machinery will not work correctly.
   //
   for (uint32_t i = 0; i < length(); i++) {
     uint32_t pcOffset = pcOffsets_[i];
@@ -161,8 +165,8 @@ void TrapSitesForKind::checkInvariants(const uint8_t* codeBase) const {
     const uint8_t* insnAddr = codeBase + uintptr_t(pcOffset);
     // `expected` describes the kind of instruction we expect to see at
     // `insnAddr`.  Find out what is actually there and check it matches.
-    mozilla::Maybe<TrapMachineInsn> actual = SummarizeTrapInstruction(insnAddr);
-    bool valid = actual.isSome() && actual.value() == expected;
+    SummarizeResult actual = SummarizeTrapInstruction(insnAddr);
+    bool valid = actual.identified() && actual.kind() == expected;
     // This is useful for diagnosing validation failures.
     // if (!valid) {
     //   fprintf(stderr,
@@ -170,11 +174,9 @@ void TrapSitesForKind::checkInvariants(const uint8_t* codeBase) const {
     //           "pcOffset=%-5u  addr= %p\n",
     //           ToString(trap), ToString(expected),
     //           pcOffset, insnAddr);
-    //   if (actual.isSome()) {
-    //     fprintf(stderr, "FAIL: identified as %s\n",
-    //             actual.isSome() ? ToString(actual.value())
-    //                             : "(insn not identified)");
-    //   }
+    //   fprintf(stderr, "FAIL: identified as %s\n",
+    //           actual.identified() ? ToString(actual.kind())
+    //                               : "(insn not identified)");
     // }
     MOZ_ASSERT(valid, "wasm trapsite does not reference a valid insn");
   }

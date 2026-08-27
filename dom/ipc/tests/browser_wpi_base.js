@@ -197,7 +197,7 @@ const heuristics = [
       // Init login detection service to trigger fetching logins
       let loginDetection = Cc[
         "@mozilla.org/login-detection-service;1"
-      ].createInstance(Ci.nsILoginDetectionService);
+      ].getService(Ci.nsILoginDetectionService);
       loginDetection.init();
 
       await TestUtils.waitForCondition(() => {

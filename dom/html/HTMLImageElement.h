@@ -94,7 +94,7 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   uint32_t NaturalHeight() { return NaturalSize().height; }
   uint32_t NaturalWidth() { return NaturalSize().width; }
 
-  bool Complete();
+  bool Complete() const;
   uint32_t Hspace() {
     return GetDimensionAttrAsUnsignedInt(nsGkAtoms::hspace, 0);
   }

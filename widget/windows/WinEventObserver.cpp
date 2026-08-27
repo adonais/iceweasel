@@ -230,7 +230,8 @@ static void OnSettingsChange(WPARAM wParam, LPARAM lParam) {
   if (lParamString == u"ConvertibleSlateMode"_ns) {
     // Documentation implies, and testing shows, that this is not seen on Win10.
     (void)NS_WARN_IF(!mozilla::IsWin11OrLater());
-    WindowsUIUtils::UpdateInWin11TabletMode();
+    WindowsUIUtils::UpdateInWin11TabletMode(
+        WindowsUIUtils::TabletModeUpdateReason::Notification);
     NotifyThemeChanged(widget::ThemeChangeKind::MediaQueriesOnly);
     return;
   }

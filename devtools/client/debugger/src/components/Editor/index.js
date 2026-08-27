@@ -34,6 +34,7 @@ import {
   getShouldHighlightSelectedLocation,
   getSelectedTraceLocation,
   getSearchOptions,
+  getBreakpointsList,
 } from "../../selectors/index";
 
 // Redux actions
@@ -265,6 +266,10 @@ class Editor extends PureComponent {
 
     shortcuts.on(L10N.getStr("toggleBreakpoint.key"), this.onToggleBreakpoint);
     shortcuts.on(
+      L10N.getStr("toggleAllBreakpoints.key"),
+      this.onToggleAllBreakpoints
+    );
+    shortcuts.on(
       L10N.getStr("toggleCondPanel.breakpoint.key"),
       this.onToggleConditionalPanel
     );
@@ -368,6 +373,7 @@ class Editor extends PureComponent {
     const { shortcuts } = this.context;
     shortcuts.off(L10N.getStr("sourceTabs.closeTab.key"));
     shortcuts.off(L10N.getStr("toggleBreakpoint.key"));
+    shortcuts.off(L10N.getStr("toggleAllBreakpoints.key"));
     shortcuts.off(L10N.getStr("toggleCondPanel.breakpoint.key"));
     shortcuts.off(L10N.getStr("toggleCondPanel.logPoint.key"));
 
@@ -409,6 +415,17 @@ class Editor extends PureComponent {
     }
 
     this.props.toggleBreakpointAtLine(currentPosition.line);
+  };
+
+  onToggleAllBreakpoints = e => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const shouldDisableBreakpoints = this.props.breakpoints.every(
+      b => !b.disabled
+    );
+
+    this.props.toggleAllBreakpoints(shouldDisableBreakpoints);
   };
 
   onToggleLogPanel = e => {
@@ -937,6 +954,7 @@ const mapStateToProps = state => {
     selectedTraceLocation: getSelectedTraceLocation(state),
     modifiers: getSearchOptions(state, "file-search"),
     searchOptions: getSearchOptions(state, searchKeys.FILE_SEARCH),
+    breakpoints: getBreakpointsList(state),
   };
 };
 
@@ -947,6 +965,7 @@ const mapDispatchToProps = dispatch => ({
       closeConditionalPanel: actions.closeConditionalPanel,
       continueToHere: actions.continueToHere,
       toggleBreakpointAtLine: actions.toggleBreakpointAtLine,
+      toggleAllBreakpoints: actions.toggleAllBreakpoints,
       addBreakpointAtLine: actions.addBreakpointAtLine,
       jumpToMappedLocation: actions.jumpToMappedLocation,
       updateViewport: actions.updateViewport,

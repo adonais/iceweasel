@@ -323,22 +323,31 @@ const TagDesc& CoreInstanceDesc::getTag(uint32_t tagIndex) const {
       });
 }
 
-bool ComponentExternDesc::matches(const ComponentExternDesc& sub,
-                                  const ComponentExternDesc& super) {
-  MOZ_ASSERT(ComponentSortValidForExternDesc(sub.sort()));
-  MOZ_ASSERT(ComponentSortValidForExternDesc(super.sort()));
-  MOZ_RELEASE_ASSERT(sub.isValid() && super.isValid());
+bool ComponentExternDesc::compatible(const ComponentExternDesc& defined,
+                                     const ComponentExternDesc& ascribed,
+                                     bool isNewSubResource) {
+  MOZ_ASSERT(ComponentSortValidForExternDesc(defined.sort()));
+  MOZ_ASSERT(ComponentSortValidForExternDesc(ascribed.sort()));
+  MOZ_RELEASE_ASSERT(defined.isValid() && ascribed.isValid());
 
   // Different sorts never match.
-  if (sub.sort() != super.sort()) {
+  if (defined.sort() != ascribed.sort()) {
     return false;
   }
 
-  switch (sub.sort()) {
+  switch (defined.sort()) {
     case ComponentSort::Func:
-      return sub.asFunc() == super.asFunc();
-    case ComponentSort::Type:
-      return sub.asType() == super.asType();
+      return defined.asFunc() == ascribed.asFunc();
+    case ComponentSort::Type: {
+      ComponentType definedType = defined.asType();
+      ComponentType ascribedType = ascribed.asType();
+      if (ascribedType.kind() == ComponentTypeKind::SubResource &&
+          isNewSubResource) {
+        return definedType.kind() == ComponentTypeKind::Resource ||
+               definedType.kind() == ComponentTypeKind::SubResource;
+      }
+      return defined.asType() == ascribed.asType();
+    }
     case ComponentSort::Component:
     case ComponentSort::Instance:
     case ComponentSort::CoreModule: {

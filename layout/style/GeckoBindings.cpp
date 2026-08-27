@@ -909,18 +909,13 @@ bool Gecko_AttrEquals(const nsAttrValue* aValue, const nsAtom* aStr,
   return aValue->Equals(aStr, aIgnoreCase ? eIgnoreCase : eCaseMatters);
 }
 
-#define WITH_COMPARATOR(ignore_case_, c_, expr_)                    \
-  auto c_ = (ignore_case_) ? nsASCIICaseInsensitiveStringComparator \
-                           : nsTDefaultStringComparator<char16_t>;  \
-  return expr_;
-
 bool Gecko_AttrDashEquals(const nsAttrValue* aValue, const nsAtom* aStr,
                           bool aIgnoreCase) {
   nsAutoString str;
   aValue->ToString(str);
-  WITH_COMPARATOR(
-      aIgnoreCase, c,
-      nsStyleUtil::DashMatchCompare(str, nsDependentAtomString(aStr), c))
+  return nsStyleUtil::DashMatchCompare(
+      str, nsDependentAtomString(aStr),
+      aIgnoreCase ? eIgnoreCase : eCaseMatters);
 }
 
 bool Gecko_AttrIncludes(const nsAttrValue* aValue, const nsAtom* aStr,
@@ -930,9 +925,8 @@ bool Gecko_AttrIncludes(const nsAttrValue* aValue, const nsAtom* aStr,
   }
   nsAutoString str;
   aValue->ToString(str);
-  WITH_COMPARATOR(
-      aIgnoreCase, c,
-      nsStyleUtil::ValueIncludes(str, nsDependentAtomString(aStr), c))
+  return nsStyleUtil::ValueIncludes(str, nsDependentAtomString(aStr),
+                                    aIgnoreCase ? eIgnoreCase : eCaseMatters);
 }
 
 bool Gecko_AttrHasSubstring(const nsAttrValue* aValue, const nsAtom* aStr,
@@ -1081,23 +1075,16 @@ void Gecko_EnsureStyleViewTimelineArrayLength(void* aArray, size_t aLen) {
   EnsureStyleAutoArrayLength(base, aLen);
 }
 
-enum class KeyframeSearchDirection {
-  Forwards,
-  Backwards,
-};
-
-enum class KeyframeInsertPosition {
-  Prepend,
-  LastForOffset,
-  Append,
-};
-
+// Note: There is a specialized version, FindOrInsertInitialOrFinalKeyframe(),
+// in CSSAnimation.cpp, and it finds the matched keyframes based on the computed
+// offset. However, this function is to find or create the matched keyframe
+// based on the specified <keyframe-selector>, for grouping them.
+// For more details, see the step 2.2 in
+// https://drafts.csswg.org/css-animations-2/#keyframe-processing
 static std::pair<Keyframe*, size_t> GetOrCreateKeyframe(
     nsTArray<Keyframe>* aKeyframes, StyleTimelineRangeName aRangeName,
     float aOffset, const StyleComputedTimingFunction* aTimingFunction,
-    const CompositeOperationOrAuto aComposition,
-    KeyframeSearchDirection aSearchDirection,
-    KeyframeInsertPosition aInsertPosition) {
+    const CompositeOperationOrAuto aComposition) {
   MOZ_ASSERT(aKeyframes, "The keyframe array should be valid");
   MOZ_ASSERT(aTimingFunction, "The timing function should be valid");
   MOZ_ASSERT(aRangeName != StyleTimelineRangeName::None ||
@@ -1107,43 +1094,18 @@ static std::pair<Keyframe*, size_t> GetOrCreateKeyframe(
 
   const auto& offset = Keyframe::OffsetType{aRangeName, (double)aOffset};
   size_t keyframeIndex;
-  switch (aSearchDirection) {
-    case KeyframeSearchDirection::Forwards:
-      if (nsAnimationManager::FindMatchingKeyframe(
-              *aKeyframes, offset, *aTimingFunction, aComposition,
-              keyframeIndex)) {
-        return {&(*aKeyframes)[keyframeIndex], keyframeIndex};
-      }
-      break;
-    case KeyframeSearchDirection::Backwards:
-      if (nsAnimationManager::FindMatchingKeyframe(
-              Reversed(*aKeyframes), offset, *aTimingFunction, aComposition,
-              keyframeIndex)) {
-        return {&(*aKeyframes)[aKeyframes->Length() - 1 - keyframeIndex],
-                aKeyframes->Length() - 1 - keyframeIndex};
-      }
-      keyframeIndex = aKeyframes->Length() - 1;
-      break;
+  // We search the keyframes in the reversed order because the newest added
+  // keyframe is the most possible one we should match (since we sorted the
+  // keyframes with <percentage> offsets already).
+  if (nsAnimationManager::FindMatchingKeyframe(Reversed(*aKeyframes), offset,
+                                               *aTimingFunction, aComposition,
+                                               keyframeIndex)) {
+    return {&(*aKeyframes)[aKeyframes->Length() - 1 - keyframeIndex],
+            aKeyframes->Length() - 1 - keyframeIndex};
   }
+  keyframeIndex = aKeyframes->Length() - 1;
 
-  Keyframe* keyframe = nullptr;
-  switch (aInsertPosition) {
-    case KeyframeInsertPosition::Prepend:
-      keyframe = aKeyframes->InsertElementAt(0);
-      break;
-    case KeyframeInsertPosition::LastForOffset:
-      // FIXME: Bug 2037642. This may be incorrect to insert the final keyframe,
-      // or we probably never call this because we generate the initial/final
-      // keyframes in from_keyframes().
-      // However, we will move the generation of initial/final keyframes into
-      // other places so this will be dropped soon. Just keep it as it is.
-      keyframe = aKeyframes->InsertElementAt(keyframeIndex);
-      break;
-    case KeyframeInsertPosition::Append:
-      keyframe = aKeyframes->AppendElement();
-      break;
-  }
-  MOZ_ASSERT(keyframe);
+  Keyframe* keyframe = aKeyframes->AppendElement();
   keyframe->mOffset.emplace(offset);
   if (!aTimingFunction->IsLinearKeyword()) {
     keyframe->mTimingFunction.emplace(*aTimingFunction);
@@ -1153,55 +1115,29 @@ static std::pair<Keyframe*, size_t> GetOrCreateKeyframe(
   return {keyframe, aKeyframes->Length()};
 }
 
-Keyframe* Gecko_GetOrCreateKeyframeAtStart(
+Keyframe* Gecko_GetOrCreateKeyframeForPercentageOffset(
     nsTArray<Keyframe>* aKeyframes, float aOffset,
     const StyleComputedTimingFunction* aTimingFunction,
     const CompositeOperationOrAuto aComposition) {
   MOZ_ASSERT(aKeyframes->IsEmpty() ||
-                 aKeyframes->ElementAt(0).mOffset->mPercentage >= aOffset,
-             "The percentage offset should be less than or equal to the first "
+                 aKeyframes->LastElement().mOffset->mPercentage >= aOffset,
+             "The percentage offset should be less than or equal to the last "
              "keyframe's offset if there are exisiting keyframes");
   return GetOrCreateKeyframe(aKeyframes, StyleTimelineRangeName::None, aOffset,
-                             aTimingFunction, aComposition,
-                             KeyframeSearchDirection::Forwards,
-                             KeyframeInsertPosition::Prepend)
+                             aTimingFunction, aComposition)
       .first;
 }
 
-Keyframe* Gecko_GetOrCreateKeyframeWithRangeName(
+Keyframe* Gecko_GetOrCreateKeyframeForTimelineRangeOffset(
     nsTArray<Keyframe>* aKeyframes, const StyleTimelineRangeName aRangeName,
     float aOffset, const StyleComputedTimingFunction* aTimingFunction,
     const CompositeOperationOrAuto aComposition, size_t* aMatchedIdx) {
   MOZ_ASSERT(aRangeName != StyleTimelineRangeName::Normal,
              "normal shouldn't be used");
-
-  auto [keyframe, idx] = GetOrCreateKeyframe(
-      aKeyframes, aRangeName, aOffset, aTimingFunction, aComposition,
-      KeyframeSearchDirection::Backwards, KeyframeInsertPosition::Append);
+  auto [keyframe, idx] = GetOrCreateKeyframe(aKeyframes, aRangeName, aOffset,
+                                             aTimingFunction, aComposition);
   *aMatchedIdx = idx;
   return keyframe;
-}
-
-Keyframe* Gecko_GetOrCreateInitialKeyframe(
-    nsTArray<Keyframe>* aKeyframes,
-    const StyleComputedTimingFunction* aTimingFunction,
-    const CompositeOperationOrAuto aComposition) {
-  return GetOrCreateKeyframe(aKeyframes, StyleTimelineRangeName::None, 0.,
-                             aTimingFunction, aComposition,
-                             KeyframeSearchDirection::Forwards,
-                             KeyframeInsertPosition::LastForOffset)
-      .first;
-}
-
-Keyframe* Gecko_GetOrCreateFinalKeyframe(
-    nsTArray<Keyframe>* aKeyframes,
-    const StyleComputedTimingFunction* aTimingFunction,
-    const CompositeOperationOrAuto aComposition) {
-  return GetOrCreateKeyframe(aKeyframes, StyleTimelineRangeName::None, 1.,
-                             aTimingFunction, aComposition,
-                             KeyframeSearchDirection::Backwards,
-                             KeyframeInsertPosition::LastForOffset)
-      .first;
 }
 
 void Gecko_GetComputedURLSpec(const StyleComputedUrl* aURL, nsCString* aOut) {

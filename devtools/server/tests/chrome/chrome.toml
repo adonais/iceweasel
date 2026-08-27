@@ -1,6 +1,7 @@
 [DEFAULT]
 tags = "devtools"
 support-files = [
+  "doc_Debugger.Source.prototype.introductionType.html",
   "doc_Debugger.Source.prototype.introductionType.xhtml",
   "Debugger.Source.prototype.element.js",
   "Debugger.Source.prototype.element-2.js",

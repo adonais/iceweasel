@@ -84,34 +84,6 @@ def _hamming_distance(str1: str, str2: str) -> int:
     return diffs
 
 
-def check_common_prefix(
-    category_name: str, metrics: Iterable[metrics.Metric]
-) -> LintGenerator:
-    """
-    Check if all metrics begin with a common prefix.
-    """
-    metric_words = sorted([_split_words(metric.name) for metric in metrics])
-
-    if len(metric_words) < 2:
-        return
-
-    first = metric_words[0]
-    last = metric_words[-1]
-
-    for i in range(min(len(first), len(last))):
-        if first[i] != last[i]:
-            break
-
-    if i > 0:
-        common_prefix = "_".join(first[:i])
-        yield (
-            f"Within category '{category_name}', all metrics begin with "
-            f"prefix '{common_prefix}'. "
-            "Remove the prefixes on the metric names and (possibly) "
-            "rename the category."
-        )
-
-
 def check_unit_in_name(
     metric: metrics.Metric, parser_config: Dict[str, Any]
 ) -> LintGenerator:
@@ -465,7 +437,8 @@ def check_name_too_similar(
 CATEGORY_CHECKS: Dict[
     str, Tuple[Callable[[str, Iterable[metrics.Metric]], LintGenerator], CheckType]
 ] = {
-    "COMMON_PREFIX": (check_common_prefix, CheckType.error),
+    # Keeping it to not break when it is listed in `no_lint`
+    "COMMON_PREFIX": (noop, CheckType.error),
     "CATEGORY_GENERIC": (check_category_generic, CheckType.error),
 }
 

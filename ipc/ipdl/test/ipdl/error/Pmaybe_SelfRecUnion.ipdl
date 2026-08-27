@@ -1,0 +1,8 @@
+//error: union `X' is only partially defined
+
+union X { X?; };
+
+[ChildProc=any]
+protocol Pmaybe_SelfRecUnion {
+child: async Msg(X? aa);
+};

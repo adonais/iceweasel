@@ -62,7 +62,6 @@ bfcache:
     notification_emails:
       - sefeng@mozilla.com
     expires: never
-    telemetry_mirror: h#BFCACHE_COMBO
 
   page_restored:
     type: labeled_counter

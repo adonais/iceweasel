@@ -35,7 +35,7 @@ add_task(async function () {
   // Check that the link contains an anchor. We can't click on the link because
   // clicking links from tests attempts to access an external URL and crashes Firefox.
   const anchor = msg.node.querySelector("a");
-  is(anchor.textContent, "[Learn More]", "Link text is correct");
+  is(anchor.textContent, "Learn More", "Link text is correct");
 
   await executeAndWaitForResultMessage(
     hud,

@@ -5,6 +5,8 @@
 package org.mozilla.fenix.tabstray.controller
 
 import android.content.Context
+import android.net.Uri
+import androidx.annotation.ColorInt
 import androidx.annotation.VisibleForTesting
 import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineScope
@@ -40,6 +42,7 @@ import org.mozilla.fenix.components.TabCollectionStorage
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.bookmarks.BookmarksUseCase
+import org.mozilla.fenix.components.share.ShareSheetChooserAction
 import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.components.usecases.ShareUseCases
@@ -132,6 +135,19 @@ interface TabManagerController :
      * Shares the current set of selected tabs.
      */
     fun handleShareSelectedTabsClicked()
+
+    /**
+     * Shares the tabs in the given tab group.
+     *
+     * @param group The tab group to share.
+     * @param dotColor The ARGB color of the group's theme dot, forwarded for the share preview.
+     * @param thumbnailUri Optional cached thumbnail image shown in the system share sheet preview.
+     */
+    fun handleShareTabGroupClicked(
+        group: TabsTrayItem.TabGroup,
+        @ColorInt dotColor: Int,
+        thumbnailUri: Uri?,
+    )
 
     /**
      * Navigate from the Tab Manager to Recently Closed section in the History fragment.
@@ -237,6 +253,7 @@ interface TabManagerController :
  * @param showBookmarkSnackbar Lambda used to display a snackbar upon saving tabs as bookmarks.
  * @param showCollectionSnackbar Lambda used to display a snackbar upon successfully saving tabs
  * to a collection.
+ * @param currentTimeMillis provider for the current time in milliseconds, injectable for testing.
  */
 @Suppress("TooManyFunctions", "LongParameterList")
 class DefaultTabManagerController(
@@ -267,6 +284,7 @@ class DefaultTabManagerController(
         tabSize: Int,
         isNewCollection: Boolean,
     ) -> Unit,
+    private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
 ) : TabManagerController {
 
     override fun handleNormalTabsFabClick() {
@@ -296,6 +314,7 @@ class DefaultTabManagerController(
             fenixBrowserUseCases.addNewHomepageTab(
                 private = isPrivate,
             )
+            handleNavigateToHome()
         } else {
             navController.popBackStack()
             navController.navigate(
@@ -467,7 +486,7 @@ class DefaultTabManagerController(
         tabs
             .filterNot { it.id == currentTabId }
             .forEach { tab ->
-                val daysSince = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(numDays)
+                val daysSince = currentTimeMillis() - TimeUnit.DAYS.toMillis(numDays)
                 browserStore.apply {
                     dispatch(LastAccessAction.UpdateLastAccessAction(tab.id, daysSince))
                     dispatch(DebugAction.UpdateCreatedAtAction(tab.id, daysSince))
@@ -559,9 +578,40 @@ class DefaultTabManagerController(
             items = data,
             source = ShareSource.TABS_TRAY,
             isPrivate = tabs.any { it.private },
+            chooserActions = ShareSheetChooserAction.tabChooserActions,
             navigateToShareFragment = {
                 navController.navigate(
                     TabManagementFragmentDirections.actionGlobalShareFragment(data = data.toTypedArray()),
+                )
+            },
+        )
+    }
+
+    override fun handleShareTabGroupClicked(
+        group: TabsTrayItem.TabGroup,
+        @ColorInt dotColor: Int,
+        thumbnailUri: Uri?,
+    ) {
+        TabsTray.shareTabGroup.record(TabsTray.ShareTabGroupExtra(tabCount = group.tabs.size))
+
+        val data = group.tabs.map {
+            ShareData(url = it.url, title = it.title)
+        }
+
+        shareUseCases.shareItems(
+            items = data,
+            source = ShareSource.TABS_TRAY,
+            isPrivate = group.tabs.any { it.private },
+            subject = group.title,
+            chooserActions = ShareSheetChooserAction.tabChooserActions,
+            thumbnailUri = thumbnailUri,
+            navigateToShareFragment = {
+                navController.navigate(
+                    TabManagementFragmentDirections.actionGlobalShareFragment(
+                        data = data.toTypedArray(),
+                        shareGroupTitle = group.title,
+                        shareGroupColor = dotColor,
+                    ),
                 )
             },
         )

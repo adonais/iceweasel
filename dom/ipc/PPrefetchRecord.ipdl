@@ -1,0 +1,29 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+// Speculation Rules Prefetch IPC protocol.
+//
+// One actor pair per prefetch record; managed by PWindowGlobal so that the
+// pair is torn down automatically when the document navigates away or the
+// window closes.
+//
+// Spec: https://wicg.github.io/nav-speculation/prefetch.html#prefetch-record
+
+include protocol PWindowGlobal;
+include PrefetchIPCTypes;
+
+namespace mozilla {
+namespace dom {
+
+async protocol PPrefetchRecord {
+  manager PWindowGlobal;
+
+parent:
+  // Spec: https://wicg.github.io/nav-speculation/prefetch.html#prefetch-record-cancel-and-discard
+  async Cancel();
+  async __delete__();
+};
+
+}  // namespace dom
+}  // namespace mozilla

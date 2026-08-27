@@ -13,7 +13,7 @@ dbg.onDebuggerStatement = function (frame) {
     assertEq(script.isModule, false);
 };
 const m = g.parseModule("(function(){ debugger; })()");
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);
 
 assertEq(count, 1);

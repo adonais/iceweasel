@@ -1,0 +1,57 @@
+[
+  {
+    "date_time": "2026-08-03T23:00:00-04:00",
+    "epoch_date_time": 1785812400,
+    "temperature": {
+      "c": 19,
+      "f": 66
+    },
+    "icon_id": 33,
+    "url": "https://example.com/en/ca/toronto/m5h/hourly-weather-forecast/55488?day=1&hbhhour=23&lang=en-us&partner=web_mozilla_adc",
+    "summary": "Clear"
+  },
+  {
+    "date_time": "2026-08-04T00:00:00-04:00",
+    "epoch_date_time": 1785816000,
+    "temperature": {
+      "c": 18,
+      "f": 65
+    },
+    "icon_id": 33,
+    "url": "https://example.com/en/ca/toronto/m5h/hourly-weather-forecast/55488?day=2&hbhhour=0&lang=en-us&partner=web_mozilla_adc",
+    "summary": "Clear"
+  },
+  {
+    "date_time": "2026-08-04T01:00:00-04:00",
+    "epoch_date_time": 1785819600,
+    "temperature": {
+      "c": 18,
+      "f": 64
+    },
+    "icon_id": 33,
+    "url": "https://example.com/en/ca/toronto/m5h/hourly-weather-forecast/55488?day=2&hbhhour=1&lang=en-us&partner=web_mozilla_adc",
+    "summary": "Clear"
+  },
+  {
+    "date_time": "2026-08-04T02:00:00-04:00",
+    "epoch_date_time": 1785823200,
+    "temperature": {
+      "c": 17,
+      "f": 63
+    },
+    "icon_id": 33,
+    "url": "https://example.com/en/ca/toronto/m5h/hourly-weather-forecast/55488?day=2&hbhhour=2&lang=en-us&partner=web_mozilla_adc",
+    "summary": "Clear"
+  },
+  {
+    "date_time": "2026-08-04T03:00:00-04:00",
+    "epoch_date_time": 1785826800,
+    "temperature": {
+      "c": 17,
+      "f": 63
+    },
+    "icon_id": 33,
+    "url": "https://example.com/en/ca/toronto/m5h/hourly-weather-forecast/55488?day=2&hbhhour=3&lang=en-us&partner=web_mozilla_adc",
+    "summary": "Clear"
+  }
+]

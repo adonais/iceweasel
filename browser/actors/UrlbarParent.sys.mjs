@@ -2,18 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { blobAsDataURL } from "moz-src:///toolkit/modules/FaviconUtils.sys.mjs";
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarParentController:
     "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs",
-  UrlbarQueryContext:
-    "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarQueryContext: "chrome://browser/content/urlbar/UrlbarQueryContext.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
 });
 
 /**
  * @import {UrlbarParentController} from "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs"
+ * @import {SearchEngineStore} from "chrome://browser/content/urlbar/SearchEngineStore.mjs"
  */
 
 /**
@@ -22,11 +24,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * chrome with `browser.urlbar.ipc.chromeMessagePassing`) holds a
  * `UrlbarParentControllerProxy` and trades actor messages with us: we build the
  * `UrlbarParentController` from the `Init` payload and retain it in a `Map` keyed
- * by the child-assigned `instanceId`, routing subsequent messages to it. The
- * controller's notifications go back to the child as `Notify` messages
- * (dispatched through a parent-side `UrlbarChildControllerProxy` stand-in). The
- * controller is dropped on the `Destroy` message the child sends when its input
- * is collected (via a `FinalizationRegistry`).
+ * by the child-assigned `instanceId`, routing subsequent messages to it. There is
+ * one actor per window global, so that `Map` holds a controller for each
+ * message-path input in that global. The controller's notifications go back to
+ * the child as `Notify` messages (dispatched through a parent-side
+ * `UrlbarChildControllerProxy` stand-in). The controller is torn down on the
+ * `Destroy` message the child sends when its input is collected (via a
+ * `FinalizationRegistry`), and in `didDestroy` for a global that goes away whole.
  *
  * The direct path (in-process chrome `<moz-urlbar>`) doesn't go through this
  * actor at all: `UrlbarChildController` builds its `UrlbarParentController` in
@@ -44,7 +48,13 @@ export class UrlbarParent extends JSWindowActorParent {
    *   The actor message, with `name` and `data`.
    */
   receiveMessage(message) {
-    let { instanceId } = message.data;
+    // The sender may be a content process (about:newtab), so treat the payload
+    // as untrusted: every message carries a numeric instanceId, and only known
+    // names and live controllers are acted on below.
+    let { instanceId } = message.data ?? {};
+    if (typeof instanceId != "number") {
+      return undefined;
+    }
 
     if (message.name == "Init") {
       let { sapName, isPrivate } = message.data;
@@ -62,6 +72,7 @@ export class UrlbarParent extends JSWindowActorParent {
     }
 
     if (message.name == "Destroy") {
+      this.#messageControllers.get(instanceId)?.destroy();
       this.#messageControllers.delete(instanceId);
       return undefined;
     }
@@ -83,6 +94,14 @@ export class UrlbarParent extends JSWindowActorParent {
             lazy.UrlbarQueryContext.fromWire(message.data.queryContext)
           )
           .then(result => result?.toWire() ?? null);
+      case "ResolveFallbackNavigation":
+        return controller
+          .resolveFallbackNavigation(message.data.details)
+          .then(outcome =>
+            outcome.heuristicResult
+              ? { heuristicResult: outcome.heuristicResult.toWire() }
+              : outcome
+          );
       case "RecordEngagement":
         controller.recordEngagement(message.data.wire);
         break;
@@ -94,6 +113,36 @@ export class UrlbarParent extends JSWindowActorParent {
         break;
       case "TrackBounceBrowser":
         controller.trackBounceBrowser(message.data.browserId);
+        break;
+      case "RecordAutofillBackspace":
+        controller.recordAutofillBackspace(message.data.url);
+        break;
+      case "RecordAutofillDeletion":
+        controller.recordAutofillDeletion();
+        break;
+      case "ClearAutofillBackspaceEntryForUrl":
+        controller.clearAutofillBackspaceEntryForUrl(message.data.url);
+        break;
+      case "HandleAutofillReintegration":
+        controller.handleAutofillReintegration(message.data.url);
+        break;
+      case "RecordSearchMode":
+        controller.recordSearchMode(message.data.searchMode);
+        break;
+      case "RecordSearchForm":
+        controller.recordSearchForm(message.data.engineName);
+        break;
+      case "RecordSearch":
+        controller.recordSearch(message.data);
+        break;
+      case "RecordSearchInOpenedTab":
+        controller.recordSearchInOpenedTab(message.data.searchData);
+        break;
+      case "CheckKeywordURIFixup":
+        controller.checkKeywordURIFixup(
+          message.data.searchString,
+          message.data.browserId
+        );
         break;
       case "StartQuery":
         // Round-trips so the proxy's startQuery resolves at true completion with
@@ -113,6 +162,23 @@ export class UrlbarParent extends JSWindowActorParent {
           lazy.UrlbarQueryContext.fromWire(message.data.queryContext),
           message.data.reason
         );
+        break;
+      case "DismissAutofill":
+        return controller.dismissAutofill(
+          message.data.url,
+          message.data.action
+        );
+      case "LoadURL":
+        return controller.loadURL(message.data.loadData);
+      case "FocusBrowser":
+        return controller.focusBrowser(message.data.browserId);
+      case "SwitchToTab":
+        controller.switchToTab(message.data.loadData);
+        break;
+      case "AddToInputHistory":
+        controller.addToInputHistory(message.data.url, message.data.input, {
+          whenReady: message.data.whenReady,
+        });
         break;
       case "RemoveResult":
         controller.removeResult(
@@ -141,9 +207,96 @@ export class UrlbarParent extends JSWindowActorParent {
       case "OnSelection":
         controller.onSelection(lazy.UrlbarResult.fromWire(message.data.result));
         break;
+      case "InitEngineStore":
+        controller.initEngineStore();
+        break;
+      case "GetEngineIconURL":
+        return this.#getSerializableEngineIcon(
+          controller,
+          message.data.engineId
+        );
+      case "MarkEngineAsUsed":
+        controller.markEngineAsUsed(message.data.engineId);
+        break;
+      case "OpenSERP":
+        controller.openSERP(
+          message.data.engineId,
+          message.data.searchTerms,
+          message.data.where,
+          message.data.inBackground,
+          message.data.browserId
+        );
+        break;
+      case "OpenSearchForm":
+        controller.openSearchForm(
+          message.data.engineId,
+          message.data.where,
+          message.data.inBackground,
+          message.data.browserId
+        );
+        break;
     }
     return undefined;
   }
+
+  /**
+   * Returns an engine's icon URL in a form that resolves in the child's
+   * process.
+   *
+   * @param {UrlbarParentController} controller
+   * @param {string} engineId
+   * @returns {Promise<?string>}
+   *   The icon URL, or null if the engine or its icon could not be found.
+   */
+  async #getSerializableEngineIcon(controller, engineId) {
+    let url = await controller.getEngineIconURL(engineId);
+
+    // A blob URL only resolves in the process that created it, so the icon
+    // travels as a data URL instead.
+    if (!url?.startsWith("blob:")) {
+      return url;
+    }
+
+    try {
+      let response = await fetch(url);
+      return await blobAsDataURL(await response.blob());
+    } catch (ex) {
+      console.error(`Could not read the icon of engine ${engineId}`, ex);
+      return null;
+    }
+  }
+
+  didDestroy() {
+    // Every controller here belongs to an input in this window global, and the
+    // child sends `Destroy` per input from a FinalizationRegistry that never
+    // runs when the whole global goes away. So tear them all down.
+    for (let controller of this.#messageControllers.values()) {
+      controller.destroy();
+    }
+    this.#messageControllers.clear();
+  }
+}
+
+/**
+ * Sends a message-path proxy's message to the child, dropping it if the child's
+ * window global is gone.
+ *
+ * A controller can still be called after its window global has closed: work it
+ * started -- a query, a provider's engagement hook -- resolves independently of
+ * teardown, and sending on a closed global throws.
+ *
+ * @param {UrlbarParent} actor
+ *   The actor to send through.
+ * @param {string} name
+ *   The message name.
+ * @param {object} data
+ *   The message payload.
+ */
+function sendToChild(actor, name, data) {
+  if (!actor.manager || actor.manager.isClosed) {
+    return;
+  }
+  actor.sendAsyncMessage(name, data);
 }
 
 /**
@@ -166,7 +319,7 @@ class UrlbarChildControllerProxy {
   }
 
   notify(name, ...params) {
-    this.#actor.sendAsyncMessage("Notify", {
+    sendToChild(this.#actor, "Notify", {
       instanceId: this.#instanceId,
       name,
       params: params.map(param =>
@@ -174,6 +327,16 @@ class UrlbarChildControllerProxy {
           ? { serializedQueryContext: param.toWire() }
           : param
       ),
+    });
+  }
+
+  /**
+   * @type {typeof SearchEngineStore.prototype.receive}
+   */
+  updateEngineStore(...args) {
+    sendToChild(this.#actor, "UpdateEngineStore", {
+      instanceId: this.#instanceId,
+      args,
     });
   }
 
@@ -205,7 +368,7 @@ class ViewProxy {
   }
 
   #invoke(method, args) {
-    this.#actor.sendAsyncMessage("InvokeContentAction", {
+    sendToChild(this.#actor, "InvokeContentAction", {
       instanceId: this.#instanceId,
       target: "view",
       method,
@@ -217,12 +380,20 @@ class ViewProxy {
     this.#invoke("acknowledgeFeedback", [result.toWire()]);
   }
 
-  close() {
-    this.#invoke("close", []);
+  clearTopSitesCache() {
+    this.#invoke("clearTopSitesCache", []);
+  }
+
+  close(options) {
+    this.#invoke("close", options ? [options] : []);
   }
 
   startTail150() {
     this.#invoke("startTail150", []);
+  }
+
+  updateResultMenuCommands(resultId, commands) {
+    this.#invoke("updateResultMenuCommands", [resultId, commands]);
   }
 }
 
@@ -244,7 +415,7 @@ class InputProxy {
   }
 
   #invoke(method, args) {
-    this.#actor.sendAsyncMessage("InvokeContentAction", {
+    sendToChild(this.#actor, "InvokeContentAction", {
       instanceId: this.#instanceId,
       target: "input",
       method,

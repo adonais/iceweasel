@@ -34,6 +34,7 @@ EXPORTS.mozilla.net = [
     "CookieServiceParent.h",
     "CookieStorage.h",
     "CookieValidation.h",
+    "PrefetchCookieCopier.h",
     "ThirdPartyCookieBlockingExceptions.h",
 ]
 
@@ -52,6 +53,7 @@ UNIFIED_SOURCES += [
     "CookieServiceParent.cpp",
     "CookieStorage.cpp",
     "CookieValidation.cpp",
+    "PrefetchCookieCopier.cpp",
     "ThirdPartyCookieBlockingExceptions.cpp",
 ]
 

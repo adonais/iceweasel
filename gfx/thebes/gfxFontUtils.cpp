@@ -995,7 +995,7 @@ void gfxFontUtils::GetPrefsFontList(const char* aPrefName,
 
 constexpr uint32_t MAX_B64_LEN = 32;
 
-nsresult gfxFontUtils::MakeUniqueUserFontName(nsAString& aName) {
+nsresult gfxFontUtils::MakeUniqueUserFontName(nsACString& aName) {
   nsCOMPtr<nsIUUIDGenerator> uuidgen =
       do_GetService("@mozilla.org/uuid-generator;1");
   NS_ENSURE_TRUE(uuidgen, NS_ERROR_OUT_OF_MEMORY);
@@ -1020,7 +1020,7 @@ nsresult gfxFontUtils::MakeUniqueUserFontName(nsAString& aName) {
     if (*p == '/') *p = '-';
   }
 
-  aName.AssignLiteral(u"uf");
+  aName.AssignLiteral("uf");
   aName.AppendASCII(guidB64);
   return NS_OK;
 }
@@ -2018,29 +2018,29 @@ double StyleDistance(const mozilla::SlantStyleRange& aRange,
   return kReverse + kNegate + (minAngle - targetAngle);
 }
 
-double StretchDistance(const mozilla::StretchRange& aRange,
-                       const mozilla::StyleFontStretch& aTargetStretch) {
+double WidthDistance(const mozilla::WidthRange& aRange,
+                     const mozilla::StyleFontWidth& aTargetWidth) {
   const double kReverseDistance = 1000.0;
 
-  mozilla::FontStretch minStretch = aRange.Min();
-  mozilla::FontStretch maxStretch = aRange.Max();
+  mozilla::FontWidth minWidth = aRange.Min();
+  mozilla::FontWidth maxWidth = aRange.Max();
 
-  // The stretch value is a (non-negative) percentage; currently we support
+  // The width value is a (non-negative) percentage; currently we support
   // values in the range 0 .. 1000. (If the upper limit is ever increased,
   // the kReverseDistance value used here may need to be adjusted.)
-  // If aTargetStretch is >100, we prefer larger values if available;
+  // If aTargetWidth is >100, we prefer larger values if available;
   // if <=100, we prefer smaller values if available.
-  if (aTargetStretch < minStretch) {
-    if (aTargetStretch > mozilla::FontStretch::NORMAL) {
-      return minStretch.ToFloat() - aTargetStretch.ToFloat();
+  if (aTargetWidth < minWidth) {
+    if (aTargetWidth > mozilla::FontWidth::NORMAL) {
+      return minWidth.ToFloat() - aTargetWidth.ToFloat();
     }
-    return (minStretch.ToFloat() - aTargetStretch.ToFloat()) + kReverseDistance;
+    return (minWidth.ToFloat() - aTargetWidth.ToFloat()) + kReverseDistance;
   }
-  if (aTargetStretch > maxStretch) {
-    if (aTargetStretch <= mozilla::FontStretch::NORMAL) {
-      return aTargetStretch.ToFloat() - maxStretch.ToFloat();
+  if (aTargetWidth > maxWidth) {
+    if (aTargetWidth <= mozilla::FontWidth::NORMAL) {
+      return aTargetWidth.ToFloat() - maxWidth.ToFloat();
     }
-    return (aTargetStretch.ToFloat() - maxStretch.ToFloat()) + kReverseDistance;
+    return (aTargetWidth.ToFloat() - maxWidth.ToFloat()) + kReverseDistance;
   }
   return 0.0;
 }

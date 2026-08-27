@@ -353,7 +353,9 @@ export default class MozButton extends MozLitElement {
           size=${this.size}
         >
           <img
-            src="chrome://global/skin/icons/arrow-down.svg"
+            src="chrome://global/skin/icons/arrow-down${this.size === "small"
+              ? "-12"
+              : ""}.svg"
             role="presentation"
           />
         </span>

@@ -35,8 +35,8 @@ import mozilla.components.service.pocket.recommendations.db.ContentRecommendatio
 )
 internal data class SponsoredContentImpressionEntity(
     val url: String,
+    var impressionDateInSeconds: Long = System.currentTimeMillis() / 1000,
 ) {
     @PrimaryKey(autoGenerate = true)
     var impressionId: Int = 0
-    var impressionDateInSeconds: Long = System.currentTimeMillis() / 1000
 }

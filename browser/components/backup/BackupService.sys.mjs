@@ -2956,7 +2956,8 @@ export class BackupService extends EventTarget {
    *   The path to write the extracted file to.
    * @param {string} [recoveryCode=null]
    *   The recovery code to decrypt an encrypted backup with.
-   * @returns {Promise<undefined, Error>}
+   * @returns {Promise<{isEncrypted: boolean}, Error>}
+   *   Resolves with whether the archive was encrypted.
    */
   async extractCompressedSnapshotFromArchive(
     archivePath,
@@ -3015,6 +3016,8 @@ export class BackupService extends EventTarget {
         decryptor.OSKeyStoreSecret
       );
     }
+
+    return { isEncrypted };
   }
 
   /**
@@ -3250,11 +3253,12 @@ export class BackupService extends EventTarget {
         BackupService.RECOVERY_ZIP_FILE_NAME
       );
       currentStep = RESTORE_STEPS.RESTORE_EXTRACT_SNAPSHOT;
-      await this.extractCompressedSnapshotFromArchive(
-        archivePath,
-        RECOVERY_FILE_DEST_PATH,
-        recoveryCode
-      );
+      let { isEncrypted } =
+        (await this.extractCompressedSnapshotFromArchive(
+          archivePath,
+          RECOVERY_FILE_DEST_PATH,
+          recoveryCode
+        )) ?? {};
 
       const RECOVERY_FOLDER_DEST_PATH = PathUtils.join(
         profilePath,
@@ -3330,14 +3334,16 @@ export class BackupService extends EventTarget {
               null,
               profileRootPath,
               manifest,
-              replaceCurrentProfile
+              replaceCurrentProfile,
+              isEncrypted
             );
         } else {
           newProfile = await this.recoverFromSnapshotFolder(
             RECOVERY_FOLDER_DEST_PATH,
             shouldLaunchOrQuit,
             profileRootPath,
-            manifest
+            manifest,
+            isEncrypted
           );
         }
 
@@ -3585,10 +3591,12 @@ export class BackupService extends EventTarget {
    * @param {string} recoveryPath The path to the decompressed backup archive
    *   on the file system.
    * @param {string} profilePath The path of the newly recovered profile
+   * @param {boolean} wasEncrypted Whether the source archive was encrypted.
+   *   Resources that require encryption are skipped when this is false.
    * @returns {object}
    *   An object containing post recovery data for each resource.
    */
-  async #recoverResources(manifest, recoveryPath, profilePath) {
+  async #recoverResources(manifest, recoveryPath, profilePath, wasEncrypted) {
     let postRecovery = {};
 
     // Iterate over each resource in the manifest and call recover() on each
@@ -3598,6 +3606,16 @@ export class BackupService extends EventTarget {
       let resourceClass = this.#resources.get(resourceKey);
       if (!resourceClass) {
         lazy.logConsole.error(`No BackupResource found for key ${resourceKey}`);
+        continue;
+      }
+
+      // A resource that requires encryption should only have been written into
+      // an encrypted archive. If the archive isn't encrypted, refuse to recover it.
+      if (resourceClass.requiresEncryption && !wasEncrypted) {
+        lazy.logConsole.warn(
+          `Skipping resource ${resourceKey}: requires encryption but the ` +
+            `archive is not encrypted.`
+        );
         continue;
       }
 
@@ -3679,6 +3697,9 @@ export class BackupService extends EventTarget {
    * @param {object} [manifest=null]
    *   If we've already read and validated the manifest, we can avoid redoing that work
    *   by passing this in as a parameter.
+   * @param {boolean} [wasEncrypted=false]
+   *   Whether the source archive was encrypted. Resources that require
+   *   encryption are skipped during recovery when this is false.
    * @returns {Promise<nsIToolkitProfile>}
    *   The nsIToolkitProfile that was created for the recovered profile.
    * @throws {Exception}
@@ -3688,7 +3709,8 @@ export class BackupService extends EventTarget {
     recoveryPath,
     shouldLaunch = false,
     profileRootPath = null,
-    manifest = null
+    manifest = null,
+    wasEncrypted = false
   ) {
     lazy.logConsole.debug("Recovering from backup at ", recoveryPath);
 
@@ -3724,7 +3746,8 @@ export class BackupService extends EventTarget {
       let postRecovery = await this.#recoverResources(
         manifest,
         recoveryPath,
-        profile.rootDir.path
+        profile.rootDir.path,
+        wasEncrypted
       );
 
       restoreStep = RESTORE_STEPS.RESTORE_WRITE_POST_RECOVERY;
@@ -3841,6 +3864,9 @@ export class BackupService extends EventTarget {
    *   by passing this in as a parameter.
    * @param {boolean} [replaceCurrentProfile=false]
    *   Indicates if we are replacing the current running profile or adding to the group
+   * @param {boolean} [wasEncrypted=false]
+   *   Whether the source archive was encrypted. Resources that require
+   *   encryption are skipped during recovery when this is false.
    * @returns {Promise<SelectableProfile>}
    *   The SelectableProfile that was created for the recovered profile.
    * @throws {Exception}
@@ -3852,7 +3878,8 @@ export class BackupService extends EventTarget {
     copiedProfile = null,
     profileRootPath = null,
     manifest = null,
-    replaceCurrentProfile = false
+    replaceCurrentProfile = false,
+    wasEncrypted = false
   ) {
     lazy.logConsole.debug(
       "Recovering SelectableProfile from backup at ",
@@ -3895,7 +3922,8 @@ export class BackupService extends EventTarget {
       let postRecovery = await this.#recoverResources(
         manifest,
         recoveryPath,
-        profile.path
+        profile.path,
+        wasEncrypted
       );
 
       if (copiedProfile) {

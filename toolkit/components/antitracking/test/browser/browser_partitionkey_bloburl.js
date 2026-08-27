@@ -1,7 +1,7 @@
 const BASE_URI =
   "https://example.net/browser/toolkit/components/antitracking/test/browser/blobPartitionPage.html";
 const EMPTY_URI =
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   "https://example.com/browser/toolkit/components/antitracking/test/browser/empty.html";
 
 add_setup(async function () {

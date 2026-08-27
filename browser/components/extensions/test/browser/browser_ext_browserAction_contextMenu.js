@@ -786,7 +786,8 @@ add_task(async function test_unified_extensions_item_no_pinning() {
     ".unified-extensions-context-menu-pin-to-toolbar"
   );
   Assert.ok(pinToToolbar.hidden, "Pin to Toolbar is hidden.");
-  menu.hidePopup();
+  await closeChromeContextMenu(UNIFIED_CONTEXT_MENU);
+  await closeExtensionsPanel();
 
   await extension.unload();
 });

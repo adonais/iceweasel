@@ -75,7 +75,7 @@ class FenceD3D11 final : public Fence {
   FenceD3D11(const OwnsFence aOwnsFence, const RefPtr<ID3D11Device> aDevice,
              const RefPtr<ID3D11Fence> aSignalFence,
              const RefPtr<gfx::FileHandleWrapper>& aHandle);
-  virtual ~FenceD3D11();
+  virtual ~FenceD3D11() = default;
 
   uint64_t mFenceValue = 0;
 

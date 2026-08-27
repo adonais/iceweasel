@@ -11,7 +11,7 @@ origin:
 
   url: https://www.cairographics.org
 
-  release: 1.18.4 (2025-03-08T13:23:25.000+00:00).
+  release: 1.18.4 (2025-03-08T13:23:25Z).
   revision: 1.18.4
 
   license: 'MPL-1.1'
@@ -22,6 +22,14 @@ vendoring:
   source-hosting: gitlab
   tracking: tag
   vendor-directory: gfx/cairo/cairo
+
+  # Upstream's history contains a malformed commit object
+  # (e5b831b107ad18e78ec9ea5e6da68eb30bf71126) that predates git's fsck
+  # validation and fails it (missing space before the author/committer
+  # date). It has nothing to do with any revision we actually vendor;
+  # it's just unreachable history that a clone would otherwise refuse
+  # to transfer.
+  tolerate-git-fsck-errors: true
 
   exclude:
     - boilerplate
@@ -67,6 +75,24 @@ vendoring:
     - patches/0029-Add-configuration-files-needed-for-Firefox-s-mozbuil.patch
     - patches/0030-Bug-2027883-Fix-integer-overflow-in-cairo-PDF-surfac.patch
     - patches/0031-Bug-2029910-Cairo-avoid-overflow-rendering-FreeType-.patch
+    - patches/0032-Bug-2033610-Check-cairo-image-surface-for-error.patch
+    - patches/0033-Bug-2036587-No-component-alpha-for-dwrite-glyph-surfaces.patch
+    - patches/0034-Bug-2037290-cff-subset-offset-checks.patch
+    - patches/0035-cff-dict-validation.patch
+    - patches/0036-cff-operator-bounds.patch
+    - patches/0037-type1-decode-integer.patch
+    - patches/0038-pcf-row_bytes.patch
+    - patches/0039-cff-fdselect-bounds.patch
+    - patches/0040-Bug-2048799-flip-polarity-of-a-bounds-check.patch
+    - patches/0041-fdselect-checks.patch
+    - patches/0042-gid-range-check.patch
+    - patches/0043-type1-stack-check.patch
+    - patches/0044-win32-printing-linear-pattern.patch
+    - patches/0045-Bug-2045711-records-size-check.patch
+    - patches/0046-Bug-2053599-glyph-index-bounds.patch
+    - patches/0047-Bug-2050228-win32-print-tiny-dash.patch
+    - patches/0048-Bug-2054626-type2-decode-integer.patch
+    - patches/0049-Bug-2054627-skip-token-check.patch
 
 updatebot:
   maintainer-phab: "#gfx-reviewers"

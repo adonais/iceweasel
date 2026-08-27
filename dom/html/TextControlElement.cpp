@@ -53,21 +53,6 @@ RefPtr<Element> MakePlaceholderOrPreview(Document& aDoc,
   return el;
 }
 
-Element* TextControlElement::FindShadowPseudo(PseudoStyleType aType) const {
-  auto* sr = GetShadowRoot();
-  if (!sr) {
-    return nullptr;
-  }
-  for (auto* child = sr->GetFirstChild(); child;
-       child = child->GetNextSibling()) {
-    auto* el = Element::FromNode(child);
-    if (el->GetPseudoElementType() == aType) {
-      return el;
-    }
-  }
-  return nullptr;
-}
-
 void TextControlElement::GetPreviewValue(nsAString& aValue) {
   Element* existing = FindShadowPseudo(PseudoStyleType::MozTextControlPreview);
   if (!existing) {

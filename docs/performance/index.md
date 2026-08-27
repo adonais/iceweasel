@@ -2,9 +2,9 @@
 
 This page explains how to optimize the performance of the Firefox code base.
 
-The [test documentation](/testing/perfdocs/index.rst)
+The [test documentation](/testing/perfdocs/index.md)
 explains how to test for performance in Firefox.
-The [profiler documentation](/tools/profiler/index.rst)
+The [profiler documentation](/tools/profiler/index.md)
 explains how to use the Gecko profiler.
 
 ```{toctree}
@@ -12,7 +12,9 @@ explains how to use the Gecko profiler.
 :glob:
 
 *
-memory/*
+memory/index
+build_metrics/build_metrics
+platform_microbenchmarks/platform_microbenchmarks
 ```
 
 ## General Performance references
@@ -26,7 +28,7 @@ memory/*
 
 ## Memory profiling and leak detection tools
 
-* The [Developer Tools Memory panel](memory/memory.md) supports taking heap snapshots, diffing them, computing dominator trees to surface "heavy retainers", and recording allocation stacks.
+* The [Developer Tools Memory panel](/devtools-user/memory/index.md) supports taking heap snapshots, diffing them, computing dominator trees to surface "heavy retainers", and recording allocation stacks.
 * [About:memory](memory/about_colon_memory.md) about:memory is the easiest-to-use tool for measuring memory usage in Mozilla code, and is the best place to start. It also lets you do other memory-related operations like trigger GC and CC, dump GC & CC logs, and dump DMD reports. about:memory is built on top of Firefox's [memory reporting](memory/memory_reporting.md) infrastructure.
 * [DMD](memory/dmd.md) is a tool that identifies shortcomings in about:memory's measurements, and can also do multiple kinds of general heap profiling.
 * [AWSY](memory/awsy.md) (are we slim yet?) is a memory usage and regression tracker.

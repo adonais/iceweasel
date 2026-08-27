@@ -233,13 +233,17 @@ class ChatsInView extends ViewPage {
     const descriptionHeader = "firefoxview-chats-empty-header";
     const descriptionLabels = ["firefoxview-chats-empty-description"];
 
+    let asset = Services.prefs.getBoolPref("browser.nova.enabled", false)
+      ? "chrome://browser/skin/sidebar/kit-page-history.svg"
+      : "chrome://browser/content/firefoxview/history-empty.svg";
+
     return html`
       <fxview-empty-state
         headerLabel=${descriptionHeader}
         .descriptionLabels=${descriptionLabels}
         class="empty-state chats"
         ?isSelectedTab=${this.selectedTab}
-        mainImageUrl="chrome://browser/content/firefoxview/history-empty.svg"
+        mainImageUrl=${asset}
       >
       </fxview-empty-state>
     `;

@@ -29,7 +29,7 @@ This guide is not intended to be all encompassing or cover every scenario, but t
 ```
 
 ```{seealso}
-For an alternative approach to connecting with Gecko on the C++ side, please see [this documentation for connecting to C++ code to Java using the JNI](./geckoview-architecture.rst#jni).
+For an alternative approach to connecting with Gecko on the C++ side, please see [this documentation for connecting to C++ code to Java using the JNI](./geckoview-architecture.md#jni).
 ```
 
 ## Overview
@@ -49,7 +49,7 @@ Some key files or components for the translations feature include:
 **GeckoView:**
 
 * [GeckoViewTranslations.sys.mjs](https://searchfox.org/mozilla-central/rev/a965e3c683ecc035dee1de72bd33a8d91b1203ed/mobile/shared/modules/geckoview/GeckoViewTranslations.sys.mjs) \- JavaScript side module which both listens to relevant messages and calls `TranslationsParent`.
-* [TranslationsController.java](https://searchfox.org/mozilla-central/rev/a965e3c683ecc035dee1de72bd33a8d91b1203ed/mobile/android/geckoview/src/main/java/org/mozilla/geckoview/TranslationsController.java) \- Java side class which coordinates both [session and runtime](./geckoview-architecture.rst#view-runtime-and-session) specific calls, listens for events, as well as defines a delegate.
+* [TranslationsController.java](https://searchfox.org/mozilla-central/rev/a965e3c683ecc035dee1de72bd33a8d91b1203ed/mobile/android/geckoview/src/main/java/org/mozilla/geckoview/TranslationsController.java) \- Java side class which coordinates both [session and runtime](./geckoview-architecture.md#view-runtime-and-session) specific calls, listens for events, as well as defines a delegate.
 
 **Android Components:**
 
@@ -115,7 +115,7 @@ The first step is to identify toolkit code to see if the module is already in th
 
 Some adjustments to the toolkit code might also be necessary for it to run on Android. For example, Android does not have a `gBrowser` and code calling `gBrowser` will need to be changed. These minor adjustments can usually be quickly identified through testing. These issues are usually fixed through availability checks or use of `AppConstants.platform \!== "android"` style checks.
 
-An example of this in translations is that the `TranslationsParent` only offers a translation if the user is on the same page. Important to note is that the Android paradigm for windows is different from desktop. For Android, there is always [one window for one tab](./geckoview-architecture.rst#window-model). Because of that, branching behavior to check if on the same current page was added to Android:
+An example of this in translations is that the `TranslationsParent` only offers a translation if the user is on the same page. Important to note is that the Android paradigm for windows is different from desktop. For Android, there is always [one window for one tab](./geckoview-architecture.md#window-model). Because of that, branching behavior to check if on the same current page was added to Android:
 
 [`TranslationsParent.sys.mjs`](https://searchfox.org/mozilla-central/rev/dd8b64a6198ff599a5eb2ca096845ebd6997457f/toolkit/components/translations/actors/TranslationsParent.sys.mjs#735):
 
@@ -231,13 +231,13 @@ Connecting the relevant toolkit code to the GeckoView side during the early expl
 
 ## Writing GeckoView APIs to call toolkit code
 
-Designing a GeckoView API should take considerable thought and care. GeckoView is a public API that anyone can use to use Gecko on Android. As such, well designed APIs should expose necessary functionality, be well documented for different product usage, and be extensible for future expansions. API changes are publicly listed in a CHANGELOG and also an API hash is generated for each change ([see contributor guide for details](./geckoview-quick-start.rst#updating-the-changelog-and-api-documentation)). See this [GeckoView architecture guide](./geckoview-architecture.rst#api) for more information.
+Designing a GeckoView API should take considerable thought and care. GeckoView is a public API that anyone can use to use Gecko on Android. As such, well designed APIs should expose necessary functionality, be well documented for different product usage, and be extensible for future expansions. API changes are publicly listed in a CHANGELOG and also an API hash is generated for each change ([see contributor guide for details](./geckoview-quick-start.md#updating-the-changelog-and-api-documentation)). See this [GeckoView architecture guide](./geckoview-architecture.md#api) for more information.
 
 ### Outline Toolkit Calls and Data
 
 One way to begin is to outline all of the toolkit function calls or messages that the feature will need to interact with. This can be achieved through looking at the feature designs and listing each piece of functionality or through looking at desktop code and creating a list of what was called. For example, with translations, calling the toolkit translate function was an easily identifiable call to list on this document. Additionally, functions should be noted if they should be called automatically under certain conditions, such as when an `onLoad` event occurs. For example, the `TranslationsParent` sends a state message that GeckoView listens to and reacts to by activating a delegate call. On the Android Components side, this delegate's message is used to update various state stores and sometimes UI.
 
-It is also helpful to note if the call should be a [session or runtime call](./geckoview-architecture.rst#view-runtime-and-session). Session calls require the state of the page to be known. For example, requesting a page restore. These calls should not outlive the session. Runtime calls do not require the state of the page. They can be statically declared functions or anything else that does not depend on session state. For example, changing a preference.
+It is also helpful to note if the call should be a [session or runtime call](./geckoview-architecture.md#view-runtime-and-session). Session calls require the state of the page to be known. For example, requesting a page restore. These calls should not outlive the session. Runtime calls do not require the state of the page. They can be statically declared functions or anything else that does not depend on session state. For example, changing a preference.
 
 ```{tip}
 **Aside on preferences:** Generally Gecko preferences can be connected specifically on the Java side in [GeckoRuntimeSettings.java](https://searchfox.org/firefox-main/source/mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntimeSettings.java), but some cases may wish to run through the toolkit if there is additional setting/getting logic.
@@ -284,13 +284,13 @@ This list will change and grow as more details are uncovered.
 
 At this point, it is now possible to begin outlining the GeckoView API for functions that should be called directly as well as begin designing the delegate.
 
-The GeckoView Java side uses a `GeckoResult` as a message wrapper to communicate with the GeckoView JavaScript side. The JavaScript side will send a callback to the `GeckoResult` for an `onEvent` message or else send a new message to Java using the [`EventDispatcher`](./geckoview-architecture.rst#eventdispatcher). A `GeckoResult` is similar to a JavaScript promise and allows results to be returned asynchronously. In general, the return type of the `GeckoResult` will be the same data type as on the JavaScript side. Mapping can be used to change or format results. A `GeckoBundle` is used to serialize this information. Recommend also renaming functions on the Java side to match current naming patterns. Decisions will also need to be made if the result should be deserialized into a data object. If a data object is needed, implementing `fromBundle` and `toBundle` on the object is the typical setup.
+The GeckoView Java side uses a `GeckoResult` as a message wrapper to communicate with the GeckoView JavaScript side. The JavaScript side will send a callback to the `GeckoResult` for an `onEvent` message or else send a new message to Java using the [`EventDispatcher`](./geckoview-architecture.md#eventdispatcher). A `GeckoResult` is similar to a JavaScript promise and allows results to be returned asynchronously. In general, the return type of the `GeckoResult` will be the same data type as on the JavaScript side. Mapping can be used to change or format results. A `GeckoBundle` is used to serialize this information. Recommend also renaming functions on the Java side to match current naming patterns. Decisions will also need to be made if the result should be deserialized into a data object. If a data object is needed, implementing `fromBundle` and `toBundle` on the object is the typical setup.
 
 For example, the JS toolkit signature `string[] getPreferredLanguages()` could have a GeckoView Java corresponding caller signature be `GeckoResult<List<String>> preferredLanguages` or `GeckoResult<List<Language>> preferredLanguages`.
 
 ### A quick overview of GeckoView delegates
 
-If the application needs to listen to an event or react to information, then there is a good chance the API will also need [a delegate](./geckoview-architecture.rst#delegates). GeckoView only provides base functionality. Embedders of GeckoView, such as Android Components, which powers Fenix, need to implement the specifics of what the reaction should be to an event. If the app needs to do something in response to an event, such as paint UI, then the embedding application needs to implement the delegate.
+If the application needs to listen to an event or react to information, then there is a good chance the API will also need [a delegate](./geckoview-architecture.md#delegates). GeckoView only provides base functionality. Embedders of GeckoView, such as Android Components, which powers Fenix, need to implement the specifics of what the reaction should be to an event. If the app needs to do something in response to an event, such as paint UI, then the embedding application needs to implement the delegate.
 
 For example, a UI/UX requirement for translations might be: “When the user visits a page not in their set of expected known languages, then pop-up the translate feature dialog.” GeckoView does not implement this UI, but provides a mechanism for this to occur and others to implement the work. So, in this case, in toolkit, there is already a message called `TranslationsParent:OfferTranslation` that signals when a translation should be offered. To implement the functionality, a listener on the GeckoView JavaScript side should be set up to tell the GeckoView Java delegate that the event occurred. If the embedder implements this delegate, then that app can react as needed to this information.
 
@@ -339,7 +339,7 @@ See the [GeckoView Translations API RFC](https://docs.google.com/document/d/1pMn
 
 ### Proposed API Review
 
-It is highly recommended that you send a draft of proposed GeckoView API changes or additions to [geckoview-reviewers](https://firefox-source-docs.mozilla.org/mots/index.html#core-geckoview) before implementing. The [RFC template may be found here](https://docs.google.com/document/d/1oHc4BbqM8pzEtVIq-MD1s2itRYAGTVQ8LkyHvy4s168/edit?tab=t.0#heading=h.ls1dr18v7zrx). This is especially important for non-trivial additions or changes. Some examples of non-trivial changes are introducing an API to support a new end-to-end feature, introduction of a new class or module, significant updates to an existing API, or introduction of an API that traverses multiple layers. Examples of trivial changes are introducing a new preference setting API, adding or updating parameters or responses, or minor updates to reflect changes in Gecko. (Also, extremely important note, public APIs cannot be directly changed, they must go through a [deprecation process](./geckoview-quick-start.rst#updating-the-changelog-and-api-documentation) to avoid [breaking changes](https://firefox-source-docs.mozilla.org/mobile/android/geckoview/design/breaking-changes.rst).) The review group can provide comments and recommendations before implementing. This can save time and potential issues during code review.
+It is highly recommended that you send a draft of proposed GeckoView API changes or additions to [geckoview-reviewers](https://firefox-source-docs.mozilla.org/mots/index.html#core-geckoview) before implementing. The [RFC template may be found here](https://docs.google.com/document/d/1oHc4BbqM8pzEtVIq-MD1s2itRYAGTVQ8LkyHvy4s168/edit?tab=t.0#heading=h.ls1dr18v7zrx). This is especially important for non-trivial additions or changes. Some examples of non-trivial changes are introducing an API to support a new end-to-end feature, introduction of a new class or module, significant updates to an existing API, or introduction of an API that traverses multiple layers. Examples of trivial changes are introducing a new preference setting API, adding or updating parameters or responses, or minor updates to reflect changes in Gecko. (Also, extremely important note, public APIs cannot be directly changed, they must go through a [deprecation process](./geckoview-quick-start.md#updating-the-changelog-and-api-documentation) to avoid [breaking changes](../design/breaking-changes.md).) The review group can provide comments and recommendations before implementing. This can save time and potential issues during code review.
 
 ```{important}
 Highly recommend creating an [RFC](https://docs.google.com/document/d/1oHc4BbqM8pzEtVIq-MD1s2itRYAGTVQ8LkyHvy4s168/edit?tab=t.0#heading=h.ls1dr18v7zrx) for proposed GeckoView API additions or changes and consult [Core: GeckoView](https://firefox-source-docs.mozilla.org/mots/index.html#core-geckoview) for recommendations.
@@ -354,7 +354,7 @@ After creating a list of the toolkit endpoints and GeckoView API endpoints and a
 Generally, a new Java class should be made to encompass the API, unless the feature is small or an extension of an existing feature. A rule of thumb is for a small change related to content, the API might simply be placed on `GeckoSession.java` and, for a small change related to settings, the API might be placed on `GeckoRuntime.java`. In the case of translations, which is a bigger feature, a `TranslationsController` class, which has both a session and runtime component was selected. The purpose of the `TranslationsController` is to organize and coordinate any calls involving translations in a contained manner. Much of the work was patterned similarly to the `WebExtensionsController`. Please see the [design document](https://docs.google.com/document/d/1pMn3IZthtsWPzg-tBGRGoeWebIaI8KJt42odiMTjMII/edit?tab=t.0#heading=h.rkn3k63wwhae) for more details. Deciding how a new feature should be structured would be a good discussion in the recommended API RFC.
 
 ```{seealso}
-Please see the [GeckoView Contributor Guide](./geckoview-quick-start.rst) for more information on the specifics of linting, testing, generating API keys or the [Junit Test Framework](./junit.rst) guide for testing basics.
+Please see the [GeckoView Contributor Guide](./geckoview-quick-start.md) for more information on the specifics of linting, testing, generating API keys or the [Junit Test Framework](./junit.md) guide for testing basics.
 ```
 
 #### Session API Example
@@ -608,7 +608,7 @@ See the [initial translations runtime patch](https://phabricator.services.mozill
 On the GeckoView side, the most common test is a junit or plain mochitest. Cross-platform tests generally run as well. The tests for the GeckoView side of translations may be found in [TranslationsTests.kt](http://TranslationsTests.kt) or [test\_geckoview\_translations.html](https://searchfox.org/firefox-main/source/mobile/shared/modules/geckoview/test/mochitest/test_geckoview_translations.html) for reference.
 
 ```{seealso}
-See [junit testing guide](./junit.rst#the-test-runner-extension) for more details.
+See [junit testing guide](./junit.md#the-test-runner-extension) for more details.
 ```
 
 #### GeckoView Example

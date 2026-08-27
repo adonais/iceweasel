@@ -37,3 +37,12 @@ To find out what you can do with the Inspector, see the following how to guides:
 
 - {ref}`Keyboard shortcuts <keyboard-shortcuts-page-inspector>`
 - {ref}`Settings <settings-inspector>`
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+3-pane_mode/index
+how_to/index
+ui_tour/index
+```

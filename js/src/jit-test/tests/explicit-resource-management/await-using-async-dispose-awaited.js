@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !getBuildConfiguration("explicit-resource-management"); --enable-explicit-resource-management
-
 let catchCalled = false;
 async function testAsyncDisposeAwaitUsingAwaited() {
   await using x = {

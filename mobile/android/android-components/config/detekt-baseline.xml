@@ -73,7 +73,6 @@
     <ID>ForbiddenSuppress:Dropdown.kt$@Suppress("LongMethod")</ID>
     <ID>ForbiddenSuppress:Dropdown.kt$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:DropdownMenu.kt$@Suppress("LongMethod")</ID>
-    <ID>ForbiddenSuppress:EngineSession.kt$EngineSession.CookieBannerHandlingMode$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:EngineSession.kt$EngineSession.SessionPriority$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:EngineSession.kt$EngineSession.TrackingProtectionPolicy.CookiePolicy$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:EngineVersion.kt$EngineVersion.Companion$@Suppress("MagicNumber", "ReturnCount")</ID>

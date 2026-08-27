@@ -14,8 +14,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Subprocess: "resource://gre/modules/Subprocess.sys.mjs",
   WindowsSetDefaultRedirect:
     "moz-src:///browser/components/shell/WindowsSetDefaultRedirect.sys.mjs",
-  WindowsVersionInfo:
-    "resource://gre/modules/components-utils/WindowsVersionInfo.sys.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -197,6 +195,57 @@ let ShellServiceInternal = {
       return "ErrHash";
     }
     return null;
+  },
+
+  /**
+   * Whether Firefox can currently make itself the default browser by writing
+   * the Windows UserChoice registry keys, instead of having to send the user
+   * into the Windows Settings app to do it manually. `true` means a set-default
+   * request would be honored or that Firefox is already the default (the
+   * latter is a shortcut to `true` to avoid the risk of a UserChoice write
+   * when we don't need to attempt to set to default anyway).
+   *
+   * If the UserChoice Protection Driver (UCPD) is running and Firefox isn't
+   * already the default, this temporarily renames the `http` association key
+   * and renames it back. UCPD versions where one-click still works permit
+   * this rename, while those where it doesn't do not.
+   *
+   * Always `false` on macOS and Linux. Neither goes through UserChoice, and
+   * neither is reliably one-click, since both can (but don't always) defer to
+   * an OS consent prompt. Supporting them needs its own handling (see bug
+   * 2060879).
+   *
+   * @returns {boolean}
+   */
+  isOneClickSetDefaultEnabled() {
+    if (AppConstants.platform != "win" || !this.shellService) {
+      return false;
+    }
+    if (
+      !Services.prefs.getBoolPref(
+        "browser.shell.setDefaultBrowserUserChoice",
+        false
+      )
+    ) {
+      return false;
+    }
+    if (this._userChoiceImpossibleTelemetryResult() !== null) {
+      return false;
+    }
+    if (!this.isUserChoiceProtectionDriverRunning()) {
+      return true;
+    }
+    if (this.isDefaultBrowser(false)) {
+      return true;
+    }
+    // A running UCPD doesn't always block the rename a UserChoice write needs,
+    // so try renaming it to determine if it's actually blocked.
+    return (
+      Services.prefs.getBoolPref(
+        "browser.shell.setDefaultBrowserUserChoice.regRename",
+        false
+      ) && this.canRenameUserChoiceAssociationKey("http")
+    );
   },
 
   /**
@@ -429,10 +478,13 @@ let ShellServiceInternal = {
     Glean.browser.setDefaultError[setAsDefaultError ? "true" : "false"].add();
   },
 
+  /**
+   * Returns whether the current operating system is Windows 11.
+   *
+   * This is used so it can be mocked out in tests.
+   */
   _isWindows11() {
-    return (
-      lazy.WindowsVersionInfo.get({ throwOnError: false }).buildNumber >= 22000
-    );
+    return Services.sysinfo.isWindows10BuildOrLater(22000);
   },
 
   /**

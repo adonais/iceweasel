@@ -74,8 +74,6 @@ nsresult nsDirectoryService::GetCurrentProcessDirectory(nsIFile** aFile) {
 
 StaticRefPtr<nsDirectoryService> nsDirectoryService::gService;
 
-nsDirectoryService::nsDirectoryService() : mHashtable(128) {}
-
 nsresult nsDirectoryService::Create(REFNSIID aIID, void** aResult) {
   if (NS_WARN_IF(!aResult)) {
     return NS_ERROR_INVALID_ARG;

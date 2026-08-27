@@ -75,11 +75,12 @@ describe("MemoriesSchedulers scheduling from AIWindow", () => {
       testWin = null;
     });
 
-    it("calls maybeRunAndSchedule during init when window is AI Window", () => {
+    it("calls maybeRunAndSchedule during init when window is AI Window", async () => {
       testWin.document.documentElement.setAttribute("ai-window", "");
 
       AIWindow.uninit();
       AIWindow.init(testWin);
+      await testWin.delayedStartupPromise;
 
       Assert.ok(stub.calledOnce, "called once during AI Window init");
     });
@@ -89,6 +90,62 @@ describe("MemoriesSchedulers scheduling from AIWindow", () => {
       AIWindow.init(testWin);
 
       Assert.ok(stub.notCalled, "not called during classic window init");
+    });
+
+    it("still calls maybeRunAndSchedule for a later AI window even if an earlier window init() saw wasn't one", async () => {
+      // beforeEach already called init() against `window` (not an AI
+      // window) without an intervening uninit() - simulates a cold start
+      // where the first window init() sees isn't yet the real AI window.
+      testWin.document.documentElement.setAttribute("ai-window", "");
+
+      AIWindow.init(testWin);
+      await testWin.delayedStartupPromise;
+
+      Assert.ok(
+        stub.calledOnce,
+        "called for a later AI window despite an earlier non-AI window init()"
+      );
+    });
+  });
+
+  describe("firstrun completing after an AI Window toggle", () => {
+    beforeEach(async () => {
+      await SpecialPowers.pushPrefEnv({
+        set: [["browser.smartwindow.firstrun.hasCompleted", false]],
+      });
+      AIWindow.uninit();
+      AIWindow.init(window);
+    });
+
+    afterEach(async () => {
+      AIWindow.uninit();
+      await SpecialPowers.popPrefEnv();
+      AIWindow.init(window);
+    });
+
+    it("calls maybeRunAndSchedule when firstrun completes", () => {
+      Services.prefs.setBoolPref(
+        "browser.smartwindow.firstrun.hasCompleted",
+        true
+      );
+
+      Assert.ok(stub.calledOnce, "called once when firstrun completes");
+    });
+
+    it("does not call maybeRunAndSchedule when firstrun is set to false", () => {
+      Services.prefs.setBoolPref(
+        "browser.smartwindow.firstrun.hasCompleted",
+        true
+      );
+      // Only the false-transition below should be counted.
+      stub.resetHistory();
+
+      Services.prefs.setBoolPref(
+        "browser.smartwindow.firstrun.hasCompleted",
+        false
+      );
+
+      Assert.ok(stub.notCalled, "not called when firstrun is set to false");
     });
   });
 });

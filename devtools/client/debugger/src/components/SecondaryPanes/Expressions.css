@@ -63,6 +63,7 @@
   display: flex;
 
   /* The outline on the input is set to 0 as we want the whole container to have the focus indicator */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   &:has(input:focus) {
     outline: var(--theme-focus-outline);
     /* The container takes the whole width of the sidebar, we need to offset the layout for it to be visible */

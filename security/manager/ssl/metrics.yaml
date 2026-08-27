@@ -68,6 +68,52 @@ data_storage:
     unit: entries
 
 tls:
+  auth_algorithm:
+    type: labeled_counter
+    description: >
+      Algorithm used to authenticate the full TLS handshake.
+      See SSLAuthType in sslt.h.
+    labels:
+      - none
+      - rsa_key_exchange
+      - dsa
+      - kea_unused
+      - ecdsa
+      - ecdh_rsa
+      - ecdh_ecdsa
+      - rsa_sign
+      - rsa_pss
+      - psk
+      - tls13_any
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050189
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050189
+    notification_emails:
+      - seceng-telemetry@mozilla.com
+    expires: never
+
+  auth_ecdsa_curve:
+    type: labeled_counter
+    description: ECDSA signature curve for TLS_*_ECDSA_* in full TLS handshake
+    labels:
+      - p256
+      - p384
+      - p521
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050189
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063132
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050189
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063132
+    notification_emails:
+      - seceng-telemetry@mozilla.com
+    expires: never
+
   certificate_verifications:
     type: counter
     description: >
@@ -96,6 +142,97 @@ tls:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
+    notification_emails:
+      - seceng-telemetry@mozilla.com
+    expires: never
+
+  kea_ecdhe_curve:
+    type: labeled_counter
+    description: ECDHE KEA (TLS_ECDHE_*) curve in full TLS handshake
+    labels:
+      - p256
+      - p384
+      - p521
+      - curve25519
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050189
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050189
+    notification_emails:
+      - seceng-telemetry@mozilla.com
+    expires: never
+
+  key_exchange_algorithm:
+    type: dual_labeled_counter
+    description: Key Exchange Algorithm for TLS handshake
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050189
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050189
+    notification_emails:
+      - seceng-telemetry@mozilla.com
+    expires: never
+    dual_labels:
+      key:
+        description: The type of handshake (full or resumed)
+        labels:
+          - full
+          - resumed
+      category:
+        description: The key exchange algorithm (see SSLKEAType in sslt.h)
+        labels:
+          - rsa
+          - dh
+          - dh_psk
+          - ecdh
+          - ecdh_psk
+          - ecdh_hybrid
+          - ecdh_hybrid_psk
+          - kem
+          - kem_psk
+
+  npn_type:
+    type: labeled_counter
+    description: NPN (next protocol negotiation) results
+    labels:
+      - none
+      - negotiated
+      - no-overlap
+      - alpn
+      - in0rtt
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050189
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050189
+    notification_emails:
+      - seceng-telemetry@mozilla.com
+    expires: never
+
+  reasons_for_not_false_starting:
+    type: labeled_counter
+    description: >
+      Collection of reasons we did not false start when libssl would have let us.
+    labels:
+      - none
+      - kea
+      - cipherSuite
+      - cipherSuite_kea
+      - version
+      - version_kea
+      - version_cipherSuite
+      - version_cipherSuite_kea
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050189
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050189
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
@@ -244,18 +381,57 @@ pkcs11:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1905453
     expires: 159
 
-  external_trust_anchor_module_loaded:
-    type: boolean
-    description:
-      Whether or not an external trust anchor module was loaded.
+  builtin_roots_module_source:
+    type: labeled_counter
+    description: >
+      Which source the built-in roots (CKBI) module was loaded from.
+
+      `xul` is the usual case, and means the roots linked in to libxul were used.
+      `gre_directory` means a `libnssckbi.so` sitting next to the Firefox binary
+      was loaded instead, which some distributions arrange in order to substitute
+      the system trust store. `os_library_path` and `nss3_directory` are only
+      reachable in builds configured with `--with-system-nss`, and likewise
+      indicate that the trust anchors came from the system trust store rather
+      than from Firefox. `none` means no built-in roots module could be loaded at
+      all.
     bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1958977
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2058733
     data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1958977
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2058733
     data_sensitivity:
-      - interaction
+      - technical
     notification_emails:
-      - anna.weine@mozilla.com
+      - jschanck@mozilla.com
+      - dkeeler@mozilla.com
+    expires: never
+    labels:
+      - os_library_path
+      - nss3_directory
+      - gre_directory
+      - xul
+      - none
+
+  fips_enabled:
+    type: boolean
+    description: >
+      Whether the NSS internal PKCS#11 module is in FIPS mode after NSS
+      initialization, as reported by `PK11_IsFIPS()`.
+
+      Note that this is always `false` in builds that use the in-tree copy of
+      NSS, which is compiled with `disable_fips=1` (`NSS_FIPS_DISABLED`): that
+      disables both the `/proc/sys/crypto/fips_enabled` check and the ability to
+      toggle FIPS mode from the device manager. This is only ever `true` in
+      builds configured with `--with-system-nss`, where the system NSS may have
+      been built with FIPS support and forces FIPS mode on when the host is in
+      FIPS mode.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2058730
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2058730
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - jschanck@mozilla.com
       - dkeeler@mozilla.com
     expires: never
 
@@ -1383,25 +1559,6 @@ ssl:
       - seceng-telemetry@mozilla.com
     expires: never
 
-  npn_type:
-    type: custom_distribution
-    description: >
-      NPN Results (0=none, 1=negotiated, 2=no-overlap, 3=selected(alpn))
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram SSL_NPN_TYPE.
-    range_min: 0
-    range_max: 16
-    bucket_count: 17
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: never
-
   resumed_session:
     type: labeled_counter
     description: >
@@ -1417,46 +1574,6 @@ ssl:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1340021
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1340021
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: never
-
-  key_exchange_algorithm_full:
-    type: custom_distribution
-    description: >
-      SSL Handshake Key Exchange Algorithm for full handshake (null=0, rsa=1,
-      dh=2, fortezza=3, ecdh=4)
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram SSL_KEY_EXCHANGE_ALGORITHM_FULL.
-    range_min: 0
-    range_max: 16
-    bucket_count: 17
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: never
-
-  key_exchange_algorithm_resumed:
-    type: custom_distribution
-    description: >
-      SSL Handshake Key Exchange Algorithm for resumed handshake (null=0, rsa=1,
-      dh=2, fortezza=3, ecdh=4)
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram SSL_KEY_EXCHANGE_ALGORITHM_RESUMED.
-    range_min: 0
-    range_max: 16
-    bucket_count: 17
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
@@ -1637,143 +1754,6 @@ ssl:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: never
-
-  kea_rsa_key_size_full:
-    type: custom_distribution
-    description: >
-      RSA KEA (TLS_RSA_*) key size in full handshake
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram SSL_KEA_RSA_KEY_SIZE_FULL.
-    range_min: 0
-    range_max: 24
-    bucket_count: 25
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: never
-
-  kea_dhe_key_size_full:
-    type: custom_distribution
-    description: >
-      DHE KEA (TLS_DHE_*) key size in full handshake
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram SSL_KEA_DHE_KEY_SIZE_FULL.
-    range_min: 0
-    range_max: 24
-    bucket_count: 25
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: never
-
-  kea_ecdhe_curve_full:
-    type: custom_distribution
-    description: >
-      ECDHE KEA (TLS_ECDHE_*) curve (23=P-256, 24=P-384, 25=P-521,
-      29=Curve25519) in full handshake
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram SSL_KEA_ECDHE_CURVE_FULL.
-    range_min: 0
-    range_max: 36
-    bucket_count: 37
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: never
-
-  auth_algorithm_full:
-    type: custom_distribution
-    description: >
-      SSL Authentication Algorithm (null=0, rsa(KEA)=1, ecdsa=4, rsa(sign)=7) in
-      full handshake
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram SSL_AUTH_ALGORITHM_FULL.
-    range_min: 0
-    range_max: 16
-    bucket_count: 17
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: never
-
-  auth_rsa_key_size_full:
-    type: custom_distribution
-    description: >
-      RSA signature key size for TLS_*_RSA_* in full handshake
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram SSL_AUTH_RSA_KEY_SIZE_FULL.
-    range_min: 0
-    range_max: 24
-    bucket_count: 25
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: never
-
-  auth_ecdsa_curve_full:
-    type: custom_distribution
-    description: >
-      ECDSA signature curve for TLS_*_ECDSA_* in full handshake (23=P-256,
-      24=P-384, 25=P-521)
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram SSL_AUTH_ECDSA_CURVE_FULL.
-    range_min: 0
-    range_max: 36
-    bucket_count: 37
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: never
-
-  reasons_for_not_false_starting:
-    type: custom_distribution
-    description: >
-      Bitmask of reasons we did not false start when libssl would have let us
-      (see key in nsNSSCallbacks.cpp)
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram SSL_REASONS_FOR_NOT_FALSE_STARTING.
-    range_min: 0
-    range_max: 512
-    bucket_count: 513
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never

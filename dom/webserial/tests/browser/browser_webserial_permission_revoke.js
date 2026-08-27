@@ -1,6 +1,11 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
+ChromeUtils.defineESModuleGetters(this, {
+  SerialDeviceSharingHelper:
+    "moz-src:///browser/modules/SerialDeviceSharingHelper.sys.mjs",
+});
+
 const TEST_URL =
   "https://example.com/document-builder.sjs?html=<h1>Test serial permission revocation</h1>";
 
@@ -49,7 +54,7 @@ add_task(async function testPermissionRevocation() {
     gBrowser.selectedBrowser
   );
 
-  gSerialDeviceObserver.resetBrowserCount(gBrowser.selectedBrowser);
+  SerialDeviceSharingHelper.resetBrowserCount(gBrowser.selectedBrowser);
   gBrowser.updateBrowserSharing(gBrowser.selectedBrowser, { serial: false });
 
   // Give time for observer to be registered (it happens async)

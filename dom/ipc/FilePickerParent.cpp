@@ -89,7 +89,7 @@ FilePickerParent::IORunnable::Run() {
 
       BlobImplOrString* data = mResults.AppendElement();
       data->mType = BlobImplOrString::eDirectoryPath;
-      data->mDirectoryPath = path;
+      data->mDirectoryPath = std::move(path);
       continue;
     }
 

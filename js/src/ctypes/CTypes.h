@@ -24,6 +24,13 @@ namespace JS {
 struct CTypesCallbacks;
 }  // namespace JS
 
+// libffi's ffi_call_plan is only accelerated for the x86-64 System V ABI;
+// elsewhere it just wraps ffi_call, so gate on the targets that benefit.
+#if defined(FFI_VERSION_NUMBER) && FFI_VERSION_NUMBER >= 30700 && \
+    defined(__x86_64__) && !defined(__ILP32__) && !defined(_WIN64)
+#  define CTYPES_HAVE_FAST_CALL_PLAN 1
+#endif
+
 namespace js {
 namespace ctypes {
 
@@ -362,6 +369,13 @@ struct FunctionInfo {
   // Flag indicating whether the function behaves like a C function with
   // ... as the final formal parameter.
   bool mIsVariadic;
+
+#ifdef CTYPES_HAVE_FAST_CALL_PLAN
+  // Reusable libffi call plan wrapping mCIF, built once for non-variadic
+  // signatures. Holds a pointer into mCIF, so it is freed (in CType::Finalize)
+  // before mCIF.
+  ffi_call_plan* mCallPlan = nullptr;
+#endif
 };
 
 // Parameters necessary for invoking a JS function from a C closure.

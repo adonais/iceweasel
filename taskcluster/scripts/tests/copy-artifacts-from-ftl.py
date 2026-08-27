@@ -10,7 +10,7 @@ from Google Cloud Storage (GCS) for devices in Firebase TestLab.
 It is intended to be run as part of a Taskcluster job following a scheduled test task, or as part of
 a Taskcluster that runs baseline profile generation on Firebase TestLab.
 The script requires the presence of a `matrix_ids.json` artifact in the results directory
-and the availability of the `gsutil` command in the environment.
+and the availability of the `gcloud` command (with the `storage` component) in the environment.
 
 The script performs the following operations:
 - Loads the `matrix_ids.json` artifact to identify the GCS paths for the artifacts.
@@ -19,7 +19,7 @@ The script performs the following operations:
 - Copies the fetched artifacts to the current worker artifact results directory.
 
 The script is configured to log its operations and errors, providing visibility into its execution process.
-It uses the `gsutil` command-line tool to interact with GCS, ensuring compatibility with the GCS environment.
+It uses the `gcloud storage` command group to interact with GCS, ensuring compatibility with the GCS environment.
 
 Usage:
     python3 copy-artifacts-from-ftl.py <artifact_type>
@@ -28,7 +28,7 @@ Usage:
 
 Requirements:
     - The `matrix_ids.json` artifact must be present in the results directory.
-    - The `gsutil` command must be available in the environment.
+    - The `gcloud` command (with the `storage` component) must be available in the environment.
     - The script should be run after a scheduled test task in a Taskcluster job or as part of a
         scheduled baseline profile task in a Taskcluster job
 
@@ -113,17 +113,20 @@ def get_gcs_path(matrix_artifact_file):
     return None
 
 
-def check_gsutil_availability():
+def check_gcloud_storage_availability():
     """
-    Check the availability of the `gsutil` command in the environment.
-    Exit the script if `gsutil` is not available.
+    Check the availability of the `gcloud storage` command group in the environment.
+    Exit the script if `gcloud` (or the `storage` component) is not available.
     """
     try:
         subprocess.run(
-            ["gsutil", "--version"], capture_output=True, text=True, check=True
+            ["gcloud", "storage", "--help"],
+            capture_output=True,
+            text=True,
+            check=True,
         )
     except Exception as e:
-        exit_with_error(f"Error executing gsutil: {e}")
+        exit_with_error(f"Error executing gcloud storage: {e}")
 
 
 def fetch_artifacts(root_gcs_path, device, artifact_pattern):
@@ -141,22 +144,22 @@ def fetch_artifacts(root_gcs_path, device, artifact_pattern):
 
     try:
         result = subprocess.check_output(
-            ["gsutil", "ls", gcs_path], text=True, stderr=subprocess.STDOUT
+            ["gcloud", "storage", "ls", gcs_path], text=True, stderr=subprocess.STDOUT
         )
         return result.splitlines()
     except subprocess.CalledProcessError as e:
         output = e.output or ""
-        if "AccessDeniedException" in output:
+        if "403" in output or "401" in output:
             logging.error(f"Permission denied for GCS path: {gcs_path}")
         elif "network error" in output.lower():
             logging.error(f"Network error accessing GCS path: {gcs_path}")
-        elif "CommandException: One or more URLs matched no objects" in output:
+        elif "matched no objects" in output.lower() or "not found" in output.lower():
             logging.info(f"No files found in GCS at {gcs_path}")
         else:
             logging.error(f"Failed to list files at {gcs_path}: {output}")
         return []
     except Exception as e:
-        logging.error(f"Error executing gsutil: {e}")
+        logging.error(f"Error executing gcloud storage: {e}")
         return []
 
 
@@ -181,9 +184,9 @@ def fetch_device_names(matrix_artifact_file, only_failed=False):
     return devices
 
 
-def gsutil_cp(artifact, dest):
+def gcloud_storage_cp(artifact, dest):
     """
-    Copy the specified artifact to the destination path using `gsutil`.
+    Copy the specified artifact to the destination path using `gcloud storage`.
 
     Args:
         artifact (str): The path to the artifact to copy.
@@ -194,20 +197,20 @@ def gsutil_cp(artifact, dest):
     logging.info(f"Copying {artifact} to {dest}")
     try:
         result = subprocess.run(
-            ["gsutil", "cp", artifact, dest],
+            ["gcloud", "storage", "cp", artifact, dest],
             check=False,
             capture_output=True,
             text=True,
         )
         if result.returncode != 0:
-            if "AccessDeniedException" in result.stderr:
+            if "403" in result.stderr or "401" in result.stderr:
                 logging.error(f"Permission denied for GCS path: {artifact}")
             elif "network error" in result.stderr.lower():
                 logging.error(f"Network error accessing GCS path: {artifact}")
             else:
                 logging.error(f"Failed to copy file {artifact}: {result.stderr}")
     except Exception as e:
-        logging.error(f"Error executing gsutil: {e}")
+        logging.error(f"Error executing gcloud storage: {e}")
 
 
 def parse_crash_log(log_path):
@@ -293,7 +296,7 @@ def process_baseline_profile_artifacts(root_gcs_path, device_names):
             )
             count += 1
 
-        gsutil_cp(artifact, dest_path)
+        gcloud_storage_cp(artifact, dest_path)
         downloaded_files.append(dest_path)
 
 
@@ -321,7 +324,7 @@ def process_macrobenchmark_artifact(root_gcs_path, device_names):
             )
             count += 1
 
-        gsutil_cp(artifact, dest_path)
+        gcloud_storage_cp(artifact, dest_path)
         downloaded_files.append(dest_path)
 
 
@@ -337,7 +340,7 @@ def process_memory_leaks_artifacts(root_gcs_path, device_names):
             base_name = os.path.basename(artifact)
             dest_path = os.path.join(Worker.MEMORY_LEAKS_DIR.value, f"leak_{base_name}")
 
-            gsutil_cp(artifact, dest_path)
+            gcloud_storage_cp(artifact, dest_path)
 
 
 def process_crash_artifacts(root_gcs_path, failed_device_names):
@@ -349,7 +352,7 @@ def process_crash_artifacts(root_gcs_path, failed_device_names):
             continue
 
         for artifact in artifacts:
-            gsutil_cp(artifact, Worker.RESULTS_DIR.value)
+            gcloud_storage_cp(artifact, Worker.RESULTS_DIR.value)
             crashes_reported += parse_crash_log(
                 os.path.join(Worker.RESULTS_DIR.value, os.path.basename(artifact))
             )
@@ -364,7 +367,7 @@ def exit_with_error(message):
 
 def main():
     setup_logging()
-    check_gsutil_availability()
+    check_gcloud_storage_availability()
 
     if len(sys.argv) < 2:
         logging.error("Usage: python script_name.py <artifact_type>")

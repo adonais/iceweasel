@@ -14,8 +14,8 @@ ALLOWED_HOSTS = [
     # The models hub is a HuggingFace compatible model hub for downloading models.
     "model-hub.mozilla.org",
     # The MLPA server is the front for the mozilla-managed LLM service.
-    "mlpa-prod-prod-mozilla.global.ssl.fastly.net",
-    "mlpa-nonprod-stage-mozilla.global.ssl.fastly.net",
+    "mlpa-prod-prod-mozilla.freetls.fastly.net",
+    "mlpa-nonprod-stage-mozilla.freetls.fastly.net",
 ]
 
 PREFS = {

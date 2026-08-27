@@ -4313,8 +4313,6 @@ void TSFTextStore::Content::EndComposition(const PendingAction& aCompEnd) {
  *  TSFTextStore::MouseTracker
  *****************************************************************************/
 
-TSFTextStore::MouseTracker::MouseTracker() : mCookie(kInvalidCookie) {}
-
 HRESULT TSFTextStore::MouseTracker::Init(TSFTextStore* aTextStore) {
   MOZ_LOG(gIMELog, LogLevel::Debug,
           ("0x%p   TSFTextStore::MouseTracker::Init(aTextStore=0x%p), "

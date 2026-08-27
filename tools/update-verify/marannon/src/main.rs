@@ -31,6 +31,9 @@ fn get_extension(filename: &str) -> Option<&str> {
     if filename.ends_with(".tar.xz") {
         return Some("tar.xz");
     }
+    if filename.ends_with(".tar.bz2") {
+        return Some("tar.bz2");
+    }
     return Path::new(filename).extension()?.to_str();
 }
 

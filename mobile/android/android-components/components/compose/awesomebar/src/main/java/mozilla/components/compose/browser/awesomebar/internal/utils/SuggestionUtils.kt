@@ -5,7 +5,7 @@
 package mozilla.components.compose.browser.awesomebar.internal.utils
 
 import mozilla.components.compose.browser.awesomebar.R
-import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestionStatus
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionStatus
 
 /**
  * Maps a [SportSuggestionStatus] to its corresponding string resource ID for display in the UI.

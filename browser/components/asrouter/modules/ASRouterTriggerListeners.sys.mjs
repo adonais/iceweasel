@@ -324,6 +324,149 @@ export const ASRouterTriggerListeners = new Map([
       },
     },
   ],
+
+  /**
+   * Notifies the trigger handler whenever the user adds a bookmark through any
+   * UI path (URL bar star, menus, keyboard shortcut, "Bookmark Link", "Bookmark
+   * All Tabs", or the Library). Bulk and non-interactive sources (import,
+   * restore, sync) and tag operations are ignored. Fires at most once per
+   * Places notification so a batch add results in a single trigger. Does not
+   * fire in private windows.
+   */
+  [
+    "bookmarkAdded",
+    {
+      id: "bookmarkAdded",
+      _initialized: false,
+      _triggerHandler: null,
+      _sourcesToIgnore: null,
+
+      init(triggerHandler) {
+        if (!this._initialized) {
+          this.handlePlacesEvents = this.handlePlacesEvents.bind(this);
+          // Bulk and non-interactive sources to ignore
+          this._sourcesToIgnore = [
+            lazy.PlacesUtils.bookmarks.SOURCES.IMPORT,
+            lazy.PlacesUtils.bookmarks.SOURCES.RESTORE,
+            lazy.PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP,
+            lazy.PlacesUtils.bookmarks.SOURCES.SYNC,
+            lazy.PlacesUtils.bookmarks.SOURCES
+              .SYNC_REPARENT_REMOVED_FOLDER_CHILDREN,
+          ];
+          lazy.PlacesUtils.observers.addListener(
+            ["bookmark-added"],
+            this.handlePlacesEvents
+          );
+          this._initialized = true;
+        }
+        this._triggerHandler = triggerHandler;
+      },
+
+      uninit() {
+        if (this._initialized) {
+          lazy.PlacesUtils.observers.removeListener(
+            ["bookmark-added"],
+            this.handlePlacesEvents
+          );
+          this._initialized = false;
+          this._triggerHandler = null;
+        }
+      },
+
+      handlePlacesEvents(aEvents) {
+        const window = Services.wm.getMostRecentBrowserWindow();
+        if (!window || isPrivateWindow(window)) {
+          return;
+        }
+        const browser = window.gBrowser.selectedBrowser;
+
+        for (let ev of aEvents) {
+          if (
+            ev.itemType === lazy.PlacesUtils.bookmarks.TYPE_BOOKMARK &&
+            !ev.isTagging &&
+            !this._sourcesToIgnore.includes(ev.source)
+          ) {
+            this._triggerHandler(browser, { id: this.id });
+
+            // Don't fire more than once per Places notification.
+            break;
+          }
+        }
+      },
+    },
+  ],
+
+  /**
+   * Notifies the trigger handler whenever the user navigates a top-level
+   * document to a URL that is already bookmarked. Does not fire in private
+   * windows.
+   */
+  [
+    "visitBookmarkedURL",
+    {
+      id: "visitBookmarkedURL",
+      _initialized: false,
+      _triggerHandler: null,
+
+      init(triggerHandler) {
+        if (!this._initialized) {
+          this.onLocationChange = this.onLocationChange.bind(this);
+          lazy.EveryWindow.registerCallback(
+            this.id,
+            win => {
+              if (!isPrivateWindow(win)) {
+                win.gBrowser.addTabsProgressListener(this);
+              }
+            },
+            win => {
+              if (!isPrivateWindow(win)) {
+                win.gBrowser.removeTabsProgressListener(this);
+              }
+            }
+          );
+          this._initialized = true;
+        }
+        this._triggerHandler = triggerHandler;
+      },
+
+      uninit() {
+        if (this._initialized) {
+          lazy.EveryWindow.unregisterCallback(this.id);
+          this._initialized = false;
+          this._triggerHandler = null;
+        }
+      },
+
+      async onLocationChange(
+        aBrowser,
+        aWebProgress,
+        aRequest,
+        aLocationURI,
+        aFlags
+      ) {
+        const isSameDocument = !!(
+          aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT
+        );
+        if (!aWebProgress.isTopLevel || isSameDocument) {
+          return;
+        }
+
+        let isBookmarked = false;
+        try {
+          isBookmarked = !!(await lazy.PlacesUtils.bookmarks.fetch({
+            url: aLocationURI,
+          }));
+        } catch (e) {
+          // fetch throws for URLs it can't normalize
+          return;
+        }
+
+        if (isBookmarked && this._triggerHandler) {
+          this._triggerHandler(aBrowser, { id: this.id });
+        }
+      },
+    },
+  ],
   [
     "frequentVisits",
     {
@@ -1506,93 +1649,6 @@ export const ASRouterTriggerListeners = new Map([
         "nsIObserver",
         "nsISupportsWeakReference",
       ]),
-    },
-  ],
-  [
-    "cookieBannerDetected",
-    {
-      id: "cookieBannerDetected",
-      _initialized: false,
-      _triggerHandler: null,
-
-      init(triggerHandler) {
-        this._triggerHandler = triggerHandler;
-        if (!this._initialized) {
-          lazy.EveryWindow.registerCallback(
-            this.id,
-            win => {
-              win.addEventListener("cookiebannerdetected", this);
-            },
-            win => {
-              win.removeEventListener("cookiebannerdetected", this);
-            }
-          );
-          this._initialized = true;
-        }
-      },
-      handleEvent(event) {
-        if (this._initialized) {
-          const win = event.target || Services.wm.getMostRecentBrowserWindow();
-          if (!win) {
-            return;
-          }
-          this._triggerHandler(win.gBrowser.selectedBrowser, {
-            id: this.id,
-          });
-        }
-      },
-      uninit() {
-        if (this._initialized) {
-          lazy.EveryWindow.unregisterCallback(this.id);
-          this._initialized = false;
-          this._triggerHandler = null;
-        }
-      },
-    },
-  ],
-  [
-    "cookieBannerHandled",
-    {
-      id: "cookieBannerHandled",
-      _initialized: false,
-      _triggerHandler: null,
-
-      init(triggerHandler) {
-        this._triggerHandler = triggerHandler;
-        if (!this._initialized) {
-          lazy.EveryWindow.registerCallback(
-            this.id,
-            win => {
-              win.addEventListener("cookiebannerhandled", this);
-            },
-            win => {
-              win.removeEventListener("cookiebannerhandled", this);
-            }
-          );
-          this._initialized = true;
-        }
-      },
-      handleEvent(event) {
-        if (this._initialized) {
-          const browser =
-            event.detail.windowContext.rootFrameLoader?.ownerElement;
-          const win = browser?.documentGlobal;
-          // We only want to show messages in the active browser window.
-          if (
-            win === Services.wm.getMostRecentBrowserWindow() &&
-            browser === win.gBrowser.selectedBrowser
-          ) {
-            this._triggerHandler(browser, { id: this.id });
-          }
-        }
-      },
-      uninit() {
-        if (this._initialized) {
-          lazy.EveryWindow.unregisterCallback(this.id);
-          this._initialized = false;
-          this._triggerHandler = null;
-        }
-      },
     },
   ],
   [

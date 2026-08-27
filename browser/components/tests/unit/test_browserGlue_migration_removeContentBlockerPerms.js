@@ -1,8 +1,6 @@
 /* Any copyright is dedicated to the Public Domain.
    http://creativecommons.org/publicdomain/zero/1.0/ */
 
-const TOPIC_BROWSERGLUE_TEST = "browser-glue-test";
-const TOPICDATA_BROWSERGLUE_TEST = "force-ui-migration";
 const UI_VERSION = 147;
 const CONTENT_BLOCKER_PERM_TYPES = [
   "other",
@@ -28,8 +26,8 @@ const CONTENT_BLOCKER_PERM_TYPES = [
   "speculative",
 ];
 
-const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"].getService(
-  Ci.nsIObserver
+const { ProfileDataUpgrader } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/ProfileDataUpgrader.sys.mjs"
 );
 
 // Test to check if migration resets default permissions properly.
@@ -40,7 +38,6 @@ add_task(async function test_removeContentBlockerPerms() {
   });
 
   Services.perms.removeAll();
-  Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
 
   let pm = Services.perms;
 
@@ -72,11 +69,7 @@ add_task(async function test_removeContentBlockerPerms() {
   );
 
   // Simulate a migration.
-  gBrowserGlue.observe(
-    null,
-    TOPIC_BROWSERGLUE_TEST,
-    TOPICDATA_BROWSERGLUE_TEST
-  );
+  ProfileDataUpgrader.upgrade(UI_VERSION, UI_VERSION + 1);
 
   // Check all permissions were deleted
   remaining_perms = pm.getAllByTypes(CONTENT_BLOCKER_PERM_TYPES);

@@ -33,8 +33,13 @@ namespace mozilla::intl {
  */
 class Bidi final {
  public:
+#if USE_RUST_UNICODE_BIDI
+  Bidi() = default;
+  ~Bidi() = default;
+#else
   Bidi();
   ~Bidi();
+#endif
 
   // Not copyable or movable
   Bidi(const Bidi&) = delete;

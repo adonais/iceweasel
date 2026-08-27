@@ -4,6 +4,7 @@
    Copyright (C) 1998 Geoffrey Keating
    Copyright (C) 2001 John Hornkvist
    Copyright (C) 2002, 2006, 2007, 2009, 2010 Free Software Foundation, Inc.
+   Copyright (C) 2026 Anthony Green
 
    FFI support for Darwin and AIX.
    
@@ -38,6 +39,33 @@ struct ffi_aix_trampoline_struct {
     void * toc;			/* TOC */
     void * static_chain;	/* Pointer to closure */
 };
+
+/* Closure jump table indexes returned by ffi_closure_helper_common and
+   consumed by the jump tables in aix_closure.S.  These mirror the
+   definitions in ffi_powerpc.h, which this file cannot include because
+   it defines its own (differing) FLAG_* and ffi_dblfl.  */
+#define PPC_LD_NONE		0
+#define PPC_LD_R3		1
+#define PPC_LD_R3R4		2
+#define PPC_LD_F32		3
+#define PPC_LD_F64		4
+#define PPC_LD_F128		5
+#define PPC_LD_U8		6
+#define PPC_LD_S8		7
+#define PPC_LD_U16		8
+#define PPC_LD_S16		9
+
+#ifndef POWERPC64
+# define PPC_LD_U32		PPC_LD_R3
+# define PPC_LD_S32		PPC_LD_R3
+# define PPC_LD_PTR		PPC_LD_R3
+# define PPC_LD_I64		PPC_LD_R3R4
+#else
+# define PPC_LD_U32		10
+# define PPC_LD_S32		11
+# define PPC_LD_PTR		PPC_LD_R3
+# define PPC_LD_I64		PPC_LD_R3
+#endif
 
 extern void ffi_closure_ASM (void);
 
@@ -1192,12 +1220,12 @@ typedef union
   double d;
 } ffi_dblfl;
 
-ffi_type *
+int
 ffi_closure_helper_DARWIN (ffi_closure *, void *,
 			   unsigned long *, ffi_dblfl *);
 
 #if defined (FFI_GO_CLOSURES)
-ffi_type *
+int
 ffi_go_closure_helper_DARWIN (ffi_go_closure*, void *,
 			      unsigned long *, ffi_dblfl *);
 #endif
@@ -1209,7 +1237,7 @@ ffi_go_closure_helper_DARWIN (ffi_go_closure*, void *,
    up space for a return value, ffi_closure_ASM invokes the
    following helper function to do most of the work.  */
 
-static ffi_type *
+static int
 ffi_closure_helper_common (ffi_cif* cif,
 			   void (*fun)(ffi_cif*, void*, void**, void*),
 			   void *user_data, void *rvalue,
@@ -1485,7 +1513,7 @@ ffi_closure_helper_common (ffi_cif* cif,
     }
 }
 
-ffi_type *
+int
 ffi_closure_helper_DARWIN (ffi_closure *closure, void *rvalue,
 			   unsigned long *pgr, ffi_dblfl *pfr)
 {
@@ -1494,7 +1522,7 @@ ffi_closure_helper_DARWIN (ffi_closure *closure, void *rvalue,
 }
 
 #if defined (FFI_GO_CLOSURES)
-ffi_type *
+int
 ffi_go_closure_helper_DARWIN (ffi_go_closure *closure, void *rvalue,
 			      unsigned long *pgr, ffi_dblfl *pfr)
 {

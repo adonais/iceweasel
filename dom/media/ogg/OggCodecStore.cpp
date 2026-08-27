@@ -6,8 +6,6 @@
 
 namespace mozilla {
 
-OggCodecStore::OggCodecStore() : mMonitor("CodecStore") {}
-
 OggCodecState* OggCodecStore::Add(uint32_t serial,
                                   UniquePtr<OggCodecState> codecState) {
   MonitorAutoLock mon(mMonitor);

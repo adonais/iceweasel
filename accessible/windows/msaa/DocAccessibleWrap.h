@@ -16,7 +16,7 @@ namespace a11y {
 class DocAccessibleWrap : public DocAccessible {
  public:
   DocAccessibleWrap(dom::Document* aDocument, PresShell* aPresShell);
-  virtual ~DocAccessibleWrap();
+  virtual ~DocAccessibleWrap() = default;
 
   // LocalAccessible
   virtual void Shutdown();

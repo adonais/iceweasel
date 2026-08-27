@@ -115,15 +115,12 @@ add_task(async function basic() {
   await assertAction("testaction");
 
   info("The callback of the action is fired when selected");
+  let engaged = UrlbarTestUtils.promiseProviderEngagement(window);
   EventUtils.synthesizeKey("KEY_Tab", {}, window);
   assertAccessibilityWhenSelected("testaction");
   EventUtils.synthesizeKey("KEY_Enter", {}, window);
-  // The action's onPick runs parent-side, so on the actor message path it fires
-  // asynchronously after the pick rather than synchronously.
-  await TestUtils.waitForCondition(
-    () => testActionCalled == 1,
-    "Test action was called"
-  );
+  await engaged;
+  Assert.equal(testActionCalled, 1, "Test action was called");
 });
 
 add_task(async function match_in_phrase() {
@@ -207,13 +204,12 @@ add_task(async function testAfterTabSwitch() {
 
   await BrowserTestUtils.switchTab(gBrowser, tab1);
   info("Testing if quick action in tab 1 still works.");
+  let engaged = UrlbarTestUtils.promiseProviderEngagement(window);
   EventUtils.synthesizeKey("KEY_Tab", {}, window);
   assertAccessibilityWhenSelected("testaction");
   EventUtils.synthesizeKey("KEY_Enter", {}, window);
-  await TestUtils.waitForCondition(
-    () => testActionCalled == 2,
-    "Test action was called"
-  );
+  await engaged;
+  Assert.equal(testActionCalled, 2, "Test action was called");
 
   BrowserTestUtils.removeTab(tab2);
 });
@@ -290,6 +286,10 @@ add_task(async function test_update() {
 
   const sandbox = sinon.createSandbox();
   try {
+    // Updates are disabled for testing, so pretend this build can update.
+    sandbox
+      .stub(UpdateService.prototype, "canUsuallyCheckForUpdates")
+      .get(() => true);
     sandbox
       .stub(UpdateService.prototype, "currentState")
       .get(() => Ci.nsIApplicationUpdateService.STATE_IDLE);
@@ -317,6 +317,10 @@ add_task(async function test_update_in_actions_mode() {
   const sandbox = sinon.createSandbox();
   let currentState = Ci.nsIApplicationUpdateService.STATE_IDLE;
   sandbox.stub(UpdateService.prototype, "currentState").get(() => currentState);
+  // Updates are disabled for testing, so pretend this build can update.
+  sandbox
+    .stub(UpdateService.prototype, "canUsuallyCheckForUpdates")
+    .get(() => true);
 
   try {
     await enterActionsMode();
@@ -450,6 +454,68 @@ add_task(async function test_searchMode() {
 
   BrowserTestUtils.removeTab(tab);
   BrowserTestUtils.removeTab(viewSourceTab);
+});
+
+add_task(async function test_searchMode_unsupported_action() {
+  ActionsProviderQuickActions.addAction("unsupportedsearchaction", {
+    commands: ["unsupportedsearch"],
+    label: "quickactions-downloads2",
+    isUnsupported: () => true,
+    onPick: () => {},
+  });
+  ActionsProviderQuickActions.addAction("supportedsearchaction", {
+    commands: ["unsupportedsearchsupported"],
+    label: "quickactions-downloads2",
+    onPick: () => {},
+  });
+
+  await enterActionsMode();
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "unsupportedsearch",
+  });
+
+  await assertAction("supportedsearchaction");
+  Assert.ok(
+    !window.document.querySelector(
+      `.urlbarView-action-btn[data-action=unsupportedsearchaction]`
+    ),
+    "Unsupported action is not shown in the actions search mode list"
+  );
+
+  await exitActionsMode();
+
+  ActionsProviderQuickActions.removeAction("unsupportedsearchaction");
+  ActionsProviderQuickActions.removeAction("supportedsearchaction");
+});
+
+add_task(async function test_searchMode_inactive_action() {
+  ActionsProviderQuickActions.addAction("inactivesearchaction", {
+    commands: ["inactivesearch"],
+    label: "quickactions-downloads2",
+    isInactive: () => true,
+    onPick: () => {},
+  });
+
+  await enterActionsMode();
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "inactivesearch",
+  });
+
+  await assertAction("inactivesearchaction");
+  Assert.ok(
+    window.document
+      .querySelector(`.urlbarView-action-btn[data-action=inactivesearchaction]`)
+      .hasAttribute("disabled"),
+    "Inactive action is shown but disabled in the actions search mode list"
+  );
+
+  await exitActionsMode();
+
+  ActionsProviderQuickActions.removeAction("inactivesearchaction");
 });
 
 let showAction = async testFun => {

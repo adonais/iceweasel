@@ -23,4 +23,15 @@
             column="6"/>
     </issue>
 
+    <issue
+        id="Autofill"
+        message="Missing `autofillHints` attribute"
+        errorLine1="        &lt;EditText"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="src/main/res/layout/mozac_feature_text_prompt.xml"
+            line="29"
+            column="10"/>
+    </issue>
+
 </issues>

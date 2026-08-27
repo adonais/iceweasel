@@ -25,7 +25,7 @@ function compileAndEvaluateModule(script, options) {
     options.module = true;
     let stencil = compileToStencil(script, options);
     let m = instantiateModuleStencil(stencil);
-    moduleLink(m);
+    moduleLoadAndLink(m);
     moduleEvaluate(m);
     return m;
 }

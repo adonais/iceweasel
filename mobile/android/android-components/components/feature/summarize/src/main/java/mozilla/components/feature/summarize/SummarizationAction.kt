@@ -36,11 +36,16 @@ data object SettingsBackClicked : SummarizationAction
 /** Shake Consent has been requested */
 data object ShakeConsentRequested : SummarizationAction
 
-/**  */
+/** Actions related to preparing and initializing the LLM provider. */
 sealed interface LlmProviderAction : SummarizationAction {
 
-    /** The LLM provider has been made available */
-    data object ProviderAvailable : LlmProviderAction
+    /**
+     * Preparing the provider failed because the user must sign in. Drives the sign-in UI.
+     *
+     * @property reason The provider-unavailable exception that blocked preparation, carried
+     * through for telemetry.
+     */
+    data class SignInRequired(val reason: Throwable) : LlmProviderAction
 
     /** The LLM provider finished initializing with the given [llm]. */
     data class ProviderInitialized(val llm: Llm) : LlmProviderAction
@@ -97,6 +102,18 @@ sealed interface OffDeviceSummarizationShakeConsentAction : SummarizationAction 
 
     /** Dispatched when the user dismisses the consent dialog. */
     data object CancelClicked : OffDeviceSummarizationShakeConsentAction
+}
+
+/** Actions for the sign-in content shown when an integrity failure blocks summarization. */
+sealed interface SignInSummarizationContentAction : SummarizationAction {
+    /** Dispatched when the user taps the "Learn more" link. */
+    data object LearnMoreClicked : SignInSummarizationContentAction
+
+    /** Dispatched when the user taps the sign-in button. */
+    data object SignInClicked : SignInSummarizationContentAction
+
+    /** Dispatched when the user dismisses the sign-in prompt. */
+    data object DismissClicked : SignInSummarizationContentAction
 }
 
 /**

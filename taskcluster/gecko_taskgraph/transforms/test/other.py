@@ -336,7 +336,16 @@ def setup_browsertime(config, tasks):
 
         ts = {
             "by-test-platform": {
-                "android.*": ["browsertime", "linux64-geckodriver", "linux64-node"],
+                "android-em-14-arm64.*": [
+                    "browsertime",
+                    "macosx64-geckodriver",
+                    "macosx64-aarch64-node",
+                ],
+                "android-(?!em-14-arm64).*": [
+                    "browsertime",
+                    "linux64-geckodriver",
+                    "linux64-node",
+                ],
                 "linux.*": ["browsertime", "linux64-geckodriver", "linux64-node"],
                 "macosx1470.*": [
                     "browsertime",
@@ -368,7 +377,8 @@ def setup_browsertime(config, tasks):
 
         fs = {
             "by-test-platform": {
-                "android.*": ["linux64-ffmpeg-7.1"],
+                "android-em-14-arm64.*": ["mac64-ffmpeg-7.1"],
+                "android-(?!em-14-arm64).*": ["linux64-ffmpeg-7.1"],
                 "linux.*": ["linux64-ffmpeg-7.1"],
                 "macosx1470.*": ["mac64-ffmpeg-7.1"],
                 "macosx1400.*": ["mac64-ffmpeg-7.1"],
@@ -379,7 +389,12 @@ def setup_browsertime(config, tasks):
         }
 
         cd_fetches = {
-            "android.*": [
+            "android-em-14-arm64.*": [
+                "mac-cft-cd-arm-backup",
+                "mac-cft-cd-arm-stable",
+                "mac-cft-cd-arm-beta",
+            ],
+            "android-(?!em-14-arm64).*": [
                 "linux64-cft-cd-backup",
                 "linux64-cft-cd-stable",
                 "linux64-cft-cd-beta",
@@ -415,7 +430,8 @@ def setup_browsertime(config, tasks):
             "linux.*": ["linux64-cft-cd-canary"],
             "macosx1500.*": ["mac-cft-cd-arm-canary"],
             "windows.*-64.*": ["win64-cft-cd-canary"],
-            "android.*": ["linux64-cft-cd-canary"],
+            "android-em-14-arm64.*": ["mac-cft-cd-arm-canary"],
+            "android-(?!em-14-arm64).*": ["linux64-cft-cd-canary"],
         }
 
         cd_extracted_name = {
@@ -467,6 +483,16 @@ def setup_browsertime(config, tasks):
                     "$MOZ_FETCHES_DIR/ffmpeg-n7.1-latest-win64-gpl-shared-7.1/bin/ffmpeg.exe",
                 ],
                 "macosx.*": [
+                    "--browsertime-node",
+                    "$MOZ_FETCHES_DIR/node/bin/node",
+                    "--browsertime-geckodriver",
+                    "$MOZ_FETCHES_DIR/geckodriver",
+                    "--browsertime-chromedriver",
+                    "$MOZ_FETCHES_DIR/" + cd_extracted_name["mac"],
+                    "--browsertime-ffmpeg",
+                    "$MOZ_FETCHES_DIR/ffmpeg-7.1/bin/ffmpeg",
+                ],
+                "android-em-14-arm64.*": [
                     "--browsertime-node",
                     "$MOZ_FETCHES_DIR/node/bin/node",
                     "--browsertime-geckodriver",

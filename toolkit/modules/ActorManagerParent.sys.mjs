@@ -185,6 +185,16 @@ let JSWINDOWACTORS = {
 
     child: {
       esModuleURI: "resource://gre/actors/AutoCompleteChild.sys.mjs",
+      // On GeckoView the autocomplete popup is a delegated native prompt; we
+      // listen for pagehide (which also fires for bfcache) to tear it down so
+      // it can't outlive its document. Other platforms close the popup via
+      // nsFormFillController, so the listener is GeckoView-only to avoid
+      // instantiating the actor on every navigation elsewhere.
+      ...(AppConstants.MOZ_GECKOVIEW && {
+        events: {
+          pagehide: { mozSystemGroup: true },
+        },
+      }),
     },
 
     allFrames: true,
@@ -322,59 +332,6 @@ let JSWINDOWACTORS = {
         "resource://gre/actors/CaptchaDetectionCommunicationChild.sys.mjs",
     },
     allFrames: true,
-    safeForUntrustedWebProcess: true,
-  },
-
-  CookieBanner: {
-    parent: {
-      esModuleURI: "resource://gre/actors/CookieBannerParent.sys.mjs",
-    },
-    child: {
-      esModuleURI: "resource://gre/actors/CookieBannerChild.sys.mjs",
-      events: {
-        DOMContentLoaded: {},
-        load: { capture: true },
-      },
-    },
-    // Only need handle cookie banners for HTTP/S scheme.
-    matches: ["https://*/*", "http://*/*"],
-    // Only handle banners for browser tabs (including sub-frames).
-    messageManagerGroups: ["browsers"],
-    // Cookie banners can be shown in sub-frames so we need to include them.
-    allFrames: true,
-    onAddActor(register, unregister) {
-      let isRegistered = false;
-
-      const maybeRegister = () => {
-        const isEnabled = Services.prefs.getBoolPref(
-          "cookiebanners.bannerClicking.enabled",
-          false
-        );
-        const mode = Services.prefs.getIntPref("cookiebanners.service.mode", 0);
-        const privateBrowsing = Services.prefs.getIntPref(
-          "cookiebanners.service.mode.privateBrowsing"
-        );
-        if (isEnabled && (mode != 0 || privateBrowsing != 0)) {
-          if (!isRegistered) {
-            register();
-            isRegistered = true;
-          }
-        } else if (isRegistered) {
-          unregister();
-          isRegistered = false;
-        }
-      };
-
-      [
-        "cookiebanners.bannerClicking.enabled",
-        "cookiebanners.service.mode",
-        "cookiebanners.service.mode.privateBrowsing",
-      ].forEach(prefName => {
-        Services.prefs.addObserver(prefName, maybeRegister);
-      });
-
-      maybeRegister();
-    },
     safeForUntrustedWebProcess: true,
   },
 
@@ -648,21 +605,6 @@ let JSWINDOWACTORS = {
     safeForUntrustedWebProcess: true,
   },
 
-  WebChannel: {
-    parent: {
-      esModuleURI: "resource://gre/actors/WebChannelParent.sys.mjs",
-    },
-    child: {
-      esModuleURI: "resource://gre/actors/WebChannelChild.sys.mjs",
-      events: {
-        WebChannelMessageToChrome: { capture: true, wantUntrusted: true },
-      },
-    },
-
-    allFrames: true,
-    safeForUntrustedWebProcess: true,
-  },
-
   Thumbnails: {
     child: {
       esModuleURI: "resource://gre/actors/ThumbnailsChild.sys.mjs",
@@ -883,6 +825,22 @@ if (AppConstants.platform != "android") {
     },
 
     includeChrome: true,
+    allFrames: true,
+    safeForUntrustedWebProcess: true,
+  };
+
+  // GeckoView implements WebChannel communication at the embedder-level.
+  JSWINDOWACTORS.WebChannel = {
+    parent: {
+      esModuleURI: "resource://gre/actors/WebChannelParent.sys.mjs",
+    },
+    child: {
+      esModuleURI: "resource://gre/actors/WebChannelChild.sys.mjs",
+      events: {
+        WebChannelMessageToChrome: { capture: true, wantUntrusted: true },
+      },
+    },
+
     allFrames: true,
     safeForUntrustedWebProcess: true,
   };

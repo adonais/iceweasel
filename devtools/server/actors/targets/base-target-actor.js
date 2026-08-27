@@ -322,10 +322,8 @@ class BaseTargetActor extends Actor {
   }
 
   // List of active global highlighters enabled via Target Configuration's `enabledHighlighters`
-  // Contains objects with:
-  //  - `type` (string) highlighter type
-  //  - `highlighter` (HighlighterActor) active highlighter actor instance
-  #enabledHighlighters = new Set();
+  // Map whose keys are the highlighter types, and the values the highlighter actor instances
+  #enabledHighlighters = new Map();
 
   /**
    * Process Target Configuration's enabledHighlighters setting
@@ -345,15 +343,16 @@ class BaseTargetActor extends Actor {
       }
       const highlighter = await inspectorActor.getHighlighterByType(type);
       promises.push(highlighter.show());
-      this.#enabledHighlighters.add({ type, highlighter });
+      this.#enabledHighlighters.set(type, highlighter);
     }
 
-    // Then disable the one no longer mentioned in the new list
-    for (const { type, highlighter } of this.#enabledHighlighters) {
+    // Then disable the ones no longer mentioned in the new list
+    for (const [type, highlighter] of this.#enabledHighlighters) {
       if (enabledHighlighters.includes(type)) {
         continue;
       }
-      promises.push(highlighter.hide());
+      highlighter.hide();
+      this.#enabledHighlighters.delete(type);
     }
 
     await Promise.all(promises);

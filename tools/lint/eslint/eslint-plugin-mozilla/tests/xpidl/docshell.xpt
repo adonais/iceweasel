@@ -5461,13 +5461,6 @@
         "value": 65536
       },
       {
-        "name": "LOAD_FLAGS_FORCE_ALLOW_COOKIES",
-        "type": {
-          "tag": "TD_UINT32"
-        },
-        "value": 131072
-      },
-      {
         "name": "LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL",
         "type": {
           "tag": "TD_UINT32"

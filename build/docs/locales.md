@@ -289,7 +289,7 @@ For the legacy ini configuration files, there's a Python module
 signature
 
 ```python
-def test(mod, path, entity = None):
+def test(mod, path, entity=None):
     if does_not_matter:
         return "ignore"
     if show_but_do_not_merge:

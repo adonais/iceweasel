@@ -14,7 +14,9 @@ using namespace js::jit;
 // JIT backend, and also includes implementations for assorted random things
 // which can't be implemented in headers.
 
-void JitRuntime::generateEnterJIT(JSContext*, MacroAssembler&) { MOZ_CRASH(); }
+void JitRuntime::generateEnterJIT(JSContext*, MacroAssembler&, EnterJitMode) {
+  MOZ_CRASH();
+}
 // static
 mozilla::Maybe<::JS::ProfilingFrameIterator::RegisterState>
 JitRuntime::getCppEntryRegisters(JitFrameLayout* frameStackAddress) {

@@ -30,8 +30,6 @@
 
 NS_IMPL_ISUPPORTS_INHERITED(nsMIMEInfoWin, nsMIMEInfoBase, nsIPropertyBag)
 
-nsMIMEInfoWin::~nsMIMEInfoWin() {}
-
 nsresult nsMIMEInfoWin::LaunchDefaultWithFile(nsIFile* aFile) {
   // Launch the file, unless it is an executable.
   bool executable = true;

@@ -44,7 +44,7 @@ def test_perfdocs_generator_generate_perfdocs_pass(
 
     generator = Generator(verifier, generate=True, workspace=top_dir)
     generator.templates_path = templates_dir
-    with temp_file("index.rst", tempdir=templates_dir, content="{test_documentation}"):
+    with temp_file("index.md", tempdir=templates_dir, content="{test_documentation}"):
         generator.generate_perfdocs()
 
     assert logger.warning.call_count == 0
@@ -73,7 +73,7 @@ def test_perfdocs_generator_generate_perfdocs_metrics_pass(
     }
 
     with temp_file(
-        "metrics.rst",
+        "metrics.md",
         tempdir=pathlib.Path(top_dir, "perfdocs"),
         content="{metrics_documentation}",
     ):
@@ -97,17 +97,17 @@ def test_perfdocs_generator_generate_perfdocs_metrics_pass(
         generator = Generator(verifier, generate=True, workspace=top_dir)
         generator.templates_path = templates_dir
         with temp_file(
-            "index.rst", tempdir=templates_dir, content="{test_documentation}"
+            "index.md", tempdir=templates_dir, content="{test_documentation}"
         ):
             generator.generate_perfdocs()
 
-        with pathlib.Path(generator.perfdocs_path, "raptor-metrics.rst").open() as f:
+        with pathlib.Path(generator.perfdocs_path, "raptor-metrics.md").open() as f:
             metrics_content = f.read()
             assert "{metrics_documentation}" not in metrics_content
             assert "a description" in metrics_content
             assert "**Tests using it**" in metrics_content
 
-        with pathlib.Path(generator.perfdocs_path, "raptor.rst").open() as f:
+        with pathlib.Path(generator.perfdocs_path, "raptor.md").open() as f:
             raptor_index_content = f.read()
             assert "{metrics_rst_name}" not in raptor_index_content
             assert "raptor-metrics" in raptor_index_content
@@ -157,7 +157,7 @@ def test_perfdocs_generator_needed_update(logger, structured_logger, perfdocs_sa
 
     generator = Generator(verifier, generate=True, workspace=top_dir)
     generator.templates_path = templates_dir
-    with temp_file("index.rst", tempdir=templates_dir, content="{test_documentation}"):
+    with temp_file("index.md", tempdir=templates_dir, content="{test_documentation}"):
         generator.generate_perfdocs()
 
         # Removed file for testing and run again
@@ -184,8 +184,8 @@ def test_perfdocs_generator_needed_update(logger, structured_logger, perfdocs_sa
     logs = [v[0][0] for v in logger.log.call_args_list]
     for failure_log in (
         "Some files are missing or are funny.",
-        "Missing in existing docs: index.rst",
-        "Missing in existing docs: mozperftest.rst",
+        "Missing in existing docs: index.md",
+        "Missing in existing docs: mozperftest.md",
     ):
         assert failure_log in logs
 
@@ -219,7 +219,7 @@ def test_perfdocs_generator_update_with_no_changes(structured_logger, perfdocs_s
 
     generator = Generator(verifier, generate=True, workspace=top_dir)
     generator.templates_path = templates_dir
-    with temp_file("index.rst", tempdir=templates_dir, content="{test_documentation}"):
+    with temp_file("index.md", tempdir=templates_dir, content="{test_documentation}"):
         generator.generate_perfdocs()
 
         # Removed file for testing and run again
@@ -262,19 +262,19 @@ def test_perfdocs_generator_created_perfdocs(
 
     generator = Generator(verifier, generate=True, workspace=top_dir)
     generator.templates_path = templates_dir
-    with temp_file("index.rst", tempdir=templates_dir, content="{test_documentation}"):
+    with temp_file("index.md", tempdir=templates_dir, content="{test_documentation}"):
         perfdocs_tmpdir = generator._create_perfdocs()
 
     files = [f for f in os.listdir(perfdocs_tmpdir)]
     files.sort()
-    expected_files = ["index.rst", "mozperftest.rst"]
+    expected_files = ["index.md", "mozperftest.md"]
 
     for i, file in enumerate(files):
         assert file == expected_files[i]
 
     with pathlib.Path(perfdocs_tmpdir, expected_files[0]).open() as f:
         filedata = f.readlines()
-    assert "".join(filedata) == "  * :doc:`mozperftest`"
+    assert "".join(filedata) == "* {doc}`mozperftest`"
 
 
 @mock.patch("mozperftest.perfdocs.logger.PerfDocLogger")
@@ -363,12 +363,12 @@ def test_perfdocs_generator_save_perfdocs_pass(
 
     assert not generator.perfdocs_path.is_dir()
 
-    with temp_file("index.rst", tempdir=templates_dir, content="{test_documentation}"):
+    with temp_file("index.md", tempdir=templates_dir, content="{test_documentation}"):
         perfdocs_tmpdir = generator._create_perfdocs()
 
     generator._save_perfdocs(perfdocs_tmpdir)
 
-    expected = ["index.rst", "mozperftest.rst"]
+    expected = ["index.md", "mozperftest.md"]
     files = [f for f in os.listdir(generator.perfdocs_path)]
     files.sort()
 
@@ -395,7 +395,7 @@ def test_perfdocs_generator_save_perfdocs_fail(
 
     generator = Generator(verifier, generate=True, workspace=top_dir)
     generator.templates_path = templates_dir
-    with temp_file("index.rst", tempdir=templates_dir, content="{test_documentation}"):
+    with temp_file("index.md", tempdir=templates_dir, content="{test_documentation}"):
         perfdocs_tmpdir = generator._create_perfdocs()
 
     shutil.copytree = mock.Mock(side_effect=Exception())

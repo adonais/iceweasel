@@ -17,7 +17,6 @@ const {
   ON_PASSWORD_RESET_NOTIFICATION,
   ON_PROFILE_CHANGE_NOTIFICATION,
   ON_PROFILE_UPDATED_NOTIFICATION,
-  ON_VERIFY_LOGIN_NOTIFICATION,
   log,
 } = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccountsCommon.sys.mjs"
@@ -309,44 +308,6 @@ add_test(function observePushTopicAccountDestroyed() {
   let pushService = new FxAccountsPushService({
     pushService: mockPushService,
     fxai: customAccounts,
-  });
-
-  pushService.observe(
-    msg,
-    mockPushService.pushTopic,
-    FXA_PUSH_SCOPE_ACCOUNT_UPDATE
-  );
-});
-
-add_test(function observePushTopicVerifyLogin() {
-  let url = "http://localhost/newLogin";
-  let title = "bogustitle";
-  let body = "bogusbody";
-  let msg = {
-    data: {
-      json: () => ({
-        command: ON_VERIFY_LOGIN_NOTIFICATION,
-        data: {
-          body,
-          title,
-          url,
-        },
-      }),
-    },
-    QueryInterface() {
-      return this;
-    },
-  };
-  let obs = (subject, topic, data) => {
-    Services.obs.removeObserver(obs, topic);
-    Assert.equal(data, JSON.stringify(msg.data.json().data));
-    run_next_test();
-  };
-  Services.obs.addObserver(obs, ON_VERIFY_LOGIN_NOTIFICATION);
-
-  let pushService = new FxAccountsPushService({
-    pushService: mockPushService,
-    fxai: mockFxAccounts,
   });
 
   pushService.observe(

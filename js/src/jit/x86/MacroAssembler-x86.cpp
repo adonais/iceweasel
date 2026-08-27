@@ -1102,6 +1102,25 @@ void MacroAssembler::branchTestNaNValue(Condition cond, const ValueOperand& val,
   }
 }
 
+void MacroAssembler::testValueSet(Condition cond, const ValueOperand& lhs,
+                                  const Value& rhs, Register dest) {
+  MOZ_ASSERT(cond == Equal || cond == NotEqual);
+  MOZ_ASSERT(!rhs.isNaN());
+  MOZ_ASSERT(!lhs.aliases(dest));
+
+  if (rhs.isGCThing()) {
+    cmpPtrSet(cond, lhs.payloadReg(), ImmGCPtr(rhs.toGCThing()), dest);
+  } else {
+    cmpPtrSet(cond, lhs.payloadReg(), ImmWord(rhs.toNunboxPayload()), dest);
+  }
+
+  // cmpPtrSet doesn't preserve flags, so we have test against |dest|.
+  Label done;
+  branchTest32(cond, dest, dest, &done);
+  cmp32Set(cond, lhs.typeReg(), Imm32(rhs.toNunboxTag()), dest);
+  bind(&done);
+}
+
 // ========================================================================
 // Memory access primitives.
 template <typename T>
@@ -1153,53 +1172,70 @@ void MacroAssembler::wasmLoad(const wasm::MemoryAccessDesc& access,
   memoryBarrierBefore(access.sync());
 
   switch (access.type()) {
-    case Scalar::Int8:
-      append(access, wasm::TrapMachineInsn::Load8,
-             FaultingCodeOffset(currentOffset()));
+    case Scalar::Int8: {
+      auto before = currentOffset();
       movsbl(srcAddr, out.gpr());
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Load8,
+                      FaultingCodeRange(before, after));
       break;
-    case Scalar::Uint8:
-      append(access, wasm::TrapMachineInsn::Load8,
-             FaultingCodeOffset(currentOffset()));
+    }
+    case Scalar::Uint8: {
+      auto before = currentOffset();
       if (access.isSplatSimd128Load()) {
         vbroadcastb(srcAddr, out.fpu());
       } else {
         movzbl(srcAddr, out.gpr());
       }
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Load8,
+                      FaultingCodeRange(before, after));
       break;
-    case Scalar::Int16:
-      append(access, wasm::TrapMachineInsn::Load16,
-             FaultingCodeOffset(currentOffset()));
+    }
+    case Scalar::Int16: {
+      auto before = currentOffset();
       movswl(srcAddr, out.gpr());
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Load16,
+                      FaultingCodeRange(before, after));
       break;
-    case Scalar::Uint16:
-      append(access, wasm::TrapMachineInsn::Load16,
-             FaultingCodeOffset(currentOffset()));
+    }
+    case Scalar::Uint16: {
+      auto before = currentOffset();
       if (access.isSplatSimd128Load()) {
         vbroadcastw(srcAddr, out.fpu());
       } else {
         movzwl(srcAddr, out.gpr());
       }
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Load16,
+                      FaultingCodeRange(before, after));
       break;
+    }
     case Scalar::Int32:
-    case Scalar::Uint32:
-      append(access, wasm::TrapMachineInsn::Load32,
-             FaultingCodeOffset(currentOffset()));
+    case Scalar::Uint32: {
+      auto before = currentOffset();
       movl(srcAddr, out.gpr());
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Load32,
+                      FaultingCodeRange(before, after));
       break;
-    case Scalar::Float32:
-      append(access, wasm::TrapMachineInsn::Load32,
-             FaultingCodeOffset(currentOffset()));
+    }
+    case Scalar::Float32: {
+      auto before = currentOffset();
       if (access.isSplatSimd128Load()) {
         vbroadcastss(srcAddr, out.fpu());
       } else {
         // vmovss does the right thing also for access.isZeroExtendSimd128Load()
         vmovss(srcAddr, out.fpu());
       }
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Load32,
+                      FaultingCodeRange(before, after));
       break;
-    case Scalar::Float64:
-      append(access, wasm::TrapMachineInsn::Load64,
-             FaultingCodeOffset(currentOffset()));
+    }
+    case Scalar::Float64: {
+      auto before = currentOffset();
       if (access.isSplatSimd128Load()) {
         vmovddup(srcAddr, out.fpu());
       } else if (access.isWidenSimd128Load()) {
@@ -1229,12 +1265,19 @@ void MacroAssembler::wasmLoad(const wasm::MemoryAccessDesc& access,
         // vmovsd does the right thing also for access.isZeroExtendSimd128Load()
         vmovsd(srcAddr, out.fpu());
       }
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Load64,
+                      FaultingCodeRange(before, after));
       break;
-    case Scalar::Simd128:
-      append(access, wasm::TrapMachineInsn::Load128,
-             FaultingCodeOffset(currentOffset()));
+    }
+    case Scalar::Simd128: {
+      auto before = currentOffset();
       vmovups(srcAddr, out.fpu());
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Load128,
+                      FaultingCodeRange(before, after));
       break;
+    }
     case Scalar::Int64:
     case Scalar::Uint8Clamped:
     case Scalar::BigInt64:
@@ -1260,51 +1303,69 @@ void MacroAssembler::wasmLoadI64(const wasm::MemoryAccessDesc& access,
   memoryBarrierBefore(access.sync());
 
   switch (access.type()) {
-    case Scalar::Int8:
+    case Scalar::Int8: {
       MOZ_ASSERT(out == Register64(edx, eax));
-      append(access, wasm::TrapMachineInsn::Load8,
-             FaultingCodeOffset(currentOffset()));
+      auto before = currentOffset();
       movsbl(srcAddr, out.low);
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Load8,
+                      FaultingCodeRange(before, after));
 
       cdq();
       break;
-    case Scalar::Uint8:
-      append(access, wasm::TrapMachineInsn::Load8,
-             FaultingCodeOffset(currentOffset()));
+    }
+    case Scalar::Uint8: {
+      auto before = currentOffset();
       movzbl(srcAddr, out.low);
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Load8,
+                      FaultingCodeRange(before, after));
 
       xorl(out.high, out.high);
       break;
-    case Scalar::Int16:
+    }
+    case Scalar::Int16: {
       MOZ_ASSERT(out == Register64(edx, eax));
-      append(access, wasm::TrapMachineInsn::Load16,
-             FaultingCodeOffset(currentOffset()));
+      auto before = currentOffset();
       movswl(srcAddr, out.low);
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Load16,
+                      FaultingCodeRange(before, after));
 
       cdq();
       break;
-    case Scalar::Uint16:
-      append(access, wasm::TrapMachineInsn::Load16,
-             FaultingCodeOffset(currentOffset()));
+    }
+    case Scalar::Uint16: {
+      auto before = currentOffset();
       movzwl(srcAddr, out.low);
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Load16,
+                      FaultingCodeRange(before, after));
 
       xorl(out.high, out.high);
       break;
-    case Scalar::Int32:
+    }
+    case Scalar::Int32: {
       MOZ_ASSERT(out == Register64(edx, eax));
-      append(access, wasm::TrapMachineInsn::Load32,
-             FaultingCodeOffset(currentOffset()));
+      auto before = currentOffset();
       movl(srcAddr, out.low);
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Load32,
+                      FaultingCodeRange(before, after));
 
       cdq();
       break;
-    case Scalar::Uint32:
-      append(access, wasm::TrapMachineInsn::Load32,
-             FaultingCodeOffset(currentOffset()));
+    }
+    case Scalar::Uint32: {
+      auto before = currentOffset();
       movl(srcAddr, out.low);
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Load32,
+                      FaultingCodeRange(before, after));
 
       xorl(out.high, out.high);
       break;
+    }
     case Scalar::Int64: {
       if (srcAddr.kind() == Operand::MEM_SCALE) {
         MOZ_RELEASE_ASSERT(srcAddr.toBaseIndex().base != out.low &&
@@ -1314,13 +1375,16 @@ void MacroAssembler::wasmLoadI64(const wasm::MemoryAccessDesc& access,
         MOZ_RELEASE_ASSERT(srcAddr.toAddress().base != out.low);
       }
 
-      append(access, wasm::TrapMachineInsn::Load32,
-             FaultingCodeOffset(currentOffset()));
+      auto before = currentOffset();
       movl(LowWord(srcAddr), out.low);
+      auto mid = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Load32,
+                      FaultingCodeRange(before, mid));
 
-      append(access, wasm::TrapMachineInsn::Load32,
-             FaultingCodeOffset(currentOffset()));
       movl(HighWord(srcAddr), out.high);
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Load32,
+                      FaultingCodeRange(mid, after));
 
       break;
     }
@@ -1351,39 +1415,57 @@ void MacroAssembler::wasmStore(const wasm::MemoryAccessDesc& access,
   switch (access.type()) {
     case Scalar::Int8:
     case Scalar::Uint8Clamped:
-    case Scalar::Uint8:
-      append(access, wasm::TrapMachineInsn::Store8,
-             FaultingCodeOffset(currentOffset()));
+    case Scalar::Uint8: {
       // FIXME figure out where this movb goes
+      auto before = currentOffset();
       movb(value.gpr(), dstAddr);
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Store8,
+                      FaultingCodeRange(before, after));
       break;
+    }
     case Scalar::Int16:
-    case Scalar::Uint16:
-      append(access, wasm::TrapMachineInsn::Store16,
-             FaultingCodeOffset(currentOffset()));
+    case Scalar::Uint16: {
+      auto before = currentOffset();
       movw(value.gpr(), dstAddr);
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Store16,
+                      FaultingCodeRange(before, after));
       break;
+    }
     case Scalar::Int32:
-    case Scalar::Uint32:
-      append(access, wasm::TrapMachineInsn::Store32,
-             FaultingCodeOffset(currentOffset()));
+    case Scalar::Uint32: {
+      auto before = currentOffset();
       movl(value.gpr(), dstAddr);
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Store32,
+                      FaultingCodeRange(before, after));
       break;
-    case Scalar::Float32:
-      append(access, wasm::TrapMachineInsn::Store32,
-             FaultingCodeOffset(currentOffset()));
+    }
+    case Scalar::Float32: {
+      auto before = currentOffset();
       vmovss(value.fpu(), dstAddr);
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Store32,
+                      FaultingCodeRange(before, after));
       break;
-    case Scalar::Float64:
-      append(access, wasm::TrapMachineInsn::Store64,
-             FaultingCodeOffset(currentOffset()));
+    }
+    case Scalar::Float64: {
+      auto before = currentOffset();
       vmovsd(value.fpu(), dstAddr);
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Store64,
+                      FaultingCodeRange(before, after));
       break;
-    case Scalar::Simd128:
-      append(access, wasm::TrapMachineInsn::Store128,
-             FaultingCodeOffset(currentOffset()));
+    }
+    case Scalar::Simd128: {
+      auto before = currentOffset();
       vmovups(value.fpu(), dstAddr);
+      auto after = currentOffset();
+      appendAndVerify(access, wasm::TrapMachineInsn::Store128,
+                      FaultingCodeRange(before, after));
       break;
+    }
     case Scalar::Int64:
       MOZ_CRASH("Should be handled in storeI64.");
     case Scalar::Float16:
@@ -1405,13 +1487,16 @@ void MacroAssembler::wasmStoreI64(const wasm::MemoryAccessDesc& access,
 
   // Store the high word first so as to hit guard-page-based OOB checks without
   // writing partial data.
-  append(access, wasm::TrapMachineInsn::Store32,
-         FaultingCodeOffset(currentOffset()));
+  auto before = currentOffset();
   movl(value.high, HighWord(dstAddr));
+  auto mid = currentOffset();
+  appendAndVerify(access, wasm::TrapMachineInsn::Store32,
+                  FaultingCodeRange(before, mid));
 
-  append(access, wasm::TrapMachineInsn::Store32,
-         FaultingCodeOffset(currentOffset()));
   movl(value.low, LowWord(dstAddr));
+  auto after = currentOffset();
+  appendAndVerify(access, wasm::TrapMachineInsn::Store32,
+                  FaultingCodeRange(mid, after));
 }
 
 template <typename T>
@@ -1428,11 +1513,13 @@ static void AtomicLoad64(MacroAssembler& masm,
   masm.movl(edx, ecx);
   masm.movl(eax, ebx);
 
-  if (access) {
-    masm.append(*access, wasm::TrapMachineInsn::Atomic,
-                FaultingCodeOffset(masm.currentOffset()));
-  }
+  auto before = masm.currentOffset();
   masm.lock_cmpxchg8b(edx, eax, ecx, ebx, Operand(address));
+  auto after = masm.currentOffset();
+  if (access) {
+    masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic,
+                         FaultingCodeRange(before, after));
+  }
 }
 
 void MacroAssembler::wasmAtomicLoad64(const wasm::MemoryAccessDesc& access,
@@ -1460,11 +1547,13 @@ static void CompareExchange64(MacroAssembler& masm,
 
   // NOTE: the generated code must match the assembly code in gen_cmpxchg in
   // GenerateAtomicOperations.py
-  if (access) {
-    masm.append(*access, wasm::TrapMachineInsn::Atomic,
-                FaultingCodeOffset(masm.currentOffset()));
-  }
+  auto before = masm.currentOffset();
   masm.lock_cmpxchg8b(edx, eax, ecx, ebx, Operand(mem));
+  auto after = masm.currentOffset();
+  if (access) {
+    masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic,
+                         FaultingCodeRange(before, after));
+  }
 }
 
 void MacroAssembler::wasmCompareExchange64(const wasm::MemoryAccessDesc& access,
@@ -1504,11 +1593,14 @@ static void AtomicExchange64(MacroAssembler& masm,
 
   Label again;
   masm.bind(&again);
-  if (access) {
-    masm.append(*access, wasm::TrapMachineInsn::Atomic,
-                FaultingCodeOffset(masm.currentOffset()));
-  }
+  auto before = masm.currentOffset();
   masm.lock_cmpxchg8b(edx, eax, ecx, ebx, Operand(mem));
+  auto after = masm.currentOffset();
+  if (access) {
+    masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic,
+                         FaultingCodeRange(before, after));
+  }
+
   masm.j(MacroAssembler::NonZero, &again);
 }
 
@@ -1532,23 +1624,25 @@ static void AtomicFetchOp64(MacroAssembler& masm,
   // We don't have enough registers for all the operands on x86, so the rhs
   // operand is in memory.
 
-#define ATOMIC_OP_BODY(OPERATE)                                         \
-  do {                                                                  \
-    MOZ_ASSERT(output.low == eax);                                      \
-    MOZ_ASSERT(output.high == edx);                                     \
-    MOZ_ASSERT(temp.low == ebx);                                        \
-    MOZ_ASSERT(temp.high == ecx);                                       \
-    FaultingCodeOffsetPair fcop = masm.load64(mem, output);             \
-    if (access) {                                                       \
-      masm.append(*access, wasm::TrapMachineInsn::Load32, fcop.first);  \
-      masm.append(*access, wasm::TrapMachineInsn::Load32, fcop.second); \
-    }                                                                   \
-    Label again;                                                        \
-    masm.bind(&again);                                                  \
-    masm.move64(output, temp);                                          \
-    masm.OPERATE(Operand(value), temp);                                 \
-    masm.lock_cmpxchg8b(edx, eax, ecx, ebx, Operand(mem));              \
-    masm.j(MacroAssembler::NonZero, &again);                            \
+#define ATOMIC_OP_BODY(OPERATE)                                    \
+  do {                                                             \
+    MOZ_ASSERT(output.low == eax);                                 \
+    MOZ_ASSERT(output.high == edx);                                \
+    MOZ_ASSERT(temp.low == ebx);                                   \
+    MOZ_ASSERT(temp.high == ecx);                                  \
+    FaultingCodeRangePair fcrp = masm.load64(mem, output);         \
+    if (access) {                                                  \
+      masm.appendAndVerify(*access, wasm::TrapMachineInsn::Load32, \
+                           fcrp.first);                            \
+      masm.appendAndVerify(*access, wasm::TrapMachineInsn::Load32, \
+                           fcrp.second);                           \
+    }                                                              \
+    Label again;                                                   \
+    masm.bind(&again);                                             \
+    masm.move64(output, temp);                                     \
+    masm.OPERATE(Operand(value), temp);                            \
+    masm.lock_cmpxchg8b(edx, eax, ecx, ebx, Operand(mem));         \
+    masm.j(MacroAssembler::NonZero, &again);                       \
   } while (0)
 
   switch (op) {

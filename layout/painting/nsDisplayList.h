@@ -6845,9 +6845,9 @@ class nsDisplayDestination final : public nsPaintedDisplayItem {
 class nsDisplayAccessibleId final : public nsPaintedDisplayItem {
  public:
   nsDisplayAccessibleId(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                        uint64_t aBrowsingContextId, uint64_t aAccId)
+                        uint64_t aInnerWindowId, uint64_t aAccId)
       : nsPaintedDisplayItem(aBuilder, aFrame),
-        mBrowsingContextId(aBrowsingContextId),
+        mInnerWindowId(aInnerWindowId),
         mAccId(aAccId) {}
 
   NS_DISPLAY_DECL_NAME("AccessibleId", TYPE_ACCESSIBLE_ID)
@@ -6855,7 +6855,7 @@ class nsDisplayAccessibleId final : public nsPaintedDisplayItem {
   void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
 
  private:
-  uint64_t mBrowsingContextId;
+  uint64_t mInnerWindowId;
   uint64_t mAccId;
 };
 

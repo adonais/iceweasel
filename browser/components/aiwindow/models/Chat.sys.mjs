@@ -24,6 +24,9 @@ import {
   WORLD_CUP_PREF,
   ADD_MEMORY,
   SEARCH_THE_WEB,
+  SEARCH_THE_WEB_FAST_PREF,
+  SEARCH_THE_WEB_TOOL_CONFIG_FAST,
+  GET_SKILL,
 } from "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs";
 import { runSearchTheWeb } from "moz-src:///browser/components/aiwindow/models/search/SearchWorkflow.sys.mjs";
 
@@ -93,6 +96,12 @@ export async function executeToolByName(
     case GET_NAVIGATION_INFO:
       result = await toolFns.getNavigationInfo(toolParams);
       break;
+    case GET_SKILL:
+      result = await toolFns.getSkill({
+        toolParams,
+        model: conversation.engine?.model,
+      });
+      break;
     case MANAGE_TABS: {
       const { toolResult, uiData } = await toolFns.manageTabs(
         toolParams,
@@ -133,8 +142,16 @@ const FEATURE_GATED_HANDLERS = new Map([
 ]);
 
 /**
+ * Slow tools that surface the action log's pending row before their handler
+ * resolves (not the same as feature-gating). Only list tools whose action log
+ * row is body-independent, since the pending row uses a placeholder body.
+ */
+const TOOLS_WITH_PENDING_ACTION_LOG = new Set([SEARCH_THE_WEB]);
+
+/**
  * Removes any feature-gated tools whose enable pref is currently off, so the
- * model is never offered tools the build is not configured to support.
+ * model is never offered tools the build is not configured to support, and
+ * swaps in pref-selected variants of a tool's config.
  *
  * @param {object[]} tools
  * @returns {object[]}
@@ -143,6 +160,15 @@ function filterFeatureGatedTools(tools) {
   let filtered = tools;
   if (!Services.prefs.getBoolPref(WORLD_CUP_PREF, false)) {
     filtered = filtered.filter(t => !WORLD_CUP_TOOLS.has(t.function?.name));
+  }
+  // The two search_the_web paths return different shapes, so the description
+  // and parameters the model sees have to match the path that will run.
+  if (Services.prefs.getBoolPref(SEARCH_THE_WEB_FAST_PREF, false)) {
+    filtered = filtered.map(t =>
+      t.function?.name === SEARCH_THE_WEB
+        ? structuredClone(SEARCH_THE_WEB_TOOL_CONFIG_FAST)
+        : t
+    );
   }
   return filtered;
 }
@@ -321,9 +347,9 @@ Object.assign(Chat, {
         streamOptions: { enabled: true },
         fxAccountToken,
         chatId: conversation.id,
-        tool_choice: "auto",
         tools: chatToolsConfig,
         args: snapshot,
+        inferenceParams: { tool_choice: "auto" },
         signal,
       });
     };
@@ -540,6 +566,19 @@ Object.assign(Chat, {
             browsingContext,
             mode
           );
+
+        // Emit the tool message up front with a `pending`-marked placeholder
+        // body so the action log renders its pending row while the slow work
+        // runs; the real result is reconciled into the same row below.
+        let pendingToolMessage = null;
+        if (TOOLS_WITH_PENDING_ACTION_LOG.has(toolName)) {
+          pendingToolMessage = conversation.addToolCallMessage({
+            tool_call_id: id,
+            body: { pending: true },
+            name: toolName,
+          });
+        }
+
         try {
           if (featureGatedHandler) {
             result = await featureGatedHandler(
@@ -582,7 +621,7 @@ Object.assign(Chat, {
           );
 
           const content = { tool_call_id: id, body: result, name: toolName };
-          conversation.addToolCallMessage(content);
+          conversation.updateToolCallMessage(pendingToolMessage, content);
         } catch (error) {
           console.error(error);
           toolCallError = "execution_failed";
@@ -592,8 +631,14 @@ Object.assign(Chat, {
             { startTime: toolStart },
             `chat-run-tool-error(${toolName})`
           );
+          // Only carry `name` (which drives the action-log card) when we
+          // already showed a pending row, so it resolves. Otherwise a failed
+          // call renders nothing, as before.
           const content = { tool_call_id: id, body: result };
-          conversation.addToolCallMessage(content);
+          if (pendingToolMessage) {
+            content.name = toolName;
+          }
+          conversation.updateToolCallMessage(pendingToolMessage, content);
         }
 
         recordToolCallEvent({

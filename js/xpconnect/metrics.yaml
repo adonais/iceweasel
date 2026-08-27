@@ -346,6 +346,42 @@ javascript.gc:
       - jcoppeard@mozilla.com
     expires: never
 
+  buffer_alloc_heap_bytes:
+    type: labeled_memory_distribution
+    memory_unit: byte
+    description: >
+      Size of retained buffer allocator memory in bytes, labeled by process
+      type. For small and medium allocations only.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055193
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055193
+    notification_emails:
+      - dev-telemetry-gc-alerts@mozilla.org
+      - jcoppeard@mozilla.com
+    expires: never
+
+  buffer_alloc_heap_density:
+    type: custom_distribution
+    range_min: 0
+    range_max: 100
+    bucket_count: 20
+    histogram_type: linear
+    unit: "percentage"
+    description: >
+      Percentage of buffer allocator memory (summed across all zones) that
+      holds live data, as opposed to free space or administrative overhead.
+      Recorded after each major GC. This applies to small and medium allocations
+      only; there is no wasted space for large allocations.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055193
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055193
+    notification_emails:
+      - dev-telemetry-gc-alerts@mozilla.org
+      - jcoppeard@mozilla.com
+    expires: never
+
   zone_count:
     type: custom_distribution
     range_min: 0
@@ -394,6 +430,21 @@ javascript.gc:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1932686
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1932686
+    notification_emails:
+      - dev-telemetry-gc-alerts@mozilla.org
+      - jcoppeard@mozilla.com
+    expires: never
+
+  mark_stack_max_capacity:
+    type: labeled_memory_distribution
+    memory_unit: byte
+    description: >
+      The maximum mark stack capacity (in bytes) reached by any marker
+      during the marking phase of a major GC.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055571
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055571
     notification_emails:
       - dev-telemetry-gc-alerts@mozilla.org
       - jcoppeard@mozilla.com
@@ -934,8 +985,6 @@ slow_script_warning:
         description: >
           How long the notification was up (ms).
         type: string
-    no_lint:
-      - COMMON_PREFIX
 
   notify_delay:
     type: timing_distribution
@@ -981,37 +1030,6 @@ script.preloader:
       - plawless@mozilla.com
     expires: never
     telemetry_mirror: SCRIPT_PRELOADER_MAINTHREAD_RECOMPILE
-
-  requests:
-    type: labeled_counter
-    description: >
-      Record hits and misses to the script preloader, with categories.
-
-      This metric was generated to correspond to the Legacy Telemetry
-      categorical histogram SCRIPT_PRELOADER_REQUESTS.
-    labels:
-      - Hit
-      - HitChild
-      - Miss
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1364235
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1590385
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1623098
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1649954
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1689257
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1754639
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1364235
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1590385
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1623098
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1649954
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1689257
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1754639
-    notification_emails:
-      - dothayer@mozilla.com
-      - plawless@mozilla.com
-    expires: never
-    telemetry_mirror: h#SCRIPT_PRELOADER_REQUESTS
 
   wait_time:
     type: timing_distribution

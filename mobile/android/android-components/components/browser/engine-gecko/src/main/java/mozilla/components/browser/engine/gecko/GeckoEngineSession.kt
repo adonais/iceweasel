@@ -508,37 +508,6 @@ class GeckoEngineSession(
     }
 
     /**
-     * See [EngineSession.hasCookieBannerRuleForSession]
-     */
-    override fun hasCookieBannerRuleForSession(
-        onResult: (Boolean) -> Unit,
-        onException: (Throwable) -> Unit,
-    ) {
-        geckoSession.hasCookieBannerRuleForBrowsingContextTree().then(
-            { response ->
-                if (response == null) {
-                    logger.error(
-                        "Invalid value: unable to get response from hasCookieBannerRuleForBrowsingContextTree.",
-                    )
-                    onException(
-                        java.lang.IllegalStateException(
-                            "Invalid value: unable to get response from hasCookieBannerRuleForBrowsingContextTree.",
-                        ),
-                    )
-                    return@then GeckoResult()
-                }
-                onResult(response)
-                GeckoResult<Boolean>()
-            },
-            { throwable ->
-                logger.error("Checking for cookie banner rule failed.", throwable)
-                onException(throwable)
-                GeckoResult()
-            },
-        )
-    }
-
-    /**
      * Checks and returns a non-mobile version of the url.
      */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -686,6 +655,48 @@ class GeckoEngineSession(
             },
             { throwable ->
                 logger.error("Checking for PDF viewer failed.", throwable)
+                onException(throwable)
+                GeckoResult()
+            },
+        )
+    }
+
+    /**
+     * Send the broken site report using Glean.
+     *
+     * @param details The {@link JSONObject} returned by getBrokenSiteReport.
+     * @param description the description of the issue which the user has input.
+     * @param reason the reason for breakage that the user has input.
+     * @param url the final URL the user has input.
+     * @param sendTabSpecificInfo whether to send tab-specific info in the report.
+     * @param sendBlockedUrls whether the user opted into sending ETP-blocked URLs in the report.
+     * @param onResult callback invoked if the engine API returned a valid response.
+     * @param onException callback invoked if there was an error getting the response.
+     */
+    override fun sendGleanBrokenSiteReport(
+        details: JSONObject?,
+        description: String?,
+        reason: String,
+        url: String,
+        sendTabSpecificInfo: Boolean,
+        sendBlockedUrls: Boolean,
+        onResult: () -> Unit,
+        onException: (Throwable) -> Unit,
+    ) {
+        geckoSession.sendGleanBrokenSiteReport(
+          details,
+          description,
+          reason,
+          url,
+          sendTabSpecificInfo,
+          sendBlockedUrls,
+         ).then(
+            {
+                onResult()
+                GeckoResult<Void>()
+            },
+            { throwable ->
+                logger.error("Sending broken site report via Glean failed.", throwable)
                 onException(throwable)
                 GeckoResult()
             },
@@ -1030,10 +1041,6 @@ class GeckoEngineSession(
             notifyObservers {
                 onExcludedOnTrackingProtectionChange(isIgnoredForTrackingProtection())
             }
-            // Re-set the status of cookie banner handling when the user navigates to another site.
-            notifyObservers {
-                onCookieBannerChange(CookieBannerHandlingStatus.NO_DETECTED)
-            }
             // Reset the status of the translation state for the page
             notifyObservers { onTranslatePageChange() }
             notifyObservers { onLocationChange(url, hasUserGesture) }
@@ -1262,6 +1269,22 @@ class GeckoEngineSession(
         }
     }
 
+    private fun queryHasVisitedHostSince(
+        host: String,
+        afterEpochMillis: Long,
+        beforeEpochMillis: Long,
+    ): GeckoResult<Boolean>? {
+        if (privateMode) {
+            return null
+        }
+
+        val delegate = settings.historyTrackingDelegate ?: return null
+
+        return scope.launchGeckoResult {
+            delegate.hasVisitedSince(host, afterEpochMillis, beforeEpochMillis)
+        }
+    }
+
     internal fun createHistoryDelegate() = object : GeckoSession.HistoryDelegate {
         @SuppressWarnings("ReturnCount")
         override fun onVisited(
@@ -1347,6 +1370,15 @@ class GeckoEngineSession(
             }
         }
 
+        @OptIn(ExperimentalGeckoViewApi::class)
+        override fun hasVisitedHostSince(
+            session: GeckoSession,
+            host: String,
+            afterEpochMillis: Long,
+            beforeEpochMillis: Long,
+        ): GeckoResult<Boolean>? =
+            queryHasVisitedHostSince(host, afterEpochMillis, beforeEpochMillis)
+
         override fun onHistoryStateChange(
             session: GeckoSession,
             historyList: GeckoSession.HistoryDelegate.HistoryList,
@@ -1366,14 +1398,6 @@ class GeckoEngineSession(
 
     @Suppress("NestedBlockDepth", "CognitiveComplexMethod")
     internal fun createContentDelegate() = object : GeckoSession.ContentDelegate {
-        override fun onCookieBannerDetected(session: GeckoSession) {
-            notifyObservers { onCookieBannerChange(CookieBannerHandlingStatus.DETECTED) }
-        }
-
-        override fun onCookieBannerHandled(session: GeckoSession) {
-            notifyObservers { onCookieBannerChange(CookieBannerHandlingStatus.HANDLED) }
-        }
-
         override fun onFirstComposite(session: GeckoSession) = Unit
 
         override fun onFirstContentfulPaint(session: GeckoSession) {

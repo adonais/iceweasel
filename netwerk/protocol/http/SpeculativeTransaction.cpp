@@ -91,17 +91,17 @@ void SpeculativeTransaction::Close(nsresult aReason) {
   if (aReason == NS_BASE_STREAM_CLOSED) {
     aReason = NS_OK;
   }
-  if (mCloseCallback) {
-    mCloseCallback(mTriedToWrite || NS_FAILED(aReason) ? aReason
-                                                       : NS_ERROR_FAILURE);
-    mCloseCallback = nullptr;
+  std::function<void(nsresult)> callback = std::move(mCloseCallback);
+  if (callback) {
+    callback(mTriedToWrite || NS_FAILED(aReason) ? aReason : NS_ERROR_FAILURE);
   }
 }
 
 void SpeculativeTransaction::InvokeCallback() {
-  if (mCloseCallback) {
-    mCloseCallback(NS_OK);
-    mCloseCallback = nullptr;
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  std::function<void(nsresult)> callback = std::move(mCloseCallback);
+  if (callback) {
+    callback(NS_OK);
   }
 }
 

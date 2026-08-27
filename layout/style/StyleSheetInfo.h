@@ -61,6 +61,8 @@ struct StyleSheetInfo final {
 
   RefPtr<const StyleStylesheetContents> mContents;
 
+  // The list of StyleSheets that share this inner.
+  //
   // HACK: This must be the after any member rust accesses in order to not cause
   // issues on i686-android. Bindgen generates an opaque blob of [u64; N] for
   // types it doesn't understand like AutoTArray, but turns out u64 is not

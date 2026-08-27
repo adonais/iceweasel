@@ -1,16 +1,19 @@
 import pytest
 
 URL = "https://www.neopets.com/explore.phtml"
-HERO_CSS = "body > span[style*='left: -1000px;']"
+CONTENT_CSS = ".contentModule"
+LOGIN_CSS = "a[href='/login/']"
 
 
 async def is_screen_too_wide(client):
-    await client.navigate(URL, wait="none")
-    assert client.await_css(HERO_CSS)
+    await client.navigate(URL)
+    await client.stall(3)
     return client.execute_script(
         """
-      return document.documentElement.scrollWidth > window.innerWidth;
-	    """
+        return arguments[0].getBoundingClientRect().left > arguments[1].getBoundingClientRect().right
+	    """,
+        client.await_css(LOGIN_CSS, is_displayed=True),
+        client.await_css(CONTENT_CSS, is_displayed=True),
     )
 
 

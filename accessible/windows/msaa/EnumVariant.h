@@ -46,7 +46,7 @@ class ChildrenEnumVariant final : public IEnumVARIANT {
       : mAnchorMsaa(aEnumVariant.mAnchorMsaa),
         mCurAcc(aEnumVariant.mCurAcc),
         mCurIndex(aEnumVariant.mCurIndex) {}
-  virtual ~ChildrenEnumVariant() {}
+  virtual ~ChildrenEnumVariant() = default;
 
  protected:
   RefPtr<MsaaAccessible> mAnchorMsaa;

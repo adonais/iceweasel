@@ -1,0 +1,11 @@
+//error: asynchronous ctor/dtor message `PAsyncCtorReturnsManageeConstructor' declares return values
+
+include protocol PAsyncCtorReturnsManagee;
+
+[ChildProc=any]
+protocol PAsyncCtorReturns {
+  manages PAsyncCtorReturnsManagee;
+
+child:
+  async PAsyncCtorReturnsManagee() returns (bool unused);
+};

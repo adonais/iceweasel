@@ -52,6 +52,7 @@
   @layer tokens-foundation-nova {
     :root,
     :host {
+      --urlbar-border-radius: var(--popup-border-radius);
       --urlbar-box-background-color: color-mix(in srgb, currentColor 16%, transparent);
       --urlbar-box-background-color-hover: color-mix(in srgb, currentColor 22%, transparent);
       --urlbar-box-background-color-active: color-mix(in srgb, currentColor 30%, transparent);

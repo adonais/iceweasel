@@ -899,7 +899,7 @@ mod tests {
     fn mock_changes_endpoint() -> mockito::Mock {
         mock(
             "GET",
-            "/v1/buckets/monitor/collections/changes/changeset?_expected=0",
+            "/v2/buckets/monitor/collections/changes/changeset?_expected=0",
         )
         .with_body(response_body_changes())
         .with_status(200)
@@ -917,6 +917,7 @@ mod tests {
             "signatures": [{
               "x5u": "fake",
               "signature": "fake",
+              "mode": "fake",
             }],
           },
           "timestamp": 1000,
@@ -982,6 +983,7 @@ mod tests {
             "signatures": [{
               "x5u": "fake",
               "signature": "fake",
+              "mode": "fake",
             }],
           },
           "timestamp": 1000,
@@ -1031,6 +1033,7 @@ mod tests {
             "signatures": [{
               "x5u": "fake",
               "signature": "fake",
+              "mode": "fake",
             }],
           },
           "timestamp": 1000,
@@ -1044,7 +1047,7 @@ mod tests {
         let changes_mock = mock_changes_endpoint();
         let m = mock(
             "GET",
-            "/v1/buckets/main/collections/search-config-v2/changeset?_expected=0",
+            "/v2/buckets/main/collections/search-config-v2/changeset?_expected=0",
         )
         .with_body(
             json!({
@@ -1055,6 +1058,7 @@ mod tests {
                 "signatures": [{
                   "x5u": "fake",
                   "signature": "fake",
+                  "mode": "fake",
                 }],
               },
               "timestamp": 1000,
@@ -1090,7 +1094,7 @@ mod tests {
         let changes_mock = mock_changes_endpoint();
         let m1 = mock(
             "GET",
-            "/v1/buckets/main/collections/search-config-v2/changeset?_expected=0",
+            "/v2/buckets/main/collections/search-config-v2/changeset?_expected=0",
         )
         .with_body(response_body())
         .with_status(501)
@@ -1121,7 +1125,7 @@ mod tests {
         let changes_mock = mock_changes_endpoint();
         let m1 = mock(
             "GET",
-            "/v1/buckets/main/collections/search-config-v2/changeset?_expected=0",
+            "/v2/buckets/main/collections/search-config-v2/changeset?_expected=0",
         )
         .with_body(response_body())
         .with_status(200)
@@ -1131,7 +1135,7 @@ mod tests {
 
         let m2 = mock(
             "GET",
-            "/v1/buckets/main/collections/search-config-overrides-v2/changeset?_expected=0",
+            "/v2/buckets/main/collections/search-config-overrides-v2/changeset?_expected=0",
         )
         .with_body(
             json!({
@@ -1142,6 +1146,7 @@ mod tests {
                  "signatures": [{
                    "x5u": "fake",
                    "signature": "fake",
+                   "mode": "fake",
                  }],
                },
                "timestamp": 1000,
@@ -1175,7 +1180,7 @@ mod tests {
         let changes_mock = mock_changes_endpoint();
         let m1 = mock(
             "GET",
-            "/v1/buckets/main/collections/search-config-v2/changeset?_expected=0",
+            "/v2/buckets/main/collections/search-config-v2/changeset?_expected=0",
         )
         .with_body(response_body())
         .with_status(200)
@@ -1185,7 +1190,7 @@ mod tests {
 
         let m2 = mock(
             "GET",
-            "/v1/buckets/main/collections/search-config-overrides-v2/changeset?_expected=0",
+            "/v2/buckets/main/collections/search-config-overrides-v2/changeset?_expected=0",
         )
         .with_body(response_body_overrides())
         .with_status(501)
@@ -1217,7 +1222,7 @@ mod tests {
         let changes_mock = mock_changes_endpoint();
         let m1 = mock(
             "GET",
-            "/v1/buckets/main/collections/search-config-v2/changeset?_expected=0",
+            "/v2/buckets/main/collections/search-config-v2/changeset?_expected=0",
         )
         .with_body(response_body())
         .with_status(200)
@@ -1227,7 +1232,7 @@ mod tests {
 
         let m2 = mock(
             "GET",
-            "/v1/buckets/main/collections/search-config-overrides-v2/changeset?_expected=0",
+            "/v2/buckets/main/collections/search-config-overrides-v2/changeset?_expected=0",
         )
         .with_body(response_body_overrides())
         .with_status(200)
@@ -1276,7 +1281,7 @@ mod tests {
 
         let m = mock(
             "GET",
-            "/v1/buckets/main/collections/search-config-v2/changeset?_expected=0",
+            "/v2/buckets/main/collections/search-config-v2/changeset?_expected=0",
         )
         .with_body(response_body())
         .with_status(200)
@@ -1347,7 +1352,7 @@ mod tests {
         let changes_mock = mock_changes_endpoint();
         let m = mock(
             "GET",
-            "/v1/buckets/main/collections/search-config-v2/changeset?_expected=0",
+            "/v2/buckets/main/collections/search-config-v2/changeset?_expected=0",
         )
         .with_body(response_body_locales())
         .with_status(200)

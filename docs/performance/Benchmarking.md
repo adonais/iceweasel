@@ -24,7 +24,7 @@ ac_add_options RUSTC_OPT_LEVEL=2
 ## Profile Guided Optimization (PGO)
 
 [Profile Guided
-Optimization](/build/buildsystem/pgo.rst#profile-guided-optimization) is
+Optimization](/build/buildsystem/pgo.md#profile-guided-optimization) is
 disabled by default and may improve runtime by up to 20%. However, it takes a
 long time to build. To enable, add the following to your [mozconfig]:
 
@@ -97,4 +97,4 @@ include Instruments on OSX (part of XCode), [RotateRight
 Zoom](http://www.rotateright.com/) on Linux (uses perf underneath), and
 Intel VTune on Windows or Linux.
 
-[mozconfig]: /setup/configuring_build_options.rst#using-a-mozconfig-configuration-file
+[mozconfig]: /setup/configuring_build_options.md#using-a-mozconfig-configuration-file

@@ -1,0 +1,77 @@
+<!-- Any copyright is dedicated to the Public Domain.
+   - http://creativecommons.org/publicdomain/zero/1.0/ -->
+<!DOCTYPE HTML>
+<title>Test that a gamepad button press does not grant user activation to a background tab</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css" />
+<script>
+const GamepadService = navigator.requestGamepadServiceTest();
+
+let index;
+async function pressButton(win) {
+  let p = new Promise(r => {
+    win.addEventListener("gamepadbuttondown", r, { once: true });
+  });
+
+  await GamepadService.newButtonEvent(index, 0, true, true);
+  await GamepadService.newButtonEvent(index, 0, false, false);
+
+  await p;
+  // Wait to ensure that the background tab processed (or didn't) the
+  // button press as well.
+  await new Promise(r => SpecialPowers.executeSoon(r));
+}
+
+async function openGamepadTab() {
+  let win = SpecialPowers.wrap(window).open("gamepad_frame.html");
+  await new Promise(r => {
+    win.addEventListener("load", r, { once: true });
+  });
+  return win.wrappedJSObject;
+}
+
+function waitForTabVisible(win, visible) {
+  if (!win.document.hidden == visible) {
+    return Promise.resolve();
+  }
+  return new Promise(r => {
+    win.document.addEventListener("visibilitychange", r, { once: true });
+  });
+}
+
+add_task(async function test_gamepad_user_activation_background_tab() {
+  let background = await openGamepadTab();
+  let foreground = await openGamepadTab();
+
+  index = await GamepadService.addGamepad(
+    "test gamepad", // id
+    GamepadService.standardMapping,
+    GamepadService.noHand,
+    4, // buttons
+    2,
+    0,
+    0,
+    0
+  );
+
+  await Promise.all([
+    waitForTabVisible(background, false),
+    waitForTabVisible(foreground, true),
+  ]);
+
+  await pressButton(foreground);
+
+  ok(!background.navigator.userActivation.hasBeenActive,
+     "a gamepad button press must not grant sticky activation to a background tab");
+  ok(!background.navigator.userActivation.isActive,
+     "a gamepad button press must not grant transient activation to a background tab");
+  ok(foreground.navigator.userActivation.hasBeenActive,
+     "a gamepad button press should grant sticky activation to the foreground tab");
+  ok(foreground.navigator.userActivation.isActive,
+     "a gamepad button press should grant transient activation to the foreground tab");
+
+  await GamepadService.removeGamepad(index);
+  background.close();
+  foreground.close();
+});
+</script>

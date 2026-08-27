@@ -101,7 +101,7 @@ void nsDragSessionWayland::ReplyToDragMotion(RefPtr<DataOffer> aDataOffer) {
     LOGDRAGSERVICE("  Wayland: switch copy to move");
     action = GDK_ACTION_MOVE;
   }
-  aDataOffer->SetDragStatus(mCanDrop, action);
+  aDataOffer->SetDragStatus(action && mCanDrop, action);
 }
 
 void nsDragSessionWayland::EndDragSessionImplBackend() {

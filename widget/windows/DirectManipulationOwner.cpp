@@ -7,7 +7,9 @@
 #include "InputData.h"
 #include "UnitTransforms.h"
 #include "WinModifierKeyState.h"
+#include "WinUtils.h"
 #include "directmanipulation.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/SwipeTracker.h"
 #include "mozilla/TimeStamp.h"
@@ -66,7 +68,7 @@ class DManipEventHandler : public IDirectManipulationViewportEventHandler,
     void ClearOwner() { mOwner = nullptr; }
 
    private:
-    virtual ~VObserver() {}
+    virtual ~VObserver() = default;
     DManipEventHandler* mOwner;
   };
 
@@ -341,6 +343,9 @@ HRESULT
 DManipEventHandler::OnInteraction(
     IDirectManipulationViewport2* viewport,
     DIRECTMANIPULATION_INTERACTION_TYPE interaction) {
+  // Skip if mOwner was already freed.  Should never happen.
+  NS_ENSURE_TRUE(mOwner, S_OK);
+
   if (interaction == DIRECTMANIPULATION_INTERACTION_BEGIN) {
     if (!mObserver) {
       mObserver = new VObserver(this);
@@ -503,35 +508,19 @@ void DManipEventHandler::SendPanCommon(nsWindow* aWindow, Phase aPhase,
 }
 
 void DirectManipulationOwner::Init(const LayoutDeviceIntRect& aBounds) {
-  HRESULT hr = CoCreateInstance(
-      CLSID_DirectManipulationManager, nullptr, CLSCTX_INPROC_SERVER,
-      IID_IDirectManipulationManager, getter_AddRefs(mDmManager));
-  if (!SUCCEEDED(hr)) {
-    NS_WARNING("CoCreateInstance(CLSID_DirectManipulationManager failed");
-    mDmManager = nullptr;
-    return;
-  }
+  auto uninitOnError = MakeScopeExit([this]() { Destroy(); });
 
-  hr = mDmManager->GetUpdateManager(IID_IDirectManipulationUpdateManager,
-                                    getter_AddRefs(mDmUpdateManager));
-  if (!SUCCEEDED(hr)) {
-    NS_WARNING("GetUpdateManager failed");
-    mDmManager = nullptr;
-    mDmUpdateManager = nullptr;
-    return;
-  }
+  NS_ENSURE_HRESULT_VOID(CoCreateInstance(
+      CLSID_DirectManipulationManager, nullptr, CLSCTX_INPROC_SERVER,
+      IID_IDirectManipulationManager, getter_AddRefs(mDmManager)));
+
+  NS_ENSURE_HRESULT_VOID(mDmManager->GetUpdateManager(
+      IID_IDirectManipulationUpdateManager, getter_AddRefs(mDmUpdateManager)));
 
   HWND wnd = static_cast<HWND>(mWindow->GetNativeData(NS_NATIVE_WINDOW));
-
-  hr = mDmManager->CreateViewport(nullptr, wnd, IID_IDirectManipulationViewport,
-                                  getter_AddRefs(mDmViewport));
-  if (!SUCCEEDED(hr)) {
-    NS_WARNING("CreateViewport failed");
-    mDmManager = nullptr;
-    mDmUpdateManager = nullptr;
-    mDmViewport = nullptr;
-    return;
-  }
+  NS_ENSURE_HRESULT_VOID(
+      mDmManager->CreateViewport(nullptr, wnd, IID_IDirectManipulationViewport,
+                                 getter_AddRefs(mDmViewport)));
 
   DIRECTMANIPULATION_CONFIGURATION configuration =
       DIRECTMANIPULATION_CONFIGURATION_INTERACTION |
@@ -544,78 +533,21 @@ void DirectManipulationOwner::Init(const LayoutDeviceIntRect& aBounds) {
     configuration |= DIRECTMANIPULATION_CONFIGURATION_SCALING;
   }
 
-  hr = mDmViewport->ActivateConfiguration(configuration);
-  if (!SUCCEEDED(hr)) {
-    NS_WARNING("ActivateConfiguration failed");
-    mDmManager = nullptr;
-    mDmUpdateManager = nullptr;
-    mDmViewport = nullptr;
-    return;
-  }
-
-  hr = mDmViewport->SetViewportOptions(
-      DIRECTMANIPULATION_VIEWPORT_OPTIONS_MANUALUPDATE);
-  if (!SUCCEEDED(hr)) {
-    NS_WARNING("SetViewportOptions failed");
-    mDmManager = nullptr;
-    mDmUpdateManager = nullptr;
-    mDmViewport = nullptr;
-    return;
-  }
+  NS_ENSURE_HRESULT_VOID(mDmViewport->ActivateConfiguration(configuration));
+  NS_ENSURE_HRESULT_VOID(mDmViewport->SetViewportOptions(
+      DIRECTMANIPULATION_VIEWPORT_OPTIONS_MANUALUPDATE));
 
   mDmHandler = new DManipEventHandler(mWindow, this, aBounds);
-
-  hr = mDmViewport->AddEventHandler(wnd, mDmHandler.get(),
-                                    &mDmViewportHandlerCookie);
-  if (!SUCCEEDED(hr)) {
-    NS_WARNING("AddEventHandler failed");
-    mDmManager = nullptr;
-    mDmUpdateManager = nullptr;
-    mDmViewport = nullptr;
-    mDmHandler = nullptr;
-    return;
-  }
+  NS_ENSURE_HRESULT_VOID(mDmViewport->AddEventHandler(
+      wnd, mDmHandler.get(), &mDmViewportHandlerCookie));
 
   RECT rect = {0, 0, aBounds.Width(), aBounds.Height()};
-  hr = mDmViewport->SetViewportRect(&rect);
-  if (!SUCCEEDED(hr)) {
-    NS_WARNING("SetViewportRect failed");
-    mDmManager = nullptr;
-    mDmUpdateManager = nullptr;
-    mDmViewport = nullptr;
-    mDmHandler = nullptr;
-    return;
-  }
+  NS_ENSURE_HRESULT_VOID(mDmViewport->SetViewportRect(&rect));
+  NS_ENSURE_HRESULT_VOID(mDmManager->Activate(wnd));
+  NS_ENSURE_HRESULT_VOID(mDmViewport->Enable());
+  NS_ENSURE_HRESULT_VOID(mDmUpdateManager->Update(nullptr));
 
-  hr = mDmManager->Activate(wnd);
-  if (!SUCCEEDED(hr)) {
-    NS_WARNING("manager Activate failed");
-    mDmManager = nullptr;
-    mDmUpdateManager = nullptr;
-    mDmViewport = nullptr;
-    mDmHandler = nullptr;
-    return;
-  }
-
-  hr = mDmViewport->Enable();
-  if (!SUCCEEDED(hr)) {
-    NS_WARNING("mDmViewport->Enable failed");
-    mDmManager = nullptr;
-    mDmUpdateManager = nullptr;
-    mDmViewport = nullptr;
-    mDmHandler = nullptr;
-    return;
-  }
-
-  hr = mDmUpdateManager->Update(nullptr);
-  if (!SUCCEEDED(hr)) {
-    NS_WARNING("mDmUpdateManager->Update failed");
-    mDmManager = nullptr;
-    mDmUpdateManager = nullptr;
-    mDmViewport = nullptr;
-    mDmHandler = nullptr;
-    return;
-  }
+  uninitOnError.release();
 }
 
 void DirectManipulationOwner::ResizeViewport(
@@ -634,18 +566,6 @@ void DirectManipulationOwner::ResizeViewport(
 }
 
 void DirectManipulationOwner::Destroy() {
-  if (mDmHandler) {
-    mDmHandler->mWindow = nullptr;
-    mDmHandler->mOwner = nullptr;
-    if (mDmHandler->mObserver) {
-      gfxWindowsPlatform::GetPlatform()
-          ->GetGlobalVsyncDispatcher()
-          ->RemoveMainThreadObserver(mDmHandler->mObserver);
-      mDmHandler->mObserver->ClearOwner();
-      mDmHandler->mObserver = nullptr;
-    }
-  }
-
   HRESULT hr;
   if (mDmViewport) {
     hr = mDmViewport->Stop();
@@ -661,6 +581,19 @@ void DirectManipulationOwner::Destroy() {
     hr = mDmViewport->RemoveEventHandler(mDmViewportHandlerCookie);
     if (!SUCCEEDED(hr)) {
       NS_WARNING("mDmViewport->RemoveEventHandler() failed");
+    }
+    mDmViewportHandlerCookie = 0;
+
+    if (mDmHandler) {
+      mDmHandler->mWindow = nullptr;
+      mDmHandler->mOwner = nullptr;
+      if (mDmHandler->mObserver) {
+        gfxWindowsPlatform::GetPlatform()
+            ->GetGlobalVsyncDispatcher()
+            ->RemoveMainThreadObserver(mDmHandler->mObserver);
+        mDmHandler->mObserver->ClearOwner();
+        mDmHandler->mObserver = nullptr;
+      }
     }
 
     hr = mDmViewport->Abandon();

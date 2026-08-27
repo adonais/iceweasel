@@ -28,6 +28,7 @@ import mozilla.components.browser.menu.view.StickyItemPlacement
 import mozilla.components.browser.menu.view.StickyItemsLinearLayoutManager
 import mozilla.components.concept.menu.MenuStyle
 import mozilla.components.support.ktx.android.view.isRTL
+import mozilla.components.support.ktx.android.view.pixelSizeFor
 
 /**
  * A popup menu composed of BrowserMenuItem objects.
@@ -73,8 +74,8 @@ open class BrowserMenu internal constructor(
             )
 
             adapter = this@BrowserMenu.adapter
-            minWidth = style?.minWidth ?: resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_width_min)
-            maxWidth = style?.maxWidth ?: resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_width_max)
+            minWidth = style?.minWidth ?: pixelSizeFor(R.dimen.mozac_browser_menu_width_min)
+            maxWidth = style?.maxWidth ?: pixelSizeFor(R.dimen.mozac_browser_menu_width_max)
         }
 
         setColors(view, style)

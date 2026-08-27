@@ -16,6 +16,7 @@
 
 #include "wasm/WasmRealm.h"
 
+#include "gc/Marking.h"
 #include "vm/GlobalObject.h"
 #include "vm/Realm.h"
 #include "wasm/WasmDebug.h"
@@ -32,18 +33,6 @@ wasm::Realm::Realm(JSRuntime* rt) : runtime_(rt) {}
 
 wasm::Realm::~Realm() { MOZ_ASSERT(instances_.empty()); }
 
-struct InstanceComparator {
-  const Instance& target;
-  explicit InstanceComparator(const Instance& target) : target(target) {}
-
-  int operator()(const Instance* instance) const {
-    if (instance == &target) {
-      return 0;
-    }
-    return instance < &target ? -1 : 1;
-  }
-};
-
 bool wasm::Realm::registerInstance(JSContext* cx,
                                    Handle<WasmInstanceObject*> instanceObj) {
   MOZ_ASSERT(runtime_ == cx->runtime());
@@ -59,34 +48,15 @@ bool wasm::Realm::registerInstance(JSContext* cx,
   }
 
   {
-    if (!instances_.reserve(instances_.length() + 1)) {
+    if (!instances_.putNew(&instance)) {
       return false;
     }
 
     auto runtimeInstances = cx->runtime()->wasmInstances.lock();
-    if (!runtimeInstances->reserve(runtimeInstances->length() + 1)) {
+    if (!runtimeInstances->putNew(&instance)) {
+      instances_.remove(&instance);
       return false;
     }
-
-    // To avoid implementing rollback, do not fail after mutations start.
-
-    InstanceComparator cmp(instance);
-    size_t index;
-
-    // The following section is not unsafe, but simulated OOM do not consider
-    // the fact that these insert calls are guarded by the previous reserve
-    // calls.
-    AutoEnterOOMUnsafeRegion oomUnsafe;
-    (void)oomUnsafe;
-
-    MOZ_ALWAYS_FALSE(
-        BinarySearchIf(instances_, 0, instances_.length(), cmp, &index));
-    MOZ_ALWAYS_TRUE(instances_.insert(instances_.begin() + index, &instance));
-
-    MOZ_ALWAYS_FALSE(BinarySearchIf(runtimeInstances.get(), 0,
-                                    runtimeInstances->length(), cmp, &index));
-    MOZ_ALWAYS_TRUE(
-        runtimeInstances->insert(runtimeInstances->begin() + index, &instance));
   }
 
   // Notify the debugger after wasmInstances is unlocked.
@@ -97,41 +67,47 @@ bool wasm::Realm::registerInstance(JSContext* cx,
 }
 
 void wasm::Realm::unregisterInstance(Instance& instance) {
-  InstanceComparator cmp(instance);
-  size_t index;
-
-  if (BinarySearchIf(instances_, 0, instances_.length(), cmp, &index)) {
-    instances_.erase(instances_.begin() + index);
-  }
+  instances_.remove(&instance);
 
   auto runtimeInstances = runtime_->wasmInstances.lock();
-  if (BinarySearchIf(runtimeInstances.get(), 0, runtimeInstances->length(), cmp,
-                     &index)) {
-    runtimeInstances->erase(runtimeInstances->begin() + index);
+  runtimeInstances->remove(&instance);
+}
+
+void wasm::Realm::traceWeakInstances() {
+  // Registration/unregistration of instances_ is tied to Instance lifetime, so
+  // an instance whose owning object is about to be finalized is still present
+  // here until ~Instance runs. Remove such entries now, at the start of zone
+  // sweeping, because the instances() read barrier that otherwise protects
+  // readers is a no-op once the zone is being swept.
+  for (auto iter = instances_.modIter(); !iter.done(); iter.next()) {
+    if (js::gc::IsAboutToBeFinalizedUnbarriered(
+            iter.get()->objectUnbarriered())) {
+      iter.remove();
+    }
   }
 }
 
 void wasm::Realm::ensureProfilingLabels(bool profilingEnabled) {
-  for (Instance* instance : instances_) {
-    instance->ensureProfilingLabels(profilingEnabled);
+  for (auto iter = instances_.iter(); !iter.done(); iter.next()) {
+    iter.get()->ensureProfilingLabels(profilingEnabled);
   }
 }
 
 void wasm::Realm::addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
                                          size_t* realmTables) {
-  *realmTables += instances_.sizeOfExcludingThis(mallocSizeOf);
+  *realmTables += instances_.shallowSizeOfExcludingThis(mallocSizeOf);
 }
 
 void wasm::InterruptRunningCode(JSContext* cx) {
   auto runtimeInstances = cx->runtime()->wasmInstances.lock();
-  for (Instance* instance : runtimeInstances.get()) {
-    instance->setInterrupt();
+  for (auto iter = runtimeInstances->iter(); !iter.done(); iter.next()) {
+    iter.get()->setInterrupt();
   }
 }
 
 void wasm::ResetInterruptState(JSContext* cx) {
   auto runtimeInstances = cx->runtime()->wasmInstances.lock();
-  for (Instance* instance : runtimeInstances.get()) {
-    instance->resetInterrupt();
+  for (auto iter = runtimeInstances->iter(); !iter.done(); iter.next()) {
+    iter.get()->resetInterrupt();
   }
 }

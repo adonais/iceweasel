@@ -182,7 +182,7 @@ class Builtin:
 
 builtinNames = [
     Builtin("boolean", "bool", "bool", "boolean"),
-    Builtin("void", "void", "libc::c_void", "void"),
+    Builtin("void", "void", "()", "void"),
     Builtin("int8_t", "int8_t", "i8", "i8", True, True),
     Builtin("int16_t", "int16_t", "i16", "i16", True, True),
     Builtin("int32_t", "int32_t", "i32", "i32", True, True),

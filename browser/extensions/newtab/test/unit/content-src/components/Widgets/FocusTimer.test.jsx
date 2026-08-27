@@ -858,7 +858,7 @@ describe("<FocusTimer>", () => {
       );
     });
 
-    it("renders size submenu with medium/large items when nova is enabled", () => {
+    it("renders size submenu with small/medium/large items when nova is enabled", () => {
       const novaWrapper = mount(
         <WrapWithProvider state={novaState}>
           <FocusTimer
@@ -874,17 +874,14 @@ describe("<FocusTimer>", () => {
       assert.isTrue(submenu.exists());
 
       const items = submenu.find("panel-item");
-      assert.equal(items.length, 2);
+      assert.equal(items.length, 3);
 
       const smallItem = items.filterWhere(n => n.prop("data-size") === "small");
       const mediumItem = items.filterWhere(
         n => n.prop("data-size") === "medium"
       );
       const largeItem = items.filterWhere(n => n.prop("data-size") === "large");
-      assert.isFalse(
-        smallItem.exists(),
-        "small item should not exist for the timer"
-      );
+      assert.isTrue(smallItem.exists(), "small item should exist");
       assert.isTrue(mediumItem.exists(), "medium item should exist");
       assert.isTrue(largeItem.exists(), "large item should exist");
       novaWrapper.unmount();
@@ -955,6 +952,37 @@ describe("<FocusTimer>", () => {
       assert.equal(telemetryAction.data.widget_name, "focus_timer");
       assert.equal(telemetryAction.data.user_action, "change_size");
       assert.equal(telemetryAction.data.action_value, "large");
+      novaWrapper.unmount();
+    });
+
+    it("dispatches the small size when the small item is clicked", () => {
+      const novaWrapper = mount(
+        <WrapWithProvider state={novaState}>
+          <FocusTimer
+            dispatch={dispatch}
+            handleUserInteraction={handleUserInteraction}
+            widgetsMayBeMaximized={true}
+          />
+        </WrapWithProvider>
+      );
+      const submenuNode = novaWrapper
+        .find("panel-list[id='focus-timer-size-submenu']")
+        .getDOMNode();
+      const mockItem = document.createElement("div");
+      mockItem.dataset.size = "small";
+      const event = new MouseEvent("click", { bubbles: true });
+      Object.defineProperty(event, "composedPath", {
+        value: () => [mockItem],
+      });
+      submenuNode.dispatchEvent(event);
+
+      const [setPrefAction] = dispatch.getCall(0).args;
+      assert.equal(setPrefAction.data.name, "widgets.focusTimer.size");
+      assert.equal(setPrefAction.data.value, "small");
+
+      const [telemetryAction] = dispatch.getCall(1).args;
+      assert.equal(telemetryAction.data.user_action, "change_size");
+      assert.equal(telemetryAction.data.action_value, "small");
       novaWrapper.unmount();
     });
   });

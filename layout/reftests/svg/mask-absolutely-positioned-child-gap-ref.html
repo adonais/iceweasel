@@ -1,0 +1,33 @@
+<!doctype html>
+<html reftest-zoom="1.2">
+<meta charset="utf-8">
+<style>
+  html { background: #f4f4f6; }
+  body { margin: 0; }
+  .stage { position: relative; height: 160px; overflow: hidden; }
+  #parent {
+    position: absolute;
+    left: 40px;
+    top: 7px;
+    width: 560px;
+    height: 36px;
+    background: #202024;
+  }
+  #child {
+    position: absolute;
+    left: 0;
+    top: 36px;
+    width: 180px;
+    height: 22px;
+    padding-left: 10px;
+    box-sizing: border-box;
+    color: #202024;
+    font: 700 13px system-ui, sans-serif;
+    background: #202024;
+  }
+</style>
+<div class="stage">
+  <div id="parent">
+    <div id="child">Found over 1,000</div>
+  </div>
+</div>

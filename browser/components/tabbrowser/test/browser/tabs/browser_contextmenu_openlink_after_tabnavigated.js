@@ -1,7 +1,7 @@
 "use strict";
 
 const example_base =
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   "http://example.com/browser/browser/components/tabbrowser/test/browser/tabs/";
 
 add_setup(async function () {
@@ -44,7 +44,7 @@ add_task(async function test_contextmenu_openlink_after_tabnavigated() {
 
   let awaitNewTabOpen = BrowserTestUtils.waitForNewTab(
     gBrowser,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/",
     true
   );
@@ -61,7 +61,7 @@ add_task(async function test_contextmenu_openlink_after_tabnavigated() {
 
   is(
     newTab.linkedBrowser.currentURI.spec,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/",
     "Got the expected URL loaded in the new tab"
   );

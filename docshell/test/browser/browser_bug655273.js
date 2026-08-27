@@ -12,7 +12,7 @@ add_task(async function test() {
   waitForExplicitFinish();
 
   await BrowserTestUtils.withNewTab(
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     { gBrowser, url: "http://example.com" },
     async function (browser) {
       let bc = browser.browsingContext;

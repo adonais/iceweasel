@@ -82,10 +82,10 @@ function runTest(route) {
   // We load a page that is served using a report only CSP which loads an image.
   SimpleTest.executeSoon(function() {
     // we need to test http functionality here, so we need to load an http url
-    /* eslint-disable @microsoft/sdl/no-insecure-url */
+    /* eslint-disable sdl/no-insecure-url */
     document.getElementById(`${route}frame`).src =
       `http://example.com/tests/dom/security/test/csp/file_upgrade_insecure_report_only_server.sjs?${route}=true`;
-    /* eslint-enable @microsoft/sdl/no-insecure-url */
+    /* eslint-enable sdl/no-insecure-url */
   });
 }
 

@@ -106,6 +106,7 @@ export class _FeatureCalloutBroker {
     let item = this.#calloutMap.get(win);
     let callout = item?.callout;
     if (item) {
+      callout.browser = browser;
       // If a callout previously showed in this instance, but the new message's
       // tour_pref_name is different, update the old instance's tour properties.
       callout.teardownFeatureTourProgress();

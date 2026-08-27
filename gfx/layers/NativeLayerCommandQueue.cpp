@@ -7,9 +7,6 @@
 namespace mozilla {
 namespace layers {
 
-NativeLayerCommandQueue::NativeLayerCommandQueue()
-    : mQueue("NativeLayerCommandQueue") {}
-
 void NativeLayerCommandQueue::AppendCommand(
     mozilla::layers::NativeLayerCommand&& aCommand) {
   auto q = mQueue.Lock();

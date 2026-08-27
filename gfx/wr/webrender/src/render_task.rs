@@ -170,6 +170,7 @@ pub struct ImageRequestTask {
 pub struct ClipRegionTask {
     pub clip_rect: LayoutRect,
     pub radius: BorderRadius,
+    pub inset: LayoutSideOffsets,
     pub mode: ClipMode,
     pub device_pixel_scale: DevicePixelScale,
 }
@@ -550,12 +551,14 @@ impl RenderTaskKind {
     pub fn new_rounded_rect_mask(
         clip_rect: LayoutRect,
         radius: BorderRadius,
+        inset: LayoutSideOffsets,
         mode: ClipMode,
         device_pixel_scale: DevicePixelScale,
     ) -> Self {
         RenderTaskKind::ClipRegion(ClipRegionTask {
             clip_rect,
             radius,
+            inset,
             mode,
             device_pixel_scale,
         })
@@ -568,10 +571,10 @@ impl RenderTaskKind {
         &self,
         target_rect: DeviceIntRect,
     ) -> RenderTaskData {
-        // NOTE: The ordering and layout of these structures are
-        //       required to match both the GPU structures declared
-        //       in prim_shared.glsl, and also the uses in submit_batch()
-        //       in renderer.rs.
+        // NOTE: The ordering and layout of these structures are required to
+        //       match the GPU-side RenderTaskData declared in render_task.glsl,
+        //       which is uploaded as `render_task_texture` (renderer/vertex.rs)
+        //       and read through the sRenderTasks sampler.
         // TODO(gw): Maybe there's a way to make this stuff a bit
         //           more type-safe. Although, it will always need
         //           to be kept in sync with the GLSL code anyway.
@@ -731,7 +734,7 @@ impl RenderTaskKind {
                         let mut writer = gpu_buffer.f32.write_blocks(1);
                         writer.push_one(color.to_array());
                         filter_task.extra_gpu_data = Some(writer.finish());
-                     }
+                    }
                     FilterGraphOp::SVGFEGaussianBlur{..} => {}
                     FilterGraphOp::SVGFEIdentity => {}
                     FilterGraphOp::SVGFEImage {..} => {}
@@ -2107,7 +2110,7 @@ impl RenderTask {
         }
 
         output_task_id
-   }
+    }
 
     pub fn uv_rect_kind(&self) -> UvRectKind {
         self.uv_rect_kind

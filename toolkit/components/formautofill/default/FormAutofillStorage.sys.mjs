@@ -21,6 +21,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   JSONFile: "resource://gre/modules/JSONFile.sys.mjs",
   OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
   Passports: "resource://autofill/PassportStorage.sys.mjs",
+  RustAutofillStore: "resource://autofill/RustAutofillStore.sys.mjs",
 });
 
 const PROFILE_JSON_FILE_NAME = "autofill-profiles.json";
@@ -77,7 +78,8 @@ export class FormAutofillStorage extends FormAutofillStorageBase {
 
   getPassports() {
     if (!this._passports) {
-      this._passports = new lazy.Passports(this.rustStore);
+      const rustStore = new lazy.RustAutofillStore();
+      this._passports = new lazy.Passports(rustStore.ensureOpen());
     }
     return this._passports;
   }

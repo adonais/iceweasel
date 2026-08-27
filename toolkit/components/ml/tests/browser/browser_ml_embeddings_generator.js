@@ -12,10 +12,60 @@ ChromeUtils.defineESModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
   EMBEDDING_TYPE: "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs",
   EmbeddingsGenerator: "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs",
+  EmbeddingsGeneratorFactory:
+    "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs",
+  Region: "resource://gre/modules/Region.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
 const EMBEDDING_SIZE = 256;
+
+// Contextual embeddings are only selected on Mac/Windows, see
+// isMacOrWindows() in EmbeddingsGenerator.sys.mjs.
+const IS_MAC_OR_WINDOWS =
+  AppConstants.platform === "macosx" || AppConstants.platform === "win";
+
+const PREF_MULTILINGUAL_REGIONS =
+  "places.semanticHistory.multilingualEmbeddingRegions";
+
+/**
+ * Runs `fn` with `Region.home` reporting the given region code.
+ *
+ * @param {string} region Home region code, or "" for "not detected yet".
+ * @param {Function} fn Callback, awaited before the stub is restored.
+ */
+async function withHomeRegion(region, fn) {
+  const stub = sinon.stub(Region, "home").get(() => region);
+  try {
+    await fn();
+  } finally {
+    stub.restore();
+  }
+}
+
+/**
+ * Runs `fn` with `Services.locale.appLocaleAsBCP47` reporting the given locale.
+ *
+ * @param {string} locale BCP 47 language tag.
+ * @param {Function} fn Callback, awaited before the locale is restored.
+ */
+async function withAppLocale(locale, fn) {
+  const availableLocales = Services.locale.availableLocales;
+  const requestedLocales = Services.locale.requestedLocales;
+  Services.locale.availableLocales = [locale];
+  Services.locale.requestedLocales = [locale];
+  Assert.equal(
+    Services.locale.appLocaleAsBCP47,
+    locale,
+    `App locale is now ${locale}`
+  );
+  try {
+    await fn();
+  } finally {
+    Services.locale.requestedLocales = requestedLocales;
+    Services.locale.availableLocales = availableLocales;
+  }
+}
 
 async function setup() {
   const { removeMocks, remoteClients } = await createAndMockMLRemoteSettings({
@@ -46,7 +96,7 @@ async function setup() {
 }
 
 add_task(async function test_EmbeddingsGenerator_for_minimum_physical_memory() {
-  let embeddingsGenerator = EmbeddingsGenerator.forGeneral();
+  let embeddingsGenerator = new EmbeddingsGeneratorFactory().forGeneral();
   Assert.ok(
     embeddingsGenerator.isEnoughPhysicalMemoryAvailable(),
     "Physical Memory size < 7GiB."
@@ -54,7 +104,7 @@ add_task(async function test_EmbeddingsGenerator_for_minimum_physical_memory() {
 });
 
 add_task(async function test_EmbeddingsGenerator_for_minimum_cpu_cores() {
-  let embeddingsGenerator = EmbeddingsGenerator.forGeneral();
+  let embeddingsGenerator = new EmbeddingsGeneratorFactory().forGeneral();
   Assert.ok(
     embeddingsGenerator.isEnoughCpuCoresAvailable(),
     "Number CPU cores < 2."
@@ -80,7 +130,12 @@ class MockMLEngineForEmbedMany {
 }
 
 add_task(async function test_embedMany_valid_inputs() {
-  const embeddingsGenerator = EmbeddingsGenerator.forPlaces();
+  // Pin the family: forPlaces() otherwise depends on the machine's home
+  // region, and the static/contextual engines take differently shaped args.
+  await SpecialPowers.pushPrefEnv({
+    set: [["places.semanticHistory.embeddingType", "static"]],
+  });
+  const embeddingsGenerator = new EmbeddingsGeneratorFactory().forPlaces();
   sinon.stub(embeddingsGenerator, "createEngineIfNotPresent").callsFake(() => {
     return new MockMLEngineForEmbedMany(true);
   });
@@ -96,10 +151,11 @@ add_task(async function test_embedMany_valid_inputs() {
   }
 
   sinon.restore();
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_embedMany_empty_array_input() {
-  const embeddingsGenerator = EmbeddingsGenerator.forGeneral();
+  const embeddingsGenerator = new EmbeddingsGeneratorFactory().forGeneral();
   sinon.stub(embeddingsGenerator, "createEngineIfNotPresent").callsFake(() => {
     return new MockMLEngineForEmbedMany();
   });
@@ -121,7 +177,7 @@ add_task(async function test_embedMany_empty_array_input() {
 });
 
 add_task(async function test_embedMany_invalid_input_null() {
-  const embeddingsGenerator = EmbeddingsGenerator.forGeneral();
+  const embeddingsGenerator = new EmbeddingsGeneratorFactory().forGeneral();
   sinon.stub(embeddingsGenerator, "createEngineIfNotPresent").callsFake(() => {
     return new MockMLEngineForEmbedMany();
   });
@@ -140,7 +196,7 @@ add_task(async function test_embedMany_invalid_input_null() {
 });
 
 add_task(async function test_embedMany_invalid_input_nonstring() {
-  const embeddingsGenerator = EmbeddingsGenerator.forGeneral();
+  const embeddingsGenerator = new EmbeddingsGeneratorFactory().forGeneral();
   sinon.stub(embeddingsGenerator, "createEngineIfNotPresent").callsFake(() => {
     return new MockMLEngineForEmbedMany();
   });
@@ -175,7 +231,7 @@ class MockMLEngineForEmbed {
 }
 
 add_task(async function test_embed_valid_input() {
-  const embeddingsGenerator = EmbeddingsGenerator.forGeneral();
+  const embeddingsGenerator = new EmbeddingsGeneratorFactory().forGeneral();
   sinon.stub(embeddingsGenerator, "createEngineIfNotPresent").callsFake(() => {
     return new MockMLEngineForEmbed();
   });
@@ -190,7 +246,7 @@ add_task(async function test_embed_valid_input() {
 });
 
 add_task(async function test_embed_invalid_input_empty_string() {
-  const embeddingsGenerator = EmbeddingsGenerator.forGeneral();
+  const embeddingsGenerator = new EmbeddingsGeneratorFactory().forGeneral();
   sinon.stub(embeddingsGenerator, "createEngineIfNotPresent").callsFake(() => {
     return new MockMLEngineForEmbed();
   });
@@ -218,8 +274,8 @@ add_task(async function test_onnx() {
 
   Assert.equal(
     embeddingsGenerator.options.backend,
-    "onnx-native",
-    "Check other backend"
+    "best-onnx",
+    "Contextual resolves to the best-onnx sentinel backend"
   );
   Assert.equal(
     embeddingsGenerator.embeddingSize,
@@ -230,22 +286,18 @@ add_task(async function test_onnx() {
 
 add_task(async function test_forPlaces_prefDrivesContextual() {
   // forPlaces() reads `places.semanticHistory.embeddingType`. Setting it to
-  // "contextual" picks the onnx-native engine only on Mac/Windows; on other
-  // platforms (e.g. Linux) it falls back to static-embeddings. The default
-  // ("static") always picks static-embeddings.
-  const isMacOrWindows =
-    AppConstants.platform === "macosx" || AppConstants.platform === "win";
-
+  // "contextual" picks the onnx engine only on Mac/Windows; on other
+  // platforms (e.g. Linux) it falls back to static-embeddings.
   await SpecialPowers.pushPrefEnv({
     set: [["places.semanticHistory.embeddingType", "contextual"]],
   });
   try {
-    const contextual = EmbeddingsGenerator.forPlaces();
-    if (isMacOrWindows) {
+    const contextual = new EmbeddingsGeneratorFactory().forPlaces();
+    if (IS_MAC_OR_WINDOWS) {
       Assert.equal(
         contextual.options.backend,
-        "onnx-native",
-        "forPlaces + 'contextual' pref resolves to onnx-native on Mac/Windows"
+        "best-onnx",
+        "forPlaces + 'contextual' pref resolves to best-onnx on Mac/Windows"
       );
       Assert.equal(
         contextual.embeddingSize,
@@ -262,22 +314,14 @@ add_task(async function test_forPlaces_prefDrivesContextual() {
   } finally {
     await SpecialPowers.popPrefEnv();
   }
-
-  // With the pref cleared (back to the default "static"), forPlaces should
-  // fall back to the static engine.
-  const staticGen = EmbeddingsGenerator.forPlaces();
-  Assert.equal(
-    staticGen.options.backend,
-    "static-embeddings",
-    "forPlaces + default pref resolves to static-embeddings"
-  );
 });
 
 add_task(async function test_forGeneral_returnsContextualEmbeddings() {
-  const eg = EmbeddingsGenerator.forGeneral();
-  Assert.ok(
-    ["onnx-native", "onnx-wasm"].includes(eg.options.backend),
-    `backend should be one of onnx-native or onnx-wasm, got ${eg.options.backend}`
+  const eg = new EmbeddingsGeneratorFactory().forGeneral();
+  Assert.equal(
+    eg.options.backend,
+    "best-onnx",
+    `forGeneral always uses best-onnx, got ${eg.options.backend}`
   );
   Assert.equal(
     eg.options.embeddingDimension,
@@ -286,30 +330,370 @@ add_task(async function test_forGeneral_returnsContextualEmbeddings() {
   );
 });
 
-add_task(async function test_forPlaces_defaultIsStatic() {
+add_task(async function test_forPlaces_explicitStaticPref() {
+  await withHomeRegion("FR", async () => {
+    await SpecialPowers.pushPrefEnv({
+      set: [["places.semanticHistory.embeddingType", "static"]],
+    });
+    try {
+      const eg = new EmbeddingsGeneratorFactory().forPlaces();
+      Assert.equal(
+        eg.options.backend,
+        "static-embeddings",
+        "An explicit 'static' pref wins over the region default"
+      );
+      Assert.equal(
+        eg.options.embeddingDimension,
+        512,
+        "forPlaces static path uses the engine's preferredDimension (512)"
+      );
+    } finally {
+      await SpecialPowers.popPrefEnv();
+    }
+  });
+});
+
+add_task(async function test_forPlaces_regionDefaults() {
+  // With no pref value, the embedding family is derived from the home region
+  // and the app locale (en-US here). Non-English markets (currently just FR)
+  // get contextual embeddings on Mac/Windows; everything else stays on static.
+  const cases = [
+    { region: "FR", contextual: true, desc: "non-English market" },
+    { region: "fr", contextual: true, desc: "lowercased region code" },
+    { region: "US", contextual: false, desc: "English market" },
+    { region: null, contextual: false, desc: "region not detected yet" },
+  ];
+
   await SpecialPowers.pushPrefEnv({
-    set: [["places.semanticHistory.embeddingType", "static"]],
+    set: [["places.semanticHistory.embeddingType", ""]],
   });
   try {
-    const eg = EmbeddingsGenerator.forPlaces();
+    for (const { region, contextual, desc } of cases) {
+      await withHomeRegion(region, () => {
+        const eg = new EmbeddingsGeneratorFactory().forPlaces();
+        const expected =
+          contextual && IS_MAC_OR_WINDOWS ? "best-onnx" : "static-embeddings";
+        Assert.equal(
+          eg.options.backend,
+          expected,
+          `Region "${region}" (${desc}) resolves to ${expected}`
+        );
+      });
+    }
+  } finally {
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(async function test_forPlaces_multilingualRegionsPref() {
+  // The default pref value is '[["FR",["en-*","fr-*"]],["*",["fr-*"]]]', so
+  // either France in English or French, or a French locale in any region.
+  const cases = [
+    { region: "FR", locale: "en-US", contextual: true, desc: "FR + en-*" },
+    { region: "FR", locale: "fr-FR", contextual: true, desc: "FR + fr-*" },
+    { region: "FR", locale: "de-DE", contextual: false, desc: "FR + de-*" },
+    {
+      region: "US",
+      locale: "fr-FR",
+      contextual: true,
+      desc: "wildcard region",
+    },
+    { region: "US", locale: "en-US", contextual: false, desc: "US + en-*" },
+    {
+      region: null,
+      locale: "fr-FR",
+      contextual: true,
+      desc: "wildcard region applies before the region resolves",
+    },
+    { region: null, locale: "en-US", contextual: false, desc: "no match" },
+  ];
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["places.semanticHistory.embeddingType", ""]],
+  });
+  try {
+    for (const { region, locale, contextual, desc } of cases) {
+      await withAppLocale(locale, () =>
+        withHomeRegion(region, () => {
+          const expected =
+            contextual && IS_MAC_OR_WINDOWS ? "best-onnx" : "static-embeddings";
+          Assert.equal(
+            new EmbeddingsGeneratorFactory().forPlaces().options.backend,
+            expected,
+            `Region "${region}" + locale "${locale}" (${desc}) resolves to ${expected}`
+          );
+        })
+      );
+    }
+  } finally {
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(async function test_forPlaces_multilingualRegionsPrefOverrides() {
+  // The region/locale list is Nimbus-settable, so a value that does not mention
+  // FR must move the multilingual markets with it. An emptied or unparseable
+  // value must not throw: empty disables multilingual embeddings everywhere,
+  // junk falls back to the built-in defaults.
+  const cases = [
+    {
+      setPref: '[["DE",["de-*"]]]',
+      region: "DE",
+      locale: "de-DE",
+      contextual: true,
+      desc: "custom region",
+    },
+    {
+      setPref: '[["DE",["de-*"]]]',
+      region: "FR",
+      locale: "fr-FR",
+      contextual: false,
+      desc: "FR dropped from a custom list",
+    },
+    {
+      setPref: '[["*",["fr"]]]',
+      region: "US",
+      locale: "fr",
+      contextual: true,
+      desc: "exact locale match, no wildcard",
+    },
+    {
+      setPref: '[["*",["fr"]]]',
+      region: "US",
+      locale: "fr-FR",
+      contextual: false,
+      desc: "exact locale pattern does not match a variant",
+    },
+    {
+      setPref: "",
+      region: "FR",
+      locale: "fr-FR",
+      contextual: false,
+      desc: "empty pref disables multilingual embeddings",
+    },
+    {
+      setPref: "not json",
+      region: "FR",
+      locale: "fr-FR",
+      contextual: true,
+      desc: "invalid json falls back to the defaults",
+    },
+  ];
+
+  for (const { setPref, region, locale, contextual, desc } of cases) {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["places.semanticHistory.embeddingType", ""],
+        [PREF_MULTILINGUAL_REGIONS, setPref],
+      ],
+    });
+    try {
+      await withAppLocale(locale, () =>
+        withHomeRegion(region, () => {
+          const expected =
+            contextual && IS_MAC_OR_WINDOWS ? "best-onnx" : "static-embeddings";
+          Assert.equal(
+            new EmbeddingsGeneratorFactory().forPlaces().options.backend,
+            expected,
+            `Pref "${setPref}" with region "${region}" + locale "${locale}" (${desc}) resolves to ${expected}`
+          );
+        })
+      );
+    } finally {
+      await SpecialPowers.popPrefEnv();
+    }
+  }
+});
+
+add_task(async function test_factorySingletonIsShared() {
+  // Freezing the region is only meaningful if every production caller shares
+  // one factory, so guard the singleton against being turned into a per-caller
+  // instance.
+  const a = ChromeUtils.importESModule(
+    "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs"
+  );
+  const b = ChromeUtils.importESModule(
+    "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs"
+  );
+  Assert.strictEqual(
+    a.embeddingsGeneratorFactory,
+    b.embeddingsGeneratorFactory,
+    "Separate imports resolve to the same factory instance"
+  );
+  Assert.ok(
+    a.embeddingsGeneratorFactory instanceof EmbeddingsGeneratorFactory,
+    "The exported singleton is an EmbeddingsGeneratorFactory"
+  );
+});
+
+add_task(async function test_factory_freezesRegionOnFirstUse() {
+  // Persisted embeddings are only comparable within one model, so a factory
+  // must keep handing out the same embedding family even if the home region
+  // changes underneath it.
+  await SpecialPowers.pushPrefEnv({
+    set: [["places.semanticHistory.embeddingType", ""]],
+  });
+  try {
+    const factory = new EmbeddingsGeneratorFactory();
+    const expected = IS_MAC_OR_WINDOWS ? "best-onnx" : "static-embeddings";
+
+    await withHomeRegion("FR", () => {
+      Assert.equal(
+        factory.forPlaces().options.backend,
+        expected,
+        "First use captures the FR region"
+      );
+    });
+
+    await withHomeRegion("US", () => {
+      Assert.equal(
+        factory.forPlaces().options.backend,
+        expected,
+        "A later region change does not alter the embedding family"
+      );
+      Assert.equal(factory.region, "FR", "The captured region stays frozen");
+    });
+  } finally {
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(async function test_factory_freezesNullRegion() {
+  // A region that has not resolved yet is frozen too: it is corrected on the
+  // next startup rather than mid-session.
+  await SpecialPowers.pushPrefEnv({
+    set: [["places.semanticHistory.embeddingType", ""]],
+  });
+  try {
+    const factory = new EmbeddingsGeneratorFactory();
+
+    await withHomeRegion(null, () => {
+      Assert.equal(
+        factory.forPlaces().options.backend,
+        "static-embeddings",
+        "An unresolved region falls back to static"
+      );
+    });
+
+    await withHomeRegion("FR", () => {
+      Assert.equal(
+        factory.forPlaces().options.backend,
+        "static-embeddings",
+        "Resolving to FR later does not switch the family mid-session"
+      );
+    });
+  } finally {
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(async function test_forPlaces_invalidPrefFallsBackToRegion() {
+  // A junk pref value must not leak into resolveEngineOptions(), which would
+  // throw "Unknown embedding type".
+  await SpecialPowers.pushPrefEnv({
+    set: [["places.semanticHistory.embeddingType", "bogus"]],
+  });
+  try {
+    await withHomeRegion("US", () => {
+      Assert.equal(
+        new EmbeddingsGeneratorFactory().forPlaces().options.backend,
+        "static-embeddings",
+        "An unrecognized pref value falls back to the region default"
+      );
+    });
+    await withHomeRegion("FR", () => {
+      Assert.equal(
+        new EmbeddingsGeneratorFactory().forPlaces().options.backend,
+        IS_MAC_OR_WINDOWS ? "best-onnx" : "static-embeddings",
+        "An unrecognized pref value falls back to the region default in FR"
+      );
+    });
+  } finally {
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(async function test_forTest_rejectsUnsupportedDimensions() {
+  Assert.throws(
+    () =>
+      EmbeddingsGenerator.forTest({
+        type: EMBEDDING_TYPE.STATIC,
+        embeddingSize: 384,
+      }),
+    /Unsupported static embedding size/,
+    "Static engine only accepts its supportedDimensions"
+  );
+
+  Assert.throws(
+    () =>
+      EmbeddingsGenerator.forTest({
+        type: EMBEDDING_TYPE.CONTEXTUAL,
+        embeddingSize: 100,
+      }),
+    /Unsupported contextual embedding size/,
+    "Contextual dims must be a multiple of 8 within [128, 2048]"
+  );
+
+  Assert.throws(
+    () => EmbeddingsGenerator.forTest({ type: "nope" }),
+    /Unknown embedding type/,
+    "Unknown embedding types are rejected"
+  );
+});
+
+add_task(async function test_contextual_devPrefOverrides() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.embedGen.textEmbeddingSize", 512],
+      ["browser.ml.embedGen.textEmbeddingFeatureModel", "test/model"],
+    ],
+  });
+  try {
+    const eg = EmbeddingsGenerator.forTest({
+      type: EMBEDDING_TYPE.CONTEXTUAL,
+    });
     Assert.equal(
-      eg.options.backend,
-      "static-embeddings",
-      "forPlaces with embeddingType=static resolves to the static engine"
+      eg.embeddingSize,
+      512,
+      "Contextual dimension comes from the dev pref"
     );
     Assert.equal(
-      eg.options.embeddingDimension,
-      512,
-      "forPlaces static path uses the engine's preferredDimension (512)"
+      eg.options.modelId,
+      "test/model",
+      "Contextual modelId comes from the dev pref"
+    );
+    Assert.deepEqual(
+      eg.modelContext,
+      {
+        featureId: "simple-text-embedder",
+        embeddingDimension: 512,
+        modelId: "test/model",
+      },
+      "modelContext reflects the overridden model configuration"
     );
   } finally {
     await SpecialPowers.popPrefEnv();
   }
 });
 
+add_task(async function test_contextual_hasNoManualFallbackEngine() {
+  // best-onnx resolves native -> wasm inside MLEngineChild, so the generator
+  // must not carry (or act on) its own fallback engine config.
+  for (const eg of [
+    new EmbeddingsGeneratorFactory().forGeneral(),
+    EmbeddingsGenerator.forTest({ type: EMBEDDING_TYPE.CONTEXTUAL }),
+  ]) {
+    Assert.equal(
+      eg.options.fallbackEngine,
+      undefined,
+      "The contextual engine config declares no manual fallback"
+    );
+  }
+});
+
 add_task(
   async function test_ensureEngine_all_concurrent_callers_reject_on_failure() {
-    const embeddingsGenerator = EmbeddingsGenerator.forGeneral();
+    const embeddingsGenerator = new EmbeddingsGeneratorFactory().forGeneral();
 
     sinon
       .stub(embeddingsGenerator, "createEngineIfNotPresent")
@@ -340,7 +724,7 @@ add_task(
 );
 
 add_task(async function test_ensureEngine_allows_retry_after_failure() {
-  const embeddingsGenerator = EmbeddingsGenerator.forGeneral();
+  const embeddingsGenerator = new EmbeddingsGeneratorFactory().forGeneral();
 
   let callCount = 0;
   sinon

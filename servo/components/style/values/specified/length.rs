@@ -22,7 +22,7 @@ use crate::values::generics::length::{
 };
 use crate::values::generics::NonNegative;
 use crate::values::specified::calc::{
-    AllowAnchorPositioningFunctions, CalcLengthPercentage, CalcNode,
+    AllowAnchorPositioningFunctions, CalcLengthPercentage, CalcNode, PercentageContext,
 };
 use crate::values::specified::font::QueryFontMetricsFlags;
 use crate::values::specified::percentage::NoCalcPercentage;
@@ -760,7 +760,7 @@ impl NoCalcLength {
 
         context
             .builder
-            .add_flags(ComputedValueFlags::USES_FONT_RELATIVE_UNITS);
+            .add_flags(ComputedValueFlags::USES_FONT_OR_WM_RELATIVE_UNITS);
 
         let reference_font_size = base_size.resolve(context);
         let length = self.value;
@@ -931,6 +931,9 @@ impl NoCalcLength {
             ViewportUnit::Vmin => cmp::min(size.width, size.height),
             ViewportUnit::Vmax => cmp::max(size.width, size.height),
             ViewportUnit::Vi | ViewportUnit::Vb => {
+                context
+                    .builder
+                    .add_flags(ComputedValueFlags::USES_FONT_OR_WM_RELATIVE_UNITS);
                 context
                     .rule_cache_conditions
                     .borrow_mut()
@@ -1183,7 +1186,13 @@ impl Length {
             },
             Token::Function(ref name) => {
                 let function = CalcNode::math_function(context, name, location)?;
-                let calc = CalcNode::parse_length(context, input, num_context, function)?;
+                let calc = CalcNode::parse_length(
+                    context,
+                    input,
+                    num_context,
+                    function,
+                    PercentageContext::not_allowed(),
+                )?;
                 Ok(Self::new_calc(Box::new(calc)))
             },
             ref token => return Err(location.new_unexpected_token_error(token.clone())),
@@ -1875,8 +1884,7 @@ impl Size {
                                "auto" => Auto);
         parse_fit_content_function!(Size, input, context, allow_quirks);
 
-        let allow_anchor = allow_anchor_functions == ParseAnchorFunctions::Yes
-            && static_prefs::pref!("layout.css.anchor-positioning.enabled");
+        let allow_anchor = allow_anchor_functions == ParseAnchorFunctions::Yes;
         match input
             .try_parse(|i| NonNegativeLengthPercentage::parse_quirky(context, i, allow_quirks))
         {
@@ -1968,15 +1976,11 @@ impl MaxSize {
                                "none" => None);
         parse_fit_content_function!(MaxSize, input, context, allow_quirks);
 
-        match input
-            .try_parse(|i| NonNegativeLengthPercentage::parse_quirky(context, i, allow_quirks))
+        if let Ok(length) =
+            input.try_parse(|i| NonNegativeLengthPercentage::parse_quirky(context, i, allow_quirks))
         {
-            Ok(length) => return Ok(GenericMaxSize::LengthPercentage(length)),
-            Err(e) if !static_prefs::pref!("layout.css.anchor-positioning.enabled") => {
-                return Err(e.into())
-            },
-            Err(_) => (),
-        };
+            return Ok(GenericMaxSize::LengthPercentage(length));
+        }
         if let Ok(length) = input.try_parse(|i| {
             NonNegativeLengthPercentage::parse_non_negative_with_anchor_size(
                 context,
@@ -2011,13 +2015,9 @@ impl Margin {
         {
             return Ok(Self::LengthPercentage(l));
         }
-        match input.try_parse(|i| i.expect_ident_matching("auto")) {
-            Ok(_) => return Ok(Self::Auto),
-            Err(e) if !static_prefs::pref!("layout.css.anchor-positioning.enabled") => {
-                return Err(e.into())
-            },
-            Err(_) => (),
-        };
+        if input.try_parse(|i| i.expect_ident_matching("auto")).is_ok() {
+            return Ok(Self::Auto);
+        }
         if let Ok(l) = input.try_parse(|i| {
             LengthPercentage::parse_quirky_with_anchor_size_function(context, i, allow_quirks)
         }) {

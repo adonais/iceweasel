@@ -4,7 +4,7 @@ let s = registerModule('s', parseModule(`await 0;`));
 
 let state = "init";
 
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m).then(() => { state = "loaded"; });
 drainJobQueue();
 

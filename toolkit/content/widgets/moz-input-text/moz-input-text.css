@@ -20,12 +20,9 @@
     font-size: max(1em, 12px);
   }
 
-  &:focus-visible {
-    outline-offset: var(--focus-outline-offset);
-  }
-
   :host([invalid]) & {
     border-color: var(--border-color-error);
+    accent-color: var(--border-color-error);
   }
 
   &:disabled {
@@ -51,6 +48,7 @@
 
   &[type="search"] {
     --input-background-icon: url(chrome://global/skin/icons/search-textbox.svg);
+    border-radius: var(--input-search-border-radius);
     padding-inline-end: var(--space-xxsmall);
   }
 

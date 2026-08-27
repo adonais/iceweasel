@@ -20,7 +20,6 @@ pub fn linear_gradient_pattern(
     end: LayoutPoint,
     extend_mode: ExtendMode,
     stops: &[GradientStop],
-    _is_software: bool,
     gpu_buffer_builder: &mut GpuBufferBuilder
 ) -> Pattern {
     let num_blocks = 2 + gpu_gradient_stops_blocks(stops.len());
@@ -57,22 +56,21 @@ pub fn linear_gradient_pattern(
 
 pub fn radial_gradient_pattern(
     center: LayoutPoint,
-    scale: DeviceVector2D,
     start_radius: f32,
     end_radius: f32,
     ratio_xy: f32,
     extend_mode: ExtendMode,
     stops: &[GradientStop],
-    _is_software: bool,
     gpu_buffer_builder: &mut GpuBufferBuilder
 ) -> Pattern {
     let num_blocks = 2 + gpu_gradient_stops_blocks(stops.len());
     let mut writer = gpu_buffer_builder.f32.write_blocks(num_blocks);
+    // zw is padding: the gradient parameters need five floats across two blocks.
     writer.push_one([
         center.x,
         center.y,
-        scale.x,
-        scale.y,
+        0.0,
+        0.0,
     ]);
     writer.push_one([
         start_radius,
@@ -100,7 +98,6 @@ pub fn radial_gradient_pattern(
 
 pub fn conic_gradient_pattern(
     center: LayoutPoint,
-    scale: DeviceVector2D,
     angle: f32, // in radians
     start_offset: f32,
     end_offset: f32,
@@ -110,11 +107,12 @@ pub fn conic_gradient_pattern(
 ) -> Pattern {
     let num_blocks = 2 + gpu_gradient_stops_blocks(stops.len());
     let mut writer = gpu_buffer_builder.f32.write_blocks(num_blocks);
+    // zw is padding: the gradient parameters need five floats across two blocks.
     writer.push_one([
         center.x,
         center.y,
-        scale.x,
-        scale.y,
+        0.0,
+        0.0,
     ]);
     writer.push_one([
         start_offset,

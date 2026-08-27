@@ -97,7 +97,7 @@ class GPUAdapterReporter final : public nsIMemoryReporter {
     return result;
   }
 
-  ~GPUAdapterReporter() {}
+  ~GPUAdapterReporter() = default;
 
  public:
   NS_DECL_ISUPPORTS
@@ -195,7 +195,7 @@ Atomic<size_t> gfxWindowsPlatform::sD3D11SharedTextures;
 Atomic<size_t> gfxWindowsPlatform::sD3D9SharedTextures;
 
 class D3DSharedTexturesReporter final : public nsIMemoryReporter {
-  ~D3DSharedTexturesReporter() {}
+  ~D3DSharedTexturesReporter() = default;
 
  public:
   NS_DECL_ISUPPORTS

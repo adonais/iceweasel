@@ -7,5 +7,5 @@ g.eval("(" + function() {
     };
 } + ")()");
 m = parseModule(` s1 `);
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);

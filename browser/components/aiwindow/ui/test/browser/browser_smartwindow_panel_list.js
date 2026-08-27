@@ -343,6 +343,67 @@ add_task(
   }
 );
 
+add_task(async function test_active_selection_and_navigation() {
+  const { tab, browser } = await openTestPage(TEST_PAGE);
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const panel = content.document.getElementById("test-panel");
+    // The persistent highlight only renders in command mode
+    panel.setAttribute("data-triggered-by", "inline-command");
+    panel.groups = [
+      {
+        items: [
+          { id: "a", label: "A" },
+          { id: "b", label: "B" },
+          { id: "c", label: "C" },
+        ],
+      },
+    ];
+    await panel.updateComplete;
+
+    Assert.equal(panel.selectedItemId, "a", "First item selected by default");
+    Assert.equal(
+      panel.getSelectedItem().id,
+      "a",
+      "getSelectedItem is the first"
+    );
+
+    panel.moveSelection(1);
+    await panel.updateComplete;
+    Assert.equal(panel.selectedItemId, "b", "Moves to the second item");
+
+    panel.moveSelection(1);
+    panel.moveSelection(1);
+    await panel.updateComplete;
+    Assert.equal(panel.selectedItemId, "a", "Wraps to the first past the end");
+
+    panel.moveSelection(-1);
+    await panel.updateComplete;
+    Assert.equal(panel.selectedItemId, "c", "Wraps to the last from the first");
+
+    const selected = panel.shadowRoot.querySelector("panel-item.selected");
+    Assert.ok(selected, "The active item carries the selected class");
+    Assert.equal(selected.itemId, "c", "Selected class is on the active item");
+
+    panel.groups = [
+      {
+        items: [
+          { id: "x", label: "X" },
+          { id: "y", label: "Y" },
+        ],
+      },
+    ];
+    await panel.updateComplete;
+    Assert.equal(
+      panel.selectedItemId,
+      "x",
+      "Selection resets to the first item when the item set changes"
+    );
+  });
+
+  BrowserTestUtils.removeTab(tab);
+});
+
 add_task(async function test_keyboard_events() {
   const { tab, browser } = await openTestPage(TEST_PAGE);
 

@@ -1629,6 +1629,16 @@ void WebRenderCommandBuilder::DoGroupingForDisplayList(
     return;
   }
 
+  // Sizing the group's blob from its untransformed bounds is only bounded by
+  // the raster scale, and GetInheritedScale() reports a placeholder of 1.0 when
+  // the real scale is degenerate. Rasterizing at the placeholder would request
+  // a blob the size of the untransformed bounds, which can reach nscoord
+  // saturation. The content covers less than a pixel, so drop it (bug 1906769).
+  if (aSc.HasDegenerateRasterScale()) {
+    GP("Skipping group with degenerate raster scale\n");
+    return;
+  }
+
   GP("DoGroupingForDisplayList\n");
 
   mClipManager.BeginList(aSc);
@@ -2484,6 +2494,13 @@ WebRenderCommandBuilder::GenerateFallbackData(
     nsDisplayItem* aItem, wr::DisplayListBuilder& aBuilder,
     wr::IpcResourceUpdateQueue& aResources, const StackingContextHelper& aSc,
     nsDisplayListBuilder* aDisplayListBuilder, LayoutDeviceRect& aImageRect) {
+  // See the comment in DoGroupingForDisplayList: the placeholder scale reported
+  // for degenerate content would size the fallback buffer from bounds that can
+  // reach nscoord saturation (bug 1906769).
+  if (aSc.HasDegenerateRasterScale()) {
+    return nullptr;
+  }
+
   Maybe<gfx::DeviceColor> highlight;
   if (StaticPrefs::gfx_webrender_debug_highlight_painted_layers()) {
     highlight.emplace(gfx::DeviceColor(1.0, 0.0, 0.0, 0.5));
@@ -2565,6 +2582,7 @@ WebRenderCommandBuilder::GenerateFallbackData(
   }
 
   auto visibleSize = visibleRect.Size();
+
   // these rectangles can overflow from scaling so try to
   // catch that with IsEmpty() checks. See bug 1622126.
   if (visibleSize.IsEmpty() || dtRect.IsEmpty()) {
@@ -2728,6 +2746,13 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
     wr::IpcResourceUpdateQueue& aResources, const StackingContextHelper& aSc,
     nsDisplayListBuilder* aDisplayListBuilder,
     const LayoutDeviceRect& aBounds) {
+  // See the comment in DoGroupingForDisplayList: the placeholder scale reported
+  // for degenerate content would size the mask blob from bounds that can reach
+  // nscoord saturation (bug 1906769).
+  if (aSc.HasDegenerateRasterScale()) {
+    return Nothing();
+  }
+
   RefPtr<WebRenderMaskData> maskData =
       CreateOrRecycleWebRenderUserData<WebRenderMaskData>(aMaskItem);
 
@@ -2775,22 +2800,48 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
 
   LayoutDeviceToLayerScale2D layerScale(scale.xScale, scale.yScale);
 
-  // Rect the mask image is placed and sampled over. The blob itself must stay
-  // integer-sized (itemRect/visibleRect, above), but the placement rect we
-  // hand to WebRender becomes the mask clip node's rect, which WebRender snaps
-  // to device pixels at frame time. With pixel alignment disabled, send the
-  // true (unrounded) rect -- the same one the masked content uses -- so the
-  // mask snaps in lockstep with its content instead of carrying our own stale
-  // device-pixel RoundOut.
+  // Rect the mask image is placed and sampled over; it becomes the mask clip
+  // node's rect, which WebRender snaps to device pixels at frame time. Send the
+  // true (unrounded) bounds so WebRender snaps the clip in lockstep with the
+  // masked content -- rather than a stale display-list-time RoundOut -- when
+  // pixel alignment is disabled (bug 1973192). Clamp bounds to the region the
+  // blob actually covers so the clip stays aligned to the blob's alpha: the
+  // union of the building rect (what needs to be painted) and visibleRect (the
+  // rasterized region on the blob's nearest-pixel grid). Clamping to the
+  // building rect alone would drop a partially-covered edge row that the blob
+  // did rasterize (bug 2055747); not clamping at all would span inflated bounds
+  // that were never drawn into the blob (svg/filters/filter-clipped-rect-01).
   LayoutDeviceRect imageRect;
   if (StaticPrefs::layout_disable_pixel_alignment()) {
-    imageRect = LayoutDeviceRect::FromAppUnits(
-        bounds.Intersect(aMaskItem->GetBuildingRect()), appUnitsPerDevPixel);
+    LayoutDeviceRect coverage =
+        LayoutDeviceRect::FromAppUnits(aMaskItem->GetBuildingRect(),
+                                       appUnitsPerDevPixel)
+            .Union(LayerRect(visibleRect) / layerScale);
+    imageRect = LayoutDeviceRect::FromAppUnits(bounds, appUnitsPerDevPixel)
+                    .Intersect(coverage);
   } else {
     imageRect = LayerRect(visibleRect) / layerScale;
   }
 
   nsPoint maskOffset = aMaskItem->ToReferenceFrame() - bounds.TopLeft();
+
+  // The blob is rasterized against itemRect's grid but painted in absolute
+  // coordinates, so this sub-pixel offset is baked into its alpha. itemRect is
+  // an integer rect and maskOffset is translation invariant, so neither
+  // notices when it changes: an item nudged a sub-pixel distance without being
+  // invalidated (e.g. by a sibling's layout change) would otherwise keep alpha
+  // rasterized against the offset it had at the previous position, leaving the
+  // mask up to a device pixel out of place until something else invalidated it
+  // (bug 2057351). Before bug 1973192 rounding out meant such a move always
+  // resized itemRect, which tripped the check below on its own.
+  gfx::Point residual(
+      NSAppUnitsToFloatPixels(bounds.x, appUnitsPerDevPixel) * scale.xScale -
+          itemRect.x,
+      NSAppUnitsToFloatPixels(bounds.y, appUnitsPerDevPixel) * scale.yScale -
+          itemRect.y);
+  bool sameResidual =
+      gfx::FuzzyEqual(residual.x, maskData->mResidual.x, 0.01f) &&
+      gfx::FuzzyEqual(residual.y, maskData->mResidual.y, 0.01f);
 
   bool shouldHandleOpacity = aBuilder.GetInheritedOpacity() != 1.0f;
 
@@ -2798,7 +2849,7 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
   // If this mask item is being painted for the first time, some members of
   // WebRenderMaskData are still default initialized. This is intentional.
   if (aMaskItem->IsInvalid(dirtyRect) ||
-      !itemRect.IsEqualInterior(maskData->mItemRect) ||
+      !itemRect.IsEqualInterior(maskData->mItemRect) || !sameResidual ||
       !(aMaskItem->Frame()->StyleSVGReset()->mMask == maskData->mMaskStyle) ||
       maskOffset != maskData->mMaskOffset || !sameScale ||
       shouldHandleOpacity != maskData->mShouldHandleOpacity) {
@@ -2900,6 +2951,7 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
                          mManager->GetRenderRootStateManager(), aResources);
     if (maskIsComplete) {
       maskData->mItemRect = itemRect;
+      maskData->mResidual = residual;
       maskData->mMaskOffset = maskOffset;
       maskData->mScale = scale;
       maskData->mMaskStyle = aMaskItem->Frame()->StyleSVGReset()->mMask;

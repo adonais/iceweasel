@@ -8,7 +8,7 @@
 
   @media -moz-pref("browser.nova.enabled") {
     --panel-padding: 0 var(--space-small) var(--space-small);
-    --panel-border-radius: var(--border-radius-xlarge);
+    --panel-border-radius: var(--border-radius-large);
   }
 
   @media not -moz-pref("browser.tabs.notes.enabled") {
@@ -58,6 +58,55 @@
   justify-content: space-between;
 }
 
+/* Container indicator pill, matching the URL-bar one. */
+.tab-preview-container-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xxsmall);
+  width: max-content;
+  max-width: 100%;
+  margin-block-start: var(--space-xxsmall);
+
+  &[hidden] {
+    display: none;
+  }
+
+  @media -moz-pref("browser.nova.enabled") {
+    padding: var(--space-xxsmall) var(--space-small);
+    border-radius: var(--border-radius-circle);
+    background-color: var(--identity-fill-tint);
+  }
+}
+
+.tab-preview-container-icon {
+  width: 16px;
+  height: 16px;
+  background-image: var(--identity-icon);
+  -moz-context-properties: fill;
+  fill: var(--identity-icon-color);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center center;
+
+  /* Non-nova shows name + icon; nova shows icon + name, matching the URL bar. */
+  @media -moz-pref("browser.nova.enabled") {
+    order: 1;
+    fill: var(--identity-fill-color);
+  }
+}
+
+.tab-preview-container-label {
+  color: var(--identity-tab-color);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  @media -moz-pref("browser.nova.enabled") {
+    order: 2;
+    color: var(--identity-fill-color);
+  }
+}
+
 .tab-preview-thumbnail-container {
   width: 264px;
   max-width: 100%;
@@ -77,9 +126,6 @@
     border: var(--border-width) solid var(--border-color-deemphasized);
     border-radius: var(--border-radius-medium);
     box-sizing: border-box;
-    @media -moz-pref("browser.nova.enabled") {
-      border-radius: var(--border-radius-large);
-    }
   }
 }
 
@@ -231,5 +277,13 @@
 
   & toolbarbutton.active-tab {
     font-weight: var(--font-weight-semibold);
+  }
+
+  @media -moz-pref("browser.nova.enabled") {
+    --panel-padding: var(--space-small);
+
+    .group-preview-button {
+      border: 1px solid var(--button-border-color-ghost);
+    }
   }
 }

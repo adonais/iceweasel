@@ -15,8 +15,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import mozilla.components.concept.awesomebar.AwesomeBar
-import mozilla.components.concept.awesomebar.AwesomeBar.CombinedSuggestionsDataSource
+import mozilla.components.feature.awesomebar.optimizedsuggestions.CombinedSuggestionsDataSource
+import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightItem
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportItem
+import mozilla.components.feature.awesomebar.optimizedsuggestions.StockItem
 import mozilla.components.feature.fxsuggest.client.MerinoClient
 import mozilla.components.feature.fxsuggest.client.SuggestMerinoClient
 import mozilla.components.feature.fxsuggest.dto.CombinedSuggestionResponseDto
@@ -40,23 +42,23 @@ sealed class CombinedResults {
     /**
      * The stocks provider (Polygon) returned the highest-scoring suggestion.
      *
-     * @property items The list of [AwesomeBar.StockItem]s parsed from the response.
+     * @property items The list of [StockItem]s parsed from the response.
      */
-    data class Stocks(val items: List<AwesomeBar.StockItem>) : CombinedResults()
+    data class Stocks(val items: List<StockItem>) : CombinedResults()
 
     /**
      * The sports provider returned the highest-scoring suggestion.
      *
-     * @property items The list of [AwesomeBar.SportItem]s parsed from the response.
+     * @property items The list of [SportItem]s parsed from the response.
      */
-    data class Sports(val items: List<AwesomeBar.SportItem>) : CombinedResults()
+    data class Sports(val items: List<SportItem>) : CombinedResults()
 
     /**
      * The flights provider (FlightAware) returned the highest-scoring suggestion.
      *
-     * @property items The list of [AwesomeBar.FlightItem]s parsed from the response.
+     * @property items The list of [FlightItem]s parsed from the response.
      */
-    data class Flights(val items: List<AwesomeBar.FlightItem>) : CombinedResults()
+    data class Flights(val items: List<FlightItem>) : CombinedResults()
 
     /**
      * No suggestions were returned, either because the API returned no results,
@@ -106,13 +108,13 @@ class CombinedOnlineSuggestionDataSource(
         return resultsFlow.first { it.first == query }.second
     }
 
-    override suspend fun fetchStocks(query: String): List<AwesomeBar.StockItem> =
+    override suspend fun fetchStocks(query: String): List<StockItem> =
         (fetch(query) as? CombinedResults.Stocks)?.items ?: emptyList()
 
-    override suspend fun fetchSports(query: String): List<AwesomeBar.SportItem> =
+    override suspend fun fetchSports(query: String): List<SportItem> =
         (fetch(query) as? CombinedResults.Sports)?.items ?: emptyList()
 
-    override suspend fun fetchFlights(query: String): List<AwesomeBar.FlightItem> =
+    override suspend fun fetchFlights(query: String): List<FlightItem> =
         (fetch(query) as? CombinedResults.Flights)?.items ?: emptyList()
 
     private suspend fun fetchAndParse(query: String): CombinedResults = withContext(Dispatchers.IO) {

@@ -9,33 +9,58 @@ from .base import BaseFormatter
 
 
 class TestSummaryFormatter(BaseFormatter):
-    """Passthrough formatter that emits every raw structured log record
-    verbatim, except for:
-      - `log` actions not at level ERROR, which are dropped
-      - `test_status` actions where the status matches the expected status
-        (i.e. the subtest result was expected) which are dropped
-      - `process_output` actions, which are dropped
+    """Passthrough formatter that emits only:
+      - `group_start`, `group_end`, `suite_start`, `suite_end`, `test_start`
+        and `test_end` actions
+      - `test_status` actions where the status differs from the expected
+        status (i.e. the subtest result was unexpected)
+      - `crash` actions
 
-    In addition, the fields `thread`, `pid`, `source`, `extra`, `tests`, and any
+    All other actions are dropped.
+
+    In addition, the fields `thread`, `pid`, `source`, `extra`, `tests`, `js_source`, `minidump_path`, `crashing_thread_stack`, `stack` and any
     field whose name starts with `stackwalk_` are stripped from every
-    emitted record
+    emitted record, except that `stack` is preserved for `crash` actions
     """
 
-    _ALWAYS_STRIP = ("thread", "pid", "source", "extra", "tests")
+    _ALLOWED_ACTIONS = frozenset({
+        "group_start",
+        "group_end",
+        "suite_start",
+        "suite_end",
+        "test_start",
+        "test_end",
+        "test_status",
+        "crash",
+    })
+    _ALWAYS_STRIP = frozenset({
+        "crashing_thread_stack",
+        "extra",
+        "js_source",
+        "minidump_path",
+        "pid",
+        "source",
+        "stack",
+        "tests",
+        "thread",
+    })
+    _ALWAYS_STRIP_CRASH = _ALWAYS_STRIP - {"stack"}
 
     def __call__(self, data):
         action = data.get("action")
-        if action == "log" and data.get("level") != "ERROR":
+        if action not in self._ALLOWED_ACTIONS:
             return
-        if action == "process_output":
+        if action == "test_status" and (
+            "expected" not in data or data["expected"] == data.get("status")
+        ):
             return
-        if action == "mozleak_total":
-            return
+
+        strip = self._ALWAYS_STRIP_CRASH if action == "crash" else self._ALWAYS_STRIP
 
         data = {
             k: v
             for k, v in data.items()
-            if k not in self._ALWAYS_STRIP and not k.startswith("stackwalk_")
+            if k not in strip and not k.startswith("stackwalk_")
         }
 
         return json.dumps(data) + "\n"

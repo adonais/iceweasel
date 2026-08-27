@@ -209,6 +209,8 @@ class ImageBridgeChild final : public PImageBridgeChild,
   void ClearImagesInHost(ImageClient* aClient, ImageContainer* aContainer,
                          ClearImagesType aType);
 
+  void WaitFlushTasks();
+
   bool IPCOpen() const override { return mCanSend; }
 
  private:

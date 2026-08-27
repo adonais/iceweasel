@@ -210,7 +210,7 @@ add_task(async function test_lna_insecure_context_blocking() {
 
   for (const test of testCases) {
     const rand = Math.random();
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     const url = `http://${PUBLIC_SERVER_HOST}:${gPublicServerPort}/test.html?test=${test.type}&rand=${rand}`;
     info(`Loading test page: ${url}`);
 
@@ -258,7 +258,7 @@ add_task(async function test_lna_insecure_context_prompts_when_pref_disabled() {
   });
 
   const rand = Math.random();
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   const url = `http://${PUBLIC_SERVER_HOST}:${gPublicServerPort}/test.html?test=fetch&rand=${rand}`;
 
   const popupShown = BrowserTestUtils.waitForEvent(

@@ -7,20 +7,21 @@
 #ifndef mozilla_Casting_h
 #define mozilla_Casting_h
 
-#include "mozilla/Assertions.h"
-
-#include <cstdint>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <type_traits>
+
+#include "mozilla/Assertions.h"
 
 #ifndef __clang__
 #  include <cstring>
 #endif
 
 #ifdef DEBUG
-#  include "fmt/format.h"  // IWYU pragma: keep(for fmt::)
 #  include <cstdio>
+
+#  include "fmt/format.h"  // IWYU pragma: keep(for fmt::)
 #endif
 
 namespace mozilla {

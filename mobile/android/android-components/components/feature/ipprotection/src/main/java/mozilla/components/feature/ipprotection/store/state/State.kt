@@ -10,6 +10,8 @@ import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.lib.state.State
+import java.util.IllformedLocaleException
+import java.util.Locale
 
 const val BYTES_PER_GB = 1024 * 1024 * 1024f
 
@@ -26,6 +28,7 @@ const val BYTES_PER_GB = 1024 * 1024 * 1024f
  * @property lastError The last error received from the IPProtection service.
  * @property proxyActiveShown Whether the proxy-active status has been shown to the user.
  * @property activate To turn protection on or off.
+ * @property locationState The location selection state.
  */
 data class IPProtectionState(
     val eligibilityStatus: EligibilityStatus = EligibilityStatus.Unknown,
@@ -38,6 +41,7 @@ data class IPProtectionState(
     val lastError: String? = null,
     val proxyActiveShown: Boolean = false,
     val activate: Boolean? = null,
+    val locationState: LocationState = LocationState(),
 ) : State
 
 /**
@@ -76,6 +80,53 @@ val IPProtectionState.usedDataGb: Float
 data class AccountState(
     val status: AccountStatus = AccountStatus.Uninitialized,
 )
+
+/**
+ * Holds the location related data.
+ *
+ * @property selectedLocation The location to use when connecting to VPN.
+ * @property locations The list of locations for user to choose from.
+ */
+data class LocationState(
+    val selectedLocation: Location = Recommended(),
+    val locations: List<Location> = listOf(Recommended()),
+)
+
+/**
+ * A sealed interface to represent a selectable location.
+ *
+ * @property countryCode ISO 3166-1 alpha-2 code of the location, or `null`.
+ */
+sealed interface Location {
+    val countryCode: String?
+}
+
+/**
+ * The "recommended" (default) location, letting the proxy pick the server automatically.
+ */
+data class Recommended(override val countryCode: String? = null) : Location
+
+/**
+ * A specific country from the IP protection proxy server list.
+ *
+ * @property countryCode ISO 3166-1 alpha-2 country code.
+ * @property available Whether the country could be selected as the active proxy.
+ * @property displayName The localized name for UI. If localization fails, returns raw [countryCode].
+ */
+data class Country(
+    override val countryCode: String,
+    val available: Boolean,
+) : Location {
+    val displayName: String
+        get() = try {
+            Locale.Builder()
+                .setRegion(countryCode)
+                .build()
+                .getDisplayCountry(Locale.getDefault())
+        } catch (_: IllformedLocaleException) {
+            countryCode
+        }
+}
 
 /**
  * Represents the lifecycle of the FxA account as it pertains to the IP protection service.

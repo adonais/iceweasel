@@ -32,7 +32,7 @@ IPCResult ClientHandleOpParent::Init(ClientOpConstructorArgs&& aArgs) {
 
   if (!IsValidClientOpConstructorArgs(
           aArgs,
-          BackgroundParent::GetRemoteType(handle->Manager()->Manager()))) {
+          BackgroundParent::GetLoadedOrigins(handle->Manager()->Manager()))) {
     return IPC_FAIL(this, "Invalid ClientOpConstructorArgs!");
   }
 

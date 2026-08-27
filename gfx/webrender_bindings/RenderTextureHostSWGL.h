@@ -53,6 +53,8 @@ class RenderTextureHostSWGL : public RenderTextureHost {
   bool LockSWGLCompositeSurface(void* aContext,
                                 wr::SWGLCompositeSurfaceInfo* aInfo) override;
 
+  void UnlockSWGLCompositeSurface() override;
+
   size_t BytesFromPlanes() {
     NS_ASSERTION(mPlanes.size(), "Can't compute bytes without any planes");
     size_t bytes = 0;
@@ -63,7 +65,13 @@ class RenderTextureHostSWGL : public RenderTextureHost {
   }
 
  protected:
-  bool mLocked = false;
+  bool mLockedSWGL = false;
+  bool mLockedSWGLCompositeSurface = false;
+
+  bool HasLockedSWGL() const {
+    return mLockedSWGL || mLockedSWGLCompositeSurface;
+  }
+
   void* mContext = nullptr;
   std::vector<PlaneInfo> mPlanes;
 

@@ -41,6 +41,10 @@ const DEFAULT_PRIVATE_BLOCK_LABEL = gBrowserBundle.GetStringFromName(
 const gPermissionsL10n = new Localization(["browser/permissions.ftl"], true);
 const EXISTING_L10N_ID = "perm-persistent-storage-remember";
 
+const FAVICON_DATA_URL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12NgAAAAAgAB4iG8MwAAAABJRU5ErkJggg==";
+const FAVICON_URL = "https://example.com/favicon.ico";
+
 const TREATMENT = {
   headline: "Stay in the loop with <>",
   body: "Get order updates and delivery alerts.",
@@ -48,7 +52,7 @@ const TREATMENT = {
   primaryCtaAccessKey: "Y",
   secondaryCtaLabel: "No thanks",
   secondaryCtaAccessKey: "N",
-  logoUrl: "https://example.com/logo.png",
+  logoUrl: "chrome://global/skin/icons/info.svg",
 };
 
 add_setup(async function () {
@@ -404,55 +408,7 @@ add_task(async function test_private_browsing_keeps_default_block_label() {
   }
 });
 
-add_task(
-  async function test_no_user_gesture_shows_post_prompt_records_exposure() {
-    let doCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
-      featureId: FEATURE_ID,
-      value: TREATMENT,
-    });
-
-    await SpecialPowers.pushPrefEnv({
-      set: [["dom.webnotifications.requireuserinteraction", true]],
-    });
-
-    await BrowserTestUtils.withNewTab(
-      { gBrowser, url: TEST_URL },
-      async function (browser) {
-        let sandbox = sinon.createSandbox();
-        sandbox.spy(NimbusFeatures[FEATURE_ID], "recordExposureEvent");
-
-        let mockRequest = makeMockPermissionRequest(browser);
-        let prompt = new PermissionUI.DesktopNotificationPermissionPrompt(
-          mockRequest
-        );
-        await prompt.prompt();
-
-        let notification = PopupNotifications.getNotification(
-          NOTIFICATION_ID,
-          browser
-        );
-        Assert.ok(
-          !notification || notification.dismissed,
-          "No modal shown without a user gesture"
-        );
-        Assert.ok(mockRequest._cancelled, "The request is cancelled");
-        Assert.ok(
-          NimbusFeatures[FEATURE_ID].recordExposureEvent.calledOnce,
-          "Exposure recorded for the post-prompt"
-        );
-
-        await hidePrompt(browser);
-        cleanupPrincipalPermission(browser);
-        sandbox.restore();
-      }
-    );
-
-    await SpecialPowers.popPrefEnv();
-    await doCleanup();
-  }
-);
-
-add_task(async function test_post_prompt_renders_treatment() {
+add_task(async function test_post_prompt_renders_treatment_and_exposure() {
   let doCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
     featureId: FEATURE_ID,
     value: TREATMENT,
@@ -465,6 +421,9 @@ add_task(async function test_post_prompt_renders_treatment() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: TEST_URL },
     async function (browser) {
+      let sandbox = sinon.createSandbox();
+      sandbox.spy(NimbusFeatures[FEATURE_ID], "recordExposureEvent");
+
       let mockRequest = makeMockPermissionRequest(browser);
       let prompt = new PermissionUI.DesktopNotificationPermissionPrompt(
         mockRequest
@@ -475,10 +434,21 @@ add_task(async function test_post_prompt_renders_treatment() {
         NOTIFICATION_ID,
         browser
       );
+
+      // Without a user gesture the modal is suppressed: only the quiet,
+      // dismissed post-prompt is shown, the request is cancelled, and a single
+      // exposure is recorded.
       Assert.ok(
         notification && notification.dismissed,
-        "The quiet post-prompt is shown dismissed"
+        "The quiet post-prompt is shown dismissed without a user gesture"
       );
+      Assert.ok(mockRequest._cancelled, "The request is cancelled");
+      Assert.ok(
+        NimbusFeatures[FEATURE_ID].recordExposureEvent.calledOnce,
+        "Exposure recorded once for the post-prompt"
+      );
+
+      // The post-prompt renders the same treatment copy/logo/labels as the modal.
       Assert.equal(
         notification.message,
         TREATMENT.headline,
@@ -502,6 +472,7 @@ add_task(async function test_post_prompt_renders_treatment() {
 
       await hidePrompt(browser);
       cleanupPrincipalPermission(browser);
+      sandbox.restore();
     }
   );
 
@@ -551,6 +522,173 @@ add_task(async function test_headline_without_site_token_falls_back() {
         notification.message,
         DEFAULT_HEADLINE,
         "Headline without the '<>' site-name token falls back to the default copy"
+      );
+
+      await hidePrompt(browser);
+      cleanupPrincipalPermission(browser);
+    }
+  );
+
+  await doCleanup();
+});
+
+function expectedSiteFaviconURL(browser) {
+  return `page-icon:${browser.contentPrincipal.URI.spec}`;
+}
+
+add_task(async function test_logo_url_takes_precedence_over_site_favicon() {
+  let doCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: FEATURE_ID,
+    value: { logoUrl: TREATMENT.logoUrl, useSiteFavicon: true },
+  });
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: TEST_URL },
+    async function (browser) {
+      let { notification } = await showModalPrompt(browser);
+      Assert.equal(
+        notification.options.popupIconURL,
+        TREATMENT.logoUrl,
+        "A valid logoUrl takes precedence over useSiteFavicon"
+      );
+
+      await hidePrompt(browser);
+      cleanupPrincipalPermission(browser);
+    }
+  );
+
+  await doCleanup();
+});
+
+add_task(async function test_use_site_favicon_resolves_real_favicon() {
+  await PlacesUtils.history.clear();
+  await PlacesTestUtils.addVisits(TEST_URL);
+  await PlacesTestUtils.setFaviconForPage(
+    TEST_URL,
+    FAVICON_URL,
+    FAVICON_DATA_URL
+  );
+
+  let doCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: FEATURE_ID,
+    value: { useSiteFavicon: true },
+  });
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: TEST_URL },
+    async function (browser) {
+      // The site has a cached favicon, so page-icon: is used (the primary path)
+      // regardless of the tab's live icon.
+      let { notification } = await showModalPrompt(browser);
+
+      let iconURL = notification.options.popupIconURL;
+      Assert.equal(
+        iconURL,
+        expectedSiteFaviconURL(browser),
+        "Prompt icon is a page-icon: URL for the requesting origin"
+      );
+
+      // Resolving that exact URL must return the seeded site favicon rather than
+      // the default. getFaviconForPage is the same lookup the page-icon: protocol
+      // handler performs internally,
+      // so this proves the emitted URL actually renders the site's own icon and
+      // not the fallback globe.
+      let pageURL = iconURL.replace(/^page-icon:/, "");
+      let favicon = await PlacesTestUtils.getFaviconForPage(pageURL);
+      Assert.ok(favicon, "A favicon resolves for the prompt's page-icon: URL");
+      Assert.equal(
+        favicon.width,
+        1,
+        "Resolved favicon is the seeded 1x1 site icon, not the default"
+      );
+      Assert.equal(
+        favicon.dataURI.spec,
+        FAVICON_DATA_URL,
+        "Resolved favicon data matches the seeded site favicon"
+      );
+
+      await hidePrompt(browser);
+      cleanupPrincipalPermission(browser);
+    }
+  );
+
+  await doCleanup();
+  await PlacesUtils.history.clear();
+});
+
+add_task(async function test_use_site_favicon_strips_origin_attributes() {
+  // Seed a favicon in the shared cache so the page-icon: path is taken (a
+  // private window reads the same cache), letting us check the emitted URL.
+  await PlacesUtils.history.clear();
+  await PlacesTestUtils.addVisits(TEST_URL);
+  await PlacesTestUtils.setFaviconForPage(
+    TEST_URL,
+    FAVICON_URL,
+    FAVICON_DATA_URL
+  );
+
+  let doCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: FEATURE_ID,
+    value: { useSiteFavicon: true },
+  });
+
+  let privateWin = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+
+  try {
+    await BrowserTestUtils.withNewTab(
+      { gBrowser: privateWin.gBrowser, url: TEST_URL },
+      async function (browser) {
+        let { notification } = await showModalPrompt(browser, privateWin);
+
+        // The private window's principal carries a ^privateBrowsingId origin
+        // attribute; the page-icon: URL must key on the suffix-free URI spec so
+        // it resolves the shared favicon cache instead of a bogus page that
+        // always falls back to the default icon.
+        Assert.equal(
+          notification.options.popupIconURL,
+          expectedSiteFaviconURL(browser),
+          "page-icon: URL uses the origin without attributes in a private window"
+        );
+        Assert.ok(
+          !notification.options.popupIconURL.includes("privateBrowsingId"),
+          "page-icon: URL does not leak the private-browsing origin attribute"
+        );
+
+        await hidePrompt(browser, privateWin);
+        cleanupPrincipalPermission(browser);
+      }
+    );
+  } finally {
+    await BrowserTestUtils.closeWindow(privateWin);
+    await doCleanup();
+    await PlacesUtils.history.clear();
+  }
+});
+
+add_task(async function test_use_site_favicon_falls_back_to_live_icon() {
+  let doCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: FEATURE_ID,
+    value: { useSiteFavicon: true },
+  });
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: TEST_URL },
+    async function (browser) {
+      // No cached favicon (as on a first-time private visit), so page-icon:
+      // can't resolve and we fall back to the tab's already-loaded live icon.
+      await PlacesUtils.history.clear();
+
+      let liveIcon =
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12NgAAAAAgAB4iG8MwAAAABJRU5ErkJggg==";
+      browser.mIconURL = liveIcon;
+
+      let { notification } = await showModalPrompt(browser);
+      Assert.equal(
+        notification.options.popupIconURL,
+        liveIcon,
+        "Falls back to the tab's live in-memory icon when nothing is cached"
       );
 
       await hidePrompt(browser);

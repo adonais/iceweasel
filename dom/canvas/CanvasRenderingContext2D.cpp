@@ -1106,7 +1106,7 @@ CanvasRenderingContext2D::ContextState::ContextState(const ContextState& aOther)
       textBaseline(aOther.textBaseline),
       textDirection(aOther.textDirection),
       fontKerning(aOther.fontKerning),
-      fontStretch(aOther.fontStretch),
+      fontWidth(aOther.fontWidth),
       fontVariantCaps(aOther.fontVariantCaps),
       textRendering(aOther.textRendering),
       letterSpacing(aOther.letterSpacing),
@@ -3035,7 +3035,7 @@ void CanvasRenderingContext2D::SetLetterSpacing(
   Maybe<float> value = ParseSpacing(aLetterSpacing, normalized);
   if (value) {
     CurrentState().letterSpacing = *value;
-    CurrentState().letterSpacingStr = normalized;
+    CurrentState().letterSpacingStr = std::move(normalized);
   }
 }
 
@@ -3052,7 +3052,7 @@ void CanvasRenderingContext2D::SetWordSpacing(const nsACString& aWordSpacing) {
   Maybe<float> value = ParseSpacing(aWordSpacing, normalized);
   if (value) {
     CurrentState().wordSpacing = *value;
-    CurrentState().wordSpacingStr = normalized;
+    CurrentState().wordSpacingStr = std::move(normalized);
   }
 }
 
@@ -3113,7 +3113,7 @@ Maybe<float> CanvasRenderingContext2D::ParseSpacing(const nsACString& aSpacing,
     }
     value = style->StyleText()->mLetterSpacing.AsLength().ToCSSPixels();
   }
-  aNormalized = normalized;
+  aNormalized = std::move(normalized);
   return Some(value);
 }
 
@@ -4262,41 +4262,41 @@ bool CanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
 
   resizedFont.kerning = CanvasToGfx(CurrentState().fontKerning);
 
-  // fontStretch handling: if fontStretch is not 'normal', apply it;
+  // fontWidth handling: if fontWidth is not 'normal', apply it;
   // if it is normal, then use whatever the shorthand set.
   // XXX(jfkthame) The interaction between the shorthand and the separate attr
   // here is not clearly spec'd, and we may want to reconsider it (or revise
   // the available values); see https://github.com/whatwg/html/issues/8103.
-  switch (CurrentState().fontStretch) {
+  switch (CurrentState().fontWidth) {
     case CanvasFontStretch::Normal:
       // Leave whatever the shorthand set.
       break;
     case CanvasFontStretch::Ultra_condensed:
-      resizedFont.stretch = StyleFontStretch::ULTRA_CONDENSED;
+      resizedFont.width = StyleFontWidth::ULTRA_CONDENSED;
       break;
     case CanvasFontStretch::Extra_condensed:
-      resizedFont.stretch = StyleFontStretch::EXTRA_CONDENSED;
+      resizedFont.width = StyleFontWidth::EXTRA_CONDENSED;
       break;
     case CanvasFontStretch::Condensed:
-      resizedFont.stretch = StyleFontStretch::CONDENSED;
+      resizedFont.width = StyleFontWidth::CONDENSED;
       break;
     case CanvasFontStretch::Semi_condensed:
-      resizedFont.stretch = StyleFontStretch::SEMI_CONDENSED;
+      resizedFont.width = StyleFontWidth::SEMI_CONDENSED;
       break;
     case CanvasFontStretch::Semi_expanded:
-      resizedFont.stretch = StyleFontStretch::SEMI_EXPANDED;
+      resizedFont.width = StyleFontWidth::SEMI_EXPANDED;
       break;
     case CanvasFontStretch::Expanded:
-      resizedFont.stretch = StyleFontStretch::EXPANDED;
+      resizedFont.width = StyleFontWidth::EXPANDED;
       break;
     case CanvasFontStretch::Extra_expanded:
-      resizedFont.stretch = StyleFontStretch::EXTRA_EXPANDED;
+      resizedFont.width = StyleFontWidth::EXTRA_EXPANDED;
       break;
     case CanvasFontStretch::Ultra_expanded:
-      resizedFont.stretch = StyleFontStretch::ULTRA_EXPANDED;
+      resizedFont.width = StyleFontWidth::ULTRA_EXPANDED;
       break;
     default:
-      MOZ_ASSERT_UNREACHABLE("unknown stretch value");
+      MOZ_ASSERT_UNREACHABLE("unknown width value");
       break;
   }
 
@@ -4380,9 +4380,9 @@ static void SerializeFontForCanvas(const StyleFontFamilyList& aList,
     aUsedFont.Append(" ");
   }
 
-  // font-stretch is serialized using CSS Fonts 3 keywords, not percentages.
-  if (!aStyle.stretch.IsNormal() &&
-      Servo_FontStretch_SerializeKeyword(&aStyle.stretch, &aUsedFont)) {
+  // font-width is serialized using CSS Fonts 3 keywords, not percentages.
+  if (!aStyle.width.IsNormal() &&
+      Servo_FontWidth_SerializeKeyword(&aStyle.width, &aUsedFont)) {
     aUsedFont.Append(" ");
   }
 
@@ -4431,7 +4431,7 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   float size = 0.0f;
   bool smallCaps = false;
   if (!ServoCSSParser::ParseFontShorthandForMatching(
-          aFont, urlExtraData, list, fontStyle.style, fontStyle.stretch,
+          aFont, urlExtraData, list, fontStyle.style, fontStyle.width,
           fontStyle.weight, &size, &smallCaps)) {
     return false;
   }
@@ -4441,36 +4441,36 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   fontStyle.allowForceGDIClassic = false;
 #endif
 
-  switch (CurrentState().fontStretch) {
+  switch (CurrentState().fontWidth) {
     case CanvasFontStretch::Normal:
       // Leave whatever the shorthand set.
       break;
     case CanvasFontStretch::Ultra_condensed:
-      fontStyle.stretch = StyleFontStretch::ULTRA_CONDENSED;
+      fontStyle.width = StyleFontWidth::ULTRA_CONDENSED;
       break;
     case CanvasFontStretch::Extra_condensed:
-      fontStyle.stretch = StyleFontStretch::EXTRA_CONDENSED;
+      fontStyle.width = StyleFontWidth::EXTRA_CONDENSED;
       break;
     case CanvasFontStretch::Condensed:
-      fontStyle.stretch = StyleFontStretch::CONDENSED;
+      fontStyle.width = StyleFontWidth::CONDENSED;
       break;
     case CanvasFontStretch::Semi_condensed:
-      fontStyle.stretch = StyleFontStretch::SEMI_CONDENSED;
+      fontStyle.width = StyleFontWidth::SEMI_CONDENSED;
       break;
     case CanvasFontStretch::Semi_expanded:
-      fontStyle.stretch = StyleFontStretch::SEMI_EXPANDED;
+      fontStyle.width = StyleFontWidth::SEMI_EXPANDED;
       break;
     case CanvasFontStretch::Expanded:
-      fontStyle.stretch = StyleFontStretch::EXPANDED;
+      fontStyle.width = StyleFontWidth::EXPANDED;
       break;
     case CanvasFontStretch::Extra_expanded:
-      fontStyle.stretch = StyleFontStretch::EXTRA_EXPANDED;
+      fontStyle.width = StyleFontWidth::EXTRA_EXPANDED;
       break;
     case CanvasFontStretch::Ultra_expanded:
-      fontStyle.stretch = StyleFontStretch::ULTRA_EXPANDED;
+      fontStyle.width = StyleFontWidth::ULTRA_EXPANDED;
       break;
     default:
-      MOZ_ASSERT_UNREACHABLE("unknown stretch value");
+      MOZ_ASSERT_UNREACHABLE("unknown width value");
       break;
   }
 

@@ -4,30 +4,32 @@
 
 //! # Taskbar Pinning
 //!
-//! This module abstracts over the WinRT and COM APIs to pin a given shortcut
-//! with matching AppUserModelId (AUMID) to the Windows taskbar.
+//! This module abstracts over the WinRT and COM APIs relevant to Windows
+//! Taskbar pinning.
 
-use crate::util::thread::{self, MainThreadGuard};
-use nserror::{
-    NS_ERROR_NOT_AVAILABLE, NS_ERROR_NOT_SAME_THREAD, NS_ERROR_UNEXPECTED, NS_OK, nsresult,
-};
+use nserror::{NS_ERROR_FAILURE, NS_ERROR_UNEXPECTED, nsresult};
 use nsstring::{nsAString, nsString};
+use windows::ApplicationModel::Package;
 use xpcom::{
-    Promise, RefPtr,
-    interfaces::{nsIWindowsShellService, nsIWritableVariant},
+    RefPtr,
+    interfaces::{nsIWinTaskbar, nsIWindowsRegKey, nsIWindowsShellService},
 };
+
+use crate::util::thread_guard::{self, MainThreadGuard};
 
 mod com;
+mod ffi;
+mod shortcut;
 mod winrt;
 
-// Result from the attempt to pin to taskbar.
+/// Result from the attempt to pin to taskbar.
 enum PinResult {
-    // Pin request affirmed by user.
+    /// Pin request affirmed by user.
     Pinned,
-    // Pin request rejected by user or system.
+    /// Pin request rejected by user or system.
     Rejected,
-    // Either returned before pin request was acted upon, or fell back to an API
-    // where success isn't known.
+    /// Either returned before pin request was acted upon, or fell back to an
+    /// API where success isn't known.
     Unknown,
 }
 
@@ -41,23 +43,40 @@ impl From<PinResult> for u8 {
     }
 }
 
-impl TryFrom<PinResult> for RefPtr<nsIWritableVariant> {
-    type Error = nsresult;
-
-    fn try_from(result: PinResult) -> Result<Self, Self::Error> {
-        let variant = xpcom::create_instance::<nsIWritableVariant>(c"@mozilla.org/variant;1")
-            .ok_or_else(|| {
-                log::error!("Failed to create writable variant.");
-                NS_ERROR_UNEXPECTED
-            })?;
-
-        // SAFETY: No invariants to uphold as parameter is POD.
-        unsafe { variant.SetAsUint8(result.into()) }
-            .to_result()
-            .inspect_err(|e| log::error!("Failed to set Uint8 on nsIWritableVariant: {e:?}"))?;
-
-        Ok(variant)
+/// Checks whether pinning to the taskbar should be possible.
+fn can_pin(main_guard: MainThreadGuard) -> bool {
+    if let Some((policy, hive)) = find_policy_disabling_pin() {
+        log::info!("Pinning disabled by policy {policy:?} in hive {hive:?}.");
+        return false;
     }
+
+    use winrt::CanPin::*;
+    match winrt::can_pin() {
+        // Respect the OS assertion that pinning is not allowed when pinning via
+        // WinRT is supported.
+        Ok(Supported { allowed }) => {
+            log::trace!("WinRT pinning supported, allowed = {allowed:?}");
+            return allowed;
+        }
+        Ok(Unsupported) => log::trace!("Win32 pinning via WinRT not supported by this OS."),
+        Err(e) => log::error!("Error checking if we can pin via WinRT: {e:?}"),
+    }
+
+    // COM pinning is nonfunctional on MSIX as we currently implement it.
+    //
+    // Note: This API might work if a to-be-pinned shortcut were created to a
+    // non-virtualized path, including an unvirtualized path within this
+    // package’s AppData directory. This has not been validated, and we cannot
+    // guarantee cleanup of those shortcuts or unpinning from the taskbar on
+    // uninstall; see https://github.com/microsoft/WindowsAppSDK/issues/2779.
+    if Package::Current().is_err() {
+        let present = com::is_pinning_available(main_guard);
+        log::trace!("COM pinning present: {present:?}");
+
+        return present;
+    }
+
+    false
 }
 
 /// Pins the shortcut with matching AUMID to the taskbar.
@@ -67,6 +86,15 @@ async fn pin_app(
     fire_and_forget: bool,
     main_guard: MainThreadGuard,
 ) -> Result<PinResult, nsresult> {
+    if Package::Current().is_ok() && !matches_default_aumid(&aumid)? {
+        // Bug 1911343: We should make this API impossible to misuse this way by
+        // consolidating SecondaryTile pinning herein.
+        log::error!(
+            "TaskbarManager pinning only supports apps defined in the package manifest; use SecondaryTiles instead for runtime-defined pin targets"
+        );
+        return Err(NS_ERROR_FAILURE);
+    }
+
     // Attempt to use the documented WinRT pinning API.
     let winrt_pin = winrt::pin_to_taskbar(aumid, fire_and_forget, main_guard).await;
 
@@ -82,6 +110,61 @@ async fn pin_app(
         // Fallback to undocumented COM API.
         com::modify_taskbar(com::PinOp::Pin, shortcut_path, main_guard)
     })
+}
+
+/// Checks if the current app is pinned.
+async fn is_pinned(aumid: &nsAString) -> Result<bool, nsresult> {
+    match Package::Current() {
+        Ok(package) => {
+            if !matches_default_aumid(&aumid)? {
+                // Bug 1911343: We should make this API impossible to misuse this way by
+                // consolidating SecondaryTile pin checks herein.
+                log::error!(
+                    "TaskbarManager pin checking only supports apps defined in the package manifest; use SecondaryTiles instead for runtime-defined pin targets"
+                );
+                return Err(NS_ERROR_FAILURE);
+            }
+
+            winrt::is_current_app_pinned(package).await.map_err(|e| {
+                log::error!(
+                    "Error checking whether the current app is pinned to the taskbar: {e:?}"
+                );
+                NS_ERROR_FAILURE
+            })
+        }
+        Err(_) => {
+            let aumid = nsString::from(aumid);
+
+            thread_guard::spawn_background_guard(
+                "shell_windows::taskbar::is_pinned",
+                async move |bg_guard| shortcut::is_app_pinned(&aumid.to_string(), bg_guard),
+            )
+            .await
+            .map_err(|e| {
+                log::error!(
+                    "Error checking whether the current app is pinned to the taskbar: {e:?}"
+                );
+                NS_ERROR_FAILURE
+            })
+        }
+    }
+}
+
+/// Unpins the provided shortcut from the taskbar.
+fn unpin_shortcut(shortcut_path: &nsAString, main_guard: MainThreadGuard) -> Result<(), nsresult> {
+    com::modify_taskbar(com::PinOp::UnPin, shortcut_path, main_guard).map(|_| ())
+}
+
+/// Checks if the provided AUMID matches the app default AUMID.
+fn matches_default_aumid(aumid: &nsAString) -> Result<bool, nsresult> {
+    let taskbar = xpcom::create_instance::<nsIWinTaskbar>(c"@mozilla.org/windows-taskbar;1")
+        .ok_or(NS_ERROR_UNEXPECTED)?;
+
+    let mut default_aumid = nsString::new();
+    // SAFETY: `group_id` is a valid writable XPCOM string.
+    unsafe { taskbar.GetDefaultGroupId(&mut *default_aumid) }.to_result()?;
+
+    Ok(*aumid == default_aumid)
 }
 
 /// Records Glean telemetry for the attempted pin to taskbar using WinRT.
@@ -101,91 +184,83 @@ fn record_winrt_pin_telemetry(pin_result: &Result<PinResult, winrt::WinRtPinErro
     });
 }
 
-/// FFI accessible interface to check if taskbar pinning APIs are available.
-///
-/// # Safety
-///
-/// No safety considerations, marked unsafe to satisfy FFI requirements.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn shell_windows_taskbar_can_pin_to_taskbar() -> nsresult {
-    let main_guard = match thread::get_main_thread_guard() {
-        Some(m) => m,
-        None => {
-            log::error!("Must be called on main thread to check for pinning APIs.");
-            return NS_ERROR_NOT_SAME_THREAD;
-        }
-    };
+#[derive(Clone, Copy, Debug)]
+enum PinPolicy {
+    NoPinningToTaskbar,
+    TaskbarNoPinnedList,
+}
 
-    match winrt::is_pinning_allowed() || com::is_pinning_available(main_guard) {
-        true => NS_OK,
-        false => NS_ERROR_NOT_AVAILABLE,
+impl PinPolicy {
+    fn to_reg_value_name(self) -> &'static str {
+        match self {
+            PinPolicy::NoPinningToTaskbar => "NoPinningToTaskbar",
+            PinPolicy::TaskbarNoPinnedList => "TaskbarNoPinnedList",
+        }
     }
 }
 
-/// FFI accessible interface to asynchronously pin a given shortcut and AUMID to
-/// the taskbar.
-///
-/// # Safety
-///
-/// The caller is responsible for ensuring all pointers point to initialized
-/// memory if non-null.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn shell_windows_taskbar_pin_app_to_taskbar(
-    aumid: &nsAString,
-    shortcut_path: &nsAString,
-    fire_and_forget: bool,
-    promise: &Promise,
-) -> nsresult {
-    let main_guard = match thread::get_main_thread_guard() {
-        Some(m) => m,
-        None => {
-            log::error!("Pinning must be called from main thread to resolve DOM promise.");
-            return NS_ERROR_NOT_SAME_THREAD;
-        }
-    };
-
-    let aumid = nsString::from(aumid);
-    let shortcut_path = nsString::from(shortcut_path);
-    let promise = RefPtr::new(promise);
-
-    moz_task::spawn_local("Pin to Taskbar", async move {
-        let result: Result<RefPtr<nsIWritableVariant>, nsresult> =
-            pin_app(&aumid, &shortcut_path, fire_and_forget, main_guard)
-                .await
-                .and_then(TryInto::try_into);
-
-        match result {
-            Ok(variant) => promise.resolve_with_variant(&variant),
-            Err(e) => promise.reject_with_nsresult(e),
-        }
-    })
-    .detach();
-
-    NS_OK
+#[derive(Clone, Copy, Debug)]
+enum Hive {
+    HKCU,
+    HKLM,
 }
 
-/// FFI accessible interface to unpin a given shortcut from the taskbar.
-///
-/// # Safety
-///
-/// The caller is responsible for ensuring all pointers point to initialized
-/// memory if non-null.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn shell_windows_taskbar_unpin_shortcut_from_taskbar(
-    shortcut_path: &nsAString,
-) -> nsresult {
-    let main_guard = match thread::get_main_thread_guard() {
-        Some(m) => m,
-        None => {
-            log::error!(
-                "Unpinning must be called from the main thread to ensure the underlying COM API is run from an STA thread."
-            );
-            return NS_ERROR_NOT_SAME_THREAD;
+impl Hive {
+    fn to_root_key(self) -> u32 {
+        match self {
+            Hive::HKCU => nsIWindowsRegKey::ROOT_KEY_CURRENT_USER,
+            Hive::HKLM => nsIWindowsRegKey::ROOT_KEY_LOCAL_MACHINE,
         }
-    };
-
-    match com::modify_taskbar(com::PinOp::UnPin, shortcut_path, main_guard) {
-        Ok(_) => NS_OK,
-        Err(e) => e,
     }
+}
+
+const PIN_POLICIES: [(PinPolicy, Hive); 3] = [
+    // NoPinningToTaskbar, class="User"
+    //
+    // "... users can't unpin these programs already pinned to the Taskbar, and
+    // they can't pin new programs to the Taskbar"
+    // https://learn.microsoft.com/en-us/windows/configuration/taskbar/policy-settings?tabs=actions&pivots=windows-10#do-not-allow-pinning-programs-to-the-taskbar
+    (PinPolicy::NoPinningToTaskbar, Hive::HKCU),
+    // TaskbarNoPinnedList, class="Both"
+    //
+    // "... Users can't pin programs to the taskbar"
+    // https://learn.microsoft.com/en-us/windows/configuration/taskbar/policy-settings?tabs=taskbar&pivots=windows-10#remove-pinned-programs-from-the-taskbar
+    (PinPolicy::TaskbarNoPinnedList, Hive::HKCU),
+    (PinPolicy::TaskbarNoPinnedList, Hive::HKLM),
+];
+
+/// Returns the first group policy found disabling taskbar pinning, if present.
+fn find_policy_disabling_pin() -> Option<&'static (PinPolicy, Hive)> {
+    PIN_POLICIES
+        .iter()
+        .find(|policy| read_pin_policy(policy.1, policy.0).is_some_and(|enabled| enabled != 0))
+}
+
+/// Reads a taskbar pinning policy DWORD from the given hive, returning `None`
+/// when the policy is unset or unreadable.
+fn read_pin_policy(hive: Hive, policy: PinPolicy) -> Option<u32> {
+    let explorer_policy_subkey = nsString::from(r"Software\Policies\Microsoft\Windows\Explorer");
+
+    let reg: RefPtr<nsIWindowsRegKey> =
+        xpcom::create_instance(c"@mozilla.org/windows-registry-key;1")?;
+
+    // SAFETY: `explorer_policy_subkey` was initialized above.
+    unsafe {
+        reg.Open(
+            hive.to_root_key(),
+            &*explorer_policy_subkey,
+            nsIWindowsRegKey::ACCESS_QUERY_VALUE,
+        )
+    }
+    .to_result()
+    .ok()?;
+
+    let value_name = nsString::from(policy.to_reg_value_name());
+    let mut value = 0u32;
+    // SAFETY: `value_name` and `value` were initialized above.
+    unsafe { reg.ReadIntValue(&*value_name, &mut value) }
+        .to_result()
+        .ok()?;
+
+    Some(value)
 }

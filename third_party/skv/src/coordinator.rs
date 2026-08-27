@@ -191,6 +191,19 @@ impl<'a> CoordinatorClient<'a> {
         })
     }
 
+    /// Aborts this client's signal, and the signals of all its
+    /// descendants, without removing clients or closing stores.
+    ///
+    /// This is a lightweight, synchronous operation that does not
+    /// block on I/O, and is safe to call on the main thread.
+    pub fn abort(&self) {
+        let state = self.coordinator.state.lock().unwrap();
+        let max_child_key = self.key.clone().appending(ClientKeyBud::MAX);
+        for (_, client) in state.clients.range(&self.key..=&max_child_key) {
+            client.controller.abort();
+        }
+    }
+
     /// Invalidates this client.
     ///
     /// Invalidation is recursive: if the client has descendants
@@ -251,7 +264,11 @@ impl<'a> CoordinatorClient<'a> {
         for store in closeable_stores {
             // Invariant: `into_inner` always succeeds for closeable stores.
             let store = store.into_inner().expect("invariant violation");
-            store.close();
+            if store.has_bound_close_sink() {
+                // Store::drop will dispatch through schedule_close.
+            } else {
+                store.close();
+            }
         }
     }
 

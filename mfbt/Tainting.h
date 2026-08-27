@@ -10,6 +10,7 @@
 #define mozilla_Tainting_h
 
 #include <utility>
+
 #include "mozilla/MacroArgs.h"
 
 namespace IPC {

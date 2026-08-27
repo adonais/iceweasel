@@ -300,42 +300,4 @@ struct SEC_PKCS12AuthenticatedSafeStr {
 };
 #define SEC_PKCS12_PFX_VERSION 1 /* what we create */
 
-/* PKCS 12 Templates */
-extern const SEC_ASN1Template SEC_PKCS12PFXItemTemplate_OLD[];
-extern const SEC_ASN1Template SEC_PKCS12AuthenticatedSafeTemplate_OLD[];
-extern const SEC_ASN1Template SEC_PKCS12BaggageTemplate_OLD[];
-extern const SEC_ASN1Template SEC_PKCS12PFXItemTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12MacDataTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12AuthenticatedSafeTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12BaggageTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12ESPVKItemTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12PVKSupportingDataTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12PVKAdditionalTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12SafeContentsTemplate_OLD[];
-extern const SEC_ASN1Template SEC_PKCS12SafeContentsTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12SafeBagTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12PrivateKeyTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12PrivateKeyBagTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12CertAndCRLTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12CertAndCRLBagTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12X509CertCRLTemplate_OLD[];
-extern const SEC_ASN1Template SEC_PKCS12X509CertCRLTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12SDSICertTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12SecretBagTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12SecretTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12SecretItemTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12SecretAdditionalTemplate[];
-extern const SEC_ASN1Template SGN_DigestInfoTemplate[];
-extern const SEC_ASN1Template SEC_PointerToPKCS12KeyBagTemplate[];
-extern const SEC_ASN1Template SEC_PointerToPKCS12CertAndCRLBagTemplate[];
-extern const SEC_ASN1Template SEC_PointerToPKCS12CertAndCRLBagTemplate_OLD[];
-extern const SEC_ASN1Template SEC_PointerToPKCS12SecretBagTemplate[];
-extern const SEC_ASN1Template SEC_PointerToPKCS12X509CertCRLTemplate_OLD[];
-extern const SEC_ASN1Template SEC_PointerToPKCS12X509CertCRLTemplate[];
-extern const SEC_ASN1Template SEC_PointerToPKCS12SDSICertTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12CodedSafeBagTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12CodedCertBagTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12CodedCertAndCRLBagTemplate[];
-extern const SEC_ASN1Template SEC_PKCS12PVKSupportingDataTemplate_OLD[];
-extern const SEC_ASN1Template SEC_PKCS12ESPVKItemTemplate_OLD[];
 #endif

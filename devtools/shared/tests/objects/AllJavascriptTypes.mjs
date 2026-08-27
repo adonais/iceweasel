@@ -4,7 +4,6 @@
 /* eslint-disable object-shorthand */
 
 // eslint-disable-next-line mozilla/reject-import-system-module-from-non-system
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 // Try replicating real world environment, by using
 // * a true HTML document
@@ -497,21 +496,6 @@ const Errors = [
           throw new Error("something went wrong", { cause: e })
         }
       })`,
-  },
-  {
-    context: CONTEXTS.JS,
-    expression: `
-      throw new SuppressedError(
-        new Error("foo"),
-        new Error("bar"),
-        "the suppressed error message"
-      );
-    `,
-    prefs: [
-      ["javascript.options.experimental.explicit_resource_management", true],
-    ],
-    // eslint-disable-next-line no-constant-binary-expression
-    disabled: true || !AppConstants.ENABLE_EXPLICIT_RESOURCE_MANAGEMENT,
   },
 ];
 

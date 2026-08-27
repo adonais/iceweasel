@@ -770,7 +770,7 @@ add_task(async function test_sec_error_ca_cert_invalid_registered() {
     "Should show the exception button"
   );
   Assert.ok(config.buttons.showAdvanced, "Should show the advanced section");
-  Assert.equal(config.hasNoUserFix, true, "Should have no user fix");
+  Assert.equal(config.hasNoUserFix, false, "Should have a user fix");
   Assert.equal(
     config.advanced.whyDangerous.dataL10nId,
     "fp-certerror-invalid-cert-why-dangerous",

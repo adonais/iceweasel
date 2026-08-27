@@ -7373,6 +7373,7 @@ files_changed:
   - xpcom/ds/nsTArray.h
 filters:
   - target_tasks_method
+head_git_repository: https://github.com/mozilla-firefox/firefox
 head_git_rev: 9a3317a65545e83f4e32b94fdf1f6860342423ef
 head_ref: 0b76dd137a61420640d9276c563698c3b3eff72a
 head_repository: https://hg.mozilla.org/mozilla-central

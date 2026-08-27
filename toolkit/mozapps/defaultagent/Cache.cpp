@@ -47,8 +47,6 @@ Cache::Cache(const wchar_t* cacheRegKey /* = nullptr */)
       mFront(0),
       mSize(0) {}
 
-Cache::~Cache() {}
-
 VoidResult Cache::Init() {
   if (mInitializeResult.isSome()) {
     HRESULT hr = mInitializeResult.value();

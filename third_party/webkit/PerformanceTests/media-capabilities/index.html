@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+<script src=runner.js></script>
+<script src=configs.js></script>
+<script src=driver.js></script>
+<meta charset="utf-8">
+<style>
+  html {
+    font-family: helvetica, arial;
+  }
+  table {
+    margin: 1em;
+    border-collapse: collapse;
+  }
+  thead {
+    background-color: #aaaaaa;
+  }
+  tr:nth-child(even) {
+    background-color: #eeeeee;
+  }
+  td {
+    border: 1px solid black;
+    text-align: center;
+    padding: 2px 8px;
+  }
+  #in-progress {
+    display: none;
+  }
+</style>
+</head>
+<body>
+<div id=controls>
+  <button id=run-all>Run all</button>
+  <div id=in-progress>
+    Benchmark in progress...
+  </div>
+</div>
+<div id=results>
+</div>
+</body>
+</html>

@@ -41,7 +41,6 @@ option(
     "--enable-isolated-zygote-process",
     env="MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_WITH_ZYGOTE",
     help="Enable generating content process services with app Zygote preloading and isolated processes",
-    default=False,
 )
 
 isIsolatedAppZygoteProcessEnabled = depends_if(
@@ -60,7 +59,6 @@ option(
     "--enable-isolated-process",
     env="MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS",
     help="Enable generating content process services with isolatedProcess=true",
-    default=False,
 )
 
 isIsolatedProcessEnabled = depends_if("MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS")(

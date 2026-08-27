@@ -467,6 +467,23 @@ static bool FindIsAttrValue(const char16_t** aAtts, const char16_t** aResult) {
   return false;
 }
 
+// https://github.com/whatwg/html/pull/12000
+// https://html.spec.whatwg.org/#create-an-element-for-the-token
+// Step 6: Check for the customelementregistry content attribute.
+static bool HasCustomElementRegistryAttr(const char16_t** aAtts) {
+  RefPtr<nsAtom> prefix, localName;
+  for (; *aAtts; aAtts += 2) {
+    int32_t nameSpaceID;
+    nsContentUtils::SplitExpatName(aAtts[0], getter_AddRefs(prefix),
+                                   getter_AddRefs(localName), &nameSpaceID);
+    if (nameSpaceID == kNameSpaceID_None &&
+        localName == nsGkAtoms::customelementregistry) {
+      return true;
+    }
+  }
+  return false;
+}
+
 nsresult nsXMLContentSink::CreateElement(
     const char16_t** aAtts, uint32_t aAttsCount,
     mozilla::dom::NodeInfo* aNodeInfo, uint32_t aLineNumber,
@@ -501,9 +518,19 @@ nsresult nsXMLContentSink::CreateElement(
   //
   // Note that the check that the parser was not created as part of the HTML
   // fragment parsing algorithm is done by the check for a non-null mDocument.
+  // https://github.com/whatwg/html/pull/12000
+  // https://html.spec.whatwg.org/#create-an-element-for-the-token
+  // Step 6: "Let registry be null if customelementregistry attribute exists."
+  bool hasCustomElementRegistryAttr =
+      isXHTMLOrXUL &&
+      StaticPrefs::dom_scoped_custom_element_registries_enabled() &&
+      HasCustomElementRegistryAttr(aAtts);
+
+  // Step 7: Look up a custom element definition.
   CustomElementDefinition* customElementDefinition = nullptr;
   nsAtom* nameAtom = ni->NameAtom();
-  if (mDocument && !mDocument->IsLoadedAsData() && isXHTMLOrXUL &&
+  if (!hasCustomElementRegistryAttr && mDocument &&
+      !mDocument->IsLoadedAsData() && isXHTMLOrXUL &&
       (isAtom || nsContentUtils::IsCustomElementName(nameAtom, namespaceID))) {
     nsAtom* typeAtom = is ? isAtom.get() : nameAtom;
 
@@ -531,6 +558,12 @@ nsresult nsXMLContentSink::CreateElement(
                        isAtom);
   }
   NS_ENSURE_SUCCESS(rv, rv);
+
+  // https://github.com/whatwg/html/pull/12000
+  // Set null registry on elements with customelementregistry attribute.
+  if (hasCustomElementRegistryAttr && element) {
+    element->SetKeepCustomElementRegistryNull();
+  }
 
   if (aNodeInfo->Equals(nsGkAtoms::script, kNameSpaceID_XHTML) ||
       aNodeInfo->Equals(nsGkAtoms::script, kNameSpaceID_SVG)) {

@@ -55,22 +55,11 @@ bool IsServiceWorker(const RemoteWorkerData& aData) {
 }
 
 void TransmitPermissionsAndCookiesAndBlobURLsForPrincipalInfo(
-    ContentParent* aContentParent, const PrincipalInfo& aPrincipalInfo) {
+    ContentParent* aContentParent, nsIPrincipal* aPrincipal) {
   AssertIsOnMainThread();
   MOZ_ASSERT(aContentParent);
 
-  auto principalOrErr = PrincipalInfoToPrincipal(aPrincipalInfo);
-
-  if (NS_WARN_IF(principalOrErr.isErr())) {
-    return;
-  }
-
-  nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
-
-  aContentParent->TransmitBlobURLsForPrincipal(principal);
-
-  MOZ_ALWAYS_SUCCEEDS(
-      aContentParent->TransmitPermissionsForPrincipal(principal));
+  MOZ_ALWAYS_SUCCEEDS(aContentParent->AboutToLoadOrigin(aPrincipal));
 
   CookieServiceParent* cs = nullptr;
 
@@ -85,10 +74,10 @@ void TransmitPermissionsAndCookiesAndBlobURLsForPrincipalInfo(
   }
 
   if (cs) {
-    nsCOMPtr<nsIURI> uri = principal->GetURI();
-    cs->UpdateCookieInContentList(uri, principal->OriginAttributesRef());
+    nsCOMPtr<nsIURI> uri = aPrincipal->GetURI();
+    cs->UpdateCookieInContentList(uri, aPrincipal->OriginAttributesRef());
   } else {
-    aContentParent->AddPrincipalToCookieInProcessCache(principal);
+    aContentParent->AddPrincipalToCookieInProcessCache(aPrincipal);
   }
 }
 
@@ -266,22 +255,34 @@ void RemoteWorkerManager::LaunchInternal(
   MOZ_ASSERT(aTargetActor == mParentActor ||
              mChildActors.Contains(aTargetActor));
 
+  auto principalOrErr = PrincipalInfoToPrincipal(aData.principalInfo());
+  if (NS_WARN_IF(principalOrErr.isErr())) {
+    AsyncCreationFailed(aController);
+    return;
+  }
+  nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
+
   // We need to send permissions to content processes, but not if we're spawning
   // the worker here in the parent process.
   if (aTargetActor != mParentActor) {
     MOZ_ASSERT(aKeepAlive);
 
-    // This won't cause any race conditions because the content process
-    // should wait for the permissions to be received before executing the
-    // Service Worker.
+    // Tentatively mark the origin as loaded by this content process, then
+    // dispatch a task to the main thread to actually send down relevant
+    // information.
+    //
+    // The content process will also tentatively mark the origin as loaded as
+    // the worker is created, and will delay running meaningful work until
+    // origin-specific data has been received.
+    aKeepAlive->LoadedOrigins()->AddTentative(principal);
+
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-        __func__, [contentHandle = RefPtr{aKeepAlive.get()},
-                   principalInfo = aData.principalInfo()] {
+        __func__, [contentHandle = RefPtr{aKeepAlive.get()}, principal] {
           AssertIsOnMainThread();
           if (RefPtr<ContentParent> contentParent =
                   contentHandle->GetContentParent()) {
             TransmitPermissionsAndCookiesAndBlobURLsForPrincipalInfo(
-                contentParent, principalInfo);
+                contentParent, principal);
           }
         });
 

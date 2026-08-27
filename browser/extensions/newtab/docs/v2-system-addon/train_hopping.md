@@ -181,20 +181,29 @@ Similar to `FeatureManifest.yaml`, these metric and ping definitions are often p
 
 This means it is possible to land new metrics and pings for New Tab, but to maintain backwards compatibility, and use those metrics and pings on the Beta and Release channel before the `metrics.yaml` or `pings.yaml` files have reached those channels.
 
-This is done via:
+This is handled automatically at build time. The `GENERATED_FILES` rules in `browser/extensions/newtab/webext-glue/moz.build` run `metrics/gen_runtime_metrics.py` to diff Nightly's metrics and pings against a given channel. The result is written to a `runtime-metrics-N.json` file, where `N` is the channel's major version (e.g. `runtime-metrics-142.json`). These files go into the objdir and are packaged into the XPI; they are **not** checked into the source tree, and no manual step is required before a train-hop. Stale versions are handled automatically, since only the currently relevant channel versions are ever generated.
+
+Generating the diff requires the current Beta and Release `metrics.yaml`/`pings.yaml`, which are fetched over the network. Whether that fetch runs depends on the build:
+
+- **Shipped XPI builds and CI builds** set `MOZ_BROWSER_NEWTAB_METRICS_FETCH=1`. For shipped XPIs this is configured in the [xpi-manifest](https://github.com/mozilla-extensions/xpi-manifest) repo; for CI it is set on the `build-extensions` task in `taskcluster/kinds/build-extensions/kind.yml`. This fetches the current Beta and Release definitions over the network, and a fetch failure fails the build, so these builds never contain stale or empty runtime metrics.
+- **Every other build** leaves the flag unset and writes an empty payload, so ordinary local and try builds have no network dependency. This is safe because runtime metrics are only consumed once the XPI is train-hopped onto Beta or Release.
+
+If you are building an XPI locally that you intend to install, for example to test a train-hop, set the flag for that build as well:
+
+```
+MOZ_BROWSER_NEWTAB_METRICS_FETCH=1 ./mach build
+```
+
+Run this as a clean build, for example after `./mach clobber`, if you have previously built without the flag.
+
+The same diff can still be produced on demand for inspection with:
 
 ```
 $ ./mach newtab channel-metrics-diff --channel beta
 $ ./mach newtab channel-metrics-diff --channel release
 ```
 
-What this does is produce two JSON files that describe any difference between the `metrics.yaml` and `pings.yaml` files from Nightly, and those same files from the Beta and Release channels. Those JSON files are named something like `runtime-metrics-142.json` where `142` refers to the major version number of the Firefox instance that the difference applies to.
-
-Those JSON files are written to `browser/extensions/newtab/webext-glue/metrics`. In advance of a train-hop, a New Tab developer should:
-
-1. Run the two `channel-metrics-diff` commands to produce those JSON files.
-2. Delete any pre-existing `runtime-metrics-N.json` files for major versions that are no longer supported on the release channel for train-hopping.
-3. Post for review and land those changes in the Nightly repository in advance of the train-hop.
+which fetches the channel definitions and writes the JSON to `browser/extensions/newtab/webext-glue/metrics`. This command is also the escape hatch if build-time generation ever needs to be disabled: revert the `GENERATED_FILES` block in `webext-glue/moz.build` to restore the static `metrics/**` packaging, then run these commands and land the resulting files as before.
 
 ## Region compatibility
 
@@ -215,13 +224,15 @@ This offset also gives us the opportunity to land strings sooner. If the strings
 
 The caveat to landing strings early is that localizers *must have the right context* to supply their localizations. We cannot supply English strings and just assume that our localizers will be able to understand the context in which the translations must appear. Therefore, it is important to provide comments in the Fluent files that describe what the strings are for \- and to *provide URLs to publicly available screenshots or Figma documents* that show the strings being used in context. This is documented [here](https://mozilla-l10n.github.io/documentation/localization/dev_best_practices.html#add-localization-notes).
 
-Packaging the localized strings into the XPI is a manual process, and actually involves pulling in the Fluent files for all supported locales and landing them in the source tree. This can be done with a `mach` command:
+When the XPI is built, New Tab's localized `newtab.ftl` files are generated into the objdir and packaged into the XPI. The English `newtab.ftl` always comes from the in-tree copy. Every other locale is copied from a clone of the `firefox-l10n` repository, and is only included for shipped builds, which set the `MOZ_BROWSER_NEWTAB_LOCALES_ALL` environment variable. Local and try builds package en-US only.
+
+It is still useful to inspect the localization status. You can generate a report to show how many strings per locale are "pending" or "missing". A "pending" string is one that hasn't been localized yet, and has not had its 3 week opportunity on the Beta channel to be localized. A "missing" string is one that hasn't been localized, but has been on the Beta channel for more than 3 weeks, and therefore can safely fall back.
+
+The report is produced by:
 
 `./mach newtab update-locales`
 
-This will update the English `newtab.ftl` that is included with the XPI, and grab the most recent `newtab.ftl` files that have been translated and pushed to the `firefox-l10n` repository. It will also produce a report that will display how many strings per locale are "pending" or "missing". A "pending" string is one that hasn't been localized yet, and has not had its' 3 week opportunity on the Beta channel to be localized. A string that is "missing" is one that hasn't been localized, but has been on the Beta channel for more than 3 weeks, and therefore can safely fallback.
-
-You can see the most recent report for the current snapshot of the locales by running:
+This clones `firefox-l10n`, writes a local snapshot of the locale files and the report into the source tree, and refreshes the English `newtab.ftl`. It is not needed for cutting a train-hop, since the build packages the locales on its own, but it does double as the escape hatch if build-time generation ever needs to be bypassed. To read the most recent report without regenerating it, run:
 
 `./mach newtab locales-report`
 
@@ -233,13 +244,9 @@ would show the pending and missing Fluent string IDs for the Polish locale, as w
 
 It is the responsibility of the New Tab team to ensure that a train-hop that aims to enable a feature for a particular region has the necessary strings translated for that feature.
 
-For example, if there was a new `StockTicketWidget` UI component that happened to use some Fluent strings, and we aimed to enable UI component for English, Italian and German locales, we'd want to:
+For example, if there was a new `StockTicketWidget` UI component that happened to use some Fluent strings, and we aimed to enable it for the English, Italian and German locales, we'd want to ensure the Italian and German strings had either been localized, or had their 3 week opportunity. Running `./mach newtab update-locales` locally is the way to check this.
 
-1. Ensure that the strings had either been localized in those regions, or had their 3 week opportunity.
-2. Run `./mach newtab update-locales` and post the resulting Fluent string and report changes to Phabricator for review.
-3. Land the reviewed changes in the Nightly code.
-
-The train-hopped XPI should then be built off of that revision that landed in the Nightly code (or a later revision, presuming no new strings have landed in the interim). Notably, it's only necessary to run `./mach newtab update-locales` in advance of a train-hop. It is not strictly necessary to run it on a regular cadence.
+It helps to understand when the translations are captured. The train-hop XPI is built through ShipIt off a chosen Nightly revision, and during that build the current `firefox-l10n` translations are pulled in and frozen into the XPI. Nothing is fetched afterwards, since when Firefox loads the XPI it only registers the packaged files. So a locale's translations track `firefox-l10n` as it stands at XPI build time, independent of the Nightly revision: if a translation lands later, rebuilding the XPI picks it up.
 
 # Train-hop compatibility automated testing
 
@@ -276,7 +283,7 @@ If no useful data is gleaned from the log, the next step is to attempt to reprod
 3. In `about:config`
    1. Set `xpinstall.signatures.required` to `false`
    2. Set `browser.newtabpage.resource-mapping.log` to `true` (this is optional, but may emit some useful debugging information)
-   3. Create a new string pref with key `browser.newtabpage.trainhopAddon.version` and set the value to `any`
+   3. Create new string prefs with keys `browser.newtabpage.trainhopAddon.version` and `browser.newtabpage.trainhopAddonDeployment.version`, and set both values to `any`. These prefs normally hold the train-hop version Nimbus says this client is entitled to; `any` is a sentinel meaning “entitled to whichever version is installed”, so the XPI you install by hand is not treated as an unentitled version and uninstalled at startup. Set both: the entitled version is the highest of the two, so a stale real version left in one of them by a past enrollment would otherwise defeat the sentinel in the other.
 4. Visit `about:addons`
 5. Click on the gear icon, and choose “Install Add-on From File”
 6. Choose the `newtab@mozilla.org.xpi` file from the first step in the native file picker

@@ -26,7 +26,7 @@ const gMultipleLogin = LoginTestUtils.testData.formLogin({
 });
 const gLoginInsecureAction = LoginTestUtils.testData.formLogin({
   origin: "https://example.org",
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   formActionOrigin: "http://example.org/",
   username: "username3",
   password: "password3",

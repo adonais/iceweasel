@@ -137,16 +137,21 @@ add_task(async function test_signed_in() {
     await openFirefoxViewTab(window);
     // Test telemetry for adding a device.
     Services.fog.testResetFOG();
-    EventUtils.synthesizeMouseAtCenter(
-      emptyState.querySelector(`moz-button[data-action="add-device"]`).buttonEl,
-      {},
-      browser.contentWindow
-    );
-    Assert.equal(
-      1,
-      Glean.firefoxviewNext.fxaMobileSync.testGetValue().length,
-      "Expected one fxa_continue event."
-    );
+    // TODO: Exercise the QR-code based flow on Nova, once implemented.
+    // FIXME: Bug 2058059 - [Nova] On the tabs from other devices panel there is no QR code displayed when signed in to sync with no devices connected
+    if (!Services.prefs.getBoolPref("browser.nova.enabled", false)) {
+      EventUtils.synthesizeMouseAtCenter(
+        emptyState.querySelector(`moz-button[data-action="add-device"]`)
+          .buttonEl,
+        {},
+        browser.contentWindow
+      );
+      Assert.equal(
+        1,
+        Glean.firefoxviewNext.fxaMobileSync.testGetValue().length,
+        "Expected one fxa_continue event."
+      );
+    }
     // clean up extra tabs
     while (gBrowser.tabs.length > 1) {
       await BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));

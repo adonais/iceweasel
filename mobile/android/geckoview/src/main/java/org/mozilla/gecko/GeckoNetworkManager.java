@@ -4,16 +4,18 @@
 
 package org.mozilla.gecko;
 
-import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.DhcpInfo;
+import android.net.LinkProperties;
+import android.net.Network;
 import android.net.Proxy;
 import android.net.ProxyInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -73,6 +75,12 @@ public class GeckoNetworkManager extends BroadcastReceiver {
     disableNotifications,
     receivedUpdate
   }
+
+  // Whether the current default network uses a private DNS (DNS-over-TLS) resolver. Updated from
+  // NetworkCallback#onLinkPropertiesChanged and read from the Gecko thread, hence volatile.
+  private static volatile boolean sIsPrivateDnsActive = false;
+
+  private ConnectivityManager.NetworkCallback mNetworkCallback;
 
   private ManagerState mCurrentState = ManagerState.OffNoListeners;
   private ConnectionType mCurrentConnectionType = ConnectionType.NONE;
@@ -384,6 +392,16 @@ public class GeckoNetworkManager extends BroadcastReceiver {
   private static native void onProxyChanged(
       String host, int port, String pacFileUrl, String[] exclusionList);
 
+  /**
+   * Whether the current default network uses a private DNS (DNS-over-TLS) resolver. This is kept up
+   * to date via NetworkCallback#onLinkPropertiesChanged, as the value can change over time (for
+   * instance while the private DNS server name is being resolved).
+   */
+  @WrapForJNI(calledFrom = "gecko")
+  private static boolean isPrivateDnsActive() {
+    return sIsPrivateDnsActive;
+  }
+
   /** Send current network state and connection type to whomever is listening. */
   private void sendNetworkStateToListeners(final Context context) {
     final boolean connectionTypeOrSubtypeChanged =
@@ -435,17 +453,95 @@ public class GeckoNetworkManager extends BroadcastReceiver {
   }
 
   /** Stop listening for network state updates. */
-  private static void unregisterBroadcastReceiver(
+  private void unregisterBroadcastReceiver(
       final Context context, final BroadcastReceiver receiver) {
     context.unregisterReceiver(receiver);
+    unregisterNetworkCallback(context);
   }
 
   /** Start listening for network state updates. */
-  private static void registerBroadcastReceiver(
-      final Context context, final BroadcastReceiver receiver) {
+  private void registerBroadcastReceiver(final Context context, final BroadcastReceiver receiver) {
     final IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
     filter.addAction(Proxy.PROXY_CHANGE_ACTION);
     context.registerReceiver(receiver, filter);
+    registerNetworkCallback(context);
+  }
+
+  /**
+   * Start listening for LinkProperties changes on the default network. Unlike CONNECTIVITY_ACTION,
+   * this fires when only the private DNS state of an otherwise unchanged network changes. This is a
+   * no-op if a callback is already registered.
+   */
+  private void registerNetworkCallback(final Context context) {
+    if (mNetworkCallback != null) {
+      return;
+    }
+
+    final ConnectivityManager connectivityManager =
+        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+    if (connectivityManager == null) {
+      return;
+    }
+
+    final ConnectivityManager.NetworkCallback callback =
+        new ConnectivityManager.NetworkCallback() {
+          @Override
+          public void onLinkPropertiesChanged(
+              @NonNull final Network network, @NonNull final LinkProperties linkProperties) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+              updatePrivateDnsState(linkProperties.isPrivateDnsActive());
+            }
+          }
+
+          @Override
+          public void onLost(@NonNull final Network network) {
+            updatePrivateDnsState(false);
+          }
+        };
+
+    try {
+      connectivityManager.registerDefaultNetworkCallback(callback);
+      mNetworkCallback = callback;
+    } catch (final RuntimeException e) {
+      // registerDefaultNetworkCallback can throw if too many callbacks are already registered.
+      Log.e(LOGTAG, "Failed to register default network callback", e);
+    }
+  }
+
+  /** Stop listening for LinkProperties changes. This is a no-op if no callback is registered. */
+  private void unregisterNetworkCallback(final Context context) {
+    if (mNetworkCallback == null) {
+      return;
+    }
+
+    final ConnectivityManager connectivityManager =
+        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+    if (connectivityManager != null) {
+      try {
+        connectivityManager.unregisterNetworkCallback(mNetworkCallback);
+      } catch (final RuntimeException e) {
+        // The callback was not registered.
+      }
+    }
+    mNetworkCallback = null;
+  }
+
+  /**
+   * Update the cached private DNS state and, if it changed, notify Gecko so that network-dependent
+   * heuristics (such as DoH autoselect) are re-evaluated.
+   */
+  private void updatePrivateDnsState(final boolean isActive) {
+    if (isActive == sIsPrivateDnsActive) {
+      return;
+    }
+    sIsPrivateDnsActive = isActive;
+
+    if (GeckoThread.isRunning()) {
+      onStatusChanged(LINK_DATA_CHANGED);
+    } else {
+      GeckoThread.queueNativeCall(
+          GeckoNetworkManager.class, "onStatusChanged", String.class, LINK_DATA_CHANGED);
+    }
   }
 
   private static int wifiDhcpGatewayAddress(final Context context) {
@@ -460,7 +556,6 @@ public class GeckoNetworkManager extends BroadcastReceiver {
         return 0;
       }
 
-      @SuppressLint("MissingPermission")
       final DhcpInfo d = mgr.getDhcpInfo();
       if (d == null) {
         return 0;

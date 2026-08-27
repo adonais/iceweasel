@@ -41,6 +41,21 @@ interface nsIWindowsUIUtils : nsISupports
   readonly attribute boolean inWin11TabletMode;
 
   /**
+   * Whether this device is believed to be capable of entering tablet mode at
+   * all, regardless of whether it happens to be in tablet mode right now.
+   *
+   * Always true on Win10, where tablet mode is a user-toggleable setting on
+   * every device; determined heuristically on Win11 and later, where there is
+   * no documented way to ask.
+   *
+   * Prefer this over the inWin*TabletMode getters when deciding whether to
+   * offer tablet-mode-related UI: those report momentary state, so they are
+   * false on a convertible that merely isn't folded at the moment, and they can
+   * change while that UI is open.
+   */
+  readonly attribute boolean isTabletCapable;
+
+  /**
    * Share URL
    */
   void shareUrl(in AString urlToShare, in AString shareTitle);

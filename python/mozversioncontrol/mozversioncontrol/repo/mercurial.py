@@ -213,12 +213,12 @@ class HgRepository(Repository):
 
         paths = [str(path) for path in paths]
 
-        args = ["addremove"] + paths
+        args = ["addremove"]
         m = re.search(r"\d+\.\d+", self.tool_version)
         simplified_version = float(m.group(0)) if m else 0
         if simplified_version >= 3.9:
             args = ["--config", "extensions.automv="] + args
-        self._run(*args)
+        self._run_batched(*args, paths=paths)
 
     def forget_add_remove_files(self, *paths: Union[str, Path]):
         if not paths:
@@ -226,7 +226,7 @@ class HgRepository(Repository):
 
         paths = [str(path) for path in paths]
 
-        self._run("forget", *paths)
+        self._run_batched("forget", paths=paths)
 
     def get_tracked_files_finder(self, path=None):
         # Can return backslashes on Windows. Normalize to forward slashes.

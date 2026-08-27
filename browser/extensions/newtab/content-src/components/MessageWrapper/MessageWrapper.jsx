@@ -84,7 +84,7 @@ function MessageWrapper({
     onDismiss?.();
   }, [dispatch, message, onDismiss]);
 
-  function handleDismiss() {
+  const handleDismiss = useCallback(() => {
     const { id } = message.messageData;
     if (id) {
       dispatch(
@@ -95,9 +95,9 @@ function MessageWrapper({
       );
     }
     handleClose();
-  }
+  }, [dispatch, message, handleClose]);
 
-  function handleBlock() {
+  const handleBlock = useCallback(() => {
     const { id } = message.messageData;
     if (id) {
       dispatch(
@@ -107,19 +107,22 @@ function MessageWrapper({
         })
       );
     }
-  }
+  }, [dispatch, message]);
 
-  function handleClick(elementId) {
-    const { id } = message.messageData;
-    if (id) {
-      dispatch(
-        ac.OnlyToMain({
-          type: at.MESSAGE_CLICK,
-          data: { message: message.messageData, source: elementId || "" },
-        })
-      );
-    }
-  }
+  const handleClick = useCallback(
+    elementId => {
+      const { id } = message.messageData;
+      if (id) {
+        dispatch(
+          ac.OnlyToMain({
+            type: at.MESSAGE_CLICK,
+            data: { message: message.messageData, source: elementId || "" },
+          })
+        );
+      }
+    },
+    [dispatch, message]
+  );
 
   if (!message || (!hiddenOverride && !message.isVisible)) {
     return null;

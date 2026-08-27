@@ -65,8 +65,6 @@ skip-if = [
 
 ["browser_setting_pane_missing_group.js"]
 
-["browser_setting_pane_redesign_promo.js"]
-
 ["browser_setting_pane_scroll_restoration.js"]
 
 ["browser_setting_pane_sub_pane.js"]
@@ -81,6 +79,10 @@ skip-if = [
 
 ["browser_subdialogs.js"]
 support-files = ["subdialog.xhtml", "subdialog2.xhtml"]
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && opt && nova", # Bug 2057850
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && nova", # Bug 2057850
+]
 
 ["browser_tabs_browsing_pane.js"]
 

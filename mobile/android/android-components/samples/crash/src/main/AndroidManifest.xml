@@ -19,8 +19,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Material3.DayNight"
         android:dataExtractionRules="@xml/data_extraction_rules"
-        tools:targetApi="s"
-        tools:ignore="DataExtractionRules">
+        tools:targetApi="s">
         <activity android:name="org.mozilla.samples.crash.CrashActivity"
             android:launchMode="singleTask"
             android:exported="true">

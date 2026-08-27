@@ -88,6 +88,7 @@ exports[`DebugTargetInfo component Connection info renders the expected snapshot
       <input
         className="devtools-textinput debug-target-url-input"
         defaultValue="http://some.target/url"
+        dir="auto"
         onChange={[Function]}
         onFocus={[Function]}
       />
@@ -240,6 +241,7 @@ exports[`DebugTargetInfo component Target icon renders the expected snapshot for
       <input
         className="devtools-textinput debug-target-url-input"
         defaultValue="http://some.target/url"
+        dir="auto"
         onChange={[Function]}
         onFocus={[Function]}
       />
@@ -485,6 +487,7 @@ exports[`DebugTargetInfo component Target title renders the expected snapshot fo
       <input
         className="devtools-textinput debug-target-url-input"
         defaultValue="http://some.target/url"
+        dir="auto"
         onChange={[Function]}
         onFocus={[Function]}
       />
@@ -565,6 +568,7 @@ exports[`DebugTargetInfo component Target title renders the expected snapshot fo
       <input
         className="devtools-textinput debug-target-url-input"
         defaultValue="http://some.target/without/a/name"
+        dir="auto"
         onChange={[Function]}
         onFocus={[Function]}
       />

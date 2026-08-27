@@ -9,8 +9,10 @@ origin:
   description: "Schemas used by Mozilla Nimbus and related projects."
   url: "https://github.com/mozilla/experimenter"
   license: "MPL-2.0"
-  revision: "fa4a7e30a18e5288121bed4a137a3f7cabb6110a"
-  release: "version 3001.0.0"
+  # mozilla-nimbus-schemas v3001.0.0. Leave release and revision in the form
+  # `mach vendor` writes them, or it rewrites them on the next update.
+  revision: bfa19cb37b8e818a2ee218aa71251aca1caa19fa
+  release: bfa19cb37b8e818a2ee218aa71251aca1caa19fa (2025-03-19T16:19:26Z).
 
 vendoring:
   url: "https://github.com/mozilla/experimenter"

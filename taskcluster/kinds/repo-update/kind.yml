@@ -16,6 +16,7 @@ task-defaults:
     run-on-projects: []  # Only run via cron
     worker-type: b-linux-xlarge
     run:
+        clone-with: hg
         using: run-task
         checkout: true
         sparse-profile: periodic-updates

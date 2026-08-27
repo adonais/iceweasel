@@ -464,7 +464,7 @@ nsresult HTMLEditor::ComputeTargetRanges(
     AutoClonedSelectionRangeArray& aRangesToDelete) const {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  Element* editingHost = ComputeEditingHost();
+  RefPtr<Element> editingHost = ComputeEditingHost();
   if (!editingHost) {
     aRangesToDelete.RemoveAllRanges();
     return NS_ERROR_EDITOR_NO_EDITABLE_RANGE;
@@ -586,11 +586,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleDeleteSelection(
         rangeArray.GetFirstRangeEndPoint<EditorDOMPoint>();
     MOZ_ASSERT(deletionStart.GetContainer() == text);
     MOZ_ASSERT(deletionEnd.GetContainer() == text);
-    RefPtr<nsFrameSelection> frameSelection =
-        SelectionRef().GetFrameSelection();
-    if (NS_WARN_IF(!frameSelection)) {
-      return Err(NS_ERROR_FAILURE);
-    }
+    RefPtr<nsFrameSelection> frameSelection = GetEditableFrameSelection();
     AutoCaretBidiLevelManager bidiLevelManager(*this, aDirectionAndAmount,
                                                *editContext);
     editContext->UpdateTextAndFireEvent(deletionStart.Offset(),
@@ -609,7 +605,8 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleDeleteSelection(
     // However, we don't want to do this if the textupdate handler
     // changed the text next to the caret, since then this may not be a simple
     // deletion.
-    if (!editContext->WasTextNextToCaretChangedByTextUpdateHandler()) {
+    if (frameSelection &&
+        !editContext->WasTextNextToCaretChangedByTextUpdateHandler()) {
       bidiLevelManager.MaybeUpdateCaretBidiLevel(*this);
       frameSelection->SetHint(DirectionIsBackspace(aDirectionAndAmount)
                                   ? CaretAssociationHint::Before
@@ -1934,6 +1931,9 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteTextAroundCollapsedRanges(
         "HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces() failed");
     return caretPointOrError;
   }
+  // Remember that we did a ranged delete for the benefit of
+  // OnEndHandlingTopLevelEditSubActionInternal().
+  aHTMLEditor.TopLevelEditSubActionDataRef().mDidDeleteNonCollapsedRange = true;
   if (!needsToPutPaddingBRForLastEmptyLine) {
     return caretPointOrError;
   }
@@ -3364,7 +3364,8 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteNonCollapsedRanges(
     MOZ_ASSERT(aRangesToDelete.IsFirstRangeEditable(aEditingHost));
   }
 
-  // Remember that we did a ranged delete for the benefit of AfterEditInner().
+  // Remember that we did a ranged delete for the benefit of
+  // OnEndHandlingTopLevelEditSubActionInternal().
   aHTMLEditor.TopLevelEditSubActionDataRef().mDidDeleteNonCollapsedRange = true;
 
   // Figure out if the endpoints are in nodes that can be merged.  Adjust

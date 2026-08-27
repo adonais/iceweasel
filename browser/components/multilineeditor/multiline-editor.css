@@ -22,10 +22,6 @@
   :host {
     --multiline-editor-mention-placeholder-background-color: light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-60));
     --multiline-editor-mention-placeholder-border-color: light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-60));
-    /* TODO: Bug 2030460 - Replace with token when available */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    --multiline-editor-mention-placeholder-border-radius: 12px;
-    --text-color-deemphasized: light-dark(color-mix(to srgb, var(--color-violet-desaturated-90) 70%, transparent), var(--color-violet-desaturated-0));
   }
 }
 
@@ -37,7 +33,7 @@
   max-height: var(--multiline-editor-max-height, none);
   overflow-y: auto;
   scrollbar-width: var(--multiline-editor-scrollbar-width, auto);
-  padding: var(--space-small) var(--space-medium);
+  padding: var(--space-medium);
 }
 
 .multiline-editor:focus-within {

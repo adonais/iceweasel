@@ -541,6 +541,9 @@ class nsWindow : public nsIWidget {
   void ConfigureToplevelWindow();
   virtual void ConfigureToplevelWindowNative() {};
 
+  // Native implementation of OnMap() event for X11/Wayland.
+  virtual void OnMapNative() {};
+
   virtual void EnableVSyncSource() {};
   virtual void DisableVSyncSource() {};
 
@@ -770,6 +773,7 @@ class nsWindow : public nsIWidget {
 
   float mLastMotionPressure = 0.0f;
 
+  // Input region margin is stored in layout (scaled) coordinates.
   InputRegion mInputRegion;
 
   bool DragInProgress(void);

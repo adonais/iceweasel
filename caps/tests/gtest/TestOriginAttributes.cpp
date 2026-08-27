@@ -45,6 +45,39 @@ TEST(OriginAttributes, Suffix_default)
   TestSuffix(attrs);
 }
 
+TEST(OriginAttributes, StripUserContextId)
+{
+  OriginAttributes attrs;
+  attrs.mUserContextId = 1;
+  attrs.mGeckoViewSessionContextId = u"context"_ns;
+
+  OriginAttributes expected = attrs;
+  expected.mUserContextId = nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID;
+
+  EXPECT_NE(attrs.mUserContextId, expected.mUserContextId);
+  attrs.StripAttributes(OriginAttributes::STRIP_USER_CONTEXT_ID);
+  EXPECT_EQ(attrs, expected);
+}
+
+TEST(OriginAttributes, EqualsIgnoringUserContextId)
+{
+  OriginAttributes attrs;
+  attrs.mUserContextId = 1;
+  attrs.mGeckoViewSessionContextId = u"context"_ns;
+
+  OriginAttributes other = attrs;
+  other.mUserContextId = 2;
+  EXPECT_TRUE(
+      attrs.EqualsIgnoring(other, OriginAttributes::STRIP_USER_CONTEXT_ID));
+
+  other.mGeckoViewSessionContextId = u"other-context"_ns;
+  EXPECT_FALSE(
+      attrs.EqualsIgnoring(other, OriginAttributes::STRIP_USER_CONTEXT_ID));
+  EXPECT_TRUE(attrs.EqualsIgnoring(
+      other, OriginAttributes::STRIP_USER_CONTEXT_ID |
+                 OriginAttributes::STRIP_GECKOVIEW_SESSION_CONTEXT_ID));
+}
+
 // A host may now contain an asterisk or a double quote (bug 1815926), so they
 // can end up in the first-party domain and partition key. The serialized suffix
 // is used by the quota manager for file naming, where both characters are

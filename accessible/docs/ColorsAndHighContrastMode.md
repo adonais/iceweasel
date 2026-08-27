@@ -45,7 +45,7 @@ By default, `browser.display.document_color_use` is set to `2` on Windows. If a 
 Users on non-Windows platforms have HCM disabled by default (`document_color_use=1`). In order to enable Firefox HCM, they will either need to turn
 it on explicitly (`document_color_use=2`), or set it to use the OS HCM mode and palette (`document_color_use=0`).
 
-For a simplified flow chart of this decision tree, check out our [HCM Settings page](HCMSettings.html)
+For a simplified flow chart of this decision tree, check out our [HCM Settings page](HCMSettings.md)
 
 ## High Contrast Mode
 

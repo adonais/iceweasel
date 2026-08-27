@@ -1680,7 +1680,9 @@ PK11_DeriveWithTemplate(PK11SymKey *baseKey, CK_MECHANISM_TYPE derive,
     PK11SymKey *symKey;
     PK11SymKey *newBaseKey = NULL;
     CK_BBOOL cktrue = CK_TRUE;
-    CK_OBJECT_CLASS keyClass = CKO_SECRET_KEY;
+    /* PKCS #11 Mechanisms v3.0 Sec 2.62.4: CKM_HKDF_DATA output is a CKO_DATA object */
+    PRBool cko_data = (derive == CKM_HKDF_DATA);
+    CK_OBJECT_CLASS keyClass = cko_data ? CKO_DATA : CKO_SECRET_KEY;
     CK_KEY_TYPE keyType = CKK_GENERIC_SECRET;
     CK_ULONG valueLen = 0;
     CK_MECHANISM mechanism;
@@ -1717,7 +1719,8 @@ PK11_DeriveWithTemplate(PK11SymKey *baseKey, CK_MECHANISM_TYPE derive,
         PK11_SETATTRS(attrs, CKA_CLASS, &keyClass, sizeof keyClass);
         attrs++;
     }
-    if (!pk11_FindAttrInTemplate(keyTemplate, numAttrs, CKA_KEY_TYPE)) {
+    /* PKCS #11 v3.0 Sec 4.5.2: Adding CKA_KEY_TYPE to CKO_DATA is invalid */
+    if (!pk11_FindAttrInTemplate(keyTemplate, numAttrs, CKA_KEY_TYPE) && !cko_data) {
         keyType = PK11_GetKeyType(target, keySize);
         PK11_SETATTRS(attrs, CKA_KEY_TYPE, &keyType, sizeof keyType);
         attrs++;
@@ -1728,7 +1731,9 @@ PK11_DeriveWithTemplate(PK11SymKey *baseKey, CK_MECHANISM_TYPE derive,
         PK11_SETATTRS(attrs, CKA_VALUE_LEN, &valueLen, sizeof valueLen);
         attrs++;
     }
-    if ((operation != CKA_FLAGS_ONLY) &&
+    /* PKCS #11 v3.0 Sec 4.5.2: CKO_DATA objects do not support
+     * cryptographic operation flags */
+    if ((operation != CKA_FLAGS_ONLY) && !cko_data &&
         !pk11_FindAttrInTemplate(keyTemplate, numAttrs, operation)) {
         PK11_SETATTRS(attrs, operation, &cktrue, sizeof cktrue);
         attrs++;

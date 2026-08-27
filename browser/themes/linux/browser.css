@@ -13,7 +13,7 @@
   :root:not([lwtheme]) {
     @media (-moz-gtk-theme-family) {
       --tabs-navbar-separator-style: none;
-      @media (prefers-color-scheme: light) and (not -moz-pref("browser.nova.enabled")) {
+      @media (prefers-color-scheme: light) {
         --urlbar-box-background-color: #fafafa;
       }
     }

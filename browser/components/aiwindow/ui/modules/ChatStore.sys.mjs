@@ -85,7 +85,7 @@ import {
   parseMessageRows,
   parseChatHistoryViewRows,
   toJSONOrNull,
-  stripHistoryResultAssets,
+  stripResolvedAssets,
 } from "./ChatUtils.sys.mjs";
 
 // NOTE: Reference to migrations file, migrations.mjs has an example
@@ -260,7 +260,15 @@ class ChatStore {
           message_id: m.id,
           type: TOOL_RESULT_TYPE.HISTORY_RESULTS,
           ordinal: index,
-          payload: toJSONOrNull(stripHistoryResultAssets(record)),
+          payload: toJSONOrNull(stripResolvedAssets(record)),
+        });
+      });
+      m.citations.forEach((record, index) => {
+        toolResults.push({
+          message_id: m.id,
+          type: TOOL_RESULT_TYPE.CITATIONS,
+          ordinal: index,
+          payload: toJSONOrNull(stripResolvedAssets(record)),
         });
       });
     }
@@ -959,11 +967,12 @@ class ChatStore {
       convs[convId].messages = messages;
     }
 
-    // Rebuild the history results map for ai-chat-grid
-    // instances now that all messages are retrieved
-    conversations.forEach(conversation =>
-      conversation.rehydrateHistoryResultsPool()
-    );
+    // Rebuild the history results map for ai-chat-grid instances and citations
+    // for the source chips.
+    conversations.forEach(conversation => {
+      conversation.rehydrateHistoryResultsPool();
+      conversation.rehydrateCitationsPool();
+    });
 
     return conversations;
   }

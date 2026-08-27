@@ -80,7 +80,7 @@ class GetIMEGeneralPropertyName : public nsAutoCString {
       AppendLiteral("IME_PROP_ACCEPT_WIDE_VKEY");
     }
   }
-  virtual ~GetIMEGeneralPropertyName() {}
+  virtual ~GetIMEGeneralPropertyName() = default;
 };
 
 class GetIMEUIPropertyName : public nsAutoCString {
@@ -102,7 +102,7 @@ class GetIMEUIPropertyName : public nsAutoCString {
       AppendLiteral("UI_CAP_ROTANY");
     }
   }
-  virtual ~GetIMEUIPropertyName() {}
+  virtual ~GetIMEUIPropertyName() = default;
 };
 
 class GetReconvertStringLog : public nsAutoCString {
@@ -133,7 +133,7 @@ class GetReconvertStringLog : public nsAutoCString {
     }
     AppendLiteral("\" }");
   }
-  virtual ~GetReconvertStringLog() {}
+  virtual ~GetReconvertStringLog() = default;
 };
 
 namespace mozilla {

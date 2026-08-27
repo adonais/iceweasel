@@ -17,6 +17,8 @@ tags = "os_integration"
 
 ["browser_containers_name_input.js"]
 
+["browser_containers_reorder.js"]
+
 ["browser_privacy_dnsoverhttps_policy_srd.js"]
 
 ["browser_privacy_dnsoverhttps_srd.js"]

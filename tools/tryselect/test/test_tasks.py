@@ -2,15 +2,20 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import io
 import os
+from types import SimpleNamespace
 
 import mozunit
 import pytest
+from tryselect import tasks as tasks_mod
 from tryselect.tasks import (
+    WATCHMAN_TRIGGER_NAME,
     cache_key,
     filter_tasks_by_paths,
     filter_tasks_by_worker_type,
     resolve_tests_by_suite,
+    suggest_watchman_setup,
 )
 
 
@@ -196,6 +201,85 @@ def test_cache_key(
         cache_key(attr, params, disable_target_task_filter, target_tasks_method)
         == expected
     )
+
+
+class _FakeStdout(io.StringIO):
+    def __init__(self, tty):
+        super().__init__()
+        self._tty = tty
+
+    def isatty(self):
+        return self._tty
+
+
+def _run_suggest(
+    monkeypatch,
+    *,
+    tty=True,
+    watchman="/usr/bin/watchman",
+    run_result=None,
+    run_exc=None,
+):
+    """Drive suggest_watchman_setup() with the environment stubbed out and
+    return whatever it printed."""
+    stdout = _FakeStdout(tty)
+    monkeypatch.setattr(tasks_mod.sys, "stdout", stdout)
+    monkeypatch.setattr(tasks_mod.shutil, "which", lambda _: watchman)
+
+    def fake_run(*args, **kwargs):
+        if run_exc is not None:
+            raise run_exc
+        return run_result
+
+    monkeypatch.setattr(tasks_mod.subprocess, "run", fake_run)
+    suggest_watchman_setup()
+    return stdout.getvalue()
+
+
+def test_suggest_watchman_setup_shows_hint(monkeypatch):
+    # watchman is watching the checkout and the trigger is not registered yet.
+    out = _run_suggest(
+        monkeypatch,
+        run_result=SimpleNamespace(returncode=0, stdout="some-other-trigger\n"),
+    )
+    assert "watchman -j" in out
+    assert "watchman.json" in out
+
+
+def test_suggest_watchman_setup_silent_when_not_tty(monkeypatch):
+    out = _run_suggest(
+        monkeypatch,
+        tty=False,
+        run_result=SimpleNamespace(returncode=0, stdout=""),
+    )
+    assert out == ""
+
+
+def test_suggest_watchman_setup_silent_when_watchman_missing(monkeypatch):
+    out = _run_suggest(monkeypatch, watchman=None)
+    assert out == ""
+
+
+def test_suggest_watchman_setup_silent_when_not_watching(monkeypatch):
+    # A non-zero `trigger-list` means watchman is not watching this checkout.
+    out = _run_suggest(
+        monkeypatch,
+        run_result=SimpleNamespace(returncode=1, stdout=""),
+    )
+    assert out == ""
+
+
+def test_suggest_watchman_setup_silent_when_already_registered(monkeypatch):
+    out = _run_suggest(
+        monkeypatch,
+        run_result=SimpleNamespace(returncode=0, stdout=f"{WATCHMAN_TRIGGER_NAME}\n"),
+    )
+    assert out == ""
+
+
+def test_suggest_watchman_setup_silent_on_subprocess_error(monkeypatch):
+    out = _run_suggest(monkeypatch, run_exc=OSError("boom"))
+    assert out == ""
 
 
 if __name__ == "__main__":

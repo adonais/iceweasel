@@ -71,7 +71,13 @@ void RemoteAccessible::Shutdown() {
   // accessibles can be destroyed before the doc they own.
   uint32_t childCount = mChildren.Length();
   if (!IsOuterDoc()) {
-    for (uint32_t idx = 0; idx < childCount; idx++) mChildren[idx]->Shutdown();
+    for (uint32_t idx = 0; idx < childCount; idx++) {
+      RemoteAccessible* child = mChildren[idx].get();
+      // Drop our reference before recursing so the refcount assertion below
+      // reflects only mDoc's reference once we get to it.
+      mChildren[idx] = nullptr;
+      child->Shutdown();
+    }
   } else {
     if (childCount > 1) {
       MOZ_CRASH("outer doc has too many documents!");
@@ -81,9 +87,20 @@ void RemoteAccessible::Shutdown() {
   }
 
   mChildren.Clear();
+  // mDoc's mAccessibles entry should be the only reference left at this
+  // point; every other reference (our parent's mChildren, our own children's
+  // mParent) should already have been released above or by our caller. If
+  // this fires, something else is unexpectedly holding a strong reference to
+  // this RemoteAccessible, which will leak it below rather than destroy it.
+  MOZ_DIAGNOSTIC_ASSERT(int32_t(mRefCnt) == 1,
+                        "RemoteAccessible has an unexpected extra reference "
+                        "at shutdown");
   ProxyDestroyed(static_cast<RemoteAccessible*>(this));
-  // mDoc owns this RemoteAccessible, so RemoveAccessible deletes this.
-  mDoc->RemoveAccessible(static_cast<RemoteAccessible*>(this));
+  DocAccessibleParent* doc = mDoc;
+  mDoc = nullptr;
+  // This drops doc's reference to this RemoteAccessible. If nothing else
+  // references it (e.g. another node's mChildren), it is destroyed now.
+  doc->RemoveAccessible(static_cast<RemoteAccessible*>(this));
 }
 
 void RemoteAccessible::SetChildDoc(DocAccessibleParent* aChildDoc) {

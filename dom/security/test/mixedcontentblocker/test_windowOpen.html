@@ -27,7 +27,7 @@ function markTestCaseComplete() {
 
 window.onmessage = function(event) {
   if (event.data.src.includes("test1")) {
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     is(event.data.target, "http://test1.example.com/tests/dom/security/test/mixedcontentblocker/file_windowOpen.html", "error thrown for failed iframe load should be from test1's iframe.");
     is(event.data.outcome, "blocked", "http iframe should be blocked from loading in child https window.");
     is(event.data.method, "http", "messages from test1 iframe should be http.");
@@ -73,7 +73,7 @@ function testURLInOpenedWindow(testURL) {
   };
 };
 
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 testURLInOpenedWindow("http://test1.example.com/tests/dom/security/test/mixedcontentblocker/file_windowOpen.html");
 testURLInOpenedWindow("https://test2.example.com/tests/dom/security/test/mixedcontentblocker/file_windowOpen.html");
 

@@ -7,7 +7,7 @@ function y() {
 }
 export { x, y };
 `);
-moduleLink(m1);
+moduleLoadAndLink(m1);
 moduleEvaluate(m1);
 
 registerModule('m1', m1);
@@ -26,5 +26,5 @@ test(1);
 y();
 test(2);
 `);
-moduleLink(m2);
+moduleLoadAndLink(m2);
 moduleEvaluate(m2);

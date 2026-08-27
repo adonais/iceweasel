@@ -867,7 +867,10 @@ async function setupTestFromUrl(url) {
 
   const sourceUrl = getFileUrl(url);
   const promise = waitForNewSource(threadFront, sourceUrl);
-  loadSubScript(sourceUrl, global);
+  loadSubScriptWithOptions(sourceUrl, {
+    target: global,
+    allowUnsafeURL: true,
+  });
   const { source } = await promise;
 
   const sourceFront = threadFront.source(source);

@@ -17,7 +17,7 @@ namespace gl {
 /*static*/
 UniquePtr<SharedSurface_Basic> SharedSurface_Basic::Create(
     const SharedSurfaceDesc& desc) {
-  auto fb = MozFramebuffer::Create(desc.gl, desc.size, 0, false);
+  auto fb = MozFramebuffer::Create(desc.gl, desc.size, 0, false, false);
   if (!fb) return nullptr;
 
   return AsUnique(new SharedSurface_Basic(desc, std::move(fb)));

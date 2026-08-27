@@ -683,6 +683,9 @@ nsresult LoadLoadableCertsTask::LoadLoadableRoots() {
   // First try checking the OS' default library search path.
   nsAutoCString emptyString;
   if (mozilla::psm::LoadLoadableRoots(emptyString)) {
+    mozilla::glean::pkcs11::builtin_roots_module_source
+        .Get("os_library_path"_ns)
+        .Add(1);
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("loaded CKBI from from OS default library path"));
     return NS_OK;
@@ -694,6 +697,9 @@ nsresult LoadLoadableCertsTask::LoadLoadableRoots() {
 
   if (NS_SUCCEEDED(rv)) {
     if (mozilla::psm::LoadLoadableRoots(nss3Dir)) {
+      mozilla::glean::pkcs11::builtin_roots_module_source
+          .Get("nss3_directory"_ns)
+          .Add(1);
       MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
               ("loaded CKBI from %s", nss3Dir.get()));
       return NS_OK;
@@ -706,19 +712,20 @@ nsresult LoadLoadableCertsTask::LoadLoadableRoots() {
 #endif  // MOZ_SYSTEM_NSS
 
   if (mozilla::psm::LoadLoadableRoots(mGreBinDir)) {
-    mozilla::glean::pkcs11::external_trust_anchor_module_loaded.Set(true);
+    mozilla::glean::pkcs11::builtin_roots_module_source.Get("gre_directory"_ns)
+        .Add(1);
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("loaded external CKBI from gre directory"));
     return NS_OK;
   }
 
-  mozilla::glean::pkcs11::external_trust_anchor_module_loaded.Set(false);
-
   if (LoadLoadableRootsFromXul()) {
+    mozilla::glean::pkcs11::builtin_roots_module_source.Get("xul"_ns).Add(1);
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("loaded CKBI from xul"));
     return NS_OK;
   }
 
+  mozilla::glean::pkcs11::builtin_roots_module_source.Get("none"_ns).Add(1);
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("could not load loadable roots"));
   return NS_ERROR_FAILURE;
 }
@@ -1551,6 +1558,10 @@ nsresult nsNSSComponent::InitializeNSS() {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("failed to initialize NSS"));
     return rv;
   }
+
+  bool isFIPS = PK11_IsFIPS();
+  mozilla::glean::pkcs11::fips_enabled.Set(isFIPS);
+  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("FIPS mode: %u", isFIPS));
 
   PK11_SetPasswordFunc(PK11PasswordPrompt);
 

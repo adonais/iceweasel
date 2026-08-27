@@ -385,6 +385,9 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
     return mConstructorDocument == &aDocument;
   }
 
+  // Whether the given doc or shadow root adopts this sheet.
+  bool IsAdoptedBy(const dom::DocumentOrShadowRoot&) const;
+
   // Add a document or shadow root to the list of adopters.
   // Adopters will be notified when styles are changed.
   void AddAdopter(dom::DocumentOrShadowRoot& aAdopter) {
@@ -576,26 +579,21 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   RefPtr<URLExtraData> mURLData;
   RefPtr<nsIURI> mOriginalSheetURI;
-  State mState;
 
+  State mState;
   Atomic<uint32_t, ReleaseAcquire> mAsyncParseBlockers{0};
+  // Index within mInner->mSheets.
+  uint32_t mInnerSheetIndex = 0;
 
   // Core information we get from parsed sheets, which are shared amongst
-  // StyleSheet clones.
-  //
-  // Always nonnull until LastRelease().
+  // StyleSheet clones. Always nonnull until LastRelease().
   StyleSheetInfo* mInner;
 
   nsTArray<ServoStyleSet*> mStyleSets;
-
   RefPtr<ServoCSSRuleList> mRuleList;
-
   MozPromiseHolder<StyleSheetParsePromise> mParsePromise;
-
   nsTArray<dom::DocumentOrShadowRoot*> mAdopters;
 
-  // Make StyleSheetInfo and subclasses into friends so they can use
-  // ChildSheetListBuilder.
   friend struct StyleSheetInfo;
 };
 

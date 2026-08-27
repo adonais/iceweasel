@@ -7,29 +7,49 @@ package org.mozilla.focus.session
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.text.TextUtils
 import mozilla.components.browser.state.state.SessionState
-import mozilla.components.feature.customtabs.createCustomTabConfigFromIntent
-import mozilla.components.feature.customtabs.isCustomTabIntent
+import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
+import mozilla.components.feature.customtabs.CustomTabIntentProcessor
+import mozilla.components.feature.intent.ext.getSessionId
+import mozilla.components.feature.intent.processing.TabIntentProcessor
+import mozilla.components.feature.search.SearchUseCases
 import mozilla.components.feature.tabs.CustomTabsUseCases
 import mozilla.components.feature.tabs.TabsUseCases
-import mozilla.components.support.ktx.util.URLStringUtils
 import mozilla.components.support.utils.SafeIntent
-import mozilla.components.support.utils.WebURLFinder
 import org.mozilla.focus.activity.TextActionActivity
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.shortcut.HomeScreen
-import org.mozilla.focus.utils.SearchUtils
+import mozilla.components.feature.intent.processing.IntentProcessor as ComponentsIntentProcessor
 
 /**
- * Implementation moved from Focus SessionManager. To be replaced with SessionIntentProcessor from feature-session
- * component soon.
+ * Focus-specific [mozilla.components.feature.intent.processing.IntentProcessor] implementation.
+ * It uses [TabIntentProcessor] and [CustomTabIntentProcessor] internally to handle standard intents
+ * and adds Focus-specific logic for home screen shortcuts and text selection.
+ *
+ * @param context The application context.
+ * @param tabsUseCases Use cases for managing browser tabs.
+ * @param customTabsUseCases Use cases for managing custom tabs.
+ * @param searchUseCases Use cases for performing searches.
  */
 class IntentProcessor(
     private val context: Context,
     private val tabsUseCases: TabsUseCases,
-    private val customTabsUseCases: CustomTabsUseCases,
-) {
+    customTabsUseCases: CustomTabsUseCases,
+    searchUseCases: SearchUseCases,
+) : ComponentsIntentProcessor {
+
+    private val tabIntentProcessor = TabIntentProcessor(
+        tabsUseCases,
+        searchUseCases.newTabSearch,
+        isPrivate = true,
+    )
+
+    private val customTabIntentProcessor = CustomTabIntentProcessor(
+        customTabsUseCases.add,
+        context.resources,
+        isPrivate = true,
+    )
+
     /**
      * Represents the result of processing an intent.
      */
@@ -42,7 +62,7 @@ class IntentProcessor(
         /**
          * A new standard tab was created.
          */
-        data class Tab(val id: String) : Result()
+        object Tab : Result()
 
         /**
          * A new custom tab was created.
@@ -52,11 +72,15 @@ class IntentProcessor(
 
     /**
      * Handle this incoming intent (via onCreate()) and create a new session if required.
+     *
+     * @param intent The incoming [SafeIntent] to process.
+     * @param savedInstanceState The saved instance state bundle, or `null` if there is none.
+     * @return A [Result] indicating whether a new tab, custom tab, or no session was created.
      */
     fun handleIntent(intent: SafeIntent, savedInstanceState: Bundle?): Result {
         if ((intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0) {
             // This Intent was launched from history (recent apps). Android will redeliver the
-            // original Intent (which might be a VIEW intent). However if there's no active browsing
+            // original Intent (which might be a VIEW intent). However, if there's no active browsing
             // session then we do not want to re-process the Intent and potentially re-open a website
             // from a session that the user already "erased".
             return Result.None
@@ -67,156 +91,69 @@ class IntentProcessor(
             return Result.None
         }
 
-        return createSessionFromIntent(intent)
+        return processForResult(intent.unsafe)
     }
 
-    /**
-     * Handle this incoming intent (via onNewIntent()) and create a new session if required.
-     */
-    fun handleNewIntent(intent: SafeIntent) {
-        createSessionFromIntent(intent)
-    }
+    private fun processForResult(intent: Intent): Result {
+        val safeIntent = SafeIntent(intent)
 
-    private fun createSessionFromIntent(intent: SafeIntent): Result {
-        return when (intent.action) {
-            Intent.ACTION_VIEW -> createViewSession(intent)
+        return when {
+            safeIntent.hasExtra(HomeScreen.ADD_TO_HOMESCREEN_TAG) -> {
+                val requestDesktop = safeIntent.getBooleanExtra(HomeScreen.REQUEST_DESKTOP, false)
+                val tabId = tabsUseCases.addTab(
+                    safeIntent.dataString ?: "",
+                    source = SessionState.Source.Internal.HomeScreen,
+                    private = true,
+                    flags = LoadUrlFlags.external(),
+                )
+                if (requestDesktop) {
+                    context.components.sessionUseCases.requestDesktopSite(true, tabId)
+                }
+                Result.Tab
+            }
 
-            Intent.ACTION_SEND -> createSendSession(intent)
+            safeIntent.hasExtra(TextActionActivity.EXTRA_TEXT_SELECTION) -> {
+                tabsUseCases.addTab(
+                    safeIntent.dataString ?: "",
+                    source = SessionState.Source.Internal.TextSelection,
+                    private = true,
+                    flags = LoadUrlFlags.external(),
+                )
+                Result.Tab
+            }
+
+            customTabIntentProcessor.process(intent) -> {
+                Result.CustomTab(intent.getSessionId()!!)
+            }
+
+            tabIntentProcessor.process(intent) -> {
+                Result.Tab
+            }
 
             else -> Result.None
         }
     }
 
-    private fun createViewSession(intent: SafeIntent): Result {
-        val dataString = intent.dataString
-        if (TextUtils.isEmpty(dataString)) {
-            // If there's no URL in the Intent then we can't create a session.
-            return Result.None
-        }
-
-        return when {
-            intent.hasExtra(HomeScreen.ADD_TO_HOMESCREEN_TAG) -> {
-                val requestDesktop =
-                    intent.getBooleanExtra(HomeScreen.REQUEST_DESKTOP, false)
-
-                // Ignoring, because exception!
-                // HomeScreen.BLOCKING_ENABLED
-
-                createSession(
-                    SessionState.Source.Internal.HomeScreen,
-                    intent,
-                    intent.dataString ?: "",
-                    requestDesktop,
-                )
-            }
-
-            intent.hasExtra(TextActionActivity.EXTRA_TEXT_SELECTION) -> createSession(
-                SessionState.Source.Internal.TextSelection,
-                intent,
-                intent.dataString ?: "",
-            )
-
-            else -> createSession(
-                SessionState.Source.External.ActionView(null),
-                intent,
-                intent.dataString ?: "",
-            )
-        }
+    /**
+     * Handle this incoming intent (via onNewIntent()) and create a new session if required.
+     *
+     * @param intent The incoming [SafeIntent] to process.
+     */
+    fun handleNewIntent(intent: SafeIntent) {
+        process(intent.unsafe)
     }
 
-    private fun createSendSession(intent: SafeIntent): Result {
-        val dataString = intent.getStringExtra(Intent.EXTRA_TEXT)
-        if (TextUtils.isEmpty(dataString)) {
-            return Result.None
-        }
-
-        return if (dataString == null || !URLStringUtils.isURLLike(dataString)) {
-            val bestURL = WebURLFinder(dataString).bestWebURL()
-            if (TextUtils.isEmpty(bestURL)) {
-                createSearchSession(
-                    SessionState.Source.External.ActionSend(null),
-                    SearchUtils.createSearchUrl(context, dataString ?: ""),
-                    dataString ?: "",
-                )
-            } else {
-                createSession(SessionState.Source.External.ActionSend(null), bestURL ?: "")
-            }
-        } else {
-            createSession(SessionState.Source.External.ActionSend(null), dataString)
-        }
-    }
-
-    private fun createSession(source: SessionState.Source, url: String): Result {
-        return Result.Tab(
-            tabsUseCases.addTab(
-                url,
-                source = source,
-                selectTab = true,
-                private = true,
-            ),
-        )
-    }
-
-    private fun createSearchSession(source: SessionState.Source, url: String, searchTerms: String): Result {
-        return Result.Tab(
-            tabsUseCases.addTab(
-                url,
-                source = source,
-                searchTerms = searchTerms,
-                private = true,
-            ),
-        )
-    }
-
-    private fun createSession(source: SessionState.Source, intent: SafeIntent, url: String): Result {
-        return if (isCustomTabIntent(intent.unsafe)) {
-            Result.CustomTab(
-                customTabsUseCases.add(
-                    url,
-                    createCustomTabConfigFromIntent(intent.unsafe, context.resources),
-                    private = true,
-                    source = source,
-                ),
-            )
-        } else {
-            Result.Tab(
-                tabsUseCases.addTab(
-                    url,
-                    source = source,
-                    selectTab = true,
-                    private = true,
-                ),
-            )
-        }
-    }
-
-    private fun createSession(
-        source: SessionState.Source,
-        intent: SafeIntent,
-        url: String,
-        requestDesktop: Boolean,
-    ): Result {
-        val (result, tabId) = if (isCustomTabIntent(intent)) {
-            val tabId = customTabsUseCases.add(
-                url,
-                createCustomTabConfigFromIntent(intent.unsafe, context.resources),
-                private = true,
-                source = source,
-            )
-            Pair(Result.CustomTab(tabId), tabId)
-        } else {
-            val tabId = tabsUseCases.addTab(
-                url,
-                source = source,
-                private = true,
-            )
-            Pair(Result.Tab(tabId), tabId)
-        }
-
-        if (requestDesktop) {
-            context.components.sessionUseCases.requestDesktopSite(requestDesktop, tabId)
-        }
-
-        return result
-    }
+    /**
+     * Processes the given [Intent] and opens the appropriate tab or custom tab.
+     *
+     * Handles three Focus-specific cases in order of priority:
+     * 1. Intents from a home screen shortcut, optionally requesting desktop mode.
+     * 2. Intents from text selection via [TextActionActivity].
+     * 3. Custom tab intents, delegated to [CustomTabIntentProcessor].
+     * 4. Standard tab intents, delegated to [TabIntentProcessor].
+     *
+     * @param intent The [Intent] to process.
+     * @return `true` if the intent was handled, `false` otherwise.
+     */
+    override fun process(intent: Intent): Boolean = processForResult(intent) !is Result.None
 }

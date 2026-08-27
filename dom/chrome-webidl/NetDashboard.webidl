@@ -181,3 +181,26 @@ dictionary Http3ConnectionStatsElement {
 dictionary Http3ConnStatsDict {
   sequence<Http3ConnectionStatsElement> connections;
 };
+
+dictionary SSLTokensCacheElement {
+  DOMString key = "";
+  boolean restored = false;
+  double expirationTime = 0;
+  unsigned long long tokenId = 0;
+  unsigned long tokenLength = 0;
+  unsigned long compressedLength = 0;
+  unsigned long decompressedLength = 0;
+  boolean evStatus = false;
+  unsigned short certificateTransparencyStatus = 0;
+  octet overridableErrorCategory = 0;
+  // -1: unknown, 0: not a built-in root, 1: built-in root.
+  long builtInRoot = -1;
+  sequence<octet> serverCertDER;
+  sequence<sequence<octet>> succeededCertChainDER;
+  sequence<sequence<octet>> handshakeCertDER;
+};
+
+[GenerateConversionToJS]
+dictionary SSLTokensCacheDict {
+  sequence<SSLTokensCacheElement> entries;
+};

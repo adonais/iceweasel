@@ -123,15 +123,14 @@ class DefaultHappyEyeballsConnMgrDelegate final
                                nsHttpTransaction* aTrans) override {
     return aEntry->RemoveTransFromPendingQ(aTrans);
   }
-  nsresult StartRetryWithoutTRR(ConnectionEntry* aEntry,
-                                nsHttpTransaction* aTrans, uint32_t aCaps,
-                                bool aSpeculative, bool aUrgentStart,
-                                bool aAllow1918) override {
+  nsresult StartRetry(ConnectionEntry* aEntry, nsHttpTransaction* aTrans,
+                      uint32_t aCaps, bool aSpeculative, bool aUrgentStart,
+                      bool aAllow1918, bool aRetryWithoutTRR) override {
     RefPtr<PendingTransactionInfo> pendingTransInfo =
         new PendingTransactionInfo(aTrans);
     return aEntry->CreateDnsAndConnectSocket(
         aTrans, aCaps, aSpeculative, aUrgentStart, aAllow1918, pendingTransInfo,
-        /* retryWithoutTRR = */ true);
+        aRetryWithoutTRR);
   }
 };
 
@@ -618,6 +617,10 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
           RetryWithoutTRR();
           return NS_OK;
         }
+        if (ShouldRetryForLocalAddress(event.failed.reason)) {
+          RetryForLocalAddress();
+          return NS_OK;
+        }
         TransitionPayload payload;
         payload.mFailureReason = Some(event.failed.reason);
         Transition(State::Failed, std::move(payload));
@@ -891,6 +894,10 @@ void HappyEyeballsConnectionAttempt::HandleConnectionResult(
   mConnectionEstablisherTable.Remove(aId);
   NetAddr addr = establisher->Addr();
 
+  // A local establisher refuses synchronously in Start() and never reaches
+  // here, so this means an establisher actually attempted a connection.
+  mAllAttemptsRefusedLocal = false;
+
   LOG((
       "HappyEyeballsConnectionAttempt::HandleConnectionResult %p addr=[%s] "
       "family=[%d] id=%" PRIu64 " isUDP=%d",
@@ -1052,7 +1059,17 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
   if (establisher->Start(std::move(callback))) {
     mConnectionEstablisherTable.InsertOrUpdate(aId, std::move(establisher));
   } else {
-    ProcessConnectionResult(aAddr, NS_ERROR_FAILURE, aId);
+    // Start() refused synchronously. A speculative attempt refuses local
+    // (RFC1918) peers; surface it as a refusal and remember it so a later Claim
+    // can retry with local addresses allowed.
+    nsresult reason = NS_ERROR_FAILURE;
+    if (establisher->RefusedForLocalAddress()) {
+      mLocalAddrRefused = true;
+      reason = NS_ERROR_CONNECTION_REFUSED;
+    } else {
+      mAllAttemptsRefusedLocal = false;
+    }
+    ProcessConnectionResult(aAddr, reason, aId);
   }
 
   return NS_OK;
@@ -1092,7 +1109,17 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
   if (establisher->Start(std::move(callback))) {
     mConnectionEstablisherTable.InsertOrUpdate(aId, std::move(establisher));
   } else {
-    ProcessConnectionResult(aAddr, NS_ERROR_FAILURE, aId);
+    // Start() refused synchronously. A speculative attempt refuses local
+    // (RFC1918) peers; surface it as a refusal and remember it so a later Claim
+    // can retry with local addresses allowed.
+    nsresult reason = NS_ERROR_FAILURE;
+    if (establisher->RefusedForLocalAddress()) {
+      mLocalAddrRefused = true;
+      reason = NS_ERROR_CONNECTION_REFUSED;
+    } else {
+      mAllAttemptsRefusedLocal = false;
+    }
+    ProcessConnectionResult(aAddr, reason, aId);
   }
 
   return NS_OK;
@@ -1207,19 +1234,20 @@ bool HappyEyeballsConnectionAttempt::ShouldRetryWithoutTRR(
   return true;
 }
 
-void HappyEyeballsConnectionAttempt::RetryWithoutTRR() {
+void HappyEyeballsConnectionAttempt::DoRetry(bool aRetryWithoutTRR,
+                                             const char* aLogTag) {
   RefPtr<HappyEyeballsConnectionAttempt> self(this);
   RefPtr<ConnectionEntry> entry(mEntry);
   RefPtr<nsHttpTransaction> realTrans = RealHttpTransaction();
-  LOG(("HappyEyeballsConnectionAttempt::RetryWithoutTRR %p trans=%p", this,
+  LOG(("HappyEyeballsConnectionAttempt::%s %p trans=%p", aLogTag, this,
        realTrans.get()));
   MOZ_ASSERT(entry && realTrans);
 
-  // Start a fresh attempt that re-resolves this transaction with TRR disabled.
-  nsresult rv = mConnMgrDelegate->StartRetryWithoutTRR(
-      entry, realTrans, mCaps, mSpeculative, mUrgentStart, mAllow1918);
+  nsresult rv =
+      mConnMgrDelegate->StartRetry(entry, realTrans, mCaps, mSpeculative,
+                                   mUrgentStart, mAllow1918, aRetryWithoutTRR);
   if (NS_FAILED(rv)) {
-    LOG(("  StartRetryWithoutTRR failed rv=%" PRIx32 "; failing normally",
+    LOG(("  %s: StartRetry failed rv=%" PRIx32 "; failing normally", aLogTag,
          static_cast<uint32_t>(rv)));
     TransitionPayload payload;
     payload.mFailureReason = Some(happy_eyeballs::FailureReason::Connection);
@@ -1231,6 +1259,38 @@ void HappyEyeballsConnectionAttempt::RetryWithoutTRR() {
   // can't close or re-queue it, then remove ourselves and abandon.
   ForgetRealTransaction();
   mConnMgrDelegate->RemoveConnectionAttempt(entry, this, /* abandon = */ true);
+}
+
+void HappyEyeballsConnectionAttempt::RetryWithoutTRR() {
+  // Start a fresh attempt that re-resolves this transaction with TRR disabled.
+  DoRetry(/* aRetryWithoutTRR = */ true, "RetryWithoutTRR");
+}
+
+bool HappyEyeballsConnectionAttempt::ShouldRetryForLocalAddress(
+    happy_eyeballs::FailureReason aReason) const {
+  // A speculative attempt must not open a connection to a local (RFC1918) peer:
+  // that would let a remote origin use a preconnect/speculative connection to
+  // probe the user's local network before any real navigation (Local Network
+  // Access). So while speculative the establisher refuses local peers outright
+  // rather than "just connecting" -- there is no safe way to speculatively
+  // reach a local address. Claim() lifts that restriction (mAllow1918 becomes
+  // true) once a real transaction takes over, but an establisher may already
+  // have refused the peer before the claim raced in, leaving the attempt
+  // terminally failed. This retry recovers that case.
+  //
+  // Retry only when every attempt was a local-peer refusal and the attempt has
+  // since been claimed (mAllow1918 true, so a non-speculative attempt never
+  // qualifies) with a real transaction to reconnect. The fresh retry allows
+  // local addresses, so it can't refuse again or loop.
+  return aReason == happy_eyeballs::FailureReason::Connection &&
+         mLocalAddrRefused && mAllAttemptsRefusedLocal && mAllow1918 &&
+         RealHttpTransaction();
+}
+
+void HappyEyeballsConnectionAttempt::RetryForLocalAddress() {
+  // Start a fresh attempt for this transaction; mAllow1918 is now true, so the
+  // establisher no longer refuses the local peer.
+  DoRetry(/* aRetryWithoutTRR = */ false, "RetryForLocalAddress");
 }
 
 void HappyEyeballsConnectionAttempt::Abandon() {
@@ -1907,8 +1967,8 @@ nsresult HappyEyeballsConnectionAttempt::OnARecord(nsIDNSRecord* aRecord,
       MaybeBuildOriginCoalescingKeys();
     }
     nsTArray<NetAddr> emptyArray;
-    rv =
-        happy_eyeballs_process_dns_response_a(mHappyEyeballs, aId, &emptyArray);
+    rv = happy_eyeballs_process_dns_response_a(mHappyEyeballs, aId, &emptyArray,
+                                               mDnsMetadata.mIsTRR);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -1933,8 +1993,8 @@ nsresult HappyEyeballsConnectionAttempt::OnARecord(nsIDNSRecord* aRecord,
     MaybeBuildOriginCoalescingKeys();
   }
 
-  rv = happy_eyeballs_process_dns_response_a(mHappyEyeballs, aId,
-                                             &ipv4Addresses);
+  rv = happy_eyeballs_process_dns_response_a(
+      mHappyEyeballs, aId, &ipv4Addresses, mDnsMetadata.mIsTRR);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -1964,8 +2024,8 @@ nsresult HappyEyeballsConnectionAttempt::OnAAAARecord(nsIDNSRecord* aRecord,
       MaybeBuildOriginCoalescingKeys();
     }
     nsTArray<NetAddr> emptyArray;
-    rv = happy_eyeballs_process_dns_response_aaaa(mHappyEyeballs, aId,
-                                                  &emptyArray);
+    rv = happy_eyeballs_process_dns_response_aaaa(
+        mHappyEyeballs, aId, &emptyArray, mDnsMetadata.mIsTRR);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -1990,8 +2050,8 @@ nsresult HappyEyeballsConnectionAttempt::OnAAAARecord(nsIDNSRecord* aRecord,
     MaybeBuildOriginCoalescingKeys();
   }
 
-  rv = happy_eyeballs_process_dns_response_aaaa(mHappyEyeballs, aId,
-                                                &ipv6Addresses);
+  rv = happy_eyeballs_process_dns_response_aaaa(
+      mHappyEyeballs, aId, &ipv6Addresses, mDnsMetadata.mIsTRR);
   if (NS_FAILED(rv)) {
     return rv;
   }

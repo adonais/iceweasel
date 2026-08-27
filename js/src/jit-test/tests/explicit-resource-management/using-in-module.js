@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !getBuildConfiguration("explicit-resource-management"); --enable-explicit-resource-management
-
 globalThis.called = false;
 
 const m = parseModule(`
@@ -10,7 +8,7 @@ using x = {
 }
 `);
 
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);
 
 assertEq(globalThis.called, true);

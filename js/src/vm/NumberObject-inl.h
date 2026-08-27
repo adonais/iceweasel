@@ -17,7 +17,7 @@ inline NumberObject* NumberObject::create(JSContext* cx, double d,
   if (!obj) {
     return nullptr;
   }
-  obj->setPrimitiveValue(d);
+  obj->initPrimitiveValue(d);
   return obj;
 }
 

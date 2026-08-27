@@ -165,12 +165,12 @@ class MaybeLockBufferAllocator
 // freed. From there they can merged back into one of the main thread lists
 // (since they may no longer contain nursery-owned buffers).
 //
-// Chunks containing tenured-owned buffers are stored in |tenuredChunks| and are
-// moved to |tenuredChunksToSweep| at the start of major GC. They are
+// Chunks containing tenured-owned buffers are stored in |currentTenuredChunks|
+// and are moved to |tenuredChunksToSweep| at the start of major GC. They are
 // unavailable for allocation after this point and will be swept on a background
 // thread and placed in |sweptTenuredChunks| if they are not freed. From there
-// they will be merged back into |tenuredChunks|. This means that allocation
-// during an incremental GC will allocate a new chunk.
+// they will be merged back into |currentTenuredChunks|. This means that
+// allocation during an incremental GC will allocate a new chunk.
 //
 // Merging swept data requires taking a lock and so only happens when
 // necessary. This happens when a new chunk is needed or at various points
@@ -257,6 +257,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   using SizeClassBitSet = mozilla::BitSet<AllocSizeClasses, uint32_t>;
 
+  enum class ContentKind : uint8_t { Tenured = 0, Mixed };
+
   // Segregated free list: an array of free lists, one per size class.
   class FreeLists {
     using FreeListArray = mozilla::Array<FreeList, AllocSizeClasses>;
@@ -308,13 +310,15 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
     void getStats(Stats& stats);
   };
 
+  // Lists of chunks keyed by size class and arranged by content kind.
   class ChunkLists {
     using ChunkListArray =
         mozilla::Array<BufferChunkList, AllocSizeClasses + 1>;
     using AvailableBitSet = mozilla::BitSet<AllocSizeClasses + 1, uint32_t>;
 
     ChunkListArray lists;
-    AvailableBitSet available;
+    AvailableBitSet availableMixed;
+    AvailableBitSet availableTenured;
 
    public:
     class ChunkListIter;
@@ -325,22 +329,26 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
     ChunkLists(const ChunkLists& other) = delete;
     ChunkLists& operator=(const ChunkLists& other) = delete;
 
-    ChunkListIter chunkListIter();
     ChunkIter chunkIter();
-    const auto& availableSizeClasses() const { return available; }
 
-    void pushFront(size_t sizeClass, BufferChunk* chunk);
-    void pushBack(BufferChunk* chunk);
-    void pushBack(size_t sizeClass, BufferChunk* chunk);
+    bool hasMixedChunks() const { return !availableMixed.IsEmpty(); }
 
-    // Returns SIZE_MAX if none available.
-    size_t getFirstAvailableSizeClass(size_t minSizeClass,
-                                      size_t maxSizeClass) const;
+    const auto& availableSizeClasses(ContentKind kind) const {
+      return kind == ContentKind::Mixed ? availableMixed : availableTenured;
+    }
 
-    BufferChunk* popFirstChunk(size_t sizeClass);
+    void addChunk(BufferChunk* chunk);
+    void addChunk(size_t sizeClass, BufferChunk* chunk);
+    void addMixedChunk(size_t sizeClass, BufferChunk* chunk);
+    void addTenuredChunk(BufferChunk* chunk);
+    void addTenuredChunk(size_t sizeClass, BufferChunk* chunk);
+
+    BufferChunk* popFirstChunk(ContentKind kind, size_t sizeClass);
 
     void remove(size_t sizeClass, BufferChunk* chunk);
+    void remove(ContentKind kind, size_t sizeClass, BufferChunk* chunk);
 
+    BufferChunkList extractMixedChunks();
     BufferChunkList extractAllChunks();
 
     bool isEmpty() const;
@@ -361,23 +369,25 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   // The zone this allocator is associated with.
   MainThreadOrGCTaskData<JS::Zone*> zone;
 
-  // Chunks containing medium and small buffers. They may contain both
-  // nursery-owned and tenured-owned buffers.
-  MainThreadOrGCTaskData<BufferChunkList> mixedChunks;
+  // Chunks containing medium and small buffers that are currently being used
+  // for allocation. They may contain both nursery-owned and tenured-owned
+  // buffers.
+  MainThreadOrGCTaskData<BufferChunkList> currentMixedChunks;
 
-  // Chunks containing only tenured-owned small and medium buffers.
-  MainThreadOrGCTaskData<BufferChunkList> tenuredChunks;
+  // Chunks containing only tenured-owned small and medium buffers that are
+  // currently being used for allocation.
+  MainThreadOrGCTaskData<BufferChunkList> currentTenuredChunks;
 
-  // Free lists for the small and medium buffers in |mixedChunks| and
-  // |tenuredChunks|. Used for allocation.
+  // Free lists for the small and medium buffers in |currentMixedChunks| and
+  // |currentTenuredChunks|. Used for allocation.
   MainThreadOrGCTaskData<FreeLists> freeLists;
 
   // Chunks that may contain nursery-owned buffers waiting to be swept during a
-  // minor GC. Populated from |mixedChunks|.
+  // minor GC. Populated from |currentMixedChunks|.
   MainThreadOrGCTaskData<BufferChunkList> mixedChunksToSweep;
 
   // Chunks that contain only tenured-owned buffers waiting to be swept during a
-  // major GC. Populated from |tenuredChunks|.
+  // major GC. Populated from |currentTenuredChunks|.
   MainThreadOrGCTaskData<BufferChunkList> tenuredChunksToSweep;
 
   // Chunks that have been swept. Populated by a background thread.
@@ -386,8 +396,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   // Chunks that have been swept and are available for allocation but have not
   // had their free regions merged into |freeLists|. Owned by the main thread.
-  MainThreadOrGCTaskData<ChunkLists> availableMixedChunks;
-  MainThreadOrGCTaskData<ChunkLists> availableTenuredChunks;
+  MainThreadOrGCTaskData<ChunkLists> availableChunks;
 
   // List of large nursery-owned buffers.
   MainThreadOrGCTaskData<LargeAllocList> largeNurseryAllocs;
@@ -525,6 +534,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void maybeMergeSweptData(MaybeLock& lock);
   void mergeSweptData();
   void mergeSweptData(const AutoLock& lock);
+  void mergeChunkStatsToRuntime(BufferChunk* chunk);
   void abortMajorSweeping(const AutoLock& lock);
   void clearAllocatedDuringCollectionState(const AutoLock& lock);
 
@@ -556,10 +566,10 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   RefillResult refillFreeLists(size_t sizeClass, size_t maxSizeClass,
                                GrowHeap&& growHeap);
   bool useAvailableChunk(size_t sizeClass, size_t maxSizeClass);
-  bool useAvailableChunk(size_t sizeClass, size_t maxSizeClass, ChunkLists& src,
-                         BufferChunkList& dst);
+  bool useAvailableChunk(size_t sizeClass, size_t maxSizeClass,
+                         ContentKind kind, BufferChunkList& dst);
   SizeClassBitSet getChunkSizeClassesToMove(size_t maxSizeClass,
-                                            ChunkLists& src) const;
+                                            ContentKind kind) const;
   void* bumpAlloc(size_t bytes, size_t sizeClass, size_t maxSizeClass);
   void* allocFromRegion(FreeRegion* region, size_t bytes, size_t sizeClass);
   void* allocMediumAligned(size_t bytes, bool inGC);
@@ -578,7 +588,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
                       uintptr_t freeEnd, bool shouldDecommit,
                       bool expectUnchanged, FreeLists& freeLists);
   bool sweepSmallBufferRegion(BufferChunk* chunk, SmallBufferRegion* region,
-                              SweepKind sweepKind);
+                              SweepKind sweepKind, size_t* usedBytesOut);
   void addSweptRegion(SmallBufferRegion* region, uintptr_t freeStart,
                       uintptr_t freeEnd, bool shouldDecommit,
                       bool expectUnchanged, FreeLists& freeLists);
@@ -658,7 +668,6 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
 #ifdef DEBUG
   void checkChunkListsGCStateNotInUse(ChunkLists& chunkLists,
-                                      bool hasNurseryOwnedAllocs,
                                       bool allowAllocatedDuringCollection);
   void checkChunkListGCStateNotInUse(BufferChunkList& chunks,
                                      bool hasNurseryOwnedAllocs,

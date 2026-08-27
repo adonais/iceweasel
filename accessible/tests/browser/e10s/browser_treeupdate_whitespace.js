@@ -49,7 +49,7 @@ addAccessibleTask(
       let img = doc.createElement("img");
       img.setAttribute(
         "src",
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         "http://example.com/a11y/accessible/tests/mochitest/moz.png"
       );
       doc.getElementById("container2").appendChild(img);

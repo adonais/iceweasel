@@ -234,23 +234,40 @@ class RequestedFrameRefreshObserver : public nsARefreshObserver {
       return;
     }
 
-    RefPtr<SourceSurface> snapshot;
+    if (mPendingCapturePromise.Exists()) {
+      PROFILER_MARKER_TEXT("Canvas CaptureStream", MEDIA_RT, {},
+                           "Abort: pending capture"_ns);
+      return;
+    }
+
     {
       AUTO_PROFILER_MARKER_TEXT("Canvas CaptureStream", MEDIA_RT, {},
                                 "GetSnapshot"_ns);
-      snapshot = mOwningElement->GetSurfaceSnapshot(nullptr);
-      if (!snapshot) {
-        PROFILER_MARKER_TEXT("Canvas CaptureStream", MEDIA_RT, {},
-                             "Abort: snapshot failed"_ns);
-        return;
-      }
-    }
 
+      mOwningElement->GetSurfaceSnapshotAsync()
+          ->Then(
+              GetCurrentSerialEventTarget(), __func__,
+              [self = RefPtr{this},
+               time = aTime](RefPtr<gfx::SourceSurface> aSurface) {
+                MOZ_ASSERT(aSurface);
+                self->mPendingCapturePromise.Complete();
+                self->GetSurfaceSnapshotAsyncSuccess(aSurface, time);
+              },
+              [self = RefPtr{this}](nsresult aRv) {
+                NS_WARNING("Failed to get Snapshot");
+                self->mPendingCapturePromise.Complete();
+              })
+          ->Track(mPendingCapturePromise);
+    }
+  }
+
+  void GetSurfaceSnapshotAsyncSuccess(RefPtr<gfx::SourceSurface> aSurface,
+                                      TimeStamp aTime) {
     RefPtr<DataSourceSurface> copy;
     {
       AUTO_PROFILER_MARKER_TEXT("Canvas CaptureStream", MEDIA_RT, {},
                                 "CopySurface"_ns);
-      copy = CopySurface(snapshot, mReturnPlaceholderData);
+      copy = CopySurface(aSurface, mReturnPlaceholderData);
       if (!copy) {
         PROFILER_MARKER_TEXT("Canvas CaptureStream", MEDIA_RT, {},
                              "Abort: copy failed"_ns);
@@ -282,6 +299,7 @@ class RequestedFrameRefreshObserver : public nsARefreshObserver {
     Unregister();
     mRefreshDriver = nullptr;
     mWatchManager.Shutdown();
+    mPendingCapturePromise.DisconnectIfExists();
   }
 
   bool IsRegisteredAndWatching() { return mRegistered && mWatching; }
@@ -354,6 +372,8 @@ class RequestedFrameRefreshObserver : public nsARefreshObserver {
   WatchManager<RequestedFrameRefreshObserver> mWatchManager;
   TimeStamp mLastCaptureTime;
   bool mPendingThrottledCapture;
+  MozPromiseRequestHolder<HTMLCanvasElement::SurfaceSnapshotPromise>
+      mPendingCapturePromise;
 };
 
 // ---------------------------------------------------------------------------
@@ -1516,6 +1536,20 @@ already_AddRefed<SourceSurface> HTMLCanvasElement::GetSurfaceSnapshot(
     return mOffscreenDisplay->GetSurfaceSnapshot();
   }
   return nullptr;
+}
+
+RefPtr<HTMLCanvasElement::SurfaceSnapshotPromise>
+HTMLCanvasElement::GetSurfaceSnapshotAsync() {
+  if (mCurrentContext && mCurrentContext->SupportAsyncSnapshot()) {
+    return mCurrentContext->GetSurfaceSnapshotAsync();
+  }
+
+  RefPtr<gfx::SourceSurface> surface = GetSurfaceSnapshot();
+  if (!surface) {
+    return SurfaceSnapshotPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+
+  return SurfaceSnapshotPromise::CreateAndResolve(std::move(surface), __func__);
 }
 
 layers::LayersBackend HTMLCanvasElement::GetCompositorBackendType() const {

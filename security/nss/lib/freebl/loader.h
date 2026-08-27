@@ -994,6 +994,8 @@ SEC_END_PROTOS
 
 #endif
 
+typedef SECStatus (*F_DH_GenParam)(int primelen, DHParams **params);
+
 #ifdef NSS_DISABLE_DEPRECATED_SEED
 typedef SECStatus (*F_SEED_InitContext)(SEEDContext *cx,
                                         const unsigned char *key,

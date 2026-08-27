@@ -979,7 +979,7 @@ nsresult Http3Session::ProcessEvents() {
             mStreamIdHash.InsertOrUpdate(wtStream->StreamId(),
                                          std::move(wtStream));
           } break;
-          case WebTransportEventExternal::Tag::Datagram:
+          case WebTransportEventExternal::Tag::Datagram: {
             LOG(
                 ("Http3Session::ProcessEvents - "
                  "WebTransportEventExternal::Tag::Datagram [this=%p]",
@@ -1002,7 +1002,29 @@ nsresult Http3Session::ProcessEvents() {
             }
 
             wt->OnDatagramReceived(std::move(data));
-            break;
+          } break;
+          case WebTransportEventExternal::Tag::Draining: {
+            uint64_t sessionId = event.web_transport._0.draining.session_id;
+            LOG(
+                ("Http3Session::ProcessEvents - WebTransport Draining "
+                 "sessionId=0x%" PRIx64,
+                 sessionId));
+            RefPtr<Http3StreamBase> stream = mStreamIdHash.Get(sessionId);
+            if (!stream) {
+              LOG(
+                  ("Http3Session::ProcessEvents - WebTransport Draining - "
+                   "session not found "
+                   "sessionId=0x%" PRIx64 " [this=%p].",
+                   sessionId, this));
+              break;
+            }
+
+            RefPtr<Http3WebTransportSession> wt =
+                stream->GetHttp3WebTransportSession();
+            if (wt) {
+              wt->OnSessionDraining();
+            }
+          } break;
         }
       } break;
       case Http3Event::Tag::ConnectUdp: {
@@ -3093,10 +3115,10 @@ nsresult Http3Session::CreateWebTransportStream(
 }
 
 void Http3Session::SendDatagram(Http3WebTransportSession* aSession,
-                                nsTArray<uint8_t>& aData,
-                                uint64_t aTrackingId) {
-  nsresult rv = mHttp3Connection->WebTransportSendDatagram(aSession->StreamId(),
-                                                           aData, aTrackingId);
+                                nsTArray<uint8_t>& aData, uint64_t aTrackingId,
+                                uint64_t aSendGroupId, int64_t aSendOrder) {
+  nsresult rv = mHttp3Connection->WebTransportSendDatagram(
+      aSession->StreamId(), aData, aTrackingId, aSendGroupId, aSendOrder);
   LOG(("Http3Session::SendDatagram %p res=%" PRIx32, this,
        static_cast<uint32_t>(rv)));
   if (!aTrackingId) {
@@ -3127,20 +3149,49 @@ uint64_t Http3Session::MaxDatagramSize(uint64_t aSessionId) {
   return size;
 }
 
+nsresult Http3Session::ExportWebTransportKeyingMaterial(
+    uint64_t aSessionId, const nsTArray<uint8_t>& aLabel,
+    const nsTArray<uint8_t>& aContext, nsTArray<uint8_t>& aKeyingMaterial) {
+  return mHttp3Connection->ExportWebTransportKeyingMaterial(
+      aSessionId, aLabel, aContext, aKeyingMaterial);
+}
+
+nsresult Http3Session::RegisterWebTransportSendGroup(uint64_t aSessionId,
+                                                     uint64_t aGroupId) {
+  return mHttp3Connection->RegisterWebTransportSendGroup(aSessionId, aGroupId);
+}
+
+nsresult Http3Session::GetWebTransportSessionProtocol(uint64_t aSessionId,
+                                                      nsACString& aProtocol) {
+  return mHttp3Connection->GetWebTransportSessionProtocol(aSessionId,
+                                                          aProtocol);
+}
 void Http3Session::SendHTTPDatagram(uint64_t aStreamId,
                                     nsTArray<uint8_t>& aData,
                                     uint64_t aTrackingId) {
   LOG(("Http3Session::SendHTTPDatagram %p length=%zu aTrackingId=%" PRIx64,
        this, aData.Length(), aTrackingId));
-  (void)mHttp3Connection->ConnectUdpSendDatagram(aStreamId, aData, aTrackingId);
+  // Connect-UDP (MASQUE) doesn't use WebTransport send groups or send order,
+  // so pass 0 for both (0 = null sendGroup, 0 = default sendOrder).
+  (void)mHttp3Connection->ConnectUdpSendDatagram(aStreamId, aData, aTrackingId,
+                                                 0, 0);
 }
 
-void Http3Session::SetSendOrder(Http3StreamBase* aStream,
-                                Maybe<int64_t> aSendOrder) {
+void Http3Session::SetSendOrder(Http3StreamBase* aStream, int64_t aSendOrder) {
   if (!IsClosing()) {
     nsresult rv = mHttp3Connection->WebTransportSetSendOrder(
         aStream->StreamId(), aSendOrder);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
+    (void)rv;
+  }
+}
+
+void Http3Session::SetSendGroup(Http3StreamBase* aStream,
+                                uint64_t aSendGroupId) {
+  if (!IsClosing()) {
+    nsresult rv = mHttp3Connection->WebTransportSetSendGroup(
+        aStream->StreamId(), aSendGroupId);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "WebTransportSetSendGroup failed");
     (void)rv;
   }
 }

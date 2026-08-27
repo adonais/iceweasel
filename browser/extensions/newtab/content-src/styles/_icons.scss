@@ -121,6 +121,12 @@
   }
 
   &.icon-trending {
+    /*
+    * @backward-compat { version 155 }
+    * trending.svg was renamed to lightning-bolt.svg in 155. The original file
+    * was kept solely so newtab could continue using it in case of a train hop.
+    * Update this rule and remove trending.svg once 155 is on Release.
+    */
     background-image: url('chrome://browser/skin/trending.svg');
     transform: translateY(2px); // trending bolt is visually top heavy
   }

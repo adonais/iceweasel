@@ -201,6 +201,7 @@ describe("PictureOfTheDay widget", () => {
       PictureOfTheDay: {
         ...INITIAL_STATE.PictureOfTheDay,
         imageUrl: "https://example.com/potd.jpg",
+        thumbnailUrl: "https://example.com/potd-thumb.jpg",
         title: "Test picture",
         description: "A test picture description.",
         publishedDate: "2026-07-01",
@@ -221,7 +222,10 @@ describe("PictureOfTheDay widget", () => {
       expect(root.className).toContain("has-picture");
       const img = container.querySelector("img.picture-of-the-day-image");
       expect(img).toBeTruthy();
-      expect(img.getAttribute("src")).toBe("https://example.com/potd.jpg");
+      // The widget renders the thumbnail, never the high-res imageUrl.
+      expect(img.getAttribute("src")).toBe(
+        "https://example.com/potd-thumb.jpg"
+      );
       expect(img.getAttribute("alt")).toBe("A test picture description.");
       expect(
         container.querySelector('[data-l10n-id="newtab-picture-header-main"]')
@@ -236,6 +240,29 @@ describe("PictureOfTheDay widget", () => {
       expect(
         container.querySelector(".picture-of-the-day-show-button")
       ).toBeFalsy();
+    });
+
+    it("shows the empty state (never the high-res URL) when the thumbnail is absent", () => {
+      const { container } = renderWidget(
+        jest.fn(),
+        {},
+        {
+          ...populatedState,
+          PictureOfTheDay: {
+            ...populatedState.PictureOfTheDay,
+            thumbnailUrl: "",
+          },
+        }
+      );
+      expect(
+        container.querySelector("img.picture-of-the-day-image")
+      ).toBeFalsy();
+      expect(
+        container.querySelector('[data-l10n-id="newtab-picture-check-back"]')
+      ).toBeTruthy();
+      expect(
+        container.querySelector("article.picture-of-the-day").className
+      ).not.toContain("has-picture");
     });
 
     it("renders the New badge until the widget has been interacted with", () => {
@@ -529,6 +556,7 @@ describe("PictureOfTheDay widget", () => {
       PictureOfTheDay: {
         ...INITIAL_STATE.PictureOfTheDay,
         imageUrl: "https://example.com/potd.jpg",
+        thumbnailUrl: "https://example.com/potd-thumb.jpg",
         description: "A test picture description.",
         publishedDate: "2026-07-01",
         author: "Jane Doe",
@@ -646,6 +674,7 @@ describe("PictureOfTheDay widget", () => {
       PictureOfTheDay: {
         ...INITIAL_STATE.PictureOfTheDay,
         imageUrl: "https://example.com/potd.jpg",
+        thumbnailUrl: "https://example.com/potd-thumb.jpg",
         title: "Test picture",
         description: "A test picture description.",
         publishedDate: "2026-07-01",
@@ -715,6 +744,7 @@ describe("PictureOfTheDay widget", () => {
       PictureOfTheDay: {
         ...INITIAL_STATE.PictureOfTheDay,
         imageUrl: "https://example.com/potd.jpg",
+        thumbnailUrl: "https://example.com/potd-thumb.jpg",
         title: "Test picture",
         description: "A test picture description.",
         publishedDate: "2026-07-01",

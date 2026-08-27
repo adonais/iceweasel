@@ -1462,8 +1462,8 @@ RefPtr<WebGLFramebuffer> WebGLContext::CreateOpaqueFramebuffer(
   samples = std::min(samples, gl->MaxSamples());
   const gfx::IntSize size = {options.width, options.height};
 
-  auto fbo =
-      gl::MozFramebuffer::Create(gl, size, samples, options.depthStencil);
+  auto fbo = gl::MozFramebuffer::Create(gl, size, samples, options.depthStencil,
+                                        options.depthStencil);
   if (!fbo) {
     return nullptr;
   }

@@ -86,30 +86,21 @@ add_task(async function testIndexedDB() {
   await extension.awaitMessage("indexedDBCreated");
   await extension.awaitMessage("indexedDBCreated");
 
-  function getUsage() {
-    return new Promise(resolve => {
-      let qms = SpecialPowers.Services.qms;
-      let cb = SpecialPowers.wrapCallback(request => resolve(request.result));
-      qms.getUsage(cb);
-    });
-  }
+  // Listing every origin in the profile is a parent process only operation,
+  // so this has to run there rather than in our content process.
+  function getOrigins() {
+    return SpecialPowers.spawnChrome([], async () => {
+      const result = await new Promise(resolve => {
+        Services.qms.getUsage(request => resolve(request.result));
+      });
 
-  async function getOrigins() {
-    let origins = [];
-    let result = await getUsage();
-    for (let i = 0; i < result.length; ++i) {
-      if (result[i].usage === 0) {
-        continue;
-      }
-      if (
-        result[i].origin.startsWith("https://example.org") ||
-        result[i].origin.startsWith("https://example.com") ||
-        result[i].origin.startsWith("https://example.net")
-      ) {
-        origins.push(result[i].origin);
-      }
-    }
-    return origins.sort();
+      return result
+        .filter(
+          item => item.usage !== 0 && item.origin.startsWith("https://example.")
+        )
+        .map(item => item.origin)
+        .sort();
+    });
   }
 
   let origins = await getOrigins();

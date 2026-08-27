@@ -64,7 +64,7 @@ android-fenix:
         - "'test-apk-fenix-debug"
         - "'ui-test-apk-fenix-arm-debug"
         - "^source-test 'fenix"
-        - "'generate-baseline-profile-firebase-fenix"
+        - "'generate-baseline-profile-firebase-fenix-simulation"
 
 android-frontend:
     selector: fuzzy
@@ -86,7 +86,7 @@ android-frontend:
         - "'test-apk-focus-debug"
         - "'ui-test-apk-focus-arm-debug"
         - "^source-test 'android | 'fenix | 'focus"
-        - "'generate-baseline-profile-firebase-fenix"
+        - "'generate-baseline-profile-firebase-fenix-simulation"
 
 android-focus:
     selector: fuzzy
@@ -126,7 +126,7 @@ android-fullstack:
         - "'test-apk-focus-debug"
         - "'ui-test-apk-focus-arm-debug"
         - "^source-test 'android | 'fenix | 'focus"
-        - "'generate-baseline-profile-firebase-fenix"
+        - "'generate-baseline-profile-firebase-fenix-simulation"
         # GeckoView tests (from android-geckoview preset)
         - "^source-test-mozlint eslint$ | rejected-words$ | file-perm$ | file-whitespace$"
         # Miscellaneous Tests
@@ -557,9 +557,11 @@ webrender:
     selector: fuzzy
     description: >-
         Runs the conformance tests relevant to WebRender.
+    disable_target_task_filter: true
     query:
-        - "!talos !raptor !shippable !asan !tsan !nofis !python-reftest '-reftest"
-        - "!talos !raptor !shippable !asan !tsan !nofis !python-reftest webrender-"
+        - "!talos !raptor !shippable !asan !tsan !nofis !python-reftest !ccov !mingwclang !android-hw !backlog '-reftest"
+        - "!talos !raptor !shippable !asan !tsan !nofis !python-reftest !ccov !mingwclang !android-hw !backlog 'webrender-"
+        - "'webrender-android-hw-p6-opt"
 
 webrender-linux:
     selector: fuzzy
@@ -580,3 +582,16 @@ webrender-perf:
         - "'tp5"
         - "'talos-webgl"
         - "'motionmark-animometer"
+
+webrender-wrench:
+    selector: fuzzy
+    description: >-
+        Runs WebRender wrench tests on Linux, macOS, Windows, Android emulator
+        and Pixel 6.
+    disable_target_task_filter: true
+    query:
+        - "'webrender-linux64-debug"
+        - "'webrender-macos-release"
+        - "'webrender-windows"
+        - "'webrender-android-emulator-release"
+        - "'webrender-android-hw-p6-opt"

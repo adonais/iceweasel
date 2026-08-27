@@ -4,6 +4,10 @@
 
 :host {
   --heading-text-color: light-dark(var(--color-violet-70), var(--color-violet-30));
+
+  @media -moz-pref("browser.nova.enabled") {
+    --heading-text-color: var(--text-color);
+  }
 }
 
 .heading-container {

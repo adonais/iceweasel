@@ -1,0 +1,45 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+package mozilla.components.service.mars
+
+import kotlinx.coroutines.test.runTest
+import mozilla.components.feature.top.sites.TopSitesProvider
+import mozilla.components.support.test.eq
+import mozilla.components.support.test.mock
+import mozilla.components.support.test.whenever
+import org.junit.Test
+import org.mockito.ArgumentMatchers.anyBoolean
+import org.mockito.Mockito.verify
+import java.io.IOException
+
+class MacTopSitesUseCasesTest {
+
+    @Test
+    fun `WHEN refresh MAC top sites use case is called THEN call the provider to fetch top sites bypassing the cache`() = runTest {
+        val provider: TopSitesProvider = mock()
+
+        MacTopSitesUseCases.initialize(provider)
+
+        whenever(provider.getTopSites(anyBoolean())).thenReturn(emptyList())
+
+        MacTopSitesUseCases().refreshMacTopSites.invoke()
+
+        verify(provider).getTopSites(eq(false))
+    }
+
+    @Test(expected = IOException::class)
+    fun `GIVEN the provider fails to fetch MAC top sites WHEN refresh top sites use case is called THEN an exception is thrown`() = runTest {
+        val provider: TopSitesProvider = mock()
+        val throwable = IOException("test")
+
+        MacTopSitesUseCases.initialize(provider)
+
+        whenever(provider.getTopSites(anyBoolean())).then {
+            throw throwable
+        }
+
+        MacTopSitesUseCases().refreshMacTopSites.invoke()
+    }
+}

@@ -18,6 +18,7 @@ const PREF_CAPTIVE_ENABLED = "network.captive-portal-service.enabled";
 const PREF_CAPTIVE_TESTMODE = "network.captive-portal-service.testMode";
 const PREF_CAPTIVE_MINTIME = "network.captive-portal-service.minInterval";
 const PREF_CAPTIVE_ENDPOINT = "captivedetect.canonicalURL";
+const PREF_CAPTIVE_CANONICAL_CONTENT = "captivedetect.canonicalContent";
 const PREF_DNS_NATIVE_IS_LOCALHOST = "network.dns.native-is-localhost";
 
 const SUCCESS_STRING =
@@ -35,11 +36,13 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref(PREF_CAPTIVE_ENABLED);
   Services.prefs.clearUserPref(PREF_CAPTIVE_TESTMODE);
   Services.prefs.clearUserPref(PREF_CAPTIVE_ENDPOINT);
+  Services.prefs.clearUserPref(PREF_CAPTIVE_CANONICAL_CONTENT);
   Services.prefs.clearUserPref(PREF_CAPTIVE_MINTIME);
   Services.prefs.clearUserPref(PREF_DNS_NATIVE_IS_LOCALHOST);
 });
 
 add_task(async function setup() {
+  Services.prefs.setCharPref(PREF_CAPTIVE_CANONICAL_CONTENT, SUCCESS_STRING);
   Services.prefs.setCharPref(
     PREF_CAPTIVE_ENDPOINT,
     `http://localhost:${httpserver.identity.primaryPort}/captive.txt`

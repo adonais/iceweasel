@@ -2,12 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
-  UrlbarTelemetryUtils:
-    "chrome://browser/content/urlbar/UrlbarTelemetryUtils.mjs",
-});
+import { UrlbarTelemetryUtils } from "chrome://browser/content/urlbar/UrlbarTelemetryUtils.mjs";
 
 /**
  * @import {UrlbarChildController} from "chrome://browser/content/urlbar/UrlbarChildController.mjs"
@@ -80,7 +75,7 @@ export class UrlbarChildTelemetry {
       if (this.#startEventInfo.interactionType == "topsites") {
         this.#startEventInfo.interactionType =
           interactionType ||
-          lazy.UrlbarTelemetryUtils.startInteractionType(event, searchString);
+          UrlbarTelemetryUtils.startInteractionType(event, searchString);
         this.#startEventInfo.searchString = searchString;
       } else if (
         this.#startEventInfo.interactionType == "returned" &&
@@ -116,7 +111,7 @@ export class UrlbarChildTelemetry {
       timeStamp: event.timeStamp || ChromeUtils.now(),
       interactionType:
         interactionType ||
-        lazy.UrlbarTelemetryUtils.startInteractionType(event, searchString),
+        UrlbarTelemetryUtils.startInteractionType(event, searchString),
       searchString,
     };
   }
@@ -141,21 +136,18 @@ export class UrlbarChildTelemetry {
     // This should never throw, or it may break the urlbar.
     try {
       this.#handlingRecord = true;
-      let snapshot = lazy.UrlbarTelemetryUtils.collectSnapshot(
+      let snapshot = UrlbarTelemetryUtils.collectSnapshot(
         event,
         details,
         this.#startEventInfo
       );
       if (snapshot) {
         let { input, view } = this.#controller;
-        let engagementData = lazy.UrlbarTelemetryUtils.engagementData(
-          input,
-          view
-        );
-        let smartbarData = lazy.UrlbarTelemetryUtils.smartbarData(input);
+        let engagementData = UrlbarTelemetryUtils.engagementData(input, view);
+        let smartbarData = UrlbarTelemetryUtils.smartbarData(input);
 
         let { built, previousSearchWords } =
-          lazy.UrlbarTelemetryUtils.buildRecordedEngagement(
+          UrlbarTelemetryUtils.buildRecordedEngagement(
             snapshot,
             engagementData,
             smartbarData,
@@ -169,7 +161,7 @@ export class UrlbarChildTelemetry {
         let disableBuilt = engagementData.visibleResults.some(
           r => r.providerName == "UrlbarProviderQuickSuggest"
         )
-          ? lazy.UrlbarTelemetryUtils.buildRecordedDisableCandidate(
+          ? UrlbarTelemetryUtils.buildRecordedDisableCandidate(
               snapshot,
               engagementData,
               smartbarData,
@@ -187,13 +179,14 @@ export class UrlbarChildTelemetry {
             );
 
         this.#controller.recordEngagement(
-          lazy.UrlbarTelemetryUtils.recordedEngagementToWire({
+          UrlbarTelemetryUtils.recordedEngagementToWire({
             built,
             disableBuilt,
             method: snapshot.method,
             searchSource: snapshot.internalDetails.searchSource,
             internalDetails: snapshot.internalDetails,
             exposures,
+            visibleResults: engagementData.visibleResults,
           })
         );
       }
@@ -268,7 +261,7 @@ export class UrlbarChildTelemetry {
     // Record at most one exposure per result, like the parent recorder.
     if (!this.#exposureResults.has(result)) {
       this.#exposureResults.add(result);
-      let { resultType, keyword } = lazy.UrlbarTelemetryUtils.exposureEntry(
+      let { resultType, keyword } = UrlbarTelemetryUtils.exposureEntry(
         result,
         queryContext
       );
@@ -295,7 +288,7 @@ export class UrlbarChildTelemetry {
       return {
         resultType,
         keyword,
-        terminal: lazy.UrlbarTelemetryUtils.exposureTerminal(
+        terminal: UrlbarTelemetryUtils.exposureTerminal(
           result,
           queryContext,
           visibleResults
@@ -303,6 +296,10 @@ export class UrlbarChildTelemetry {
       };
     });
   }
+
+  // Bounces still being tracked on the message path, keyed by the tab's stable
+  // browser id.
+  #bounceStates = new Map();
 
   /**
    * Starts tracking a potential bounce after an engagement, resolving the
@@ -313,24 +310,29 @@ export class UrlbarChildTelemetry {
    * recording -- it doesn't run for a content-process urlbar, which has no such
    * browser.
    *
-   * @param {MozBrowser} browser
-   *   The chrome <browser> for the tab the engagement happened in.
+   * @param {number} browserId
+   *   The stable browser id of the tab the engagement happened in.
    * @param {Event} event The DOM event behind the engagement.
    * @param {object} details The interaction details.
    */
-  async startTrackingBounceEvent(browser, event, details) {
-    let state = this.#controller.input.getBrowserState(browser);
+  async startTrackingBounceEvent(browserId, event, details) {
+    // Resolve the session and the input/view content the snapshot needs before
+    // awaiting below: the engagement record that follows this call ends the
+    // session and closes the view, and the await yields to it.
+    let startEventInfo = this.#startEventInfo;
+    let { input, view } = this.#controller;
+    let engagementData = UrlbarTelemetryUtils.engagementData(input, view);
+    let smartbarData = UrlbarTelemetryUtils.smartbarData(input);
+
     // Another engagement while already tracking could itself be a bounce.
-    if (state.bounceEventTracking) {
-      await this.handleBounceEventTrigger(browser);
+    if (this.#bounceStates.has(browserId)) {
+      await this.handleBounceEventTrigger(browserId);
     }
 
-    let { input, view } = this.#controller;
-    let engagementData = lazy.UrlbarTelemetryUtils.engagementData(input, view);
-    let snapshot = lazy.UrlbarTelemetryUtils.collectBounceSnapshot(
+    let snapshot = UrlbarTelemetryUtils.collectBounceSnapshot(
       event,
       details,
-      this.#startEventInfo,
+      startEventInfo,
       engagementData.visibleResults
     );
 
@@ -341,7 +343,7 @@ export class UrlbarChildTelemetry {
     if (snapshot) {
       searchSource = snapshot.searchSource;
       let searchMode = snapshot.searchMode ?? engagementData.searchMode;
-      let { interaction } = lazy.UrlbarTelemetryUtils.getInteractionType(
+      let { interaction } = UrlbarTelemetryUtils.getInteractionType(
         "bounce",
         snapshot.startEventInfo,
         searchSource,
@@ -349,8 +351,7 @@ export class UrlbarChildTelemetry {
         searchMode,
         this.#previousSearchWords
       );
-      let smartbarData = lazy.UrlbarTelemetryUtils.smartbarData(input);
-      built = lazy.UrlbarTelemetryUtils.buildEventInfo({
+      built = UrlbarTelemetryUtils.buildEventInfo({
         method: "bounce",
         action: snapshot.action,
         interaction,
@@ -371,12 +372,16 @@ export class UrlbarChildTelemetry {
       });
     }
 
-    state.bounceEventTracking = { startTime: Date.now(), built, searchSource };
+    this.#bounceStates.set(browserId, {
+      startTime: Date.now(),
+      built,
+      searchSource,
+    });
 
     // The bounce records parent-side at trigger time, by which point a closing
     // tab's browser is gone. Hand the parent the live browser now so it can
     // still resolve it then.
-    this.#controller.trackBounceBrowser(browser.browsingContext?.browserId);
+    this.#controller.trackBounceBrowser(browserId);
   }
 
   /**
@@ -385,22 +390,22 @@ export class UrlbarChildTelemetry {
    * content the recording reads to the parent, which queries `Interactions`
    * and records the bounce if warranted.
    *
-   * @param {MozBrowser} browser
-   *   The chrome <browser> for the tab the trigger happened in.
+   * @param {number} browserId
+   *   The stable browser id of the tab the trigger happened in.
    */
-  handleBounceEventTrigger(browser) {
-    let state = this.#controller.input.getBrowserState(browser);
-    if (!state.bounceEventTracking) {
+  handleBounceEventTrigger(browserId) {
+    let state = this.#bounceStates.get(browserId);
+    if (!state) {
       return;
     }
-    let { built, searchSource, startTime } = state.bounceEventTracking;
-    state.bounceEventTracking = null;
+    this.#bounceStates.delete(browserId);
+    let { built, searchSource, startTime } = state;
 
     this.#controller.handleBounceTrigger({
       built,
       searchSource,
       startTime,
-      browserId: browser.browsingContext?.browserId,
+      browserId,
     });
   }
 }

@@ -169,6 +169,12 @@ void ModuleLoadRequest::LoadFinished() {
   mLoader->OnModuleLoadComplete(request);
 }
 
+void ModuleLoadRequest::NotifyModuleWaitFinished() {
+  if (HasScriptLoadContext()) {
+    GetScriptLoadContext()->NotifyModuleWaitFinished();
+  }
+}
+
 void ModuleLoadRequest::SetImport(Handle<JSScript*> aReferrerScript,
                                   Handle<JSObject*> aModuleRequestObj,
                                   Handle<Value> aPayload) {

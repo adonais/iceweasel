@@ -70,6 +70,13 @@ class HTMLTemplateElement final : public nsGenericHTMLElement {
     SetHTMLBoolAttr(nsGkAtoms::shadowrootserializable, aValue, aRv);
   }
 
+  void GetShadowRootCustomElementRegistry(nsAString& aResult) const {
+    GetHTMLAttr(nsGkAtoms::shadowrootcustomelementregistry, aResult);
+  }
+  void SetShadowRootCustomElementRegistry(const nsAString& aValue) {
+    SetHTMLAttr(nsGkAtoms::shadowrootcustomelementregistry, aValue);
+  }
+
   void GetShadowRootReferenceTarget(nsAString& aResult) const {
     GetHTMLAttr(nsGkAtoms::shadowrootreferencetarget, aResult);
   }

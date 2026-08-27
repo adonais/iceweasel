@@ -27,7 +27,7 @@ server.registerPathHandler("/", (request, response) => {
 });
 
 add_task(async function () {
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   let page = await XPCShellContentUtils.loadContentPage("http://example.com/", {
     remote: true,
     remoteSubframes: true,

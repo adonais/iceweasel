@@ -82,5 +82,5 @@ This document is meant for being loaded in a window dialog, and embeds the `Migr
 
 Pages like `about:preferences` or `about:welcome` can embed the `MigrationWizard` component directly, rather than use `migration-dialog-window.html`.
 
-[jsactors]: /dom/ipc/jsactors.html
-[xrayvision]: /dom/scriptSecurity/xray_vision.html
+[jsactors]: /dom/ipc/jsactors.md
+[xrayvision]: /dom/scriptSecurity/xray_vision.md

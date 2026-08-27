@@ -15,43 +15,43 @@
 
 PR_BEGIN_EXTERN_C
 
-typedef struct PLArena          PLArena;
+typedef struct PLArena PLArena;
 
 struct PLArena {
-    PLArena     *next;          /* next arena for this lifetime */
-    PRUword     base;           /* aligned base address, follows this header */
-    PRUword     limit;          /* one beyond last byte in arena */
-    PRUword     avail;          /* points to next available byte */
+    PLArena* next; /* next arena for this lifetime */
+    PRUword base;  /* aligned base address, follows this header */
+    PRUword limit; /* one beyond last byte in arena */
+    PRUword avail; /* points to next available byte */
 };
 
 #ifdef PL_ARENAMETER
 typedef struct PLArenaStats PLArenaStats;
 
 struct PLArenaStats {
-    PLArenaStats  *next;        /* next in arenaStats list */
-    char          *name;        /* name for debugging */
-    PRUint32      narenas;      /* number of arenas in pool */
-    PRUint32      nallocs;      /* number of PL_ARENA_ALLOCATE() calls */
-    PRUint32      nreclaims;    /* number of reclaims from freeArenas */
-    PRUint32      nmallocs;     /* number of malloc() calls */
-    PRUint32      ndeallocs;    /* number of lifetime deallocations */
-    PRUint32      ngrows;       /* number of PL_ARENA_GROW() calls */
-    PRUint32      ninplace;     /* number of in-place growths */
-    PRUint32      nreleases;    /* number of PL_ARENA_RELEASE() calls */
-    PRUint32      nfastrels;    /* number of "fast path" releases */
-    PRUint32      nbytes;       /* total bytes allocated */
-    PRUint32      maxalloc;     /* maximum allocation size in bytes */
-    PRFloat64     variance;     /* size variance accumulator */
+    PLArenaStats* next; /* next in arenaStats list */
+    char* name;         /* name for debugging */
+    PRUint32 narenas;   /* number of arenas in pool */
+    PRUint32 nallocs;   /* number of PL_ARENA_ALLOCATE() calls */
+    PRUint32 nreclaims; /* number of reclaims from freeArenas */
+    PRUint32 nmallocs;  /* number of malloc() calls */
+    PRUint32 ndeallocs; /* number of lifetime deallocations */
+    PRUint32 ngrows;    /* number of PL_ARENA_GROW() calls */
+    PRUint32 ninplace;  /* number of in-place growths */
+    PRUint32 nreleases; /* number of PL_ARENA_RELEASE() calls */
+    PRUint32 nfastrels; /* number of "fast path" releases */
+    PRUint32 nbytes;    /* total bytes allocated */
+    PRUint32 maxalloc;  /* maximum allocation size in bytes */
+    PRFloat64 variance; /* size variance accumulator */
 };
 #endif
 
-typedef struct PLArenaPool      PLArenaPool;
+typedef struct PLArenaPool PLArenaPool;
 
 struct PLArenaPool {
-    PLArena     first;          /* first arena in pool list */
-    PLArena     *current;       /* arena from which to allocate space */
-    PRUint32    arenasize;      /* net exact size of a new arena */
-    PRUword     mask;           /* alignment mask (power-of-2 - 1) */
+    PLArena first;      /* first arena in pool list */
+    PLArena* current;   /* arena from which to allocate space */
+    PRUint32 arenasize; /* net exact size of a new arena */
+    PRUword mask;       /* alignment mask (power-of-2 - 1) */
 #ifdef PL_ARENAMETER
     PLArenaStats stats;
 #endif
@@ -114,10 +114,10 @@ struct PLArenaPool {
  * See https://github.com/google/sanitizers/wiki/AddressSanitizerManualPoisoning
  */
 
-PL_ASAN_VISIBILITY(void) __asan_poison_memory_region(
-    void const volatile *addr, size_t size);
-PL_ASAN_VISIBILITY(void) __asan_unpoison_memory_region(
-    void const volatile *addr, size_t size);
+PL_ASAN_VISIBILITY(void)
+__asan_poison_memory_region(void const volatile* addr, size_t size);
+PL_ASAN_VISIBILITY(void)
+__asan_unpoison_memory_region(void const volatile* addr, size_t size);
 
 #define PL_MAKE_MEM_NOACCESS(addr, size) \
     __asan_poison_memory_region((addr), (size))
@@ -144,106 +144,110 @@ PL_ASAN_VISIBILITY(void) __asan_unpoison_memory_region(
  * per ALLOCATE and GROW.
  */
 #ifdef PL_ARENA_CONST_ALIGN_MASK
-#define PL_ARENA_ALIGN(pool, n) (((PRUword)(n) + PL_ARENA_CONST_ALIGN_MASK) \
-                                & ~PL_ARENA_CONST_ALIGN_MASK)
+#define PL_ARENA_ALIGN(pool, n) \
+    (((PRUword)(n) + PL_ARENA_CONST_ALIGN_MASK) & ~PL_ARENA_CONST_ALIGN_MASK)
 
 #define PL_INIT_ARENA_POOL(pool, name, size) \
-        PL_InitArenaPool(pool, name, size, PL_ARENA_CONST_ALIGN_MASK + 1)
+    PL_InitArenaPool(pool, name, size, PL_ARENA_CONST_ALIGN_MASK + 1)
 #else
-#define PL_ARENA_ALIGN(pool, n) (((PRUword)(n) + (pool)->mask) & ~(pool)->mask)
+#define PL_ARENA_ALIGN(pool, n) \
+    (((PRUword)(n) + (pool)->mask) & ~(pool)->mask)
 #endif
 
-#define PL_ARENA_ALLOCATE(p, pool, nb) \
-    PR_BEGIN_MACRO \
-        PLArena *_a = (pool)->current; \
-        PRUint32 _nb = PL_ARENA_ALIGN(pool, (PRUint32)(nb) + PL_ARENA_REDZONE_SIZE); \
-        PRUword _p = _a->avail; \
-        if (_nb < (PRUint32)nb) { \
-            _p = 0; \
-        } else if (_nb > (_a->limit - _a->avail)) { \
-            _p = (PRUword)PL_ArenaAllocate(pool, _nb); \
-        } else { \
-            _a->avail += _nb; \
-        } \
-        p = (void *)_p; \
-        if (p) { \
-            PL_MAKE_MEM_UNDEFINED(p, (PRUint32)nb); \
-            PL_ArenaCountAllocation(pool, (PRUint32)nb); \
-        } \
+#define PL_ARENA_ALLOCATE(p, pool, nb)                                           \
+    PR_BEGIN_MACRO                                                               \
+    PLArena* _a = (pool)->current;                                               \
+    PRUint32 _nb = PL_ARENA_ALIGN(pool, (PRUint32)(nb) + PL_ARENA_REDZONE_SIZE); \
+    PRUword _p = _a->avail;                                                      \
+    if (_nb < (PRUint32)nb) {                                                    \
+        _p = 0;                                                                  \
+    } else if (_nb > (_a->limit - _a->avail)) {                                  \
+        _p = (PRUword)PL_ArenaAllocate(pool, _nb);                               \
+    } else {                                                                     \
+        _a->avail += _nb;                                                        \
+    }                                                                            \
+    p = (void*)_p;                                                               \
+    if (p) {                                                                     \
+        PL_MAKE_MEM_UNDEFINED(p, (PRUint32)nb);                                  \
+        PL_ArenaCountAllocation(pool, (PRUint32)nb);                             \
+    }                                                                            \
     PR_END_MACRO
 
-#define PL_ARENA_GROW(p, pool, size, incr) \
-    PR_BEGIN_MACRO \
-        PLArena *_a = (pool)->current; \
-        PRUint32 _incr = PL_ARENA_ALIGN(pool, (PRUint32)incr); \
-        if (_incr < (PRUint32)incr) { \
-            p = NULL; \
-        } else if (_a->avail == (PRUword)(p) + \
-                   PL_ARENA_ALIGN(pool, size + PL_ARENA_REDZONE_SIZE) && \
-                   _incr <= (_a->limit - _a->avail)) { \
-            PL_MAKE_MEM_UNDEFINED((unsigned char *)(p) + size, (PRUint32)incr); \
-            _a->avail += _incr; \
-            PL_MAKE_MEM_NOACCESS((unsigned char *)(p) + size + incr, PL_ARENA_REDZONE_SIZE); \
-            PL_ArenaCountInplaceGrowth(pool, size, (PRUint32)incr); \
-        } else { \
-            p = PL_ArenaGrow(pool, p, size, (PRUint32)incr); \
-        } \
-        if (p) {\
-            PL_ArenaCountGrowth(pool, size, (PRUint32)incr); \
-        } \
+#define PL_ARENA_GROW(p, pool, size, incr)                                   \
+    PR_BEGIN_MACRO                                                           \
+    PLArena* _a = (pool)->current;                                           \
+    PRUint32 _incr = PL_ARENA_ALIGN(pool, (PRUint32)incr);                   \
+    if (_incr < (PRUint32)incr) {                                            \
+        p = NULL;                                                            \
+    } else if (_a->avail ==                                                  \
+                   (PRUword)(p) +                                            \
+                       PL_ARENA_ALIGN(pool, size + PL_ARENA_REDZONE_SIZE) && \
+               _incr <= (_a->limit - _a->avail)) {                           \
+        PL_MAKE_MEM_UNDEFINED((unsigned char*)(p) + size, (PRUint32)incr);   \
+        _a->avail += _incr;                                                  \
+        PL_MAKE_MEM_NOACCESS((unsigned char*)(p) + size + incr,              \
+                             PL_ARENA_REDZONE_SIZE);                         \
+        PL_ArenaCountInplaceGrowth(pool, size, (PRUint32)incr);              \
+    } else {                                                                 \
+        p = PL_ArenaGrow(pool, p, size, (PRUint32)incr);                     \
+    }                                                                        \
+    if (p) {                                                                 \
+        PL_ArenaCountGrowth(pool, size, (PRUint32)incr);                     \
+    }                                                                        \
     PR_END_MACRO
 
-#define PL_ARENA_MARK(pool) ((void *) (pool)->current->avail)
-#define PR_UPTRDIFF(p,q) ((PRUword)(p) - (PRUword)(q))
+#define PL_ARENA_MARK(pool) ((void*)(pool)->current->avail)
+#define PR_UPTRDIFF(p, q) ((PRUword)(p) - (PRUword)(q))
 
-#define PL_CLEAR_UNUSED_PATTERN(a, pattern) \
-    PR_BEGIN_MACRO \
-        PR_ASSERT((a)->avail <= (a)->limit); \
-        PL_MAKE_MEM_UNDEFINED((void*)(a)->avail, (a)->limit - (a)->avail); \
-        memset((void*)(a)->avail, (pattern), (a)->limit - (a)->avail); \
+#define PL_CLEAR_UNUSED_PATTERN(a, pattern)                            \
+    PR_BEGIN_MACRO                                                     \
+    PR_ASSERT((a)->avail <= (a)->limit);                               \
+    PL_MAKE_MEM_UNDEFINED((void*)(a)->avail, (a)->limit - (a)->avail); \
+    memset((void*)(a)->avail, (pattern), (a)->limit - (a)->avail);     \
     PR_END_MACRO
 #ifdef DEBUG
 #define PL_FREE_PATTERN 0xDA
 #define PL_CLEAR_UNUSED(a) PL_CLEAR_UNUSED_PATTERN((a), PL_FREE_PATTERN)
-#define PL_CLEAR_ARENA(a) \
-    PR_BEGIN_MACRO \
-        PL_MAKE_MEM_UNDEFINED((void*)(a), (a)->limit - (PRUword)(a)); \
-        memset((void*)(a), PL_FREE_PATTERN, (a)->limit - (PRUword)(a)); \
+#define PL_CLEAR_ARENA(a)                                           \
+    PR_BEGIN_MACRO                                                  \
+    PL_MAKE_MEM_UNDEFINED((void*)(a), (a)->limit - (PRUword)(a));   \
+    memset((void*)(a), PL_FREE_PATTERN, (a)->limit - (PRUword)(a)); \
     PR_END_MACRO
 #else
 #define PL_CLEAR_UNUSED(a)
 #define PL_CLEAR_ARENA(a)
 #endif
 
-#define PL_ARENA_RELEASE(pool, mark) \
-    PR_BEGIN_MACRO \
-        char *_m = (char *)(mark); \
-        PLArena *_a = (pool)->current; \
-        if (PR_UPTRDIFF(_m, _a->base) <= PR_UPTRDIFF(_a->avail, _a->base)) { \
-            _a->avail = (PRUword)PL_ARENA_ALIGN(pool, _m); \
-            PL_CLEAR_UNUSED(_a); \
-            PL_MAKE_MEM_NOACCESS((void*)_a->avail, _a->limit - _a->avail); \
-            PL_ArenaCountRetract(pool, _m); \
-        } else { \
-            PL_ArenaRelease(pool, _m); \
-        } \
-        PL_ArenaCountRelease(pool, _m); \
+#define PL_ARENA_RELEASE(pool, mark)                                     \
+    PR_BEGIN_MACRO                                                       \
+    char* _m = (char*)(mark);                                            \
+    PLArena* _a = (pool)->current;                                       \
+    if (PR_UPTRDIFF(_m, _a->base) <= PR_UPTRDIFF(_a->avail, _a->base)) { \
+        _a->avail = (PRUword)PL_ARENA_ALIGN(pool, _m);                   \
+        PL_CLEAR_UNUSED(_a);                                             \
+        PL_MAKE_MEM_NOACCESS((void*)_a->avail, _a->limit - _a->avail);   \
+        PL_ArenaCountRetract(pool, _m);                                  \
+    } else {                                                             \
+        PL_ArenaRelease(pool, _m);                                       \
+    }                                                                    \
+    PL_ArenaCountRelease(pool, _m);                                      \
     PR_END_MACRO
 
 #ifdef PL_ARENAMETER
-#define PL_COUNT_ARENA(pool,op) ((pool)->stats.narenas op)
+#define PL_COUNT_ARENA(pool, op) ((pool)->stats.narenas op)
 #else
-#define PL_COUNT_ARENA(pool,op)
+#define PL_COUNT_ARENA(pool, op)
 #endif
 
-#define PL_ARENA_DESTROY(pool, a, pnext) \
-    PR_BEGIN_MACRO \
-        PL_COUNT_ARENA(pool,--); \
-        if ((pool)->current == (a)) (pool)->current = &(pool)->first; \
-        *(pnext) = (a)->next; \
-        PL_CLEAR_ARENA(a); \
-        free(a); \
-        (a) = 0; \
+#define PL_ARENA_DESTROY(pool, a, pnext)  \
+    PR_BEGIN_MACRO                        \
+    PL_COUNT_ARENA(pool, --);             \
+    if ((pool)->current == (a))           \
+        (pool)->current = &(pool)->first; \
+    *(pnext) = (a)->next;                 \
+    PL_CLEAR_ARENA(a);                    \
+    free(a);                              \
+    (a) = 0;                              \
     PR_END_MACRO
 
 /*
@@ -255,33 +259,38 @@ PL_ASAN_VISIBILITY(void) __asan_unpoison_memory_region(
 ** Note: choose a gross size that's a power of two to avoid the heap allocator
 ** rounding the size up.
 **/
-PR_EXTERN(void) PL_InitArenaPool(
-    PLArenaPool *pool, const char *name, PRUint32 size, PRUint32 align);
+PR_EXTERN(void)
+PL_InitArenaPool(PLArenaPool* pool, const char* name, PRUint32 size,
+                 PRUint32 align);
 
 /*
 ** Finish using arenas, freeing all memory associated with them.
 ** NOTE: this function is now a no-op. If you want to free a single
 ** PLArenaPoolUse use PL_FreeArenaPool() or PL_FinishArenaPool().
 **/
-PR_EXTERN(void) PL_ArenaFinish(void);
+PR_EXTERN(void)
+PL_ArenaFinish(void);
 
 /*
 ** Free the arenas in pool.  The user may continue to allocate from pool
 ** after calling this function.  There is no need to call PL_InitArenaPool()
 ** again unless PL_FinishArenaPool(pool) has been called.
 **/
-PR_EXTERN(void) PL_FreeArenaPool(PLArenaPool *pool);
+PR_EXTERN(void)
+PL_FreeArenaPool(PLArenaPool* pool);
 
 /*
 ** Free the arenas in pool and finish using it altogether.
 **/
-PR_EXTERN(void) PL_FinishArenaPool(PLArenaPool *pool);
+PR_EXTERN(void)
+PL_FinishArenaPool(PLArenaPool* pool);
 
 /*
 ** Compact all of the arenas in a pool so that no space is wasted.
 ** NOT IMPLEMENTED.  Do not use.
 **/
-PR_EXTERN(void) PL_CompactArenaPool(PLArenaPool *pool);
+PR_EXTERN(void)
+PL_CompactArenaPool(PLArenaPool* pool);
 
 /*
 ** Friend functions used by the PL_ARENA_*() macros.
@@ -289,56 +298,64 @@ PR_EXTERN(void) PL_CompactArenaPool(PLArenaPool *pool);
 ** WARNING: do not call these functions directly. Always use the
 ** PL_ARENA_*() macros.
 **/
-PR_EXTERN(void *) PL_ArenaAllocate(PLArenaPool *pool, PRUint32 nb);
+PR_EXTERN(void*)
+PL_ArenaAllocate(PLArenaPool* pool, PRUint32 nb);
 
-PR_EXTERN(void *) PL_ArenaGrow(
-    PLArenaPool *pool, void *p, PRUint32 size, PRUint32 incr);
+PR_EXTERN(void*)
+PL_ArenaGrow(PLArenaPool* pool, void* p, PRUint32 size, PRUint32 incr);
 
-PR_EXTERN(void) PL_ArenaRelease(PLArenaPool *pool, char *mark);
+PR_EXTERN(void)
+PL_ArenaRelease(PLArenaPool* pool, char* mark);
 
 /*
 ** memset contents of all arenas in pool to pattern
 */
-PR_EXTERN(void) PL_ClearArenaPool(PLArenaPool *pool, PRInt32 pattern);
+PR_EXTERN(void)
+PL_ClearArenaPool(PLArenaPool* pool, PRInt32 pattern);
 
 /*
 ** A function like malloc_size() or malloc_usable_size() that measures the
 ** size of a heap block.
 */
-typedef size_t (*PLMallocSizeFn)(const void *ptr);
+typedef size_t (*PLMallocSizeFn)(const void* ptr);
 
 /*
 ** Measure all memory used by a PLArenaPool, excluding the PLArenaPool
 ** structure.
 */
-PR_EXTERN(size_t) PL_SizeOfArenaPoolExcludingPool(
-    const PLArenaPool *pool, PLMallocSizeFn mallocSizeOf);
+PR_EXTERN(size_t)
+PL_SizeOfArenaPoolExcludingPool(const PLArenaPool* pool,
+                                PLMallocSizeFn mallocSizeOf);
 
 #ifdef PL_ARENAMETER
 
 #include <stdio.h>
 
-PR_EXTERN(void) PL_ArenaCountAllocation(PLArenaPool *pool, PRUint32 nb);
+PR_EXTERN(void)
+PL_ArenaCountAllocation(PLArenaPool* pool, PRUint32 nb);
 
-PR_EXTERN(void) PL_ArenaCountInplaceGrowth(
-    PLArenaPool *pool, PRUint32 size, PRUint32 incr);
+PR_EXTERN(void)
+PL_ArenaCountInplaceGrowth(PLArenaPool* pool, PRUint32 size, PRUint32 incr);
 
-PR_EXTERN(void) PL_ArenaCountGrowth(
-    PLArenaPool *pool, PRUint32 size, PRUint32 incr);
+PR_EXTERN(void)
+PL_ArenaCountGrowth(PLArenaPool* pool, PRUint32 size, PRUint32 incr);
 
-PR_EXTERN(void) PL_ArenaCountRelease(PLArenaPool *pool, char *mark);
+PR_EXTERN(void)
+PL_ArenaCountRelease(PLArenaPool* pool, char* mark);
 
-PR_EXTERN(void) PL_ArenaCountRetract(PLArenaPool *pool, char *mark);
+PR_EXTERN(void)
+PL_ArenaCountRetract(PLArenaPool* pool, char* mark);
 
-PR_EXTERN(void) PL_DumpArenaStats(FILE *fp);
+PR_EXTERN(void)
+PL_DumpArenaStats(FILE* fp);
 
-#else  /* !PL_ARENAMETER */
+#else /* !PL_ARENAMETER */
 
-#define PL_ArenaCountAllocation(ap, nb)                 /* nothing */
-#define PL_ArenaCountInplaceGrowth(ap, size, incr)      /* nothing */
-#define PL_ArenaCountGrowth(ap, size, incr)             /* nothing */
-#define PL_ArenaCountRelease(ap, mark)                  /* nothing */
-#define PL_ArenaCountRetract(ap, mark)                  /* nothing */
+#define PL_ArenaCountAllocation(ap, nb)            /* nothing */
+#define PL_ArenaCountInplaceGrowth(ap, size, incr) /* nothing */
+#define PL_ArenaCountGrowth(ap, size, incr)        /* nothing */
+#define PL_ArenaCountRelease(ap, mark)             /* nothing */
+#define PL_ArenaCountRetract(ap, mark)             /* nothing */
 
 #endif /* !PL_ARENAMETER */
 

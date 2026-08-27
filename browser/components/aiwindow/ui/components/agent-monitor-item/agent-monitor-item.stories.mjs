@@ -18,7 +18,7 @@ export default {
 
 const AGENT = {
   id: "agent-sony",
-  productName: "Nike Men's Vomero Plus Running Shoes",
+  monitorName: "Nike Men's Vomero Plus Running Shoes",
   url: "soundnest.com/audio/sony-wh-1000xm5",
   faviconText: "S",
   faviconColor: "#e8663a",
@@ -89,7 +89,7 @@ export const Create = Template.bind({});
 Create.args = {
   agent: {
     ...AGENT,
-    productName: "",
+    monitorName: "",
     value: "",
     valueMeta: "found on this page just now",
     status: null,

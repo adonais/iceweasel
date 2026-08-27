@@ -28,7 +28,11 @@ function runTest() {
 
   // Longhand properties that are NOT considered to be subproperties of the 'all'
   // shorthand.
-  var excludedSubproperties = ["direction", "unicode-bidi"];
+  var excludedSubproperties = [
+    "direction",
+    "unicode-bidi",
+    "-webkit-line-clamp",
+  ];
   var excludedSubpropertiesSet = new Set(excludedSubproperties);
 
   // Longhand properties that are considered to be subproperties of the 'all'

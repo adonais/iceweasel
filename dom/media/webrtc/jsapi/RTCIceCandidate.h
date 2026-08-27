@@ -35,7 +35,7 @@ class RTCIceCandidate final : public nsISupports, public nsWrapperCache {
                   const Nullable<uint16_t>& aSdpMLineIndex,
                   const nsAString& aUsernameFragment);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(RTCIceCandidate)
 
   static already_AddRefed<RTCIceCandidate> Constructor(

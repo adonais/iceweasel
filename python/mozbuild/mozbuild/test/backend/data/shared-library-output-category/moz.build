@@ -1,0 +1,16 @@
+# Any copyright is dedicated to the Public Domain.
+# http://creativecommons.org/publicdomain/zero/1.0/
+
+
+@template
+def SharedLibrary(name, output_category=None):
+    LIBRARY_NAME = name
+    FORCE_SHARED_LIB = True
+    if output_category:
+        SHARED_LIBRARY_OUTPUT_CATEGORY = output_category
+
+
+DIRS += [
+    "with-output-category",
+    "without-output-category",
+]

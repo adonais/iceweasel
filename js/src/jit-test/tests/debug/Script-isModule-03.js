@@ -13,6 +13,6 @@ dbg.onNewScript = function (script) {
     };
 };
 const m = g.parseModule("eval('')");
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);
 assertEq(count, 2);

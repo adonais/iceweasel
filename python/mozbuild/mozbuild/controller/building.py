@@ -1429,29 +1429,10 @@ class BuildDriver(MozbuildObject):
 
             status = None
 
-            if not config_rc and any([
-                self.backend_out_of_date(
-                    mozpath.join(self.topobjdir, "backend.%sBackend" % backend)
-                )
-                for backend in all_backends
-            ]):
-                self.log(
-                    logging.INFO,
-                    "build_output",
-                    {},
-                    "Build configuration changed. Regenerating backend.",
-                )
-                args = [
-                    config.substs["PYTHON3"],
-                    mozpath.join(self.topobjdir, "config.status"),
-                ]
-                self.run_process(args, cwd=self.topobjdir, pass_thru=True)
+            if not config_rc:
+                self.ensure_backend_current()
 
-            if jobs == 0:
-                for param in self.mozconfig.get("make_extra") or []:
-                    key, value = param.split("=", 1)
-                    if key == "MOZ_PARALLEL_BUILD":
-                        jobs = int(value)
+            jobs = self.resolve_num_jobs(jobs, job_size)
 
             if "Make" not in active_backend:
                 backend_cls = get_backend_class(active_backend)(config)
@@ -1484,7 +1465,7 @@ class BuildDriver(MozbuildObject):
                             message = "Build argument '{target}' is a subdirectory and was ignored."
                             # Don't tell agents how to override, because they do
                             # override
-                            if not is_running_under_coding_agent:
+                            if not is_running_under_coding_agent():
                                 message += (
                                     "\nUse --allow-subdirectory-build to override."
                                 )
@@ -1500,7 +1481,11 @@ class BuildDriver(MozbuildObject):
                     if make_dir is None and make_target is None:
                         return 1
 
-                    if config.is_artifact_build and target.startswith("installers-"):
+                    if (
+                        config.is_artifact_build
+                        and target.startswith("installers-")
+                        and config.substs.get("MOZ_USE_LEGACY_L10N")
+                    ):
                         # See https://bugzilla.mozilla.org/show_bug.cgi?id=1387485
                         self.log(
                             logging.ERROR,
@@ -1560,6 +1545,16 @@ class BuildDriver(MozbuildObject):
             elif status is None:
                 # If the backend doesn't specify a build() method, then just
                 # call client.mk directly.
+                # In automation, client.mk starts the sccache daemon, which
+                # only reads its configuration from the environment when it
+                # starts, so it needs the sccache variables in its environment.
+                # config.mk covers the sub-makes.
+                client_mk_env = dict(append_env or {})
+                client_mk_env.update(
+                    (name, value)
+                    for name, value in config.substs.items()
+                    if name.startswith("SCCACHE_")
+                )
                 status = self._run_client_mk(
                     line_handler=output.on_stdout_line,
                     stderr_line_handler=output.on_stderr_line,
@@ -1567,7 +1562,7 @@ class BuildDriver(MozbuildObject):
                     job_size=job_size,
                     verbose=verbose,
                     keep_going=keep_going,
-                    append_env=append_env,
+                    append_env=client_mk_env,
                 )
 
             self.log(

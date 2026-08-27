@@ -69,7 +69,10 @@ struct FFmpegVulkanVideoDecoder {
   PFN_vkFreeCommandBuffers mFreeCommandBuffers = nullptr;
   PFN_vkBeginCommandBuffer mBeginCommandBuffer = nullptr;
   PFN_vkEndCommandBuffer mEndCommandBuffer = nullptr;
-  PFN_vkGetDeviceQueue mGetDeviceQueue = nullptr;
+  // Must use GetDeviceQueue2 with the same flags used at vkCreateDevice
+  // (AVVulkanDeviceContext.queue_flags). GetDeviceQueue is illegal whenever
+  // those flags are non-zero (VUID-vkGetDeviceQueue-flags-01841) — bug 2058347.
+  PFN_vkGetDeviceQueue2 mGetDeviceQueue2 = nullptr;
   PFN_vkQueueSubmit mQueueSubmit = nullptr;
   PFN_vkCmdPipelineBarrier mCmdPipelineBarrier = nullptr;
   PFN_vkCmdCopyImage mCmdCopyImage = nullptr;
@@ -101,8 +104,12 @@ struct FFmpegVulkanVideoDecoder {
   std::vector<uint64_t> mDrmModifiers;
   nsTHashMap<uint64_t, bool> mExportRequiresDedicatedByModifier;
 
+  // aGeneration guards against a prior, already-destroyed VkInstance whose
+  // address a new one could in principle reuse (see
+  // VulkanDeviceHolder::Generation()).
   void LoadInstanceFunctions(PFN_vkGetInstanceProcAddr aGetProcAddr,
-                             VkInstance aInst, VkPhysicalDevice aPhysDev);
+                             VkInstance aInst, VkPhysicalDevice aPhysDev,
+                             uint64_t aGeneration);
   void LoadDeviceFunctions(VkDevice aDev);
   bool IsLoaded() const;
   // Populated by LoadInstanceFunctions / LoadDeviceFunctions respectively;
@@ -120,6 +127,8 @@ struct FFmpegVulkanVideoDecoder {
       '\0',
   };
   bool mDecoderMatchesCompositor = false;
+  // Set when ImageFormatProperties2 left only LINEAR and we forced NVIDIA BL.
+  bool mForcedNvidiaBlockLinear = false;
   ~FFmpegVulkanVideoDecoder();
   void Cleanup();
 
@@ -128,7 +137,8 @@ struct FFmpegVulkanVideoDecoder {
   // a back-pointer into the enclosing FFmpegVideoDecoder object.
   bool InitCtx(VkDevice aDevice, VkPhysicalDevice aPhysDev,
                PFN_vkGetInstanceProcAddr aGetProcAddr, VkInstance aInstance,
-               uint32_t aCopyQueueFamilyIndex);
+               uint64_t aGeneration, uint32_t aCopyQueueFamilyIndex,
+               VkDeviceQueueCreateFlags aQueueCreateFlags);
   MediaResult InitCopyRingBuffer(uint32_t aWidth, uint32_t aHeight,
                                  AVPixelFormat aSwFormat,
                                  AVBufferRef* aVulkanDevCtx);

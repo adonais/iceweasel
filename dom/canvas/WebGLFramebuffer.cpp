@@ -1620,8 +1620,8 @@ void WebGLFramebuffer::BlitFramebuffer(WebGLContext* webgl, GLint _srcX0,
 
     // src -Blit-> fbB -DrawBlit-> fbC -Blit-> dst
 
-    const auto fbB = gl::MozFramebuffer::Create(gl, {1, 1}, 0, false);
-    const auto fbC = gl::MozFramebuffer::Create(gl, {1, 1}, 0, false);
+    const auto fbB = gl::MozFramebuffer::Create(gl, {1, 1}, 0, false, false);
+    const auto fbC = gl::MozFramebuffer::Create(gl, {1, 1}, 0, false, false);
 
     // -
 

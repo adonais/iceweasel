@@ -46,8 +46,17 @@ void JitRuntime::generateBaselineInterpreterEntryTrampoline(
       FramePointer, BaselineInterpreterEntryFrameLayout::offsetOfCalleeToken());
   masm.loadPtr(calleeTokenAddr, callee);
 
+  Address descriptorAddr(
+      FramePointer, BaselineInterpreterEntryFrameLayout::offsetOfDescriptor());
+
   // Load argc into nargs.
   masm.loadNumActualArgs(FramePointer, nargs);
+
+  // Compute in |nargs| the number of Values the caller pushed above ThisV. The
+  // loop below then copies ThisV and these Values.
+  Label resuming, argsCounted, argsPushed;
+  masm.branchTest32(Assembler::NonZero, descriptorAddr,
+                    Imm32(FrameDescriptor::IsResumingGenerator), &resuming);
 
   Label notFunction;
   {
@@ -76,6 +85,31 @@ void JitRuntime::generateBaselineInterpreterEntryTrampoline(
     masm.addPtr(scratch, nargs);
   }
   masm.bind(&notFunction);
+  masm.jump(&argsCounted);
+
+  // The caller is resuming a suspended generator or async function/module, so
+  // it also pushed the resume args (see ResumeFrameArgs) and numActualArgs is
+  // 0.
+  Label moduleResume;
+  masm.bind(&resuming);
+  {
+#ifdef DEBUG
+    Label argcOk;
+    masm.branchTest32(Assembler::Zero, nargs, nargs, &argcOk);
+    masm.assumeUnreachable("Resume frames have numActualArgs == 0");
+    masm.bind(&argcOk);
+#endif
+
+    masm.branchTestPtr(Assembler::NonZero, callee, Imm32(CalleeTokenScriptBit),
+                       &moduleResume);
+
+    // The callee is a generator or async function: the resume args were pushed
+    // above the formals.
+    masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), callee, scratch);
+    masm.loadFunctionArgCount(scratch, nargs);
+    masm.addPtr(Imm32(ResumeFrameArgs::NumSlots), nargs);
+  }
+  masm.bind(&argsCounted);
 
   // Align stack
   masm.alignJitStackBasedOnNArgs(nargs, /*countIncludesThis = */ false);
@@ -99,14 +133,44 @@ void JitRuntime::generateBaselineInterpreterEntryTrampoline(
     masm.subPtr(Imm32(sizeof(Value)), argPtr);
     masm.branchPtr(Assembler::Above, argPtr, scratch, &loop);
   }
+  masm.jump(&argsPushed);
+
+  masm.bind(&moduleResume);
+  {
+    // Resuming a module (top-level await). Module frames have no ThisV and no
+    // arguments, so the resume args are the only Values the caller pushed.
+    masm.alignJitStackBasedOnNumValues(ResumeFrameArgs::NumSlots);
+
+    // Copy them from the last slot to the first, to preserve their order.
+    static_assert(sizeof(BaselineInterpreterEntryFrameLayout) ==
+                  sizeof(JitFrameLayout));
+    constexpr size_t base =
+        BaselineInterpreterEntryFrameLayout::offsetOfModuleResumeArgs();
+    for (uint32_t slot = ResumeFrameArgs::NumSlots; slot > 0; slot--) {
+      size_t offset = base + ResumeFrameArgs::offsetOfSlot(slot - 1);
+      masm.pushValue(Address(FramePointer, int32_t(offset)));
+    }
+  }
+  masm.bind(&argsPushed);
 
   // Copy callee token
   masm.push(callee);
 
-  // Save a new descriptor using BaselineInterpreterEntry frame type.
+  // Save a new descriptor using BaselineInterpreterEntry frame type. When
+  // resuming a generator we have to propagate the IsResumingGenerator bit so
+  // that the callee's prologue dispatches to the resume point.
+  Label descriptorPushed, notResuming;
+  masm.branchTest32(Assembler::Zero, descriptorAddr,
+                    Imm32(FrameDescriptor::IsResumingGenerator), &notResuming);
+  masm.push(FrameDescriptor(FrameType::BaselineInterpreterEntry, /* argc = */ 0,
+                            /* hasInlinedICScript = */ false,
+                            /* isResumingGenerator = */ true));
+  masm.jump(&descriptorPushed);
+  masm.bind(&notResuming);
   masm.loadNumActualArgs(FramePointer, scratch);
   masm.pushFrameDescriptorForJitCall(FrameType::BaselineInterpreterEntry,
                                      scratch, scratch);
+  masm.bind(&descriptorPushed);
 
   // Call into baseline interpreter
   uint8_t* blinterpAddr = baselineInterpreter().codeRaw();

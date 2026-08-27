@@ -19,6 +19,14 @@ enum TCPSocketBinaryType {
 dictionary SocketOptions {
   boolean useSecureTransport = false;
   TCPSocketBinaryType binaryType = "string";
+  /**
+   * nsISocketTransport connection flags, applied to the transport before the
+   * connection is started. Setting them afterwards through the transport
+   * attribute is too late, because the connect has already been dispatched to
+   * the socket thread. Only honoured in the parent process; the content process
+   * path does not carry these over IPC.
+   */
+  unsigned long connectionFlags = 0;
 };
 
 enum TCPReadyState {

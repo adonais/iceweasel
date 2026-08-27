@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "IPCTestUtils.h"
+
+#include "chrome/common/ipc_message.h"
+#include "chrome/common/ipc_message_utils.h"
 #include "gtest/gtest.h"
 
 #include "mozilla/ipc/SharedMemoryCursor.h"
@@ -24,6 +28,25 @@
 #endif
 
 namespace mozilla::ipc {
+
+struct SharedMemoryInternalTest : public testing::Test {
+  // Changes our idea of the size without changing the size of the OS object;
+  // mappings could fail, or could succeed but crash on access.
+  void UnsafeSetSize(shared_memory::HandleBase& aHandle, uint64_t aSize) {
+    aHandle.SetSize(aSize);
+  }
+
+  template <shared_memory::Type T>
+  shared_memory::Handle<T> UnsafeConvertTo(
+      shared_memory::HandleBase&& aHandle) {
+    return std::move(aHandle).ConvertTo<T>();
+  }
+
+  shared_memory::MutableHandle UnsafeThaw(
+      shared_memory::ReadOnlyHandle&& aHandle) {
+    return UnsafeConvertTo<shared_memory::Type::Mutable>(std::move(aHandle));
+  }
+};
 
 #define ASSERT_SHMEM(handle, size)            \
   do {                                        \
@@ -252,10 +275,9 @@ TEST(IPCSharedMemoryMapping, FreezableUnmap)
 
 // Try to map a frozen shm for writing.  Threat model: the process is
 // compromised and then receives a frozen handle.
-TEST(IPCSharedMemory, FreezeAndMapRW)
-{
+TEST_F(SharedMemoryInternalTest, FreezeAndMapRW) {
   // Create
-  auto handle = ipc::shared_memory::CreateFreezable(1);
+  auto handle = shared_memory::CreateFreezable(1);
   ASSERT_TRUE(handle);
 
   // Initialize
@@ -266,10 +288,19 @@ TEST(IPCSharedMemory, FreezeAndMapRW)
   *mem = 'A';
 
   // Freeze
-  auto [roHandle, rwMapping] = std::move(mapping).FreezeWithMutableMapping();
-  ASSERT_TRUE(rwMapping);
+  auto roHandle = std::move(mapping).Freeze();
   ASSERT_TRUE(roHandle);
 
+  // Bypass the type system
+  auto rwHandle = UnsafeThaw(std::move(roHandle));
+  ASSERT_TRUE(rwHandle);
+
+  // Fail to write
+  auto rwMapping = rwHandle.Map();
+  EXPECT_FALSE(rwMapping);
+
+  // But it's still the same handle, for whatever that's worth
+  roHandle = std::move(rwHandle).ToReadOnly();
   auto roMapping = roHandle.Map();
   ASSERT_TRUE(roMapping);
   const auto* roMem = roMapping.DataAs<char>();
@@ -316,10 +347,8 @@ TEST(IPCSharedMemory, FreezeAndReprotect)
 // It doesn't work on Windows: VirtualProtect can't exceed the permissions set
 // in MapViewOfFile regardless of the security status of the original handle.
 //
-// It doesn't work on MacOS: we can set a higher max_protection for the memory
-// when creating the handle, but we wouldn't want to do this for freezable
-// handles (to prevent creating additional RW mappings that break the memory
-// freezing invariants).
+// It doesn't work on MacOS: we passed the same value as cur_prot and max_prot
+// when calling mach_vm_map, so the permissions can't be increased.
 TEST(IPCSharedMemory, Reprotect)
 {
   // Create
@@ -586,6 +615,56 @@ TEST(IPCSharedMemory, CursorWriteRead)
   // Ensure that writes past the end fail safely.
   cursor.Seek(mapping.Size() - 3);
   ASSERT_FALSE(cursor.Write(data, std::size(data)));
+}
+
+// A baseline for the SizeChangeMsg test below
+TEST_F(SharedMemoryInternalTest, PlainRoundTrip) {
+  auto handle = shared_memory::Create(65537);
+  ASSERT_TRUE(SerializeAndDeserialize(std::move(handle), &handle));
+  ASSERT_SHMEM(handle, 65537);
+  auto mapping = handle.Map();
+  EXPECT_TRUE(mapping.IsValid());
+}
+
+// Check that a handle where the stated size is higher than the OS object size
+// results in an error at or before mapping time.
+TEST_F(SharedMemoryInternalTest, SizeChangeMsg) {
+  // Windows and Mach only care about the number of pages, so the change has to
+  // roll over a page boundary.  This should be enough.
+  static constexpr size_t kRealSize = 65536;
+  static constexpr size_t kFakeSize = 65537;
+
+  auto handle = shared_memory::Create(kRealSize);
+
+  // We already know that our Handle class accepts and preserves unaligned
+  // sizes, so this is valid.
+  UnsafeSetSize(handle, kFakeSize);
+  ASSERT_SHMEM(handle, kFakeSize);
+
+#if defined(XP_UNIX) && !defined(XP_DARWIN)
+  EXPECT_FALSE(SerializeAndDeserialize(std::move(handle), &handle));
+#else  // Win/Mac
+  ASSERT_TRUE(SerializeAndDeserialize(std::move(handle), &handle));
+  auto mapping = handle.Map();
+  EXPECT_FALSE(mapping.IsValid());
+#endif
+}
+
+// If the claimed size is lower than the real size, that's fine; it doesn't
+// break anything, and some OSes round up the size anyway.  It also can't be
+// done accidentally though our SharedMemory API, since SetSize is private.
+TEST_F(SharedMemoryInternalTest, SizeChangeMsgDown) {
+  static constexpr size_t kRealSize = 65536;
+  static constexpr size_t kFakeSize = 12288;
+
+  auto handle = shared_memory::Create(kRealSize);
+  UnsafeSetSize(handle, kFakeSize);
+  ASSERT_SHMEM(handle, kFakeSize);
+
+  ASSERT_TRUE(SerializeAndDeserialize(std::move(handle), &handle));
+  auto mapping = handle.Map();
+  ASSERT_TRUE(mapping.IsValid());
+  EXPECT_EQ(kFakeSize, mapping.Size());
 }
 
 }  // namespace mozilla::ipc

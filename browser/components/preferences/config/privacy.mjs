@@ -349,6 +349,7 @@ Preferences.addAll([
   { id: "browser.urlbar.trustPanel.breachAlerts", type: "bool" },
   { id: "browser.urlbar.trustPanel.featureGate", type: "bool" },
   { id: "browser.urlbar.trustPanel.breachAlerts.featureGate", type: "bool" },
+  { id: "browser.urlbar.trackerCount.enabled", type: "bool" },
 
   // Button prefs
   { id: "pref.privacy.disable_button.cookie_exceptions", type: "bool" },
@@ -454,10 +455,6 @@ Preferences.addAll([
   { id: "dom.security.https_only_mode_pbm", type: "bool" },
   { id: "dom.security.https_first", type: "bool" },
   { id: "dom.security.https_first_pbm", type: "bool" },
-
-  // Cookie Banner Handling
-  { id: "cookiebanners.ui.desktop.enabled", type: "bool" },
-  { id: "cookiebanners.service.mode.privateBrowsing", type: "int" },
 
   // DoH
   { id: "network.trr.mode", type: "int" },
@@ -1209,6 +1206,11 @@ SettingGroupManager.registerGroups({
             control: "moz-box-button",
           },
         ],
+      },
+      {
+        id: "etpTrackerCountEnabled",
+        l10nId: "preferences-etp-tracker-count-enabled",
+        control: "moz-checkbox",
       },
       {
         id: "protectionsDashboardLink",
@@ -2758,6 +2760,10 @@ Preferences.addSetting(
 
 Preferences.addSetting({
   id: "cookieExceptions",
+  disabled: () =>
+    Services.prefs.prefIsLocked(
+      "pref.privacy.disable_button.cookie_exceptions"
+    ),
   onUserClick() {
     gSubDialog.open(
       "chrome://browser/content/preferences/dialogs/permissions.xhtml",
@@ -3164,7 +3170,7 @@ Preferences.addSetting({
   id: "viewCertificatesButton",
   deps: ["disableOpenCertManager"],
   disabled: deps => {
-    return deps.disableOpenCertManager.value;
+    return deps.disableOpenCertManager.locked;
   },
   onUserClick: () => {
     PrivacySettingHelpers.showCertificates();
@@ -3174,7 +3180,7 @@ Preferences.addSetting({
   id: "viewSecurityDevicesButton",
   deps: ["disableOpenDeviceManager"],
   disabled: deps => {
-    return deps.disableOpenDeviceManager.value;
+    return deps.disableOpenDeviceManager.locked;
   },
   onUserClick: () => {
     PrivacySettingHelpers.showSecurityDevices();
@@ -3702,6 +3708,22 @@ Preferences.addSetting({
 });
 
 Preferences.addSetting({
+  id: "urlbarNimbusListener",
+  setup(onChange) {
+    window.NimbusFeatures.urlbar.onUpdate(onChange);
+    return () => window.NimbusFeatures.urlbar.offUpdate(onChange);
+  },
+});
+
+Preferences.addSetting({
+  id: "etpTrackerCountEnabled",
+  pref: "browser.urlbar.trackerCount.enabled",
+  deps: ["urlbarNimbusListener"],
+  visible: () =>
+    window.NimbusFeatures.urlbar.getVariable("trackerCountFeatureGate"),
+});
+
+Preferences.addSetting({
   id: "protectionsDashboardLink",
 });
 
@@ -3787,6 +3809,10 @@ Preferences.addSetting({
 
 Preferences.addSetting({
   id: "etpManageExceptionsButton",
+  disabled: () =>
+    Services.prefs.prefIsLocked(
+      "pref.privacy.disable_button.tracking_protection_exceptions"
+    ),
   onUserClick() {
     let params = {
       permissionType: "trackingprotection",

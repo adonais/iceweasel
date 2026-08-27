@@ -2143,6 +2143,25 @@ toolbar#nav-bar {
             self.log.error(str(e))
             return None
 
+        # Enable the profiler by default with a feature set chosen to keep
+        # overhead low while still producing useful profiles: the platform
+        # defaults minus `stackwalk` and `fileioall` (both too expensive),
+        # plus `ipcmessages` and `memory` so IPC and memory tracks show up.
+        #
+        # The profiler is left disabled under ThreadSanitizer, where it causes
+        # too many failures, and on Android, where profiles are not yet
+        # transferred from the device to the host.
+        if not mozinfo.info["tsan"] and mozinfo.info["os"] != "android":
+            browserEnv.setdefault("MOZ_PROFILER_STARTUP", "1")
+            browserEnv.setdefault(
+                "MOZ_PROFILER_STARTUP_FEATURES",
+                "java,js,screenshots,processcpu,ipcmessages,memory",
+            )
+
+            # Set the sampling interval to 10ms to reduce the sampling overhead
+            # and avoid triggering the timer resolution change on Windows.
+            browserEnv.setdefault("MOZ_PROFILER_STARTUP_INTERVAL", "10")
+
         if (
             "MOZ_PROFILER_STARTUP_FEATURES" not in browserEnv
             or "nativeallocations"
@@ -2154,6 +2173,16 @@ toolbar#nav-bar {
 
         # If profiling options are enabled, turn on the gecko profiler by using the
         # profiler environmental variables.
+        if options.profiler or options.profilerSaveOnly:
+            # The user explicitly asked for a profile, so use the normal
+            # profiler feature set and sampling interval instead of the
+            # low-overhead defaults above, unless they have already picked
+            # values themselves.
+            if "MOZ_PROFILER_STARTUP_FEATURES" not in os.environ:
+                browserEnv["MOZ_PROFILER_STARTUP_FEATURES"] = "default"
+            if "MOZ_PROFILER_STARTUP_INTERVAL" not in os.environ:
+                browserEnv.pop("MOZ_PROFILER_STARTUP_INTERVAL", None)
+
         if options.profiler:
             if "MOZ_PROFILER_SHUTDOWN" not in os.environ:
                 # The user wants to capture a profile, and automatically view it. The
@@ -3682,6 +3711,7 @@ toolbar#nav-bar {
             "http3": options.useHttp3Server,
             "http2": options.useHttp2Server,
             "inc_origin_init": os.environ.get("MOZ_ENABLE_INC_ORIGIN_INIT") == "1",
+            "nova": self.extraPrefs.get("browser.nova.enabled", True),
             "sessionHistoryInParent": True,
             "socketprocess_e10s": self.extraPrefs.get("network.process.enabled", False),
             "socketprocess_networking": self.extraPrefs.get(

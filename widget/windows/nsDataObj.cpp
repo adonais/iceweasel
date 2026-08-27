@@ -57,21 +57,7 @@ using namespace mozilla::widget;
 #define BFH_LENGTH 14
 #define DEFAULT_THREAD_TIMEOUT_MS 30000
 
-//-----------------------------------------------------------------------------
-// CStreamBase implementation
-nsDataObj::CStreamBase::CStreamBase() : mStreamRead(0) {}
-
-//-----------------------------------------------------------------------------
-nsDataObj::CStreamBase::~CStreamBase() {}
-
 NS_IMPL_ISUPPORTS(nsDataObj::CStream, nsIStreamListener)
-
-//-----------------------------------------------------------------------------
-// CStream implementation
-nsDataObj::CStream::CStream() : mChannelRead(false) {}
-
-//-----------------------------------------------------------------------------
-nsDataObj::CStream::~CStream() {}
 
 //-----------------------------------------------------------------------------
 // helper - initializes the stream
@@ -413,9 +399,6 @@ nsDataObj::CMemStream::CMemStream(nsHGLOBAL aGlobalMem, uint32_t aTotalLength,
     : mGlobalMem(aGlobalMem), mEvent(aEvent), mTotalLength(aTotalLength) {
   ::CoCreateFreeThreadedMarshaler(this, getter_AddRefs(mMarshaler));
 }
-
-//-----------------------------------------------------------------------------
-nsDataObj::CMemStream::~CMemStream() {}
 
 //-----------------------------------------------------------------------------
 // IUnknown
@@ -819,7 +802,7 @@ STDMETHODIMP nsDataObj::QueryGetData(LPFORMATETC pFE) {
       return S_OK;
     }
   }
-  return E_FAIL;
+  return DV_E_FORMATETC;
 }
 
 //-----------------------------------------------------
@@ -1965,7 +1948,7 @@ HRESULT nsDataObj::DropTempFile(FORMATETC& aFE, STGMEDIUM& aSTG) {
     char buffer[512];
     ULONG readCount = 0;
     uint32_t writeCount = 0;
-    while (1) {
+    while (true) {
       HRESULT hres = pStream->Read(buffer, sizeof(buffer), &readCount);
       if (FAILED(hres)) return E_FAIL;
       if (readCount == 0) break;

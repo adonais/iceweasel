@@ -1739,9 +1739,12 @@ void SourceCompressionTaskEntry::workEncodingSpecific(Compressor& comp) {
   MOZ_ASSERT(reader->isUncompressed<Unit>());
 
   // Try to keep the maximum memory usage down by only allocating half the
-  // size of the string, first.
+  // size of the string, first. Small source strings are more likely to compress
+  // poorly, and don't use much memory to start with.
   size_t inputBytes = reader->length() * sizeof(Unit);
-  size_t firstSize = inputBytes / 2;
+  const size_t MinimumSizeForOptimisticAllocation = 5000;
+  bool allocateOptimistically = inputBytes > MinimumSizeForOptimisticAllocation;
+  size_t firstSize = allocateOptimistically ? inputBytes / 2 : inputBytes;
   UniqueChars compressed(js_pod_malloc<char>(firstSize));
   if (!compressed) {
     return;
@@ -1755,7 +1758,7 @@ void SourceCompressionTaskEntry::workEncodingSpecific(Compressor& comp) {
 
   comp.setOutput(reinterpret_cast<unsigned char*>(compressed.get()), firstSize);
   bool cont = true;
-  bool reallocated = false;
+  bool canReallocate = allocateOptimistically;
   while (cont) {
     if (shouldCancel()) {
       return;
@@ -1765,7 +1768,7 @@ void SourceCompressionTaskEntry::workEncodingSpecific(Compressor& comp) {
       case Compressor::CONTINUE:
         break;
       case Compressor::MOREOUTPUT: {
-        if (reallocated) {
+        if (!canReallocate) {
           // The compressed string is longer than the original string.
           return;
         }
@@ -1778,7 +1781,7 @@ void SourceCompressionTaskEntry::workEncodingSpecific(Compressor& comp) {
 
         comp.setOutput(reinterpret_cast<unsigned char*>(compressed.get()),
                        inputBytes);
-        reallocated = true;
+        canReallocate = false;
         break;
       }
       case Compressor::DONE:

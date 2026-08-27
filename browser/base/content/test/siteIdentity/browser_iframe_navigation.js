@@ -10,7 +10,7 @@ const ROOT_URI = getRootDirectory(gTestPath).replace(
   "https://example.com"
 );
 const SECURE_TEST_URI = ROOT_URI + "iframe_navigation.html";
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 const INSECURE_TEST_URI = SECURE_TEST_URI.replace("https://", "http://");
 
 const NOT_SECURE_LABEL = Services.prefs.getBoolPref(

@@ -68,7 +68,7 @@ class MouseScrollHandler::SynthesizingEvent {
         mLParam(0),
         mStatus(NOT_SYNTHESIZING) {}
 
-  ~SynthesizingEvent() {}
+  ~SynthesizingEvent() = default;
 
   static SynthesizingEvent* GetActiveInstance();
 

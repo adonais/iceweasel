@@ -303,16 +303,19 @@ nsresult FetchMostFrecentSubPageIcon(const UniquePtr<ConnectionAdapter>& aConn,
                                      const nsACString& aPageRoot,
                                      const nsACString& aPageHost,
                                      IconData& aIconData) {
+  // width is a uint16, so packing it under frecency makes the single max()
+  // rank rows exactly like ORDER BY frecency DESC, width DESC, without a sort.
+  // The HAVING avoids the all-NULL row a bare aggregate returns on no match.
   nsCOMPtr<mozIStorageStatement> stmt = aConn->GetStatement(
-      "SELECT i.icon_url, i.id, i.expire_ms, i.data, i.width, i.root "
+      "SELECT i.icon_url, i.id, i.expire_ms, i.data, i.width, i.root, "
+      "max(p.frecency * 65536 + i.width) "
       "FROM moz_pages_w_icons pwi "
-      "JOIN moz_icons_to_pages itp ON pwi.id = itp.page_id "
-      "JOIN moz_icons i ON itp.icon_id = i.id "
+      "JOIN moz_icons_to_pages itp ON itp.page_id = pwi.id "
+      "JOIN moz_icons i ON i.id = itp.icon_id "
       "JOIN moz_places p ON p.url_hash = pwi.page_url_hash "
       "WHERE p.rev_host = get_unreversed_host(:pageHost || '.') || '.' "
       "AND p.url BETWEEN :pageRoot || '/' AND :pageRoot || '/'  || X'FFFF' "
-      "ORDER BY p.frecency DESC, i.width DESC "
-      "LIMIT 1"_ns);
+      "HAVING count(*) > 0"_ns);
   NS_ENSURE_STATE(stmt);
   mozStorageStatementScoper scoperFallback(stmt);
 

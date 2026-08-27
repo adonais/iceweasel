@@ -18,22 +18,13 @@ using mozilla::Nothing;
 
 ForOfEmitter::ForOfEmitter(BytecodeEmitter* bce,
                            const EmitterScope* headLexicalEmitterScope,
-                           SelfHostedIter selfHostedIter, IteratorKind iterKind
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-                           ,
-                           HeadUsingDeclarationKind usingDeclarationInHead
-#endif
-                           )
+                           SelfHostedIter selfHostedIter, IteratorKind iterKind,
+                           HeadUsingDeclarationKind usingDeclarationInHead)
     : bce_(bce),
       selfHostedIter_(selfHostedIter),
       iterKind_(iterKind),
-      headLexicalEmitterScope_(headLexicalEmitterScope)
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-      ,
-      usingDeclarationInHead_(usingDeclarationInHead)
-#endif
-{
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+      headLexicalEmitterScope_(headLexicalEmitterScope),
+      usingDeclarationInHead_(usingDeclarationInHead) {
   // The using bindings are closed over and stored in the lexical environment
   // object for headLexicalEmitterScope.
   // Mark that the environment has disposables for them to be disposed on
@@ -45,7 +36,6 @@ ForOfEmitter::ForOfEmitter(BytecodeEmitter* bce,
   MOZ_ASSERT_IF(
       headLexicalEmitterScope && headLexicalEmitterScope->hasDisposables(),
       usingDeclarationInHead != HeadUsingDeclarationKind::None);
-#endif
 }
 
 bool ForOfEmitter::emitIterated() {
@@ -110,7 +100,6 @@ bool ForOfEmitter::emitInitialize(uint32_t forPos) {
                ScopeKind::Lexical);
 
     if (headLexicalEmitterScope_->hasEnvironment()) {
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
       // Before recreation of the lexical environment, we must dispose
       // the disposables of the previous iteration.
       //
@@ -126,7 +115,6 @@ bool ForOfEmitter::emitInitialize(uint32_t forPos) {
               usingDeclarationInHead_ == HeadUsingDeclarationKind::Async)) {
         return false;
       }
-#endif
       if (!bce_->emitInternedScopeOp(headLexicalEmitterScope_->index(),
                                      JSOp::RecreateLexicalEnv)) {
         //          [stack] NEXT ITER

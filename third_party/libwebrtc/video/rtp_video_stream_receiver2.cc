@@ -400,7 +400,7 @@ void RtpVideoStreamReceiver2::AddReceiveCodec(
     const CodecParameterMap& codec_params,
     bool raw_payload) {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
-  if (codec_params.count(kH264FmtpSpsPpsIdrInKeyframe) > 0 ||
+  if (codec_params.count(std::string(kH264FmtpSpsPpsIdrInKeyframe)) > 0 ||
       env_.field_trials().IsEnabled("WebRTC-SpsPpsIdrIsH264Keyframe")) {
     packet_buffer_.ForceSpsPpsIdrIsH264Keyframe();
     sps_pps_idr_is_h264_keyframe_ = true;
@@ -1003,6 +1003,7 @@ void RtpVideoStreamReceiver2::OnCompleteFrames(
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
   for (auto& frame : frames) {
     last_seq_num_for_pic_id_[frame->Id()] = frame->last_seq_num();
+    last_timestamp_for_pic_id_[frame->Id()] = frame->RtpTimestamp();
 
     last_completed_picture_id_ =
         std::max(last_completed_picture_id_, frame->Id());
@@ -1359,11 +1360,18 @@ void RtpVideoStreamReceiver2::FrameContinuous(int64_t picture_id) {
 void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
   int seq_num = -1;
+  std::optional<uint32_t> rtp_timestamp;
   auto seq_num_it = last_seq_num_for_pic_id_.find(picture_id);
   if (seq_num_it != last_seq_num_for_pic_id_.end()) {
     seq_num = seq_num_it->second;
     last_seq_num_for_pic_id_.erase(last_seq_num_for_pic_id_.begin(),
                                    ++seq_num_it);
+  }
+  auto ts_it = last_timestamp_for_pic_id_.find(picture_id);
+  if (ts_it != last_timestamp_for_pic_id_.end()) {
+    rtp_timestamp = ts_it->second;
+    last_timestamp_for_pic_id_.erase(last_timestamp_for_pic_id_.begin(),
+                                     ++ts_it);
   }
 
   if (seq_num != -1) {
@@ -1377,7 +1385,7 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
                    "remote_ssrc", config_.rtp.remote_ssrc, "seq_num", seq_num);
       vcm_receive_statistics_->OnDiscardedPackets(num_packets_cleared);
     }
-    reference_finder_->ClearTo(seq_num);
+    reference_finder_->ClearTo(seq_num, rtp_timestamp);
   }
 }
 
@@ -1429,7 +1437,7 @@ void RtpVideoStreamReceiver2::InsertSpsPpsIntoTracker(uint8_t payload_type) {
 
   H264SpropParameterSets sprop_decoder;
   auto sprop_base64_it =
-      codec_params_it->second.find(kH264FmtpSpropParameterSets);
+      codec_params_it->second.find(std::string(kH264FmtpSpropParameterSets));
 
   if (sprop_base64_it == codec_params_it->second.end())
     return;

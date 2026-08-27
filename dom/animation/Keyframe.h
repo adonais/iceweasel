@@ -24,13 +24,14 @@ struct PropertyValuePair {
 
   PropertyValuePair(const CSSPropertyId& aProperty,
                     RefPtr<StyleLockedDeclarationBlock>&& aValue)
-      : mProperty(aProperty), mServoDeclarationBlock(std::move(aValue)) {
-    MOZ_ASSERT(mServoDeclarationBlock, "Should be valid property value");
-  }
+      : mProperty(aProperty), mServoDeclarationBlock(std::move(aValue)) {}
 
   CSSPropertyId mProperty;
 
   // The specified value when using the Servo backend.
+  // If it is nullptr, we use the base values, i.e. the value generated for that
+  // property by finding the computed value for that property in the absence of
+  // animations, when composing the animations and getkeyframes().
   RefPtr<StyleLockedDeclarationBlock> mServoDeclarationBlock;
 
 #ifdef DEBUG
@@ -42,14 +43,11 @@ struct PropertyValuePair {
   bool operator==(const PropertyValuePair&) const;
 };
 
-// The preprocess info for an array of Keyframe.
-struct KeyframesOffsetHasAny {
-  // True if there are any Keyframes in nsTArray<mKeyframe> that use timeline
-  // range offsets.
-  bool mRangeOffset = false;
-  // True if there are any Keyframes in nsTArray<mKeyframe> that use percentage
-  // offset or their offsets are not set.
-  bool mNonRangeOffset = false;
+// Yes if there are any Keyframes in nsTArray<Keyframe> that use
+// <timeline-range-offset>.
+enum class KeyframeOffsetsHasRangeOffset {
+  No,
+  Yes,
 };
 
 /**
@@ -123,10 +121,6 @@ struct Keyframe {
   dom::CompositeOperationOrAuto mComposite =
       dom::CompositeOperationOrAuto::Auto;
   CopyableTArray<PropertyValuePair> mPropertyValues;
-
-  // FIXME: Bug 2037642. Drop this once we don't generate the missing keyframes
-  // when creating the animations.
-  bool mIsGenerated = false;
 };
 
 }  // namespace mozilla

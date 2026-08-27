@@ -76,4 +76,10 @@ internal object GlobalAccountManager {
 
         instance?.get()?.encounteredAuthError(operation, authErrorCountWithinWindow)
     }
+
+    internal fun requireAccountManager(): FxaAccountManager {
+        return requireNotNull(instance?.get()) {
+            "Trying to access the account manager without calling GlobalAccountManager.setInstance"
+        }
+    }
 }

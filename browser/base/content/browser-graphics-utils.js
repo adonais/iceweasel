@@ -12,11 +12,41 @@ var gGfxUtils = {
 
   init() {
     if (Services.prefs.getBoolPref("gfx.webrender.debug.enable-capture")) {
-      document.getElementById("wrCaptureCmd").removeAttribute("disabled");
-      document
-        .getElementById("wrToggleCaptureSequenceCmd")
-        .removeAttribute("disabled");
+      this.registerCaptureShortcuts();
     }
+  },
+
+  /**
+   * Registers the keyboard shortcuts triggering WebRender captures. This is only
+   * done when captures are enabled: as long as a key element exists, the
+   * shortcut counts as a system shortcut and can't be assigned to anything else
+   * (a WebExtension command for example), even if the command it is bound to is
+   * disabled.
+   */
+  registerCaptureShortcuts() {
+    // A key element only takes effect if it is added to the document as part of
+    // a keyset, since the handlers of a keyset are built when it is inserted.
+    let keyset = document.createXULElement("keyset");
+    keyset.id = "gfxDebugKeyset";
+
+    for (let [command, macKey, key] of [
+      ["wrCaptureCmd", "3", "#"],
+      ["wrToggleCaptureSequenceCmd", "6", "^"],
+    ]) {
+      let keyElement = document.createXULElement("key");
+      keyElement.id = `key_${command}`;
+      keyElement.setAttribute("command", command);
+      if (AppConstants.platform == "macosx") {
+        keyElement.setAttribute("key", macKey);
+        keyElement.setAttribute("modifiers", "control,shift");
+      } else {
+        keyElement.setAttribute("key", key);
+        keyElement.setAttribute("modifiers", "control");
+      }
+      keyset.appendChild(keyElement);
+    }
+
+    document.documentElement.appendChild(keyset);
   },
 
   /**

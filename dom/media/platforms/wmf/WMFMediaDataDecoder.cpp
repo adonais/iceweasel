@@ -22,8 +22,6 @@ WMFMediaDataDecoder::WMFMediaDataDecoder(MFTManager* aMFTManager)
           "WMFMediaDataDecoder")),
       mMFTManager(aMFTManager) {}
 
-WMFMediaDataDecoder::~WMFMediaDataDecoder() {}
-
 RefPtr<MediaDataDecoder::InitPromise> WMFMediaDataDecoder::Init() {
   MOZ_ASSERT(!mIsShutDown);
   return InitPromise::CreateAndResolve(mMFTManager->GetType(), __func__);

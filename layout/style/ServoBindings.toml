@@ -379,8 +379,8 @@ cbindgen-types = [
     { gecko = "StyleBaselineShiftKeyword", servo = "crate::values::generics::box_::BaselineShiftKeyword" },
     { gecko = "StyleBaselineSource", servo = "crate::values::specified::BaselineSource" },
     { gecko = "StyleCustomIdent", servo = "crate::values::CustomIdent" },
-    { gecko = "StyleComputedFontStretchRange", servo = "crate::font_face::ComputedFontStretchRange" },
     { gecko = "StyleComputedFontStyleRange", servo = "crate::font_face::ComputedFontStyleRange" },
+    { gecko = "StyleComputedFontWidthRange", servo = "crate::font_face::ComputedFontWidthRange" },
     { gecko = "StyleComputedFontWeightRange", servo = "crate::font_face::ComputedFontWeightRange" },
     { gecko = "StyleComputedTimingFunction", servo = "crate::values::computed::easing::TimingFunction" },
     { gecko = "StyleDominantBaseline", servo = "crate::values::specified::DominantBaseline" },
@@ -563,6 +563,7 @@ cbindgen-types = [
     { gecko = "StyleGenericBorderImageSideWidth", servo = "crate::values::generics::border::BorderImageSideWidth" },
     { gecko = "StyleGenericUrlOrNone", servo = "crate::values::generics::url::UrlOrNone" },
     { gecko = "StyleGenericCalcNode", servo = "crate::values::generics::calc::GenericCalcNode" },
+    { gecko = "StyleGenericCalcPercentageLeaf", servo = "crate::values::generics::calc::GenericCalcPercentageLeaf" },
     { gecko = "StyleCssUrl", servo = "crate::url::CssUrl" },
     { gecko = "StyleSpecifiedUrl", servo = "crate::url::SpecifiedUrl" },
     { gecko = "StyleComputedUrl", servo = "crate::url::ComputedUrl" },
@@ -627,7 +628,7 @@ cbindgen-types = [
     { gecko = "StyleContainIntrinsicSize", servo = "crate::values::computed::ContainIntrinsicSize" },
     { gecko = "StyleFontStyle", servo = "crate::values::computed::font::FontStyle" },
     { gecko = "StyleFontWeight", servo = "crate::values::computed::font::FontWeight" },
-    { gecko = "StyleFontStretch", servo = "crate::values::computed::font::FontStretch" },
+    { gecko = "StyleFontWidth", servo = "crate::values::computed::font::FontWidth" },
     { gecko = "StyleFontPalette", servo = "crate::values::computed::font::FontPalette" },
     { gecko = "StyleFontSynthesis", servo = "crate::values::computed::font::FontSynthesis" },
     { gecko = "StyleFontSynthesisStyle", servo = "crate::values::computed::font::FontSynthesisStyle" },
@@ -687,6 +688,7 @@ mapped-generic-types = [
     { generic = false, gecko = "nsString", servo = "nsstring::nsString" },
     { generic = true, gecko = "nsTArray", servo = "thin_vec::ThinVec" },
     { generic = true, gecko = "CopyableTArray", servo = "thin_vec::ThinVec" },
+    { generic = true, gecko = "mozilla::StyleOptional", servo = "crate::values::generics::Optional" },
 ]
 
 allowlist-functions = ["Servo_.*", "Gecko_.*"]

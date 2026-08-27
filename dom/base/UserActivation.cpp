@@ -65,6 +65,10 @@ static TimeStamp sHandlingInputStart;
 // at the end of the input.
 static TimeStamp sLatestUserInputStart;
 
+// True if there are paste commands associated with the current keyboard event
+// being handled, if any.
+static bool sHandlingKeyboardEventHasAssociatedPasteCommands = false;
+
 }  // namespace
 
 /* static */
@@ -73,6 +77,12 @@ bool UserActivation::IsHandlingUserInput() { return sUserInputEventDepth > 0; }
 /* static */
 bool UserActivation::IsHandlingKeyboardInput() {
   return sUserKeyboardEventDepth > 0;
+}
+
+bool UserActivation::IsHandlingKeyboardInputWithPasteActions() {
+  MOZ_ASSERT_IF(sHandlingKeyboardEventHasAssociatedPasteCommands,
+                sUserKeyboardEventDepth > 0);
+  return sHandlingKeyboardEventHasAssociatedPasteCommands;
 }
 
 /* static */
@@ -146,7 +156,19 @@ TimeStamp UserActivation::LatestUserInputStart() {
 AutoHandlingUserInputStatePusher::AutoHandlingUserInputStatePusher(
     bool aIsHandlingUserInput, WidgetEvent* aEvent)
     : mMessage(aEvent ? aEvent->mMessage : eVoidEvent),
-      mIsHandlingUserInput(aIsHandlingUserInput) {
+      mIsHandlingUserInput(aIsHandlingUserInput),
+      // Save the current keyboard event paste command state in case a nested
+      // event loop is spun.
+      mPreviousHandlingKeyboardEventHasAssociatedPasteCommands(
+          sHandlingKeyboardEventHasAssociatedPasteCommands) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (aEvent && aEvent->IsTrusted() && aEvent->AsKeyboardEvent()) {
+    mozilla::WidgetKeyboardEvent* keyboardEvent = aEvent->AsKeyboardEvent();
+    sHandlingKeyboardEventHasAssociatedPasteCommands =
+        keyboardEvent->HasRelevantCommand(Command::Paste) ||
+        keyboardEvent->HasRelevantCommand(Command::PasteWithoutFormat);
+  }
   if (!aIsHandlingUserInput) {
     return;
   }
@@ -154,6 +176,11 @@ AutoHandlingUserInputStatePusher::AutoHandlingUserInputStatePusher(
 }
 
 AutoHandlingUserInputStatePusher::~AutoHandlingUserInputStatePusher() {
+  // Restore the previous keyboard event paste command state in case a nested
+  // event loop was entered.
+  sHandlingKeyboardEventHasAssociatedPasteCommands =
+      mPreviousHandlingKeyboardEventHasAssociatedPasteCommands;
+
   if (!mIsHandlingUserInput) {
     return;
   }

@@ -13,7 +13,7 @@ to be able to perform native debugging inside Android Studio. This
 article will guide you through how to do that.
 
 If you need to get set up with GeckoView for the first time, follow the
-[Quick Start Guide](geckoview-quick-start.html).
+[Quick Start Guide](geckoview-quick-start.md).
 
 ### Perform a debug build of Gecko
 
@@ -126,7 +126,7 @@ connect such a Java debugger manually from the Android Studio UI.
 [Bug 1522318](https://bugzilla.mozilla.org/show_bug.cgi?id=1522318)
 added environment variables that makes GeckoView wait for Java debuggers
 to attach, making this debug process more developer-friendly. See
-[Configuring GeckoView for Automation](../consumer/automation.html)
+[Configuring GeckoView for Automation](../consumer/automation.md)
 for instructions on how to set environment variables that configure
 GeckoView’s runtime environment.
 

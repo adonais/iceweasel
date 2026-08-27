@@ -785,6 +785,9 @@ this.AccessibilityUtils = (function () {
           node.getRootNode().host?.localName === "moz-radio") ||
         (role === Ci.nsIAccessibleRole.ROLE_RADIOBUTTON &&
           node.getRootNode().host?.localName === "moz-visual-picker-item") ||
+        // Sidebar lists also use a roving tabindex.
+        (role === Ci.nsIAccessibleRole.ROLE_SUMMARY &&
+          node.getRootNode().host?.localName === "sidebar-bookmark-list") ||
         shouldIgnoreTabIndex(node))
     );
   }

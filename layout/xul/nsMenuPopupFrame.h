@@ -232,7 +232,8 @@ class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
   // true. These panels do not roll up automatically.
   bool IsNoAutoHide() const;
 
-  PopupLevel GetPopupLevel() const { return GetPopupLevel(IsNoAutoHide()); }
+  // Returns the popup's level.
+  PopupLevel GetPopupLevel() const;
 
   // Ensure that a widget has already been created for this view, and create
   // one if it hasn't. If aForceRecreate is true, destroys any existing widget
@@ -456,9 +457,6 @@ class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
   void WillDispatchPopupPositioned() { mPendingPositionedEvent = false; }
 
  protected:
-  // returns the popup's level.
-  PopupLevel GetPopupLevel(bool aIsNoAutoHide) const;
-
   void InitPositionFromAnchorAlign(const nsAString& aAnchor,
                                    const nsAString& aAlign);
 

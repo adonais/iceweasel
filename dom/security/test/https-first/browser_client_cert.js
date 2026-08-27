@@ -15,7 +15,7 @@ function runTest() {
 
     BrowserTestUtils.startLoadingURIString(
       browser,
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       "http://requireclientcert.example.com"
     );
 

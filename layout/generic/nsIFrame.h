@@ -3268,7 +3268,7 @@ class nsIFrame : public nsQueryFrame {
    */
   bool ComputeOverflowClipRectRelativeToSelf(
       const mozilla::PhysicalAxes aClipAxes, nsRect& aOutRect,
-      nsRectCornerRadii& aOutRadii) const;
+      nsRectCornerRadii& aOutRadii, nsMargin& aOutInset) const;
 
   // Returns the applicable overflow-clip-margin values relative to our
   // border-box. If aAllowNegative is false, prevents us from returning margins

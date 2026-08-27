@@ -16,11 +16,11 @@
 #include "mozilla/Span.h"       // for mozilla::Span
 #include "mozilla/TextUtils.h"  // for mozilla::IsAscii and via Latin1.h for
                                 // encoding_rs_mem.h and MOZ_HAS_JSRUST.
-#include "mozilla/Types.h"      // for MFBT_API
+#include <limits.h>             // for CHAR_BIT
+#include <stddef.h>             // for size_t
+#include <stdint.h>             // for uint8_t
 
-#include <limits.h>  // for CHAR_BIT
-#include <stddef.h>  // for size_t
-#include <stdint.h>  // for uint8_t
+#include "mozilla/Types.h"  // for MFBT_API
 
 #if MOZ_HAS_JSRUST()
 #  include <limits>  // for std::numeric_limits

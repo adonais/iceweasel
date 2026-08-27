@@ -211,7 +211,9 @@ export function makeScriptSourceId(sourceResource) {
 }
 
 export function makeStyleSheetSourceId(sourceResource) {
-  return `source-url-${sourceResource.href}`;
+  // Base the source id on the actor as we can have multiple stylesheets with the same href
+  // (e.g. link to same external style sheet within the HTML page)
+  return `source-actor-${sourceResource.resourceId}`;
 }
 
 /**

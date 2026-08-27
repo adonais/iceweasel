@@ -212,7 +212,7 @@ add_task(async function test_fixup_replaced_hosts_not_rewritten() {
   });
 
   for (let [url, expected] of [
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     ["http://0.0.0.0:8080", "<http://>0.0.0.0<:8080>"],
     ["https://0.0.0.0:8080", "0.0.0.0<:8080>"],
     ["https://[::]:8080", "[::]<:8080>"],

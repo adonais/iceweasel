@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Test videoRate debug info is the true average frame rate for variable-frame-rate video</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+<script type="text/javascript" src="manifest.js"></script>
+<script class="testbody" type="text/javascript">
+const testFile = {
+  name: "video_rate_vfr.mp4",
+  sampleDurationRuns: [
+    { sampleCount: 3, sampleDuration: 0.5 },
+    { sampleCount: 3, sampleDuration: 1 / 30 },
+  ],
+};
+
+// Check that videoRate reports the true average for variable-frame-rate video.
+add_task(async function testVideoRateIsTrueAverageForVariableFrameRate() {
+  let video = document.createElement("video");
+  video.src = testFile.name;
+  document.body.appendChild(video);
+
+  await video.play();
+  ok(
+    video.videoWidth > 0 && video.videoHeight > 0,
+    `Video should have loaded (${video.videoWidth}x${video.videoHeight})`
+  );
+
+  info("Play the entire clip before checking videoRate");
+  await once(video, "ended");
+
+  let debugData = await SpecialPowers.wrap(video).mozRequestDebugInfo();
+  let videoRate = debugData.decoder.reader.videoRate;
+
+  const sampleCount = testFile.sampleDurationRuns.reduce(
+    (sum, run) => sum + run.sampleCount,
+    0
+  );
+  const totalDuration = testFile.sampleDurationRuns.reduce(
+    (sum, run) => sum + run.sampleCount * run.sampleDuration,
+    0
+  );
+  const expectedRate = sampleCount / totalDuration;
+  info(
+    `videoRate=${videoRate} fps, expectedRate=${expectedRate} fps, ` +
+      `sampleCount=${sampleCount}, totalDuration=${totalDuration}s`
+  );
+
+  ok(
+    Math.abs(videoRate - expectedRate) <= 0.05 * expectedRate,
+    `videoRate (${videoRate} fps) should match the true average frame rate ` +
+      `sampleCount/totalDuration (${expectedRate} fps)`
+  );
+
+  removeNodeAndSource(video);
+});
+</script>
+</head>
+</html>

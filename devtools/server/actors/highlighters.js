@@ -60,7 +60,6 @@ exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
   constructor(parent, typeName) {
     super(parent.conn, customHighlighterSpec);
 
-    this._parent = parent;
     this.highlighterTypeName = typeName;
 
     const modulePath = highlighterTypes.get(typeName);
@@ -75,7 +74,7 @@ exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
     // container to append their elements and thus a non-XUL window or they have
     // to define a static XULSupported flag that indicates that the highlighter
     // supports XUL windows. Otherwise, bail out.
-    if (!isXUL(this._parent.targetActor.window) || constructor.XULSupported) {
+    if (!isXUL(parent.targetActor.window) || constructor.XULSupported) {
       this._highlighterEnv = new HighlighterEnvironment();
       this._highlighterEnv.initFromTargetActor(parent.targetActor);
       this._highlighter = new constructor(this._highlighterEnv, parent);
@@ -97,7 +96,6 @@ exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
   destroy() {
     super.destroy();
     this.finalize();
-    this._parent = null;
     this.#isShown = false;
   }
 

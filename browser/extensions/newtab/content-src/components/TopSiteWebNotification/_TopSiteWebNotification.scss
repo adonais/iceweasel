@@ -1,0 +1,37 @@
+// The icon lives in an overflow-clipped wrapper, so the badge cannot be a child
+// of it and still hang over the corner. `.icon-stack` is the unclipped box that
+// holds both: it takes its size from the icon wrapper, which lets the badge
+// anchor straight to the icon's corner rather than deriving that corner from
+// the tile's dimensions. It never moves on hover, so neither does the badge.
+.icon-stack {
+  position: relative;
+  display: flex;
+}
+
+.top-site-web-notification {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-end: 0;
+  transform: translate(50%, 50%);
+  min-width: var(--icon-size-small);
+  height: var(--icon-size-small);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-semibold);
+  background: var(--toolbarbutton-badge-background-color);
+  // The badge background is a saturated red in both themes, so its text is
+  // always light. The text-color tokens are all light-dark() pairs and would
+  // flip to dark text on that red in light mode, so none of them fit; this is
+  // the same light violet those tokens resolve to on their dark arm.
+  // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens
+  color: var(--color-violet-desaturated-0);
+  border-radius: var(--border-radius-circle);
+  padding-inline: var(--toolbarbutton-badge-padding-inline);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:dir(rtl) {
+    transform: translate(-50%, 50%);
+  }
+}

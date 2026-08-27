@@ -792,3 +792,113 @@ add_task(async function test_hybrid_semantic_respects_distance_threshold() {
 
   await semanticManager.shutdown();
 });
+
+add_task(async function test_basic_text_search_returns_thumbnail() {
+  await PlacesUtils.history.clear();
+  sb.restore();
+
+  const now = Date.now();
+  const url = "https://example.com/mozilla-with-preview";
+  const previewImageURL = "https://example.com/mozilla-preview.png";
+
+  await PlacesUtils.history.insertMany([
+    {
+      url,
+      title: "Mozilla With Preview",
+      visits: [{ date: new Date(now - 5 * 60 * 1000) }], // 5 min ago
+    },
+  ]);
+  await PlacesUtils.history.update({ url, previewImageURL });
+
+  // Disable semantic search to take the Places history search path.
+  Services.prefs.setBoolPref("browser.ml.enable", false);
+  Services.prefs.setBoolPref("places.semanticHistory.featureGate", false);
+
+  try {
+    const output = await searchBrowsingHistory({
+      searchTerm: "mozilla",
+      startTs: null,
+      endTs: null,
+      historyLimit: 15,
+    });
+
+    Assert.equal(
+      output.results.length,
+      1,
+      "Places history search returns the entry"
+    );
+    Assert.equal(
+      output.results[0].thumbnail,
+      previewImageURL,
+      "Places history search result should have a preview image URL"
+    );
+  } finally {
+    Services.prefs.setBoolPref("browser.ml.enable", true);
+    Services.prefs.setBoolPref("places.semanticHistory.featureGate", true);
+  }
+});
+
+add_task(async function test_hybrid_keyword_only_row_has_thumbnail() {
+  await PlacesUtils.history.clear();
+  sb.restore();
+
+  const now = Date.now();
+  const url = "https://example.com/keyword-only";
+  const previewImageURL = "https://example.com/keyword-only-preview.png";
+
+  await PlacesUtils.history.insertMany([
+    {
+      url,
+      title: "Keyword Only From Places",
+      visits: [{ date: new Date(now - 5 * 60 * 1000) }], // 5 min ago
+    },
+  ]);
+  await PlacesUtils.history.update({ url, previewImageURL });
+
+  const semanticManager = getPlacesSemanticHistoryManager();
+
+  sb.stub(semanticManager, "hasSufficientEntriesForSearching").resolves(true);
+  sb.stub(semanticManager, "isEnabledForSmartWindow").value(true);
+
+  sb.stub(semanticManager.embedder, "ensureEngine").resolves();
+  sb.stub(semanticManager.embedder, "embed").resolves({
+    output: [[0.1, 0.2, 0.3]],
+  });
+
+  // Non-matching URL, so only the keyword leg finds the seeded page.
+  sb.stub(semanticManager, "getConnection").resolves({
+    execute: async () => [],
+    executeCached: async () => [
+      {
+        getResultByName(name) {
+          const row = {
+            id: 2,
+            title: "Semantic Only",
+            url: "https://example.com/semantic-only",
+            distance: 0.1,
+            visit_count: 1,
+            frecency: 10,
+            last_visit_date: (now - 60 * 60 * 1000) * 1000, // 60 min ago
+            preview_image_url: null,
+          };
+          return row[name];
+        },
+      },
+    ],
+  });
+
+  const output = await searchBrowsingHistory({
+    searchTerm: "keyword",
+    startTs: null,
+    endTs: null,
+    historyLimit: 15,
+  });
+
+  const keywordRow = output.results.find(result => result.url === url);
+  Assert.ok(keywordRow, "Keyword-only URL should be returned by hybrid search");
+  Assert.equal(
+    keywordRow.thumbnail,
+    previewImageURL,
+    "Keyword-only hybrid result should have a preview image URL"
+  );
+});

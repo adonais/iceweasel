@@ -21,6 +21,18 @@ class RecommendedThemesFooter extends AboutAddonsHTMLElement {
             data-l10n-id="find-more-themes"
           ></button>
         </div>
+        <addons-promo
+          imagesrc="chrome://mozapps/skin/extensions/kit-themes.svg"
+          imagealignment="end"
+          data-l10n-id="find-more-themes-promo"
+        >
+          <moz-button
+            slot="actions"
+            action="open-amo"
+            size="large"
+            data-l10n-id="find-more-themes-promo-open-amo-button"
+          ></moz-button>
+        </addons-promo>
       </template>
     `;
   }
@@ -44,7 +56,13 @@ class RecommendedThemesFooter extends AboutAddonsHTMLElement {
     let action = event.target.getAttribute("action");
     switch (action) {
       case "open-amo":
-        openAmoInTab("themes", { utmContent: "find-more-link-bottom" });
+        // TODO: remove the conditional utmContent value along with
+        // removing the old pre-nova open-amo button.
+        openAmoInTab("themes", {
+          utmContent: event.target.closest("addons-promo")
+            ? "find-more-promo-bottom"
+            : "find-more-link-bottom",
+        });
         break;
     }
   }

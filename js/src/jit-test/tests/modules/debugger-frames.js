@@ -21,6 +21,7 @@ function assertArrayEq(actual, expected)
 }
 
 var g2 = newGlobal({newCompartment: true});
+g2.moduleLoadAndLink = moduleLoadAndLink;
 
 var dbg = Debugger(g2);
 dbg.onDebuggerStatement = function (frame) {
@@ -65,7 +66,7 @@ f = g2.eval(
         export const c = 3;
         export function f(x) { return x + 1; }
     \`));
-    moduleLink(a);
+    moduleLoadAndLink(a);
     moduleEvaluate(a);
 
     let m = parseModule(
@@ -78,6 +79,6 @@ f = g2.eval(
         eval("");
         debugger;
     \`);
-    moduleLink(m);
+    moduleLoadAndLink(m);
     moduleEvaluate(m);
 `);

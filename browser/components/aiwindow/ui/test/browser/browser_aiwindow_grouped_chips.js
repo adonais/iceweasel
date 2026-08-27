@@ -274,3 +274,85 @@ add_task(async function test_grouped_chips_panel_toggle() {
     BrowserTestUtils.removeTab(tab);
   }
 });
+
+// Check if the grouped chips component emits the event open link
+add_task(async function test_grouped_chips_open_dispatches_open_link() {
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    GROUPED_CHIPS_PAGE
+  );
+  const browser = tab.linkedBrowser;
+  const contentWin = browser.contentWindow;
+  const contentDoc = browser.contentDocument;
+
+  try {
+    await contentWin.customElements.whenDefined("ai-grouped-chip-container");
+    const grouped = contentDoc.createElement("ai-grouped-chip-container");
+    // Set chips before connecting so the first render shows the grouped chips,
+    // not the panel's empty state.
+    grouped.chips = CHIPS;
+    contentDoc.body.appendChild(grouped);
+    await grouped.updateComplete;
+
+    const trigger = grouped.shadowRoot.querySelector("#grouped-chips-trigger");
+    const panel = grouped.shadowRoot.querySelector("smartwindow-panel-list");
+    const panelList = BrowserTestUtils.querySelectorDeep(
+      grouped.shadowRoot,
+      "panel-list"
+    );
+
+    const shownPromise = BrowserTestUtils.waitForEvent(
+      panelList,
+      "shown",
+      false,
+      null,
+      true
+    );
+    trigger.click();
+    await shownPromise;
+    await grouped.updateComplete;
+
+    const items = panel.shadowRoot.querySelectorAll("panel-item");
+    Assert.equal(
+      items.length,
+      CHIPS.length,
+      "Every chip should render a selectable panel-item"
+    );
+
+    // The component dispatches AIChatContent:OpenLink when clicked
+    const openLinkPromise = BrowserTestUtils.waitForEvent(
+      contentDoc,
+      "AIChatContent:OpenLink",
+      false,
+      null,
+      true
+    );
+    const hiddenPromise = BrowserTestUtils.waitForEvent(
+      panelList,
+      "hidden",
+      false,
+      null,
+      true
+    );
+    items[0].click();
+
+    const openLinkEvent = await openLinkPromise;
+    Assert.equal(
+      openLinkEvent.detail.url,
+      CHIPS[0].url,
+      "Selecting a grouped chip should request its URL"
+    );
+    Assert.ok(
+      openLinkEvent.detail.preferSwitchToTab,
+      "Selecting a grouped chip should prefer switching to a matching tab"
+    );
+
+    await hiddenPromise;
+    Assert.ok(
+      !panelList.hasAttribute("open"),
+      "Selecting an item should close the panel"
+    );
+  } finally {
+    BrowserTestUtils.removeTab(tab);
+  }
+});

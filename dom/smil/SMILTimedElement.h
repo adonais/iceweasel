@@ -515,7 +515,9 @@ class SMILTimedElement {
   void SampleFillValue();
   void AddInstanceTimeFromCurrentTime(SMILTime aCurrentTime,
                                       double aOffsetSeconds, bool aIsBegin);
-  void RegisterMilestone();
+  // aContainer, if given, must be this element's time container; it lets
+  // callers that have already resolved it avoid walking the tree again.
+  void RegisterMilestone(SMILTimeContainer* aContainer = nullptr);
   bool GetNextMilestone(SMILMilestone& aNextMilestone) const;
 
   // Notification methods. Note that these notifications can result in nested

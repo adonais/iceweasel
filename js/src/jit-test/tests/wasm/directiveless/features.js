@@ -27,9 +27,9 @@ let nightly = !releaseOrBeta;
 assertEq(wasmCompileMode() == "baseline+ion", true);
 
 // Check if the wasm module text is valid or not.
-function check(text) {
+function check(text, imports) {
   try {
-    wasmEvalText(text);
+    wasmEvalText(text, imports);
     return true;
   } catch (err) {
     if (!(err instanceof WebAssembly.CompileError)) {
@@ -55,8 +55,11 @@ let features = {
     test: () => check(`(memory 1 1 (pagesize 1))`)
   },
   "compactImports": {
-    status: DISABLED,
-    test: () => check(`(import "mod" (item "1" (func)) (item "2" (func)))`)
+    status: RELEASED,
+    test: () => check(
+      `(import "mod" (item "1" (func)) (item "2" (func)))`,
+      {mod: {"1": () => {}, "2": () => {}}},
+    ),
   },
   "memoryControl": {
     status: DISABLED,
@@ -71,7 +74,7 @@ let features = {
     test: () => WebAssembly.promising !== undefined
   },
   "wideArithmetic": {
-    status: NIGHTLY,
+    status: RELEASED,
     test: () => check(`(func unreachable i64.add128 unreachable)`)
   },
   "simd": {

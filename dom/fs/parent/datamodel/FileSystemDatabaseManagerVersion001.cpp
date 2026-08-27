@@ -201,7 +201,7 @@ Result<EntryId, QMResult> GetUniqueEntryId(
       return entryId;
     }
 
-    generatorInput.parentId() = entryId;
+    generatorInput.parentId() = std::move(entryId);
   }
 
   return Err(QMResult(NS_ERROR_UNEXPECTED));

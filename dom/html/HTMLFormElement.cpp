@@ -33,6 +33,7 @@
 #include "nsDocShell.h"
 #include "nsDocShellLoadState.h"
 #include "nsError.h"
+#include "nsExternalHelperAppService.h"
 #include "nsFocusManager.h"
 #include "nsGkAtoms.h"
 #include "nsHTMLDocument.h"
@@ -882,6 +883,19 @@ nsresult HTMLFormElement::SubmitSubmission(
     const bool hasValidUserGestureActivation =
         doc->HasValidTransientUserGestureActivation();
     loadState->SetHasValidUserGestureActivation(hasValidUserGestureActivation);
+
+    // For protocols that would launch without a prompt (e.g. mailto), consume
+    // the transient user gesture activation here, at the same point the
+    // activation value is captured on the load state, so a single gesture can't
+    // chain multiple launches. This keeps form submission consistent with link
+    // clicks (nsDocShell::OnLinkClick) and scripted navigation
+    // (BrowsingContext::Navigate). The pre-consume value is already recorded on
+    // the load state above. See bug 299116.
+    if (nsAutoCString scheme; NS_SUCCEEDED(actionURI->GetScheme(scheme))) {
+      nsExternalHelperAppService::MaybeConsumeUserActivationForExternalScheme(
+          doc->GetWindowContext(), loadState->TriggeringPrincipal(), scheme);
+    }
+
     loadState->SetTextDirectiveUserActivation(
         doc->ConsumeTextDirectiveUserActivation() ||
         hasValidUserGestureActivation);

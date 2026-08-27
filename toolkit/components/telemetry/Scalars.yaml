@@ -1430,57 +1430,6 @@ browser.ui.interaction:
     record_in_processes:
       - 'main'
 
-cookie.banners:
-  normal_window_service_mode:
-    bug_numbers:
-      - 1790781
-      - 1804259
-    description: >
-      The pref value of the cookie banner service mode for normal windows.
-    expires: never
-    kind: boolean
-    keyed: true
-    notification_emails:
-      - tihuang@mozilla.com
-      - emz@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - 'firefox'
-    record_in_processes:
-      - 'main'
-  private_window_service_mode:
-    bug_numbers:
-      - 1790781
-      - 1804259
-    description: >
-      The pref value of the cookie banner service mode for private windows.
-    expires: never
-    kind: boolean
-    keyed: true
-    notification_emails:
-      - tihuang@mozilla.com
-      - emz@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - 'firefox'
-    record_in_processes:
-      - 'main'
-  service_detect_only:
-    bug_numbers:
-      - 1809700
-    description: >
-      Tracks the value of the cookiebanners.service.detectOnly pref.
-    expires: never
-    kind: boolean
-    notification_emails:
-      - tihuang@mozilla.com
-      - emz@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - 'firefox'
-    record_in_processes:
-      - 'main'
-
 security:
   https_only_mode_enabled:
     bug_numbers:

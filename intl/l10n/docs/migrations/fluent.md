@@ -55,11 +55,13 @@ ctx.add_transforms(
     "browser/browser/aboutLogins.ftl",
     "browser/browser/aboutLogins.ftl",
     transforms_from(
-"""
+        """
 about-logins-breach-icon =
     .alt = {COPY_PATTERN(from_path, "about-logins-icon")}
     .title = {COPY_PATTERN(from_path, "about-logins-icon.title")}
-""",from_path="browser/browser/aboutLogins.ftl"),
+""",
+        from_path="browser/browser/aboutLogins.ftl",
+    ),
 )
 ```
 
@@ -105,10 +107,12 @@ A migration may be applied to create this new message with:
 from fluent.migrate.transforms import TransformPattern
 import fluent.syntax.ast as FTL
 
+
 class STRIP_SPAN(TransformPattern):
     def visit_TextElement(self, node):
         node.value = re.sub("</?span[^>]*>", "", node.value)
         return node
+
 
 def migrate(ctx):
     path = "toolkit/toolkit/global/videocontrols.ftl"

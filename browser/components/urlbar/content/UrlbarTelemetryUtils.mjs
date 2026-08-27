@@ -2,12 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs";
+import { UrlbarResult } from "chrome://browser/content/urlbar/UrlbarResult.mjs";
+import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
-  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
@@ -89,9 +90,9 @@ export class UrlbarTelemetryUtils {
   static parseSearchString(searchString) {
     let numChars = searchString.length.toString();
     let searchWords = searchString
-      .substring(0, lazy.UrlbarUtils.MAX_TEXT_LENGTH)
+      .substring(0, UrlbarShared.MAX_TEXT_LENGTH)
       .trim()
-      .split(lazy.UrlUtils.REGEXP_SPACES)
+      .split(UrlbarShared.REGEXP_SPACES)
       .filter(t => t);
     let numWords = searchWords.length.toString();
 
@@ -115,7 +116,11 @@ export class UrlbarTelemetryUtils {
    */
   static startInteractionType(event, searchString) {
     if (event.type == "input") {
-      return lazy.UrlbarUtils.isPasteEvent(event) ? "pasted" : "typed";
+      // We can't use `InputEvent.isInstance(event)` here because that doesn't
+      // work in the newtab context.
+      return UrlbarShared.isPasteEvent(/** @type {InputEvent} */ (event))
+        ? "pasted"
+        : "typed";
     } else if (event.type == "drop") {
       return "dropped";
     } else if (event.type == "paste") {
@@ -260,10 +265,10 @@ export class UrlbarTelemetryUtils {
    * @returns {{resultType: string, keyword: ?string}}
    */
   static exposureEntry(result, queryContext) {
-    let resultType = lazy.UrlbarUtils.searchEngagementTelemetryType(result);
+    let resultType = UrlbarShared.searchEngagementTelemetryType(result);
     let keyword =
       !queryContext.isPrivate &&
-      lazy.UrlbarPrefs.get("keywordExposureResults").has(resultType)
+      UrlbarPrefs.get("keywordExposureResults").has(resultType)
         ? queryContext.trimmedLowerCaseSearchString
         : null;
     return { resultType, keyword };
@@ -297,7 +302,8 @@ export class UrlbarTelemetryUtils {
    * source, and the resolved exposure list.
    *
    * @param {object} data
-   *   `{built, disableBuilt, method, searchSource, internalDetails, exposures}`.
+   *   `{built, disableBuilt, method, searchSource, internalDetails, exposures,
+   *   visibleResults}`.
    * @returns {object} The wire payload; reconstruct with
    *   `recordedEngagementFromWire()`.
    */
@@ -309,6 +315,10 @@ export class UrlbarTelemetryUtils {
     delete internalDetails.element;
     return {
       ...data,
+      // The results shown at engagement, in wire form, so the parent can notify
+      // providers' impression/abandonment hooks (which key off them) -- the
+      // parent's own view has none on the message path.
+      visibleResults: data.visibleResults?.map(r => r.toWire()) ?? null,
       internalDetails: {
         ...internalDetails,
         result: result?.toWire() ?? null,
@@ -327,12 +337,14 @@ export class UrlbarTelemetryUtils {
   static recordedEngagementFromWire(wire) {
     return {
       ...wire,
+      visibleResults:
+        wire.visibleResults?.map(r => UrlbarResult.fromWire(r)) ?? [],
       internalDetails: {
         ...wire.internalDetails,
         event: null,
         element: null,
         result: wire.internalDetails.result
-          ? lazy.UrlbarResult.fromWire(wire.internalDetails.result)
+          ? UrlbarResult.fromWire(wire.internalDetails.result)
           : null,
       },
     };
@@ -413,7 +425,7 @@ export class UrlbarTelemetryUtils {
     if (searchMode.engineName) {
       return "search_engine";
     }
-    const source = lazy.UrlbarUtils.LOCAL_SEARCH_MODES.find(
+    const source = UrlbarShared.LOCAL_SEARCH_MODES.find(
       m => m.source == searchMode.source
     )?.telemetryLabel;
     return source ?? "unknown";
@@ -488,7 +500,7 @@ export class UrlbarTelemetryUtils {
     let next = previousSearchWords;
     if (
       (method === "engagement" &&
-        lazy.UrlbarPrefs.isPersistedSearchTermsEnabled()) ||
+        lazy.UrlbarUtils.isPersistedSearchTermsEnabled()) ||
       method === "abandonment"
     ) {
       next = new Set(searchWords);
@@ -586,7 +598,7 @@ export class UrlbarTelemetryUtils {
       .map(r => lazy.UrlbarUtils.searchEngagementTelemetryGroup(r))
       .join(",");
     let results = visibleResults
-      .map(r => lazy.UrlbarUtils.searchEngagementTelemetryType(r))
+      .map(r => UrlbarShared.searchEngagementTelemetryType(r))
       .join(",");
     let actions = visibleResults
       .map(r => lazy.UrlbarUtils.searchEngagementTelemetryAction(r))
@@ -595,7 +607,7 @@ export class UrlbarTelemetryUtils {
 
     switch (method) {
       case "engagement": {
-        let selected_result = lazy.UrlbarUtils.searchEngagementTelemetryType(
+        let selected_result = UrlbarShared.searchEngagementTelemetryType(
           visibleResults[selIndex],
           selType
         );
@@ -663,7 +675,7 @@ export class UrlbarTelemetryUtils {
             : "engagement";
         let selected_result = "none";
         if (previousEvent == "engagement") {
-          selected_result = lazy.UrlbarUtils.searchEngagementTelemetryType(
+          selected_result = UrlbarShared.searchEngagementTelemetryType(
             visibleResults[selIndex],
             selType
           );
@@ -685,7 +697,7 @@ export class UrlbarTelemetryUtils {
         };
       }
       case "bounce": {
-        let selected_result = lazy.UrlbarUtils.searchEngagementTelemetryType(
+        let selected_result = UrlbarShared.searchEngagementTelemetryType(
           visibleResults[selIndex],
           selType
         );
@@ -704,7 +716,7 @@ export class UrlbarTelemetryUtils {
               selType === "help" || selType === "dismiss" ? selType : action,
             results,
             view_time: viewTime.toString(),
-            threshold: lazy.UrlbarPrefs.get(
+            threshold: UrlbarPrefs.get(
               "events.bounce.maxSecondsFromLastSearch"
             ),
             window_mode: windowMode,

@@ -38,6 +38,11 @@ extern LazyLogModule gHttpLog;
 class HttpConnectionInfoCloneArgs;
 class nsHttpTransaction;
 
+struct CoalescingKey {
+  HashNumber mHash = 0;
+  nsCString mString;
+};
+
 class nsHttpConnectionInfo final : public ARefBase {
  public:
   nsHttpConnectionInfo(const nsACString& originHost, int32_t originPort,
@@ -63,9 +68,9 @@ class nsHttpConnectionInfo final : public ARefBase {
   DeserializeHttpConnectionInfoCloneArgs(
       const HttpConnectionInfoCloneArgs& aInfoArgs);
 
-  static HashNumber BuildOriginFrameHashKey(nsHttpConnectionInfo* ci,
-                                            const nsACString& host,
-                                            int32_t port);
+  static CoalescingKey BuildOriginFrameHashKey(nsHttpConnectionInfo* ci,
+                                               const nsACString& host,
+                                               int32_t port);
 
  private:
   virtual ~nsHttpConnectionInfo() {

@@ -1269,9 +1269,9 @@ struct BaseCompiler final {
 
   // ptr and dest may be the same iff dest is I32.
   // This may destroy ptr even if ptr and dest are not the same.
-  void executeLoad(MemoryAccessDesc* access, AccessCheck* check,
-                   RegPtr instance, RegPtr memoryBase, RegI32 ptr, AnyReg dest,
-                   RegI32 temp);
+  void executeLoad(MemoryAccessDesc* access, RegPtr instance, RegPtr memoryBase,
+                   RegI32 ptr, AnyReg dest, RegI32 temp,
+                   ZeroExtendIndex zeroExtend);
   void load(MemoryAccessDesc* access, AccessCheck* check, RegPtr instance,
             RegPtr memoryBase, RegI32 ptr, AnyReg dest, RegI32 temp);
   void load(MemoryAccessDesc* access, AccessCheck* check, RegPtr instance,
@@ -1284,9 +1284,9 @@ struct BaseCompiler final {
 
   // ptr and src must not be the same register.
   // This may destroy ptr and src.
-  void executeStore(MemoryAccessDesc* access, AccessCheck* check,
-                    RegPtr instance, RegPtr memoryBase, RegI32 ptr, AnyReg src,
-                    RegI32 temp);
+  void executeStore(MemoryAccessDesc* access, RegPtr instance,
+                    RegPtr memoryBase, RegI32 ptr, AnyReg src, RegI32 temp,
+                    ZeroExtendIndex zeroExtend);
   void store(MemoryAccessDesc* access, AccessCheck* check, RegPtr instance,
              RegPtr memoryBase, RegI32 ptr, AnyReg src, RegI32 temp);
   void store(MemoryAccessDesc* access, AccessCheck* check, RegPtr instance,
@@ -1793,12 +1793,12 @@ struct BaseCompiler final {
   // null pointer dereferences/accesses.
   struct NoNullCheck {
     static void emitNullCheck(BaseCompiler* bc, RegRef rp) {}
-    static void emitTrapSite(BaseCompiler* bc, FaultingCodeOffset fco,
+    static void emitTrapSite(BaseCompiler* bc, FaultingCodeRange fcr,
                              TrapMachineInsn tmi) {}
   };
   struct SignalNullCheck {
     static void emitNullCheck(BaseCompiler* bc, RegRef rp);
-    static void emitTrapSite(BaseCompiler* bc, FaultingCodeOffset fco,
+    static void emitTrapSite(BaseCompiler* bc, FaultingCodeRange fcr,
                              TrapMachineInsn tmi);
   };
 

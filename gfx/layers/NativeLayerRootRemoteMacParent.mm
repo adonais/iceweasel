@@ -67,8 +67,11 @@ NativeLayerRootRemoteMacParent::RecvCommitNativeLayerCommands(
 
       case NativeLayerCommand::TCommandChangedSurface: {
         auto& changedSurface = command.get_CommandChangedSurface();
+        auto& transfer = changedSurface.Transfer();
+        MOZ_ASSERT(transfer.type() == SurfaceTransfer::TSurfaceTransferMacOS);
+        auto& transferMacOS = transfer.get_SurfaceTransferMacOS();
         HandleChangedSurface(changedSurface.ID(),
-                             std::move(changedSurface.Surface()),
+                             std::move(transferMacOS.Surface()),
                              changedSurface.IsDRM(), changedSurface.IsHDR(),
                              changedSurface.Size());
         break;

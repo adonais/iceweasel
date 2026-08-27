@@ -80,12 +80,8 @@ class MOZ_STACK_CLASS LexicalScopeEmitter {
   const EmitterScope& emitterScope() const { return *emitterScope_; }
 
   [[nodiscard]] bool emitScope(ScopeKind kind,
-                               LexicalScope::ParserData* bindings
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-                               ,
-                               BlockKind blockKind = BlockKind::Other
-#endif
-  );
+                               LexicalScope::ParserData* bindings,
+                               BlockKind blockKind = BlockKind::Other);
   [[nodiscard]] bool emitEmptyScope();
 
   [[nodiscard]] bool emitEnd();

@@ -134,7 +134,7 @@ class _OpenSearchManager {
    *   The window whose UI should be updated.
    */
   updateOpenSearchBadge(win) {
-    let engines = this.#offeredEngines.get(win.gBrowser.selectedBrowser);
+    let engines = this.getInstallableEngines(win.gBrowser.selectedBrowser);
     for (let urlbar of /** @type {NodeListOf<UrlbarInput>} */ (
       win.document.querySelectorAll("moz-urlbar")
     )) {
@@ -147,6 +147,9 @@ class _OpenSearchManager {
         win.gBrowser.selectedBrowser,
         engines || []
       );
+      if (urlbar.sapName == "searchbar") {
+        urlbar.searchModeSwitcher.toggleAddEnginesBadge(!!engines?.length);
+      }
     }
 
     let searchBar = win.document.getElementById("searchbar");
@@ -219,6 +222,24 @@ class _OpenSearchManager {
    */
   getEngines(browser) {
     return this.#offeredEngines.get(browser) || [];
+  }
+
+  /**
+   * Get the open search engines offered by a browser that the user is allowed
+   * to install. Returns an empty list when the installSearchEngine policy
+   * disallows installing engines, even though the engines remain available for
+   * one-off searches (e.g. contextual search).
+   *
+   * @param {MozBrowser} browser
+   *   The browser for which to get the engines.
+   * @returns {OpenSearchData[]}
+   *   The installable open search engines.
+   */
+  getInstallableEngines(browser) {
+    if (!Services.policies.isAllowed("installSearchEngine")) {
+      return [];
+    }
+    return this.getEngines(browser);
   }
 
   clearEngines(browser) {

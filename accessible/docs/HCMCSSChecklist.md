@@ -54,7 +54,7 @@ macOS "Increase Contrast" and Linux HCM alone do **not** trigger `forced-colors`
 
 When a component needs distinct treatment for IC and HCM users, the recommended split is:
 
-```css
+```scss
 :root {
   @media (prefers-contrast) {
     /* Applies to ALL contrast users (IC + HCM).
@@ -91,7 +91,7 @@ Two main rules govern how HCM overrides should be written:
 
 **Nest media queries inside `:root` / `:host`, not on specific elements.** Do not create a separate top-level `@media` rule wrapping a new `:root` declaration. Nesting inside the existing block keeps all variable definitions for a component in one place and makes the full cascade visible at a glance.
 
-```css
+```scss
 /* WRONG — separate top-level @media rule instead of nesting inside :root */
 :root {
   --my-wrong-text-color: rgb(123, 123, 123);
@@ -130,7 +130,7 @@ Two main rules govern how HCM overrides should be written:
 
 **Override the existing variable; do not introduce new HCM-specific ones.** Do not create `-hcm-`-suffixed variables or other HCM-specific names. Overriding the existing variable means the element rule can stay simple and clean.
 
-```css
+```scss
 /* WRONG — introduces an HCM-specific variable; --my-btn-text-color still resolves to the
    light-dark() value in forced-colors, so the element must also carry its own override */
 :root {
@@ -255,14 +255,14 @@ HCM reduces the available palette to a small set of system colors. If any inform
 - **Disabled/inactive states remain distinct** from enabled states. Use disabled tokens (ex. `--button-text-color-disabled`) for disabled foreground rather than relying on reduced opacity.
 - **Status or severity** (e.g. error, warning, success) is not indicated only by color. If an icon or label is the only indicator, ensure it is present and its text/icon uses an appropriate foreground token.
 
-```css
+```scss
 /* WRONG — selected state differs from default only by color,
    which may become indistinguishable across HCM themes */
 :root {
   @media (forced-colors) {
     --my-wrong-item-text: var(--button-text-color);
     --my-wrong-item-bg: var(--button-background-color);
-    --my-wrong-item-bg-selected: var(--button-background-color); /* ← no distinction */
+    --my-wrong-item-bg-selected: var(--button-background-color); /* <- no distinction */
     /* no selected foreground color specified */
   }
 }
@@ -295,13 +295,13 @@ Testing chrome patches in Firefox using FF HCM will not produce the same results
 
 The design system's `--button-*-ghost-*` tokens already have `forced-colors` overrides that add a visible border in the default state (ghost buttons are borderless by default) and override hover and active states. If a component uses ghost styling in non-HCM, do not override the ghost tokens to non-ghost values in the `forced-colors` block — that creates a state mismatch between modes. Let the ghost tokens cascade naturally through the design system. If you've chosen custom color values for your ghost component, override those styles with ghost tokens in HCM.
 
-```css
+```scss
 /* WRONG — non-HCM uses ghost state, forced-colors switches to default state */
 :host {
   --my-wrong-ghost-btn-bg: var(--button-background-color-ghost);
 
   @media (forced-colors) {
-    --my-wrong-ghost-btn-bg: var(--button-background-color); /* ← this will remove the ghost stylinlg, causing a state mismatch */
+    --my-wrong-ghost-btn-bg: var(--button-background-color); /* <- this will remove the ghost styling, causing a state mismatch */
   }
 }
 
@@ -336,7 +336,7 @@ In HCM, border tokens are supplied by our design system for most token family ty
 
 If the same border is appropriate for both IC and HCM, set it in a bare `@media (prefers-contrast)` block. The `forced-colors` block's value will override it for HCM users due to source order:
 
-```css
+```scss
 :root {
   --my-item-border-width: 0px;
   --my-item-border-color: transparent;
@@ -373,7 +373,7 @@ Blur effects, drop shadows, semi-opaque surfaces, and gradient backgrounds must 
 | Semi-opaque surface | Solid background (`var(--background-color-box)`) with `opacity:1;`|
 | Blur | Remove entirely |
 
-```css
+```scss
 :root {
   --my-shadow: drop-shadow(-16px -16px red);
   --my-gradient: linear-gradient(135deg, var(--color-violet-50), var(--color-blue-50));
@@ -402,7 +402,7 @@ SVGs fall into two categories with different HCM requirements:
 **Informational or interactive SVGs** — those that uniquely communicate information or function as controls — must use only HCM palette colors. An example of an SVG in this category is the down-chevron on a custom accordian element.
 Generally, button tokens are appropriate when these items are interactive and traditional background/text tokens are appropriate when they are static. These components should also gain borders in HCM.
 
-```css
+```scss
 /* Interactive icon SVG — must adapt in HCM */
 :root {
   --my-chevron-fill: var(--color-violet-60);

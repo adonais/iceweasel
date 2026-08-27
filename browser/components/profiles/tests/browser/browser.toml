@@ -1,7 +1,7 @@
 [DEFAULT]
 support-files = ["head.js"]
 
-prefs = ["browser.profiles.enabled=true","browser.profiles.created=false",]
+prefs = ["browser.profiles.enabled=true","browser.profiles.created=false","browser.nova.enabled=true",]
 
 ["browser_activate.js"]
 run-if = [
@@ -44,6 +44,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && debug", # Bug 1942961
 ]
 
+["browser_edit_profile_theme_picker_nova_test.js"]
+
 ["browser_empty_name_beforeunload_test.js"]
 
 ["browser_fxa_menu_profiles.js"]
@@ -76,8 +78,6 @@ skip-if = [
 skip-if = [
   "os == 'win'", # Bug 1994086
 ]
-
-["browser_test_nimbus_feature.js"]
 
 ["browser_test_profile_selector.js"]
 skip-if = [

@@ -1,4 +1,4 @@
-requestLongerTimeout(2);
+requestLongerTimeout(10); // slow on verify
 
 AntiTracking.runTestInNormalAndPrivateMode(
   "BroadcastChannel",

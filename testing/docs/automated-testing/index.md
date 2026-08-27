@@ -48,7 +48,6 @@ analysing the code with a linter.
    "``f8``", ":doc:`flake8 </code-quality/lint/linters/ruff>`", "All", "Python analyzed for style and correctness."
    "``stylelint``", ":doc:`Stylelint </code-quality/lint/linters/stylelint>`", "All", "CSS is analyzed for correctness."
    "``W``", ":doc:`wpt lint </web-platform/index>`", "Desktop", "web-platform-tests analyzed for style and manifest correctness"
-   "``WR(tidy)``", ":doc:`WebRender servo-tidy </testing/webrender/index>`", "Desktop", "Code in gfx/wr is run through servo-tidy."
    "``A``", ":doc:`Spotless </code-quality/lint/linters/android-format>`", "Android", "Java is analyzed for style and correctness."
 ```
 
@@ -75,7 +74,7 @@ analysing the code with a linter.
    "``SM(...), SM(pkg)``", "`SpiderMonkey automation <https://wiki.mozilla.org/Javascript:Automation_Builds>`__", "Desktop", "N/A", "JSShell", "N/A", "Low", "SpiderMonkey engine shell tests and JSAPI tests."
    "``W``", ":doc:`web-platform-tests </web-platform/index>`", "Desktop", "Child", "Content", "Yes", "Low", "Standardized features exposed to ECMAScript in web content; tests are shared with other vendors."
    "``Wr``", "`web-platform-tests <https://web-platform-tests.org/writing-tests/reftests.html>`__", "All", "Child", "Content", "Yes", "Low", "Layout and graphic correctness for standardized features; tests are shared with other vendors."
-   "``Mn``", ":doc:`Marionette </testing/marionette/Testing>`", "Desktop", "?", "Content, Browser", "?", "High", "Large out-of-process function integration tests and tests that do communication with multiple remote Gecko processes."
+   "``Mn``", ":doc:`Marionette </remote/marionette/Testing>`", "Desktop", "?", "Content, Browser", "?", "High", "Large out-of-process function integration tests and tests that do communication with multiple remote Gecko processes."
    "``Fxfn``", ":doc:`Firefox UI Tests </remote/Testing>`", "Desktop", "?", "Content, Browser", "Yes", "High", "Integration tests with a focus on the user interface and localization."
    "``tt(c)``", ":doc:`telemetry-tests-client </toolkit/components/telemetry/internals/tests>`", "Desktop", "N/A", "Content, Browser", "Yes", "High", "Integration tests for the Firefox Telemetry client."
    "``TV``", ":doc:`Test Verification (test-verify) </testing/test-verification/index>`", "All", "Depends on test harness", "?", "?", "?", "Uses other test harnesses - mochitest, reftest, xpcshell - to perform extra testing on new/modified tests."
@@ -207,7 +206,7 @@ problem is found.
 
 Try one of the flavors of
 {doc}`mochitest </testing/mochitest-plain/index>`, or
-{doc}`Marionette </testing/marionette/index>` if the application also needs to be
+{doc}`Marionette </remote/marionette/index>` if the application also needs to be
 restarted, or tested with localized builds.
 
 (are-you-testing-mobileandroid)=
@@ -234,7 +233,7 @@ be a good choice.
   {doc}`Mochitest browser chrome tests </testing/mochitest-plain/index>`.
 - For Desktop Firefox, or if you just want to see the future of Gecko
   testing, look into the on-going
-  {doc}`Marionette </testing/marionette/Testing>` project.
+  {doc}`Marionette </remote/marionette/Testing>` project.
 
 (need-to-get-more-data-out-of-your-tests)=
 

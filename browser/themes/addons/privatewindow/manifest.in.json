@@ -39,6 +39,7 @@
       "sidebar_text": "#ffffff",
       "sidebar": "{color.violet-desaturated.70}",
       "tab_background_separator": "{color.violet-desaturated.60}",
+      "tab_border_color_selected_trailing": "{color.violet.50}",
       "tab_loading": "{color.violet.20}",
       "tab_selected": "{color.gray.75}",
       "tab_text": "#ffffff",
@@ -56,6 +57,12 @@
       "toolbar_field_text_focus": "{color.violet-desaturated.10}",
       "toolbar_top_separator": "{color.violet-desaturated.60}",
       "toolbar_vertical_separator": "rgba(251, 251, 254, 0.7)"
+    }
+  },
+
+  "theme_experiment": {
+    "colors": {
+      "tab_border_color_selected_trailing": "--tab-border-color-selected-trailing"
     }
   }
 }

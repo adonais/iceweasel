@@ -95,9 +95,5 @@ if (is_android) {
       "res/values/colors.xml",
       "res/values/strings.xml",
     ]
-
-    # Needed for Bazel converter.
-    resource_dirs = [ "res" ]
-    assert(resource_dirs != [])  # Mark as used.
   }
 }

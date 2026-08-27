@@ -21,8 +21,6 @@ base += ["!reserved-js-words.js"]
 flags = []
 if CONFIG["ENABLE_DECORATORS"]:
     flags.append("--enable-decorators")
-if CONFIG["ENABLE_EXPLICIT_RESOURCE_MANAGEMENT"]:
-    flags.append("--enable-explicit-resource-management")
 if flags:
     GeneratedFile(
         "reserved-js-words.js",

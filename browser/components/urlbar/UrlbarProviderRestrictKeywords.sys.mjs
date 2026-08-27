@@ -6,10 +6,7 @@
  * This module exports a provider that offers restrict keywords for search mode.
  */
 
-import {
-  UrlbarProvider,
-  UrlbarUtils,
-} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -32,10 +29,10 @@ export class UrlbarProviderRestrictKeywords extends UrlbarProvider {
   }
 
   /**
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof lazy.UrlbarShared.PROVIDER_TYPE>}
    */
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
+    return lazy.UrlbarShared.PROVIDER_TYPE.HEURISTIC;
   }
 
   getPriority() {
@@ -69,7 +66,7 @@ export class UrlbarProviderRestrictKeywords extends UrlbarProvider {
     }
 
     for (const [token, l10nRestrictKeywords] of tokenToKeyword.entries()) {
-      let icon = UrlbarUtils.LOCAL_SEARCH_MODES.find(
+      let icon = lazy.UrlbarShared.LOCAL_SEARCH_MODES.find(
         mode => mode.restrict == token
       )?.icon;
 
@@ -84,7 +81,7 @@ export class UrlbarProviderRestrictKeywords extends UrlbarProvider {
           providesSearchMode: true,
         },
         highlights: {
-          l10nRestrictKeywords: UrlbarUtils.HIGHLIGHT.TYPED,
+          l10nRestrictKeywords: lazy.UrlbarShared.HIGHLIGHT.TYPED,
         },
       });
       addCallback(this, result);

@@ -49,7 +49,7 @@ class SimpleGlobalObject final : public nsIGlobalObject, public nsWrapperCache {
   static JSObject* Create(GlobalType globalType, JS::Handle<JS::Value> proto =
                                                      JS::UndefinedHandleValue);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(SimpleGlobalObject)
 
   // Gets the GlobalType of this SimpleGlobalObject.

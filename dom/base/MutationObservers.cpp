@@ -47,12 +47,42 @@ template <typename NotifyObserver>
 static inline nsINode* ForEachAncestorObserver(nsINode* aNode,
                                                NotifyObserver& aFunc,
                                                uint32_t aCallback) {
+  // Nodes below the lowest observed ancestor cost a slots load and yield
+  // nothing, so a previous walk from this node lets us start above them.
+  nsINode* node = nsINode::ObserverChainSkipTo(aNode);
+#ifdef DEBUG
+  if (node) {
+    nsINode* debugNode = aNode;
+    nsINode* debugLast = nullptr;
+    while (debugNode && debugNode != node) {
+      if (debugNode->GetMutationObservers()) {
+        MOZ_ASSERT(false, "skipped nodes must not have observers");
+      }
+      debugLast = debugNode;
+      if (!(debugNode = debugNode->GetParentNode())) {
+        if (ShadowRoot* shadow = ShadowRoot::FromNode(debugLast)) {
+          debugNode = shadow->GetHost();
+        }
+      }
+    }
+    MOZ_ASSERT(debugNode == node,
+               "cached skip-to node must be a valid ancestor");
+  }
+#endif
+  bool memoize = !node && aNode->IsInComposedDoc();
+  if (!node) {
+    node = aNode;
+  }
+
   nsINode* last;
-  nsINode* node = aNode;
   do {
     mozilla::SafeDoublyLinkedList<nsIMutationObserver>* observers =
         node->GetMutationObservers();
     if (observers) {
+      if (memoize && node != aNode) {
+        nsINode::NoteObserverChain(aNode, node);
+      }
+      memoize = false;
       for (auto iter = observers->begin(); iter != observers->end(); ++iter) {
         if (iter->IsCallbackEnabled(aCallback)) {
           aFunc(&*iter);
@@ -66,6 +96,11 @@ static inline nsINode* ForEachAncestorObserver(nsINode* aNode,
       }
     }
   } while (node);
+
+  // Nothing observed anything, so a later walk can go straight to the end.
+  if (memoize && last != aNode) {
+    nsINode::NoteObserverChain(aNode, last);
+  }
   return last;
 }
 

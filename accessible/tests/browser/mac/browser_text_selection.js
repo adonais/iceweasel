@@ -118,6 +118,16 @@ addAccessibleTask(
       "Correct event target"
     );
 
+    let selTextChangedTarget = await selTextChanged;
+    is(
+      focusChangedTarget.getAttributeValue("AXDOMIdentifier"),
+      "button",
+      "Correct event target"
+    );
+    selTextChanged = waitForMacEvent(
+      "AXSelectedTextChanged",
+      e => e.getAttributeValue("AXDOMIdentifier") != "body"
+    );
     focusChanged = waitForMacEvent("AXFocusedUIElementChanged");
     await SpecialPowers.spawn(browser, [], () => {
       content.document.getElementById("link").focus();
@@ -129,7 +139,7 @@ addAccessibleTask(
       "Correct event target"
     );
 
-    let selTextChangedTarget = await selTextChanged;
+    selTextChangedTarget = await selTextChanged;
     is(
       selTextChangedTarget.getAttributeValue("AXDOMIdentifier"),
       "link",

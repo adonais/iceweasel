@@ -22,11 +22,4 @@ nsresult nsLoadGroupConstructor(const nsIID& aIID, void** aResult);
 
 extern nsresult net_NewIncrementalDownload(const nsIID&, void**);
 
-namespace mozilla {
-namespace net {
-nsresult WebSocketChannelConstructor(const nsIID& aIID, void** aResult);
-nsresult WebSocketSSLChannelConstructor(const nsIID& aIID, void** aResult);
-}  // namespace net
-}  // namespace mozilla
-
 #endif

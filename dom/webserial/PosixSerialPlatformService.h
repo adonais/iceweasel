@@ -43,6 +43,7 @@ class PosixSerialPlatformService final : public SerialPlatformService {
   nsresult GetSignalsImpl(const nsString& aPortId,
                           IPCSerialInputSignals& aSignals) override;
   nsresult GetReadStreamImpl(const nsString& aPortId, uint32_t aBufferSize,
+                             bool aDetectParityErrors,
                              nsIAsyncInputStream** aStream) override;
   ~PosixSerialPlatformService() override;
 

@@ -127,6 +127,25 @@ add_task(async function () {
     `::picker-icon is properly displayed`
   );
 
+  info("Highlighting the option::checkmark node");
+  // The ::checkmark pseudo element only exists when the select is opened, so show the
+  // picker so we can see them
+  await showCustomizableSelectPicker(inspector, "select");
+  const optionNodeFront = await getNodeFront("option", inspector);
+  const { nodes: optionChildren } =
+    await inspector.walker.children(optionNodeFront);
+  const optionCheckmarkNodeFront = optionChildren[0];
+  onHighlighterShown = waitForHighlighterTypeShown(
+    inspector.highlighters.TYPES.BOXMODEL
+  );
+  await selectNode(optionCheckmarkNodeFront, inspector, "test-highlight");
+  await onHighlighterShown;
+  is(
+    await getHighlighterInfobarText(),
+    "option::checkmark16 × 16",
+    `::checkmark is properly displayed`
+  );
+
   info("Check highlighting for ::view-transition pseudo elements");
   const onMarkupMutation = inspector.once("markupmutation");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {

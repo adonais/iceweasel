@@ -5,8 +5,18 @@
 with Files("**"):
     BUG_COMPONENT = ("Core", "DOM: Security")
 
+XPIDL_SOURCES += [
+    "nsISiteContainerService.idl",
+]
+
+XPIDL_MODULE = "contextualidentity"
+
 MOZ_SRC_FILES += [
     "ContextualIdentityService.sys.mjs",
+]
+
+XPCOM_MANIFESTS += [
+    "components.conf",
 ]
 
 BROWSER_CHROME_MANIFESTS += ["tests/browser/browser.toml"]

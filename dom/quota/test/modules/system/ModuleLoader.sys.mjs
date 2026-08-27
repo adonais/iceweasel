@@ -47,7 +47,10 @@ export function ModuleLoader(base, depth, proto) {
     const sandbox = sharedGlobalsandbox.Object();
     Object.assign(sandbox, properties);
 
-    Services.scriptloader.loadSubScript(url.href, sandbox);
+    Services.scriptloader.loadSubScriptWithOptions(url.href, {
+      target: sandbox,
+      allowUnsafeURL: true,
+    });
 
     return module.exported_symbols;
   };

@@ -300,6 +300,25 @@
     overflow-y: scroll;
   }
 
+  .trainhop-info {
+    margin-block-start: var(--space-large);
+  }
+
+  .trainhop-empty {
+    margin-block-start: var(--space-large);
+    padding: var(--space-large);
+    border-radius: var(--border-radius-medium);
+    background-color: var(--background-color-warning);
+  }
+
+  .trainhop-config {
+    margin-block-start: var(--space-large);
+    font-family: monospace;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
   .message-item {
     &:first-child td {
       border-block-start: 1px solid var(--border-color);

@@ -10,23 +10,14 @@ using namespace js::frontend;
 LexicalScopeEmitter::LexicalScopeEmitter(BytecodeEmitter* bce) : bce_(bce) {}
 
 bool LexicalScopeEmitter::emitScope(ScopeKind kind,
-                                    LexicalScope::ParserData* bindings
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-                                    ,
-                                    BlockKind blockKind
-#endif
-) {
+                                    LexicalScope::ParserData* bindings,
+                                    BlockKind blockKind) {
   MOZ_ASSERT(state_ == State::Start);
   MOZ_ASSERT(bindings);
 
   tdzCache_.emplace(bce_);
   emitterScope_.emplace(bce_);
-  if (!emitterScope_->enterLexical(bce_, kind, bindings
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-                                   ,
-                                   blockKind
-#endif
-                                   )) {
+  if (!emitterScope_->enterLexical(bce_, kind, bindings, blockKind)) {
     return false;
   }
 

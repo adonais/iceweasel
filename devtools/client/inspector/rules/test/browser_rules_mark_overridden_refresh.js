@@ -38,10 +38,10 @@ add_task(async function () {
     },
   ]);
 
-  info("Simulate light mode to trigger a refresh");
+  info("Emulate light mode to trigger a refresh");
   const onRuleViewRefreshed = inspector.once("rule-view-refreshed");
   inspector.panelDoc
-    .querySelector("#color-scheme-simulation-light-toggle")
+    .querySelector("#color-scheme-emulation-light-toggle")
     .click();
   await onRuleViewRefreshed;
 

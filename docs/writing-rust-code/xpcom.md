@@ -21,7 +21,7 @@ xpcom = { path = "../../../xpcom/rust/xpcom" }
 file hierarchy.)
 
 Next hook it into the build system according to the [build
-documentation](/build/buildsystem/rust.rst).
+documentation](/build/buildsystem/rust.md).
 
 The Rust code will need to import some basic types. `xpcom::interfaces`
 contains all the usual `nsI` interfaces.
@@ -110,4 +110,4 @@ The following XPCOM components are written in Rust.
 - [bookmark_sync](https://searchfox.org/firefox-main/source/toolkit/components/places/bookmark_sync),
   which [merges](https://mozilla.github.io/dogear) bookmarks from Firefox Sync
   with bookmarks in the Places database.
-  [There's also some docs on how Rust interacts with Sync](/services/sync/rust-engines.rst)
+  [There's also some docs on how Rust interacts with Sync](/services/sync/rust-engines.md)

@@ -3,6 +3,7 @@
 load(libdir + "asserts.js");
 
 var g = newGlobal({newCompartment: true});
+g.moduleLoadAndLink = moduleLoadAndLink;
 var dbg = Debugger(g);
 dbg.onDebuggerStatement = function (frame) {
     let env = frame.environment.parent;
@@ -24,7 +25,7 @@ g.eval(
         let e = 5;
         function f() { debugger; return e; }
     \`);
-    moduleLink(m);
+    moduleLoadAndLink(m);
     moduleEvaluate(m);
 `);
 

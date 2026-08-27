@@ -16,13 +16,13 @@ class nsIDialogParamBlock;
 
 class nsPrintDialogServiceWin final : public nsIPrintDialogService {
  public:
-  nsPrintDialogServiceWin();
+  nsPrintDialogServiceWin() = default;
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPRINTDIALOGSERVICE
 
  private:
-  virtual ~nsPrintDialogServiceWin();
+  virtual ~nsPrintDialogServiceWin() = default;
 
   nsresult DoDialog(mozIDOMWindowProxy* aParent,
                     nsIDialogParamBlock* aParamBlock, nsIPrintSettings* aPS,

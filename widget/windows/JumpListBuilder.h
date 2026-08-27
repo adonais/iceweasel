@@ -44,7 +44,7 @@ class JumpListBackend {
   virtual HRESULT AppendKnownCategory(KNOWNDESTCATEGORY category) = 0;
 
  protected:
-  virtual ~JumpListBackend() {}
+  virtual ~JumpListBackend() = default;
 };
 
 /**

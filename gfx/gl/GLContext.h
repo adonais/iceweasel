@@ -231,6 +231,12 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
    */
   virtual bool IsWARP() const { return false; }
 
+  /**
+   * Returns true if the context is using ANGLE's D3D backend. This should only
+   * be overridden for an ANGLE implementation.
+   */
+  virtual bool IsD3DANGLE() const { return false; }
+
   virtual void GetWSIInfo(nsCString* const out) const = 0;
 
   /**

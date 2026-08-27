@@ -7,10 +7,8 @@
 #ifdef JS_HAS_INTL_API
 #  include "builtin/intl/Segmenter.h"
 #endif
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-#  include "builtin/AsyncDisposableStackObject.h"
-#  include "builtin/DisposableStackObject.h"
-#endif
+#include "builtin/AsyncDisposableStackObject.h"
+#include "builtin/DisposableStackObject.h"
 #include "builtin/MapObject.h"
 #include "js/experimental/JitInfo.h"
 #include "vm/ArrayBufferObject.h"
@@ -65,12 +63,10 @@ const JSClass* js::jit::InlinableNativeGuardToClass(InlinableNative native) {
 #endif
     case InlinableNative::IntrinsicGuardToAsyncIteratorHelper:
       return &AsyncIteratorHelperObject::class_;
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case InlinableNative::IntrinsicGuardToAsyncDisposableStack:
       return &AsyncDisposableStackObject::class_;
     case InlinableNative::IntrinsicGuardToDisposableStack:
       return &DisposableStackObject::class_;
-#endif
 
     case InlinableNative::IntrinsicGuardToMapObject:
       return &MapObject::class_;
@@ -203,10 +199,8 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
     case InlinableNative::IntrinsicRegExpExecForTest:
     case InlinableNative::IntrinsicTypedArrayLength:
     case InlinableNative::IntrinsicArrayIteratorPrototypeOptimizable:
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case InlinableNative::IntrinsicGuardToAsyncDisposableStack:
     case InlinableNative::IntrinsicGuardToDisposableStack:
-#endif
       MOZ_CRASH("Unexpected cross-realm intrinsic call");
 
     case InlinableNative::TestBailout:

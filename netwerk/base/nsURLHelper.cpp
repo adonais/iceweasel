@@ -122,7 +122,7 @@ nsresult net_GetURLSpecFromDir(nsIFile* aFile, nsACString& result) {
     escPath += '/';
   }
 
-  result = escPath;
+  result = std::move(escPath);
   return NS_OK;
 }
 
@@ -142,7 +142,7 @@ nsresult net_GetURLSpecFromFile(nsIFile* aFile, nsACString& result) {
     if (NS_SUCCEEDED(rv) && dir) escPath += '/';
   }
 
-  result = escPath;
+  result = std::move(escPath);
   return NS_OK;
 }
 
@@ -885,8 +885,8 @@ void net_ParseRequestContentType(const nsACString& aHeaderStr,
   net_ParseMediaType(flatStr, contentType, contentCharset, 0, &hadCharset,
                      &dummy1, &dummy2, true);
 
-  aContentType = contentType;
-  aContentCharset = contentCharset;
+  aContentType = std::move(contentType);
+  aContentCharset = std::move(contentCharset);
   *aHadCharset = hadCharset;
 }
 

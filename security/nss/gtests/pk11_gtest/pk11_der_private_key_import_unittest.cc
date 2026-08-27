@@ -98,6 +98,49 @@ const std::vector<uint8_t> kEd25519WithNonEmptyAlgorithmParams = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
+// kValidP256Key with the optional [1] publicKey field removed. Without it
+// pk11pk12.c leaves CKA_NSS_DB unset, so softoken has to derive the point
+// itself in sftk_mkPrivKey().
+const std::vector<uint8_t> kValidP256KeyNoPublicKey = {
+    0x30, 0x41,                                            // SEQUENCE(65)
+    0x02, 0x01, 0x00,                                      // INTEGER 0
+    0x30, 0x13,                                            // SEQUENCE(19)
+    0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01,  // id-ecPublicKey
+    0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07,  // prime256v1
+    0x04, 0x27,        // OCTET STRING(39) -- privateKey
+    0x30, 0x25,        // SEQUENCE(37) -- ECPrivateKey
+    0x02, 0x01, 0x01,  // INTEGER 1 -- version
+    0x04, 0x20,        // OCTET STRING(32) -- privateKey
+    0xc9, 0xaf, 0xa9, 0xd8, 0x45, 0xba, 0x75, 0x16, 0x6b, 0x5c, 0x21,
+    0x57, 0x67, 0xb1, 0xd6, 0x93, 0x4e, 0x50, 0xc3, 0xdb, 0x36, 0xe8,
+    0x9b, 0x12, 0x7b, 0x8a, 0x62, 0x2b, 0x12, 0x0f, 0x67, 0x21};
+
+const std::vector<uint8_t> kValidP256PublicKey = {
+    0x04, 0x60, 0xfe, 0xd4, 0xba, 0x25, 0x5a, 0x9d, 0x31, 0xc9, 0x61,
+    0xeb, 0x74, 0xc6, 0x35, 0x6d, 0x68, 0xc0, 0x49, 0xb8, 0x92, 0x3b,
+    0x61, 0xfa, 0x6c, 0xe6, 0x69, 0x62, 0x2e, 0x60, 0xf2, 0x9f, 0xb6,
+    0x79, 0x03, 0xfe, 0x10, 0x08, 0xb8, 0xbc, 0x99, 0xa4, 0x1a, 0xe9,
+    0xe9, 0x56, 0x28, 0xbc, 0x64, 0xf2, 0xf1, 0xb2, 0x0c, 0x2d, 0x7e,
+    0x9f, 0x51, 0x77, 0xa3, 0xc2, 0x94, 0xd4, 0x46, 0x22, 0x99};
+
+// P-256 with a 31-byte privateKey OCTET STRING rather than the 32 bytes RFC
+// 5915 requires, and no [1] publicKey field. The missing publicKey sends
+// sftk_mkPrivKey() down the derive path, where the short scalar makes
+// EC_DerivePublicKey() fail on ec_secp256r1_pt_mul()'s k->len check.
+const std::vector<uint8_t> kP256ShortScalarNoPublicKey = {
+    0x30, 0x40,                                            // SEQUENCE(64)
+    0x02, 0x01, 0x00,                                      // INTEGER 0
+    0x30, 0x13,                                            // SEQUENCE(19)
+    0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01,  // id-ecPublicKey
+    0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07,  // prime256v1
+    0x04, 0x26,        // OCTET STRING(38) -- privateKey
+    0x30, 0x24,        // SEQUENCE(36) -- ECPrivateKey
+    0x02, 0x01, 0x01,  // INTEGER 1 -- version
+    0x04, 0x1f,        // OCTET STRING(31) -- one byte short
+    0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+    0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+    0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa};
+
 const std::vector<uint8_t> kInvalidZeroLengthKey = {
     0x30, 0x1a,        // SEQUENCE(len=26)
     0x02, 0x01, 0x00,  // INT(len=1) = 0
@@ -139,6 +182,9 @@ class DERPrivateKeyImportTest : public ::testing::Test {
     rv = PK11_Authenticate(slot.get(), PR_TRUE, nullptr);
     EXPECT_EQ(rv, SECSuccess);
 
+    /* SEC_ASN1DecoderFinish() (lib/util/secasn1d.c:3001) only reports
+     * SEC_ERROR_BAD_DER when no error is already pending. */
+    PORT_SetError(0);
     rv = PK11_ImportDERPrivateKeyInfoAndReturnKey(
         slot.get(), &item, &nick, nullptr, true, false, KU_ALL, &key, nullptr);
     EXPECT_EQ(rv == SECSuccess, key != nullptr);
@@ -238,6 +284,49 @@ TEST_F(DERPrivateKeyImportTest, ImportRSAPSSKey) {
 TEST_F(DERPrivateKeyImportTest, ImportEcdsaKey) {
   EXPECT_TRUE(ParsePrivateKey(kValidP256Key, true));
   EXPECT_FALSE(PORT_GetError()) << PORT_GetError();
+}
+
+// The input has no public key, so CKA_NSS_DB is left unset,
+// and CKA_TOKEN is false, so the point derivation happens during the import.
+TEST_F(DERPrivateKeyImportTest, ImportEcdsaKeyWithoutPublicKey) {
+  ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
+  ASSERT_TRUE(slot);
+
+  SECItem item = {siBuffer,
+                  const_cast<unsigned char*>(kValidP256KeyNoPublicKey.data()),
+                  static_cast<unsigned int>(kValidP256KeyNoPublicKey.size())};
+  SECKEYPrivateKey* privk = nullptr;
+  PORT_SetError(0);
+  ASSERT_EQ(SECSuccess, PK11_ImportDERPrivateKeyInfoAndReturnKey(
+                            slot.get(), &item, nullptr, nullptr, PR_FALSE,
+                            PR_FALSE, KU_ALL, &privk, nullptr));
+  ScopedSECKEYPrivateKey key(privk);
+  ASSERT_TRUE(key);
+
+  SECItem point = {siBuffer, nullptr, 0};
+  ASSERT_EQ(SECSuccess, PK11_ReadRawAttribute(PK11_TypePrivKey, key.get(),
+                                              CKA_NSS_DB, &point));
+  EXPECT_EQ(kValidP256PublicKey,
+            std::vector<uint8_t>(point.data, point.data + point.len));
+  SECITEM_FreeItem(&point, PR_FALSE);
+}
+
+// Same derive path, but the scalar is a byte short, so EC_DerivePublicKey()
+// fails.
+TEST_F(DERPrivateKeyImportTest, DeriveFailsOnShortScalar) {
+  ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
+  ASSERT_TRUE(slot);
+
+  SECItem item = {
+      siBuffer, const_cast<unsigned char*>(kP256ShortScalarNoPublicKey.data()),
+      static_cast<unsigned int>(kP256ShortScalarNoPublicKey.size())};
+  SECKEYPrivateKey* privk = nullptr;
+  PORT_SetError(0);
+  EXPECT_EQ(SECFailure, PK11_ImportDERPrivateKeyInfoAndReturnKey(
+                            slot.get(), &item, nullptr, nullptr, PR_FALSE,
+                            PR_FALSE, KU_ALL, &privk, nullptr));
+  EXPECT_EQ(nullptr, privk);
+  EXPECT_EQ(PORT_GetError(), SEC_ERROR_BAD_DATA);
 }
 
 TEST_F(DERPrivateKeyImportTest, ImportInvalidPrivateKey) {

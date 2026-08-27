@@ -33,6 +33,7 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
  *  expanded or not. Can be used to expand the content section of the
  *  accordion card on initial render.
  * @property {string} role - (optional) Role of the article element in the card.
+ * @property {number} summaryTabIndex - (optional) tabindex for the accordion summary.
  * @slot content - The content to show inside of the card.
  */
 export default class MozCard extends MozLitElement {
@@ -52,6 +53,7 @@ export default class MozCard extends MozLitElement {
     spacing: { type: String, reflect: true },
     expanded: { type: Boolean },
     role: { type: String, mapped: true },
+    summaryTabIndex: { type: Number },
   };
 
   constructor() {
@@ -104,19 +106,25 @@ export default class MozCard extends MozLitElement {
   cardTemplate() {
     if (this.type === "accordion") {
       return html`
-        <details
-          id="moz-card-details"
-          @toggle=${this.onToggle}
-          ?open=${this.expanded}
-        >
-          <summary part="summary">${this.headingTemplate()}</summary>
-          <div id="content"><slot id="content-slot"></slot></div>
-        </details>
+        <div class="moz-card-wrapper">
+          <div id="cover-image"><slot name="cover-image"></slot></div>
+          <details
+            id="moz-card-details"
+            @toggle=${this.onToggle}
+            ?open=${this.expanded}
+          >
+            <summary part="summary" tabindex=${ifDefined(this.summaryTabIndex)}>
+              ${this.headingTemplate()}
+            </summary>
+            <div id="content"><slot id="content-slot"></slot></div>
+          </details>
+        </div>
       `;
     }
 
     return html`
       <div id="moz-card-details">
+        <div id="cover-image"><slot name="cover-image"></slot></div>
         ${this.headingTemplate()}
         <div id="content" aria-describedby="content">
           <slot></slot>

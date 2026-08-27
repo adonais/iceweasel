@@ -22,9 +22,6 @@ struct CallbackThreadRegistrySingleton {
   UniquePtr<CallbackThreadRegistry> mRegistry;
 };
 
-CallbackThreadRegistry::CallbackThreadRegistry()
-    : mThreadIds("CallbackThreadRegistry::mThreadIds") {}
-
 /* static */
 CallbackThreadRegistry* CallbackThreadRegistry::Get() {
   static CallbackThreadRegistrySingleton sSingleton;

@@ -202,6 +202,13 @@ class WritableStreamToOutputAlgorithms : public UnderlyingSinkAlgorithmsWrapper,
     }
   }
 
+  // Maps the abort reason to the nsresult the output stream is closed with in
+  // AbortCallbackImpl(). The default recognizes a WebTransportError reason and
+  // otherwise falls back to a generic WebTransport code; subclasses may
+  // override to map their own reasons to more meaningful status codes.
+  virtual nsresult BuildErrorStatus(
+      JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason);
+
  private:
   void ClearData() {
     mData = Nothing();

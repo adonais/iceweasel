@@ -42,8 +42,6 @@ MediaSystemResourceService::MediaSystemResourceService() : mDestroyed(false) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
 }
 
-MediaSystemResourceService::~MediaSystemResourceService() = default;
-
 void MediaSystemResourceService::Destroy() { mDestroyed = true; }
 
 void MediaSystemResourceService::Acquire(

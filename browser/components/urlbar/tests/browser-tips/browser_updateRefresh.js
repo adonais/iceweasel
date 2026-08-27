@@ -39,7 +39,7 @@ add_task(async function test() {
   // button.
   await doUpdateTest({
     searchString: SEARCH_STRINGS.UPDATE,
-    tip: UrlbarProviderInterventions.TIP_TYPE.UPDATE_REFRESH,
+    tip: UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_REFRESH,
     title:
       /^.+ is up to date\. Trying to fix a problem\? Restore default settings and remove old add-ons for optimal performance\.$/,
     button: /^Refresh .+…$/,

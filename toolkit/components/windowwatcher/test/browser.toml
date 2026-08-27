@@ -11,8 +11,8 @@ support-files = ["head.js"]
 ["browser_new_sized_window.js"]
 skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 1276802 - Opening windows from content on Windows might not get the size right
-  "os == 'win' && os_version == '11.26200' && arch == 'x86'", # Bug 1276802 - Opening windows from content on Windows might not get the size right
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1276802 - Opening windows from content on Windows might not get the size right
+  "os == 'win' && os_version == '11.26200' && arch == 'x86'", # Bug 1276802 - Opening windows from content on Windows might not get the size right
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1276802 - Opening windows from content on Windows might not get the size right
 ]
 

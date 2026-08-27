@@ -1,0 +1,257 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Tests for GeckoView Broken Site Reporter</title>
+  <script type="text/javascript" src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script type="text/javascript" src="head.js" type="application/javascript"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+
+<script class="testbody" type="text/javascript">
+  add_task(async function test_send_glean_broken_site() {
+    const helper = new BrokenSiteReportTestHelper();
+
+    await helper.sendReportAndCheckPing(
+        {sendBlockedUrls: true},
+        "Test full Glean ping with blocked origins");
+
+    await helper.sendReportAndCheckPing(
+        {},
+        "Test full Glean ping without blocked origins");
+
+    await helper.sendReportAndCheckPing(
+        {sendTabSpecificInfo: false},
+        "Test partial Glean ping without tab-specific info");
+
+    await helper.sendReportAndCheckPing(
+        {details: null},
+        "Test partial Glean ping without details");
+
+    helper.destroy();
+  });
+
+  function areObjectsEqual(actual, expected, path = "") {
+    if (typeof expected == "function") {
+      try {
+        const passes = expected(actual);
+        if (!passes) {
+          info(`${path} not pass check function: ${actual}`);
+        }
+        return passes;
+      } catch (e) {
+        info(`${path} threw exception:
+          got: ${typeof actual}, ${actual}
+          expected: ${typeof expected}, ${expected}
+          exception: ${e.message}
+            ${e.stack}`);
+        return false;
+      }
+    }
+
+    if (typeof actual != typeof expected) {
+      info(`${path} types do not match:
+        got: ${typeof actual}, ${actual}
+        expected: ${typeof expected}, ${expected}`);
+      return false;
+    }
+    if (typeof actual != "object" || actual === null || expected === null) {
+      if (actual !== expected) {
+        info(`${path} does not match
+          got: ${typeof actual}, ${actual}
+          expected: ${typeof expected}, ${expected}`);
+        return false;
+      }
+      return true;
+    }
+    const prefix = path ? `${path}.` : path;
+    for (const [key, val] of Object.entries(actual)) {
+      if (!(key in expected)) {
+        info(`Extra ${prefix}${key}: ${val}`);
+        return false;
+      }
+    }
+    let result = true;
+    for (const [key, expectedVal] of Object.entries(expected)) {
+      if (key in actual) {
+        if (!areObjectsEqual(actual[key], expectedVal, `${prefix}${key}`)) {
+          result = false;
+        }
+      } else {
+        info(`Missing ${prefix}${key} (${expectedVal})`);
+        result = false;
+      }
+    }
+    return result;
+  }
+
+  class BrokenSiteReportTestHelper {
+      constructor() {
+          this.chromeScript = SpecialPowers.loadChromeScript(_ => {
+              async function callActorParentFn(name, args = []) {
+                  const navigator = Services.wm.getMostRecentWindow("navigator:geckoview");
+                  const report = await navigator.window.moduleManager.getActor("ReportBrokenSite")[name](...args);
+                  // return a stringified version, as the default stringification of messages isn't JSON-friendly (arrays become objects, etc).
+                  return JSON.stringify(report);
+              }
+              addMessageListener("getBrokenSiteReport", () => {
+                  return callActorParentFn("getBrokenSiteReport");
+              });
+              addMessageListener("filterReportData", ({report, opts}) => {
+                  return callActorParentFn("filterReportData", [report, opts]);
+              });
+              addMessageListener("callGeckoViewAPI", async ({name, params}) => {
+                  const navigator = Services.wm.getMostRecentWindow("navigator:geckoview");
+                  const dispatcher = navigator.window.WindowEventDispatcher;
+                  return new Promise((resolve, reject) => {
+                      dispatcher.dispatch(`GeckoView:${name}`, params, {
+                          onSuccess(message) {
+                              resolve(message)
+                          },
+                          onError(error) {
+                              reject(error)
+                          }
+                      });
+                  });
+              });
+              addMessageListener("getBrokenSiteReportGleanPing", async () => {
+                  const ping = {};
+                  const navigator = Services.wm.getMostRecentWindow("navigator:geckoview");
+                  const { Glean } = navigator.window;
+                  const extractCategory = category => {
+                      const values = {};
+                      for (let name of Object.keys(category)) {
+                          let value = category[name].testGetValue?.();
+                          if (name.endsWith("Json")) {
+                              name = name.slice(0, -4);
+                              value = JSON.parse(value);
+                          }
+                          values[name] = value;
+                      }
+                      return values;
+                  }
+                  for (const name of Object.keys(Glean)) {
+                      if (name.startsWith("brokenSiteReport")) {
+                          ping[name] = extractCategory(Glean[name]);
+                      }
+                  }
+
+                  // we do not actually send any security data on Android
+                  delete ping.brokenSiteReportBrowserInfoSecurity;
+
+                  Services.fog.testResetFOG();
+
+                  return JSON.stringify(ping);
+              });
+          });
+      }
+
+      destroy() {
+          this.chromeScript?.destroy();
+      }
+
+      filterReportData(report, opts) {
+          return this.chromeScript.sendQuery("filterReportData", {report, opts});
+      }
+
+      getBrokenSiteReportGleanPing() {
+          return this.chromeScript.sendQuery("getBrokenSiteReportGleanPing");
+      }
+
+      nativeGetBrokenSiteReport() {
+          return this.chromeScript.sendQuery("getBrokenSiteReport");
+      }
+
+      #callGeckoViewAPI(name, params) {
+          return this.chromeScript.sendQuery("callGeckoViewAPI", {name, params});
+      }
+
+      gvGetBrokenSiteReport() {
+          return this.#callGeckoViewAPI("GetBrokenSiteReport");
+      }
+
+      gvSendGleanBrokenSiteReport(report) {
+          return this.#callGeckoViewAPI("SendGleanBrokenSiteReport", report);
+      }
+
+      async getReportDetails() {
+          let expected = await this.nativeGetBrokenSiteReport();
+          let actual = await this.gvGetBrokenSiteReport();
+
+          is(expected, actual, "GeckoView:GetBrokenSiteReport gets the expected data");
+          is(JSON.parse(actual).antitracking.blockList.glean, "tabInfo.antitracking", "The expected data passes a sniff test");
+
+          const origins = ["https://blocked1.org", "https://blocked2.org"];
+          expected = JSON.parse(expected);
+          expected.antitracking.blockedOrigins.value = origins;
+          expected = JSON.stringify(expected);
+
+          return expected;
+      }
+
+      async buildExpectedPing({ description, details, sendTabSpecificInfo, sendBlockedUrls, reason, url }) {
+          const ping = {};
+
+          if (details === null) {
+            // the ping values remain as nulls if we send no details, so need an example report
+            details = JSON.parse(await this.getReportDetails());
+            details = JSON.parse(await this.filterReportData(details, {sendNoData: true, nullify: true}));
+          } else {
+            details = JSON.parse(await this.filterReportData(details, {sendTabSpecificInfo, sendBlockedUrls, nullify: true}));
+          }
+
+          for (const categoryEntries of Object.values(details)) {
+              for (const [entry, {glean, value}] of Object.entries(categoryEntries)) {
+                  if (!glean) {
+                      continue;
+                  }
+                  // Transform glean=xx.yy.zz to brokenSiteReportXxYyZz.
+                  const gleanCategory =
+                    "brokenSiteReport" +
+                    glean
+                      .split(".")
+                      .map(v => `${v[0].toUpperCase()}${v.substr(1)}`)
+                      .join("");
+                  ping[gleanCategory] ??= {};
+                  ping[gleanCategory][entry] = value;
+              }
+          }
+
+          ping.brokenSiteReport = { breakageCategory: reason, description, url };
+
+          // we have to cast devicePixelRatio to a string, as that's how its stored in the ping.
+          const graphics = ping.brokenSiteReportBrowserInfoGraphics;
+          if (graphics?.devicePixelRatio) {
+              graphics.devicePixelRatio = String(graphics.devicePixelRatio);
+          }
+
+          return ping;
+      }
+
+      async sendReportAndCheckPing(sendCallOverrides, testMessage) {
+          const details = !Object.hasOwn(sendCallOverrides, "details")
+              ? JSON.parse(await this.getReportDetails())
+              : null;
+
+          const args = Object.assign({
+              description: "test description",
+              details,
+              reason: "test reason",
+              url: "https://test.site/",
+              sendBlockedUrls: false,
+              sendTabSpecificInfo: true,
+              doNotSubmit: true,
+          }, sendCallOverrides ?? {});
+
+          await this.gvSendGleanBrokenSiteReport(args);
+
+          const actualPing = JSON.parse(await this.getBrokenSiteReportGleanPing())
+          const expectedPing = await this.buildExpectedPing(args);
+          ok(areObjectsEqual(actualPing, expectedPing), testMessage);
+      }
+  }
+</script>
+</body>
+</html>

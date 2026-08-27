@@ -11,11 +11,13 @@
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/Components.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/PermissionManager.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/FetchEventOpProxyChild.h"
 #include "mozilla/dom/IndexedDatabaseManager.h"
 #include "mozilla/dom/MessagePort.h"
@@ -130,6 +132,69 @@ class RemoteWorkerCSPEventListener final : public nsICSPEventListener {
 
 NS_IMPL_ISUPPORTS(RemoteWorkerCSPEventListener, nsICSPEventListener)
 
+// This is used to wait until auxiliary information, like permissions, for a
+// remote worker's origin has arrived in the content process.
+class LoadedOriginAddedObserver final : public nsIObserver {
+ public:
+  NS_DECL_ISUPPORTS
+
+  static constexpr const char* kTopic = "content-loaded-origin-added";
+
+  LoadedOriginAddedObserver(nsIPrincipal* aPrincipal,
+                            nsISerialEventTarget* aWorkerTarget,
+                            nsIRunnable* aWorkerInitRunnable)
+      : mPrincipal(aPrincipal),
+        mWorkerTarget(aWorkerTarget),
+        mWorkerInitRunnable(aWorkerInitRunnable) {}
+
+  nsresult CallWhenReady() {
+    RefPtr<LoadedOriginSet> loadedOrigins = CurrentLoadedOriginSet();
+    if (!loadedOrigins ||
+        loadedOrigins->Has(mPrincipal, LoadedOriginSet::Level::Full)) {
+      return Dispatch();
+    }
+
+    MOZ_ASSERT(
+        loadedOrigins->Has(mPrincipal, LoadedOriginSet::Level::Tentative),
+        "Our caller must have previously marked as tentative");
+
+    // If the origin is only tentatively loaded, add ourselves as an observer to
+    // be notified when new origins are added to CurrentLoadedOriginSet().
+    nsCOMPtr<nsIObserverService> obs = components::Observer::Service();
+    return obs ? obs->AddObserver(this, kTopic, /* ownsWeak */ false)
+               : NS_ERROR_NOT_AVAILABLE;
+  }
+
+  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t* aData) override {
+    MOZ_ASSERT(!strcmp(aTopic, kTopic));
+    nsCOMPtr<nsIPrincipal> principal = do_QueryInterface(aSubject);
+    if (mPrincipal && mPrincipal->Equals(principal)) {
+      Dispatch();
+
+      nsCOMPtr<nsIObserverService> obs = components::Observer::Service();
+      obs->RemoveObserver(this, kTopic);
+    }
+    return NS_OK;
+  }
+
+ private:
+  ~LoadedOriginAddedObserver() = default;
+
+  nsresult Dispatch() {
+    nsresult rv = mWorkerTarget->Dispatch(mWorkerInitRunnable.forget());
+    mWorkerTarget = nullptr;
+    mPrincipal = nullptr;
+    return rv;
+  }
+
+  nsCOMPtr<nsIPrincipal> mPrincipal;
+  nsCOMPtr<nsISerialEventTarget> mWorkerTarget;
+  nsCOMPtr<nsIRunnable> mWorkerInitRunnable;
+};
+
+NS_IMPL_ISUPPORTS(LoadedOriginAddedObserver, nsIObserver)
+
 }  // anonymous namespace
 
 RemoteWorkerChild::RemoteWorkerChild(const RemoteWorkerData& aData)
@@ -236,6 +301,15 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
   }
 
   nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
+
+  // It is possible we have reached the main thread in the content process
+  // before messages sent by `ContentParent::AboutToLoadOrigin` have arrived &
+  // been processed.
+  // Tentatively indicate that we anticipate the messages will arrive to ensure
+  // in-process principal validation passes while setting up the remote worker.
+  if (RefPtr<LoadedOriginSet> loadedOrigins = CurrentLoadedOriginSet()) {
+    loadedOrigins->AddTentative(principal);
+  }
 
   auto loadingPrincipalOrErr =
       PrincipalInfoToPrincipal(aData.loadingPrincipalInfo());
@@ -417,25 +491,15 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
     lock->as<Pending>().mWorkerPrivate = std::move(workerPrivate);
   }
 
-  if (mIsServiceWorker) {
-    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-        __func__, [workerTarget,
-                   initializeWorkerRunnable = std::move(runnable)]() mutable {
-          (void)NS_WARN_IF(NS_FAILED(
-              workerTarget->Dispatch(initializeWorkerRunnable.forget())));
-        });
-
-    RefPtr<PermissionManager> permissionManager =
-        PermissionManager::GetInstance();
-    if (!permissionManager) {
-      return NS_ERROR_FAILURE;
-    }
-    permissionManager->WhenPermissionsAvailable(principal, r);
-  } else {
-    if (NS_WARN_IF(NS_FAILED(workerTarget->Dispatch(runnable.forget())))) {
-      rv = NS_ERROR_FAILURE;
-      return rv;
-    }
+  // FIXME: It seems possible that script can run in the worker before this
+  // callback is invoked, and that script could be running without permissions.
+  //
+  // Perhaps we want to move this wait earlier during remote worker creation?
+  auto loadedOriginObs =
+      MakeRefPtr<LoadedOriginAddedObserver>(principal, workerTarget, runnable);
+  if (NS_WARN_IF(NS_FAILED(loadedOriginObs->CallWhenReady()))) {
+    rv = NS_ERROR_FAILURE;
+    return rv;
   }
 
   scopeExit.release();

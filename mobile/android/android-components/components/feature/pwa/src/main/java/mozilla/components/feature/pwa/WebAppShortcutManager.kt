@@ -53,12 +53,14 @@ const val SHORTCUT_CATEGORY = mozilla.components.feature.customtabs.SHORTCUT_CAT
  * @param storage Storage used to save web app manifests to disk.
  * @param supportWebApps If true, Progressive Web Apps will be pinnable.
  * If false, all web sites will be bookmark shortcuts even if they have a manifest.
+ * @param currentTimeMillis provider for the current time in milliseconds, injectable for testing.
  */
 class WebAppShortcutManager(
     context: Context,
     httpClient: Client,
     private val storage: ManifestStorage,
     internal val supportWebApps: Boolean = true,
+    private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
 ) {
 
     internal val icons = webAppIcons(context, httpClient)
@@ -220,7 +222,7 @@ class WebAppShortcutManager(
      */
     suspend fun getWebAppInstallState(
         url: String,
-        @VisibleForTesting currentTimeMs: Long = System.currentTimeMillis(),
+        @VisibleForTesting currentTimeMs: Long = currentTimeMillis(),
     ): WebAppInstallState {
         if (storage.hasRecentManifest(url, currentTimeMs = currentTimeMs)) {
             return WebAppInstallState.Installed

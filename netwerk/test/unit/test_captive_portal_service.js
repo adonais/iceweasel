@@ -22,6 +22,7 @@ function contentHandler(metadata, response) {
 const PREF_CAPTIVE_ENABLED = "network.captive-portal-service.enabled";
 const PREF_CAPTIVE_TESTMODE = "network.captive-portal-service.testMode";
 const PREF_CAPTIVE_ENDPOINT = "captivedetect.canonicalURL";
+const PREF_CAPTIVE_CANONICAL_CONTENT = "captivedetect.canonicalContent";
 const PREF_CAPTIVE_MINTIME = "network.captive-portal-service.minInterval";
 const PREF_CAPTIVE_MAXTIME = "network.captive-portal-service.maxInterval";
 const PREF_DNS_NATIVE_IS_LOCALHOST = "network.dns.native-is-localhost";
@@ -34,6 +35,7 @@ registerCleanupFunction(async () => {
   Services.prefs.clearUserPref(PREF_CAPTIVE_ENABLED);
   Services.prefs.clearUserPref(PREF_CAPTIVE_TESTMODE);
   Services.prefs.clearUserPref(PREF_CAPTIVE_ENDPOINT);
+  Services.prefs.clearUserPref(PREF_CAPTIVE_CANONICAL_CONTENT);
   Services.prefs.clearUserPref(PREF_CAPTIVE_MINTIME);
   Services.prefs.clearUserPref(PREF_CAPTIVE_MAXTIME);
   Services.prefs.clearUserPref(PREF_DNS_NATIVE_IS_LOCALHOST);
@@ -63,6 +65,7 @@ add_task(function setup() {
   httpserver.registerPathHandler("/captive.html", contentHandler);
   httpserver.start(-1);
 
+  Services.prefs.setCharPref(PREF_CAPTIVE_CANONICAL_CONTENT, SUCCESS_STRING);
   Services.prefs.setCharPref(PREF_CAPTIVE_ENDPOINT, cpURI);
   Services.prefs.setIntPref(PREF_CAPTIVE_MINTIME, 50);
   Services.prefs.setIntPref(PREF_CAPTIVE_MAXTIME, 100);
@@ -95,6 +98,138 @@ add_task(async function test_simple() {
   cps.recheckCaptivePortal();
   await notification;
   equal(cps.state, Ci.nsICaptivePortalService.UNLOCKED_PORTAL);
+});
+
+// Restores the configuration shared by the tests below, so that a test using
+// its own endpoint behaviour doesn't leak into the following ones.
+function restoreSharedConfig() {
+  Services.prefs.setCharPref(PREF_CAPTIVE_CANONICAL_CONTENT, SUCCESS_STRING);
+  httpserver.registerPathHandler("/captive.html", contentHandler);
+  cpResponse = SUCCESS_STRING;
+  Services.prefs.setBoolPref(PREF_CAPTIVE_ENABLED, false);
+}
+
+// This test mimics the production configuration, where the canonical endpoint
+// returns an empty 204 response when there is no captive portal and no content
+// is expected.
+add_task(async function test_204_endpoint() {
+  Services.prefs.setBoolPref(PREF_CAPTIVE_ENABLED, false);
+  equal(cps.state, Ci.nsICaptivePortalService.UNKNOWN);
+
+  Services.prefs.setCharPref(PREF_CAPTIVE_CANONICAL_CONTENT, "");
+
+  let captive = false;
+  httpserver.registerPathHandler("/captive.html", (metadata, response) => {
+    if (captive) {
+      // A captive portal returns its login page instead of the empty 204.
+      response.setStatusLine(metadata.httpVersion, 200, "OK");
+      response.setHeader("Content-Type", "text/html");
+      let body = "<html>please log in</html>";
+      response.bodyOutputStream.write(body, body.length);
+    } else {
+      response.setStatusLine(metadata.httpVersion, 204, "No Content");
+    }
+  });
+
+  let notification = observerPromise("network:captive-portal-connectivity");
+  Services.prefs.setBoolPref(PREF_CAPTIVE_ENABLED, true);
+  equal(await notification, "clear", "An empty 204 means no captive portal");
+  equal(cps.state, Ci.nsICaptivePortalService.NOT_CAPTIVE);
+
+  captive = true;
+  notification = observerPromise("captive-portal-login");
+  cps.recheckCaptivePortal();
+  await notification;
+  equal(
+    cps.state,
+    Ci.nsICaptivePortalService.LOCKED_PORTAL,
+    "A 200 login page instead of the empty 204 means a captive portal"
+  );
+
+  captive = false;
+  notification = observerPromise("captive-portal-login-success");
+  cps.recheckCaptivePortal();
+  await notification;
+  equal(cps.state, Ci.nsICaptivePortalService.UNLOCKED_PORTAL);
+
+  restoreSharedConfig();
+});
+
+// When no content is expected, an empty body means no captive portal whether
+// it arrives as a 200 or as a 204 - some deployments answer a generate_204
+// style endpoint with an empty 200.
+add_task(async function test_empty_body_accepts_200_and_204() {
+  for (let status of [200, 204]) {
+    Services.prefs.setBoolPref(PREF_CAPTIVE_ENABLED, false);
+    equal(cps.state, Ci.nsICaptivePortalService.UNKNOWN);
+
+    Services.prefs.setCharPref(PREF_CAPTIVE_CANONICAL_CONTENT, "");
+    httpserver.registerPathHandler("/captive.html", (metadata, response) => {
+      response.setStatusLine(metadata.httpVersion, status, "");
+    });
+
+    let notification = observerPromise("network:captive-portal-connectivity");
+    Services.prefs.setBoolPref(PREF_CAPTIVE_ENABLED, true);
+    equal(await notification, "clear", `An empty ${status} means no portal`);
+    equal(cps.state, Ci.nsICaptivePortalService.NOT_CAPTIVE);
+  }
+
+  restoreSharedConfig();
+});
+
+// A 204 carries no body, so it cannot be the expected content when one is
+// configured. Such a response is treated as interference rather than silently
+// accepted.
+add_task(async function test_204_with_expected_content() {
+  Services.prefs.setBoolPref(PREF_CAPTIVE_ENABLED, false);
+  equal(cps.state, Ci.nsICaptivePortalService.UNKNOWN);
+
+  Services.prefs.setCharPref(PREF_CAPTIVE_CANONICAL_CONTENT, SUCCESS_STRING);
+  httpserver.registerPathHandler("/captive.html", (metadata, response) => {
+    response.setStatusLine(metadata.httpVersion, 204, "No Content");
+  });
+
+  let notification = observerPromise("captive-portal-login");
+  Services.prefs.setBoolPref(PREF_CAPTIVE_ENABLED, true);
+  await notification;
+  equal(
+    cps.state,
+    Ci.nsICaptivePortalService.LOCKED_PORTAL,
+    "A 204 is not accepted when a non-empty content is expected"
+  );
+
+  restoreSharedConfig();
+});
+
+// A canonicalURL pointed at a 200 returning endpoint - by an enterprise policy
+// or a user override - must keep working even though the default endpoint now
+// answers with a 204, as long as canonicalContent is overridden along with it.
+add_task(async function test_200_endpoint_still_works() {
+  Services.prefs.setBoolPref(PREF_CAPTIVE_ENABLED, false);
+  equal(cps.state, Ci.nsICaptivePortalService.UNKNOWN);
+
+  // The expected content is whatever the overridden endpoint returns, exactly
+  // as it was before the default endpoint moved to a 204.
+  Services.prefs.setCharPref(PREF_CAPTIVE_CANONICAL_CONTENT, SUCCESS_STRING);
+  httpserver.registerPathHandler("/captive.html", contentHandler);
+  cpResponse = SUCCESS_STRING;
+
+  let notification = observerPromise("network:captive-portal-connectivity");
+  Services.prefs.setBoolPref(PREF_CAPTIVE_ENABLED, true);
+  equal(
+    await notification,
+    "clear",
+    "A 200 matching the expected content means no captive portal"
+  );
+  equal(cps.state, Ci.nsICaptivePortalService.NOT_CAPTIVE);
+
+  cpResponse = "<html>please log in</html>";
+  notification = observerPromise("captive-portal-login");
+  cps.recheckCaptivePortal();
+  await notification;
+  equal(cps.state, Ci.nsICaptivePortalService.LOCKED_PORTAL);
+
+  restoreSharedConfig();
 });
 
 // This test redirects to another URL which returns the same content.

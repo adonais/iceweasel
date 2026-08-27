@@ -22,6 +22,16 @@ pub const ENCODED_OID_BYTES_SECP256R1: &[u8] =
 pub const ENCODED_OID_BYTES_SECP384R1: &[u8] = &[0x06, 0x05, 0x2b, 0x81, 0x04, 0x00, 0x22];
 pub const ENCODED_OID_BYTES_SECP521R1: &[u8] = &[0x06, 0x05, 0x2b, 0x81, 0x04, 0x00, 0x23];
 
+// Helper function to turn a utf-8 char pointer into a slice, given that null
+// pointers cannot be passed to std::slice::from_raw_parts.
+pub unsafe fn char_ptr_to_slice<'a>(ptr: CK_UTF8CHAR_PTR, len: CK_ULONG) -> &'a [u8] {
+    if ptr.is_null() {
+        &[]
+    } else {
+        std::slice::from_raw_parts(ptr, len as usize)
+    }
+}
+
 // This is a helper function to take a value and lay it out in memory how
 // PKCS#11 is expecting it.
 pub fn serialize_uint<T: TryInto<u64>>(value: T) -> Result<Vec<u8>, Error> {

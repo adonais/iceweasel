@@ -121,3 +121,14 @@ The following articles cover different aspects of using the Storage Inspector:
 - {doc}`Cache Storage <../storage_inspector/cache_storage/index>`
 - {doc}`IndexedDB <../storage_inspector/indexeddb/index>`
 - {doc}`Extension Storage <../storage_inspector/extension_storage/index>`
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+cache_storage/index
+cookies/index
+extension_storage/index
+indexeddb/index
+local_storage_session_storage/index
+```

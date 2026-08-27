@@ -122,10 +122,10 @@ void NativeKeyBindings::Init(NativeKeyBindingsType aType) {
   SEL_TO_COMMAND(moveForwardAndModifySelection:, Command::SelectCharNext);
   SEL_TO_COMMAND(moveLeft:, Command::CharPrevious);
   SEL_TO_COMMAND(moveLeftAndModifySelection:, Command::SelectCharPrevious);
-  SEL_TO_COMMAND(moveParagraphBackwardAndModifySelection:,
-                 Command::SelectBeginParagraph);
-  SEL_TO_COMMAND(moveParagraphForwardAndModifySelection:,
-                 Command::SelectEndParagraph);
+  // moveParagraphBackwardAndModifySelection: and
+  // moveParagraphForwardAndModifySelection: are expanded into two commands in
+  // AppendEditCommandsForSelector so that the selection can cross a paragraph
+  // boundary, so they are intentionally not mapped here.
   SEL_TO_COMMAND(moveRight:, Command::CharNext);
   SEL_TO_COMMAND(moveRightAndModifySelection:, Command::SelectCharNext);
   SEL_TO_COMMAND(moveToBeginningOfDocument:, Command::MoveTop);
@@ -307,6 +307,23 @@ void NativeKeyBindings::AppendEditCommandsForSelector(
     // is taken. See bug 282097, comment 79 for more details.
     aCommands.AppendElement(static_cast<CommandInt>(Command::WordPrevious));
     aCommands.AppendElement(static_cast<CommandInt>(Command::SelectWordNext));
+  } else if (aSelector == ToObjcSelectorPtr(@selector(
+                              moveParagraphBackwardAndModifySelection:))) {
+    // Paragraph selection on its own cannot cross a paragraph boundary, so
+    // extend the selection by one character first. This lets repeated
+    // Shift+Option+ArrowUp keep extending the selection upward, matching the
+    // non-selecting Option+ArrowUp binding and native macOS text views.
+    aCommands.AppendElement(
+        static_cast<CommandInt>(Command::SelectCharPrevious));
+    aCommands.AppendElement(
+        static_cast<CommandInt>(Command::SelectBeginParagraph));
+  } else if (aSelector == ToObjcSelectorPtr(@selector(
+                              moveParagraphForwardAndModifySelection:))) {
+    // See the comment above; this is the downward counterpart used by
+    // Shift+Option+ArrowDown.
+    aCommands.AppendElement(static_cast<CommandInt>(Command::SelectCharNext));
+    aCommands.AppendElement(
+        static_cast<CommandInt>(Command::SelectEndParagraph));
   }
 }
 

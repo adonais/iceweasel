@@ -1009,7 +1009,7 @@ class ScriptSource {
     explicit DataReader(ScriptSource* source) : source_(source) {
       auto guard_ = source_->sourceDataState_.lock();
       getConstWithLock()->getSourceProperties(&hasSourceText_, &retrievable_,
-                                      &isTwoByteString_);
+                                              &isTwoByteString_);
       if (hasSourceText_) {
         guard_->addReader();
       }
@@ -2038,12 +2038,6 @@ class JSScript : public js::BaseScript {
       return nullptr;
     }
     return immutableScriptData()->code();
-  }
-
-  bool hasForceInterpreterOp() const {
-    // JSOp::ForceInterpreter, if present, must be the first op.
-    MOZ_ASSERT(length() >= 1);
-    return JSOp(*code()) == JSOp::ForceInterpreter;
   }
 
   js::AllBytecodesIterable allLocations() {

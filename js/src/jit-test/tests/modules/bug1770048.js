@@ -15,6 +15,6 @@ const m2 = parseModule(`
 `);
 
 registerModule('m1', m1);
-moduleLink(m2);
+moduleLoadAndLink(m2);
 moduleEvaluate(m2);
 drainJobQueue();

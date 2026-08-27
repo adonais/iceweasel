@@ -24,8 +24,9 @@ async function closeAllTabsMenu(win = window) {
   await hidden;
 }
 
-// The "New Container Tab" and "Close Duplicate Tabs" items live inside the
-// scrollable tab list as its first two children, so they scroll with the tabs
+// Test that the sticky items at the top of the menu are in fact sticky (i.e.
+// they appear outside of the scrollable tab list) and appear in the order
+// they should
 add_task(async function test_menu_item_order_and_visibility() {
   await SpecialPowers.pushPrefEnv({
     set: [["privacy.userContext.enabled", true]],
@@ -39,6 +40,8 @@ add_task(async function test_menu_item_order_and_visibility() {
   await openAllTabsMenu();
 
   const tabsList = document.getElementById("allTabsMenu-allTabsView-tabs");
+  const outerBody = tabsList.parentNode;
+  const searchButton = document.getElementById("allTabsMenu-searchTabs");
   const containerButton = document.getElementById(
     "allTabsMenu-containerTabsButton"
   );
@@ -46,15 +49,16 @@ add_task(async function test_menu_item_order_and_visibility() {
     "allTabsMenu-closeDuplicateTabs"
   );
 
+  is(outerBody.children[0], searchButton, "Search All Tabs is the first item");
   is(
-    tabsList.children[0],
-    containerButton,
-    "New Container Tab is the first item in the tab list"
+    outerBody.children[1],
+    closeDuplicateButton,
+    "Close Duplicate Tabs is the second item"
   );
   is(
-    tabsList.children[1],
-    closeDuplicateButton,
-    "Close Duplicate Tabs is the second item in the tab list"
+    outerBody.children[2],
+    containerButton,
+    "New Container Tab is the third item"
   );
   ok(
     BrowserTestUtils.isVisible(containerButton),
@@ -67,9 +71,9 @@ add_task(async function test_menu_item_order_and_visibility() {
 
   const firstTabRow = tabsList.querySelector(".all-tabs-item");
   is(
-    tabsList.children[2],
+    tabsList.children[0],
     firstTabRow,
-    "The first tab is the third item in the list, after the two action buttons"
+    "The first tab is the first item in the scrollable list"
   );
 
   await closeAllTabsMenu();
@@ -84,7 +88,9 @@ add_task(async function test_close_duplicate_hidden_without_duplicates() {
   window.gTabsPanel.init();
   await openAllTabsMenu();
 
-  const tabsList = document.getElementById("allTabsMenu-allTabsView-tabs");
+  const outerBody = document.getElementById(
+    "allTabsMenu-allTabsView-tabs"
+  ).parentNode;
   const closeDuplicateButton = document.getElementById(
     "allTabsMenu-closeDuplicateTabs"
   );
@@ -94,7 +100,7 @@ add_task(async function test_close_duplicate_hidden_without_duplicates() {
     "Close Duplicate Tabs is hidden when there are no duplicate tabs"
   );
   is(
-    tabsList.children[1],
+    outerBody.children[1],
     closeDuplicateButton,
     "Close Duplicate Tabs keeps its position while hidden"
   );
@@ -169,9 +175,6 @@ add_task(async function test_hidden_audio_tabs_at_top() {
     "allTabsMenu-hiddenTabsSeparator"
   );
   const tabsList = document.getElementById("allTabsMenu-allTabsView-tabs");
-  const containerButton = document.getElementById(
-    "allTabsMenu-containerTabsButton"
-  );
 
   ok(
     BrowserTestUtils.isVisible(hiddenTabsButton),
@@ -201,8 +204,9 @@ add_task(async function test_hidden_audio_tabs_at_top() {
     hiddenTabsSeparator,
     "Separator follows the audio tabs container"
   );
+  const firstVisibleTabRow = tabsList.querySelector(":scope > .all-tabs-item");
   ok(
-    hiddenTabsSeparator.compareDocumentPosition(containerButton) &
+    hiddenTabsSeparator.compareDocumentPosition(firstVisibleTabRow) &
       Node.DOCUMENT_POSITION_FOLLOWING,
     "The visible tab list comes after the separator, within the scrollable list"
   );
@@ -229,13 +233,14 @@ add_task(async function test_hidden_audio_tabs_at_top() {
   BrowserTestUtils.removeTab(hiddenTab);
 });
 
-// Adding a tab while the menu is open re-renders the tab list. The two action
-// buttons must remain its first two children.
+// Adding a tab while the menu is open re-renders the tab list. The sticky
+// action buttons should not change positions.
 add_task(async function test_buttons_persist_after_tab_added() {
   window.gTabsPanel.init();
   await openAllTabsMenu();
 
   const tabsList = document.getElementById("allTabsMenu-allTabsView-tabs");
+  const outerBody = tabsList.parentNode;
   const containerButton = document.getElementById(
     "allTabsMenu-containerTabsButton"
   );
@@ -253,23 +258,23 @@ add_task(async function test_buttons_persist_after_tab_added() {
   );
 
   is(
-    tabsList.children[0],
-    containerButton,
-    "New Container Tab is still the first item after a tab is added"
+    outerBody.children[1],
+    closeDuplicateButton,
+    "Close Duplicate Tabs stays sticky after a tab is added"
   );
   is(
-    tabsList.children[1],
-    closeDuplicateButton,
-    "Close Duplicate Tabs is still the second item after a tab is added"
+    outerBody.children[2],
+    containerButton,
+    "New Container Tab stays sticky after a tab is added"
   );
 
   await closeAllTabsMenu();
   BrowserTestUtils.removeTab(newTab);
 });
 
-// "Search All Tabs" is pinned above the scrollable list and "View All Tabs" is
-// pinned below it
-add_task(async function test_search_and_view_all_tabs_pinned() {
+// "Search All Tabs" is sticky above the scrollable list and "View All Tabs" is
+// sticky below it
+add_task(async function test_search_and_view_all_tabs_sticky() {
   const hiddenTab = await addTab("about:blank");
   const tabHiddenPromise = BrowserTestUtils.waitForEvent(hiddenTab, "TabHide");
   gBrowser.hideTab(hiddenTab);
@@ -290,7 +295,7 @@ add_task(async function test_search_and_view_all_tabs_pinned() {
   is(
     outerBody.children[0],
     searchTabsButton,
-    "Search All Tabs is the first item, pinned to the top outside the tab list"
+    "Search All Tabs is the first item, sticky at the top outside the tab list"
   );
 
   ok(
@@ -300,7 +305,7 @@ add_task(async function test_search_and_view_all_tabs_pinned() {
   is(
     outerBody.children[outerBody.children.length - 1],
     viewAllTabsButton,
-    "View All Tabs is the last item, pinned to the bottom outside the tab list"
+    "View All Tabs is the last item, sticky at the bottom outside the tab list"
   );
 
   await closeAllTabsMenu();

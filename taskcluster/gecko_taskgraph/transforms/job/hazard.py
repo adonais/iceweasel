@@ -29,6 +29,9 @@ class HazRunSchema(Schema, kw_only=True):
     # appropriately.  `true` here means ['*'], all secrets.  Not supported on
     # Windows
     secrets: Optional[Union[bool, list[str]]] = None
+    # How to clone the upstream repo for the checkout, either "hg" or "git"
+    # (default: "git")
+    clone_with: Optional[Literal["hg", "git"]] = "git"
     # Base work directory used to set up the task.
     workdir: Optional[str] = None
 

@@ -656,23 +656,6 @@ class GeckoProfile(TryConfig):
             return {key: value for key, value in cfg.items() if value is not None}
 
 
-class NativeProfiling(TryConfig):
-    arguments = [
-        [
-            ["--native-profiling"],
-            {
-                "action": "store_true",
-                "default": False,
-                "help": "Use OS-native profilers (Simpleperf for Android and xperf for Windows) when running tests. Only available in raptor-browsertime tests at the moment.",
-            },
-        ],
-    ]
-
-    def try_config(self, native_profiling, **kwargs):
-        if native_profiling:
-            return {"native-profiling": True}
-
-
 class Browsertime(TryConfig):
     arguments = [
         [
@@ -893,7 +876,6 @@ all_task_configs = {
     "existing-tasks": ExistingTasks,
     "extensions": Extensions,
     "gecko-profile": GeckoProfile,
-    "native-profiling": NativeProfiling,
     "new-test-config": NewConfig,
     "path": Path,
     "test-tag": Tag,

@@ -1,0 +1,136 @@
+<!DOCTYPE HTML>
+<html>
+<meta charset=utf-8>
+<head>
+  <title>Test for Bug 2038465 - FLAC with varying per-frame channel count must not leak ASan-poisoned heap</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<pre id="test">
+<script class="testbody" type="text/javascript">
+
+SimpleTest.waitForExplicitFinish();
+
+// The is() assertions on numberOfChannels/length/sampleRate run on every
+// build. The ASan malloc-fill sentinel scan is also unconditional, but
+// only meaningful on ASan builds: Firefox's ASan defaults at
+// build/sanitizers/AsanOptions.cpp fill every fresh allocation with
+// malloc_fill_byte=0xe4 up to max_malloc_fill_size=256 MiB. The test
+// queries the live ASAN_OPTIONS and bails out if either value differs
+// from the hardcoded expectations below, so any drift fails loudly rather
+// than letting the sentinel scan silently miss the regression. On
+// non-ASan builds the drift check is skipped (no ASAN_OPTIONS) and the
+// sentinel scan passes vacuously since 0xe4e4e4e4 does not occur in the
+// decoded audio for this fixture.
+
+// ASan parses ASAN_OPTIONS with last-occurrence-wins for duplicate keys
+// (compiler-rt sanitizer_flag_parser.cpp). The separator class matches
+// every delimiter compiler-rt's is_space() recognises (':', ',', spaces,
+// tabs, newlines). Use lookahead for the trailing delimiter so adjacent
+// duplicate keys are not collapsed when matchAll walks the string.
+function parseAsanOption(opts, key) {
+  const sep = "[:\\s,]";
+  const re = new RegExp(`(?:^|${sep})${key}=([^:\\s,]+)(?=${sep}|$)`, "g");
+  return [...opts.matchAll(re)].at(-1)?.[1];
+}
+
+// JavaScript bitwise operators coerce to signed 32-bit ints, so
+// (0xe4 << 24) | ... evaluates to -471604856. The trailing >>> 0
+// reinterprets that bit pattern as an unsigned 32-bit value
+// (3823362580 === 0xe4e4e4e4) so it compares equal with === to
+// Uint32Array element reads below.
+function tileByte(b) {
+  return ((b << 24) | (b << 16) | (b << 8) | b) >>> 0;
+}
+
+// Hardcoded expectations from build/sanitizers/AsanOptions.cpp. If you
+// change either value there, update them here too or this test will fail
+// loudly with a drift message pointing at both files.
+const EXPECTED_MALLOC_FILL_BYTE = 0xe4;
+const EXPECTED_MAX_MALLOC_FILL_SIZE = 268435456;
+const EXPECTED_SENTINEL = tileByte(EXPECTED_MALLOC_FILL_BYTE);
+
+async function runTest() {
+  const env = SpecialPowers.Services.env;
+  const asanOpts = env.exists("ASAN_OPTIONS") ? env.get("ASAN_OPTIONS") : "";
+  const liveMallocFillByte = parseAsanOption(asanOpts, "malloc_fill_byte");
+  const liveMaxMallocFillSize =
+    parseAsanOption(asanOpts, "max_malloc_fill_size");
+
+  info(`Live ASAN_OPTIONS overrides: ` +
+       `malloc_fill_byte=${liveMallocFillByte} ` +
+       `max_malloc_fill_size=${liveMaxMallocFillSize}; ` +
+       `expected sentinel=0x${EXPECTED_SENTINEL.toString(16)}`);
+
+  if (liveMallocFillByte !== undefined &&
+      parseInt(liveMallocFillByte, 10) !== EXPECTED_MALLOC_FILL_BYTE) {
+    ok(false,
+       `ASan malloc_fill_byte=${liveMallocFillByte} on this worker ` +
+       `differs from the value this test was written against ` +
+       `(${EXPECTED_MALLOC_FILL_BYTE}, per ` +
+       `build/sanitizers/AsanOptions.cpp). Update ASAN_OPTIONS or both ` +
+       `files in lockstep to re-align.`);
+    SimpleTest.finish();
+    return;
+  }
+  if (liveMaxMallocFillSize !== undefined &&
+      parseInt(liveMaxMallocFillSize, 10) !== EXPECTED_MAX_MALLOC_FILL_SIZE) {
+    ok(false,
+       `ASan max_malloc_fill_size=${liveMaxMallocFillSize} on this ` +
+       `worker differs from the value this test was written against ` +
+       `(${EXPECTED_MAX_MALLOC_FILL_SIZE}, per ` +
+       `build/sanitizers/AsanOptions.cpp). Update ASAN_OPTIONS or both ` +
+       `files in lockstep to re-align.`);
+    SimpleTest.finish();
+    return;
+  }
+
+  const resp = await fetch("bug2038465_varying_channels.flac");
+  const buf = await resp.arrayBuffer();
+  const ctx = new OfflineAudioContext(2, 44100, 44100);
+
+  const decoded = await ctx.decodeAudioData(buf);
+
+  is(decoded.numberOfChannels, 2,
+     "decoded.numberOfChannels matches max per-packet channel count");
+  is(decoded.length, 44100,
+     "decoded.length matches total FLAC frame samples");
+  is(decoded.sampleRate, 44100,
+     "decoded.sampleRate matches FLAC STREAMINFO");
+
+  for (let c = 0; c < decoded.numberOfChannels; ++c) {
+    const data = decoded.getChannelData(c);
+    const u32 = new Uint32Array(data.buffer, data.byteOffset, data.length);
+
+    let sentinelCount = 0;
+    let firstBad = -1;
+    let firstBadU32 = 0;
+    for (let i = 0; i < data.length; ++i) {
+      const w = u32[i];
+      if (w === EXPECTED_SENTINEL) {
+        sentinelCount++;
+        if (firstBad < 0) {
+          firstBad = i;
+          firstBadU32 = w;
+        }
+      }
+    }
+    const desc = `channel ${c}: first bad at index ${firstBad}, ` +
+                 `u32=0x${firstBadU32.toString(16).padStart(8, "0")}`;
+    is(sentinelCount, 0,
+       `channel ${c}: ASan malloc-fill bytes leaked to JS - ${desc}`);
+  }
+
+  SimpleTest.finish();
+}
+
+runTest().catch(e => {
+  ok(false, "Unexpected exception: " + e);
+  SimpleTest.finish();
+});
+
+</script>
+</pre>
+</body>
+</html>

@@ -198,7 +198,7 @@ async function testClickInInnerIframe(doc) {
   tooltip.setContentSize({ width: 100, height: 50 });
   await showTooltip(tooltip, doc.getElementById("box1"));
 
-  iframe.srcdoc = "<div id=test style='height:50px'></div>";
+  iframe.src = CHROME_URL_ROOT + "doc_html_tooltip-02-iframe.html";
   await new Promise(r => {
     const frameLoad = () => {
       r();

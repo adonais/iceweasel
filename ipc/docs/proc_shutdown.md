@@ -149,7 +149,7 @@ Be aware that (as of this writing) `AsyncShutdown` is implemented in JS and can 
 
 > **Warning:** You cannot rely on any order of execution between different blockers running inside the same phase.
 
-See [AsyncShutdown](/toolkit/modules/toolkit_modules/AsyncShutdown.rst) for a general introduction.
+See [AsyncShutdown](/toolkit/modules/toolkit_modules/AsyncShutdown.md) for a general introduction.
 
 Predefined barriers:
 

@@ -15,7 +15,7 @@ namespace js {
 
 class SymbolObject : public NativeObject {
   /* Stores this Symbol object's [[PrimitiveValue]]. */
-  static const unsigned PRIMITIVE_VALUE_SLOT = 0;
+  JS_DEFINE_TYPED_SLOT(0, PRIMITIVE_VALUE_SLOT, Symbol);
 
  public:
   static const unsigned RESERVED_SLOTS = 1;
@@ -30,12 +30,12 @@ class SymbolObject : public NativeObject {
   static SymbolObject* create(JSContext* cx, JS::HandleSymbol symbol);
 
   JS::Symbol* unbox() const {
-    return getFixedSlot(PRIMITIVE_VALUE_SLOT).toSymbol();
+    return getFixedSlotTyped(PRIMITIVE_VALUE_SLOT).toSymbol();
   }
 
  private:
-  inline void setPrimitiveValue(JS::Symbol* symbol) {
-    setFixedSlot(PRIMITIVE_VALUE_SLOT, SymbolValue(symbol));
+  inline void initPrimitiveValue(JS::Symbol* symbol) {
+    initFixedSlotTyped(PRIMITIVE_VALUE_SLOT, SymbolValue(symbol));
   }
 
   [[nodiscard]] static bool construct(JSContext* cx, unsigned argc, Value* vp);

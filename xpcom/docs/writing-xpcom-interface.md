@@ -212,9 +212,8 @@ Classes = [
         # This CID is the ID for component entries, and needs a separate UUID from
         # the .idl file. Replace the Xs with a uuid from `mach gen-uuid`,
         # `uuidgen`, or https://mozilla.pettay.fi/uuidgen.html
-        'cid': '{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}',
-        'interfaces': ['nsIComponentName'],
-
+        "cid": "{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}",
+        "interfaces": ["nsIComponentName"],
         # A contract ID is a human-readable identifier for an _implementation_ of
         # an XPCOM interface.
         #
@@ -229,18 +228,15 @@ Classes = [
         # This design goes back to a time when XPCOM was intended to be a generalized
         # solution for the Gecko Runtime Environment (GRE). At this point most (if
         # not all) of mozilla-central has an @mozilla domain.
-        'contract_ids': ['@mozilla.org/component-name;1'],
-
+        "contract_ids": ["@mozilla.org/component-name;1"],
         # This is the name of the C++ type that implements the interface.
-        'type': 'mozilla::ComponentName',
-
+        "type": "mozilla::ComponentName",
         # The header file to pull in for the implementation of the interface.
-        'headers': ['path/to/ComponentName.h'],
-
+        "headers": ["path/to/ComponentName.h"],
         # In order to hook up this interface to the `Services` object, we can
         # provide the "js_name" parameter. This is an ergonomic way to access
         # the component.
-        'js_name': 'componentName',
+        "js_name": "componentName",
     },
 ]
 ```

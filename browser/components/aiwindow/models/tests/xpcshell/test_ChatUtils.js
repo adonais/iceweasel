@@ -10,7 +10,6 @@ const {
   constructRealTimeInfoInjectionMessage,
   getLocalIsoTime,
   getCurrentTabMetadata,
-  constructRelevantMemoriesContextMessage,
   parseContentWithTokens,
   detectTokens,
   sanitizeUntrustedContent,
@@ -25,46 +24,9 @@ const {
 const { ChatConversation } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
 );
-const { MemoriesManager } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs"
-);
-const { MemoryStore } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs"
-);
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
-
-/**
- * Constants for test memories
- */
-const TEST_MEMORIES = [
-  {
-    memory_summary: "Loves drinking coffee",
-    category: "Food & Drink",
-    intent: "Plan / Organize",
-    score: 3,
-  },
-  {
-    memory_summary: "Buys dog food online",
-    category: "Pets & Animals",
-    intent: "Buy / Acquire",
-    score: 4,
-  },
-];
-
-/**
- * Helper function bulk-add memories
- */
-async function clearAndAddMemories() {
-  const memories = await MemoryStore.getMemories();
-  for (const memory of memories) {
-    await MemoryStore.hardDeleteMemory(memory.id);
-  }
-  for (const memory of TEST_MEMORIES) {
-    await MemoryStore.addMemory(memory);
-  }
-}
 
 /**
  * Constants for preference keys and test values
@@ -213,89 +175,6 @@ add_task(
       Assert.ok(mapping.todayDate, "Should still include date");
     } finally {
       clock.restore();
-      sb.restore();
-    }
-  }
-);
-
-add_task(async function test_constructRelevantMemoriesContextMessage() {
-  await clearAndAddMemories();
-  MemoriesManager._clearEmbeddingsCache();
-
-  const sb = sinon.createSandbox();
-  try {
-    // Mock getRelevantMemories to return coffee memory
-    const stub = sb.stub(MemoriesManager, "getRelevantMemories").resolves([
-      {
-        id: "food_drink.16ec1838",
-        memory_summary: "Loves drinking coffee",
-        tags: ["category:Food & Drink", "intent:Plan / Organize"],
-        similarity: 0.95,
-      },
-    ]);
-
-    const relevantMemoriesContextMessage =
-      await constructRelevantMemoriesContextMessage(
-        "I love drinking coffee",
-        {}
-      );
-    Assert.ok(stub.calledOnce, "getRelevantMemories should be called once");
-
-    // Check relevantMemoriesContextMessage's top level structure
-    Assert.strictEqual(
-      typeof relevantMemoriesContextMessage,
-      "object",
-      "Should return an object"
-    );
-    Assert.equal(
-      Object.keys(relevantMemoriesContextMessage).length,
-      2,
-      "Should have 2 keys"
-    );
-
-    // Check specific fields
-    Assert.equal(
-      relevantMemoriesContextMessage.role,
-      "system",
-      "Should have role 'system'"
-    );
-    Assert.ok(
-      relevantMemoriesContextMessage.content.includes("# Existing Memories"),
-      "Should include prompt template text"
-    );
-    Assert.ok(
-      relevantMemoriesContextMessage.content.includes("Loves drinking coffee"),
-      "Should include memory content about coffee"
-    );
-  } finally {
-    sb.restore();
-  }
-});
-
-add_task(
-  async function test_constructRelevantMemoriesContextMessage_no_relevant_memories() {
-    await clearAndAddMemories();
-    MemoriesManager._clearEmbeddingsCache();
-
-    const sb = sinon.createSandbox();
-    try {
-      // Mock getRelevantMemories to return empty array (no matches)
-      const stub = sb.stub(MemoriesManager, "getRelevantMemories").resolves([]);
-
-      const relevantMemoriesContextMessage =
-        await constructRelevantMemoriesContextMessage(
-          "I love drinking coffee",
-          {}
-        );
-      Assert.ok(stub.calledOnce, "getRelevantMemories should be called once");
-
-      // No relevant memories, so returned value should be null
-      Assert.equal(
-        relevantMemoriesContextMessage,
-        null,
-        "Should return null when there are no relevant memories"
-      );
-    } finally {
       sb.restore();
     }
   }

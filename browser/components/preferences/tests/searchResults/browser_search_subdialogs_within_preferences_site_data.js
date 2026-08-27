@@ -2,10 +2,11 @@
  * This file contains tests for the Preferences search bar.
  */
 
+// Opening about:preferences repeatedly is very slow under the macOS
+// test-verify chaos passes; see bug 2052897.
+requestLongerTimeout(4);
+
 add_task(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["cookiebanners.ui.desktop.enabled", false]],
-  });
   await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, {
     leaveOpen: true,
   });

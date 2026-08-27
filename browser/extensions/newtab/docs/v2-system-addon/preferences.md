@@ -1,4 +1,4 @@
-# Preferences
+# New Tab preferences
 
 ## Preference branch
 

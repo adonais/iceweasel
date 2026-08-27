@@ -58,6 +58,7 @@
 #include "api/video/resolution.h"
 #include "api/video/video_adaptation_counters.h"
 #include "api/video/video_adaptation_reason.h"
+#include "api/video/video_adapter.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_bitrate_allocator.h"
 #include "api/video/video_bitrate_allocator_factory.h"
@@ -84,7 +85,6 @@
 #include "call/adaptation/video_stream_adapter.h"
 #include "call/video_send_stream.h"
 #include "common_video/h264/h264_common.h"
-#include "media/base/video_adapter.h"
 #include "media/engine/webrtc_video_engine.h"
 #include "modules/video_coding/codecs/av1/libaom_av1_encoder.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
@@ -108,6 +108,7 @@
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"
+#include "test/create_test_environment.h"
 #include "test/create_test_field_trials.h"
 #include "test/encoder_settings.h"
 #include "test/fake_encoder.h"
@@ -822,10 +823,8 @@ class SimpleVideoStreamEncoderFactory {
 
   FieldTrials field_trials_ = CreateTestFieldTrials();
   GlobalSimulatedTimeController time_controller_{Timestamp::Zero()};
-  Environment env_ =
-      CreateEnvironment(&field_trials_,
-                        time_controller_.GetClock(),
-                        time_controller_.CreateTaskQueueFactory());
+  Environment env_ = CreateTestEnvironment(
+      {.field_trials = &field_trials_, .time = &time_controller_});
   std::unique_ptr<MockableSendStatisticsProxy> stats_proxy_ =
       std::make_unique<MockableSendStatisticsProxy>(
           time_controller_.GetClock(),
@@ -1767,9 +1766,8 @@ class VideoStreamEncoderTest : public ::testing::Test {
  protected:
   FieldTrials field_trials_ = CreateTestFieldTrials();
   GlobalSimulatedTimeController time_controller_{Timestamp::Micros(1234)};
-  Environment env_ = CreateEnvironment(&field_trials_,
-                                       time_controller_.GetClock(),
-                                       time_controller_.GetTaskQueueFactory());
+  Environment env_ = CreateTestEnvironment(
+      {.field_trials = &field_trials_, .time = &time_controller_});
   VideoSendStream::Config video_send_config_;
   VideoEncoderConfig video_encoder_config_;
   int codec_width_;
@@ -7201,10 +7199,9 @@ TEST_F(VideoStreamEncoderTest,
   // for the first time.
   // TODO(eshr): We should avoid these waits by using threads with simulated
   // time.
-  EXPECT_THAT(
+  EXPECT_TRUE(
       WaitUntil([&] { return stats_proxy_->GetStats().bw_limited_resolution; },
-                IsTrue(), {.timeout = TimeDelta::Millis(2000 * 2.5 * 2)}),
-      IsRtcOk());
+                {.timeout = TimeDelta::Millis(2000 * 2.5 * 2)}));
   timestamp_ms += kFrameInterval100Ms;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(timestamp_ms);
@@ -8159,7 +8156,7 @@ TEST_F(VideoStreamEncoderTest, DropsFramesWhenEncoderOvershoots) {
     // doesn't push back as hard so we don't need quite as much overshoot.
     // These numbers are unfortunately a bit magical but there's not trivial
     // way to algebraically infer them.
-    overshoot_factor = 3.0;
+    overshoot_factor = 3.5;
   }
   fake_encoder_.SimulateOvershoot(overshoot_factor);
   video_stream_encoder_->WaitUntilTaskQueueIsIdle();
@@ -8358,6 +8355,51 @@ TEST_F(VideoStreamEncoderTest, SetsFrameTypesSimulcast) {
   video_stream_encoder_->Stop();
 }
 
+TEST_F(VideoStreamEncoderTest, MergesKeyFrameRequestsForMultipleLayers) {
+  // Setup simulcast with three streams.
+  ResetEncoder("VP8", 3, 1, 1, false);
+  video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
+      kSimulcastTargetBitrate, kSimulcastTargetBitrate, 0, 0, 0);
+  sink_.SetNumExpectedLayers(3);
+
+  // First frame is always keyframe.
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
+  WaitForEncodedFrame(1);
+  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
+              ::testing::ElementsAreArray({VideoFrameType::kVideoFrameKey,
+                                           VideoFrameType::kVideoFrameKey,
+                                           VideoFrameType::kVideoFrameKey}));
+
+  // Insert delta frame.
+  video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
+  WaitForEncodedFrame(2);
+  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
+              ::testing::ElementsAreArray({VideoFrameType::kVideoFrameDelta,
+                                           VideoFrameType::kVideoFrameDelta,
+                                           VideoFrameType::kVideoFrameDelta}));
+
+  // Request next frame be a keyframe on first and third layers by calling
+  // SendKeyFrame twice.
+  video_stream_encoder_->SendKeyFrame({VideoFrameType::kVideoFrameKey,
+                                       VideoFrameType::kVideoFrameDelta,
+                                       VideoFrameType::kVideoFrameDelta});
+  video_stream_encoder_->SendKeyFrame({VideoFrameType::kVideoFrameDelta,
+                                       VideoFrameType::kVideoFrameDelta,
+                                       VideoFrameType::kVideoFrameKey});
+
+  video_source_.IncomingCapturedFrame(CreateFrame(3, nullptr));
+  WaitForEncodedFrame(3);
+
+  // Verify that both requests are merged, producing keyframes on 1st and 3rd
+  // streams.
+  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
+              ::testing::ElementsAreArray({VideoFrameType::kVideoFrameKey,
+                                           VideoFrameType::kVideoFrameDelta,
+                                           VideoFrameType::kVideoFrameKey}));
+
+  video_stream_encoder_->Stop();
+}
+
 TEST_F(VideoStreamEncoderTest, DoesNotRewriteH264BitstreamWithOptimalSps) {
   // SPS contains VUI with restrictions on the maximum number of reordered
   // pictures, there is no need to rewrite the bitstream to enable faster
@@ -8531,7 +8573,6 @@ TEST_F(VideoStreamEncoderTest, EncoderRatesPropagatedOnReconfigure) {
 
   video_stream_encoder_->Stop();
 }
-
 
 TEST_F(VideoStreamEncoderTest, EncoderSelectorCurrentEncoderIsSignaled) {
   constexpr int kDontCare = 100;
@@ -8861,9 +8902,7 @@ TEST_F(VideoStreamEncoderTest, NoPreferenceDefaultFallbackToVP8Disabled) {
     time_controller_.AdvanceTime(TimeDelta::Millis(33));
   }
 
-  ASSERT_THAT(WaitUntil([&] { return fake_encoder_.GetNumEncodes() == 0; },
-                        ::testing::IsTrue()),
-              IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] { return fake_encoder_.GetNumEncodes() == 0; }));
 
   // After requesting fallback failure, the encoder will be released.
   EXPECT_CALL(video_encoder, Release()).Times(1);
@@ -10531,7 +10570,7 @@ TEST(VideoStreamEncoderSimpleTest, CreateDestroy) {
 
   // Lots of boiler plate.
   GlobalSimulatedTimeController time_controller(Timestamp::Zero());
-  Environment env = CreateEnvironment(time_controller.GetClock());
+  Environment env = CreateTestEnvironment({.time = &time_controller});
   MockableSendStatisticsProxy stats_proxy(
       &env.clock(), VideoSendStream::Config(nullptr),
       VideoEncoderConfig::ContentType::kRealtimeVideo, env.field_trials());
@@ -10608,6 +10647,51 @@ TEST(VideoStreamEncoderFrameCadenceTest, ActivatesFrameCadenceOnContentType) {
   VideoEncoderConfig config2;
   test::FillEncoderConfiguration(kVideoCodecVP8, 1, &config2);
   config2.content_type = VideoEncoderConfig::ContentType::kRealtimeVideo;
+  video_stream_encoder->ConfigureEncoder(std::move(config2), 0);
+  PassAFrame(encoder_queue, video_stream_encoder_callback, /*ntp_time_ms=*/2);
+  factory.DepleteTaskQueues();
+}
+
+TEST(VideoStreamEncoderFrameCadenceTest,
+     AllowZeroHertzVideoEnablesFrameCadence) {
+  auto adapter = std::make_unique<MockFrameCadenceAdapter>();
+  auto* adapter_ptr = adapter.get();
+  SimpleVideoStreamEncoderFactory factory;
+  FrameCadenceAdapterInterface::Callback* video_stream_encoder_callback =
+      nullptr;
+  EXPECT_CALL(*adapter_ptr, Initialize)
+      .WillOnce([&](FrameCadenceAdapterInterface::Callback* callback) {
+        video_stream_encoder_callback = callback;
+      });
+  TaskQueueBase* encoder_queue = nullptr;
+  std::unique_ptr<SimpleVideoStreamEncoderFactory::AdaptedVideoStreamEncoder>
+      video_stream_encoder = factory.Create(std::move(adapter), &encoder_queue);
+
+  EXPECT_CALL(*adapter_ptr, SetZeroHertzModeEnabled(Optional(Field(
+                                &FrameCadenceAdapterInterface::
+                                    ZeroHertzModeParams::num_simulcast_layers,
+                                Eq(0u)))));
+  VideoEncoderConfig config;
+  test::FillEncoderConfiguration(kVideoCodecVP8, 1, &config);
+  config.content_type = VideoEncoderConfig::ContentType::kRealtimeVideo;
+  config.allow_zero_hertz_video = true;
+  video_stream_encoder->ConfigureEncoder(std::move(config), 0);
+  factory.DepleteTaskQueues();
+
+  EXPECT_CALL(*adapter_ptr, SetZeroHertzModeEnabled(Optional(Field(
+                                &FrameCadenceAdapterInterface::
+                                    ZeroHertzModeParams::num_simulcast_layers,
+                                Gt(0u)))));
+  PassAFrame(encoder_queue, video_stream_encoder_callback, /*ntp_time_ms=*/1);
+  factory.DepleteTaskQueues();
+
+  // Expect a disabled zero-hertz mode after passing realtime video without
+  // allow_zero_hertz_video.
+  EXPECT_CALL(*adapter_ptr, SetZeroHertzModeEnabled(Eq(std::nullopt)));
+  VideoEncoderConfig config2;
+  test::FillEncoderConfiguration(kVideoCodecVP8, 1, &config2);
+  config2.content_type = VideoEncoderConfig::ContentType::kRealtimeVideo;
+  config2.allow_zero_hertz_video = false;
   video_stream_encoder->ConfigureEncoder(std::move(config2), 0);
   PassAFrame(encoder_queue, video_stream_encoder_callback, /*ntp_time_ms=*/2);
   factory.DepleteTaskQueues();

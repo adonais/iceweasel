@@ -198,10 +198,10 @@ add_task(async function test_link_hover_http_page() {
   Services.obs.addObserver(observer, "speculative-connect-request");
 
   // Load the test page from HTTP example.com with the target URL pointing to our local server
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   const targetURL = encodeURIComponent(gServerURL + "/target.html");
   const pageURL =
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com" +
     TEST_PATH +
     "file_link_hover.sjs?target=" +

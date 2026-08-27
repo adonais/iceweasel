@@ -24,3 +24,8 @@ select {
 select::picker-icon {
   background-color: hotpink;
 }
+/* stylelint-disable-next-line selector-pseudo-element-no-unknown */
+option::checkmark {
+  background-color: lime;
+  content: "-";
+}

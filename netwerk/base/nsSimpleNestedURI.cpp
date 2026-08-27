@@ -88,7 +88,12 @@ nsresult nsSimpleNestedURI::ReadPrivate(nsIObjectInputStream* aStream) {
   mInnerURI = do_QueryInterface(supports, &rv);
   if (NS_FAILED(rv)) return rv;
 
-  return rv;
+  // Sanity check.
+  if (!IsValidInnerURI(mInnerURI)) {
+    return NS_ERROR_MALFORMED_URI;
+  }
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP

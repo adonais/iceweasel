@@ -2,7 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-// @nova-cleanup(merge-styles): Merge nova/_TopSites.scss back to TopSites/_TopSites.scss after ship
+// @nova-cleanup(merge-styles): Merge into components/TopSites/_TopSites.scss,
+// dropping the .nova-enabled scope from every selector.
+// These rules are imported last, so they beat the component SCSS on source
+// order alone. Folding them into a component file moves them earlier: any
+// classic declaration they were overriding at equal specificity must be deleted
+// outright, not just moved. Verify by diffing the compiled css/activity-stream.css
+// before and after -- the only rules that should disappear are classic ones.
 
 .nova-enabled .top-sites {
   display: contents;
@@ -188,7 +194,13 @@
 
 .nova-enabled .edit-topsites {
   .modalOverlayOuter {
-    background: var(--panel-background-color);
+    /*
+     * @backward-compat { version 155 }
+     * The Nova value of --panel-background-color aliases --popup-background-color,
+     * which the platform only defines from 155. Remove the "revert" fallback once
+     * 155 reaches Release.
+     */
+    background: var(--panel-background-color, revert);
     border: 1px solid var(--panel-border-color);
   }
 

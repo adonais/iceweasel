@@ -5,11 +5,12 @@
 #ifndef mozilla_Range_h
 #define mozilla_Range_h
 
+#include <stddef.h>
+
+#include <type_traits>
+
 #include "mozilla/RangedPtr.h"
 #include "mozilla/Span.h"
-
-#include <stddef.h>
-#include <type_traits>
 
 namespace mozilla {
 

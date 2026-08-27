@@ -706,13 +706,13 @@ void CustomElementRegistry::EnqueueLifecycleCallback(
 }
 
 using ScopedRegistryMap =
-    nsRefPtrHashtable<nsPtrHashKey<nsINode>, CustomElementRegistry>;
+    nsRefPtrHashtable<nsPtrHashKey<const nsINode>, CustomElementRegistry>;
 
 static StaticAutoPtr<ScopedRegistryMap> gScopedRegistryMap;
 
 /* static */
 already_AddRefed<CustomElementRegistry>
-CustomElementRegistry::GetScopedRegistry(nsINode& aNode) {
+CustomElementRegistry::GetScopedRegistry(const nsINode& aNode) {
   if (!gScopedRegistryMap) {
     return nullptr;
   }
@@ -804,7 +804,8 @@ nsTArray<nsCOMPtr<Element>> CandidateFinder::OrderedCandidates() {
 
 }  // namespace
 
-// https://html.spec.whatwg.org/#upgrade-particular-elements-within-a-document
+/* https://html.spec.whatwg.org/#upgrade-particular-elements-within-a-document
+ */
 void CustomElementRegistry::UpgradeCandidates(
     nsAtom* aKey, CustomElementDefinition* aDefinition, ErrorResult& aRv) {
   DocGroup* docGroup = mWindow->GetDocGroup();
@@ -1290,7 +1291,7 @@ void CustomElementRegistry::SetElementCreationCallback(
   }
 }
 
-// https://html.spec.whatwg.org/#dom-customelementregistry-upgrade
+/* https://html.spec.whatwg.org/#dom-customelementregistry-upgrade */
 void CustomElementRegistry::Upgrade(nsINode& aRoot) {
   // 1. For each shadow-including inclusive descendant candidate of root, in
   //    shadow-including tree order:
@@ -1301,22 +1302,17 @@ void CustomElementRegistry::Upgrade(nsINode& aRoot) {
       continue;
     }
 
-    // TODO(keithamus): 1.2. If candidate's custom element registry is not this,
-    // then continue. Not yet implemented -- we don't check the element's
-    // registry against |this|. We always look up via the document's registry
-    // (scoped registries).
+    // 1.2. If candidate's custom element registry is not this, then continue.
+    if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+      if (element->GetCustomElementRegistry() != this) {
+        continue;
+      }
+    }
+
     CustomElementData* ceData = element->GetCustomElementData();
     if (ceData) {
       // 1.3. Try to upgrade candidate.
-      NodeInfo* nodeInfo = element->NodeInfo();
-      nsAtom* typeAtom = ceData->GetCustomElementType();
-      CustomElementDefinition* definition =
-          nsContentUtils::LookupCustomElementDefinition(
-              nodeInfo->GetDocument(), nodeInfo->NameAtom(),
-              nodeInfo->NamespaceID(), typeAtom);
-      if (definition) {
-        nsContentUtils::EnqueueUpgradeReaction(element, definition);
-      }
+      nsContentUtils::TryToUpgradeElement(element);
     }
   }
 }
@@ -1536,6 +1532,11 @@ void CustomElementRegistry::Upgrade(Element* aElement,
   CustomElementData* data = aElement->GetCustomElementData();
   MOZ_ASSERT(data, "CustomElementData should exist");
 
+  DocGroup* docGroup = aElement->OwnerDoc()->GetDocGroup();
+  if (!docGroup) {
+    return;
+  }
+
   // 1. If element's custom element state is not "undefined" or "uncustomized",
   //    then return.
   if (data->mState != CustomElementData::State::eUndefined) {
@@ -1590,14 +1591,34 @@ void CustomElementRegistry::Upgrade(Element* aElement,
   // 6. Add element to the end of definition's construction stack.
   AutoConstructionStackEntry acs(aDefinition->mConstructionStack, aElement);
 
-  // XXX: Steps 7-9 performed by DoUpgrade:
   // 7. Let C be definition's constructor.
-  // TODO(keithamus): 8. Set the active custom element constructor map[C] to
-  // element's custom element registry. Not yet using element's registry (scoped
-  // registries).
-  // 9. Run the following steps while catching any exceptions:
-  DoUpgrade(aElement, aDefinition, MOZ_KnownLive(aDefinition->mConstructor),
-            aRv);
+
+  // 8. Let previousRegistry be the surrounding agent's active custom element
+  //    constructor map[C] with default null.
+  // 9. Set the surrounding agent's active custom element constructor map[C] to
+  //    element's custom element registry.
+  {
+    Maybe<DocGroup::AutoActiveConstructorRegistry> activeRegistry;
+    if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+      activeRegistry.emplace(docGroup, aDefinition->mConstructor,
+                             aElement->GetCustomElementRegistry());
+    }
+
+    // 10. Run the following steps while catching any exceptions:
+    DoUpgrade(aElement, aDefinition, MOZ_KnownLive(aDefinition->mConstructor),
+              aRv);
+
+    // 9.x. Then, perform the following steps, regardless of whether the above
+    //      steps threw an exception or not:
+    //
+    // 9.x.1. If previousRegistry is null, then remove the surrounding agent's
+    //        active custom element constructor map[C].
+    // 9.x.2. Otherwise, set the surrounding agent 's active custom element
+    //        constructor map[C] to previousRegistry.
+    // (Handled by `activeRegistry`'s destructor during scope exit).
+  }
+
+  // 9.x. Finally, if the above steps threw an exception:
   if (aRv.Failed()) {
     MOZ_ASSERT(data->mState == CustomElementData::State::eFailed ||
                data->mState == CustomElementData::State::ePrecustomized);

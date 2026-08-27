@@ -1,0 +1,19 @@
+# LeakSanitizer suppressions for the NSPR test suite.
+#
+# These entries cover NSPR's process-global singletons that are allocated
+# once during PR_Init / lazy initialization and deliberately never freed
+# for the life of the process. They are not growing leaks (e.g. the reinit
+# test performs several PR_Init/PR_Cleanup cycles yet only one instance of
+# each is ever allocated), so they are safe to suppress rather than adding
+# teardown to the stable, widely-deployed library ABI.
+#
+# Format: https://clang.llvm.org/docs/AddressSanitizer.html#suppressing-memory-leaks
+
+# Thread-private-data key table (pr/src/threads/prtpd.c).
+leak:_PR_InitTPD
+
+# Dynamic linker global state and the initial library path (pr/src/linking/prlink.c).
+leak:_PR_InitLinker
+
+# File-descriptor cache entries (pr/src/io/prfdcach.c).
+leak:_PR_Getfd

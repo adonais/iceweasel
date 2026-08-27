@@ -80,15 +80,17 @@ ScreenOrientation::ScreenOrientation(nsPIDOMWindowInner* aWindow,
 
   Document* doc = screenOrientation->GetResponsibleDocument();
   BrowsingContext* bc = doc ? doc->GetBrowsingContext() : nullptr;
-  if (bc && !bc->IsDiscarded() && !bc->HasOrientationOverride()) {
-    MOZ_ALWAYS_SUCCEEDS(bc->SetCurrentOrientation(screenOrientation->mType,
-                                                  screenOrientation->mAngle));
-  } else if (bc && !bc->IsTop() && bc->HasOrientationOverride()) {
-    // Resync the override for newly created iframes.
-    BrowsingContext* topBC = bc->Top();
-    MOZ_ALWAYS_SUCCEEDS(
-        bc->SetOrientationOverride(topBC->GetCurrentOrientationType(),
-                                   topBC->GetCurrentOrientationAngle()));
+  if (bc && !bc->IsDiscarded()) {
+    if (!bc->HasOrientationOverride()) {
+      MOZ_ALWAYS_SUCCEEDS(bc->SetCurrentOrientation(screenOrientation->mType,
+                                                    screenOrientation->mAngle));
+    } else if (!bc->IsTop() && bc->HasOrientationOverride()) {
+      // Resync the override for newly created iframes.
+      BrowsingContext* topBC = bc->Top();
+      MOZ_ALWAYS_SUCCEEDS(
+          bc->SetOrientationOverride(topBC->GetCurrentOrientationType(),
+                                     topBC->GetCurrentOrientationAngle()));
+    }
   }
 
   return screenOrientation.forget();

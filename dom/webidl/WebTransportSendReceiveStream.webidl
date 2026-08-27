@@ -7,7 +7,8 @@
 
 [Exposed=(Window,Worker), SecureContext, Pref="network.webtransport.enabled"]
 interface WebTransportSendStream : WritableStream {
-  attribute long long? sendOrder;
+  [SetterThrows] attribute WebTransportSendGroup? sendGroup;
+  attribute long long sendOrder;
   Promise<WebTransportSendStreamStats> getStats();
 };
 

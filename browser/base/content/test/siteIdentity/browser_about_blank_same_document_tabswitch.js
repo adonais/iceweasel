@@ -9,7 +9,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const TEST_PATH = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   "http://example.org"
 );
 
@@ -69,7 +69,7 @@ add_task(async function test_identityBlock_inherited_blank() {
 
     ok(
       gURLBar.value.startsWith(
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         UrlbarTestUtils.trimURL("http://example.org/")
       ),
       "URL bar value should be correct, was " + gURLBar.value

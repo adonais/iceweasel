@@ -3,30 +3,30 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 /**
- * This module defines functions to generate, deduplicate, and filter memories.
+ * This module defines functions to generate, filter, and merge memories.
  *
  * The primary method is `runSessionMemoryPipeline`, which orchestrates the
  * pipeline over a batch of unified session bundles (see `buildSessions`):
  * 1. Generates initial memories, one LLM call per chunk of <=MAX_SESSIONS_PER_BATCH sessions
  * 2. Filters out low-quality (generic/ephemeral) AND sensitive memories (one global call)
- * 3. Deduplicates the newly generated memories against all existing memories (one global call)
- * 4. Returns the final memory objects plus the watermark the caller should advance to
+ * 3. Returns the final memory objects plus the watermark the caller should advance to
  *
  * `runSessionMemoryPipeline` requires:
- * 1. `conversation`: a Conversation instance, reused across the three LLM calls (each step clears messages before setSystemMessage / addUserMessage)
+ * 1. `conversation`: a Conversation instance, reused across every LLM call (each step clears messages before setSystemMessage / addUserMessage)
  * 2. `sessions`: gate-filtered session bundles from `buildSessions`
- * 3. `existingMemoriesList`: existing memory summary strings to deduplicate against
  */
 
 import {
   renderPrompt,
   MODEL_FEATURES,
+  makeJSONSchemaBlob,
   parseAndExtractJSON,
 } from "../Utils.sys.mjs";
 import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  MODEL_FEATURES: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   loadPrompt:
     "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -44,20 +44,21 @@ import {
   SESSION,
   MEMORY_TYPE_SHORT_TERM_MEMORY,
   MEMORY_SENSITIVITY_CATEGORY_NOT_SENSITIVE,
-  INITIAL_MEMORY_TYPE_STRENGTH,
-  MEMORY_EVIDENCE_WEIGHT,
-  MEMORY_LIFETIME_ACCESSED_WEIGHT,
-  MEMORY_MERGE_COUNT_WEIGHT,
-  MEMORY_USER_REQUEST_MODIFIER,
+  MEMORY_SENSITIVITY_CATEGORY_SENSITIVE,
+  MEMORY_STRENGTH_EVIDENCE_WEIGHT,
+  MEMORY_STRENGTH_EVIDENCE_CAP,
+  MEMORY_STRENGTH_LIFETIME_ACCESSED_WEIGHT,
+  MEMORY_STRENGTH_LIFETIME_ACCESSED_HALFLIFE,
+  MEMORY_STRENGTH_MERGE_COUNT_WEIGHT,
+  MEMORY_STRENGTH_MERGE_COUNT_HALFLIFE,
+  MEMORY_STRENGTH_FLOOR,
+  MEMORY_STRENGTH_PRECISION,
+  MEMORY_STRENGTH_USER_REQUEST_MODIFIER,
+  MEMORY_TYPE_TIERS,
   MEMORY_FRECENCY_MAX_DAYS,
   MEMORY_FRECENCY_DAY_HALFLIFE,
+  MEMORY_DECAY_THRESHOLD,
 } from "./MemoriesConstants.sys.mjs";
-
-import {
-  INITIAL_MEMORIES_SCHEMA,
-  MEMORIES_QUALITY_AND_SENSITIVITY_FILTER_SCHEMA,
-  MEMORIES_DEDUPLICATION_SCHEMA,
-} from "moz-src:///browser/components/aiwindow/models/memories/MemoriesSchemas.sys.mjs";
 
 // Pipeline input key for unified session bundles.
 const SESSIONS = "sessions";
@@ -90,14 +91,13 @@ const INITIAL_MEMORY_GENERATION_BATCH_RETRY_DELAY_MS = 12000;
  *
  * @param {Conversation} conversation           Conversation reused across the pipeline (cleared between calls)
  * @param {Array<object>} sessions              Session bundles from `buildSessions` (gate-filtered by the caller)
- * @param {Array<string>} existingMemoriesList  Existing memory summary strings to deduplicate against
  * @param {object} [opts]
  * @param {number} [opts.batchSize]             Max sessions per generation call
  * @param {number} [opts.maxBatchRetries]       Max retries per batch per generation call
  * @param {number} [opts.initialMemoryGenerationRetryDelayMS] Number of MS to delay before retrying a transient error
  * @returns {Promise<{memories: Array<object>, processedThroughMs: number}>}
- *   `memories` is the final list of generated, filtered, deduplicated memory
- *   objects. `processedThroughMs` is the max `session_end_ms` the caller should
+ *   `memories` is the final list of generated, filtered objects.
+ *   `processedThroughMs` is the max `session_end_ms` the caller should
  *   advance its watermark to: the latest chunk that either succeeded or failed
  *   deterministically.
  * @throws Re-throws a 429 (rate limit) error from any LLM call so the caller can
@@ -106,7 +106,6 @@ const INITIAL_MEMORY_GENERATION_BATCH_RETRY_DELAY_MS = 12000;
 export async function runSessionMemoryPipeline(
   conversation,
   sessions,
-  existingMemoriesList,
   {
     batchSize = MAX_SESSIONS_PER_BATCH,
     maxBatchRetries = MAX_RETRIES_PER_BATCH,
@@ -179,53 +178,136 @@ export async function runSessionMemoryPipeline(
     return { memories: [], processedThroughMs };
   }
 
-  // Step 3: Single global dedup against the existing store (and across batches).
-  const dedupedSummaries = await deduplicateMemories(
-    conversation,
-    existingMemoriesList,
-    filteredSummaries
-  );
-  if (!dedupedSummaries || !dedupedSummaries.length) {
-    return { memories: [], processedThroughMs };
-  }
-
-  // Step 4: Map surviving summaries back to full memory objects.
+  // Step 3: Map surviving summaries back to full memory objects.
   const memories = await mapFilteredMemoriesToInitialList(
     candidateMemories,
-    dedupedSummaries
+    filteredSummaries
   );
   return { memories, processedThroughMs };
 }
 
 /**
- * Computes the strength of a memory based on:
- *  1. Type
- *  2. Amount of supporting evidence
- *  3. Number of times it was used over its lifetime
- *  4. Number of memories that were merged to create it
+ * Computes the strength of a memory as a floor plus four additive terms.
+ * `decay(d, h) = 0.5 ** (d / h)` is exponential decay over `d` days with
+ * half-life `h`:
+ *
+ *   strength = FLOOR
+ *            + (from a user request ? USER_REQUEST_MODIFIER : 0)
+ *            + min(evidenceCount, EVIDENCE_CAP) * EVIDENCE_WEIGHT
+ *            + sqrt(lifetime_accessed_count)
+ *              * decay(daysSinceAccessed, LIFETIME_ACCESSED_HALFLIFE)
+ *              * LIFETIME_ACCESSED_WEIGHT
+ *            + merge_count
+ *              * decay(daysSinceMerged, MERGE_COUNT_HALFLIFE)
+ *              * MERGE_COUNT_WEIGHT
+ *
+ * The evidence term is capped so a lot of evidence URLs or chats cannot overwhelm final
+ * strength.
+ * The use count is damped by sqrt so repeated use has diminishing returns.
+ * Both decay terms are measured against the current time, so strength falls
+ * as a memory goes unused. Type is derived from strength by
+ * {@link classifyMemoryAndCapStrength} rather than being an input here.
  *
  * @param {object} memory   Memory object
  * @returns {number}        Computed memory strength
  */
 export function computeMemoryStrength(memory) {
-  // If the memory was derived from a user request, add a large constant to boost its strength
-  let user_request_modifier;
-  if (memory.sources.includes(USER)) {
-    user_request_modifier = MEMORY_USER_REQUEST_MODIFIER;
-  } else {
-    user_request_modifier = 0;
-  }
+  // If the memory was derived from a user request, add a constant to boost its strength
+  const userRequestModifier = memory.sources.includes(USER)
+    ? MEMORY_STRENGTH_USER_REQUEST_MODIFIER
+    : 0;
+
+  const evidenceCount = Object.values(memory.source_ids).reduce(
+    (sum, sourceIds) => sum + sourceIds.length,
+    0
+  );
+
+  // Both decay terms are keyed on elapsed days, falling back to created_at
+  // when the memory has never been used or merged.
+  const now = Date.now();
+  const daysSince = timestamp => (now - timestamp) / (1000 * 60 * 60 * 24);
+  const daysSinceAccessed = daysSince(
+    memory.last_accessed ?? memory.created_at
+  );
+  const daysSinceMerged = daysSince(memory.last_merged ?? memory.created_at);
+
+  const strength =
+    MEMORY_STRENGTH_FLOOR +
+    userRequestModifier +
+    Math.min(evidenceCount, MEMORY_STRENGTH_EVIDENCE_CAP) *
+      MEMORY_STRENGTH_EVIDENCE_WEIGHT +
+    Math.sqrt(memory.lifetime_accessed_count) *
+      0.5 ** (daysSinceAccessed / MEMORY_STRENGTH_LIFETIME_ACCESSED_HALFLIFE) *
+      MEMORY_STRENGTH_LIFETIME_ACCESSED_WEIGHT +
+    memory.merge_count *
+      0.5 ** (daysSinceMerged / MEMORY_STRENGTH_MERGE_COUNT_HALFLIFE) *
+      MEMORY_STRENGTH_MERGE_COUNT_WEIGHT;
 
   return (
-    INITIAL_MEMORY_TYPE_STRENGTH[memory.type] +
-    user_request_modifier +
-    Object.values(memory.source_ids).reduce((sum, currentSource) => {
-      return sum + currentSource.length;
-    }, 0) *
-      MEMORY_EVIDENCE_WEIGHT +
-    memory.lifetime_accessed_count * MEMORY_LIFETIME_ACCESSED_WEIGHT +
-    memory.merge_count * MEMORY_MERGE_COUNT_WEIGHT
+    Math.round(strength * MEMORY_STRENGTH_PRECISION) / MEMORY_STRENGTH_PRECISION
   );
+}
+
+/**
+ * Assigns a memory's type to the strongest tier of
+ * {@link MEMORY_TYPE_TIERS} whose strength and age requirements it exceeds,
+ * falling back to {@link MEMORY_TYPE_SHORT_TERM_MEMORY}.
+ *
+ * A memory that is strong enough for a tier but too young for it is held at
+ * that tier's `minStrength`, which denies the promotion.
+ *
+ * Expects `memory.strength` to have been recomputed by
+ * {@link computeMemoryStrength} first. Updates `memory.type` and possibly
+ * `memory.strength` in place.
+ *
+ * @param {object} memory   Memory object
+ */
+export function classifyMemoryAndCapStrength(memory) {
+  const daysSinceCreated =
+    (Date.now() - memory.created_at) / (1000 * 60 * 60 * 24);
+
+  for (const { type, minStrength, minAgeDays } of MEMORY_TYPE_TIERS) {
+    if (daysSinceCreated < minAgeDays) {
+      memory.strength = Math.min(memory.strength, minStrength);
+    } else if (memory.strength > minStrength) {
+      memory.type = type;
+      return;
+    }
+  }
+
+  memory.type = MEMORY_TYPE_SHORT_TERM_MEMORY;
+}
+
+/**
+ * Computes a memory's position on the Ebbinghaus Forgetting Curve to
+ * determine if it should be deleted due to decay. Compares the result
+ * to {@link MEMORY_DECAY_THRESHOLD} and returns true if the memory
+ * should be deleted or false if it shouldn't
+ *
+ * The Ebbinghouse Forgetting Curve computes retention `r` using
+ * time `t` (here as days since last accessed) and strength `s` (
+ * memory strength computed with {@link computeMemoryStrength}).
+ *
+ * r = exp(-t / s)
+ *
+ * @param {object} memory   Memory object
+ * @returns {boolean}       Result of the decay comparison. True if the
+ *                          memory should be deleted due to decay or false
+ *                          if it shouldn't
+ */
+export function isShouldDeleteMemoryDueToDecay(memory) {
+  // Compute t, time in days since the memory was last_accessed.
+  // A never-used memory stores last_accessed as null, so fall back to
+  // created_at rather than measuring from the epoch.
+  const now = Date.now();
+  const lastAccessed = memory.last_accessed ?? memory.created_at;
+  const t = (now - lastAccessed) / (1000 * 60 * 60 * 24);
+
+  // Compute r, "retention"
+  const r = Math.exp(-t / memory.strength);
+
+  // Compare to the threshold and return
+  return r <= MEMORY_DECAY_THRESHOLD;
 }
 
 /**
@@ -518,7 +600,6 @@ export async function generateInitialMemoriesList(conversation, sources) {
   conversation.setSystemMessage(systemPrompt);
   conversation.addUserMessage(userPrompt);
   const response = await conversation.run({
-    responseFormat: { type: "json_schema", schema: INITIAL_MEMORIES_SCHEMA },
     fxAccountToken: await openAIEngine.getFxAccountToken(),
   });
 
@@ -562,62 +643,10 @@ export async function generateInitialMemoriesList(conversation, sources) {
     delete memory.evidence;
     // Compute strength after we've added the necessary calculation components above
     m.strength = computeMemoryStrength(m);
+    classifyMemoryAndCapStrength(m);
 
     return m;
   });
-}
-
-/**
- * Prompts an LLM to deduplicate new memories against existing ones
- *
- * @param {Conversation} conversation           Conversation reused across the pipeline (cleared between calls)
- * @param {Array<string>} existingMemoriesList  List of existing memory summary strings
- * @param {Array<string>} newMemoriesList       List of new memory summary strings to deduplicate
- * @returns {Promise<Array<string>>}            Promise resolving the final list of deduplicated memory summary strings
- */
-export async function deduplicateMemories(
-  conversation,
-  existingMemoriesList,
-  newMemoriesList
-) {
-  const [{ prompt: systemPrompt }, { prompt: userPromptTemplate }] =
-    await Promise.all([
-      lazy.loadPrompt(MODEL_FEATURES.MEMORIES_DEDUPLICATION_SYSTEM),
-      lazy.loadPrompt(MODEL_FEATURES.MEMORIES_DEDUPLICATION_USER),
-    ]);
-
-  const userPrompt = renderPrompt(userPromptTemplate, {
-    existingMemoriesList: formatListForPrompt(existingMemoriesList),
-    newMemoriesList: formatListForPrompt(newMemoriesList),
-  });
-
-  conversation.clearMessages();
-  conversation.setSystemMessage(systemPrompt);
-  conversation.addUserMessage(userPrompt);
-  const response = await conversation.run({
-    responseFormat: {
-      type: "json_schema",
-      schema: MEMORIES_DEDUPLICATION_SCHEMA,
-    },
-    fxAccountToken: await openAIEngine.getFxAccountToken(),
-  });
-
-  const parsed = parseAndExtractJSON(response, { unique_memories: [] });
-
-  if (
-    parsed.unique_memories === undefined ||
-    !Array.isArray(parsed.unique_memories)
-  ) {
-    return [];
-  }
-
-  // Make sure we filter out any invalid main_memory entries before returning
-  return parsed.unique_memories
-    .filter(
-      item =>
-        item.main_memory !== undefined && typeof item.main_memory === "string"
-    )
-    .map(item => item.main_memory);
 }
 
 /**
@@ -648,10 +677,6 @@ export async function applyQualityAndSensitivityFilter(
   conversation.setSystemMessage(systemPrompt);
   conversation.addUserMessage(userPrompt);
   const response = await conversation.run({
-    responseFormat: {
-      type: "json_schema",
-      schema: MEMORIES_QUALITY_AND_SENSITIVITY_FILTER_SCHEMA,
-    },
     fxAccountToken: await openAIEngine.getFxAccountToken(),
   });
 
@@ -684,4 +709,213 @@ export async function mapFilteredMemoriesToInitialList(
   return initialMemories.filter(memory =>
     filteredMemoriesList.includes(memory.memory_summary)
   );
+}
+
+/**
+ * Prompts an LLM to return a list of memories grouped by theme
+ * and topic that can be merged into a single memory
+ *
+ * @param {Conversation} conversation   Conversation object holding the openAIEngine
+ * @param {Array<object>} memories      Array of memories
+ * @returns {Array<object>}             Array of memory merge candidates
+ */
+export async function getMergeMemoryCandidates(conversation, memories) {
+  // Gather memory summaries and reasoning and render the prompt
+  const memoriesForPrompt = [];
+  for (const memory of memories) {
+    memoriesForPrompt.push(
+      `- Statement: ${memory.memory_summary}\n  Reasoning: ${memory.reasoning}`
+    );
+  }
+
+  // Prompt the LLM and extract output
+  const [memoriesMergeSystemPrompt, memoriesMergeUserPrompt] =
+    await Promise.all([
+      lazy.loadPrompt(lazy.MODEL_FEATURES.MEMORIES_MERGE, {
+        module: "system-instructions",
+        model: conversation.engine?.model,
+      }),
+      lazy.loadPrompt(lazy.MODEL_FEATURES.MEMORIES_MERGE, {
+        module: "user-data",
+        model: conversation.engine?.model,
+      }),
+    ]);
+
+  const userPrompt = renderPrompt(memoriesMergeUserPrompt.prompt, {
+    memoriesList: memoriesForPrompt.join("\n"),
+  });
+
+  conversation.clearMessages();
+  conversation.setSystemMessage(memoriesMergeSystemPrompt.prompt);
+  conversation.addUserMessage(userPrompt);
+
+  const response = await conversation.run({
+    inferenceParams: {
+      response_format: makeJSONSchemaBlob("MemoriesMergeCandidates", {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["component_statements", "new_reasoning", "new_statement"],
+          properties: {
+            component_statements: {
+              type: "array",
+              minItems: 2,
+              items: { type: "string" },
+            },
+            new_reasoning: { type: "string" },
+            new_statement: {
+              type: "string",
+              maxLength: MAX_MEMORY_SUMMARY_LENGTH,
+            },
+          },
+        },
+      }),
+    },
+    fxAccountToken: await openAIEngine.getFxAccountToken(),
+  });
+  const mergedMemoriesOut = parseAndExtractJSON(response, []);
+
+  return mergedMemoriesOut;
+}
+
+/**
+ * Latest of a set of timestamps that may be null, or null when none are set.
+ * `Math.max` coerces null to 0, which would report the epoch for a set of
+ * memories that have never been used.
+ *
+ * @param {Array<?number>} timestamps   Timestamps in milliseconds since Unix epoch
+ * @returns {?number}                   The latest timestamp, or null if there are none
+ */
+function latestTimestamp(timestamps) {
+  const set = timestamps.filter(timestamp => timestamp != null);
+  return set.length ? Math.max(...set) : null;
+}
+
+/**
+ * Creates merged memories from a set of merge candidates
+ *
+ * @param {Array<object>} mergedMemoryCandidates  Array of memory merge candidates
+ * @param {Array<object>} memories                Array of existing memories
+ * @returns {{finalMergedMemories: Array<object>, componentMemoryIdsToDelete: Array<string>}}
+ *   `finalMergedMemories`: new merged memory objects
+ *   `componentMemoryIdsToDelete`: ids of the component memories that were merged to be deleted
+ */
+export function createMergedMemories(mergedMemoryCandidates, memories) {
+  const finalMergedMemories = [];
+  const componentMemoryIdsToDelete = new Set();
+
+  const now = Date.now();
+
+  for (const mergedMemory of mergedMemoryCandidates) {
+    // Skip a merged memory that's empty or too long
+    if (
+      typeof mergedMemory.new_statement !== "string" ||
+      !mergedMemory.new_statement.length ||
+      mergedMemory.new_statement.length > MAX_MEMORY_SUMMARY_LENGTH
+    ) {
+      continue;
+    }
+    // Skip a merged memory with empty reasoning
+    if (
+      typeof mergedMemory.new_reasoning !== "string" ||
+      !mergedMemory.new_reasoning.length
+    ) {
+      continue;
+    }
+    // Skip a merged memory without a list of component statements
+    if (!Array.isArray(mergedMemory.component_statements)) {
+      continue;
+    }
+
+    const componentMemories = memories.filter(mem =>
+      mergedMemory.component_statements.includes(mem.memory_summary)
+    );
+
+    // A merged memory must have at least 2 components
+    if (componentMemories.length < 2) {
+      continue;
+    }
+
+    const mergedMemoryToSave = {
+      // System fields
+      sources: [...new Set(componentMemories.flatMap(mem => mem.sources))],
+      source_ids: {
+        history_source_ids: [
+          ...new Set(
+            componentMemories.flatMap(
+              mem => mem.source_ids?.history_source_ids ?? []
+            )
+          ),
+        ],
+        conversation_source_ids: [
+          ...new Set(
+            componentMemories.flatMap(
+              mem => mem.source_ids?.conversation_source_ids ?? []
+            )
+          ),
+        ],
+      },
+      sensitivity_category: componentMemories.some(
+        mem =>
+          mem.sensitivity_category === MEMORY_SENSITIVITY_CATEGORY_SENSITIVE
+      )
+        ? MEMORY_SENSITIVITY_CATEGORY_SENSITIVE
+        : MEMORY_SENSITIVITY_CATEGORY_NOT_SENSITIVE,
+      is_deleted: false,
+
+      // Descriptive fields
+      memory_summary: mergedMemory.new_statement,
+      reasoning: mergedMemory.new_reasoning,
+      tags: [...new Set(componentMemories.flatMap(mem => mem.tags))],
+      keywords: [...new Set(componentMemories.flatMap(mem => mem.keywords))],
+      component_summaries: [
+        ...new Map(
+          [
+            ...componentMemories.flatMap(mem => mem.component_summaries),
+            ...componentMemories.map(mem => ({
+              memory_summary: mem.memory_summary,
+              reasoning: mem.reasoning,
+            })),
+          ].map(component => [component.memory_summary, component])
+        ).values(),
+      ],
+
+      // Tracker fields
+      created_at: Math.min(...componentMemories.map(mem => mem.created_at)),
+      updated_at: Math.max(...componentMemories.map(mem => mem.updated_at)),
+      last_accessed: latestTimestamp(
+        componentMemories.map(mem => mem.last_accessed)
+      ),
+      recent_accessed_counts: Object.fromEntries(
+        Array.from({ length: MEMORY_FRECENCY_MAX_DAYS }, (_, day) => [
+          day,
+          componentMemories.reduce(
+            (sum, mem) => sum + (mem.recent_accessed_counts[day] ?? 0),
+            0
+          ),
+        ])
+      ),
+      lifetime_accessed_count: Math.sumPrecise(
+        componentMemories.map(mem => mem.lifetime_accessed_count)
+      ),
+      last_merged: now,
+      merge_count:
+        Math.sumPrecise(componentMemories.map(mem => mem.merge_count)) + 1,
+    };
+    mergedMemoryToSave.frecency = computeMemoryFrecency(mergedMemoryToSave);
+    mergedMemoryToSave.strength = computeMemoryStrength(mergedMemoryToSave);
+    classifyMemoryAndCapStrength(mergedMemoryToSave);
+    finalMergedMemories.push(mergedMemoryToSave);
+
+    // Record component memory IDs to delete
+    for (const mem of componentMemories) {
+      componentMemoryIdsToDelete.add(mem.id);
+    }
+  }
+
+  return {
+    finalMergedMemories,
+    componentMemoryIdsToDelete: [...componentMemoryIdsToDelete],
+  };
 }

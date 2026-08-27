@@ -595,7 +595,5 @@ class SingleTestMixin:
         error_summary_file = os.path.join(
             dir, "%s%s_errorsummary.log" % (test_suite, index)
         )
-        test_summary_file = os.path.join(
-            dir, "%s%s_testsummary.jsonl" % (test_suite, index)
-        )
+        test_summary_file = os.path.join(dir, "summary.jsonl")
         return raw_log_file, error_summary_file, test_summary_file

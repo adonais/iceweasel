@@ -1,0 +1,82 @@
+[DEFAULT]
+tags = "urlbar"
+support-files = [
+  "../browser/dummy_page.html",
+  "../browser/head-common.js",
+  "head.js",
+]
+prefs = [
+  "browser.bookmarks.testing.skipDefaultBookmarksImport=true",
+  "browser.urlbar.trending.featureGate=false",
+  "layout.css.attr.enabled=true",
+]
+
+["browser_acknowledgeFeedbackAndDismissal.js"]
+
+["browser_autoselect.js"]
+
+["browser_bestMatch.js"]
+
+["browser_blobIcons.js"]
+
+["browser_calculator.js"]
+
+["browser_click_row_border.js"]
+
+["browser_dynamicResults.js"]
+https_first_disabled = true
+
+["browser_heuristicNotAddedFirst.js"]
+
+["browser_hideHeuristic.js"]
+
+["browser_no_title.js"]
+
+["browser_readline_navigation.js"]
+run-if = [
+  "os == 'mac'", # Mac only feature
+]
+
+["browser_remove_match.js"]
+
+["browser_resultSpan.js"]
+
+["browser_result_a11y_label.js"]
+support-files = [
+  "../browser/searchSuggestionEngine.xml",
+  "../browser/searchSuggestionEngine.sjs",
+]
+skip-if = [
+  "a11y_checks", # Test times out (bug 1854660)
+]
+
+["browser_result_explanations.js"]
+
+["browser_result_menu.js"]
+
+["browser_result_menu_general.js"]
+
+["browser_result_noTitle.js"]
+
+["browser_result_onSelection.js"]
+
+["browser_results_format_displayValue.js"]
+
+["browser_retainedResultsOnFocus.js"]
+
+["browser_same_ref_deduplication.js"]
+
+["browser_secondaryActions.js"]
+support-files = ["../browser/add_search_engine_one.html"]
+
+["browser_slow_heuristic.js"]
+
+["browser_suggestedIndex.js"]
+
+["browser_tag_star_visibility.js"]
+
+["browser_testUrlbarIcons.js"]
+
+["browser_top_sites_switchtab.js"]
+
+["browser_unitConversion.js"]

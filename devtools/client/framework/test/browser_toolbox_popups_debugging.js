@@ -40,7 +40,7 @@ add_task(async function () {
       popupTab.linkedBrowser
     );
     const iframe = browserContainer.querySelector(
-      ".devtools-toolbox-bottom-iframe"
+      ".devtools-toolbox-iframe.bottom-host"
     );
     ok(iframe, "The original tab's toolbox moved to the popup tab");
   } else {

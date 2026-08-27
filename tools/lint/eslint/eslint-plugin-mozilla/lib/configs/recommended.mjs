@@ -232,6 +232,7 @@ export default [
         {
           argsIgnorePattern: "^_",
           caughtErrors: "none",
+          ignoreUsingDeclarations: true,
           vars: "local",
         },
       ],
@@ -306,6 +307,7 @@ export default [
         {
           argsIgnorePattern: "^_",
           caughtErrors: "none",
+          ignoreUsingDeclarations: true,
           vars: "all",
         },
       ],

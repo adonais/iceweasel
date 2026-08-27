@@ -282,6 +282,12 @@
         return false;
       }
 
+      return this.isEmptyIgnoringLoad;
+    }
+
+    // Like isEmpty, but ignoring the load in progress. Only for callers which
+    // know that load is being taken away from the tab.
+    get isEmptyIgnoringLoad() {
       if (this.hasAttribute("customizemode")) {
         return false;
       }

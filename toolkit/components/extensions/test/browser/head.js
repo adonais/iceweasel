@@ -1,6 +1,7 @@
 /* exported ACCENT_COLOR, BACKGROUND, ENCODED_IMAGE_DATA, FRAME_COLOR, TAB_TEXT_COLOR,
    TEXT_COLOR, TAB_BACKGROUND_TEXT_COLOR, imageBufferFromDataURI, hexToCSS, hexToRGB, testBorderColor,
-   waitForTransition, loadTestSubscript, assertPersistentListeners, getToolboxBackgroundColor */
+   waitForTransition, waitForThemeRestyle, loadTestSubscript, assertPersistentListeners,
+   getToolboxBackgroundColor */
 
 "use strict";
 
@@ -72,6 +73,17 @@ function waitForTransition(element, propertyName) {
       return event.target == element && event.propertyName == propertyName;
     }
   );
+}
+
+// A theme change's light-dark() restyle (e.g. Nova's default toolbox
+// gradient) lands on a later refresh-driver tick, not synchronously
+// (see Bug 2045122 and Bug 2058902).
+// Wait for it via "look-and-feel-changed" plus an extra animation frame.
+async function waitForThemeRestyle(triggerThemeChange) {
+  let lookAndFeelChanged = TestUtils.topicObserved("look-and-feel-changed");
+  await triggerThemeChange();
+  await lookAndFeelChanged;
+  await new Promise(resolve => window.requestAnimationFrame(resolve));
 }
 
 function getToolboxBackgroundColor() {

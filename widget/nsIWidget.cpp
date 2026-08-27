@@ -1930,7 +1930,8 @@ void nsIWidget::NotifyWindowMoved(const LayoutDeviceIntPoint& aPoint,
 void nsIWidget::NotifyWindowMoved(const DesktopIntPoint& aPoint,
                                   ByMoveToRect aByMoveToRect) {
   return NotifyWindowMoved(
-      LayoutDeviceIntPoint::Round(aPoint * GetDesktopToDeviceScale()));
+      LayoutDeviceIntPoint::Round(aPoint * GetDesktopToDeviceScale()),
+      aByMoveToRect);
 }
 
 void nsIWidget::NotifySizeMoveDone() {

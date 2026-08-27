@@ -169,7 +169,7 @@ struct arena_chunk_t {
 
   // This will point to the page index of the first run that may have dirty
   // pages.
-  uint16_t mDirtyRunHint;
+  uint16_t mDirtyRunHint = 0;
 
   bool mIsPurging = false;
   bool mDying = false;

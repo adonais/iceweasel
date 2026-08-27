@@ -38,7 +38,9 @@ targeting, use separate messages instead.
 ## Available trigger actions
 
 - [`openArticleURL`](#openarticleurl)
+- [`bookmarkAdded`](#bookmarkadded)
 - [`openBookmarkedURL`](#openbookmarkedurl)
+- [`visitBookmarkedURL`](#visitbookmarkedurl)
 - [`userBookmarkFolderActivity`](#userbookmarkfolderactivity)
 - [`frequentVisits`](#frequentvisits)
 - [`openURL`](#openurl)
@@ -58,8 +60,6 @@ targeting, use separate messages instead.
 - [`tabGroupSaved`](#tabgroupsaved)
 - [`tabGroupCollapsed`](#tabgroupcollapsed)
 - [`activityAfterIdle`](#activityafteridle)
-- [`cookieBannerDetected`](#cookiebannerdetected)
-- [`cookieBannerHandled`](#cookiebannerhandled)
 - [`messagesLoaded`](#messagesloaded)
 - [`pageActionInUrlbar`](#pageactioninurlbar)
 - [`onSearch`](#onsearch)
@@ -115,11 +115,27 @@ let regexPatterns: string[];
 }
 ```
 
+### `bookmarkAdded`
+
+Fires when the user adds a bookmark through any UI path, including the URL bar
+star icon, the Bookmarks menu, the keyboard shortcut, the "Bookmark Link" and
+"Bookmark All Tabs" commands, and the Library window.
+
+Bulk and non-interactive sources (import, restore, sync) and tag operations are
+ignored, so mass operations such as an add-on importing or syncing bookmarks do
+not fire the trigger. It fires at most once per operation and does not fire in
+private windows.
+
 ### `openBookmarkedURL`
 
 Happens when the user bookmarks or navigates to a bookmarked URL.
 
 Does not filter by host or patterns.
+
+### `visitBookmarkedURL`
+
+Fires when the user navigates to a URL that is already bookmarked. This does not fire when the user creates a bookmark, only when they open one. Does not
+fire in private windows.
 
 ### `userBookmarkFolderActivity`
 
@@ -473,23 +489,6 @@ No params or patterns. The `idleForMilliseconds` context variable is available i
   targeting: "idleForMilliseconds >= 1200000"
 }
 ```
-
-### `cookieBannerDetected`
-
-Happens when the `cookiebannerdetected` window event is dispatched. This event is dispatched when the following conditions are true:
-
-1. The user is presented with a cookie consent banner on the webpage they're viewing,
-2. The domain has a valid ruleset for automatically engaging with the consent banner, and
-3. The user has not explicitly opted in or out of the Cookie Banner Handling feature.
-
-### `cookieBannerHandled`
-
-Happens when the `cookiebannerhandled` window event is dispatched. This event is dispatched when the following conditions are true:
-
-1. The user is presented with a cookie consent banner on the webpage they're viewing,
-2. The domain has a valid ruleset for automatically engaging with the consent banner, and
-3. The user is opted into the Cookie Banner Handling feature (this is by default in private windows), and
-4. Firefox succeeds in automatically engaging with the consent banner.
 
 ### `messagesLoaded`
 

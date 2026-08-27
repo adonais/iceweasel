@@ -47,7 +47,7 @@ class xpcAccessibleMacInterface : public xpcAccessibleMacNSObjectWrapper,
                                     JS::MutableHandleValue aResult);
 
  protected:
-  virtual ~xpcAccessibleMacInterface() {}
+  virtual ~xpcAccessibleMacInterface() = default;
 
   // Return true if our native object responds to this selector and
   // if it implements isAccessibilitySelectorAllowed check that it returns true

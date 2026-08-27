@@ -4,7 +4,6 @@
 
 package mozilla.components.concept.identitycredential
 
-import android.annotation.SuppressLint
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
@@ -15,7 +14,6 @@ import kotlinx.parcelize.Parcelize
  * @property name The name of this [Account].
  * @property icon An icon for the [Account], normally the profile picture
  */
-@SuppressLint("ParcelCreator")
 @Parcelize
 data class Account(
     val id: Int,

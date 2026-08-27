@@ -101,6 +101,10 @@ export function isDiscoverEnabled() {
   return true;
 }
 
+export function isBrowserNovaEnabled() {
+  return lazy.BROWSER_NOVA_ENABLED;
+}
+
 export function getBrowserElement() {
   return window.docShell.chromeEventHandler;
 }

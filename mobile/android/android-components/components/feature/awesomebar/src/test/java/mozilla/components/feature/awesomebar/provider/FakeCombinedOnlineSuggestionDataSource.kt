@@ -4,30 +4,33 @@
 
 package mozilla.components.feature.awesomebar.provider
 
-import mozilla.components.concept.awesomebar.AwesomeBar
+import mozilla.components.feature.awesomebar.optimizedsuggestions.CombinedSuggestionsDataSource
+import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightItem
+import mozilla.components.feature.awesomebar.optimizedsuggestions.SportItem
+import mozilla.components.feature.awesomebar.optimizedsuggestions.StockItem
 
 /**
  * Simple fake data source used for unit tests.
  * Records calls and returns the specified results.
  */
 class FakeCombinedOnlineSuggestionDataSource(
-    private val stockResults: List<AwesomeBar.StockItem> = emptyList(),
-    private val sportResults: List<AwesomeBar.SportItem> = emptyList(),
-    private val flightResults: List<AwesomeBar.FlightItem> = emptyList(),
-) : AwesomeBar.CombinedSuggestionsDataSource {
+    private val stockResults: List<StockItem> = emptyList(),
+    private val sportResults: List<SportItem> = emptyList(),
+    private val flightResults: List<FlightItem> = emptyList(),
+) : CombinedSuggestionsDataSource {
     val calls = mutableListOf<String>()
 
-    override suspend fun fetchStocks(query: String): List<AwesomeBar.StockItem> {
+    override suspend fun fetchStocks(query: String): List<StockItem> {
         calls += query
         return stockResults
     }
 
-    override suspend fun fetchSports(query: String): List<AwesomeBar.SportItem> {
+    override suspend fun fetchSports(query: String): List<SportItem> {
         calls += query
         return sportResults
     }
 
-    override suspend fun fetchFlights(query: String): List<AwesomeBar.FlightItem> {
+    override suspend fun fetchFlights(query: String): List<FlightItem> {
         calls += query
         return flightResults
     }

@@ -51,6 +51,8 @@ class PerftestResultsHandler(metaclass=ABCMeta):
         test_bytecode_cache=False,
         simpleperf=False,
         etw_profile=False,
+        samply_profile=False,
+        perf_profile=False,
         extra_summary_methods=[],
         **kwargs,
     ):
@@ -71,6 +73,8 @@ class PerftestResultsHandler(metaclass=ABCMeta):
         self.test_bytecode_cache = test_bytecode_cache
         self.simpleperf = simpleperf
         self.etw_profile = etw_profile
+        self.samply_profile = samply_profile
+        self.perf_profile = perf_profile
         self.existing_results = None
         self.extra_summary_methods = extra_summary_methods
 
@@ -108,6 +112,10 @@ class PerftestResultsHandler(metaclass=ABCMeta):
                 extra_options.append("simpleperf")
             if self.etw_profile:
                 extra_options.append("etw-profile")
+            if self.samply_profile:
+                extra_options.append("samply-profile")
+            if self.perf_profile:
+                extra_options.append("perf-profile")
             extra_options.append("webrender")
         else:
             for modifier, name in modifiers:
@@ -1091,6 +1099,8 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                     new_result["support_class"] = test.get("support_class", None)
                     new_result["simpleperf"] = test.get("simpleperf", False)
                     new_result["etw-profile"] = test.get("etw_profile", False)
+                    new_result["samply-profile"] = test.get("samply_profile", False)
+                    new_result["perf-profile"] = test.get("perf_profile", False)
 
                     return new_result
 

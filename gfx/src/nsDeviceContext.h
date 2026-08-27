@@ -34,6 +34,7 @@ struct nsRect;
 namespace mozilla {
 namespace dom {
 enum class ScreenColorGamut : uint8_t;
+class WindowContext;
 }  // namespace dom
 namespace hal {
 enum class ScreenOrientation : uint32_t;
@@ -193,6 +194,8 @@ class nsDeviceContext final {
    * @param aTitle - title of Document
    * @param aPrintToFileName - name of file to print to, if empty then don't
    *                           print to file
+   * @param aWindowContext - the window global of the (static clone) document
+   *                         being printed
    * @param aStartPage - starting page number (must be greater than zero)
    * @param aEndPage - ending page number (must be less than or
    * equal to number of pages)
@@ -201,8 +204,8 @@ class nsDeviceContext final {
    */
   nsresult BeginDocument(const nsAString& aTitle,
                          const nsAString& aPrintToFileName,
-                         uint64_t aBrowsingContextId, int32_t aStartPage,
-                         int32_t aEndPage);
+                         mozilla::dom::WindowContext* aWindowContext,
+                         int32_t aStartPage, int32_t aEndPage);
 
   /**
    * Inform the output device that output of a document is ending.
@@ -305,7 +308,7 @@ class nsDeviceContext final {
   RefPtr<PrintTarget> mPrintTarget;
   bool mIsCurrentlyPrintingDoc;
   bool mIsInitialized = false;
-  uint64_t mBrowsingContextId = 0;
+  uint64_t mInnerWindowId = 0;
 };
 
 #endif /* NS_DEVICECONTEXT_H_ */

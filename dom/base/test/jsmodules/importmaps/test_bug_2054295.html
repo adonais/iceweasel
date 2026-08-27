@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Bug 2054295: a canceled module preload must not leak the onload block</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+</head>
+<body>
+<script>
+// Reproduction, driven from file_bug_2054295.html and the channel suspensions
+// below:
+//
+// 1. bug_2054295_hold_parser.js is suspended, so the iframe's parser stalls
+//    before it reaches the import map.
+// 2. Meanwhile the preload scanner preloads bug_2054295_entry.mjs, which is
+//    long enough to be compiled off-thread. That blocks onload.
+// 3. The compiled entry module starts fetching bug_2054295_dep.mjs. That fetch
+//    is suspended in turn, and the parser is released.
+// 4. The parser inserts the import map, which cancels the preloaded (and now
+//    onload-blocking) entry module.
+// 5. The dependency fetch is released so the load group can drain, and onload
+//    must fire.
+
+SimpleTest.waitForExplicitFinish();
+
+SimpleTest.requestFlakyTimeout(
+  "The bug manifests as load never firing; a watchdog is required to turn that " +
+  "non-event into an explicit failure.");
+
+let holdParserChannel = null;
+let depChannel = null;
+
+const observer = {
+  observe(subject) {
+    const channel = subject.QueryInterface(SpecialPowers.Ci.nsIChannel);
+    const spec = channel.URI.spec;
+    if (!holdParserChannel && spec.includes("bug_2054295_hold_parser.js")) {
+      holdParserChannel = channel;
+      channel.suspend();
+    } else if (!depChannel && spec.includes("bug_2054295_dep.mjs")) {
+      depChannel = channel;
+      channel.suspend();
+      holdParserChannel.resume();
+    }
+  },
+};
+SpecialPowers.addObserver(observer, "http-on-opening-request");
+
+onmessage = function (event) {
+  is(event.data, "import-map-registered", "Expected message from the iframe");
+  ok(depChannel, "The dependency fetch is suspended when the import map is registered");
+  depChannel?.resume();
+};
+
+function finish() {
+  clearTimeout(watchdog);
+  SpecialPowers.removeObserver(observer, "http-on-opening-request");
+  SimpleTest.finish();
+}
+
+const watchdog = setTimeout(() => {
+  ok(false,
+     "Load event never fired: the canceled module preload leaked its onload " +
+     "block (bug 2054295 regressed)");
+  finish();
+}, 30000);
+
+SpecialPowers.ChromeUtils.clearResourceCache({ types: ["script"] });
+
+const iframe = document.createElement("iframe");
+iframe.addEventListener("load", () => {
+  ok(true,
+     "Load event fired after a module preload was canceled by an import map");
+  finish();
+}, { once: true });
+iframe.src = "file_bug_2054295.html";
+document.body.appendChild(iframe);
+</script>
+</body>
+</html>

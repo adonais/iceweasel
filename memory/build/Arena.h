@@ -247,7 +247,7 @@ struct arena_t : public BaseAllocClass {
   RedBlackTreeNode<arena_t> mLink;
 
   // Arena id, that we keep away from the beginning of the struct so that
-  // free list pointers in TypedBaseAlloc<arena_t> don't overflow in it,
+  // free list pointers in the base allocator don't overflow in it,
   // and it keeps the value it had after the destructor.
   arena_id_t mId = 0;
 
@@ -370,7 +370,7 @@ struct arena_t : public BaseAllocClass {
 
   // A mirror of ArenaCollection::mIsDeferredPurgeEnabled, here only to
   // optimize memory reads in ShouldStartPurge().
-  bool mIsDeferredPurgeEnabled MOZ_GUARDED_BY(mLock);
+  bool mIsDeferredPurgeEnabled MOZ_GUARDED_BY(mLock) = false;
 
   // True if the arena is in the process of being destroyed, and needs to be
   // released after a concurrent purge completes.

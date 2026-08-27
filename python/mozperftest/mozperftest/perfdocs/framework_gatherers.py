@@ -59,8 +59,40 @@ class FrameworkGatherer:
         :param content: content of section paragraph
         :param header_type: type of the title heading
         """
-        heading_map = {"H2": "*", "H3": "=", "H4": "-", "H5": "^"}
-        return [title, heading_map.get(header_type, "^") * len(title), content, ""]
+        heading_map = {"H2": "##", "H3": "###", "H4": "####", "H5": "#####"}
+        prefix = heading_map.get(header_type, "#####")
+        return [f"{prefix} {title}", "", content, ""]
+
+    def _slugify(self, heading):
+        """
+        Turns a heading into the anchor MyST generates for it.
+
+        Mirrors mdit_py_plugins.anchors.index.slugify, which is what
+        the `heading_anchors` MyST setting relies on.
+
+        :param str heading: the heading to build the anchor of
+        :return str: the anchor targeting the heading
+        """
+        return re.sub(r"[^\w一-鿿\- ]", "", heading.strip().lower().replace(" ", "-"))
+
+    def _build_dropdown_with_anchor(self, anchor, dropdown_title):
+        """
+        Opens a dropdown that can be targeted by a cross-reference.
+
+        The MyST anchor makes the id known to Sphinx so that
+        `[title](<file>.md#<anchor>)` links resolve, while the
+        `anchor-id-` class is kept for the styling and the anchor
+        handling done in docs/_static/sphinx_design.js.
+
+        :param str anchor: the id to make the dropdown targetable by
+        :param str dropdown_title: the title displayed on the dropdown
+        :return str: the opening of the dropdown directive
+        """
+        return (
+            f"({anchor})=\n\n"
+            f"::::{{dropdown}} {dropdown_title}\n"
+            f":class-container: anchor-id-{anchor}\n\n"
+        )
 
     def _get_metric_heading(self, metric, metrics_info):
         """
@@ -148,9 +180,10 @@ class FrameworkGatherer:
         :return str: Returns the command to run locally, this output is added to
             the mozilla source docs, and is formatted
         """
-        command_to_run_locally = "   * Command to Run Locally\n\n"
-        command_to_run_locally += "   .. code-block::\n\n"
-        command_to_run_locally += f"      ./mach {framework_command} {title}\n\n"
+        command_to_run_locally = "* **Command to Run Locally**\n\n"
+        command_to_run_locally += "  ```\n"
+        command_to_run_locally += f"  ./mach {framework_command} {title}\n"
+        command_to_run_locally += "  ```\n\n"
         return command_to_run_locally
 
 
@@ -281,7 +314,7 @@ class RaptorGatherer(FrameworkGatherer):
             documented metric.
         """
         metric_heading = super()._get_metric_heading(metric, metrics_info)
-        return f"`{metric} <raptor-metrics.html#{metric_heading.lower().replace(' ', '-')}>`__"
+        return f"[{metric}](raptor-metrics.md#{self._slugify(metric_heading)})"
 
     def get_test_list(self):
         """
@@ -342,17 +375,16 @@ class RaptorGatherer(FrameworkGatherer):
                 f"(obtained from config.yml): {title}"
             )
 
-        result = f".. dropdown:: {title}\n"
-        result += f"   :class-container: anchor-id-{title}-{suite_name[0]}\n\n"
+        result = self._build_dropdown_with_anchor(f"{title}-{suite_name[0]}", title)
         result += self.build_command_to_run_locally("raptor -t", title)
 
         for idx, description in enumerate(matcher):
             if description["name"] != title:
-                result += f"   {idx + 1}. **{description['name']}**\n\n"
+                result += f"{idx + 1}. **{description['name']}**\n\n"
             if "owner" in description.keys():
-                result += f"   **Owner**: {description['owner']}\n\n"
+                result += f"**Owner**: {description['owner']}\n\n"
             if test_description:
-                result += f"   **Description**: {test_description}\n\n"
+                result += f"**Description**: {test_description}\n\n"
 
             for key in sorted(description.keys()):
                 if key in ["owner", "name", "manifest", "metrics"]:
@@ -362,19 +394,19 @@ class RaptorGatherer(FrameworkGatherer):
                     if "<" in description[key] or ">" in description[key]:
                         description[key] = description[key].replace("<", r"\<")
                         description[key] = description[key].replace(">", r"\>")
-                    result += f"   * **{sub_title}**: `<{description[key]}>`__\n"
+                    result += f"* **{sub_title}**: <{description[key]}>\n"
                 elif key == "secondary_url":
-                    result += f"   * **{sub_title}**: `<{description[key]}>`__\n"
+                    result += f"* **{sub_title}**: <{description[key]}>\n"
                 elif key == "link searchfox":
-                    result += f"   * **{sub_title}**: :searchfox:`{description[key]}`\n"
+                    result += f"* **{sub_title}**: {{searchfox}}`{description[key]}`\n"
                 elif key in ["playback_pageset_manifest"]:
                     result += (
-                        f"   * **{sub_title}**: "
+                        f"* **{sub_title}**: "
                         f"{description[key].replace('{subtest}', description['name'])}\n"
                     )
                 elif key == "alert_on":
                     result += (
-                        f"   * **{sub_title}**: "
+                        f"* **{sub_title}**: "
                         + ", ".join(
                             self._get_metric_heading(metric.strip(), metrics_info)
                             for metric in description[key]
@@ -387,10 +419,10 @@ class RaptorGatherer(FrameworkGatherer):
                 else:
                     if "\n" in description[key]:
                         description[key] = description[key].replace("\n", " ")
-                    result += f"   * **{sub_title}**: {description[key]}\n"
+                    result += f"* **{sub_title}**: {description[key]}\n"
 
             if self._task_list.get(title, []):
-                result += "   * **Test Task**:\n\n"
+                result += "* **Test Task**:\n\n"
                 for platform in sorted(self._task_list[title]):
                     if (suite_name == "mobile" and "android" not in platform) or (
                         suite_name == "desktop" and "android" in platform
@@ -403,7 +435,7 @@ class RaptorGatherer(FrameworkGatherer):
                         widths=[30] + [15 for x in BRANCHES],
                         header_rows=1,
                         headers=[["Test Name"] + BRANCHES],
-                        indent=3,
+                        indent=0,
                     )
 
                     for task in self._task_list[title][platform]:
@@ -421,11 +453,12 @@ class RaptorGatherer(FrameworkGatherer):
                         table.add_row(values)
                     result += f"{table.finish_table()}\n"
 
+        result += "::::\n"
         return [result]
 
     def build_suite_section(self, title, content):
         return self._build_section_with_header(
-            title.capitalize(), content, header_type="H4"
+            title.capitalize(), content, header_type="H3"
         )
 
     def build_metrics_documentation(self, parsed_metrics):
@@ -436,20 +469,23 @@ class RaptorGatherer(FrameworkGatherer):
             metric_content = metric_info["description"] + "\n\n"
 
             metric_content += (
-                f"  * **Aliases**: {', '.join(sorted(metric_info['aliases']))}\n"
+                f"* **Aliases**: {', '.join(sorted(metric_info['aliases']))}\n"
             )
             if metric_info.get("location", None):
-                metric_content += "  * **Tests using it**:\n"
+                metric_content += "* **Tests using it**:\n"
 
                 for suite, tests in sorted(
                     metric_info["location"].items(), key=lambda item: item[0]
                 ):
-                    metric_content += f"     * **{suite.capitalize()}**: "
+                    metric_content += f"  * **{suite.capitalize()}**: "
 
                     test_links = []
                     for test in sorted(tests):
+                        # The dropdowns are targeted through the anchors set
+                        # by _build_dropdown_with_anchor rather than through
+                        # a path, as they are not headings.
                         test_links.append(
-                            f"`{test} <raptor.html#{test}-{suite.lower()[0]}>`__"
+                            f"{{ref}}`{test} <{test}-{suite.lower()[0]}>`"
                         )
 
                     metric_content += ", ".join(test_links) + "\n"
@@ -516,7 +552,7 @@ class MozperftestGatherer(FrameworkGatherer):
         return [str(self.script_infos[title])]
 
     def build_suite_section(self, title, content):
-        return self._build_section_with_header(title, content, header_type="H4")
+        return self._build_section_with_header(title, content, header_type="H2")
 
 
 class TalosGatherer(FrameworkGatherer):
@@ -577,8 +613,7 @@ class TalosGatherer(FrameworkGatherer):
     def build_test_description(
         self, title, test_description="", suite_name="", metrics_info=None
     ):
-        result = f".. dropdown:: {title}\n"
-        result += f"   :class-container: anchor-id-{title}\n\n"
+        result = self._build_dropdown_with_anchor(title, title)
         result += self.build_command_to_run_locally("talos-test -a", title)
 
         yml_descriptions = [s.strip() for s in test_description.split("- ") if s]
@@ -586,22 +621,22 @@ class TalosGatherer(FrameworkGatherer):
             if "Example Data" in description:
                 # Example Data for using code block
                 example_list = [s.strip() for s in description.split("* ")]
-                result += f"   * {example_list[0]}\n"
-                result += "\n   .. code-block::\n\n"
+                result += f"* {example_list[0]}\n\n"
+                result += "  ```\n"
                 for example in example_list[1:]:
-                    result += f"      {example}\n"
-                result += "\n"
+                    result += f"  {example}\n"
+                result += "  ```\n\n"
 
             elif "    * " in description:
                 # Sub List
                 sub_list = [s.strip() for s in description.split(" * ")]
-                result += f"   * {sub_list[0]}\n"
+                result += f"* {sub_list[0]}\n"
                 for sub in sub_list[1:]:
-                    result += f"      * {sub}\n"
+                    result += f"  * {sub}\n"
 
             else:
                 # General List
-                result += f"   * {description}\n"
+                result += f"* {description}\n"
 
         if title in self._descriptions:
             for key in sorted(self._descriptions[title]):
@@ -616,10 +651,10 @@ class TalosGatherer(FrameworkGatherer):
                     for k, v in value.items():
                         if isinstance(v, str) and "\\" in v:
                             value[k] = str(v).replace("\\", r"/")
-                result += r"   * " + key + r": " + str(value) + r"\n"
+                result += r"* " + key + r": " + str(value) + r"\n"
 
         if self._task_list.get(title, []):
-            result += "   * **Test Task**:\n\n"
+            result += "* **Test Task**:\n\n"
             for platform in sorted(self._task_list[title]):
                 self._task_list[title][platform].sort(key=lambda x: x["test_name"])
 
@@ -628,7 +663,7 @@ class TalosGatherer(FrameworkGatherer):
                     widths=[30] + [15 for x in BRANCHES],
                     header_rows=1,
                     headers=[["Test Name"] + BRANCHES],
-                    indent=3,
+                    indent=0,
                 )
 
                 for task in self._task_list[title][platform]:
@@ -646,6 +681,7 @@ class TalosGatherer(FrameworkGatherer):
                     table.add_row(values)
                 result += f"{table.finish_table()}\n"
 
+        result += "::::\n"
         return [result]
 
     def build_suite_section(self, title, content):
@@ -693,29 +729,30 @@ class AwsyGatherer(FrameworkGatherer):
 
     def build_suite_section(self, title, content):
         return self._build_section_with_header(
-            title.capitalize(), content, header_type="H4"
+            title.capitalize(), content, header_type="H2"
         )
 
     def build_test_description(
         self, title, test_description="", suite_name="", metrics_info=None
     ):
         dropdown_suite_name = suite_name.replace(" ", "-")
-        result = f".. dropdown:: {title} ({test_description})\n"
-        result += f"   :class-container: anchor-id-{title}-{dropdown_suite_name}\n\n"
+        result = self._build_dropdown_with_anchor(
+            f"{title}-{dropdown_suite_name}", f"{title} ({test_description})"
+        )
         result += self.build_command_to_run_locally(
             "awsy-test", "" if title == "tp6" else f"--{title}"
         )
 
         awsy_data = read_yaml(self._yaml_path)["suites"]["Awsy tests"]
         if "owner" in awsy_data.keys():
-            result += f"   **Owner**: {awsy_data['owner']}\n\n"
-        result += "   * **Test Task**:\n"
+            result += f"**Owner**: {awsy_data['owner']}\n\n"
+        result += "* **Test Task**:\n"
 
         # tp5 tests are represented by awsy-e10s test names
         # while the others have their title in test names
         search_tag = "awsy-e10s" if title == "tp5" else title
         for platform in sorted(self._task_list.keys()):
-            result += f"      * {platform}\n"
+            result += f"  * {platform}\n"
             for test_dict in sorted(
                 self._task_list[platform], key=lambda d: d["test_name"]
             ):
@@ -725,11 +762,10 @@ class AwsyGatherer(FrameworkGatherer):
                         if test_dict["run_on_projects"]
                         else "None"
                     )
-                    result += (
-                        f"            * {test_dict['test_name']}{run_on_project}\n"
-                    )
+                    result += f"    * {test_dict['test_name']}{run_on_project}\n"
             result += "\n"
 
+        result += "::::\n"
         return [result]
 
 

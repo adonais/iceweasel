@@ -37,10 +37,18 @@ enum class FrameChildListID {
   Overflow,
   OverflowContainers,
   ExcessOverflowContainers,
-  OverflowOutOfFlow,
+  // Floats placed by the block. Their placeholders are in the block's in-flow
+  // lines.
   Float,
-  Marker,
+  // Floats pushed to the block's next-in-flow because they didn't fit. The list
+  // can hold floats' first-in-flows and next-in-flows, and it is expected to be
+  // drained by the block's next-in-flow during reflow.
   PushedFloats,
+  // Floats whose placeholders are in the overflow lines. This list collects the
+  // floats' real frames so they are drained with their placeholders by the
+  // block's next-in-flow.
+  OverflowFloats,
+  Marker,
   // A special alias for FrameChildListID::Principal that suppress the reflow
   // request that is normally done when manipulating child lists.
   NoReflowPrincipal,

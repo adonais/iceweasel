@@ -33,9 +33,10 @@ using namespace js;
   MOZ_ASSERT_IF(initialDisposeCapability.isObject(),
                 initialDisposeCapability.toObject().is<ArrayObject>());
 
-  obj->initReservedSlot(DisposableStackObject::DISPOSABLE_RESOURCE_STACK_SLOT,
-                        initialDisposeCapability);
-  obj->initReservedSlot(
+  obj->initReservedSlotTyped(
+      DisposableStackObject::DISPOSABLE_RESOURCE_STACK_SLOT,
+      initialDisposeCapability);
+  obj->initReservedSlotTyped(
       DisposableStackObject::STATE_SLOT,
       JS::Int32Value(int32_t(DisposableStackObject::DisposableState::Pending)));
 
@@ -209,7 +210,7 @@ using namespace js;
   // Step 6. Set newDisposableStack.[[DisposeCapability]] to
   // disposableStack.[[DisposeCapability]].
   JS::Rooted<JS::Value> existingDisposeCapability(
-      cx, disposableStack->getReservedSlot(
+      cx, disposableStack->getReservedSlotTyped(
               DisposableStackObject::DISPOSABLE_RESOURCE_STACK_SLOT));
   DisposableStackObject* newDisposableStack =
       DisposableStackObject::create(cx, nullptr, existingDisposeCapability);

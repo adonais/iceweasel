@@ -8,11 +8,6 @@ const SHEET = document.querySelector('style');
 
 let lazy = {};
 
-ChromeUtils.defineESModuleGetters(lazy, {
-  WindowsVersionInfo:
-    "resource://gre/modules/components-utils/WindowsVersionInfo.sys.mjs",
-});
-
 
 SimpleTest.waitForExplicitFinish();
 
@@ -101,7 +96,7 @@ expectUnkown("(-moz-platform: )");
   await testMozPref('-moz-pref("foo.bar.int", 1)', "foo.bar.int", 1, 2);
   await testMozPref('-moz-pref("foo.bar.int")', "foo.bar.int", 1, 0);
 
-  let supportsMica = matchMedia('(-moz-platform: windows)').matches && lazy.WindowsVersionInfo.get().buildNumber >= 22621;
+  let supportsMica = matchMedia('(-moz-platform: windows)').matches && Services.sysinfo.isWindows10BuildOrLater(22621);
   info(`Mica supported: ${supportsMica}`);
   for (let [query, pref] of [['(-moz-windows-mica)', 'widget.windows.mica'], ['(-moz-windows-mica-popups)', 'widget.windows.mica.popups']]) {
     let prefIsBool = pref == 'widget.windows.mica';

@@ -7,12 +7,12 @@ plugins to our Stylelint configuration.
 :local: true
 ```
 
-# General Notes
+## General Notes
 
 - Enabling of new rules and adding plugins should happen in agreement with the
   [Desktop Theme module owner and peers](/mots/index.html#desktop-theme).
 
-# Enabling a New Rule
+## Enabling a New Rule
 
 The general process for enabling new rules is to file a bug under the
 `Developer Infrastructure` product in the `Lint and Formatting` component.
@@ -21,7 +21,7 @@ The rule should then be added to the relevant configurations and existing issues
 fixed. For large amounts of existing issues, we may do a staged roll-out
 as discussed below.
 
-## Options for Roll-Outs
+### Options for Roll-Outs
 
 For rolling out new rules, we prefer that there is a plan and owner for ensuring
 the existing failures are resolved over time. They do not always need to be fixed
@@ -61,7 +61,7 @@ errors are found and how much work it is to fix existing issues.
 
 The options here are not firmly set, the list should be used as a guide.
 
-## Where to Add
+### Where to Add
 
 Custom rules should be added in
 {searchfox}`stylelint-plugin-mozilla/rules <tools/lint/stylelint/stylelint-plugin-mozilla/rules>`

@@ -10,12 +10,14 @@
 #include "nsIChannel.h"
 #include "nsIURI.h"
 #include "nsIProtocolHandler.h"
+#include "nsPrintfCString.h"
 #include "nsServiceManagerUtils.h"
 #include "mozilla/Components.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/browser/NimbusFeatures.h"
 
+#define REFERRALS_ENABLED_PREF "browser.referrals.enabled"
 #define PROFILES_ENABLED_PREF "browser.profiles.enabled"
 #define ABOUT_WELCOME_CHROME_URL \
   "chrome://browser/content/aboutwelcome/aboutwelcome.html"
@@ -93,6 +95,9 @@ static const RedirEntry kRedirMap[] = {
     {"profiling",
      "chrome://devtools/content/performance-new/aboutprofiling/index.html",
      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI},
+    {"referrals", "https://www.firefox.com/invite/",
+     nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
+         nsIAboutModule::URI_MUST_LOAD_IN_CHILD},
     {"rights", "https://www.mozilla.org/about/legal/terms/firefox/",
      nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
          nsIAboutModule::URI_MUST_LOAD_IN_CHILD},
@@ -121,6 +126,11 @@ static const RedirEntry kRedirMap[] = {
          nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::HIDE_FROM_ABOUTABOUT},
     {"settings", "chrome://browser/content/preferences/preferences.xhtml",
      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI |
+         nsIAboutModule::HIDE_FROM_ABOUTABOUT},
+    {"smartwindowtasks", "chrome://browser/content/aiwindow/tasks.html",
+     nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
+         nsIAboutModule::URI_CAN_LOAD_IN_PRIVILEGEDABOUT_PROCESS |
+         nsIAboutModule::URI_MUST_LOAD_IN_CHILD | nsIAboutModule::ALLOW_SCRIPT |
          nsIAboutModule::HIDE_FROM_ABOUTABOUT},
     {"preferences", "chrome://browser/content/preferences/preferences.xhtml",
      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI},
@@ -199,6 +209,11 @@ AboutRedirector::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
 
   nsAutoCString path = GetAboutModuleName(aURI);
 
+  if (path.EqualsASCII("referrals") &&
+      !mozilla::Preferences::GetBool(REFERRALS_ENABLED_PREF, false)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   if ((path.EqualsASCII("editprofile") || path.EqualsASCII("deleteprofile") ||
        path.EqualsASCII("newprofile")) &&
       !mozilla::Preferences::GetBool(PROFILES_ENABLED_PREF, false)) {
@@ -225,6 +240,15 @@ AboutRedirector::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
           url.AssignASCII(ABOUT_WELCOME_CHROME_URL);
         } else {
           url.AssignASCII(ABOUT_HOME_URL);
+        }
+      }
+
+      if (path.EqualsLiteral("referrals")) {
+        nsAutoCString query;
+        if (nsresult rv = aURI->GetQuery(query); NS_SUCCEEDED(rv)) {
+          url.AssignASCII(nsPrintfCString("%s?%s", redir.url, query.get()));
+        } else {
+          url.AssignASCII(redir.url);
         }
       }
 

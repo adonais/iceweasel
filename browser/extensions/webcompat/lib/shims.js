@@ -12,7 +12,7 @@
 // on tabs where a shim using a given logo happens to be active).
 const LogosBaseURL = "https://smartblock.firefox.etp/";
 
-const releaseBranch = browser.appConstants.getReleaseBranch();
+const releaseBranch = browser.appConstants.getEffectiveUpdateChannel();
 
 const platform =
   browser.appConstants.getPlatform() === "android" ? "android" : "desktop";

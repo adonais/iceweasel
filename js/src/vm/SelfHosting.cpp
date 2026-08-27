@@ -4,10 +4,6 @@
 
 #include "vm/SelfHosting.h"
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-#  include "builtin/AsyncDisposableStackObject.h"
-#  include "builtin/DisposableStackObject.h"
-#endif
 #include "mozilla/BinarySearch.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ScopeExit.h"  // mozilla::MakeScopeExit
@@ -20,7 +16,9 @@
 #include "selfhosted.out.h"
 
 #include "builtin/Array.h"
+#include "builtin/AsyncDisposableStackObject.h"
 #include "builtin/BigInt.h"
+#include "builtin/DisposableStackObject.h"
 #ifdef JS_HAS_INTL_API
 #  include "builtin/intl/Segmenter.h"
 #endif
@@ -375,7 +373,6 @@ static bool intrinsic_ThrowInternalError(JSContext* cx, unsigned argc,
   return false;
 }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 static bool intrinsic_CreateSuppressedError(JSContext* cx, unsigned argc,
                                             Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -391,7 +388,6 @@ static bool intrinsic_CreateSuppressedError(JSContext* cx, unsigned argc,
   args.rval().setObject(*suppressedError);
   return true;
 }
-#endif
 
 /**
  * Handles an assertion failure in self-hosted code just like an assertion
@@ -833,7 +829,9 @@ static bool intrinsic_GeneratorSetClosed(JSContext* cx, unsigned argc,
   MOZ_ASSERT(args[0].isObject());
 
   GeneratorObject* genObj = &args[0].toObject().as<GeneratorObject>();
-  genObj->setClosed(cx);
+  if (!genObj->isClosed()) {
+    genObj->setClosed(cx);
+  }
   return true;
 }
 
@@ -1527,16 +1525,12 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("AssertionFailed", intrinsic_AssertionFailed, 1, 0),
     JS_FN("CallArrayIteratorMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<ArrayIteratorObject>>, 2, 0),
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     JS_FN("CallAsyncDisposableStackMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<AsyncDisposableStackObject>>, 2, 0),
-#endif
     JS_FN("CallAsyncIteratorHelperMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<AsyncIteratorHelperObject>>, 2, 0),
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     JS_FN("CallDisposableStackMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<DisposableStackObject>>, 2, 0),
-#endif
     JS_FN("CallGeneratorMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<GeneratorObject>>, 2, 0),
     JS_FN("CallIteratorHelperMethodIfWrapped",
@@ -1578,9 +1572,7 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("CreateMapIterationResultPair",
           intrinsic_CreateMapIterationResultPair, 0, 0),
     JS_FN("CreateSetIterationResult", intrinsic_CreateSetIterationResult, 0, 0),
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     JS_FN("CreateSuppressedError", intrinsic_CreateSuppressedError, 2, 0),
-#endif
     JS_FN("DecompileArg", intrinsic_DecompileArg, 2, 0),
     JS_FN("DefineDataProperty", intrinsic_DefineDataProperty, 4, 0),
     JS_FN("DefineProperty", intrinsic_DefineProperty, 6, 0),
@@ -1608,19 +1600,15 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_INLINABLE_FN("GuardToArrayIterator",
                     intrinsic_GuardToBuiltin<ArrayIteratorObject>, 1, 0,
                     IntrinsicGuardToArrayIterator),
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     JS_INLINABLE_FN("GuardToAsyncDisposableStackHelper",
                     intrinsic_GuardToBuiltin<AsyncDisposableStackObject>, 1, 0,
                     IntrinsicGuardToAsyncDisposableStack),
-#endif
     JS_INLINABLE_FN("GuardToAsyncIteratorHelper",
                     intrinsic_GuardToBuiltin<AsyncIteratorHelperObject>, 1, 0,
                     IntrinsicGuardToAsyncIteratorHelper),
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     JS_INLINABLE_FN("GuardToDisposableStackHelper",
                     intrinsic_GuardToBuiltin<DisposableStackObject>, 1, 0,
                     IntrinsicGuardToDisposableStack),
-#endif
     JS_INLINABLE_FN("GuardToIteratorHelper",
                     intrinsic_GuardToBuiltin<IteratorHelperObject>, 1, 0,
                     IntrinsicGuardToIteratorHelper),

@@ -3,6 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :host {
+  /* Fill the width so we can measure how much space they have available */
+  display: block;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+
   --citations-background-color: light-dark(var(--color-violet-0), var(--color-violet-80));
   --citations-background-color-hover: light-dark(color-mix(in srgb, var(--color-violet-50) 15%, transparent), var(--color-violet-110));
 
@@ -18,9 +23,6 @@
 }
 
 .citations {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
   gap: var(--space-xsmall);
 
   ai-website-chip::part(chip):hover {
@@ -47,6 +49,7 @@
     --button-min-height: 0;
     --button-padding: var(--space-xxsmall) var(--space-small);
     --button-text-color-ghost: light-dark(var(--color-violet-90), var(--color-violet-10));
+    white-space: nowrap;
 
     @media -moz-pref("browser.nova.enabled") {
       --button-text-color-ghost: light-dark(var(--color-violet-desaturated-90), var(--color-violet-desaturated-0));

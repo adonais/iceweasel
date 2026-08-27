@@ -9,6 +9,7 @@
 
 #include "AndroidSurfaceTexture.h"
 #include "FFmpegDataDecoder.h"
+#include "FFmpegDecodeStats.h"
 #include "FFmpegLibWrapper.h"
 #include "ImageContainer.h"
 #include "PerformanceRecorder.h"
@@ -307,31 +308,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
 #endif
 
 #if LIBAVCODEC_VERSION_MAJOR >= 58
-  class DecodeStats {
-   public:
-    void DecodeStart();
-    void UpdateDecodeTimes(int64_t aDuration);
-    bool IsDecodingSlow() const;
-
-   private:
-    uint32_t mDecodedFrames = 0;
-
-    double mAverageFrameDecodeTime = 0;
-    double mAverageFrameDuration = 0;
-
-    // Number of delayed frames until we consider decoding as slow.
-    const uint32_t mMaxLateDecodedFrames = 15;
-    // How many frames is decoded behind its pts time, i.e. video decode lags.
-    uint32_t mDecodedFramesLate = 0;
-
-    // Reset mDecodedFramesLate every 3 seconds of correct playback.
-    const uint32_t mDelayedFrameReset = 3000;
-
-    uint32_t mLastDelayedFrameNum = 0;
-
-    TimeStamp mDecodeStart;
-  };
-
+  using DecodeStats = FFmpegDecodeStats;
   DecodeStats mDecodeStats;
 #endif
 

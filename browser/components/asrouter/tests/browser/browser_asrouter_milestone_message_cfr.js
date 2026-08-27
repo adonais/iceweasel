@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-disable @microsoft/sdl/no-insecure-url */
+/* eslint-disable sdl/no-insecure-url */
 function checkCFRTrackingProtectionMilestone(notification) {
   Assert.strictEqual(notification.hidden, false, "Panel should be visible");
   Assert.strictEqual(

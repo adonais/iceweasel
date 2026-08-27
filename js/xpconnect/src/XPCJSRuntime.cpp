@@ -133,10 +133,8 @@ const char* const XPCJSRuntime::mStrings[] = {
     "indexedDB",        // IDX_INDEXEDDB
     "structuredClone",  // IDX_STRUCTUREDCLONE
     "locks",            // IDX_LOCKS
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-    "suppressed",  // IDX_SUPPRESSED
-    "error",       // IDX_ERROR
-#endif
+    "suppressed",       // IDX_SUPPRESSED
+    "error",            // IDX_ERROR
 };
 
 /***************************************************************************/
@@ -155,7 +153,7 @@ class AsyncFreeSnowWhite : public Runnable {
     auto timerId =
         glean::cycle_collector::async_snow_white_freeing.ProcessGet().Start();
     // 2 ms budget, given that kICCSliceBudget is only 3 ms
-    SliceBudget budget = SliceBudget(TimeBudget(2));
+    SliceBudget budget = SliceBudget(TimeDuration::FromMilliseconds(2));
     bool hadSnowWhiteObjects =
         nsCycleCollector_doDeferredDeletionWithBudget(budget);
     glean::cycle_collector::async_snow_white_freeing.ProcessGet()
@@ -2698,6 +2696,14 @@ static void AccumulateTelemetryCallback(JSMetric id,
       glean::javascript_gc::effectiveness.AccumulateSingleSample(
           sample.as<size_t>());
       break;
+    case JSMetric::GC_BUFFER_ALLOC_HEAP_BYTES:
+      glean::javascript_gc::buffer_alloc_heap_bytes.ProcessGet().Accumulate(
+          sample.as<size_t>());
+      break;
+    case JSMetric::GC_BUFFER_ALLOC_HEAP_DENSITY:
+      glean::javascript_gc::buffer_alloc_heap_density.AccumulateSingleSample(
+          sample.as<size_t>());
+      break;
     case JSMetric::GC_ZONE_COUNT:
       glean::javascript_gc::zone_count.AccumulateSingleSample(
           sample.as<size_t>());
@@ -2708,6 +2714,10 @@ static void AccumulateTelemetryCallback(JSMetric id,
       break;
     case JSMetric::GC_PRETENURE_COUNT_2:
       glean::javascript_gc::pretenure_count.AccumulateSingleSample(
+          sample.as<size_t>());
+      break;
+    case JSMetric::GC_MARK_STACK_MAX_CAPACITY:
+      glean::javascript_gc::mark_stack_max_capacity.ProcessGet().Accumulate(
           sample.as<size_t>());
       break;
     case JSMetric::GC_MARK_RATE_2:
@@ -3305,6 +3315,10 @@ bool XPCJSRuntime::DescribeCustomObjects(JSObject* obj, const JSClass* clasp,
   }
 
   XPCWrappedNativeProto* p = XPCWrappedNativeProto::Get(obj);
+  if (!p) {
+    // Can be null if XPC shutdown has already happened.
+    return false;
+  }
   // Nothing here can GC. The analysis would otherwise think that ~nsCOMPtr
   // could GC, but that's only possible if nsIXPCScriptable::GetJSClass()
   // somehow released a reference to the nsIXPCScriptable, which isn't going to

@@ -8,7 +8,7 @@ loadTestSubscript("head_unified_extensions.js");
 const XPI_REL_PATH = "toolkit/mozapps/extensions/test/xpinstall/amosigned.xpi";
 // Installation via https triggers an error in checkCert like bug 1895502,
 // so we need to access the XPI over http.
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 const XPI_URL = `http://example.com/browser/${XPI_REL_PATH}`;
 const XPI_FILE_PATH = getTestFilePath(`../../../../../${XPI_REL_PATH}`);
 const XPI_ADDON_ID = "amosigned-xpi@tests.mozilla.org";

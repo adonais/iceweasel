@@ -175,11 +175,20 @@ static uint32_t ComputeBaselineFrameSize(const JSJitFrameIter& frame) {
   // Note: an UnwoundJit exit frame is a JitFrameLayout that was turned into an
   // ExitFrameLayout by EnsureUnwoundJitExitFrame. We have to use the original
   // header size here because that's what we have on the stack.
-  if (frame.isScripted() || frame.isUnwoundJitExit()) {
+  //
+  // A BaselineInterpreterEntry frame can be called directly by a Baseline frame
+  // (without an intervening stub frame) for JSOp::Resume.
+  if (frame.isScripted() || frame.isUnwoundJitExit() ||
+      frame.isBaselineInterpreterEntry()) {
     return frameSize - JitFrameLayout::Size();
   }
 
   if (frame.isExitFrame()) {
+    // A CalledFromJit exit frame (lazy-link stub or interpreter stub) wraps a
+    // full JitFrameLayout for the callee it was about to enter.
+    if (frame.isExitFrameLayout<CalledFromJitExitFrameLayout>()) {
+      return frameSize - JitFrameLayout::Size();
+    }
     frameSize -= ExitFrameLayout::Size();
     if (frame.exitFrame()->isWrapperExit()) {
       VMFunctionId id = frame.exitFrame()->footer()->functionId();

@@ -21,6 +21,7 @@ import android.content.Intent.EXTRA_EMAIL
 import android.content.Intent.EXTRA_STREAM
 import android.content.Intent.EXTRA_SUBJECT
 import android.content.Intent.EXTRA_TEXT
+import android.content.Intent.EXTRA_TITLE
 import android.content.Intent.FLAG_ACTIVITY_NEW_DOCUMENT
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -38,6 +39,7 @@ import android.util.TypedValue
 import android.view.accessibility.AccessibilityManager
 import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
+import androidx.annotation.DimenRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
@@ -139,6 +141,7 @@ fun Context.share(text: String, subject: String = getString(R.string.mozac_suppo
  * @param text the data to be shared [EXTRA_TEXT]
  * @param subject of the intent [EXTRA_SUBJECT]
  * @param actions Custom list of [ChooserAction] to be added to the share intent.
+ * @param thumbnailUri Optional [Uri] of an image to display in the share sheet preview.
  * @return true it is able to share false otherwise.
  */
 @RequiresApi(VERSION_CODES.UPSIDE_DOWN_CAKE)
@@ -146,12 +149,18 @@ fun Context.shareWithChooserActions(
     text: String,
     subject: String = getString(R.string.mozac_support_ktx_share_dialog_title),
     actions: Array<ChooserAction>,
+    thumbnailUri: Uri? = null,
 ): Boolean {
     return try {
         val intent = Intent(ACTION_SEND).apply {
             type = "text/plain"
             putExtra(EXTRA_SUBJECT, subject)
             putExtra(EXTRA_TEXT, text)
+            thumbnailUri?.let {
+                putExtra(EXTRA_TITLE, subject)
+                clipData = ClipData.newUri(contentResolver, subject, it)
+                addFlags(FLAG_GRANT_READ_URI_PERMISSION)
+            }
         }
         val shareIntent = intent.createChooserExcludingCurrentApp(
             this,
@@ -494,3 +503,17 @@ fun Context.isEdgeToEdgeDisabled(): Boolean =
 fun Context.doesDeviceHaveHinge(): Boolean =
     SDK_INT >= VERSION_CODES.R &&
         packageManager.hasSystemFeature(PackageManager.FEATURE_SENSOR_HINGE_ANGLE)
+
+/**
+ * Returns the pixel size for the given dimension resource ID.
+ *
+ * This is a wrapper around `resources.getDimensionPixelSize`, reducing verbosity when accessing
+ * dimension values from a [Context].
+ *
+ * @param resId Resource ID of the dimension.
+ * @return The pixel size corresponding to the given dimension resource.
+ */
+@Suppress("Resources.GetDimensionPixelSizeInsteadOfPixelSizeFor")
+fun Context.pixelSizeFor(
+    @DimenRes resId: Int,
+) = resources.getDimensionPixelSize(resId)

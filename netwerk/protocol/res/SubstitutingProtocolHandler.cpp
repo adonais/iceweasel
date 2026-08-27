@@ -341,8 +341,8 @@ nsresult SubstitutingProtocolHandler::CollectSubstitutions(
     }
     SubstitutionMapping substitution = {mScheme,
                                         nsCString(substitutionEntry.GetKey()),
-                                        serialized, entry.flags};
-    aMappings.AppendElement(substitution);
+                                        std::move(serialized), entry.flags};
+    aMappings.AppendElement(std::move(substitution));
   }
 
   return NS_OK;

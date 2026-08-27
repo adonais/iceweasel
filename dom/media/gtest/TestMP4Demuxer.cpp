@@ -886,7 +886,7 @@ TEST(MP4Demuxer, VideoInfoMdcvOnly)
 
   ASSERT_TRUE(info.mHDRMetadata.isSome());
   EXPECT_TRUE(info.mHDRMetadata->mSmpte2086.isSome());
-  EXPECT_TRUE(info.mHDRMetadata->mContentLightLevel.isNothing());
+  EXPECT_TRUE(info.mHDRMetadata->mContentLightLevel.isSome());
 }
 
 TEST(MP4Demuxer, VideoInfoClliOnly)
@@ -906,7 +906,7 @@ TEST(MP4Demuxer, VideoInfoClliOnly)
   ASSERT_NS_SUCCEEDED(info.Update(&track, &video));
 
   ASSERT_TRUE(info.mHDRMetadata.isSome());
-  EXPECT_TRUE(info.mHDRMetadata->mSmpte2086.isNothing());
+  EXPECT_TRUE(info.mHDRMetadata->mSmpte2086.isSome());
   ASSERT_TRUE(info.mHDRMetadata->mContentLightLevel.isSome());
   const auto& cll = info.mHDRMetadata->mContentLightLevel.value();
   EXPECT_EQ(cll.maxContentLightLevel, 500u);

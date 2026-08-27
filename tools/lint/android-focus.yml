@@ -7,6 +7,7 @@ android-focus:
     support-files:
         - 'mobile/android/**/Makefile.in'
         - 'mobile/android/config/**'
+        - 'mobile/android/shared-lint.xml'
         - 'mobile/android/gradle.configure'
         - 'mobile/android/**/moz.build'
         - '**/*.gradle'

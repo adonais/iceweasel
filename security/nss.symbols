@@ -361,6 +361,7 @@ PK11_GetKeyGen
 PK11_GetLowLevelKeyIDForPrivateKey
 PK11_GetMechanism
 PK11_GetModInfo
+PK11_GetModuleID
 PK11_GetModuleURI
 PK11_GetNextSafe
 PK11_GetNextSymKey
@@ -585,6 +586,7 @@ SECMOD_LoadModule
 SECMOD_LoadUserModule
 SECMOD_LoadUserModuleWithFunction
 SECMOD_LockedModuleHasRemovableSlots
+SECMOD_LookupSlot
 SECMOD_OpenUserDB
 SECMOD_PubCipherFlagstoInternal
 SECMOD_PubMechFlagstoInternal

@@ -61,6 +61,7 @@
   border-inline-start-style: dotted;
 }
 
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 #diagram-container-table tbody td:has(+ td.same-document-nav) {
   border-inline-end-style: dotted;
 }
@@ -82,11 +83,13 @@
   );
 }
 
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 #diagram-container-table td:has(:popover-open) button {
   background-color: var(--theme-selection-background);
   color: var(--theme-selection-color);
 }
 
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 #diagram-container-table td:has(:popover-open) {
   anchor-name: --selected-session-history-entry-info;
 }

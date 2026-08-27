@@ -41,7 +41,6 @@ def is_release_promotion_available(parameters):
                 "enum": [
                     "bump-main",
                     "bump-esr153",
-                    "early-to-late-beta",
                     "main-to-beta",
                     "beta-to-release",
                     "release-to-esr",
@@ -80,6 +79,10 @@ def is_release_promotion_available(parameters):
                 "type": "integer",
                 "description": "Shipit merge automation ID for marking as merged.",
             },
+            "update-clobber-file": {
+                "type": "boolean",
+                "description": "Update clobber file",
+            },
         },
         "required": ["behavior"],
     },
@@ -104,6 +107,7 @@ def merge_automation_action(parameters, graph_config, input, task_group_id, task
         "push",
         "fetch-version-from",
         "merge-automation-id",
+        "update-clobber-file",
     ]:
         if input.get(field):
             parameters["merge_config"][field] = input[field]

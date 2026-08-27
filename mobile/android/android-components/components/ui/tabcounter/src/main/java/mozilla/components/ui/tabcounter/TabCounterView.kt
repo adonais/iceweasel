@@ -19,6 +19,7 @@ import android.widget.TextView
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.view.isVisible
+import mozilla.components.support.ktx.android.content.pixelSizeFor
 import mozilla.components.support.utils.DrawableUtils
 import mozilla.components.ui.tabcounter.databinding.MozacUiTabcounterLayoutBinding
 import java.text.NumberFormat
@@ -289,7 +290,7 @@ class TabCounterView @JvmOverloads constructor(
         }
 
         val counterBoxWidth =
-            context.resources.getDimensionPixelSize(R.dimen.mozac_tab_counter_box_width_height)
+            context.pixelSizeFor(R.dimen.mozac_tab_counter_box_width_height)
         val textSize = newRatio * counterBoxWidth
         counterText.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize)
         counterText.setTypeface(null, Typeface.BOLD)

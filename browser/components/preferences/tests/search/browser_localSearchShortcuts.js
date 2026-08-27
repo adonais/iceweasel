@@ -24,7 +24,7 @@ add_task(async function test_visible_rows() {
 
   Assert.equal(
     engineList.children.length,
-    engines.length + UrlbarUtils.LOCAL_SEARCH_MODES.length,
+    engines.length + UrlbarShared.LOCAL_SEARCH_MODES.length,
     "Expected number of rows"
   );
 

@@ -1,0 +1,15 @@
+//error: cycle(s) detected in manager/manages hierarchy: `Pcyclecheck_Parent -> Pcyclecheck_Child -> Pcyclecheck_Grandchild -> Pcyclecheck_Parent'
+//error: |manages| declaration in protocol `Pcyclecheck_Grandchild' does not match any |manager| declaration in protocol `Pcyclecheck_Parent'
+
+include protocol Pcyclecheck_Child;
+include protocol Pcyclecheck_Parent;
+
+protocol Pcyclecheck_Grandchild {
+    manager Pcyclecheck_Child;
+    manages Pcyclecheck_Parent;
+
+child:
+    async Pcyclecheck_Parent();
+    async __delete__();
+};
+

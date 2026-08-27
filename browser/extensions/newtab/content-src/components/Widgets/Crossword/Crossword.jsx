@@ -12,13 +12,14 @@ import React, {
 } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { useIntersectionObserver, useSizeSubmenu } from "../../../lib/utils";
+import { useSizeSubmenu } from "../../../lib/utils";
 import {
   WIDGET_REGISTRY,
   resolveWidgetSize,
   resolveCrosswordEndpoint,
 } from "common/WidgetsRegistry.mjs";
 import { MoveSubmenu } from "../MoveSubmenu";
+import { useWidgetTelemetry } from "../useWidgetTelemetry";
 
 const USER_ACTION_TYPES = {
   CHANGE_SIZE: "change_size",
@@ -101,6 +102,17 @@ const MENU_ACTION_ITEMS = [
   },
 ];
 
+// This allow list allows us to filter out the echos coming from context-menu interactions,
+// as well as per-cell/per-keystroke actions which were creating noisy telemetry event dispatches.
+// This way, only the necessary events are sent to Glean.
+const INTERACTION_TELEMETRY_ALLOWLIST = new Set([
+  "play_started",
+  "hint_revealed",
+  "related_article_clicked",
+  "admire_crossword_clicked",
+  "endgame_reveal_incorrect",
+]);
+
 const CROSSWORD_ENTRY = WIDGET_REGISTRY.find(w => w.id === "crossword");
 
 // Flipped to true the first time the user interacts with the crossword. Used to
@@ -117,8 +129,15 @@ function Crossword({
   const widgetSize = resolveWidgetSize(CROSSWORD_ENTRY, prefs);
   const hasInteracted = prefs[PREF_CROSSWORD_INTERACTION];
   const crosswordEndpoint = resolveCrosswordEndpoint(prefs);
-  const impressionFired = useRef(false);
   const iframeRef = useRef(null);
+
+  const { impressionRef, recordUserAction, recordEnabled } = useWidgetTelemetry(
+    {
+      dispatch,
+      widget: CROSSWORD_ENTRY,
+      widgetSize,
+    }
+  );
 
   // Set once the widget reports the puzzle is finished, so menu actions that
   // only apply to an in-progress game (Solve puzzle) can be hidden.
@@ -210,18 +229,11 @@ function Crossword({
           break;
         case EVENT_TYPES.PUZZLE_COMPLETED:
           setPuzzleCompleted(true);
-          dispatch(
-            ac.AlsoToMain({
-              type: at.WIDGETS_USER_EVENT,
-              data: {
-                widget_name: "crossword",
-                widget_source: "iframe",
-                user_action: "puzzle_completed",
-                action_value: payload.hintsTaken,
-                widget_size: widgetSize,
-              },
-            })
-          );
+          recordUserAction("puzzle_completed", {
+            source: "iframe",
+            value: payload.hintsTaken,
+            alsoToMain: true,
+          });
           break;
         case EVENT_TYPES.INTERACTION:
           // Viewing the completed grid or opening the all-clues panel both need
@@ -229,25 +241,21 @@ function Crossword({
           if (LARGE_LAYOUT_INTERACTIONS.has(payload.action)) {
             setShowLarge(true);
           }
+          // Flip the "New" badge pref for every real interaction, but only
+          // forward the curated allowlist to Glean (see the allowlist comment).
           handleInteraction();
-          dispatch(
-            ac.AlsoToMain({
-              type: at.WIDGETS_USER_EVENT,
-              data: {
-                widget_name: "crossword",
-                widget_source: "iframe",
-                user_action: "interaction",
-                action_value: payload.action,
-                widget_size: widgetSize,
-              },
-            })
-          );
+          if (INTERACTION_TELEMETRY_ALLOWLIST.has(payload.action)) {
+            recordUserAction(payload.action, {
+              source: "iframe",
+              alsoToMain: true,
+            });
+          }
           break;
         default:
           break;
       }
     },
-    [dispatch, handleInteraction, widgetSize]
+    [recordUserAction, handleInteraction]
   );
 
   // Listen for events from the widget, discarding anything that fails origin,
@@ -286,39 +294,10 @@ function Crossword({
     action => {
       handleInteraction();
       postMenuAction(action);
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "crossword",
-            widget_source: "context_menu",
-            user_action: "menu_action",
-            action_value: action,
-            widget_size: widgetSize,
-          },
-        })
-      );
+      recordUserAction(action, { source: "context_menu" });
     },
-    [handleInteraction, postMenuAction, dispatch, widgetSize]
+    [handleInteraction, postMenuAction, recordUserAction]
   );
-
-  const handleIntersection = useCallback(() => {
-    if (impressionFired.current) {
-      return;
-    }
-    impressionFired.current = true;
-    dispatch(
-      ac.AlsoToMain({
-        type: at.WIDGETS_IMPRESSION,
-        data: {
-          widget_name: "crossword",
-          widget_size: widgetSize,
-        },
-      })
-    );
-  }, [dispatch, widgetSize]);
-
-  const widgetRef = useIntersectionObserver(handleIntersection);
 
   function handleCrosswordHide() {
     batch(() => {
@@ -328,17 +307,7 @@ function Crossword({
           data: { name: CROSSWORD_ENTRY.enabledPref, value: false },
         })
       );
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_ENABLED,
-          data: {
-            widget_name: "crossword",
-            widget_source: "context_menu",
-            enabled: false,
-            widget_size: widgetSize,
-          },
-        })
-      );
+      recordEnabled(false, { source: "context_menu" });
     });
   }
 
@@ -352,21 +321,14 @@ function Crossword({
             data: { name: CROSSWORD_ENTRY.sizePref, value: size },
           })
         );
-        dispatch(
-          ac.OnlyToMain({
-            type: at.WIDGETS_USER_EVENT,
-            data: {
-              widget_name: "crossword",
-              widget_source: "context_menu",
-              user_action: USER_ACTION_TYPES.CHANGE_SIZE,
-              action_value: size,
-              widget_size: size,
-            },
-          })
-        );
+        recordUserAction(USER_ACTION_TYPES.CHANGE_SIZE, {
+          source: "context_menu",
+          value: size,
+          size,
+        });
       });
     },
-    [dispatch, handleInteraction]
+    [dispatch, handleInteraction, recordUserAction]
   );
 
   const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
@@ -382,17 +344,7 @@ function Crossword({
           },
         })
       );
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "crossword",
-            widget_source: "context_menu",
-            user_action: "learn_more",
-            widget_size: widgetSize,
-          },
-        })
-      );
+      recordUserAction("learn_more", { source: "context_menu" });
     });
   }
 
@@ -407,26 +359,14 @@ function Crossword({
           },
         })
       );
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "crossword",
-            widget_source: "context_menu",
-            user_action: "powered_by_particle",
-            widget_size: widgetSize,
-          },
-        })
-      );
+      recordUserAction("powered_by_particle", { source: "context_menu" });
     });
   }
 
   return (
     <article
       className={`crossword widget col-4 ${displaySize}-widget`}
-      ref={el => {
-        widgetRef.current = [el];
-      }}
+      ref={impressionRef}
     >
       <div className="crossword-title-wrapper">
         <div className="crossword-badge-title-wrapper">

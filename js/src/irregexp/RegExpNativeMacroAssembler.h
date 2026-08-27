@@ -82,8 +82,8 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   virtual void CheckBitInTable(Handle<ByteArray> table, Label* on_bit_set);
   virtual void SkipUntilBitInTable(int cp_offset, Handle<ByteArray> table,
                                    Handle<ByteArray> nibble_table,
-                                   int advance_by, Label* on_match,
-                                   Label* on_no_match);
+                                   int advance_by, int bounds_check_offset,
+                                   Label* on_match, Label* on_no_match);
   virtual bool SkipUntilBitInTableUseSimd(int advance_by);
   virtual void CheckSpecialClassRanges(StandardCharacterSet type,
                                        Label* on_no_match);
@@ -92,10 +92,6 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   virtual void CheckNotBackReferenceIgnoreCase(int start_reg,
                                                bool read_backward, bool unicode,
                                                Label* on_no_match);
-
-  virtual void LoadCurrentCharacterImpl(int cp_offset, Label* on_end_of_input,
-                                        bool check_bounds, int characters,
-                                        int eats_at_least);
 
   virtual void AdvanceRegister(int reg, int by);
   virtual void IfRegisterGE(int reg, int comparand, Label* if_ge);

@@ -28,6 +28,10 @@ error_help.set_prefix(f"*** ERROR *** {script_name} did not complete successfull
 repo_type = detect_repo_type()
 
 
+class FastForwardError(Exception):
+    pass
+
+
 def early_exit_handler():
     error_help.print_help()
 
@@ -81,16 +85,14 @@ def find_base_commit(
         f"git merge-base {base_commit_sha} {target_branch_head}", libwebrtc_repo_path
     )
     if len(stdout_lines) != 1:
-        error_help.set_help("Unable to find merge-base in find_base_commit")
-        sys.exit(1)
+        raise FastForwardError("Unable to find merge-base in find_base_commit")
     base_commit_sha = stdout_lines[0]
     # now make it a short hash
     stdout_lines = run_git(
         f"git rev-parse --short {base_commit_sha}", libwebrtc_repo_path
     )
     if len(stdout_lines) != 1:
-        error_help.set_help("Unable to find merge-base in find_base_commit")
-        sys.exit(1)
+        raise FastForwardError("Unable to find merge-base in find_base_commit")
     base_commit_sha = stdout_lines[0]
     print(f"adjusted base_commit_sha: {base_commit_sha}")
     return base_commit_sha
@@ -107,10 +109,9 @@ def find_next_commit(
     )
     line_cnt = len(stdout_lines)
     if line_cnt == 0:
-        error_help.set_help(
+        raise FastForwardError(
             "No information was returned from 'git log' in find_next_commit"
         )
-        sys.exit(1)
     return stdout_lines[1] if len(stdout_lines) > 1 else stdout_lines[0]
 
 
@@ -194,12 +195,123 @@ def write_commit_message_file(
         ofile.write(original_upstream_commit_msg)
 
 
-if __name__ == "__main__":
+def fast_forward_libwebrtc(
+    target_path,
+    state_path,
+    log_path,
+    tmp_path,
+    script_path,
+    repo_path,
+    branch,
+    commit_bug_number,
+    target_branch_head,
+):
     # first, check which repo we're in, git or hg
     if repo_type is None or not isinstance(repo_type, RepoType):
         print("Unable to detect repo (git or hg)")
         sys.exit(1)
 
+    # ensure the log and tmp directories exist
+    os.makedirs(log_path, exist_ok=True)
+    os.makedirs(tmp_path, exist_ok=True)
+
+    # check the resume file
+    resume_state_filename = os.path.join(state_path, "fast_forward.resume")
+    resume_state = ""
+    if os.path.exists(resume_state_filename):
+        resume_state = get_last_line(resume_state_filename).strip()
+    print(f"resume_state: '{resume_state}'")
+
+    skip_to = "run"
+    if len(resume_state) == 0:
+        # Check for modified files and abort if present.
+        if repo_type == RepoType.GIT:
+            stdout_lines = git_status(".", target_path)
+        else:
+            stdout_lines = run_shell(
+                f'hg status --exclude "{target_path}/**.orig" {target_path}'
+            )
+        if len(stdout_lines) != 0:
+            print("There are modified files in the checkout. Cowardly aborting!")
+            print("\n".join(stdout_lines))
+            sys.exit(1)
+
+        # Completely clean the checkout before proceeding
+        if repo_type == RepoType.GIT:
+            run_shell("git restore --staged :/ && git restore :/ && git clean -fd")
+        else:
+            run_shell("hg update -C -r . && hg purge")
+    else:
+        skip_to = resume_state
+        if repo_type == RepoType.GIT:
+            run_git(f"git restore {target_path}/README.mozilla.last-vendor", ".")
+        else:
+            run_hg(f"hg revert -C {target_path}/README.mozilla.last-vendor")
+
+    # register the exit handler so a failure reports the error help.
+    atexit.register(early_exit_handler)
+
+    try:
+        next_commit_sha = find_next_commit(repo_path, target_branch_head)
+    except FastForwardError as e:
+        error_help.set_help(str(e))
+        sys.exit(1)
+    print(f"next_commit_sha: {next_commit_sha}")
+    print(f"   resume_state: {resume_state}")
+    print(f"        skip_to: {skip_to}")
+
+    commit_msg_filename = os.path.join(tmp_path, "commit_msg.txt")
+
+    if skip_to == "run":
+        update_resume_state("resume2", resume_state_filename)
+        rebase_mozlibwebrtc_stack(
+            repo_path,
+            log_path,
+            branch,
+            next_commit_sha,
+        )
+
+    if skip_to == "resume2":
+        skip_to = "run"
+    if skip_to == "run":
+        update_resume_state("resume3", resume_state_filename)
+        write_commit_message_file(
+            repo_path,
+            state_path,
+            tmp_path,
+            next_commit_sha,
+            commit_bug_number,
+            commit_msg_filename,
+        )
+
+    if skip_to == "resume3":
+        skip_to = "run"
+    if skip_to == "run":
+        vendor_and_commit(
+            script_path,
+            repo_path,
+            branch,
+            next_commit_sha,
+            target_path,
+            state_path,
+            log_path,
+            commit_msg_filename,
+        )
+
+    update_resume_state("", resume_state_filename)
+
+    no_op_msg_filename = os.path.join(
+        state_path, f"{next_commit_sha}.no-op-cherry-pick-msg"
+    )
+    if os.path.exists(no_op_msg_filename):
+        os.remove(no_op_msg_filename)
+
+    # unregister the exit handler so the normal exit doesn't falsely
+    # report as an error.
+    atexit.unregister(early_exit_handler)
+
+
+if __name__ == "__main__":
     default_target_dir = "third_party/libwebrtc"
     default_state_dir = ".moz-fast-forward"
     default_log_dir = ".moz-fast-forward/logs"
@@ -259,98 +371,14 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # ensure the log and tmp directories exist
-    os.makedirs(args.log_path, exist_ok=True)
-    os.makedirs(args.tmp_path, exist_ok=True)
-
-    # check the resume file
-    resume_state_filename = os.path.join(args.state_path, "fast_forward.resume")
-    resume_state = ""
-    if os.path.exists(resume_state_filename):
-        resume_state = get_last_line(resume_state_filename).strip()
-    print(f"resume_state: '{resume_state}'")
-
-    skip_to = "run"
-    if len(resume_state) == 0:
-        # Check for modified files and abort if present.
-        if repo_type == RepoType.GIT:
-            stdout_lines = git_status(".", args.target_path)
-        else:
-            stdout_lines = run_shell(
-                f'hg status --exclude "{args.target_path}/**.orig" {args.target_path}'
-            )
-        if len(stdout_lines) != 0:
-            print("There are modified files in the checkout. Cowardly aborting!")
-            print("\n".join(stdout_lines))
-            sys.exit(1)
-
-        # Completely clean the checkout before proceeding
-        if repo_type == RepoType.GIT:
-            run_shell("git restore --staged :/ && git restore :/ && git clean -fd")
-        else:
-            run_shell("hg update -C -r . && hg purge")
-    else:
-        skip_to = resume_state
-        if repo_type == RepoType.GIT:
-            run_git(f"git restore {args.target_path}/README.mozilla.last-vendor", ".")
-        else:
-            run_hg(f"hg revert -C {args.target_path}/README.mozilla.last-vendor")
-
-    # register the exit handler after the arg parser completes so '--help' doesn't exit with
-    # an error.
-    atexit.register(early_exit_handler)
-
-    next_commit_sha = find_next_commit(args.repo_path, args.target_branch_head)
-    print(f"next_commit_sha: {next_commit_sha}")
-    print(f"   resume_state: {resume_state}")
-    print(f"        skip_to: {skip_to}")
-
-    commit_msg_filename = os.path.join(args.tmp_path, "commit_msg.txt")
-
-    if skip_to == "run":
-        update_resume_state("resume2", resume_state_filename)
-        rebase_mozlibwebrtc_stack(
-            args.repo_path,
-            args.log_path,
-            args.branch,
-            next_commit_sha,
-        )
-
-    if skip_to == "resume2":
-        skip_to = "run"
-    if skip_to == "run":
-        update_resume_state("resume3", resume_state_filename)
-        write_commit_message_file(
-            args.repo_path,
-            args.state_path,
-            args.tmp_path,
-            next_commit_sha,
-            args.commit_bug_number,
-            commit_msg_filename,
-        )
-
-    if skip_to == "resume3":
-        skip_to = "run"
-    if skip_to == "run":
-        vendor_and_commit(
-            args.script_path,
-            args.repo_path,
-            args.branch,
-            next_commit_sha,
-            args.target_path,
-            args.state_path,
-            args.log_path,
-            commit_msg_filename,
-        )
-
-    update_resume_state("", resume_state_filename)
-
-    no_op_msg_filename = os.path.join(
-        args.state_path, f"{next_commit_sha}.no-op-cherry-pick-msg"
+    fast_forward_libwebrtc(
+        args.target_path,
+        args.state_path,
+        args.log_path,
+        args.tmp_path,
+        args.script_path,
+        args.repo_path,
+        args.branch,
+        args.commit_bug_number,
+        args.target_branch_head,
     )
-    if os.path.exists(no_op_msg_filename):
-        os.remove(no_op_msg_filename)
-
-    # unregister the exit handler so the normal exit doesn't falsely
-    # report as an error.
-    atexit.unregister(early_exit_handler)

@@ -141,10 +141,9 @@ function checkDetails(details) {
   ok(expect.origin === originUrlSuffix || originUrlSuffix.startsWith(expect.origin), `origin url is correct`);
   is(details.parentFrameId, expect.parentFrameId, "parentFrameId matches");
   is(expect.tabId ? tabId : -1, details.tabId, "tabId matches");
-  // TODO: When expect.toplevel is "undefined", the details.frameId is supposed
-  // to be -1.
-  // details in https://phabricator.services.mozilla.com/D182705#inline-1030548.
-  if (expect.toplevel === undefined || expect.toplevel) {
+  if (expect.toplevel === undefined) {
+    is(details.frameId, -1, "expect -1 frameId");
+  } else if (expect.toplevel) {
     is(details.frameId, 0, "expect zero frameId");
   } else {
     ok(details.frameId > 0, "expect non-zero frameId");

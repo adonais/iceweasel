@@ -30,6 +30,8 @@ const SKIP_SPLASH_IF_LOADED_PREF =
 const DID_SEE_ABOUT_WELCOME_PREF = "trailhead.firstrun.didSeeAboutWelcome";
 const PREONBOARDING_ENABLED_PREF = "browser.preonboarding.enabled";
 const SPLASH_SHOWN_PREF = "browser.preonboarding.splashShown";
+const ABOUT_WELCOME_ENABLED_PREF = "browser.aboutwelcome.enabled";
+const WELCOME_URL_PREF = "startup.homepage_welcome_url";
 
 add_setup(async function () {
   do_get_profile();
@@ -52,14 +54,17 @@ function stubShow() {
 }
 
 // Establish the state under which the splash should show: gate on, Nimbus
-// enabled, the TOU modal not showing, a genuinely new user, and preonboarding
-// enabled so the default message's screens are available.
+// enabled, about:welcome showing for a first-run profile, the TOU modal not
+// showing, a genuinely new user, and preonboarding enabled so the default
+// message's screens are available.
 function stubSplashWillShow() {
   sinon.stub(ExperimentAPI, "enabled").get(() => true);
   sinon.stub(TelemetryReportingPolicy, "willShowTOUModal").returns(false);
   sinon
     .stub(TelemetryReportingPolicy, "hasUserResolvedTermsOfUse")
     .returns(false);
+  sinon.stub(PreonboardingSplash.Policy, "isFirstRunProfile").returns(true);
+  Services.prefs.setCharPref(WELCOME_URL_PREF, "about:welcome");
   Services.prefs.setBoolPref(EXPERIMENTS_GATE_PREF, true);
   // Whether experiments have already loaded depends on the test harness, so
   // deterministically disable the skip-if-loaded suppression except where a
@@ -72,6 +77,8 @@ function stubSplashWillShow() {
 
 function restoreState() {
   sinon.restore();
+  Services.prefs.clearUserPref(WELCOME_URL_PREF);
+  Services.prefs.clearUserPref(ABOUT_WELCOME_ENABLED_PREF);
   Services.prefs.clearUserPref(EXPERIMENTS_GATE_PREF);
   Services.prefs.clearUserPref(SKIP_SPLASH_IF_LOADED_PREF);
   Services.prefs.clearUserPref(PREONBOARDING_ENABLED_PREF);
@@ -187,6 +194,83 @@ add_task(async function test_no_splash_for_returning_user() {
   );
 
   restoreState();
+});
+
+add_task(async function test_no_splash_when_aboutwelcome_will_not_show() {
+  // Not a first-run profile startup
+  const { showSpotlight } = stubShow();
+  stubSplashWillShow();
+  PreonboardingSplash.Policy.isFirstRunProfile.returns(false);
+
+  PreonboardingSplash.maybeShowStartupSplash();
+
+  Assert.equal(
+    showSpotlight.callCount,
+    0,
+    "splash is not shown when the first window did not open the welcome page"
+  );
+
+  restoreState();
+
+  // The first-run page is not about:welcome, e.g. local builds whose
+  // unofficial branding sets an empty welcome URL.
+  const { showSpotlight: show2 } = stubShow();
+  stubSplashWillShow();
+  Services.prefs.setCharPref(WELCOME_URL_PREF, "");
+
+  PreonboardingSplash.maybeShowStartupSplash();
+
+  Assert.equal(
+    show2.callCount,
+    0,
+    "splash is not shown when the welcome URL is not about:welcome"
+  );
+
+  restoreState();
+
+  // about:welcome is disabled outright
+  const { showSpotlight: show3 } = stubShow();
+  stubSplashWillShow();
+  Services.prefs.setBoolPref(ABOUT_WELCOME_ENABLED_PREF, false);
+
+  PreonboardingSplash.maybeShowStartupSplash();
+
+  Assert.equal(
+    show3.callCount,
+    0,
+    "splash is not shown when about:welcome is disabled"
+  );
+
+  restoreState();
+});
+
+add_task(async function test_splash_shown_when_aboutwelcome_is_multi_url() {
+  const { showSpotlight } = stubShow();
+  stubSplashWillShow();
+  Services.prefs.setCharPref(
+    WELCOME_URL_PREF,
+    "about:welcome|https://example.com"
+  );
+
+  PreonboardingSplash.maybeShowStartupSplash();
+
+  Assert.equal(
+    showSpotlight.callCount,
+    1,
+    "splash is shown when about:welcome is one of several pipe-joined welcome URLs"
+  );
+
+  restoreState();
+});
+
+add_task(async function test_isFirstRunProfile_reads_browser_handler() {
+  // Every other test stubs isFirstRunProfile, so test the real
+  // nsIBrowserHandler service here
+  Assert.equal(
+    typeof PreonboardingSplash.Policy.isFirstRunProfile(),
+    "boolean",
+    "PreonboardingSplash.Policy.isFirstRunProfile() reads nsIBrowserHandler.firstRunProfile"
+  );
 });
 
 add_task(async function test_splash_passes_only_loading_screen() {

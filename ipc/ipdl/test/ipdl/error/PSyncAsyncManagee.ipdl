@@ -1,0 +1,10 @@
+//error: protocol `PSyncAsyncManagee' requires more powerful send semantics than its manager `PSyncAsyncManager' provides
+
+include protocol PSyncAsyncManager;
+
+[ChildProc=any]
+sync protocol PSyncAsyncManagee {
+    manager PSyncAsyncManager;
+child:
+    async __delete__();
+};

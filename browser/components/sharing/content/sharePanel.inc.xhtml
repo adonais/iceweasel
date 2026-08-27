@@ -1,0 +1,73 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+<html:template id="template-share-panel">
+<panel id="share-panel"
+       class="panel-no-padding"
+       type="arrow"
+       role="dialog"
+       orient="vertical">
+  <panelmultiview id="share-panel-multiview"
+                  mainViewId="share-panel-mainView">
+    <panelview id="share-panel-mainView"
+               class="PanelUI-subView"
+               role="document"
+               mainview-with-header="true"
+               has-custom-header="true">
+      <hbox class="panel-header">
+        <html:h1>
+          <html:span data-l10n-id="share-panel-heading"></html:span>
+        </html:h1>
+      </hbox>
+      <toolbarseparator/>
+      <vbox class="panel-subview-body">
+        <toolbarbutton id="share-panel-copy-link"
+                        class="subviewbutton subviewbutton-iconic"
+                        data-l10n-id="share-panel-copy-link"/>
+        <toolbarbutton id="share-panel-os-share"
+                        class="subviewbutton subviewbutton-iconic"
+                        data-l10n-id="share-panel-os-share"/>
+        <toolbarbutton id="share-panel-mail"
+                        class="subviewbutton subviewbutton-iconic"
+                        data-l10n-id="share-panel-mail"/>
+        <toolbarbutton id="share-panel-screenshot"
+                        class="subviewbutton subviewbutton-iconic"
+                        data-l10n-id="share-panel-screenshot"/>
+        <toolbarbutton id="share-panel-qr-code"
+                        class="subviewbutton subviewbutton-iconic"
+                        data-l10n-id="share-panel-qr-code"/>
+        <toolbarbutton id="share-panel-send-to-device"
+                        class="subviewbutton subviewbutton-iconic"
+                        data-l10n-id="share-panel-send-to-device"/>
+      </vbox>
+    </panelview>
+
+    <panelview id="share-panel-deviceView"
+               class="PanelUI-subView"
+               data-l10n-id="share-panel-device-subview"
+               data-l10n-attrs="title">
+      <hbox class="panel-header">
+        <html:h1>
+          <html:span></html:span>
+        </html:h1>
+      </hbox>
+      <toolbarseparator/>
+      <vbox id="share-panel-deviceView-body" class="panel-subview-body"/>
+    </panelview>
+
+    <panelview id="share-panel-osShareView"
+               class="PanelUI-subView"
+               data-l10n-id="share-panel-os-share-subview"
+               data-l10n-attrs="title">
+      <hbox class="panel-header">
+        <html:h1>
+          <html:span></html:span>
+        </html:h1>
+      </hbox>
+      <toolbarseparator/>
+      <vbox id="share-panel-osShareView-body" class="panel-subview-body"/>
+    </panelview>
+  </panelmultiview>
+</panel>
+</html:template>

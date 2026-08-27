@@ -1,11 +1,17 @@
 [package]
 name = "itertools"
-version = "0.13.0"
+version = "0.14.999"
 edition = "2018"
 license = "MPL2.0"
 
 [lib]
 path = "lib.rs"
 
+[features]
+default = ["itertools/default"]
+use_alloc = ["itertools/use_alloc"]
+use_std = ["itertools/use_std"]
+
 [dependencies.itertools]
-version = "0.14"
+version = "0.15"
+default-features = false

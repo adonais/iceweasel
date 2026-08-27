@@ -42,12 +42,6 @@ class NativeMenuGtk : public NativeMenu {
   void OpenSubmenu(dom::Element* aMenuElement) override;
   void CloseSubmenu(dom::Element* aMenuElement) override;
   RefPtr<dom::Element> Element() override;
-  void AddObserver(NativeMenu::Observer* aObserver) override {
-    mObservers.AppendElement(aObserver);
-  }
-  void RemoveObserver(NativeMenu::Observer* aObserver) override {
-    mObservers.RemoveElement(aObserver);
-  }
 
   MOZ_CAN_RUN_SCRIPT void OnUnmap();
 
@@ -59,7 +53,6 @@ class NativeMenuGtk : public NativeMenu {
   bool mPoppedUp = false;
   RefPtr<GtkWidget> mNativeMenu;
   RefPtr<MenuModelGMenu> mMenuModel;
-  nsTArray<NativeMenu::Observer*> mObservers;
 };
 
 #ifdef MOZ_ENABLE_DBUS

@@ -14,6 +14,7 @@
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/dom/CSSTransition.h"
 #include "mozilla/dom/Document.h"
@@ -44,7 +45,8 @@ bool nsTransitionManager::UpdateTransitions(
   }
 
   MOZ_ASSERT(mPresContext->IsDynamic());
-  if (aNewStyle.StyleDisplay()->mDisplay == StyleDisplay::None) {
+  if (aNewStyle.StyleDisplay()->mDisplay == StyleDisplay::None &&
+      !StaticPrefs::layout_css_display_animations_enabled()) {
     StopAnimationsForElement(aElement, aPseudoRequest);
     return false;
   }

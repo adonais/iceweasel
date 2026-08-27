@@ -381,7 +381,7 @@
     results found in the page and the position the user is at. %1$d is the
     position, %2$d is the total number of results.
   -->
-  <string name="accessibility_find_in_page_result">\"%1$d ནང་ནས་ %1$d \"</string>
+  <string name="accessibility_find_in_page_result">%1$d ནང་ནས་ %2$d</string>
   <!-- String to be read by the accessibility service when focusing the next result button -->
   <string name="accessibility_next_result">ཤོག་ངོས་ཞོལ་མ།</string>
   <!-- String to be read by the accessibility service when focusing the previous result button -->

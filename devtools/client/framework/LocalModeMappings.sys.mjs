@@ -287,6 +287,13 @@ async function updateMappings(toolbox, startup = false) {
   }
 
   LocalModeMappings.emit("updated");
+
+  if (startup) {
+    // Record the number of permanent mappings being restored on DevTools opening
+    Glean.devtoolsLocalmodeMappings.count.set(
+      Object.keys(serverMappings).length
+    );
+  }
 }
 
 /**
@@ -469,6 +476,8 @@ function showLocalModeNotice(toolbox) {
 
         // Navigate to the mapping's URL
         await toolbox.commands.targetCommand.navigateTo(url + "/" + filename);
+
+        Glean.devtoolsLocalmodeMappings.addPermanentFromNotification.add(1);
       },
     });
 
@@ -490,6 +499,8 @@ function showLocalModeNotice(toolbox) {
         );
 
         await toolbox.commands.targetCommand.navigateTo(url + "/" + filename);
+
+        Glean.devtoolsLocalmodeMappings.addTransient.add(1);
       },
     });
   }

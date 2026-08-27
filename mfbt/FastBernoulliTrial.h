@@ -5,11 +5,12 @@
 #ifndef mozilla_FastBernoulliTrial_h
 #define mozilla_FastBernoulliTrial_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/XorShift128PlusRNG.h"
+#include <stdint.h>
 
 #include <cmath>
-#include <stdint.h>
+
+#include "mozilla/Assertions.h"
+#include "mozilla/XorShift128PlusRNG.h"
 
 namespace mozilla {
 

@@ -1,12 +1,10 @@
 /* Any copyright is dedicated to the Public Domain.
    http://creativecommons.org/publicdomain/zero/1.0/ */
 
-const TOPIC_BROWSERGLUE_TEST = "browser-glue-test";
-const TOPICDATA_BROWSERGLUE_TEST = "force-ui-migration";
 const UI_VERSION = 173;
 
-const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"].getService(
-  Ci.nsIObserver
+const { ProfileDataUpgrader } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/ProfileDataUpgrader.sys.mjs"
 );
 
 function makePrincipal(origin) {
@@ -24,7 +22,6 @@ add_task(async function test_removeABAPerms() {
   });
 
   Services.perms.removeAll();
-  Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
 
   let pm = Services.perms;
 
@@ -56,11 +53,7 @@ add_task(async function test_removeABAPerms() {
     "Three permissions added"
   );
 
-  gBrowserGlue.observe(
-    null,
-    TOPIC_BROWSERGLUE_TEST,
-    TOPICDATA_BROWSERGLUE_TEST
-  );
+  ProfileDataUpgrader.upgrade(UI_VERSION, UI_VERSION + 1);
 
   let remaining = pm.getAllWithTypePrefix("3rdPartyFrameStorage^");
   Assert.equal(remaining.length, 1, "Only the cross-site permission remains");

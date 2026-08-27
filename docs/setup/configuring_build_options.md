@@ -288,9 +288,13 @@ with Debug Symbols <building-with-debug-symbols>`.
   test the different ifdef behaviors. To do a full beta simulation see
   [Sheriffing/How To/Beta simulations](https://wiki.mozilla.org/Sheriffing/How_To/Beta_simulations).
 
-- `early-beta`
-- `late-beta`
+- `beta`
 - `release`
+
+`early-beta` and `late-beta` are deprecated aliases of `beta`, accepted only
+transitionally so that existing mozconfigs keep working. The distinct early and
+late beta periods are being phased out, so both do exactly what `beta` does.
+Update your mozconfig to `--as-milestone=beta`; the aliases will be removed.
 
 ### Tests
 

@@ -19,7 +19,7 @@ PR_BEGIN_EXTERN_C
 ** NSPR's name, this should persist until at least the turn of the
 ** century.
 */
-#define PR_NAME     "NSPR"
+#define PR_NAME "NSPR"
 
 /*
 ** NSPR's version is used to determine the likelihood that the version you
@@ -29,11 +29,11 @@ PR_BEGIN_EXTERN_C
 ** The format of the version string is
 **     "<major version>.<minor version>[.<patch level>] [<Beta>]"
 */
-#define PR_VERSION  "4.39"
-#define PR_VMAJOR   4
-#define PR_VMINOR   39
-#define PR_VPATCH   0
-#define PR_BETA     PR_FALSE
+#define PR_VERSION "4.40"
+#define PR_VMAJOR 4
+#define PR_VMINOR 40
+#define PR_VPATCH 0
+#define PR_BETA PR_FALSE
 
 /*
 ** PRVersionCheck
@@ -61,13 +61,14 @@ typedef PRBool (*PRVersionCheck)(const char*);
 ** Note that NSPR has no cooperating dependencies.
 */
 
-NSPR_API(PRBool) PR_VersionCheck(const char *importedVersion);
+NSPR_API(PRBool)
+PR_VersionCheck(const char* importedVersion);
 
 /*
  * Returns a const string of the NSPR library version.
  */
-NSPR_API(const char*) PR_GetVersion(void);
-
+NSPR_API(const char*)
+PR_GetVersion(void);
 
 /************************************************************************/
 /*******************************INITIALIZATION***************************/
@@ -79,8 +80,8 @@ NSPR_API(const char*) PR_GetVersion(void);
 **
 ** The specificaiton of 'maxPTDs' is ignored.
 */
-NSPR_API(void) PR_Init(
-    PRThreadType type, PRThreadPriority priority, PRUintn maxPTDs);
+NSPR_API(void)
+PR_Init(PRThreadType type, PRThreadPriority priority, PRUintn maxPTDs);
 
 /*
 ** And alternate form of initialization, one that may become the default if
@@ -100,15 +101,16 @@ NSPR_API(void) PR_Init(
 ** function, 'prmain'.
 */
 
-typedef PRIntn (PR_CALLBACK *PRPrimordialFn)(PRIntn argc, char **argv);
+typedef PRIntn(PR_CALLBACK* PRPrimordialFn)(PRIntn argc, char** argv);
 
-NSPR_API(PRIntn) PR_Initialize(
-    PRPrimordialFn prmain, PRIntn argc, char **argv, PRUintn maxPTDs);
+NSPR_API(PRIntn)
+PR_Initialize(PRPrimordialFn prmain, PRIntn argc, char** argv, PRUintn maxPTDs);
 
 /*
 ** Return PR_TRUE if PR_Init has already been called.
 */
-NSPR_API(PRBool) PR_Initialized(void);
+NSPR_API(PRBool)
+PR_Initialized(void);
 
 /*
  * Perform a graceful shutdown of NSPR.  PR_Cleanup() may be called by
@@ -126,57 +128,66 @@ NSPR_API(PRBool) PR_Initialized(void);
  * or PR_FAILURE if the calling thread of this function is not the
  * primordial thread.
  */
-NSPR_API(PRStatus) PR_Cleanup(void);
+NSPR_API(PRStatus)
+PR_Cleanup(void);
 
 /*
 ** Disable Interrupts
 **      Disables timer signals used for pre-emptive scheduling.
 */
-NSPR_API(void) PR_DisableClockInterrupts(void);
+NSPR_API(void)
+PR_DisableClockInterrupts(void);
 
 /*
 ** Enables Interrupts
 **      Enables timer signals used for pre-emptive scheduling.
 */
-NSPR_API(void) PR_EnableClockInterrupts(void);
+NSPR_API(void)
+PR_EnableClockInterrupts(void);
 
 /*
 ** Block Interrupts
 **      Blocks the timer signal used for pre-emptive scheduling
 */
-NSPR_API(void) PR_BlockClockInterrupts(void);
+NSPR_API(void)
+PR_BlockClockInterrupts(void);
 
 /*
 ** Unblock Interrupts
 **      Unblocks the timer signal used for pre-emptive scheduling
 */
-NSPR_API(void) PR_UnblockClockInterrupts(void);
+NSPR_API(void)
+PR_UnblockClockInterrupts(void);
 
 /*
 ** Create extra virtual processor threads. Generally used with MP systems.
 */
-NSPR_API(void) PR_SetConcurrency(PRUintn numCPUs);
+NSPR_API(void)
+PR_SetConcurrency(PRUintn numCPUs);
 
 /*
 ** Control the method and size of the file descriptor (PRFileDesc*)
 ** cache used by the runtime. Setting 'high' to zero is for performance,
 ** any other value probably for debugging (see memo on FD caching).
 */
-NSPR_API(PRStatus) PR_SetFDCacheSize(PRIntn low, PRIntn high);
+NSPR_API(PRStatus)
+PR_SetFDCacheSize(PRIntn low, PRIntn high);
 
 /*
  * Cause an immediate, nongraceful, forced termination of the process.
  * It takes a PRIntn argument, which is the exit status code of the
  * process.
  */
-NSPR_API(void) PR_ProcessExit(PRIntn status);
+NSPR_API(void)
+PR_ProcessExit(PRIntn status);
 
 /*
 ** Abort the process in a non-graceful manner. This will cause a core file,
 ** call to the debugger or other moral equivalent as well as causing the
 ** entire process to stop.
 */
-NSPR_API(void) PR_Abort(void);
+NSPR_API(void)
+PR_Abort(void);
 
 /*
  ****************************************************************
@@ -192,21 +203,15 @@ typedef struct PRCallOnceType {
     PRStatus status;
 } PRCallOnceType;
 
-typedef PRStatus (PR_CALLBACK *PRCallOnceFN)(void);
+typedef PRStatus(PR_CALLBACK* PRCallOnceFN)(void);
 
-typedef PRStatus (PR_CALLBACK *PRCallOnceWithArgFN)(void *arg);
+typedef PRStatus(PR_CALLBACK* PRCallOnceWithArgFN)(void* arg);
 
-NSPR_API(PRStatus) PR_CallOnce(
-    PRCallOnceType *once,
-    PRCallOnceFN    func
-);
+NSPR_API(PRStatus)
+PR_CallOnce(PRCallOnceType* once, PRCallOnceFN func);
 
-NSPR_API(PRStatus) PR_CallOnceWithArg(
-    PRCallOnceType      *once,
-    PRCallOnceWithArgFN  func,
-    void                *arg
-);
-
+NSPR_API(PRStatus)
+PR_CallOnceWithArg(PRCallOnceType* once, PRCallOnceWithArgFN func, void* arg);
 
 PR_END_EXTERN_C
 

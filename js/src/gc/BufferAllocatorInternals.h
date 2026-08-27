@@ -49,7 +49,7 @@ static constexpr uint32_t FreeRegionCheckValue = 0xBFA110C3;
 template <size_t N, typename Word = size_t>
 class BitSetIter {
   using BitSet = mozilla::BitSet<N, Word>;
-  const BitSet& bitset;
+  BitSet bitset;
   size_t bit = 0;
 
  public:
@@ -183,12 +183,15 @@ class BufferAllocator::FreeLists::FreeRegionIter
 
 class BufferAllocator::ChunkLists::ChunkListIter
     : public BitSetIter<AllocSizeClasses + 1, uint32_t> {
-  ChunkLists& chunkLists;
+  ChunkListArray& lists;
 
  public:
   explicit ChunkListIter(ChunkLists& chunkLists)
-      : BitSetIter(chunkLists.available), chunkLists(chunkLists) {}
-  BufferChunkList& get() { return chunkLists.lists[getSizeClass()]; }
+      : BitSetIter(chunkLists.availableMixed | chunkLists.availableTenured),
+        lists(chunkLists.lists) {}
+  ChunkListIter(ChunkLists& chunkLists, const AvailableBitSet& bitSet)
+      : BitSetIter(bitSet), lists(chunkLists.lists) {}
+  BufferChunkList& get() { return lists[getSizeClass()]; }
   size_t getSizeClass() const { return BitSetIter::get(); }
   operator BufferChunkList&() { return get(); }
 };
@@ -297,6 +300,10 @@ struct AllocSpace {
     bool isEmpty = false;
     bool hasNurseryOwnedAllocs = false;
     size_t bytesFreed = 0;
+    // Total bytes in allocations that survived this sweep. Computed as a
+    // byproduct of the sweep's allocation-bitmap walk so callers can derive
+    // used/free/admin byte totals without a separate free-region walk.
+    size_t usedBytes = 0;
   };
   SweepResult sweep(BufferAllocator* allocator, FreeLists& freeLists,
                     SweepKind sweepKind, bool sweptAnyPreviously,
@@ -394,6 +401,11 @@ struct BufferChunk
   MainThreadOrGCTaskData<BufferAllocator::FreeLists> freeLists;
   MainThreadOrGCTaskData<bool> ownsFreeLists;
 
+  // Used and admin sizes after this chunk was last swept as part of a major
+  // collection.
+  MainThreadOrGCTaskData<size_t> usedBytesAfterSweep;
+  MainThreadOrGCTaskData<size_t> adminBytesAfterSweep;
+
   using SmallRegionIter = BitmapToBlockIter<SmallRegionBitmap::Iter,
                                             SmallRegionSize, SmallBufferRegion>;
   SmallRegionIter smallRegionIter() { return {this, smallRegionBitmap.ref()}; }
@@ -409,6 +421,11 @@ struct BufferChunk
 
   explicit BufferChunk(Zone* zone);
   ~BufferChunk();
+
+  BufferAllocator::ContentKind kind() const {
+    return hasNurseryOwnedAllocs ? BufferAllocator::ContentKind::Mixed
+                                 : BufferAllocator::ContentKind::Tenured;
+  }
 
   void setSmallBufferRegion(void* alloc, bool smallAlloc);
   bool isSmallBufferRegion(const void* alloc) const;

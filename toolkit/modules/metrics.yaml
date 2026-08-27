@@ -218,8 +218,6 @@ jsonfile:
           event's `value` parameter.
         type: string
     telemetry_mirror: Jsonfile_Load_Logins
-    no_lint:
-      - COMMON_PREFIX
 
   load_autofillprofiles:
     type: event
@@ -235,8 +233,6 @@ jsonfile:
     expires: never
     extra_keys: *jsonfile_load_extra
     telemetry_mirror: Jsonfile_Load_Autofillprofiles
-    no_lint:
-      - COMMON_PREFIX
 
 os.environment:
   allowed_app_sources:

@@ -13,6 +13,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
 let retVals = window.arguments[0];
 const { onAccept, onCancel } = retVals;
 
+document.l10n.setArgs(document.getElementById("clear-data-for-site-list"), {
+  site: retVals.hostOrBaseDomain,
+});
+
 document.addEventListener("dialogaccept", e => {
   e.preventDefault();
   lazy.ForgetAboutSite.removeDataFromBaseDomain(retVals.host).catch(
@@ -30,14 +34,4 @@ document.addEventListener("dialogcancel", e => {
   if (typeof onCancel === "function") {
     onCancel();
   }
-});
-
-window.addEventListener("load", () => {
-  document.l10n.setAttributes(
-    document.getElementById("clear-data-for-site-list"),
-    "clear-data-for-site-list",
-    {
-      site: retVals.hostOrBaseDomain,
-    }
-  );
 });

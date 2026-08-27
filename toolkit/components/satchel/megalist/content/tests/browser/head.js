@@ -222,8 +222,8 @@ async function checkNotificationInteractionTelemetry(
 function setInputValue(loginForm, fieldElement, value) {
   info(`Filling ${fieldElement} with value '${value}'.`);
   const field = loginForm.shadowRoot.querySelector(fieldElement);
-  field.input.value = value;
-  field.input.dispatchEvent(
+  field.inputEl.value = value;
+  field.inputEl.dispatchEvent(
     new InputEvent("input", {
       composed: true,
       bubbles: true,

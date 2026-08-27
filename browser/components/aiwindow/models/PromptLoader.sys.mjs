@@ -7,30 +7,47 @@
 import {
   getRemoteClient,
   selectMainConfig,
+  renderPrompt,
+  checkMajorVersion,
+  parseVersion,
   MODEL_PREF,
   FEATURE_MAJOR_VERSIONS,
   MODEL_FEATURES,
   PURPOSES,
   SERVICE_TYPES,
   GENERIC_MODEL_NAME,
-  parseVersion,
-  checkMajorVersion,
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
+import {
+  constructRealTimeInfoInjectionMessage,
+  getLocalIsoTime,
+  sanitizeUntrustedContent,
+} from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 import { Conversation } from "moz-src:///browser/components/aiwindow/models/Conversation.sys.mjs";
 
+/**
+ * @typedef {import("moz-src:///browser/components/aiwindow/models/Utils.sys.mjs").InferenceParams} InferenceParams
+ */
+
 const CUSTOM_PROMPTS_PREF = "browser.smartwindow.customPrompts";
 const MODEL_CHOICE_PREF = "browser.smartwindow.firstrun.modelChoice";
+
+// Core modules that define the assistant; if either is missing
+// buildChatSystemPrompt throws rather than serve a partial prompt. Others are
+// optional (e.g. model-details is model-specific and has no generic record).
+const REQUIRED_CHAT_MODULES = new Set(["identity", "response-rules"]);
 
 export const DEFAULT_PURPOSE = "default";
 export const FEATURE_PURPOSES = Object.freeze({
   [DEFAULT_PURPOSE]: PURPOSES.CHAT,
   [MODEL_FEATURES.CHAT]: PURPOSES.CHAT,
+  [MODEL_FEATURES.SMART_FORM_FILL]: PURPOSES.SMART_FORM_FILL,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER]:
     PURPOSES.CONVERSATION_STARTERS_SIDEBAR,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP]:
     PURPOSES.CONVERSATION_STARTERS_SIDEBAR,
   [MODEL_FEATURES.TITLE_GENERATION]: PURPOSES.TITLE_GENERATION,
+  [MODEL_FEATURES.TAB_GROUP_NAMING]: PURPOSES.TAB_GROUP_NAMING,
   [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM]:
     PURPOSES.MEMORY_GENERATION,
   [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM]:
@@ -62,23 +79,41 @@ function versionOf(record) {
   return version ? version.major * 1000000 + version.minor : 0;
 }
 
-// Find the module record a manifest entry points to: matching feature+module
-// and the entry's MAJOR version (Remote Settings keeps one record per major),
-// preferring the model-specific record over generic.
-function findModuleAtVersion(records, { feature, module, model, version }) {
-  const major = parseVersion(version)?.major;
-  const matching = records.filter(
-    r =>
-      r.kind === "module" &&
-      r.feature === feature &&
-      r.module === module &&
-      parseVersion(r.version)?.major === major
-  );
-  matching.sort((a, b) => versionOf(b) - versionOf(a));
+function pickRecord(records, predicate, { model, version } = {}) {
+  const requestedVersion = version == null ? null : parseVersion(version);
+  if (version != null && !requestedVersion) {
+    return null;
+  }
+  let matching = records.filter(predicate);
+
+  if (requestedVersion) {
+    matching = matching.filter(
+      r => parseVersion(r.version)?.major === requestedVersion.major
+    );
+  } else {
+    const maxVersion = Math.max(...matching.map(versionOf));
+    matching = matching.filter(r => versionOf(r) === maxVersion);
+  }
+
+  if (!matching.length) {
+    return null;
+  }
+
   return (
     (model && matching.find(r => r.model === model)) ||
     matching.find(r => r.model === GENERIC_MODEL_NAME) ||
     null
+  );
+}
+
+function findModule(
+  records,
+  { feature, module, options: { model, version = null } }
+) {
+  return pickRecord(
+    records,
+    r => r.kind === "module" && r.feature === feature && r.module === module,
+    { model, version }
   );
 }
 
@@ -97,22 +132,247 @@ function findParams(records, { feature, model }) {
   );
 }
 
+function findSkill(records, { name, model }) {
+  return pickRecord(records, r => r.kind === "skill" && r.name === name, {
+    model,
+  });
+}
+
+function listSkills(records, model) {
+  const byName = new Map();
+  for (const r of records) {
+    if (r.kind !== "skill") {
+      continue;
+    }
+    const isExactModel = model && r.model === model;
+    const isGenericModel = r.model === GENERIC_MODEL_NAME;
+    if (!isExactModel && !isGenericModel) {
+      continue;
+    }
+    const current = byName.get(r.name);
+    if (
+      !current ||
+      versionOf(r) > versionOf(current) ||
+      (versionOf(r) === versionOf(current) &&
+        current.model === GENERIC_MODEL_NAME &&
+        isExactModel)
+    ) {
+      byName.set(r.name, r);
+    }
+  }
+  return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function renderTemplate(rawContent, substitutions = {}) {
+  let rendered = rawContent;
+  for (const [name, value] of Object.entries(substitutions)) {
+    rendered = rendered.replaceAll(`{${name}}`, value ?? "");
+  }
+  return rendered;
+}
+
 /**
- * Reads Remote Settings and runs model-selection logic to pick the single
- * config record for a feature. Throws if no records exist for the feature or
- * if no record matches the current major version / model-choice prefs.
+ * Assemble the chat system prompt from modular v2 records. The chat params
+ * record for this build's major version carries a `modules` manifest — an
+ * ordered [{name, version}] list — that dictates the module set, order, and
+ * the version of each module to load; Firefox keys only on the params major
+ * version, everything else comes from data.
  *
- * @param {string} feature - Feature identifier from MODEL_FEATURES
+ * Chat is fully v2: there is no hardcoded module order and no v1 fallback. If
+ * the params manifest is absent, or it omits or can't resolve a required core
+ * module (identity, response-rules), this throws (clientReason
+ * "promptLoadFailure") rather than serve a partial prompt. Optional modules
+ * are skipped when no record is published. The returned `version` is the
+ * params version.
+ *
+ * @param {string} model
+ * @returns {Promise<{prompt: string, version: string}>}
+ */
+export async function buildChatSystemPrompt(model) {
+  const records = await loadV2Records();
+  const params = findParams(records, {
+    feature: MODEL_FEATURES.CHAT,
+    model,
+  });
+  if (!params) {
+    // No manifest means nothing to assemble from (and chat has no v1 fallback),
+    // so fail loud rather than serve a partial or hardcoded prompt.
+    const err = new Error("Missing chat module manifest");
+    err.clientReason = "promptLoadFailure";
+    throw err;
+  }
+
+  // Every required core module must be named by the manifest (an empty or
+  // omitting manifest must not yield a partial prompt); the loop below also
+  // throws if a named required module has no published record.
+  for (const required of REQUIRED_CHAT_MODULES) {
+    if (!params.modules.some(m => m.name === required)) {
+      const err = new Error(`Missing required chat module: ${required}`);
+      err.clientReason = "promptLoadFailure";
+      throw err;
+    }
+  }
+
+  // Manifest-driven: module set, order, and per-module version all come from
+  // the params record. Modules are selected by the major version it names.
+  const sections = [];
+  for (const entry of params.modules) {
+    const record = findModule(records, {
+      feature: MODEL_FEATURES.CHAT,
+      module: entry.name,
+      options: { model, version: entry.version },
+    });
+    const text = record?.prompts?.trim();
+    if (text) {
+      sections.push(text);
+    } else if (REQUIRED_CHAT_MODULES.has(entry.name)) {
+      const err = new Error(`Missing required chat module: ${entry.name}`);
+      err.clientReason = "promptLoadFailure";
+      throw err;
+    }
+  }
+
+  const isoTimestamp = getLocalIsoTime() ?? "";
+  const skillList = listSkills(records, model)
+    .map(
+      ({ name, description = "" }) =>
+        `- <name>${name}</name><description>${description}</description>`
+    )
+    .join("\n");
+
+  const prompt = renderTemplate(sections.join("\n\n\n"), {
+    skill_list: skillList,
+    locale: Services.locale.appLocaleAsBCP47,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    isoTimestamp,
+    todayDate: isoTimestamp.split("T")[0],
+  });
+  return { prompt, version: params.version };
+}
+
+/**
+ * Look up a skill record by name and return its prompt text, or an
+ * `{ error }` object the model can act on when the name is invalid or no
+ * matching skill exists (mirrors the other tool handlers' result shape).
+ *
+ * @param {string} name
+ * @param {string} model
+ * @returns {Promise<string|{error: string}>}
+ */
+export async function getSkillPrompt(name, model) {
+  // Defensive: skill name comes from the LLM. The findSkill lookup is by
+  // equality so traversal isn't possible, but reject obviously malformed
+  // names before the records fetch.
+  const skillName = String(name || "").trim();
+  if (!/^[A-Za-z0-9_-]+$/.test(skillName)) {
+    return { error: `Invalid skill name: ${skillName}` };
+  }
+  const records = await loadV2Records();
+  const record = findSkill(records, { name: skillName, model });
+  if (!record?.prompts) {
+    return { error: `Unknown skill: ${skillName}` };
+  }
+  return record.prompts;
+}
+
+/**
+ * Build the per-turn browser-context prompt (active tab + any @mentions).
+ * Returns null when nothing is available.
+ *
+ * @param {string} model
  * @param {object} [opts]
- * @param {number} [opts.majorVersionOverride] - Override the hardcoded major version
- * @param {string} [opts.modelChoiceIdOverride] - Override the user's model-choice pref (used by per-conversation model switching)
- * @returns {Promise<object>} The selected Remote Settings record
+ * @param {Function} [opts.getRealTimeMapping]
+ * @param {object[]} [opts.contextMentions]
+ * @param {object} opts.securityProperties
+ * @returns {Promise<string|null>}
+ */
+export async function buildBrowserContextPrompt(
+  model,
+  {
+    getRealTimeMapping = constructRealTimeInfoInjectionMessage,
+    contextMentions,
+    securityProperties,
+  } = {}
+) {
+  const browserContextMapping = await getRealTimeMapping(contextMentions);
+  if (!browserContextMapping) {
+    return null;
+  }
+
+  const records = await loadV2Records();
+  const findFragment = fragment =>
+    findModule(records, {
+      feature: "browser-context",
+      module: fragment,
+      options: { model },
+    });
+
+  const fragments = [];
+
+  if (browserContextMapping.hasTabInfo) {
+    securityProperties.setPrivateData();
+    const record = findFragment("tab");
+    if (record?.prompts) {
+      fragments.push(record.prompts);
+    }
+  } else {
+    delete browserContextMapping.url;
+    delete browserContextMapping.title;
+    delete browserContextMapping.description;
+  }
+  delete browserContextMapping.hasTabInfo;
+
+  if (contextMentions?.length) {
+    securityProperties.setPrivateData();
+    // m.url is intentionally not wrapped in sanitizeUntrustedContent — it's a
+    // structured value the model uses to navigate/fetch, and the spotlighting
+    // tokens would corrupt it. The user-controlled label is sanitized.
+    const contextUrls = contextMentions
+      .map(
+        m => `- URL: ${m.url}\n  Title: ${sanitizeUntrustedContent(m.label)}`
+      )
+      .join("\n");
+    browserContextMapping.contextUrls = contextUrls;
+    const record = findFragment("mentions");
+    if (record?.prompts) {
+      fragments.push(record.prompts);
+    }
+  }
+
+  if (!fragments.length) {
+    return null;
+  }
+
+  return renderPrompt(fragments.join("\n\n"), browserContextMapping) ?? null;
+}
+
+// ===========================================================================
+// Feature config + engine
+// ===========================================================================
+
+/**
+ * Read Remote Settings and pick the model+params config record for a feature.
+ * Features with v2 kind:"params" records resolve from those records. Other
+ * features read their v1 main-config record (no `kind`). V2 module/skill
+ * records are never model-selection candidates.
+ *
+ * @param {string} feature
+ * @param {object} [opts]
+ * @param {number} [opts.majorVersionOverride]
+ * @param {string} [opts.modelChoiceIdOverride]
+ * @returns {Promise<object>}
  */
 async function selectFeatureConfig(feature, opts = {}) {
-  const client = getRemoteClient();
-  const allRecords = await client.get();
+  const allRecords = await getRemoteClient().get();
 
-  const featureConfigs = allRecords.filter(r => r.feature === feature);
+  const hasV2Params = allRecords.some(
+    r => r.feature === feature && r.kind === "params"
+  );
+  const featureConfigs = allRecords.filter(r =>
+    hasV2Params
+      ? r.feature === feature && r.kind === "params"
+      : r.feature === feature && !r.kind
+  );
   if (!featureConfigs.length) {
     const err = new Error(
       `No Remote Settings records found for feature: ${feature}`
@@ -154,7 +414,7 @@ async function selectFeatureConfig(feature, opts = {}) {
  *
  * @param {string} feature
  * @param {object} [opts]
- * @returns {Promise<{engine: openAIEngine, parameters: object}>}
+ * @returns {Promise<{engine: openAIEngine, parameters: inferenceParams}>}
  */
 export async function buildEngineForFeature(feature, opts = {}) {
   const mainConfig = await selectFeatureConfig(feature, opts);
@@ -180,7 +440,11 @@ export async function buildEngineForFeature(feature, opts = {}) {
 
   // resolve the model to use for inference, this allows specific features to default to chat model
   let model = mainConfig.model;
-  const CHAT_MODEL_FALLBACK_FEATURES = new Set([MODEL_FEATURES.AGENT_MONITOR]);
+  const CHAT_MODEL_FALLBACK_FEATURES = new Set([
+    MODEL_FEATURES.AGENT_MONITOR,
+    MODEL_FEATURES.RESUME_ACTIVITY_CONVERSATION,
+    MODEL_FEATURES.RESUME_ACTIVITY_CONVERSATION_STARTER,
+  ]);
   if (
     model === GENERIC_MODEL_NAME &&
     CHAT_MODEL_FALLBACK_FEATURES.has(feature)
@@ -209,11 +473,8 @@ export async function buildEngineForFeature(feature, opts = {}) {
  * model/parameters/serviceType/purpose from RS, builds the engine, and
  * returns a fresh Conversation wired to both.
  *
- * @param {string} feature - MODEL_FEATURES.*
+ * @param {string} feature
  * @param {object} [opts]
- * @param {string|null} [opts.flowId]
- * @param {number} [opts.majorVersionOverride]
- * @param {string} [opts.modelChoiceIdOverride] - Override the user's model-choice pref
  * @returns {Promise<Conversation>}
  */
 export async function buildConversation(feature, opts = {}) {
@@ -221,14 +482,21 @@ export async function buildConversation(feature, opts = {}) {
   return new Conversation({ feature, engine, parameters });
 }
 
+// ===========================================================================
+// Public entry point
+// ===========================================================================
+
 /**
- * Loads the prompt text for a feature. Honors the
- * `browser.smartwindow.customPrompts` pref override.
+ * Load the prompt text for a feature. CHAT is assembled from v2 modular
+ * records for the given model (`opts.model`, recoverable from the engine);
+ * every other feature reads its prompt from the v1 main-config record.
+ * Honors the `customPrompts` pref override.
  *
- * @param {string} feature - Feature identifier from MODEL_FEATURES
+ * @param {string} feature
  * @param {object} [opts]
- * @param {string} [opts.modelChoiceIdOverride] - Override the user's model-choice pref
- * @returns {Promise<{prompt: string, version: string}>} The prompt text and version
+ * @param {string} [opts.model] - Model to assemble the CHAT prompt for.
+ * @param {string} [opts.modelChoiceIdOverride]
+ * @returns {Promise<{prompt: string, version: string}>}
  */
 export async function loadPrompt(feature, opts = {}) {
   const customPromptsRaw = Services.prefs.getStringPref(
@@ -250,6 +518,13 @@ export async function loadPrompt(feature, opts = {}) {
     return loadPromptV2(feature, opts);
   }
 
+  // CHAT is fully v2: assemble from modular records for the engine's model.
+  // Throws (no v1 fallback) if a required module is missing.
+  if (feature === MODEL_FEATURES.CHAT) {
+    return buildChatSystemPrompt(opts.model);
+  }
+
+  // Every other feature still reads its prompt from the v1 main-config record.
   const mainConfig = await selectFeatureConfig(feature, opts);
   if (!mainConfig.prompts) {
     const err = new Error(`No prompts field in record for feature: ${feature}`);
@@ -292,11 +567,10 @@ export async function loadPromptV2(feature, opts = {}) {
     paramsRecord.version;
 
   // find the module record for the feature+module+model+version
-  const moduleRecord = findModuleAtVersion(v2Records, {
+  const moduleRecord = findModule(v2Records, {
     feature,
     module: opts.module,
-    model,
-    version: moduleVersion,
+    options: { model, version: moduleVersion },
   });
   if (!moduleRecord?.prompts) {
     const err = new Error(

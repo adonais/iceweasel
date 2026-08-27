@@ -1,0 +1,10 @@
+//error: message `Msg' requires more powerful send semantics than its protocol `PtooWeakSyncAsync' provides
+
+[ChildProc=any]
+protocol PtooWeakSyncAsync {
+
+    // it's an error to declare an async protocol with a sync message
+
+parent:  sync Msg();
+
+};

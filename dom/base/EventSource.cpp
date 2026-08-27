@@ -245,7 +245,6 @@ class EventSourceImpl final : public nsIChannelEventSink,
   nsCOMPtr<nsIPrincipal> mPrincipal;
   Maybe<ClientInfo> mClientInfo;
   Maybe<ServiceWorkerDescriptor> mController;
-  nsString mOrigin;
   nsCOMPtr<nsITimer> mTimer;
   nsCOMPtr<nsIHttpChannel> mHttpChannel;
 
@@ -258,6 +257,10 @@ class EventSourceImpl final : public nsIChannelEventSink,
     // We can't check for the 1st state with a simple nsString.
     Maybe<nsString> mLastEventID;
     nsString mData;
+    // Origin of the connection this message was parsed from. Copied per
+    // message because a reconnect can change it while older messages are
+    // still queued.
+    nsString mOrigin;
   };
 
   // Message related data members. May be set / initialized when initializing
@@ -336,6 +339,8 @@ class EventSourceImpl final : public nsIChannelEventSink,
   struct SharedData {
     RefPtr<EventSource> mEventSource;
     UniquePtr<EventSourceServiceNotifier> mServiceNotifier;
+    // Origin of the current connection's final URL, i.e. after redirects.
+    nsString mOrigin;
   };
 
   DataMutex<SharedData> mSharedData;
@@ -543,10 +548,6 @@ nsresult EventSourceImpl::ParseURL(const nsAString& aURL) {
 
   NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_SYNTAX_ERR);
 
-  nsAutoString origin;
-  rv = nsContentUtils::GetWebExposedOriginSerialization(srcURI, origin);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   nsAutoCString spec;
   rv = srcURI->GetSpec(spec);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -562,7 +563,6 @@ nsresult EventSourceImpl::ParseURL(const nsAString& aURL) {
     lock->mEventSource->mOriginalURL = NS_ConvertUTF8toUTF16(spec);
   }
   mSrc = std::move(srcURI);
-  mOrigin = std::move(origin);
   return NS_OK;
 }
 
@@ -682,8 +682,17 @@ EventSourceImpl::OnStartRequest(nsIRequest* aRequest) {
     }
   }
 
+  nsCOMPtr<nsIURI> finalURI;
+  rv = NS_GetFinalChannelURI(httpChannel, getter_AddRefs(finalURI));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoString origin;
+  rv = nsContentUtils::GetWebExposedOriginSerialization(finalURI, origin);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   {
     auto lock = mSharedData.Lock();
+    lock->mOrigin = origin;
     lock->mServiceNotifier = MakeUnique<EventSourceServiceNotifier>(
         this, mHttpChannel->ChannelId(), mInnerWindowID);
   }
@@ -1456,6 +1465,11 @@ nsresult EventSourceImpl::DispatchCurrentMessageEvent() {
     message->mEventName.AssignLiteral("message");
   }
 
+  {
+    auto lock = mSharedData.Lock();
+    message->mOrigin = lock->mOrigin;
+  }
+
   mMessagesToDispatch.Push(message.release());
 
   if (!mGoingToDispatchAllMessages) {
@@ -1535,8 +1549,9 @@ void EventSourceImpl::DispatchAllMessageEvents() {
         new MessageEvent(eventSource, nullptr, nullptr);
 
     event->InitMessageEvent(nullptr, message->mEventName, CanBubble::eNo,
-                            Cancelable::eNo, jsData, mOrigin, mLastEventID,
-                            nullptr, Sequence<OwningNonNull<MessagePort>>());
+                            Cancelable::eNo, jsData, message->mOrigin,
+                            mLastEventID, nullptr,
+                            Sequence<OwningNonNull<MessagePort>>());
     event->SetTrusted(true);
 
     // We can't hold the mutex while dispatching the event because the mutex is

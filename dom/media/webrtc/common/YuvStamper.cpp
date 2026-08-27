@@ -359,7 +359,7 @@ bool YuvStamper::WriteDigits(uint32_t value) {
 }
 
 bool YuvStamper::WriteDigit(unsigned char digit) {
-  if (digit > sizeof(DIGITS) / sizeof(DIGITS[0])) return false;
+  if (digit >= sizeof(DIGITS) / sizeof(DIGITS[0])) return false;
 
   unsigned char* dig = DIGITS[digit];
   for (uint32_t row = 0; row < sDigitHeight; ++row) {

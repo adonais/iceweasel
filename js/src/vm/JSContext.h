@@ -381,12 +381,16 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   js::SymbolRegistry& symbolRegistry() { return runtime_->symbolRegistry(); }
 
   // Methods to access other runtime data that checks locking internally.
-  js::gc::AtomMarkingRuntime& atomMarking() { return runtime_->gc.atomMarking; }
-  void markAtom(JSAtom* atom) { atomMarking().markAtom(this, atom); }
-  void markAtom(JS::Symbol* symbol) { atomMarking().markAtom(this, symbol); }
-  void markId(jsid id) { atomMarking().markId(this, id); }
-  void markAtomValue(const js::Value& value) {
-    atomMarking().markAtomValue(this, value);
+  js::gc::AtomRefRuntime& atomReferences() {
+    return runtime_->gc.atomReferences;
+  }
+  void recordRef(JSAtom* atom) { atomReferences().recordRef(this, atom); }
+  void recordRef(JS::Symbol* symbol) {
+    atomReferences().recordRef(this, symbol);
+  }
+  void recordRefToId(jsid id) { atomReferences().recordRefToId(this, id); }
+  void recordRefToValue(const js::Value& value) {
+    atomReferences().recordRefToValue(this, value);
   }
 
   // Interface for recording telemetry metrics.
@@ -628,10 +632,21 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   mozilla::Atomic<bool, mozilla::SequentiallyConsistent>
       suppressProfilerSampling;
 
+  // While sampling is suppressed, whether the sampler may still read tenured
+  // script data (e.g. line/column) via ProfilingStackFrame::script(). Most
+  // suppression sites leave this false because the script pointers may be
+  // unsafe, notably during the compacting phase of GC where scripts are being
+  // relocated. Minor GC sets it because it does not move scripts. Read from
+  // the sampler thread, written from the main thread, hence atomic.
+  mozilla::Atomic<bool, mozilla::SequentiallyConsistent>
+      allowProfilerScriptAccess_;
+
  public:
   bool isProfilerSamplingEnabled() const { return !suppressProfilerSampling; }
   void disableProfilerSampling() { suppressProfilerSampling = true; }
   void enableProfilerSampling() { suppressProfilerSampling = false; }
+  bool allowProfilerScriptAccess() const { return allowProfilerScriptAccess_; }
+  void setAllowProfilerScriptAccess(bool b) { allowProfilerScriptAccess_ = b; }
 
  private:
   js::wasm::Context wasm_;
@@ -982,11 +997,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   // True if jobQueue is empty, or we are running the last job in the queue.
   // Such conditions permit optimizations around `await` expressions.
   js::ContextData<bool> canSkipEnqueuingJobs;
-
-  // Depth of nested AsyncFunctionResume / AsyncGeneratorResume calls on the
-  // C++ stack. Maintained by AutoAsyncResumeDepth. See
-  // IsTopMostAsyncFunctionCall for more details.
-  js::ContextData<uint32_t> asyncResumeDepth;
 
   js::ContextData<JS::PromiseRejectionTrackerCallback>
       promiseRejectionTrackerCallback;

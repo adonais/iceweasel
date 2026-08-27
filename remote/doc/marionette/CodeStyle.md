@@ -1,4 +1,4 @@
-# Style guide
+# Marionette style guide
 
 Like other projects, we also have some guidelines to keep to the code.
 For the overall Marionette project, a few rough rules are:

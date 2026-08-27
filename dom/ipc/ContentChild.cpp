@@ -606,6 +606,10 @@ class ContentChild::ShutdownCanary final {};
 ContentChild* ContentChild::sSingleton;
 StaticAutoPtr<ContentChild::ShutdownCanary> ContentChild::sShutdownCanary;
 
+static StaticMutex sLoadedOriginsMutex;
+static StaticRefPtr<LoadedOriginSet> sLoadedOrigins
+    MOZ_GUARDED_BY(sLoadedOriginsMutex);
+
 ContentChild::ContentChild()
     : mIsForBrowser(false), mIsAlive(true), mShuttingDown(false) {
   // This process is a content process, so it's clearly running in
@@ -637,6 +641,16 @@ ContentChild::ContentChild()
   if (!sShutdownCanary) {
     sShutdownCanary = new ShutdownCanary();
     ClearOnShutdown(&sShutdownCanary, ShutdownPhase::XPCOMShutdown);
+  }
+
+  {
+    StaticMutexAutoLock lock(sLoadedOriginsMutex);
+    MOZ_ASSERT(!sLoadedOrigins);
+    sLoadedOrigins = MakeRefPtr<LoadedOriginSet>(PREALLOC_REMOTE_TYPE);
+    RunOnShutdown([] {
+      StaticMutexAutoLock lock(sLoadedOriginsMutex);
+      sLoadedOrigins = nullptr;
+    });
   }
 }
 
@@ -870,7 +884,7 @@ void ContentChild::SetProcessName(const nsACString& aName,
           nsAutoCString originSuffix;
           isolationPrincipal->GetOriginSuffix(originSuffix);
           schemeless.Append(originSuffix);
-          mProcessName = schemeless;
+          mProcessName = std::move(schemeless);
         } else
 #endif
         {
@@ -2691,20 +2705,20 @@ mozilla::ipc::IPCResult ContentChild::RecvAppInfo(
   return IPC_OK();
 }
 
-static StaticMutex sCurrentRemoteTypeMutex;
-static StaticAutoPtr<nsCString> sCurrentRemoteType
-    MOZ_GUARDED_BY(sCurrentRemoteTypeMutex);
-
 nsCString CurrentRemoteType() {
   if (XRE_IsContentProcess()) {
-    StaticMutexAutoLock lock(sCurrentRemoteTypeMutex);
-    if (sCurrentRemoteType) {
-      return *sCurrentRemoteType;
+    if (RefPtr<LoadedOriginSet> loadedOrigins = CurrentLoadedOriginSet()) {
+      return loadedOrigins->GetRemoteType();
     }
     return PREALLOC_REMOTE_TYPE;
   }
 
   return NOT_REMOTE_TYPE;
+}
+
+already_AddRefed<LoadedOriginSet> CurrentLoadedOriginSet() {
+  StaticMutexAutoLock lock(sLoadedOriginsMutex);
+  return do_AddRef(sLoadedOrigins);
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
@@ -2742,17 +2756,11 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
   // Must do before SetProcessName
   mRemoteType.Assign(aRemoteType);
 
-  {
-    StaticMutexAutoLock lock(sCurrentRemoteTypeMutex);
-    if (!sCurrentRemoteType) {
-      sCurrentRemoteType = new nsCString();
-      RunOnShutdown([] {
-        StaticMutexAutoLock lock(sCurrentRemoteTypeMutex);
-        sCurrentRemoteType = nullptr;
-      });
-    }
-    sCurrentRemoteType->Assign(mRemoteType);
+  RefPtr<LoadedOriginSet> loadedOrigins = CurrentLoadedOriginSet();
+  if (!loadedOrigins) {
+    return IPC_FAIL(this, "Always initialized before this point");
   }
+  loadedOrigins->SetRemoteType(mRemoteType);
 
   // Update the process name so about:memory's process names are more obvious.
   if (aRemoteType == FILE_REMOTE_TYPE) {
@@ -2805,6 +2813,26 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
   CrashReporter::RecordAnnotationNSCString(
       CrashReporter::Annotation::RemoteType, remoteTypePrefix);
 
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentChild::RecvAddLoadedOrigin(
+    nsIPrincipal* aPrincipal) {
+  if (RefPtr<LoadedOriginSet> loadedOrigins = CurrentLoadedOriginSet()) {
+    (void)loadedOrigins->AddInternal(aPrincipal, /* aTentative */ false);
+
+    // Notify observers that we've received a new origin.
+    //
+    // Currently this is only used by `RemoteWorkerChild` to wait for this
+    // message before continuing with remote worker startup.
+    //
+    // NOTE: If this topic grows new observers, we should consider refactoring
+    // the observer code out of RemoteWorkerChild and into a common helper.
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (obs) {
+      obs->NotifyObservers(aPrincipal, "content-loaded-origin-added", nullptr);
+    }
+  }
   return IPC_OK();
 }
 

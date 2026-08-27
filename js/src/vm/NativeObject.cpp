@@ -135,7 +135,9 @@ bool ObjectElements::FreezeOrSeal(JSContext* cx, Handle<NativeObject*> obj,
   }
 
   if (level == IntegrityLevel::Frozen) {
-    if (!JSObject::setFlag(cx, obj, ObjectFlag::FrozenElements)) {
+    ObjectFlags flags = {ObjectFlag::FrozenElements,
+                         ObjectFlag::NeedsProxyGetSetResultValidation};
+    if (!JSObject::setFlags(cx, obj, flags)) {
       return false;
     }
   }

@@ -227,6 +227,23 @@ crash:
     send_in_pings:
     - crash
     type: string
+  install_time:
+    bugs:
+    - https://bugzilla.mozilla.org/2049748
+    data_reviews:
+    - https://bugzilla.mozilla.org/2049748
+    data_sensitivity:
+    - technical
+    description: The time when Firefox was installed expressed as seconds since the
+      Epoch
+    expires: never
+    notification_emails:
+    - crash-reporting-wg@mozilla.org
+    - stability@mozilla.org
+    send_in_pings:
+    - crash
+    time_unit: second
+    type: timespan
   ipc_channel_error:
     bugs:
     - https://bugzilla.mozilla.org/1950749
@@ -1048,6 +1065,27 @@ memory:
     - crash
     type: quantity
     unit: bytes
+meta:
+  annotations:
+    bugs:
+    - https://bugzilla.mozilla.org/2049744
+    data_reviews:
+    - https://bugzilla.mozilla.org/2049744
+    data_sensitivity:
+    - technical
+    description: The source crash annotations for this ping.
+    expires: never
+    notification_emails:
+    - crash-reporting-wg@mozilla.org
+    - stability@mozilla.org
+    send_in_pings:
+    - crash
+    structure:
+      properties:
+        source:
+          type: string
+      type: object
+    type: object
 windows:
   package_family_name:
     bugs:

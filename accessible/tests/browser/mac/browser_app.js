@@ -216,14 +216,14 @@ add_task(async () => {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       url: "http://example.com",
     },
     async () => {
       let input = await getMacAccessible(gURLBar.inputField);
       is(
         input.getAttributeValue("AXValue"),
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         UrlbarTestUtils.trimURL("http://example.com"),
         "Location bar has correct value"
       );
@@ -238,7 +238,7 @@ add_task(async () => {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       url: "http://example.com",
     },
     async () => {

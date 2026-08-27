@@ -379,8 +379,8 @@ nsresult ScriptPreloader::Observe(nsISupports* subject, const char* topic,
     // reclaim these pages under memory pressure without unmapping them.
     if (mCacheData->initialized()) {
       // MADV_COLD may return EINVAL on kernels older than 5.4.
-      (void)madvise(mCacheData->get<uint8_t>().get(), mCacheData->size(),
-                    MADV_COLD);
+      uint8_t* ptr = const_cast<uint8_t*>(mCacheData->get<uint8_t>().get());
+      (void)madvise(ptr, mCacheData->size(), MADV_COLD);
     }
 #endif
 
@@ -1077,22 +1077,11 @@ already_AddRefed<JS::Stencil> ScriptPreloader::GetCachedStencil(
     RefPtr<JS::Stencil> stencil =
         mChildCache->GetCachedStencilInternal(cx, options, path);
     if (stencil) {
-#ifndef ANDROID
-      glean::script_preloader::requests
-          .EnumGet(glean::script_preloader::RequestsLabel::eHitchild)
-          .Add();
-#endif
       return stencil.forget();
     }
   }
 
   RefPtr<JS::Stencil> stencil = GetCachedStencilInternal(cx, options, path);
-#ifndef ANDROID
-  glean::script_preloader::requests
-      .EnumGet(stencil ? glean::script_preloader::RequestsLabel::eHit
-                       : glean::script_preloader::RequestsLabel::eMiss)
-      .Add();
-#endif
 
   return stencil.forget();
 }

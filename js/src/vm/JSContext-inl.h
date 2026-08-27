@@ -96,15 +96,15 @@ class ContextChecks {
     JS::AssertCellIsNotGray(thing);
 
 #ifdef DEBUG
-    // Atoms which move across zone boundaries need to be marked in the atom
-    // marking bitmap for the new zone, see JS_MarkCrossZoneId.
-    // Note that the atom marking state may not be up-to-date if incremental
-    // marking is taking place.
+    // Atoms which move across zone boundaries need to be recorded in the atom
+    // reference bitmap for the new zone, see JS_MarkCrossZoneId. Note that the
+    // atom reference state may not be up-to-date if incremental marking is
+    // taking place.
     gc::GCRuntime* gc = &cx->runtime()->gc;
     bool isGCMarking =
         gc->state() >= gc::State::Prepare && gc->state() <= gc::State::Sweep;
     if (zone() && !isGCMarking) {
-      gc::CellColor color = gc->atomMarking.getAtomMarkColor(zone(), thing);
+      gc::CellColor color = gc->atomReferences.getRefColor(zone(), thing);
       if (color != gc::CellColor::Black) {
         MOZ_CRASH_UNSAFE_PRINTF(
             "*** Atom is marked %s for zone %p at argument %d",

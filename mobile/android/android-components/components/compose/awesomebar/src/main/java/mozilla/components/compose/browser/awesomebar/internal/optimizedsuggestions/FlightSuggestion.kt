@@ -52,8 +52,8 @@ import mozilla.components.compose.base.theme.success
 import mozilla.components.compose.browser.awesomebar.R
 import mozilla.components.compose.browser.awesomebar.internal.utils.FlightSuggestionDataProvider
 import mozilla.components.compose.browser.awesomebar.internal.utils.FlightSuggestionPreviewModel
-import mozilla.components.concept.awesomebar.optimizedsuggestions.FlightData
-import mozilla.components.concept.awesomebar.optimizedsuggestions.FlightSuggestionStatus
+import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightData
+import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightSuggestionStatus
 import kotlin.math.roundToInt
 import mozilla.components.ui.icons.R as iconsR
 

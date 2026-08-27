@@ -31,8 +31,9 @@ IPCResult ServiceWorkerContainerParent::RecvRegister(
     return IPC_OK();
   }
 
-  if (!ClientIsValidPrincipalInfo(aClientInfo.principalInfo(),
-                                  BackgroundParent::GetRemoteType(Manager()))) {
+  if (!ClientIsValidPrincipalInfo(
+          aClientInfo.principalInfo(),
+          BackgroundParent::GetLoadedOrigins(Manager()))) {
     return IPC_FAIL(this,
                     "Register ClientInfo principal not valid for remote type");
   }
@@ -60,8 +61,9 @@ IPCResult ServiceWorkerContainerParent::RecvGetRegistration(
     return IPC_OK();
   }
 
-  if (!ClientIsValidPrincipalInfo(aClientInfo.principalInfo(),
-                                  BackgroundParent::GetRemoteType(Manager()))) {
+  if (!ClientIsValidPrincipalInfo(
+          aClientInfo.principalInfo(),
+          BackgroundParent::GetLoadedOrigins(Manager()))) {
     return IPC_FAIL(
         this, "GetRegistration ClientInfo principal not valid for remote type");
   }
@@ -86,8 +88,9 @@ IPCResult ServiceWorkerContainerParent::RecvGetRegistrations(
     return IPC_OK();
   }
 
-  if (!ClientIsValidPrincipalInfo(aClientInfo.principalInfo(),
-                                  BackgroundParent::GetRemoteType(Manager()))) {
+  if (!ClientIsValidPrincipalInfo(
+          aClientInfo.principalInfo(),
+          BackgroundParent::GetLoadedOrigins(Manager()))) {
     return IPC_FAIL(
         this,
         "GetRegistrations ClientInfo principal not valid for remote type");
@@ -118,8 +121,9 @@ IPCResult ServiceWorkerContainerParent::RecvGetReady(
     return IPC_OK();
   }
 
-  if (!ClientIsValidPrincipalInfo(aClientInfo.principalInfo(),
-                                  BackgroundParent::GetRemoteType(Manager()))) {
+  if (!ClientIsValidPrincipalInfo(
+          aClientInfo.principalInfo(),
+          BackgroundParent::GetLoadedOrigins(Manager()))) {
     return IPC_FAIL(this,
                     "GetReady ClientInfo principal not valid for remote type");
   }

@@ -17,7 +17,7 @@ interface nsINetDashboardCallback : nsISupports
  * The async API returns JSONs, which hold arrays with the required info.
  * Only one request of each type may be pending at any time.
  */
-[scriptable, uuid(c79eb3c6-091a-45a6-8544-5a8d1ab79537)]
+[scriptable, uuid(126fe1c5-8fd9-4819-855d-b543ff52b890)]
 interface nsIDashboard : nsISupports
 {
     /* Arrays: host, port, tcp, active, socksent, sockreceived
@@ -65,4 +65,7 @@ interface nsIDashboard : nsISupports
      * Arrays: originHost, originPort, alternateHost, alternatePort, alpn,
      *         https, validated, ttl, originAttributesSuffix */
     void requestAltSvcCache(in nsINetDashboardCallback cb);
+
+    /* TLS resumption token cache entries. */
+    void requestSSLTokensCache(in nsINetDashboardCallback cb);
 };

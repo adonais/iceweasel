@@ -56,7 +56,8 @@ namespace mozilla::dom {
 #define LOGV(msg, ...) LOG_INTERNAL(Verbose, msg, ##__VA_ARGS__)
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(VideoEncoder, DOMEventTargetHelper,
-                                   mErrorCallback, mOutputCallback)
+                                   mErrorCallback, mOutputCallback,
+                                   mPendingFlushPromises)
 NS_IMPL_ADDREF_INHERITED(VideoEncoder, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(VideoEncoder, DOMEventTargetHelper)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(VideoEncoder)

@@ -41,7 +41,7 @@ add_task(async function test_scheme_modification() {
     {
       await UrlbarTestUtils.promiseAutocompleteResultPopup({
         window,
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         value: "http://example.com",
       });
       const onLoad = BrowserTestUtils.browserLoaded(

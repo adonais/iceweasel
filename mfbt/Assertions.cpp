@@ -3,10 +3,11 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Atomics.h"
-#include "mozilla/Sprintf.h"
 
 #include <stdarg.h>
+
+#include "mozilla/Atomics.h"
+#include "mozilla/Sprintf.h"
 
 MOZ_BEGIN_EXTERN_C
 

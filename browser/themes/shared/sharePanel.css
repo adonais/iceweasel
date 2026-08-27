@@ -1,0 +1,35 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#share-button > .urlbar-icon {
+  list-style-image: url("chrome://browser/content/sharing/share-alt.svg");
+
+  @media (-moz-platform: macos) {
+    list-style-image: url("chrome://browser/skin/share.svg");
+  }
+}
+
+#share-panel-copy-link {
+  list-style-image: url("chrome://global/skin/icons/link.svg");
+}
+
+#share-panel-screenshot {
+  list-style-image: url("chrome://browser/skin/screenshot.svg");
+}
+
+#share-panel-qr-code {
+  list-style-image: url("chrome://browser/skin/qrcode.svg");
+}
+
+#share-panel-send-to-device {
+  list-style-image: url("chrome://browser/skin/send-tab.svg");
+}
+
+#share-panel-mail {
+  list-style-image: url("chrome://browser/skin/mail.svg");
+}
+
+#share-panel-os-share {
+  list-style-image: url("chrome://browser/skin/share.svg");
+}

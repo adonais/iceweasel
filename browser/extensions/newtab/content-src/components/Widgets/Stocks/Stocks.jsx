@@ -3,26 +3,25 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 // eslint-disable-next-line no-unused-vars
-import React, { useCallback, useRef } from "react";
+import React, { useCallback } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { useIntersectionObserver } from "../../../lib/utils";
+import { useWidgetTelemetry } from "../useWidgetTelemetry";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 import { WidgetMenuFooter } from "../WidgetMenuFooter";
 import { SizeSubmenu } from "../SizeSubmenu";
 import { StockTicker } from "./StockTicker";
 import { StocksError } from "./StocksError";
 
-const USER_ACTION_TYPES = {
-  CHANGE_SIZE: "change_size",
-  SEARCH_TICKERS: "search_tickers",
-  LEARN_MORE: "learn_more",
-};
-
 const STOCKS_ENTRY = WIDGET_REGISTRY.find(w => w.id === "stocks");
 const STOCKS_PLACEHOLDER_COUNT = 4;
 
-function Stocks({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
+function Stocks({
+  dispatch,
+  handleUserInteraction,
+  widgetsMayBeMaximized,
+  widgetEnabledMap,
+}) {
   const prefs = useSelector(state => state.Prefs.values);
   const { tickers, error } = useSelector(state => state.Stocks);
 
@@ -30,25 +29,23 @@ function Stocks({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
   // default can apply.
   const widgetSize = resolveWidgetSize(STOCKS_ENTRY, prefs);
   const showError = error && !tickers.length;
-  const impressionFired = useRef(false);
 
-  const handleIntersection = useCallback(() => {
-    if (impressionFired.current) {
-      return;
-    }
-    impressionFired.current = true;
-    dispatch(
-      ac.AlsoToMain({
-        type: at.WIDGETS_IMPRESSION,
-        data: {
-          widget_name: "stocks",
-          widget_size: widgetSize,
-        },
-      })
-    );
-  }, [dispatch, widgetSize]);
+  // Show the "New" badge until the user first interacts with the widget;
+  // handleInteraction flips widgets.stocks.interaction, which removes it.
+  const hasInteracted = prefs["widgets.stocks.interaction"];
 
-  const widgetRef = useIntersectionObserver(handleIntersection);
+  const { impressionRef, recordUserAction, recordError } = useWidgetTelemetry({
+    dispatch,
+    widget: STOCKS_ENTRY,
+    widgetSize,
+  });
+
+  // Any user action flips widgets.stocks.interaction (idempotent, one-way),
+  // matching the other widgets. Hiding the widget is not an interaction.
+  const handleInteraction = useCallback(
+    () => handleUserInteraction("stocks"),
+    [handleUserInteraction]
+  );
 
   const handleChangeSize = useCallback(
     size => {
@@ -59,66 +56,48 @@ function Stocks({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
             data: { name: STOCKS_ENTRY.sizePref, value: size },
           })
         );
-        dispatch(
-          ac.OnlyToMain({
-            type: at.WIDGETS_USER_EVENT,
-            data: {
-              widget_name: "stocks",
-              widget_source: "context_menu",
-              user_action: USER_ACTION_TYPES.CHANGE_SIZE,
-              action_value: size,
-              widget_size: size,
-            },
-          })
-        );
+        recordUserAction("change_size", {
+          source: "context_menu",
+          value: size,
+          size,
+        });
+        handleInteraction();
       });
     },
-    [dispatch]
+    [dispatch, recordUserAction, handleInteraction]
   );
 
   // Placeholder: a real ticker search will replace this telemetry-only stub in
   // a follow-up.
   function handleSearchTickers() {
-    dispatch(
-      ac.OnlyToMain({
-        type: at.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "stocks",
-          widget_source: "context_menu",
-          user_action: USER_ACTION_TYPES.SEARCH_TICKERS,
-          widget_size: widgetSize,
-        },
-      })
-    );
+    recordUserAction("search_tickers", { source: "context_menu" });
+    handleInteraction();
   }
 
   // The shared footer opens the support link; here we only record the click.
   function handleLearnMore() {
-    dispatch(
-      ac.OnlyToMain({
-        type: at.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "stocks",
-          widget_source: "context_menu",
-          user_action: USER_ACTION_TYPES.LEARN_MORE,
-          widget_size: widgetSize,
-        },
-      })
-    );
+    recordUserAction("learn_more", { source: "context_menu" });
+    handleInteraction();
   }
 
   return (
     <article
       className={`stocks widget col-4 ${widgetSize}-widget`}
-      ref={el => {
-        widgetRef.current = [el];
-      }}
+      ref={impressionRef}
     >
       <div className="stocks-title-wrapper">
-        <span
-          className="stocks-title"
-          data-l10n-id="newtab-stocks-widget-title"
-        ></span>
+        <div className="stocks-badge-title-wrapper">
+          {!hasInteracted && !!tickers.length && (
+            <moz-badge
+              className="stocks-new-badge"
+              data-l10n-id="newtab-widget-lists-label-new"
+            ></moz-badge>
+          )}
+          <span
+            className="stocks-title"
+            data-l10n-id="newtab-stocks-widget-title"
+          ></span>
+        </div>
         <div className="stocks-context-menu-wrapper">
           <moz-button
             className="stocks-context-menu-button"
@@ -158,9 +137,7 @@ function Stocks({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
       </div>
 
       <div className="stocks-body">
-        {showError && (
-          <StocksError widgetSize={widgetSize} dispatch={dispatch} />
-        )}
+        {showError && <StocksError recordError={recordError} />}
         {!showError && widgetSize === "medium" && (
           <ul
             className={`stocks-grid${tickers.length ? "" : " stocks-grid--loading"}`}

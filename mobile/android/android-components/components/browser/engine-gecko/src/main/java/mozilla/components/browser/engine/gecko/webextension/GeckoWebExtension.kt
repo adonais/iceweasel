@@ -260,8 +260,15 @@ class GeckoWebExtension(
                 ext: GeckoNativeWebExtension,
                 tabDetails: GeckoNativeWebExtension.CreateTabDetails,
             ): GeckoResult<GeckoSession>? {
+                // TODO bug 1372178: extensions cannot set (non-)privateness.
+                val isPrivate = tabHandler.isInPrivateBrowsing()
+                if (isPrivate && !this@GeckoWebExtension.isAllowedInPrivateBrowsing()) {
+                    return null
+                }
+
                 val geckoEngineSession = GeckoEngineSession(
                     runtime = runtime,
+                    privateMode = isPrivate,
                     defaultSettings = defaultSettings,
                     openGeckoSession = false,
                 )
@@ -271,6 +278,7 @@ class GeckoWebExtension(
                     geckoEngineSession,
                     tabDetails.active == true,
                     tabDetails.url ?: "",
+                    isPrivate,
                 )
                 return GeckoResult.fromValue(geckoEngineSession.geckoSession)
             }
@@ -385,7 +393,7 @@ class GeckoWebExtension(
     }
 
     override fun isAllowedInPrivateBrowsing(): Boolean {
-        return isBuiltIn() || nativeExtension.metaData.allowedInPrivateBrowsing
+        return nativeExtension.metaData.allowedInPrivateBrowsing
     }
 
     override suspend fun loadIcon(size: Int): Bitmap? {

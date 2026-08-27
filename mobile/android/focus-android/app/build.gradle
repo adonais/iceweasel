@@ -60,7 +60,7 @@ android {
     }
 
     lint {
-        lintConfig = file("lint.xml")
+        lintConfig = file("../../shared-lint.xml")
         baseline = file("lint-baseline.xml")
         sarifReport = true
         sarifOutput = file("../build/reports/lint/lint-report.sarif.json")
@@ -303,7 +303,6 @@ dependencies {
     implementation libs.androidx.constraintlayout.compose
     implementation libs.androidx.core
     implementation libs.androidx.core.splashscreen
-    implementation libs.androidx.datastore.preferences
     implementation libs.androidx.emoji2
     implementation libs.androidx.fragment
     implementation libs.androidx.lifecycle.process
@@ -636,11 +635,18 @@ if (project.hasProperty("coverage")) {
 
 mozilla {
     ktlintSourcePaths = ["src/**/*.kt", "!**/build/**/*.kt"]
+    detektSourcePaths = [
+        "**/src/**/*.kt",
+        "!**/test/**", "!**/androidTest/**", "!**/build/**", "!**/resources/**", "!**/tmp/**",
+    ]
+    detektConfig = "$projectDir/../quality/detekt.yml"
+    detektBaseline = "$projectDir/../quality/detekt-baseline.xml"
+    detektReports = [
+        "xml": "$projectDir/../build/reports/detekt/detekt.xml",
+        "html": "$projectDir/../build/reports/detekt.html",
+    ]
 }
 
-tasks.register("detekt", Exec) {
-    group = "verification"
-    description = "Run detekt static analysis."
-    workingDir file("${gradle.mozconfig.topsrcdir}")
-    commandLine "./mach", "gradle", "-p", "mobile/android/focus-android", ":detekt"
+dependencies {
+    detektPlugins project(":components:tooling-detekt")
 }

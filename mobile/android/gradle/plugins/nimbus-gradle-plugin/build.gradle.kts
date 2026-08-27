@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
-    kotlin("jvm") version "2.3.10"
+    kotlin("jvm") version embeddedKotlinVersion
     `maven-publish`
     `java-gradle-plugin`
 }

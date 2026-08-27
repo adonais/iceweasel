@@ -57,6 +57,7 @@
         'mixins': ['shards-4'],
       },
       'video_timing_tests': {},
+      'videocodec_test_mediacodec': {},
       'voip_unittests': {},
       'webrtc_nonparallel_tests': {},
       # keep-sorted end
@@ -111,6 +112,7 @@
       'video_timing_tests': {},
       'voip_unittests': {},
       'webrtc_nonparallel_tests': {},
+      'xvfb_capture_tests': {},
       # keep-sorted end
     },
     'desktop_tests_linux_specific': {
@@ -191,7 +193,7 @@
         'mixins': ['xcodebuild_sim_runner']
       },
       'svc_tests': {
-        'mixins': ['shards-4', 'cores-12'],
+        'mixins': ['shards-8', 'cores-12'],
       },
       'system_wrappers_unittests': {},
       'test_support_unittests': {},

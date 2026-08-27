@@ -6,7 +6,7 @@
  * https://drafts.csswg.org/css-anchor-position-1/#om-position-try
  */
 
-[Exposed=Window, Pref="layout.css.anchor-positioning.enabled"]
+[Exposed=Window]
 interface CSSPositionTryRule : CSSRule {
   readonly attribute UTF8String name;
   [SameObject, PutForwards=cssText] readonly attribute CSSPositionTryDescriptors style;

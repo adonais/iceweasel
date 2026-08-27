@@ -40,6 +40,8 @@ exec_script_allowlist = build_dotfile_settings.exec_script_allowlist +
 
 # Normally, we'd use 'if (!build_with_mozilla)', but that flag isn't
 # available yet.
+#expand_directory_allowlist = build_dotfile_settings.expand_directory_allowlist
+#
 #export_compile_commands = [ "*" ]
 
 default_args = {

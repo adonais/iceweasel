@@ -11,7 +11,7 @@
 //    HTTPS-Only error page is loaded through the identity pane.
 
 // We specifically want a insecure url here that will fail to upgrade
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 const TEST_URL = "http://untrusted.example.com";
 const TEST_PRINCIPAL =
   Services.scriptSecurityManager.createContentPrincipalFromOrigin(TEST_URL);

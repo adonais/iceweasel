@@ -33,10 +33,10 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
   }
 
   /**
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof lazy.UrlbarShared.PROVIDER_TYPE>}
    */
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
+    return lazy.UrlbarShared.PROVIDER_TYPE.HEURISTIC;
   }
 
   /**
@@ -141,7 +141,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
       return null;
     }
 
-    let unescapedSearchString = UrlbarUtils.unEscapeURIForUI(
+    let unescapedSearchString = lazy.UrlbarShared.unEscapeURIForUI(
       queryContext.searchString
     );
     let [prefix, suffix] = UrlbarUtils.stripURLPrefix(unescapedSearchString);
@@ -198,7 +198,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
     // pass the pretty, unescaped URL as the result's title, since it is
     // displayed to the user.
     let escapedURL = uri.toString();
-    let displayURL = UrlbarUtils.prepareUrlForDisplay(uri, {
+    let displayURL = lazy.UrlbarShared.prepareUrlForDisplay(uri, {
       trimURL: false,
       // If the user didn't type a protocol, and we added one, don't show it,
       // as https-first may upgrade it, potentially breaking expectations.
@@ -328,7 +328,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
       heuristic,
       payload: {
         engine: engine.name,
-        icon: UrlbarUtils.ICON.SEARCH_GLASS,
+        icon: lazy.UrlbarShared.ICON.SEARCH_GLASS,
         query,
         title: query,
         keyword,

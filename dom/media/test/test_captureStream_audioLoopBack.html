@@ -4,6 +4,7 @@
   <title>audio loopback output check for captureStream() and MediaElementAudioSourceNode</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
   <script type="text/javascript" src="../webaudio/test/webaudio.js"></script>
+  <script src="rms-utils.js"></script>
   <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
 </head>
 <body>
@@ -46,36 +47,42 @@ add_task(async function testCaptureStreamAudioPlayout() {
   info("waiting for loopback audio to become audible");
   const SILENCE_RMS_THRESHOLD = 0.0;
   const AUDIBLE_RMS_THRESHOLD = 0.01;
-  let curRms = await waitForRmsOverThreshold(ac, source, AUDIBLE_RMS_THRESHOLD);
+  let curRms =
+    await RMSUtils.waitForRmsOverThreshold(ac, source, AUDIBLE_RMS_THRESHOLD);
   ok(curRms > 0.01, `Expected audible baseline RMS ${curRms}`);
 
   audio.volume = 0.3;
   info(`Lowering volume to ${audio.volume}`);
   let tempAudibleThreshold = AUDIBLE_RMS_THRESHOLD * audio.volume;
-  curRms = await waitForRmsOverThreshold(ac, source, tempAudibleThreshold);
+  curRms =
+    await RMSUtils.waitForRmsOverThreshold(ac, source, tempAudibleThreshold);
   ok(curRms > tempAudibleThreshold,
      `Expected non-silent RMS ${curRms} after volume=${audio.volume}`);
 
   audio.volume = 0.0;
   info(`Lowering volume to ${audio.volume}`);
-  curRms = await waitForRmsEqualToThreshold(ac, source, SILENCE_RMS_THRESHOLD);
+  curRms =
+    await RMSUtils.waitForRmsEqualToThreshold(ac, source, SILENCE_RMS_THRESHOLD);
   is(curRms, SILENCE_RMS_THRESHOLD,
      `Expected silent RMS ${curRms} after volume=${audio.volume}`);
 
   audio.volume = 1.0;
   info(`Raising volume to ${audio.volume}`);
-  curRms = await waitForRmsOverThreshold(ac, source, AUDIBLE_RMS_THRESHOLD);
+  curRms =
+    await RMSUtils.waitForRmsOverThreshold(ac, source, AUDIBLE_RMS_THRESHOLD);
   ok(curRms > AUDIBLE_RMS_THRESHOLD,
      `Expected non-silent RMS ${curRms} after volume=${audio.volume}`);
 
   audio.muted = true;
   info("Muting audio");
-  curRms = await waitForRmsEqualToThreshold(ac, source, SILENCE_RMS_THRESHOLD);
+  curRms =
+    await RMSUtils.waitForRmsEqualToThreshold(ac, source, SILENCE_RMS_THRESHOLD);
   is(curRms, SILENCE_RMS_THRESHOLD, `Expected silent RMS ${curRms} after muting`);
 
   audio.muted = false;
   info("Unmuting audio");
-  curRms = await waitForRmsOverThreshold(ac, source, AUDIBLE_RMS_THRESHOLD);
+  curRms =
+    await RMSUtils.waitForRmsOverThreshold(ac, source, AUDIBLE_RMS_THRESHOLD);
   ok(curRms > AUDIBLE_RMS_THRESHOLD,
      `Expected non-silent RMS ${curRms} after unmuting`);
 
@@ -109,12 +116,15 @@ add_task(async function testMediaElementAudioSourceNodeAudioPlayout() {
   info("audio playback should now be routed through the Web Audio graph");
   const SILENCE_RMS_THRESHOLD = 0.0;
   const AUDIBLE_RMS_THRESHOLD = 0.01;
-  let curRms = await waitForRmsEqualToThreshold(ac, source, SILENCE_RMS_THRESHOLD);
+  let curRms =
+    await RMSUtils.waitForRmsEqualToThreshold(ac, source, SILENCE_RMS_THRESHOLD);
   is(curRms, SILENCE_RMS_THRESHOLD,
      `Expected silent RMS ${curRms} for loopback stream`);
 
   info("waiting for the Web Audio graph to produce audible sound");
-  curRms = await waitForRmsOverThreshold(ac, srcElementNode, AUDIBLE_RMS_THRESHOLD);
+  curRms = await RMSUtils.waitForRmsOverThreshold(
+    ac, srcElementNode, AUDIBLE_RMS_THRESHOLD
+  );
   ok(curRms > AUDIBLE_RMS_THRESHOLD,
      `Expected audible RMS ${curRms} from the graph`);
 
@@ -123,12 +133,15 @@ add_task(async function testMediaElementAudioSourceNodeAudioPlayout() {
   ok(!!captured.getTracks().length, "captureStream() returned tracks");
 
   info("verifying the loopback stream remains silent after captureStream()");
-  curRms = await waitForRmsEqualToThreshold(ac, source, SILENCE_RMS_THRESHOLD);
+  curRms =
+    await RMSUtils.waitForRmsEqualToThreshold(ac, source, SILENCE_RMS_THRESHOLD);
   is(curRms, SILENCE_RMS_THRESHOLD,
      `Expected silent RMS ${curRms} for loopback stream`);
 
   info("verifying the Web Audio graph still produces audible sound");
-  curRms = await waitForRmsOverThreshold(ac, srcElementNode, AUDIBLE_RMS_THRESHOLD);
+  curRms = await RMSUtils.waitForRmsOverThreshold(
+    ac, srcElementNode, AUDIBLE_RMS_THRESHOLD
+  );
   ok(curRms > AUDIBLE_RMS_THRESHOLD,
      `Expected audible RMS ${curRms} from the graph`);
 
@@ -168,42 +181,6 @@ async function createAndPlayAudio() {
   return audio;
 }
 
-async function waitForRmsEqualToThreshold(ac, src, threshold) {
-  return await waitForRmsPredicate(ac, src, threshold, rms => rms == threshold);
-}
-
-async function waitForRmsOverThreshold(ac, src, threshold) {
-  return await waitForRmsPredicate(ac, src, threshold, rms => rms > threshold);
-}
-
-async function waitForRmsPredicate(ac, src, threshold, predicate, timeoutMs = 10000) {
-  const start = performance.now();
-  while (true) {
-    const rms = await measureRMSOnceWithFreshScriptProcessor(ac, src);
-    if (predicate(rms)) {
-      return rms;
-    }
-    const elapsedTime = performance.now() - start;
-    if (elapsedTime > timeoutMs) {
-      throw new Error(`Timed out waitForRmsPredicate ${elapsedTime}`);
-    }
-  }
-}
-
-async function measureRMSOnceWithFreshScriptProcessor(ac, src) {
-  // Use a new ScriptProcessorNode for each measurement, so that an event does
-  // not contain samples from the past.
-  const sp = ac.createScriptProcessor(2048, 1, 1);
-  src.connect(sp);
-  sp.connect(ac.destination);
-
-  const { inputBuffer } = await new Promise(r => (sp.onaudioprocess = r));
-
-  src.disconnect(sp);
-  sp.disconnect();
-  sp.onaudioprocess = null;
-  return rms(inputBuffer); // from webaudio.js
-}
 </script>
 </body>
 </html>

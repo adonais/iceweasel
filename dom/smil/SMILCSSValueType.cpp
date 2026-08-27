@@ -485,7 +485,8 @@ bool SMILCSSValueType::SetPropertyValues(NonCustomCSSPropertyId aPropertyId,
              "Unexpected SMIL value type");
   const ValueWrapper* wrapper = ExtractValueWrapper(aValue);
   if (!wrapper) {
-    return Servo_DeclarationBlock_RemovePropertyById(&aDecl, aPropertyId, {});
+    auto propertyId = CSSPropertyId(aPropertyId);
+    return Servo_DeclarationBlock_RemovePropertyById(&aDecl, &propertyId, {});
   }
 
   bool changed = false;

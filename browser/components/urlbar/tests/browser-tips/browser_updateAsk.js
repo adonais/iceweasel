@@ -61,7 +61,7 @@ add_task(async function test() {
   // restart the browser.
   await doUpdateTest({
     searchString: SEARCH_STRINGS.UPDATE,
-    tip: UrlbarProviderInterventions.TIP_TYPE.UPDATE_ASK,
+    tip: UrlbarShared.INTERVENTION_TIP_TYPE.UPDATE_ASK,
     title: /^A new version of .+ is available\.$/,
     button: "Install and Restart to Update",
     awaitCallback() {

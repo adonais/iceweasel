@@ -14,7 +14,7 @@ def list_providers():
     providers = []
     here = os.path.abspath(os.path.dirname(__file__))
     for p in os.listdir(here):
-        if p.endswith('.py'):
+        if p.endswith(".py"):
             providers.append(os.path.join(here, p))
     return providers
 ```

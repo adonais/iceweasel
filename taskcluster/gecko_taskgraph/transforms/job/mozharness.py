@@ -65,6 +65,9 @@ class MozharnessRunSchema(Schema, kw_only=True):
     requires_signed_builds: bool
     # Whether or not to use caches.
     use_caches: Optional[Union[bool, list[str]]] = None
+    # How to clone the upstream repo for the checkout, either "hg" or "git"
+    # (default: "git")
+    clone_with: Optional[Literal["hg", "git"]] = "git"
     # If false, don't set MOZ_SIMPLE_PACKAGE_NAME
     # Only disableable on windows
     use_simple_package: bool
@@ -266,7 +269,7 @@ def mozharness_on_generic_worker(config, job, taskdesc):
         system_python_dir = ""
         gecko_path = "$GECKO_PATH"
 
-    if run.get("use-python", "system") == "system":
+    if job.get("use-python", "system") == "system":
         python_bindir = system_python_dir
     else:
         # $MOZ_PYTHON_HOME is going to be substituted in run-task, when we

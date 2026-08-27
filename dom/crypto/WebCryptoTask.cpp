@@ -2219,7 +2219,7 @@ class ExportKeyTask : public WebCryptoTask {
 
         nsresult rv = CryptoKey::PublicKeyToJwk(mPublicKey.get(), mJwk);
         if (NS_FAILED(rv)) {
-          return NS_ERROR_DOM_OPERATION_ERR;
+          return rv;
         }
       } else if (mKeyType == CryptoKey::PRIVATE) {
         if (!mPrivateKey) {
@@ -2228,7 +2228,7 @@ class ExportKeyTask : public WebCryptoTask {
 
         nsresult rv = CryptoKey::PrivateKeyToJwk(mPrivateKey.get(), mJwk);
         if (NS_FAILED(rv)) {
-          return NS_ERROR_DOM_OPERATION_ERR;
+          return rv;
         }
       }
 

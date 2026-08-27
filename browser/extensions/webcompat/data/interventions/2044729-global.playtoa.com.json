@@ -8,7 +8,7 @@
   },
   "interventions": [
     {
-      "platforms": ["all"],
+      "platforms": ["desktop"],
       "ua_string": ["Chrome_with_FxQuantum"]
     }
   ]

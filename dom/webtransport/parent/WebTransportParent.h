@@ -36,6 +36,7 @@ class WebTransportParent : public PWebTransportParent,
               const IPCClientInfo& aClientInfo, const bool& aDedicated,
               const bool& aRequireUnreliable,
               const uint32_t& aCongestionControl,
+              nsTArray<nsString>&& aProtocols,
               nsTArray<WebTransportHash>&& aServerCertHashes,
               Endpoint<PWebTransportParent>&& aParentEndpoint,
               std::function<void(std::tuple<const nsresult&, const uint8_t&>)>&&
@@ -43,16 +44,26 @@ class WebTransportParent : public PWebTransportParent,
 
   IPCResult RecvClose(const uint32_t& aCode, const nsACString& aReason);
 
-  IPCResult RecvSetSendOrder(uint64_t aStreamId, Maybe<int64_t> aSendOrder);
+  IPCResult RecvSetSendOrder(uint64_t aStreamId, int64_t aSendOrder);
+
+  IPCResult RecvSetSendGroup(uint64_t aStreamId, uint64_t aGroupId);
+
+  IPCResult RecvCreateSendGroup(uint64_t aGroupId);
+
+  IPCResult RecvExportKeyingMaterial(nsTArray<uint8_t>&& aLabel,
+                                     Maybe<nsTArray<uint8_t>>&& aContext,
+                                     ExportKeyingMaterialResolver&& aResolver);
 
   IPCResult RecvCreateUnidirectionalStream(
-      Maybe<int64_t> aSendOrder,
+      int64_t aSendOrder, Maybe<uint64_t> aSendGroupId,
       CreateUnidirectionalStreamResolver&& aResolver);
   IPCResult RecvCreateBidirectionalStream(
-      Maybe<int64_t> aSendOrder, CreateBidirectionalStreamResolver&& aResolver);
+      int64_t aSendOrder, Maybe<uint64_t> aSendGroupId,
+      CreateBidirectionalStreamResolver&& aResolver);
 
   ::mozilla::ipc::IPCResult RecvOutgoingDatagram(
       nsTArray<uint8_t>&& aData, const TimeStamp& aExpirationTime,
+      const uint64_t& aSendGroupId, const int64_t& aSendOrder,
       OutgoingDatagramResolver&& aResolver);
 
   ::mozilla::ipc::IPCResult RecvGetMaxDatagramSize(
@@ -86,6 +97,7 @@ class WebTransportParent : public PWebTransportParent,
   using ResolveType = std::tuple<const nsresult&, const uint8_t&>;
   nsCOMPtr<nsISerialEventTarget> mSocketThread;
   Atomic<bool> mSessionReady{false};
+  uint64_t mSessionId{0};
 
   mozilla::Mutex mMutex{"WebTransportParent::mMutex"};
   std::function<void(ResolveType)> mResolver MOZ_GUARDED_BY(mMutex);

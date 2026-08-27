@@ -27,6 +27,7 @@ export class GenAIChild extends JSWindowActorChild {
   downTimeStamp = 0;
   debounceDelay = 200;
   pendingHide = false;
+  #compositionActive = false;
 
   /**
    * A flag that gets set when this actor is destroyed.
@@ -35,6 +36,8 @@ export class GenAIChild extends JSWindowActorChild {
 
   registerHideEvents() {
     this.document.addEventListener("selectionchange", this);
+    this.document.addEventListener("compositionstart", this);
+    this.document.addEventListener("compositionend", this);
     HIDE_EVENTS.forEach(ev =>
       this.contentWindow.addEventListener(ev, this, true)
     );
@@ -43,10 +46,13 @@ export class GenAIChild extends JSWindowActorChild {
 
   removeHideEvents() {
     this.document.removeEventListener("selectionchange", this);
+    this.document.removeEventListener("compositionstart", this);
+    this.document.removeEventListener("compositionend", this);
     HIDE_EVENTS.forEach(ev =>
       this.contentWindow?.removeEventListener(ev, this, true)
     );
     this.pendingHide = false;
+    this.#compositionActive = false;
   }
 
   handleEvent(event) {
@@ -113,11 +119,28 @@ export class GenAIChild extends JSWindowActorChild {
 
         break;
       }
+      case "compositionstart":
+        this.#compositionActive = true;
+        break;
+      case "compositionend":
+        this.#compositionActive = false;
+        break;
+      case "selectionchange":
+        if (this.#compositionActive) {
+          // Visually hide without calling sendHide()
+          // sendHide() triggers hidePopup() which issues a focus change event
+          // that breaking any active IME composition
+          if (this.pendingHide) {
+            this.sendAsyncMessage("GenAI:HideShortcuts", "selectionchange-ime");
+            this.removeHideEvents();
+          }
+        } else {
+          sendHide();
+        }
+        break;
       case "pagehide":
       case "resize":
       case "scroll":
-      case "selectionchange":
-        // Hide if selection might have shifted away from shortcuts
         sendHide();
         break;
     }

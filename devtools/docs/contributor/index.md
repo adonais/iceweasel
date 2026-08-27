@@ -1,5 +1,12 @@
 ```{toctree}
 :name: devtools-contributor-doc
+:hidden:
+:maxdepth: 1
+
+Getting started <README.md>
+Architecture overview <architecture-overview.md>
+Contributing <contributing.md>
+Bugs and issues <bugs-issues.md>
 ```
 
 # Firefox DevTools Contributor Docs
@@ -21,6 +28,7 @@ JavaScript Objects tests<tests/js-object-tests.md>
 Writing tests <tests/writing-tests.md>
 Debugging intermittent failures </testing/debugging-intermittents/index.md>
 Performance tests overview<tests/performance-tests-overview.md>
+Backward Compatibility tests <tests/backward-compat-tests.md>
 DAMP Performance tests <tests/performance-tests-damp.md>
 Writing a new test <tests/writing-perf-tests.md>
 Example <tests/writing-perf-tests-example.md>
@@ -49,6 +57,8 @@ Responsive Design Mode <tools/responsive-design-mode.md>
 Console <tools/console-panel.md>
 Network </devtools/netmonitor/architecture.md>
 Storage <tools/storage.md>
+Inspector <tools/inspector.md>
+Responsive Design Mode devices <responsive/devices.md>
 ```
 
 ## Frontend

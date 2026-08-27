@@ -54,11 +54,19 @@
 #  include "mozilla/WidgetUtilsGtk.h"
 #endif
 
+#ifdef XP_DARWIN
+#  include "GLContextEGL.h"
+#  include "GLLibraryEGL.h"
+#  include "mozilla/webrender/MetalDeviceManager.h"
+#endif
+
 using namespace mozilla;
 
 static already_AddRefed<gl::GLContext> CreateGLContext(nsACString& aError);
 
 MOZ_DEFINE_MALLOC_SIZE_OF(WebRenderRendererMallocSizeOf)
+MOZ_DEFINE_MALLOC_SIZE_OF(WebRenderPoolMallocSizeOf)
+MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF(WebRenderPoolMallocEnclosingSizeOf)
 
 namespace mozilla::wr {
 
@@ -85,6 +93,7 @@ RenderThread::RenderThread(RefPtr<nsIThread> aThread)
       mThreadPool(false),
       mThreadPoolLP(true),
       mChunkPool(wr_chunk_pool_new()),
+      mRenderBackendPool(nullptr),
       mGlyphRasterThread(USE_DEDICATED_GLYPH_RASTER_THREAD),
       mSingletonGLIsForHardwareWebRender(true),
       mBatteryInfo("RenderThread.mBatteryInfo"),
@@ -92,11 +101,40 @@ RenderThread::RenderThread(RefPtr<nsIThread> aThread)
       mRenderTextureMapLock("RenderThread.mRenderTextureMapLock"),
       mHasShutdown(false),
       mHandlingDeviceReset(false),
-      mHandlingWebRenderError(false) {}
+      mHandlingWebRenderError(false) {
+  // Pref of `0` (the default) keeps each window on its own private backend
+  // thread; anything `>= 1` creates a shared pool of N backend threads
+  // across the process.
+  uint32_t poolSize =
+      StaticPrefs::gfx_webrender_render_backend_thread_count_AtStartup();
+  if (poolSize >= 1) {
+    mRenderBackendPool =
+        wr_render_backend_pool_new(poolSize, &WebRenderPoolMallocSizeOf,
+                                   &WebRenderPoolMallocEnclosingSizeOf);
+    if (!mRenderBackendPool) {
+      gfxCriticalNote << "wr_render_backend_pool_new(" << poolSize
+                      << ") failed; falling back to private backend threads";
+    }
+  }
+}
 
 RenderThread::~RenderThread() {
   MOZ_ASSERT(mRenderTexturesDeferred.empty());
+  DestroyRenderBackendPool();
   wr_chunk_pool_delete(mChunkPool);
+}
+
+void RenderThread::DestroyRenderBackendPool() {
+  if (!mRenderBackendPool) {
+    return;
+  }
+
+  // This waits for the pool's threads to exit. They register themselves with
+  // the profiler, which lazily creates an nsThread wrapper that is only
+  // released when the thread exits, so a thread still winding down when XPCOM
+  // writes its leak log is reported as a leak.
+  wr_render_backend_pool_delete(mRenderBackendPool);
+  mRenderBackendPool = nullptr;
 }
 
 // static
@@ -202,6 +240,11 @@ void RenderThread::ShutDown() {
   // spinning the MT event loop.
   nsCOMPtr<nsIThread> oldThread = sRenderThread->GetRenderThread();
   oldThread->Shutdown();
+
+  // Tear down the shared render backend threads here rather than relying on
+  // the RenderThread destructor, so that they are guaranteed to be gone
+  // before the rest of Gecko shuts down.
+  sRenderThread->DestroyRenderBackendPool();
 
   layers::SharedSurfacesParent::Shutdown();
 
@@ -1627,16 +1670,9 @@ WebRenderProgramCache::~WebRenderProgramCache() {
 
 }  // namespace mozilla::wr
 
-#ifdef XP_WIN
+#if defined(XP_WIN) || defined(XP_DARWIN)
 static already_AddRefed<gl::GLContext> CreateGLContextANGLE(
     nsACString& aError) {
-  const RefPtr<ID3D11Device> d3d11Device =
-      gfx::DeviceManagerDx::Get()->GetCompositorDevice();
-  if (!d3d11Device) {
-    aError.Assign("RcANGLE(no compositor device for EGLDisplay)"_ns);
-    return nullptr;
-  }
-
   nsCString failureId;
   const auto lib = gl::GLLibraryEGL::Get(&failureId);
   if (!lib) {
@@ -1645,7 +1681,34 @@ static already_AddRefed<gl::GLContext> CreateGLContextANGLE(
     return nullptr;
   }
 
+#  if defined(XP_WIN)
+  const RefPtr<ID3D11Device> d3d11Device =
+      gfx::DeviceManagerDx::Get()->GetCompositorDevice();
+  if (!d3d11Device) {
+    aError.Assign("RcANGLE(no compositor device for EGLDisplay)"_ns);
+    return nullptr;
+  }
+
   const auto egl = lib->CreateDisplay(d3d11Device.get());
+#  elif defined(XP_DARWIN)
+  // Providing an explicit device ID ensures ANGLE's display cache returns to us
+  // a different EGLDisplay than if we simply called CreateDisplay(), even if it
+  // would have selected the same underlying device. Importantly, this ensures a
+  // different display is used for webrender than for WebGL, avoiding rendering
+  // glitches presumably due to lack of thread safety.
+  //
+  // Note that on systems with multiple GPUs the "system default" is the
+  // discrete GPU. We currently block webrender on Metal ANGLE on systems with
+  // multiple GPUs, so this is moot. But in order to support systems with
+  // multiple GPUs we will probably want to do something smarter.
+  auto registryId = wr::MetalDeviceManager::GetSystemDefaultDeviceRegistryId();
+  if (!registryId) {
+    aError.Assign("RcANGLE(no Metal device for EGLDisplay)"_ns);
+    return nullptr;
+  }
+  const auto egl = lib->CreateDisplayForMetalDevice(*registryId);
+#  endif
+
   if (!egl) {
     aError.Assign(nsPrintfCString("RcANGLE(create EGLDisplay failed: %s)",
                                   failureId.get()));
@@ -1656,11 +1719,6 @@ static already_AddRefed<gl::GLContext> CreateGLContextANGLE(
 
   if (StaticPrefs::gfx_webrender_prefer_robustness_AtStartup()) {
     flags |= gl::CreateContextFlags::PREFER_ROBUSTNESS;
-  }
-
-  if (egl->IsExtensionSupported(
-          gl::EGLExtension::MOZ_create_context_provoking_vertex_dont_care)) {
-    flags |= gl::CreateContextFlags::PROVOKING_VERTEX_DONT_CARE;
   }
 
   // Create GLContext with dummy EGLSurface, the EGLSurface is not used.
@@ -1728,7 +1786,11 @@ static already_AddRefed<gl::GLContext> CreateGLContext(nsACString& aError) {
     gl = CreateGLContextEGL();
   }
 #elif XP_DARWIN
-  gl = CreateGLContextCGL();
+  if (gfx::gfxVars::UseWebRenderANGLE()) {
+    gl = CreateGLContextANGLE(aError);
+  } else {
+    gl = CreateGLContextCGL();
+  }
 #endif
 
   wr::RenderThread::MaybeEnableGLDebugMessage(gl);

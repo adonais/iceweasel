@@ -227,15 +227,6 @@ BrowserHost::GetHasPresented(bool* aHasPresented) {
   return NS_OK;
 }
 
-/* void transmitPermissionsForPrincipal (in nsIPrincipal aPrincipal); */
-NS_IMETHODIMP
-BrowserHost::TransmitPermissionsForPrincipal(nsIPrincipal* aPrincipal) {
-  if (!mRoot) {
-    return NS_OK;
-  }
-  return GetContentParent()->TransmitPermissionsForPrincipal(aPrincipal);
-}
-
 /* void createAboutBlankDocumentViewer(in nsIPrincipal aPrincipal, in
  * nsIPrincipal aPartitionedPrincipal); */
 NS_IMETHODIMP
@@ -247,15 +238,16 @@ BrowserHost::CreateAboutBlankDocumentViewer(
 
   // Before creating the viewer in-content, ensure that the process is allowed
   // to load this principal.
-  if (NS_WARN_IF(!mRoot->Manager()->ValidatePrincipal(aPrincipal))) {
+  if (NS_WARN_IF(!mRoot->Manager()->ValidatePrincipal(
+          aPrincipal, {ValidatePrincipalOptions::AllowNotLoadedOrigin}))) {
     ContentParent::LogAndAssertFailedPrincipalValidationInfo(
         aPrincipal, "BrowserHost::CreateAboutBlankDocumentViewer");
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  // Ensure the content process has permisisons for the new document we're about
-  // to create in it.
-  nsresult rv = GetContentParent()->TransmitPermissionsForPrincipal(aPrincipal);
+  // Ensure the content process has permisisons, blob URLs, etc. for the new
+  // document we're about to create in it.
+  nsresult rv = GetContentParent()->AboutToLoadOrigin(aPrincipal);
   if (NS_FAILED(rv)) {
     return rv;
   }

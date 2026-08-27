@@ -46,6 +46,8 @@ class DataChannelConnectionUsrsctp : public DataChannelConnection {
                                MediaTransportHandler* aHandler);
   void Destroy() override;
   bool RaiseStreamLimitTo(uint16_t aNewLimit) override;
+  // usrsctp grows the stream count on demand toward this fixed ceiling.
+  uint16_t GetStreamIdCeiling() const override { return MAX_NUM_STREAMS; }
   void OnTransportReady() override;
   bool Init(const uint16_t aLocalPort, const uint16_t aNumStreams) override;
   int SendMessage(DataChannel& aChannel, OutgoingMsg&& aMsg) override;

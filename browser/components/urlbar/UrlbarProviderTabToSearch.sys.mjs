@@ -101,10 +101,10 @@ export class UrlbarProviderTabToSearch extends UrlbarProvider {
   }
 
   /**
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof lazy.UrlbarShared.PROVIDER_TYPE>}
    */
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.PROFILE;
+    return lazy.UrlbarShared.PROVIDER_TYPE.PROFILE;
   }
 
   /**
@@ -242,7 +242,7 @@ export class UrlbarProviderTabToSearch extends UrlbarProvider {
     // enginesForDomainPrefix only matches against engine domains.
     // Remove trailing slashes and www. from the search string and check if the
     // resulting string is worth matching.
-    let [searchStr] = UrlbarUtils.stripPrefixAndTrim(
+    let [searchStr] = lazy.UrlbarShared.stripPrefixAndTrim(
       queryContext.searchString,
       {
         stripWww: true,
@@ -293,9 +293,12 @@ export class UrlbarProviderTabToSearch extends UrlbarProvider {
     for (let engine of engines) {
       // Trim the engine host. This will also be set as the result url, so the
       // Muxer can use it to filter.
-      let [host] = UrlbarUtils.stripPrefixAndTrim(engine.searchUrlDomain, {
-        stripWww: true,
-      });
+      let [host] = lazy.UrlbarShared.stripPrefixAndTrim(
+        engine.searchUrlDomain,
+        {
+          stripWww: true,
+        }
+      );
       // Check if the host may be autofilled.
       if (host.startsWith(searchStr.toLocaleLowerCase())) {
         if (onboardingInteractionsLeft > 0) {
@@ -349,7 +352,7 @@ function makeOnboardingResult(engine, satisfiesAutofillThreshold = false) {
       engine: engine.name,
       searchUrlDomainWithoutSuffix: searchUrlDomainWithoutSuffix(engine),
       providesSearchMode: true,
-      icon: UrlbarUtils.ICON.SEARCH_GLASS,
+      icon: lazy.UrlbarShared.ICON.SEARCH_GLASS,
       dynamicType: DYNAMIC_RESULT_TYPE,
       satisfiesAutofillThreshold,
     },
@@ -366,7 +369,7 @@ function makeResult(context, engine, satisfiesAutofillThreshold = false) {
       isGeneralPurposeEngine: engine.isGeneralPurposeEngine,
       searchUrlDomainWithoutSuffix: searchUrlDomainWithoutSuffix(engine),
       providesSearchMode: true,
-      icon: UrlbarUtils.ICON.SEARCH_GLASS,
+      icon: lazy.UrlbarShared.ICON.SEARCH_GLASS,
       query: "",
       satisfiesAutofillThreshold,
     },
@@ -374,7 +377,7 @@ function makeResult(context, engine, satisfiesAutofillThreshold = false) {
 }
 
 function searchUrlDomainWithoutSuffix(engine) {
-  let [value] = UrlbarUtils.stripPrefixAndTrim(engine.searchUrlDomain, {
+  let [value] = lazy.UrlbarShared.stripPrefixAndTrim(engine.searchUrlDomain, {
     stripWww: true,
   });
   return value.substr(0, value.length - engine.searchUrlPublicSuffix.length);

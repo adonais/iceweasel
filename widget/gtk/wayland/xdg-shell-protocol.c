@@ -30,6 +30,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+
 #include "wayland-util.h"
 
 #pragma GCC visibility push(default)

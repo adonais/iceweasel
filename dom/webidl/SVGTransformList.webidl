@@ -11,7 +11,10 @@
 
 [Exposed=Window]
 interface SVGTransformList {
+  readonly attribute unsigned long length;
+  [BinaryName="Length"]
   readonly attribute unsigned long numberOfItems;
+
   [Throws]
   undefined clear();
   [Throws]
@@ -30,7 +33,6 @@ interface SVGTransformList {
   SVGTransform createSVGTransformFromMatrix(optional DOMMatrix2DInit matrix = {});
   [Throws]
   SVGTransform? consolidate();
-
-  // Mozilla-specific stuff
-  readonly attribute unsigned long length; // synonym for numberOfItems
+  [Throws]
+  setter undefined (unsigned long index, SVGTransform newItem);
 };

@@ -22,9 +22,10 @@ add_task(async function test_passwords_empty_state() {
   info("Test empty search results");
   await addMockPasswords();
   await checkAllLoginsRendered(megalist);
-  const searchInput = megalist.querySelector(".search");
-  searchInput.value = "hello";
-  searchInput.dispatchEvent(new Event("input"));
+  const searchInput = megalist.querySelector("moz-input-search");
+  searchInput.dispatchEvent(
+    new CustomEvent("MozInputSearch:search", { detail: { query: "hello" } })
+  );
   await checkEmptyState(".empty-search-results", megalist);
   ok(true, "Empty search results rendered.");
 

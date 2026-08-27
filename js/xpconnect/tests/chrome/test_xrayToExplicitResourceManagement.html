@@ -11,11 +11,6 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1929055
   <link rel="stylesheet" type="text/css" href="chrome://global/skin" />
   <link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css" />
   <script>
-    var { AppConstants } = SpecialPowers.ChromeUtils.importESModule(
-      "resource://gre/modules/AppConstants.sys.mjs"
-    );
-    const isExplicitResourceManagementEnabled = AppConstants.ENABLE_EXPLICIT_RESOURCE_MANAGEMENT;
-
     async function go() {
       SimpleTest.waitForExplicitFinish();
 
@@ -31,18 +26,6 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1929055
       simpleConstructors = simpleConstructors.concat(errorObjectClasses);
 
       const iwin = document.getElementById('ifr').contentWindow;
-
-      if (!isExplicitResourceManagementEnabled) {
-        for (let c of simpleConstructors) {
-          is(iwin[c], undefined, "Constructors should not be exposed: " + c);
-        }
-        SimpleTest.finish();
-        return;
-      }
-
-      await SpecialPowers.pushPrefEnv({
-        set: [["javascript.options.experimental.explicit_resource_management", true]],
-      });
 
       let global = Cu.getGlobalForObject.bind(Cu);
 
@@ -330,7 +313,6 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1929055
 
       testSuppressedError();
 
-      await SpecialPowers.popPrefEnv();
       SimpleTest.finish();
     }
   </script>

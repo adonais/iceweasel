@@ -440,7 +440,7 @@ Any call made to a `console` API from JavaScript will be logged through the
   `prefix` value will be used as the MOZ_LOG module name.
 
 More info about `console.createInstance` is available on the
-[JavaScript Logging page](/toolkit/javascript-logging.html)
+[JavaScript Logging page](/toolkit/javascript-logging.md)
 
 When using the `console` API, the console methods calls will be visible
 in the Developer Tools, as well as through MOZ_LOG stdout, file or profiler

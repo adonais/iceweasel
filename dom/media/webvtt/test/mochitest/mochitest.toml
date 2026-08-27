@@ -72,6 +72,8 @@ skip-if = [
 
 ["test_webvtt_positionalign.html"]
 
+["test_webvtt_process_cues_exception.html"]
+
 ["test_webvtt_resistfingerprinting.html"]
 support-files = [
   "basicvtt-server.sjs",

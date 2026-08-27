@@ -1,0 +1,58 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+# DevTools remote debugging backward compatibility tests. Only scheduled by the
+# devtools-backward-compat cron job, hence run-on-projects: [].
+# See devtools/client/aboutdebugging/documentation/TESTS_BACKWARD_COMPAT.md
+task-defaults:
+    suite:
+        name: devtools-compat
+        category: mochitest
+    test-manifest-loader: null  # don't load in taskgraph
+    chunks: 1
+    tier: 2
+    max-run-time: 1800
+    instance-size: default
+    virtualization: virtual
+    # Required by --use-test-media-devices, in the shared mochitest options.
+    loopback-video: true
+    run-on-projects: []
+    mozharness:
+        script: devtools_compat.py
+        config:
+            by-test-platform:
+                linux.*:
+                    - unittests/linux_unittest.py
+                    - remove_executables.py
+        extra-options:
+            # Not added by handle_suite_category, which only knows desktop_unittest.py.
+            - --mochitest-suite=mochitest-devtools-compat
+    fetches:
+        toolchain:
+            by-test-platform:
+                linux.*:
+                    - linux64-node
+                    - linux64-minidump-stackwalk
+                    - linux64-fix-stacks
+
+devtools-compat-same-version:
+    description: "DevTools backward compatibility tests, same version server"
+    treeherder-symbol: DTbc(same)
+    mozharness:
+        extra-options:
+            - --compat-server=local
+
+devtools-compat-beta:
+    description: "DevTools backward compatibility tests, Beta server"
+    treeherder-symbol: DTbc(beta)
+    mozharness:
+        extra-options:
+            - --compat-server=beta
+
+devtools-compat-release:
+    description: "DevTools backward compatibility tests, Release server"
+    treeherder-symbol: DTbc(release)
+    mozharness:
+        extra-options:
+            - --compat-server=release

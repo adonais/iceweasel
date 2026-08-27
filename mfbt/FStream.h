@@ -13,11 +13,13 @@
 #define mozilla_FStream_h
 
 #if defined(__MINGW32__) && defined(__GLIBCXX__)
+#  include <fcntl.h>
+
+#  include <ext/stdio_filebuf.h>
 #  include <istream>
 #  include <ostream>
+
 #  include "mozilla/UniquePtr.h"
-#  include <fcntl.h>
-#  include <ext/stdio_filebuf.h>
 #else
 #  if defined(XP_WIN)
 #    include "mozilla/Char16.h"

@@ -116,7 +116,6 @@ export class IPProtectionPanel {
       IPProtectionPanel.CUSTOM_ELEMENTS_SCRIPT,
       {
         target: window,
-        async: true,
       }
     );
     hasCustomElements.add(window);
@@ -130,7 +129,7 @@ export class IPProtectionPanel {
    *  The location country code
    * @property {Array<{code: string, available: boolean}>} locationsList
    *  Countries available as egress locations, from IPProtectionServerlist.
-   * @property {"generic-error" | "network-error" | ""} error
+   * @property {"generic-error" | "network-error" | "vpn-unavailable" | ""} error
    *  The error type as a string if an error occurred, or empty string if there are no errors.
    * @property {boolean} hasUpgraded
    *  True if a Mozilla VPN subscription is linked to the user's Mozilla account.
@@ -525,16 +524,27 @@ export class IPProtectionPanel {
       inPrivateBrowsing,
       country
     );
-    if (error && error !== lazy.ERRORS.CANCELED) {
-      const errorMessage =
-        error == lazy.ERRORS.NETWORK
-          ? lazy.ERRORS.NETWORK
-          : lazy.ERRORS.GENERIC;
+    // Cancellation, an exhausted quota and a not-ready proxy are already
+    // represented elsewhere in the UI, so they must not raise an error message.
+    const handledElsewhere = [
+      lazy.ERRORS.CANCELED,
+      lazy.ERRORS.QUOTA_EXHAUSTED,
+      lazy.ERRORS.NOT_READY,
+    ];
+    if (error && !handledElsewhere.includes(error)) {
+      const errorMessage = this.#errorMessage(error);
       this.setState({
         error: errorMessage,
       });
       this.toolbarButton?.updateState(null, { error: errorMessage });
     }
+  }
+
+  #errorMessage(error) {
+    if ([lazy.ERRORS.NETWORK, lazy.ERRORS.VPN_UNAVAILABLE].includes(error)) {
+      return error;
+    }
+    return lazy.ERRORS.GENERIC;
   }
 
   async #stopProxy() {
@@ -587,10 +597,7 @@ export class IPProtectionPanel {
     this.#updateSiteData();
 
     if (this.state.paused) {
-      this.setState({ isEnrolling: true });
-      lazy.IPPProxyManager.refreshUsage().finally(() => {
-        this.setState({ isEnrolling: false });
-      });
+      lazy.IPPProxyManager.refreshUsage();
     }
 
     // Only check default browser on panel open if not premium to limit calls to the Shell Service

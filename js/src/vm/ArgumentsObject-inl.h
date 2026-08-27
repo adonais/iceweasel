@@ -18,7 +18,7 @@ inline const Value& ArgumentsObject::element(uint32_t i) const {
   const Value& v = data()->args[i];
   if (IsMagicScopeSlotValue(v)) {
     CallObject& callobj =
-        getFixedSlot(MAYBE_CALL_SLOT).toObject().as<CallObject>();
+        getFixedSlotTyped(MAYBE_CALL_SLOT).toObject().as<CallObject>();
     return callobj.aliasedFormalFromArguments(v);
   }
   return v;
@@ -29,7 +29,7 @@ inline void ArgumentsObject::setElement(uint32_t i, const Value& v) {
   Value value = data()->args[i];
   if (IsMagicScopeSlotValue(value)) {
     CallObject& callobj =
-        getFixedSlot(MAYBE_CALL_SLOT).toObject().as<CallObject>();
+        getFixedSlotTyped(MAYBE_CALL_SLOT).toObject().as<CallObject>();
     callobj.setAliasedFormalFromArguments(value, v);
   } else {
     setArg(i, v);

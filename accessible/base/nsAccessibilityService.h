@@ -423,6 +423,8 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
    */
   static bool IsOnlyForPdfOutput() { return gConsumers == ePdfOutput; }
 
+  static bool IsRunningInParentProcess() { return gConsumers & eMainProcess; }
+
   static uint64_t GetActiveCacheDomains() { return gCacheDomains; }
   bool ShouldAllowNewCacheDomains() { return mShouldAllowNewCacheDomains; }
 

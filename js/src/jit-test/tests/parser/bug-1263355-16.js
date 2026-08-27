@@ -7,5 +7,5 @@ function addThis() {
   return statusmessages[i] = Number;
 }
 `);
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);

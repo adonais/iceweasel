@@ -12,6 +12,7 @@ import androidx.core.view.updateLayoutParams
 import mozilla.components.browser.menu2.R
 import mozilla.components.browser.menu2.ext.applyStyle
 import mozilla.components.concept.menu.candidate.DecorativeTextMenuCandidate
+import mozilla.components.support.ktx.android.view.pixelSizeFor
 
 internal class DecorativeTextMenuCandidateViewHolder(
     itemView: View,
@@ -34,8 +35,9 @@ internal class DecorativeTextMenuCandidateViewHolder(
     private fun applyHeight(newHeight: Int?, oldHeight: Int?) {
         if (newHeight != oldHeight) {
             textView.updateLayoutParams {
-                height = newHeight ?: itemView.resources
-                    .getDimensionPixelSize(R.dimen.mozac_browser_menu2_candidate_container_layout_height)
+                height = newHeight ?: itemView.pixelSizeFor(
+                    R.dimen.mozac_browser_menu2_candidate_container_layout_height,
+                )
             }
         }
     }

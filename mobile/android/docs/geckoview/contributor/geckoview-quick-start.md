@@ -41,7 +41,7 @@ and {ref}`Bootstrap <bootstrap-setup>` and build the project.
 
 Once you have got GeckoView building and running, you will want to start
 contributing. There is a general guide to [Performing a Bug Fix for Git
-Developers](contributing-to-firefox.html) for you to follow. To contribute to
+Developers](contributing-to-firefox.md) for you to follow. To contribute to
 GeckoView specifically, you will need the following additional
 information.
 
@@ -49,7 +49,7 @@ information.
 
 Because GeckoView is on many layers, often the best debugging tool depends on the layer the bug is on.
 For Java or Kotlin code, using the Android Studio IDE is an easy way to connect a debugger and set breakpoints. It can
-also be used with C++ code once native debugging is setup. Please see this guide on [Native Debugging](native-debugging.html).
+also be used with C++ code once native debugging is setup. Please see this guide on [Native Debugging](native-debugging.md).
 
 For JavaScript code, it is possible to connect a debugger using Firefox Desktop Nightly's `about:debugging` section. The device must be setup to support
 USB connections and the device likely needs developer mode enabled.
@@ -118,7 +118,7 @@ To see information on other options, simply run
 `./mach geckoview-junit --help`; of particular note for dealing with
 intermittent test failures are `--repeat N` and
 `--run-until-failure`, both of which do exactly what you’d expect.
-If a test is intermittently failing, consult [Debugging Intermittent Test Failures](/testing/debugging-intermittents/index.html) for additional tips.
+If a test is intermittently failing, consult [Debugging Intermittent Test Failures](/testing/debugging-intermittents/index.md) for additional tips.
 
 Other tests, such as mochitests, may be ran using:
 
@@ -204,7 +204,7 @@ The next step will generate a new `api.txt` file, which is a running list of pub
 If the changes look as expected, then it is time to generate `api.txt` by running this command:
 
 ```bash
-./mach gradlew geckoview:apiUpdateFileDebug
+./mach gradle geckoview:apiUpdateFileDebug
 ```
 
 The build should pass this time, and an updated `api.txt` file will be generated for the changes.
@@ -363,7 +363,7 @@ Failures on `try` will show up with the test name highlighted in orange. Select 
 Intermittent failures occasionally occur due to issues with the test harness. Retriggering the test is a good way
 to confirm it is an intermittent failure and not due to the patch. Usually there will also be a bug number with
 a portion of the stack trace as well for documented intermittent failures.
-See [Intermittent Test Failures](/devtools/tests/debugging-intermittents.html) for more information.
+See [Intermittent Test Failures](/testing/debugging-intermittents/index.md) for more information.
 
 To debug failures on try, it is always a good idea to check the logcat. To do this, select the individual test,
 select "Artifacts and Debugging" and then open the log from "logcat-emulator-5554.log".
@@ -422,7 +422,7 @@ libraries were not included in a deployed APK. Avoid this by setting
 In projects that don’t have first-class support for dependency
 substitution already, you can do the substitution yourself. See the
 documentation in
-[substitue-local-geckoview.gradle](https://hg.mozilla.org/mozilla-central/file/tip/substitute-local-geckoview.gradle),
+[substitute-local-geckoview.gradle](https://searchfox.org/firefox-main/source/substitute-local-geckoview.gradle),
 but roughly: in each Gradle project that consumes GeckoView, i.e., in
 each `build.gradle` with a
 `dependencies { ... 'org.mozilla.geckoview:geckoview-...' }` block,
@@ -439,4 +439,4 @@ want to return to using the published GeckoView builds!**
 
 ### Next Steps
 
-- Get started with [Native Debugging for Android](native-debugging.html)
+- Get started with [Native Debugging for Android](native-debugging.md)

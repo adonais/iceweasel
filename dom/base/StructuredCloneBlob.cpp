@@ -120,7 +120,7 @@ void StructuredCloneBlob::Deserialize(JSContext* aCx,
   }
 
   if (!JS_WrapValue(aCx, aResult)) {
-    aResult.set(JS::UndefinedValue());
+    aResult.setUndefined();
     aRv.NoteJSContextException(aCx);
   }
 }

@@ -10,6 +10,38 @@ const PREF_NOVA_ENABLED = "nova.enabled";
 // eslint-disable-next-line no-shadow
 import { CSSTransition } from "react-transition-group";
 
+const THEME_PICKER_ELEMENTS = [
+  "chrome://global/content/elements/moz-visual-picker.mjs",
+  "chrome://global/content/elements/moz-segmented-control.mjs",
+  "chrome://global/content/elements/theme-picker.mjs",
+];
+const THEME_PICKER_FTL = "toolkit/global/theme-picker.ftl";
+let themePickerElementsLoaded = false;
+
+/**
+ * @backward-compat { version 155 }
+ * The `theme-picker` element, its `moz-visual-picker` / `moz-segmented-control`
+ * dependencies, and its `theme-picker.ftl` only exist in Firefox 155+. Load them lazily
+ * and only on a supported host (callers gate on `browserNovaEnabled`, which encodes the
+ * 155+ check) so their `chrome://` URLs / l10n resources are never referenced when
+ * newtab train-hops onto an older host — there a missing chrome URL is a fatal
+ * `CheckForBrokenChromeURL` process crash, not a catchable load error. The element's own
+ * `insertFTLIfNeeded` does not run in the newtab content context (no `MozXULElement`), so
+ * the ftl is registered here instead of via a static `<link>`. Remove once 155 reaches
+ * Release.
+ */
+function loadThemePickerElements() {
+  if (themePickerElementsLoaded) {
+    return;
+  }
+  themePickerElementsLoaded = true;
+  document.l10n?.addResourceIds([THEME_PICKER_FTL]);
+  for (const url of THEME_PICKER_ELEMENTS) {
+    // eslint-disable-next-line no-unsanitized/method
+    import(/* webpackIgnore: true */ url).catch(() => {});
+  }
+}
+
 export class _CustomizeMenu extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -30,8 +62,17 @@ export class _CustomizeMenu extends React.PureComponent {
     this.setState({ subpanelOpen: isOpen });
   }
 
+  componentDidMount() {
+    if (this.props.showing && this.props.Prefs.values.browserNovaEnabled) {
+      loadThemePickerElements();
+    }
+  }
+
   componentDidUpdate(prevProps) {
     if (this.props.showing && !prevProps.showing) {
+      if (this.props.Prefs.values.browserNovaEnabled) {
+        loadThemePickerElements();
+      }
       if (!this.dialogRef.current?.open) {
         this.dialogRef.current?.showModal();
       }
@@ -79,6 +120,8 @@ export class _CustomizeMenu extends React.PureComponent {
       : "";
     // @nova-cleanup(remove-pref): remove nova pref
     const novaEnabled = this.props.Prefs.values[PREF_NOVA_ENABLED];
+    // Browser-wide Nova gate for the theme picker (distinct from novaEnabled).
+    const { browserNovaEnabled } = this.props.Prefs.values;
 
     return (
       <span>
@@ -101,7 +144,7 @@ export class _CustomizeMenu extends React.PureComponent {
                 onClick={() => this.props.onOpen()}
                 iconsrc="chrome://global/skin/icons/edit-outline.svg"
                 iconposition="end"
-                type="default"
+                type="primary"
               ></moz-button>
             ) : (
               <button
@@ -167,6 +210,7 @@ export class _CustomizeMenu extends React.PureComponent {
                   this.props.mayHaveInferredPersonalization
                 }
                 mayHaveWeather={this.props.mayHaveWeather}
+                mayHaveWebNotifications={this.props.mayHaveWebNotifications}
                 mayHaveWidgets={this.props.mayHaveWidgets}
                 mayHaveWeatherForecast={this.props.mayHaveWeatherForecast}
                 weatherDisplay={this.props.weatherDisplay}
@@ -185,6 +229,9 @@ export class _CustomizeMenu extends React.PureComponent {
                 toggleSectionsMgmtPanel={this.props.toggleSectionsMgmtPanel}
                 showSectionsMgmtPanel={this.props.showSectionsMgmtPanel}
                 novaEnabled={novaEnabled}
+                browserNovaEnabled={browserNovaEnabled}
+                toggleThemesPanel={this.props.toggleThemesPanel}
+                showThemesPanel={this.props.showThemesPanel}
                 toggleWidgetsManagementPanel={
                   this.props.toggleWidgetsManagementPanel
                 }

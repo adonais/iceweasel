@@ -302,24 +302,30 @@ static nsAtomTable* gAtomTable;
 nsAtomSubTable& nsAtomTable::SelectSubTable(AtomTableKey& aKey) {
   // There are a few considerations around how we select subtables.
   //
-  // First, we want entries to be evenly distributed across the subtables. This
-  // can be achieved by using any bits in the hash key, assuming the key itself
-  // is evenly-distributed. Empirical measurements indicate that this method
-  // produces a roughly-even distribution across subtables.
+  // First, we want entries to be evenly distributed across the subtables.
   //
-  // Second, we want to use the hash bits that are least likely to influence an
-  // entry's position within the subtable. If we used the exact same bits used
-  // by the subtables, then each subtable would compute the same position for
-  // every entry it observes, leading to pessimal performance. In this case,
-  // we're using nsTHashtable, whose primary hash function uses the N leftmost
-  // bits of the hash value (where N is the log2 capacity of the table). This
-  // means we should prefer the rightmost bits here.
+  // Second, we want to use hash bits that are as independent as possible from
+  // the bits that determine an entry's position within a subtable. Each
+  // subtable is a PLDHashTable, which scrambles the hash with
+  // ScrambleHashCode() (a multiply by kGoldenRatioU32) and then uses the
+  // resulting high bits. If we used correlated bits to select the subtable,
+  // every entry within a given subtable would tend to land in the same slot,
+  // leading to pessimal performance.
   //
-  // Note that the below is equivalent to mHash % kNumSubTables, a replacement
-  // which an optimizing compiler should make, but let's avoid any doubt.
+  // The low bits of mHash used to satisfy both requirements, but HashString()
+  // has weak avalanche in its low bits, so they aren't evenly distributed. So
+  // we instead run a multiplicative hash with a different constant from
+  // ScrambleHashCode() and use its high bits: those are well-distributed and
+  // uncorrelated with the within-subtable position.
   static_assert((kNumSubTables & (kNumSubTables - 1)) == 0,
                 "must be power of two");
-  return mSubTables[aKey.mHash & (kNumSubTables - 1)];
+  constexpr uint32_t kSubTableShift =
+      mozilla::kHashNumberBits - mozilla::CeilingLog2(kNumSubTables);
+  // A well-distributed odd multiplier, distinct from kGoldenRatioU32.
+  constexpr uint32_t kSubTableMultiplier = 0xcc9e2d51;
+  return mSubTables[mozilla::WrappingMultiply(aKey.mHash,
+                                              kSubTableMultiplier) >>
+                    kSubTableShift];
 }
 
 void nsAtomTable::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,

@@ -116,7 +116,7 @@ void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
       case eCSSProperty_border_image_slice:
       case eCSSProperty_border_image_width:
       case eCSSProperty_font_size_adjust:
-      case eCSSProperty_font_stretch:
+      case eCSSProperty_font_width:
       case eCSSProperty_flex_grow:
       case eCSSProperty_flex_shrink:
       case eCSSProperty_stroke_miterlimit:

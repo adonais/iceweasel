@@ -865,19 +865,16 @@ var BookmarksEventHandler = {
       // Only record interactions through the Bookmarks Toolbar
       if (target.closest("#PersonalToolbar")) {
         Glean.browserEngagement.bookmarksToolbarBookmarkOpened.add(1);
+        if (
+          gBookmarksToolbarVisibility == "newtab" &&
+          AIWindow.isAIWindowActive(window) &&
+          AIWindow.isAIWindowNewTabPage(gBrowser.currentURI)
+        ) {
+          Glean.smartWindow.bookmarkbar.opened.add(1);
+        }
       }
     } else if (eventAction) {
-      switch (eventAction) {
-        case "signin":
-          gSync.openFxAEmailFirstPage("bookmarks-top-menu");
-          break;
-        case "turnonsync":
-          gSync.openSyncSetupForEntryPoint("bookmarks-top-menu");
-          break;
-        case "connectdevice":
-          gSync.openConnectAnotherDevice("bookmarks-top-menu");
-          break;
-      }
+      gSync.handleSyncPromoAction(eventAction, "bookmarks-top-menu");
     }
   },
 
@@ -1557,8 +1554,12 @@ var BookmarkingUI = {
     if (PrivateBrowsingUtils.isWindowPrivate(window)) {
       newTabURLs.push("about:privatebrowsing");
     }
-    return newTabURLs.some(newTabUriString =>
-      this._newTabURI(newTabUriString)?.equalsExceptRef(uri)
+    // In a Smart Window, the new tab is a chrome document rather than
+    // about:newtab; isAIWindowNewTabPage matches it (and excludes firstrun).
+    return (
+      newTabURLs.some(newTabUriString =>
+        this._newTabURI(newTabUriString)?.equalsExceptRef(uri)
+      ) || AIWindow.isAIWindowNewTabPage(uri)
     );
   },
 
@@ -2161,12 +2162,13 @@ var BookmarkingUI = {
     for (let ev of aEvents) {
       switch (ev.type) {
         case "bookmark-added":
-          // Only need to update the UI if it wasn't marked as starred before:
-          if (this._itemGuids.size == 0) {
-            if (ev.url && ev.url == this._uri.spec) {
-              // If a new bookmark has been added to the tracked uri, register it.
-              if (!this._itemGuids.has(ev.guid)) {
-                this._itemGuids.add(ev.guid);
+          if (!ev.isTagging && ev.url && ev.url == this._uri.spec) {
+            // If a new bookmark has been added to the tracked uri, register it.
+            if (!this._itemGuids.has(ev.guid)) {
+              // Only need to update the UI if it wasn't marked as starred before:
+              let wasStarred = this._itemGuids.size > 0;
+              this._itemGuids.add(ev.guid);
+              if (!wasStarred) {
                 isStarUpdateNeeded = true;
               }
             }

@@ -87,7 +87,7 @@ scopeguard = { version = "1", optional = true }
 [build-dependencies]
 bindgen = { version = "0.69", default-features = false, features = ["runtime"], optional = true }
 cc = { version = "1.0", features = ["parallel"], optional = true }
-itertools = { version = "0.14", default-features = false, features = ["use_alloc"], optional = true }
+itertools = { version = "0.15", default-features = false, features = ["use_alloc"], optional = true }
 libc = "0.2"
 log = { version = "0.4", features = ["std"], optional = true }
 memchr = { version = "2", optional = true }
@@ -284,3 +284,6 @@ toolchain-nimbus-fml = []
 megazord = []
 embedded-uniffi-bindgen = []
 nimbus-fml = []
+gkrust-uniffi-components = []
+uniffi-bindgen-gecko-js = []
+uniffi-bindgen-gecko-js-test-fixtures = []

@@ -51,6 +51,8 @@
   <string name="mozac_summarize_download_error_negative_button">Annuleren</string>
   <!-- Title for the error screen when page is too long to summarize -->
   <string name="mozac_summarize_content_too_long_error_title">Pagina te lang om samen te vatten</string>
+  <!-- Title for the error screen when the page content is behind a paywall -->
+  <string name="mozac_summarize_paywalled_content_error_title">Kan inhoud achter een betaalmuur niet samenvatten</string>
   <!-- Title for the info error screen -->
   <string name="mozac_summarize_info_error_title">Kan nu niet samenvatten</string>
   <!-- Generic fallback message for the info error screen -->

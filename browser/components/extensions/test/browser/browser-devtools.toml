@@ -1,7 +1,4 @@
 [DEFAULT]
-skip-if = [
-	"debug && standalone", # TODO bug 2048260: Drop skip-if = standalone
-]
 tags = "webextensions devtools"
 prefs = [
   # We don't want to reset this at the end of the test, so that we don't have
@@ -28,12 +25,6 @@ support-files = ["file_inspectedwindow_reload_target.sjs"]
 
 ["browser_ext_devtools_network.js"]
 https_first_disabled = true
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1697626
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1697626
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1697626
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1697626
-]
 
 ["browser_ext_devtools_network_targetSwitch.js"]
 https_first_disabled = true

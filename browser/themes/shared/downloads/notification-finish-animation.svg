@@ -1,193 +1,281 @@
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
-<svg xmlns="http://www.w3.org/2000/svg" width="540" height="20">
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="20">
   <defs>
-    <path fill="context-stroke" d="M10.109 2.55a.618.618 0 0 0-.207-.39.641.641 0 0 0-.418-.16.636.636 0 0 0-.625.55c0 0 0 8.45 0 8.45 0 0-3.31-3.36-3.31-3.36a.633.633 0 0 0-.88 0 .606.606 0 0 0-.187.44.62.62 0 0 0 .187.44c0 0 4.47 4.48 4.47 4.48 0 0 .72 0 .72 0 0 0 4.47-4.48 4.47-4.48a.604.604 0 0 0 0-.88.633.633 0 0 0-.88 0c0 0-3.34 3.36-3.34 3.36 0 0 0-8.45 0-8.45z" id="ab"/>
-    <path fill="context-stroke" d="M14.125 17a2 2 0 0 0 2-2c0 0 0-1.45 0-1.45a.625.625 0 0 0-.209-.39.632.632 0 0 0-.416-.16.636.636 0 0 0-.625.55c0 0 0 1.6 0 1.6 0 0-.601.6-.601.6 0 0-9.549 0-9.549 0 0 0-.6-.6-.6-.6 0 0 0-1.6 0-1.6A.638.638 0 0 0 3.5 13a.636.636 0 0 0-.625.55c0 0 0 1.45 0 1.45a2 2 0 0 0 2 2c0 0 9.25 0 9.25 0z" id="aa"/>
-    <path stroke="context-fill" stroke-width="1.8" d="M5.838 8.706c0 0 3.487 3.488 3.487 3.488 0 0 4.387-5.175 4.387-5.175" fill="none" id="i"/>
-    <path fill="#15141A" d="M-1.17 3c0 0-2.65-2.64-2.65-2.64a.625.625 0 0 1-.161-.7.638.638 0 0 1 .351-.35.625.625 0 0 1 .496.011.625.625 0 0 1 .204.149c0 0 2.07 2.08 2.07 2.08 0 0 3.79-3.8 3.79-3.8a.63.63 0 0 1 .89.89C3.82-1.36-.55 3-.55 3c0 0-.62 0-.62 0z" id="d"/>
-    <path stroke="context-fill" stroke-linecap="round" d="M9.991 1.6a8.4 8.4 0 1 1 0 16.8 8.4 8.4 0 0 1 0-16.8z" fill="none" stroke-width="1.05" id="c"/>
-    <path fill="context-fill" d="M0-4.752a4.753 4.753 0 1 0 .001 9.505A4.753 4.753 0 0 0 0-4.752z" id="b"/>
-    <path fill="none" stroke="context-fill" stroke-linecap="round" d="M0-8A8 8 0 1 1 0 8 8 8 0 0 1 0-8z" id="a"/>
+    <path id="a" fill="none" stroke="context-fill" stroke-linecap="round"
+      stroke-linejoin="miter" stroke-width="1.5"
+      d="M16.5 8.25a8.25 8.25 0 1 1-16.5 0 8.25 8.25 0 0 1 16.5 0Z" />
+    <path id="b" fill="context-stroke" d="M12 6A6 6 0 1 1 0 6a6 6 0 0 1 12 0" />
+    <path id="c" fill="none" stroke="context-fill" stroke-linecap="round"
+      stroke-linejoin="round" stroke-width="1.5" d="m2.1 2.1 1.4 1.4L7 0" />
+    <path id="d" fill="none" stroke="context-fill" stroke-linecap="round"
+      stroke-linejoin="round" stroke-width="1.5"
+      d="m8.499 0-4.43 4.43a2 2 0 0 1-2.828 0L0 3.189" />
+    <path id="e" fill="none" stroke="context-fill" stroke-linecap="round"
+      stroke-linejoin="round" stroke-width="1.5"
+      d="M6.368 2.131 4.069 4.43a2 2 0 0 1-2.828 0L0 3.189" />
+    <path id="f" fill="none" stroke="context-fill" stroke-linecap="round"
+      stroke-linejoin="round" stroke-width="1.5" d="m0 0 3.5 3.5L7 0" />
   </defs>
-  <svg viewBox="0 0 20 20" width="20" height="20">
-    <use transform="matrix(1.05 0 0 1.05 9.991 10)" href="#a"/>
-    <use transform="matrix(1.35 0 0 1.35 10 10)" href="#b"/>
+  <svg width="20" height="20" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="translate(4 4)" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="20">
-    <use transform="matrix(1.05 0 0 1.05 9.991 10)" href="#a"/>
-    <use transform="matrix(1.35 0 0 1.35 10 10)" href="#b"/>
+  <svg width="20" height="20" x="20" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="translate(4.163 4.163)scale(.9728)" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="40">
-    <use transform="matrix(1.05 0 0 1.05 9.991 10)" href="#a"/>
-    <use transform="matrix(1.35 0 0 1.35 10 10)" href="#b"/>
+  <svg width="20" height="20" x="40" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="translate(4.586 4.586)scale(.9024)" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="60">
-    <use transform="matrix(1.05 0 0 1.05 9.991 10)" href="#a"/>
-    <use transform="matrix(1.35 0 0 1.35 10 10)" href="#b"/>
+  <svg width="20" height="20" x="60" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="translate(5.202 5.202)scale(.7997)" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="80">
-    <use transform="matrix(1.05 0 0 1.05 9.991 10)" href="#a"/>
-    <use transform="matrix(1.35 0 0 1.35 10 10)" href="#b"/>
+  <svg width="20" height="20" x="80" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="translate(5.972 5.972)scale(.6713)" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="100">
-    <use transform="matrix(1.05 0 0 1.05 9.991 10)" href="#a"/>
-    <use transform="matrix(1.35 0 0 1.35 10 10)" href="#b"/>
+  <svg width="20" height="20" x="100" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="translate(6.87 6.87)scale(.5215)" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="120">
-    <use transform="matrix(1.05 0 0 1.05 9.991 10)" href="#a"/>
-    <use transform="matrix(1.35 0 0 1.35 10 10)" href="#b"/>
+  <svg width="20" height="20" x="120" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="translate(7.884 7.884)scale(.3527)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="m6.689 12.1-.938-.938" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="140">
-    <use transform="matrix(1.05 0 0 1.05 9.991 10)" href="#a"/>
-    <use transform="matrix(1.35 0 0 1.35 10 10)" href="#b"/>
+  <svg width="20" height="20" x="140" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="translate(9.005 9.005)scale(.1659)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M7.965 12.94a2 2 0 0 1-.973-.537l-1.241-1.241" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="160">
-    <use transform="matrix(1.05 0 0 1.05 9.991 10)" href="#a"/>
-    <use transform="translate(10 10) scale(1.20948)" href="#b"/>
+  <svg width="20" height="20" x="160" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M9.369 12.742a2 2 0 0 1-2.377-.34l-1.241-1.24" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="180">
-    <use transform="matrix(1.05 0 0 1.05 9.991 10)" href="#a"/>
-    <use transform="translate(10 10) scale(.8747)" href="#b"/>
+  <svg width="20" height="20" x="180" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="m10.372 11.85-.552.553a2 2 0 0 1-2.828 0l-1.241-1.241" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="200">
-    <use transform="matrix(1.05 0 0 1.05 9.991 10)" href="#a"/>
-    <use transform="translate(10 10) scale(.4753)" href="#b"/>
+  <svg width="20" height="20" x="200" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M11.247 10.976 9.82 12.403a2 2 0 0 1-2.828 0l-1.241-1.241" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="220">
-    <use transform="matrix(1.05 0 0 1.05 9.991 10)" href="#a"/>
-    <use transform="translate(10 10) scale(.14052)" href="#b"/>
+  <svg width="20" height="20" x="220" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M12.039 10.184 9.82 12.403a2 2 0 0 1-2.828 0l-1.241-1.241" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="240">
-    <use fill="none" stroke-width="1.05" href="#c"/>
-    <use transform="matrix(0 0 0 0 10 10)" href="#b"/>
+  <svg width="20" height="20" x="240" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M12.739 9.484 9.82 12.403a2 2 0 0 1-2.828 0l-1.241-1.241" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="260">
-    <use fill="none" stroke-width="1.05" href="#c"/>
-    <use transform="matrix(0 0 0 0 10 10)" href="#b"/>
+  <svg width="20" height="20" x="260" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M13.332 8.89 9.82 12.404a2 2 0 0 1-2.828 0l-1.241-1.241" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="280">
-    <defs>
-      <mask id="e" mask-type="alpha">
-        <use fill="#15141A" transform="translate(10 10)" href="#d"/>
-      </mask>
-    </defs>
-    <use fill="none" stroke-width="1.05" href="#c"/>
-    <use transform="matrix(0 0 0 0 10 10)" href="#b"/>
-    <g style="display:block" mask="url(#e)">
-      <path stroke="context-fill" stroke-width="1.8" d="M5.838 8.706c0 0 1.927 1.928 2.916 2.918" fill="none"/>
-    </g>
+  <svg width="20" height="20" x="280" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M13.802 8.42 9.82 12.404a2 2 0 0 1-2.828 0l-1.241-1.241" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="300">
-    <defs>
-      <mask id="f" mask-type="alpha">
-        <use fill="#15141A" transform="translate(10 10)" href="#d"/>
-      </mask>
-    </defs>
-    <use fill="none" stroke-width="1.05" href="#c"/>
-    <use transform="matrix(0 0 0 0 10 10)" href="#b"/>
-    <g style="display:block" mask="url(#f)">
-      <path stroke="context-fill" stroke-width="1.8" d="M5.838 8.706c0 0 3.487 3.488 3.487 3.488 0 0 .802-.945 1.72-2.028" fill="none"/>
-    </g>
+  <svg width="20" height="20" x="300" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="m14.12 8.103-4.3 4.3a2 2 0 0 1-2.828 0l-1.241-1.241" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="320">
-    <defs>
-      <mask id="g" mask-type="alpha">
-        <use fill="#15141A" transform="translate(10 10)" href="#d"/>
-      </mask>
-    </defs>
-    <use fill="none" stroke-width="1.05" href="#c"/>
-    <use transform="matrix(0 0 0 0 10 10)" href="#b"/>
-    <g style="display:block" mask="url(#g)">
-      <path stroke="context-fill" stroke-width="1.8" d="M5.838 8.706c0 0 3.487 3.488 3.487 3.488 0 0 2.335-2.755 3.6-4.244" fill="none"/>
-    </g>
+  <svg width="20" height="20" x="320" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M14.249 7.974 9.82 12.403a2 2 0 0 1-2.828 0l-1.241-1.241" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="340">
-    <defs>
-      <mask id="h" mask-type="alpha">
-        <use fill="#15141A" transform="translate(10 10)" href="#d"/>
-      </mask>
-    </defs>
-    <use fill="none" stroke-width="1.05" href="#c"/>
-    <use transform="matrix(0 0 0 0 10 10)" href="#b"/>
-    <g style="display:block" mask="url(#h)">
-      <use stroke="context-fill" stroke-width="1.8" fill="none" href="#i"/>
-    </g>
+  <svg width="20" height="20" x="340" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <use href="#d" transform="translate(5.751 7.973)" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="360">
-    <defs>
-      <mask id="W" mask-type="alpha">
-        <use fill="#15141A" transform="translate(10 10)" href="#d"/>
-      </mask>
-    </defs>
-    <use fill="none" stroke-width="1.05" href="#c"/>
-    <use transform="matrix(0 0 0 0 10 10)" href="#b"/>
-    <g style="display:block" mask="url(#W)">
-      <use stroke="context-fill" stroke-width="1.8" fill="none" href="#i"/>
-    </g>
+  <svg width="20" height="20" x="360" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <use href="#d" transform="translate(5.751 7.973)" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="380">
-    <defs>
-      <mask id="X" mask-type="alpha">
-        <use fill="#15141A" transform="translate(10 10)" href="#d"/>
-      </mask>
-    </defs>
-    <use fill="none" stroke-width="1.05" href="#c"/>
-    <use transform="matrix(0 0 0 0 10 10)" href="#b"/>
-    <g style="display:block" mask="url(#X)">
-      <use stroke="context-fill" stroke-width="1.8" fill="none" href="#i"/>
-    </g>
+  <svg width="20" height="20" x="380" viewBox="0 0 20 20">
+    <use href="#a" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <use href="#d" transform="translate(5.751 7.973)" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="400">
-    <defs>
-      <mask id="Y" mask-type="alpha">
-        <use fill="#15141A" transform="translate(10 10)" href="#d"/>
-      </mask>
-    </defs>
-    <use fill="none" opacity=".74" stroke-width="1.05" href="#c"/>
-    <path fill="context-fill" d="M9.752 9.485a.046.046 0 0 0-.016-.03.048.048 0 0 0-.03-.011.047.047 0 0 0-.047.04c0 0 0 .627 0 .627 0 0-.245-.249-.245-.249a.047.047 0 0 0-.076.015.046.046 0 0 0 .01.05c0 0 .332.333.332.333 0 0 .053 0 .053 0 0 0 .332-.333.332-.333a.045.045 0 0 0 0-.065.047.047 0 0 0-.066 0c0 0-.247.25-.247.25 0 0 0-.627 0-.627z" opacity=".3"/>
-    <g mask="url(#Y)">
-      <path stroke="context-fill" stroke-width="1.67" d="M6.146 8.802c0 0 3.23 3.23 3.23 3.23 0 0 4.061-4.792 4.061-4.792" fill="none"/>
-    </g>
+  <svg width="20" height="20" x="400" viewBox="0 0 20 20">
+    <use href="#a" opacity=".993" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M10.514 17.247a44 44 0 0 1-1.022 0M10 4.31v-.56M14.238 7.989l-4.414 4.414a2 2 0 0 1-2.828 0l-1.241-1.241" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="420">
-    <defs>
-      <mask id="Z" mask-type="alpha">
-        <use fill="#15141A" transform="translate(10 10)" href="#d"/>
-      </mask>
-    </defs>
-    <use fill="none" opacity=".26" stroke-width="1.05" href="#c"/>
-    <path fill="context-stroke" d="M10.465 18.111a.519.519 0 0 0 .52-.519c0 0 0-.376 0-.376a.164.164 0 0 0-.162-.143.165.165 0 0 0-.163.143c0 0 0 .415 0 .415 0 0-.156.156-.156.156 0 0-2.476 0-2.476 0 0 0-.156-.156-.156-.156 0 0 0-.415 0-.415a.163.163 0 0 0-.27-.101.16.16 0 0 0-.054.101c0 0 0 .376 0 .376a.519.519 0 0 0 .518.519c0 0 2.4 0 2.4 0z"/>
-    <path fill="context-stroke" d="M9.423 7.697a.16.16 0 0 0-.054-.1.166.166 0 0 0-.108-.042.165.165 0 0 0-.162.142c0 0 0 2.192 0 2.192 0 0-.859-.871-.859-.871a.164.164 0 0 0-.264.052.16.16 0 0 0 .036.176c0 0 1.16 1.162 1.16 1.162 0 0 .186 0 .186 0 0 0 1.16-1.162 1.16-1.162a.157.157 0 0 0 0-.228.164.164 0 0 0-.229 0c0 0-.866.871-.866.871 0 0 0-2.192 0-2.192z" opacity=".7"/>
-    <g style="display:block" mask="url(#Z)">
-      <path stroke="context-fill" stroke-width="1.33" d="M6.917 9.041c0 0 2.583 2.584 2.583 2.584 0 0 3.25-3.833 3.25-3.833" fill="none"/>
-    </g>
+  <svg width="20" height="20" x="420" viewBox="0 0 20 20">
+    <use href="#a" opacity=".955" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M11.21 17.231a37 37 0 0 1-2.415 0M10 5.075V3.75M14.172 8.073l-4.33 4.33a2 2 0 0 1-2.828 0l-1.24-1.24" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="440">
-    <use fill="none" opacity=".26" stroke-width="1.05" href="#c"/>
-    <use transform="matrix(0 0 0 0 10 10)" href="#b"/>
-    <path fill="context-stroke" d="M11.655 17.75a1 1 0 0 0 1-1c0 0 0-.725 0-.725a.316.316 0 0 0-.313-.275.318.318 0 0 0-.312.275c0 0 0 .8 0 .8 0 0-.301.3-.301.3 0 0-4.775 0-4.775 0 0 0-.3-.3-.3-.3 0 0 0-.8 0-.8a.314.314 0 0 0-.52-.195.31.31 0 0 0-.104.195c0 0 0 .725 0 .725a1 1 0 0 0 1 1c0 0 4.625 0 4.625 0z"/>
-    <path fill="context-stroke" d="M9.646 6.025a.31.31 0 0 0-.104-.195.32.32 0 0 0-.209-.08.318.318 0 0 0-.312.275c0 0 0 4.225 0 4.225 0 0-1.655-1.68-1.655-1.68a.317.317 0 0 0-.509.1.308.308 0 0 0 .069.34c0 0 2.235 2.24 2.235 2.24 0 0 .36 0 .36 0 0 0 2.235-2.24 2.235-2.24a.302.302 0 0 0 0-.44.317.317 0 0 0-.44 0c0 0-1.67 1.68-1.67 1.68 0 0 0-4.225 0-4.225z"/>
+  <svg width="20" height="20" x="440" viewBox="0 0 20 20">
+    <use href="#a" opacity=".876" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M11.879 17.205a39 39 0 0 1-3.752 0M10 5.809V3.75M14.047 8.234l-4.17 4.17a2 2 0 0 1-2.828 0l-1.241-1.24" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="460">
-    <use fill="none" opacity=".26" stroke-width="1.05" href="#c"/>
-    <path fill="context-stroke" d="M12.844 17.389a1.482 1.482 0 0 0 1.48-1.481c0 0 0-1.074 0-1.074a.468.468 0 0 0-.463-.407.471.471 0 0 0-.462.407c0 0 0 1.185 0 1.185 0 0-.445.444-.445.444 0 0-7.073 0-7.073 0 0 0-.444-.444-.444-.444 0 0 0-1.185 0-1.185a.466.466 0 0 0-.772-.289.459.459 0 0 0-.154.289c0 0 0 1.074 0 1.074a1.481 1.481 0 0 0 1.482 1.481c0 0 6.85 0 6.85 0z"/>
-    <path fill="context-stroke" d="M9.869 4.353a.458.458 0 0 0-.153-.29.475.475 0 0 0-.31-.118.47.47 0 0 0-.463.408c0 0 0 6.258 0 6.258 0 0-2.451-2.489-2.451-2.489a.469.469 0 0 0-.754.15.456.456 0 0 0 .102.502c0 0 3.31 3.318 3.31 3.318 0 0 .534 0 .534 0 0 0 3.31-3.318 3.31-3.318a.447.447 0 0 0 0-.652.469.469 0 0 0-.651 0c0 0-2.474 2.489-2.474 2.489 0 0 0-6.258 0-6.258z"/>
+  <svg width="20" height="20" x="460" viewBox="0 0 20 20">
+    <use href="#a" opacity=".745" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M12.521 17.169a39 39 0 0 1-5.036 0M10 6.514V3.75M13.866 8.468l-3.937 3.937a2 2 0 0 1-2.828 0l-1.241-1.24" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="480">
-    <use fill="none" opacity=".26" stroke-width="1.05" href="#c"/>
-    <path fill="context-stroke" d="M13.759 17.111a1.852 1.852 0 0 0 1.851-1.851c0 0 0-1.343 0-1.343a.585.585 0 0 0-.579-.51.59.59 0 0 0-.578.51c0 0 0 1.481 0 1.481 0 0-.556.556-.556.556 0 0-8.841 0-8.841 0 0 0-.556-.556-.556-.556 0 0 0-1.481 0-1.481a.591.591 0 0 0-.579-.51.59.59 0 0 0-.578.51c0 0 0 1.343 0 1.343a1.851 1.851 0 0 0 1.852 1.851c0 0 8.564 0 8.564 0z"/>
-    <path fill="context-stroke" d="M10.04 3.065a.572.572 0 0 0-.191-.36.593.593 0 0 0-.387-.149.589.589 0 0 0-.579.51c0 0 0 7.823 0 7.823 0 0-3.065-3.111-3.065-3.111a.586.586 0 0 0-.814 0 .561.561 0 0 0-.173.407.574.574 0 0 0 .173.408c0 0 4.138 4.147 4.138 4.147 0 0 .667 0 .667 0 0 0 4.138-4.147 4.138-4.147a.559.559 0 0 0 0-.815.586.586 0 0 0-.814 0c0 0-3.093 3.11-3.093 3.11 0 0 0-7.823 0-7.823z"/>
+  <svg width="20" height="20" x="480" viewBox="0 0 20 20">
+    <use href="#a" opacity=".566" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M13.138 17.125a39 39 0 0 1-6.27 0M10 7.193V3.75M13.64 8.764l-3.642 3.643a2 2 0 0 1-2.828 0l-1.241-1.241" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="500">
-    <use fill="none" opacity=".26" stroke-width="1.05" href="#c"/>
-    <use fill="context-stroke" href="#aa"/>
-    <use fill="context-stroke" href="#ab"/>
+  <svg width="20" height="20" x="500" viewBox="0 0 20 20">
+    <use href="#a" opacity=".37" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M13.731 17.073a39.3 39.3 0 0 1-7.456 0M10 7.846V3.75M13.399 9.093l-3.316 3.316a2 2 0 0 1-2.828 0l-1.241-1.241" />
   </svg>
-  <svg viewBox="0 0 20 20" width="20" height="20" x="520">
-    <use fill="context-fill" opacity=".26" stroke-width="1.05" href="#c"/>
-    <use fill="context-stroke" href="#aa"/>
-    <use fill="context-stroke" href="#ab"/>
+  <svg width="20" height="20" x="520" viewBox="0 0 20 20">
+    <use href="#a" opacity=".205" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M14.298 17.015a39.2 39.2 0 0 1-8.59 0M10 8.471V3.75M13.178 9.416l-2.995 2.995a2 2 0 0 1-2.828 0L6.114 11.17" />
+  </svg>
+  <svg width="20" height="20" x="540" viewBox="0 0 20 20">
+    <use href="#a" opacity=".092" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M6.55 11.069 8.983 13.5l3.5-3.5" opacity=".041" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M14.834 16.924a2 2 0 0 1-.334.068 39.2 39.2 0 0 1-8.976.002 2 2 0 0 1-.351-.073M10 9.069V3.75" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="m13.011 9.696-2.717 2.717a2 2 0 0 1-2.828 0l-1.24-1.24"
+      opacity=".969" />
+  </svg>
+  <svg width="20" height="20" x="560" viewBox="0 0 20 20">
+    <use href="#a" opacity=".028" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M6.54 10.839 9.201 13.5l3.5-3.5" opacity=".324" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M15.305 16.712c-.238.147-.51.246-.805.28a39.2 39.2 0 0 1-8.976.002 2 2 0 0 1-.822-.286M10 9.637V3.75" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="m12.916 9.912-2.504 2.504a2 2 0 0 1-2.828 0l-1.24-1.241"
+      opacity=".7" />
+  </svg>
+  <svg width="20" height="20" x="580" viewBox="0 0 20 20">
+    <use href="#a" opacity=".002" transform="translate(1.75 1.75)" />
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M6.53 10.621 9.409 13.5l3.5-3.5" opacity=".739" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M15.686 16.404a1.96 1.96 0 0 1-1.186.588 39.2 39.2 0 0 1-8.976.002 2 2 0 0 1-1.204-.592M10 10.176V3.75" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="m12.899 10.051-2.367 2.367a2 2 0 0 1-2.828 0l-1.241-1.24"
+      opacity=".234" />
+  </svg>
+  <svg width="20" height="20" x="600" viewBox="0 0 20 20">
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="M6.52 10.428 9.594 13.5l3.5-3.5" opacity=".979" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M15.966 16.039c-.307.513-.836.88-1.466.953a39.2 39.2 0 0 1-8.976.002 2 2 0 0 1-1.486-.957M10 10.682V3.75" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5" d="m12.953 10.116-2.305 2.305a2 2 0 0 1-2.828 0L6.579 11.18"
+      opacity=".015" />
+  </svg>
+  <svg width="20" height="20" x="620" viewBox="0 0 20 20">
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M6.513 10.268 9.745 13.5l3.5-3.5M16.145 15.648a1.98 1.98 0 0 1-1.645 1.344 39.2 39.2 0 0 1-8.976.002 2.01 2.01 0 0 1-1.667-1.346M10 11.154V3.75" />
+  </svg>
+  <svg width="20" height="20" x="640" viewBox="0 0 20 20">
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M6.507 10.145 9.862 13.5l3.5-3.5M16.234 15.262a1.99 1.99 0 0 1-1.734 1.73 39.2 39.2 0 0 1-8.976.002 2.01 2.01 0 0 1-1.757-1.732M10 11.589V3.75" />
+  </svg>
+  <svg width="20" height="20" x="660" viewBox="0 0 20 20">
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="m6.503 10.06 3.44 3.44 3.5-3.5M16.25 14.902v.104c0 1.009-.748 1.87-1.75 1.986a39.2 39.2 0 0 1-8.976.002 2.007 2.007 0 0 1-1.774-1.991v-.101M10 11.985V3.75" />
+  </svg>
+  <svg width="20" height="20" x="680" viewBox="0 0 20 20">
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M6.501 10.013 9.988 13.5l3.5-3.5M16.25 14.582v.424c0 1.009-.748 1.87-1.75 1.986a39.2 39.2 0 0 1-8.976.002 2.007 2.007 0 0 1-1.774-1.991v-.421M10 12.337V3.75" />
+  </svg>
+  <svg width="20" height="20" x="700" viewBox="0 0 20 20">
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <use href="#f" transform="translate(6.5 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M16.25 14.304v.702c0 1.009-.748 1.87-1.75 1.986a39.2 39.2 0 0 1-8.976.002 2.007 2.007 0 0 1-1.774-1.991v-.699M10 12.641V3.75" />
+  </svg>
+  <svg width="20" height="20" x="720" viewBox="0 0 20 20">
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <use href="#f" transform="translate(6.5 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M16.25 14.076v.93c0 1.009-.748 1.87-1.75 1.986a39.2 39.2 0 0 1-8.976.002 2.007 2.007 0 0 1-1.774-1.991v-.927M10 12.892V3.75" />
+  </svg>
+  <svg width="20" height="20" x="740" viewBox="0 0 20 20">
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <use href="#f" transform="translate(6.5 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M16.25 13.902v1.104c0 1.009-.748 1.87-1.75 1.986a39.2 39.2 0 0 1-8.976.002 2.007 2.007 0 0 1-1.774-1.991v-1.101M10 13.083V3.75" />
+  </svg>
+  <svg width="20" height="20" x="760" viewBox="0 0 20 20">
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <use href="#f" transform="translate(6.5 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M16.25 13.79v1.216c0 1.009-.748 1.87-1.75 1.986a39.2 39.2 0 0 1-8.976.002 2.007 2.007 0 0 1-1.774-1.991V13.79M10 13.205V3.75" />
+  </svg>
+  <svg width="20" height="20" x="780" viewBox="0 0 20 20">
+    <use href="#b" transform="matrix(0 0 0 0 10 10)" />
+    <use href="#f" transform="translate(6.5 10)" />
+    <path fill="none" stroke="context-fill" stroke-linecap="round" stroke-linejoin="round"
+      stroke-width="1.5"
+      d="M16.25 13.75v1.256c0 1.009-.748 1.87-1.75 1.986a39.2 39.2 0 0 1-8.976.002 2.007 2.007 0 0 1-1.774-1.991V13.75M10 13.249V3.75" />
   </svg>
 </svg>

@@ -1,0 +1,187 @@
+[DEFAULT]
+tags = "urlbar"
+support-files = [
+  "../browser/dummy_page.html",
+  "../browser/head-common.js",
+  "head.js",
+]
+prefs = [
+  "browser.bookmarks.testing.skipDefaultBookmarksImport=true",
+  "browser.urlbar.trending.featureGate=false",
+  "layout.css.attr.enabled=true",
+]
+
+["browser_action_searchengine.js"]
+skip-if = [
+  "os == 'win' && asan", # Bug 1834810
+]
+
+["browser_action_searchengine_alias.js"]
+
+["browser_add_search_engine.js"]
+support-files = [
+  "../browser/add_search_engine_0.xml",
+  "../browser/add_search_engine_1.xml",
+  "../browser/add_search_engine_2.xml",
+  "../browser/add_search_engine_3.xml",
+  "../browser/add_search_engine_invalid.html",
+  "../browser/add_search_engine_one.html",
+  "../browser/add_search_engine_many.html",
+  "../browser/add_search_engine_same_names.html",
+  "../browser/add_search_engine_two.html",
+]
+
+["browser_contextualsearch.js"]
+
+["browser_contextualsearch_install.js"]
+
+["browser_downArrowKeySearch.js"]
+https_first_disabled = true
+
+["browser_engineStoreQueryGate.js"]
+
+["browser_engine_used_on_search_mode.js"]
+
+["browser_groupLabels.js"]
+support-files = [
+  "../browser/searchSuggestionEngine.xml",
+  "../browser/searchSuggestionEngine.sjs",
+]
+
+["browser_keyword.js"]
+support-files = [
+  "../browser/print_postdata.sjs",
+  "../browser/searchSuggestionEngine.xml",
+  "../browser/searchSuggestionEngine.sjs",
+]
+
+["browser_keywordBookmarklets.js"]
+
+["browser_keywordSearch.js"]
+support-files = [
+  "../browser/searchSuggestionEngine.xml",
+  "../browser/searchSuggestionEngine.sjs",
+]
+
+["browser_keywordSearch_postData.js"]
+support-files = [
+  "../browser/POSTSearchEngine.xml",
+  "../browser/print_postdata.sjs",
+]
+
+["browser_keyword_override.js"]
+
+["browser_keyword_select_and_type.js"]
+
+["browser_oneOffs.js"]
+support-files = [
+  "../browser/searchSuggestionEngine.xml",
+  "../browser/searchSuggestionEngine.sjs",
+]
+
+["browser_oneOffs_contextMenu.js"]
+support-files = [
+  "../browser/searchSuggestionEngine.xml",
+  "../browser/searchSuggestionEngine.sjs",
+]
+
+["browser_oneOffs_heuristicRestyle.js"]
+
+["browser_oneOffs_keyModifiers.js"]
+support-files = [
+  "../browser/searchSuggestionEngine.xml",
+  "../browser/searchSuggestionEngine.sjs",
+]
+
+["browser_oneOffs_searchSuggestions.js"]
+support-files = [
+  "../browser/searchSuggestionEngine.xml",
+  "../browser/searchSuggestionEngine.sjs",
+  "../browser/searchSuggestionEngine2.xml",
+]
+
+["browser_oneOffs_settings.js"]
+
+["browser_placeholder.js"]
+support-files = [
+  "../browser/searchSuggestionEngine.xml",
+  "../browser/searchSuggestionEngine2.xml",
+  "../browser/searchSuggestionEngine.sjs",
+  "../../../search/test/browser/trendingSuggestionEngine.sjs",
+]
+
+["browser_recentsearches.js"]
+
+["browser_searchFunction.js"]
+
+["browser_searchHistoryLimit.js"]
+
+["browser_searchSettings.js"]
+
+["browser_searchSingleWordNotification.js"]
+https_first_disabled = true
+
+["browser_searchSuggestions.js"]
+support-files = [
+  "../browser/searchSuggestionEngine.xml",
+  "../browser/searchSuggestionEngine.sjs",
+]
+
+["browser_searchTelemetry.js"]
+support-files = [
+  "../browser/searchSuggestionEngine.xml",
+  "../browser/searchSuggestionEngine.sjs",
+]
+
+["browser_search_bookmarks_from_bookmarks_menu.js"]
+
+["browser_search_continuation.js"]
+support-files = ["../../../search/test/browser/trendingSuggestionEngine.sjs"]
+
+["browser_search_history_from_history_panel.js"]
+
+["browser_selectStaleResults.js"]
+support-files = [
+  "../browser/searchSuggestionEngineSlow.xml",
+  "../browser/searchSuggestionEngine.sjs",
+]
+
+["browser_separatePrivateDefault.js"]
+support-files = [
+  "../browser/POSTSearchEngine.xml",
+  "../browser/print_postdata.sjs",
+  "../browser/searchSuggestionEngine.xml",
+  "../browser/searchSuggestionEngine.sjs",
+  "../browser/searchSuggestionEngine2.xml",
+]
+
+["browser_separatePrivateDefault_differentEngine.js"]
+support-files = [
+  "../browser/POSTSearchEngine.xml",
+  "../browser/print_postdata.sjs",
+  "../browser/searchSuggestionEngine.xml",
+  "../browser/searchSuggestionEngine.sjs",
+  "../browser/searchSuggestionEngine2.xml",
+]
+
+["browser_shortcuts_add_search_engine.js"]
+support-files = [
+  "../browser/add_search_engine_many.html",
+  "../browser/add_search_engine_two.html",
+  "../browser/add_search_engine_0.xml",
+  "../browser/add_search_engine_1.xml",
+]
+
+["browser_speculative_connect.js"]
+support-files = [
+  "../browser/searchSuggestionEngine2.xml",
+  "../browser/searchSuggestionEngine.sjs",
+]
+
+["browser_stopSearchOnSelection.js"]
+support-files = [
+  "../browser/searchSuggestionEngineSlow.xml",
+  "../browser/searchSuggestionEngine.sjs",
+]
+
+["browser_tabToSearch.js"]

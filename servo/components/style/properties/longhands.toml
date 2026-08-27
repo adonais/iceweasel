@@ -96,16 +96,6 @@ enabled_in = "ua"
 spec = "Nonstandard (Internal-only)"
 affects = "layout"
 
-[-webkit-line-clamp]
-type = "LineClamp"
-initial = "computed::LineClamp::none()"
-struct = "box"
-boxed = true
-engine = "gecko"
-parse_method = "parse_legacy"
-spec = "https://drafts.csswg.org/css-overflow-4/#webkit-line-clamp"
-affects = "layout"
-
 [line-clamp]
 type = "LineClamp"
 initial = "computed::LineClamp::none()"
@@ -195,7 +185,6 @@ initial = "computed::AnchorName::none()"
 struct = "box"
 engine = "gecko"
 animation_type = "discrete"
-gecko_pref = "layout.css.anchor-positioning.enabled"
 spec = "https://drafts.csswg.org/css-anchor-position-1/#propdef-anchor-name"
 affects = ""
 
@@ -205,7 +194,6 @@ initial = "computed::ScopedName::none()"
 struct = "box"
 engine = "gecko"
 animation_type = "discrete"
-gecko_pref = "layout.css.anchor-positioning.enabled"
 spec = "https://drafts.csswg.org/css-anchor-position-1/#propdef-scope"
 affects = ""
 
@@ -768,7 +756,6 @@ affects = "layout"
 type = "Display"
 initial = "computed::Display::inline()"
 struct = "box"
-animation_type = "discrete"
 spec = "https://drafts.csswg.org/css-display/#propdef-display"
 servo_restyle_damage = "rebuild_box"
 affects = "layout"
@@ -897,8 +884,6 @@ initial = "computed::FontPalette::normal()"
 struct = "font"
 engine = "gecko"
 animation_type = "discrete"
-gecko_pref = "layout.css.font-palette.enabled"
-has_effect_on_gecko_scrollbars = false
 spec = "https://drafts.csswg.org/css-fonts/#font-palette-prop"
 affects = "layout"
 
@@ -921,13 +906,14 @@ spec = "https://drafts.csswg.org/css-fonts/#propdef-font-size-adjust"
 gecko_ffi_name = "mFont.sizeAdjust"
 affects = "layout"
 
-[font-stretch]
-type = "FontStretch"
-initial = "computed::FontStretch::hundred()"
+[font-width]
+type = "FontWidth"
+initial = "computed::FontWidth::hundred()"
 struct = "font"
-initial_specified_value = "specified::FontStretch::normal()"
-gecko_ffi_name = "mFont.stretch"
-spec = "https://drafts.csswg.org/css-fonts/#propdef-font-stretch"
+initial_specified_value = "specified::FontWidth::normal()"
+gecko_ffi_name = "mFont.width"
+spec = "https://drafts.csswg.org/css-fonts/#propdef-font-width"
+aliases = ["font-stretch"]
 servo_restyle_damage = "rebuild_box"
 affects = "layout"
 
@@ -1021,8 +1007,6 @@ type = "FontVariationSettings"
 initial = "computed::FontVariationSettings::normal()"
 struct = "font"
 servo_pref = "layout.variable_fonts.enabled"
-gecko_pref = "layout.css.font-variations.enabled"
-has_effect_on_gecko_scrollbars = false
 spec = "https://drafts.csswg.org/css-fonts-4/#propdef-font-variation-settings"
 affects = "layout"
 
@@ -1742,7 +1726,6 @@ struct = "position"
 engine = "gecko"
 animation_type = "discrete"
 rule_types_allowed = ["style", "keyframe", "scope", "position-try"]
-gecko_pref = "layout.css.anchor-positioning.enabled"
 spec = "https://drafts.csswg.org/css-anchor-position-1/#propdef-position-anchor"
 affects = "layout"
 
@@ -1752,7 +1735,6 @@ initial = "computed::PositionArea::none()"
 struct = "position"
 animation_type = "discrete"
 rule_types_allowed = ["style", "keyframe", "scope", "position-try"]
-gecko_pref = "layout.css.anchor-positioning.enabled"
 servo_pref = "layout.unimplemented"
 spec = "https://drafts.csswg.org/css-anchor-position-1/#typedef-position-area"
 affects = "layout"
@@ -1762,7 +1744,6 @@ type = "PositionTryFallbacks"
 initial = "computed::PositionTryFallbacks::none()"
 struct = "position"
 animation_type = "discrete"
-gecko_pref = "layout.css.anchor-positioning.enabled"
 servo_pref = "layout.unimplemented"
 spec = "https://drafts.csswg.org/css-anchor-position-1/#position-try-fallbacks"
 affects = "layout"
@@ -1773,7 +1754,6 @@ initial = "computed::PositionTryOrder::normal()"
 struct = "position"
 engine = "gecko"
 animation_type = "discrete"
-gecko_pref = "layout.css.anchor-positioning.enabled"
 spec = "https://drafts.csswg.org/css-anchor-position-1/#position-try-order-property"
 affects = "layout"
 
@@ -1783,7 +1763,6 @@ initial = "computed::PositionVisibility::ANCHORS_VISIBLE"
 struct = "position"
 engine = "gecko"
 animation_type = "discrete"
-gecko_pref = "layout.css.anchor-positioning.enabled"
 spec = "https://drafts.csswg.org/css-anchor-position-1/#propdef-position-visibility"
 affects = "layout"
 
@@ -1893,6 +1872,16 @@ spec = "https://drafts.csswg.org/css-scrollbars-1/#scrollbar-color"
 boxed = true
 ignored_when_colors_disabled = true
 affects = "paint"
+
+[-moz-line-scroll-amount]
+type = "length::NonNegativeLengthOrAuto"
+initial = "computed::length::NonNegativeLengthOrAuto::auto()"
+struct = "ui"
+engine = "gecko"
+animation_type = "discrete"
+spec = "None (Nonstandard internal property)"
+enabled_in = "chrome"
+affects = ""
 
 [-moz-inert]
 type = "Inert"
@@ -3804,8 +3793,6 @@ spec = "https://drafts.csswg.org/css-fonts/#propdef-font-variant-emoji"
 animation_type = "discrete"
 affects = "layout"
 gecko_ffi_name = "mFont.variantEmoji"
-gecko_pref = "layout.css.font-variant-emoji.enabled"
-has_effect_on_gecko_scrollbars = false
 keyword = { values = ["normal", "text", "emoji", "unicode"] }
 
 [font-variant-position]
@@ -3822,9 +3809,7 @@ spec = "https://www.w3.org/TR/css-fonts-4/#font-optical-sizing-def"
 animation_type = "discrete"
 affects = "layout"
 gecko_ffi_name = "mFont.opticalSizing"
-gecko_pref = "layout.css.font-variations.enabled"
 servo_pref = "layout.variable_fonts.enabled"
-has_effect_on_gecko_scrollbars = false
 keyword = { values = ["auto", "none"], gecko_constant_prefix = "NS_FONT_OPTICAL_SIZING" }
 
 [math-style]

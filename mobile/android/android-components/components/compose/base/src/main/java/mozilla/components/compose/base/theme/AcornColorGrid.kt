@@ -40,6 +40,7 @@ private class ColorParameterProvider : PreviewParameterProvider<ColorGridParamet
             ColorGridParameters(lightColorPalette, acornLightColorScheme(), lightAcornGradientScheme),
             ColorGridParameters(darkColorPalette, acornDarkColorScheme(), darkAcornGradientScheme),
             ColorGridParameters(privateColorPalette, acornPrivateColorScheme(), privateAcornGradientScheme),
+            ColorGridParameters(oledColorPalette, acornOledColorScheme(), oledAcornGradientScheme),
         )
 }
 

@@ -84,7 +84,7 @@ void MIRGenerator::spewBeginFunction(JSScript* function) {
     graphSpewer_->beginFunction(function);
   }
 #endif
-  perfSpewer().startRecording();
+  perfSpewer().startRecording(runtime);
 }
 
 void MIRGenerator::spewBeginWasmFunction(unsigned funcIndex) {
@@ -95,7 +95,7 @@ void MIRGenerator::spewBeginWasmFunction(unsigned funcIndex) {
     graphSpewer_->beginWasmFunction(funcIndex);
   }
 #endif
-  perfSpewer().startRecording(wasmCodeMeta_);
+  perfSpewer().startRecording(/* runtime = */ nullptr, wasmCodeMeta_);
 }
 
 void MIRGenerator::spewPass(const char* name, BacktrackingAllocator* ra) {

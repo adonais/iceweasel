@@ -74,7 +74,7 @@ add_task(async function test_extension_tab_create() {
     true
   );
 
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   extension.sendMessage("load-tab", "http://expected.example.org");
   await extension.awaitMessage("load-tab:done");
 
@@ -99,7 +99,7 @@ add_task(async function test_extension_tab_create() {
 
   Services.fog.testResetFOG();
 
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   extension.sendMessage("load-tab", "http://extra.example.org");
   await extension.awaitMessage("load-tab:done");
 

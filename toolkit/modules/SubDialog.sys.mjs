@@ -313,8 +313,12 @@ SubDialog.prototype = {
   handleEvent(aEvent) {
     switch (aEvent.type) {
       case "click":
-        // Close the dialog if the user clicked the overlay background, just
-        // like when the user presses the ESC key (case "command" below).
+        // Clicks on the close button close the dialog directly.
+        if (aEvent.target === this._closeButton) {
+          this._frame.contentWindow.close();
+          break;
+        }
+        // Otherwise, only clicks on the overlay background close the dialog.
         if (aEvent.target !== this._overlay) {
           break;
         }
@@ -323,9 +327,6 @@ SubDialog.prototype = {
           break;
         }
         this._frame.focus();
-        break;
-      case "command":
-        this._frame.contentWindow.close();
         break;
       case "dialogclosing":
         this._onDialogClosing(aEvent);
@@ -813,9 +814,6 @@ SubDialog.prototype = {
       }
     }
 
-    // Make the close button work.
-    this._closeButton?.addEventListener("command", this);
-
     if (includeLoad) {
       // DOMFrameContentLoaded only fires on the top window
       this._window.addEventListener("DOMFrameContentLoaded", this, true);
@@ -855,8 +853,6 @@ SubDialog.prototype = {
 
       chromeBrowser.removeEventListener("DOMTitleChanged", this, true);
     }
-
-    this._closeButton?.removeEventListener("command", this);
 
     if (includeLoad) {
       this._window.removeEventListener("DOMFrameContentLoaded", this, true);

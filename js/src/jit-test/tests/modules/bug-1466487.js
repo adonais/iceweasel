@@ -2,6 +2,6 @@
 
 evalInWorker(`
     let m = parseModule("import.meta;");
-    moduleLink(m);
+    moduleLoadAndLink(m);
     moduleEvaluate(m);
 `);

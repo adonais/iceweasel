@@ -1,61 +1,37 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Sun, 28 Dec 2025 15:36:00 -0600
-Subject: Bug 2006933 - (fix-d381cc8b23) fix base-toolchains build
+Date: Fri, 16 Jan 2026 16:48:00 -0600
+Subject: Bug 2010312 - (fix-dc65955c6d) fix base-toolchains build
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/ff7279205c599769b913c9359873562896b80799
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/6c3f917f52d45566db7b5916b74f792928456dff
 ---
- modules/rtp_rtcp/source/rtp_format.cc | 15 +++++++--------
- 1 file changed, 7 insertions(+), 8 deletions(-)
+ call/rtp_transport_controller_send.cc | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
-diff --git a/modules/rtp_rtcp/source/rtp_format.cc b/modules/rtp_rtcp/source/rtp_format.cc
-index 5d3c880aff..6363c92da6 100644
---- a/modules/rtp_rtcp/source/rtp_format.cc
-+++ b/modules/rtp_rtcp/source/rtp_format.cc
-@@ -36,32 +36,31 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
-     PayloadSizeLimits limits,
-     // Codec-specific details.
-     const RTPVideoHeader& rtp_video_header) {
--  using enum PacketizationFormat;
-   switch (format) {
--    case kRaw: {
-+    case PacketizationFormat::kRaw: {
-       return std::make_unique<RtpPacketizerGeneric>(payload, limits);
-     }
--    case kH264: {
-+    case PacketizationFormat::kH264: {
-       const auto& h264 =
-           std::get<RTPVideoHeaderH264>(rtp_video_header.video_type_header);
-       return std::make_unique<RtpPacketizerH264>(payload, limits,
-                                                  h264.packetization_mode);
-     }
--    case kVP8: {
-+    case PacketizationFormat::kVP8: {
-       const auto& vp8 =
-           std::get<RTPVideoHeaderVP8>(rtp_video_header.video_type_header);
-       return std::make_unique<RtpPacketizerVp8>(payload, limits, vp8);
-     }
--    case kVP9: {
-+    case PacketizationFormat::kVP9: {
-       const auto& vp9 =
-           std::get<RTPVideoHeaderVP9>(rtp_video_header.video_type_header);
-       return std::make_unique<RtpPacketizerVp9>(payload, limits, vp9);
-     }
--    case kAV1:
-+    case PacketizationFormat::kAV1:
-       return std::make_unique<RtpPacketizerAv1>(
-           payload, limits, rtp_video_header.frame_type,
-           rtp_video_header.is_last_frame_in_picture);
--    case kH265: {
-+    case PacketizationFormat::kH265: {
- #ifdef RTC_ENABLE_H265
-       return std::make_unique<RtpPacketizerH265>(payload, limits);
- #else
-@@ -69,7 +68,7 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
-                                                     rtp_video_header);
- #endif
-     }
--    case kGeneric: {
-+    case PacketizationFormat::kGeneric: {
-       return std::make_unique<RtpPacketizerGeneric>(payload, limits,
-                                                     rtp_video_header);
+diff --git a/call/rtp_transport_controller_send.cc b/call/rtp_transport_controller_send.cc
+index 470cf40029..025781f488 100644
+--- a/call/rtp_transport_controller_send.cc
++++ b/call/rtp_transport_controller_send.cc
+@@ -738,19 +738,18 @@ void RtpTransportControllerSend::ComputeStatsFromCongestionControlFeedback(
+ 
+     if (packet_info.IsReceived()) {
+       switch (packet_info.ecn) {
+-        using enum EcnMarking;
+-        case kEct1:
++        case EcnMarking::kEct1:
+           ++stats->num_packets_received_with_ect1;
+           break;
+-        case kCe:
++        case EcnMarking::kCe:
+           ++stats->num_packets_received_with_ce;
+           break;
+-        case kNotEct:
++        case EcnMarking::kNotEct:
+           if (packet_info.sent_with_ect1) {
+             ++stats->num_packets_with_bleached_ect1_marking;
+           }
+           break;
+-        case kEct0:
++        case EcnMarking::kEct0:
+           break;
+       }
      }

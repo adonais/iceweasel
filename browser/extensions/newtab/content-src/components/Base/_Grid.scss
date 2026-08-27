@@ -4,8 +4,10 @@
  * Layout structure:
  * .container (full grid)
  *   ├── .sidebar-inline-start (148px - left sidebar for logo/navigation)
- *   ├── .content (flexible - fills remaining space with 75px columns)
- *   └── .sidebar-inline-end (148px - right sidebar for mini widgets)
+ *   ├── .sidebar-inline-end (148px - right sidebar for a single mini widget)
+ *   └── .content-main (<main>, display: contents - landmark only)
+ *         ├── .content (flexible - fills remaining space with 75px columns)
+ *         └── .content-full-width (spans all three columns, on the row below)
  *
  * DOM order: sidebar-inline-end precedes content (for tab focus order).
  * CSS grid-column placement preserves the visual order above.
@@ -48,28 +50,80 @@
   container-name: outer-grid;
   display: grid;
   grid-template-columns: var(--side-col-width) var(--content-col-width) var(--side-col-width);
-  grid-auto-rows: var(--row-height);
+  // Rows 1-2 carry the --row-height baseline that .sidebar-inline-end subgrids.
+  // Everything below is auto so .content sizes its own track instead of
+  // overflowing onto .content-full-width.
+  grid-template-rows: repeat(2, var(--row-height));
+  grid-auto-rows: auto;
   gap: var(--space-medium);
   justify-content: space-between;
   margin-inline: auto;
   padding-inline: var(--space-xlarge);
 }
 
-.nova-enabled .content {
+.nova-enabled :is(.content, .content-full-width) {
   container-type: inline-size;
   container-name: content-grid;
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--col-width));
   gap: var(--space-medium);
   justify-content: center;
-  grid-column: 2;
-  grid-row: 2 / span 2;
   // Size to intrinsic content rather than stretching to the fixed-size
   // grid track so descendants with position: sticky have a containing
   // block that extends through the full document.
   align-self: start;
 }
 
+// The main landmark wraps .content and .content-full-width for semantics only.
+// display: contents keeps both children as direct grid items of .container, so
+// their placement below is unaffected. Note this is layout-only: child
+// combinators from .container still see this element in the DOM.
+.nova-enabled .content-main {
+  display: contents;
+}
+
+.nova-enabled .content {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+}
+
+// Search hoisted out of .content (see Base.jsx) so position: sticky is bounded
+// by .container rather than .content. It spans rows 2-3 because row 2 is a
+// fixed --row-height track and the search is taller than that; row 3 is auto
+// and absorbs the rest.
+.nova-enabled.container > .sticky-search-sentinel {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.nova-enabled.container > .search-wrapper {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+}
+
+.nova-enabled.container:has(> .search-wrapper) .content {
+  grid-row: 4;
+}
+
+// Spans all three columns, so it reclaims both side gutters and their gaps
+// (324px) at widths where .content is still bounded by them. Capped at the
+// same 16 columns .content is, so wide viewports are unchanged.
+// TODO(Bug 2061740): at the smallest widths this now runs under
+// .personalizeButtonWrapper (position: fixed, inset-inline-end: --space-xlarge,
+// z-index 5), which used to sit clear of .content in the side gutter. Needs the
+// band to reserve room for the button at those widths.
+.nova-enabled .content-full-width {
+  grid-column: 1 / -1;
+  // justify-self: center makes the item shrink-to-fit, so inline-size: 100%
+  // is what keeps it filling the row up to the cap.
+  justify-self: center;
+  inline-size: 100%;
+  // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens
+  max-inline-size: var(--content-max-width);
+}
+
+// Holds a single mini widget going forward. The subgrid is only two rows tall,
+// so additional widgets would overflow into .content-full-width's row.
 .nova-enabled .sidebar-inline-end {
   display: grid;
   grid-column: 3;
@@ -87,7 +141,7 @@
   grid-row: 3 / span 2;
 }
 
-.nova-enabled .content > * {
+.nova-enabled :is(.content, .content-full-width) > * {
   grid-column: 1 / -1;
   container-type: inline-size;
   container-name: component;

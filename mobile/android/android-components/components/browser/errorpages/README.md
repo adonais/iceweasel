@@ -68,6 +68,23 @@ GeckoEngine(settings)
 
 See the `ErrorType` enum for the full list of supported error types.
 
+### Archived-copy query parameters
+
+When the consumer opts in via `createUrlEncodedErrorPage(archiveActionEnabled = true)` and the
+error type and URL are eligible (see `ErrorPages.archiveUrlFor`), `createUrlEncodedErrorPage`
+appends the following extra query parameters that a custom HTML template may consume to offer an
+"archived version" action. They are absent when the action is disabled (the default) or not
+applicable, so templates must treat them as optional:
+
+- `archiveUrl` - A privacy-cleaned (scheme, host, port and path only) version of the failed URL
+  to look up an archived copy for.
+- `archiveCheckButtonLabel` - Localized label for the button that triggers the lookup.
+- `archiveCheckingLabel` - Localized label shown while the lookup is in progress.
+- `archiveNotFoundMessage` - Localized message shown when no archived copy was found.
+- `archiveSearchWebLabel` - Localized label for the link that searches the web instead.
+- `archiveUnreachableMessage` - Localized message shown when the archive service could not be reached.
+- `archiveRetryLabel` - Localized label for the link that retries the lookup after the service was unreachable.
+
 ### Engine Support
 
 If you want to add support for another engine, you need to support the `RequestInterceptor` and have it invoked with an `ErrorType` based on the `EngineSession`'s' error code for that request:

@@ -39,11 +39,14 @@ case ${target_platform} in
     Linux)
         prefix=lib
         extension=so
+        EXTRA_CXX_FLAGS="-Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -fstack-clash-protection -fstack-protector-strong"
+
         ;;
     Android)
         extra_args="--android --android_ndk_path=$MOZ_FETCHES_DIR/android-ndk --android_sdk_path=$MOZ_FETCHES_DIR/android-sdk-linux --android_abi=$target_arch"
         prefix=lib
         extension=so
+        EXTRA_CXX_FLAGS="-Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -fstack-clash-protection -fstack-protector-strong"
         ;;
     Windows)
         # Still use visual studio there, compilation through clang-cl is not
@@ -118,7 +121,7 @@ python3 tools/ci_build/build.py \
     --cmake_extra_defines PYTHON_EXECUTABLE=$(which python3)\
     --cmake_extra_defines ONNX_USE_LITE_PROTO=ON\
     --disable_exceptions \
-    --cmake_extra_defines CMAKE_CXX_FLAGS=-fno-exceptions\ -DORT_NO_EXCEPTIONS\ -DONNX_NO_EXCEPTIONS\ -DMLAS_NO_EXCEPTION\
+    --cmake_extra_defines CMAKE_CXX_FLAGS="-fno-exceptions $EXTRA_CXX_FLAGS -DORT_NO_EXCEPTIONS -DONNX_NO_EXCEPTIONS -DMLAS_NO_EXCEPTION"\
     ${extra_args}
 
 ###

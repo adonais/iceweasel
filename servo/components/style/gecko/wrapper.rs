@@ -743,7 +743,12 @@ impl<'le> GeckoElement<'le> {
     /// Returns a reference to the DOM slots for this Element, if they exist.
     #[inline]
     fn dom_slots(&self) -> Option<&structs::FragmentOrElement_nsDOMSlots> {
-        let slots = self.as_node().0.mSlots as *const structs::FragmentOrElement_nsDOMSlots;
+        // For the bit usage, see nsINode::mSlotsOrListenerManager.
+        let slots_or_elm = self.as_node().0.mSlotsOrListenerManager;
+        if slots_or_elm & structs::nsINode_kListenerManagerBit != 0 {
+            return None;
+        }
+        let slots = slots_or_elm as *const structs::FragmentOrElement_nsDOMSlots;
         unsafe { slots.as_ref() }
     }
 
@@ -1528,7 +1533,9 @@ impl<'le> TElement for GeckoElement<'le> {
         let after_change_ui_style = after_change_style.get_ui();
         let existing_transitions = self.css_transitions_info();
 
-        if after_change_style.get_box().clone_display().is_none() {
+        if after_change_style.get_box().clone_display().is_none()
+            && !static_prefs::pref!("layout.css.display-animations.enabled")
+        {
             // We need to cancel existing transitions.
             return !existing_transitions.is_empty();
         }
@@ -1937,7 +1944,7 @@ impl<'le> ::selectors::Element for GeckoElement<'le> {
         let self_flags = flags.for_self();
         if !self_flags.is_empty() {
             self.as_node()
-                .set_selector_flags(selector_flags_to_node_flags(flags))
+                .set_selector_flags(selector_flags_to_node_flags(self_flags))
         }
 
         // Handle flags that apply to the parent.

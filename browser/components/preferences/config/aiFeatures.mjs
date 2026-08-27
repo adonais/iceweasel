@@ -440,6 +440,8 @@ function makeAiControlSetting({
   feature,
   getControlConfig,
   onBeforeBlock,
+  setup,
+  visible,
 }) {
   function recordTelemetry(selection) {
     Glean.browser.aiControlChanged.record({ feature, selection });
@@ -461,11 +463,14 @@ function makeAiControlSetting({
         }
       };
       Services.obs.addObserver(featureChange, "OnDeviceModelManagerChange");
-      return () =>
+      const teardownSetup = setup?.(emitChange);
+      return () => {
         Services.obs.removeObserver(
           featureChange,
           "OnDeviceModelManagerChange"
         );
+        teardownSetup?.();
+      };
     },
     get(prefVal, deps) {
       const aiControlState = OnDeviceModelManager.getAiControlState(feature);
@@ -515,6 +520,9 @@ function makeAiControlSetting({
       return OnDeviceModelManager.isManagedByPolicy(feature);
     },
     visible(deps) {
+      if (visible && !visible(deps)) {
+        return false;
+      }
       return (
         OnDeviceModelManager.isAllowed(feature) ||
         deps.aiControlsShowUnavailable.value
@@ -561,6 +569,25 @@ makeAiControlSetting({
   id: "aiControlSmartTabGroupsSelect",
   pref: "browser.ai.control.smartTabGroups",
   feature: OnDeviceModelManager.features.TabGroups,
+  setup(emitChange) {
+    const onTabGroupsEnabledChange = (_, __, changedPref) => {
+      if (changedPref == "browser.tabs.groups.enabled") {
+        emitChange();
+      }
+    };
+    Services.prefs.addObserver(
+      "browser.tabs.groups.enabled",
+      onTabGroupsEnabledChange
+    );
+    return () =>
+      Services.prefs.removeObserver(
+        "browser.tabs.groups.enabled",
+        onTabGroupsEnabledChange
+      );
+  },
+  visible() {
+    return Services.prefs.getBoolPref("browser.tabs.groups.enabled", true);
+  },
 });
 makeAiControlSetting({
   id: "aiControlLinkPreviewKeyPointsSelect",
@@ -1467,7 +1494,7 @@ SettingGroupManager.registerGroups({
         supportPage: "smart-window",
         controlAttrs: {
           headinglevel: 2,
-          iconsrc: "chrome://browser/skin/smart-window-mono.svg",
+          iconsrc: "chrome://browser/skin/smart-window-mono-32.svg",
           badge: "beta",
         },
         items: [
@@ -1508,7 +1535,7 @@ SettingGroupManager.registerGroups({
       {
         id: "sidebarChatbotFieldset",
         control: "moz-fieldset",
-        l10nId: "preferences-ai-controls-sidebar-chatbot-group",
+        l10nId: "preferences-ai-controls-sidebar-chatbot-group-2",
         supportPage: "ai-chatbot",
         controlAttrs: {
           headinglevel: 2,

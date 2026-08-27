@@ -23,6 +23,12 @@ TARGET_STALL_MS = 500
 ALLOWED_EAGERNESS = ("immediate", "eager", "moderate", "conservative")
 DEFAULT_EAGERNESS = "moderate"
 
+# Rule source, selected via the ?source= query parameter (unknown falls back to
+# DEFAULT_SOURCE): "document" matches the page's links with a `where` predicate,
+# "list" specifies the target URLs explicitly.
+ALLOWED_SOURCES = ("document", "list")
+DEFAULT_SOURCE = "document"
+
 # Footer instruction describing how each level's prefetch is triggered.
 ACTION_HINTS = {
     "immediate": "Prefetch starts on load; click a button to navigate.",
@@ -37,6 +43,20 @@ SPECULATION_RULES_TEMPLATE = """<script type="speculationrules">
   "prefetch": [{{
     "source": "document",
     "where": {{ "href_matches": "/target.html*" }},
+    "eagerness": "{eagerness}"
+  }}]
+}}
+</script>
+"""
+
+# List-source counterpart of SPECULATION_RULES_TEMPLATE; its URLs mirror the four
+# landing-page targets so both sources cover the same navigations.
+SPECULATION_RULES_LIST_TEMPLATE = """<script type="speculationrules">
+{{
+  "prefetch": [{{
+    "source": "list",
+    "urls": ["/target.html?item=a", "/target.html?item=b",
+             "/target.html?item=c", "/target.html?item=d"],
     "eagerness": "{eagerness}"
   }}]
 }}
@@ -277,15 +297,25 @@ class _Handler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         if path in ("/", "/landing.html"):
-            requested = urllib.parse.parse_qs(parsed.query).get(
-                "eagerness", [DEFAULT_EAGERNESS]
-            )[0]
+            query = urllib.parse.parse_qs(parsed.query)
+            requested = query.get("eagerness", [DEFAULT_EAGERNESS])[0]
             eagerness = (
                 requested if requested in ALLOWED_EAGERNESS else DEFAULT_EAGERNESS
             )
+            requested_source = query.get("source", [DEFAULT_SOURCE])[0]
+            source = (
+                requested_source
+                if requested_source in ALLOWED_SOURCES
+                else DEFAULT_SOURCE
+            )
+            template = (
+                SPECULATION_RULES_LIST_TEMPLATE
+                if source == "list"
+                else SPECULATION_RULES_TEMPLATE
+            )
             self._send(
                 LANDING_HTML_TEMPLATE.format(
-                    rules=SPECULATION_RULES_TEMPLATE.format(eagerness=eagerness),
+                    rules=template.format(eagerness=eagerness),
                     stall_ms=TARGET_STALL_MS,
                     eagerness=eagerness,
                     action_hint=ACTION_HINTS[eagerness],

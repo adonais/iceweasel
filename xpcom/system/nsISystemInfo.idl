@@ -37,4 +37,13 @@ interface nsISystemInfo : nsISupports
    */
   [implicit_jscontext]
   readonly attribute Promise processInfo;
+
+  /**
+   * Checks whether the Windows build number is at least the requested value.
+   *
+   * @param aBuildNumber - The desired build number.
+   * @returns Whether the current system has at least this build number.
+   * @throws NS_ERROR_NOT_AVAILABLE on non-Windows systems.
+   */
+  boolean isWindows10BuildOrLater(in uint32_t aBuildNumber);
 };

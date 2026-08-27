@@ -9,13 +9,21 @@
  *
  * When the TOU modal will show, it already includes a splash screen as
  * its first screen, so this standalone splash suppresses itself in that case.
+ * It also suppresses itself when about:welcome is not going to be shown this
+ * startup, since there is then nothing for the splash to gate.
  *
  * It is triggered from BrowserGlue._onWindowsRestored at
  * `sessionstore-windows-restored` time so that it appears before about:welcome
  * content renders.
  */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 const lazy = {};
+
+XPCOMUtils.defineLazyServiceGetters(lazy, {
+  BrowserHandler: ["@mozilla.org/browser/clh;1", Ci.nsIBrowserHandler],
+});
 
 ChromeUtils.defineESModuleGetters(lazy, {
   ASRouterTargeting: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
@@ -30,6 +38,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://gre/modules/TelemetryReportingPolicy.sys.mjs",
 });
 
+const ABOUT_WELCOME_ENABLED_PREF = "browser.aboutwelcome.enabled";
+const WELCOME_URL_PREF = "startup.homepage_welcome_url";
 const EXPERIMENTS_GATE_PREF = "browser.aboutwelcome.experimentsGate.enabled";
 const SKIP_SPLASH_IF_LOADED_PREF =
   "browser.aboutwelcome.experimentsGate.skipSplashIfLoaded";
@@ -48,6 +58,7 @@ export const PreonboardingSplash = {
       }),
     showSpotlight: (config, browser) =>
       lazy.SpecialMessageActions.handleAction(config, browser),
+    isFirstRunProfile: () => lazy.BrowserHandler.firstRunProfile,
   },
 
   /**
@@ -73,6 +84,13 @@ export const PreonboardingSplash = {
    * Determine whether the standalone preonboarding splash should be shown.
    */
   _shouldShow() {
+    // The splash exists to hold back about:welcome while experiments enroll,
+    // so there is no reason to show it when about:welcome is not going to be
+    // shown at all
+    if (!this._willShowAboutWelcome()) {
+      return false;
+    }
+
     if (Services.prefs.getBoolPref(SPLASH_SHOWN_PREF, false)) {
       return false;
     }
@@ -114,6 +132,24 @@ export const PreonboardingSplash = {
     }
 
     return true;
+  },
+
+  /**
+   * Whether or not about:welcome is going to be shown for this startup
+   */
+  _willShowAboutWelcome() {
+    if (!this.Policy.isFirstRunProfile()) {
+      return false;
+    }
+
+    if (!Services.prefs.getBoolPref(ABOUT_WELCOME_ENABLED_PREF, true)) {
+      return false;
+    }
+
+    return Services.urlFormatter
+      .formatURLPref(WELCOME_URL_PREF)
+      .split("|")
+      .includes("about:welcome");
   },
 
   /**

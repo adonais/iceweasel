@@ -141,6 +141,8 @@ FINAL_TARGET_FILES.actors += [
     "SpeechDispatcherChild.sys.mjs",
     "SpeechDispatcherParent.sys.mjs",
     "SwitchDocumentDirectionChild.sys.mjs",
+    "ThemePickerChild.sys.mjs",
+    "ThemePickerParent.sys.mjs",
     "UrlbarChild.sys.mjs",
     "UrlbarParent.sys.mjs",
     "WebRTCChild.sys.mjs",

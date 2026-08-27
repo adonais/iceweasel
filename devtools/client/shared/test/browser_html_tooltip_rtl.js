@@ -159,7 +159,9 @@ async function testLtrAnchors(doc, tooltip) {
   // anchor, but it is shifted to the left to fit in the toolbox.
   is(
     panelRect.right,
-    TOOLBOX_WIDTH,
+    TOOLBOX_WIDTH -
+      // In Nova, remove 2px to account for the toolbox border)
+      (Services.prefs.getBoolPref("browser.nova.enabled") ? 2 : 0),
     "Tooltip is aligned with right edge of toolbox"
   );
   is(

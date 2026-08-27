@@ -1,8 +1,5 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
-import io.gitlab.arturbosch.detekt.Detekt
-import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
-
 buildscript {
     repositories {
         gradle.configureMavenRepositories(delegate)
@@ -16,13 +13,25 @@ buildscript {
 
 plugins {
     alias(libs.plugins.dependency.analysis)
-    alias(libs.plugins.detekt)
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.ksp)
 }
 
 mozilla {
     ktlintSourcePaths = ["components/**/*.kt", "samples/**/*.kt", "buildSrc/**/*.kt", "!**/build/**/*.kt"]
+    detektSourcePaths = [
+        "**/components/**/*.kt", "**/buildSrc/**/*.kt", "**/samples/**/*.kt",
+        "!**/build.gradle.kts", "!**/build/**", "!**/docs/**", "!**/resources/**",
+        "!**/src/androidTest/**", "!**/src/iosTest/**", "!**/src/main/assets/extensions/**",
+        "!**/src/test/**", "!**/test/src/**", "!**/tmp/**", "!**/tooling/fetch-tests/**",
+    ]
+    detektConfig = "$projectDir/config/detekt.yml"
+    detektBaseline = "$projectDir/config/detekt-baseline.xml"
+    detektReports = [
+        "xml": "$projectDir/build/reports/detekt/detekt.xml",
+        "html": "$projectDir/build/reports/detekt.html",
+        "suppression-count": "$projectDir/build/reports/suppressions.txt",
+    ]
 }
 
 allprojects {
@@ -61,13 +70,6 @@ subprojects {
             }
 
             android {
-                // We can't have one baseline file at the root of android-components because
-                // this is not a project module and we would have to coordinate every module to
-                // merge baselines.
-                lint {
-                    baseline = file("${projectDir}/lint-baseline.xml")
-                }
-
                 testOptions {
                     testCoverage {
                         jacocoVersion = libs.versions.jacoco.get()
@@ -139,56 +141,7 @@ if (findProject(":geckoview") == null) {
     }
 }
 
-detekt {
-    input = files("$projectDir/components", "$projectDir/buildSrc", "$projectDir/samples")
-    config = files("$projectDir/config/detekt.yml")
-    baseline = file("$projectDir/config/detekt-baseline.xml")
-
-    reports {
-        html {
-            enabled = true
-            destination = file("$projectDir/build/reports/detekt.html")
-        }
-        xml {
-            enabled = false
-        }
-        txt {
-            enabled = false
-        }
-    }
-}
-
-tasks.named("detekt").configure {
-    reports {
-        custom {
-            reportId = "suppression-count"
-            outputLocation.set(file("$projectDir/build/reports/suppressions.txt"))
-        }
-    }
-}
-
-tasks.withType(Detekt).configureEach() {
-    // Custom detekt rules should be built before.
-    // See https://detekt.dev/docs/introduction/extensions#pitfalls
-    dependsOn(":components:tooling-detekt:assemble")
-
-    autoCorrect = true
-
-    exclude "**/build.gradle.kts"
-    exclude "**/build/**"
-    exclude "**/docs/**"
-    exclude "**/resources/**"
-    exclude "**/src/androidTest/**"
-    exclude "**/src/iosTest/**"
-    exclude "**/src/main/assets/extensions/**"
-    exclude "**/src/test/**"
-    exclude "**/test/src/**"
-    exclude "**/tmp/**"
-    exclude "**/tooling/fetch-tests/**"
-}
-
-// Apply same path exclusions as for the main task
-tasks.withType(DetektCreateBaselineTask).configureEach() {
+tasks.named("detektBaseline").configure {
     dependsOn(":components:browser-icons:updateBuiltInExtensionVersion")
     dependsOn(":components:feature-accounts:updateBuiltInExtensionVersion")
     dependsOn(":components:feature-readerview:updateBuiltInExtensionVersion")
@@ -198,30 +151,10 @@ tasks.withType(DetektCreateBaselineTask).configureEach() {
     dependsOn(":components:samples-browser:updateTestExtensionVersion")
     dependsOn(":components:samples-compose-browser:updateBorderifyExtensionVersion")
     dependsOn(":components:samples-compose-browser:updateTestExtensionVersion")
-    dependsOn(":components:tooling-detekt:assemble")
-
-    exclude "**/build.gradle.kts"
-    exclude "**/build/**"
-    exclude "**/docs/**"
-    exclude "**/resources/**"
-    exclude "**/src/androidTest/**"
-    exclude "**/src/iosTest/**"
-    exclude "**/src/main/assets/extensions/**"
-    exclude "**/src/test/**"
-    exclude "**/test/src/**"
-    exclude "**/tmp/**"
-    exclude "**/tooling/fetch-tests/**"
-}
-
-configurations {
-    detektDependencies
 }
 
 dependencies {
     detektPlugins project(":components:tooling-detekt")
-    detekt libs.detekt.cli
-
-    detektDependencies libs.detekt.cli
 }
 
 tasks.register("lint") {

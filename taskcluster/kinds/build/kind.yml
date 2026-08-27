@@ -41,6 +41,7 @@ task-defaults:
         toolchain:
             - terser
     run:
+        clone-with: hg
         mozconfig-variant:
             by-release-type:
                 beta: beta

@@ -124,8 +124,8 @@ const ClassSpec NumberFormatObject::classSpec_ = {
 };
 
 NumberFormatOptions js::intl::NumberFormatObject::getOptions() const {
-  const auto& slot = getFixedSlot(OPTIONS_SLOT);
-  const auto& digitsSlot = getFixedSlot(DIGITS_OPTIONS_SLOT);
+  const auto& slot = getFixedSlotTyped(OPTIONS_SLOT);
+  const auto& digitsSlot = getFixedSlotTyped(DIGITS_OPTIONS_SLOT);
   if (slot.isUndefined() || digitsSlot.isUndefined()) {
     return {};
   }
@@ -135,8 +135,8 @@ NumberFormatOptions js::intl::NumberFormatObject::getOptions() const {
 void js::intl::NumberFormatObject::setOptions(
     const NumberFormatOptions& options) {
   auto [packed, packedDigits] = PackedNumberFormatOptions::pack(options);
-  setFixedSlot(OPTIONS_SLOT, packed);
-  setFixedSlot(DIGITS_OPTIONS_SLOT, packedDigits);
+  setFixedSlotTyped(OPTIONS_SLOT, packed);
+  setFixedSlotTyped(DIGITS_OPTIONS_SLOT, packedDigits);
 }
 
 /**

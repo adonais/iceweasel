@@ -1,5 +1,3 @@
-// |jit-test| test-also=-P wasm_compact_imports
-
 load(libdir + "wasm-binary.js");
 
 const { extractStackFrameFunction } = WasmHelpers;
@@ -362,7 +360,7 @@ for (let toBuffer of toBufferOpts) {
         0x08: true, 0x09: true, 0x0a: true, 0x0b: true, 0x0c: true, 0x0d: true, 0x0e: true,
         // Table (proposed)
         0x0f: true, 0x10: true, 0x11: true, 0x12: true,
-        // Wide arithmetic operations (proposed as of Jan 2026)
+        // Wide arithmetic operations (standardized)
         0x13: true, 0x14: true, 0x15: true, 0x16: true,
         // Structure operations (experimental, internal)
         0x50: true, 0x51: true, 0x52: true, 0x53: true };

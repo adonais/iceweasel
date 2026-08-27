@@ -17,7 +17,7 @@ class nsICommandParams;
 
 class nsControllerCommandTable final {
  public:
-  nsControllerCommandTable();
+  nsControllerCommandTable() = default;
 
   NS_INLINE_DECL_REFCOUNTING(nsControllerCommandTable);
 
@@ -38,10 +38,12 @@ class nsControllerCommandTable final {
   void GetSupportedCommands(nsTArray<nsCString>&) const;
 
  private:
-  ~nsControllerCommandTable();
+  ~nsControllerCommandTable() = default;
+  // This value is used to size the hash table. Just a sensible upper bound
+  static constexpr size_t num_commands_length = 32;
   // Hash table of nsIControllerCommands, keyed by command name.
   nsRefPtrHashtable<nsCStringHashKey, mozilla::ControllerCommand>
-      mCommandsTable;
+      mCommandsTable{num_commands_length};
 
   // Are we mutable?
   bool mMutable = true;

@@ -1,6 +1,6 @@
 //error: invalid value for attribute `Compress', expected one of: None, all
 
-include protocol compressCtor;
+include protocol PcompressCtor;
 
 [ChildProc=any]
 async protocol PCompressInvalid {

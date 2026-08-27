@@ -9,6 +9,8 @@ import os
 import mozpack.path as mozpath
 from mozpack.files import FileFinder
 
+from mozbuild.util import get_rust_build_kind
+
 GENERATED_SOURCE_EXTS = (".rs", ".c", ".h", ".cc", ".cpp")
 
 
@@ -52,7 +54,7 @@ def get_generated_sources():
         yield mozpath.join(base, p), f
     # Next, return any source files that were generated into the Rust
     # object directory.
-    rust_build_kind = "debug" if buildconfig.substs.get("MOZ_DEBUG_RUST") else "release"
+    rust_build_kind = get_rust_build_kind(buildconfig.substs)
     base = mozpath.join(buildconfig.substs["RUST_TARGET"], rust_build_kind, "build")
     finder = FileFinder(mozpath.join(buildconfig.topobjdir, base))
     for p, f in finder:

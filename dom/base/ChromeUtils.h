@@ -375,6 +375,13 @@ class ChromeUtils {
                                       nsACString& aRemoteType,
                                       ErrorResult& aRv);
 
+  static bool IsBlobURLValid(GlobalObject& aGlobal, nsIPrincipal* aPrincipal,
+                             const nsACString& aURIString);
+
+  static void ValidateServiceWorkerScope(GlobalObject&,
+                                         nsIPrincipal* aPrincipal,
+                                         nsIURI* aScopeURI, ErrorResult& aRv);
+
 #ifdef MOZ_WMF_CDM
   static already_AddRefed<Promise> GetWMFContentDecryptionModuleInformation(
       GlobalObject& aGlobal, ErrorResult& aRv);

@@ -17,19 +17,31 @@ add_task(async function () {
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("devtools.toolbox.host");
   });
+  // Prevent the RDM reload notification to be displayed so it doesn't impact the test
+  await pushPref("devtools.responsive.reloadNotification.enabled", false);
 
   const tab = await addTab(URL);
+  // Open a split view for the test so the notifications, as in such case notifications
+  // are placed inside .browserContainer and will impact the available height for the toolbox.
+  const otherTab = await addTab(URL);
+  await BrowserTestUtils.switchTab(gBrowser, tab);
+  gBrowser.addTabSplitView([tab, otherTab], {
+    insertBefore: tab,
+  });
+
   const panel = gBrowser.getPanel();
   const toolbox = await gDevTools.showToolboxForTab(tab);
 
-  const bottomIframe = panel.querySelector(".devtools-toolbox-bottom-iframe");
+  const bottomIframe = panel.querySelector(
+    ".devtools-toolbox-iframe.bottom-host"
+  );
   is(
-    bottomIframe.clientHeight,
+    bottomIframe.getBoundingClientRect().height,
     TOOLBOX_INITIAL_SIZE,
     "The bottom toolbox iframe has the expected height"
   );
   const horzSplitter = panel.querySelector(
-    "splitter.devtools-horizontal-splitter"
+    "splitter.devtools-toolbox-splitter.for-bottom-host"
   );
 
   Assert.equal(
@@ -43,8 +55,103 @@ add_task(async function () {
     "The horizontal splitter's aria-controls attribute points to the toolbox"
   );
 
+  // Wait for the initial calls that sets the aria-valuemax attribute
+  await waitFor(() => horzSplitter.ariaValueMax);
+  let previousAriaValueMax = horzSplitter.ariaValueMax;
+
+  info("Show Find in page toolbar");
+  {
+    await gFindBarPromise;
+    gFindBar.open();
+    await waitFor(() => horzSplitter.ariaValueMax !== previousAriaValueMax);
+    Assert.less(
+      parseFloat(horzSplitter.ariaValueMax),
+      parseFloat(previousAriaValueMax),
+      "aria-valuemax is smaller now, as showing the findbar reduced available vertical space"
+    );
+  }
+
+  info("Show RDM");
+  {
+    previousAriaValueMax = horzSplitter.ariaValueMax;
+    await openRDM(tab);
+    await waitFor(() => horzSplitter.ariaValueMax !== previousAriaValueMax);
+    Assert.less(
+      parseFloat(horzSplitter.ariaValueMax),
+      parseFloat(previousAriaValueMax),
+      "aria-valuemax is smaller now, as showing RDM reduced available vertical space"
+    );
+  }
+
+  info("Show notification");
+  previousAriaValueMax = horzSplitter.ariaValueMax;
+  const notificationBox = gBrowser.getNotificationBox(tab.linkedBrowser);
+  const notification = await notificationBox.appendNotification(
+    "dt-test",
+    {
+      label: "Test for DevTools",
+      image: "chrome://global/skin/icons/blocked.svg",
+      priority: notificationBox.PRIORITY_CRITICAL_HIGH,
+    },
+    []
+  );
+  await waitFor(() => horzSplitter.ariaValueMax !== previousAriaValueMax);
+  Assert.less(
+    parseFloat(horzSplitter.ariaValueMax),
+    parseFloat(previousAriaValueMax),
+    "aria-valuemax is smaller now, as showing the findbar reduced available vertical space"
+  );
+
+  info("Hide RDM");
+  {
+    previousAriaValueMax = horzSplitter.ariaValueMax;
+    await closeRDM(tab);
+    await waitFor(() => horzSplitter.ariaValueMax !== previousAriaValueMax);
+    Assert.greater(
+      parseFloat(horzSplitter.ariaValueMax),
+      parseFloat(previousAriaValueMax),
+      "aria-valuemax is bigger now, as hiding RDM gave us more vertical space"
+    );
+  }
+
+  info("Hide notification");
+  {
+    previousAriaValueMax = horzSplitter.ariaValueMax;
+    notification.close();
+    await waitFor(() => horzSplitter.ariaValueMax !== previousAriaValueMax);
+    Assert.greater(
+      parseFloat(horzSplitter.ariaValueMax),
+      parseFloat(previousAriaValueMax),
+      "aria-valuemax is bigger now, as hiding the notification gave us more vertical space"
+    );
+  }
+
+  info("Hide find in page toolbar");
+  {
+    previousAriaValueMax = horzSplitter.ariaValueMax;
+    const onFindBarClosePromise = BrowserTestUtils.waitForEvent(
+      gBrowser,
+      "findbarclose"
+    );
+    gFindBar.close(
+      // by default, the findbar closing has an animation.
+      // The `findbarclose` is emitted before the animation ends, meaning the elements
+      // inside the findbar are still focusable for a bit, which might impact the
+      // rest of the test.
+      // So close without animation so we don't have to wait for the animation to end
+      true
+    );
+    await onFindBarClosePromise;
+    await waitFor(() => horzSplitter.ariaValueMax !== previousAriaValueMax);
+    Assert.greater(
+      parseFloat(horzSplitter.ariaValueMax),
+      parseFloat(previousAriaValueMax),
+      "aria-valuemax is bigger now, as hiding the findbar gave us more vertical space"
+    );
+  }
+
   info("Move focus to the content page");
-  Services.focus.setFocus(gBrowser.selectedBrowser, Services.focus.FLAG_BYKEY);
+  Services.focus.setFocus(tab.linkedBrowser, Services.focus.FLAG_BYKEY);
 
   const onHorizontalSplitterFocused = BrowserTestUtils.waitForEvent(
     horzSplitter,
@@ -102,15 +209,17 @@ add_task(async function () {
 
   info("Dock the toolbox to the side");
   await toolbox.switchHost(Toolbox.HostType.RIGHT);
-  const sideIframe = panel.querySelector(".devtools-toolbox-side-iframe");
+  const sideIframe = panel.querySelector(".devtools-toolbox-iframe.side-host");
   sideIframe.style.minWidth = "1px"; // Disable the min width set in css
   is(
-    sideIframe.clientWidth,
+    sideIframe.getBoundingClientRect().width,
     TOOLBOX_INITIAL_SIZE,
     "The iframe is resized properly"
   );
 
-  const sideSplitter = panel.querySelector(".devtools-side-splitter");
+  const sideSplitter = panel.querySelector(
+    ".devtools-toolbox-splitter.for-side-host"
+  );
 
   Assert.equal(
     sideSplitter.getAttribute("role"),
@@ -121,6 +230,18 @@ add_task(async function () {
     sideSplitter.getAttribute("aria-controls"),
     sideIframe.id,
     "The side splitter's aria-controls attribute points to the toolbox"
+  );
+
+  info("Remove right tab on the split view");
+  // Wait for the initial ResizeObserver callback to set the aria-valuemax attribute
+  await waitFor(() => sideSplitter.ariaValueMax);
+  previousAriaValueMax = sideSplitter.ariaValueMax;
+  await removeTab(otherTab);
+  await waitFor(() => sideSplitter.ariaValueMax !== previousAriaValueMax);
+  Assert.greater(
+    parseFloat(sideSplitter.ariaValueMax),
+    parseFloat(previousAriaValueMax),
+    "aria-valuemax is larger now as closing the split view gave us more available space"
   );
 
   info("Move focus to the content page");

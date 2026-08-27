@@ -123,7 +123,7 @@ export class Passports {
 
   /**
    * @param {Promise<Store>} rustStore The shared Application Services `autofill`
-   *   store, owned by FormAutofillStorageBase#rustStore and opened off the main
+   *   store, owned by the RustAutofillStore handler and opened off the main
    *   thread. The AS store is local-only and keeps passports in plaintext, so no
    *   encryption key or further setup is required here.
    */

@@ -1443,19 +1443,7 @@ nsRefreshDriver::nsRefreshDriver(nsPresContext* aPresContext)
       mFreezeCount(0),
       mThrottledFrameRequestInterval(
           TimeDuration::FromMilliseconds(GetThrottledTimerInterval())),
-      mMinRecomputeVisibilityInterval(GetMinRecomputeVisibilityInterval()),
-      mThrottled(false),
-      mNeedToRecomputeVisibility(false),
-      mTestControllingRefreshes(false),
-      mInRefresh(false),
-      mWaitingForTransaction(false),
-      mSkippedPaints(false),
-      mResizeSuppressed(false),
-      mInNormalTick(false),
-      mAttemptedExtraTickSinceLastVsync(false),
-      mHasExceededAfterLoadTickPeriod(false),
-      mHasImageAnimations(false),
-      mHasStartedTimerAtLeastOnce(false) {
+      mMinRecomputeVisibilityInterval(GetMinRecomputeVisibilityInterval()) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mPresContext,
              "Need a pres context to tell us to call Disconnect() later "

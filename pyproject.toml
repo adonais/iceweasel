@@ -33,7 +33,6 @@ exclude = [
   "dom/bindings/parser/tests/test_arraybuffer.py",
   "dom/bindings/parser/tests/test_securecontext_extended_attribute.py",
   "gfx/tests",
-  "ipc/ipdl/ipdl",
   "layout/base/tests/marionette",
   "layout/reftests/border-image",
   "layout/reftests/fonts",
@@ -101,6 +100,8 @@ exclude = [
   "testing/mozharness/configs/test/test_malformed.py",
   "testing/web-platform/tests",
   "tools/lint/test/files",
+  # Vendored verbatim from bugbug; style is owned upstream.
+  "tools/lint/python/review_context_schema.py",
   "tools/crashreporter/*.configure",
   ".ycm_extra_conf.py",
 ]

@@ -156,6 +156,22 @@ ContentPrefService2.prototype = {
       return this._connPromise;
     }
 
+    // Register the blocker before opening: a connection that is still opening
+    // when Sqlite.shutdown begins must still be closed before the barrier
+    // completes.
+    try {
+      lazy.Sqlite.shutdown.addBlocker(
+        "Closing ContentPrefService2 connection.",
+        async () => {
+          let conn = await this._connPromise?.catch(() => null);
+          await conn?.close();
+        }
+      );
+    } catch (e) {
+      // Nothing would close the connection, so don't open one.
+      return (this._connPromise = Promise.resolve(null));
+    }
+
     return (this._connPromise = (async () => {
       let conn;
       try {
@@ -1051,10 +1067,14 @@ ContentPrefService2.prototype = {
    *                     nsresult: The error code.
    */
   _execStmts: async function CPS2__execStmts(stmts, callbacks) {
-    let conn = await this.conn;
     let rows;
     let ok = true;
     try {
+      // Awaiting the connection has to happen inside the try: callers such as
+      // removeByName() do not consume the returned promise, so a rejection here
+      // (e.g. the connection was closed while opening) would otherwise surface
+      // as an unhandled rejection instead of reaching onError/onDone.
+      let conn = await this.conn;
       rows = await executeStatementsInTransaction(conn, stmts);
     } catch (e) {
       ok = false;
@@ -1364,21 +1384,6 @@ ContentPrefService2.prototype = {
         incrementalVacuum: true,
         vacuumOnIdle: true,
       });
-      try {
-        lazy.Sqlite.shutdown.addBlocker(
-          "Closing ContentPrefService2 connection.",
-          () => conn.close()
-        );
-      } catch (ex) {
-        // Uh oh, we failed to add a shutdown blocker. Close the connection
-        // anyway, but make sure that doesn't throw.
-        try {
-          await conn?.close();
-        } catch (ex) {
-          console.error(ex);
-        }
-        return null;
-      }
     } catch (e) {
       console.error(e);
       return resetAndRetry(e);
@@ -1391,14 +1396,12 @@ ContentPrefService2.prototype = {
       return resetAndRetry(e);
     }
 
-    // Turn off disk synchronization checking to reduce disk churn and speed up
-    // operations when prefs are changed rapidly (such as when a user repeatedly
-    // changes the value of the browser zoom setting for a site).
-    //
-    // Note: this could cause database corruption if the OS crashes or machine
-    // loses power before the data gets written to disk, but this is considered
-    // a reasonable risk for the not-so-critical data stored in this database.
-    await conn.execute("PRAGMA synchronous = OFF");
+    // WAL with synchronous = NORMAL syncs only at checkpoints, avoiding disk
+    // churn on rapid pref changes (e.g. per-site zoom) without the corruption
+    // risk of synchronous = OFF.
+    await conn.execute("PRAGMA journal_mode = WAL");
+    await conn.execute("PRAGMA wal_autocheckpoint = 16");
+    await conn.execute("PRAGMA synchronous = NORMAL");
 
     return conn;
   },

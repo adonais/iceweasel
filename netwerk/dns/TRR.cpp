@@ -714,7 +714,7 @@ nsresult TRR::FollowCname(nsIChannel* aChannel) {
   }
 
   // restore mCname as DohDecode() change it
-  mCname = cname;
+  mCname = std::move(cname);
   if (NS_SUCCEEDED(rv) && HasUsableResponse()) {
     ReturnData(aChannel);
     return NS_OK;
@@ -722,9 +722,13 @@ nsresult TRR::FollowCname(nsIChannel* aChannel) {
 
   bool ra = mPacket && mPacket->RecursionAvailable().unwrapOr(false);
   LOG(("ra = %d", ra));
-  if (rv == NS_ERROR_UNKNOWN_HOST && ra) {
+  if (rv == NS_ERROR_UNKNOWN_HOST && ra && mType != TRRTYPE_HTTPSSVC) {
     // If recursion is available, but no addresses have been returned,
     // we can just return a failure here.
+    // This optimization is only valid for A/AAAA CNAME chains: a recursive
+    // resolver that follows a CNAME already inlines the target's addresses.
+    // It does not hold for HTTPS AliasMode, since recursive resolvers do not
+    // chase the SVCB/HTTPS alias, so we must query the TargetName ourselves.
     LOG(("TRR::FollowCname not sending another request as RA flag is set."));
     FailData(NS_ERROR_UNKNOWN_HOST);
     return NS_OK;
@@ -740,6 +744,12 @@ nsresult TRR::FollowCname(nsIChannel* aChannel) {
   RefPtr<TRR> trr =
       new TRR(mHostResolver, mRec, mCname, mType, mCnameLoop, mPB);
   trr->SetPurpose(mPurpose);
+  // Recursive resolvers do not chase HTTPS AliasMode targets, so following the
+  // TargetName is an HTTPS alias follow. Remember this so that a target with no
+  // HTTPS record still yields an AliasMode record instead of failing.
+  if (mType == TRRTYPE_HTTPSSVC) {
+    trr->mHTTPSAliasFollow = true;
+  }
   if (!TRRService::Get()) {
     return NS_ERROR_FAILURE;
   }
@@ -759,6 +769,31 @@ nsresult TRR::On200Response(nsIChannel* aChannel) {
       mHost, mType, mCname, StaticPrefs::network_trr_allow_rfc1918(), mDNS,
       mResult, additionalRecords, mTTL);
   if (NS_FAILED(rv)) {
+    // We followed an HTTPS AliasMode record to this TargetName. If the target
+    // resolved successfully (NOERROR) but simply has no HTTPS record of its
+    // own, RFC 9460 still requires connecting to the TargetName, so synthesize
+    // an AliasMode record carrying it. The connection layer then routes to the
+    // target and Happy Eyeballs issues A/AAAA/HTTPS queries for it. A SERVFAIL
+    // or NXDOMAIN is a genuine failure and is left to propagate.
+    if (mType == TRRTYPE_HTTPSSVC && mHTTPSAliasFollow &&
+        rv == NS_ERROR_UNKNOWN_HOST) {
+      auto rcode = mPacket->GetRCode();
+      if (rcode.isOk() && rcode.unwrap() == 0) {
+        LOG(("TRR::On200Response synthesizing AliasMode record for %s\n",
+             mHost.get()));
+        SVCB alias;
+        alias.mSvcFieldPriority = 0;
+        alias.mSvcDomainName = mHost;
+        CopyableTArray<SVCB> records;
+        records.AppendElement(std::move(alias));
+        mResult = AsVariant(std::move(records));
+        if (mTTL == UINT32_MAX) {
+          mTTL = 60;
+        }
+        ReturnData(aChannel);
+        return NS_OK;
+      }
+    }
     LOG(("TRR::On200Response DohDecode %x\n", (int)rv));
     HandleDecodeError(rv);
     return rv;

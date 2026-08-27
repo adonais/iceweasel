@@ -121,6 +121,7 @@
 #else
 namespace mozilla {
 namespace dom {
+class BooleanOrImportNodeOptions;
 class ElementCreationOptionsOrString;
 }  // namespace dom
 }  // namespace mozilla
@@ -277,6 +278,7 @@ class ShadowRoot;
 class SimpleContentList;
 class SpeculationRules;
 class SpeculationRuleSet;
+class SpeculationRulesManager;
 class SVGDocument;
 class SVGElement;
 class SVGSVGElement;
@@ -2407,8 +2409,8 @@ class Document : public nsINode,
           aCustomElementRegistry = mozilla::Nothing());
 
   // https://dom.spec.whatwg.org/#effective-global-custom-element-registry
-  mozilla::dom::CustomElementRegistry*
-  GetEffectiveGlobalCustomElementRegistry();
+  mozilla::dom::CustomElementRegistry* GetEffectiveGlobalCustomElementRegistry()
+      const;
 
   // Whether this document is the key of a scoped custom element registry.
   bool HasScopedCustomElementRegistry() const {
@@ -3058,6 +3060,16 @@ class Document : public nsINode,
 
   bool IsDNSPrefetchAllowed() const { return mAllowDNSPrefetch; }
 
+  // Returns the SpeculationRulesManager for this document, creating it
+  // lazily on first call.
+  SpeculationRulesManager* EnsureSpeculationRulesManager();
+
+  // Returns the SpeculationRulesManager if one has been created; nullptr
+  // otherwise.
+  SpeculationRulesManager* GetSpeculationRulesManager() const {
+    return mSpeculationRulesManager.get();
+  }
+
   /**
    * Returns true if this document is allowed to contain XUL element and
    * use non-builtin XBL bindings.
@@ -3536,8 +3548,9 @@ class Document : public nsINode,
   already_AddRefed<Comment> CreateComment(const nsAString& aData) const;
   already_AddRefed<ProcessingInstruction> CreateProcessingInstruction(
       const nsAString& target, const nsAString& data, ErrorResult& rv) const;
-  already_AddRefed<nsINode> ImportNode(nsINode& aNode, bool aDeep,
-                                       ErrorResult& rv) const;
+  already_AddRefed<nsINode> ImportNode(
+      nsINode& aNode, const BooleanOrImportNodeOptions& aOptions,
+      ErrorResult& rv) const;
   // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsINode* AdoptNode(
       nsINode& aAdoptedNode, ErrorResult& rv, bool aAcceptShadowRoot = false);
@@ -4193,7 +4206,9 @@ class Document : public nsINode,
   void MaybeSkipTransitionAfterVisibilityChange();
 
   void ScheduleViewTransitionUpdateCallback(ViewTransition* aVt);
-  MOZ_CAN_RUN_SCRIPT void FlushViewTransitionUpdateCallbackQueue();
+
+  // Returns whether any callback ran.
+  MOZ_CAN_RUN_SCRIPT bool FlushViewTransitionUpdateCallbackQueue();
 
   // Returns some ViewTransition::TypeList or Nothing if skip transition.
   // https://drafts.csswg.org/css-view-transitions-2/#resolve-view-transition-rule
@@ -4841,6 +4856,9 @@ class Document : public nsINode,
 
   // Lazy-initialization to have mDocGroup initialized in prior to the
   UniquePtr<ServoStyleSet> mStyleSet;
+
+  // Lazy: created on first speculation rule encountered (Chunk 6 wires this).
+  UniquePtr<SpeculationRulesManager> mSpeculationRulesManager;
 
  protected:
   // Never ever call this. Only call GetWindow!
@@ -5945,6 +5963,7 @@ class Document : public nsINode,
                                               ErrorResult& aError);
 
   class SpeculationRules& SpeculationRules();
+  class SpeculationRules* GetSpeculationRules();
 
   nsIURI* GetTlsCertificateBindingURI() const {
     return mTLSCertificateBindingURI;

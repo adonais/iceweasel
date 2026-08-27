@@ -1,0 +1,10 @@
+//error: can't locate include file `PIDONTEXIST.ipdl'
+
+include protocol PIDONTEXIST;
+
+// error: nonexistent protocol ^^^
+
+[ChildProc=any]
+protocol PbadProtocolInclude {
+child: async Msg();
+};

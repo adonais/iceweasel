@@ -69,6 +69,10 @@ enum Stat {
   // Number of BigInts promoted.
   STAT_BIGINTS_PROMOTED,
 
+  // Maximum mark stack capacity (in words) reached by any marker during
+  // the marking phase of a major GC.
+  STAT_MARK_STACK_MAX_CAPACITY,
+
   STAT_LIMIT
 };
 
@@ -179,7 +183,7 @@ struct Statistics {
   void beginSlice(const ZoneGCStats& zoneStats, JS::GCOptions options,
                   const JS::SliceBudget& budget, JS::GCReason reason,
                   bool budgetWasIncreased);
-  void endSlice();
+  void endSlice(const JS::SliceBudget& budget);
 
   [[nodiscard]] bool startTimingMutator();
   [[nodiscard]] bool stopTimingMutator(double& mutator_ms, double& gc_ms);
@@ -505,16 +509,18 @@ struct Statistics {
                                 Sprinter& sprinter);
 };
 
-struct MOZ_RAII AutoGCSlice {
+class MOZ_RAII AutoGCSlice {
+  Statistics& stats;
+  const JS::SliceBudget& budget;
+
+ public:
   AutoGCSlice(Statistics& stats, const ZoneGCStats& zoneStats,
               JS::GCOptions options, const JS::SliceBudget& budget,
               JS::GCReason reason, bool budgetWasIncreased)
-      : stats(stats) {
+      : stats(stats), budget(budget) {
     stats.beginSlice(zoneStats, options, budget, reason, budgetWasIncreased);
   }
-  ~AutoGCSlice() { stats.endSlice(); }
-
-  Statistics& stats;
+  ~AutoGCSlice() { stats.endSlice(budget); }
 };
 
 struct MOZ_RAII AutoPhase {

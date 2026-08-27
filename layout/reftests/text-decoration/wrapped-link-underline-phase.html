@@ -1,0 +1,46 @@
+<!doctype html>
+<meta charset="utf-8">
+<!--
+  Bug 2059455: every line of a wrapped link must keep its underline.
+
+  Each line box of a wrapped link paints its own sub-range of one shared text
+  run, so nsTextFrame::DrawTextRunAndDecorations builds a clip to keep the
+  decoration inside the painted range. That clip's block-axis extent comes from
+  the ink overflow rect - which contains the decoration - so rounding that edge
+  to the nearest device pixel can move it inward, past the row the decoration
+  was snapped to, and the line is then culled entirely rather than trimmed.
+
+  The recipe, all of which matters: the fractional line-height puts alternate
+  line boxes on a half device pixel; the fractional padding-top and the identity
+  transform (which makes a reference frame) offset the content a quarter pixel
+  from the device grid; and Prototype.ttf's underline metrics land the decoration
+  flush against the bottom of the ink overflow rect rather than clear of it.
+
+  Only the first line box is visible, and it is one of the lines that loses its
+  underline, so this must differ from the reference (the same document with no
+  underline at all). If the underline is culled the two render identically.
+-->
+<style>
+@font-face {
+  font-family: testfont;
+  src: url(../fonts/Prototype.ttf);
+}
+html, body { margin: 0; background: white; }
+#crop {
+  padding-top: 0.35px;  /* the sub-pixel phase under test */
+  height: 22px;         /* only the first line box is visible */
+  overflow: hidden;
+}
+#text {
+  transform: matrix(1, 0, 0, 1, 0, 0);
+  width: 112px;
+  font: 15px/21.5px testfont;
+  overflow-wrap: break-word;
+}
+a {
+  color: black;
+  text-decoration-line: underline;
+}
+</style>
+<div id="crop"><div id="text"><a
+href="#">product=Firefox&amp;channel=release&amp;timestamp=1784692800000</a></div></div>

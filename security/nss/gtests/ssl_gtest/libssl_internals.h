@@ -59,4 +59,5 @@ PRBool SSLInt_IsIp(PRUint8 *s, unsigned int len);
 
 SECStatus SSLInt_GetCertificateCompressionAlgorithm(
     PRFileDesc *fd, SSLCertificateCompressionAlgorithm *alg);
+SECStatus SSLInt_SetEnableEchXtnCompression(PRFileDesc *fd, PRBool enabled);
 #endif  // ifndef libssl_internals_h_

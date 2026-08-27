@@ -143,7 +143,7 @@ void FontFaceSetImpl::Destroy() {
 
 void FontFaceSetImpl::ParseFontShorthandForMatching(
     const nsACString& aFont, StyleFontFamilyList& aFamilyList,
-    FontWeight& aWeight, FontStretch& aStretch, FontSlantStyle& aStyle,
+    FontWeight& aWeight, FontWidth& aWidth, FontSlantStyle& aStyle,
     ErrorResult& aRv) {
   RefPtr<URLExtraData> url = GetURLExtraData();
   if (!url) {
@@ -151,8 +151,8 @@ void FontFaceSetImpl::ParseFontShorthandForMatching(
     return;
   }
 
-  if (!ServoCSSParser::ParseFontShorthandForMatching(
-          aFont, url, aFamilyList, aStyle, aStretch, aWeight)) {
+  if (!ServoCSSParser::ParseFontShorthandForMatching(aFont, url, aFamilyList,
+                                                     aStyle, aWidth, aWeight)) {
     aRv.ThrowSyntaxError("Invalid font shorthand");
     return;
   }
@@ -180,9 +180,9 @@ void FontFaceSetImpl::FindMatchingFontFaces(const nsACString& aFont,
 
   StyleFontFamilyList familyList;
   FontWeight weight;
-  FontStretch stretch;
+  FontWidth width;
   FontSlantStyle italicStyle;
-  ParseFontShorthandForMatching(aFont, familyList, weight, stretch, italicStyle,
+  ParseFontShorthandForMatching(aFont, familyList, weight, width, italicStyle,
                                 aRv);
   if (aRv.Failed()) {
     return;
@@ -191,7 +191,7 @@ void FontFaceSetImpl::FindMatchingFontFaces(const nsACString& aFont,
   gfxFontStyle style;
   style.style = italicStyle;
   style.weight = weight;
-  style.stretch = stretch;
+  style.width = width;
 
   // Set of FontFaces that we want to return.
   nsTHashSet<FontFace*> matchingFaces;
@@ -513,26 +513,22 @@ FontFaceSetImpl::FindOrCreateUserFontEntryFromFontFace(
                       StyleFontFaceSourceFormatKeyword::EmbeddedOpentype;
                 } else if (valueString.LowerCaseEqualsASCII("svg")) {
                   face->mFormatHint = StyleFontFaceSourceFormatKeyword::Svg;
-                } else if (StaticPrefs::layout_css_font_variations_enabled()) {
-                  // Non-standard values that Firefox accepted, for back-compat;
-                  // these are superseded by the tech() function.
-                  if (valueString.LowerCaseEqualsASCII("woff-variations")) {
-                    face->mFormatHint = StyleFontFaceSourceFormatKeyword::Woff;
-                  } else if (valueString.LowerCaseEqualsASCII(
-                                 "woff2-variations")) {
-                    face->mFormatHint = StyleFontFaceSourceFormatKeyword::Woff2;
-                  } else if (valueString.LowerCaseEqualsASCII(
-                                 "opentype-variations")) {
-                    face->mFormatHint =
-                        StyleFontFaceSourceFormatKeyword::Opentype;
-                  } else if (valueString.LowerCaseEqualsASCII(
-                                 "truetype-variations")) {
-                    face->mFormatHint =
-                        StyleFontFaceSourceFormatKeyword::Truetype;
-                  } else {
-                    face->mFormatHint =
-                        StyleFontFaceSourceFormatKeyword::Unknown;
-                  }
+                }
+                // Non-standard values that Firefox accepted, for back-compat;
+                // these are superseded by the tech() function.
+                else if (valueString.LowerCaseEqualsASCII("woff-variations")) {
+                  face->mFormatHint = StyleFontFaceSourceFormatKeyword::Woff;
+                } else if (valueString.LowerCaseEqualsASCII(
+                               "woff2-variations")) {
+                  face->mFormatHint = StyleFontFaceSourceFormatKeyword::Woff2;
+                } else if (valueString.LowerCaseEqualsASCII(
+                               "opentype-variations")) {
+                  face->mFormatHint =
+                      StyleFontFaceSourceFormatKeyword::Opentype;
+                } else if (valueString.LowerCaseEqualsASCII(
+                               "truetype-variations")) {
+                  face->mFormatHint =
+                      StyleFontFaceSourceFormatKeyword::Truetype;
                 } else {
                   // unknown format specified, mark to distinguish from the
                   // case where no format hints are specified
@@ -592,14 +588,14 @@ nsresult FontFaceSetImpl::LogMessage(gfxUserFontEntry* aUserFontEntry,
 
   nsAutoCString weightString;
   aUserFontEntry->Weight().ToString(weightString);
-  nsAutoCString stretchString;
-  aUserFontEntry->Stretch().ToString(stretchString);
+  nsAutoCString widthString;
+  aUserFontEntry->Width().ToString(widthString);
   nsPrintfCString message(
       "downloadable font: %s "
-      "(font-family: \"%s\" style:%s weight:%s stretch:%s src index:%d)",
+      "(font-family: \"%s\" style:%s weight:%s width:%s src index:%d)",
       aMessage, familyName.get(),
       aUserFontEntry->IsItalic() ? "italic" : "normal",  // XXX todo: oblique?
-      weightString.get(), stretchString.get(), aSrcIndex);
+      weightString.get(), widthString.get(), aSrcIndex);
 
   if (NS_FAILED(aStatus)) {
     message.AppendLiteral(": ");

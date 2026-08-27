@@ -170,12 +170,6 @@ class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
    */
   bool AnimListMirrorsBaseList() const;
 
-  uint32_t NumberOfItems() const {
-    if (IsAnimValList()) {
-      Element()->FlushAnimations();
-    }
-    return LengthNoFlush();
-  }
   void Clear(ErrorResult& aRv);
   already_AddRefed<DOMSVGPoint> Initialize(DOMSVGPoint& aNewItem,
                                            ErrorResult& aRv);
@@ -192,7 +186,13 @@ class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
                                            ErrorResult& aRv) {
     return InsertItemBefore(aNewItem, LengthNoFlush(), aRv);
   }
-  uint32_t Length() const { return NumberOfItems(); }
+  void IndexedSetter(uint32_t aIndex, DOMSVGPoint& aNewValue, ErrorResult& aRv);
+  uint32_t Length() const {
+    if (IsAnimValList()) {
+      Element()->FlushAnimations();
+    }
+    return LengthNoFlush();
+  }
 
  private:
   /**

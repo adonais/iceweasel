@@ -1,0 +1,18 @@
+{
+  "label": "jobs.abbott",
+  "bugs": {
+    "2053077": {
+      "issue": "broken-interactive-elements",
+      "matches": ["*://www.jobs.abbott/*"]
+    }
+  },
+  "css": {
+    "restore_otp_inputs": "input[type=number].otp-field-input { -moz-appearance: textfield !important; appearance: textfield !important; }"
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "css": ["restore_otp_inputs"]
+    }
+  ]
+}

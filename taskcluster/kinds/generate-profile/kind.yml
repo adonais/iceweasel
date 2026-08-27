@@ -26,6 +26,8 @@ task-defaults:
         kind: build
         tier: 1
     use-python: default
+    run:
+        clone-with: hg
     fetches:
         fetch:
             - pgo-extended-corpus

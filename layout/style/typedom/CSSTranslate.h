@@ -9,6 +9,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "mozilla/dom/CSSTransformComponent.h"
+#include "mozilla/dom/DOMMatrixBindingFwd.h"
 #include "nsCycleCollectionParticipant.h"
 
 template <class T>
@@ -66,6 +67,8 @@ class CSSTranslate final : public CSSTransformComponent {
   void SetZ(CSSNumericValue& aArg, ErrorResult& aRv);
 
   // end of CSSTranslate Web IDL declarations
+
+  already_AddRefed<DOMMatrix> ToMatrix(ErrorResult& aRv);
 
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                              nsACString& aDest) const;

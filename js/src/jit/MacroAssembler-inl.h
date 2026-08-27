@@ -21,6 +21,7 @@
 #include "vm/JSObject.h"
 #include "vm/ProxyObject.h"
 #include "vm/Runtime.h"
+#include "vm/Stack.h"  // js::ResumeFrameArgs
 #include "vm/StringType.h"
 
 #include "jit/ABIFunctionList-inl.h"
@@ -292,6 +293,15 @@ void MacroAssembler::PushFrameDescriptorForJitCall(FrameType type,
   framePushed_ += sizeof(uintptr_t);
 }
 
+void MacroAssembler::branchIfNotActivationEntryFrame(Register scratch,
+                                                     Label* notEntryFrame) {
+  load32(Address(FramePointer, CommonFrameLayout::offsetOfDescriptor()),
+         scratch);
+  and32(Imm32(FrameDescriptor::TypeMask), scratch);
+  branch32(Assembler::NotEqual, scratch, Imm32(uint32_t(FrameType::CppToJSJit)),
+           notEntryFrame);
+}
+
 void MacroAssembler::loadNumActualArgs(Register framePtr, Register dest) {
   loadPtr(Address(framePtr, JitFrameLayout::offsetOfDescriptor()), dest);
   rshift32(Imm32(FrameDescriptor::NumActualArgsShift), dest);
@@ -307,6 +317,34 @@ void MacroAssembler::PushCalleeToken(Register callee, bool constructing) {
                   "Non-constructing call requires no tagging");
     Push(callee);
   }
+}
+
+template <typename KindT, typename ValueT>
+void MacroAssembler::pushGeneratorResumeArgsAndFormals(
+    const Address& resumeIndex, const KindT& resumeKind, Register generator,
+    const ValueT& resumeValue, Register nformals) {
+  // Push the ResumeFrameArgs first, high to low: resumeIndex, resumeKind,
+  // generator, resumeValue.
+  static_assert(ResumeFrameArgs::NumSlots == 4);
+  static_assert(ResumeFrameArgs::ResumeIndexSlot == 3);
+  static_assert(ResumeFrameArgs::ResumeKindSlot == 2);
+  static_assert(ResumeFrameArgs::GeneratorSlot == 1);
+  static_assert(ResumeFrameArgs::ResumeValueSlot == 0);
+  pushValue(resumeIndex);
+  pushValue(resumeKind);
+  pushValue(JSVAL_TYPE_OBJECT, generator);
+  pushValue(resumeValue);
+
+  // Push |undefined| for the formals and for |this|. Because |this| is also
+  // pushed, we count down to -1 so we always push at least one Value.
+  Label loop;
+  bind(&loop);
+  {
+    pushValue(UndefinedValue());
+    branchSub32(Assembler::NotSigned, Imm32(1), nformals, &loop);
+  }
+
+  checkStackAlignment();
 }
 
 void MacroAssembler::loadFunctionFromCalleeToken(Address token, Register dest) {

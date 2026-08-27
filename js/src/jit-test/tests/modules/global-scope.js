@@ -2,7 +2,7 @@
 
 function evalModuleAndCheck(source, expected) {
     let m = parseModule(source);
-    moduleLink(m);
+    moduleLoadAndLink(m);
     moduleEvaluate(m);
     assertEq(getModuleEnvironmentValue(m, "r"), expected);
 }
@@ -23,7 +23,7 @@ function offThreadEvalModuleAndCheck(source, expected) {
     let stencil = finishOffThreadStencil();
     let m = instantiateModuleStencil(stencil);
     print("compiled");
-    moduleLink(m);
+    moduleLoadAndLink(m);
     moduleEvaluate(m);
     assertEq(getModuleEnvironmentValue(m, "r"), expected);
 }

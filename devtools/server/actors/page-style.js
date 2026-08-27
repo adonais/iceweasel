@@ -60,9 +60,6 @@ loader.lazyRequireGetter(
 loader.lazyGetter(this, "PSEUDO_ELEMENTS", () => {
   return InspectorUtils.getCSSPseudoElementNames();
 });
-loader.lazyGetter(this, "FONT_VARIATIONS_ENABLED", () => {
-  return Services.prefs.getBoolPref("layout.css.font-variations.enabled");
-});
 
 const NORMAL_FONT_WEIGHT = 400;
 const BOLD_FONT_WEIGHT = 700;
@@ -147,7 +144,7 @@ class PageStyleActor extends Actor {
         fontStyleLevel4: CSS.supports("font-style: oblique 20deg"),
         // Whether getAllUsedFontFaces/getUsedFontFaces accepts the includeVariations
         // argument.
-        fontVariations: FONT_VARIATIONS_ENABLED,
+        fontVariations: CSS.supports("font-variation-settings: 'liga' 1"),
         // Whether the page supports values of font-weight from CSS Fonts Level 4.
         // font-weight at CSS Fonts Level 4 accepts values in increments of 1 rather
         // than 100. However, CSS.supports() returns false positives, so we guard with the
@@ -441,7 +438,7 @@ class PageStyleActor extends Actor {
         };
       }
 
-      if (options.includeVariations && FONT_VARIATIONS_ENABLED) {
+      if (options.includeVariations) {
         // Round font variation axes values
         fontFace.variationAxes = font.getVariationAxes().map(axis => ({
           ...axis,
@@ -775,7 +772,10 @@ class PageStyleActor extends Actor {
     // In such case, we want to call #getElementRules with the actual pseudo element node,
     // not its binding element.
 
-    const relevantPseudoElements = [];
+    // Store the relevant pseudo elements in a Map where the key is the actual pseudo
+    // element (e.g. `::before`, `::picker(select)`, `::highlight(custom)`), and the
+    // value is the "short" version (e.g. resspectively `::before`, `::picker`, `::highlight`).
+    const relevantPseudoElements = new Map();
     for (const readPseudo of PSEUDO_ELEMENTS) {
       if (!this.#pseudoIsRelevant(rawNode, readPseudo, isInherited)) {
         continue;
@@ -788,25 +788,34 @@ class PageStyleActor extends Actor {
           // only active
           true
         ).forEach(name => {
-          relevantPseudoElements.push(`::highlight(${name})`);
+          relevantPseudoElements.set(`::highlight(${name})`, readPseudo);
         });
+      } else if (readPseudo === "::picker") {
+        relevantPseudoElements.set(
+          `::picker(${rawNode.nodeName.toLowerCase()})`,
+          readPseudo
+        );
       } else {
-        relevantPseudoElements.push(readPseudo);
+        relevantPseudoElements.set(readPseudo, readPseudo);
       }
     }
 
-    for (const readPseudo of relevantPseudoElements) {
+    for (const [pseudo, shortPseudo] of relevantPseudoElements) {
       const pseudoRules = this.#getElementRules(
         rawNode,
-        readPseudo,
+        // here we need to pass the full pseudo element text for InspectorUtils.getMatchingCSSRules
+        // to work properly
+        pseudo,
         isInherited ? node : null,
         filter
       );
-      // inherited element backed pseudo element rules (e.g. `::details-content`) should
-      // not be at the same "level" as rules inherited from the binding element (e.g. `<details>`),
-      // so we need to put them before the "regular" rules.
+      // inherited element backed pseudo element rules (e.g. `::details-content`, `::picker`, …)
+      // should not be at the same "level" as rules inherited from the binding element
+      // (e.g. `<details>`, `<select>`, …), so we need to put them before the "regular" rules.
       if (
-        SharedCssLogic.ELEMENT_BACKED_PSEUDO_ELEMENTS.has(readPseudo) &&
+        // In ELEMENT_BACKED_PSEUDO_ELEMENTS, we have the "short" version of the pseudo
+        // (e.g `::picker`).
+        SharedCssLogic.ELEMENT_BACKED_PSEUDO_ELEMENTS.has(shortPseudo) &&
         isInherited
       ) {
         rules.unshift(...pseudoRules);
@@ -982,9 +991,37 @@ class PageStyleActor extends Actor {
         // for DevTools. For now we skip them.
         return false;
       case "::picker-icon":
-      case "::picker":
-        // FIXME: Bug 2042839. Need to handle in DevTools.
         return !isInherited && node.nodeName == "SELECT";
+      case "::picker": {
+        if (node.nodeName !== "SELECT") {
+          return false;
+        }
+
+        if (!isInherited) {
+          return true;
+        }
+
+        // If we're getting rules on a parent element, we need to check if the selected
+        // element is inside the ::picker
+        // We traverse the flattened parent tree until we find the <slot> that implements
+        // the pseudo element.
+        let traversedNode = this.selectedElement;
+        while (traversedNode) {
+          if (
+            // if we found the <slot> implementing the pseudo element
+            traversedNode.implementedPseudoElement === "::picker" &&
+            // and its parent <select> element is the element we're evaluating
+            traversedNode.flattenedTreeParentNode === node
+          ) {
+            // then include the ::picker rules from that element
+            return true;
+          }
+          // otherwise keep looking up the tree
+          traversedNode = traversedNode.flattenedTreeParentNode;
+        }
+
+        return false;
+      }
       case "::checkmark":
         return !isInherited && node.nodeName == "OPTION";
       case "::-webkit-scrollbar":

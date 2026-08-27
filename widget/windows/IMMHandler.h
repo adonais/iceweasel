@@ -29,7 +29,7 @@ struct MSGResult;
 
 class IMEContext final {
  public:
-  IMEContext() : mWnd(nullptr), mIMC(nullptr) {}
+  IMEContext() = default;
 
   explicit IMEContext(HWND aWnd);
   explicit IMEContext(nsWindow* aWindowBase);
@@ -85,8 +85,8 @@ class IMEContext final {
  protected:
   IMEContext(const IMEContext& aOther) { MOZ_CRASH("Don't copy IMEContext"); }
 
-  HWND mWnd;
-  HIMC mIMC;
+  HWND mWnd{nullptr};
+  HIMC mIMC{nullptr};
 };
 
 class IMMHandler final {

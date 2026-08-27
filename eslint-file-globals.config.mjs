@@ -238,6 +238,7 @@ export default [
       "gfx/layers/apz/test/mochitest/helper_touch_action_regions.html",
       "mobile/shared/actors/tests/mochitests/test_geckoview_experiment_delegate.html",
       "mobile/shared/modules/geckoview/test/mochitest/test_extensions_late_startup.html",
+      "mobile/shared/modules/geckoview/test/mochitest/test_geckoview_brokensitereporter.html",
       "mobile/shared/modules/geckoview/test/mochitest/test_geckoview_translations.html",
       "netwerk/cookie/test/mochitest/cookiesHelper.js",
       "netwerk/test/mochitests/file_1331680.js",

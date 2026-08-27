@@ -14,4 +14,11 @@ interface nsIMarionette : nsISupports
 {
   /** Indicates whether Marionette is running. */
   readonly attribute boolean running;
+
+  /**
+   * Indicates whether a Marionette session for browser automation is currently
+   * running. Can be set to false when started at runtime (e.g. for tooling,
+   * agentic assisted browsing).
+   */
+  readonly attribute boolean isBrowserAutomationRunning;
 };

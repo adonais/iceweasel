@@ -97,7 +97,7 @@ export const CERT_ERRORS = [
       },
       showViewCertificate: true,
     },
-    hasNoUserFix: true,
+    hasNoUserFix: false,
   },
   {
     id: "SEC_ERROR_EXPIRED_CERTIFICATE",

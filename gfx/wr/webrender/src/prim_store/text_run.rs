@@ -9,7 +9,7 @@ use crate::scene_building::{IsVisible};
 use glyph_rasterizer::{FontInstance, FontTransform, GlyphKey, SubpixelDirection, FONT_SIZE_LIMIT};
 use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
-use crate::picture::SurfaceInfo;
+use crate::surface::SurfaceInfo;
 use crate::prim_store::PrimitiveScratchBuffer;
 use crate::prim_store::{PrimitiveStore, PrimKeyCommonData, PrimTemplateCommonData};
 use crate::renderer::{GpuBufferAddress, GpuBufferBuilderF, MAX_VERTEX_TEXTURE_WIDTH};
@@ -232,9 +232,9 @@ pub struct TextRunScratch {
     /// Normalized prim local rect for this run. `.min` is the run anchor:
     /// the shader transforms it to device space and adds the per-glyph
     /// device offsets. Stored here so batching emits the identical anchor
-    /// in `PrimitiveHeader.local_rect` that `request_resources` used to
+    /// in `PrimitiveHeader.pattern_rect` that `request_resources` used to
     /// compute those offsets.
-    pub local_rect: LayoutRect,
+    pub pattern_rect: LayoutRect,
     /// Per-instance GPU buffer address for the color block followed by the
     /// per-glyph offset blocks (two glyphs per block). In device mode these are
     /// glyph pen positions snapped to the device grid, relative to the
@@ -292,21 +292,28 @@ impl TextRunTemplate {
         // raster, instead of displacing every glyph and shaving a slice off it
         // (bug 2060342).
         // Color bitmap glyphs (Apple Color Emoji and any CBDT/sbix font with
-        // embedded bitmap strikes) can't have a rotation or skew baked into their
-        // rasterization: the platform backends force an identity glyph shape for
-        // bitmap fonts and only fold the uniform scale into the point size. On the
-        // screen-space TRANSFORM_GLYPHS path that leaves a rotated/skewed emoji
-        // drawn axis-aligned while still positioned at its transformed pen, so it
-        // looks unrotated and displaced (bug 2055177). `has_bitmap_strikes` is
-        // computed by the caller from the real font face (the EMBEDDED_BITMAPS
-        // instance flag alone is unreliable: on unix it only reflects a fontconfig
-        // preference and is set even for ordinary outline fonts) and is only true
-        // for a genuine bitmap font under a non-axis-aligned transform. Route those
-        // through the local-raster fallback so the shader applies the full transform
-        // to the emoji image, the same way vector glyphs and the manual
-        // filter/isolated-surface workaround do. A pure axis-aligned
-        // scale+translation is fine on the device path (the uniform scale already
-        // folds into the font size), so those are left untouched.
+        // embedded bitmap strikes) can't have any part of the transform baked into
+        // their rasterization: the platform backends force an identity glyph shape
+        // for bitmap fonts, so a rotation or skew is dropped outright and the scale
+        // survives only as the scalar `RasterizedGlyph::scale`, which the device
+        // path multiplies into the atlas footprint. That scalar cannot express a
+        // transform scale at all, so on the device path a scaled emoji is painted
+        // at its untransformed size (too small when scaling up, too big and clipped
+        // when scaling down - bugs 2061411, 2062234), and a rotated one is drawn
+        // axis-aligned at its transformed pen (bug 2055177). Before bug 2044211 the
+        // GPU routed these by glyph format - `GlyphFormat::Bitmap`/`ColorBitmap`
+        // have no `Transformed` variant, so bitmap glyphs never reached the
+        // transform shader and always had the transform applied in local space.
+        // `has_bitmap_strikes` restores that: the caller computes it from the real
+        // font face (the EMBEDDED_BITMAPS instance flag alone is unreliable - on
+        // unix it only reflects a fontconfig preference and is set even for
+        // ordinary outline fonts) and it is true only for a genuine bitmap font
+        // under a transform that isn't a pure translation. Route those through the
+        // local-raster fallback so the shader applies the full transform to the
+        // emoji image, the same way vector glyphs and the manual
+        // filter/isolated-surface workaround do. A pure translation is fine on the
+        // device path, where the scalar scale already lands the glyph at the right
+        // size, so that - the common case - is left untouched.
         let (use_subpixel_aa, transform_glyphs, texture_padding, oversized) = if raster_space != RasterSpace::Screen ||
             !transform.is_2d_on_z_plane() || !transform.has_2d_inverse() ||
             has_bitmap_strikes
@@ -431,7 +438,7 @@ impl TextRunTemplate {
 
     pub fn request_resources(
         &self,
-        local_rect: LayoutRect,
+        pattern_rect: LayoutRect,
         transform: &LayoutToWorldTransform,
         surface: &SurfaceInfo,
         spatial_node_index: SpatialNodeIndex,
@@ -449,12 +456,13 @@ impl TextRunTemplate {
             spatial_tree,
         );
 
-        // Only bitmap fonts drawn under a non-axis-aligned transform need the
-        // local-raster fallback (bug 2055177). Gate on the cheap transform and
-        // instance-flag checks first so that axis-aligned text - the common case -
-        // does no extra work, and only then consult the cached per-font
-        // bitmap-strike info (a lock-free lookup populated when the font was added).
-        let has_bitmap_strikes = !transform.is_2d_scale_translation()
+        // Bitmap fonts need the local-raster fallback under any transform that
+        // isn't a pure translation - a scale as much as a rotation or skew
+        // (bugs 2055177, 2061411). Gate on the cheap transform and instance-flag
+        // checks first so that untransformed text - the common case - does no
+        // extra work, and only then consult the cached per-font bitmap-strike
+        // info (a lock-free lookup populated when the font was added).
+        let has_bitmap_strikes = !transform.is_simple_2d_translation()
             && self.font.flags.contains(FontInstanceFlags::EMBEDDED_BITMAPS)
             && resource_cache.font_has_bitmap_strikes(self.font.font_key);
 
@@ -502,7 +510,7 @@ impl TextRunTemplate {
         };
 
         // World-space run anchor (device mode only).
-        let anchor_world = transform.transform_point2d(local_rect.min);
+        let anchor_world = transform.transform_point2d(pattern_rect.min);
 
         let mut glyph_offsets: Vec<DeviceVector2D> = Vec::new();
         let glyph_keys_range = if local_raster {
@@ -514,7 +522,7 @@ impl TextRunTemplate {
             glyph_offsets.reserve(self.glyphs.len());
 
             scratch.frame.glyph_keys.extend(self.glyphs.iter().map(|src| {
-                let pos = local_rect.min + src.point.to_vector();
+                let pos = pattern_rect.min + src.point.to_vector();
                 let raster_pos = DevicePoint::new(pos.x * glyph_raster_scale, pos.y * glyph_raster_scale);
                 let snapped = (raster_pos + snap_bias).floor();
                 glyph_offsets.push(snapped.to_vector());
@@ -546,7 +554,7 @@ impl TextRunTemplate {
             scratch.frame.glyph_keys.extend(self.glyphs.iter().map(|src| {
                 // Exact glyph pen position in absolute device space.
                 let glyph_world = transform
-                    .transform_point2d(local_rect.min + src.point.to_vector())
+                    .transform_point2d(pattern_rect.min + src.point.to_vector())
                     .unwrap_or(anchor_world);
                 let device_pen = glyph_world * dps;
 
@@ -570,7 +578,7 @@ impl TextRunTemplate {
         scratch.frame.text_runs.push(TextRunScratch {
             used_font,
             glyph_keys_range,
-            local_rect,
+            pattern_rect,
             gpu_address,
             raster_scale,
             local_raster,

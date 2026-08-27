@@ -74,7 +74,7 @@ class SVGPathElement final : public SVGPathElementBase {
   // nsIContent interface
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
-  SVGAnimatedPathSegList* GetAnimPathSegList() override { return &mD; }
+  SVGAnimatedPathSegList* GetAnimatedPathSegList() override { return &mD; }
 
   nsStaticAtom* GetPathDataAttrName() const override { return nsGkAtoms::d; }
 

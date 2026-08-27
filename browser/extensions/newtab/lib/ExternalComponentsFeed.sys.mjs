@@ -69,6 +69,9 @@ const TRAIN_HOPPING_COMPONENT_CONFIGURATIONS = [
             "ASRouterNewTabMessage:SpecialMessageAction": {
               wantUntrusted: true,
             },
+            "ASRouterNewTabMessage:EvaluateTargeting": {
+              wantUntrusted: true,
+            },
           },
         },
         matches: ["about:home", "about:newtab"],

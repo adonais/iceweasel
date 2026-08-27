@@ -29,6 +29,7 @@ task-defaults:
     use-python: default
     run-on-projects: ['mozilla-central']
     run:
+        clone-with: hg
         using: mozharness
         actions: [static-analysis-autotest]
         script: mozharness/scripts/fx_desktop_build.py
@@ -53,6 +54,7 @@ tasks:
                 LD_LIBRARY_PATH: /builds/worker/checkouts/gecko/clang/lib
                 PERFHERDER_EXTRA_OPTIONS: static-analysis-autotest
         run:
+            clone-with: hg
             config:
                 - builds/releng_base_firefox.py
                 - builds/releng_sub_linux_configs/64_stat_and_debug.py
@@ -81,6 +83,7 @@ tasks:
             tier: 2
         worker-type: b-win2022
         run:
+            clone-with: hg
             config:
                 - builds/releng_base_firefox.py
                 - builds/taskcluster_base_windows.py

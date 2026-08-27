@@ -9,8 +9,8 @@ origin:
   description: Netscape Portable Runtime
   url: https://github.com/mozilla/nspr
 
-  release: NSPR_4_39_RTM (2026-05-05T14:48:55+02:00).
-  revision: NSPR_4_39_RTM
+  release: NSPR_4_40_RTM (2026-08-05T13:57:49+09:00).
+  revision: NSPR_4_40_RTM
 
   license: MPL-2.0
   license-file: LICENSE

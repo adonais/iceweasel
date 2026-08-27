@@ -152,7 +152,9 @@ class DocAccessible : public HyperTextAccessible,
 
   bool IsHidden() const;
 
-  void SetViewportCacheDirty(bool aDirty) { mViewportCacheDirty = aDirty; }
+  void SetViewportCacheDirty(bool aDirty) {
+    mViewportCacheDirty = aDirty && IPCDoc();
+  }
 
   /**
    * Document load states.
@@ -457,6 +459,17 @@ class DocAccessible : public HyperTextAccessible,
   void ARIAAttributeDefaultChanged(dom::Element* aElement, nsAtom* aAttribute,
                                    AttrModType aModType);
 
+  bool ShouldSendToParentProcess() const {
+    // For most documents, we should only send accessibility info to the parent
+    // process if the accessibility service is running there. It might not be
+    // running there if accessibility was started only in a content process,
+    // which happens in automation scenarios such as WebDriver. However, for
+    // print documents, we must send the tree regardless in order to generate a
+    // tagged PDF.
+    return IPCAccessibilityActive() &&
+           (nsAccessibilityService::IsRunningInParentProcess() || IsPrintDoc());
+  }
+
  protected:
   virtual ~DocAccessible();
 
@@ -709,8 +722,11 @@ class DocAccessible : public HyperTextAccessible,
    *    insertion.
    *
    * Returns true if the root node should be reinserted.
+   *
+   * aIsInsertRoot is true when aRoot was reported as inserted, and false when
+   * we reached it by descending into an insert root's subtree.
    */
-  bool PruneOrInsertSubtree(nsIContent* aRoot);
+  bool PruneOrInsertSubtree(nsIContent* aRoot, bool aIsInsertRoot = true);
 
  protected:
   /**

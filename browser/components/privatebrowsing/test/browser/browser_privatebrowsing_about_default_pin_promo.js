@@ -23,31 +23,31 @@ add_setup(async function () {
 });
 
 add_task(async function test_pin_promo() {
+  const selectors = getPromoSelectors();
+
   let { win: win1, tab: tab1 } = await openTabAndWaitForRender();
 
-  await SpecialPowers.spawn(tab1, [], async function () {
-    const promoContainer = content.document.querySelector(".promo");
-    const promoHeader = content.document.getElementById("promo-header");
-
+  await SpecialPowers.spawn(tab1, [selectors], async function (promo) {
+    const promoContainer = content.document.querySelector(promo.container);
     ok(promoContainer, "Pin promo is shown");
-    is(
-      promoHeader.getAttribute("data-l10n-id"),
-      "about-private-browsing-pin-promo-header",
-      "Correct default values are shown"
-    );
   });
+  await assertPromoHeader(
+    tab1,
+    "about-private-browsing-pin-promo-header",
+    "Correct default values are shown"
+  );
 
   let { win: win2 } = await openTabAndWaitForRender();
   let { win: win3 } = await openTabAndWaitForRender();
   let { win: win4, tab: tab4 } = await openTabAndWaitForRender();
 
-  await SpecialPowers.spawn(tab4, [], async function () {
-    is(
-      content.document.getElementById(".private-browsing-promo-link"),
-      null,
-      "should no longer render the promo after 3 impressions"
-    );
-  });
+  // After 3 impressions the pin promo hits its frequency cap and is no longer
+  // shown. Whatever promo (if any) takes its place is not this test's concern.
+  await assertPromoHeaderNot(
+    tab4,
+    "about-private-browsing-pin-promo-header",
+    "Pin promo is no longer shown after 3 impressions"
+  );
 
   await BrowserTestUtils.closeWindow(win1);
   await BrowserTestUtils.closeWindow(win2);

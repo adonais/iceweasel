@@ -119,6 +119,9 @@ class RetAddrEntry {
     // A callVM for the over-recursion check on function entry.
     StackCheck,
 
+    // A callVM for the over-recursion check on the generator resume path.
+    ResumeStackCheck,
+
     // A callVM for an interrupt check.
     InterruptCheck,
 

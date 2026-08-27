@@ -174,36 +174,66 @@ export async function constructRealTimeInfoInjectionMessage(
 /**
  * Constructs the relevant memories context message to be inejcted before the user message.
  *
- * @param {string} message                                                          User message to find relevant memories for
- * @returns {Promise<null|{role: string, tool_call_id: string, content: string}>}   Relevant memories context message or null if no relevant memories
+ * Only `message` is used for retrieval, but `previousMemories` (the memories
+ * retrieved for the preceding user messages) are folded into the rendered list
+ * so memories surfaced earlier in the conversation stay available for follow
+ * ups like "what about the other one?".
+ *
+ * @param {string} message                                                  User message to find relevant memories for
+ * @param {Array<{id: string, memory_summary: string}>} [previousMemories]  Memories retrieved for the preceding user messages
+ * @returns {Promise<null|{message: {role: string, content: string}, relevantMemories: Array<{id: string, memory_summary: string}>}>}
+ *   The context message plus the memories retrieved for `message` alone, or
+ *   null if there is nothing to inject
  */
-export async function constructRelevantMemoriesContextMessage(message) {
-  const relevantMemories =
-    await lazy.MemoriesManager.getRelevantMemories(message);
+export async function constructRelevantMemoriesContextMessage(
+  message,
+  previousMemories = []
+) {
+  const relevantMemories = (
+    await lazy.MemoriesManager.getRelevantMemories(message)
+  ).map(memory => ({
+    id: memory.id,
+    memory_summary: memory.memory_summary,
+  }));
 
-  // If there are relevant memories, render and return the context message
-  if (relevantMemories.length) {
-    const relevantMemoriesList =
-      "- " +
-      relevantMemories
-        .map(memory => {
-          return `${memory.id} - ${memory.memory_summary}`;
-        })
-        .join("\n- ");
-    const { prompt: relevantMemoriesContextPrompt } = await lazy.loadPrompt(
-      lazy.MODEL_FEATURES.MEMORIES_RELEVANT_CONTEXT
-    );
-    const content = lazy.renderPrompt(relevantMemoriesContextPrompt, {
-      relevantMemoriesList,
-    });
+  // Combine and deduplicate the current message's set of relevant memories with prior messages'
+  // If a memory is in both sets, prefer it in the current message's set, so it appears higher
+  // in the list and rendered prompt.
+  const seenIds = new Set();
+  const contextMemories = [];
+  for (const memory of [...relevantMemories, ...previousMemories]) {
+    if (!seenIds.has(memory.id)) {
+      seenIds.add(memory.id);
+      contextMemories.push(memory);
+    }
+  }
 
-    return {
+  // If there aren't any relevant memories, return null
+  if (!contextMemories.length) {
+    return null;
+  }
+
+  const relevantMemoriesList =
+    "- " +
+    contextMemories
+      .map(memory => {
+        return `${memory.id} - ${memory.memory_summary}`;
+      })
+      .join("\n- ");
+  const { prompt: relevantMemoriesContextPrompt } = await lazy.loadPrompt(
+    lazy.MODEL_FEATURES.MEMORIES_RELEVANT_CONTEXT
+  );
+  const content = lazy.renderPrompt(relevantMemoriesContextPrompt, {
+    relevantMemoriesList,
+  });
+
+  return {
+    message: {
       role: "system",
       content,
-    };
-  }
-  // If there aren't any relevant memories, return null
-  return null;
+    },
+    relevantMemories,
+  };
 }
 
 /**

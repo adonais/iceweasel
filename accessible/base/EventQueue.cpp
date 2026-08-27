@@ -490,9 +490,11 @@ void EventQueue::ProcessEventQueue() {
     }
   }
 
-  if (mDocument && IPCAccessibilityActive() &&
-      (!selectedIDs.IsEmpty() || !unselectedIDs.IsEmpty())) {
-    DocAccessibleChild* ipcDoc = mDocument->IPCDoc();
+  if (!mDocument) {
+    return;
+  }
+  if (auto* ipcDoc = mDocument->IPCDoc();
+      ipcDoc && (!selectedIDs.IsEmpty() || !unselectedIDs.IsEmpty())) {
     ipcDoc->SendSelectedAccessiblesChanged(selectedIDs, unselectedIDs);
   }
 }

@@ -20,9 +20,9 @@ AddonTestUtils.createAppInfo(
   "43"
 );
 
-Services.scriptloader.loadSubScript(
+Services.scriptloader.loadSubScriptWithOptions(
   Services.io.newFileURI(do_get_file("head_dnr.js")).spec,
-  this
+  { target: this, allowUnsafeURL: true }
 );
 
 const { promiseStartupManager, promiseRestartManager } = AddonTestUtils;

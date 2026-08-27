@@ -91,11 +91,11 @@ async function testAsync() {
         stacks.push(readGeckoInterpProfilingStack());
     };
     await asyncFun();
-    assertStack(readGeckoInterpProfilingStack(), ["AsyncFunctionNext", "testAsync"]);
+    assertStack(readGeckoInterpProfilingStack(), ["testAsync"]);
 
     assertEq(stacks.length, 2);
     assertStack(stacks[0], ["testAsync", "asyncFun"]);
-    assertStack(stacks[1], ["AsyncFunctionNext", "asyncFun"]);
+    assertStack(stacks[1], ["asyncFun"]);
 }
 testAsync();
 drainJobQueue();

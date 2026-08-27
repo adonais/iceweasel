@@ -47,6 +47,7 @@ open class PlacesHistoryStorage(
     private val context: Context,
     crashReporter: CrashReporting? = null,
     override val autocompletePriority: Int = 0,
+    private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
 ) : PlacesStorage(context, crashReporter),
     HistoryStorage,
     HistoryMetadataStorage,
@@ -115,7 +116,7 @@ open class PlacesHistoryStorage(
             handlePlacesExceptions("getVisited", default = emptyList()) {
                 places.reader().getVisitedUrlsInRange(
                     start = 0,
-                    end = System.currentTimeMillis(),
+                    end = currentTimeMillis(),
                     includeRemote = true,
                 )
             }

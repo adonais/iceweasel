@@ -49,7 +49,7 @@ add_task(async function () {
   let delayedHeuristicProvider = new UrlbarTestUtils.TestProvider({
     delayResultsPromise,
     results: [result],
-    type: UrlbarUtils.PROVIDER_TYPE.HEURISTIC,
+    type: UrlbarShared.PROVIDER_TYPE.HEURISTIC,
   });
   let providersManager = ProvidersManager.getInstanceForSap("urlbar");
   providersManager.registerProvider(delayedHeuristicProvider);

@@ -22,7 +22,7 @@ namespace mozilla {
 namespace crashreporter {
 
 class LSPAnnotationGatherer : public Runnable {
-  ~LSPAnnotationGatherer() {}
+  ~LSPAnnotationGatherer() = default;
 
  public:
   LSPAnnotationGatherer() : Runnable("crashreporter::LSPAnnotationGatherer") {}

@@ -50,6 +50,13 @@ add_task(async function testAutocompletePopup() {
   });
 
   async function testDatalist(browser, doc) {
+    // A click only opens the datalist popup of an input that is already
+    // focused, and focusing the browser of a just-opened popup panel reaches
+    // the extension process asynchronously. Without waiting for that, both
+    // clicks below can be dispatched before the input is focusable, neither
+    // opens the popup, and the test times out.
+    await SimpleTest.promiseFocus(browser);
+
     let autocompletePopup = doc.getElementById("PopupAutoComplete");
     let opened = promisePopupShown(autocompletePopup);
     info("click in test-input now");
@@ -115,7 +122,6 @@ add_task(async function testAutocompletePopup() {
     `moz-extension://${extension.uuid}/page.html`,
     "options_ui document from extension is loaded in about:addons"
   );
-  await SimpleTest.promiseFocus(optionsBrowser);
   await testDatalist(optionsBrowser, browserWindow.document);
 
   await BrowserTestUtils.closeWindow(browserWindow);

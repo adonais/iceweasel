@@ -7,14 +7,14 @@
 #ifndef mozilla_MathAlgorithms_h
 #define mozilla_MathAlgorithms_h
 
-#include "mozilla/Assertions.h"
-
 #include <algorithm>
 #include <bit>
-#include <cmath>
 #include <climits>
+#include <cmath>
 #include <cstdint>
 #include <type_traits>
+
+#include "mozilla/Assertions.h"
 
 namespace mozilla {
 

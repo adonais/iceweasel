@@ -968,7 +968,8 @@ impl ShorthandId {
         % endfor
         ];
         NonCustomPropertyIterator {
-            filter: NonCustomPropertyId::from(self).enabled_for_all_content(),
+            filter: NonCustomPropertyId::from(self).enabled_for_all_content() &&
+                !self.allows_disabled_subproperties(),
             iter: MAP[self as usize].iter(),
         }
     }
@@ -1406,7 +1407,7 @@ pub mod style_structs {
                 pub fn compute_font_hash(&mut self) {
                     let mut hasher: FxHasher = Default::default();
                     self.font_weight.hash(&mut hasher);
-                    self.font_stretch.hash(&mut hasher);
+                    self.font_width.hash(&mut hasher);
                     self.font_style.hash(&mut hasher);
                     self.font_family.hash(&mut hasher);
                     self.hash = hasher.finish()
@@ -2902,6 +2903,9 @@ use crate::values::specified;
 pub enum DescriptorId {
     % for descriptor in descriptors:
     /// The "${descriptor.name}" descriptor.
+    % if descriptor.aliases:
+    #[parse(aliases="${','.join(descriptor.aliases)}")]
+    % endif
     ${descriptor.camel_case},
     % endfor
 }

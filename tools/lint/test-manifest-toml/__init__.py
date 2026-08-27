@@ -116,7 +116,7 @@ class State:
             self._manifest_fixed += 1
             self._fixed += 1
 
-    def check_condition(self, kind_if: str) -> None:
+    def check_condition(self) -> None:
         """
         Checks the condition for warnings or errors and updates results
         Returns the number of fixable warnings
@@ -152,8 +152,6 @@ class State:
                 self.warning(
                     "linux os_version == '24.04' is only supported on display == 'x11'"
                 )
-            if kind_if == "skip-if" and self.condition.find("display == '") < 0:
-                self.warning("linux condition requires display == 'x11' or 'wayland'")
         if self.condition.find("os == 'mac'") >= 0:
             if self.condition.find("os_version == '11.20'") >= 0:
                 self.warning("mac os_version == '11.20' is no longer used")
@@ -209,7 +207,13 @@ def lint(paths, config, fix=None, **lintargs):
         sections: ListStr = [k for k in manifest.keys() if k != DEFAULT_SECTION]
         sorted_sections: ListStr = sort_paths(sections)
         if sections != sorted_sections:
-            state.warning("The manifest sections are not in alphabetical order.")
+            i = next(idx for idx, s in enumerate(sections) if s != sorted_sections[idx])
+            misplaced = sorted_sections[i]
+            state.set_section(misplaced)
+            state.warning(
+                "The manifest sections are not in alphabetical order; "
+                f"[{misplaced}] should come before [{sections[i]}]."
+            )
         m = section_rx.findall(state.manifest_str())
         if len(m) > 0:
             for section_match in m:
@@ -258,7 +262,7 @@ def lint(paths, config, fix=None, **lintargs):
                                         f'Value for conditional must not include explicit ||, instead put on multiple lines: {k} = [ ... "{e}" ... ]'
                                     )
                                 else:
-                                    state.check_condition(k)
+                                    state.check_condition()
 
         if state.manifest_fixed() > 0:
             manifest_str: str = alphabetize_toml_str(manifest, True)  # does fixes

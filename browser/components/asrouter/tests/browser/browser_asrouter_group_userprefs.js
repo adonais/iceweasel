@@ -72,7 +72,7 @@ add_setup(async function () {
  * Group is enabled if both user preferences are enabled.
  */
 add_task(async function test_heartbeat_tactic_2() {
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   const TEST_URL = "http://example.com";
   const msg = ASRouter.state.messages.find(m =>
     m.groups.includes("messaging-experiments")

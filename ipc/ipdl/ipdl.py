@@ -5,6 +5,7 @@ import json
 import optparse
 import os
 import sys
+import traceback
 from configparser import RawConfigParser
 from io import StringIO
 from multiprocessing import Manager
@@ -76,23 +77,32 @@ class WorkerPool:
             allsyncmessages,
             alljsonobjs,
         ) = WorkerPool.per_process_context
-        ast = asts[index]
-        ipdl.gencxx(files[index], ast, headersdir, cppdir, segmentCapacityDict)
+        try:
+            ast = asts[index]
+            ipdl.gencxx(files[index], ast, headersdir, cppdir, segmentCapacityDict)
 
-        if ast.protocol:
-            allmessages[ast.protocol.name] = ipdl.genmsgenum(ast)
-            allprotocols.append(ast.protocol.name)
+            if ast.protocol:
+                allmessages[ast.protocol.name] = ipdl.genmsgenum(ast)
+                allprotocols.append(ast.protocol.name)
 
-            alljsonobjs.append(JSONExporter.protocolToObject(ast.protocol))
+                alljsonobjs.append(JSONExporter.protocolToObject(ast.protocol))
 
-            # e.g. PContent::RequestMemoryReport (not prefixed or suffixed.)
-            for md in ast.protocol.messageDecls:
-                allmessageprognames.append("%s::%s" % (md.namespace, md.decl.progname))
-
-                if md.sendSemantics is SYNC:
-                    allsyncmessages.append(
-                        "%s__%s" % (ast.protocol.name, md.prettyMsgName())
+                # e.g. PContent::RequestMemoryReport (not prefixed or suffixed.)
+                for md in ast.protocol.messageDecls:
+                    allmessageprognames.append(
+                        "%s::%s" % (md.namespace, md.decl.progname)
                     )
+
+                    if md.sendSemantics is SYNC:
+                        allsyncmessages.append(
+                            "%s__%s" % (ast.protocol.name, md.prettyMsgName())
+                        )
+        except Exception as exc:
+            raise RuntimeError(
+                f"IPDL worker failed while processing "
+                f"{files[index]}:\n"
+                f"{traceback.format_exc()}"
+            ) from exc
 
 
 def main():

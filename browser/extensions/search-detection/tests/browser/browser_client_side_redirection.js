@@ -12,19 +12,8 @@ const { SearchService } = ChromeUtils.importESModule(
 const { SearchTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/SearchTestUtils.sys.mjs"
 );
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
 
 SearchTestUtils.init(this);
-
-const TELEMETRY_EVENTS_FILTERS = {
-  category: "addonsSearchDetection",
-  method: "etld_change",
-};
-
-// The search-detection built-in add-on records events in the parent process.
-const TELEMETRY_TEST_UTILS_OPTIONS = { clear: true, process: "parent" };
 
 async function testClientSideRedirect({
   background,
@@ -34,7 +23,6 @@ async function testClientSideRedirect({
   sameSiteParamChanged = null,
 }) {
   Services.fog.testResetFOG();
-  Services.telemetry.clearEvents();
 
   // Load an extension that does a client-side redirect. We expect this
   // extension to be reported in a Telemetry event when `telemetryExpected` is
@@ -68,51 +56,47 @@ async function testClientSideRedirect({
 
   await extension.unload();
 
-  TelemetryTestUtils.assertEvents(
-    telemetryExpected
-      ? [
-          {
-            object: "webrequest",
-            value: "extension",
-            extra: {
-              addonId,
-              addonVersion,
-              from: redirectingAppProvidedEngine
-                ? "example.org"
-                : "example.com",
-              to: "mochi.test",
-            },
-          },
-        ]
-      : [],
-    TELEMETRY_EVENTS_FILTERS,
-    TELEMETRY_TEST_UTILS_OPTIONS
-  );
-
   let events = Glean.addonsSearchDetection.etldChangeWebrequest.testGetValue();
   if (!telemetryExpected) {
-    Assert.equal(null, events);
+    Assert.equal(events, null, "expected no etldChangeWebrequest events");
   } else {
-    Assert.equal(1, events.length);
-    Assert.equal("extension", events[0].extra.value);
-    Assert.equal(addonId, events[0].extra.addonId);
-    Assert.equal(addonVersion, events[0].extra.addonVersion);
-    Assert.equal(
-      redirectingAppProvidedEngine ? "example.org" : "example.com",
-      events[0].extra.from
+    Assert.deepEqual(
+      events[0]?.extra,
+      {
+        value: "extension",
+        addonId,
+        addonVersion,
+        from: redirectingAppProvidedEngine ? "example.org" : "example.com",
+        to: "mochi.test",
+      },
+      "etldChangeWebrequest event has the expected extra properties"
     );
-    Assert.equal("mochi.test", events[0].extra.to);
+    Assert.equal(
+      events.length,
+      1,
+      "got the expected number of etldChangeWebrequest events"
+    );
   }
 
   let ssr = Glean.addonsSearchDetection.sameSiteRedirect.testGetValue();
   if (sameSiteParamChanged == null) {
-    Assert.equal(null, ssr);
+    Assert.equal(ssr, null, "expected no sameSiteRedirect events");
   } else {
-    Assert.equal(1, ssr.length);
-    Assert.equal(addonId, ssr[0].extra.addonId);
-    Assert.equal(addonVersion, ssr[0].extra.addonVersion);
-    Assert.equal("example.org", ssr[0].extra.origin);
-    Assert.equal(String(sameSiteParamChanged), ssr[0].extra.paramChanged);
+    Assert.deepEqual(
+      ssr[0]?.extra,
+      {
+        addonId,
+        addonVersion,
+        origin: "example.org",
+        paramChanged: String(sameSiteParamChanged),
+      },
+      "sameSiteRedirect event has the expected extra properties"
+    );
+    Assert.equal(
+      ssr.length,
+      1,
+      "got the expected number of sameSiteRedirect events"
+    );
   }
 }
 

@@ -551,6 +551,10 @@ bool TrialInliner::canInline(JSContext* cx, JSScript* script,
     JitSpew(JitSpew_WarpTrialInlining, "SKIP: uninlineable flag");
     return false;
   }
+  if (script->isGenerator() || script->isAsync()) {
+    JitSpew(JitSpew_WarpTrialInlining, "SKIP: generator or async function");
+    return false;
+  }
   if (!script->canIonCompile()) {
     JitSpew(JitSpew_WarpTrialInlining, "SKIP: can't ion-compile");
     return false;

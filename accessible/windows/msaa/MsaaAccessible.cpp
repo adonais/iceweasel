@@ -927,7 +927,7 @@ class AccessibleEnumerator final : public IEnumVARIANT {
 
   AccessibleEnumerator(const AccessibleEnumerator& toCopy)
       : mArray(toCopy.mArray.Clone()), mCurIndex(toCopy.mCurIndex) {}
-  ~AccessibleEnumerator() {}
+  ~AccessibleEnumerator() = default;
 
   // IUnknown
   DECL_IUNKNOWN

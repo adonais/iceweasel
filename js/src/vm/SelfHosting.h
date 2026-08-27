@@ -207,11 +207,6 @@
 //   resumeGenerator(gen, value, kind)
 //     Resume generator `gen`, using `kind`, which is one of "next", "throw",
 //     or "return", pasing `value` as parameter, using `JSOp::Resume` opcode.
-//
-//   forceInterpreter()
-//     Force interpreter execution for this function, using
-//     `JSOp::ForceInterpreter` opcode.
-//     This must be the first statement inside the function.
 
 namespace JS {
 class JS_PUBLIC_API CompileOptions;

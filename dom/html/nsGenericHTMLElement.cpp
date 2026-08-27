@@ -26,6 +26,7 @@
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/TextControlElement.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/AncestorIterator.h"
@@ -447,12 +448,17 @@ void nsGenericHTMLElement::SetEditContext(mozilla::dom::EditContext* aContext,
   }
   EditContext::SetForElement(*this, aContext);
 
+  // Update the active EditContext since it might have changed.
+  // It's important to do this before ChangeEditableState, since
+  // we want the active EditContext to be up-to-date for
+  // HTMLEditor::NotifyEditingHostMaybeChanged.
+  RefPtr doc = OwnerDoc();
+  doc->UpdateTextEditContext();
+
   int32_t delta = (aContext != nullptr) - (oldEditContext != nullptr);
   if (delta) {
     ChangeEditableState(delta);
   }
-  // Update the active EditContext since it might have changed.
-  OwnerDoc()->UpdateTextEditContext();
 }
 
 bool nsGenericHTMLElement::InNavQuirksMode(Document* aDoc) {
@@ -1793,73 +1799,6 @@ uint32_t nsGenericHTMLElement::GetDimensionAttrAsUnsignedInt(
   }
 
   return parsedInt;
-}
-
-void nsGenericHTMLElement::GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr,
-                                      nsAString& aResult) const {
-  nsCOMPtr<nsIURI> uri;
-  const nsAttrValue* attr = GetURIAttr(aAttr, aBaseAttr, getter_AddRefs(uri));
-  if (!attr) {
-    aResult.Truncate();
-    return;
-  }
-  if (!uri) {
-    // Just return the attr value
-    attr->ToString(aResult);
-    return;
-  }
-  nsAutoCString spec;
-  uri->GetSpec(spec);
-  CopyUTF8toUTF16(spec, aResult);
-}
-
-void nsGenericHTMLElement::GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr,
-                                      nsACString& aResult) const {
-  nsCOMPtr<nsIURI> uri;
-  const nsAttrValue* attr = GetURIAttr(aAttr, aBaseAttr, getter_AddRefs(uri));
-  if (!attr) {
-    aResult.Truncate();
-    return;
-  }
-  if (!uri) {
-    // Just return the attr value
-    nsAutoString value;
-    attr->ToString(value);
-    CopyUTF16toUTF8(value, aResult);
-    return;
-  }
-  uri->GetSpec(aResult);
-}
-
-const nsAttrValue* nsGenericHTMLElement::GetURIAttr(nsAtom* aAttr,
-                                                    nsAtom* aBaseAttr,
-                                                    nsIURI** aURI) const {
-  *aURI = nullptr;
-
-  const nsAttrValue* attr = mAttrs.GetAttr(aAttr);
-  if (!attr) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsIURI> baseURI = GetBaseURI();
-  if (aBaseAttr) {
-    nsAutoString baseAttrValue;
-    if (GetAttr(aBaseAttr, baseAttrValue)) {
-      nsCOMPtr<nsIURI> baseAttrURI;
-      nsresult rv = nsContentUtils::NewURIWithDocumentCharset(
-          getter_AddRefs(baseAttrURI), baseAttrValue, OwnerDoc(), baseURI);
-      if (NS_FAILED(rv)) {
-        return attr;
-      }
-      baseURI.swap(baseAttrURI);
-    }
-  }
-
-  // Don't care about return value.  If it fails, we still want to
-  // return true, and *aURI will be null.
-  nsContentUtils::NewURIWithDocumentCharset(
-      aURI, nsAttrValueOrString(attr).String(), OwnerDoc(), baseURI);
-  return attr;
 }
 
 bool nsGenericHTMLElement::IsContentEditable() const {
@@ -3921,6 +3860,26 @@ void nsGenericHTMLElement::FocusCandidate(Element* aControl,
       }
     }
   }
+}
+
+Element* nsGenericHTMLElement::FindShadowPseudo(
+    mozilla::PseudoStyleType aType) const {
+  MOZ_ASSERT(TextControlElement::FromNodeOrNull(this) ||
+             HTMLSelectElement::FromNodeOrNull(this));
+  auto* sr = GetShadowRoot();
+  if (!sr) {
+    return nullptr;
+  }
+  MOZ_ASSERT(sr->IsUAWidget(),
+             "Why are we looking for a pseudo on an author shadow tree?");
+  for (auto* child = sr->GetFirstChild(); child;
+       child = child->GetNextSibling()) {
+    auto* el = Element::FromNodeOrNull(child);
+    if (el && el->GetPseudoElementType() == aType) {
+      return el;
+    }
+  }
+  return nullptr;
 }
 
 already_AddRefed<ElementInternals> nsGenericHTMLElement::AttachInternals(

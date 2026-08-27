@@ -265,6 +265,32 @@ function TargetMixin(parentClass) {
       return null;
     }
 
+    /**
+     * This method gets the source content for a given resource.
+     *
+     * @param {object} resourceActor - The resource actor for which to get the source content.
+     *                                 This is the actor created by the create...Actor api's in create.js.
+     * @returns {Promise<{source: string, contentType: string}>}
+     */
+    async getSourceContentForResource(resourceActor) {
+      const { resourceCommand } = this.commands;
+      switch (resourceActor.sourceObject.type) {
+        case resourceCommand.TYPES.STYLESHEET: {
+          const stylesheetsFront = await this.getFront("stylesheets");
+          const sourceStr = await stylesheetsFront.getText(resourceActor.id);
+          return { source: await sourceStr.string(), contentType: "text/css" };
+        }
+        case resourceCommand.TYPES.SOURCE: {
+          const sourceFront = this.threadFront.source({
+            actor: resourceActor.id,
+          });
+          const { source, contentType } = await sourceFront.source();
+          return { source, contentType };
+        }
+      }
+      return null;
+    }
+
     get client() {
       return this._client;
     }

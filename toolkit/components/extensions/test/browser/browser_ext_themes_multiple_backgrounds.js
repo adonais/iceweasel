@@ -1,5 +1,13 @@
 "use strict";
 
+// Nova being enabled changes some of the styling that is being tested here.
+const novaEnabled = Services.prefs.getBoolPref(
+  "browser.nova.enabled",
+  true // If the pref isn't set to false, assume Nova styles are enabled by default.
+);
+
+info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
+
 async function waitForConsole(task, message) {
   let p = new Promise(resolve => {
     // Not necessary in browser-chrome tests, but monitorConsole gripes
@@ -65,6 +73,13 @@ add_task(async function test_support_backgrounds_position() {
     },
   });
 
+  let bgImageElement = gNavToolbox;
+  let bgImageCS = window.getComputedStyle(bgImageElement);
+
+  let defaultMainBgImage = novaEnabled ? bgImageCS.backgroundImage : "none";
+  let defaultBackgroundPosition = bgImageCS.backgroundPosition;
+  let defaultBackgroundRepeat = bgImageCS.backgroundRepeat;
+
   await extension.startup();
 
   let docEl = document.documentElement;
@@ -75,8 +90,7 @@ add_task(async function test_support_backgrounds_position() {
     "LWT text color attribute should be set"
   );
 
-  let bgImageElement = gNavToolbox;
-  let bgImageCS = window.getComputedStyle(bgImageElement);
+  bgImageCS = window.getComputedStyle(bgImageElement);
   let mainBgImage = bgImageCS.backgroundImage.split(",")[0].trim();
   Assert.equal(
     bgImageCS.backgroundImage,
@@ -101,15 +115,15 @@ add_task(async function test_support_backgrounds_position() {
     "The backgroundPosition should use the default value."
   );
 
-  await extension.unload();
+  await waitForThemeRestyle(() => extension.unload());
 
   Assert.ok(!docEl.hasAttribute("lwtheme"), "LWT attribute should not be set");
   bgImageCS = window.getComputedStyle(bgImageElement);
 
   // Styles should've reverted to their initial values.
-  Assert.equal(bgImageCS.backgroundImage, "none");
-  Assert.equal(bgImageCS.backgroundPosition, "0% 0%");
-  Assert.equal(bgImageCS.backgroundRepeat, "repeat");
+  Assert.equal(bgImageCS.backgroundImage, defaultMainBgImage);
+  Assert.equal(bgImageCS.backgroundPosition, defaultBackgroundPosition);
+  Assert.equal(bgImageCS.backgroundRepeat, defaultBackgroundRepeat);
 });
 
 add_task(async function test_support_backgrounds_repeat() {

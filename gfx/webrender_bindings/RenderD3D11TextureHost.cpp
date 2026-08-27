@@ -211,6 +211,8 @@ size_t RenderDXGITextureHost::GetPlaneCount() const {
     case gfx::SurfaceFormat::HSV:
     case gfx::SurfaceFormat::Lab:
     case gfx::SurfaceFormat::Depth:
+    case gfx::SurfaceFormat::CMYK:
+    case gfx::SurfaceFormat::InvertedCMYK:
     case gfx::SurfaceFormat::UNKNOWN:
       return 1;
   }
@@ -582,8 +584,8 @@ void RenderDXGITextureHost::DeleteTextureHandle() {
     }
   }
 
-  for (int i = 0; i < 2; ++i) {
-    mTextureHandle[i] = 0;
+  for (unsigned int& i : mTextureHandle) {
+    i = 0;
   }
 
   mTexture = nullptr;

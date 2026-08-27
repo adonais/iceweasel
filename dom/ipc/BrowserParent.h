@@ -61,6 +61,10 @@ namespace gfx {
 class SourceSurface;
 }  // namespace gfx
 
+namespace layers {
+struct KeyboardScrollAction;
+}  // namespace layers
+
 namespace dom {
 
 class CanonicalBrowsingContext;
@@ -418,6 +422,9 @@ class BrowserParent final : public PBrowserParent,
       const nsRect& aRect, const AxisScrollParams& aVertical,
       const AxisScrollParams& aHorizontal, const ScrollFlags& aScrollFlags,
       const int32_t& aAppUnitsPerDevPixel);
+
+  mozilla::ipc::IPCResult RecvScrollForKeyboard(
+      const mozilla::layers::KeyboardScrollAction& aAction);
 
   already_AddRefed<PColorPickerParent> AllocPColorPickerParent(
       const MaybeDiscarded<BrowsingContext>& aBrowsingContext,
@@ -1015,6 +1022,10 @@ class BrowserParent final : public PBrowserParent,
   // True after RecvLockNativePointer has been called and until
   // UnlockNativePointer has been called.
   bool mLockedNativePointer : 1;
+
+  // True after mLockedNativePointer is changed to `false` and reset to false
+  // once we receive a native mouse move request.
+  bool mWaitingForNativeMouseMoveAfterUnlock : 1;
 
   // True between ShowTooltip and HideTooltip messages.
   bool mShowingTooltip : 1;

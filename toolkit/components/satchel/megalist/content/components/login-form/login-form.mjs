@@ -5,12 +5,12 @@
 import { html, when } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 
-/* eslint-disable-next-line import/no-unassigned-import, mozilla/no-browser-refs-in-toolkit */
-import "chrome://browser/content/aboutlogins/components/input-field/login-origin-field.mjs";
-/* eslint-disable-next-line import/no-unassigned-import, mozilla/no-browser-refs-in-toolkit */
-import "chrome://browser/content/aboutlogins/components/input-field/login-username-field.mjs";
-/* eslint-disable-next-line import/no-unassigned-import, mozilla/no-browser-refs-in-toolkit */
-import "chrome://browser/content/aboutlogins/components/input-field/login-password-field.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/elements/moz-input-url.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/elements/moz-input-text.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/elements/moz-input-password.mjs";
 
 /* eslint-disable-next-line import/no-unassigned-import, mozilla/no-browser-refs-in-toolkit */
 import "chrome://browser/content/aboutlogins/components/login-message-popup.mjs";
@@ -33,9 +33,9 @@ export class LoginForm extends MozLitElement {
 
   static queries = {
     formEl: "form",
-    originField: "login-origin-field",
-    usernameField: "login-username-field",
-    passwordField: "login-password-field",
+    originField: "moz-input-url",
+    usernameField: "moz-input-text",
+    passwordField: "moz-input-password",
     originWarning: "origin-warning",
     passwordWarning: "password-warning",
   };
@@ -55,6 +55,51 @@ export class LoginForm extends MozLitElement {
     // Wait for the button group to complete its update cycle since it might reorder its slots.
     await mozButtonGroup.updateComplete;
     this.#handleKeyPressOnLastButton(mozButtonGroup);
+
+    await this.passwordField.updateComplete;
+    this.passwordField.inputEl.setAttribute("aria-required", "true");
+    if (this.originField) {
+      await this.originField.updateComplete;
+      this.originField.inputEl.setAttribute("aria-required", "true");
+    }
+  }
+
+  #revealPassword() {
+    this.passwordField.inputEl.type = "text";
+  }
+
+  #concealPassword() {
+    this.passwordField.inputEl.type = "password";
+  }
+
+  #addHTTPSPrefix() {
+    const originValue = this.originField.value.trim();
+    if (originValue && !originValue.match(/:\/\//)) {
+      this.originField.value = "https://" + originValue;
+    }
+  }
+
+  #renderReadonlyOrigin() {
+    return html`
+      <div class="origin-field-readonly">
+        <label
+          for="origin-link"
+          class="field-label"
+          data-l10n-id="login-item-origin-label"
+        ></label>
+        <a
+          id="origin-link"
+          class="origin-input"
+          dir="auto"
+          target="_blank"
+          rel="noreferrer"
+          href=${this.originValue}
+          @click=${this.onOriginClick}
+        >
+          ${this.originValue}
+        </a>
+      </div>
+    `;
   }
 
   #handleKeyPressOnLastButton(mozButtonGroup) {
@@ -99,7 +144,9 @@ export class LoginForm extends MozLitElement {
     }
   }
 
-  #shouldShowWarning(field, input, warning) {
+  #shouldShowWarning(field, warning) {
+    const input = field.inputEl;
+    input.required = true;
     const fieldInvalid =
       warning === this.originWarning
         ? this._originInvalid
@@ -109,12 +156,13 @@ export class LoginForm extends MozLitElement {
       // FIXME: for some reason checkValidity does not apply the :invalid style
       // to the field. For now, we reset the input value to "" apply :invalid
       // styling.
+      field.value = "";
       input.value = "";
 
       input.focus();
       warning.setAttribute("message", input.validationMessage);
       warning.classList.add("invalid-input");
-      field.setAttribute("aria-describedby", warning.id);
+      input.setAttribute("aria-describedby", warning.id);
       if (warning === this.originWarning) {
         this._originInvalid = true;
       } else if (warning === this.passwordWarning) {
@@ -123,7 +171,7 @@ export class LoginForm extends MozLitElement {
       return true;
     }
 
-    field.removeAttribute("aria-describedby");
+    input.removeAttribute("aria-describedby");
     this.#removeWarning(warning);
     if (warning === this.originWarning) {
       this._originInvalid = false;
@@ -137,11 +185,12 @@ export class LoginForm extends MozLitElement {
     const field = e.target;
     const warning =
       field.name === "origin" ? this.originWarning : this.passwordWarning;
-    const isValid = field.input.checkValidity();
+    field.inputEl.required = true;
+    const isValid = field.inputEl.checkValidity();
 
     if (isValid) {
       this.#removeWarning(warning);
-      field.removeAttribute("aria-describedby");
+      field.inputEl.removeAttribute("aria-describedby");
     }
 
     if (field.name === "origin") {
@@ -155,8 +204,8 @@ export class LoginForm extends MozLitElement {
     e.preventDefault();
 
     const loginFromForm = {
-      origin: this.originValue || this.originField.input.value,
-      username: this.usernameField.input.value.trim(),
+      origin: this.originValue || this.originField?.value,
+      username: this.usernameField.value.trim(),
       password: this.passwordField.value,
     };
     this.onClose(loginFromForm);
@@ -170,8 +219,8 @@ export class LoginForm extends MozLitElement {
     }
 
     const loginFromForm = {
-      origin: this.originValue || this.originField.input.value,
-      username: this.usernameField.input.value.trim(),
+      origin: this.originValue || this.originField?.value,
+      username: this.usernameField.value.trim(),
       password: this.passwordField.value,
     };
     this.onSaveClick(loginFromForm);
@@ -183,14 +232,12 @@ export class LoginForm extends MozLitElement {
 
     passwordError = this.#shouldShowWarning(
       this.passwordField,
-      this.passwordField.input,
       this.passwordWarning
     );
 
     if (this.type !== "edit") {
       originError = this.#shouldShowWarning(
         this.originField,
-        this.originField.input,
         this.originWarning
       );
     }
@@ -289,34 +336,61 @@ export class LoginForm extends MozLitElement {
           @submit=${e => this.onSubmit(e)}
         >
           <moz-fieldset id="moz-fieldset-id" data-l10n-id=${heading}>
+            ${this.type === "edit"
+              ? this.#renderReadonlyOrigin()
+              : html`
+                  <div class="field-container">
+                    <moz-input-url
+                      name="origin"
+                      aria-describedby="origin-description"
+                      data-l10n-id="contextual-manager-passwords-origin-field"
+                      .value=${this.originValue}
+                      @input=${e => this.onInput(e)}
+                      @change=${() => this.#addHTTPSPrefix()}
+                    ></moz-input-url>
+                    <p
+                      id="origin-description"
+                      role="note"
+                      class="field-description"
+                      data-l10n-id="contextual-manager-passwords-origin-field-description"
+                    ></p>
+                    <origin-warning
+                      id="origin-alert"
+                      role="alert"
+                      arrowdirection="down"
+                    ></origin-warning>
+                  </div>
+                `}
             <div class="field-container">
-              <login-origin-field
-                name="origin"
-                required
-                ?readonly=${this.type === "edit"}
-                value=${this.originValue}
-                @input=${e => this.onInput(e)}
-                .onOriginClick=${this.onOriginClick}
-              >
-              </login-origin-field>
-              <origin-warning
-                id="origin-alert"
-                role="alert"
-                arrowdirection="down"
-              ></origin-warning>
+              <moz-input-text
+                name="username"
+                aria-describedby="username-description"
+                data-l10n-id="contextual-manager-passwords-username-field"
+                .value=${this.usernameValue}
+              ></moz-input-text>
+              <p
+                id="username-description"
+                role="note"
+                class="field-description"
+                data-l10n-id="contextual-manager-passwords-username-field-description"
+              ></p>
             </div>
-            <login-username-field
-              name="username"
-              value=${this.usernameValue}
-            ></login-username-field>
             <div class="field-container">
-              <login-password-field
+              <moz-input-password
                 name="password"
-                required
-                ?newPassword=${this.type !== "edit"}
+                aria-describedby="password-description"
+                data-l10n-id="contextual-manager-passwords-password-field"
                 .value=${this.passwordValue}
                 @input=${e => this.onInput(e)}
-              ></login-password-field>
+                @focusin=${() => this.#revealPassword()}
+                @focusout=${() => this.#concealPassword()}
+              ></moz-input-password>
+              <p
+                id="password-description"
+                role="note"
+                class="field-description"
+                data-l10n-id="contextual-manager-passwords-password-field-description"
+              ></p>
               <password-warning
                 id="password-alert"
                 role="alert"

@@ -43,6 +43,7 @@
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WheelHandlingHelper.h"
+#include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/IdleDeadline.h"
 #include "mozilla/dom/InProcessParent.h"
@@ -54,6 +55,7 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/Record.h"
 #include "mozilla/dom/ReportingHeader.h"
+#include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/SharedScriptCache.h"
 #include "mozilla/dom/UnionTypes.h"
 #include "mozilla/dom/WindowBinding.h"  // For IdleRequestCallback/Options
@@ -3074,6 +3076,19 @@ void ChromeUtils::PredictRemoteTypeForURI(
   }
 
   PredictRemoteTypeForURI(aGlobal, preferredURI, newOptions, aRemoteType, aRv);
+}
+
+bool ChromeUtils::IsBlobURLValid(GlobalObject& aGlobal,
+                                 nsIPrincipal* aPrincipal,
+                                 const nsACString& aURIString) {
+  return BlobURLProtocolHandler::IsBlobURLValid(aPrincipal, aURIString);
+}
+
+void ChromeUtils::ValidateServiceWorkerScope(GlobalObject&,
+                                             nsIPrincipal* aPrincipal,
+                                             nsIURI* aScopeURI,
+                                             ErrorResult& aRv) {
+  ServiceWorkerScopeIsValid(aPrincipal, aScopeURI, aRv);
 }
 
 }  // namespace mozilla::dom

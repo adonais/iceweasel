@@ -29,6 +29,14 @@
 - **Dispatch correctness.** Runnables target the right queue/thread; captured
   state is kept alive and is safe to touch on the target thread; nothing is
   dispatched to (or run on) a thread/TaskQueue after it has been shut down.
+- **`MozPromiseHolder<T>` is single-thread-only, and nothing tells you when you
+  break that.** Its state is a plain non-atomic `RefPtr`: `Ensure()` may construct
+  it and takes a reference, `Resolve`/`Reject` clear it, so touching one holder
+  from two threads is a data race. Every accessor calls a `Check()` hook, and
+  `MozPromiseHolder` defines it as a no-op — the misuse asserts nothing, even in
+  debug. `Ensure()` on the current thread before arming any settle callback that
+  can fire elsewhere; where a holder is genuinely cross-thread, use
+  `MozMonitoredPromiseHolder`, whose `Check()` asserts monitor ownership.
 
 ## dom/media specifics
 

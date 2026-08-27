@@ -283,31 +283,33 @@ mozilla::ipc::IPCResult FetchChild::RecvOnCSPViolationEvent(
 
   nsString JSON(aJSON);
 
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(__func__, [JSON]() mutable {
-    SecurityPolicyViolationEventInit violationEventInit;
-    if (NS_WARN_IF(!violationEventInit.Init(JSON))) {
-      return;
-    }
+  nsCOMPtr<nsIRunnable> r =
+      NS_NewRunnableFunction(__func__, [JSON = std::move(JSON)]() mutable {
+        SecurityPolicyViolationEventInit violationEventInit;
+        if (NS_WARN_IF(!violationEventInit.Init(JSON))) {
+          return;
+        }
 
-    nsCOMPtr<nsIURI> uri;
-    nsresult rv =
-        NS_NewURI(getter_AddRefs(uri), violationEventInit.mBlockedURI);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
+        nsCOMPtr<nsIURI> uri;
+        nsresult rv =
+            NS_NewURI(getter_AddRefs(uri), violationEventInit.mBlockedURI);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return;
+        }
 
-    nsCOMPtr<nsIObserverService> observerService =
-        mozilla::services::GetObserverService();
-    if (!observerService) {
-      return;
-    }
+        nsCOMPtr<nsIObserverService> observerService =
+            mozilla::services::GetObserverService();
+        if (!observerService) {
+          return;
+        }
 
-    rv = observerService->NotifyObservers(
-        uri, CSP_VIOLATION_TOPIC, violationEventInit.mViolatedDirective.get());
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
-  });
+        rv = observerService->NotifyObservers(
+            uri, CSP_VIOLATION_TOPIC,
+            violationEventInit.mViolatedDirective.get());
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return;
+        }
+      });
   MOZ_ALWAYS_SUCCEEDS(SchedulerGroup::Dispatch(r.forget()));
 
   if (mCSPEventListener) {

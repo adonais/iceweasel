@@ -127,12 +127,9 @@ class TabBase {
       return options.format === "jpeg" ? GRAY_1PX_JPEG : BLACK_1PX_PNG;
     }
 
-    let image = await wgp.drawSnapshot(
-      rect,
-      scale * zoom,
-      "white",
-      resetScrollPosition
-    );
+    let image = await wgp.drawSnapshot(rect, scale * zoom, "white", {
+      resetScrollPosition,
+    });
 
     let canvas = new OffscreenCanvas(image.width, image.height);
     let ctx = canvas.getContext("bitmaprenderer", { alpha: false });

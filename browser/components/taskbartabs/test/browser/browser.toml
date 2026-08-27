@@ -9,6 +9,9 @@ prefs = [
 ]
 
 ["browser_taskbarTabs_chromeTest.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && ccov && nova", # Bug 2057867
+]
 
 ["browser_taskbarTabs_cmd.js"]
 

@@ -109,16 +109,18 @@ void TransactionBuilder::RemovePipeline(PipelineId aPipelineId) {
 }
 
 void TransactionBuilder::SetDisplayList(
-    Epoch aEpoch, wr::WrPipelineId pipeline_id,
+    Epoch aEpoch, wr::IdNamespace aIdNamespace, wr::WrPipelineId pipeline_id,
     wr::BuiltDisplayListDescriptor dl_descriptor,
     wr::Vec<uint8_t>& dl_items_data, wr::Vec<uint8_t>& dl_spatial_tree) {
-  wr_transaction_set_display_list(mTxn, aEpoch, pipeline_id, dl_descriptor,
-                                  &dl_items_data.inner, &dl_spatial_tree.inner);
+  wr_transaction_set_display_list(mTxn, aEpoch, aIdNamespace, pipeline_id,
+                                  dl_descriptor, &dl_items_data.inner,
+                                  &dl_spatial_tree.inner);
 }
 
 void TransactionBuilder::ClearDisplayList(Epoch aEpoch,
+                                          wr::IdNamespace aIdNamespace,
                                           wr::WrPipelineId aPipelineId) {
-  wr_transaction_clear_display_list(mTxn, aEpoch, aPipelineId);
+  wr_transaction_clear_display_list(mTxn, aEpoch, aIdNamespace, aPipelineId);
 }
 
 void TransactionBuilder::GenerateFrame(const VsyncId& aVsyncId, bool aPresent,
@@ -286,6 +288,7 @@ RefPtr<WebRenderAPI::CreatePromise> WebRenderAPI::Create(
                 renderThread->ThreadPool().Raw(),
                 renderThread->ThreadPoolLP().Raw(),
                 renderThread->MemoryChunkPool(),
+                renderThread->GetRenderBackendPool(),
                 renderThread->GlyphRasterThread().Raw(), &WebRenderMallocSizeOf,
                 &WebRenderMallocEnclosingSizeOf, 0, compositor.get(),
                 compositor->ShouldUseNativeCompositor(),
@@ -573,15 +576,28 @@ void WebRenderAPI::FlushPendingWrTransactionEventsWithWait() {
 void WebRenderAPI::HandleWrTransactionEvents(RemoteTextureWaitType aType) {
   auto& events = mPendingWrTransactionEvents;
 
+  // Events can be flushed asynchronously (e.g. from a RemoteTextureMap
+  // readiness callback that holds a reference to this api), so re-check what
+  // SendTransaction checked when they were queued. Once the renderer is gone
+  // there is nothing left to submit to: drain the queue without waiting on
+  // remote textures, and without sending anything to the render backend.
+  const bool rendererDestroyed = mRootApi && mRootApi->mRendererDestroyed;
+  if (rendererDestroyed) {
+    aType = RemoteTextureWaitType::FlushWithoutWait;
+  }
+
   while (!events.empty()) {
     auto& front = events.front();
     switch (front.mTag) {
       case WrTransactionEvent::Tag::Transaction:
-        wr_api_send_transaction(mDocHandle, front.RawTransaction(),
-                                front.UseSceneBuilderThread());
-        if (front.GetTransactionBuilder()->mRemoteTextureTxnScheduler) {
-          front.GetTransactionBuilder()->mRemoteTextureTxnScheduler->NotifyTxn(
-              front.GetTransactionBuilder()->mRemoteTextureTxnId);
+        if (!rendererDestroyed) {
+          wr_api_send_transaction(mDocHandle, front.RawTransaction(),
+                                  front.UseSceneBuilderThread());
+          if (front.GetTransactionBuilder()->mRemoteTextureTxnScheduler) {
+            front.GetTransactionBuilder()
+                ->mRemoteTextureTxnScheduler->NotifyTxn(
+                    front.GetTransactionBuilder()->mRemoteTextureTxnId);
+          }
         }
         break;
       case WrTransactionEvent::Tag::PendingRemoteTextures: {
@@ -1215,8 +1231,9 @@ void DisplayListBuilder::DumpSerializedDisplayList() {
   wr_dump_serialized_display_list(mWrState);
 }
 
-void DisplayListBuilder::Begin() {
-  wr_api_begin_builder(mWrState);
+void DisplayListBuilder::Begin(int32_t aAppUnitsPerDevPixel) {
+  MOZ_ASSERT(aAppUnitsPerDevPixel > 0);
+  wr_api_begin_builder(mWrState, aAppUnitsPerDevPixel);
 
   mASRToSpatialIdMap.clear();
   mCurrentSpaceAndClipChain = wr::RootScrollNodeWithChain();
@@ -1448,11 +1465,12 @@ void DisplayListBuilder::PushRoundedRect(const wr::LayoutRect& aBounds,
   wr::LayoutSideOffsets widths = {v, h, v, h};
   wr::BorderRadius radii = {{h, v}, {h, v}, {h, v}, {h, v},
                             1.0f,   1.0f,   1.0f,   1.0f};
+  wr::LayoutSideOffsets inset = EmptyLayoutSideOffsets();
 
   // Anti-aliased borders are required for rounded borders.
   wr_dp_push_border(mWrState, aBounds, aClip, aIsBackfaceVisible,
                     &mCurrentSpaceAndClipChain, wr::AntialiasBorder::Yes,
-                    widths, side, side, side, side, radii);
+                    widths, side, side, side, side, radii, inset);
 }
 
 void DisplayListBuilder::PushHitTest(
@@ -1668,20 +1686,18 @@ void DisplayListBuilder::PushIFrame(const LayoutDeviceRect& aDevPxBounds,
                     aIgnoreMissingPipeline);
 }
 
-void DisplayListBuilder::PushBorder(const wr::LayoutRect& aBounds,
-                                    const wr::LayoutRect& aClip,
-                                    bool aIsBackfaceVisible,
-                                    const wr::LayoutSideOffsets& aWidths,
-                                    const Range<const wr::BorderSide>& aSides,
-                                    const wr::BorderRadius& aRadius,
-                                    wr::AntialiasBorder aAntialias) {
+void DisplayListBuilder::PushBorder(
+    const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
+    bool aIsBackfaceVisible, const wr::LayoutSideOffsets& aWidths,
+    const Range<const wr::BorderSide>& aSides, const wr::BorderRadius& aRadius,
+    const wr::LayoutSideOffsets& aInset, wr::AntialiasBorder aAntialias) {
   MOZ_ASSERT(aSides.length() == 4);
   if (aSides.length() != 4) {
     return;
   }
   wr_dp_push_border(mWrState, aBounds, aClip, aIsBackfaceVisible,
                     &mCurrentSpaceAndClipChain, aAntialias, aWidths, aSides[0],
-                    aSides[1], aSides[2], aSides[3], aRadius);
+                    aSides[1], aSides[2], aSides[3], aRadius, aInset);
 }
 
 void DisplayListBuilder::PushBorderImage(const wr::LayoutRect& aBounds,

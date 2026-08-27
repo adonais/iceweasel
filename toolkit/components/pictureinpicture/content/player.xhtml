@@ -82,7 +82,8 @@
         <div class="end-controls">
           <button id="audio" class="control-item control-button tooltip-over-controls center-tooltip" hidden="true" data-l10n-attrs="tooltip" tabindex="3"/>
           <input id="audio-scrubber" class="control-item" min="0" max="1" step=".001" type="range" tabindex="4" hidden="true"/>
-          <button id="closed-caption" class="control-item control-button tooltip-over-controls center-tooltip closed-caption" hidden="true" disabled="true" data-l10n-id="pictureinpicture-subtitles-btn" data-l10n-attrs="tooltip" tabindex="5"></button>
+          <button id="playbackRate" class="control-item control-button tooltip-over-controls center-tooltip" hidden="true" data-l10n-id="pictureinpicture-playback-rate-btn" data-l10n-attrs="tooltip" tabindex="5"></button>
+          <button id="closed-caption" class="control-item control-button tooltip-over-controls center-tooltip closed-caption" hidden="true" disabled="true" data-l10n-id="pictureinpicture-subtitles-btn" data-l10n-attrs="tooltip" tabindex="6"></button>
           <div id="settings" class="hide panel">
             <fieldset class="box panel-fieldset">
               <legend class="a11y-only panel-legend" data-l10n-id="pictureinpicture-subtitles-panel-accessible"></legend>
@@ -109,6 +110,24 @@
                   <label data-l10n-id="pictureinpicture-font-size-large" for="large"></label>
                 </div>
               </fieldset>
+            </fieldset>
+            <div class="arrow"></div>
+          </div>
+          <div id="playbackRateSettings" class="hide panel">
+            <fieldset class="box panel-fieldset">
+              <legend class="a11y-only panel-legend" data-l10n-id="pictureinpicture-playback-rate-panel-accessible"></legend>
+              <div class="playback-rate-header">
+                <span data-l10n-id="pictureinpicture-playback-rate-label"></span>
+                <span id="playback-rate-value" data-l10n-id="pictureinpicture-playback-rate-value" data-l10n-args='{"rate": 1}'></span>
+              </div>
+              <input id="playback-rate-slider" type="range" min="0.25" max="2" step="0.05" value="1" tabindex="7"/>
+              <div class="playback-rate-presets">
+                <button class="playback-rate-preset" data-rate="0.75" aria-pressed="false" data-l10n-id="pictureinpicture-playback-rate-preset" data-l10n-args='{"rate": 0.75}' tabindex="7"></button>
+                <button class="playback-rate-preset" data-rate="1" aria-pressed="false" data-l10n-id="pictureinpicture-playback-rate-preset" data-l10n-args='{"rate": 1}' tabindex="7"></button>
+                <button class="playback-rate-preset" data-rate="1.25" aria-pressed="false" data-l10n-id="pictureinpicture-playback-rate-preset" data-l10n-args='{"rate": 1.25}' tabindex="7"></button>
+                <button class="playback-rate-preset" data-rate="1.5" aria-pressed="false" data-l10n-id="pictureinpicture-playback-rate-preset" data-l10n-args='{"rate": 1.5}' tabindex="7"></button>
+                <button class="playback-rate-preset" data-rate="2" aria-pressed="false" data-l10n-id="pictureinpicture-playback-rate-preset" data-l10n-args='{"rate": 2}' tabindex="7"></button>
+              </div>
             </fieldset>
             <div class="arrow"></div>
           </div>

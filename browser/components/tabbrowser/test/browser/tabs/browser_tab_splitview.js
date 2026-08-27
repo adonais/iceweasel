@@ -24,6 +24,20 @@ async function addTabAndLoadBrowser() {
   return tab;
 }
 
+async function checkSelectedSplitViewColumn(expected, message) {
+  const root = document.documentElement;
+  await BrowserTestUtils.waitForMutationCondition(
+    root,
+    { attributes: true, attributeFilter: ["splitview-selected-column"] },
+    () => root.getAttribute("splitview-selected-column") === expected
+  );
+  Assert.equal(
+    root.getAttribute("splitview-selected-column"),
+    expected,
+    message
+  );
+}
+
 async function checkSplitViewPanelVisible(tab, isVisible) {
   const panel = document.getElementById(tab.linkedPanel);
   info("wait for split-view-panel-active to change visibility");
@@ -350,6 +364,73 @@ add_task(async function test_suspend_preserves_split_view_attributes() {
   Assert.ok(
     !panel2.hasAttribute("column"),
     "column attribute is removed from panel2 after dissolution"
+  );
+
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
+});
+
+/**
+ * The sidebar splitters and the split view splitter need to know which split
+ * view column is selected, but they live outside of the selected panel's
+ * subtree. That state is mirrored onto the root element as
+ * [splitview-selected-column] rather than matched with :root:has(), which is
+ * far too expensive to invalidate in the main window (bug 2054065).
+ */
+add_task(async function test_selected_split_view_column_on_root() {
+  const tab1 = await addTabAndLoadBrowser();
+  const tab2 = await addTabAndLoadBrowser();
+  const originalTab = gBrowser.selectedTab;
+  await BrowserTestUtils.switchTab(gBrowser, tab1);
+
+  await checkSelectedSplitViewColumn(
+    null,
+    "No selected column before a split view is created"
+  );
+
+  const splitView = gBrowser.addTabSplitView([tab1, tab2]);
+  for (const tab of splitView.tabs) {
+    await checkSplitViewPanelVisible(tab, true);
+  }
+
+  await SimpleTest.promiseFocus(tab1.linkedBrowser);
+  await checkSelectedSplitViewColumn(
+    "0",
+    "Selecting the first panel reports column 0"
+  );
+
+  await SimpleTest.promiseFocus(tab2.linkedBrowser);
+  await checkSelectedSplitViewColumn(
+    "1",
+    "Selecting the second panel reports column 1"
+  );
+
+  info("Reverse the tabs in the split view.");
+  splitView.reverseTabs();
+  await checkSelectedSplitViewColumn(
+    "0",
+    "Reversing the tabs moves the selected tab to column 0"
+  );
+
+  info("Switch to a non-split-view tab.");
+  await BrowserTestUtils.switchTab(gBrowser, originalTab);
+  await checkSelectedSplitViewColumn(
+    null,
+    "No selected column while a non-split-view tab is selected"
+  );
+
+  info("Switch back to a split-view tab.");
+  await BrowserTestUtils.switchTab(gBrowser, tab2);
+  await checkSelectedSplitViewColumn(
+    "0",
+    "Selected column is restored when switching back to the split view"
+  );
+
+  info("Dissolve the split view.");
+  splitView.unsplitTabs();
+  await checkSelectedSplitViewColumn(
+    null,
+    "No selected column after the split view is dissolved"
   );
 
   BrowserTestUtils.removeTab(tab1);

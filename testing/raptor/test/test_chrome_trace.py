@@ -48,7 +48,7 @@ def test_browsertime_trace_collection(mock_log_info, mock_log_critical):
         )
         profile.output_trace()
         profile.clean()
-        arcname = os.environ["RAPTOR_LATEST_GECKO_PROFILE_ARCHIVE"]
+        arcname = os.environ["RAPTOR_LATEST_PROFILE"]
         assert os.stat(arcname).st_size > 900000, "We got a ~0.9mb+ zip"
     except:
         assert False, "Failed to collect Traces"

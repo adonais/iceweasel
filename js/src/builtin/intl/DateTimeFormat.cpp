@@ -316,7 +316,7 @@ struct PackedDateTimeFormatOptions {
 };
 
 DateTimeFormatOptions js::intl::DateTimeFormatObject::getOptions() const {
-  const auto& slot = getFixedSlot(OPTIONS_SLOT);
+  const auto& slot = getFixedSlotTyped(OPTIONS_SLOT);
   if (slot.isUndefined()) {
     return {};
   }
@@ -325,7 +325,7 @@ DateTimeFormatOptions js::intl::DateTimeFormatObject::getOptions() const {
 
 void js::intl::DateTimeFormatObject::setOptions(
     const DateTimeFormatOptions& options) {
-  setFixedSlot(OPTIONS_SLOT, PackedDateTimeFormatOptions::pack(options));
+  setFixedSlotTyped(OPTIONS_SLOT, PackedDateTimeFormatOptions::pack(options));
 }
 
 static constexpr std::string_view HourCycleToString(

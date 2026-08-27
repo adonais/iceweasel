@@ -36,6 +36,10 @@ Focusable SVGSymbolElement::IsFocusableWithoutStyle(IsFocusableFlags aFlags) {
 }
 
 bool SVGSymbolElement::CouldBeRendered() const {
+  // Treat external symbols as always visible.
+  if (OwnerDoc()->IsResourceDoc() && !OwnerDoc()->IsBeingUsedAsImage()) {
+    return true;
+  }
   // Only <symbol> elements in the root of a <svg:use> shadow tree are
   // displayed.
   auto* shadowRoot = ShadowRoot::FromNodeOrNull(GetParentNode());

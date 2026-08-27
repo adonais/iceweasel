@@ -53,7 +53,6 @@ class DOMSVGStringList final : public nsISupports, public nsWrapperCache {
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  uint32_t NumberOfItems() const;
   uint32_t Length() const;
   void Clear();
   void Initialize(const nsAString& aNewItem, nsAString& aRetval,
@@ -67,6 +66,8 @@ class DOMSVGStringList final : public nsISupports, public nsWrapperCache {
   void RemoveItem(uint32_t aIndex, nsAString& aRetval, ErrorResult& aRv);
   void AppendItem(const nsAString& aNewItem, nsAString& aRetval,
                   ErrorResult& aRv);
+  void IndexedSetter(uint32_t aIndex, const nsAString& aNewValue,
+                     ErrorResult& aRv);
 
   /**
    * Factory method to create and return a DOMSVGStringList wrapper

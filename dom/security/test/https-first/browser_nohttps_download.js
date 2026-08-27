@@ -47,7 +47,7 @@ add_task(async function test_nohttps_download() {
   // ensure https-first did upgrade the scheme.
   is(
     download.source.url,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://" + EXPECTED_DOWNLOAD_URL,
     "Scheme should be http."
   );

@@ -263,9 +263,7 @@ class GitRepository(Repository):
         if force:
             cmd.append("-f")
 
-        cmd.extend(paths)
-
-        self._run(*cmd)
+        self._run_batched(*cmd, paths=paths)
 
     def forget_add_remove_files(self, *paths: Union[str, Path]):
         if not paths:
@@ -273,7 +271,7 @@ class GitRepository(Repository):
 
         paths = [str(path) for path in paths]
 
-        self._run("reset", *paths)
+        self._run_batched("reset", paths=paths)
 
     def get_tracked_files_finder(self, path=None):
         files = [p for p in self._run("ls-files", "-z").split("\0") if p]

@@ -8,6 +8,6 @@ let module2 = registerModule('module2', parseModule(
 let module3 = registerModule('module3', parseModule(
   `throw 1;`));
 
-moduleLink(module1);
+moduleLoadAndLink(module1);
 moduleEvaluate(module1).catch(() => 0);
 drainJobQueue();

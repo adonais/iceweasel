@@ -56,7 +56,6 @@ const TEST_URI = `https://example.org/document-builder.sjs?html=${encodeURICompo
 `)}`;
 
 add_task(async function () {
-  await pushPref("layout.css.anchor-positioning.enabled", true);
   await addTab(TEST_URI);
   const { inspector, view } = await openRuleView();
 

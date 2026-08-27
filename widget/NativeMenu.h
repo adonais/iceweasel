@@ -77,37 +77,14 @@ class NativeMenu {
   // Return this NativeMenu's DOM element.
   virtual RefPtr<dom::Element> Element() = 0;
 
-  class Observer {
-   public:
-    // Called when the menu opened, after popupshown.
-    // No strong reference is held to the observer during the call.
-    virtual void OnNativeMenuOpened() = 0;
-
-    // Called when the menu closed, after popuphidden.
-    // No strong reference is held to the observer during the call.
-    virtual void OnNativeMenuClosed() = 0;
-
-    // Called before the popupshowing event of a submenu fires.
-    virtual void OnNativeSubMenuWillOpen(dom::Element* aPopupElement) = 0;
-
-    // Called after the popupshown event of a submenu fired.
-    virtual void OnNativeSubMenuDidOpen(dom::Element* aPopupElement) = 0;
-
-    // Called after the popuphidden event of a submenu fired.
-    virtual void OnNativeSubMenuClosed(dom::Element* aPopupElement) = 0;
-
-    // Called before the command event of an activated menu item fires.
-    virtual void OnNativeMenuWillActivateItem(
-        dom::Element* aMenuItemElement) = 0;
-  };
-
-  // Add an observer that gets notified of menu opening and closing.
-  // The menu does not keep a strong reference the observer. The observer must
-  // remove itself before it is destroyed.
-  virtual void AddObserver(Observer* aObserver) = 0;
-
-  // Remove an observer that was previously added with AddObserver.
-  virtual void RemoveObserver(Observer* aObserver) = 0;
+  // Notifications to the popup manager, if this menu is the one it is
+  // currently showing.
+  void OnOpened();
+  void OnClosed();
+  void OnSubMenuWillOpen(dom::Element* aPopupElement);
+  void OnSubMenuDidOpen(dom::Element* aPopupElement);
+  void OnSubMenuClosed(dom::Element* aPopupElement);
+  void OnWillActivateItem(dom::Element* aMenuItemElement);
 
  protected:
   virtual ~NativeMenu() = default;

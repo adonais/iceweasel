@@ -209,6 +209,9 @@ function test_value(property, val, is_initial)
 
 function test_property(prop) {
   var info = gCSSProperties[prop];
+  if ("subproperties" in info && info.subproperties.length == 0) {
+    return;
+  }
   for (var idx in info.initial_values)
     test_value(prop, info.initial_values[idx], true);
   for (var idx in info.other_values)

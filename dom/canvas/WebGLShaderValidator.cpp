@@ -349,9 +349,9 @@ ShaderValidator::ValidateAndTranslate(const char* const source) const {
     }
 
     if (header.size()) {
-      auto combined = header;
+      auto combined = std::move(header);
       combined += body;
-      *translatedSource = combined;
+      *translatedSource = std::move(combined);
     }
   }
 

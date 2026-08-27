@@ -2836,7 +2836,10 @@ ServerHandler.prototype = {
           // separate these two lines!
           var line = new Error().lineNumber;
           let uri = Services.io.newFileURI(file);
-          Services.scriptloader.loadSubScript(uri.spec, s);
+          Services.scriptloader.loadSubScriptWithOptions(uri.spec, {
+            target: s,
+            allowUnsafeURL: true,
+          });
         } catch (e) {
           dumpn("*** syntax error in SJS at " + file.path + ": " + e);
           throw HTTP_500;

@@ -26,6 +26,10 @@ const lazy = XPCOMUtils.declareLazy({
   },
 });
 
+// Longer search terms provide no user benefit and make the submission URL
+// expensive to build.
+export const MAX_SEARCH_TERM_LENGTH = 32000;
+
 // Supported OpenSearch parameters
 // See https://web.archive.org/web/20060203040832/http://opensearch.a9.com/spec/1.1/querysyntax/#core
 const OS_PARAM_INPUT_ENCODING = "inputEncoding";
@@ -1363,6 +1367,15 @@ export class SearchEngine {
         responseType == lazy.SearchUtils.URL_TYPE.SUGGEST_JSON)
     ) {
       lazy.logConsole.warn("getSubmission: searchTerms is empty!");
+    }
+
+    if (searchTerms.length > MAX_SEARCH_TERM_LENGTH) {
+      searchTerms = searchTerms.substring(0, MAX_SEARCH_TERM_LENGTH);
+      // Avoid splitting a surrogate pair.
+      let last = searchTerms.charCodeAt(searchTerms.length - 1);
+      if (last >= 0xd800 && last <= 0xdbff) {
+        searchTerms = searchTerms.slice(0, -1);
+      }
     }
 
     return url.getSubmission(searchTerms, this.queryCharset);

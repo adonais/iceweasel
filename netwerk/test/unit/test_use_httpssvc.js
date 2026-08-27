@@ -239,3 +239,62 @@ add_task(async function testFallback() {
     false
   );
 });
+
+// When the origin's HTTPS record is an AliasMode record whose target has no
+// HTTPS record of its own, we must still connect to the target (bug 2056195).
+// Only the target has an address record, so a successful connection proves the
+// alias was followed and the connection was routed to the target.
+add_task(async function testConnectToAliasTargetWithoutRecord() {
+  Services.prefs.setIntPref("network.trr.mode", Ci.nsIDNSService.MODE_TRRONLY);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${trrServer.port()}/dns-query`
+  );
+  Services.dns.clearCache(true);
+
+  // The HTTPS RR query for a non-default port is port-prefixed.
+  let originQuery = `_${h2Port}._https.alias-origin.com`;
+
+  // origin is an HTTPS AliasMode record pointing at the target.
+  await trrServer.registerDoHAnswers(originQuery, "HTTPS", {
+    answers: [
+      {
+        name: originQuery,
+        ttl: 55,
+        type: "HTTPS",
+        flush: false,
+        data: { priority: 0, name: "alias-target.com", values: [] },
+      },
+    ],
+  });
+  // The target has no HTTPS record of its own (NODATA)...
+  await trrServer.registerDoHAnswers("alias-target.com", "HTTPS", {
+    answers: [],
+  });
+  // ...but it does resolve to the test server's address. The origin has no
+  // address record, so the connection can only succeed via the target.
+  await trrServer.registerDoHAnswers("alias-target.com", "A", {
+    answers: [
+      {
+        name: "alias-target.com",
+        ttl: 55,
+        type: "A",
+        flush: false,
+        data: "127.0.0.1",
+      },
+    ],
+  });
+
+  certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
+    true
+  );
+
+  let chan = makeChan(`https://alias-origin.com:${h2Port}/`);
+  let [req] = await channelOpenPromise(chan);
+  // The connection succeeded over h2, i.e. we reached the target's address.
+  Assert.equal(req.getResponseHeader("x-connection-http2"), "yes");
+
+  certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
+    false
+  );
+});

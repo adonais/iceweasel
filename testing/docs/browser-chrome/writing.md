@@ -29,7 +29,7 @@ To help do this, a number of useful primitives are available:
 - `add_setup` allows you to add setup tasks that run before any `add_task` tasks.
 - `SpecialPowers.pushPrefEnv` ([see below](#changing-preferences)) allows you to set prefs that will be automatically
   reverted when the test file has finished running.
-- [`BrowserTestUtils.withNewTab`](browsertestutils.rst#BrowserTestUtils.withNewTab), allows you to easily run async code
+- [`BrowserTestUtils.withNewTab`](browsertestutils.md#BrowserTestUtils.withNewTab), allows you to easily run async code
   talking to a tab that you open and close it when done.
 - `registerCleanupFunction` takes an async callback function that you can use
   to do any other cleanup your test might need.
@@ -95,13 +95,13 @@ order for your test to pass reliably on macOS if it uses keyboard focus.
 
 ### Wait for an observer service notification topic or DOM event
 
-Use the utilities for this on [`TestUtils`](../testutils.rst#TestUtils.topicObserved):
+Use the utilities for this on [`TestUtils`](../testutils.md#TestUtils.topicObserved):
 
 ```js
 await TestUtils.topicObserved("sync-pane-loaded");
 ```
 
-and [`BrowserTestUtils`](browsertestutils.rst#BrowserTestUtils.waitForEvent), respectively:
+and [`BrowserTestUtils`](browsertestutils.md#BrowserTestUtils.waitForEvent), respectively:
 
 ```js
 await BrowserTestUtils.waitForEvent(domElement, "click");
@@ -109,13 +109,13 @@ await BrowserTestUtils.waitForEvent(domElement, "click");
 
 ### Wait for some DOM to update.
 
-Use [`BrowserTestUtils.waitForMutationCondition`](browsertestutils.rst#BrowserTestUtils.waitForMutationCondition).
+Use [`BrowserTestUtils.waitForMutationCondition`](browsertestutils.md#BrowserTestUtils.waitForMutationCondition).
 Do **not** use `waitForCondition`, which uses a timeout loop and often
 leads to intermittent failures.
 
 ### Querying elements across Shadow DOM boundaries
 
-Use [`BrowserTestUtils.querySelectorDeep`](browsertestutils.rst#BrowserTestUtils.querySelectorDeep)
+Use [`BrowserTestUtils.querySelectorDeep`](browsertestutils.md#BrowserTestUtils.querySelectorDeep)
 from the parent process, or `ContentTaskUtils.querySelectorDeep` inside a
 `SpecialPowers.spawn` callback, to find an element that may be nested inside
 one or more Shadow DOM roots (open or closed):

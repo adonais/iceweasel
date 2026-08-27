@@ -11,8 +11,6 @@
   --aiwindow-popover-gap: var(--space-medium);
   --aiwindow-popover-padding: var(--space-large);
 
-  --memories-accent-border: var(--button-border-color-ghost);
-
   --aiwindow-action-row-padding: 0 var(--space-xsmall);
 
   --aiwindow-action-row-button-alignment: center;
@@ -42,18 +40,11 @@
   --aiwindow-memory-item-color: var(--text-color);
 
   @media not (forced-colors) {
-    --aiwindow-text-accent: light-dark(var(--color-violet-90), var(--color-white));
-
     --aiwindow-memory-item-bg: light-dark(var(--color-gray-0), var(--color-gray-80));
     --aiwindow-memory-item-border: none;
 
-    --aiwindow-memories-icon-fill: light-dark(var(--color-gray-70), var(--color-white));
-
     --aiwindow-popover-bg: light-dark(var(--color-white), var(--color-gray-90));
     --aiwindow-popover-border-color: light-dark(var(--color-gray-20), var(--color-gray-60));
-
-    --memories-accent-bg-hover: rgba(191, 143, 204, 0.2);
-    --memories-accent-bg-active: rgba(191, 143, 204, 0.26);
 
     --aiwindow-callout-background: light-dark(
       linear-gradient(97deg, rgba(50, 27, 253, 0.05) -7.07%, rgba(207, 48, 226, 0.05) 64.52%, rgba(255, 153, 0, 0.05) 101%, rgba(245, 196, 81, 0.05) 121.66%),
@@ -75,9 +66,7 @@
   @media -moz-pref("browser.nova.enabled") {
     --button-font-size: var(--font-size-small);
 
-    /* TODO: Bug 2030460 - replace with token when available */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    --aiwindow-popover-border-radius: 24px;
+    --aiwindow-popover-border-radius: var(--border-radius-xlarge);
     --aiwindow-popover-gap: var(--space-small);
     --aiwindow-popover-padding: var(--space-medium);
 
@@ -96,14 +85,8 @@
 
     --aiwindow-remove-btn-margin-inline-end: var(--space-xsmall);
 
-    #manage-memories-row {
-      display: none;
-    }
-
     @media not (forced-colors) {
-      /* TODO: Bug 2033070 - replace with neutral color token */
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-      --aiwindow-popover-bg: light-dark(var(--color-white), #1d1b1f);
+      --aiwindow-popover-bg: light-dark(var(--color-white), var(--color-gray-75));
       --aiwindow-popover-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));
 
       --aiwindow-action-row-btn-ghost-text: light-dark(var(--color-violet-60), var(--color-violet-30));
@@ -115,14 +98,8 @@
         color-mix(in srgb, var(--color-violet-30) 40%, transparent)
       );
 
-      --button-background-color-ghost-active: light-dark(
-        color-mix(in srgb, var(--color-violet-desaturated-60) 30%, transparent),
-        color-mix(in srgb, var(--color-violet-40) 36%, transparent)
-      );
-      --button-background-color-ghost-hover: light-dark(
-        color-mix(in srgb, var(--color-violet-desaturated-60) 16%, transparent),
-        color-mix(in srgb, var(--color-violet-40) 24%, transparent)
-      );
+      --button-background-color-ghost-hover: var(--chat-assistant-footer-button-bg-hover);
+      --button-background-color-ghost-active: var(--chat-assistant-footer-button-bg-active);
       --button-background-color-ghost-selected: var(--button-background-color-ghost-hover);
       --button-text-color-ghost-selected: var(--button-text-color-ghost-hover);
 
@@ -136,48 +113,41 @@
   }
 }
 
-:host([data-open]) moz-button.memories-trigger {
-  @media not (forced-colors) {
-    @media not -moz-pref("browser.nova.enabled") {
-      --button-icon-fill: var(--aiwindow-text-accent);
-      --button-background-color-ghost: var(--memories-accent-bg-hover);
-      --button-border-color-ghost: var(--memories-accent-border);
-      --button-text-color-ghost-selected: var(--aiwindow-text-accent);
-      --button-background-color-ghost-selected: var(--memories-accent-bg-hover);
-      --button-border-color-ghost-selected: var(--memories-accent-border);
-      --button-background-color-ghost-hover: var(--memories-accent-bg-hover);
-      --button-border-color-ghost-hover: var(--memories-accent-border);
+/* Only show the label when the sidebar is wider than 250px */
+@media (width > 250px) {
+  moz-button.memories-trigger {
+    &::part(button) {
+      gap: var(--space-xsmall);
     }
 
-    @media -moz-pref("browser.nova.enabled") {
-      --button-icon-fill: var(--button-text-color-ghost-hover);
+    &:not([disabled]):is(:hover, :focus-within)::part(moz-button-label),
+    :host([data-open]) &::part(moz-button-label) {
+      opacity: 1;
+      max-width: var(--size-image-xxlarge);
     }
-  }
 
-  &::part(moz-button-label) {
-    opacity: 1;
-    max-width: var(--size-image-xxlarge);
+    :host([data-open]) & {
+      @media (not (forced-colors)) and (not -moz-pref("browser.nova.enabled")) {
+        --button-background-color-ghost: var(--chat-assistant-footer-button-bg-hover);
+        --button-background-color-ghost-selected: var(--chat-assistant-footer-button-bg-hover);
+        --button-text-color-ghost-selected: var(--chat-assistant-footer-button-icon-fill);
+      }
+    }
   }
 }
 
+/* Same mapping as moz-button.footer-icon-button in assistant-message-footer.css,
+ * off the same tokens, so the trigger matches the other footer buttons. */
 moz-button.memories-trigger {
-  --button-padding: var(--space-small);
   @media not (forced-colors) {
-    @media not -moz-pref("browser.nova.enabled") {
-      --button-icon-fill: var(--aiwindow-memories-icon-fill);
-      --button-background-color-ghost-hover: var(--memories-accent-bg-hover);
-      --button-border-color-ghost-hover: var(--memories-accent-border);
-      --button-background-color-ghost-active: var(--memories-accent-bg-active);
-      --button-border-color-ghost-active: var(--memories-accent-border);
-      --button-text-color-ghost: var(--text-color-deemphasized);
-    }
+    --button-icon-fill: var(--chat-assistant-footer-button-icon-fill);
+    --button-text-color-ghost-hover: var(--chat-assistant-footer-button-text-color-hover);
+    --button-text-color-ghost-active: var(--chat-assistant-footer-button-text-color-hover);
+    --button-background-color-ghost-hover: var(--chat-assistant-footer-button-bg-hover);
+    --button-background-color-ghost-active: var(--chat-assistant-footer-button-bg-active);
 
-    @media -moz-pref("browser.nova.enabled") {
-      --button-icon-fill: var(--smartwindow-icon-color-accent-primary-desaturated);
-
-      &:is(:hover, :active, :focus-visible, [aria-expanded="true"], [aria-pressed="true"]) {
-        --button-icon-fill: var(--button-text-color-ghost-hover);
-      }
+    &:is(:hover, :active, :focus-visible, [aria-expanded="true"], [aria-pressed="true"]) {
+      --button-icon-fill: var(--chat-assistant-footer-button-icon-fill-hover);
     }
   }
 
@@ -185,15 +155,10 @@ moz-button.memories-trigger {
     opacity: var(--opacity-deemphasized-strong);
   }
 
-  &:not([disabled]):hover::part(moz-button-label),
-  &:not([disabled]):focus-within::part(moz-button-label) {
-    opacity: 1;
-    max-width: var(--size-image-xxlarge);
-  }
-
   &::part(button) {
-    padding: var(--button-padding-block, var(--space-xsmall)) var(--space-xsmall);
-    gap: var(--space-xsmall);
+    gap: 0;
+    height: var(--button-size-icon-small);
+    padding: var(--space-xsmall);
   }
 
   &::part(moz-button-label) {
@@ -213,10 +178,11 @@ moz-button.memories-trigger {
   pointer-events: none;
   position: absolute;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  width: min(318px, 100%);
+  max-width: min(100%, var(--size-layout-large));
+  width: 100%;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   bottom: 40px;
-  left: 0;
+  inset-inline-start: 0;
   display: flex;
   flex-direction: column;
   gap: var(--aiwindow-popover-gap);
@@ -230,6 +196,7 @@ moz-button.memories-trigger {
   border-width: var(--border-width);
   border-style: solid;
   box-shadow: var(--box-shadow-level-3);
+  box-sizing: border-box;
   transition:
     opacity 120ms ease,
     transform 120ms ease;
@@ -324,10 +291,10 @@ moz-button.memories-trigger {
   }
 }
 
-moz-button.retry-without-memories-button::part(button),
-moz-button.retry-without-memories-button::part(moz-button-label),
-moz-button.memories-remove-button::part(button) {
+moz-button::part(button),
+moz-button::part(moz-button-label) {
   cursor: pointer;
+  text-align: start;
 }
 
 .popover-action-row {

@@ -12,6 +12,7 @@
  * @import { ChatConversation } from "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
  */
 
+import { getSkillPrompt } from "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs";
 import { searchBrowsingHistory as implSearchBrowsingHistory } from "moz-src:///browser/components/aiwindow/models/SearchBrowsingHistory.sys.mjs";
 import {
   manageTabsAction,
@@ -27,10 +28,6 @@ import {
   sanitizeUntrustedContent,
   isNewPageUrl,
 } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
-import {
-  FEATURE_MAJOR_VERSIONS,
-  MODEL_FEATURES,
-} from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -104,6 +101,7 @@ export const SEARCH_THE_WEB = "search_the_web";
 export const GET_USER_MEMORIES = "get_user_memories";
 export const GET_NAVIGATION_INFO = "get_navigation_info";
 export const MANAGE_TABS = "manage_tabs";
+export const GET_SKILL = "get_skill";
 export const WORLD_CUP_MATCHES = "world_cup_matches";
 export const WORLD_CUP_LIVE = "world_cup_live";
 export const ADD_MEMORY = "add_memory";
@@ -117,6 +115,11 @@ export const SEARCH_QUERY_ENDPOINT_PREF =
 export const SEARCH_QUERY_APIKEY_PREF =
   "browser.smartwindow.searchQuery.apiKey";
 
+// When true, search_the_web returns Exa snippets straight to the main
+// assistant. When false, it runs the answer-generation flow with page reads.
+// The two paths return different shapes and so need different tool configs.
+export const SEARCH_THE_WEB_FAST_PREF = "browser.smartwindow.searchTheWebFast";
+
 export const TOOLS = [
   GET_OPEN_TABS,
   SEARCH_BROWSING_HISTORY,
@@ -128,6 +131,7 @@ export const TOOLS = [
   WORLD_CUP_LIVE,
   ADD_MEMORY,
   SEARCH_THE_WEB,
+  GET_SKILL,
 ];
 
 export const RUN_SEARCH_VERBATIM_QUERY_DESCRIPTION =
@@ -178,6 +182,15 @@ export const SEARCH_THE_WEB_DESCRIPTION =
   "clear, self-contained query; you may rewrite the user's phrasing (for " +
   "example resolve 'near me' to a place) and add brief context.";
 
+export const SEARCH_THE_WEB_FAST_DESCRIPTION =
+  "Search the web. Returns a short list of results, each with a title, a URL, " +
+  "and a snippet of text from the page. Use this whenever the user asks an " +
+  "informational question that needs fresh or external knowledge. Answer from " +
+  "the snippets when they are enough, and call get_page_content on one of the " +
+  "returned URLs when you need the full page. Pass a clear, self-contained " +
+  "query; you may rewrite the user's phrasing (for example resolve 'near me' " +
+  "to a place).";
+
 const SEARCH_THE_WEB_TOOL_CONFIG = {
   type: "function",
   function: {
@@ -196,6 +209,27 @@ const SEARCH_THE_WEB_TOOL_CONFIG = {
           description:
             "Optional additional context that helps answer the query, such as " +
             "a location or a clarification the user gave earlier.",
+        },
+      },
+      required: ["query"],
+    },
+  },
+};
+
+// Fast-path variant, selected in Chat.sys.mjs when SEARCH_THE_WEB_FAST_PREF is
+// on. No `context` parameter: the fast path has no sub-agent prompt to feed it.
+export const SEARCH_THE_WEB_TOOL_CONFIG_FAST = {
+  type: "function",
+  function: {
+    name: SEARCH_THE_WEB,
+    description: SEARCH_THE_WEB_FAST_DESCRIPTION,
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description:
+            "The self-contained question or query to answer from the web.",
         },
       },
       required: ["query"],
@@ -444,31 +478,34 @@ export const toolsConfig = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: GET_SKILL,
+      description:
+        "Look up a focused instruction set ('skill') by name. Use when the user's request maps to a known specialty. The available skill names are listed in the system prompt.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: {
+            type: "string",
+            description: "The name of the skill to retrieve.",
+          },
+        },
+        required: ["name"],
+      },
+    },
+  },
 ];
 
 /**
- * Metadata about a Tab used in chat conversations.
+ * Gets N amount of most recently opened tabs
  *
- * @typedef {object} TabInfo
- * @property {string} url - The url of the tab.
- * @property {string} title - Title of the tab.
- * @property {number} lastAccessed - When the tab was last accessed in milliseconds.
- */
-
-/**
- * Retrieves a list of the latest open tabs from the current active browser window.
- * Tabs are sorted by most recently accessed and limited to MAX_TABS results.
- * Only includes tabs with http/https URLs.
+ * @param {number} [amount=MAX_TABS] How many tabs to get
  *
- * @param {ChatConversation} conversation
- * @returns {Promise<Array<TabInfo>>}
+ * @returns {Array<TabInfo>}
  */
-export async function getOpenTabs(conversation) {
-  // No security check needed. The security checks prevent data exfiltration,
-  // which requires external communication. This tool makes no external requests.
-
-  const startTime = ChromeUtils.now();
-
+export function getTabList(amount = MAX_TABS) {
   /** @type {Array<TabInfo>} */
   const tabs = [];
 
@@ -496,7 +533,33 @@ export async function getOpenTabs(conversation) {
 
   tabs.sort((a, b) => b.lastAccessed - a.lastAccessed);
 
-  const recentTabs = tabs.slice(0, MAX_TABS);
+  return tabs.slice(0, amount);
+}
+
+/**
+ * Metadata about a Tab used in chat conversations.
+ *
+ * @typedef {object} TabInfo
+ * @property {string} url - The url of the tab.
+ * @property {string} title - Title of the tab.
+ * @property {number} lastAccessed - When the tab was last accessed in milliseconds.
+ */
+
+/**
+ * Retrieves a list of the latest open tabs from the current active browser window.
+ * Tabs are sorted by most recently accessed and limited to MAX_TABS results.
+ * Only includes tabs with http/https URLs.
+ *
+ * @param {ChatConversation} conversation
+ * @returns {Promise<Array<TabInfo>>}
+ */
+export async function getOpenTabs(conversation) {
+  // No security check needed. The security checks prevent data exfiltration,
+  // which requires external communication. This tool makes no external requests.
+
+  const startTime = ChromeUtils.now();
+
+  const recentTabs = getTabList(MAX_TABS);
 
   // Tab titles are truncated to 100 characters and therefore not expected to
   // contain enough untrusted data for a prompt injection attack.
@@ -1254,6 +1317,12 @@ export async function worldCupLive(toolParams, conversation) {
   return trimmed;
 }
 
+// No securityProperties / trust flags: skill prompts are Remote Settings
+// content and carry the same trust level as the system prompt itself.
+export async function getSkill({ toolParams, model }) {
+  return getSkillPrompt(toolParams?.name, model);
+}
+
 /**
  * Counts open http(s) tabs across all active AI windows. Used for
  * browser_action_submit telemetry.
@@ -1328,7 +1397,7 @@ export async function manageTabs(
     conversation.lastBrowserActionType = actionType;
   }
 
-  const promptVersion = String(FEATURE_MAJOR_VERSIONS[MODEL_FEATURES.CHAT]);
+  const promptVersion = conversation?.systemPromptVersion ?? "";
 
   const baseTelemetryInfo = {
     location: mode,
@@ -1414,4 +1483,5 @@ export const toolFns = {
   worldCupLive,
   manageTabs,
   addMemory,
+  getSkill,
 };

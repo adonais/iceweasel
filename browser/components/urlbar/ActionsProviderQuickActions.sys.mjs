@@ -27,8 +27,16 @@ const MIN_SEARCH_PREF = "quickactions.minimumSearchString";
  *   The URI of the icon associated with this command.
  * @property {string} label
  *   The id of the label for the result element.
- * @property {() => boolean} [isVisible]
- *   A function to call to check if this action should be visible or not.
+ * @property {() => boolean} [isUnsupported]
+ *   Called to check whether this action's underlying feature or capability is
+ *   unavailable, e.g. disabled by a pref or policy, or missing on this build.
+ *   When it returns true the action is hidden everywhere, including the full
+ *   actions list shown in search mode. Defaults to supported.
+ * @property {() => boolean} [isInactive]
+ *   Called to check whether this action, though supported, can't be used right
+ *   now, e.g. mute when no tab is playing audio. When it returns true the
+ *   action is hidden from the urlbar but still shown, as a disabled entry, in
+ *   the full actions list used for feature discoverability. Defaults to active.
  * @property {(queryContext, controller, window) => null|{focusContent: boolean}} onPick
  *   The function to call when the quick action is picked. It may return an object
  *   with property focusContent to indicate if the content area should be focussed
@@ -66,10 +74,10 @@ class ProviderQuickActions extends ActionsProvider {
       }
     }
 
-    // Remove invisible actions.
+    // Remove actions that are unsupported or currently inactive.
     results.forEach(key => {
       const action = this.#actions.get(key);
-      if (!(action.isVisible?.() ?? true)) {
+      if (action.isUnsupported?.() || action.isInactive?.()) {
         results.delete(key);
       }
     });

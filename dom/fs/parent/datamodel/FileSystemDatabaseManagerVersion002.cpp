@@ -780,6 +780,8 @@ nsresult FileSystemDatabaseManagerVersion002::MergeFileId(
 
   QM_TRY(MOZ_TO_RESULT(stmt.Execute()));
 
+  QM_SCOPED_CONTEXT("FileSystemMergeFileId::CommitFailed"_ns);
+
   if (!maybeOldFileId) {
     // We successfully added a new main file and there is nothing to clean up.
     QM_TRY(MOZ_TO_RESULT(transaction.Commit()));

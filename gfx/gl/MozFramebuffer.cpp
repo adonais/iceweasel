@@ -23,7 +23,8 @@ static void DeleteByTarget(GLContext* const gl, const GLenum target,
 UniquePtr<MozFramebuffer> MozFramebuffer::Create(GLContext* const gl,
                                                  const gfx::IntSize& size,
                                                  const uint32_t samples,
-                                                 const bool depthStencil) {
+                                                 const bool depth,
+                                                 const bool stencil) {
   if (samples && !gl->IsSupported(GLFeature::framebuffer_multisample))
     return nullptr;
 
@@ -64,19 +65,22 @@ UniquePtr<MozFramebuffer> MozFramebuffer::Create(GLContext* const gl,
     return nullptr;
   }
 
-  return CreateImpl(
-      gl, size, samples,
-      depthStencil ? DepthAndStencilBuffer::Create(gl, size, samples) : nullptr,
-      colorTarget, colorName);
+  return CreateImpl(gl, size, samples,
+                    (depth || stencil) ? DepthAndStencilBuffer::Create(
+                                             gl, size, samples, depth, stencil)
+                                       : nullptr,
+                    colorTarget, colorName);
 }
 
 UniquePtr<MozFramebuffer> MozFramebuffer::CreateForBacking(
     GLContext* const gl, const gfx::IntSize& size, const uint32_t samples,
-    bool depthStencil, const GLenum colorTarget, const GLuint colorName) {
-  return CreateImpl(
-      gl, size, samples,
-      depthStencil ? DepthAndStencilBuffer::Create(gl, size, samples) : nullptr,
-      colorTarget, colorName);
+    bool depth, bool stencil, const GLenum colorTarget,
+    const GLuint colorName) {
+  return CreateImpl(gl, size, samples,
+                    (depth || stencil) ? DepthAndStencilBuffer::Create(
+                                             gl, size, samples, depth, stencil)
+                                       : nullptr,
+                    colorTarget, colorName);
 }
 
 /* static */ UniquePtr<MozFramebuffer>
@@ -109,12 +113,16 @@ MozFramebuffer::CreateForBackingWithSharedDepthAndStencil(
   }
 
   if (depthAndStencilBuffer) {
-    gl->fFramebufferRenderbuffer(
-        LOCAL_GL_FRAMEBUFFER, LOCAL_GL_DEPTH_ATTACHMENT, LOCAL_GL_RENDERBUFFER,
-        depthAndStencilBuffer->mDepthRB);
-    gl->fFramebufferRenderbuffer(
-        LOCAL_GL_FRAMEBUFFER, LOCAL_GL_STENCIL_ATTACHMENT,
-        LOCAL_GL_RENDERBUFFER, depthAndStencilBuffer->mStencilRB);
+    if (depthAndStencilBuffer->mDepthRB) {
+      gl->fFramebufferRenderbuffer(
+          LOCAL_GL_FRAMEBUFFER, LOCAL_GL_DEPTH_ATTACHMENT,
+          LOCAL_GL_RENDERBUFFER, depthAndStencilBuffer->mDepthRB);
+    }
+    if (depthAndStencilBuffer->mStencilRB) {
+      gl->fFramebufferRenderbuffer(
+          LOCAL_GL_FRAMEBUFFER, LOCAL_GL_STENCIL_ATTACHMENT,
+          LOCAL_GL_RENDERBUFFER, depthAndStencilBuffer->mStencilRB);
+    }
   }
 
   const auto status = gl->fCheckFramebufferStatus(LOCAL_GL_FRAMEBUFFER);
@@ -133,7 +141,8 @@ MozFramebuffer::CreateForBackingWithSharedDepthAndStencil(
 }
 
 /* static */ RefPtr<DepthAndStencilBuffer> DepthAndStencilBuffer::Create(
-    GLContext* const gl, const gfx::IntSize& size, const uint32_t samples) {
+    GLContext* const gl, const gfx::IntSize& size, const uint32_t samples,
+    const bool depth, const bool stencil) {
   const auto fnAllocRB = [&](GLenum format) {
     GLuint rb = gl->CreateRenderbuffer();
     const ScopedBindRenderbuffer bindRB(gl, rb);
@@ -147,16 +156,20 @@ MozFramebuffer::CreateForBackingWithSharedDepthAndStencil(
     return rb;
   };
 
-  GLuint depthRB, stencilRB;
+  GLuint depthRB = 0, stencilRB = 0;
   {
     GLContext::LocalErrorScope errorScope(*gl);
 
-    if (gl->IsSupported(GLFeature::packed_depth_stencil)) {
+    if (depth && stencil && gl->IsSupported(GLFeature::packed_depth_stencil)) {
       depthRB = fnAllocRB(LOCAL_GL_DEPTH24_STENCIL8);
       stencilRB = depthRB;  // Ignore unused mStencilRB.
     } else {
-      depthRB = fnAllocRB(LOCAL_GL_DEPTH_COMPONENT24);
-      stencilRB = fnAllocRB(LOCAL_GL_STENCIL_INDEX8);
+      if (depth) {
+        depthRB = fnAllocRB(LOCAL_GL_DEPTH_COMPONENT24);
+      }
+      if (stencil) {
+        stencilRB = fnAllocRB(LOCAL_GL_STENCIL_INDEX8);
+      }
     }
 
     const auto err = errorScope.GetError();

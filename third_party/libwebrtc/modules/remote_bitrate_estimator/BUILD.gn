@@ -111,6 +111,7 @@ rtc_library("congestion_control_feedback_generator") {
     "../../api/units:timestamp",
     "../../rtc_base:checks",
     "../../rtc_base:logging",
+    "../../rtc_base:macromagic",
     "../../rtc_base:rtc_numerics",
     "../../rtc_base/containers:flat_map",
     "../../rtc_base/experiments:field_trial_parser",
@@ -130,6 +131,7 @@ if (!build_with_chromium) {
       "tools/bwe_rtp.h",
     ]
     deps = [
+      "../../api:rtp_header_extension_id",
       "../../test:rtp_test_utils",
       "../rtp_rtcp:rtp_rtcp_format",
       "//third_party/abseil-cpp/absl/flags:flag",
@@ -174,6 +176,7 @@ if (rtc_include_tests) {
       ":transport_sequence_number_feedback_generator",
       "..:module_api_public",
       "../../api:field_trials",
+      "../../api:rtp_header_extension_id",
       "../../api:rtp_headers",
       "../../api/environment:environment_factory",
       "../../api/transport:bandwidth_usage",
@@ -189,6 +192,7 @@ if (rtc_include_tests) {
       "../../rtc_base:logging",
       "../../rtc_base:random",
       "../../system_wrappers",
+      "../../test:create_test_environment",
       "../../test:create_test_field_trials",
       "../../test:fileutils",
       "../../test:test_support",

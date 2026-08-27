@@ -10,6 +10,7 @@ task-defaults:
     worker:
         max-run-time: 1800
     run:
+        clone-with: hg
         resources:
             - 'taskcluster/scripts/misc/build-gn-common.sh'
         toolchain-artifact: public/build/gn.tar.zst
@@ -21,12 +22,14 @@ linux64-gn:
     treeherder:
         symbol: TL(gn)
     run:
+        clone-with: hg
         script: build-gn-linux.sh
 
 macosx64-gn:
     treeherder:
         symbol: TM(gn)
     run:
+        clone-with: hg
         script: build-gn-macosx.sh
     fetches:
         toolchain:
@@ -52,6 +55,7 @@ win64-gn:
     worker:
         max-run-time: 3600
     run:
+        clone-with: hg
         script: build-gn-win64.sh
     fetches:
         fetch:

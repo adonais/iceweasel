@@ -17,8 +17,8 @@
 #  include "mozilla/fuzzing/NyxWrapper.h"
 
 #  ifdef __cplusplus
-#    include "mozilla/fuzzing/Nyx.h"
 #    include "mozilla/ScopeExit.h"
+#    include "mozilla/fuzzing/Nyx.h"
 
 #    define MOZ_FUZZING_NYX_RELEASE(id)                       \
       if (mozilla::fuzzing::Nyx::instance().is_enabled(id)) { \

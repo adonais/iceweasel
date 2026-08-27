@@ -16,6 +16,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.SoftwareKeyboardController
@@ -38,6 +39,7 @@ import androidx.compose.ui.text.TextRange
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_SEARCH_BOX
 import mozilla.components.concept.toolbar.AutocompleteResult
 import mozilla.components.support.test.any
+import mozilla.components.support.test.eq
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.whenever
@@ -50,7 +52,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.never
@@ -669,6 +670,72 @@ class InlineAutocompleteTextFieldTest {
         composeTestRule.runOnIdle { isTextFieldShown = false }
         composeTestRule.waitForIdle()
         assertFalse(imm.isSoftInputVisible)
+    }
+
+    @Test
+    fun `GIVEN all actions are possible WHEN showing the contextual menu THEN all are made available`() {
+        val delegate: TextToolbar = mock()
+        val copyAction = {}
+        val pasteAction = {}
+        val cutAction = {}
+        val selectAllAction = {}
+        val autofillAction = {}
+
+        val toolbar = PasteSanitizerTextToolbar(
+            context = testContext,
+            delegate = delegate,
+            clipboard = mock(),
+            scope = mock(),
+            handlePaste = {},
+        )
+
+        toolbar.showMenu(
+            rect = Rect.Zero,
+            onCopyRequested = copyAction,
+            onPasteRequested = pasteAction,
+            onCutRequested = cutAction,
+            onSelectAllRequested = selectAllAction,
+            onAutofillRequested = autofillAction,
+        )
+
+        verify(delegate).showMenu(
+            rect = eq(Rect.Zero),
+            onCopyRequested = eq(copyAction),
+            onPasteRequested = any(),
+            onCutRequested = eq(cutAction),
+            onSelectAllRequested = eq(selectAllAction),
+            onAutofillRequested = eq(autofillAction),
+        )
+    }
+
+    @Test
+    fun `GIVEN no action is possible WHEN showing the contextual menu THEN the no actions are shown`() {
+        val delegate: TextToolbar = mock()
+        val toolbar = PasteSanitizerTextToolbar(
+            context = testContext,
+            delegate = delegate,
+            clipboard = mock(),
+            scope = mock(),
+            handlePaste = {},
+        )
+
+        toolbar.showMenu(
+            rect = Rect.Zero,
+            onCopyRequested = null,
+            onPasteRequested = null,
+            onCutRequested = null,
+            onSelectAllRequested = null,
+            onAutofillRequested = null,
+        )
+
+        verify(delegate).showMenu(
+            rect = Rect.Zero,
+            onCopyRequested = null,
+            onPasteRequested = null,
+            onCutRequested = null,
+            onSelectAllRequested = null,
+            onAutofillRequested = null,
+        )
     }
 }
 

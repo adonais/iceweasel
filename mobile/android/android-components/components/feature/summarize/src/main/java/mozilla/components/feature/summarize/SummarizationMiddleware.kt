@@ -27,7 +27,12 @@ import kotlin.time.Duration.Companion.seconds
 
 const val TAG = "SummarizationMiddleware"
 
-/** The initial middleware for the summarization feature */
+/**
+ * The initial middleware for the summarization feature.
+ *
+ * @property llmProvider The cloud provider used to source a summarization [Llm]. A token is renewed
+ * by preparing the provider when it does not already hold a usable one.
+ */
 class SummarizationMiddleware(
     private val isPageLoadingFlow: Flow<Boolean>,
     private val settings: SummarizationSettings,
@@ -58,7 +63,7 @@ class SummarizationMiddleware(
                         store.dispatch(SummarizationFailed(e))
                     }
                 } else {
-                    observeCloudLlmProvider(store, llmProvider)
+                    observeCloudLlmProvider(store)
                 }
             }
             OffDeviceSummarizationShakeConsentAction.CancelClicked -> scope.launch {
@@ -66,10 +71,7 @@ class SummarizationMiddleware(
             }
             OffDeviceSummarizationShakeConsentAction.AllowClicked -> scope.launch {
                 settings.setHasConsentedToShake(true)
-                observeCloudLlmProvider(store, llmProvider)
-            }
-            LlmProviderAction.ProviderAvailable -> scope.launch {
-                llmProvider.prepare()
+                observeCloudLlmProvider(store)
             }
             is LlmProviderAction.ProviderInitialized -> scope.launch {
                 observePrompt(store, action.llm)
@@ -78,7 +80,7 @@ class SummarizationMiddleware(
                 errorReporter.report(TAG, action.exception)
             }
             is PageLoadCompleted -> scope.launch {
-                observeCloudLlmProvider(store, llmProvider)
+                observeCloudLlmProvider(store)
             }
 
             is ContentExtracted,
@@ -95,11 +97,15 @@ class SummarizationMiddleware(
             OnDeviceSummarizationShakeConsentAction.AllowClicked,
             OnDeviceSummarizationShakeConsentAction.CancelClicked,
             OnDeviceSummarizationShakeConsentAction.LearnMoreClicked,
+            is LlmProviderAction.SignInRequired,
             PageLoadStarted,
             is ReceivedParsedDocument,
             SettingsBackClicked,
             SettingsClicked,
             ShakeConsentRequested,
+            SignInSummarizationContentAction.DismissClicked,
+            SignInSummarizationContentAction.LearnMoreClicked,
+            SignInSummarizationContentAction.SignInClicked,
             SummarizationCompleted,
             is SummarizationRequested,
             is ViewDismissed,
@@ -134,10 +140,12 @@ class SummarizationMiddleware(
         }
     }
 
-    private suspend fun observeCloudLlmProvider(
-        store: SummarizationStore,
-        llmProvider: CloudLlmProvider,
-    ) = llmProvider.fetchLlm.collect { store.dispatch(it) }
+    private suspend fun observeCloudLlmProvider(store: SummarizationStore) {
+        if (llmProvider.state.value !is CloudLlmProvider.State.Ready) {
+            llmProvider.prepare()
+        }
+        llmProvider.fetchLlm.collect { store.dispatch(it) }
+    }
 
     private suspend fun needsShakeConsent(state: SummarizationState): Boolean =
         state is SummarizationState.Inert &&

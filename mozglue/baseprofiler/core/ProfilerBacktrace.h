@@ -50,7 +50,7 @@ class ProfilerBacktrace {
       ProfileChunkedBuffer* aExternalProfileChunkedBufferOrNull = nullptr,
       ProfileBuffer* aExternalProfileBufferOrNull = nullptr);
 
-  ~ProfilerBacktrace();
+  ~ProfilerBacktrace() = default;
 
   [[nodiscard]] bool IsEmpty() const {
     return !mProfileChunkedBuffer ||

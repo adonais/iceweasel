@@ -8,10 +8,7 @@
  * the page title.
  */
 
-import {
-  UrlbarProvider,
-  UrlbarUtils,
-} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -26,10 +23,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
  */
 export class UrlbarProviderHistoryUrlHeuristic extends UrlbarProvider {
   /**
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof lazy.UrlbarShared.PROVIDER_TYPE>}
    */
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
+    return lazy.UrlbarShared.PROVIDER_TYPE.HEURISTIC;
   }
 
   /**
@@ -48,7 +45,7 @@ export class UrlbarProviderHistoryUrlHeuristic extends UrlbarProvider {
       queryContext.fixupInfo?.href &&
       !queryContext.fixupInfo.isSearch &&
       queryContext.fixupInfo.scheme.startsWith("http") &&
-      queryContext.fixupInfo.href.length <= UrlbarUtils.MAX_TEXT_LENGTH
+      queryContext.fixupInfo.href.length <= lazy.UrlbarShared.MAX_TEXT_LENGTH
     );
   }
 
@@ -69,7 +66,7 @@ export class UrlbarProviderHistoryUrlHeuristic extends UrlbarProvider {
 
   async #getResult(queryContext) {
     const inputedURL = queryContext.fixupInfo.href;
-    const [strippedURL] = UrlbarUtils.stripPrefixAndTrim(inputedURL, {
+    const [strippedURL] = lazy.UrlbarShared.stripPrefixAndTrim(inputedURL, {
       stripHttp: true,
       stripHttps: true,
       stripWww: true,
@@ -122,10 +119,12 @@ export class UrlbarProviderHistoryUrlHeuristic extends UrlbarProvider {
       payload: {
         url: inputedURL,
         title,
-        icon: UrlbarUtils.getIconForUrl(resultSet[0].getResultByName("url")),
+        icon: lazy.UrlbarShared.getIconForUrl(
+          resultSet[0].getResultByName("url")
+        ),
       },
       highlights: {
-        url: UrlbarUtils.HIGHLIGHT.TYPED,
+        url: lazy.UrlbarShared.HIGHLIGHT.TYPED,
       },
     });
   }

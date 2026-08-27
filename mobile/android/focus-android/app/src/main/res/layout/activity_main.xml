@@ -6,20 +6,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/settings_background"
     android:orientation="vertical">
 
     <ViewStub
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/settings_background"
         android:layout="@layout/toolbar"
         android:gravity="center_vertical" />
 
     <FrameLayout
         android:id="@+id/container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:ignore="MergeRootFrame" />
+        android:layout_height="match_parent" />
 </LinearLayout>

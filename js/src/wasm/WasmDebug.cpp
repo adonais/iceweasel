@@ -400,27 +400,27 @@ bool DebugState::getGlobal(Instance& instance, uint32_t globalIndex,
     LitVal value = global.constantValue();
     switch (value.type().kind()) {
       case ValType::I32:
-        vp.set(Int32Value(value.i32()));
+        vp.setInt32(value.i32());
         break;
       case ValType::I64:
         // Just display as a Number; it's ok if we lose some precision
-        vp.set(NumberValue((double)value.i64()));
+        vp.setNumber((double)value.i64());
         break;
       case ValType::F32:
-        vp.set(NumberValue(value.f32()));
+        vp.setNumber(value.f32());
         break;
       case ValType::F64:
-        vp.set(NumberValue(value.f64()));
+        vp.setNumber(value.f64());
         break;
       case ValType::Ref:
         // It's possible to do better.  We could try some kind of hashing
         // scheme, to make the pointer recognizable without revealing it.
-        vp.set(MagicValue(JS_OPTIMIZED_OUT));
+        vp.setMagic(JS_OPTIMIZED_OUT);
         break;
       case ValType::V128:
         // Debugger must be updated to handle this, and should be updated to
         // handle i64 in any case.
-        vp.set(MagicValue(JS_OPTIMIZED_OUT));
+        vp.setMagic(JS_OPTIMIZED_OUT);
         break;
       default:
         MOZ_CRASH("Global constant type");
@@ -434,30 +434,30 @@ bool DebugState::getGlobal(Instance& instance, uint32_t globalIndex,
   }
   switch (global.type().kind()) {
     case ValType::I32: {
-      vp.set(Int32Value(*static_cast<int32_t*>(dataPtr)));
+      vp.setInt32(*static_cast<int32_t*>(dataPtr));
       break;
     }
     case ValType::I64: {
       // Just display as a Number; it's ok if we lose some precision
-      vp.set(NumberValue((double)*static_cast<int64_t*>(dataPtr)));
+      vp.setNumber((double)*static_cast<int64_t*>(dataPtr));
       break;
     }
     case ValType::F32: {
-      vp.set(NumberValue(*static_cast<float*>(dataPtr)));
+      vp.setNumber(*static_cast<float*>(dataPtr));
       break;
     }
     case ValType::F64: {
-      vp.set(NumberValue(*static_cast<double*>(dataPtr)));
+      vp.setNumber(*static_cast<double*>(dataPtr));
       break;
     }
     case ValType::Ref: {
       // Just hide it.  See above.
-      vp.set(MagicValue(JS_OPTIMIZED_OUT));
+      vp.setMagic(JS_OPTIMIZED_OUT);
       break;
     }
     case ValType::V128: {
       // Just hide it.  See above.
-      vp.set(MagicValue(JS_OPTIMIZED_OUT));
+      vp.setMagic(JS_OPTIMIZED_OUT);
       break;
     }
     default: {

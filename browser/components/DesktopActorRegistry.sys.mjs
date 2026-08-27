@@ -248,6 +248,7 @@ let JSWINDOWACTORS = {
         "AIChatContent:RequestAssets": { wantUntrusted: true },
         "AIChatContent:HistoryGridRender": { wantUntrusted: true },
         "AIChatContent:HistoryGridItemClick": { wantUntrusted: true },
+        "AIChatContent:ClientError": { wantUntrusted: true },
       },
     },
     allFrames: true,
@@ -270,6 +271,33 @@ let JSWINDOWACTORS = {
     allFrames: true,
     enablePreference: "browser.smartwindow.enabled",
     remoteTypes: ["parent"],
+  },
+
+  SmartWindowTasks: {
+    parent: {
+      esModuleURI:
+        "moz-src:///browser/components/aiwindow/ui/actors/SmartWindowTasksParent.sys.mjs",
+    },
+    child: {
+      esModuleURI:
+        "moz-src:///browser/components/aiwindow/ui/actors/SmartWindowTasksChild.sys.mjs",
+      events: {
+        "SmartWindowTasks:RequestListMonitors": { wantUntrusted: true },
+        "SmartWindowTasks:RequestCreateMonitor": { wantUntrusted: true },
+        "SmartWindowTasks:RequestDeleteMonitor": { wantUntrusted: true },
+        "SmartWindowTasks:RequestUpdateMonitor": { wantUntrusted: true },
+        "SmartWindowTasks:RequestRunMonitor": { wantUntrusted: true },
+        "SmartWindowTasks:RequestPauseMonitor": { wantUntrusted: true },
+        "SmartWindowTasks:RequestConstants": { wantUntrusted: true },
+      },
+    },
+    allFrames: true,
+    // TODO: Remove chrome:// URL and "parent" remoteType before landing
+    // These are only for development while about:smartwindowtasks registration lands
+    matches: ["about:smartwindowtasks"],
+    includeChrome: true,
+    remoteTypes: ["privilegedabout"],
+    enablePreference: "browser.smartwindow.enabled",
   },
 
   BackupUI: {
@@ -740,6 +768,29 @@ let JSWINDOWACTORS = {
     remoteTypes: ["privilegedabout"],
   },
 
+  ThemePicker: {
+    parent: {
+      esModuleURI: "resource:///actors/ThemePickerParent.sys.mjs",
+    },
+    child: {
+      esModuleURI: "resource:///actors/ThemePickerChild.sys.mjs",
+      events: {
+        ThemePickerGetInitialState: { wantUntrusted: true },
+        ThemePickerUpdateTheme: { wantUntrusted: true },
+        ThemePickerUpdateAppearance: { wantUntrusted: true },
+        ThemePickerUpdateNativeTheme: { wantUntrusted: true },
+      },
+    },
+    matches: [
+      "about:editprofile",
+      "about:newprofile",
+      "about:newtab",
+      "about:home",
+      "about:welcome",
+    ],
+    remoteTypes: ["privilegedabout"],
+  },
+
   Prompt: {
     parent: {
       esModuleURI: "resource:///actors/PromptParent.sys.mjs",
@@ -831,6 +882,54 @@ let JSWINDOWACTORS = {
     },
     matches: ["about:studies*"],
     safeForUntrustedWebProcess: true,
+  },
+
+  SmartFormFill: {
+    parent: {
+      esModuleURI:
+        "moz-src:///browser/components/aiwindow/ui/actors/SmartFormFillParent.sys.mjs",
+    },
+    child: {
+      esModuleURI:
+        "moz-src:///browser/components/aiwindow/ui/actors/SmartFormFillChild.sys.mjs",
+      events: {
+        DOMContentLoaded: {},
+      },
+    },
+    safeForUntrustedWebProcess: true,
+
+    // SmartFormFill should only work on HTTPS urls
+    matches: ["https://*/*"],
+    messageManagerGroups: ["browsers"],
+
+    onAddActor(register, unregister) {
+      let isRegistered = false;
+
+      const maybeRegister = () => {
+        if (
+          Services.prefs.getBoolPref("browser.smartwindow.enabled") &&
+          Services.prefs.getBoolPref(
+            "browser.smartwindow.smartformfill.enabled",
+            false
+          )
+        ) {
+          if (!isRegistered) {
+            register();
+            isRegistered = true;
+          }
+        } else if (isRegistered) {
+          unregister();
+          isRegistered = false;
+        }
+      };
+
+      Services.prefs.addObserver("browser.smartwindow.enabled", maybeRegister);
+      Services.prefs.addObserver(
+        "browser.smartwindow.smartformfill.enabled",
+        maybeRegister
+      );
+      maybeRegister();
+    },
   },
 
   SpeechDispatcher: {

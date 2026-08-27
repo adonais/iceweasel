@@ -23,7 +23,7 @@
 class MOZ_STACK_CLASS SpanningCellSorter {
  public:
   SpanningCellSorter();
-  ~SpanningCellSorter();
+  ~SpanningCellSorter() = default;
 
   struct Item {
     int32_t row, col;

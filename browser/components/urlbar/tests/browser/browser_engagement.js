@@ -130,7 +130,7 @@ async function doTest({
     ["engagement", "abandonment"].includes(state),
     "State should be either 'engagement' or 'abandonment'"
   );
-  Assert.equal(controller.input.isPrivate, expectedIsPrivate, "End isPrivate");
+  Assert.equal(controller.isPrivate, expectedIsPrivate, "End isPrivate");
   Assert.equal(state, expectedEndState, "End state");
   Assert.ok(queryContext, "End queryContext");
   Assert.equal(
@@ -159,11 +159,19 @@ async function doTest({
       element,
       "endEngagement() should have returned the expected engaged element"
     );
-    expectedEndDetails.result = result;
-    expectedEndDetails.element = element;
+    UrlbarTestUtils.assertPickedResult(
+      details.result,
+      details.element,
+      result,
+      element
+    );
 
     // The event object that is passed to providers varies between calls.
+    // `result` and `element` are asserted above since they don't survive the
+    // wire as the same objects.
     delete details.event;
+    delete details.result;
+    delete details.element;
     Assert.deepEqual(
       details,
       Object.assign(detailsDefaults, expectedEndDetails),

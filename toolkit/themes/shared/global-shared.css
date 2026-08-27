@@ -123,7 +123,6 @@ h3 {
    kinds of windows with toolbars (not just browser windows) */
 :root[chromehidden~="menubar"] .chromeclass-menubar,
 :root[chromehidden~="directories"] .chromeclass-directories,
-:root[chromehidden~="status"] .chromeclass-status,
 :root[chromehidden~="extrachrome"] .chromeclass-extrachrome,
 :root[chromehidden~="location"] .chromeclass-location,
 :root[chromehidden~="location"][chromehidden~="toolbar"] .chromeclass-toolbar,
@@ -247,11 +246,8 @@ xul|label[disabled] {
 }
 
 .tooltip-label {
+  /* Override the default xul|description margins for tooltip labels. */
   margin: 0;
-  word-wrap: break-word;
-  /* We must specify a min-width, otherwise word-wrap:break-word doesn't work.
-     See Bug 630864. */
-  min-width: 1px;
 }
 
 /* Links */

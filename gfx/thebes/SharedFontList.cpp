@@ -21,7 +21,7 @@ namespace mozilla {
 namespace fontlist {
 
 static double WSSDistance(const Face* aFace, const gfxFontStyle& aStyle) {
-  double stretchDist = StretchDistance(aFace->mStretch, aStyle.stretch);
+  double widthDist = WidthDistance(aFace->mWidth, aStyle.width);
   double styleDist = StyleDistance(
       aFace->mStyle, aStyle.style,
       aStyle.synthesisStyle != StyleFontSynthesisStyle::ObliqueOnly);
@@ -29,14 +29,14 @@ static double WSSDistance(const Face* aFace, const gfxFontStyle& aStyle) {
 
   // Sanity-check that the distances are within the expected range
   // (update if implementation of the distance functions is changed).
-  MOZ_ASSERT(stretchDist >= 0.0 && stretchDist <= 2000.0);
+  MOZ_ASSERT(widthDist >= 0.0 && widthDist <= 2000.0);
   MOZ_ASSERT(styleDist >= 0.0 && styleDist <= 900.0);
   MOZ_ASSERT(weightDist >= 0.0 && weightDist <= 1600.0);
 
-  // weight/style/stretch priority: stretch >> style >> weight
-  // so we multiply the stretch and style values to make them dominate
+  // weight/style/width priority: width >> style >> weight
+  // so we multiply the width and style values to make them dominate
   // the result
-  return stretchDist * kStretchFactor + styleDist * kStyleFactor +
+  return widthDist * kWidthFactor + styleDist * kStyleFactor +
          weightDist * kWeightFactor;
 }
 
@@ -218,12 +218,12 @@ void Family::AddFaces(FontList* aList, const nsTArray<Face::InitData>& aFaces) {
     // Check if this can be treated as a "simple" family
     isSimple = true;
     for (const auto& f : aFaces) {
-      if (!f.mWeight.IsSingle() || !f.mStretch.IsSingle() ||
+      if (!f.mWeight.IsSingle() || !f.mWidth.IsSingle() ||
           !f.mStyle.IsSingle()) {
         isSimple = false;
         break;
       }
-      if (!f.mStretch.Min().IsNormal()) {
+      if (!f.mWidth.Min().IsNormal()) {
         isSimple = false;
         break;
       }
@@ -275,15 +275,15 @@ void Family::AddFaces(FontList* aList, const nsTArray<Face::InitData>& aFaces) {
   if (LOG_FONTLIST_ENABLED()) {
     const nsCString& fam = DisplayName().AsString(aList);
     for (unsigned j = 0; j < aFaces.Length(); j++) {
-      nsAutoCString weight, style, stretch;
+      nsAutoCString weight, style, width;
       aFaces[j].mWeight.ToString(weight);
       aFaces[j].mStyle.ToString(style);
-      aFaces[j].mStretch.ToString(stretch);
+      aFaces[j].mWidth.ToString(width);
       LOG_FONTLIST(
           ("(shared-fontlist) family (%s) added face (%s) index %u, weight "
-           "%s, style %s, stretch %s",
+           "%s, style %s, width %s",
            fam.get(), aFaces[j].mDescriptor.get(), aFaces[j].mIndex,
-           weight.get(), style.get(), stretch.get()));
+           weight.get(), style.get(), width.get()));
     }
   }
 }
@@ -385,14 +385,14 @@ bool Family::FindAllFacesForStyleInternal(FontList* aList,
   }
 
   // Pick the font(s) that are closest to the desired weight, style, and
-  // stretch. Iterate over all fonts, measuring the weight/style distance.
+  // width. Iterate over all fonts, measuring the weight/style distance.
   // Because of unicode-range values, there may be more than one font for a
   // given but the 99% use case is only a single font entry per
-  // weight/style/stretch distance value. To optimize this, only add entries
+  // weight/style/width distance value. To optimize this, only add entries
   // to the matched font array when another entry already has the same
-  // weight/style/stretch distance and add the last matched font entry. For
+  // weight/style/width distance and add the last matched font entry. For
   // normal platform fonts with a single font entry for each
-  // weight/style/stretch combination, only the last matched font entry will
+  // weight/style/width combination, only the last matched font entry will
   // be added.
   double minDistance = INFINITY;
   Face* matched = nullptr;
@@ -402,7 +402,7 @@ bool Family::FindAllFacesForStyleInternal(FontList* aList,
   for (uint32_t i = 0; i < NumFaces(); i++) {
     auto* face = facePtrs[i].ToPtr<Face>(aList);
     if (face) {
-      // weight/style/stretch priority: stretch >> style >> weight
+      // weight/style/width priority: width >> style >> weight
       double distance = WSSDistance(face, aStyle);
       if (distance < minDistance) {
         matched = face;
@@ -592,11 +592,11 @@ void Family::SetFacePtrs(FontList* aList, nsTArray<Pointer>& aFaces) {
     for (const Pointer& fp : aFaces) {
       auto* f = fp.ToPtr<const Face>(aList);
       if (!f->mWeight.IsSingle() || !f->mStyle.IsSingle() ||
-          !f->mStretch.IsSingle()) {
+          !f->mWidth.IsSingle()) {
         isSimple = false;
         break;
       }
-      if (!f->mStretch.Min().IsNormal()) {
+      if (!f->mWidth.Min().IsNormal()) {
         isSimple = false;
         break;
       }
@@ -1097,15 +1097,14 @@ void FontList::SetAliases(
       for (unsigned j = 0; j < faces.Length(); j++) {
         auto* face = faces[j].ToPtr<const Face>(this);
         const nsCString& desc = face->mDescriptor.AsString(this);
-        nsAutoCString weight, style, stretch;
+        nsAutoCString weight, style, width;
         face->mWeight.ToString(weight);
         face->mStyle.ToString(style);
-        face->mStretch.ToString(stretch);
+        face->mWidth.ToString(width);
         LOG_FONTLIST(
             ("(shared-fontlist) face (%s) index %u, weight %s, style %s, "
-             "stretch %s",
-             desc.get(), face->mIndex, weight.get(), style.get(),
-             stretch.get()));
+             "width %s",
+             desc.get(), face->mIndex, weight.get(), style.get(), width.get()));
       }
     }
   }

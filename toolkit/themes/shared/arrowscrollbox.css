@@ -11,6 +11,18 @@
 scrollbox {
   min-width: 0;
   min-height: 0;
+
+  /* Vertical mode scrolls natively. Horizontal mode is scrolled from script,
+   * see arrowscrollbox.js.
+   *
+   * Only a box with something to scroll becomes a scroll container, so that one
+   * that fits doesn't get an APZ scroll frame. The scrollbar and the overscroll
+   * effect are off by default; a consumer can opt into either. */
+  :host([orient="vertical"][overflowing]) > & {
+    overflow-y: auto;
+    overscroll-behavior-y: none;
+    scrollbar-width: none;
+  }
 }
 
 slot {

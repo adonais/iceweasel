@@ -10,4 +10,6 @@ run-if = [
 
 ["test_migratedFile.js"]
 
+["test_siteAssociations.js"]
+
 ["test_telemetry.js"]

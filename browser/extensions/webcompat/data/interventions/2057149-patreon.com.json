@@ -1,0 +1,17 @@
+{
+  "label": "patreon.com",
+  "bugs": {
+    "2057149": {
+      "issue": "broken-scrolling",
+      "matches": ["*://www.patreon.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "content_scripts": {
+        "js": ["speed_up_wheel_events.js"]
+      }
+    }
+  ]
+}

@@ -58,6 +58,14 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+// Flag, that indicates if an async widget event should be used when dispatching a touch event.
+XPCOMUtils.defineLazyPreferenceGetter(
+  actions,
+  "useAsyncTouchEvents",
+  "remote.events.async.touch.enabled",
+  false
+);
+
 // Flag, that indicates if an async widget event should be used when dispatching a wheel scroll event.
 XPCOMUtils.defineLazyPreferenceGetter(
   actions,
@@ -2056,6 +2064,45 @@ class TouchActionGroup {
 }
 
 /**
+ * Calculate and convert coordinates for a touch action.
+ *
+ * @param {PointerAction} action
+ *     The action containing x, y, and origin properties.
+ * @param {InputSource} actionInputSource
+ *     The input source for this action.
+ * @param {ActionsOptions} options
+ *     Configuration of actions dispatch.
+ *
+ * @returns {Promise<Array<number>>}
+ *     Array of [x, y] coordinates, converted if necessary.
+ */
+async function getTouchCoordinates(action, actionInputSource, options) {
+  const { assertInViewPort, context, toBrowserWindowCoordinates } = options;
+
+  let target = await action.origin.getTargetCoordinates(
+    actionInputSource,
+    [action.x, action.y],
+    options
+  );
+
+  await assertInViewPort(target, context);
+
+  // Only convert coordinates if these are for a content process, and are not
+  // relative to an already initialized pointer source.
+  if (
+    !(
+      action.origin instanceof PointerOrigin && actionInputSource.initialized
+    ) &&
+    context.isContent &&
+    actions.useAsyncTouchEvents
+  ) {
+    target = await toBrowserWindowCoordinates(target, context);
+  }
+
+  return target;
+}
+
+/**
  * Group of actions representing behavior of all touch pointers
  * depressed during a single tick.
  */
@@ -2078,13 +2125,7 @@ class PointerDownTouchActionGroup extends TouchActionGroup {
    *     Promise that is resolved once the action is complete.
    */
   async dispatch(state, inputSource, tickDuration, options) {
-    const { context, dispatchEvent } = options;
-
-    lazy.logger.trace(
-      `Dispatch ${this.constructor.name} with ${Array.from(
-        this.actions.values()
-      ).map(x => x[1].id)}`
-    );
+    const { context, dispatchEvent, toBrowserWindowCoordinates } = options;
 
     if (inputSource !== null) {
       throw new Error(
@@ -2098,10 +2139,29 @@ class PointerDownTouchActionGroup extends TouchActionGroup {
         !actionInputSource.isPressed(action.button)
     );
 
+    lazy.logger.trace(
+      `Dispatch ${this.constructor.name} with ${filteredActions.map(x => x[1].id)} async: ${actions.useAsyncTouchEvents}`
+    );
+
     if (filteredActions.length) {
-      const eventData = new MultiTouchEventData("touchstart");
+      const eventData = new TouchEventData("touchstart");
 
       for (const [actionInputSource, action] of filteredActions) {
+        // If the pointer hasn't been moved yet, its initial (0, 0) viewport
+        // coordinates need to be converted to browser window space for async
+        // touch dispatch in a content process.
+        if (
+          !actionInputSource.initialized &&
+          context.isContent &&
+          actions.useAsyncTouchEvents
+        ) {
+          const target = await toBrowserWindowCoordinates(
+            [actionInputSource.x, actionInputSource.y],
+            context
+          );
+          actionInputSource.moveTo(target[0], target[1]);
+        }
+
         eventData.addPointerEventData(actionInputSource, action);
         actionInputSource.press(action.button);
         eventData.update(state, actionInputSource);
@@ -2121,68 +2181,12 @@ class PointerDownTouchActionGroup extends TouchActionGroup {
         }
       }
 
-      await dispatchEvent("synthesizeMultiTouch", context, { eventData });
+      await dispatchEvent("synthesizeTouchAtPoint", context, { eventData });
 
       for (const [, action] of filteredActions) {
         // Append a copy of |action| with pointerUp subtype if event dispatched
         state.inputsToCancel.push(new PointerUpAction(action.id, action));
       }
-    }
-  }
-}
-
-/**
- * Group of actions representing behavior of all touch pointers
- * released during a single tick.
- */
-class PointerUpTouchActionGroup extends TouchActionGroup {
-  static type = "pointerUp";
-
-  /**
-   * Dispatch a pointerup touch action.
-   *
-   * @param {State} state
-   *     The {@link State} of the action.
-   * @param {InputSource} inputSource
-   *     Current input device.
-   * @param {number} tickDuration
-   *     [unused] Length of the current tick, in ms.
-   * @param {ActionsOptions} options
-   *     Configuration of actions dispatch.
-   *
-   * @returns {Promise}
-   *     Promise that is resolved once the action is complete.
-   */
-  async dispatch(state, inputSource, tickDuration, options) {
-    const { context, dispatchEvent } = options;
-
-    lazy.logger.trace(
-      `Dispatch ${this.constructor.name} with ${Array.from(
-        this.actions.values()
-      ).map(x => x[1].id)}`
-    );
-
-    if (inputSource !== null) {
-      throw new Error(
-        "Expected null inputSource for PointerUpTouchActionGroup.dispatch"
-      );
-    }
-
-    // Only include pointers that are not already depressed
-    const filteredActions = Array.from(this.actions.values()).filter(
-      ([actionInputSource, action]) =>
-        actionInputSource.isPressed(action.button)
-    );
-
-    if (filteredActions.length) {
-      const eventData = new MultiTouchEventData("touchend");
-      for (const [actionInputSource, action] of filteredActions) {
-        eventData.addPointerEventData(actionInputSource, action);
-        actionInputSource.release(action.button);
-        eventData.update(state, actionInputSource);
-      }
-
-      await dispatchEvent("synthesizeMultiTouch", context, { eventData });
     }
   }
 }
@@ -2210,30 +2214,29 @@ class PointerMoveTouchActionGroup extends TouchActionGroup {
    *     Promise that is resolved once the action is complete.
    */
   async dispatch(state, inputSource, tickDuration, options) {
-    const { assertInViewPort, context } = options;
-
-    lazy.logger.trace(
-      `Dispatch ${this.constructor.name} with ${Array.from(this.actions).map(
-        x => x[1].id
-      )}`
-    );
     if (inputSource !== null) {
       throw new Error(
         "Expected null inputSource for PointerMoveTouchActionGroup.dispatch"
       );
     }
 
+    const moveActions = Array.from(this.actions.values());
+
+    lazy.logger.trace(
+      `Dispatch ${this.constructor.name} with ${moveActions.map(
+        x => x[1].id
+      )} async: ${actions.useAsyncTouchEvents}`
+    );
+
     let startCoords = [];
     let targetCoords = [];
 
-    for (const [actionInputSource, action] of this.actions.values()) {
-      const target = await action.origin.getTargetCoordinates(
+    for (const [actionInputSource, action] of moveActions) {
+      const target = await getTouchCoordinates(
+        action,
         actionInputSource,
-        [action.x, action.y],
         options
       );
-
-      await assertInViewPort(target, context);
 
       startCoords.push([actionInputSource.x, actionInputSource.y]);
       targetCoords.push(target);
@@ -2311,7 +2314,7 @@ class PointerMoveTouchActionGroup extends TouchActionGroup {
       return;
     }
 
-    const eventData = new MultiTouchEventData("touchmove");
+    const eventData = new TouchEventData("touchmove");
     for (const [inputSource, action, target] of perPointerData) {
       inputSource.moveTo(target[0], target[1]);
       eventData.addPointerEventData(inputSource, action);
@@ -2323,7 +2326,61 @@ class PointerMoveTouchActionGroup extends TouchActionGroup {
       eventData.update(state, inputSource);
     }
 
-    await dispatchEvent("synthesizeMultiTouch", context, { eventData });
+    await dispatchEvent("synthesizeTouchAtPoint", context, { eventData });
+  }
+}
+
+/**
+ * Group of actions representing behavior of all touch pointers
+ * released during a single tick.
+ */
+class PointerUpTouchActionGroup extends TouchActionGroup {
+  static type = "pointerUp";
+
+  /**
+   * Dispatch a pointerup touch action.
+   *
+   * @param {State} state
+   *     The {@link State} of the action.
+   * @param {InputSource} inputSource
+   *     Current input device.
+   * @param {number} tickDuration
+   *     [unused] Length of the current tick, in ms.
+   * @param {ActionsOptions} options
+   *     Configuration of actions dispatch.
+   *
+   * @returns {Promise}
+   *     Promise that is resolved once the action is complete.
+   */
+  async dispatch(state, inputSource, tickDuration, options) {
+    const { context, dispatchEvent } = options;
+
+    if (inputSource !== null) {
+      throw new Error(
+        "Expected null inputSource for PointerUpTouchActionGroup.dispatch"
+      );
+    }
+
+    // Only include pointers that are not already depressed
+    const filteredActions = Array.from(this.actions.values()).filter(
+      ([actionInputSource, action]) =>
+        actionInputSource.isPressed(action.button)
+    );
+
+    lazy.logger.trace(
+      `Dispatch ${this.constructor.name} with ${filteredActions.map(x => x[1].id)} async: ${actions.useAsyncTouchEvents}`
+    );
+
+    if (filteredActions.length) {
+      const eventData = new TouchEventData("touchend");
+      for (const [actionInputSource, action] of filteredActions) {
+        eventData.addPointerEventData(actionInputSource, action);
+        actionInputSource.release(action.button);
+        eventData.update(state, actionInputSource);
+      }
+
+      await dispatchEvent("synthesizeTouchAtPoint", context, { eventData });
+    }
   }
 }
 
@@ -2547,11 +2604,9 @@ class MousePointer extends Pointer {
     });
     mouseEvent.update(state, inputSource);
 
-    if (mouseEvent.ctrlKey) {
-      if (lazy.AppInfo.isMac) {
-        mouseEvent.button = 2;
-        state.clickTracker.reset();
-      }
+    if (mouseEvent.ctrlKey && lazy.AppInfo.isMac) {
+      mouseEvent.button = 2;
+      state.clickTracker.reset();
     } else {
       mouseEvent.clickCount = state.clickTracker.count + 1;
     }
@@ -3091,13 +3146,13 @@ class WheelEventData extends InputEventData {
 }
 
 /**
- * Representation of a multi touch event.
+ * Representation of one or more touch events.
  */
-class MultiTouchEventData extends PointerEventData {
+class TouchEventData extends PointerEventData {
   #setGlobalState;
 
   /**
-   * Creates a new {@link MultiTouchEventData} instance.
+   * Creates a new {@link TouchEventData} instance.
    *
    * @param {string} type
    *     The event type.

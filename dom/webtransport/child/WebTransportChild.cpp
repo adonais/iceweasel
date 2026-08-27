@@ -67,6 +67,25 @@ void WebTransportChild::CloseAll() {
   return IPC_OK();
 }
 
+::mozilla::ipc::IPCResult WebTransportChild::RecvDraining() {
+  if (mTransport) {
+    RefPtr<WebTransport> self(mTransport);
+    self->ResolveDraining();
+  }
+  return IPC_OK();
+}
+
+::mozilla::ipc::IPCResult WebTransportChild::RecvNegotiatedProtocol(
+    const nsACString& aSubprotocol) {
+  LOG(("WebTransportChild::RecvNegotiatedProtocol: %s",
+       PromiseFlatCString(aSubprotocol).get()));
+  if (mTransport) {
+    RefPtr<WebTransport> self(mTransport);
+    self->SetNegotiatedProtocol(aSubprotocol);
+  }
+  return IPC_OK();
+}
+
 ::mozilla::ipc::IPCResult WebTransportChild::RecvOnStreamResetOrStopSending(
     const uint64_t& aStreamId, const StreamResetOrStopSendingError& aError) {
   if (mTransport) {

@@ -190,6 +190,30 @@ class MetricsStorage:
 
         return self.stddata
 
+    def get_available_metrics(self, group_name="firefox", transformer=None):
+        """Returns the names of every metric found in the standardized data.
+
+        These are the subtest names present across all data types. They are
+        used to populate the metrics list when none were explicitly requested,
+        so that the data is still filtered (instead of skipped) and per-metric
+        processing continues to run in the metrics layers.
+
+        :param group_name str: The name for this results group.
+        :param transformer str: The name of the transformer to use when
+            parsing the data. Must match the one used elsewhere as the
+            standardized data is cached on first use.
+        :return list: The unique metric names, in order of appearance.
+        """
+        results = self.get_standardized_data(
+            group_name=group_name, transformer=transformer
+        )
+        names = []
+        for data_info in results.values():
+            for res in data_info:
+                if res["subtest"] not in names:
+                    names.append(res["subtest"])
+        return names
+
     def filtered_metrics(
         self,
         group_name="firefox",
@@ -220,6 +244,7 @@ class MetricsStorage:
         results = self.get_standardized_data(
             group_name=group_name, transformer=transformer
         )
+
         if not metrics:
             return results
         if not exclude:
@@ -313,6 +338,30 @@ class MetricsStorage:
 _metrics = {}
 
 
+def _get_storage(metadata, path, prefix):
+    """Returns the cached MetricsStorage for a path/prefix, creating it once.
+
+    We cache an instance of MetricsStorage per metrics/storage combination so
+    the (potentially expensive) standardized data is only computed once and
+    shared across callers.
+    """
+    key = path, prefix
+    if key not in _metrics:
+        storage = _metrics[key] = MetricsStorage(path, prefix, metadata)
+        storage.set_results(metadata.get_results())
+    else:
+        storage = _metrics[key]
+    return storage
+
+
+def get_available_metrics(
+    metadata, path, prefix, group_name="firefox", transformer=None
+):
+    """Returns the names of every metric found in the metadata's data."""
+    storage = _get_storage(metadata, path, prefix)
+    return storage.get_available_metrics(group_name=group_name, transformer=transformer)
+
+
 def filtered_metrics(
     metadata,
     path,
@@ -331,12 +380,7 @@ def filtered_metrics(
     We're caching an instance of MetricsStorage per metrics/storage
     combination and compute the data only once when this function is called.
     """
-    key = path, prefix
-    if key not in _metrics:
-        storage = _metrics[key] = MetricsStorage(path, prefix, metadata)
-        storage.set_results(metadata.get_results())
-    else:
-        storage = _metrics[key]
+    storage = _get_storage(metadata, path, prefix)
 
     results = storage.filtered_metrics(
         group_name=group_name,

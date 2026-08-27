@@ -354,3 +354,111 @@ add_task(async function test_toggle_dispatches_event() {
     });
   });
 });
+
+add_task(async function test_loading_state_shimmer_and_swap() {
+  // Force reduced motion so the completion transition is deterministic: the
+  // shimmer loop is disabled and the scripted sweep short-circuits (no running
+  // animation to finish), so the swap to the completed label happens promptly
+  // instead of waiting on animation/timer callbacks that can stall in CI.
+  await SpecialPowers.pushPrefEnv({ set: [["ui.prefersReducedMotion", 1]] });
+
+  await withTestPage(async browser => {
+    // Enter the loading state with a pending label.
+    await setProps(browser, { label: "Searching tabs", isLoading: true });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-action-result");
+      const shadow = el.shadowRoot;
+
+      Assert.ok(
+        el.hasAttribute("is-loading"),
+        "is-loading is reflected while loading"
+      );
+      Assert.ok(
+        el.hasAttribute("shimmering"),
+        "shimmering treatment is applied while loading"
+      );
+      Assert.equal(
+        shadow.querySelector(".action-result-label").textContent.trim(),
+        "Searching tabs",
+        "The pending label is shown while loading"
+      );
+      // The expand chevron stays visible while loading so the card can be
+      // expanded mid-flight to reveal the in-progress steps.
+      Assert.notEqual(
+        content.getComputedStyle(
+          shadow.querySelector(".action-result-header"),
+          "::after"
+        ).display,
+        "none",
+        "The expand chevron is shown while loading"
+      );
+    });
+
+    // Completing swaps the label to the completed text.
+    await setProps(browser, { label: "Completed 2 steps", isLoading: false });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-action-result");
+      const shadow = el.shadowRoot;
+
+      await ContentTaskUtils.waitForCondition(
+        () => !el.hasAttribute("shimmering"),
+        "shimmering clears once the action completes"
+      );
+
+      Assert.ok(
+        !el.hasAttribute("is-loading"),
+        "is-loading is removed once completed"
+      );
+      Assert.equal(
+        shadow.querySelector(".action-result-label").textContent.trim(),
+        "Completed 2 steps",
+        "The label swaps to the completed text"
+      );
+      // The chevron returns once the card is interactive again.
+      Assert.notEqual(
+        content.getComputedStyle(
+          shadow.querySelector(".action-result-header"),
+          "::after"
+        ).display,
+        "none",
+        "The expand chevron is shown again once completed"
+      );
+    });
+  });
+});
+
+add_task(async function test_expand_while_loading() {
+  await withTestPage(async browser => {
+    await setProps(browser, {
+      label: "Searching the web with Exa",
+      rows: [{ label: "Searching the web with Exa", items: [] }],
+      isLoading: true,
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-action-result");
+      const shadow = el.shadowRoot;
+
+      Assert.ok(
+        el.hasAttribute("shimmering"),
+        "Card is shimmering while loading"
+      );
+      Assert.ok(
+        !shadow.querySelector(".action-result-expanded"),
+        "Not expanded initially"
+      );
+
+      const header = shadow.querySelector(".action-result-header");
+      header.getBoundingClientRect();
+      header.click();
+      await el.updateComplete;
+
+      Assert.ok(
+        shadow.querySelector(".action-result-expanded"),
+        "The card can be expanded while still loading"
+      );
+    });
+  });
+});

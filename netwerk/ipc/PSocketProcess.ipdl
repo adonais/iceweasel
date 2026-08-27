@@ -45,6 +45,7 @@ using mozilla::net::SocketInfo from "mozilla/net/DashboardTypes.h";
 using mozilla::net::DNSCacheEntries from "mozilla/net/DashboardTypes.h";
 using mozilla::net::HttpRetParams from "mozilla/net/DashboardTypes.h";
 using mozilla::net::Http3ConnectionStatsParams from "mozilla/net/DashboardTypes.h";
+using mozilla::net::SSLTokensCacheRecordInfo from "mozilla/net/DashboardTypes.h";
 using mozilla::net::NetAddr from "mozilla/net/DNS.h";
 using nsIDNSService::DNSFlags from "nsIDNSService.h";
 
@@ -142,7 +143,7 @@ parent:
 
   // Socket process pushes its TLS session token cache to the parent for
   // persistence to disk.
-  async SSLTokensCacheData(ByteBuf aBuf);
+  async SSLTokensCacheData(SSLTokensCacheRecordInfo[] aRecords);
 
 #if defined(XP_MACOSX) || defined(XP_IOS)
   async AppleFastDatapathProbeResult(bool aAvailable);
@@ -198,6 +199,8 @@ child:
     returns (HttpRetParams[] params);
   async GetHttp3ConnectionStatsData()
     returns (Http3ConnectionStatsParams[] params);
+  async GetSSLTokensCacheData()
+    returns (SSLTokensCacheRecordInfo[] records);
 
   async InitProxyAutoConfigChild(Endpoint<PProxyAutoConfigChild> endpoint);
 

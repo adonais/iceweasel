@@ -436,6 +436,35 @@ ffi::WGPUTextureAspect ConvertTextureAspect(
   return result;
 }
 
+ConvertTextureDescriptor::ConvertTextureDescriptor(
+    const dom::GPUTextureDescriptor& aDesc)
+    : mLabel(aDesc.mLabel) {
+  if (aDesc.mSize.IsRangeEnforcedUnsignedLongSequence()) {
+    const auto& seq = aDesc.mSize.GetAsRangeEnforcedUnsignedLongSequence();
+    mDesc.size.width = seq.Length() > 0 ? seq[0] : 1;
+    mDesc.size.height = seq.Length() > 1 ? seq[1] : 1;
+    mDesc.size.depth_or_array_layers = seq.Length() > 2 ? seq[2] : 1;
+  } else if (aDesc.mSize.IsGPUExtent3DDict()) {
+    const auto& dict = aDesc.mSize.GetAsGPUExtent3DDict();
+    mDesc.size.width = dict.mWidth;
+    mDesc.size.height = dict.mHeight;
+    mDesc.size.depth_or_array_layers = dict.mDepthOrArrayLayers;
+  } else {
+    MOZ_CRASH("Unexpected union");
+  }
+  mDesc.label = mLabel.Get();
+  mDesc.mip_level_count = aDesc.mMipLevelCount;
+  mDesc.sample_count = aDesc.mSampleCount;
+  mDesc.dimension = ffi::WGPUTextureDimension(aDesc.mDimension);
+  mDesc.format = ConvertTextureFormat(aDesc.mFormat);
+  mDesc.usage = aDesc.mUsage;
+
+  for (auto format : aDesc.mViewFormats) {
+    mViewFormats.AppendElement(ConvertTextureFormat(format));
+  }
+  mDesc.view_formats = {mViewFormats.Elements(), mViewFormats.Length()};
+}
+
 ffi::WGPUVertexFormat ConvertVertexFormat(const dom::GPUVertexFormat& aFormat) {
   ffi::WGPUVertexFormat result = ffi::WGPUVertexFormat_Sentinel;
   switch (aFormat) {
@@ -584,6 +613,9 @@ ffi::WGPUMultisampleState ConvertMultisampleState(
 ffi::WGPUBlendComponent ConvertBlendComponent(
     const dom::GPUBlendComponent& aDesc) {
   ffi::WGPUBlendComponent desc = {};
+  // NOTE: We rely on discriminants between `GPUBlendFactor` and
+  // `wgpu_types::BlendFactor` being the same. See also
+  // `dom/webidl/WebGPU.webidl`.
   desc.src_factor = ffi::WGPUBlendFactor(aDesc.mSrcFactor);
   desc.dst_factor = ffi::WGPUBlendFactor(aDesc.mDstFactor);
   desc.operation = ffi::WGPUBlendOperation(aDesc.mOperation);

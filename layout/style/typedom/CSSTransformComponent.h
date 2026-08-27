@@ -60,8 +60,10 @@ class CSSTransformComponent : public nsISupports, public nsWrapperCache {
   // https://drafts.css-houdini.org/css-typed-om-1/#dom-csstransformcomponent-is2d
   bool Is2D() const;
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-csstransformcomponent-is2d
   void SetIs2D(bool aArg);
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-csstransformcomponent-tomatrix
   already_AddRefed<DOMMatrix> ToMatrix(ErrorResult& aRv);
 
   void Stringify(nsACString&);

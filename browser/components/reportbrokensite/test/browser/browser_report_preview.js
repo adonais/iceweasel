@@ -150,7 +150,10 @@ add_task(async function testPreview() {
       await checkPreviewPanelUX(rbs);
 
       if (win.browsingContext.usePrivateBrowsing) {
-        rbs.blockedTrackersToggle.pressed = false;
+        if (rbs.blockedTrackersToggle.pressed) {
+          rbs.blockedTrackersToggle.click();
+          await isNotPressed(rbs.blockedTrackersToggle);
+        }
         const [data] = await checkPreviewPanelData(rbs, basicInfo);
         await checkPreviewPanelUX(rbs);
         ok(

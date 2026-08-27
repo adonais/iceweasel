@@ -977,6 +977,9 @@ export class ApplicationListItem {
     );
     this.actionsMenu.slot = "actions";
     this.actionsMenu.classList.add("actionsMenu");
+    this.actionsMenu.disabled = Services.prefs.prefIsLocked(
+      "pref.downloads.disable_button.edit_actions"
+    );
 
     this.node.appendChild(this.actionsMenu);
 

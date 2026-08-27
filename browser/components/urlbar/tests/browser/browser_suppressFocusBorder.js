@@ -159,10 +159,8 @@ add_task(async function newTab() {
     "Waiting for the Urlbar to become focused."
   );
   Assert.ok(
-    !win.gURLBar.hasAttribute(
-      "suppress-focus-border",
-      "The Urlbar does not have the suppress-focus-border attribute."
-    )
+    !win.gURLBar.hasAttribute("suppress-focus-border"),
+    "The Urlbar does not have the suppress-focus-border attribute."
   );
 
   BrowserTestUtils.removeTab(tab);
@@ -188,10 +186,8 @@ add_task(async function newTab_alreadyOpen() {
         "Waiting for the Urlbar panel to close."
       );
       Assert.ok(
-        !win.gURLBar.hasAttribute(
-          "suppress-focus-border",
-          "The Urlbar does not have the suppress-focus-border attribute."
-        )
+        !win.gURLBar.hasAttribute("suppress-focus-border"),
+        "The Urlbar does not have the suppress-focus-border attribute."
       );
       BrowserTestUtils.removeTab(tab);
     }
@@ -229,11 +225,11 @@ add_task(async function searchTip() {
     EventUtils.synthesizeMouseAtCenter(button, {}, win);
   });
 
-  Assert.ok(
-    !win.gURLBar.hasAttribute(
-      "suppress-focus-border",
-      "The Urlbar does not have the suppress-focus-border attribute."
-    )
+  // The tip's engagement effects run parent-side, so over the message path the
+  // blur that clears the attribute lands asynchronously after the pick.
+  await TestUtils.waitForCondition(
+    () => !win.gURLBar.hasAttribute("suppress-focus-border"),
+    "The Urlbar no longer has the suppress-focus-border attribute after picking the tip."
   );
 
   BrowserTestUtils.removeTab(tab);

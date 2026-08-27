@@ -25,6 +25,17 @@
   }
 }
 
+.pinned-tabs moz-button.selected.inactive::part(button) {
+  @media -moz-pref("browser.nova.enabled") {
+    outline-color: color-mix(in srgb, var(--tab-selected-outline-color) 60%, transparent);
+    --tab-border-color-accent: linear-gradient(
+      96deg,
+      color-mix(in srgb, var(--color-violet-30) 60%, transparent) 20.68%,
+      color-mix(in srgb, light-dark(var(--color-orange-30), var(--color-violet-50)) 60%, transparent) 79.34%
+    );
+  }
+}
+
 .pinned-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -35,4 +46,12 @@
 
 .sidebar-panel .sidebar-panel-scrollable-content {
   padding-inline: 0;
+}
+
+moz-input-search {
+  flex: 1;
+}
+
+.menu-button::part(button) {
+  margin-inline-start: var(--space-small);
 }

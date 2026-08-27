@@ -756,11 +756,7 @@
     }
 
     set selected(val) {
-      if (val) {
-        this.setAttribute("selected", "true");
-      } else {
-        this.removeAttribute("selected");
-      }
+      this.toggleAttribute("selected", val);
 
       setTimeout(() => {
         const { AutoCompleteParent } = ChromeUtils.importESModule(
@@ -772,7 +768,7 @@
     }
 
     get selected() {
-      return this.getAttribute("selected") == "true";
+      return this.hasAttribute("selected");
     }
   }
 

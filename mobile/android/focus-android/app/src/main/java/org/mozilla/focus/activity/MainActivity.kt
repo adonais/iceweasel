@@ -35,7 +35,6 @@ import mozilla.components.support.utils.DefaultDateTimeProvider
 import mozilla.components.support.utils.SafeIntent
 import mozilla.components.support.utils.StatusBarUtils
 import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.experiments.nimbus.initializeTooling
 import org.mozilla.experiments.nimbus.internal.FeatureHolder
 import org.mozilla.focus.GleanMetrics.AppOpened
 import org.mozilla.focus.GleanMetrics.Notifications
@@ -76,7 +75,7 @@ private const val REQUEST_TIME_OUT = 2000L
 open class MainActivity : EdgeToEdgeActivity() {
     private var isToolbarInflated = false
     private val intentProcessor by lazy {
-        IntentProcessor(this, components.tabsUseCases, components.customTabsUseCases)
+        IntentProcessor(this, components.tabsUseCases, components.customTabsUseCases, components.searchUseCases)
     }
     private val onboardingStorage by lazy { OnboardingStorage(this) }
     private val navigator by lazy {
@@ -112,7 +111,6 @@ open class MainActivity : EdgeToEdgeActivity() {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        components.experiments.initializeTooling(applicationContext, intent)
         installSplashScreen()
 
         updateSecureWindowFlags()

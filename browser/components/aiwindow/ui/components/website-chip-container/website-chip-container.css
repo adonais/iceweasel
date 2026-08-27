@@ -5,6 +5,16 @@
 :host {
   display: block;
   min-width: 0;
+
+  @media not ((prefers-contrast) or (forced-colors)) {
+    --overflow-more-background-color: light-dark(var(--color-violet-0), var(--color-violet-80));
+    --overflow-more-background-color-hover: light-dark(color-mix(in srgb, var(--color-violet-50) 15%, transparent), var(--color-violet-110));
+
+    @media -moz-pref("browser.nova.enabled") {
+      --overflow-more-background-color: light-dark(color-mix(in srgb, var(--color-violet-desaturated-10) 70%, transparent), var(--color-violet-desaturated-60));
+      --overflow-more-background-color-hover: var(--overflow-more-background-color);
+    }
+  }
 }
 
 .chip-container {
@@ -14,22 +24,60 @@
 .chip-container-scroller {
   display: flex;
   flex-wrap: nowrap;
+  gap: var(--space-xsmall);
+
+  /* Overflowing chips should scroll or collapse instead of squeezing. */
+  > * {
+    flex: 0 0 auto;
+  }
+}
+
+/* Mirrors the sizing of `ai-website-chip` so the button matches the chips. */
+.chip-container-scroller.smartwindow-overflow-row {
+  moz-button {
+    --button-border: 1px solid transparent;
+    --button-border-radius: var(--border-radius-medium);
+    --button-font-weight: var(--font-weight);
+    --button-min-height: 0;
+    --button-padding: var(--space-small);
+    white-space: nowrap;
+
+    /* Match the chip label styling. */
+    &::part(button) {
+      font-size: var(--font-size-small);
+      line-height: var(--size-item-small);
+    }
+
+    @media not ((prefers-contrast) or (forced-colors)) {
+      --button-background-color-ghost: var(--overflow-more-background-color);
+      --button-background-color-ghost-hover: var(--overflow-more-background-color-hover);
+      --button-text-color-ghost: light-dark(var(--color-violet-90), var(--color-violet-10));
+
+      @media -moz-pref("browser.nova.enabled") {
+        --button-text-color-ghost: light-dark(var(--color-violet-desaturated-90), var(--color-violet-desaturated-0));
+      }
+    }
+
+    @media -moz-pref("browser.nova.enabled") {
+      --button-border: var(--focus-outline-width) solid transparent;
+    }
+  }
+}
+
+:host([chip-size="small"]) .chip-container-scroller.smartwindow-overflow-row moz-button {
+  --button-border-radius: var(--border-radius-large);
+  --button-padding: var(--space-xxsmall) var(--space-small);
 }
 
 /* when the chip container is part of the chat bubble */
 :host(.chat-bubble-chips) .chip-container-scroller {
   align-items: flex-end;
   flex-direction: column;
-  gap: var(--space-xsmall);
 }
 
 /* when the chip container is part of the smartbar */
 :host(.smartbar-context-chips-header) .chip-container {
-  padding-inline-start: var(--space-medium);
-  /* This padding aligns with border-width to maintain consistent spacing that creates the visual that the chips are coming to the edge. */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  padding-inline-end: var(--border-width);
-  padding-block-start: var(--space-large);
+  padding-block: var(--space-large) var(--space-xsmall);
 
   .chip-container-scroller {
     align-items: center;
@@ -38,6 +86,13 @@
     overflow-y: hidden;
     scrollbar-width: none;
     min-width: 0;
+    /* Fade the inline-end edge so the last chip dissolves into the frame's rounded
+     corner instead of colliding with its border, and to hint that the row scrolls. */
+    mask-image: linear-gradient(to right, transparent, var(--color-black) var(--space-large), var(--color-black) calc(100% - var(--space-large)), transparent);
+
+    & > *:first-child {
+      margin-inline-start: var(--space-large);
+    }
 
     > slot {
       display: contents;

@@ -725,6 +725,15 @@ void APZCTesterBase::Pan(const RefPtr<InputReceiver>& aTarget,
     } else if (aTouchStart.y != aTouchEnd.y) {
       overcomeTouchToleranceY = panThreshold;
     }
+    // For a negative-direction gesture we add the offset and subtract it for a
+    // positive-direction one, so the touch-down is "behind" the start
+    // coordinate along the gesture direction.
+    if (aTouchEnd.x > aTouchStart.x) {
+      overcomeTouchToleranceX = -overcomeTouchToleranceX;
+    }
+    if (aTouchEnd.y > aTouchStart.y) {
+      overcomeTouchToleranceY = -overcomeTouchToleranceY;
+    }
   }
 
   const TimeDuration TIME_BETWEEN_TOUCH_EVENT =

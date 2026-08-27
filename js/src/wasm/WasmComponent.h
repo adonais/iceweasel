@@ -451,7 +451,8 @@ class ComponentResourceBuiltin {
  public:
   ComponentResourceBuiltin(Kind kind, ComponentType resourceType)
       : kind_(kind), resourceType_(resourceType) {
-    MOZ_ASSERT(resourceType.kind() == ComponentTypeKind::Resource);
+    MOZ_ASSERT(resourceType.kind() == ComponentTypeKind::Resource ||
+               resourceType.kind() == ComponentTypeKind::SubResource);
   }
 
   Kind kind() const { return kind_; }
@@ -825,8 +826,15 @@ class ComponentExternDesc {
     return coreModuleIndex_;
   }
 
-  static bool matches(const ComponentExternDesc& sub,
-                      const ComponentExternDesc& super);
+  // Checks whether an item can be ascribed the given new externdesc, e.g. a
+  // defined resource type being ascribed the (sub resource) type bound.
+  // `isNewSubResource` should be true if attempting to ascribe `(sub resource)`
+  // _and_ the `(sub resource)` was part of the current definition (as opposed
+  // to an eq of a previously-defined `(sub resource)`); i.e. are we
+  // "generating" the resource type now or did we already generate it?
+  static bool compatible(const ComponentExternDesc& defined,
+                         const ComponentExternDesc& ascribed,
+                         bool isNewSubResource);
 };
 
 static_assert(std::is_default_constructible_v<ComponentExternDesc>);
@@ -1080,7 +1088,7 @@ class ComponentInstance {
   const SharedComponent component_;
 
   using CoreInstanceVector =
-      GCVector<WasmInstanceObject*, 0, SystemAllocPolicy>;
+      GCVector<HeapPtr<WasmInstanceObject*>, 0, SystemAllocPolicy>;
   // An array of all the core instances owned by this component instance. NOTE!
   // This array is sparse; its indices will always correspond 1:1 with
   // Component::coreInstances(), but not all such instances will get a

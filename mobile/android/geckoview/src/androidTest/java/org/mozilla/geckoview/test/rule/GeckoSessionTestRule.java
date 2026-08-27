@@ -2577,14 +2577,6 @@ public class GeckoSessionTestRule implements TestRule {
     return (Boolean) webExtensionApiCall(session, "GetActive", null);
   }
 
-  public void triggerCookieBannerDetected(final @NonNull GeckoSession session) {
-    webExtensionApiCall(session, "TriggerCookieBannerDetected", null);
-  }
-
-  public void triggerCookieBannerHandled(final @NonNull GeckoSession session) {
-    webExtensionApiCall(session, "TriggerCookieBannerHandled", null);
-  }
-
   public void triggerTranslationsOffer(final @NonNull GeckoSession session) {
     webExtensionApiCall(session, "TriggerTranslationsOffer", null);
   }

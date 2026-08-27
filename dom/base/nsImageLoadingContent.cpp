@@ -309,6 +309,10 @@ void nsImageLoadingContent::Notify(imgIRequest* aRequest, int32_t aType,
   }
 }
 
+bool nsImageLoadingContent::HasPendingAlwaysLoadImageTask() const {
+  return mPendingImageLoadTask && mPendingImageLoadTask->AlwaysLoad();
+}
+
 void nsImageLoadingContent::OnLoadComplete(imgIRequest* aRequest,
                                            uint32_t aImageStatus) {
   // XXXjdm This occurs when we have a pending request created, then another
@@ -1348,17 +1352,6 @@ already_AddRefed<Promise> nsImageLoadingContent::RecognizeCurrentImageText(
             }
             auto& textRecognitionResult = aValue.ResolveValue();
             Element* el = ilc->AsContent()->AsElement();
-
-            // When enabled, this feature will place the recognized text as
-            // spans inside of the shadow dom of the img element. These are then
-            // positioned so that the user can select the text.
-            if (Preferences::GetBool("dom.text-recognition.shadow-dom-enabled",
-                                     false)) {
-              el->AttachAndSetUAShadowRoot(Element::NotifyUAWidget::Yes);
-              TextRecognition::FillShadow(*el->GetShadowRoot(),
-                                          textRecognitionResult);
-              el->NotifyUAWidgetSetupOrChange();
-            }
 
             nsTArray<ImageText> imageTexts(
                 textRecognitionResult.quads().Length());

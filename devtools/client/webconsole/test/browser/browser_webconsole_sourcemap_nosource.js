@@ -55,7 +55,7 @@ add_task(async function () {
   ok(node, "source map error is displayed in web console");
 
   ok(
-    !!node.querySelector(".learn-more-link"),
+    !!node.querySelector(".webconsole-learn-more-link"),
     "source map error has learn more link"
   );
 });

@@ -36,3 +36,16 @@ Examples used in the Memory tool documentation.
 
 - {doc}`Monster example <monster_example/index>`
 - {doc}`DOM allocation example <dom_allocation_example/index>`
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+aggregate_view/index
+basic_operations/index
+dom_allocation_example/index
+dominators/index
+dominators_view/index
+monster_example/index
+tree_map_view/index
+```

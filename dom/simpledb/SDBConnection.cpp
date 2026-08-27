@@ -385,7 +385,7 @@ SDBConnection::Write(JS::Handle<JS::Value> aValue, JSContext* aCx,
   }
 
   SDBRequestWriteParams params;
-  params.data() = data;
+  params.data() = std::move(data);
 
   RefPtr<SDBRequest> request = new SDBRequest(this);
 

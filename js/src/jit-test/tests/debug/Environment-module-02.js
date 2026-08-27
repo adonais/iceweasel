@@ -9,7 +9,7 @@ const m = g.parseModule(`
   export function foo() { return x; }
   foo();
 `);
-moduleLink(m);
+moduleLoadAndLink(m);
 
 let fooFunction;
 dbg.onEnterFrame = function (frame) {

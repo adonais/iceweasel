@@ -32,7 +32,7 @@ namespace wasm {
 
 class Realm {
   JSRuntime* runtime_;
-  InstanceVector instances_;
+  InstanceSet instances_;
 
  public:
   explicit Realm(JSRuntime* rt);
@@ -47,12 +47,19 @@ class Realm {
   bool registerInstance(JSContext* cx, Handle<WasmInstanceObject*> instanceObj);
   void unregisterInstance(Instance& instance);
 
-  // Return a vector of all live instances in the realm. The lifetime of
+  // Return the set of all live instances in the realm. The lifetime of
   // these Instances is determined by their owning WasmInstanceObject.
-  // Note that accessing instances()[i]->object() triggers a read barrier
-  // since instances() is effectively a weak list.
+  // Note that accessing an instance's object() triggers a read barrier
+  // since instances() is effectively a weak set. This read barrier is only
+  // effective while the owning zone is being marked; traceWeakInstances()
+  // prunes dying entries at the start of sweeping so that the set never
+  // exposes an about-to-be-finalized instance to the mutator.
 
-  const InstanceVector& instances() const { return instances_; }
+  const InstanceSet& instances() const { return instances_; }
+
+  // Remove instances whose owning object is about to be finalized. Called at
+  // the start of zone sweeping, when the instances() read barrier is a no-op.
+  void traceWeakInstances();
 
   // Ensure all Instances in this Realm have profiling labels created.
 

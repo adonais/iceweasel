@@ -194,13 +194,13 @@ ConfigureVideoEncoderSettings(const VideoCodecConfig& aConfig,
   aConfig.mAv1Config.apply([&](const Av1Config& config) {
     MOZ_ASSERT(aConfig.mName == kAv1CodecName);
     config.mProfile.apply([&](uint8_t value) {
-      aParameters[kAv1FmtpProfile] = std::to_string(value);
+      aParameters[std::string(kAv1FmtpProfile)] = std::to_string(value);
     });
     config.mLevelIdx.apply([&](uint8_t value) {
-      aParameters[kAv1FmtpLevelIdx] = std::to_string(value);
+      aParameters[std::string(kAv1FmtpLevelIdx)] = std::to_string(value);
     });
     config.mTier.apply([&](uint8_t value) {
-      aParameters[kAv1FmtpTier] = std::to_string(value);
+      aParameters[std::string(kAv1FmtpTier)] = std::to_string(value);
     });
   });
 
@@ -218,10 +218,11 @@ ConfigureVideoEncoderSettings(const VideoCodecConfig& aConfig,
           webrtc::ParseH264ProfileLevelId(profileLevelId.c_str());
       MOZ_DIAGNOSTIC_ASSERT(parsedProfileLevelId);
       if (parsedProfileLevelId) {
-        aParameters[kH264FmtpProfileLevelId] = profileLevelId;
+        aParameters[kH264FmtpProfileLevelId] = std::move(profileLevelId);
       }
     }
-    aParameters[kH264FmtpSpropParameterSets] = aConfig.mSpropParameterSets;
+    aParameters[std::string(kH264FmtpSpropParameterSets)] =
+        aConfig.mSpropParameterSets;
   }
   if (aConfig.mName == kVp8CodecName) {
     webrtc::VideoCodecVP8 vp8_settings =
@@ -577,11 +578,11 @@ void WebrtcVideoConduit::OnControlConfigChange() {
 
       // Check for the keyframe request type: PLI is preferred over FIR, and FIR
       // is preferred over none.
-      if (codec_config.RtcpFbNackIsSet(kRtcpFbNackParamPli)) {
+      if (codec_config.RtcpFbNackIsSet(std::string(kRtcpFbNackParamPli))) {
         newRtp.keyframe_method = webrtc::KeyFrameReqMethod::kPliRtcp;
       } else if (newRtp.keyframe_method !=
                      webrtc::KeyFrameReqMethod::kPliRtcp &&
-                 codec_config.RtcpFbCcmIsSet(kRtcpFbCcmParamFir)) {
+                 codec_config.RtcpFbCcmIsSet(std::string(kRtcpFbCcmParamFir))) {
         newRtp.keyframe_method = webrtc::KeyFrameReqMethod::kFirRtcp;
       }
 
@@ -589,7 +590,7 @@ void WebrtcVideoConduit::OnControlConfigChange() {
       // has none? In practice, that's not a useful configuration, and
       // VideoReceiveStream::Config can't represent that, so simply union the
       // (boolean) settings
-      if (codec_config.RtcpFbNackIsSet(kParamValueEmpty)) {
+      if (codec_config.RtcpFbNackIsSet(std::string(kParamValueEmpty))) {
         newRtp.nack.rtp_history_ms = 1000;
       }
       newRtp.tmmbr |= codec_config.RtcpFbCcmIsSet(kRtcpFbCcmParamTmmbr);
@@ -841,7 +842,7 @@ void WebrtcVideoConduit::OnControlConfigChange() {
           const bool useFECDefaults =
               !codecConfig->RtcpFbFECIsSet() ||
               (codecConfig->mName == kH264CodecName &&
-               codecConfig->RtcpFbNackIsSet(kParamValueEmpty));
+               codecConfig->RtcpFbNackIsSet(std::string(kParamValueEmpty)));
           newRtp.ulpfec.ulpfec_payload_type =
               useFECDefaults ? kNullPayloadType
                              : codecConfig->mULPFECPayloadType;
@@ -853,7 +854,8 @@ void WebrtcVideoConduit::OnControlConfigChange() {
         }
 
         newRtp.nack.rtp_history_ms =
-            codecConfig->RtcpFbNackIsSet(kParamValueEmpty) ? 1000 : 0;
+            codecConfig->RtcpFbNackIsSet(std::string(kParamValueEmpty)) ? 1000
+                                                                        : 0;
 
         newRtp.rids.clear();
         if (!codecConfig->mEncodings.empty() &&

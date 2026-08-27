@@ -76,7 +76,10 @@ let consoleTesterFiles = {
       getAPI(context) {
         if (!globalThis.consoleTester_testConsole) {
           const mozExtJsFile = context.extension.getURL("common.js");
-          Services.scriptloader.loadSubScript(mozExtJsFile, globalThis);
+          Services.scriptloader.loadSubScriptWithOptions(mozExtJsFile, {
+            target: globalThis,
+            allowUnsafeURL: true,
+          });
         }
         return {
           consoleTester: {
@@ -93,7 +96,10 @@ let consoleTesterFiles = {
       getAPI(context) {
         if (!globalThis.consoleTester_testConsole) {
           const mozExtJsFile = context.extension.getURL("common.js");
-          Services.scriptloader.loadSubScript(mozExtJsFile, globalThis);
+          Services.scriptloader.loadSubScriptWithOptions(mozExtJsFile, {
+            target: globalThis,
+            allowUnsafeURL: true,
+          });
         }
         return {
           consoleTester: {

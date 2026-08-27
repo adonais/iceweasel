@@ -70,6 +70,11 @@ const void* CompileRuntime::addressOfJitStackLimit() {
   return runtime()->mainContextFromAnyThread()->addressOfJitStackLimit();
 }
 
+const void* CompileRuntime::addressOfJitStackLimitNoInterrupt() {
+  JSContext* cx = runtime()->mainContextFromAnyThread();
+  return cx->addressOfJitStackLimitNoInterrupt();
+}
+
 const void* CompileRuntime::addressOfInterruptBits() {
   return runtime()->mainContextFromAnyThread()->addressOfInterruptBits();
 }

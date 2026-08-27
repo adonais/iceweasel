@@ -52,6 +52,7 @@ impl Example for App {
         let complex = ComplexClipRegion::new(
             (50, 50).to(150, 150),
             BorderRadius::uniform(20.0),
+            LayoutSideOffsets::zero(),
             ClipMode::Clip
         );
         let clip_id = builder.define_clip_rounded_rect(
@@ -88,6 +89,7 @@ impl Example for App {
             bottom: border_side,
             left: border_side,
             radius: BorderRadius::uniform(20.0),
+            inset: LayoutSideOffsets::zero(),
             do_aa: true,
         });
 

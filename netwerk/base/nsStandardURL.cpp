@@ -447,7 +447,7 @@ nsresult nsStandardURL::NormalizeIDN(const nsACString& aHost,
   if (aResult.IsEmpty()) {
     aResult.Assign(displayHost);
   } else {
-    mDisplayHost = displayHost;
+    mDisplayHost = std::move(displayHost);
   }
   return NS_OK;
 }
@@ -1248,7 +1248,7 @@ nsresult nsStandardURL::CheckIfHostIsAscii() {
   }
 
   if (!mozilla::IsAscii(displayHost)) {
-    mDisplayHost = displayHost;
+    mDisplayHost = std::move(displayHost);
   }
 
   return NS_OK;
@@ -1980,7 +1980,7 @@ nsresult nsStandardURL::SetHost(const nsACString& input) {
       if (NS_FAILED(rv)) {
         return rv;
       }
-      hostBuf = ipString;
+      hostBuf = std::move(ipString);
     }
   }
 

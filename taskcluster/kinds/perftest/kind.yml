@@ -21,6 +21,7 @@ transforms:
 
 tasks-from:
     - android.yml
+    - android-emulator.yml
     - linux.yml
     - macosx.yml
     - windows11-24h2.yml
@@ -49,6 +50,7 @@ task-defaults:
               name: public/build
               path: artifacts
     run:
+        clone-with: hg
         run-as-root: true
         using: run-task
         checkout: false

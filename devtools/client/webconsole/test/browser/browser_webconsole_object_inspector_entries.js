@@ -18,7 +18,7 @@ const EXPECTED_VALUES_FILE =
 add_task(async function () {
   await pushPref("dom.event.dragexit.enabled", true);
   // nsHttpServer does not support https
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   const hud = await openNewTabAndConsole("http://example.com");
   const outputScroller = hud.ui.outputScroller;
 

@@ -213,7 +213,7 @@ static SkPDF::Metadata GetDefaultMetadata() {
 
 nsresult PrintTargetSkPDF::BeginPrinting(const nsAString& aTitle,
                                          const nsAString& aPrintToFileName,
-                                         uint64_t aBrowsingContextId,
+                                         uint64_t aInnerWindowId,
                                          int32_t aStartPage, int32_t aEndPage) {
   // We need to create the SkPDFDocument here rather than in CreateOrNull
   // because it's only now that we are given aTitle which we want for the
@@ -235,7 +235,7 @@ nsresult PrintTargetSkPDF::BeginPrinting(const nsAString& aTitle,
   // structRoot needs to survive until SkPDF::MakeDocument returns.
   SkPDF::StructureElementNode structRoot = {};
   if (auto* builder =
-          mozilla::a11y::PdfStructTreeBuilder::Get(aBrowsingContextId)) {
+          mozilla::a11y::PdfStructTreeBuilder::Get(aInnerWindowId)) {
     if (builder->BuildStructTree(structRoot)) {
       metadata.fStructureElementTreeRoot = &structRoot;
       metadata.fOutline = SkPDF::Metadata::Outline::StructureElementHeaders;

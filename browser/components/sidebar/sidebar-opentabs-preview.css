@@ -1,0 +1,118 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  display: block;
+  min-inline-size: 17em;
+  max-inline-size: 24em;
+  padding: var(--space-large);
+}
+
+.preview-heading {
+  margin: 0;
+  padding-inline: var(--space-xsmall);
+  padding-block-end: var(--space-xsmall);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight);
+  color: var(--text-color-deemphasized);
+}
+
+.preview-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  padding-inline: var(--space-medium);
+  padding-block: var(--space-xsmall);
+  border-radius: var(--border-radius-medium);
+  margin-inline: calc(-1 * var(--space-small));
+
+  @media -moz-pref("browser.nova.enabled") {
+    border-radius: var(--border-radius-circle);
+  }
+
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--button-background-color-ghost-hover);
+
+    @media (forced-colors) {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      background-color: SelectedItem;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      color: SelectedItemText;
+    }
+  }
+}
+
+.favicon {
+  inline-size: var(--size-item-small);
+  block-size: var(--size-item-small);
+  flex-shrink: 0;
+}
+
+.audio-button,
+.close-button {
+  --button-size-icon: 24px;
+  --button-min-height: 24px;
+  --icon-size: var(--icon-size-xsmall);
+  flex-shrink: 0;
+
+  &::part(button) {
+    cursor: pointer;
+  }
+}
+
+.preview-row-title {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.close-button {
+  visibility: hidden;
+
+  .preview-row:hover &,
+  .preview-row:focus-within & {
+    visibility: visible;
+  }
+}
+
+.preview-separator {
+  margin-block: var(--space-xsmall);
+  margin-inline: 0;
+  border: none;
+  border-block-start: var(--border-width) solid var(--border-color);
+}
+
+.show-all-button {
+  inline-size: 100%;
+  margin: 0;
+  padding: var(--space-small);
+  border: none;
+  border-radius: var(--border-radius-medium);
+  background-color: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--font-size-small);
+  text-align: start;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--button-background-color-ghost-hover);
+
+    @media (forced-colors) {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      background-color: SelectedItem;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      color: SelectedItemText;
+    }
+  }
+}

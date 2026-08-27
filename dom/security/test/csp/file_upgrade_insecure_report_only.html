@@ -17,10 +17,10 @@
     }
     var myImg = document.getElementById("testimage");
     // we need to test http functionality here, so we need to load an http url
-    /* eslint-disable @microsoft/sdl/no-insecure-url */
+    /* eslint-disable sdl/no-insecure-url */
     myImg.src =
       `http://example.com/tests/dom/security/test/csp/file_upgrade_insecure_report_only_server.sjs?img-${route}`;
-    /* eslint-enable @microsoft/sdl/no-insecure-url */
+    /* eslint-enable sdl/no-insecure-url */
     myImg.onload = function(e) {
       window.parent.postMessage({result: `${route}-img-ok`}, "*");
     };

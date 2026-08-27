@@ -7,10 +7,10 @@
 #ifndef mozilla_mfbt_initializedonce_h_
 #define mozilla_mfbt_initializedonce_h_
 
+#include <type_traits>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
-
-#include <type_traits>
 
 namespace mozilla {
 

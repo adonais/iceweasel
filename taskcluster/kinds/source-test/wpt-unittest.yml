@@ -18,6 +18,7 @@ default:
     treeherder:
         symbol: wpt-unittest
     run:
+        clone-with: hg
         using: run-task
         cwd: '{checkout}'
         command: ./mach wpt-unittest -e py39

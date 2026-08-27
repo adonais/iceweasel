@@ -15,10 +15,13 @@ import mozilla.components.feature.top.sites.db.toPinnedSite
 /**
  * A storage implementation for organizing pinned sites.
  */
-class PinnedSiteStorage(context: Context) {
+class PinnedSiteStorage(
+    context: Context,
+    currentTimeMillis: () -> Long = { System.currentTimeMillis() },
+) {
 
     @VisibleForTesting
-    internal var currentTimeMillis: () -> Long = { System.currentTimeMillis() }
+    internal var currentTimeMillis: () -> Long = currentTimeMillis
 
     @VisibleForTesting
     internal var database: Lazy<TopSiteDatabase> = lazy { TopSiteDatabase.get(context) }

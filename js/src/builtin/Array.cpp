@@ -1136,7 +1136,7 @@ static bool ArraySpeciesCreate(JSContext* cx, HandleObject origArray,
   FixedInvokeArgs<2> args(cx);
 
   args[0].setObject(*origArray);
-  args[1].set(NumberValue(length));
+  args[1].setNumber(length);
 
   RootedValue rval(cx);
   if (!CallSelfHostedFunction(cx, cx->names().ArraySpeciesCreate,

@@ -430,6 +430,22 @@ class SystemEngineSession(
     }
 
     /**
+     * See [EngineSession.sendGleanBrokenSiteReport]
+     */
+    override fun sendGleanBrokenSiteReport(
+        details: JSONObject?,
+        description: String?,
+        reason: String,
+        url: String,
+        sendTabSpecificInfo: Boolean,
+        sendBlockedUrls: Boolean,
+        onResult: () -> Unit,
+        onException: (Throwable) -> Unit,
+    ) {
+        throw UnsupportedOperationException("Sending broken site report via Glean is not available in this engine")
+    }
+
+    /**
      * See [EngineSession.getBrokenSiteReport]
      */
     override fun getBrokenSiteReport(
@@ -497,13 +513,6 @@ class SystemEngineSession(
         onException: (Throwable) -> Unit,
     ) {
         throw UnsupportedOperationException("Setting the site's translate setting is not available in this engine")
-    }
-
-    override fun hasCookieBannerRuleForSession(
-        onResult: (Boolean) -> Unit,
-        onException: (Throwable) -> Unit,
-    ) {
-        throw UnsupportedOperationException("Cookie Banner handling is not available in this engine")
     }
 
     /**

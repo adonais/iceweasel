@@ -8,7 +8,7 @@
     See https://developer.android.com/training/package-visibility/declaring for more details.-->
 
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
-        tools:ignore="PackageVisibilityPolicy,QueryAllPackagesPermission" />
+        tools:ignore="QueryAllPackagesPermission" />
 
     <queries>
         <intent>

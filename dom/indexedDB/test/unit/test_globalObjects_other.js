@@ -33,7 +33,7 @@ function* testSteps() {
   Cu.evalInSandbox(
     "Components.classes['@mozilla.org/moz/jssubscript-loader;1'] \
                .createInstance(Components.interfaces.mozIJSSubScriptLoader) \
-               .loadSubScript(__SCRIPT_URI_SPEC__);",
+               .loadSubScriptWithOptions(__SCRIPT_URI_SPEC__, { allowUnsafeURL: true });",
     sandbox,
     "1.7"
   );

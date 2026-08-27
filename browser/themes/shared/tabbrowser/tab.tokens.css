@@ -114,7 +114,7 @@
       --tab-background-color-selected: var(--toolbar-background-color);
       --tab-border-color-accent: linear-gradient(96deg, var(--tab-border-color-selected-leading) 20.68%, var(--tab-border-color-selected-trailing) 79.34%);
       --tab-border-color-selected-leading: var(--color-violet-30);
-      --tab-border-color-selected-trailing: light-dark(var(--color-orange-30), var(--color-violet-50));
+      --tab-border-color-selected-trailing: var(--color-orange-30);
       --tab-border-radius: var(--toolbarbutton-border-radius);
       --tab-box-shadow-selected: none;
       --tab-group-blue: light-dark(var(--color-blue-50), var(--color-blue-30));
@@ -144,6 +144,18 @@
       --tab-loading-fill: var(--color-accent-primary);
       --tab-margin-block: 6px;
       --tab-outline-offset: -1px;
+    }
+  }
+
+  /* Bug 1879900: Can't nest media queries inside of :host, :root selector
+   until Bug 1879349 lands */
+  @layer tokens-forced-colors-nova {
+    @media (forced-colors) {
+      :root,
+      :host {
+        --tab-border-color-selected-leading: var(--border-color);
+        --tab-border-color-selected-trailing: var(--border-color);
+      }
     }
   }
 

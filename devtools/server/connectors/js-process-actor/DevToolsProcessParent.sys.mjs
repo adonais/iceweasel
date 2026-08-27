@@ -130,6 +130,22 @@ export class DevToolsProcessParent extends JSProcessActorParent {
         `Watcher Actor with ID '${watcherActorID}' can't be found.`
       );
     }
+    const { innerWindowId } = targetActorForm;
+    if (innerWindowId) {
+      const windowGlobal = WindowGlobalParent.getByInnerWindowId(innerWindowId);
+      if (!windowGlobal) {
+        throw new Error(
+          `Unable to find WindowGlobal in the parent process for ${innerWindowId}`
+        );
+      }
+      if (windowGlobal.domProcess != this.manager) {
+        throw new Error(
+          `The target's window global  ${innerWindowId}' ${windowGlobal.domProcess.osPid} doesn't relate to this process ${this.manager.osPid}`
+        );
+      }
+    } else if (targetActorForm.isTopLevelTarget) {
+      throw new Error("Unexpected top level target without an innerWindowId");
+    }
     const connection = watcher.conn;
 
     // If this is the first target actor for this watcher,

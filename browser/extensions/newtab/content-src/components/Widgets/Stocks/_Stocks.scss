@@ -26,6 +26,40 @@
   align-items: center;
   display: flex;
   justify-content: space-between;
+
+  .stocks-badge-title-wrapper {
+    align-items: center;
+    display: flex;
+    gap: var(--space-small);
+    min-inline-size: 0;
+  }
+}
+
+// moz-badge renders its label in shadow DOM, so it can only be styled here
+// through its token custom properties (padding/background) plus inherited
+// properties (text-transform). The green "filled" look normally comes from
+// type="new", which errors on the unregistered moz-badge-new2 string, so
+// paint the pill on the host and recolor via the same tokens the default
+// badge reads. Kept at the top level (not nested under .stocks-title-wrapper)
+// so the forced-colors override below matches its specificity and wins.
+.stocks-new-badge {
+  flex: none;
+  background-color: var(--badge-background-color-filled);
+  border-radius: var(--badge-border-radius);
+  text-transform: uppercase;
+
+  --badge-padding-block: 1px;
+  --badge-padding-inline: var(--space-small);
+  --badge-background-color-filled: var(--color-green-40);
+  --badge-text-color: var(--badge-text-color-filled);
+  --badge-border-color: transparent;
+}
+
+// Keep the badge readable in High Contrast Mode by using the system accent.
+@media (forced-colors: active) {
+  .stocks-new-badge {
+    --badge-background-color-filled: AccentColor;
+  }
 }
 
 .stocks-title {

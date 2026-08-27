@@ -632,7 +632,7 @@ export class ScreenshotsOverlay {
         // face and move focus to the bottom right mover for adjustments
         if (Services.focus.focusedElement === this.previewFace) {
           let rect = this.previewFace.getBoundingClientRect();
-          this.hoverElementRegion.dimensions = rect;
+          this.hoverElementRegion.setDimensionsFromDOMRect(rect);
           this.draggingReadyStart();
           this.draggingReadyDragEnd({ doNotMoveFocus: true });
           this.bottomRightMover.focus({ focusVisible: true });
@@ -1630,7 +1630,7 @@ export class ScreenshotsOverlay {
   updateScreenshotsOverlayContainer() {
     let { scrollWidth, scrollHeight, scrollMinX } =
       this.windowDimensions.dimensions;
-    this.screenshotsContainer.style = `left:${scrollMinX};width:${scrollWidth}px;height:${scrollHeight}px;`;
+    this.screenshotsContainer.style = `left:${scrollMinX}px;width:${scrollWidth}px;height:${scrollHeight}px;`;
   }
 
   showScreenshotsOverlayContainer() {
@@ -1831,15 +1831,7 @@ export class ScreenshotsOverlay {
     }
 
     if (rect) {
-      let { scrollX, scrollY } = this.windowDimensions.dimensions;
-      let { left, top, right, bottom } = rect;
-      let newRect = {
-        left: left + scrollX,
-        top: top + scrollY,
-        right: right + scrollX,
-        bottom: bottom + scrollY,
-      };
-      this.hoverElementRegion.dimensions = newRect;
+      this.hoverElementRegion.setDimensionsFromDOMRect(rect);
       this.drawHoverElementRegion();
     } else {
       this.hoverElementRegion.resetDimensions();

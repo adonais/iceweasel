@@ -1233,3 +1233,25 @@ async function assertDisplayedRulesCount(
   const ruleElements = view.element.querySelectorAll(".ruleview-rule");
   is(ruleElements.length, expected, message);
 }
+
+/**
+ * Open a customizable <select> picker and wait for the markup mutation (which should
+ * be triggered by the addition of ::checkmark pseudo elements in the markup view).
+ * Note that this will close any dialog that is displayed on the content page.
+ *
+ * @param {Inspector} inspector
+ * @param {string} selector: The selector for the <select> element we want to open
+ */
+async function showCustomizableSelectPicker(inspector, selector) {
+  const onMarkupMutation = inspector.once("markupmutation");
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [selector], slctr => {
+    // Hide any opened modal (e.g. <dialog>) so we can actually click the <select>
+    for (const modal of content.document.querySelectorAll(":modal")) {
+      modal.close();
+    }
+    const selectEl = content.document.querySelector(slctr);
+    selectEl.scrollIntoView({ behavior: "instant" });
+    EventUtils.synthesizeMouseAtCenter(selectEl, {}, content);
+  });
+  await onMarkupMutation;
+}

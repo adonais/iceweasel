@@ -22,6 +22,10 @@
       const PREF_NATIVE_THEME = "browser.theme.native-theme";
       const PREF_ACTIVE_THEME_ID = "extensions.activeThemeID";
 
+      const { AppConstants } = ChromeUtils.importESModule(
+        "resource://gre/modules/AppConstants.sys.mjs"
+      );
+
       let originalCreateController;
 
       // The theme-picker element picks its controller in its constructor based on
@@ -170,6 +174,8 @@
       add_task(async function testStorybookNativeThemeCheckboxDisabled() {
         useController(ThemePickerStorybookController);
         let picker = await renderThemePicker();
+        picker.showNativeThemeOption = true;
+        await picker.updateComplete;
 
         let checkbox = picker.shadowRoot.querySelector("moz-checkbox");
         ok(
@@ -189,6 +195,52 @@
         ok(
           !checkbox.disabled,
           "The native theme checkbox is re-enabled for the default theme."
+        );
+      });
+
+      add_task(async function testNativeThemeCheckboxHiddenWhenOptionOff() {
+        useController(ThemePickerStorybookController);
+        let picker = await renderThemePicker();
+        picker.showNativeThemeOption = false;
+        await picker.updateComplete;
+
+        ok(
+          !picker.shadowRoot.querySelector("moz-checkbox"),
+          "The native theme checkbox is hidden when the option is off."
+        );
+      });
+
+      add_task(async function testNativeThemeCheckboxShownWhenOptionOn() {
+        useController(ThemePickerStorybookController);
+        let picker = await renderThemePicker();
+        picker.showNativeThemeOption = true;
+        await picker.updateComplete;
+
+        let checkbox = picker.shadowRoot.querySelector("moz-checkbox");
+        ok(
+          checkbox,
+          "The native theme checkbox is shown when the option is on."
+        );
+        ok(!checkbox.checked, "The checkbox reflects nativeTheme when off.");
+
+        picker.nativeTheme = true;
+        await picker.updateComplete;
+        ok(checkbox.checked, "The checkbox reflects nativeTheme when on.");
+      });
+
+      add_task(async function testDirectNativeThemeCheckboxLinuxOnly() {
+        useController(ThemePickerDirectController);
+        setThemePrefs({
+          systemUsesDark: null,
+          nativeTheme: false,
+          activeThemeId: DEFAULT_THEME_ID,
+        });
+        let picker = await renderThemePicker();
+
+        is(
+          !!picker.shadowRoot.querySelector("moz-checkbox"),
+          AppConstants.platform === "linux",
+          "The native theme checkbox is present only on Linux."
         );
       });
 
@@ -309,7 +361,12 @@
       });
 
       // The native theme checkbox is written to browser.theme.native-theme.
+      // The direct controller only shows the checkbox on Linux.
       add_task(async function testDirectNativeThemeChange() {
+        if (AppConstants.platform !== "linux") {
+          ok(true, "The native theme checkbox is Linux-only.");
+          return;
+        }
         useController(ThemePickerDirectController);
         setThemePrefs({
           systemUsesDark: null,
@@ -492,6 +549,58 @@
           "Uses aria-label l10n ID when showLabels is false."
         );
       });
+
+      add_task(
+        async function testDirectControllerUpdatesColorsOnOSThemeChange() {
+          useController(ThemePickerDirectController);
+          setThemePrefs({
+            systemUsesDark: null,
+            nativeTheme: false,
+            activeThemeId: "nova-sun@mozilla.org",
+          });
+          let picker = await renderThemePicker();
+
+          is(picker.appearance, "device", "Appearance starts in device mode.");
+
+          let themeItem = picker.shadowRoot.querySelector(
+            "moz-visual-picker-item[value='nova-sun@mozilla.org']"
+          );
+          let themePreview = themeItem.querySelector(".theme-preview");
+          let initialColor = getComputedStyle(themePreview).backgroundColor;
+
+          ok(initialColor, "Theme preview has an initial background color.");
+
+          Services.prefs.setIntPref(PREF_SYSTEM_USES_DARK, 1);
+
+          await waitForCondition(
+            () =>
+              getComputedStyle(themePreview).backgroundColor !== initialColor,
+            "Theme swatch color changes after OS switches to dark mode."
+          );
+
+          let darkColor = getComputedStyle(themePreview).backgroundColor;
+          isnot(
+            darkColor,
+            initialColor,
+            "Theme swatch shows dark variant color in dark mode."
+          );
+
+          Services.prefs.setIntPref(PREF_SYSTEM_USES_DARK, 0);
+
+          await waitForCondition(
+            () =>
+              getComputedStyle(themePreview).backgroundColor === initialColor,
+            "Theme swatch color changes back after OS switches to light mode."
+          );
+
+          let lightColor = getComputedStyle(themePreview).backgroundColor;
+          is(
+            lightColor,
+            initialColor,
+            "Theme swatch shows original light variant color."
+          );
+        }
+      );
     </script>
   </head>
   <body>

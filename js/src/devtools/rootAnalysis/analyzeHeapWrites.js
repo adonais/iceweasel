@@ -186,7 +186,7 @@ function treatAsSafeArgument(entry, varName, csuName)
         [/Gecko_SetContentData/, "aContent", null],
         ["Gecko_SetCounterFunction", "aContent", null],
         [/Gecko_EnsureStyle.*?ArrayLength/, "aArray", null],
-        ["Gecko_GetOrCreateKeyframeAtStart", "aKeyframes", null],
+        ["Gecko_GetOrCreateKeyframeAtEnd", "aKeyframes", null],
         ["Gecko_GetOrCreateInitialKeyframe", "aKeyframes", null],
         ["Gecko_GetOrCreateFinalKeyframe", "aKeyframes", null],
         ["Gecko_AppendPropertyValuePair", "aProperties", null],

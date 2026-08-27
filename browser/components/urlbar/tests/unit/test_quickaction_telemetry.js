@@ -7,8 +7,24 @@
 ChromeUtils.defineESModuleGetters(this, {
   ActionsProviderQuickActions:
     "moz-src:///browser/components/urlbar/ActionsProviderQuickActions.sys.mjs",
+  ResetProfile: "resource://gre/modules/ResetProfile.sys.mjs",
+  UpdateService: "resource://gre/modules/UpdateService.sys.mjs",
   UrlbarProviderActionsSearchMode:
     "moz-src:///browser/components/urlbar/UrlbarProviderActionsSearchMode.sys.mjs",
+});
+
+add_setup(function stubBrowserOnlyActionGates() {
+  // startQuery evaluates every action's isUnsupported gate, and a couple of the
+  // real actions reach browser-only services that aren't initialized in a bare
+  // xpcshell run (refresh uses the toolkit profile service, update uses the
+  // update service), which asserts in debug builds. Stub those gates so search
+  // mode can be queried headlessly; this test only cares about inputLength.
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(ResetProfile, "resetSupported").returns(false);
+  sandbox
+    .stub(UpdateService.prototype, "canUsuallyCheckForUpdates")
+    .get(() => false);
+  registerCleanupFunction(() => sandbox.restore());
 });
 
 add_task(async function test_inputLength_not_nan_in_search_mode() {

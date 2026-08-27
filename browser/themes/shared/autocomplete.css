@@ -17,14 +17,11 @@
 
 #PopupAutoComplete > richlistbox {
   padding: var(--space-medium);
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
 
   &:not([pointerselected]) > richlistitem.autocomplete-row-item[selected] > autocomplete-row-item:not([subfocused]) {
     border-color: var(--focus-outline-color);
-  }
-
-  &[pointerselected] > richlistitem.autocomplete-row-item[selected] > autocomplete-row-item {
-    background-color: var(--button-background-color-ghost-hover);
-    color: var(--button-text-color-ghost-hover);
   }
 }
 
@@ -54,6 +51,12 @@
        are tall, so use a wider width to preserve their aspect ratio. */
     --icon-height: var(--icon-size-medium);
     --icon-width: var(--icon-size-large);
+  }
+
+  &[originaltype="insecureWarning"] > autocomplete-row-item {
+    /* Ensure security-broken.svg icon has a red slash through it rather than
+       being a monochrome icon. */
+    --button-icon-stroke: var(--icon-color-critical);
   }
 
   > autocomplete-row-item {

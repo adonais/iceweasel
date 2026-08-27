@@ -35,6 +35,7 @@ class GradlewSchema(Schema, kw_only=True):
     use_caches: Optional[Union[bool, list[str]]] = None
     secrets: Optional[list[SecretSchema]] = None
     dummy_secrets: Optional[list[DummySecretSchema]] = None
+    clone_with: Optional[Literal["hg", "git"]] = "git"
 
 
 class MachGradleSchema(Schema, kw_only=True):
@@ -44,6 +45,7 @@ class MachGradleSchema(Schema, kw_only=True):
     mach_build_exports: Optional[bool] = None
     workdir: Optional[str] = None
     use_caches: Optional[Union[bool, list[str]]] = None
+    clone_with: Optional[Literal["hg", "git"]] = "git"
 
 
 class RunCommandsSchema(Schema, kw_only=True):
@@ -54,6 +56,7 @@ class RunCommandsSchema(Schema, kw_only=True):
     use_caches: Optional[Union[bool, list[str]]] = None
     secrets: Optional[list[SecretSchema]] = None
     dummy_secrets: Optional[list[DummySecretSchema]] = None
+    clone_with: Optional[Literal["hg", "git"]] = "git"
 
 
 @run_job_using("docker-worker", "run-commands", schema=RunCommandsSchema)

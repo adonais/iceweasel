@@ -7,9 +7,9 @@
 
 /* A pointer wrapper indicating that the pointer should not be dereferenced. */
 
-#include "mozilla/Attributes.h"
-
 #include <cstdint>
+
+#include "mozilla/Attributes.h"
 
 // Macro indicating that a function manipulates a pointer that will not be
 // dereferenced, and therefore there is no need to check the object.

@@ -59,6 +59,7 @@
 #include "nsIWebSocketChannel.h"
 #include "nsIWebSocketImpl.h"
 #include "nsIWebSocketListener.h"
+#include "nsIWebSocketProtocolHandler.h"
 #include "nsIWindowWatcher.h"
 #include "nsJSUtils.h"
 #include "nsNetUtil.h"
@@ -1904,13 +1905,13 @@ nsresult WebSocketImpl::InitializeConnection(
   nsAutoCloseWS autoClose(this);
   nsresult rv;
 
-  if (mSecure) {
-    wsChannel =
-        do_CreateInstance("@mozilla.org/network/protocol;1?name=wss", &rv);
-  } else {
-    wsChannel =
-        do_CreateInstance("@mozilla.org/network/protocol;1?name=ws", &rv);
-  }
+  nsCOMPtr<nsIWebSocketProtocolHandler> wsHandler =
+      do_GetService(mSecure ? "@mozilla.org/network/protocol;1?name=wss"
+                            : "@mozilla.org/network/protocol;1?name=ws",
+                    &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = wsHandler->NewWebSocketChannel(getter_AddRefs(wsChannel));
   NS_ENSURE_SUCCESS(rv, rv);
 
   // add ourselves to the document's load group and
@@ -2214,10 +2215,10 @@ nsresult WebSocketImpl::ParseURL(const nsAString& aURL, nsIURI* aBaseURI) {
       nsContentUtils::GetWebExposedOriginSerialization(parsedURL, mUTF16Origin);
   NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_SYNTAX_ERR);
 
-  mAsciiHost = host;
+  mAsciiHost = std::move(host);
   ToLowerCase(mAsciiHost);
 
-  mResource = filePath;
+  mResource = std::move(filePath);
   if (!query.IsEmpty()) {
     mResource.Append('?');
     mResource.Append(query);

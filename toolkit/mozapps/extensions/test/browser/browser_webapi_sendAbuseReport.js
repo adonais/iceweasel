@@ -22,7 +22,7 @@ add_setup(async function () {
       ["extensions.webapi.testing", true],
       [
         "extensions.addonAbuseReport.url",
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         "http://test.addons.org/api/abuse/report/addon/",
       ],
     ],

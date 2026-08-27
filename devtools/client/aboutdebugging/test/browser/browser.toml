@@ -62,6 +62,9 @@ tags = "webextensions"
 tags = "webextensions"
 
 ["browser_aboutdebugging_addons_manifest_url.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2045293
+]
 
 ["browser_aboutdebugging_addons_popup_picker.js"]
 
@@ -87,18 +90,15 @@ skip-if = [
 ["browser_aboutdebugging_connect_networklocations.js"]
 
 ["browser_aboutdebugging_connect_toggle_usb_devices.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2045293
+]
 
 ["browser_aboutdebugging_connection_prompt_setting.js"]
 
 ["browser_aboutdebugging_debug-target-pane_collapsibilities_interaction.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_aboutdebugging_debug-target-pane_collapsibilities_preference.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_aboutdebugging_debug-target-pane_empty.js"]
 
@@ -137,10 +137,6 @@ skip-if = [
 ["browser_aboutdebugging_devtoolstoolbox_splitconsole_key.js"]
 
 ["browser_aboutdebugging_devtoolstoolbox_target_destroyed.js"]
-skip-if = [
-  "os == 'win' && opt && standalone", # Bug 2026757
-  "debug && standalone", # Bug 2026757
-]
 
 ["browser_aboutdebugging_devtoolstoolbox_tooltip_markupview.js"]
 fail-if = [

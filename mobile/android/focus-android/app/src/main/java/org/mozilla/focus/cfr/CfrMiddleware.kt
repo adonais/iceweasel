@@ -7,17 +7,12 @@ package org.mozilla.focus.cfr
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
 import mozilla.components.browser.state.action.BrowserAction
-import mozilla.components.browser.state.action.CookieBannerAction
 import mozilla.components.browser.state.action.TrackingProtectionAction
 import mozilla.components.browser.state.selector.findTabOrCustomTabOrSelectedTab
 import mozilla.components.browser.state.state.BrowserState
-import mozilla.components.concept.engine.EngineSession
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
-import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.experiments.nimbus.internal.FeatureHolder
-import org.mozilla.focus.GleanMetrics.CookieBanner
-import org.mozilla.focus.cookiebanner.CookieBannerOption
 import org.mozilla.focus.ext.truncatedHost
 import org.mozilla.focus.nimbus.FocusNimbus
 import org.mozilla.focus.nimbus.Onboarding
@@ -45,22 +40,7 @@ class CfrMiddleware(
         next(action)
 
         if (onboardingProvider().value().isCfrEnabled) {
-            showCookieBannerCfr(action)
             showTrackingProtectionCfr(action, store.state)
-        }
-    }
-
-    private fun showCookieBannerCfr(
-        action: BrowserAction,
-    ) {
-        if (action is CookieBannerAction.UpdateStatusAction &&
-            shouldShowCookieBannerCfr(action) &&
-            otherCfrHasBeenShown()
-        ) {
-            CookieBanner.cookieBannerCfrShown.record(NoExtras())
-            appStore.dispatch(
-                AppAction.ShowCookieBannerCfrChange(true),
-            )
         }
     }
 
@@ -110,22 +90,4 @@ class CfrMiddleware(
                     settings.shouldShowCfrForTrackingProtection &&
                     !appStore.state.showEraseTabsCfr
             )
-
-    private fun otherCfrHasBeenShown(): Boolean {
-        return (
-            !settings.shouldShowCfrForTrackingProtection &&
-                !appStore.state.showEraseTabsCfr
-            )
-    }
-
-    private fun shouldShowCookieBannerCfr(action: CookieBannerAction.UpdateStatusAction): Boolean {
-        return (
-            !settings.isFirstRun &&
-                settings.shouldShowCookieBannerCfr &&
-                settings.isCookieBannerEnable &&
-                settings.getCurrentCookieBannerOptionFromSharePref() ==
-                CookieBannerOption.CookieBannerRejectAll() &&
-                action.status == EngineSession.CookieBannerHandlingStatus.HANDLED
-            )
-    }
 }

@@ -1,4 +1,4 @@
-// Check that atom marking bitmap state and mark color is as expected and
+// Check that atom reference bitmap state and mark color is as expected and
 // AtomMarkingRuntime::refineZoneBitmapsForCollectedZones works with gray
 // symbols.
 

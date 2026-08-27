@@ -208,6 +208,31 @@ button:disabled {
     min-width: min-content;
     margin-top: calc(150px - var(--error-page-padding, 0px));
     padding-block-end: var(--space-xxlarge);
+
+    @media (max-width: 640px) {
+      /* min-content holds the card wider than a narrow viewport, which is what
+         forces a horizontal scrollbar. */
+      min-width: 0;
+      margin-top: var(--space-xxlarge);
+    }
+  }
+
+  /* Narrow viewports buy width back with padding rather than by shrinking type.
+     This selector matches the page itself, and the card's own rules below reach
+     into its shadow tree. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+  body:has(net-error-card) {
+    @media (max-width: 640px) {
+      padding-inline: var(--space-xxlarge);
+    }
+
+    @media (max-width: 480px) {
+      padding-inline: var(--space-large);
+    }
+
+    @media (max-width: 320px) {
+      padding-inline: var(--space-small);
+    }
   }
 
   .felt-privacy-container {
@@ -216,6 +241,12 @@ button:disabled {
 
     > .container {
       width: 100%;
+    }
+
+    /* Stack the illustration above the text, both left aligned. */
+    @media (max-width: 640px) {
+      flex-direction: column;
+      align-items: start;
     }
   }
 
@@ -226,6 +257,11 @@ button:disabled {
 
     &.no-connection {
       width: 13em;
+    }
+
+    @media (max-width: 640px) {
+      margin-block: 0 var(--space-large);
+      margin-inline-end: 0;
     }
   }
 

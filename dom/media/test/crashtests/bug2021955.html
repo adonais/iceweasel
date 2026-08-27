@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<head><meta charset="utf-8"></head>
+<body>
+<script>
+function le16(v){return[v&0xff,(v>>8)&0xff]}
+function le32(v){return[v&0xff,(v>>8)&0xff,(v>>16)&0xff,(v>>24)&0xff]}
+
+const nChannels = 9;
+const sampleRate = 44100;
+const bitsPerSample = 16;
+const blockAlign = nChannels * bitsPerSample / 8;
+const byteRate = sampleRate * blockAlign;
+const nFrames = 2000;
+const dataSize = nFrames * blockAlign;
+
+const pcmGUID = [0x01,0x00,0x00,0x00, 0x00,0x00, 0x10,0x00, 0x80,0x00,0x00,0xAA,0x00,0x38,0x9B,0x71];
+
+const fmt = [
+  ...le16(0xFFFE),
+  ...le16(nChannels),
+  ...le32(sampleRate),
+  ...le32(byteRate),
+  ...le16(blockAlign),
+  ...le16(bitsPerSample),
+  ...le16(22),
+  ...le16(bitsPerSample),
+  ...le32(0x1FF),
+  ...pcmGUID
+];
+
+const pcmData = new Uint8Array(dataSize);
+for(let i=0;i<dataSize;i++) pcmData[i] = (i*7)&0xff;
+
+const fmtChunk = [0x66,0x6D,0x74,0x20, ...le32(fmt.length), ...fmt];
+const dataChunk = [0x64,0x61,0x74,0x61, ...le32(dataSize)];
+
+const riffSize = 4 + fmtChunk.length + dataChunk.length + dataSize;
+
+const header = new Uint8Array([
+  0x52,0x49,0x46,0x46,
+  ...le32(riffSize),
+  0x57,0x41,0x56,0x45,
+  ...fmtChunk,
+  ...dataChunk
+]);
+
+const wav = new Uint8Array(header.length + dataSize);
+wav.set(header, 0);
+wav.set(pcmData, header.length);
+
+const blob = new Blob([wav], {type:'audio/wav'});
+const url = URL.createObjectURL(blob);
+
+const audio = document.createElement('audio');
+audio.src = url;
+audio.autoplay = true;
+audio.loop = true;
+document.body.appendChild(audio);
+
+audio.addEventListener('playing', () => {
+  setTimeout(() => { document.documentElement.className = ""; }, 500);
+});
+
+audio.play();
+</script>
+</body>
+</html>

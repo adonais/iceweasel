@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Smart Window chat assistant citations test</title>
+    <style>
+      .box {
+        display: block;
+      }
+      #wide {
+        inline-size: 900px;
+      }
+      #narrow {
+        inline-size: 120px;
+      }
+    </style>
+    <script type="module" src="test_chat_assistant_citations.mjs">
+    </script>
+    <link rel="localization" href="browser/aiWindowContent.ftl">
+  </head>
+  <body>
+    <div id="wide" class="box">
+      <chat-assistant-citations id="wide-citations"></chat-assistant-citations>
+    </div>
+    <div id="narrow" class="box">
+      <chat-assistant-citations
+        id="narrow-citations"
+      ></chat-assistant-citations>
+    </div>
+  </body>
+</html>

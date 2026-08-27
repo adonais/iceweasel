@@ -23,7 +23,7 @@ gcloud:
   test-targets:
     # Runs @Parameterized behavior shards; if the factory yields zero runnable
     # case this suite reports no tests. See BehaviorShardData.loadShard.
-    - package org.mozilla.fenix.ui.efficiency.navigation.behavior.shards
+    - package org.mozilla.fenix.ui.efficiency.generation.behavior.shards
 
   device:
     - model: MediumPhone.arm

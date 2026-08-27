@@ -56,6 +56,7 @@ class SerialPlatformService {
                       const IPCSerialOutputSignals& aSignals);
   nsresult GetSignals(const nsString& aPortId, IPCSerialInputSignals& aSignals);
   nsresult GetReadStream(const nsString& aPortId, uint32_t aBufferSize,
+                         bool aDetectParityErrors,
                          nsIAsyncInputStream** aStream);
 
   void AddDeviceChangeObserver(SerialDeviceChangeObserver* aObserver);
@@ -88,6 +89,7 @@ class SerialPlatformService {
                                   IPCSerialInputSignals& aSignals) = 0;
   virtual nsresult GetReadStreamImpl(const nsString& aPortId,
                                      uint32_t aBufferSize,
+                                     bool aDetectParityErrors,
                                      nsIAsyncInputStream** aStream) = 0;
 
   struct ObserverState {

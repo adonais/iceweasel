@@ -26,6 +26,7 @@ task-defaults:
         product: firefox
     worker-type: b-linux
     run:
+        clone-with: hg
         using: spidermonkey
     when:
         files-changed:

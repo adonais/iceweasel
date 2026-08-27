@@ -7,12 +7,12 @@
 #ifndef mozilla_EnumSet_h
 #define mozilla_EnumSet_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
-
 #include <bit>
 #include <initializer_list>
 #include <type_traits>
+
+#include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 #ifdef DEBUG
 #  include <cstdint>
 #endif

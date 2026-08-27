@@ -13,7 +13,5 @@ API is largely identical to
 omissions/changes including strict mode and string matching.
 
 ```{js:autoclass} Assert
-:members: ok, equal, notEqual, strictEqual, notStrictEqual, deepEqual, notDeepEqual,
-          greater, less, greaterOrEqual, lessOrEqual, stringContains, stringMatches,
-          throws, rejects, *
+:members: ok, equal, notEqual, strictEqual, notStrictEqual, deepEqual, notDeepEqual, greater, less, greaterOrEqual, lessOrEqual, stringContains, stringMatches, throws, rejects, *
 ```

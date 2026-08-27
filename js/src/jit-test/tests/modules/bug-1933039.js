@@ -9,7 +9,7 @@ try {
 assertEq(threw, true, "expected an exception thrown");
 
 var m = registerModule("m", parseModule('{"test": "foo"}', "", "json"));
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);
 
 threw = false;

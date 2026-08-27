@@ -46,9 +46,9 @@ async function openLoginForm(megalist, isFromMenuDropdown = true) {
 
 function addLogin(megalist, { origin, username, password }) {
   const loginForm = megalist.querySelector("login-form");
-  setInputValue(loginForm, "login-origin-field", origin);
-  setInputValue(loginForm, "login-username-field", username);
-  setInputValue(loginForm, "login-password-field", password);
+  setInputValue(loginForm, "moz-input-url", origin);
+  setInputValue(loginForm, "moz-input-text", username);
+  setInputValue(loginForm, "moz-input-password", password);
   const saveButton = loginForm.shadowRoot.querySelector(
     "moz-button[type=primary]"
   );
@@ -154,7 +154,7 @@ add_task(async function test_add_login_empty_origin() {
 
   const megalist = await openPasswordsSidebar();
   await waitForSnapshots();
-  await openLoginForm(megalist);
+  await openLoginForm(megalist, false);
   addLogin(megalist, {
     ...TEST_LOGIN_1,
     origin: "",
@@ -174,9 +174,9 @@ add_task(async function test_add_login_empty_password_and_resubmit() {
   await waitForSnapshots();
   await openLoginForm(megalist, false);
   const loginForm = megalist.querySelector("login-form");
-  setInputValue(loginForm, "login-origin-field", TEST_LOGIN_1.origin);
-  setInputValue(loginForm, "login-username-field", TEST_LOGIN_1.username);
-  setInputValue(loginForm, "login-password-field", "");
+  setInputValue(loginForm, "moz-input-url", TEST_LOGIN_1.origin);
+  setInputValue(loginForm, "moz-input-text", TEST_LOGIN_1.username);
+  setInputValue(loginForm, "moz-input-password", "");
 
   const saveButton = loginForm.shadowRoot.querySelector(
     "moz-button[type=primary]"
@@ -204,7 +204,7 @@ add_task(async function test_add_login_empty_password_and_resubmit() {
   is(logins.length, 0, "No login was added after submitting form.");
 
   info("Entering a valid password clears the warning.");
-  setInputValue(loginForm, "login-password-field", TEST_LOGIN_1.password);
+  setInputValue(loginForm, "moz-input-password", TEST_LOGIN_1.password);
   await TestUtils.waitForCondition(
     () =>
       !loginForm.shadowRoot
@@ -233,7 +233,7 @@ add_task(async function test_edit_login_empty_password_requires_new_value() {
   );
 
   let loginForm = megalist.querySelector("login-form");
-  setInputValue(loginForm, "login-password-field", "");
+  setInputValue(loginForm, "moz-input-password", "");
 
   const saveButton = loginForm.shadowRoot.querySelector(
     "moz-button[type=primary]"
@@ -242,11 +242,10 @@ add_task(async function test_edit_login_empty_password_requires_new_value() {
   saveButton.buttonEl.click();
   await waitForPopup(megalist, "password-warning");
 
-  const passwordField = loginForm.shadowRoot.querySelector(
-    "login-password-field"
-  );
+  const passwordField =
+    loginForm.shadowRoot.querySelector("moz-input-password");
   await TestUtils.waitForCondition(
-    () => passwordField.input.value === "",
+    () => passwordField.inputEl.value === "",
     "Password input should remain empty after an invalid submission."
   );
   is(passwordField.value, "", "Password component state cleared.");
@@ -339,6 +338,36 @@ add_task(async function test_passwords_add_password_empty_state() {
 
   LoginTestUtils.clearData();
 
+  info("Closing the sidebar");
+  SidebarController.hide();
+});
+
+add_task(async function test_password_reveal_button_hidden() {
+  const megalist = await openPasswordsSidebar();
+  await waitForSnapshots();
+  await openLoginForm(megalist, false);
+
+  const loginForm = megalist.querySelector("login-form");
+  const passwordField =
+    loginForm.shadowRoot.querySelector("moz-input-password");
+  await passwordField.updateComplete;
+  const input = passwordField.inputEl;
+
+  let revealButton;
+  await TestUtils.waitForCondition(() => {
+    revealButton = InspectorUtils.getChildrenForNode(input, true, false).find(
+      node => node.localName === "button"
+    );
+    return !!revealButton;
+  }, "Native password reveal button should be created in the input.");
+
+  is(
+    input.documentGlobal.getComputedStyle(revealButton).display,
+    "none",
+    "Native password reveal button is hidden by the megalist agent sheet."
+  );
+
+  LoginTestUtils.clearData();
   info("Closing the sidebar");
   SidebarController.hide();
 });

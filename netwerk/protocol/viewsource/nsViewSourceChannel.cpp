@@ -481,7 +481,7 @@ nsViewSourceChannel::GetContentType(nsACString& aContentType) {
       contentType = VIEWSOURCE_CONTENT_TYPE;
     }
 
-    mContentType = contentType;
+    mContentType = std::move(contentType);
   }
 
   aContentType = mContentType;

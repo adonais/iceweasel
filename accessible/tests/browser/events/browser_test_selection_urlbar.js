@@ -30,7 +30,7 @@ async function runTests() {
   let newWin = await BrowserTestUtils.openNewBrowserWindow();
   await PlacesTestUtils.addVisits([
     {
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       uri: "http://www.addons.mozilla.org/",
       transition: PlacesUtils.history.TRANSITION_TYPED,
     },

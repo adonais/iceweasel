@@ -155,7 +155,6 @@ open class NestedGeckoView(context: Context) : GeckoView(context), NestedScrolli
         return super.onTouchEvent(event)
     }
 
-    @SuppressLint("WrongThread") // Lint complains startNestedScroll() needs to be called on the main thread
     @Suppress("CognitiveComplexMethod")
     @VisibleForTesting
     internal fun updateInputResult(event: MotionEvent) {

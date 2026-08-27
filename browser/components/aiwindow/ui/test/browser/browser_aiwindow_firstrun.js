@@ -3,6 +3,14 @@
 
 "use strict";
 
+ChromeUtils.defineLazyGetter(this, "SidebarTestUtils", () => {
+  const { SidebarTestUtils: utils } = ChromeUtils.importESModule(
+    "resource://testing-common/SidebarTestUtils.sys.mjs"
+  );
+  utils.init(this);
+  return utils;
+});
+
 async function openFirstrunPage() {
   const tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -429,6 +437,8 @@ add_task(async function test_firstrun_telemetry() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.smartwindow.firstrun.autoAdvanceMS", 0],
+      // TODO: Bug 2053495 - Refactor tests upon pref removal
+      ["browser.smartwindow.mistralRelease", false],
       ["browser.smartwindow.firstrun.modelChoice", ""],
     ],
   });
@@ -761,6 +771,8 @@ add_task(async function test_firstrun_telemetry_unchecked() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.smartwindow.firstrun.autoAdvanceMS", 0],
+      // TODO: Bug 2053495 - Refactor tests upon pref removal
+      ["browser.smartwindow.mistralRelease", false],
       ["browser.smartwindow.firstrun.modelChoice", ""],
       ["browser.smartwindow.memories.generateFromHistory", true],
       ["browser.smartwindow.memories.generateFromConversation", true],
@@ -979,6 +991,160 @@ add_task(async function test_toggle_interactive_during_firstrun() {
     "Other tabstrip items remain dimmed during first run"
   );
 
+  await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
+ * The core (non-AI) sidebar's launcher, panel, and their splitters.
+ *
+ * @param {Window} win
+ * @returns {Record<string, Element>}
+ */
+function getCoreSidebarEls(win) {
+  return {
+    container: win.document.getElementById("sidebar-container"),
+    launcherSplitter: win.document.getElementById("sidebar-launcher-splitter"),
+    box: win.document.getElementById("sidebar-box"),
+    splitter: win.document.getElementById("sidebar-splitter"),
+  };
+}
+
+function assertCoreSidebarHidden(els, context) {
+  for (const [name, el] of Object.entries(els)) {
+    Assert.ok(
+      BrowserTestUtils.isHidden(el),
+      `#${el.id} (${name}) is hidden ${context}`
+    );
+  }
+}
+
+// In horizontal tabs mode the whole core sidebar - launcher, an open panel, and
+// both splitters - is hidden during smart window first run, and comes back once
+// first run finishes.
+add_task(async function test_core_sidebar_hidden_during_firstrun_horizontal() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.enabled", true],
+      ["browser.smartwindow.firstrun.hasCompleted", false],
+      ["sidebar.verticalTabs", false],
+    ],
+  });
+
+  const win = await openAIWindow({ waitForTabURL: FIRSTRUN_URL });
+  const root = win.document.documentElement;
+  const browser = win.gBrowser.selectedBrowser;
+  const els = getCoreSidebarEls(win);
+
+  await BrowserTestUtils.waitForMutationCondition(
+    root,
+    { attributes: true },
+    () => root.hasAttribute("aiwindow-first-run")
+  );
+
+  // A sidebar panel may already be open when the user is in the smart window.
+  // Open one outside of first run so it loads normally, then confirm it is
+  // visible before re-entering first run.
+  await promiseNavigateAndLoad(browser, "https://example.com/");
+  await BrowserTestUtils.waitForMutationCondition(
+    root,
+    { attributes: true },
+    () => !root.hasAttribute("aiwindow-first-run")
+  );
+
+  await SidebarTestUtils.showPanel(win, "viewBookmarksSidebar");
+  Assert.ok(
+    BrowserTestUtils.isVisible(els.box),
+    "Sidebar panel is visible before first run"
+  );
+
+  await promiseNavigateAndLoad(browser, FIRSTRUN_URL);
+  await BrowserTestUtils.waitForMutationCondition(
+    root,
+    { attributes: true },
+    () => root.hasAttribute("aiwindow-first-run")
+  );
+
+  assertCoreSidebarHidden(els, "during first run");
+
+  // Completing first run navigates to the AI Window new tab, which keeps the
+  // window in immersive view but clears the first-run state. The core sidebar
+  // is gated on first run specifically, so the open panel comes back even
+  // though the window is still immersive.
+  await promiseNavigateAndLoad(browser, AIWINDOW_URL);
+  await BrowserTestUtils.waitForMutationCondition(
+    root,
+    { attributes: true },
+    () => !root.hasAttribute("aiwindow-first-run")
+  );
+  Assert.ok(
+    root.hasAttribute("aiwindow-immersive-view"),
+    "Window is still in immersive view after first run completes"
+  );
+
+  Assert.ok(
+    BrowserTestUtils.isVisible(els.box),
+    "Sidebar panel is visible again after first run completes"
+  );
+
+  SidebarTestUtils.closePanel(win);
+  await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
+});
+
+// Aborting first run by switching back to a classic window also restores the
+// core sidebar.
+add_task(async function test_core_sidebar_restored_when_firstrun_aborted() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.enabled", true],
+      ["browser.smartwindow.firstrun.hasCompleted", false],
+      ["sidebar.verticalTabs", false],
+    ],
+  });
+
+  const win = await openAIWindow({ waitForTabURL: FIRSTRUN_URL });
+  const root = win.document.documentElement;
+  const browser = win.gBrowser.selectedBrowser;
+  const els = getCoreSidebarEls(win);
+
+  await BrowserTestUtils.waitForMutationCondition(
+    root,
+    { attributes: true },
+    () => root.hasAttribute("aiwindow-first-run")
+  );
+
+  // Open the panel outside of first run so it loads normally.
+  await promiseNavigateAndLoad(browser, "https://example.com/");
+  await BrowserTestUtils.waitForMutationCondition(
+    root,
+    { attributes: true },
+    () => !root.hasAttribute("aiwindow-first-run")
+  );
+  await SidebarTestUtils.showPanel(win, "viewBookmarksSidebar");
+
+  await promiseNavigateAndLoad(browser, FIRSTRUN_URL);
+  await BrowserTestUtils.waitForMutationCondition(
+    root,
+    { attributes: true },
+    () => root.hasAttribute("aiwindow-first-run")
+  );
+  Assert.ok(
+    BrowserTestUtils.isHidden(els.box),
+    "Sidebar panel is hidden during first run"
+  );
+
+  AIWindow.toggleAIWindow(win, false);
+  Assert.ok(
+    !root.hasAttribute("ai-window"),
+    "Window is back in classic mode after aborting first run"
+  );
+  Assert.ok(
+    BrowserTestUtils.isVisible(els.box),
+    "Sidebar panel is visible again after aborting first run"
+  );
+
+  SidebarTestUtils.closePanel(win);
   await BrowserTestUtils.closeWindow(win);
   await SpecialPowers.popPrefEnv();
 });

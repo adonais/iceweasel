@@ -245,6 +245,13 @@ already_AddRefed<DOMSVGPoint> DOMSVGPointList::IndexedGetter(uint32_t aIndex,
   return nullptr;
 }
 
+void DOMSVGPointList::IndexedSetter(uint32_t aIndex, DOMSVGPoint& aNewValue,
+                                    ErrorResult& aRv) {
+  // Need to take a ref to the return value so it does not leak.
+  RefPtr<DOMSVGPoint> ignored = ReplaceItem(aNewValue, aIndex, aRv);
+  (void)ignored;
+}
+
 already_AddRefed<DOMSVGPoint> DOMSVGPointList::InsertItemBefore(
     DOMSVGPoint& aNewItem, uint32_t aIndex, ErrorResult& aRv) {
   if (IsAnimValList()) {

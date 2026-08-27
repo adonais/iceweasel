@@ -21,13 +21,13 @@ registerModule("a", parseModule(`
 let c = registerModule("c", parseModule(`
     import "a";
 `));
-moduleLink(c);
+moduleLoadAndLink(c);
 assertThrowsMyError(() => moduleEvaluate(c));
 
 let b = registerModule('b', parseModule(`
     import * as ns0 from 'a'
 `));
-moduleLink(b);
+moduleLoadAndLink(b);
 assertThrowsMyError(() => moduleEvaluate(b));
 
 drainJobQueue();

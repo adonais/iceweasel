@@ -7,8 +7,6 @@
 
 "use strict";
 
-const TEST_ENGINE_BASENAME = "searchSuggestionEngine.xml";
-
 add_setup(async function () {
   // In order to open the view without any results, we need to be in search mode
   // with an empty search string so that no heuristic result is shown, and the
@@ -226,46 +224,6 @@ add_task(async function backspaceRemainOpen() {
       "noresults attribute should be absent again"
     );
 
-    await UrlbarTestUtils.promisePopupClose(win);
-  });
-});
-
-// Types a search alias and then a space to enter search mode, with no results.
-// The one-offs should be shown.
-add_task(async function spaceToEnterSearchMode() {
-  let engine = await SearchTestUtils.installOpenSearchEngine({
-    url: getRootDirectory(gTestPath) + TEST_ENGINE_BASENAME,
-  });
-  engine.alias = "@test";
-
-  await withNewWindow(async win => {
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      window: win,
-      value: engine.alias,
-    });
-
-    // We need to wait for two searches: The first enters search mode, the
-    // second does the search in search mode.
-    let searchPromise = UrlbarTestUtils.promiseSearchComplete(win);
-    EventUtils.synthesizeKey(" ", {}, win);
-    await searchPromise;
-
-    Assert.equal(UrlbarTestUtils.getResultCount(win), 0, "Zero results");
-    Assert.ok(
-      win.gURLBar.hasAttribute("noresults"),
-      "Panel has no results, therefore should have noresults attribute"
-    );
-    await UrlbarTestUtils.assertSearchMode(win, {
-      engineName: engine.name,
-      entry: "typed",
-    });
-    this.Assert.equal(
-      UrlbarTestUtils.getOneOffSearchButtonsVisible(window),
-      true,
-      "One-offs are visible"
-    );
-
-    await UrlbarTestUtils.exitSearchMode(win, { backspace: true });
     await UrlbarTestUtils.promisePopupClose(win);
   });
 });

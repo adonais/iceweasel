@@ -395,6 +395,11 @@ class nsLayoutUtils {
    */
   static bool IsPrimaryStyleFrame(const nsIFrame* aFrame);
 
+  enum class CompareTreePositionFlags : uint8_t {
+    None = 0x00,
+    FramesMayBeInDifferentOrIncompleteTrees = 0x01,
+  };
+
   /**
    * CompareTreePosition determines whether aFrame1 comes before or
    * after aFrame2 in a preorder traversal of the frame tree, where out
@@ -409,23 +414,28 @@ class nsLayoutUtils {
    *                        aContent1 or aContent2, this function will
    *                        still work, but it will be slower than
    *                        normal.
+   * @param aFlags If FramesMayBeInDifferentOrIncompleteTrees is set,
+   *               consider that being unable to find tree position to be
+   *               part of the expected behaviour.
    * @return < 0 if aContent1 is before aContent2
    *         > 0 if aContent1 is after aContent2,
-   *         0 otherwise (meaning they're the same, or they're in
-   *           different frame trees)
+   *         0 otherwise, meaning they're the same, or they're in
+   *           different/incomplete frame tree(s).
    */
   static int32_t CompareTreePosition(
       const nsIFrame* aFrame1, const nsIFrame* aFrame2,
-      const nsIFrame* aCommonAncestor = nullptr) {
-    return DoCompareTreePosition(aFrame1, aFrame2, aCommonAncestor);
+      const nsIFrame* aCommonAncestor = nullptr,
+      CompareTreePositionFlags aFlags = CompareTreePositionFlags::None) {
+    return DoCompareTreePosition(aFrame1, aFrame2, aCommonAncestor, aFlags);
   }
 
   static int32_t CompareTreePosition(
       const nsIFrame* aFrame1, const nsIFrame* aFrame2,
       const nsTArray<const nsIFrame*>& aFrame2Ancestors,
-      const nsIFrame* aCommonAncestor = nullptr) {
+      const nsIFrame* aCommonAncestor = nullptr,
+      CompareTreePositionFlags aFlags = CompareTreePositionFlags::None) {
     return DoCompareTreePosition(aFrame1, aFrame2, aFrame2Ancestors,
-                                 aCommonAncestor);
+                                 aCommonAncestor, aFlags);
   }
 
   static const nsIFrame* FillAncestors(const nsIFrame* aFrame,
@@ -434,11 +444,12 @@ class nsLayoutUtils {
 
   static int32_t DoCompareTreePosition(const nsIFrame* aFrame1,
                                        const nsIFrame* aFrame2,
-                                       const nsIFrame* aCommonAncestor);
+                                       const nsIFrame* aCommonAncestor,
+                                       CompareTreePositionFlags aFlags);
   static int32_t DoCompareTreePosition(
       const nsIFrame* aFrame1, const nsIFrame* aFrame2,
       const nsTArray<const nsIFrame*>& aFrame2Ancestors,
-      const nsIFrame* aCommonAncestor);
+      const nsIFrame* aCommonAncestor, CompareTreePositionFlags aFlags);
 
   /**
    * LastContinuationWithChild gets the last continuation in aFrame's chain
@@ -599,6 +610,22 @@ class nsLayoutUtils {
    */
   static mozilla::ScrollContainerFrame* GetNearestScrollableFrameForDirection(
       nsIFrame* aFrame, mozilla::layers::ScrollDirections aDirections);
+
+  /**
+   * GetNearestScrollContainerFrameToScrollTowards locates the first ancestor of
+   * aFrame (or aFrame itself) that is scrollable and whose current scroll
+   * position can still move toward the given physical edge (i.e. it isn't
+   * already scrolled to that edge).
+   * The search extends across document boundaries, but does not cross process
+   * boundaries; callers should handle cross-process scroll handoff themselves.
+   *
+   * @param  aFrame the frame to start with
+   * @param  aSideBits the physical edge we want to scroll toward
+   * @return the nearest scroll container frame or nullptr if not found
+   */
+  static mozilla::ScrollContainerFrame*
+  GetNearestScrollContainerFrameToScrollTowards(nsIFrame* aFrame,
+                                                mozilla::SideBits aSideBits);
 
   enum {
     /**
@@ -1459,7 +1486,7 @@ class nsLayoutUtils {
   /**
    * Find the nearest ancestor that's a block
    */
-  static nsBlockFrame* FindNearestBlockAncestor(nsIFrame* aFrame);
+  static nsBlockFrame* FindNearestBlockAncestor(const nsIFrame* aFrame);
 
   /*
    * Whether the frame is an nsBlockFrame which is not a wrapper block.
@@ -3286,6 +3313,7 @@ class nsLayoutUtils {
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsLayoutUtils::PaintFrameFlags)
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsLayoutUtils::GetPopupFrameForPointFlags)
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsLayoutUtils::CompareTreePositionFlags)
 
 template <typename PointType, typename RectType, typename CoordType>
 /* static */ bool nsLayoutUtils::PointIsCloserToRect(

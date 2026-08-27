@@ -121,10 +121,21 @@ add_task(async function test_click_on_footer() {
         PRIVACY_PREF_URL,
         true
       );
-      // Make sure dropdown is visible before continuing mouse synthesizing.
-      await TestUtils.waitForCondition(() =>
-        BrowserTestUtils.isVisible(optionButton)
-      );
+      // The rows can overflow the list while the popup is still being sized,
+      // leaving the footer outside it. Its center is then over the page, so the
+      // click would dismiss the popup. isVisible() ignores clipping.
+      await TestUtils.waitForCondition(() => {
+        if (!BrowserTestUtils.isVisible(optionButton)) {
+          return false;
+        }
+        const listRect = itemsBox.getBoundingClientRect();
+        const footerRect = optionButton.getBoundingClientRect();
+        return (
+          footerRect.height &&
+          footerRect.top >= listRect.top &&
+          footerRect.bottom <= listRect.bottom
+        );
+      }, "the footer to be inside the list");
       EventUtils.synthesizeMouseAtCenter(optionButton, {});
       info(`expecting tab: about:preferences#privacy opened`);
       const prefTab = await prefTabPromise;

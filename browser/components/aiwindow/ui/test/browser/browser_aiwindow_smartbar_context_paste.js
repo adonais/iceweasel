@@ -221,7 +221,7 @@ add_task(async function test_smartbar_context_menu_paste_and_go_submits() {
   const pasteAndGo = inputBox.getMenuItem("paste-and-go");
 
   const sb = sinon.createSandbox();
-  const loadURL = sb.stub(smartbar, "_loadURL");
+  const loadURL = sb.stub(smartbar.controller, "loadURL").returns({});
   pasteAndGo.doCommand();
 
   await BrowserTestUtils.waitForMutationCondition(
@@ -229,7 +229,10 @@ add_task(async function test_smartbar_context_menu_paste_and_go_submits() {
     { childList: true, characterData: true, subtree: true },
     () => smartbar.value === ""
   );
-  Assert.ok(loadURL.calledWith(PASTE_URL), "Paste and Go loads the pasted URL");
+  Assert.ok(
+    loadURL.calledWith(sinon.match({ url: PASTE_URL })),
+    "Paste and Go loads the pasted URL"
+  );
 
   sb.restore();
   await BrowserTestUtils.closeWindow(win);

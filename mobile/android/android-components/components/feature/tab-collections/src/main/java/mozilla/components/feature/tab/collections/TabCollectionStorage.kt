@@ -26,6 +26,7 @@ class TabCollectionStorage(
     context: Context,
     private val writer: BrowserStateWriter = BrowserStateWriter(),
     private val filesDir: File = context.filesDir,
+    private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
 ) {
     internal var database: Lazy<TabCollectionDatabase> = lazy { TabCollectionDatabase.get(context) }
 
@@ -35,8 +36,8 @@ class TabCollectionStorage(
     fun createCollection(title: String, sessions: List<TabSessionState> = emptyList()): Long? {
         val entity = TabCollectionEntity(
             title = title,
-            updatedAt = System.currentTimeMillis(),
-            createdAt = System.currentTimeMillis(),
+            updatedAt = currentTimeMillis(),
+            createdAt = currentTimeMillis(),
         ).also { entity ->
             entity.id = database.value.tabCollectionDao().insertTabCollection(entity)
         }
@@ -62,7 +63,7 @@ class TabCollectionStorage(
                 url = session.content.url,
                 stateFile = fileName,
                 tabCollectionId = collection.id!!,
-                createdAt = System.currentTimeMillis(),
+                createdAt = currentTimeMillis(),
             )
 
             val success = writer.writeTab(session, entity.getStateFile(filesDir))
@@ -71,7 +72,7 @@ class TabCollectionStorage(
             }
         }
 
-        collection.updatedAt = System.currentTimeMillis()
+        collection.updatedAt = currentTimeMillis()
         database.value.tabCollectionDao().updateTabCollection(collection)
         return collection.id
     }
@@ -88,7 +89,7 @@ class TabCollectionStorage(
 
         database.value.tabDao().deleteTab(tabEntity)
 
-        collectionEntity.updatedAt = System.currentTimeMillis()
+        collectionEntity.updatedAt = currentTimeMillis()
         database.value.tabCollectionDao().updateTabCollection(collectionEntity)
     }
 
@@ -131,7 +132,7 @@ class TabCollectionStorage(
         val collectionEntity = (collection as TabCollectionAdapter).entity.collection
 
         collectionEntity.title = title
-        collectionEntity.updatedAt = System.currentTimeMillis()
+        collectionEntity.updatedAt = currentTimeMillis()
 
         database.value.tabCollectionDao().updateTabCollection(collectionEntity)
     }

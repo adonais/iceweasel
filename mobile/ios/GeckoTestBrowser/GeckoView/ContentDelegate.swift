@@ -138,19 +138,6 @@ public protocol ContentDelegate {
     /// that was previously specified via
     /// `GeckoView.setDynamicToolbarMaxHeight`.
     func onShowDynamicToolbar(session: GeckoSession)
-
-    /// This method is called when a cookie banner is detected.
-    ///
-    /// Note: this method is called only if the cookie banner setting is such
-    /// that allows to handle the banner. For example, if
-    /// `cookiebanners.service.mode=1` (Reject only), but a cookie banner can
-    /// only be accepted on the website - the detection in that case won't be
-    /// reported.  The exception is `MODE_DETECT_ONLY` mode, when only the
-    /// detection event is emitted.
-    func onCookieBannerDetected(session: GeckoSession)
-
-    /// This method is called when a cookie banner was handled.
-    func onCookieBannerHandled(session: GeckoSession)
 }
 
 enum ContentEvents: String, CaseIterable {
@@ -168,8 +155,6 @@ enum ContentEvents: String, CaseIterable {
     case firstContentfulPaint = "GeckoView:FirstContentfulPaint"
     case paintStatusReset = "GeckoView:PaintStatusReset"
     case previewImage = "GeckoView:PreviewImage"
-    case cookieBannerEventDetected = "GeckoView:CookieBannerEvent:Detected"
-    case cookieBannerEventHandled = "GeckoView:CookieBannerEvent:Handled"
     case savePdf = "GeckoView:SavePdf"
     case onProductUrl = "GeckoView:OnProductUrl"
 }
@@ -247,12 +232,6 @@ func newContentHandler(_ session: GeckoSession) -> GeckoSessionHandler<
         case .previewImage:
             delegate?.onPreviewImage(
                 session: session, previewImageUrl: message!["previewImageUrl"] as! String)
-            return nil
-        case .cookieBannerEventDetected:
-            delegate?.onCookieBannerDetected(session: session)
-            return nil
-        case .cookieBannerEventHandled:
-            delegate?.onCookieBannerHandled(session: session)
             return nil
         case .savePdf:
             // FIXME: implement

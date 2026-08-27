@@ -797,7 +797,7 @@ nsresult internalDecodeRFC2047Header(const char* aHeaderVal,
     temp.ReplaceSubstring("\n\t", " ");
     temp.ReplaceSubstring("\r\t", " ");
     temp.StripCRLF();
-    aResult = temp;
+    aResult = std::move(temp);
   }
 
   return NS_OK;
@@ -963,7 +963,7 @@ nsresult internalDecodeParameter(const nsACString& aParamValue,
     rv = internalDecodeRFC2047Header(unQuoted.get(), aDefaultCharset,
                                      aOverrideCharset, true, decoded);
 
-    if (NS_SUCCEEDED(rv) && !decoded.IsEmpty()) aResult = decoded;
+    if (NS_SUCCEEDED(rv) && !decoded.IsEmpty()) aResult = std::move(decoded);
   }
 
   return rv;

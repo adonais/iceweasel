@@ -30,13 +30,8 @@ PR_BEGIN_EXTERN_C
  * to avoid PRUint32 overflow.
  */
 
-PR_EXTERN(char *)
-PL_Base64Encode
-(
-    const char *src,
-    PRUint32    srclen,
-    char       *dest
-);
+PR_EXTERN(char*)
+PL_Base64Encode(const char* src, PRUint32 srclen, char* dest);
 
 /*
  * PL_Base64Decode
@@ -62,13 +57,8 @@ PL_Base64Encode
  * which is equivalent but doesn't overflow for any value of srclen.
  */
 
-PR_EXTERN(char *)
-PL_Base64Decode
-(
-    const char *src,
-    PRUint32    srclen,
-    char       *dest
-);
+PR_EXTERN(char*)
+PL_Base64Decode(const char* src, PRUint32 srclen, char* dest);
 
 PR_END_EXTERN_C
 

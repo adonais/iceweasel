@@ -1,0 +1,60 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test audio at the start of an MP4 with video edit-list pre-roll</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="../webaudio/test/webaudio.js"></script>
+  <script src="rms-utils.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css">
+</head>
+<body>
+<script>
+"use strict";
+
+const MIME_TYPE = 'video/mp4; codecs="vp09.00.10.08, fLaC"';
+const RMS_THRESHOLD = 0.01;
+const CURRENT_TIME_LIMIT = 0.25;
+
+add_task(async function testAudioAudibleAtMediaStart() {
+  const video = document.createElement("video");
+  let audioContext;
+  let source;
+
+  try {
+    if (!video.canPlayType(MIME_TYPE)) {
+      ok(true, `${MIME_TYPE} is not supported`);
+      return;
+    }
+
+    video.preload = "auto";
+    video.src = "bug1735300-vp9-flac-edit-list.mp4";
+    document.body.appendChild(video);
+
+    audioContext = new AudioContext();
+    source = audioContext.createMediaElementSource(video);
+
+    await audioContext.resume();
+    await video.play();
+    const measuredRms = await RMSUtils.waitForRmsOverThreshold(
+      audioContext,
+      source,
+      RMS_THRESHOLD
+    );
+    ok(
+      measuredRms > RMS_THRESHOLD && video.currentTime < CURRENT_TIME_LIMIT,
+      `audio should be audible near currentTime 0; ` +
+        `currentTime=${video.currentTime}, rms=${measuredRms}`
+    );
+  } finally {
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+    source?.disconnect();
+    await audioContext?.close();
+    video.remove();
+  }
+});
+</script>
+</body>
+</html>

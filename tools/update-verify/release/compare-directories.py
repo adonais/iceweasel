@@ -80,7 +80,7 @@ TRANSFORMS = [
         "files": [
             "defaults/pref/channel-prefs.js",
         ],
-        "channel_prefix": ["aurora", "beta", "release", "esr"],
+        "channel_prefix": ["aurora", "beta", "release", "esr", "nightly"],
         "side": "target",
         "deletion": "//",
     },

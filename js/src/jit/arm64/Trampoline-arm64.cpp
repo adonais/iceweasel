@@ -10,8 +10,10 @@
 #include "jit/JitRuntime.h"
 #include "jit/PerfSpewer.h"
 #include "jit/VMFunctions.h"
+#include "util/Memory.h"       // js::AlignBytes
 #include "vm/JitActivation.h"  // js::jit::JitActivation
 #include "vm/JSContext.h"
+#include "vm/Stack.h"  // js::ResumeFrameArgs
 
 #include "jit/MacroAssembler-inl.h"
 
@@ -24,10 +26,15 @@ using namespace js::jit;
  *             JSObject* scopeChain, Value* vp)
  *   ...using standard AArch64 calling convention
  */
-void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
+void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
+                                  EnterJitMode mode) {
   AutoCreatedBy acb(masm, "JitRuntime::generateEnterJIT");
 
-  enterJITOffset_ = startTrampolineCode(masm);
+  if (mode == EnterJitMode::GeneratorResume) {
+    enterJITGeneratorResumeOffset_ = startTrampolineCode(masm);
+  } else {
+    enterJITOffset_ = startTrampolineCode(masm);
+  }
 
   const Register reg_code = IntArgReg0;      // EnterJitData::jitcode.
   const Register reg_argc = IntArgReg1;      // EnterJitData::maxArgc.
@@ -69,109 +76,200 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   // At this point we are 16-byte aligned.
   masm.assertStackAlignment(JitStackAlignment);
 
-  // ARM64 expects the stack pointer to be 16-byte aligned whenever it
-  // is used as a base register. This makes it awkward to build a
-  // stack frame using incremental pushes. Therefore, unlike other
-  // platforms, arm64 does not use generateEnterJitShared. Instead,
-  // we compute the total size of the frame, adjust the stack pointer
-  // a single time, and then initialize the contents of the frame.
-  //
-  // At this point:
-  // - reg_argc contains the number of args passed (not including this)
-  // - reg_argv points to the beginning of a contiguous array of arguments
-  //   values, *not* including `this`. `this` is at argvReg[-1].
-  // - reg_callee contains the callee token
+  if (mode == EnterJitMode::GeneratorResume) {
+    // reg_code is the callee's JIT code, reg_argv is the ResumeFrameArgs
+    // array, reg_callee is the callee token.
+    //
+    // Build the resume frame the callee's prologue expects, matching
+    // BaselineCodeGen::emit_Resume and generateEnterJitResumeShared on the
+    // other platforms. As in the normal entry below, arm64 computes the frame
+    // size and adjusts the stack pointer a single time (rather than with
+    // incremental pushes) to keep sp aligned.
+    Label notFunction, doneResume;
+    masm.branchTest32(Assembler::NonZero, reg_callee,
+                      Imm32(CalleeTokenScriptBit), &notFunction);
+    {
+      // Function frame: |this| and the formals (all |undefined|; dead on
+      // resume) followed by the resume args.
+      Register nformals = r19;
+      masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), reg_callee, nformals);
+      masm.loadFunctionArgCount(nformals, nformals);
 
-  // Compute the number of args to push.
-  Label notFunction;
-  Register actual_args = r19;
-  masm.branchTest32(Assembler::NonZero, reg_callee, Imm32(CalleeTokenScriptBit),
-                    &notFunction);
-  masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), reg_callee, actual_args);
-  masm.loadFunctionArgCount(actual_args, actual_args);
-  masm.max32(actual_args, reg_argc, actual_args);
+      // Frame slots: descriptor, calleeToken, |this|, the formals and the
+      // resume args. Round up to an even number of slots to keep sp 16-byte
+      // aligned.
+      Register frame_size = r20;
+      Register scratch = r21;
+      Register scratch2 = r22;
+      uint32_t extraSlots =
+          3 + ResumeFrameArgs::NumSlots;  // descriptor+token+this
+      masm.add32(Imm32(extraSlots + 1), nformals, frame_size);
+      masm.and32(Imm32(~1), frame_size);
+      masm.touchFrameValues(frame_size, scratch, scratch2);
 
-  // In addition to args, our stack frame needs space for the descriptor,
-  // the calleeToken, `this`, and `newTarget`. We allocate `newTarget`
-  // unconditionally; at worst it costs us a tiny bit of stack space.
-  // Add these to frame_size and round up to an even number.
-  Register frame_size = r20;
-  Register scratch = r21;
-  Register scratch2 = r22;
-  uint32_t extraSlots = 4;
-  masm.add32(Imm32(extraSlots + 1), actual_args, frame_size);
-  masm.and32(Imm32(~1), frame_size);
+      // Allocate the stack frame.
+      masm.lshift32(Imm32(3), frame_size);
+      masm.subFromStackPtr(frame_size);
 
-  // Touch frame incrementally (a requirement for Windows).
-  masm.touchFrameValues(frame_size, scratch, scratch2);
+      // Store |this| and the formals as |undefined|, then the resume args,
+      // starting just above the descriptor and calleeToken slots.
+      ARMRegister dest(r23, 64);
+      ARMRegister arg(scratch, 64);
+      ARMRegister count(scratch2, 64);
+      masm.Add(dest, sp, Operand(2 * sizeof(uintptr_t)));
+      masm.Mov(arg, int64_t(UndefinedValue().asRawBits()));
+      masm.Add(count, ARMRegister(nformals, 64), Operand(1));  // + |this|
 
-  // Allocate the stack frame.
-  masm.lshift32(Imm32(3), frame_size);
-  masm.subFromStackPtr(frame_size);
+      Label undefLoop;
+      masm.bind(&undefLoop);
+      masm.Str(arg, MemOperand(dest, Operand(8), vixl::PostIndex));
+      masm.Subs(count, count, Operand(1));
+      masm.B(&undefLoop, vixl::Condition::NonZero);
 
-  // Copy `this` through `argN` from reg_argv to the stack.
-  // WARNING: destructively modifies reg_argv.
-  // This section uses ARM instructions directly to get easy access
-  // to post-increment loads/stores.
-  ARMRegister dest(r23, 64);
-  ARMRegister arg(scratch, 64);
-  ARMRegister tmp_argc(scratch2, 64);
-  ARMRegister argc(reg_argc, 64);
-  ARMRegister argv(reg_argv, 64);
-  masm.Add(dest, sp, Operand(2 * sizeof(uintptr_t)));
-  masm.Add(tmp_argc, argc, Operand(1));
-  masm.Sub(argv, argv, Operand(sizeof(Value)));  // Point at `this`.
+      for (uint32_t i = 0; i < ResumeFrameArgs::NumSlots; i++) {
+        masm.Ldr(arg,
+                 MemOperand(ARMRegister(reg_argv, 64), i * sizeof(JS::Value)));
+        masm.Str(arg, MemOperand(dest, Operand(8), vixl::PostIndex));
+      }
+      masm.jump(&doneResume);
+    }
+    masm.bind(&notFunction);
+    {
+      // Module frame (top-level await): the resume args are the only Values
+      // pushed, there's no |this| or formals.
+      //
+      // Frame slots: descriptor, calleeToken and the pushed Values, rounded up
+      // to an even number of slots to keep sp 16-byte aligned.
+      constexpr uint32_t moduleSlots =
+          AlignBytes(2 + ResumeFrameArgs::NumSlots, 2u);
+      masm.subFromStackPtr(Imm32(moduleSlots * sizeof(uintptr_t)));
 
-  Label argLoop;
-  masm.bind(&argLoop);
-  // Load an argument from argv, then increment argv by 8.
-  masm.Ldr(arg, MemOperand(argv, Operand(8), vixl::PostIndex));
-  // Store the argument to dest, then increment dest by 8.
-  masm.Str(arg, MemOperand(dest, Operand(8), vixl::PostIndex));
-  // Decrement tmp_argc and set the condition codes for the new value.
-  masm.Subs(tmp_argc, tmp_argc, Operand(1));
-  // Branch if arguments remain.
-  masm.B(&argLoop, vixl::Condition::NonZero);
+      ARMRegister dest(r23, 64);
+      ARMRegister arg(r21, 64);
+      masm.Add(dest, sp, Operand(2 * sizeof(uintptr_t)));
+      for (uint32_t i = 0; i < ResumeFrameArgs::NumSlots; i++) {
+        masm.Ldr(arg,
+                 MemOperand(ARMRegister(reg_argv, 64), i * sizeof(JS::Value)));
+        masm.Str(arg, MemOperand(dest, Operand(8), vixl::PostIndex));
+      }
+    }
+    masm.bind(&doneResume);
 
-  // Fill any remaining arguments with `undefined`.
-  // First compute the number of missing arguments.
-  Label noUndef;
-  const ARMRegister missing_args(scratch2, 64);
-  masm.Subs(missing_args, ARMRegister(actual_args, 64), argc);
-  masm.B(&noUndef, vixl::Condition::Zero);
+    // Store the resume frame descriptor and the callee token.
+    Register descriptor = r19;
+    masm.move32(
+        Imm32(int32_t(FrameDescriptor(FrameType::CppToJSJit, /* argc = */ 0,
+                                      /* hasInlinedICScript = */ false,
+                                      /* isResumingGenerator = */ true)
+                          .value())),
+        descriptor);
+    masm.Str(ARMRegister(descriptor, 64), MemOperand(sp, 0));
+    masm.Str(ARMRegister(reg_callee, 64), MemOperand(sp, sizeof(uintptr_t)));
+  } else {
+    // ARM64 expects the stack pointer to be 16-byte aligned whenever it
+    // is used as a base register. This makes it awkward to build a
+    // stack frame using incremental pushes. Therefore, unlike other
+    // platforms, arm64 does not use generateEnterJitShared. Instead,
+    // we compute the total size of the frame, adjust the stack pointer
+    // a single time, and then initialize the contents of the frame.
+    //
+    // At this point:
+    // - reg_argc contains the number of args passed (not including this)
+    // - reg_argv points to the beginning of a contiguous array of arguments
+    //   values, *not* including `this`. `this` is at argvReg[-1].
+    // - reg_callee contains the callee token
 
-  Label undefLoop;
-  masm.Mov(arg, int64_t(UndefinedValue().asRawBits()));
-  masm.bind(&undefLoop);
-  // Store `undefined` to dest, then increment dest by 8.
-  masm.Str(arg, MemOperand(dest, Operand(8), vixl::PostIndex));
-  // Decrement missing_args and set the condition codes for the new value.
-  masm.Subs(missing_args, missing_args, Operand(1));
-  // Branch if missing arguments remain.
-  masm.B(&undefLoop, vixl::Condition::NonZero);
-  masm.bind(&noUndef);
+    // Compute the number of args to push.
+    Label notFunction;
+    Register actual_args = r19;
+    masm.branchTest32(Assembler::NonZero, reg_callee,
+                      Imm32(CalleeTokenScriptBit), &notFunction);
+    masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), reg_callee, actual_args);
+    masm.loadFunctionArgCount(actual_args, actual_args);
+    masm.max32(actual_args, reg_argc, actual_args);
 
-  // Store newTarget if necessary
-  Label doneArgs;
-  masm.branchTest32(Assembler::Zero, reg_callee,
-                    Imm32(CalleeToken_FunctionConstructing), &doneArgs);
-  masm.Ldr(arg, MemOperand(argv));
-  masm.Str(arg, MemOperand(dest));
-  masm.jump(&doneArgs);
-  masm.bind(&notFunction);
+    // In addition to args, our stack frame needs space for the descriptor,
+    // the calleeToken, `this`, and `newTarget`. We allocate `newTarget`
+    // unconditionally; at worst it costs us a tiny bit of stack space.
+    // Add these to frame_size and round up to an even number.
+    Register frame_size = r20;
+    Register scratch = r21;
+    Register scratch2 = r22;
+    uint32_t extraSlots = 4;
+    masm.add32(Imm32(extraSlots + 1), actual_args, frame_size);
+    masm.and32(Imm32(~1), frame_size);
 
-  // Non-functions have no arguments.
-  // Allocate space for the callee token and the descriptor.
-  const int32_t nonFunctionFrameSize = 2 * sizeof(uintptr_t);
-  static_assert(nonFunctionFrameSize % JitStackAlignment == 0);
-  masm.subFromStackPtr(Imm32(nonFunctionFrameSize));
-  masm.bind(&doneArgs);
+    // Touch frame incrementally (a requirement for Windows).
+    masm.touchFrameValues(frame_size, scratch, scratch2);
 
-  // Store descriptor and callee token.
-  masm.unboxInt32(Address(reg_vp, 0), scratch);
-  masm.makeFrameDescriptorForJitCall(FrameType::CppToJSJit, scratch, scratch);
-  masm.Str(ARMRegister(scratch, 64), MemOperand(sp, 0));
-  masm.Str(ARMRegister(reg_callee, 64), MemOperand(sp, sizeof(uintptr_t)));
+    // Allocate the stack frame.
+    masm.lshift32(Imm32(3), frame_size);
+    masm.subFromStackPtr(frame_size);
+
+    // Copy `this` through `argN` from reg_argv to the stack.
+    // WARNING: destructively modifies reg_argv.
+    // This section uses ARM instructions directly to get easy access
+    // to post-increment loads/stores.
+    ARMRegister dest(r23, 64);
+    ARMRegister arg(scratch, 64);
+    ARMRegister tmp_argc(scratch2, 64);
+    ARMRegister argc(reg_argc, 64);
+    ARMRegister argv(reg_argv, 64);
+    masm.Add(dest, sp, Operand(2 * sizeof(uintptr_t)));
+    masm.Add(tmp_argc, argc, Operand(1));
+    masm.Sub(argv, argv, Operand(sizeof(Value)));  // Point at `this`.
+
+    Label argLoop;
+    masm.bind(&argLoop);
+    // Load an argument from argv, then increment argv by 8.
+    masm.Ldr(arg, MemOperand(argv, Operand(8), vixl::PostIndex));
+    // Store the argument to dest, then increment dest by 8.
+    masm.Str(arg, MemOperand(dest, Operand(8), vixl::PostIndex));
+    // Decrement tmp_argc and set the condition codes for the new value.
+    masm.Subs(tmp_argc, tmp_argc, Operand(1));
+    // Branch if arguments remain.
+    masm.B(&argLoop, vixl::Condition::NonZero);
+
+    // Fill any remaining arguments with `undefined`.
+    // First compute the number of missing arguments.
+    Label noUndef;
+    const ARMRegister missing_args(scratch2, 64);
+    masm.Subs(missing_args, ARMRegister(actual_args, 64), argc);
+    masm.B(&noUndef, vixl::Condition::Zero);
+
+    Label undefLoop;
+    masm.Mov(arg, int64_t(UndefinedValue().asRawBits()));
+    masm.bind(&undefLoop);
+    // Store `undefined` to dest, then increment dest by 8.
+    masm.Str(arg, MemOperand(dest, Operand(8), vixl::PostIndex));
+    // Decrement missing_args and set the condition codes for the new value.
+    masm.Subs(missing_args, missing_args, Operand(1));
+    // Branch if missing arguments remain.
+    masm.B(&undefLoop, vixl::Condition::NonZero);
+    masm.bind(&noUndef);
+
+    // Store newTarget if necessary
+    Label doneArgs;
+    masm.branchTest32(Assembler::Zero, reg_callee,
+                      Imm32(CalleeToken_FunctionConstructing), &doneArgs);
+    masm.Ldr(arg, MemOperand(argv));
+    masm.Str(arg, MemOperand(dest));
+    masm.jump(&doneArgs);
+    masm.bind(&notFunction);
+
+    // Non-functions have no arguments.
+    // Allocate space for the callee token and the descriptor.
+    const int32_t nonFunctionFrameSize = 2 * sizeof(uintptr_t);
+    static_assert(nonFunctionFrameSize % JitStackAlignment == 0);
+    masm.subFromStackPtr(Imm32(nonFunctionFrameSize));
+    masm.bind(&doneArgs);
+
+    // Store descriptor and callee token.
+    masm.unboxInt32(Address(reg_vp, 0), scratch);
+    masm.makeFrameDescriptorForJitCall(FrameType::CppToJSJit, scratch, scratch);
+    masm.Str(ARMRegister(scratch, 64), MemOperand(sp, 0));
+    masm.Str(ARMRegister(reg_callee, 64), MemOperand(sp, sizeof(uintptr_t)));
+  }
 
   // We start using the PSP here.
   // TODO: convert the code below to use sp instead.
@@ -181,7 +279,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.checkStackAlignment();
 
   Label osrReturnPoint;
-  {
+  if (mode != EnterJitMode::GeneratorResume) {
     // Check for Interpreter -> Baseline OSR.
 
     AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
@@ -265,8 +363,10 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   // lr.
   masm.callJitNoProfiler(reg_code);
 
-  // Interpreter -> Baseline OSR will return here.
-  masm.bind(&osrReturnPoint);
+  if (mode != EnterJitMode::GeneratorResume) {
+    // Interpreter -> Baseline OSR will return here.
+    masm.bind(&osrReturnPoint);
+  }
 
   // Discard arguments and padding. Set sp to the address of the saved
   // registers. In debug builds we have to include the two stack canaries

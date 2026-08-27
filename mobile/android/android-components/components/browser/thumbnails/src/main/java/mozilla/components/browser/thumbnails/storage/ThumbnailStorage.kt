@@ -22,6 +22,7 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.utils.NamedThreadFactory
 import mozilla.components.support.images.DesiredSize
 import mozilla.components.support.images.decoder.AndroidImageDecoder
+import mozilla.components.support.ktx.android.content.pixelSizeFor
 import java.util.concurrent.Executors
 
 private const val MAXIMUM_SCALE_FACTOR = 2.0f
@@ -45,7 +46,7 @@ class ThumbnailStorage(
     private val decoders = AndroidImageDecoder()
     private val logger = Logger("ThumbnailStorage")
     private val maximumSize =
-        context.resources.getDimensionPixelSize(R.dimen.mozac_browser_thumbnails_maximum_size)
+        context.pixelSizeFor(R.dimen.mozac_browser_thumbnails_maximum_size)
     private val scope = CoroutineScope(jobDispatcher)
 
     init {

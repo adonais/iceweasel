@@ -45,15 +45,15 @@
 #ifndef mozilla_HashFunctions_h
 #define mozilla_HashFunctions_h
 
+#include <cstdint>
+#include <cstring>
+#include <type_traits>
+
 #include "mozilla/Attributes.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Types.h"
 #include "mozilla/WrappingOperations.h"
-
-#include <cstdint>
-#include <cstring>
-#include <type_traits>
 
 namespace mozilla {
 

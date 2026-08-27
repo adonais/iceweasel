@@ -1948,7 +1948,8 @@ int Decoder::InstructionDecode(uint8_t* instr_ptr) {
   int instruction_bits = *(reinterpret_cast<int*>(instr_ptr));
   if ((instruction_bits & kConstantPoolMarkerMask) == kConstantPoolMarker) {
     out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_,
-                                "constant pool begin (length %d)",
+                                "constant pool begin (length %d) "
+                                "[undefined insn]",
                                 DecodeConstantPoolLength(instruction_bits));
     return Instruction::kInstrSize;
   } else if (instruction_bits == kCodeAgeJumpInstruction) {

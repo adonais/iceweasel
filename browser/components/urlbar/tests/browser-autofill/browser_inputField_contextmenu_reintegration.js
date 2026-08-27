@@ -69,6 +69,8 @@ async function pickHistoryResult(url) {
   EventUtils.synthesizeKey("KEY_Enter");
   await loadPromise;
   await TestUtils.waitForTick();
+  // pickResult() fires re-integration without awaiting it.
+  await UrlbarParentController._lastAutofillReintegrationPromise;
 }
 
 async function waitForBlock(url, column) {

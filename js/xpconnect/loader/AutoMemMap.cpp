@@ -17,91 +17,57 @@ namespace loader {
 
 using namespace mozilla::ipc;
 
-AutoMemMap::~AutoMemMap() { reset(); }
-
 FileDescriptor AutoMemMap::cloneFileDescriptor() const {
-  if (fd.get()) {
+  if (mFD.get()) {
     auto handle =
-        FileDescriptor::PlatformHandleType(PR_FileDesc2NativeHandle(fd.get()));
+        FileDescriptor::PlatformHandleType(PR_FileDesc2NativeHandle(mFD.get()));
     return FileDescriptor(handle);
   }
   return FileDescriptor();
 }
 
-Result<Ok, nsresult> AutoMemMap::init(nsIFile* file, int flags, int mode,
-                                      PRFileMapProtect prot) {
-  MOZ_ASSERT(!fd);
+FileDescriptor AutoMemMap::cloneHandle() const { return cloneFileDescriptor(); }
 
-  MOZ_TRY(file->OpenNSPRFileDesc(flags, mode, getter_Transfers(fd)));
+Result<Ok, nsresult> AutoMemMap::init(nsIFile* file) {
+  MOZ_ASSERT(!mFD);
 
-  return initInternal(prot);
+  MOZ_TRY(file->OpenNSPRFileDesc(PR_RDONLY, 0, getter_Transfers(mFD)));
+
+  mFile = MemoryMappedFile::Open(mFD.get(), UINT32_MAX);
+  if (!mFile.IsValid()) {
+    return Err(NS_ERROR_FAILURE);
+  }
+  return Ok();
 }
 
-Result<Ok, nsresult> AutoMemMap::init(const FileDescriptor& file,
-                                      PRFileMapProtect prot, size_t maybeSize) {
-  MOZ_ASSERT(!fd);
+Result<Ok, nsresult> AutoMemMap::init(const FileDescriptor& file) {
+  MOZ_ASSERT(!mFD);
   if (!file.IsValid()) {
     return Err(NS_ERROR_INVALID_ARG);
   }
 
   auto handle = file.ClonePlatformHandle();
 
-  fd.reset(PR_ImportFile(PROsfd(handle.get())));
-  if (!fd) {
+  mFD.reset(PR_ImportFile(PROsfd(handle.get())));
+  if (!mFD) {
     return Err(NS_ERROR_FAILURE);
   }
   (void)handle.release();
 
-  return initInternal(prot, maybeSize);
-}
-
-Result<Ok, nsresult> AutoMemMap::initInternal(PRFileMapProtect prot,
-                                              size_t maybeSize) {
-  MOZ_ASSERT(!fileMap);
-  MOZ_ASSERT(!addr);
-
-  if (maybeSize > 0) {
-    // Some OSes' shared memory objects can't be stat()ed, either at
-    // all (Android) or without loosening the sandbox (Mac) so just
-    // use the size.
-    size_ = maybeSize;
-  } else {
-    // But if we don't have the size, assume it's a regular file and
-    // ask for it.
-    PRFileInfo64 fileInfo;
-    MOZ_TRY(PR_GetOpenFileInfo64(fd.get(), &fileInfo));
-
-    if (fileInfo.size > UINT32_MAX) {
-      return Err(NS_ERROR_INVALID_ARG);
-    }
-    size_ = fileInfo.size;
-  }
-
-  fileMap = PR_CreateFileMap(fd.get(), 0, prot);
-  if (!fileMap) {
+  mFile = MemoryMappedFile::Open(mFD.get(), UINT32_MAX);
+  if (!mFile.IsValid()) {
     return Err(NS_ERROR_FAILURE);
   }
-
-  addr = PR_MemMap(fileMap, 0, size_);
-  if (!addr) {
-    return Err(NS_ERROR_FAILURE);
-  }
-
   return Ok();
 }
 
-FileDescriptor AutoMemMap::cloneHandle() const { return cloneFileDescriptor(); }
-
 void AutoMemMap::reset() {
-  if (addr && !persistent_) {
-    (void)NS_WARN_IF(PR_MemUnmap(addr, size()) != PR_SUCCESS);
-    addr = nullptr;
+  if (mPersistent) {
+    mFile.Leak();
+  } else {
+    mFile.Unmap();
   }
-  if (fileMap) {
-    (void)NS_WARN_IF(PR_CloseFileMap(fileMap) != PR_SUCCESS);
-    fileMap = nullptr;
-  }
-  fd = nullptr;
+  mFD = nullptr;
 }
 
 }  // namespace loader

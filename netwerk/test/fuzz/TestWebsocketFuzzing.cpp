@@ -10,6 +10,7 @@
 #include "nsIPrincipal.h"
 #include "nsIWebSocketChannel.h"
 #include "nsIWebSocketListener.h"
+#include "nsIWebSocketProtocolHandler.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsSandboxFlags.h"
@@ -137,17 +138,22 @@ static int FuzzingRunNetworkWebsocket(const uint8_t* data, size_t size) {
     RefPtr<FuzzingWebSocketListener> gWebSocketListener;
     nsCOMPtr<nsIWebSocketChannel> gWebSocketChannel;
 
+    nsCOMPtr<nsIWebSocketProtocolHandler> wsHandler;
     if (fuzzWSS) {
       spec = "https://127.0.0.1/";
-      gWebSocketChannel =
-          do_CreateInstance("@mozilla.org/network/protocol;1?name=wss", &rv);
+      wsHandler =
+          do_GetService("@mozilla.org/network/protocol;1?name=wss", &rv);
     } else {
       spec = "http://127.0.0.1/";
-      gWebSocketChannel =
-          do_CreateInstance("@mozilla.org/network/protocol;1?name=ws", &rv);
+      wsHandler = do_GetService("@mozilla.org/network/protocol;1?name=ws", &rv);
     }
 
     if (rv != NS_OK) {
+      MOZ_CRASH("Failed to get the WebSocket protocol handler");
+    }
+
+    if (wsHandler->NewWebSocketChannel(getter_AddRefs(gWebSocketChannel)) !=
+        NS_OK) {
       MOZ_CRASH("Failed to create WebSocketChannel");
     }
 

@@ -38,7 +38,7 @@ character, we will continue with triaging it and file a bug where it
 is appropriate.  Bugs specific to geckodriver will be filed in the
 [`Testing :: geckodriver`] component in Bugzilla.
 
-[mailing list]: index.rst/#communication
+[mailing list]: index.md#communication
 [trace-level log]: TraceLogs.md
 [GitHub issue tracker]: https://github.com/mozilla/geckodriver/issues
 [ISSUE_TEMPLATE.md]: https://raw.githubusercontent.com/mozilla/geckodriver/master/ISSUE_TEMPLATE.md

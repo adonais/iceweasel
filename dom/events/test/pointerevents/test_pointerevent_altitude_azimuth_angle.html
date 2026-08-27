@@ -8,6 +8,8 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=2013990
 <title>Test for Bug 2013990</title>
 <script src="/tests/SimpleTest/SimpleTest.js"></script>
 <script src="/tests/SimpleTest/EventUtils.js"></script>
+<script src="/tests/SimpleTest/paint_listener.js"></script>
+<script src="apz_test_utils.js"></script>
 <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
 <style>
 #target {
@@ -24,9 +26,13 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=2013990
 <script type="text/javascript">
 
 /** Test for Bug 2013990 */
-add_task(async function test_pointer_touch_tiltX_tiltY() {
+add_setup(async function () {
+  await waitUntilApzStable();
+});
+
+async function checkTiltXTiltY() {
+  let target = document.getElementById("target");
   let promise = new Promise((resolve) => {
-    let target = document.getElementById("target");
     target.addEventListener("pointerdown", (e) => {
       is(e.tiltX, 45, "check tiltX");
       is(e.tiltY, 0, "check tiltY");
@@ -37,11 +43,11 @@ add_task(async function test_pointer_touch_tiltX_tiltY() {
   });
   synthesizeTouchAtCenter(target, { tiltX: 45, tiltY: 0 });
   await promise;
-});
+}
 
-add_task(async function test_pointer_touch_altitude_azimuth() {
+async function checkAltitudeAzimuth() {
+  let target = document.getElementById("target");
   let promise = new Promise((resolve) => {
-    let target = document.getElementById("target");
     target.addEventListener("pointerdown", (e) => {
       is(e.altitudeAngle, 1.2, "check altitudeAngle");
       is(e.azimuthAngle, 6, "check azimuthAngle");
@@ -52,6 +58,20 @@ add_task(async function test_pointer_touch_altitude_azimuth() {
   });
   synthesizeTouchAtCenter(target, { altitudeAngle: 1.2, azimuthAngle: 6 });
   await promise;
+}
+
+add_task(async function test_pointer_touch_tiltX_tiltY() {
+  await SpecialPowers.pushPrefEnv({set: [["test.events.async.enabled", false]]});
+  await checkTiltXTiltY();
+  await SpecialPowers.pushPrefEnv({set: [["test.events.async.enabled", true]]});
+  await checkTiltXTiltY();
+});
+
+add_task(async function test_pointer_touch_altitude_azimuth() {
+  await SpecialPowers.pushPrefEnv({set: [["test.events.async.enabled", false]]});
+  await checkAltitudeAzimuth();
+  await SpecialPowers.pushPrefEnv({set: [["test.events.async.enabled", true]]});
+  await checkAltitudeAzimuth();
 });
 
 </script>

@@ -9,11 +9,8 @@ import android.widget.LinearLayout
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
 import androidx.appcompat.content.res.AppCompatResources
-import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.material3.Text
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
@@ -50,19 +47,15 @@ import mozilla.components.support.utils.ColorUtils.getSecondaryReadableTextColor
 import org.mozilla.focus.GleanMetrics.TabCount
 import org.mozilla.focus.GleanMetrics.TrackingProtection
 import org.mozilla.focus.R
-import org.mozilla.focus.cookiebanner.CookieBannerOption
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.ext.isCustomTab
 import org.mozilla.focus.ext.isTablet
-import org.mozilla.focus.ext.requireComponents
 import org.mozilla.focus.ext.settings
 import org.mozilla.focus.fragment.BrowserFragment
 import org.mozilla.focus.menu.browser.CustomTabMenu
 import org.mozilla.focus.nimbus.FocusNimbus
 import org.mozilla.focus.state.AppAction
-import org.mozilla.focus.state.Screen
 import org.mozilla.focus.ui.theme.focusTypography
-import org.mozilla.focus.utils.ClickableSubstringLink
 import androidx.cardview.R as cardViewR
 import mozilla.components.browser.toolbar.R as toolbarR
 import mozilla.components.ui.icons.R as iconsR
@@ -123,9 +116,6 @@ class BrowserToolbarIntegration(
     @VisibleForTesting
     internal var trackingProtectionCfrScope: CoroutineScope? = null
 
-    @VisibleForTesting
-    internal var cookieBannerCfrScope: CoroutineScope? = null
-
     private var tabsCounterScope: CoroutineScope? = null
     private var customTabsFeature: CustomTabsToolbarFeature? = null
     private var navigationButtonsIntegration: NavigationButtonsIntegration? = null
@@ -173,7 +163,6 @@ class BrowserToolbarIntegration(
 
             setOnSiteInfoClickedListener {
                 TrackingProtection.toolbarShieldClicked.add()
-                fragment.initCookieBanner()
                 fragment.showTrackingProtectionPanel()
             }
 
@@ -202,7 +191,6 @@ class BrowserToolbarIntegration(
 
         toolbar.display.setOnTrackingProtectionClickedListener {
             TrackingProtection.toolbarShieldClicked.add()
-            fragment.initCookieBanner()
             fragment.showTrackingProtectionPanel()
         }
 
@@ -281,14 +269,6 @@ class BrowserToolbarIntegration(
             observeEraseCfr()
         }
 
-        if (fragment.requireContext().settings.shouldShowCookieBannerCfr &&
-            fragment.requireContext().settings.isCookieBannerEnable &&
-            fragment.requireContext().settings.getCurrentCookieBannerOptionFromSharePref() ==
-            CookieBannerOption.CookieBannerRejectAll()
-        ) {
-            observeCookieBannerCfr()
-        }
-
         observeTrackingProtectionCfr()
     }
 
@@ -350,74 +330,6 @@ class BrowserToolbarIntegration(
     }
 
     @VisibleForTesting
-    internal fun observeCookieBannerCfr() {
-        cookieBannerCfrScope =
-            fragment.components?.appStore?.flowScoped(
-                dispatcher = coroutineDispatcher,
-            ) { flow ->
-                flow.mapNotNull { state -> state.showCookieBannerCfr }
-                    .distinctUntilChanged()
-                    .collect { showCookieBannerCfr ->
-                        if (showCookieBannerCfr) {
-                            CFRPopup(
-                                anchor = toolbar.findViewById<AppCompatEditText>(
-                                    toolbarR.id.mozac_browser_toolbar_background,
-                                ),
-                                properties = CFRPopupProperties(
-                                    popupWidth = 256.dp,
-                                    popupAlignment = CFRPopup.PopupAlignment.BODY_TO_ANCHOR_START,
-                                    popupBodyColors = CFRPopupBackground.Colors(
-                                        listOf(
-                                            ContextCompat.getColor(
-                                                fragment.requireContext(),
-                                                R.color.cfr_pop_up_shape_end_color,
-                                            ),
-                                            ContextCompat.getColor(
-                                                fragment.requireContext(),
-                                                R.color.cfr_pop_up_shape_start_color,
-                                            ),
-                                        ),
-                                    ),
-                                    dismissButtonColor = ContextCompat.getColor(
-                                        fragment.requireContext(),
-                                        cardViewR.color.cardview_light_background,
-                                    ),
-                                    popupVerticalOffset = 0.dp,
-                                    indicatorArrowStartOffset = 10.dp,
-                                ),
-                                onDismiss = { onDismissCookieBannerCfr() },
-                                text = {
-                                    val appName = stringResource(R.string.onboarding_short_app_name)
-                                    val linkText = stringResource(R.string.cfr_cookie_banner_link)
-                                    val textCookieBannerCfr = stringResource(
-                                        id = R.string.cfr_cookie_banner,
-                                        appName,
-                                        linkText,
-                                    )
-                                    ClickableSubstringLink(
-                                        text = textCookieBannerCfr,
-                                        style = focusTypography.cfrCookieBannerTextStyle,
-                                        linkTextDecoration = TextDecoration.Underline,
-                                        clickableStartIndex = textCookieBannerCfr.indexOf(linkText),
-                                        clickableEndIndex = textCookieBannerCfr.length,
-                                        onClick = {
-                                            fragment.requireComponents.appStore.dispatch(
-                                                AppAction.OpenSettings(Screen.Settings.Page.CookieBanner),
-                                            )
-                                            onDismissCookieBannerCfr()
-                                        },
-                                    )
-                                },
-                            ).apply {
-                                show()
-                                stopObserverCookieBannerCfrChanges()
-                            }
-                        }
-                    }
-            }
-    }
-
-    @VisibleForTesting
     internal fun observeTrackingProtectionCfr() {
         trackingProtectionCfrScope =
             fragment.components?.appStore?.flowScoped(
@@ -466,15 +378,6 @@ class BrowserToolbarIntegration(
                         }
                     }
             }
-    }
-
-    private fun onDismissCookieBannerCfr() {
-        fragment.components?.appStore?.dispatch(
-            AppAction.ShowCookieBannerCfrChange(
-                false,
-            ),
-        )
-        fragment.requireContext().settings.shouldShowCookieBannerCfr = false
     }
 
     private fun onDismissTrackingProtectionCfr() {
@@ -530,7 +433,6 @@ class BrowserToolbarIntegration(
         tabsCounterScope?.cancel()
         stopObserverEraseTabsCfrChanges()
         stopObserverTrackingProtectionCfrChanges()
-        stopObserverCookieBannerCfrChanges()
     }
 
     @VisibleForTesting
@@ -546,11 +448,6 @@ class BrowserToolbarIntegration(
     @VisibleForTesting
     internal fun stopObserverSecurityIndicatorChanges() {
         securityIndicatorScope?.cancel()
-    }
-
-    @VisibleForTesting
-    internal fun stopObserverCookieBannerCfrChanges() {
-        cookieBannerCfrScope?.cancel()
     }
 
     @VisibleForTesting

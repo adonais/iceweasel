@@ -79,10 +79,10 @@ add_setup(async function () {
 
 // * Known sports
 // * In each suggestion value, both teams have icons
-// * Game statuses: past
+// * Game statuses: past (not today)
 //
 // => Each item should show both teams' icons
-add_task(async function knownSports_bothIcons_past() {
+add_task(async function knownSports_bothIcons_past_notToday() {
   await doTest({
     now: "2025-10-31T14:00:00-04:00[-04:00]",
     data: KNOWN_SPORTS.map(data =>
@@ -100,6 +100,55 @@ add_task(async function knownSports_bothIcons_past() {
         },
         expected: {
           isAwayTeamImageHidden: false,
+        },
+      })
+    ),
+  });
+});
+
+// * Known sports
+// * In each suggestion value, both teams have icons
+// * Game statuses: past (today)
+//
+// => Each item should show both teams' icons
+add_task(async function knownSports_bothIcons_past_today() {
+  await doTest({
+    now: "2025-10-31T14:00:00-04:00[-04:00]",
+    data: KNOWN_SPORTS.map(data =>
+      makeValueAndExpectedItem({
+        ...data,
+        date: "2025-10-31T17:00:00Z",
+        statusType: "past",
+        homeTeam: {
+          icon: TEST_ICON_URL_HOME,
+          score: 1,
+        },
+        awayTeam: {
+          icon: TEST_ICON_URL_AWAY,
+          score: 0,
+        },
+        expected: {
+          isAwayTeamImageHidden: false,
+          itemOverrides: {
+            date: "Today",
+            status: {
+              l10n: {
+                id: "urlbar-result-sports-status-final",
+              },
+            },
+            "home-team-date-chiclet-day": {
+              textContent: "31",
+            },
+            "home-team-date-chiclet-month": {
+              textContent: "Oct",
+            },
+            "away-team-date-chiclet-day": {
+              textContent: "31",
+            },
+            "away-team-date-chiclet-month": {
+              textContent: "Oct",
+            },
+          },
         },
       })
     ),
@@ -822,10 +871,13 @@ async function doOneTest({ expectedItems }) {
  *   Partial `home_team` in the suggestion value.
  * @param {{ icon: ?string, score: ?number }} options.awayTeam
  *   Partial `away_team` in the suggestion value.
- * @param {{ isAwayTeamImageHidden: bool }} options.expected
- * @param {bool} options.expected.isAwayTeamImageHidden
- *   Whether the away team image container is expected to be hidden (because
- *   it's the same as the home team image container).
+ * @param {object} options.expected
+ *   {bool} isAwayTeamImageHidden
+ *     Whether the away team image container is expected to be hidden (because
+ *     it's the same as the home team image container).
+ *   {?object} itemOverrides
+ *     Values to use for `expectedItem` instead of the defaults that this
+ *     function normally creates. See the code for details.
  *
  * @returns {{ value: any, expectedItem: any }}
  */
@@ -835,9 +887,9 @@ function makeValueAndExpectedItem({
   fallbackIconName,
   date,
   statusType,
+  expected,
   homeTeam = {},
   awayTeam = {},
-  expected: { isAwayTeamImageHidden },
 }) {
   let expectedItem = {
     sport,
@@ -872,13 +924,13 @@ function makeValueAndExpectedItem({
         awayTeam.icon || !fallbackIconName
           ? null
           : `url("chrome://browser/skin/urlbar/sports-${fallbackIconName}.svg")`,
-      isHidden: isAwayTeamImageHidden,
+      isHidden: expected.isAwayTeamImageHidden,
     },
     "away-team-image": {
       attributes: {
         src: awayTeam.icon ?? null,
       },
-      isHidden: isAwayTeamImageHidden,
+      isHidden: expected.isAwayTeamImageHidden,
     },
   };
 
@@ -962,13 +1014,20 @@ function makeValueAndExpectedItem({
     },
     "away-team-date-chiclet-day": {
       textContent: chicletDay,
-      isHidden: !!awayTeam.icon || !!fallbackIconName || isAwayTeamImageHidden,
+      isHidden:
+        !!awayTeam.icon || !!fallbackIconName || expected.isAwayTeamImageHidden,
     },
     "away-team-date-chiclet-month": {
       textContent: chicletMonth,
-      isHidden: !!awayTeam.icon || !!fallbackIconName || isAwayTeamImageHidden,
+      isHidden:
+        !!awayTeam.icon || !!fallbackIconName || expected.isAwayTeamImageHidden,
     },
   };
+
+  // Merge `expectedItem` with the passed-in overrides.
+  if (expected.itemOverrides) {
+    mergeObjects(expectedItem, expected.itemOverrides);
+  }
 
   return {
     expectedItem,
@@ -1004,4 +1063,19 @@ function makeMerinoSuggestions(values) {
       },
     },
   ];
+}
+
+function mergeObjects(dest, other) {
+  for (let [key, value] of Object.entries(other)) {
+    if (
+      value &&
+      typeof value == "object" &&
+      dest[key] &&
+      typeof dest[key] == "object"
+    ) {
+      mergeObjects(dest[key], value);
+    } else {
+      dest[key] = value;
+    }
+  }
 }

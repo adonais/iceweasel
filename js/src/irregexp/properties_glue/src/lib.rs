@@ -16,6 +16,23 @@ extern "C" {
     );
 }
 
+// For now, let's use ICU4X to handle only what we no longer
+// have ICU4C support for.
+fn lookup_property_set(name: &[u8]) -> Option<icu_properties::CodePointSetDataBorrowed<'static>> {
+    match name {
+        b"Changes_When_NFKC_Casefolded" | b"CWKCF" | b"Changes_When_Casefolded" | b"CWCF" => {}
+        _ => {
+            return None;
+        }
+    }
+    icu_properties::CodePointSetData::new_for_ecma262(name)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn mozilla_properties_glue_has_property(name: *const c_char) -> bool {
+    lookup_property_set(CStr::from_ptr(name).to_bytes()).is_some()
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn mozilla_properties_glue_add_property_ranges(
     list: *mut c_void,
@@ -24,16 +41,7 @@ pub unsafe extern "C" fn mozilla_properties_glue_add_property_ranges(
     negate: bool,
     needs_case_folding: bool,
 ) -> bool {
-    let name = CStr::from_ptr(name).to_bytes();
-    // For now, let's use ICU4X to handle only what we no longer
-    // have ICU4C support for.
-    match name {
-        b"Changes_When_NFKC_Casefolded" | b"CWKCF" | b"Changes_When_Casefolded" | b"CWCF" => {}
-        _ => {
-            return false;
-        }
-    }
-    let Some(prop) = icu_properties::CodePointSetData::new_for_ecma262(name) else {
+    let Some(prop) = lookup_property_set(CStr::from_ptr(name).to_bytes()) else {
         return false;
     };
     if needs_case_folding {

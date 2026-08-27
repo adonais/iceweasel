@@ -126,7 +126,11 @@ class SMILAnimationController final : public SMILTimeContainer {
   static void SampleTimedElement(mozilla::dom::SVGAnimationElement* aElement,
                                  TimeContainerHashtable* aActiveContainers);
 
-  static void AddAnimationToCompositorTable(
+  // Returns true if aElement contributed an entry to aCompositorTable, in which
+  // case the caller must keep aElement alive until it has finished with the
+  // table (see bug 1347168): compositors store raw SMILAnimationFunction
+  // pointers that are owned by their animation elements.
+  static bool AddAnimationToCompositorTable(
       mozilla::dom::SVGAnimationElement* aElement,
       SMILCompositorTable* aCompositorTable);
 

@@ -1579,6 +1579,14 @@ impl Profile {
     }
 
     pub fn new_cicp(cp: ColourPrimaries, tc: TransferCharacteristics) -> Option<Box<Profile>> {
+        Profile::new_cicp_with_intent(cp, tc, Perceptual)
+    }
+
+    pub fn new_cicp_with_intent(
+        cp: ColourPrimaries,
+        tc: TransferCharacteristics,
+        rendering_intent: Intent,
+    ) -> Option<Box<Profile>> {
         let mut profile = profile_create();
         if !cp.is_usable() || !tc.is_usable() {
             return None;
@@ -1592,7 +1600,7 @@ impl Profile {
         profile.blueTRC = Some(Box::new(curve.clone()));
         profile.greenTRC = Some(Box::new(curve));
         profile.class_type = DISPLAY_DEVICE_PROFILE;
-        profile.rendering_intent = Perceptual;
+        profile.rendering_intent = rendering_intent;
         profile.color_space = RGB_SIGNATURE;
         profile.pcs = XYZ_TYPE;
 

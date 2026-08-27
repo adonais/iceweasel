@@ -12,6 +12,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   AppProvidedConfigEngine:
     "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
+  ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
   BrowserUsageTelemetry: "resource:///modules/BrowserUsageTelemetry.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
@@ -1863,6 +1864,11 @@ export var UITour = {
       }
       appinfo.profileCreatedWeeksAgo = createdWeeksAgo;
       appinfo.profileResetWeeksAgo = resetWeeksAgo;
+
+      try {
+        await lazy.ASRouter.waitForInitialized;
+        appinfo.previousSessionEnd = lazy.ASRouter.state.previousSessionEnd;
+      } catch (e) {}
 
       this.sendPageCallback(aBrowser, aCallbackID, appinfo);
     })().catch(err => {

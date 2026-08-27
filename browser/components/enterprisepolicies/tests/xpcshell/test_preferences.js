@@ -255,3 +255,27 @@ add_task(async function test_bug_1666836() {
     `browser.tabs.warnOnClose should be false`
   );
 });
+
+add_task(async function test_invalid_entry_does_not_discard_the_others() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      Preferences: {
+        "browser.policies.test.default.survivor": {
+          Value: "kept",
+          Status: "default",
+        },
+        "browser.policies.test.default.broken": {
+          Value: true,
+          Status: "not-a-status",
+        },
+      },
+    },
+  });
+
+  checkDefaultPref("browser.policies.test.default.survivor", "kept");
+  equal(
+    Preferences.get("browser.policies.test.default.broken", undefined),
+    undefined,
+    "The invalid entry is dropped without taking the valid ones with it"
+  );
+});

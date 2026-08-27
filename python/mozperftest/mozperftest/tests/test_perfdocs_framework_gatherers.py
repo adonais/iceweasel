@@ -540,7 +540,8 @@ def test_talos_build_test_description_example_data(structured_logger):
             suite_name="Talos Tests",
         )
         text = result[0]
-        assert "code-block" in text
+        assert "```" in text
+        assert "sample: 42" in text
 
 
 def test_talos_build_test_description_sub_list(structured_logger):
@@ -619,8 +620,8 @@ def test_talos_build_suite_section(structured_logger):
 
         g = _make_gatherer(TalosGatherer, top_dir)
         section = g.build_suite_section("talos tests", "Some content")
-        assert section[0] == "talos tests"
-        assert section[1] == "*" * len("talos tests")
+        assert section[0] == "## talos tests"
+        assert section[2] == "Some content"
 
 
 def _awsy_gatherer(tmp_path):
@@ -682,8 +683,8 @@ def test_awsy_build_suite_section(structured_logger):
 
         g = _awsy_gatherer(top_dir)
         section = g.build_suite_section("awsy tests", "Some content")
-        assert section[0] == "Awsy tests"
-        assert section[1] == "-" * len("Awsy tests")
+        assert section[0] == "## Awsy tests"
+        assert section[2] == "Some content"
 
 
 def test_awsy_build_test_description_tp6(structured_logger):

@@ -14,6 +14,8 @@ extern "C" {
 nsresult new_limited_access_feature_service(REFNSIID iid, void** result);
 nsresult shell_windows_new_secondary_tile_service(REFNSIID iid, void** result);
 nsresult shell_windows_taskbar_can_pin_to_taskbar();
+nsresult shell_windows_taskbar_is_current_app_pinned(
+    const nsAString* aumid, const mozilla::dom::Promise* promise);
 nsresult shell_windows_taskbar_pin_app_to_taskbar(
     const nsAString* aumid, const nsAString* shortcut_path,
     bool fire_and_forget, const mozilla::dom::Promise* promise);

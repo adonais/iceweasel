@@ -4,7 +4,6 @@
 package org.mozilla.focus.cfr
 
 import mozilla.components.browser.state.action.ContentAction
-import mozilla.components.browser.state.action.CookieBannerAction
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.action.TrackingProtectionAction
 import mozilla.components.browser.state.state.BrowserState
@@ -25,7 +24,6 @@ import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
 import org.mozilla.experiments.nimbus.internal.FeatureHolder
-import org.mozilla.focus.cookiebanner.CookieBannerOption
 import org.mozilla.focus.nimbus.Onboarding
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.state.AppState
@@ -56,11 +54,7 @@ class CfrMiddlewareTest {
         whenever(onboardingExperiment.value()).thenReturn(onboardingConfig)
         whenever(onboardingConfig.isCfrEnabled).thenReturn(true)
 
-        whenever(settings.isFirstRun).thenReturn(false)
         whenever(settings.shouldShowCfrForTrackingProtection).thenReturn(true)
-        whenever(settings.shouldShowCookieBannerCfr).thenReturn(true)
-        whenever(settings.isCookieBannerEnable).thenReturn(true)
-        whenever(settings.getCurrentCookieBannerOptionFromSharePref()).thenReturn(CookieBannerOption.CookieBannerRejectAll())
 
         val defaultScreen = org.mozilla.focus.state.Screen.Home
         appState = AppState(screen = defaultScreen, showEraseTabsCfr = false)
@@ -212,84 +206,6 @@ class CfrMiddlewareTest {
         verify(appStore, never()).dispatch(
             AppAction.ShowTrackingProtectionCfrChange(mapOf("1" to true)),
         )
-    }
-
-    @Test
-    fun `GIVEN cookie banner action handled WHEN conditions met THEN show cookie banner CFR`() {
-        val action = CookieBannerAction.UpdateStatusAction(
-            "1",
-            EngineSession.CookieBannerHandlingStatus.HANDLED,
-        )
-
-        whenever(settings.shouldShowCfrForTrackingProtection).thenReturn(false)
-
-        browserStore.dispatch(action)
-
-        verify(appStore).dispatch(AppAction.ShowCookieBannerCfrChange(true))
-    }
-
-    @Test
-    fun `GIVEN cookie banner action not handled WHEN conditions met THEN do not show cookie banner CFR`() {
-        val action = CookieBannerAction.UpdateStatusAction(
-            "1",
-            EngineSession.CookieBannerHandlingStatus.DETECTED,
-        )
-
-        browserStore.dispatch(action)
-
-        verify(appStore, never()).dispatch(AppAction.ShowCookieBannerCfrChange(true))
-    }
-
-    @Test
-    fun `GIVEN cookie banner action handled but first run WHEN conditions met THEN do not show cookie banner CFR`() {
-        whenever(settings.isFirstRun).thenReturn(true)
-        val action = CookieBannerAction.UpdateStatusAction(
-            "1",
-            EngineSession.CookieBannerHandlingStatus.HANDLED,
-        )
-
-        browserStore.dispatch(action)
-
-        verify(appStore, never()).dispatch(AppAction.ShowCookieBannerCfrChange(true))
-    }
-
-    @Test
-    fun `GIVEN cookie banner action handled but setting disabled WHEN conditions met THEN do not show cookie banner CFR`() {
-        whenever(settings.shouldShowCookieBannerCfr).thenReturn(false)
-        val action = CookieBannerAction.UpdateStatusAction(
-            "1",
-            EngineSession.CookieBannerHandlingStatus.HANDLED,
-        )
-
-        browserStore.dispatch(action)
-
-        verify(appStore, never()).dispatch(AppAction.ShowCookieBannerCfrChange(true))
-    }
-
-    @Test
-    fun `GIVEN cookie banner action handled but feature disabled WHEN conditions met THEN do not show cookie banner CFR`() {
-        whenever(settings.isCookieBannerEnable).thenReturn(false)
-        val action = CookieBannerAction.UpdateStatusAction(
-            "1",
-            EngineSession.CookieBannerHandlingStatus.HANDLED,
-        )
-
-        browserStore.dispatch(action)
-
-        verify(appStore, never()).dispatch(AppAction.ShowCookieBannerCfrChange(true))
-    }
-
-    @Test
-    fun `GIVEN cookie banner action handled but option not reject all WHEN conditions met THEN do not show cookie banner CFR`() {
-        whenever(settings.getCurrentCookieBannerOptionFromSharePref()).thenReturn(CookieBannerOption.CookieBannerDisabled())
-        val action = CookieBannerAction.UpdateStatusAction(
-            "1",
-            EngineSession.CookieBannerHandlingStatus.HANDLED,
-        )
-
-        browserStore.dispatch(action)
-
-        verify(appStore, never()).dispatch(AppAction.ShowCookieBannerCfrChange(true))
     }
 
     private fun createTab(

@@ -96,6 +96,13 @@ vendoring:
     - update-moz-yaml
     - update-moz-build
 
+  # Disable git object validation for clones/fetches of this repository
+  # only. Only set this if upstream's history contains an object that
+  # fails git's fsck validation (e.g. a very old malformed commit), and
+  # you've confirmed the object itself is benign.
+  # optional
+  tolerate-git-fsck-errors: true
+
   # List of patch files to apply after vendoring. Applied in the order
   # specified, and alphabetically if globbing is used. Patches must apply
   # cleanly before changes are pushed.

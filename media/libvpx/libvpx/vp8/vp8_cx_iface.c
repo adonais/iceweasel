@@ -249,7 +249,7 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
 
   if (cfg->ts_number_layers > 1) {
     unsigned int i;
-    RANGE_CHECK_HI(cfg, ts_periodicity, 16);
+    RANGE_CHECK(cfg, ts_periodicity, 1, 16);
 
     for (i = 1; i < cfg->ts_number_layers; ++i) {
       if (cfg->ts_target_bitrate[i] <= cfg->ts_target_bitrate[i - 1] &&
@@ -263,7 +263,9 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
         ERROR("ts_rate_decimator factors are not powers of 2");
     }
 
-    RANGE_CHECK_HI(cfg, ts_layer_id[i], cfg->ts_number_layers - 1);
+    for (i = 0; i < cfg->ts_periodicity; ++i) {
+      RANGE_CHECK_HI(cfg, ts_layer_id[i], cfg->ts_number_layers - 1);
+    }
   }
 
 #if (CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING)
@@ -1185,7 +1187,9 @@ static vpx_codec_err_t vp8e_set_reference(vpx_codec_alg_priv_t *ctx,
     YV12_BUFFER_CONFIG sd;
 
     image2yuvconfig(&frame->img, &sd);
-    vp8_set_reference(ctx->cpi, frame->frame_type, &sd);
+    if (vp8_set_reference(ctx->cpi, frame->frame_type, &sd)) {
+      return VPX_CODEC_INVALID_PARAM;
+    }
     return VPX_CODEC_OK;
   } else {
     return VPX_CODEC_INVALID_PARAM;
@@ -1201,7 +1205,9 @@ static vpx_codec_err_t vp8e_get_reference(vpx_codec_alg_priv_t *ctx,
     YV12_BUFFER_CONFIG sd;
 
     image2yuvconfig(&frame->img, &sd);
-    vp8_get_reference(ctx->cpi, frame->frame_type, &sd);
+    if (vp8_get_reference(ctx->cpi, frame->frame_type, &sd)) {
+      return VPX_CODEC_INVALID_PARAM;
+    }
     return VPX_CODEC_OK;
   } else {
     return VPX_CODEC_INVALID_PARAM;

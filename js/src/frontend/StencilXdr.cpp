@@ -1221,32 +1221,32 @@ XDRResult StencilXDR::codeSourceData(XDRState<mode>* const xdr,
 
   switch (tag) {
     case DataType::CompressedUtf8Retrievable:
-      codeSourceRetrievable<Utf8Unit, ScriptSource::Compressed, mode>(
-          reader, writer);
+      codeSourceRetrievable<Utf8Unit, ScriptSource::Compressed, mode>(reader,
+                                                                      writer);
       return Ok();
 
     case DataType::CompressedUtf8NotRetrievable:
       return codeSourceCompressedData<Utf8Unit>(xdr, ss, reader, writer);
 
     case DataType::UncompressedUtf8Retrievable:
-      codeSourceRetrievable<Utf8Unit, ScriptSource::Uncompressed, mode>(
-        reader, writer);
+      codeSourceRetrievable<Utf8Unit, ScriptSource::Uncompressed, mode>(reader,
+                                                                        writer);
       return Ok();
 
     case DataType::UncompressedUtf8NotRetrievable:
       return codeSourceUncompressedData<Utf8Unit>(xdr, ss, reader, writer);
 
     case DataType::CompressedUtf16Retrievable:
-      codeSourceRetrievable<char16_t, ScriptSource::Compressed, mode>(
-          reader, writer);
+      codeSourceRetrievable<char16_t, ScriptSource::Compressed, mode>(reader,
+                                                                      writer);
       return Ok();
 
     case DataType::CompressedUtf16NotRetrievable:
       return codeSourceCompressedData<char16_t>(xdr, ss, reader, writer);
 
     case DataType::UncompressedUtf16Retrievable:
-      codeSourceRetrievable<char16_t, ScriptSource::Uncompressed, mode>(
-          reader, writer);
+      codeSourceRetrievable<char16_t, ScriptSource::Uncompressed, mode>(reader,
+                                                                        writer);
       return Ok();
 
     case DataType::UncompressedUtf16NotRetrievable:

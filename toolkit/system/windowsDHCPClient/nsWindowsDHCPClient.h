@@ -25,7 +25,7 @@ class nsWindowsDHCPClient final : public nsIDHCPClient {
       : mNetworkFunctions(aNetworkFunctions) {};
 
  private:
-  ~nsWindowsDHCPClient() {};
+  ~nsWindowsDHCPClient() = default;
   WindowsNetworkFunctionsWrapper* mNetworkFunctions;
 };
 

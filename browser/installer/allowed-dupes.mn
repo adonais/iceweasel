@@ -108,15 +108,6 @@ browser/chrome/browser/content/newtab/data/content/assets/glyph-webextension-16.
 # Bug 2031302 - allow duplicate css/js files which are used as content scripts by our built-in web compatibility addon.
 browser/chrome/browser/builtin-addons/webcompat/injections/*
 
-# @backward-compat {version 151}
-# Bug 2035817 - These shaft-arrow SVGs are temporarily duplicated between toolkit
-# and browser/extensions/newtab in order to make HNT Nova shippable via newtab
-# train-hop. We can remove these duplicates once Firefox 151 ships to release.
-browser/chrome/browser/builtin-addons/newtab/data/data/content/assets/shaft-arrow-left.svg
-chrome/toolkit/skin/classic/global/icons/shaft-arrow-left.svg
-browser/chrome/browser/builtin-addons/newtab/data/data/content/assets/shaft-arrow-right.svg
-chrome/toolkit/skin/classic/global/icons/shaft-arrow-right.svg
-
 # Bug 2034982 - kit-in-circle.svg is shared between the about:pdf landing page
 # (toolkit global skin, used by the promo) and browser/extensions/newtab, which
 # ship in separate packaging domains.

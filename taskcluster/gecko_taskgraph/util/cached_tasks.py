@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from taskgraph.util.cached_tasks import TARGET_CACHE_INDEX
+from taskgraph.util.cached_tasks import TARGET_CACHE_INDEX, TARGET_PR_CACHE_INDEX
 from taskgraph.util.cached_tasks import add_optimization as tg_add_optimization
 
 
@@ -41,8 +41,11 @@ def add_optimization(
 
     # Allow future pushes to find this task before it completes
     # Implementation in morphs
+    template = TARGET_CACHE_INDEX
+    if config.params["tasks_for"].startswith("github-pull-request"):
+        template = TARGET_PR_CACHE_INDEX
     taskdesc["attributes"]["eager_indexes"] = [
-        TARGET_CACHE_INDEX.format(
+        template.format(
             cache_prefix=cache_prefix,
             level=config.params["level"],
             type=cache_type,

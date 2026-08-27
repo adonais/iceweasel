@@ -190,56 +190,179 @@
                   aria-controls="ruleview-class-panel"
                   aria-pressed="false"
                 ></button>
+                <div class="devtools-separator"></div>
+                <button
+                  id="color-scheme-emulation-light-toggle"
+                  data-l10n-id="inspector-color-scheme-emulation-light"
+                  class="devtools-button"
+                  hidden=""
+                  aria-pressed="false"
+                ></button>
+                <button
+                  id="color-scheme-emulation-dark-toggle"
+                  data-l10n-id="inspector-color-scheme-emulation-dark"
+                  class="devtools-button"
+                  hidden=""
+                  aria-pressed="false"
+                ></button>
+                <button
+                  id="emulation-panel-toggle"
+                  data-l10n-id="inspector-emulation-panel-toggle"
+                  class="devtools-button"
+                  aria-controls="emulation-panel"
+                  aria-pressed="false"
+                  hidden=""
+                ></button>
+                <div class="devtools-separator"></div>
                 <button
                   id="ruleview-add-rule-button"
                   data-localization="title=inspector.addRule.tooltip"
                   class="devtools-button"
                 ></button>
-                <button
-                  id="color-scheme-simulation-light-toggle"
-                  data-localization="title=inspector.colorSchemeSimulationLight.tooltip"
-                  class="devtools-button"
-                  hidden=""
-                  aria-pressed="false"
-                ></button>
-                <button
-                  id="color-scheme-simulation-dark-toggle"
-                  data-localization="title=inspector.colorSchemeSimulationDark.tooltip"
-                  class="devtools-button"
-                  hidden=""
-                  aria-pressed="false"
-                ></button>
-                <button
-                  id="print-simulation-toggle"
-                  data-localization="title=inspector.printSimulation.tooltip"
-                  class="devtools-button"
-                  hidden=""
-                  aria-pressed="false"
-                ></button>
               </div>
             </div>
-            <div
-              id="pseudo-class-panel"
-              class="theme-toolbar ruleview-reveal-panel"
-              inert=""
-              hidden=""
-            >
-              <div id="pseudo-classes-standard" class="pseudo-classes"></div>
-              <h3
-                id="pseudo-classes-element-specific-heading"
-                class="pseudo-classes-element-specific"
-                data-l10n-id="inspector-element-specific-pseudo-classes-heading"
-              ></h3>
+            <div class="ruleview-reveal-panel-container">
               <div
-                id="pseudo-classes-element-specific"
-                class="pseudo-classes"
+                id="pseudo-class-panel"
+                class="theme-toolbar ruleview-reveal-panel"
+                inert=""
+                hidden=""
+              >
+                <div id="pseudo-classes-standard" class="pseudo-classes"></div>
+                <h3
+                  id="pseudo-classes-element-specific-heading"
+                  class="pseudo-classes-element-specific"
+                  data-l10n-id="inspector-element-specific-pseudo-classes-heading"
+                ></h3>
+                <div
+                  id="pseudo-classes-element-specific"
+                  class="pseudo-classes"
+                ></div>
+              </div>
+              <div
+                id="ruleview-class-panel"
+                class="theme-toolbar ruleview-reveal-panel"
+                hidden=""
               ></div>
+              <div
+                id="emulation-panel"
+                class="theme-toolbar ruleview-reveal-panel"
+                inert=""
+                hidden=""
+              >
+                <ul class="emulation-media">
+                  <li class="emulation-container">
+                    <a
+                      id="emulation-print-heading"
+                      class="ruleview-heading-link"
+                      >@media print</a
+                    >
+                    <div class="emulation-options">
+                      <label id="print-emulation-enabled-option">
+                        <input
+                          type="checkbox"
+                          id="print-emulation-enabled"
+                          class="devtools-checkbox-toggle"
+                        />
+                        <span
+                          data-l10n-id="inspector-emulation-panel-print"
+                        ></span>
+                      </label>
+                    </div>
+                  </li>
+                  <li class="emulation-container">
+                    <a
+                      id="emulation-color-scheme-heading"
+                      class="ruleview-heading-link"
+                      >@media (prefers-color-scheme)</a
+                    >
+                    <div class="emulation-options">
+                      <label id="color-scheme-emulation-light-option">
+                        <input
+                          type="radio"
+                          name="color-scheme-emulation"
+                          id="color-scheme-emulation-light"
+                          value="light"
+                        />
+                        <span
+                          data-l10n-id="inspector-emulation-panel-color-scheme-light"
+                        ></span>
+                      </label>
+                      <label id="color-scheme-emulation-dark-option">
+                        <input
+                          type="radio"
+                          name="color-scheme-emulation"
+                          id="color-scheme-emulation-dark"
+                          value="dark"
+                        />
+                        <span
+                          data-l10n-id="inspector-emulation-panel-color-scheme-dark"
+                        ></span>
+                      </label>
+                      <label id="color-scheme-emulation-none-option">
+                        <input
+                          type="radio"
+                          name="color-scheme-emulation"
+                          id="color-scheme-emulation-none"
+                          value=""
+                          checked="checked"
+                        />
+                        <span
+                          data-l10n-id="inspector-emulation-panel-color-scheme-none"
+                        ></span>
+                      </label>
+                    </div>
+                  </li>
+                  <li
+                    id="emulation-reduced-motion-container"
+                    class="emulation-container"
+                    hidden=""
+                  >
+                    <a
+                      id="emulation-reduced-motion-heading"
+                      class="ruleview-heading-link"
+                      >@media (prefers-reduced-motion)</a
+                    >
+                    <div class="emulation-options">
+                      <label id="reduced-motion-emulation-reduce-option">
+                        <input
+                          type="radio"
+                          name="reduced-motion-emulation"
+                          id="reduced-motion-emulation-reduce"
+                          value="reduce"
+                        />
+                        <span
+                          data-l10n-id="inspector-emulation-panel-reduced-motion-reduce"
+                        ></span>
+                      </label>
+                      <label id="reduced-motion-emulation-no-preference-option">
+                        <input
+                          type="radio"
+                          name="reduced-motion-emulation"
+                          id="reduced-motion-emulation-no-preference"
+                          value="no-preference"
+                        />
+                        <span
+                          data-l10n-id="inspector-emulation-panel-reduced-motion-no-preference"
+                        ></span>
+                      </label>
+                      <label id="reduced-motion-emulation-none-option">
+                        <input
+                          type="radio"
+                          name="reduced-motion-emulation"
+                          id="reduced-motion-emulation-none"
+                          value=""
+                          checked="checked"
+                        />
+                        <span
+                          data-l10n-id="inspector-emulation-panel-reduced-motion-none"
+                        ></span>
+                      </label>
+                    </div>
+                  </li>
+                </ul>
+              </div>
             </div>
-            <div
-              id="ruleview-class-panel"
-              class="theme-toolbar ruleview-reveal-panel"
-              hidden=""
-            ></div>
           </div>
 
           <div id="ruleview-container" class="ruleview" role="document">

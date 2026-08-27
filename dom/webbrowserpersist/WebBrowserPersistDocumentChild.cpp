@@ -63,7 +63,6 @@ void WebBrowserPersistDocumentChild::Start(
   ENSURE(aDocument->GetPersistFlags(&(attrs.persistFlags())));
 
   ENSURE(aDocument->GetPrincipal(getter_AddRefs(principal)));
-  ENSURE(ipc::PrincipalToPrincipalInfo(principal, &(attrs.principal())));
 
   ENSURE(aDocument->GetReferrerInfo(getter_AddRefs(referrerInfo)));
   attrs.referrerInfo() = referrerInfo;
@@ -75,12 +74,13 @@ void WebBrowserPersistDocumentChild::Start(
   ENSURE(aDocument->GetPostData(getter_AddRefs(postDataStream)));
 #undef ENSURE
 
-  Maybe<mozilla::ipc::IPCStream> stream;
-  mozilla::ipc::SerializeIPCStream(postDataStream.forget(), stream,
-                                   /* aAllowLazy */ false);
+  if (!principal) {
+    SendInitFailure(NS_ERROR_NULL_POINTER);
+    return;
+  }
 
   mDocument = aDocument;
-  SendAttributes(attrs, stream);
+  SendAttributes(attrs, WrapNotNull(principal), postDataStream);
 }
 
 mozilla::ipc::IPCResult WebBrowserPersistDocumentChild::RecvSetPersistFlags(

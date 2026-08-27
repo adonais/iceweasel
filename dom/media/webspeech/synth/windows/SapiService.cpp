@@ -46,7 +46,7 @@ class SapiCallback final : public nsISpeechTaskCallback {
   void OnSpeechEvent(const SPEVENT& speechEvent);
 
  private:
-  ~SapiCallback() {}
+  ~SapiCallback() = default;
 
   float GetTimeDurationFromStart() const {
     TimeDuration duration = TimeStamp::Now() - mStartingTime;
@@ -189,7 +189,7 @@ NS_IMPL_RELEASE(SapiService)
 
 SapiService::SapiService() : mInitialized(false) {}
 
-SapiService::~SapiService() {}
+SapiService::~SapiService() = default;
 
 bool SapiService::Init() {
   AUTO_PROFILER_LABEL("SapiService::Init", OTHER);

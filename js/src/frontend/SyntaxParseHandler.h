@@ -693,10 +693,8 @@ class SyntaxParseHandler {
     MOZ_ASSERT(kind != ParseNodeKind::LetDecl);
     MOZ_ASSERT(kind != ParseNodeKind::ConstDecl);
     MOZ_ASSERT(kind != ParseNodeKind::ParamsBody);
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     MOZ_ASSERT(kind != ParseNodeKind::UsingDecl);
     MOZ_ASSERT(kind != ParseNodeKind::AwaitUsingDecl);
-#endif
     return NodeGeneric;
   }
 
@@ -710,12 +708,9 @@ class SyntaxParseHandler {
       return NodeVarDeclaration;
     }
     MOZ_ASSERT(kind == ParseNodeKind::LetDecl ||
-               kind == ParseNodeKind::ConstDecl
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-               || kind == ParseNodeKind::UsingDecl ||
-               kind == ParseNodeKind::AwaitUsingDecl
-#endif
-    );
+               kind == ParseNodeKind::ConstDecl ||
+               kind == ParseNodeKind::UsingDecl ||
+               kind == ParseNodeKind::AwaitUsingDecl);
     return NodeLexicalDeclaration;
   }
 

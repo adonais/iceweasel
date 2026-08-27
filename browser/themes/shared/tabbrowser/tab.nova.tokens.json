@@ -14,12 +14,15 @@
       },
       "selected": {
         "leading": {
-          "value": "{color.violet.30}"
+          "value": {
+            "default": "{color.violet.30}",
+            "forcedColors": "{border.color.@base}"
+          }
         },
         "trailing": {
           "value": {
-            "light": "{color.orange.30}",
-            "dark": "{color.violet.50}"
+            "default": "{color.orange.30}",
+            "forcedColors": "{border.color.@base}"
           }
         }
       }

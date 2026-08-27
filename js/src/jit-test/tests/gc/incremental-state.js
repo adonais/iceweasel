@@ -25,16 +25,18 @@ finishgc();
 assertEq(gcstate(), "NotActive");
 
 // Incremental GC in multiple slices: if marking takes more than one slice,
-// we yield before we start sweeping.
+// we yield before we start sweeping. This is disabled by concurrent marking.
 gczeal(0);
-gcslice(1);
-waitForState("Mark");
-assertEq(gcstate(), "Mark");
-gcslice(1000000);
-assertEq(gcstate(), "Mark");
-gcslice(1000000);
-assert(gcstate() !== "Mark");
-finishgc();
+if (!gcparam("concurrentMarkingEnabled")) {
+  gcslice(1);
+  waitForState("Mark");
+  assertEq(gcstate(), "Mark");
+  gcslice(1000000);
+  assertEq(gcstate(), "Mark");
+  gcslice(1000000);
+  assert(gcstate() !== "Mark");
+  finishgc();
+}
 
 // Zeal mode 6: Incremental GC in two slices:
 //   1) prepare

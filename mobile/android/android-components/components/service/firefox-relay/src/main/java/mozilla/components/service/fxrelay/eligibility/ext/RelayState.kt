@@ -16,13 +16,16 @@ private val logger = Logger("RelayState")
  * Determines if the relay entitlement status should be checked.
  *
  * @param timeout Time-to-live for entitlement checks in milliseconds.
+ * @param now The current time in milliseconds.
  * @return True if the user is logged in and the TTL has expired, or if there hasn't been any
  * entitlement checks yet, false otherwise.
  */
-internal fun RelayState.shouldCheckStatus(timeout: Long = FETCH_TIMEOUT_MS): Boolean {
+internal fun RelayState.shouldCheckStatus(
+    timeout: Long = FETCH_TIMEOUT_MS,
+    now: Long = System.currentTimeMillis(),
+): Boolean {
     val loggedIn = eligibilityState !is Ineligible.FirefoxAccountNotLoggedIn
     val lastCheck = lastEntitlementCheckMs
-    val now = System.currentTimeMillis()
     val ttlExpired = lastCheck == NO_ENTITLEMENT_CHECK_YET_MS || now - lastCheck >= timeout
 
     logger.info("Should Check Status user logged in: $loggedIn, TTL expired: $ttlExpired.")

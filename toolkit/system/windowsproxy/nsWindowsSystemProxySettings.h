@@ -20,7 +20,7 @@ class nsWindowsSystemProxySettings final : public nsISystemProxySettings {
           new mozilla::toolkit::system::WindowsInternetFunctionsWrapper());
 
  private:
-  ~nsWindowsSystemProxySettings();
+  ~nsWindowsSystemProxySettings() = default;
 
   bool MatchOverride(const nsACString& aHost);
   bool PatternMatch(const nsACString& aHost, const nsACString& aOverride);

@@ -140,9 +140,9 @@ class UrlbarProvider {
     return "UrlbarProviderBase";
   }
   /**
-   * The type of the provider, must be one of UrlbarUtils.PROVIDER_TYPE.
+   * The type of the provider, must be one of UrlbarShared.PROVIDER_TYPE.
    *
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof UrlbarShared.PROVIDER_TYPE>}
    * @abstract
    */
   get type() {

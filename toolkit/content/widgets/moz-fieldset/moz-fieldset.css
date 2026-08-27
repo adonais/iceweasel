@@ -21,12 +21,15 @@ legend {
   gap: var(--space-small);
   align-items: baseline;
 
+  /* FIXME(bug 2061147): Remove this hack */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   &:has(+ a, + slot[name="support-link"]:has-slotted) {
     display: inline-flex;
   }
 
   /* Hack to handle vertical alignment in cases where we have an icon + heading
   followed by a support link */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   &:has(.icon) + a[is="moz-support-link"],
   &:has(.icon) + ::slotted([slot="support-link"]) {
     vertical-align: baseline;

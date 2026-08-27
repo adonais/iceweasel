@@ -280,7 +280,7 @@ bool ShellModuleWrapperGetter(JSContext* cx, const JS::CallArgs& args,
   JS::Rooted<T*> wrapper(cx, &args.thisv().toObject().as<T>());
   if constexpr (std::is_same_v<T, ShellModuleObjectWrapper>) {
     if (!wrapper->get()->hasCyclicModuleFields()) {
-      args.rval().set(UndefinedValue());
+      args.rval().setUndefined();
       return true;
     }
   }
@@ -344,7 +344,7 @@ bool ShellModuleNativeWrapperGetter(JSContext* cx, const JS::CallArgs& args,
   JS::Rooted<T*> wrapper(cx, &args.thisv().toObject().as<T>());
   if constexpr (std::is_same_v<T, ShellModuleObjectWrapper>) {
     if (!wrapper->get()->hasCyclicModuleFields()) {
-      args.rval().set(UndefinedValue());
+      args.rval().setUndefined();
       return true;
     }
   }

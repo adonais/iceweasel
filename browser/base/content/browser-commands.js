@@ -272,7 +272,7 @@ var BrowserCommands = {
           if (!werePassedURL && searchClipboard) {
             let clipboard = readFromClipboard();
             clipboard =
-              UrlbarUtils.stripUnsafeProtocolOnPaste(clipboard).trim();
+              UrlbarShared.stripUnsafeProtocolOnPaste(clipboard).trim();
             if (clipboard) {
               url = clipboard;
               options.allowThirdPartyFixup = true;

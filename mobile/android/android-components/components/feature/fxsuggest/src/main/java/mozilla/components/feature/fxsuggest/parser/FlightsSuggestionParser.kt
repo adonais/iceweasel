@@ -4,7 +4,7 @@
 
 package mozilla.components.feature.fxsuggest.parser
 
-import mozilla.components.concept.awesomebar.AwesomeBar.FlightItem
+import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightItem
 import mozilla.components.feature.fxsuggest.dto.AirlineDto
 import mozilla.components.feature.fxsuggest.dto.AirportDto
 import mozilla.components.feature.fxsuggest.dto.FlightAwarePayloadDto

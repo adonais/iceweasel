@@ -44,7 +44,7 @@ class MOZ_RAII AutoChangePathSegListNotifier : public mozAutoDocUpdate {
 
   ~AutoChangePathSegListNotifier() {
     mSVGElement->DidChangePathSegList(*this);
-    if (mSVGElement->GetAnimPathSegList()->IsAnimating()) {
+    if (mSVGElement->GetAnimatedPathSegList()->IsAnimating()) {
       mSVGElement->AnimationNeedsResample();
     }
   }

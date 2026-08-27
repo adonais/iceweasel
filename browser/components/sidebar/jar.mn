@@ -16,6 +16,8 @@ browser.jar:
     content/browser/sidebar/sidebar-history.css
     content/browser/sidebar/sidebar-history.html
     content/browser/sidebar/sidebar-history.mjs
+    content/browser/sidebar/sidebar-opentabs-preview.css
+    content/browser/sidebar/sidebar-opentabs-preview.mjs
     content/browser/sidebar/sidebar-opentabs.css
     content/browser/sidebar/sidebar-opentabs.html
     content/browser/sidebar/sidebar-opentabs.mjs

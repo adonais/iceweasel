@@ -170,6 +170,10 @@ class RendererOGL {
   layers::CompositorBridgeParent* mBridge;
   wr::WindowId mWindowId;
   TimeStamp mFrameStartTime;
+  // RenderCompositor::IsPaused() describes platform surface state and remains
+  // false for normal GTK windows. Track the higher-level Pause/Resume lifecycle
+  // separately so paused-window resource trimming is platform-independent.
+  bool mPausedForResourceTrimming = false;
 
 #ifdef MOZ_WIDGET_ANDROID
   struct ScreenPixelsRequest {

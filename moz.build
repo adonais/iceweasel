@@ -41,6 +41,9 @@ with Files(".hgignore"):
 with Files(".hgtags"):
     BUG_COMPONENT = ("Firefox Build System", "General")
 
+with Files(".watchmanconfig"):
+    BUG_COMPONENT = ("Firefox Build System", "General")
+
 with Files("docs/**"):
     BUG_COMPONENT = ("Developer Infrastructure", "Source Documentation")
     SCHEDULES.exclusive = ["docs"]
@@ -75,16 +78,10 @@ with Files(".prettierignore*"):
 with Files(".prettierrc.js"):
     BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
 
-with Files("..rstcheck.cfg"):
-    BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
-
 with Files(".stylelintignore"):
     BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
 
 with Files(".stylelintrc.js"):
-    BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
-
-with Files(".rstcheck.cfg"):
     BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
 
 with Files(".yamllint"):
@@ -135,6 +132,9 @@ with Files("AGENTS.md"):
     BUG_COMPONENT = ("Developer Infrastructure", "AI for Development")
 
 with Files("CLAUDE.md"):
+    BUG_COMPONENT = ("Developer Infrastructure", "AI for Development")
+
+with Files("review-context.toml"):
     BUG_COMPONENT = ("Developer Infrastructure", "AI for Development")
 
 with Files("nsprpub/**"):

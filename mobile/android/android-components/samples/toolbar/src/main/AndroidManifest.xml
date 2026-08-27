@@ -16,8 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.NoActionBar"
         android:dataExtractionRules="@xml/data_extraction_rules"
-        tools:targetApi="s"
-        tools:ignore="DataExtractionRules">
+        tools:targetApi="s">
         <activity android:name=".ToolbarActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

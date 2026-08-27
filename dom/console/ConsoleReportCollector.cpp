@@ -16,9 +16,6 @@ using mozilla::dom::ConsoleUtils;
 
 NS_IMPL_ISUPPORTS(ConsoleReportCollector, nsIConsoleReportCollector)
 
-ConsoleReportCollector::ConsoleReportCollector()
-    : mMutex("mozilla::ConsoleReportCollector") {}
-
 void ConsoleReportCollector::AddConsoleReport(
     uint32_t aErrorFlags, const nsACString& aCategory,
     PropertiesFile aPropertiesFile, const nsACString& aSourceFileURI,

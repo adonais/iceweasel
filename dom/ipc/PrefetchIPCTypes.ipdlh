@@ -1,0 +1,32 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+// Shared IPDL types for Speculation Rules prefetch.
+// Imported by both PPrefetchRecord.ipdl (the protocol) and PWindowGlobal.ipdl
+// (which carries the constructor message).
+//
+// Spec: https://wicg.github.io/nav-speculation/prefetch.html
+
+include "mozilla/dom/ReferrerInfoUtils.h";
+
+[RefCounted] using class nsIReferrerInfo from "nsIReferrerInfo.h";
+[RefCounted] using class nsIURI from "mozilla/ipc/URIUtils.h";
+
+namespace mozilla {
+namespace dom {
+
+// Arguments for `start a referrer-initiated navigational prefetch`.
+// Spec: https://wicg.github.io/nav-speculation/prefetch.html#start-a-referrer-initiated-navigational-prefetch
+struct SpeculativePrefetchArgs {
+  nsIURI uri;
+  nullable nsIReferrerInfo referrerInfo;
+  nsString noVarySearchHint;
+  bool anonymizeClientIP;
+  // A null speculation rule tag is carried as a voided string.
+  // Spec: https://html.spec.whatwg.org/multipage/speculative-loading.html#speculation-rule-tag
+  nsString?[] tags;
+};
+
+}  // namespace dom
+}  // namespace mozilla

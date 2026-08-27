@@ -212,12 +212,12 @@ def test_table_builder_validate():
     table = table.finish_table()
     print(table)
     assert (
-        table == "  .. list-table:: **I've got a lovely bunch of coconuts**\n"
-        "     :widths: 10 10 10\n     :header-rows: 1\n\n"
-        "     * - **Coconut 1**\n       - Coconut 2\n       - Coconut 3\n"
-        "     * - **big ones**\n       - small ones\n       - some as big as your head!\n"
-        "     * - **Give 'em a twist**\n       - A flick of the wrist\n"
-        "       - That's what the showman said!\n\n"
+        table == "  :::{list-table} **I've got a lovely bunch of coconuts**\n"
+        "  :widths: 10 10 10\n  :header-rows: 1\n\n"
+        "  * - **Coconut 1**\n    - Coconut 2\n    - Coconut 3\n"
+        "  * - **big ones**\n    - small ones\n    - some as big as your head!\n"
+        "  * - **Give 'em a twist**\n    - A flick of the wrist\n"
+        "    - That's what the showman said!\n  :::\n\n"
     )
 
 

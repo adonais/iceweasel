@@ -7,6 +7,9 @@
 
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/WebGPUBinding.h"
+#include "mozilla/webgpu/WebGPUTypes.h"
+#include "mozilla/webgpu/ffi/wgpu.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 class ErrorResult;
@@ -21,9 +24,6 @@ using OwningGPUExtent3D =
     OwningRangeEnforcedUnsignedLongSequenceOrGPUExtent3DDict;
 }  // namespace dom
 namespace webgpu {
-namespace ffi {
-struct WGPUExtent3d;
-}  // namespace ffi
 
 void ConvertExtent3DToFFI(const dom::GPUExtent3D& aExtent,
                           ffi::WGPUExtent3d* aExtentFFI);
@@ -43,6 +43,24 @@ ffi::WGPUTextureFormat ConvertTextureFormat(
 
 ffi::WGPUTextureAspect ConvertTextureAspect(
     const dom::GPUTextureAspect& aAspect);
+
+// Converts a `dom::GPUTextureDescriptor` into a `ffi::WGPUTextureDescriptor`,
+// owning the necessary temporary storage. The converted descriptor returned by
+// `Get` is only valid for the lifetime of this object.
+class MOZ_STACK_CLASS ConvertTextureDescriptor final {
+ public:
+  explicit ConvertTextureDescriptor(const dom::GPUTextureDescriptor& aDesc);
+
+  ConvertTextureDescriptor(const ConvertTextureDescriptor&) = delete;
+  ConvertTextureDescriptor& operator=(const ConvertTextureDescriptor&) = delete;
+
+  const ffi::WGPUTextureDescriptor* Get() const { return &mDesc; }
+
+ private:
+  StringHelper mLabel;
+  AutoTArray<ffi::WGPUTextureFormat, 8> mViewFormats;
+  ffi::WGPUTextureDescriptor mDesc = {};
+};
 
 ffi::WGPUVertexFormat ConvertVertexFormat(const dom::GPUVertexFormat& aFormat);
 

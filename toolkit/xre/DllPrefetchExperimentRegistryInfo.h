@@ -25,7 +25,7 @@ enum class AlteredDllPrefetchMode {
 class DllPrefetchExperimentRegistryInfo final {
  public:
   DllPrefetchExperimentRegistryInfo() : mBinPath(GetFullBinaryPath().get()) {}
-  ~DllPrefetchExperimentRegistryInfo() {}
+  ~DllPrefetchExperimentRegistryInfo() = default;
 
   Result<Ok, nsresult> ReflectPrefToRegistry(int32_t aVal);
   Result<Ok, nsresult> ReadRegistryValueData(DWORD expectedType);

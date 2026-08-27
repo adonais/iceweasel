@@ -294,6 +294,7 @@ class ModuleEntry:
         )
         self.singleton = data.get("singleton", False)
         self.overridable = data.get("overridable", False)
+        self.serializable = data.get("serializable", False)
 
         self.protocol_config = data.get("protocol_config", None)
 
@@ -365,6 +366,7 @@ class ModuleEntry:
           {self.cid.to_cxx()},
           {contract_id},
           {lower_processes(self.processes)},
+          {"true" if self.serializable else "false"},
         }}"""
 
     # Generates the C++ code for a JSServiceEntry representing this module.

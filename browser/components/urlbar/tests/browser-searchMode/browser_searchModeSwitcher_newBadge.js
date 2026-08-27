@@ -109,7 +109,6 @@ add_task(
       {
         id: "thirdparty@tests.mozilla.org",
         name: "engine-name",
-        is_default: true,
         search_url: "https://example.com/search-third-party",
         search_url_get_params: "?pc=thirdparty&q={searchTerms}",
       },

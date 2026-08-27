@@ -48,7 +48,7 @@ moz-button.input-cta {
     --button-text-color-ghost-selected: var(--button-text-color-selected);
   }
 
-  @media (max-width: 250px) {
+  @container smartbar-controls (max-width: 380px) {
     --button-padding: var(--space-small);
 
     &:dir(rtl) {
@@ -82,7 +82,7 @@ moz-button.input-cta {
   }
 }
 
-@media (max-width: 250px) {
+@container smartbar-controls (max-width: 380px) {
   :host([action="chat"]) moz-button.input-cta::part(button) {
     background-image: url("chrome://browser/content/aiwindow/assets/ask-icon.svg");
   }
@@ -155,7 +155,6 @@ moz-button[type="split"].input-cta {
 }
 
 moz-button[type="split"].input-cta::part(chevron-button) {
-  --icon-size: var(--size-item-xsmall);
   padding-inline-end: var(--space-xsmall);
 }
 
@@ -238,6 +237,7 @@ panel-item {
         --button-border-color-disabled: var(--button-border-color-primary-disabled);
         --button-border-color-hover: var(--button-border-color-primary-hover);
         --button-border-color-selected: var(--button-border-color-primary-selected);
+        --button-separator-color: light-dark(var(--color-white-alpha-60), var(--color-gray-70));
       }
 
       &[type="ghost"].input-cta {
@@ -249,9 +249,11 @@ panel-item {
       }
 
       &.input-cta::part(button) {
-        @media (not (forced-colors)) and (max-width: 250px) {
-          /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-          fill: var(--button-text-color-primary);
+        @media not (forced-colors) {
+          @container smartbar-controls (max-width: 380px) {
+            /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+            fill: var(--button-text-color-primary);
+          }
         }
       }
     }
@@ -260,7 +262,6 @@ panel-item {
   panel-list {
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     min-width: 256px;
-    padding: var(--space-small);
     --panel-list-border-radius: var(--border-radius-large);
 
     @media (not (forced-colors)) {

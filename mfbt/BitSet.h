@@ -5,15 +5,15 @@
 #ifndef mozilla_BitSet_h
 #define mozilla_BitSet_h
 
-#include "fmt/format.h"
-#include "mozilla/Array.h"
-#include "mozilla/MathAlgorithms.h"
-#include "mozilla/Span.h"
-
 #include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
+
+#include "fmt/format.h"
+#include "mozilla/Array.h"
+#include "mozilla/MathAlgorithms.h"
+#include "mozilla/Span.h"
 
 namespace mozilla {
 

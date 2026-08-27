@@ -36,11 +36,31 @@ const { EmbeddingsGenerator } = ChromeUtils.importESModule(
 const { _setLoadPromptForTesting } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
 );
+const { _setRemoteClientForTesting, _clearRemoteClientForTesting } =
+  ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+  );
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
+
+function setTextSystemMessage(conversation, body, version) {
+  return conversation.setSystemMessage({
+    type: SYSTEM_PROMPT_TYPE.TEXT,
+    body,
+    ...(version && { version }),
+  });
+}
+
+function addLegacySystemMessage(conversation, type, body, version) {
+  return conversation.addMessage(
+    MESSAGE_ROLE.SYSTEM,
+    { type, body, ...(version && { version }) },
+    conversation.currentTurnIndex()
+  );
+}
 
 add_task(function test_ChatConversation_constructor_defaults() {
   const conversation = new ChatConversation({});
@@ -259,6 +279,45 @@ add_task(function test_ChatConversation_addAssistantMessage() {
   });
 });
 
+add_task(function test_ChatConversation_addAssistantWithL10nMessage() {
+  const conversation = new ChatConversation({});
+
+  const events = [];
+  const onUpdate = (_event, m) => events.push(["update", m]);
+  const onComplete = (_event, m) => events.push(["complete", m]);
+  conversation.on("chat-conversation:message-update", onUpdate);
+  conversation.on("chat-conversation:message-complete", onComplete);
+
+  const message = conversation.addAssistantWithL10nMessage(
+    "smartwindow-agent-monitor-limit-reached",
+    { count: 5 },
+    { l10nName: "tasks", href: "about:smartwindowtasks" }
+  );
+
+  conversation.off("chat-conversation:message-update", onUpdate);
+  conversation.off("chat-conversation:message-complete", onComplete);
+
+  Assert.withSoftAssertions(function (soft) {
+    soft.equal(message.role, MESSAGE_ROLE.ASSISTANT);
+    soft.deepEqual(message.content, {
+      type: "text",
+      body: "",
+      l10nId: "smartwindow-agent-monitor-limit-reached",
+      l10nArgs: { count: 5 },
+      link: { l10nName: "tasks", href: "about:smartwindowtasks" },
+    });
+
+    soft.ok(
+      events.some(([type, m]) => type === "update" && m === message),
+      "emits chat-conversation:message-update"
+    );
+    soft.ok(
+      events.some(([type, m]) => type === "complete" && m === message),
+      "emits chat-conversation:message-complete"
+    );
+  });
+});
+
 add_task(function test_opts_ChatConversation_addAssistantMessage() {
   const conversation = new ChatConversation({});
 
@@ -368,13 +427,13 @@ add_task(function test_opts_ChatConversation_addToolCallMessage() {
   });
 });
 
-add_task(function test_ChatConversation_addSystemMessage() {
+add_task(function test_ChatConversation_setTextSystemMessage() {
   const conversation = new ChatConversation({});
 
   const content = {
     random: "system call specific keys",
   };
-  conversation.addSystemMessage("text", content);
+  setTextSystemMessage(conversation, content);
 
   const message = conversation.messages[0];
 
@@ -448,7 +507,7 @@ add_task(function test_renderState_includes_tool_messages() {
     body: [{ url: "https://example.com/", title: "Example" }],
     name: "get_open_tabs",
   });
-  conversation.addSystemMessage("text", "some system message");
+  setTextSystemMessage(conversation, "some system message");
   conversation.addAssistantMessage("text", "You have one tab open.");
 
   const renderState = conversation.renderState();
@@ -465,7 +524,7 @@ add_task(function test_ChatConversation_currentTurnIndex() {
 
   const content = "user to assistant msg";
 
-  conversation.addSystemMessage("text", "the system prompt");
+  setTextSystemMessage(conversation, "the system prompt");
   conversation.addUserMessage(content, "about:aiwindow");
   conversation.addAssistantMessage("text", "a response");
   conversation.addUserMessage(content, "about:aiwindow");
@@ -483,7 +542,7 @@ add_task(function test_ChatConversation_currentTurnIndex() {
 add_task(function test_ChatConversation_helpersTurnIndexing() {
   const conversation = new ChatConversation({});
 
-  conversation.addSystemMessage("text", "the system prompt");
+  setTextSystemMessage(conversation, "the system prompt");
   conversation.addUserMessage("a user's prompt", "https://www.somesite.com");
   conversation.addToolCallMessage({ some: "tool call details" });
   conversation.addAssistantMessage("text", "the llm response");
@@ -509,7 +568,7 @@ add_task(function test_ChatConversation_helpersTurnIndexing() {
 
 add_task(function test_ChatConversation_getMessagesInChatCompletionsFormat() {
   const conversation = new ChatConversation({});
-  conversation.addSystemMessage("text", "the system prompt");
+  setTextSystemMessage(conversation, "the system prompt");
   conversation.addUserMessage(
     "a user's prompt",
     "https://www.somesite.com",
@@ -551,7 +610,7 @@ add_task(function test_ChatConversation_getMessagesInChatCompletionsFormat() {
 
 add_task(async function test_unrelatedMessage_ChatConversation_retryMessage() {
   const conversation = new ChatConversation({});
-  conversation.addSystemMessage("text", "the system prompt");
+  setTextSystemMessage(conversation, "the system prompt");
   conversation.addUserMessage("a user's prompt", "https://www.somesite.com");
 
   const unrelatedMessage = new ChatMessage({
@@ -572,7 +631,7 @@ add_task(async function test_unrelatedMessage_ChatConversation_retryMessage() {
 
 add_task(async function test_nonUserMessage_ChatConversation_retryMessage() {
   const conversation = new ChatConversation({});
-  conversation.addSystemMessage("text", "the system prompt");
+  setTextSystemMessage(conversation, "the system prompt");
   conversation.addUserMessage("a user's prompt", "https://www.somesite.com");
 
   await Assert.rejects(
@@ -591,20 +650,22 @@ add_task(
     const conversation = new ChatConversation({});
 
     sandbox.stub(conversation, "injectRealTimeContext").callsFake(() => {
-      conversation.addSystemMessage(
+      addLegacySystemMessage(
+        conversation,
         SYSTEM_PROMPT_TYPE.REAL_TIME,
         "real time data"
       );
     });
 
     sandbox.stub(conversation, "injectMemoriesContext").callsFake(() => {
-      conversation.addSystemMessage(
+      addLegacySystemMessage(
+        conversation,
         SYSTEM_PROMPT_TYPE.MEMORIES,
         "memories data"
       );
     });
 
-    conversation.addSystemMessage("text", "the system prompt");
+    setTextSystemMessage(conversation, "the system prompt");
     conversation.addUserMessage("a user's prompt", "https://www.somesite.com");
     conversation.addToolCallMessage({ some: "tool call details" });
     conversation.addAssistantMessage("text", "the llm response");
@@ -634,12 +695,17 @@ add_task(
   async function test_uniqueOrdinalsWithoutMemories_ChatConversation_retryMessage() {
     const conversation = new ChatConversation({});
 
-    conversation.addSystemMessage(SYSTEM_PROMPT_TYPE.TEXT, "the system prompt");
-    conversation.addSystemMessage(
+    setTextSystemMessage(conversation, "the system prompt");
+    addLegacySystemMessage(
+      conversation,
       SYSTEM_PROMPT_TYPE.REAL_TIME,
       "real time data"
     );
-    conversation.addSystemMessage(SYSTEM_PROMPT_TYPE.MEMORIES, "memories data");
+    addLegacySystemMessage(
+      conversation,
+      SYSTEM_PROMPT_TYPE.MEMORIES,
+      "memories data"
+    );
     conversation.addUserMessage("a user's prompt", "https://www.somesite.com");
     conversation.addAssistantMessage("text", "the llm response");
 
@@ -649,7 +715,8 @@ add_task(
     const originalUserOrdinal = retryTarget.ordinal;
     await conversation.retryMessage(retryTarget);
 
-    conversation.addSystemMessage(
+    addLegacySystemMessage(
+      conversation,
       SYSTEM_PROMPT_TYPE.REAL_TIME,
       "new real time data"
     );
@@ -677,31 +744,37 @@ add_task(
 
 add_task(
   async function test_injectRealTimeContext_writes_to_userMessage_userContext() {
-    const mockGetRealTimeMapping = lazy.sinon.stub().resolves({
-      todayDate: "2024-01-15",
-      url: "https://example.com",
-      title: "Example",
-      hasTabInfo: false,
-      locale: "en-US",
-      timezone: "America/Los_Angeles",
-      isoTimestamp: "2024-01-15T10:30:00",
+    _setRemoteClientForTesting({
+      get: () =>
+        Promise.resolve([
+          {
+            id: "browser-context--tab--v1--generic",
+            kind: "module",
+            feature: "browser-context",
+            module: "tab",
+            model: "generic",
+            prompts: "TAB: {title} ({url})",
+          },
+        ]),
+      on: () => {},
     });
-    _setLoadPromptForTesting(
-      lazy.sinon.stub().resolves("Current date: {todayDate}\nLocale: {locale}")
-    );
+    registerCleanupFunction(_clearRemoteClientForTesting);
 
     const conversation = new ChatConversation({});
     const userMessage = conversation.addUserMessage("hi");
     await conversation.injectRealTimeContext(userMessage, {
-      getRealTimeMapping: mockGetRealTimeMapping,
+      getRealTimeMapping: async () => ({
+        url: "https://example.com",
+        title: "Example",
+        hasTabInfo: true,
+      }),
     });
 
     Assert.equal(
       userMessage.content.userContext.realTimeContext,
-      "Current date: 2024-01-15\nLocale: en-US",
+      "TAB: Example (https://example.com)",
       "injectRealTimeContext writes rendered prompt onto userMessage.content.userContext.realTimeContext"
     );
-    _setLoadPromptForTesting(null);
   }
 );
 
@@ -720,50 +793,63 @@ add_task(async function test_injectRealTimeContext_no_op_when_mapping_null() {
   );
 });
 
-add_task(
-  async function test_injectMemoriesContext_writes_to_userMessage_userContext() {
-    const constructMemories = lazy.sinon
-      .stub()
-      .resolves({ content: "memories data" });
+add_task(async function test_injectRealTimeContext_dedupes_when_unchanged() {
+  _setRemoteClientForTesting({
+    get: () =>
+      Promise.resolve([
+        {
+          id: "browser-context--tab--v1--generic",
+          kind: "module",
+          feature: "browser-context",
+          module: "tab",
+          model: "generic",
+          prompts: "TAB: {title} ({url})",
+        },
+      ]),
+    on: () => {},
+  });
+  registerCleanupFunction(_clearRemoteClientForTesting);
 
-    const conversation = new ChatConversation({});
-    const userMessage = conversation.addUserMessage("hi");
-    await conversation.injectMemoriesContext(
-      userMessage,
-      "hello",
-      constructMemories
-    );
+  const conversation = new ChatConversation({});
+  const sameMapping = async () => ({
+    url: "https://example.com",
+    title: "Example",
+    hasTabInfo: true,
+  });
 
-    Assert.equal(
-      userMessage.content.userContext.memoriesContext,
-      "memories data",
-      "injectMemoriesContext writes content onto userMessage.content.userContext.memoriesContext"
-    );
-    Assert.ok(
-      constructMemories.calledWith("hello"),
-      "constructMemories should be called with the prompt"
-    );
-  }
-);
+  const firstMessage = conversation.addUserMessage("turn 1");
+  await conversation.injectRealTimeContext(firstMessage, {
+    getRealTimeMapping: sameMapping,
+  });
+  Assert.equal(
+    firstMessage.content.userContext.realTimeContext,
+    "TAB: Example (https://example.com)",
+    "First turn writes context"
+  );
 
-add_task(
-  async function test_injectMemoriesContext_no_op_when_constructMemories_null() {
-    const constructMemories = lazy.sinon.stub().resolves(null);
+  const secondMessage = conversation.addUserMessage("turn 2");
+  await conversation.injectRealTimeContext(secondMessage, {
+    getRealTimeMapping: sameMapping,
+  });
+  Assert.ok(
+    !secondMessage.content.userContext?.realTimeContext,
+    "Second turn skips writing when context is identical to last-injected"
+  );
 
-    const conversation = new ChatConversation({});
-    const userMessage = conversation.addUserMessage("hi");
-    await conversation.injectMemoriesContext(
-      userMessage,
-      "hello",
-      constructMemories
-    );
-
-    Assert.ok(
-      !userMessage.content.userContext?.memoriesContext,
-      "Leaves userContext.memoriesContext unset when constructMemories returns null"
-    );
-  }
-);
+  const thirdMessage = conversation.addUserMessage("turn 3");
+  await conversation.injectRealTimeContext(thirdMessage, {
+    getRealTimeMapping: async () => ({
+      url: "https://other.example",
+      title: "Other",
+      hasTabInfo: true,
+    }),
+  });
+  Assert.equal(
+    thirdMessage.content.userContext.realTimeContext,
+    "TAB: Other (https://other.example)",
+    "Third turn writes when context changes"
+  );
+});
 
 add_task(function test_ChatConversation_renderState_filters_phantom_messages() {
   const conversation = new ChatConversation({});
@@ -799,13 +885,17 @@ add_task(
   async function test_deduplicatesMemoryIds_ChatConversation_receiveResponse() {
     let sandbox = lazy.sinon.createSandbox();
 
-    const mockMemories = [{ id: "mem-1" }, { id: "mem-2" }];
+    const mockMemories = [
+      { id: "mem-1", lifetime_accessed_count: 0, recent_accessed_counts: {} },
+      { id: "mem-2", lifetime_accessed_count: 0, recent_accessed_counts: {} },
+    ];
     sandbox.stub(MemoryStore, "getMemories").resolves(mockMemories);
+    sandbox.stub(MemoryStore, "requestSave").resolves();
 
     const conversation = new ChatConversation({});
     conversation.addAssistantMessage("text", "some response");
     const assistantMsg = conversation.messages.at(-1);
-    assistantMsg.memoriesApplied = ["mem-1", "mem-1", "mem-2", "mem-2"];
+    assistantMsg.tokens.existing_memory = ["mem-1", "mem-1", "mem-2", "mem-2"];
 
     async function* emptyStream() {}
     await conversation.receiveResponse(emptyStream());
@@ -814,7 +904,20 @@ add_task(
       MemoryStore.getMemories.calledOnce,
       "MemoryStore.getMemories should be called exactly once"
     );
-    const { memoryIds } = MemoryStore.getMemories.firstCall.args[0];
+    Assert.ok(
+      MemoryStore.requestSave.calledOnce,
+      "The recorded use should be saved exactly once for the message"
+    );
+    for (const memory of mockMemories) {
+      Assert.equal(
+        memory.lifetime_accessed_count,
+        1,
+        `Use should be recorded once per distinct memory (${memory.id})`
+      );
+    }
+    const memoryIds = new Set(
+      assistantMsg.memoriesApplied.map(memory => memory.id)
+    );
     Assert.equal(
       memoryIds.size,
       2,
@@ -826,6 +929,81 @@ add_task(
       assistantMsg.memoriesApplied,
       mockMemories,
       "memoriesApplied should be set to the resolved memories"
+    );
+
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_resolvesMemoriesOncePerTurn_ChatConversation_receiveResponse() {
+    let sandbox = lazy.sinon.createSandbox();
+
+    const mockMemories = [
+      { id: "mem-1", lifetime_accessed_count: 0, recent_accessed_counts: {} },
+    ];
+    sandbox.stub(MemoryStore, "getMemories").resolves(mockMemories);
+    sandbox.stub(MemoryStore, "requestSave").resolves();
+
+    const conversation = new ChatConversation({});
+    conversation.addAssistantMessage("text", "");
+    const assistantMsg = conversation.messages.at(-1);
+
+    // First turn: The model cites a memory and requests a tool call in the same pass,
+    // so this assistant message keeps streaming after the tool runs.
+    async function* toolCallStream() {
+      yield { text: "Let me check that.§existing_memory: mem-1§" };
+      yield {
+        toolCalls: [
+          { id: "call_1", function: { name: "run_search", arguments: "{}" } },
+        ],
+      };
+    }
+    const withToolCalls = await conversation.receiveResponse(toolCallStream());
+
+    Assert.equal(
+      withToolCalls.pendingToolCalls.length,
+      1,
+      "The first pass should report the pending tool call"
+    );
+    Assert.ok(
+      MemoryStore.getMemories.notCalled,
+      "Use should not be recorded while the turn is still running"
+    );
+    Assert.deepEqual(
+      assistantMsg.memoriesApplied,
+      ["mem-1"],
+      "memoriesApplied should still hold the raw cited id mid-turn"
+    );
+
+    // Second Turn: The same memory is cited again once the tool result is in.
+    async function* finalStream() {
+      yield { text: " Here is what I found.§existing_memory: mem-1§" };
+    }
+    const final = await conversation.receiveResponse(finalStream());
+
+    Assert.equal(
+      final.pendingToolCalls,
+      null,
+      "The final pass should not report any pending tool call"
+    );
+    Assert.ok(
+      MemoryStore.getMemories.calledOnce,
+      "MemoryStore.getMemories should be called exactly once for the turn"
+    );
+    Assert.ok(
+      MemoryStore.requestSave.calledOnce,
+      "The recorded use should be saved exactly once for the turn"
+    );
+    Assert.equal(
+      mockMemories[0].lifetime_accessed_count,
+      1,
+      "Use should be recorded once even though the memory was cited twice"
+    );
+    Assert.deepEqual(
+      assistantMsg.memoriesApplied,
+      mockMemories,
+      "memoriesApplied should end up as the resolved memories"
     );
 
     sandbox.restore();
@@ -878,6 +1056,143 @@ add_task(
     );
   }
 );
+
+add_task(function test_ChatConversation_rehydratesCitationsPool() {
+  const records = [
+    { url: "https://example.com/1", title: "Source 1" },
+    { url: "https://example.com/2", title: "Source 2" },
+  ];
+  const message = new ChatMessage({
+    ordinal: 1,
+    role: MESSAGE_ROLE.ASSISTANT,
+    turnIndex: 0,
+    content: { type: "text", body: "Here is what I found" },
+    citations: records,
+  });
+
+  const conversation = new ChatConversation({ messages: [message] });
+
+  // The snapshot only covers URLs read in the current turn.
+  Assert.deepEqual(
+    conversation.getCitationsSnapshot(),
+    [],
+    "a restored conversation starts with no pending citations"
+  );
+
+  conversation.addCitations([{ url: "https://example.com/2" }]);
+  Assert.deepEqual(
+    conversation.getCitationsSnapshot(),
+    [{ url: "https://example.com/2", title: "Source 2" }],
+    "constructor rehydrates the citations pool from message snapshots"
+  );
+});
+
+add_task(async function test_receiveResponse_snapshotsCitationsOnMessage() {
+  const conversation = new ChatConversation({});
+  conversation.addAssistantMessage("text", "");
+  const assistantMsg = conversation.messages.at(-1);
+
+  const records = [{ url: "https://example.com/1", title: "Source 1" }];
+  conversation.addCitations(records);
+
+  async function* emptyStream() {}
+  await conversation.receiveResponse(emptyStream());
+
+  Assert.deepEqual(
+    assistantMsg.citations,
+    records,
+    "receiveResponse snapshots this turn's citations onto the completed message"
+  );
+});
+
+add_task(function test_applyHistoryAssets_keepsThumbnailForCitedUrl() {
+  const url = "https://example.com/1";
+  const conversation = new ChatConversation({});
+  conversation.addHistoryResults([{ url, title: "Page 1" }]);
+  conversation.applyHistoryAssets([
+    {
+      url,
+      image: "moz-page-thumb://thumb",
+      requestedThumbnail: true,
+      hasFavicon: false,
+    },
+  ]);
+  conversation.addCitations([{ url, title: "Source 1" }]);
+  // A citation request sends no thumbnail
+  conversation.applyHistoryAssets([
+    { url, image: null, requestedThumbnail: false, hasFavicon: true },
+  ]);
+
+  Assert.equal(
+    conversation.getHistoryResultsSnapshot()[0].image,
+    "moz-page-thumb://thumb",
+    "citation-only asset resolution keeps the history record’s thumbnail"
+  );
+  Assert.ok(
+    conversation.getHistoryResultsSnapshot()[0].hasFavicon,
+    "history record picks up the resolved favicon availability"
+  );
+  Assert.ok(
+    conversation.getCitationsSnapshot()[0].hasFavicon,
+    "citation picks up the resolved favicon availability"
+  );
+
+  conversation.applyHistoryAssets([
+    { url, image: null, requestedThumbnail: true, hasFavicon: true },
+  ]);
+  Assert.equal(
+    conversation.getHistoryResultsSnapshot()[0].image,
+    null,
+    "an evicted thumbnail still clears when a thumbnail was requested"
+  );
+});
+
+add_task(async function test_addUserMessage_clearsPendingCitations() {
+  const conversation = new ChatConversation({});
+  conversation.addCitations([{ url: "https://example.com/1", title: "S1" }]);
+
+  conversation.addUserMessage("A follow-up question", "https://example.com/");
+  conversation.addAssistantMessage("text", "");
+  const assistantMsg = conversation.messages.at(-1);
+
+  async function* emptyStream() {}
+  await conversation.receiveResponse(emptyStream());
+
+  Assert.deepEqual(
+    assistantMsg.citations,
+    [],
+    "addUserMessage clears pending citations so chips belong to their own reply"
+  );
+});
+
+add_task(async function test_retryMessage_clearsPendingCitations() {
+  const conversation = new ChatConversation({});
+  const userMsg = conversation.addUserMessage(
+    "Search the web",
+    "https://example.com/"
+  );
+  conversation.addAssistantMessage("text", "Here is what I found");
+  conversation.addCitations([{ url: "https://example.com/1", title: "S1" }]);
+
+  await conversation.retryMessage(userMsg);
+
+  Assert.deepEqual(
+    conversation.getCitationsSnapshot(),
+    [],
+    "retryMessage clears the pending citations from the previous turn"
+  );
+
+  conversation.addAssistantMessage("text", "");
+  const assistantMsg = conversation.messages.at(-1);
+  async function* emptyStream() {}
+  await conversation.receiveResponse(emptyStream());
+
+  Assert.deepEqual(
+    assistantMsg.citations,
+    [],
+    "the regenerated reply does not inherit citations from the previous turn"
+  );
+});
 
 add_task(async function test_addUserMessage_sets_memories_fields() {
   const conversation = new ChatConversation({});
@@ -1058,7 +1373,19 @@ add_task(
       timezone: "America/Los_Angeles",
       isoTimestamp: "2024-01-15T10:30:00",
     });
-    _setLoadPromptForTesting(lazy.sinon.stub().resolves("{todayDate}"));
+    _setRemoteClientForTesting({
+      get: lazy.sinon.stub().resolves([
+        {
+          id: "browser-context--tab--v1--generic",
+          kind: "module",
+          feature: "browser-context",
+          module: "tab",
+          model: "generic",
+          version: "1.0",
+          prompts: "TAB {todayDate}",
+        },
+      ]),
+    });
 
     await conversation.injectRealTimeContext(userMessage, {
       getRealTimeMapping: mockGetRealTimeMapping,
@@ -1069,7 +1396,6 @@ add_task(
       conversation.securityProperties.privateData,
       "privateData should be true after commit when hasTabInfo is true"
     );
-    _setLoadPromptForTesting(null);
   }
 );
 
@@ -1084,7 +1410,9 @@ add_task(
       timezone: "America/Los_Angeles",
       isoTimestamp: "2024-01-15T10:30:00",
     });
-    _setLoadPromptForTesting(lazy.sinon.stub().resolves("{todayDate}"));
+    _setRemoteClientForTesting({
+      get: lazy.sinon.stub().resolves([]),
+    });
 
     await conversation.injectRealTimeContext(userMessage, {
       getRealTimeMapping: mockGetRealTimeMapping,
@@ -1094,49 +1422,6 @@ add_task(
     Assert.ok(
       !conversation.securityProperties.privateData,
       "privateData should remain false when hasTabInfo is false"
-    );
-    _setLoadPromptForTesting(null);
-  }
-);
-
-add_task(
-  async function test_injectMemoriesContext_setsPrivateData_when_memoriesFound() {
-    const conversation = new ChatConversation({});
-    const userMessage = conversation.addUserMessage("hi");
-    const constructMemories = lazy.sinon
-      .stub()
-      .resolves({ content: "some memory" });
-
-    await conversation.injectMemoriesContext(
-      userMessage,
-      "hello",
-      constructMemories
-    );
-
-    conversation.securityProperties.commit();
-    Assert.ok(
-      conversation.securityProperties.privateData,
-      "privateData should be true after commit when memories were found"
-    );
-  }
-);
-
-add_task(
-  async function test_injectMemoriesContext_doesNotSetPrivateData_when_noMemories() {
-    const conversation = new ChatConversation({});
-    const userMessage = conversation.addUserMessage("hi");
-    const constructMemories = lazy.sinon.stub().resolves(null);
-
-    await conversation.injectMemoriesContext(
-      userMessage,
-      "hello",
-      constructMemories
-    );
-
-    conversation.securityProperties.commit();
-    Assert.ok(
-      !conversation.securityProperties.privateData,
-      "privateData should remain false when no memories were found"
     );
   }
 );
@@ -1361,7 +1646,7 @@ add_task(async function test_generatePrompt_persistsPromptVersion() {
 
 add_task(function test_systemPromptVersion_readsFromExistingSystemMessage() {
   const conversation = new ChatConversation({});
-  conversation.addSystemMessage(SYSTEM_PROMPT_TYPE.TEXT, "body", "chat-v2");
+  setTextSystemMessage(conversation, "body", "chat-v2");
 
   Assert.equal(
     conversation.systemPromptVersion,
@@ -1372,8 +1657,7 @@ add_task(function test_systemPromptVersion_readsFromExistingSystemMessage() {
 
 add_task(function test_systemPromptVersion_emptyForLegacyMessage() {
   const conversation = new ChatConversation({});
-  // Simulate a system message persisted before this change shipped.
-  conversation.addSystemMessage(SYSTEM_PROMPT_TYPE.TEXT, "body");
+  setTextSystemMessage(conversation, "body");
   Assert.equal(
     conversation.systemPromptVersion,
     "",
@@ -1590,15 +1874,15 @@ add_task(async function test_addUserMessage_dismisses_prior_undo() {
   assistant.toolUIData = {
     toolCallId: "t1",
     uiType: "ai-action-result",
-    properties: { confirmedData: { operationId: "op-1" } },
+    properties: { confirmedData: { operationIds: ["op-1"] } },
   };
 
   // User sends a new message
   conversation.addUserMessage("show my history", "https://example.com/", 0);
 
-  Assert.equal(
-    assistant.toolUIData.properties.confirmedData.operationId,
-    "op-1",
+  Assert.deepEqual(
+    assistant.toolUIData.properties.confirmedData.operationIds,
+    ["op-1"],
     "Dismissal preserves other property keys"
   );
   Assert.strictEqual(
@@ -1642,12 +1926,12 @@ add_task(async function test_dismissPendingUndos_only_dismisses_most_recent() {
   olderAssistant.toolUIData = {
     toolCallId: "t1",
     uiType: "ai-action-result",
-    properties: { confirmedData: { operationId: "op-older" } },
+    properties: { confirmedData: { operationIds: ["op-older"] } },
   };
   newerAssistant.toolUIData = {
     toolCallId: "t2",
     uiType: "ai-action-result",
-    properties: { confirmedData: { operationId: "op-newer" } },
+    properties: { confirmedData: { operationIds: ["op-newer"] } },
   };
 
   conversation.addUserMessage("show my history", "https://example.com/", 0);
@@ -1704,6 +1988,85 @@ add_task(function test_addToolCallMessage_emits_message_update() {
       received?.content?.tool_call_id,
       "tc_abc",
       "tool message carries the tool_call_id"
+    );
+  });
+});
+
+add_task(function test_updateToolCallMessage_reconciles_pending_in_place() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("Search the web", null);
+
+  const toolUpdates = [];
+  conversation.on("chat-conversation:message-update", (_event, msg) => {
+    if (msg?.role === MESSAGE_ROLE.TOOL) {
+      toolUpdates.push(msg);
+    }
+  });
+
+  // A slow tool emits a placeholder tool message up front so the action log
+  // can render its pending row.
+  const pending = conversation.addToolCallMessage({
+    tool_call_id: "tc_slow",
+    body: { pending: true },
+    name: "search_the_web",
+  });
+
+  // On completion the same message is reconciled with the real result.
+  const finalized = conversation.updateToolCallMessage(pending, {
+    tool_call_id: "tc_slow",
+    body: { could_answer: true },
+    name: "search_the_web",
+  });
+
+  const toolMessages = conversation.messages.filter(
+    m => m.role === MESSAGE_ROLE.TOOL
+  );
+
+  Assert.withSoftAssertions(function (soft) {
+    soft.strictEqual(
+      finalized,
+      pending,
+      "Reconciles the same message rather than creating a new one"
+    );
+    soft.equal(
+      toolMessages.length,
+      1,
+      "No duplicate tool message is added on reconciliation"
+    );
+    soft.equal(
+      toolMessages[0].content.body.could_answer,
+      true,
+      "Placeholder body is replaced by the real result"
+    );
+    soft.equal(
+      toolUpdates.length,
+      2,
+      "Emits once for the pending row and once for the reconciliation"
+    );
+  });
+});
+
+add_task(function test_updateToolCallMessage_adds_when_no_pending() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("Search the web", null);
+
+  const added = conversation.updateToolCallMessage(null, {
+    tool_call_id: "tc_fresh",
+    body: { ok: true },
+    name: "search_the_web",
+  });
+
+  const toolMessages = conversation.messages.filter(
+    m => m.role === MESSAGE_ROLE.TOOL
+  );
+
+  Assert.withSoftAssertions(function (soft) {
+    soft.ok(added, "Falls back to adding a fresh tool message");
+    soft.equal(toolMessages.length, 1, "Exactly one tool message is present");
+    soft.equal(
+      toolMessages[0].content.tool_call_id,
+      "tc_fresh",
+      "The fresh tool message carries the tool_call_id"
     );
   });
 });

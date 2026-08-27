@@ -333,6 +333,9 @@ class WebRenderMaskData : public WebRenderUserData {
   std::vector<RefPtr<gfx::ScaledFont>> mFonts;
   gfx::DrawEventRecorderPrivate_ExternalSurfacesHolder mExternalSurfaces;
   LayerIntRect mItemRect;
+  // Sub-pixel offset of the item's bounds from mItemRect, which the recorded
+  // alpha is rasterized against.
+  gfx::Point mResidual;
   nsPoint mMaskOffset;
   nsStyleImageLayers mMaskStyle;
   gfx::MatrixScales mScale;

@@ -14,6 +14,7 @@
   preview/genai.ftl                                (../components/genai/content/genai.ftl)
   preview/credentialChooser.ftl                    (../../toolkit/components/credentialmanagement/credentialChooser.ftl)
   browser                                          (%browser/**/*.ftl)
+  preview/aiWindow.ftl                             (../locales-preview/aiWindow.ftl)
   preview/smartTabGroups.ftl                       (%chrome/overrides/smartTabGroups.ftl)
   preview/privacyPreferences.ftl                   (../locales-preview/privacyPreferences.ftl)
   preview/autoTabGrouping.ftl                      (../locales-preview/autoTabGrouping.ftl)

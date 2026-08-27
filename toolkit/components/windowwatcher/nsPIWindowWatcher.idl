@@ -121,10 +121,6 @@ interface nsPIWindowWatcher : nsISupports
    *        The nsIRemoteTab that is requesting the new window be opened.
    * @param aFeatures
    *        Window features if called with window.open or similar.
-   * @param aModifiers
-   *        The modifiers associated with the user activation, or
-   *        UserActivation::Modifiers::None() if this is not initiated by
-   *        user activation.
    * @param aCalledFromJS
    *        True if called via window.open or similar.
    * @param aOpenerFullZoom
@@ -139,7 +135,6 @@ interface nsPIWindowWatcher : nsISupports
    */
   nsIRemoteTab openWindowWithRemoteTab(in nsIRemoteTab aOpeningTab,
                                        in WindowFeaturesRef aFeatures,
-                                       in UserActivationModifiersRef aModifiers,
                                        in boolean aCalledFromJS,
                                        in float aOpenerFullZoom,
                                        in nsIOpenWindowInfo aOpenWindowInfo);

@@ -27,6 +27,12 @@
 /* globals run_test */
 
 var _quit = false;
+// Thrown by the harness to unwind the stack after it has already logged a
+// failure. Because this symbol is unique, catch sites can compare against it
+// to recognize a harness-initiated unwind and tell it apart from any exception
+// thrown by the test itself, which is a genuine, unreported failure that must
+// still be reported.
+const _abortMarker = Symbol("xpcshell abort after reported failure");
 var _passed = true;
 var _tests_pending = 0;
 var _cleanupFunctions = [];
@@ -54,6 +60,7 @@ let {
   uploadProfileArtifact: _uploadProfileArtifact,
   installProfilerDumpAndQuit: _installProfilerDumpAndQuit,
   setProfilerDumpTestName: _setProfilerDumpTestName,
+  shouldSaveFailureProfile: _shouldSaveFailureProfile,
 } = ChromeUtils.importESModule(
   "resource://testing-common/TestProfilerArtifact.sys.mjs"
 );
@@ -673,13 +680,9 @@ function _execute_test() {
     }
   } catch (e) {
     _passed = false;
-    // do_check failures are already logged and set _quit to true and throw
-    // NS_ERROR_ABORT. If both of those are true it is likely this exception
-    // has already been logged so there is no need to log it again. It's
-    // possible that this will mask an NS_ERROR_ABORT that happens after a
-    // do_check failure though.
-
-    if (!_quit || e.result != Cr.NS_ERROR_ABORT) {
+    // A failure the harness already reported unwinds through here as
+    // _abortMarker; don't log it a second time.
+    if (e !== _abortMarker) {
       let extra = {};
       if (e.fileName) {
         extra.source_file = e.fileName;
@@ -787,9 +790,9 @@ function _execute_test() {
     _PromiseTestUtils.assertNoMoreExpectedRejections();
   } catch (e) {
     // A late uncaught rejection reported here has already set _passed and
-    // thrown NS_ERROR_ABORT; swallow it like the run_test catch above so we
+    // thrown _abortMarker; swallow it like the run_test catch above so we
     // still reach the profile-upload path below. Re-throw anything unexpected.
-    if (!_quit || e.result != Cr.NS_ERROR_ABORT) {
+    if (e !== _abortMarker) {
       throw e;
     }
   } finally {
@@ -801,15 +804,7 @@ function _execute_test() {
     _Services.profiler.cancelScheduledDump();
   }
 
-  // If MOZ_PROFILER_SHUTDOWN is set, the profiler got started from --profiler
-  // and a profile will be shown even if there's no test failure.
-  if (
-    !_passed &&
-    runningInParent &&
-    _Services.env.exists("MOZ_UPLOAD_DIR") &&
-    !_Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
-    _Services.profiler.IsActive()
-  ) {
+  if (!_passed && runningInParent && _shouldSaveFailureProfile()) {
     if (_EXPECTED != "pass") {
       _testLogger.error(
         "Not uploading the profile as the test is expected to fail."
@@ -901,12 +896,9 @@ function executeSoon(callback, aName) {
       try {
         callback();
       } catch (e) {
-        // do_check failures are already logged and set _quit to true and throw
-        // NS_ERROR_ABORT. If both of those are true it is likely this exception
-        // has already been logged so there is no need to log it again. It's
-        // possible that this will mask an NS_ERROR_ABORT that happens after a
-        // do_check failure though.
-        if (!_quit || e.result != Cr.NS_ERROR_ABORT) {
+        // A failure the harness already reported unwinds through here as
+        // _abortMarker; don't log it a second time.
+        if (e !== _abortMarker) {
           let stack = e.stack ? _format_stack(e.stack) : null;
           _testLogger.testStatus(
             _TEST_NAME,
@@ -961,7 +953,7 @@ function _abort_failed_test() {
   // Called to abort the test run after all failures are logged.
   _passed = false;
   _do_quit();
-  throw Components.Exception("", Cr.NS_ERROR_ABORT);
+  throw _abortMarker;
 }
 
 function _format_stack(stack) {
@@ -1014,7 +1006,7 @@ function do_report_unexpected_exception(ex, text) {
     stack: _format_stack(ex?.stack),
   });
   _do_quit();
-  throw Components.Exception("", Cr.NS_ERROR_ABORT);
+  throw _abortMarker;
 }
 
 function do_note_exception(ex, text) {
@@ -1902,15 +1894,20 @@ function run_next_test() {
               _gRunningTest.name || undefined
             );
             _setTaskPrefs(initialPrefsValues);
+            // A failure the harness already reported rejects this task with
+            // _abortMarker; don't report it again as an unexpected exception.
+            if (ex === _abortMarker) {
+              return;
+            }
             try {
               // Note `ex` at this point could be undefined, for example as
               // result of a bare call to reject().
               do_report_unexpected_exception(ex);
             } catch (error) {
-              // The above throws NS_ERROR_ABORT and we don't want this to show
+              // The above throws _abortMarker and we don't want this to show
               // up as an unhandled rejection later. If any other exception
               // happened, something went wrong, so we abort.
-              if (error.result != Cr.NS_ERROR_ABORT) {
+              if (error !== _abortMarker) {
                 let extra = {};
                 if (error.fileName) {
                   extra.source_file = error.fileName;
@@ -1925,7 +1922,7 @@ function run_next_test() {
                 }
                 _testLogger.error(_exception_message(error), extra);
                 _do_quit();
-                throw Components.Exception("", Cr.NS_ERROR_ABORT);
+                throw _abortMarker;
               }
             }
           }

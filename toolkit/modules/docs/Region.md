@@ -1,5 +1,3 @@
-(region)=
-
 # Region
 
 Firefox monitors the users region in order to show relevant local
@@ -60,15 +58,16 @@ Save a script to run the geocoding in `ichnaea/ichnaea`
 
 ```python
 import geocode
+
 geocoder = geocode.Geocoder()
 
 f = open("mls.csv", "r")
 r = open("mls-lookup-results.csv", "a")
 
 for x in f:
-  [lat, long] = x.strip().split(",")
-  region = geocoder.region(lat, long)
-  r.write("%s\n" % region)
+    [lat, long] = x.strip().split(",")
+    region = geocoder.region(lat, long)
+    r.write("%s\n" % region)
 ```
 
 Run the script

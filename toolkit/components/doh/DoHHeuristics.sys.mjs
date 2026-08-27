@@ -57,6 +57,7 @@ export const Heuristics = {
       vpn: platformChecks.vpn,
       proxy: platformChecks.proxy,
       nrpt: platformChecks.nrpt,
+      privateDns: platformChecks.privateDns,
       steeredProvider: "",
     };
 
@@ -92,6 +93,7 @@ export const Heuristics = {
       vpn: Ci.nsITRRSkipReason.TRR_HEURISTIC_TRIPPED_VPN,
       proxy: Ci.nsITRRSkipReason.TRR_HEURISTIC_TRIPPED_PROXY,
       nrpt: Ci.nsITRRSkipReason.TRR_HEURISTIC_TRIPPED_NRPT,
+      privateDns: Ci.nsITRRSkipReason.TRR_HEURISTIC_TRIPPED_PRIVATE_DNS,
     };
 
     let value = namesToSkipReason[heuristicName];
@@ -123,6 +125,7 @@ export const Heuristics = {
     zscalerCanary: 16,
     canary: 17,
     ignored: 18,
+    privateDns: 19,
 
     heuristicNames() {
       return [
@@ -136,6 +139,7 @@ export const Heuristics = {
         "vpn",
         "proxy",
         "nrpt",
+        "privateDns",
       ];
     },
 
@@ -409,6 +413,10 @@ async function platform() {
       : "enable_doh";
   platformChecks.nrpt =
     indications & Ci.nsINetworkLinkService.NRPT_DETECTED
+      ? "disable_doh"
+      : "enable_doh";
+  platformChecks.privateDns =
+    indications & Ci.nsINetworkLinkService.PRIVATE_DNS_DETECTED
       ? "disable_doh"
       : "enable_doh";
 

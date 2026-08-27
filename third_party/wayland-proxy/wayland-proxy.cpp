@@ -28,6 +28,10 @@
 #include <sched.h>
 #include <fstream>
 #include <ctime>
+#include <cstdint>
+#include <cstring>
+#include <algorithm>
+#include <mutex>
 
 #include "wayland-proxy.h"
 
@@ -53,6 +57,9 @@ CompositorSilentDisconnectHandler
     WaylandProxy::sCompositorSilentDisconnectHandler = nullptr;
 std::atomic<bool> WaylandProxy::sCompositorGone = false;
 std::atomic<unsigned> WaylandProxy::sProxyStateFlags = 0;
+bool WaylandProxy::sCaptureProtocolErrors = false;
+std::mutex WaylandProxy::sLastProtocolErrorMutex;
+std::string WaylandProxy::sLastProtocolError;
 
 // The maximum number of fds libwayland can recvmsg at once
 #define MAX_LIBWAY_FDS 28
@@ -89,6 +96,11 @@ void ErrorPlain(const char* aFormat, ...) {
 class WaylandMessage {
  public:
   bool Write(int aSocket);
+
+  // Raw message bytes, used for protocol-error scanning. This is just a chunk
+  // of the byte stream: it may hold several Wayland messages, or only part of
+  // one.
+  const std::vector<unsigned char>& Data() const { return mData; }
 
   bool Loaded() const { return !mFailed && (mFds.size() || mData.size()); }
   bool Failed() const { return mFailed; }
@@ -136,10 +148,12 @@ class ProxiedConnection {
   bool TransferOrQueue(
       int aSourceSocket, int aSourcePollFlags, int aDestSocket,
       std::vector<std::unique_ptr<WaylandMessage>>* aMessageQueue,
-      int& aStatSent, int& aStatReceived);
+      int& aStatSent, int& aStatReceived, bool aScanProtocolErrors = false);
   bool FlushQueue(int aDestSocket, int aDestPollFlags,
                   std::vector<std::unique_ptr<WaylandMessage>>& aMessageQueue,
                   int& aStatSent);
+
+  void ScanToApplication(const unsigned char* aData, size_t aLen);
 
   // Where we should connect.
   // Weak pointer to parent WaylandProxy class.
@@ -161,6 +175,25 @@ class ProxiedConnection {
   // Stored proxied data
   std::vector<std::unique_ptr<WaylandMessage>> mToCompositorQueue;
   std::vector<std::unique_ptr<WaylandMessage>> mToApplicationQueue;
+
+  // Parser step for ScanToApplication() (see its definition for details).
+  enum class WlParse { Header, Skip, Error, GiveUp };
+
+  // A Wayland message header is two uint32_t values: the object id, then
+  // (size << 16) | opcode. We need all 8 of these bytes before we can tell
+  // what kind of message it is and how long it is.
+  static constexpr size_t kWlHeaderSize = 2 * sizeof(uint32_t);
+
+  WlParse mToAppParseStep = WlParse::Header;
+  size_t mToAppNeed = kWlHeaderSize;
+  std::vector<unsigned char> mToAppBuf;
+
+  // Reset the parser to wait for the next message header.
+  void WaitForToAppHeader() {
+    mToAppParseStep = WlParse::Header;
+    mToAppNeed = kWlHeaderSize;
+    mToAppBuf.clear();
+  }
 
   int mStatRecvFromCompositor = 0;
   int mStatSentToCompositor = 0;
@@ -401,13 +434,104 @@ bool ProxiedConnection::ConnectToCompositor() {
   return true;
 }
 
-// Read data from aSourceSocket and try to twite them to aDestSocket.
+// Detect a wl_display.error in the compositor's stream to the application and
+// stash its message for the crash handler.
+//
+// Called for each chunk of bytes the compositor sends, in order. It tracks
+// where the message boundaries are and, on a wl_display.error (object id 1,
+// event opcode 0), saves the error string with SetLastProtocolError().
+//
+// A socket read can stop in the middle of a message, so the parser remembers
+// which step it is on (mToAppParseStep) and how many bytes that step still
+// needs (mToAppNeed) between calls. mToAppBuf holds a header or error message
+// that arrived in pieces; the bodies of other messages are skipped.
+void ProxiedConnection::ScanToApplication(const unsigned char* aData,
+                                          size_t aLen) {
+  // Cap on a wl_display.error size; skip larger (corrupt) headers instead of
+  // buffering them.
+  constexpr uint32_t kMaxErrorSize = 4096;
+
+  size_t pos = 0;
+  while (pos < aLen) {
+    switch (mToAppParseStep) {
+      case WlParse::GiveUp:
+        // We lost track of the message boundaries earlier, so we can no longer
+        // trust this stream. Stop looking at it.
+        return;
+
+      case WlParse::Skip: {
+        const size_t n = std::min(mToAppNeed, aLen - pos);
+        pos += n;
+        mToAppNeed -= n;
+        if (mToAppNeed == 0) {
+          WaitForToAppHeader();
+        }
+        break;
+      }
+
+      case WlParse::Header: {
+        const size_t n = std::min(mToAppNeed, aLen - pos);
+        mToAppBuf.insert(mToAppBuf.end(), aData + pos, aData + pos + n);
+        pos += n;
+        mToAppNeed -= n;
+        if (mToAppNeed > 0) {
+          break;  // the header is split across chunks; wait for the rest
+        }
+        uint32_t id, header;
+        memcpy(&id, mToAppBuf.data(), sizeof(id));
+        memcpy(&header, mToAppBuf.data() + 4, sizeof(header));
+        const uint32_t opcode = header & 0xffff;
+        // size is the whole message length in bytes, including the header. If
+        // it is smaller than a header, we have lost track of the boundaries;
+        // give up.
+        const uint32_t size = header >> 16;
+        if (size < kWlHeaderSize) {
+          mToAppParseStep = WlParse::GiveUp;
+          return;
+        }
+        // wl_display is always object id 1, and its 'error' event is opcode 0.
+        if (id == 1 && opcode == 0 && size <= kMaxErrorSize) {
+          mToAppParseStep = WlParse::Error;  // keep header in mToAppBuf
+          mToAppNeed = size - kWlHeaderSize;
+        } else {
+          mToAppParseStep = WlParse::Skip;
+          mToAppNeed = size - kWlHeaderSize;
+        }
+        break;
+      }
+
+      case WlParse::Error: {
+        const size_t n = std::min(mToAppNeed, aLen - pos);
+        mToAppBuf.insert(mToAppBuf.end(), aData + pos, aData + pos + n);
+        pos += n;
+        mToAppNeed -= n;
+        if (mToAppNeed > 0) {
+          break;  // the error message is split across chunks; wait for the rest
+        }
+        // Layout of a full wl_display.error (signature "ous"): object_id (u32)
+        // at +8, code (u32) at +12, message length (u32) at +16, and the
+        // message string (the last argument) starts at +20.
+        const size_t total = mToAppBuf.size();
+        if (total > 20) {
+          // Append a NUL so reading from +20 can't run past the buffer end.
+          mToAppBuf.push_back('\0');
+          WaylandProxy::SetLastProtocolError(
+              reinterpret_cast<const char*>(mToAppBuf.data() + 20));
+        }
+        WaitForToAppHeader();
+        break;
+      }
+    }
+  }
+}
+
+// Read data from aSourceSocket and try to write them to aDestSocket.
 // If data write fails, append them to aMessageQueue.
-// Return
+// Returns false when the connection is broken and has to be closed.
 bool ProxiedConnection::TransferOrQueue(
     int aSourceSocket, int aSourcePollFlags, int aDestSocket,
     std::vector<std::unique_ptr<WaylandMessage>>* aMessageQueue,
-    int& aStatSent, int& aStatReceived) {
+    int& aStatSent, int& aStatReceived, bool aScanProtocolErrors) {
   // Don't read if we don't have any data ready
   if (!(aSourcePollFlags & POLLIN)) {
     return true;
@@ -434,6 +558,10 @@ bool ProxiedConnection::TransferOrQueue(
       return true;
     }
     aStatReceived++;
+
+    if (aScanProtocolErrors && WaylandProxy::CaptureProtocolErrors()) {
+      ScanToApplication(message->Data().data(), message->Data().size());
+    }
 
     if (message->Write(aDestSocket)) {
       aStatSent++;
@@ -554,7 +682,7 @@ bool ProxiedConnection::Process() {
 
   if (!TransferOrQueue(mCompositorSocket, mCompositorFlags, mApplicationSocket,
                        &mToApplicationQueue, mStatRecvFromCompositor,
-                       mStatSentToClient)) {
+                       mStatSentToClient, /* aScanProtocolErrors */ true)) {
     Error("ProxiedConnection::Process(): Failed to read data from compositor!");
       WaylandProxy::AddState(WAYLAND_PROXY_COMPOSITOR_CONNECTION_FAILED);
     mCompositorFailed = true;
@@ -1136,4 +1264,26 @@ const char* WaylandProxy::GetState() {
     }
   }
   return strdup(stateString.c_str());
+}
+
+void WaylandProxy::SetCaptureProtocolErrors(bool aEnable) {
+  sCaptureProtocolErrors = aEnable;
+}
+
+void WaylandProxy::SetLastProtocolError(const char* aMessage) {
+  // Print right away: a protocol error is fatal, so the crash follows within
+  // milliseconds, and the crash reason is the only other place this text shows
+  // up.
+  fprintf(stderr, "[%d] WaylandProxy: wl_display.error: %s\n", getpid(),
+          aMessage);
+
+  // The lock serializes with the crash-handler reader.
+  std::lock_guard<std::mutex> guard(sLastProtocolErrorMutex);
+  sLastProtocolError = aMessage;
+}
+
+const char* WaylandProxy::GetLastProtocolError() {
+  // The lock serializes with the proxy thread's writer.
+  std::lock_guard<std::mutex> guard(sLastProtocolErrorMutex);
+  return strdup(sLastProtocolError.c_str());
 }

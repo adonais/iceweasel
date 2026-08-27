@@ -23,7 +23,7 @@ from mozpack.chrome.manifest import ManifestEntry
 from mozbuild.frontend.context import ObjDirPath, SourcePath
 
 from ..testing import all_test_flavors
-from ..util import group_unified_files
+from ..util import get_rust_build_kind, group_unified_files
 from .context import FinalTargetValue
 
 
@@ -554,16 +554,10 @@ def cargo_output_directory(context, target_var, libname=""):
     # cargo creates several directories and places its build artifacts
     # in those directories.  The directory structure depends not only
     # on the target, but also what sort of build we are doing.
-    # Megazord libraries use custom profiles that output to different directories.
-    if "megazord" in libname:
-        rust_build_kind = "release-megazord"
-        if context.config.substs.get("MOZ_DEBUG_RUST"):
-            rust_build_kind = "dev-megazord"
-    else:
-        rust_build_kind = "release"
-        if context.config.substs.get("MOZ_DEBUG_RUST"):
-            rust_build_kind = "debug"
-    return mozpath.join(context.config.substs[target_var], rust_build_kind)
+    return mozpath.join(
+        context.config.substs[target_var],
+        get_rust_build_kind(context.config.substs, megazord="megazord" in libname),
+    )
 
 
 # We pretend Rust programs are Linkable, despite Cargo handling all the details
@@ -614,11 +608,14 @@ class HostRustProgram(BaseRustProgram):
     OUTPUT_CATEGORY_VAR = "HOST_RUST_PROGRAM_OUTPUT_CATEGORY"
 
 
-class RustTests(ContextDerived):
+class RustTests(Linkable):
+    """Context derived container object for Rust test targets."""
+
+    KIND = "target"
     __slots__ = ("names", "features", "output_category")
 
     def __init__(self, context, names, features):
-        ContextDerived.__init__(self, context)
+        Linkable.__init__(self, context)
         self.names = names
         self.features = features
         self.output_category = "rusttests"
@@ -678,14 +675,21 @@ class Library(BaseLibrary):
 class StaticLibrary(Library):
     """Context derived container object for a static library"""
 
-    __slots__ = ("link_into", "no_expand_lib")
+    __slots__ = ("link_into", "no_expand_lib", "build_static_lib_archive")
 
     def __init__(
-        self, context, basename, real_name=None, link_into=None, no_expand_lib=False
+        self,
+        context,
+        basename,
+        real_name=None,
+        link_into=None,
+        no_expand_lib=False,
+        build_static_lib_archive=False,
     ):
         Library.__init__(self, context, basename, real_name)
         self.link_into = link_into
         self.no_expand_lib = no_expand_lib
+        self.build_static_lib_archive = build_static_lib_archive or no_expand_lib
 
 
 class SandboxedWasmLibrary(Library):
@@ -693,6 +697,7 @@ class SandboxedWasmLibrary(Library):
 
     # This is a real static library; make it known to the build system.
     no_expand_lib = True
+    build_static_lib_archive = True
     KIND = "wasm"
 
     def __init__(self, context, basename, real_name=None):
@@ -953,6 +958,7 @@ class HostLibrary(HostMixin, BaseLibrary):
 
     KIND = "host"
     no_expand_lib = False
+    build_static_lib_archive = False
 
 
 class HostRustLibrary(BaseRustLibrary, HostLibrary):
@@ -964,6 +970,7 @@ class HostRustLibrary(BaseRustLibrary, HostLibrary):
     LIB_FILE_VAR = "HOST_RUST_LIBRARY_FILE"
     __slots__ = BaseRustLibrary.slots
     no_expand_lib = True
+    build_static_lib_archive = True
 
     def __init__(
         self,
@@ -1308,6 +1315,22 @@ class JsShellArchive(ContextDerived):
     def __init__(self, context, files):
         ContextDerived.__init__(self, context)
         self.files = tuple(files)
+
+
+class MacOSBundle(ContextDerived):
+    """Sandbox container object for a MACOS_BUNDLE entry.
+
+    Holds the description of one ``.app`` bundle to assemble: the output
+    path, the skeleton directory, optional generated ``Info.plist`` and
+    ``InfoPlist.strings``, the ``.lproj`` subdirectory, and the binaries to
+    install into ``Contents/MacOS``.
+    """
+
+    __slots__ = ("bundle",)
+
+    def __init__(self, context, bundle):
+        ContextDerived.__init__(self, context)
+        self.bundle = bundle
 
 
 class ObjdirFiles(FinalTargetFiles):

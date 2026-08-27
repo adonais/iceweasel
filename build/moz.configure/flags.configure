@@ -369,6 +369,9 @@ check_and_add_asm_flag(
 check_and_add_flag("-fPIC", when=building_with_gnu_compatible_cc & ~target_is_windows)
 set_define("PIC", True, when=target_is_netbsd)
 
+add_asm_flag("-nologo", when=assembler_is_masm | assembler_is_armasm)
+add_asm_flag("-quiet", when=assembler_is_masm)
+
 # DSO flags manipulations
 have_linker_support_ignore_unresolved = try_link(
     flags=["-Wl,--ignore-unresolved-symbol,environ"],

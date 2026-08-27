@@ -347,7 +347,6 @@ spec = "https://drafts.csswg.org/css-align/#place-items-property"
 engine = "gecko"
 sub_properties = ["position-try-order", "position-try-fallbacks"]
 spec = "https://drafts.csswg.org/css-anchor-position-1/#position-try-prop"
-gecko_pref = "layout.css.anchor-positioning.enabled"
 
 [marker]
 engine = "gecko"
@@ -373,7 +372,7 @@ gecko_pref = "layout.css.scroll-driven-animations.enabled"
 
 [view-timeline]
 engine = "gecko"
-sub_properties = ["view-timeline-name", "view-timeline-axis"]
+sub_properties = ["view-timeline-name", "view-timeline-axis", "view-timeline-inset"]
 spec = "https://drafts.csswg.org/scroll-animations-1/#view-timeline-shorthand"
 gecko_pref = "layout.css.scroll-driven-animations.enabled"
 
@@ -499,7 +498,7 @@ sub_properties = [
   "font-variant-numeric",
   "font-variant-position",
   "font-weight",
-  "font-stretch",
+  "font-width",
   "font-size",
   "line-height",
   "font-family",
@@ -555,3 +554,9 @@ engine = "gecko"
 sub_properties = ["-webkit-text-stroke-width", "-webkit-text-stroke-color"]
 spec = "https://compat.spec.whatwg.org/#the-webkit-text-stroke"
 derive_serialize = true
+
+[-webkit-line-clamp]
+engine = "gecko"
+flags = "IS_LEGACY_SHORTHAND ALLOWS_DISABLED_SUBPROPERTIES"
+sub_properties = ["line-clamp"]
+spec = "https://drafts.csswg.org/css-overflow-4/#webkit-line-clamp"

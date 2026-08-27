@@ -89,7 +89,7 @@ class CookiePersistentStorage final : public CookieStorage,
                    Cookie* aCookie) override;
 
  private:
-  CookiePersistentStorage();
+  CookiePersistentStorage() = default;
   ~CookiePersistentStorage() = default;
 
   static void UpdateCookieInList(Cookie* aCookie, int64_t aLastAccessed,
@@ -146,9 +146,9 @@ class CookiePersistentStorage final : public CookieStorage,
   // Synchronized by the same mMonitor + mInitialized pattern as mReadArray.
   nsTArray<CookieDomainTuple> mCleanupArray;
 
-  Monitor mMonitor MOZ_ANNOTATED;
+  Monitor mMonitor MOZ_ANNOTATED{"CookiePersistentStorage"};
 
-  Atomic<bool> mInitialized;
+  Atomic<bool> mInitialized{false};
   Atomic<bool> mInitializedDBConn;
 
   nsCOMPtr<nsIFile> mCookieFile;
@@ -157,7 +157,7 @@ class CookiePersistentStorage final : public CookieStorage,
   nsCOMPtr<mozIStorageAsyncStatement> mStmtDelete;
   nsCOMPtr<mozIStorageAsyncStatement> mStmtUpdate;
 
-  Atomic<CorruptFlag, Relaxed> mCorruptFlag;
+  Atomic<CorruptFlag, Relaxed> mCorruptFlag{OK};
 
   // Various parts representing asynchronous read state. These are useful
   // while the background read is taking place.

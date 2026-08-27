@@ -14,6 +14,8 @@ import { MLTestUtils } from "resource://testing-common/MLTestUtils.sys.mjs";
 import { TestUtils } from "resource://testing-common/TestUtils.sys.mjs";
 import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 import { ExaSearchProvider } from "moz-src:///browser/components/aiwindow/models/search/SearchProviders.sys.mjs";
+import { MemoryStore } from "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs";
+import { embeddingsGeneratorFactory } from "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs";
 
 /**
  * This class manages the MockLLMEngine for Smart Window. Smart Window instantiates
@@ -297,6 +299,85 @@ export class MockSearchManager {
     if (this.requests.length) {
       throw new Error("A search endpoint request was not handled.");
     }
+  }
+}
+
+/**
+ * This class makes relevant memories retrieval deterministic for tests. The
+ * embedding model can't run in a test, so it stands in for the model with a bag
+ * of words. Everything above the model - the memory store, the embeddings cache,
+ * the similarity search and the ranking - is the real code.
+ */
+export class MockMemoriesRetrieval {
+  #dimensions = new Map();
+  #embeddingSize;
+  #realEmbeddingsGenerator;
+
+  /**
+   * Install the mock.
+   */
+  constructor() {
+    const embeddingsGenerator = embeddingsGeneratorFactory.forGeneral();
+    this.#embeddingSize = embeddingsGenerator.embeddingSize;
+    embeddingsGenerator.setEngine({
+      run: async request => {
+        const texts = Array.isArray(request.args[0])
+          ? request.args[0]
+          : request.args;
+        return texts.map(text => this.#embed(text));
+      },
+    });
+
+    this.#realEmbeddingsGenerator = MemoryStore.embeddingsGenerator;
+    MemoryStore.embeddingsGenerator = embeddingsGenerator;
+    MemoryStore._clearEmbeddingsCache();
+  }
+
+  #embed(text) {
+    const vector = new Array(this.#embeddingSize).fill(0);
+    for (const word of text.toLowerCase().match(/[a-z]+/g) ?? []) {
+      if (!this.#dimensions.has(word)) {
+        if (this.#dimensions.size === this.#embeddingSize) {
+          throw new Error(
+            `Test corpus exceeds ${this.#embeddingSize} distinct words`
+          );
+        }
+        this.#dimensions.set(word, this.#dimensions.size);
+      }
+      vector[this.#dimensions.get(word)] = 1;
+    }
+    return vector;
+  }
+
+  /**
+   * Replace everything in the memory store with `memories`, so each test picks
+   * the memories retrieval runs against.
+   *
+   * @param {Array<{id: string, memory_summary: string}>} memories
+   */
+  async seedMemories(memories) {
+    await this.clearMemories();
+    for (const memory of memories) {
+      await MemoryStore.addMemory(memory);
+    }
+    MemoryStore._clearEmbeddingsCache();
+  }
+
+  /**
+   * Empty the memory store, leaving retrieval nothing to match.
+   */
+  async clearMemories() {
+    for (const memory of await MemoryStore.getMemories({
+      includeSoftDeleted: true,
+    })) {
+      await MemoryStore.hardDeleteMemory(memory.id);
+    }
+  }
+
+  async cleanupMocks() {
+    MemoryStore.embeddingsGenerator = this.#realEmbeddingsGenerator;
+    MemoryStore._clearEmbeddingsCache();
+    await this.clearMemories();
   }
 }
 

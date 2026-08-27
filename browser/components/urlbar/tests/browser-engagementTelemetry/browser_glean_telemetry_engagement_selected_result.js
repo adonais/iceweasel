@@ -1312,17 +1312,15 @@ add_task(async function selected_result_rust_adm_nonsponsored() {
 
 add_task(async function selected_result_action() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.scotchBonnet.enableOverride", true]],
+    set: [
+      ["browser.urlbar.scotchBonnet.enableOverride", true],
+      ["browser.urlbar.quickactions.timesToShowOnboardingLabel", 0],
+    ],
   });
   await doTest(async () => {
     await openPopup("settings");
     EventUtils.synthesizeKey("KEY_Tab");
-    EventUtils.synthesizeKey("KEY_Enter");
-    await TestUtils.waitForCondition(
-      () =>
-        gBrowser.selectedTab.linkedBrowser.currentURI.spec ==
-        "about:preferences"
-    );
+    await doEnter();
 
     await assertEngagementTelemetry([
       {

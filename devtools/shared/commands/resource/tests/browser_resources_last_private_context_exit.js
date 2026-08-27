@@ -11,6 +11,9 @@ const PRIVATE_TEST_URI = `data:text/html;charset=utf8,<!DOCTYPE html>Test in pri
 
 add_task(async function () {
   await pushPref("devtools.browsertoolbox.scope", "everything");
+  // We use a commands object for the main process
+  await pushPref("devtools.chrome.enabled", true);
+
   const { commands } = await initMultiProcessResourceCommand();
   const { resourceCommand } = commands;
 

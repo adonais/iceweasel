@@ -83,6 +83,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   bool IsEmbeddedInProcess(uint64_t aProcessId) const {
     return mEmbedderProcessId == aProcessId;
   }
+  bool IsKnownInSubTree(uint64_t aProcessId);
   uint64_t OwnerProcessId() const { return mProcessId; }
   uint64_t EmbedderProcessId() const { return mEmbedderProcessId; }
   ContentParent* GetContentParent() const;

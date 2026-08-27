@@ -1,63 +1,28 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Tue, 7 Apr 2026 19:06:00 -0500
-Subject: Bug 2030139 - (fix-15fd636394) disable perfetto usage to avoid new
- third_party library.
+From: Landry Breuil <landry@openbsd.org>
+Date: Wed, 15 Apr 2026 13:31:00 +0000
+Subject: Bug 2030612 - define AOM_EFLAG_FREEZE_INTERNAL_STATE if not defined
+ r=mjf
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/f1981bae2720ec8087be98eb7f5f323c1d233640
+fixes build with system-av1/aom after bug 2029247
+
+Differential Revision: https://phabricator.services.mozilla.com/D293051
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/70d2379819582d44092dee15e1e45ddbc9cd3f22
 ---
- video/video_stream_encoder.cc | 20 ++++++++------------
- 1 file changed, 8 insertions(+), 12 deletions(-)
+ modules/video_coding/codecs/av1/libaom_av1_encoder.cc | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/video/video_stream_encoder.cc b/video/video_stream_encoder.cc
-index eb6555f5ad..1fad810c1b 100644
---- a/video/video_stream_encoder.cc
-+++ b/video/video_stream_encoder.cc
-@@ -863,13 +863,11 @@ void VideoStreamEncoder::AddAdaptationResource(
-   // Map any externally added resources as kCpu for the sake of stats reporting.
-   // TODO(hbos): Make the manager map any unknown resources to kCpu and get rid
-   // of this MapResourceToReason() call.
--  TRACE_EVENT_BEGIN("webrtc",
--                    "VideoStreamEncoder::AddAdaptationResource(latency)",
--                    perfetto::Track::FromPointer(this));
-+  TRACE_EVENT_ASYNC_BEGIN0(
-+      "webrtc", "VideoStreamEncoder::AddAdaptationResource(latency)", this);
-   encoder_queue_->PostTask([this, resource = std::move(resource)] {
--    TRACE_EVENT_END("webrtc",
--                    /* VideoStreamEncoder::AddAdaptationResource(latency) */
--                    perfetto::Track::FromPointer(this));
-+    TRACE_EVENT_ASYNC_END0(
-+        "webrtc", "VideoStreamEncoder::AddAdaptationResource(latency)", this);
-     RTC_DCHECK_RUN_ON(encoder_queue_.get());
-     additional_resources_.push_back(resource);
-     stream_resource_manager_.AddResource(resource, VideoAdaptationReason::kCpu);
-@@ -1718,8 +1716,7 @@ void VideoStreamEncoder::TraceFrameDropStart() {
-   RTC_DCHECK_RUN_ON(encoder_queue_.get());
-   // Start trace event only on the first frame after encoder is paused.
-   if (!encoder_paused_and_dropped_frame_) {
--    TRACE_EVENT_BEGIN("webrtc", "EncoderPaused",
--                      perfetto::Track::FromPointer(this));
-+    TRACE_EVENT_ASYNC_BEGIN0("webrtc", "EncoderPaused", this);
-   }
-   encoder_paused_and_dropped_frame_ = true;
- }
-@@ -1728,8 +1725,7 @@ void VideoStreamEncoder::TraceFrameDropEnd() {
-   RTC_DCHECK_RUN_ON(encoder_queue_.get());
-   // End trace event on first frame after encoder resumes, if frame was dropped.
-   if (encoder_paused_and_dropped_frame_) {
--    TRACE_EVENT_END("webrtc", /* EncoderPaused */
--                    perfetto::Track::FromPointer(this));
-+    TRACE_EVENT_ASYNC_END0("webrtc", "EncoderPaused", this);
-   }
-   encoder_paused_and_dropped_frame_ = false;
- }
-@@ -2188,8 +2184,8 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
-   }
-   accumulated_update_rect_is_valid_ = true;
+diff --git a/modules/video_coding/codecs/av1/libaom_av1_encoder.cc b/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
+index f66ee6463a..fd61d744d6 100644
+--- a/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
++++ b/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
+@@ -67,6 +67,10 @@
+ #define AOM_EFLAG_CALCULATE_PSNR (1 << 3)
+ #endif
  
--  TRACE_EVENT_INSTANT("webrtc", "Encode", perfetto::Track::FromPointer(this),
--                      "render_time", video_frame.render_time_ms());
-+  TRACE_EVENT_ASYNC_STEP_INTO0("webrtc", "Video", video_frame.render_time_ms(),
-+                               "Encode");
- 
-   stream_resource_manager_.OnEncodeStarted(out_frame, time_when_posted_us);
- 
++#ifndef AOM_EFLAG_FREEZE_INTERNAL_STATE
++#define AOM_EFLAG_FREEZE_INTERNAL_STATE (1 << 2)
++#endif
++
+ #if defined(WEBRTC_ENCODER_PSNR_STATS)
+ constexpr bool kEnablePsnrStats = true;
+ #else

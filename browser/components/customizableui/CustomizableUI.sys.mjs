@@ -42,6 +42,7 @@ const kPrefCustomizationDebug = "browser.uiCustomization.debug";
 const kPrefDrawInTitlebar = "browser.tabs.inTitlebar";
 const kPrefUIDensity = "browser.uidensity";
 const kPrefAutoTouchMode = "browser.touchmode.auto";
+const kPrefNovaEnabled = "browser.nova.enabled";
 const kPrefAutoHideDownloadsButton = "browser.download.autohideButton";
 const kPrefProtonToolbarVersion = "browser.proton.toolbar.version";
 const kPrefHomeButtonUsed = "browser.engagement.home-button.has-used";
@@ -67,7 +68,7 @@ const kSubviewEvents = ["ViewShowing", "ViewHiding"];
  * The current version. We can use this to auto-add new default widgets as necessary.
  * (would be const but isn't because of testing purposes)
  */
-var kVersion = 25;
+var kVersion = 26;
 
 /**
  * Buttons removed from built-ins by version they were removed. kVersion must be
@@ -184,6 +185,7 @@ var gUIStateBeforeReset = {
   uiDensity: null,
   uiDensityHadUserValue: null,
   autoTouchMode: null,
+  autoTouchModeHadUserValue: null,
   sidebarPositionStart: null,
 };
 
@@ -318,6 +320,8 @@ var CustomizableUIInternal = {
   initialize() {
     lazy.log.debug("Initializing");
 
+    this._setAutoTouchModeDefault();
+
     lazy.AddonManagerPrivate.databaseReady.then(async () => {
       lazy.AddonManager.addAddonListener(this);
 
@@ -403,6 +407,7 @@ var CustomizableUIInternal = {
         defaultPlacements: [
           "tabbrowser-tabs",
           "new-tab-button",
+          "spring",
           "alltabs-button",
           "ai-window-toggle",
         ],
@@ -445,6 +450,19 @@ var CustomizableUIInternal = {
     Services.prefs.addObserver(kPrefSidebarVerticalTabsEnabled, this);
     Services.prefs.addObserver(kPrefSidebarRevampEnabled, this);
     Services.prefs.addObserver(kPrefSidebarPositionStartEnabled, this);
+  },
+
+  // Sets the default for browser.touchmode.auto (whether the UI density
+  // auto-switches to touch in tablet mode) based on whether nova is enabled.
+  // The pref is sticky so that a user value is preserved even when it matches
+  // the default this derives at startup.
+  _setAutoTouchModeDefault() {
+    Services.prefs
+      .getDefaultBranch("")
+      .setBoolPref(
+        kPrefAutoTouchMode,
+        !Services.prefs.getBoolPref(kPrefNovaEnabled, false)
+      );
   },
 
   /**
@@ -873,6 +891,37 @@ var CustomizableUIInternal = {
         if (!shouldKeepFirefoxView) {
           firefoxViewArea.splice(defaultIndex, 1);
         }
+      }
+    }
+
+    // Add the flexible space that replaced the post-tabs titlebar-spacer to the
+    // left of the alltabs-button. Only the horizontal tab strip layout is
+    // touched, to match the defaults (a fresh vertical-tabs profile doesn't get
+    // this space). For users currently in vertical tabs, that layout lives in
+    // the horizontal snapshot rather than the live tabstrip placements.
+    if (currentVersion < 26) {
+      let insertBeforeAllTabs = placements => {
+        if (!placements) {
+          return placements;
+        }
+        let alltabsIndex = placements.indexOf("alltabs-button");
+        if (
+          alltabsIndex > 0 &&
+          !placements[alltabsIndex - 1].startsWith(kSpecialWidgetPfx + "spring")
+        ) {
+          placements.splice(alltabsIndex, 0, "spring");
+        }
+        return placements;
+      };
+
+      insertBeforeAllTabs(gSavedState.placements[CustomizableUI.AREA_TABSTRIP]);
+
+      let horizontalSnapshot =
+        CustomizableUIInternal.getSavedHorizontalSnapshotState();
+      if (horizontalSnapshot.length) {
+        CustomizableUIInternal.saveHorizontalTabStripState(
+          insertBeforeAllTabs(horizontalSnapshot)
+        );
       }
     }
   },
@@ -4531,6 +4580,12 @@ var CustomizableUIInternal = {
         Services.prefs.prefHasUserValue(kPrefUIDensity);
       gUIStateBeforeReset.autoTouchMode =
         Services.prefs.getBoolPref(kPrefAutoTouchMode);
+      // browser.touchmode.auto is sticky, so an explicit value equal to the
+      // default still counts as a user value. Remember whether one was set so
+      // undoReset can faithfully restore the no-user-value state rather than
+      // pinning it with an explicit default-valued user pref.
+      gUIStateBeforeReset.autoTouchModeHadUserValue =
+        Services.prefs.prefHasUserValue(kPrefAutoTouchMode);
       gUIStateBeforeReset.currentTheme = gSelectedTheme;
       gUIStateBeforeReset.autoHideDownloadsButton = Services.prefs.getBoolPref(
         kPrefAutoHideDownloadsButton
@@ -4638,6 +4693,7 @@ var CustomizableUIInternal = {
       uiDensity,
       uiDensityHadUserValue,
       autoTouchMode,
+      autoTouchModeHadUserValue,
       autoHideDownloadsButton,
       sidebarPositionStart,
     } = gUIStateBeforeReset;
@@ -4654,7 +4710,11 @@ var CustomizableUIInternal = {
     } else {
       Services.prefs.clearUserPref(kPrefUIDensity);
     }
-    Services.prefs.setBoolPref(kPrefAutoTouchMode, autoTouchMode);
+    if (autoTouchModeHadUserValue) {
+      Services.prefs.setBoolPref(kPrefAutoTouchMode, autoTouchMode);
+    } else {
+      Services.prefs.clearUserPref(kPrefAutoTouchMode);
+    }
     Services.prefs.setBoolPref(
       kPrefAutoHideDownloadsButton,
       autoHideDownloadsButton
@@ -5191,6 +5251,12 @@ var CustomizableUIInternal = {
         );
         continue;
       }
+      // Remove all springs located in the tabs toolbar when vertical tabs are enabled
+      // there's one by default but the user could add as many as they want
+      if (this.isSpecialWidget(widgetId) && widgetId.includes("spring")) {
+        this.removeWidgetFromArea(widgetId);
+        continue;
+      }
       // if this is a extension, those are handled in a toolbarvisibilitychange handler in browser-addons.js
       if (CustomizableUI.isWebExtensionWidget(widgetId)) {
         lazy.log.debug(`Skipping a webextension saved placement ${widgetId}`);
@@ -5372,6 +5438,12 @@ var CustomizableUIInternal = {
             id,
             CustomizableUI.AREA_VERTICAL_TABSTRIP
           );
+          continue;
+        }
+        // Remove all springs located in the tabs toolbar when vertical tabs are enabled
+        // there's one by default but the user could add as many as they want
+        if (this.isSpecialWidget(id) && id.includes("spring")) {
+          this.removeWidgetFromArea(id);
           continue;
         }
         // We add the tab strip placements later in the case they have a custom position
@@ -7227,6 +7299,11 @@ function WidgetSingleWrapper(aWidget, aNode) {
   });
 
   this.__defineGetter__("overflowed", function () {
+    // A widget that isn't built in this window (e.g. showInPrivateBrowsing:false
+    // in a private window) can't be overflowed.
+    if (!aNode) {
+      return false;
+    }
     return aNode.getAttribute("overflowedItem") == "true";
   });
 

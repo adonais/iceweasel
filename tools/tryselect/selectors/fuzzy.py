@@ -105,7 +105,6 @@ class FuzzyParser(BaseTryParser):
         "existing-tasks",
         "extensions",
         "gecko-profile",
-        "native-profiling",
         "new-test-config",
         "path",
         "target-tasks-method",

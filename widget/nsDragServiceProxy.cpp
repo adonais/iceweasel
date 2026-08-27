@@ -83,6 +83,7 @@ nsresult nsDragSessionProxy::InvokeDragSessionImpl(
       aArrayTransferables, transferables, false, nullptr);
 
   nsCOMPtr<nsIPrincipal> principal;
+  // XXX: Can this use mTriggeringPrincipal instead?
   if (mSourceNode) {
     principal = mSourceNode->NodePrincipal();
   }

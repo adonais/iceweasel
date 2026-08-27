@@ -22,7 +22,7 @@
         data-l10n-sync="true">
 <head>
   <!-- CSP might be disabled by C++ code. -->
-  <meta http-equiv="Content-Security-Policy" content="script-src chrome: moz-src: resource:;" />
+  <meta http-equiv="Content-Security-Policy" content="script-src chrome: moz-src: resource:; frame-src chrome:; object-src 'none';" />
 
   <!-- The "global.css" stylesheet is imported first to allow other stylesheets to
       override rules using selectors with the same specificity. This applies to
@@ -79,6 +79,7 @@
   <link rel="localization" href="browser/reportBrokenSite.ftl"/>
   <link rel="localization" href="browser/screenshots.ftl"/>
   <link rel="localization" href="browser/search.ftl"/>
+  <link rel="localization" href="browser/sharePanel.ftl"/>
   <link rel="localization" href="browser/sidebarMenu.ftl"/>
   <link rel="localization" href="browser/tabbrowser.ftl"/>
   <link rel="localization" href="browser/taskbartabs.ftl"/>

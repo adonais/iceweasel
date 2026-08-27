@@ -182,8 +182,10 @@ nsresult TestSerialPlatformService::GetSignalsImpl(
 }
 
 nsresult TestSerialPlatformService::GetReadStreamImpl(
-    const nsString& aPortId, uint32_t aBufferSize,
+    const nsString& aPortId, uint32_t aBufferSize, bool aDetectParityErrors,
     nsIAsyncInputStream** aStream) {
+  // The mock returns its pipe stream directly; parity-error detection is only
+  // exercised on real platform services.
   MockSerialPort* port = FindPort(aPortId);
   if (!port || !port->mIsOpen) {
     return NS_ERROR_NOT_AVAILABLE;

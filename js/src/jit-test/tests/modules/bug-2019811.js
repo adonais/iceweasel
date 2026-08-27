@@ -15,4 +15,4 @@ var topModule = parseModule(
     "js"
 );
 registerModule("top.js", topModule);
-moduleLink(topModule);
+moduleLoadAndLink(topModule);

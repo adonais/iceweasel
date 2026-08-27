@@ -1,4 +1,4 @@
-# Preferences and Defines
+# Glean Preferences and Defines
 
 ## User Preferences
 

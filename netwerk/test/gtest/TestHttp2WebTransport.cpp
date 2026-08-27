@@ -254,6 +254,9 @@ MockWebTransportSessionEventListener::OnSessionClosed(
   return NS_OK;
 }
 
+NS_IMETHODIMP
+MockWebTransportSessionEventListener::OnDraining() { return NS_OK; }
+
 NS_IMETHODIMP MockWebTransportSessionEventListener::OnDatagramReceivedInternal(
     nsTArray<uint8_t>&& aData) {
   mReceivedDatagrams = std::move(aData);
@@ -1069,7 +1072,7 @@ TEST(TestHttp2WebTransport, SendAndReceiveDatagram)
   expectedData.AppendElements(mockData);
 
   // Send datagram from client to server
-  client->Session()->SendDatagram(std::move(mockData), 1);
+  client->Session()->SendDatagram(std::move(mockData), 1, 0, 0);
   ServerProcessCapsules(server, client);
 
   // Verify the server received the correct datagram capsule

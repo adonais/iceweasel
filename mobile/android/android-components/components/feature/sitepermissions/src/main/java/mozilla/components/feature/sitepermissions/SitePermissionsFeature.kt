@@ -752,11 +752,8 @@ class SitePermissionsFeature(
         origin: String,
     ): SitePermissions {
         val rules = sitePermissionsRules
-        return rules?.toSitePermissions(
-            origin,
-            savedAt = System.currentTimeMillis(),
-        )
-            ?: SitePermissions(origin, savedAt = System.currentTimeMillis())
+        return rules?.toSitePermissions(origin)
+            ?: SitePermissions(origin)
     }
 
     private fun PermissionRequest.isForAutoplay() =

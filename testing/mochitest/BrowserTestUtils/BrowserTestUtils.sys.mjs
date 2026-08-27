@@ -14,6 +14,7 @@
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { clearTimeout, setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 import { TestUtils } from "resource://testing-common/TestUtils.sys.mjs";
 
 const lazy = {};
@@ -34,8 +35,34 @@ let gListenerId = 0;
 
 const DISABLE_CONTENT_PROCESS_REUSE_PREF = "dom.ipc.disableContentProcessReuse";
 
+// Upper bound on the tabs BrowserTestUtils.overflowTabs opens.
+const MAX_TABS_FOR_OVERFLOW = 200;
+
+// Default bound on BrowserTestUtils.waitForMutationCondition, past the point
+// where a wait is plausibly still going to pass.
+const DEFAULT_MUTATION_TIMEOUT_MS = 10000;
+
 const kAboutPageRegistrationContentScript =
   "chrome://mochikit/content/tests/BrowserTestUtils/content-about-page-utils.js";
+
+/**
+ * Names a mutation wait whose caller passed no message, so that a wait which
+ * fails can still say which one it was.
+ *
+ * @param {function} checkFn  The condition the wait is testing.
+ * @param {nsIStackFrame} frame  The frame that started the wait.
+ * @returns {string}
+ */
+function describeMutationWait(checkFn, frame) {
+  let source = checkFn.toString().replace(/\s+/g, " ");
+  if (source.length > 100) {
+    source = source.slice(0, 100) + "...";
+  }
+  if (!frame) {
+    return source;
+  }
+  return `${frame.filename.replace(/.*\//, "")}:${frame.lineNumber} - ${source}`;
+}
 
 /**
  * Create and register the BrowserTestUtils and ContentEventListener window
@@ -126,16 +153,12 @@ export var BrowserTestUtils = {
       };
     }
     let tab = await BrowserTestUtils.openNewForegroundTab(options);
-    // @backward-compat { version 152 }
-    // Get rid of the documentGlobal fallback once 152 makes it to release.
-    let originalWindow = tab.documentGlobal || tab.ownerGlobal;
+    let originalWindow = tab.documentGlobal;
     let result;
     try {
       result = await taskFn(tab.linkedBrowser);
     } finally {
-      // @backward-compat { version 152 }
-      // Get rid of the documentGlobal fallback once 152 makes it to release.
-      let finalWindow = tab.documentGlobal || tab.ownerGlobal;
+      let finalWindow = tab.documentGlobal;
       if (originalWindow == finalWindow && !tab.closing && tab.linkedBrowser) {
         // taskFn may resolve within a tick after opening a new tab.
         // We shouldn't remove the newly opened tab in the same tick.
@@ -180,9 +203,7 @@ export var BrowserTestUtils = {
   openNewForegroundTab(tabbrowser, ...args) {
     let startTime = ChromeUtils.now();
     let options;
-    // @backward-compat { version 152 }
-    // Get rid of the documentGlobal fallback once 152 makes it to release.
-    let win = tabbrowser.documentGlobal || tabbrowser.ownerGlobal;
+    let win = tabbrowser.documentGlobal;
     if (win && tabbrowser === win.gBrowser) {
       // tabbrowser is a tabbrowser, read the rest of the arguments from args.
       let [
@@ -207,7 +228,7 @@ export var BrowserTestUtils = {
 
       tabbrowser = tabbrowser.gBrowser;
       options = { opening, waitForLoad, waitForStateStop, forceNewProcess };
-      win = tabbrowser.documentGlobal || tabbrowser.ownerGlobal;
+      win = tabbrowser.documentGlobal;
     }
 
     let {
@@ -375,9 +396,7 @@ export var BrowserTestUtils = {
    */
   switchTab(tabbrowser, tab) {
     let startTime = ChromeUtils.now();
-    // @backward-compat { version 152 }
-    // Get rid of the documentGlobal fallback once 152 makes it to release.
-    let win = tabbrowser.documentGlobal || tabbrowser.ownerGlobal;
+    let win = tabbrowser.documentGlobal;
     let { innerWindowId } = win.windowGlobalChild;
 
     // Some tests depend on the delay and TabSwitched only fires if the browser is visible.
@@ -461,9 +480,7 @@ export var BrowserTestUtils = {
       maybeErrorPage = false,
     } = options;
     let startTime = ChromeUtils.now();
-    // @backward-compat { version 152 }
-    // Get rid of the documentGlobal fallback once 152 makes it to release.
-    let win = browser.documentGlobal || browser.ownerGlobal;
+    let win = browser.documentGlobal;
     let { innerWindowId } = win.windowGlobalChild;
 
     // Passing a url as second argument is a common mistake we should prevent.
@@ -1004,9 +1021,7 @@ export var BrowserTestUtils = {
    *        The tabbrowser in which to preload a browser.
    */
   async maybeCreatePreloadedBrowser(gBrowser) {
-    // @backward-compat { version 152 }
-    // Get rid of the documentGlobal fallback once 152 makes it to release.
-    let win = gBrowser.documentGlobal || gBrowser.ownerGlobal;
+    let win = gBrowser.documentGlobal;
     win.NewTabPagePreloading.maybeCreatePreloadedBrowser(win);
 
     // We cannot use the regular BrowserTestUtils helper for waiting here, since that
@@ -1334,9 +1349,7 @@ export var BrowserTestUtils = {
         return subject.windowGlobalChild.innerWindowId;
       }
       if ("ownerDocument" in subject) {
-        // @backward-compat { version 152 }
-        // Get rid of the documentGlobal fallback once 152 makes it to release.
-        let win = subject.documentGlobal || subject.ownerGlobal;
+        let win = subject.documentGlobal;
         return win.windowGlobalChild.innerWindowId;
       }
       return null;
@@ -1463,6 +1476,40 @@ export var BrowserTestUtils = {
       return Promise.resolve();
     }
     return this.waitForEvent(popup, "popup" + eventSuffix);
+  },
+
+  /**
+   * Activate a menu item the way a user would, and wait for the menu to close.
+   *
+   * Activating an item dismisses the menu it is in, which is what this waits
+   * for. The menu has to be open already, as activateItem() throws
+   * "Popup is not open" otherwise. Prefer this over clicking the item: while
+   * the menu is still opening, its items are not focusable and not exposed to
+   * the accessibility APIs, so the click activates nothing.
+   *
+   * @param {Element} item
+   *        The menuitem to activate, in a menupopup that is already open.
+   */
+  async activateMenuItem(item) {
+    let popup = item.closest("menupopup");
+    let hidden = this.waitForPopupEvent(popup, "hidden");
+    popup.activateItem(item);
+    await hidden;
+  },
+
+  /**
+   * Open the menulist a menu item belongs to and activate the item, the way a
+   * user would, waiting for the dropdown to open first and to close afterwards.
+   *
+   * @param {Element} item
+   *        The menuitem to activate.
+   */
+  async selectMenulistItem(item) {
+    let menulist = item.closest("menulist");
+    let shown = this.waitForPopupEvent(menulist.menupopup, "shown");
+    menulist.open = true;
+    await shown;
+    await this.activateMenuItem(item);
   },
 
   /**
@@ -1702,24 +1749,76 @@ export var BrowserTestUtils = {
    * @param {object}  options   The options to pass to MutationObserver.observe();
    * @param {function} checkFn  Function that returns true when it wants the promise to be
    * resolved.
+   * @param {object} [waitOptions]
+   * @param {string} [waitOptions.msg]
+   *        Describes what's being waited for. Used in the rejection message and
+   *        to label the profiler marker. Defaults to the call site and the
+   *        source of `checkFn`.
+   * @param {number} [waitOptions.timeout=DEFAULT_MUTATION_TIMEOUT_MS]
+   *        Milliseconds to wait before rejecting. Pass Infinity to wait
+   *        indefinitely, in which case the wait still rejects if the test
+   *        finishes while it's pending.
    * @returns {Promise<any>}    The value returned by `checkFn`.
    */
-  waitForMutationCondition(target, options, checkFn) {
+  waitForMutationCondition(
+    target,
+    options,
+    checkFn,
+    { msg, timeout = DEFAULT_MUTATION_TIMEOUT_MS } = {}
+  ) {
     let retVal;
     if ((retVal = checkFn())) {
       return Promise.resolve(retVal);
     }
-    return new Promise(resolve => {
-      // @backward-compat { version 152 }
-      // Get rid of the documentGlobal fallback once 152 makes it to release.
-      let win = target.documentGlobal || target.ownerGlobal;
-      let obs = new win.MutationObserver(function () {
+    let startTime = ChromeUtils.now();
+    let label = `waitForMutationCondition - ${
+      msg ?? describeMutationWait(checkFn, Components.stack.caller)
+    }`;
+
+    return new Promise((resolve, reject) => {
+      let win = target.documentGlobal;
+      let timer = 0;
+      let settled = false;
+      let obs = new win.MutationObserver(() => {
         if ((retVal = checkFn())) {
-          obs.disconnect();
+          stop();
           resolve(retVal);
         }
       });
+
+      // Don't chain the returned promise (no .then()/.finally()): the extra
+      // microtask defers when an awaiting caller resumes, and tests that drive
+      // the UI right after a wait are sensitive to that. Clean up and record
+      // the wait here instead, before settling.
+      function stop() {
+        settled = true;
+        obs.disconnect();
+        clearTimeout(timer);
+        ChromeUtils.addProfilerMarker(
+          "BrowserTestUtils",
+          { startTime, category: "Test" },
+          label
+        );
+      }
+
       obs.observe(target, options);
+
+      if (timeout !== Infinity) {
+        timer = setTimeout(() => {
+          label += ` - timed out after ${timeout}ms`;
+          stop();
+          reject(label);
+        }, timeout);
+      }
+
+      TestUtils.promiseTestFinished?.then(() => {
+        if (settled) {
+          return;
+        }
+        label += " - still pending at the end of the test";
+        stop();
+        reject(label);
+      });
     });
   },
 
@@ -1978,9 +2077,7 @@ export var BrowserTestUtils = {
    *        Extra options to pass to tabbrowser's removeTab method.
    */
   removeTab(tab, options = {}) {
-    // @backward-compat { version 152 }
-    // Get rid of the documentGlobal fallback once 152 makes it to release.
-    let win = tab.documentGlobal || tab.ownerGlobal;
+    let win = tab.documentGlobal;
     win.gBrowser.removeTab(tab, options);
   },
 
@@ -2021,9 +2118,7 @@ export var BrowserTestUtils = {
         Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE
       );
     } else {
-      // @backward-compat { version 152 }
-      // Get rid of the documentGlobal fallback once 152 makes it to release.
-      let win = tab.documentGlobal || tab.ownerGlobal;
+      let win = tab.documentGlobal;
       win.gBrowser.reloadTab(tab);
     }
     return finished;
@@ -2045,7 +2140,12 @@ export var BrowserTestUtils = {
    *          Determines whether the new tabs are added at the beginning of the
    *          URL bar or at the end of it.
    *        overflowTabFactor: 3 | 1.1
-   *          Factor that helps in determining the tab count for overflow.
+   *          Factor that helps in determining the tab count for overflow. More
+   *          tabs are opened if that count doesn't overflow the tab strip.
+   *        overflowBy: number
+   *          How far the tab strip's content has to exceed its scrollport, in
+   *          tabs. Use this when the test depends on how much room there is to
+   *          scroll, since the tab count above only approximates it.
    */
   async overflowTabs(registerCleanupFunction, win, params = {}) {
     if (!params.hasOwnProperty("overflowAtStart")) {
@@ -2060,18 +2160,21 @@ export var BrowserTestUtils = {
       : "width";
     let tabIndex = params.overflowAtStart ? 0 : undefined;
     let arrowScrollbox = gBrowser.tabContainer.arrowScrollbox;
-    if (arrowScrollbox.hasAttribute("overflowing")) {
+    let overflowAmount = () =>
+      arrowScrollbox.scrollSize - arrowScrollbox.scrollClientSize;
+
+    let size = ele => ele.getBoundingClientRect()[overflowDirection];
+    let tabMinSize = gBrowser.tabContainer.verticalMode
+      ? size(gBrowser.selectedTab)
+      : parseInt(win.getComputedStyle(gBrowser.selectedTab).minWidth);
+    let overflowTarget = (params.overflowBy ?? 0) * tabMinSize;
+
+    if (
+      arrowScrollbox.hasAttribute("overflowing") &&
+      overflowAmount() > overflowTarget
+    ) {
       return;
     }
-    let promises = [];
-    promises.push(
-      BrowserTestUtils.waitForEvent(
-        arrowScrollbox,
-        "overflow",
-        false,
-        e => e.target == arrowScrollbox
-      )
-    );
     const originalSmoothScroll = arrowScrollbox.smoothScroll;
     arrowScrollbox.smoothScroll = false;
     if (registerCleanupFunction) {
@@ -2080,22 +2183,45 @@ export var BrowserTestUtils = {
       });
     }
 
-    let size = ele => ele.getBoundingClientRect()[overflowDirection];
-    let tabMinSize = gBrowser.tabContainer.verticalMode
-      ? size(gBrowser.selectedTab)
-      : parseInt(win.getComputedStyle(gBrowser.selectedTab).minWidth);
-    let tabCountForOverflow = Math.ceil(
-      (size(arrowScrollbox) / tabMinSize) * params.overflowTabFactor
+    let addTab = () =>
+      BrowserTestUtils.addTab(gBrowser, "about:blank", {
+        skipAnimation: true,
+        tabIndex,
+      });
+
+    let tabCountForOverflow = Math.min(
+      MAX_TABS_FOR_OVERFLOW,
+      Math.ceil((size(arrowScrollbox) / tabMinSize) * params.overflowTabFactor)
     );
     while (gBrowser.tabs.length < tabCountForOverflow) {
-      promises.push(
-        BrowserTestUtils.addTab(gBrowser, "about:blank", {
-          skipAnimation: true,
-          tabIndex,
-        })
-      );
+      addTab();
     }
-    await Promise.all(promises);
+
+    // The tabs share the scrollport with other elements, so the estimate above
+    // can fall short. Top it up until the content really doesn't fit, keeping
+    // a lid on the tab count in case something else stops the strip from
+    // overflowing. A tab only takes up its share of the scrollport once it is
+    // fully open, so measuring before then would badly overshoot.
+    while (gBrowser.tabs.length < MAX_TABS_FOR_OVERFLOW) {
+      await TestUtils.waitForCondition(
+        () => Array.from(gBrowser.tabs).every(tab => tab._fullyOpen),
+        "Tabs are fully open"
+      );
+      let missingSpace = overflowTarget - overflowAmount();
+      if (missingSpace < 0) {
+        break;
+      }
+      for (let i = Math.max(1, Math.ceil(missingSpace / tabMinSize)); i; i--) {
+        addTab();
+      }
+    }
+
+    await BrowserTestUtils.waitForMutationCondition(
+      arrowScrollbox,
+      { attributes: true, attributeFilter: ["overflowing"] },
+      () => arrowScrollbox.hasAttribute("overflowing"),
+      { msg: `Tab strip overflows with ${gBrowser.tabs.length} tabs` }
+    );
   },
 
   /**
@@ -2339,9 +2465,7 @@ export var BrowserTestUtils = {
    * @returns {Promise}
    */
   waitForAttribute(attr, element, value) {
-    // @backward-compat { version 152 }
-    // Get rid of the documentGlobal fallback once 152 makes it to release.
-    let win = element.documentGlobal || element.ownerGlobal;
+    let win = element.documentGlobal;
     let MutationObserver = win.MutationObserver;
     return new Promise(resolve => {
       let mut = new MutationObserver(() => {
@@ -2374,9 +2498,7 @@ export var BrowserTestUtils = {
       return Promise.resolve();
     }
 
-    // @backward-compat { version 152 }
-    // Get rid of the documentGlobal fallback once 152 makes it to release.
-    let win = element.documentGlobal || element.ownerGlobal;
+    let win = element.documentGlobal;
     let MutationObserver = win.MutationObserver;
     return new Promise(resolve => {
       dump("Waiting for removal\n");
@@ -2786,9 +2908,7 @@ export var BrowserTestUtils = {
         Services.scriptSecurityManager.getSystemPrincipal();
     }
     if (beforeLoadFunc) {
-      // @backward-compat { version 152 }
-      // Get rid of the documentGlobal fallback once 152 makes it to release.
-      let win = tabbrowser.documentGlobal || tabbrowser.ownerGlobal;
+      let win = tabbrowser.documentGlobal;
       win.addEventListener(
         "TabOpen",
         function (e) {

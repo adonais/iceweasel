@@ -42,6 +42,13 @@ void APZCTreeManagerParent::ActorDestroy(ActorDestroyReason aWhy) {
 
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetKeyboardMap(
     const KeyboardMap& aKeyboardMap) {
+  // See RecvStartAutoscroll() for why this check is necessary.
+  if (!IsForRootLayer()) {
+    return IPC_FAIL(
+        this,
+        "SetKeyboardMap from non-root APZCTreeManagerParent is not expected.");
+  }
+
   mUpdater->RunOnUpdaterThread(
       mLayersId, NewRunnableMethod<KeyboardMap>(
                      "layers::IAPZCTreeManager::SetKeyboardMap", mTreeManager,
@@ -102,6 +109,12 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvUpdateZoomConstraints(
 
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetDPI(
     const float& aDpiValue) {
+  // See RecvStartAutoscroll() for why this check is necessary.
+  if (!IsForRootLayer()) {
+    return IPC_FAIL(
+        this, "SetDPI from non-root APZCTreeManagerParent is not expected.");
+  }
+
   mUpdater->RunOnUpdaterThread(
       mLayersId,
       NewRunnableMethod<float>("layers::IAPZCTreeManager::SetDPI", mTreeManager,
@@ -124,6 +137,13 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetAllowedTouchBehavior(
 
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetBrowserGestureResponse(
     const uint64_t& aInputBlockId, const BrowserGestureResponse& aResponse) {
+  // See RecvStartAutoscroll() for why this check is necessary.
+  if (!IsForRootLayer()) {
+    return IPC_FAIL(this,
+                    "SetBrowserGestureResponse from non-root "
+                    "APZCTreeManagerParent is not expected.");
+  }
+
   mUpdater->RunOnUpdaterThread(
       mLayersId, NewRunnableMethod<uint64_t, BrowserGestureResponse>(
                      "layers::IAPZCTreeManager::SetBrowserGestureResponse",
@@ -150,12 +170,14 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvStartScrollbarDrag(
 
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvStartAutoscroll(
     const ScrollableLayerGuid& aGuid, const ScreenPoint& aAnchorLocation) {
-  // Unlike RecvStartScrollbarDrag(), this message comes from the parent
-  // process (via nsIWidget::mAPZC) rather than from the child process
-  // (via BrowserChild::mApzcTreeManager), so there is no need to check the
-  // layers id against mLayersId (and in any case, it wouldn't match, because
-  // mLayersId stores the parent process's layers id, while nsIWidget is
-  // sending the child process's layers id).
+  // Autoscroll is legitimately started only through the APZCTreeManagerParent
+  // that corresponds to the root of the layer tree. We check if this
+  // instance corresponds to the root of the layer tree.
+  if (!IsForRootLayer()) {
+    return IPC_FAIL(
+        this,
+        "StartAutoscroll from non-root APZCTreeManagerParent is not expected.");
+  }
 
   mUpdater->RunOnControllerThread(
       mLayersId,
@@ -168,7 +190,12 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvStartAutoscroll(
 
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvStopAutoscroll(
     const ScrollableLayerGuid& aGuid) {
-  // See RecvStartAutoscroll() for why we don't check the layers id.
+  // See RecvStartAutoscroll().
+  if (!IsForRootLayer()) {
+    return IPC_FAIL(
+        this,
+        "StopAutoscroll from non-root APZCTreeManagerParent is not expected.");
+  }
 
   mUpdater->RunOnControllerThread(
       mLayersId, NewRunnableMethod<ScrollableLayerGuid>(
@@ -180,6 +207,13 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvStopAutoscroll(
 
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetLongTapEnabled(
     const bool& aLongTapEnabled) {
+  // See RecvStartAutoscroll() for why this check is necessary.
+  if (!IsForRootLayer()) {
+    return IPC_FAIL(this,
+                    "SetLongTapEnabled from non-root APZCTreeManagerParent is "
+                    "not expected.");
+  }
+
   mUpdater->RunOnUpdaterThread(
       mLayersId,
       NewRunnableMethod<bool>(
@@ -204,6 +238,10 @@ bool APZCTreeManagerParent::IsGuidValid(const ScrollableLayerGuid& aGuid) {
     return false;
   }
   return true;
+}
+
+bool APZCTreeManagerParent::IsForRootLayer() const {
+  return mLayersId == mTreeManager->GetRootLayersId();
 }
 
 }  // namespace layers

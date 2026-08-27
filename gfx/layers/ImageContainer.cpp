@@ -1174,7 +1174,7 @@ nsresult NVImage::BuildSurfaceDescriptorBuffer(
     return NS_OK;
   }
 
-  DataSourceSurface::ScopedMap map(sourceSurface, DataSourceSurface::WRITE);
+  DataSourceSurface::ScopedMap map(sourceSurface, DataSourceSurface::READ);
   if (NS_WARN_IF(!map.IsMapped())) {
     return NS_ERROR_FAILURE;
   }

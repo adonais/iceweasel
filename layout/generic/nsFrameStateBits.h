@@ -535,7 +535,9 @@ FRAME_STATE_BIT(Block, 23, NS_BLOCK_HAS_LINE_CURSOR)
 
 FRAME_STATE_BIT(Block, 24, NS_BLOCK_HAS_OVERFLOW_LINES)
 
-FRAME_STATE_BIT(Block, 25, NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS)
+// NS_BLOCK_HAS_OVERFLOW_FLOATS indicates that the block has an overflow floats
+// list.
+FRAME_STATE_BIT(Block, 25, NS_BLOCK_HAS_OVERFLOW_FLOATS)
 
 // Set on any block that has descendant frames in the normal
 // flow with 'clear' set to something other than 'none'

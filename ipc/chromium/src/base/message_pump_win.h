@@ -28,7 +28,7 @@ class MessagePumpWin : public MessagePump {
   //
   class Observer {
    public:
-    virtual ~Observer() {}
+    virtual ~Observer() = default;
 
     // This method is called before processing a message.
     // The message may be undefined in which case msg.message is 0
@@ -49,14 +49,14 @@ class MessagePumpWin : public MessagePump {
   // from Dispatch.
   class Dispatcher {
    public:
-    virtual ~Dispatcher() {}
+    virtual ~Dispatcher() = default;
     // Dispatches the event. If true is returned processing continues as
     // normal. If false is returned, the nested loop exits immediately.
     virtual bool Dispatch(const MSG& msg) = 0;
   };
 
   MessagePumpWin() : have_work_(0), state_(nullptr) {}
-  virtual ~MessagePumpWin() {}
+  virtual ~MessagePumpWin() = default;
 
   // Add an Observer, which will start receiving notifications immediately.
   void AddObserver(Observer* observer);
@@ -273,7 +273,7 @@ class MessagePumpForIO : public MessagePumpWin {
   //
   class IOHandler {
    public:
-    virtual ~IOHandler() {}
+    virtual ~IOHandler() = default;
     // This will be called once the pending IO operation associated with
     // |context| completes. |error| is the Win32 error code of the IO operation
     // (ERROR_SUCCESS if there was no error). |bytes_transfered| will be zero
@@ -297,7 +297,7 @@ class MessagePumpForIO : public MessagePumpWin {
   };
 
   MessagePumpForIO();
-  virtual ~MessagePumpForIO() {}
+  virtual ~MessagePumpForIO() = default;
 
   // MessagePump methods:
   virtual void ScheduleWork();

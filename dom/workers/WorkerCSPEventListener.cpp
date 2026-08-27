@@ -60,9 +60,6 @@ already_AddRefed<WorkerCSPEventListener> WorkerCSPEventListener::Create(
   return listener.forget();
 }
 
-WorkerCSPEventListener::WorkerCSPEventListener()
-    : mMutex("WorkerCSPEventListener::mMutex") {}
-
 NS_IMETHODIMP
 WorkerCSPEventListener::OnCSPViolationEvent(const nsAString& aJSON,
                                             const nsAString& aReportGroupName) {

@@ -43,8 +43,8 @@ add_task(async function test_update_login_success() {
   const newPassword = "new_password";
   const loginForm = megalist.querySelector("login-form");
   info("Updating login.");
-  setInputValue(loginForm, "login-username-field", newUsername);
-  setInputValue(loginForm, "login-password-field", newPassword);
+  setInputValue(loginForm, "moz-input-text", newUsername);
+  setInputValue(loginForm, "moz-input-password", newPassword);
 
   const saveButton = loginForm.shadowRoot.querySelector(
     "moz-button[type=primary]"
@@ -109,7 +109,7 @@ add_task(async function test_update_login_duplicate() {
 
   const loginForm = megalist.querySelector("login-form");
   info(`updating login 1's username to login 2's username`);
-  setInputValue(loginForm, "login-username-field", TEST_LOGIN_2.username);
+  setInputValue(loginForm, "moz-input-text", TEST_LOGIN_2.username);
 
   const saveButton = loginForm.shadowRoot.querySelector(
     "moz-button[type=primary]"
@@ -155,7 +155,7 @@ add_task(async function test_update_login_discard_changes() {
   let loginForm = megalist.querySelector("login-form");
 
   // Only show the discard changes notification if the login form has been modified.
-  setInputValue(loginForm, "login-username-field", login.username + "added");
+  setInputValue(loginForm, "moz-input-text", login.username + "added");
 
   const cancelButton = loginForm.shadowRoot.querySelector(
     "moz-button[data-l10n-id=login-item-cancel-button]"
@@ -209,7 +209,7 @@ add_task(async function test_update_login_discard_changes() {
   );
 
   loginForm = megalist.querySelector("login-form");
-  setInputValue(loginForm, "login-username-field", login.username + "added");
+  setInputValue(loginForm, "moz-input-text", login.username + "added");
 
   SidebarController.hide();
   notifMsgBar = await checkNotificationAndTelemetry(
@@ -317,7 +317,7 @@ add_task(async function test_update_login_username_notification() {
   const newUsername = "new_username";
   const loginForm = megalist.querySelector("login-form");
   info("Updating login.");
-  setInputValue(loginForm, "login-username-field", newUsername);
+  setInputValue(loginForm, "moz-input-text", newUsername);
 
   const saveButton = loginForm.shadowRoot.querySelector(
     "moz-button[type=primary]"

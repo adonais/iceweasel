@@ -37,7 +37,7 @@ add_task(async function () {
     childCount: 1,
     domNodeType: 1,
     indexInParent: 1,
-    states: ["focusable", "opaque", "enabled", "sensitive"],
+    states: ["focusable", "selectable text", "opaque", "enabled", "sensitive"],
     actions: ["Press"],
     attributes: {
       "margin-top": "0px",
@@ -83,7 +83,7 @@ add_task(async function () {
   );
 
   info("State change event");
-  const expectedStates = ["unavailable", "opaque"];
+  const expectedStates = ["unavailable", "selectable text", "opaque"];
   await emitA11yEvent(
     accessibleFront,
     "states-change",

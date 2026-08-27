@@ -4,6 +4,7 @@
 
 toolkit.jar:
   content/global/megalist/megalist.css        (megalist/content/megalist.css)
+  content/global/megalist/megalist-agent.css  (megalist/content/megalist-agent.css)
   content/global/megalist/megalist.html       (megalist/content/megalist.html)
   content/global/megalist/MegalistAlpha.mjs   (megalist/content/MegalistAlpha.mjs)
   content/global/megalist/components/password-card/password-card.mjs    (megalist/content/components/password-card/password-card.mjs)

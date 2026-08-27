@@ -16,6 +16,8 @@ const JSON_CATEGORIES = {
   NUMBER: { name: "Number", color: "green" },
   STRING: { name: "String", color: "blue" },
   PROPERTY_KEY: { name: "Property Key", color: "lightblue" },
+  SEPARATOR: { name: "Separator", color: "grey" },
+  ERROR: { name: "Parse Error", color: "red" },
 };
 
 const MAX_SAMPLE_COUNT = 100000;
@@ -24,11 +26,18 @@ class JsonSizeProfiler {
   /**
    * @param {string} jsonString - The JSON string to profile.
    * @param {string} [filename] - Optional filename for the profile metadata.
+   * @param {boolean} [isJsonlines] - True if jsonString is a JSON Lines
+   *        document, ie. one JSON value per line rather than a single value.
    */
-  constructor(jsonString, filename) {
+  constructor(jsonString, filename, isJsonlines = false) {
     this.jsonString = jsonString;
     this.filename = filename;
+    this.isJsonlines = isJsonlines;
     this.pos = 0;
+    // Parsing never reads past this position. In JSON Lines mode it is set to
+    // the end of the record being parsed, so that a malformed record cannot
+    // consume the records that follow it. Otherwise it spans the whole string.
+    this.endPos = jsonString.length;
     this.bytePos = 0;
     this.lastAdvancedBytePos = 0;
     this.scopeStack = [];
@@ -345,7 +354,7 @@ class JsonSizeProfiler {
    * Skips whitespace characters in the JSON string.
    */
   skipWhitespace() {
-    while (this.pos < this.jsonString.length) {
+    while (this.pos < this.endPos) {
       const ch = this.jsonString[this.pos];
       if (ch !== " " && ch !== "\t" && ch !== "\n" && ch !== "\r") {
         break;
@@ -362,7 +371,7 @@ class JsonSizeProfiler {
   parseValue(path) {
     this.skipWhitespace();
 
-    if (this.pos >= this.jsonString.length) {
+    if (this.pos >= this.endPos) {
       throw new Error("Unexpected end of JSON");
     }
 
@@ -410,7 +419,7 @@ class JsonSizeProfiler {
     this.advanceByAsciiChars(1); // skip '{'
 
     let first = true;
-    while (this.pos < this.jsonString.length) {
+    while (this.pos < this.endPos) {
       this.skipWhitespace();
 
       if (this.jsonString[this.pos] === "}") {
@@ -492,7 +501,7 @@ class JsonSizeProfiler {
     this.advanceByAsciiChars(1); // skip '['
 
     let first = true;
-    while (this.pos < this.jsonString.length) {
+    while (this.pos < this.endPos) {
       this.skipWhitespace();
 
       if (this.jsonString[this.pos] === "]") {
@@ -533,7 +542,7 @@ class JsonSizeProfiler {
     this.advanceByAsciiChars(1); // skip opening quote (ASCII)
     let value = "";
 
-    while (this.pos < this.jsonString.length) {
+    while (this.pos < this.endPos) {
       const ch = this.jsonString[this.pos];
 
       if (ch === '"') {
@@ -541,7 +550,7 @@ class JsonSizeProfiler {
         break;
       } else if (ch === "\\") {
         this.advanceByAsciiChars(1); // backslash (ASCII)
-        if (this.pos >= this.jsonString.length) {
+        if (this.pos >= this.endPos) {
           throw new Error("Unexpected end of JSON in string");
         }
         const escaped = this.jsonString[this.pos];
@@ -583,7 +592,7 @@ class JsonSizeProfiler {
   parseNumber(path) {
     this.parsePrimitive(path, "NUMBER", () => {
       // Skip all number characters: digits, decimal point, exponent, signs
-      while (this.pos < this.jsonString.length) {
+      while (this.pos < this.endPos) {
         const ch = this.jsonString[this.pos];
         if (
           (ch >= "0" && ch <= "9") ||
@@ -634,17 +643,113 @@ class JsonSizeProfiler {
   }
 
   /**
+   * Gets the stack used for bytes that sit between records rather than inside
+   * any value, ie. record separators and trailing content.
+   *
+   * @returns {number} The stack handle.
+   */
+  getSeparatorStack() {
+    return this.getStack(null, "json (separator)", "SEPARATOR");
+  }
+
+  /**
+   * Gets the stack used for the bytes of a record that is not valid JSON.
+   *
+   * @returns {number} The stack handle.
+   */
+  getParseErrorStack() {
+    return this.getStack(null, "json (parse error)", "ERROR");
+  }
+
+  /**
+   * Parses a JSON Lines document, ie. one JSON value per line.
+   *
+   * All records share the top-level "json" path, so a given property is
+   * aggregated across every record rather than producing one set of frames per
+   * record. That is both what makes the call tree useful for sizing a JSON
+   * Lines file and what keeps the frame count bounded by the shape of the
+   * records instead of by their number.
+   *
+   * Each record is parsed within the bounds of its own line, so a malformed
+   * record cannot consume the records that follow it. A record that does not
+   * parse as exactly one JSON value has its whole line attributed to an error
+   * frame, rather than partially attributed to whichever fields happened to
+   * parse first. This matches the viewer, which splits on newlines and renders
+   * such lines as inline errors rather than failing the document.
+   */
+  parseJsonlines() {
+    while (true) {
+      // Separator bytes (newlines and blank lines) belong to no record.
+      this.recordBytesConsumed();
+      this.topStackHandle = this.getSeparatorStack();
+      this.skipWhitespace();
+      if (this.pos >= this.jsonString.length) {
+        break;
+      }
+
+      const newline = this.jsonString.indexOf("\n", this.pos);
+      this.endPos = newline === -1 ? this.jsonString.length : newline;
+
+      // Validate before attributing any bytes, so that a malformed record does
+      // not leave partial per-field attribution behind.
+      if (this.isValidRecord(this.pos, this.endPos)) {
+        this.parseValue("json");
+      } else {
+        this.recordBytesConsumed();
+        this.topStackHandle = this.getParseErrorStack();
+        this.advanceToPos(this.endPos);
+      }
+
+      // Whitespace between the value and the end of the line, such as the \r of
+      // a CRLF ending, belongs to no record.
+      this.recordBytesConsumed();
+      this.topStackHandle = this.getSeparatorStack();
+      this.advanceToPos(this.endPos);
+
+      // Lift the limit so that the skipWhitespace() above can consume the
+      // newline on the next iteration, rather than stopping at this record's end.
+      this.endPos = this.jsonString.length;
+    }
+  }
+
+  /**
+   * Checks whether a record parses as exactly one JSON value.
+   *
+   * JSON.parse is used so that this agrees with the viewer, which decides which
+   * lines to render as errors the same way. The scanner in this file is
+   * deliberately more permissive, so it cannot be used to detect this itself.
+   *
+   * @param {number} startPos - Character position the record starts at.
+   * @param {number} endPos - Character position the record ends at.
+   * @returns {boolean} True if the record is valid JSON.
+   */
+  isValidRecord(startPos, endPos) {
+    try {
+      JSON.parse(this.jsonString.slice(startPos, endPos));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
    * Parses the JSON string and generates a Firefox profiler profile.
    *
    * @returns {object} A Firefox profiler profile object.
    */
   parse() {
-    this.parseValue("json");
+    if (this.isJsonlines) {
+      this.parseJsonlines();
+    } else {
+      this.parseValue("json");
+    }
 
-    // Move to end of string to account for any trailing content
-    const remaining = this.jsonString.length - this.pos;
-    if (remaining > 0) {
-      this.advanceByAsciiChars(remaining);
+    // Attribute any trailing content to a separator frame rather than letting
+    // it fall on a null stack, where recordBytesConsumed() would discard it.
+    if (this.pos < this.jsonString.length) {
+      this.recordBytesConsumed();
+      this.topStackHandle = this.getSeparatorStack();
+      this.advanceToPos(this.jsonString.length);
     }
 
     // Advance to final position
@@ -780,9 +885,11 @@ class JsonSizeProfiler {
  *
  * @param {string} jsonString - The JSON string to profile
  * @param {string} filename - Optional filename to include in the profile
+ * @param {boolean} isJsonlines - True if jsonString is a JSON Lines document,
+ *        ie. one JSON value per line rather than a single value
  * @returns {object} A Firefox profiler profile object
  */
-export function createSizeProfile(jsonString, filename) {
-  const profiler = new JsonSizeProfiler(jsonString, filename);
+export function createSizeProfile(jsonString, filename, isJsonlines = false) {
+  const profiler = new JsonSizeProfiler(jsonString, filename, isJsonlines);
   return profiler.parse();
 }

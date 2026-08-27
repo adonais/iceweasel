@@ -277,6 +277,9 @@ class FrameIter {
   bool isEvalFrame() const;
   bool isModuleFrame() const;
   bool isFunctionFrame() const;
+
+  bool isResumingGenerator() const;
+
   bool hasArgs() const { return isFunctionFrame(); }
 
   ScriptSource* scriptSource() const;

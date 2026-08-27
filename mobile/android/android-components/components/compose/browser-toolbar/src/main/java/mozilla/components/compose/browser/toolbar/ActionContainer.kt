@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -59,74 +60,105 @@ fun ActionContainer(
     ) {
         for (action in actions) {
             when (action) {
-                is ActionButtonRes -> {
-                    action.iconDrawable()?.let {
-                        ActionButtonComposable(
-                            icon = it,
-                            contentDescription = stringResource(action.contentDescription),
-                            state = action.state,
-                            onClick = action.onClick,
-                            highlighted = action.highlighted,
-                            onLongClick = action.onLongClick,
-                            onInteraction = { onInteraction(it) },
-                            testTag = action.testTag,
-                        )
-                    }
-                }
-
-                is ActionButton -> {
-                    action.iconDrawable()?.let {
-                        ActionButtonComposable(
-                            icon = it,
-                            contentDescription = action.contentDescription,
-                            state = action.state,
-                            onClick = action.onClick,
-                            highlighted = action.highlighted,
-                            onLongClick = action.onLongClick,
-                            onInteraction = { onInteraction(it) },
-                            testTag = action.testTag,
-                        )
-                    }
-                }
-
-                is SearchSelectorAction -> {
-                    SearchSelector(
-                        icon = action.iconDrawable(),
-                        shouldTint = (action.icon as? DrawableIcon)?.shouldTint ?: true,
-                        contentDescription = action.contentDescription(),
-                        menu = action.menu,
-                        onInteraction = { onInteraction(it) },
-                        onClick = action.onClick,
-                    )
-                }
-
-                is TabCounterAction -> {
-                    TabCounter(
-                        count = action.count,
-                        showPrivacyMask = action.showPrivacyMask,
-                        onClick = action.onClick,
-                        onLongClick = action.onLongClick,
-                        onInteraction = { onInteraction(it) },
-                    )
-                }
-
-                is AnimatedPillActionRes -> {
-                    action.iconDrawable()?.let {
-                        AnimatedPillButton(
-                            icon = it,
-                            overlayIcon = action.overlayDrawable(),
-                            text = stringResource(action.textResId),
-                            contentDescription = stringResource(action.contentDescriptionResId),
-                            highlighted = action.highlighted,
-                            animated = action.animated,
-                            onClick = action.onClick,
-                            onInteraction = onInteraction,
-                            testTag = action.testTag,
-                        )
-                    }
-                }
+                is ActionButtonRes -> ActionButtonResItem(action, onInteraction)
+                is ActionButton -> ActionButtonItem(action, onInteraction)
+                is SearchSelectorAction -> SearchSelectorItem(action, onInteraction)
+                is TabCounterAction -> TabCounterItem(action, onInteraction)
+                is AnimatedPillActionRes -> AnimatedPillItem(action, onInteraction)
             }
         }
+    }
+}
+
+@Composable
+private fun ActionButtonResItem(
+    action: ActionButtonRes,
+    onInteraction: (BrowserToolbarEvent) -> Unit,
+) {
+    action.iconDrawable()?.let {
+        ActionButtonComposable(
+            icon = it,
+            contentDescription = stringResource(action.contentDescription),
+            state = action.state,
+            onClick = action.onClick,
+            highlighted = action.highlighted,
+            onLongClick = action.onLongClick,
+            onInteraction = { event -> onInteraction(event) },
+            testTag = action.testTag,
+        )
+    }
+}
+
+@Composable
+private fun ActionButtonItem(
+    action: ActionButton,
+    onInteraction: (BrowserToolbarEvent) -> Unit,
+) {
+    action.iconDrawable()?.let {
+        ActionButtonComposable(
+            icon = it,
+            contentDescription = action.contentDescription,
+            state = action.state,
+            onClick = action.onClick,
+            highlighted = action.highlighted,
+            onLongClick = action.onLongClick,
+            onInteraction = { event -> onInteraction(event) },
+            testTag = action.testTag,
+        )
+    }
+}
+
+@Composable
+private fun SearchSelectorItem(
+    action: SearchSelectorAction,
+    onInteraction: (BrowserToolbarEvent) -> Unit,
+) {
+    SearchSelector(
+        icon = action.iconDrawable(),
+        shouldTint = (action.icon as? DrawableIcon)?.shouldTint ?: true,
+        contentDescription = action.contentDescription(),
+        menu = action.menu,
+        onInteraction = { event -> onInteraction(event) },
+        onClick = action.onClick,
+    )
+}
+
+@Composable
+private fun TabCounterItem(
+    action: TabCounterAction,
+    onInteraction: (BrowserToolbarEvent) -> Unit,
+) {
+    TabCounter(
+        count = action.count,
+        showPrivacyMask = action.showPrivacyMask,
+        onClick = action.onClick,
+        onLongClick = action.onLongClick,
+        onInteraction = { event -> onInteraction(event) },
+    )
+}
+
+@Composable
+private fun AnimatedPillItem(
+    action: AnimatedPillActionRes,
+    onInteraction: (BrowserToolbarEvent) -> Unit,
+) {
+    if (action.animated) {
+        LaunchedEffect(Unit) {
+            action.onAnimationStarted?.invoke()
+        }
+    }
+    action.iconDrawable()?.let {
+        AnimatedPillButton(
+            icon = it,
+            overlayIcon = action.overlayDrawable(),
+            text = stringResource(action.textResId),
+            contentDescription = stringResource(action.contentDescriptionResId),
+            highlighted = action.highlighted,
+            animated = action.animated,
+            onClick = action.onClick,
+            onInteraction = onInteraction,
+            testTag = action.testTag,
+        )
     }
 }
 

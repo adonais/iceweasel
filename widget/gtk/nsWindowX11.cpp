@@ -17,6 +17,7 @@
 #include "gfxXlibSurface.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
 #include "nsWindow.h"
 
 using namespace mozilla;
@@ -74,46 +75,35 @@ void nsWindowX11::MoveToWorkspace(const nsAString& workspaceIDStr) {
   int32_t workspaceID = workspaceIDStr.ToInteger(&rv);
 
   LOG("nsWindow::MoveToWorkspace() ID %d", workspaceID);
-  if (NS_FAILED(rv) || !workspaceID || !mShell) {
+  if (NS_FAILED(rv)) {
     LOG("  MoveToWorkspace disabled, quit");
     return;
+  }
+
+  if (!SendWorkspaceMoveRequest(workspaceID)) {
+    mDeferredWorkspaceID = Some(workspaceID);
+    LOG("  deferred until the window is shown");
+  }
+}
+
+bool nsWindowX11::SendWorkspaceMoveRequest(int32_t workspaceID) {
+  if (!mShell || !mIsMapped) {
+    return false;
   }
 
   // Get the gdk window for this widget.
   GdkWindow* gdk_window = GetToplevelGdkWindow();
   if (!gdk_window) {
     LOG("  failed to get GdkWindow, quit.");
-    return;
+    return false;
   }
 
-  // This code is inspired by some found in the 'gxtuner' project.
-  // https://github.com/brummer10/gxtuner/blob/792d453da0f3a599408008f0f1107823939d730d/deskpager.cpp#L50
-  XEvent xevent;
-  Display* xdisplay = gdk_x11_get_default_xdisplay();
-  GdkScreen* screen = gdk_window_get_screen(gdk_window);
-  Window root_win = GDK_WINDOW_XID(gdk_screen_get_root_window(screen));
   GdkDisplay* display = gdk_window_get_display(gdk_window);
-  Atom type = gdk_x11_get_xatom_by_name_for_display(display, "_NET_WM_DESKTOP");
-
-  xevent.type = ClientMessage;
-  xevent.xclient.type = ClientMessage;
-  xevent.xclient.serial = 0;
-  xevent.xclient.send_event = TRUE;
-  xevent.xclient.display = xdisplay;
-  xevent.xclient.window = GDK_WINDOW_XID(gdk_window);
-  xevent.xclient.message_type = type;
-  xevent.xclient.format = 32;
-  xevent.xclient.data.l[0] = workspaceID;
-  xevent.xclient.data.l[1] = X11CurrentTime;
-  xevent.xclient.data.l[2] = 0;
-  xevent.xclient.data.l[3] = 0;
-  xevent.xclient.data.l[4] = 0;
-
-  XSendEvent(xdisplay, root_win, FALSE,
-             SubstructureNotifyMask | SubstructureRedirectMask, &xevent);
-
-  XFlush(xdisplay);
+  gdk_x11_window_move_to_desktop(gdk_window,
+                                 static_cast<uint32_t>(workspaceID));
+  gdk_display_flush(display);
   LOG("  moved to workspace");
+  return true;
 }
 
 Window nsWindowX11::GetX11Window() {
@@ -166,18 +156,6 @@ void nsWindowX11::CreateNative() {
 #pragma GCC diagnostic pop
 
   mSurfaceProvider.Initialize(GetX11Window());
-}
-
-void nsWindowX11::ConfigureToplevelWindowNative() {
-  // Set window manager hint to keep fullscreen windows composited.
-  //
-  // If the window were to get unredirected, there could be visible
-  // tearing because Gecko does not align its framebuffer updates with
-  // vblank.
-  //
-  // This must be (re-)applied whenever the shell's X window is created,
-  // including after CSD-triggered re-realize in SetCustomTitlebar().
-  SetCompositorHint(GTK_WIDGET_COMPOSITED_ENABLED);
 }
 
 void nsWindowX11::DestroyNative() { UnlockNativePointer(); }
@@ -334,6 +312,11 @@ void nsWindowX11::NativeShow(bool aAction) {
     LOG("  calling gtk_widget_show(mShell)\n");
     gtk_widget_show(mShell);
 
+    if (mDeferredWorkspaceID &&
+        SendWorkspaceMoveRequest(*mDeferredWorkspaceID)) {
+      mDeferredWorkspaceID.reset();
+    }
+
     if (mX11HiddenPopupPositioned) {
       LOG("  re-position hidden popup window [%d, %d]", mClientArea.x,
           mClientArea.y);
@@ -368,4 +351,29 @@ void nsWindowX11::NativeShow(bool aAction) {
     }
     gtk_widget_hide(mShell);
   }
+}
+
+void nsWindowX11::OnMapNative() {
+  if (mIsDragPopup) {
+    if (GtkWidget* parent = gtk_widget_get_parent(mShell)) {
+      gtk_widget_set_opacity(parent, 0.0);
+    }
+  }
+
+  if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
+    remoteRenderer->SendResume();
+    remoteRenderer->SendForcePresent(wr::RenderReasons::WIDGET);
+  }
+
+  // Set window manager hint to keep fullscreen windows composited.
+  //
+  // If the window were to get unredirected, there could be visible
+  // tearing because Gecko does not align its framebuffer updates with
+  // vblank.
+  //
+  // This must be (re-)applied whenever the shell's X window is created,
+  // including after CSD-triggered re-realize in SetCustomTitlebar().
+  SetCompositorHint(GTK_WIDGET_COMPOSITED_ENABLED);
+
+  XFlush(DefaultXDisplay());
 }

@@ -41,6 +41,7 @@ from mozbuild.frontend.data import (
     WasmSources,
 )
 from mozbuild.frontend.emitter import TreeMetadataEmitter
+from mozbuild.frontend.l10n_manifest import L10nManifestContext
 from mozbuild.frontend.reader import (
     BuildReader,
     BuildReaderError,
@@ -87,7 +88,9 @@ class TestEmitterBasic(unittest.TestCase):
 
         filtered = []
         for obj in objs:
-            if filter_common and isinstance(obj, DirectoryTraversal):
+            if filter_common and isinstance(
+                obj, (DirectoryTraversal, L10nManifestContext)
+            ):
                 continue
 
             filtered.append(obj)
@@ -602,6 +605,26 @@ class TestEmitterBasic(unittest.TestCase):
         with self.assertRaisesRegex(
             SandboxValidationError,
             "Outputs of LOCALIZED_GENERATED_FILES cannot be used in FINAL_TARGET_FILES:",
+        ):
+            self.read_topsrcdir(reader)
+
+    def test_build_static_lib_archive(self):
+        """Test that BUILD_STATIC_LIB_ARCHIVE builds an archive without
+        changing consumer linkage."""
+        reader = self.reader("build-static-lib-archive")
+        objs = self.read_topsrcdir(reader)
+
+        libraries = [o for o in objs if isinstance(o, StaticLibrary)]
+        self.assertEqual(len(libraries), 1)
+        self.assertTrue(libraries[0].build_static_lib_archive)
+        self.assertFalse(libraries[0].no_expand_lib)
+
+    def test_build_static_lib_archive_non_static(self):
+        """Test that BUILD_STATIC_LIB_ARCHIVE requires a static library."""
+        reader = self.reader("build-static-lib-archive-non-static")
+        with self.assertRaisesRegex(
+            SandboxValidationError,
+            "BUILD_STATIC_LIB_ARCHIVE can only be set for static libraries.",
         ):
             self.read_topsrcdir(reader)
 
@@ -1723,7 +1746,7 @@ class TestEmitterBasic(unittest.TestCase):
         """Test that a RustLibrary Cargo.toml has a permitted crate-type."""
         reader = self.reader("rust-library-invalid-crate-type")
         with self.assertRaisesRegex(
-            SandboxValidationError, "crate-type.* is not permitted"
+            SandboxValidationError, "crate-type.* must include 'staticlib'"
         ):
             self.read_topsrcdir(reader)
 

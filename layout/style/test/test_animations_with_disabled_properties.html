@@ -19,13 +19,13 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1265611
 SimpleTest.waitForExplicitFinish();
 
 /*
- * This test relies on the fact that the font-palette property
- * is disabled by the layout.css.font-palette.enabled pref. If we ever
+ * This test relies on the fact that the initial-letter property
+ * is disabled by the layout.css.initial-letter.enabled pref. If we ever
  * remove that pref we will need to substitute some other pref:property
  * combination.
  */
 SpecialPowers.pushPrefEnv(
-  { 'set': [[ 'layout.css.font-palette.enabled', false ]] },
+  { 'set': [[ 'layout.css.initial-letter.enabled', false ]] },
   () => window.open('file_animations_with_disabled_properties.html'));
 </script>
 </pre>

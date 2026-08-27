@@ -1,4 +1,9 @@
 {
+  "border": {
+    "radius": {
+      "value": "{popup.border.radius}"
+    }
+  },
   "box": {
     "background": {
       "color": {

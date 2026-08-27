@@ -13,9 +13,12 @@
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"  // For Maybe
+#include "mozilla/ServoBindings.h"  // For Servo_SerializeTimelineRangeName, Servo_LengthPercentage_ToCss
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/dom/AnimatableBinding.h"  // For the rangeStart/rangeEnd union
 #include "mozilla/dom/AnimationBinding.h"
+#include "mozilla/dom/CSSNumericValue.h"  // For CSSNumericValue::Parse
 #include "mozilla/dom/CSSNumericValueBinding.h"
 #include "mozilla/dom/CSSTransition.h"
 #include "mozilla/dom/Document.h"
@@ -297,7 +300,7 @@ void Animation::RemovedNamedTimelineReferenceFromJS(const nsAtom* aName) {
 }
 
 void Animation::SetTimelineFromJS(AnimationTimeline* aTimeline) {
-  TimelineWillSetFromJS();
+  PropertiesWillSetFromJS(CSSAnimationProperties::Timeline);
   // Can't refer to timeline by name from JS side.
   const auto prevTimelineName = GetTimelineName();
   SetTimeline(aTimeline, {}, FromJS::Yes);
@@ -318,7 +321,8 @@ bool Animation::SetTimeline(AnimationTimeline* aTimeline,
 bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
                                     const ScopedTimelineName& aTimelineName,
                                     FromJS aFromJS) {
-  if (aFromJS == FromJS::No && TimelineOverridenByJS()) {
+  if (aFromJS == FromJS::No &&
+      (PropertiesOverridenByJS() & CSSAnimationProperties::Timeline)) {
     return false;
   }
   // 1. Let old timeline be the current timeline of animation, if any.
@@ -352,6 +356,12 @@ bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
                                   ? 0.0
                                   : previousCurrentTime.Value().ToSeconds() /
                                         endTime.ToSeconds());
+  } else if (mTimeline && mTimeline->IsUnresolvedTimeline()) {
+    // If we're switching out of an unresolved timeline into the document
+    // timeline, we want to make sure that we trigger the animation.
+    // This doesn't (& shouldn't) have any impact going into a finite timeline,
+    // as the unresolved timeline does not have a resolved current time.
+    previousProgress.SetValue(0.0);
   }
 
   // We compute the active time for the old timeline because we will use it to
@@ -457,12 +467,13 @@ bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
   return true;
 }
 
-void Animation::SetTimelineRange(AnimationRange&& aRange) {
-  SetTimelineRangeNoUpdate(std::move(aRange));
+void Animation::SetTimelineRange(AnimationRange&& aRange, FromJS aFromJS) {
+  SetTimelineRangeNoUpdate(std::move(aRange), aFromJS);
   PostUpdate();
 }
 
-void Animation::SetTimelineRangeNoUpdate(AnimationRange&& aRange) {
+void Animation::SetTimelineRangeNoUpdate(AnimationRange&& aRange,
+                                         FromJS aFromJS) {
   if (mTimelineRange == aRange) {
     return;
   }
@@ -473,7 +484,23 @@ void Animation::SetTimelineRangeNoUpdate(AnimationRange&& aRange) {
   //
   // For now, this is not exposed and is set during initialization of the CSS
   // Animations.
-  mTimelineRange = std::move(aRange);
+  const auto overridden = PropertiesOverridenByJS();
+  const auto startOverridden =
+      aFromJS == FromJS::No &&
+      (overridden & CSSAnimationProperties::AnimationRangeStart);
+  const auto endOverridden =
+      aFromJS == FromJS::No &&
+      (overridden & CSSAnimationProperties::AnimationRangeEnd);
+  if (startOverridden && endOverridden) {
+    return;
+  }
+
+  if (!startOverridden) {
+    mTimelineRange.mStart = std::move(aRange.mStart);
+  }
+  if (!endOverridden) {
+    mTimelineRange.mEnd = std::move(aRange.mEnd);
+  }
 
   if (mEffect) {
     mEffect->UpdateNormalizedTiming();
@@ -1138,6 +1165,92 @@ void Animation::SetCurrentTime(const Nullable<CSSNumberish>& aCurrentTime,
   SetCurrentTime(seekTime.Value());
 }
 
+// https://drafts.csswg.org/web-animations-2/#dom-animation-rangestart
+static void RangeBoundaryToTimelineRangeValue(
+    StyleTimelineRangeName aName, const StyleLengthPercentage& aOffset,
+    nsIGlobalObject* aParent,
+    OwningTimelineRangeOffsetOrCSSNumericValueOrCSSKeywordValueOrUTF8String&
+        aRetVal) {
+  if (aName == StyleTimelineRangeName::Normal) {
+    aRetVal.SetAsUTF8String().AssignLiteral("normal");
+    return;
+  }
+
+  TimelineRangeOffset& result = aRetVal.SetAsTimelineRangeOffset();
+  if (aName != StyleTimelineRangeName::None) {
+    nsAutoCString rangeName;
+    Servo_SerializeTimelineRangeName(aName, &rangeName);
+    result.mRangeName.Construct(std::move(rangeName));
+  }
+  // else: a bare <length-percentage>, so rangeName is left null.
+
+  // Serialize the computed offset and re-parse it into a CSSNumericValue so
+  // percentages, absolute lengths and calc() (including length/percentage
+  // mixes) all round-trip. The text came from the style system, so parsing it
+  // back should not fail; if it somehow does, leave the offset unset.
+  nsAutoCString offsetCss;
+  Servo_LengthPercentage_ToCss(&aOffset, &offsetCss);
+  if (RefPtr<CSSNumericValue> offset =
+          CSSNumericValue::Parse(aParent, offsetCss, IgnoreErrors())) {
+    MOZ_ASSERT(offset);
+    result.mOffset.Construct(offset.forget());
+  }
+}
+
+void Animation::GetRangeStart(JSContext* aCx,
+                              JS::MutableHandle<JS::Value> aRetVal,
+                              ErrorResult& aRv) {
+  OwningTimelineRangeOffsetOrCSSNumericValueOrCSSKeywordValueOrUTF8String value;
+  RangeBoundaryToTimelineRangeValue(mTimelineRange.mStart.name,
+                                    mTimelineRange.mStart.lp, GetParentObject(),
+                                    value);
+  if (!value.ToJSVal(aCx, nullptr, aRetVal)) {
+    aRv.NoteJSContextException(aCx);
+  }
+}
+
+void Animation::GetRangeEnd(JSContext* aCx,
+                            JS::MutableHandle<JS::Value> aRetVal,
+                            ErrorResult& aRv) {
+  OwningTimelineRangeOffsetOrCSSNumericValueOrCSSKeywordValueOrUTF8String value;
+  RangeBoundaryToTimelineRangeValue(mTimelineRange.mEnd.name,
+                                    mTimelineRange.mEnd.lp, GetParentObject(),
+                                    value);
+  if (!value.ToJSVal(aCx, nullptr, aRetVal)) {
+    aRv.NoteJSContextException(aCx);
+  }
+}
+
+void Animation::SetRangeStart(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                              ErrorResult& aRv) {
+  OwningTimelineRangeOffsetOrCSSNumericValueOrCSSKeywordValueOrUTF8String value;
+  if (!value.Init(aCx, aValue, "Animation.rangeStart")) {
+    aRv.NoteJSContextException(aCx);
+    return;
+  }
+  AnimationRange range = mTimelineRange;
+  if (!AnimationUtils::SetAnimationRangeStart(value, range, aRv)) {
+    return;
+  }
+  PropertiesWillSetFromJS(CSSAnimationProperties::AnimationRangeStart);
+  SetTimelineRange(std::move(range), FromJS::Yes);
+}
+
+void Animation::SetRangeEnd(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                            ErrorResult& aRv) {
+  OwningTimelineRangeOffsetOrCSSNumericValueOrCSSKeywordValueOrUTF8String value;
+  if (!value.Init(aCx, aValue, "Animation.rangeEnd")) {
+    aRv.NoteJSContextException(aCx);
+    return;
+  }
+  AnimationRange range = mTimelineRange;
+  if (!AnimationUtils::SetAnimationRangeEnd(value, range, aRv)) {
+    return;
+  }
+  PropertiesWillSetFromJS(CSSAnimationProperties::AnimationRangeEnd);
+  SetTimelineRange(std::move(range), FromJS::Yes);
+}
+
 // ---------------------------------------------------------------------------
 
 void Animation::Tick(AnimationTimeline::TickState& aTickState) {
@@ -1197,7 +1310,7 @@ bool Animation::TryTriggerNow() {
   // Note(dshin): Don't try to trigger inactive timelines, since they won't
   // tick in any meaningful way. This has implications on fulfilling the ready
   // promise - See https://github.com/w3c/csswg-drafts/issues/9256
-  if (mTimeline->IsInactiveTimeline()) {
+  if (mTimeline->IsUnresolvedTimeline()) {
     return false;
   }
 
@@ -1531,6 +1644,9 @@ void Animation::ComposeStyle(
   if (!mEffect) {
     return;
   }
+  if (mTimeline && mTimeline->IsUnresolvedTimeline()) {
+    return;
+  }
 
   // In order to prevent flicker, there are a few cases where we want to use
   // a different time for rendering that would otherwise be returned by
@@ -1630,8 +1746,8 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   bool hasPendingReadyPromise = false;
   const bool hasFiniteTimeline = HasFiniteTimeline();
   const Nullable<TimeDuration> prevCurrentTime = GetCurrentTimeAsDuration();
-  const bool enableSeek =
-      (aLimitBehavior == LimitBehavior::AutoRewind) && !hasFiniteTimeline;
+  const bool autoRewindIsTrue = aLimitBehavior == LimitBehavior::AutoRewind;
+  const bool enableSeek = autoRewindIsTrue && !hasFiniteTimeline;
 
   // 6. Perform the steps corresponding to the first matching condition from the
   // following, if any:
@@ -1672,10 +1788,12 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
     mHoldTime = TimeDuration();
   }
 
-  // 7. If has finite timeline and previous current time is unresolved:
-  if (hasFiniteTimeline && prevCurrentTime.IsNull()) {
+  // 7. If has finite timeline and auto-rewind is true:
+  if (hasFiniteTimeline && autoRewindIsTrue) {
     // Set the flag auto align start time to true.
     mAutoAlignStartTime = true;
+    // Set the animation’s hold time to previous current time.
+    mHoldTime = prevCurrentTime;
   }
 
   // Note: This is a special case mentioned in web-animations-1, but not in
@@ -1686,15 +1804,6 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   // browsers, especially for a null timeline with the false auto-rewind flag.
   // [1] https://github.com/w3c/csswg-drafts/issues/7145
   if (!hasFiniteTimeline && prevCurrentTime.IsNull() && mHoldTime.IsNull()) {
-    mHoldTime = TimeDuration();
-  }
-
-  const bool hasInactiveTimeline = mTimeline && mTimeline->IsInactiveTimeline();
-  if (hasInactiveTimeline && mHoldTime.IsNull()) {
-    // Note(dshin): If we're inactive state and trying to play, hold at zero.
-    // This isn't part of the spec (Spec discusses inactive timelines very
-    // little), but this falls out of inactive timeline behing a finite timeline
-    // (See the class definition for why).
     mHoldTime = TimeDuration();
   }
 
@@ -2306,6 +2415,9 @@ void Animation::AutoAlignStartTime() {
   mStartTime.SetValue(TimeDuration::FromMilliseconds(
       (effectivePlaybackRate >= 0.0 ? startOffset : endOffset) *
       PROGRESS_TIMELINE_DURATION_MILLISEC));
+
+  // Apply any pending playback rate on animation.
+  ApplyPendingPlaybackRate();
 
   // Clear hold time.
   mHoldTime.SetNull();

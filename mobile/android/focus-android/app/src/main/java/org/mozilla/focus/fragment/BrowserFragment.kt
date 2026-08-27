@@ -26,16 +26,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.plus
 import mozilla.components.browser.state.selector.findTabOrCustomTab
 import mozilla.components.browser.state.selector.privateTabs
 import mozilla.components.browser.state.state.CustomTabConfig
@@ -61,7 +55,6 @@ import mozilla.components.feature.toolbar.ToolbarFeature
 import mozilla.components.feature.top.sites.TopSitesConfig
 import mozilla.components.feature.top.sites.TopSitesFeature
 import mozilla.components.lib.crash.Crash
-import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.content.createChooserExcludingCurrentApp
@@ -75,7 +68,6 @@ import mozilla.components.support.utils.ext.requestInPlacePermissions
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.focus.Components
 import org.mozilla.focus.GleanMetrics.Browser
-import org.mozilla.focus.GleanMetrics.CookieBanner
 import org.mozilla.focus.GleanMetrics.Downloads
 import org.mozilla.focus.GleanMetrics.OpenWith
 import org.mozilla.focus.GleanMetrics.TabCount
@@ -89,12 +81,6 @@ import org.mozilla.focus.browser.integration.BrowserToolbarIntegration
 import org.mozilla.focus.browser.integration.FindInPageIntegration
 import org.mozilla.focus.browser.integration.FullScreenIntegration
 import org.mozilla.focus.contextmenu.ContextMenuCandidates
-import org.mozilla.focus.cookiebannerreducer.CookieBannerReducerAction
-import org.mozilla.focus.cookiebannerreducer.CookieBannerReducerDetailsPanel
-import org.mozilla.focus.cookiebannerreducer.CookieBannerReducerMiddleware
-import org.mozilla.focus.cookiebannerreducer.CookieBannerReducerState
-import org.mozilla.focus.cookiebannerreducer.CookieBannerReducerStore
-import org.mozilla.focus.cookiebannerreducer.DefaultCookieBannerReducerInteractor
 import org.mozilla.focus.databinding.FragmentBrowserBinding
 import org.mozilla.focus.downloads.DownloadService
 import org.mozilla.focus.engine.EngineSharedPreferencesListener
@@ -123,7 +109,6 @@ import org.mozilla.focus.topsites.DefaultTopSitesStorage.Companion.TOP_SITES_MAX
 import org.mozilla.focus.topsites.DefaultTopSitesView
 import org.mozilla.focus.utils.FocusSnackbar
 import org.mozilla.focus.utils.FocusSnackbarDelegate
-import org.mozilla.focus.utils.ViewUtils
 import java.net.URLEncoder
 
 /**
@@ -158,11 +143,8 @@ class BrowserFragment :
 
     private var trackingProtectionPanel: TrackingProtectionPanel? = null
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<Array<String>>
-    private lateinit var cookieBannerReducerStore: CookieBannerReducerStore
-    private lateinit var defaultCookieBannerInteractor: DefaultCookieBannerReducerInteractor
     private lateinit var downloadFileUtils: DownloadFileUtils
     private var tabsPopup: TabsPopup? = null
-    private var siteNotSupportedSnackBarScope: CoroutineScope? = null
 
     /**
      * The ID of the tab associated with this fragment.
@@ -231,49 +213,6 @@ class BrowserFragment :
         downloadFileUtils = DefaultDownloadFileUtils(
             context = requireContext(),
         )
-    }
-
-    /**
-     * Initialize CookieBannerStore ,Interactor and report site snackBar
-     * when tacking protection panel is shown.
-     */
-    fun initCookieBanner() {
-        cookieBannerReducerStore = CookieBannerReducerStore(
-            CookieBannerReducerState(),
-            listOf(
-                CookieBannerReducerMiddleware(
-                    scope = viewLifecycleOwner.lifecycleScope,
-                    cookieBannersStorage = requireContext().components.cookieBannerStorage,
-                    appContext = requireContext(),
-                    currentTab = tab,
-                ),
-            ),
-        )
-        defaultCookieBannerInteractor = DefaultCookieBannerReducerInteractor(
-            store = cookieBannerReducerStore,
-        )
-        updateCookieBannerSiteToReportSnackBar()
-    }
-
-    private fun updateCookieBannerSiteToReportSnackBar(dispatcher: CoroutineDispatcher = Dispatchers.Main) {
-        siteNotSupportedSnackBarScope = cookieBannerReducerStore.flowScoped(dispatcher = dispatcher) { flow ->
-            flow.mapNotNull { state -> state.showSnackBarForSiteToReport }
-                .distinctUntilChanged()
-                .collect { showSnackBarForSiteToReport ->
-                    if (showSnackBarForSiteToReport) {
-                        ViewUtils.showBrandedSnackbar(
-                            view,
-                            R.string.cookie_banner_report_a_site_snackbar_label,
-                            0,
-                        )
-                        cookieBannerReducerStore.dispatch(
-                            CookieBannerReducerAction.ShowSnackBarForSiteToReport(
-                                false,
-                            ),
-                        )
-                    }
-                }
-        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -919,8 +858,7 @@ class BrowserFragment :
         super.onStop()
         tabsPopup?.dismiss()
         trackingProtectionPanel?.hide()
-        siteNotSupportedSnackBarScope?.cancel()
-        requireComponents.sessionUseCases.exitFullscreen()
+        requireComponents.sessionUseCases.exitFullscreen(tabId)
     }
 
     override fun onHomePressed() = pictureInPictureFeature?.onHomePressed() ?: false
@@ -1089,7 +1027,6 @@ class BrowserFragment :
         trackingProtectionPanel = TrackingProtectionPanel(
             context = requireContext(),
             lifecycleOwner = this,
-            cookieBannerReducerStore = cookieBannerReducerStore,
             siteInfo = SiteSecurityInfo(
                 tabUrl = tab.content.url,
                 isTrackingProtectionOn = tab.trackingProtection.ignoredOnTrackingProtection.not(),
@@ -1111,29 +1048,12 @@ class BrowserFragment :
                 }
 
                 override fun showConnectionInfo() = this@BrowserFragment.showConnectionInfo()
-
-                override fun showCookieBannerExceptionsDetailsPanel() =
-                    this@BrowserFragment.showCookieBannerExceptionsDetailsPanel()
             },
         ).also { currentEtp -> context?.let { currentEtp.show() } }
     }
 
     private fun reloadCurrentTab() {
         requireComponents.sessionUseCases.reload(tab.id)
-    }
-
-    private fun showCookieBannerExceptionsDetailsPanel() {
-        val cookieBannerExceptionDetailsPanel = CookieBannerReducerDetailsPanel(
-            context = requireContext(),
-            cookieBannerReducerStore = cookieBannerReducerStore,
-            ioScope = viewLifecycleOwner.lifecycleScope + Dispatchers.IO,
-            tabUrl = tab.content.url,
-            goBack = { trackingProtectionPanel?.show() },
-            defaultCookieBannerInteractor = defaultCookieBannerInteractor,
-        )
-        trackingProtectionPanel?.hide()
-        cookieBannerExceptionDetailsPanel.show()
-        CookieBanner.visitedPanel.record(NoExtras())
     }
 
     private fun showConnectionInfo() {

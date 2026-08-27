@@ -428,36 +428,6 @@ JS_PUBLIC_API void* JS_GetArrayBufferViewData(JSObject* obj,
       /*safe - caller sees isSharedMemory flag*/);
 }
 
-JS_PUBLIC_API uint8_t* JS_GetArrayBufferViewFixedData(JSObject* obj,
-                                                      uint8_t* buffer,
-                                                      size_t bufSize) {
-  ArrayBufferViewObject* view = obj->maybeUnwrapAs<ArrayBufferViewObject>();
-  if (!view) {
-    return nullptr;
-  }
-
-  // Disallow shared memory until it is needed.
-  if (view->isSharedMemory()) {
-    return nullptr;
-  }
-
-  // TypedArrays (but not DataViews) can have inline data, in which case we
-  // need to copy into the given buffer.
-  if (view->is<FixedLengthTypedArrayObject>()) {
-    auto* ta = &view->as<FixedLengthTypedArrayObject>();
-    if (ta->hasInlineElements()) {
-      size_t bytes = ta->byteLength();
-      if (bytes > bufSize) {
-        return nullptr;  // Does not fit.
-      }
-      memcpy(buffer, view->dataPointerUnshared(), bytes);
-      return buffer;
-    }
-  }
-
-  return static_cast<uint8_t*>(view->dataPointerUnshared());
-}
-
 JS_PUBLIC_API JSObject* JS_GetArrayBufferViewBuffer(JSContext* cx,
                                                     HandleObject obj,
                                                     bool* isSharedMemory) {

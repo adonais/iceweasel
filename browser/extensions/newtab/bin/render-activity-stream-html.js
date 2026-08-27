@@ -143,7 +143,7 @@ function templateHTML(options) {
     <script
       async
       type="module"
-      src="chrome://global/content/elements/panel-list.js"
+      src="chrome://global/content/elements/panel-list.mjs"
     ></script>
     <script
       async

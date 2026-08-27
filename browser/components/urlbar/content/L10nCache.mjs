@@ -5,7 +5,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 /**
@@ -245,7 +245,7 @@ export class L10nCache {
    * @param {object} [options.argsHighlights]
    *   If this is set, apply substring highlighting to the corresponding l10n
    *   arguments in `args`. Each value in this object should be an array of
-   *   highlights as returned by `UrlbarUtils.getTokenMatches()` or
+   *   highlights as returned by `UrlbarShared.getTokenMatches()` or
    *   `UrlbarResult.getDisplayableValueAndHighlights()`.
    * @param {string} [options.attribute]
    *   If the string applies to an attribute on the element, pass the name of
@@ -305,7 +305,7 @@ export class L10nCache {
 
       let span = element.ownerDocument.createElement("span");
       for (let key in argsHighlights) {
-        lazy.UrlbarUtils.addTextContentWithHighlights(
+        lazy.UrlbarShared.addTextContentWithHighlights(
           span,
           args[key],
           argsHighlights[key]

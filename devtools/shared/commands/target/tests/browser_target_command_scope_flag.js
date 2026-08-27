@@ -17,6 +17,8 @@ add_task(async function () {
 
   // First test with multiprocess debugging enabled
   await pushPref("devtools.browsertoolbox.scope", "everything");
+  // We use a commands object for the main process
+  await pushPref("devtools.chrome.enabled", true);
 
   const commands = await CommandsFactory.forMainProcess();
   const targetCommand = commands.targetCommand;

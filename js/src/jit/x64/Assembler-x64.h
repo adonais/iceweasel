@@ -694,6 +694,21 @@ class Assembler : public AssemblerX86Shared {
   void andq(Imm32 imm, Register dest) {
     masm.andq_ir(imm.value, dest.encoding());
   }
+  void andq(Imm32 imm, const Operand& dest) {
+    switch (dest.kind()) {
+      case Operand::REG:
+        masm.andq_ir(imm.value, dest.reg());
+        break;
+      case Operand::MEM_REG_DISP:
+        masm.andq_im(imm.value, dest.disp(), dest.base());
+        break;
+      case Operand::MEM_ADDRESS32:
+        masm.andq_im(imm.value, dest.address());
+        break;
+      default:
+        MOZ_CRASH("unexpected operand kind");
+    }
+  }
   void andq(const Operand& src, Register dest) {
     switch (src.kind()) {
       case Operand::REG:

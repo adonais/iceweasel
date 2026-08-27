@@ -33,8 +33,7 @@
                 android:layout_marginTop="16dp"
                 android:layout_marginStart="16dp"
                 android:importantForAccessibility="no"
-                app:srcCompat="@android:color/transparent"
-                tools:ignore="RequiredSize" />
+                app:srcCompat="@android:color/transparent" />
 
             <LinearLayout
                 android:id="@+id/details_container"

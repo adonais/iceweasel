@@ -38,7 +38,7 @@
       });
 
       SpecialPowers.spawn(win, [xml], value => {
-        content.location = URL.createObjectURL(new Blob([ value ], { type: "application/xml" }));
+        content.location = content.URL.createObjectURL(new Blob([ value ], { type: "application/xml" }));
       });
       await redirected;
 

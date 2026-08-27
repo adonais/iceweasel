@@ -192,7 +192,8 @@ add_task(async function test_canUseSemanticSearch_region_locale() {
 
   let tests = [
     { region: "US", locale: "en-US", supported: true },
-    { region: "FR", locale: "fr-FR", supported: false },
+    { region: "FR", locale: "fr-FR", supported: true },
+    { region: "FR", locale: "de-DE", supported: false },
     {
       region: "IT",
       locale: "it-IT",

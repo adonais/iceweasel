@@ -250,6 +250,10 @@ def initialize(topsrcdir, args=()):
             return None
 
     def pre_dispatch_handler(context, handler, args):
+        from mozbuild.path_performance import check_path_performance
+
+        check_path_performance(topsrcdir, driver.settings)
+
         # If --disable-tests flag was enabled in the mozconfig used to compile
         # the build, tests will be disabled. Instead of trying to run
         # nonexistent tests then reporting a failure, this will prevent mach

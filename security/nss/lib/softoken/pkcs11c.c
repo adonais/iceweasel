@@ -1553,10 +1553,17 @@ sftk_CryptInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism,
         case CKM_NSS_AES_KEY_WRAP:
         case CKM_AES_KEY_WRAP:
             context->blockSize = 8;
-        case CKM_AES_KEY_WRAP_KWP:
             context->multi = PR_FALSE;
             if (key_type != CKK_AES) {
                 crv = CKR_KEY_TYPE_INCONSISTENT;
+                break;
+            }
+            /* pParameter is an optional custom IV; if provided it must be
+             * exactly AES_KEY_WRAP_IV_BYTES long to avoid an over-read in
+             * AESKeyWrap_InitContext. */
+            if (pMechanism->pParameter != NULL &&
+                pMechanism->ulParameterLen != AES_KEY_WRAP_IV_BYTES) {
+                crv = CKR_MECHANISM_PARAM_INVALID;
                 break;
             }
             att = sftk_FindAttribute(key, CKA_VALUE);
@@ -1573,13 +1580,39 @@ sftk_CryptInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism,
                 crv = CKR_HOST_MEMORY;
                 break;
             }
-            if (pMechanism->mechanism == CKM_AES_KEY_WRAP_KWP) {
-                context->update = isEncrypt ? SFTKCipher_AESKeyWrap_EncryptKWP
-                                            : SFTKCipher_AESKeyWrap_DecryptKWP;
-            } else {
-                context->update = isEncrypt ? SFTKCipher_AESKeyWrap_Encrypt
-                                            : SFTKCipher_AESKeyWrap_Decrypt;
+            context->update = isEncrypt ? SFTKCipher_AESKeyWrap_Encrypt
+                                        : SFTKCipher_AESKeyWrap_Decrypt;
+            context->destroy = SFTKCipher_AESKeyWrap_DestroyContext;
+            break;
+
+        case CKM_AES_KEY_WRAP_KWP:
+            /* KWP (RFC 5649) uses a fixed built-in AIV; no user-supplied IV
+             * is accepted. */
+            if (pMechanism->pParameter != NULL || pMechanism->ulParameterLen != 0) {
+                crv = CKR_MECHANISM_PARAM_INVALID;
+                break;
             }
+            context->multi = PR_FALSE;
+            if (key_type != CKK_AES) {
+                crv = CKR_KEY_TYPE_INCONSISTENT;
+                break;
+            }
+            att = sftk_FindAttribute(key, CKA_VALUE);
+            if (att == NULL) {
+                crv = CKR_KEY_HANDLE_INVALID;
+                break;
+            }
+            context->cipherInfo = AESKeyWrap_CreateContext(
+                (unsigned char *)att->attrib.pValue,
+                NULL, /* always use built-in AIV for KWP */
+                isEncrypt, (unsigned int)att->attrib.ulValueLen);
+            sftk_FreeAttribute(att);
+            if (context->cipherInfo == NULL) {
+                crv = CKR_HOST_MEMORY;
+                break;
+            }
+            context->update = isEncrypt ? SFTKCipher_AESKeyWrap_EncryptKWP
+                                        : SFTKCipher_AESKeyWrap_DecryptKWP;
             context->destroy = SFTKCipher_AESKeyWrap_DestroyContext;
             break;
 

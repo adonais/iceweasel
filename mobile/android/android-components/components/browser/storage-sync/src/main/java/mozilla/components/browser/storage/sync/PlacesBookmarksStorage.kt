@@ -35,6 +35,7 @@ private const val BOOKMARKS_AUTOCOMPLETE_QUERY_LIMIT = 20
 open class PlacesBookmarksStorage(
     context: Context,
     override val autocompletePriority: Int = 0,
+    private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
 ) : PlacesStorage(context),
     BookmarksStorage,
     SyncableStore,
@@ -103,17 +104,15 @@ open class PlacesBookmarksStorage(
      *
      * @param limit The maximum number of entries to return.
      * @param maxAge Optional parameter used to filter out entries older than this number of milliseconds.
-     * @param currentTime Optional parameter for current time. Defaults toSystem.currentTimeMillis()
      * @return The list of matching bookmark nodes up to the limit number of items.
      */
     override suspend fun getRecentBookmarks(
         limit: Int,
         maxAge: Long?,
-        @VisibleForTesting currentTime: Long,
     ): Result<List<BookmarkNode>> {
         return withContext(readScope.coroutineContext) {
             val threshold = if (maxAge != null) {
-                currentTime - maxAge
+                currentTimeMillis() - maxAge
             } else {
                 0
             }

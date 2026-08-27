@@ -236,7 +236,7 @@ async function testProfilerOutputPerformance(messageManager, toolbox) {
     "profiler"
   );
   // Talos doesn't support the https protocol on example.com
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   const baseURI = "http://example.com";
   Services.prefs.setCharPref(
     "devtools.performance.recording.ui-base-url",

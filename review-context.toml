@@ -1,0 +1,52 @@
+# Code review context rules for the Firefox repository.
+#
+# Authoring guide:
+#   https://firefox-source-docs.mozilla.org/ai-agent-tools/code-review-context.html
+#
+# Validate locally before landing changes:
+#   ./mach lint review-context.toml
+
+version = 1
+
+# Front-end conventions: HTML, JS, CSS, SVG for desktop browser chrome,
+# toolkit UI, and devtools. Loaded whenever a patch touches desktop front-end
+# source, excluding test-only changes.
+[[rules]]
+name = "Firefox desktop frontend"
+description = "Front-end conventions for browser chrome, toolkit UI, and devtools (HTML, JS, CSS, SVG)."
+when = { any_file = { include = [
+  "browser/**",
+  "toolkit/**",
+  "devtools/**",
+], exclude = [
+  "**/test/**",
+  "**/tests/**",
+], ext = [
+  ".js",
+  ".mjs",
+  ".html",
+  ".xhtml",
+  ".css",
+  ".svg",
+] } }
+load = [
+  { type = "file", path = ".claude/skills/firefox-desktop-frontend/SKILL.md" },
+]
+
+# Web-standard implementation: native code behind WebIDL interfaces. Triggered
+# when a patch touches both a .webidl file and at least one native (.h/.cpp) file.
+[[rules]]
+name = "Gecko WebIDL / web standard implementation"
+description = "Guidance for implementing WebIDL interfaces and their native (C++/C/Rust) backing code."
+when = { all = [
+  { any_file = { ext = [
+    ".webidl",
+  ] } },
+  { any_file = { ext = [
+    ".h",
+    ".cpp",
+  ] } },
+] }
+load = [
+  { type = "file", path = ".claude/skills/gecko-web-standard-implementation/SKILL.md" },
+]

@@ -669,7 +669,7 @@ class FunctionDecl(MethodDecl):
         force_inline=False,
         T=None,
     ):
-        assert methodspec == MethodSpec.NONE or methodspec == MethodSpec.STATIC
+        assert methodspec in (MethodSpec.NONE, MethodSpec.STATIC)
         MethodDecl.__init__(
             self,
             name,
@@ -709,7 +709,7 @@ class ConstructorDefn(MethodDefn):
 class DestructorDecl(MethodDecl):
     def __init__(self, name, methodspec=MethodSpec.NONE, force_inline=False):
         # C++ allows pure or override destructors, but ipdl cgen does not.
-        assert methodspec == MethodSpec.NONE or methodspec == MethodSpec.VIRTUAL
+        assert methodspec in (MethodSpec.NONE, MethodSpec.VIRTUAL)
         MethodDecl.__init__(
             self,
             name,

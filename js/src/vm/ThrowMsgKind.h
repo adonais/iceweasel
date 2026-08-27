@@ -23,9 +23,7 @@ enum class ThrowMsgKind : uint8_t {
   AssignToPrivateMethod,
   // Decorators:
   DecoratorInvalidReturnType,
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   DisposeNotCallable
-#endif
 };
 
 JSErrNum ThrowMsgKindToErrNum(ThrowMsgKind kind);

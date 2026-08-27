@@ -6,6 +6,7 @@
 ChromeUtils.defineESModuleGetters(this, {
   actionCreators: "resource://newtab/common/Actions.mjs",
   actionTypes: "resource://newtab/common/Actions.mjs",
+  AdsClient: "resource://newtab/lib/AdsClient.sys.mjs",
   ContileIntegration: "resource://newtab/lib/TopSitesFeed.sys.mjs",
   ContextId: "moz-src:///browser/modules/ContextId.sys.mjs",
   DEFAULT_TOP_SITES: "resource://newtab/lib/TopSitesFeed.sys.mjs",
@@ -79,7 +80,11 @@ function getTopSitesFeedForTest(sandbox) {
       return this.state;
     },
     state: {
-      Prefs: { values: { topSitesRows: 2 } },
+      Prefs: {
+        values: {
+          topSitesRows: 2,
+        },
+      },
       TopSites: { rows: Array(12).fill("site") },
     },
   };
@@ -4079,5 +4084,72 @@ add_task(async function test_pinSiteAtGrouped_clears_stale_custom_screenshot() {
   );
 
   NewTabUtils.pinnedLinks._links = origLinks;
+  sandbox.restore();
+});
+
+add_task(async function test_fetchSites_callsAdsClientWhenEnabled() {
+  let sandbox = sinon.createSandbox();
+
+  sandbox.stub(AdsClient, "isEnabled").returns(true);
+
+  const ADS_CLIENT = {
+    requestTileAds: sinon.fake.resolves(
+      new Map([
+        [
+          "newtab_tile_1",
+          {
+            blockKey: "block1",
+            name: "Tile 1",
+            url: "https://tile.example/",
+            imageUrl: "https://tile.example/img.png",
+            callbacks: {
+              click: "https://tile.example/click",
+              impression: "https://tile.example/impression",
+            },
+          },
+        ],
+      ])
+    ),
+  };
+  sandbox.stub(AdsClient, "getClient").returns(ADS_CLIENT);
+
+  const REQUEST_OPTIONS = {
+    flags: new Map([
+      ["feature_1", true],
+      ["feature_2", false],
+    ]),
+    ohttp: true,
+  };
+  sandbox.stub(AdsClient, "requestOptions").returns(REQUEST_OPTIONS);
+
+  sandbox.stub(TopSitesFeed.prototype, "_readDefaults").returns();
+  sandbox.stub(NimbusFeatures.newtab, "getVariable").returns(true);
+
+  const feed = getTopSitesFeedForTest(sandbox);
+  feed.store.state.Prefs.values.showSponsoredTopSites = true;
+  feed.store.state.Prefs.values["unifiedAds.tiles.enabled"] = true;
+  feed.store.state.Prefs.values["discoverystream.placements.tiles"] =
+    "newtab_tile_1";
+  feed.store.state.Prefs.values["discoverystream.placements.tiles.counts"] =
+    "1";
+
+  await feed.onAction({
+    type: actionTypes.INIT,
+  });
+  Assert.ok(AdsClient.isEnabled.calledOnce);
+  Assert.ok(AdsClient.getClient.calledOnce);
+
+  await feed.onAction({
+    type: actionTypes.TOP_SITES_UPDATED,
+  });
+
+  Assert.ok(AdsClient.requestOptions.calledOnce);
+  Assert.ok(
+    ADS_CLIENT.requestTileAds.calledOnceWithExactly(
+      sinon.match.any,
+      REQUEST_OPTIONS
+    )
+  );
+
   sandbox.restore();
 });

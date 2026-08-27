@@ -125,3 +125,47 @@ TEST(StorageStreams, EarlyInputStream)
   testing::ConsumeAndValidateStream(in, dataWritten);
   in = nullptr;
 }
+
+TEST(StorageStreams, InterleavedReadAndWrite)
+{
+  nsTArray<char> kData;
+  testing::CreateData(16, kData);
+
+  nsresult rv;
+  nsCOMPtr<nsIStorageStream> stor;
+  rv = NS_NewStorageStream(8, UINT32_MAX, getter_AddRefs(stor));
+  EXPECT_NS_SUCCEEDED(rv);
+
+  nsCOMPtr<nsIInputStream> in;
+  rv = stor->NewInputStream(0, getter_AddRefs(in));
+  EXPECT_NS_SUCCEEDED(rv);
+
+  nsCOMPtr<nsIOutputStream> out;
+  rv = stor->GetOutputStream(0, getter_AddRefs(out));
+  EXPECT_NS_SUCCEEDED(rv);
+
+  uint32_t n;
+  char buffer[16];
+
+  EXPECT_NS_SUCCEEDED(out->Write(kData.Elements(), 1, &n));
+  EXPECT_EQ(n, 1u);
+  EXPECT_NS_SUCCEEDED(in->Read(buffer, 16, &n));
+  EXPECT_EQ(n, 1u);
+  EXPECT_EQ(buffer[0], kData[0]);
+
+  EXPECT_NS_SUCCEEDED(out->Write(kData.Elements() + 1, 1, &n));
+  EXPECT_EQ(n, 1u);
+  EXPECT_NS_SUCCEEDED(in->Read(buffer, 16, &n));
+  EXPECT_EQ(n, 1u);
+  EXPECT_EQ(buffer[0], kData[1]);
+
+  // Make sure it also works going past a segment boundary.
+  EXPECT_NS_SUCCEEDED(out->Write(kData.Elements() + 2, 11, &n));
+  EXPECT_EQ(n, 11u);
+  EXPECT_NS_SUCCEEDED(in->Read(buffer, 16, &n));
+  EXPECT_EQ(n, 11u);
+  EXPECT_EQ(memcmp(buffer, kData.Elements() + 2, 11), 0);
+
+  out->Close();
+  in->Close();
+}

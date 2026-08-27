@@ -207,6 +207,42 @@ add_task(async function test_untrim() {
   }
 });
 
+add_task(async function test_focus_untrims_www() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.trimHttps", true],
+      ["browser.urlbar.trimWww", true],
+    ],
+  });
+
+  const untrimmedValue = "https://www.example.com/";
+  gURLBar.setValue(untrimmedValue, {
+    allowTrim: true,
+    valueIsTyped: false,
+  });
+  gURLBar.blur();
+  Assert.equal(
+    gURLBar.value,
+    "example.com",
+    "Value has been trimmed to the bare domain"
+  );
+
+  // Because "www." was trimmed, submitting the bare "example.com" could resolve
+  // to a different host, so focusing the urlbar always restores the full URL
+  // rather than risk changing the destination (bug 1736955).
+  EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
+
+  Assert.equal(
+    gURLBar.value,
+    untrimmedValue,
+    "Focusing the urlbar restores the full URL when www. was trimmed"
+  );
+
+  gURLBar.handleRevert();
+  gURLBar.blur();
+  await SpecialPowers.popPrefEnv();
+});
+
 async function synthesizeKeyAndWaitFocus(key, options = {}, win = window) {
   let focusPromise = BrowserTestUtils.waitForEvent(window, "focus", true);
   EventUtils.synthesizeKey(

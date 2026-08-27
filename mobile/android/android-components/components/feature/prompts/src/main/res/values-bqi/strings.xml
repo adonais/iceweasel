@@ -183,11 +183,11 @@
   -->
   <string name="mozac_feature_prompts_account_picture">شؽوات هساو</string>
   <!-- Title of the Identity Credential provider dialog chooser. -->
-  <string name="mozac_feature_prompts_identity_credentials_choose_provider">پسند ی جۊر کوݩ و من ٱووڌن</string>
+  <string name="mozac_feature_prompts_identity_credentials_choose_provider">پسند ی جۊر کوننده و من ٱووڌن</string>
   <!-- Title of an account picker dialog for identity credentials. The %1$s will be replaced with the name of the provider -->
   <string name="mozac_feature_prompts_identity_credentials_choose_account_for_provider">وا هساو منتوری %1$s و من بیاین</string>
   <!-- Title of the Identity Credential privacy policy dialog title. The %1$s will be replaced with the name of the provider. -->
-  <string name="mozac_feature_prompts_identity_credentials_privacy_policy_title">و کار گرؽڌن %1$s و عونوان ی جۊر کوݩ</string>
+  <string name="mozac_feature_prompts_identity_credentials_privacy_policy_title">و کار گرؽڌن %1$s و عونوان ی جۊر کوننده</string>
   <!-- Title of the Identity Credential privacy policy dialog description. The %1$s will be replaced with the name of the provider, %2$s will be replaced with the account, %3$s will be replaced with the privacy policy url and  %4$s will be replaced with the terms of service. -->
   <string name="mozac_feature_prompts_identity_credentials_privacy_policy_description" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[و من ٱووڌن و %1$s وا ی هساو %2$s تئت <a href=\"%3$s\">سیاست زفت مهرمووه ای</a> وو <a href=\"%4$s\">شرتا داڌن خدمات</a> هونووݩ هڌ]]></string>
   <!-- Text for the positive button of the Identity Credential dialogs. -->

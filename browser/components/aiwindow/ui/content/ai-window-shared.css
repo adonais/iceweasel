@@ -41,7 +41,7 @@
     @media not (forced-colors) {
       /* Smart Window Nova Tokens */
       --smartwindow-text-color-accent-primary: light-dark(var(--color-violet-60), var(--color-violet-30));
-      --smartwindow-icon-color-accent-primary-desaturated: light-dark(var(--color-violet-desaturated-60), var(--color-violet-desaturated-50));
+      --smartwindow-icon-color-accent-primary-desaturated: light-dark(var(--color-violet-desaturated-60), var(--color-violet-desaturated-40));
 
       --smartwindow-panel-item-background-color-hover: light-dark(
         color-mix(in srgb, var(--color-violet-60) 15%, transparent),

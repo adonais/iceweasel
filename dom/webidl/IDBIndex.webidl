@@ -46,16 +46,20 @@ interface IDBIndex {
     [NewObject, Throws] IDBRequest get(any query);
     [NewObject, Throws] IDBRequest getKey(any query);
 
-    // If we decide to add use counters for the mozGetAll/mozGetAllKeys
-    // functions, we'll need to pull them out into sepatate operations
-    // with a BinaryName mapping to the same underlying implementation.
-    // See also bug 1577227.
-    [NewObject, Throws, Alias="mozGetAll"]
+    [NewObject, Throws]
     IDBRequest getAll(optional any queryOrOptions,
                       optional [EnforceRange] unsigned long count);
-    [NewObject, Throws, Alias="mozGetAllKeys"]
+    // Deprecated alias for getAll(), kept for compat. See bug 1577227.
+    [NewObject, Throws, BinaryName="GetAll", Deprecated="IDBIndexMozGetAll"]
+    IDBRequest mozGetAll(optional any queryOrOptions,
+                         optional [EnforceRange] unsigned long count);
+    [NewObject, Throws]
     IDBRequest getAllKeys(optional any queryOrOptions,
                             optional [EnforceRange] unsigned long count);
+    // Deprecated alias for getAllKeys(), kept for compat. See bug 1577227.
+    [NewObject, Throws, BinaryName="GetAllKeys", Deprecated="IDBIndexMozGetAllKeys"]
+    IDBRequest mozGetAllKeys(optional any queryOrOptions,
+                             optional [EnforceRange] unsigned long count);
     [NewObject, Throws]
     IDBRequest getAllRecords(optional IDBGetAllOptions options = {});
 

@@ -18,6 +18,7 @@ EXPORTS.mozilla += [
     "PlatformMutex.h",
     "PlatformRWLock.h",
     "Printf.h",
+    "RoundedMulDiv.h",
     "SIMD.h",
     "Sprintf.h",
     "SSE.h",
@@ -90,7 +91,6 @@ if CONFIG["OS_ARCH"] == "WINNT":
     SOURCES += [
         "GetKnownFolderPath.cpp",
         "WindowsDiagnostics.cpp",
-        "WindowsDllMain.cpp",
         "WindowsDpiInitialization.cpp",
         "WindowsMapRemoteView.cpp",
         "WindowsProcessMitigations.cpp",

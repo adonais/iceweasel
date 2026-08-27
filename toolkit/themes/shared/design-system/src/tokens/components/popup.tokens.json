@@ -1,4 +1,21 @@
 {
+  "background": {
+    "color": {
+      "value": "{background.color.box.@base}"
+    }
+  },
+  "border": {
+    "color": {
+      "value": {
+        "light": "rgb(240, 240, 244)",
+        "dark": "rgb(82, 82, 94)",
+        "nativeTheme": "{border.color.deemphasized.@base}"
+      }
+    },
+    "radius": {
+      "value": "{border.radius.medium}"
+    }
+  },
   "box": {
     "shadow": {
       "value": "{box-shadow.level-3}"

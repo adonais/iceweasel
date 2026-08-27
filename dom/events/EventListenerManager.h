@@ -6,6 +6,7 @@
 #define mozilla_EventListenerManager_h_
 
 #include "mozilla/BasicEvents.h"
+#include "mozilla/DoublyLinkedList.h"
 #include "mozilla/JSEventHandler.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/AbortFollower.h"
@@ -171,7 +172,11 @@ class EventListenerManagerBase {
  * Event listener manager
  */
 
-class EventListenerManager final : public EventListenerManagerBase {
+class EventListenerManager final
+    : public EventListenerManagerBase,
+      // The managers owned by nodes are kept in a list, see
+      // nsContentUtils::AddNodeListenerManager.
+      public DoublyLinkedListElement<EventListenerManager> {
   ~EventListenerManager();
 
  public:

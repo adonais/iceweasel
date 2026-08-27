@@ -33,7 +33,7 @@ very diverse skills:
   Firefox and many other Mozilla projects.
 - If you know **Rust**, you can also contribute to the [Rust programming
   language](https://github.com/rust-lang/rust) itself, numerous crates like [grcov](https://github.com/mozilla/grcov/)
-  or [Stylo](/layout/StyleSystemOverview.html), Firefox's parallel CSS engine, {searchfox}`WebRender <gfx/wr/>`, Firefox's GPU-based 2D rendering engine, and [Neqo](https://github.com/mozilla/neqo), our QUIC/HTTP3 networking stack.
+  or [Stylo](/layout/StyleSystemOverview.md), Firefox's parallel CSS engine, {searchfox}`WebRender <gfx/wr/>`, Firefox's GPU-based 2D rendering engine, and [Neqo](https://github.com/mozilla/neqo), our QUIC/HTTP3 networking stack.
 - If you know **Kotlin**, you can contribute to {ref}`Firefox for Android <Firefox Contributors' Quick Reference>` (code name: "Fenix"). {searchfox}`Fenix's code <mobile/android/>` is integrated into the same repository as Firefox Desktop.
 - If you know **Swift**, you can contribute to [Firefox and Firefox Focus for
   iOS](https://github.com/mozilla-mobile/firefox-ios).
@@ -46,7 +46,7 @@ very diverse skills:
   If you know **Rust**, you can also contribute to [sccache](https://github.com/mozilla/sccache/),
   our compiler caching tool used to speed up Firefox builds.
 - If you know **Go** or **JavaScript**, you can contribute to [Taskcluster](https://github.com/taskcluster/taskcluster), our CI infrastructure.
-- If you know **C**, you can contribute to [NSS](/security/nss/index.html), our cryptography library.
+- If you know **C**, you can contribute to [NSS](/security/nss/index.md), our cryptography library.
 - There are even many ways to contribute to the Mozilla mission without
   programming. If getting involved in design, support, translation,
   testing, or other types of contributions sparks your interest please

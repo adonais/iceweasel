@@ -131,12 +131,16 @@ add_task(async function resultMenu_notInterested() {
 
 // Tests the "Dismiss" result menu dismissal command.
 add_task(async function resultMenu_dismiss() {
-  let result = await doDismissTest("dismiss");
+  await doDismissTest("dismiss");
 
   Assert.equal(UrlbarPrefs.get("suggest.mdn"), true);
+
+  // The suggestion should be recorded as dismissed in the store.
   Assert.ok(
-    await QuickSuggest.isResultDismissed(result),
-    "The result should be dismissed"
+    await QuickSuggest.rustBackend.isDismissedByKey(
+      REMOTE_SETTINGS_DATA[0].attachment[0].url
+    ),
+    "The MDN suggestion should be dismissed"
   );
 
   await QuickSuggest.clearDismissedSuggestions();
@@ -182,12 +186,19 @@ async function doDismissTest(command) {
   let dismissalPromise = TestUtils.topicObserved(
     "quicksuggest-dismissals-changed"
   );
+  // The row is replaced by the acknowledgment tip via onQueryResultRemoved,
+  // which round-trips over the actor on the message path.
+  let removalPromise = UrlbarTestUtils.promiseControllerNotification(
+    window,
+    "onQueryResultRemoved"
+  );
   await UrlbarTestUtils.openResultMenuAndClickItem(window, [command], {
     resultIndex,
     openByMouse: true,
   });
   info("Awaiting dismissal promise");
   await dismissalPromise;
+  await removalPromise;
 
   // The row should be a tip now.
   Assert.ok(gURLBar.view.isOpen, "The view should remain open after dismissal");

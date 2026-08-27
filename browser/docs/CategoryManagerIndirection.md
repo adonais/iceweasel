@@ -90,7 +90,7 @@ logic. Note that it may be invoked asynchronously if the consumers are async.
 ## Caveats
 
 Any errors thrown by consumers are automatically caught and reported via the
-[Browser Console](/devtools-user/browser_console/index.rst).
+[Browser Console](/devtools-user/browser_console/index.md).
 
 Async functions are not awaited before invoking other consumers. Note that
 rejections (exceptions from async code) are still caught and reported to the

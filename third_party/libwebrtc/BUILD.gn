@@ -113,6 +113,7 @@ if (!build_with_chromium && !build_with_mozilla) {
       if (is_android) {
         deps += [
           "examples:android_examples_junit_tests",
+          "modules/video_coding:videocodec_test_mediacodec",
           "sdk/android:android_instrumentation_test_apk",
           "sdk/android:android_sdk_junit_tests",
         ]
@@ -143,9 +144,13 @@ if (rtc_include_tests) {
       "//call:call_tests",
       "//call/adaptation:resource_adaptation_tests",
       "//pc:peerconnection_unittests",
+      "//test:test_support_unittests",
       "//video:video_tests",
       "//video/adaptation:video_adaptation_tests",
     ]
+    if (rtc_desktop_capture_supported) {
+      deps += [ "//modules/desktop_capture:xvfb_capture_tests" ]
+    }
   }
 }
 
@@ -211,10 +216,10 @@ config("common_inherited_config") {
   }
 
   if (!rtc_use_perfetto) {
-    # Some tests need to declare their own trace event handlers. If this define is
-    # not set, the first time TRACE_EVENT_* is called it will store the return
-    # value for the current handler in an static variable, so that subsequent
-    # changes to the handler for that TRACE_EVENT_* will be ignored.
+    # Some tests need to declare their own trace event handlers. If this define
+    # is not set, the first time TRACE_EVENT_* is called it will store the
+    # return value for the current handler in an static variable, so that
+    # subsequent changes to the handler for that TRACE_EVENT_* will be ignored.
     # So when tests are included, we set this define, making it possible to use
     # different event handlers in different tests.
     if (rtc_include_tests) {
@@ -574,8 +579,10 @@ if (!build_with_chromium) {
       "media",
       "modules",
       "modules/video_capture:video_capture_internal_impl",
-      "pc:libjingle_peerconnection",
+      "pc:peer_connection_factory",
       "pc:rtc_pc",
+      "pc:webrtc_sdp",
+      "stats",
       "video",
     ]
     if (build_with_mozilla) {
@@ -600,8 +607,10 @@ if (!build_with_chromium) {
         "api/video_codecs:video_encoder_factory_template_libvpx_vp9_adapter",
         "api/video_codecs:video_encoder_factory_template_open_h264_adapter",
         "logging:rtc_event_log_api",
-        "pc:libjingle_peerconnection",
+        "pc:peer_connection_factory",
         "pc:rtc_pc",
+        "pc:webrtc_sdp",
+        "stats",
       ]
     }
 
@@ -756,14 +765,10 @@ if (rtc_include_tests && !build_with_chromium) {
     }
 
     if (is_android) {
-      # Do not use Chromium's launcher. native_unittests defines its own JNI_OnLoad.
-      use_default_launcher = false
-
       deps += [
         "sdk/android:native_unittests",
         "sdk/android:native_unittests_java",
       ]
-      shard_timeout = 900
     }
   }
 
@@ -789,7 +794,6 @@ if (rtc_include_tests && !build_with_chromium) {
     deps = [ "audio:audio_tests" ]
 
     if (is_android) {
-      use_default_launcher = false
       deps += [ "//build/android/gtest_apk:native_test_instrumentation_test_runner_java" ]
     }
   }
@@ -808,9 +812,7 @@ if (rtc_include_tests && !build_with_chromium) {
     data_deps = [ "resources:webrtc_perf_tests_data" ]
 
     if (is_android) {
-      use_default_launcher = false
       deps += [ "//build/android/gtest_apk:native_test_instrumentation_test_runner_java" ]
-      shard_timeout = 4500
     }
     if (is_ios) {
       deps += [ "resources:webrtc_perf_tests_bundle_data" ]

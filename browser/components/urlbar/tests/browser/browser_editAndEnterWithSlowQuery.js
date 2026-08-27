@@ -41,7 +41,7 @@ add_setup(async function setup() {
 
 add_task(async function test_url_type() {
   const testCases = [];
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   for (let protocol of ["http://", "https://"]) {
     for (let trimURLs of [true, false]) {
       testCases.push({ testURL: protocol + "example.com/123", trimURLs });
@@ -370,10 +370,10 @@ add_task(async function test_heuristic() {
         type: UrlbarShared.RESULT_TYPE.URL,
         source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
-        // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+        // eslint-disable-next-line sdl/no-insecure-url
         payload: { url: "http://example.com/123" },
       }),
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       loadingURL: "http://example.com/123",
       displayedValue: "example.com/123",
     },
@@ -428,14 +428,14 @@ add_task(async function test_heuristic() {
     Assert.ok(gURLBar.valueIsTyped);
     Assert.equal(UrlbarTestUtils.getSelectedRowIndex(window), targetRowIndex);
     let selectedResult = UrlbarTestUtils.getSelectedRow(window).result;
-    Assert.equal(selectedResult, testResult);
+    Assert.equal(selectedResult.id, testResult.id, "Selected result");
     Assert.equal(
       window.gURLBar.value,
       displayedValue.substring(0, displayedValue.length - 1)
     );
 
     info("Enter before updating");
-    let spy = sinon.spy(UrlbarUtils, "getHeuristicResultFor");
+    let spy = sinon.spy(gURLBar.controller, "resolveFallbackNavigation");
     let onLoad = BrowserTestUtils.browserLoaded(
       gBrowser.selectedBrowser,
       false,
@@ -444,8 +444,8 @@ add_task(async function test_heuristic() {
     EventUtils.synthesizeKey("KEY_Enter");
     await onLoad;
     Assert.equal(gBrowser.currentURI.spec, loadingURL);
+    Assert.ok(!spy.called, "resolveFallbackNavigation should not be called");
     spy.restore();
-    Assert.ok(!spy.called, "getHeuristicResultFor should not be called");
 
     info("Clean up");
     providersManager.unregisterProvider(provider);

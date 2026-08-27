@@ -347,14 +347,15 @@ void SSLTokensCache::RemoveMatchingLocked(Pred&& aPredicate) {
 // static
 void SSLTokensCache::PutFromPersistedCallback(
     void* aCtx, const SslTokensPersistedRecord* aRec) {
-  (void)PutFromPersisted(aRec, *static_cast<uint32_t*>(aCtx));
+  auto* ctx = static_cast<PersistedPutCtx*>(aCtx);
+  (void)PutFromPersisted(aRec, ctx->loadGen, ctx->restored);
 }
 
 // static
 void SSLTokensCache::LoadCallback(void* aCtx,
                                   const SslTokensPersistedRecord* aRec) {
   auto* ctx = static_cast<LoadCtx*>(aCtx);
-  if (PutFromPersisted(aRec, ctx->loadGen)) {
+  if (PutFromPersisted(aRec, ctx->loadGen, /* aRestored */ true)) {
     ctx->count++;
   }
 }
@@ -373,34 +374,98 @@ nsTArray<uint8_t> SSLTokensCache::SerializeForIPC() {
   return SerializeSnapshotLocked();
 }
 
+void SSLTokensCache::CollectRecordInfosLocked(
+    nsTArray<SSLTokensCacheRecordInfo>& aOut,
+    bool aFilterForPersistence) const {
+  sLock.AssertCurrentThreadOwns();
+  for (const auto& entry : mTokenCacheRecords.Values()) {
+    for (const auto& rec : entry->Records()) {
+      if (aFilterForPersistence &&
+          !ShouldPersistKey(rec->mKey, rec->mOverridableError)) {
+        continue;
+      }
+      auto info = aOut.AppendElement();
+      info->key = rec->mKey;
+      info->expirationTime = static_cast<int64_t>(rec->mExpirationTime);
+      info->overridableError = rec->mOverridableError;
+      info->restored = rec->mRestored;
+      info->id = rec->mId;
+      info->compressedPayload = rec->mCompressedPayload.Clone();
+    }
+  }
+}
+
 // static
-void SSLTokensCache::DeserializeFromIPC(Span<const uint8_t> aData) {
+void SSLTokensCache::GetAllRecords(nsTArray<SSLTokensCacheRecordInfo>& aOut) {
+  StaticMutexAutoLock lock(sLock);
+  if (!gInstance) {
+    return;
+  }
+  gInstance->CollectRecordInfosLocked(aOut, /* aFilterForPersistence */ false);
+}
+
+// static
+void SSLTokensCache::ReplaceAllRecords(
+    nsTArray<SSLTokensCacheRecordInfo>&& aRecords) {
+  StaticMutexAutoLock lock(sLock);
+  if (!gInstance) {
+    return;
+  }
+  gInstance->ClearCacheLocked();
+  for (auto& info : aRecords) {
+    auto rec = MakeRecord(info.key, static_cast<PRTime>(info.expirationTime),
+                          info.overridableError, info.restored,
+                          std::move(info.compressedPayload));
+    gInstance->InsertRecordLocked(std::move(rec));
+  }
+}
+
+// static
+bool SSLTokensCache::DecodeCompressedPayload(Span<const uint8_t> aCompressed,
+                                             nsTArray<uint8_t>& aToken,
+                                             SessionCacheInfo& aInfo,
+                                             uint32_t* aDecompressedLength) {
+  nsTArray<uint8_t> payload = DecompressRecord(aCompressed);
+  if (payload.IsEmpty()) {
+    return false;
+  }
+  if (aDecompressedLength) {
+    *aDecompressedLength = payload.Length();
+  }
+  return DeserializeRecord(payload, aToken, aInfo);
+}
+
+// static
+void SSLTokensCache::DeserializeFromIPC(Span<const uint8_t> aData,
+                                        bool aRestored) {
   if (aData.IsEmpty()) {
     return;
   }
-  uint32_t loadGen = 0;
+  PersistedPutCtx ctx{0, aRestored};
   {
     StaticMutexAutoLock lock(sLock);
     if (!gInstance) {
       return;
     }
     gInstance->ClearCacheLocked();
-    loadGen = gInstance->mLoadGeneration;
+    ctx.loadGen = gInstance->mLoadGeneration;
   }
   // callback is invoked synchronously within ssl_tokens_cache_deserialize_ipc,
-  // so &loadGen remains valid for the entire call.
+  // so &ctx remains valid for the entire call.
   ssl_tokens_cache_deserialize_ipc(aData.data(), aData.Length(), PR_Now(),
-                                   PutFromPersistedCallback, &loadGen);
+                                   PutFromPersistedCallback, &ctx);
 }
 
 // static
-void SSLTokensCache::DeserializeFromIPCAsync(mozilla::ipc::ByteBuf&& aBuf) {
+void SSLTokensCache::DeserializeFromIPCAsync(mozilla::ipc::ByteBuf&& aBuf,
+                                             bool aRestored) {
   if (aBuf.mLen == 0) {
     return;
   }
   NS_DispatchBackgroundTask(NS_NewRunnableFunction(
-      "SSLTokensCache::DeserializeFromIPCAsync", [buf = std::move(aBuf)]() {
-        DeserializeFromIPC(Span(buf.mData, buf.mLen));
+      "SSLTokensCache::DeserializeFromIPCAsync",
+      [buf = std::move(aBuf), aRestored]() {
+        DeserializeFromIPC(Span(buf.mData, buf.mLen), aRestored);
       }));
 }
 
@@ -1104,6 +1169,7 @@ void SSLTokensCache::DoWrite(bool aSynchronous) {
   nsCOMPtr<nsIFile> backingFile;
   nsCOMPtr<nsISerialEventTarget> taskQueue;
   nsTArray<uint8_t> serialized;
+  nsTArray<SSLTokensCacheRecordInfo> records;
   {
     StaticMutexAutoLock lock(sLock);
     if (!gInstance) {
@@ -1111,17 +1177,21 @@ void SSLTokensCache::DoWrite(bool aSynchronous) {
     }
     backingFile = mBackingFile;
     taskQueue = mWriteTaskQueue;
-    serialized = SerializeSnapshotLocked();
+    if (backingFile) {
+      serialized = SerializeSnapshotLocked();
+    } else if (XRE_IsSocketProcess()) {
+      CollectRecordInfosLocked(records, /* aFilterForPersistence */ true);
+    }
   }
 
   if (!backingFile) {
-    if (XRE_IsSocketProcess() && !serialized.IsEmpty()) {
+    if (XRE_IsSocketProcess() && !records.IsEmpty()) {
       NS_DispatchToMainThread(NS_NewRunnableFunction(
-          "SSLTokensCache::SendToParent", [data = std::move(serialized)]() {
+          "SSLTokensCache::SendToParent",
+          [records = std::move(records)]() mutable {
             auto* child = SocketProcessChild::GetSingleton();
             if (child && child->CanSend()) {
-              (void)child->SendSSLTokensCacheData(
-                  mozilla::ipc::ByteBufFrom(data));
+              (void)child->SendSSLTokensCacheData(std::move(records));
             }
           }));
     }
@@ -1235,18 +1305,30 @@ void SSLTokensCache::OnLoadCompleteNotify(uint32_t aCount) {
 }
 
 // static
+UniquePtr<SSLTokensCache::TokenCacheRecord> SSLTokensCache::MakeRecord(
+    const nsACString& aKey, PRTime aExpirationTime, uint8_t aOverridableError,
+    bool aRestored, nsTArray<uint8_t>&& aCompressedPayload) {
+  auto rec = MakeUnique<TokenCacheRecord>();
+  rec->mKey = aKey;
+  rec->mExpirationTime = aExpirationTime;
+  rec->mOverridableError = aOverridableError;
+  rec->mRestored = aRestored;
+  rec->mCompressedPayload = std::move(aCompressedPayload);
+  return rec;
+}
+
+// static
 bool SSLTokensCache::PutFromPersisted(const SslTokensPersistedRecord* aRec,
-                                      uint32_t aExpectedGen) {
+                                      uint32_t aExpectedGen, bool aRestored) {
   StaticMutexAutoLock lock(sLock);
   if (!gInstance || gInstance->mLoadGeneration != aExpectedGen) {
     return false;
   }
-  auto rec = MakeUnique<TokenCacheRecord>();
-  rec->mKey = aRec->key;
-  rec->mExpirationTime = static_cast<PRTime>(aRec->expiration_time);
-  rec->mOverridableError = aRec->overridable_error;
-  rec->mCompressedPayload.AppendElements(aRec->compressed_payload,
-                                         aRec->compressed_payload_len);
+  nsTArray<uint8_t> payload;
+  payload.AppendElements(aRec->compressed_payload,
+                         aRec->compressed_payload_len);
+  auto rec = MakeRecord(aRec->key, static_cast<PRTime>(aRec->expiration_time),
+                        aRec->overridable_error, aRestored, std::move(payload));
   gInstance->InsertRecordLocked(std::move(rec));
   return true;
 }
@@ -1354,16 +1436,15 @@ void SSLTokensCache::TriggerWriteForTest(const nsACString& aPath) {
 
 // static
 void SSLTokensCache::LoadForTest(const nsACString& aPath) {
-  uint32_t loadGen = 0;
+  PersistedPutCtx ctx{0, /* restored */ true};
   {
     StaticMutexAutoLock lock(sLock);
     if (gInstance) {
-      loadGen = gInstance->mLoadGeneration;
+      ctx.loadGen = gInstance->mLoadGeneration;
     }
   }
   nsCString flatPath(aPath);
-  ssl_tokens_cache_read(&flatPath, PR_Now(), PutFromPersistedCallback,
-                        &loadGen);
+  ssl_tokens_cache_read(&flatPath, PR_Now(), PutFromPersistedCallback, &ctx);
 }
 
 // static
@@ -1403,7 +1484,7 @@ void SSLTokensCache::PutForTest(const nsACString& aKey) {
   rec.expiration_time = PR_Now() + 3600LL * PR_USEC_PER_SEC;
   rec.compressed_payload = compressed.Elements();
   rec.compressed_payload_len = compressed.Length();
-  PutFromPersisted(&rec, gen);
+  PutFromPersisted(&rec, gen, /* aRestored */ false);
 }
 
 #endif  // ENABLE_TESTS
@@ -1523,15 +1604,16 @@ SSLTokensCache::BlockShutdown(nsIAsyncShutdownClient* /* aClient */) {
   // queue for atomicity. The blocker keeps the main thread alive until done.
   RefPtr<SSLTokensCache> self = this;
   auto writeAndRelease = [taskQueue, self](mozilla::ipc::ByteBuf aBuf) {
-    InvokeAsync(
-        taskQueue.get(), __func__,
-        [self, buf = std::move(aBuf)]() {
-          if (buf.mLen > 0) {
-            SSLTokensCache::DeserializeFromIPC(Span(buf.mData, buf.mLen));
-          }
-          self->DoWrite(true);
-          return GenericPromise::CreateAndResolve(true, __func__);
-        })
+    InvokeAsync(taskQueue.get(), __func__,
+                [self, buf = std::move(aBuf)]() {
+                  if (buf.mLen > 0) {
+                    SSLTokensCache::DeserializeFromIPC(
+                        Span(buf.mData, buf.mLen),
+                        /* aRestored */ false);
+                  }
+                  self->DoWrite(true);
+                  return GenericPromise::CreateAndResolve(true, __func__);
+                })
         ->Then(
             GetMainThreadSerialEventTarget(), __func__,
             [self](bool) { self->RemoveShutdownBlocker(); },

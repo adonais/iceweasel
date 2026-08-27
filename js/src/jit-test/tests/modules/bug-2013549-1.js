@@ -15,5 +15,5 @@ var consumer = parseModule(`
   assertEq(ns.default.key, "value");
 `);
 
-moduleLink(consumer);
+moduleLoadAndLink(consumer);
 moduleEvaluate(consumer);

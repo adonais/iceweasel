@@ -147,6 +147,7 @@ def add_command(config, tasks):
 
         task["run"].update({
             "using": "mach",
+            "clone-with": "hg",
             "mach": " ".join(command),
         })
 

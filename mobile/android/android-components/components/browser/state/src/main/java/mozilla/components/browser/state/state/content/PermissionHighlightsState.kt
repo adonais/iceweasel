@@ -4,7 +4,6 @@
 
 package mozilla.components.browser.state.state.content
 
-import android.annotation.SuppressLint
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
@@ -34,7 +33,6 @@ import kotlinx.parcelize.Parcelize
  * @property localNetworkAccessChanged indicates if the local network access permission has changed
  * from its default value.
  */
-@SuppressLint("ParcelCreator")
 @Parcelize
 data class PermissionHighlightsState(
     val notificationChanged: Boolean = false,

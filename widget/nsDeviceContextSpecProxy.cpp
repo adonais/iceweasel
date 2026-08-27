@@ -91,7 +91,7 @@ nsDeviceContextSpecProxy::GetDrawEventRecorder(
 NS_IMETHODIMP
 nsDeviceContextSpecProxy::BeginDocument(const nsAString& aTitle,
                                         const nsAString& aPrintToFileName,
-                                        uint64_t aBrowsingContextId,
+                                        dom::WindowContext* aWindowContext,
                                         int32_t aStartPage, int32_t aEndPage) {
   if (!mRemotePrintJob || mRemotePrintJob->IsDestroyed()) {
     mRemotePrintJob = nullptr;
@@ -100,7 +100,7 @@ nsDeviceContextSpecProxy::BeginDocument(const nsAString& aTitle,
 
   mRecorder = new mozilla::layout::DrawEventRecorderPRFileDesc();
   nsresult rv = mRemotePrintJob->InitializePrint(
-      nsString(aTitle), aBrowsingContextId, aStartPage, aEndPage);
+      nsString(aTitle), aWindowContext, aStartPage, aEndPage);
   if (NS_FAILED(rv)) {
     // The parent process will send a 'delete' message to tell this process to
     // delete our RemotePrintJobChild.  As soon as we return to the event loop

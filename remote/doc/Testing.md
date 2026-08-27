@@ -1,4 +1,4 @@
-# Testing
+# Remote protocol testing
 
 The Remote Protocol has unit- and functional tests located under different folders:
 
@@ -24,7 +24,7 @@ chatty, it can sometimes be useful to run the tests in sequence:
 The unit tests will appear as part of the `X` (for _xpcshell_) jobs
 on Treeherder.
 
-[xpcshell]: /testing/xpcshell/index.rst
+[xpcshell]: /testing/xpcshell/index.md
 
 ## Browser Chrome Mochitests
 

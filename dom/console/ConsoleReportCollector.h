@@ -17,7 +17,7 @@ class ConsoleReportCollected;
 
 class ConsoleReportCollector final : public nsIConsoleReportCollector {
  public:
-  ConsoleReportCollector();
+  ConsoleReportCollector() = default;
 
   void AddConsoleReport(uint32_t aErrorFlags, const nsACString& aCategory,
                         PropertiesFile aPropertiesFile,
@@ -76,7 +76,7 @@ class ConsoleReportCollector final : public nsIConsoleReportCollector {
     const CopyableTArray<nsString> mStringParams;
   };
 
-  Mutex mMutex;
+  Mutex mMutex{"mozilla::ConsoleReportCollector"};
 
   // protected by mMutex
   nsTArray<PendingReport> mPendingReports MOZ_GUARDED_BY(mMutex);

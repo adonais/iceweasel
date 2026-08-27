@@ -127,10 +127,26 @@ add_task(async function test_sidebarAction_not_allowed() {
     "sidebar exists in non-private window"
   );
 
+  // sidebar_action.open_at_install defaults to true, so installing the
+  // extension opens its sidebar in the existing non-private window. Wait for
+  // that panel to load, otherwise its "sidebar" message is left unconsumed in
+  // the message queue.
+  await extension.awaitMessage("sidebar");
+  is(
+    SidebarController.currentID,
+    sidebarID,
+    "sidebar is open in non-private window"
+  );
+
   let winData = await getIncognitoWindow();
 
   let hasSidebar = winData.win.SidebarController.sidebars.has(sidebarID);
   ok(!hasSidebar, "sidebar does not exist in private window");
+  ok(
+    !winData.win.SidebarController.isOpen ||
+      winData.win.SidebarController.currentID != sidebarID,
+    "sidebar is not open in private window"
+  );
   // Test API access to private window data.
   extension.sendMessage(winData.details);
   await extension.awaitFinish("pass");

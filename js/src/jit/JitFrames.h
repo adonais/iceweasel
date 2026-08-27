@@ -124,6 +124,18 @@ struct VMFunctionData;
  *    It also contains flag bits. See the Frame Descriptor Layout SMDOC for
  * more.
  *
+ *  Resuming a generator:
+ *    When resuming a suspended generator or async function/module, the caller
+ *    also pushes the resume args (see ResumeFrameArgs): the resume value, the
+ *    generator object, the resume kind, and the resume index. For function
+ *    callees these are pushed above the formals and numActualArgs is 0. Module
+ *    callees have no ThisV and no arguments, so the resume args occupy those
+ *    slots instead.
+ *    The caller signals their presence with the IsResumingGenerator descriptor
+ *    bit, which also tells the callee's prologue to dispatch to the resume
+ *    point. JSOp::AfterYield clears the bit, after which these slots must no
+ *    longer be accessed.
+ *
  * ## Baseline IC ABI
  *
  * This is the ABI that baseline ICs expect upon entry. Unlike the function ABI,
@@ -217,6 +229,7 @@ struct VMFunctionData;
  * A frame descriptor word has the following data:
  *
  *    high bits: [ numActualArgs |
+ *                 is-resuming-generator bit |
  *                 has-inlined-icscript bit |
  *                 has-cached-saved-frame bit |
  *    low bits:    frame type ]
@@ -226,6 +239,9 @@ struct VMFunctionData;
  *   caller.
  * * HasInlinedICScript: Set when passing a private ICScript to a trial-inlined
  *   script.
+ * * IsResumingGenerator: Set when this frame is a resumed generator/async
+ *   frame. The callee's prologue dispatches to the resume point if this bit is
+ *   set. Cleared by JSOp::AfterYield.
  * * HasCachedSavedFrame: Used to power the LiveSavedFrameCache optimization.
  *   See the comment in Activation.h
  * * Frame Type: BaselineJS, Exit, etc. (jit::FrameType)
@@ -237,13 +253,18 @@ class FrameDescriptor {
   static const uint32_t TypeMask = (1 << TypeBits) - 1;
   static const uint32_t HasCachedSavedFrame = 1 << TypeBits;
   static const uint32_t HasInlinedICScript = 1 << (TypeBits + 1);
-  static const uint32_t NumActualArgsShift = TypeBits + 2;
+  static const uint32_t IsResumingGenerator = 1 << (TypeBits + 2);
+  static const uint32_t NumActualArgsShift = TypeBits + 3;
 
   explicit FrameDescriptor(FrameType type) : raw_(uint32_t(type)) {}
-  FrameDescriptor(FrameType type, uint32_t argc, bool hasInlined = false)
+  FrameDescriptor(FrameType type, uint32_t argc, bool hasInlined = false,
+                  bool isResumingGenerator = false)
       : raw_(argc << NumActualArgsShift | uint32_t(type)) {
     if (hasInlined) {
       setHasInlinedICScript();
+    }
+    if (isResumingGenerator) {
+      setIsResumingGenerator();
     }
     MOZ_ASSERT(numActualArgs() == argc, "argc must fit in descriptor");
   }
@@ -262,6 +283,9 @@ class FrameDescriptor {
 
   bool hasInlinedICScript() const { return raw_ & HasInlinedICScript; }
   void setHasInlinedICScript() { raw_ |= HasInlinedICScript; }
+
+  bool isResumingGenerator() const { return raw_ & IsResumingGenerator; }
+  void setIsResumingGenerator() { raw_ |= IsResumingGenerator; }
 
   uint32_t value() const {
     MOZ_ASSERT(raw_ == uint32_t(raw_));
@@ -425,6 +449,7 @@ class CommonFrameLayout {
   FrameType prevType() const { return descriptor_.type(); }
   void changePrevType(FrameType type) { descriptor_.changeType(type); }
   bool hasCachedSavedFrame() const { return descriptor_.hasCachedSavedFrame(); }
+  bool isResumingGenerator() const { return descriptor_.isResumingGenerator(); }
   void setHasCachedSavedFrame() { descriptor_.setHasCachedSavedFrame(); }
   void clearHasCachedSavedFrame() { descriptor_.clearHasCachedSavedFrame(); }
   uint8_t* returnAddress() const { return returnAddress_; }
@@ -470,6 +495,17 @@ class JitFrameLayout : public CommonFrameLayout {
   }
   JS::Value* actualArgs() { return thisAndActualArgs() + 1; }
   uintptr_t numActualArgs() const { return descriptor().numActualArgs(); }
+
+  static constexpr size_t offsetOfModuleResumeArgs() {
+    return sizeof(JitFrameLayout);
+  }
+  JS::Value* moduleResumeArgs() {
+    MOZ_ASSERT(isResumingGenerator());
+    MOZ_ASSERT(!CalleeTokenIsFunction(calleeToken()));
+    return reinterpret_cast<JS::Value*>(this + 1);
+  }
+
+  JS::Value* resumeArgs();
 
   // Computes a reference to a stack or argument slot, where a slot is a
   // distance from the base frame pointer, as would be used for LStackSlot

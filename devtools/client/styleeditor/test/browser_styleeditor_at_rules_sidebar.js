@@ -40,8 +40,6 @@ waitForExplicitFinish();
 add_task(async function () {
   // Enable @property rules
   await pushPref("layout.css.properties-and-values.enabled", true);
-  // Enable anchor positioning
-  await pushPref("layout.css.anchor-positioning.enabled", true);
   // Enable @custom-media
   await pushPref("layout.css.custom-media.enabled", true);
 

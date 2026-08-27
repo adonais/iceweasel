@@ -21,7 +21,7 @@ add_setup(async function () {
       }),
     ],
     priority: 999,
-    type: UrlbarUtils.PROVIDER_TYPE.PROFILE,
+    type: UrlbarShared.PROVIDER_TYPE.PROFILE,
     name: "firstProvider",
     onEngagement: () => {},
     onAbandonment: () => {},
@@ -42,7 +42,7 @@ add_setup(async function () {
       }),
     ],
     priority: 999,
-    type: UrlbarUtils.PROVIDER_TYPE.PROFILE,
+    type: UrlbarShared.PROVIDER_TYPE.PROFILE,
     name: "secondProvider",
   });
 

@@ -24,6 +24,8 @@ support-files = ["data/engine.xml"]
 
 ["test_UrlbarProviderSemanticHistorySearch.js"]
 
+["test_UrlbarProviderTopSites.js"]
+
 ["test_UrlbarQueryContext.js"]
 
 ["test_UrlbarQueryContext_restrictSource.js"]
@@ -32,11 +34,21 @@ support-files = ["data/engine.xml"]
 
 ["test_UrlbarResult_wireSerialization.js"]
 
-["test_UrlbarTelemetryUtils_wireSerialization.js"]
-
 ["test_UrlbarSearchUtils.js"]
 
 ["test_UrlbarShared_deepEqual.js"]
+
+["test_UrlbarShared_formatDate.js"]
+
+["test_UrlbarShared_getTokenMatches.js"]
+
+["test_UrlbarShared_isOriginUrl.js"]
+
+["test_UrlbarShared_stripUnsafeProtocolOnPaste.js"]
+
+["test_UrlbarShared_unEscapeURIForUI.js"]
+
+["test_UrlbarTelemetryUtils_wireSerialization.js"]
 
 ["test_UrlbarUtils_addToInputHistoryWhenReady.js"]
 
@@ -48,19 +60,15 @@ support-files = ["data/engine.xml"]
 
 ["test_UrlbarUtils_copySnakeKeysToCamel.js"]
 
-["test_UrlbarUtils_formatDate.js"]
+["test_UrlbarUtils_dismissAutofill.js"]
 
 ["test_UrlbarUtils_getBackspaceBlock.js"]
 
 ["test_UrlbarUtils_getShortcutOrURIAndPostData.js"]
 
-["test_UrlbarUtils_getTokenMatches.js"]
-
-["test_UrlbarUtils_isOriginUrl.js"]
+["test_UrlbarUtils_reintegrateAutofill.js"]
 
 ["test_UrlbarUtils_skippableTimer.js"]
-
-["test_UrlbarUtils_unEscapeURIForUI.js"]
 
 ["test_about_urls.js"]
 
@@ -224,6 +232,8 @@ skip-if = [
 ["test_richsuggestions.js"]
 
 ["test_richsuggestions_order.js"]
+
+["test_searchEngineStore.js"]
 
 ["test_search_engine_restyle.js"]
 

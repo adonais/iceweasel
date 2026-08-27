@@ -19,7 +19,7 @@
   --chip-selected-border-color: var(--color-violet-20);
   --chip-selected-text-color: var(--chip-text-color);
 
-  --chip-label-mask-size: 1em;
+  --chip-label-mask-size: var(--space-large);
 
   --chip-remove-border-radius: var(--border-radius-small);
   --chip-remove-size: var(--size-item-small);
@@ -38,7 +38,6 @@
 
   --context-chip-label-color: light-dark(var(--color-violet-90), var(--color-violet-10));
   --context-chip-label-hover-color: var(--context-chip-label-color);
-  --context-chip-label-hover-margin-inline-end: 0;
   --context-chip-label-hover-text-decoration: none;
 
   --context-chip-remove-hover-background-color: light-dark(transparent, var(--color-violet-80));
@@ -79,7 +78,6 @@
     --context-chip-remove-initial-display: flex;
 
     --context-chip-label-color: light-dark(var(--color-violet-desaturated-90, #14092b), var(--color-violet-desaturated-0, #f2f0f8));
-    --context-chip-label-hover-margin-inline-end: var(--space-xlarge);
     --context-chip-label-hover-text-decoration: underline;
 
     --context-chip-icon-hover-display: flex;
@@ -87,15 +85,19 @@
 
   :host([type="context-chip"]) .chip[data-removable] {
     &:hover .chip-remove {
+      inset-inline-end: var(--space-small);
       opacity: 1;
     }
 
     .chip-remove {
-      inset-inline-end: var(--space-small);
+      inset-inline-end: calc(-1 * var(--space-small));
       opacity: 0;
       position: absolute;
-      transition: all ease 150ms;
       z-index: 1;
+
+      @media not (prefers-reduced-motion) {
+        transition: all ease 150ms;
+      }
     }
   }
 }
@@ -253,13 +255,29 @@ button.chip {
 
 /* context chips in the smartbar */
 :host([type="context-chip"]) .chip[data-removable] {
-  .chip-label {
-    margin-inline-end: var(--context-chip-label-hover-margin-inline-end);
-  }
-
   &:hover {
     --background-color-box: var(--context-chip-hover-background-color);
     border-color: var(--context-chip-hover-border-color);
+
+    @media -moz-pref("browser.nova.enabled") {
+      .chip-label {
+        clip-path: inset(0 var(--chip-remove-size) 0 0);
+        mask-image: linear-gradient(
+          to left,
+          transparent var(--chip-remove-size),
+          var(--color-black) calc(var(--chip-remove-size) + var(--chip-label-mask-size))
+        );
+
+        &:dir(rtl) {
+          clip-path: inset(0 0 0 var(--chip-remove-size));
+          mask-image: linear-gradient(
+            to right,
+            transparent var(--chip-remove-size),
+            var(--color-black) calc(var(--chip-remove-size) + var(--chip-label-mask-size))
+          );
+        }
+      }
+    }
 
     .chip-icon {
       display: var(--context-chip-icon-hover-display);
@@ -307,13 +325,23 @@ button.chip {
 
 :host([type="context-chip"]) .chip-label {
   --text-color: var(--context-chip-label-color);
-
+  /* clip path is needed to trigger the transition animation when hovered */
+  clip-path: inset(0 0 0 0);
   color: var(--text-color);
   font-size: var(--font-size-small);
   height: var(--size-item-small);
   mask-image: linear-gradient(to left, transparent, var(--color-black) var(--chip-label-mask-size));
-  transition: margin-inline-end ease 150ms;
   white-space: nowrap;
+
+  &:dir(rtl) {
+    mask-image: linear-gradient(to right, transparent, var(--color-black) var(--chip-label-mask-size));
+  }
+
+  @media not (prefers-reduced-motion) {
+    transition:
+      mask-image ease 150ms,
+      clip-path ease 150ms;
+  }
 }
 
 /* Hover state for selected - must come after type-specific rules to override borders */

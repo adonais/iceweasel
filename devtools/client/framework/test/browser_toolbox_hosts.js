@@ -97,7 +97,7 @@ async function runHostTests(browser) {
   await testToolSelect();
   await testDestroy(browser);
   await testRememberHost();
-  await testPreviousHost();
+  await testPreviousHost(browser);
 }
 
 function testBottomHost(browser) {
@@ -105,10 +105,10 @@ function testBottomHost(browser) {
 
   // test UI presence
   const panel = browser.getPanel();
-  const iframe = panel.querySelector(".devtools-toolbox-bottom-iframe");
+  const iframe = panel.querySelector(".devtools-toolbox-iframe.bottom-host");
   ok(iframe, "toolbox bottom iframe exists");
-
   checkToolboxLoaded(iframe);
+  checkBrowserSidebarContainerDevToolsHostTypeAttribute(panel, BOTTOM);
 }
 
 async function testLeftHost(browser) {
@@ -117,13 +117,14 @@ async function testLeftHost(browser) {
 
   // test UI presence
   const panel = browser.getPanel();
-  const bottom = panel.querySelector(".devtools-toolbox-bottom-iframe");
+  const bottom = panel.querySelector(".devtools-toolbox-iframe.bottom-host");
   ok(!bottom, "toolbox bottom iframe doesn't exist");
 
-  const iframe = panel.querySelector(".devtools-toolbox-side-iframe");
+  const iframe = panel.querySelector(".devtools-toolbox-iframe.side-host");
   ok(iframe, "toolbox side iframe exists");
 
   checkToolboxLoaded(iframe);
+  checkBrowserSidebarContainerDevToolsHostTypeAttribute(panel, LEFT);
 }
 
 async function testRightHost(browser) {
@@ -132,13 +133,14 @@ async function testRightHost(browser) {
 
   // test UI presence
   const panel = browser.getPanel();
-  const bottom = panel.querySelector(".devtools-toolbox-bottom-iframe");
+  const bottom = panel.querySelector(".devtools-toolbox-iframe.bottom-host");
   ok(!bottom, "toolbox bottom iframe doesn't exist");
 
-  const iframe = panel.querySelector(".devtools-toolbox-side-iframe");
+  const iframe = panel.querySelector(".devtools-toolbox-iframe.side-host");
   ok(iframe, "toolbox side iframe exists");
 
   checkToolboxLoaded(iframe);
+  checkBrowserSidebarContainerDevToolsHostTypeAttribute(panel, RIGHT);
 }
 
 async function testWindowHost(browser) {
@@ -146,14 +148,17 @@ async function testWindowHost(browser) {
   checkHostType(toolbox, WINDOW);
 
   const panel = browser.getPanel();
-  const sidebar = panel.querySelector(".devtools-toolbox-side-iframe");
+  const sidebar = panel.querySelector(".devtools-toolbox-iframe.side-host");
   ok(!sidebar, "toolbox sidebar iframe doesn't exist");
 
   const win = Services.wm.getMostRecentWindow("devtools:toolbox");
   ok(win, "toolbox separate window exists");
 
-  const iframe = win.document.querySelector(".devtools-toolbox-window-iframe");
+  const iframe = win.document.querySelector(
+    ".devtools-toolbox-iframe.window-host"
+  );
   checkToolboxLoaded(iframe);
+  checkBrowserSidebarContainerDevToolsHostTypeAttribute(panel, null);
 }
 
 async function testToolSelect() {
@@ -174,37 +179,47 @@ function testRememberHost() {
   ok(win, "toolbox separate window exists");
 }
 
-async function testPreviousHost() {
+async function testPreviousHost(browser) {
+  const panel = browser.getPanel();
+
   // last host was the window - make sure it's the same when re-opening
   is(toolbox.hostType, WINDOW, "host remembered");
+  checkBrowserSidebarContainerDevToolsHostTypeAttribute(panel, null);
 
   info("Switching to left");
   await toolbox.switchHost(LEFT);
   checkHostType(toolbox, LEFT, WINDOW);
+  checkBrowserSidebarContainerDevToolsHostTypeAttribute(panel, LEFT);
 
   info("Switching to right");
   await toolbox.switchHost(RIGHT);
   checkHostType(toolbox, RIGHT, LEFT);
+  checkBrowserSidebarContainerDevToolsHostTypeAttribute(panel, RIGHT);
 
   info("Switching to bottom");
   await toolbox.switchHost(BOTTOM);
   checkHostType(toolbox, BOTTOM, RIGHT);
+  checkBrowserSidebarContainerDevToolsHostTypeAttribute(panel, BOTTOM);
 
   info("Switching from bottom to right");
   await toolbox.switchToPreviousHost();
   checkHostType(toolbox, RIGHT, BOTTOM);
+  checkBrowserSidebarContainerDevToolsHostTypeAttribute(panel, RIGHT);
 
   info("Switching from right to bottom");
   await toolbox.switchToPreviousHost();
   checkHostType(toolbox, BOTTOM, RIGHT);
+  checkBrowserSidebarContainerDevToolsHostTypeAttribute(panel, BOTTOM);
 
   info("Switching to window");
   await toolbox.switchHost(WINDOW);
   checkHostType(toolbox, WINDOW, BOTTOM);
+  checkBrowserSidebarContainerDevToolsHostTypeAttribute(panel, null);
 
   info("Switching from window to bottom");
   await toolbox.switchToPreviousHost();
   checkHostType(toolbox, BOTTOM, WINDOW);
+  checkBrowserSidebarContainerDevToolsHostTypeAttribute(panel, BOTTOM);
 
   info("Forcing the previous host to match the current (bottom)");
   Services.prefs.setCharPref("devtools.toolbox.previousHost", BOTTOM);
@@ -212,15 +227,30 @@ async function testPreviousHost() {
   info("Switching from bottom to right (since previous=current=bottom");
   await toolbox.switchToPreviousHost();
   checkHostType(toolbox, RIGHT, BOTTOM);
+  checkBrowserSidebarContainerDevToolsHostTypeAttribute(panel, RIGHT);
 
   info("Forcing the previous host to match the current (right)");
   Services.prefs.setCharPref("devtools.toolbox.previousHost", RIGHT);
   info("Switching from right to bottom (since previous=current=side");
   await toolbox.switchToPreviousHost();
   checkHostType(toolbox, BOTTOM, RIGHT);
+  checkBrowserSidebarContainerDevToolsHostTypeAttribute(panel, BOTTOM);
 }
 
 function checkToolboxLoaded(iframe) {
   const tabs = iframe.contentDocument.querySelector(".toolbox-tabs");
   ok(tabs, "toolbox UI has been loaded into iframe");
+}
+
+function checkBrowserSidebarContainerDevToolsHostTypeAttribute(
+  panel,
+  expectedAttributeValue
+) {
+  is(
+    panel
+      .closest(".browserSidebarContainer")
+      .getAttribute("devtools-host-type"),
+    expectedAttributeValue,
+    "Got expected value for .browserSidebarContainer devtools-host-type attribute"
+  );
 }

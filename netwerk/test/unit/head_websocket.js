@@ -40,9 +40,9 @@ WebSocketListener.prototype = {
 };
 
 function makeWebSocketChan() {
-  let chan = Cc["@mozilla.org/network/protocol;1?name=wss"].createInstance(
-    Ci.nsIWebSocketChannel
-  );
+  let chan = Cc["@mozilla.org/network/protocol;1?name=wss"]
+    .getService(Ci.nsIWebSocketProtocolHandler)
+    .newWebSocketChannel();
   chan.initLoadInfo(
     null, // aLoadingNode
     Services.scriptSecurityManager.getSystemPrincipal(),

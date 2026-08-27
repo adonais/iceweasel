@@ -11,7 +11,7 @@
 #include "nsTArray.h"
 
 class nsMIMEInfoWin : public nsMIMEInfoBase, public nsIPropertyBag {
-  virtual ~nsMIMEInfoWin();
+  virtual ~nsMIMEInfoWin() = default;
 
  public:
   explicit nsMIMEInfoWin(const char* aType = "") : nsMIMEInfoBase(aType) {}

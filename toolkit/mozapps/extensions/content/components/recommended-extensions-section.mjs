@@ -4,10 +4,10 @@
 
 import { RecommendedSection } from "./recommended-section.mjs";
 
-// NOTE: importing recommended-footer webcomponent because it is used
-// in this webcomponent template.
+// NOTE: importing recommended-extensions-footer webcomponent because it is
+// used in this webcomponent template.
 // eslint-disable-next-line import/no-unassigned-import
-import "./recommended-footer.mjs";
+import "./recommended-extensions-footer.mjs";
 
 // NOTE: this class is inheriting its `render` method from RecommendedSection.
 class RecommendedExtensionsSection extends RecommendedSection {
@@ -23,7 +23,7 @@ class RecommendedExtensionsSection extends RecommendedSection {
           type="extension"
           hide-installed
         ></recommended-addon-list>
-        <footer is="recommended-footer" class="view-footer"></footer>
+        <footer is="recommended-extensions-footer" class="view-footer"></footer>
       </template>
     `;
   }

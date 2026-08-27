@@ -70,7 +70,13 @@ Example:
 }
 ```
 
-Opens a given about page
+Opens a given about page.
+
+Only pages in the `ALLOWED_ABOUT_PAGES` allowlist are permitted; any other
+page throws an error. As of writing, the allowed pages are: `addons`,
+`profiles`, `translations`, `keyboard`, `logins`, `preferences`,
+`privatebrowsing`, `protections`, `referrals`, `settings`, `welcome`,
+`newtab`, `home`, and `robots`.
 
 Example:
 
@@ -84,12 +90,19 @@ Example:
 ### `OPEN_PREFERENCES_PAGE`
 
 * args:
-```
+```ts
 {
-  args?: string, // (a category accessible via a `#`)
-  entrypoint?: string // URL search param used to referrals
+  // Top-level category, optionally with a "-subcategory" (e.g.
+  // "general-cfrfeatures"). Passed as `category` (preferred) or `args`.
+  category?: string,
+  entrypoint?: string, // URL search param used for referrals
+}
+```
 
 Opens `about:preferences` with an optional category accessible via a `#` in the URL (e.g. `about:preferences#home`).
+
+Only real top-level categories and subcategories that map to a named pane will
+route; unknown values silently fall back to the default pane.
 
 Example:
 
@@ -564,6 +577,22 @@ Summarize current page content.
 
 * args: optional `string` entry value to identify initiator default "message"
 
+### `OPEN_ORGANIZE_TABS_PANEL`
+
+Opens the Smart Window "Organize Tabs" panel. Unlike `OPEN_PANEL`, the panel is
+built on demand rather than already present in the DOM.
+
+- args:
+```ts
+{
+  data?: {
+    // Identifies the surface that opened the panel, recorded as the `source`
+    // extra key on the panel's telemetry. Defaults to "message".
+    source?: string;
+  }
+}
+```
+
 ### `OPEN_PANEL`
 
 Open a panel associated with a given widget.
@@ -637,3 +666,18 @@ Configures Firefox to launch on Windows login.
 Removes Firefox from Windows login items.
 
 - args: (none)
+
+### `SET_BROWSER_ICON`
+
+Changes the browser icon to the one identified by `id` using `CustomIconManager`. Icon ids that are not present in the catalog are ignored. The `"default"` id reverts to the browser's own icon. Windows only, and not supported on MSIX (packaged) builds.
+
+- args:
+```ts
+{
+  id: string;  // The id of the icon to switch to, as listed in the CustomIconManager ICON_CATALOG
+}
+```
+
+### `GET_REFERRAL_CODE`
+
+Gets the user's referral code (or generates one if it doesn't exist), and opens about:referrals with the code as a param. Throws an error if referrals are not enabled.

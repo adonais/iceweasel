@@ -50,9 +50,7 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
     struct Empty {};
     struct ClearFutureData {};
     struct DecodedData {
-      DecodedData()
-          : mStartTime(media::TimeUnit::Invalid()),
-            mEndTime(media::TimeUnit::Invalid()) {}
+      DecodedData() = default;
       DecodedData(DecodedData&& aDecodedData)
           : mSegment(std::move(aDecodedData.mSegment)) {
         mStartTime = aDecodedData.mStartTime;
@@ -69,12 +67,12 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
         mEndTime = media::TimeUnit::Invalid();
       }
       AudioSegment mSegment;
-      media::TimeUnit mStartTime;
-      media::TimeUnit mEndTime;
+      media::TimeUnit mStartTime{media::TimeUnit::Invalid()};
+      media::TimeUnit mEndTime{media::TimeUnit::Invalid()};
     };
     struct EOS {};
 
-    SPSCData() : mData(Empty()) {};
+    SPSCData() = default;
     explicit SPSCData(ClearFutureData&& aArg) : mData(std::move(aArg)) {};
     explicit SPSCData(DecodedData&& aArg) : mData(std::move(aArg)) {};
     explicit SPSCData(EOS&& aArg) : mData(std::move(aArg)) {};
@@ -88,7 +86,7 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
       return IsDecodedData() ? &mData.as<DecodedData>() : nullptr;
     }
 
-    Variant<Empty, ClearFutureData, DecodedData, EOS> mData;
+    Variant<Empty, ClearFutureData, DecodedData, EOS> mData{Empty()};
   };
 
   // Decoder thread API

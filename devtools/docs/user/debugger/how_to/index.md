@@ -1,4 +1,4 @@
-# How to
+# Debugger how-tos
 
 These articles describe how to use the debugger.
 
@@ -17,3 +17,24 @@ These articles describe how to use the debugger.
 - {doc}`Step through code <step_through_code/index>`
 - {doc}`Use a source map <use_a_source_map/index>`
 - {doc}`Use watchpoints <use_watchpoints/index>`
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+access_debugging_in_add-ons/index
+breaking_on_exceptions/index
+debug_eval_sources/index
+disable_breakpoints/index
+highlight_and_inspect_dom_nodes/index
+ignoring_sources/index
+open_the_debugger/index
+pretty-print_a_minified_file/index
+search/index
+set_a_breakpoint/index
+set_a_conditional_breakpoint/index
+set_watch_expressions/index
+step_through_code/index
+use_a_source_map/index
+use_watchpoints/index
+```

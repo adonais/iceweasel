@@ -387,6 +387,106 @@ async function textToGoal(
 }
 
 /**
+ * Fusion "head" scoring pipeline.
+ *
+ * Modeled on `textToGoal` above (raw-tensor construction + direct session.run).
+ *
+ * @param {object} request - The input request to the pipeline.
+ * @param {Array} request.args - `args[0]` is a `number[][]` of shape [N, X].
+ * @param {object} model - The ONNX model (head). Loaded via AutoModel.
+ * @param {object} _tokenizer - (Unused; the head takes float features, not text.)
+ * @param {object} _processor - (Unused)
+ * @param {object} config - The engine configuration options.
+ * @param {object} _modelConfig - The model configuration options.
+ * @returns {Promise<object>} Inference result: { output: [{label, score}], metrics }.
+ */
+async function fusionHead(
+  request,
+  model,
+  _tokenizer,
+  _processor,
+  config,
+  _modelConfig
+) {
+  const metrics = {
+    preprocessingTime: 0,
+    inferenceTime: 0,
+    inputTokens: 0,
+    outputTokens: 0,
+  };
+
+  const rows = request.args?.[0] ?? [];
+  if (!rows.length) {
+    return { output: [], metrics };
+  }
+
+  const numRows = rows.length;
+  const featureDim = rows[0].length;
+
+  // Flatten [N, X] -> Float32Array for a single batched head inference.
+  const startPre = ChromeUtils.now();
+  const flat = new Float32Array(numRows * featureDim);
+  for (let i = 0; i < numRows; i++) {
+    flat.set(rows[i], i * featureDim);
+  }
+  // Choose the Tensor implementation for the active backend, exactly like
+  // textToGoal does for its int64 inputs.
+  const tensorFactory =
+    config.backend === WASM_BACKEND ? transformers.Tensor : globalThis.Tensor;
+  const inputTensor = new tensorFactory("float32", flat, [numRows, featureDim]);
+  metrics.preprocessingTime += ChromeUtils.now() - startPre;
+
+  const startInfer = ChromeUtils.now();
+  const session = model.sessions.model;
+  // The head has a single float input; feed by its declared input name.
+  const inputName = session.inputNames[0];
+  const output = await session.run({ [inputName]: inputTensor });
+  metrics.inferenceTime += ChromeUtils.now() - startInfer;
+  ChromeUtils.addProfilerMarker(
+    "MLEngine:ONNX",
+    { startTime: startInfer },
+    `fusionHead`
+  );
+
+  // Head produces a single [N, numClasses] logits output.
+  const logitsTensor = output[session.outputNames[0]];
+  const logits = logitsTensor.data;
+  const numClasses = logitsTensor.dims[logitsTensor.dims.length - 1];
+
+  // id2label maps the argmax index to the field-type string. It lives on the
+  // loaded model's config for a standard classification model.
+  const id2label = model.config?.id2label ?? {};
+
+  const result = [];
+  for (let i = 0; i < numRows; i++) {
+    const base = i * numClasses;
+
+    // Softmax + argmax over this row's logits.
+    let maxLogit = -Infinity;
+    let argmax = 0;
+    for (let c = 0; c < numClasses; c++) {
+      const v = logits[base + c];
+      if (v > maxLogit) {
+        maxLogit = v;
+        argmax = c;
+      }
+    }
+    let sumExp = 0;
+    for (let c = 0; c < numClasses; c++) {
+      sumExp += Math.exp(logits[base + c] - maxLogit);
+    }
+    const score = 1 / sumExp; // exp(maxLogit - maxLogit) / sumExp
+
+    result.push({
+      label: id2label[argmax] ?? String(argmax),
+      score,
+    });
+  }
+
+  return { output: result, metrics };
+}
+
+/**
  * Configuration for engine. Each task has a configuration object that
  * gets merged at runtime with the options from PipelineOptions.
  *
@@ -428,6 +528,17 @@ const ENGINE_CONFIGURATION = {
     tokenizerId: "mozilla/iab-multitask-inference",
     tokenizerClass: "AutoTokenizer",
     pipelineFunction: textToGoal,
+  },
+  // Takes windowed float features (not text), so there is no tokenizer or processor.
+  // See fusionHead above.
+  "moz-formfill-head": {
+    modelId: null,
+    modelClass: "AutoModel",
+    tokenizerId: null,
+    tokenizerClass: null,
+    processorId: null,
+    processorClass: null,
+    pipelineFunction: fusionHead,
   },
 };
 

@@ -118,7 +118,7 @@ class TaskbarPreviewCallback : public nsITaskbarPreviewCallback {
   void SetIsPreview() { mIsThumbnail = false; }
 
  protected:
-  virtual ~TaskbarPreviewCallback() {}
+  virtual ~TaskbarPreviewCallback() = default;
 
  private:
   RefPtr<TaskbarPreview> mPreview;

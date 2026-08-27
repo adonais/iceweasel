@@ -5,7 +5,7 @@
 use pkcs11_bindings::*;
 use rsclientcerts::cryptoki::*;
 use rsclientcerts::manager::{ClientCertsBackend, CryptokiObject, Sign};
-use rsclientcerts_util::error::Error;
+use rsclientcerts_util::error::{Error, ErrorType};
 use rsclientcerts_util::*;
 
 use base64::prelude::*;
@@ -158,6 +158,7 @@ pub struct Backend {
     token_label: &'static [u8; 32],
     slot_flags: CK_FLAGS,
     token_flags: CK_FLAGS,
+    password: Vec<u8>,
     logged_in: bool,
     certs: Vec<CryptokiCert>,
     keys: Vec<Key>,
@@ -196,6 +197,7 @@ impl Backend {
             token_label,
             slot_flags,
             token_flags,
+            password: Vec::new(),
             logged_in: false,
             certs,
             keys,
@@ -245,8 +247,21 @@ impl ClientCertsBackend for Backend {
         vec![CKM_ECDSA, CKM_RSA_PKCS, CKM_RSA_PKCS_PSS]
     }
 
-    fn login(&mut self) {
-        self.logged_in = true;
+    fn change_password(&mut self, from: &[u8], to: &[u8]) -> Result<(), Error> {
+        if self.password.as_slice() == from {
+            self.password = to.to_vec();
+            self.logged_in = true;
+            return Ok(());
+        }
+        Err(error_here!(ErrorType::WrongPassword))
+    }
+
+    fn login(&mut self, password: &[u8]) -> Result<(), Error> {
+        if self.password.as_slice() == password {
+            self.logged_in = true;
+            return Ok(());
+        }
+        Err(error_here!(ErrorType::WrongPassword))
     }
 
     fn logout(&mut self) {

@@ -33,7 +33,6 @@
         'blake2b_unittest.cc',
         'shake_unittest.cc',
         'cmac_unittests.cc',
-        'dh_unittest.cc',
         'ecl_unittest.cc',
         'ghash_unittest.cc',
         'kyber_unittest.cc',

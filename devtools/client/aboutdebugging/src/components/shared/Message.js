@@ -43,13 +43,23 @@ class Message extends PureComponent {
       className: PropTypes.string,
       isCloseable: PropTypes.bool,
       level: PropTypes.oneOf(Object.values(MESSAGE_LEVEL)).isRequired,
+      messageId: PropTypes.string,
     };
+  }
+
+  static getDerivedStateFromProps(props, state) {
+    // Reset closed state if messageId changed.
+    if (props.messageId !== state.messageId) {
+      return { messageId: props.messageId, isClosed: false };
+    }
+    return null;
   }
 
   constructor(props) {
     super(props);
     this.state = {
       isClosed: false,
+      messageId: props.messageId,
     };
   }
 

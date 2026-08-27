@@ -125,7 +125,7 @@ class ChromeTrace(RaptorProfiling):
         # it can be viewed automatically via the view-gecko-profile tool.
         # since we are using the firefox profiler to view the trace, it
         # is convenient to just use the same env var.
-        os.environ["RAPTOR_LATEST_GECKO_PROFILE_ARCHIVE"] = str(
+        os.environ["RAPTOR_LATEST_PROFILE"] = str(
             self.profile_arcname
         )  # convert posixpath object to string for environment
 

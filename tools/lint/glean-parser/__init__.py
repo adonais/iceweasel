@@ -21,7 +21,6 @@ from metrics_index import tags_yamls
 from run_glean_parser import ParserError, get_parser_options, parse_with_options
 
 METRIC_NAME_PATTERN = re.compile(r"\.([^:]+):")
-COMMON_PREFIX_PATTERN = re.compile(r"COMMON_PREFIX: ([^:]+):")
 
 FENIX_PATTERN = re.compile(r"mobile/android/fenix/")
 FOCUS_PATTERN = re.compile(r"mobile/android/focus")
@@ -106,29 +105,22 @@ def lint(paths, config, fix=None, **lintargs):
                             "ERROR: "
                         )
 
-                        # Try to find line number for COMMON_PREFIX errors (category level)
-                        common_prefix_match = COMMON_PREFIX_PATTERN.search(message)
-                        if common_prefix_match:
+                        # Try to find line number for metric-specific errors
+                        match = METRIC_NAME_PATTERN.search(message)
+                        if match:
+                            metric_name = (
+                                match.group(1).split(".")[-1]
+                                if "." in match.group(1)
+                                else match.group(1)
+                            )
                             lineno, file_path = find_yaml_line_in_group(
-                                f"{common_prefix_match.group(1)}:", group_files
+                                f"  {metric_name}:", group_files
                             )
                         else:
-                            # Try to find line number for metric-specific errors
-                            match = METRIC_NAME_PATTERN.search(message)
-                            if match:
-                                metric_name = (
-                                    match.group(1).split(".")[-1]
-                                    if "." in match.group(1)
-                                    else match.group(1)
-                                )
-                                lineno, file_path = find_yaml_line_in_group(
-                                    f"  {metric_name}:", group_files
-                                )
-                            else:
-                                lineno, file_path = (
-                                    None,
-                                    (group_files[0] if group_files else None),
-                                )
+                            lineno, file_path = (
+                                None,
+                                (group_files[0] if group_files else None),
+                            )
 
                         if file_path:
                             results.append(

@@ -433,7 +433,7 @@ addAccessibleTask(
     await loadCompleted;
     testStates(iframeDoc, 0, 0, STATE_BUSY, EXT_STATE_STALE);
   },
-  { topLevel: true, chrome: true }
+  { topLevel: true }
 );
 
 /**

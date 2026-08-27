@@ -12,12 +12,21 @@ skip-if = [
 ]
 
 ["browser_aboutCertError_accesskey.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 2062455
+]
 
 ["browser_aboutCertError_caInvalid.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 2062455
+]
 
 ["browser_aboutCertError_cca_telemetry.js"]
 
 ["browser_aboutCertError_clockSkew.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 2062455
+]
 
 ["browser_aboutCertError_coep.js"]
 support-files = [
@@ -31,18 +40,33 @@ support-files = [
 ]
 
 ["browser_aboutCertError_exception.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 2062455
+]
 
 ["browser_aboutCertError_mitm.js"]
 
 ["browser_aboutCertError_noSubjectAltName.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 2062455
+]
 
 ["browser_aboutCertError_notYetValid.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 2062455
+]
 
 ["browser_aboutCertError_offlineSupport.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 2062455
+]
 
 ["browser_aboutCertError_offlineSupport_feltPrivacyV1.js"]
 
 ["browser_aboutCertError_revoked.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 2062455
+]
 
 ["browser_aboutCertError_telemetry.js"]
 
@@ -57,6 +81,9 @@ skip-if = [
 ["browser_aboutDialog_referrals.js"]
 
 ["browser_aboutNetError.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 2062455
+]
 
 ["browser_aboutNetError_basicHttpAuth.js"]
 support-files = [
@@ -92,6 +119,9 @@ support-files = [
 ["browser_aboutNetError_fileNotFound.js"]
 
 ["browser_aboutNetError_httpAuthDisabled.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 2062455
+]
 
 ["browser_aboutNetError_internet_connection_offline.js"]
 
@@ -110,10 +140,7 @@ support-files = [
   "server_error.sjs",
 ]
 
-["browser_aboutNetError_sslKeyLogging.js"]
-support-files = [
-  "sslKeyLogging_processScript.js",
-]
+["browser_aboutNetError_sslKeyLoggingDisabled.js"]
 
 ["browser_aboutNetError_telemetry.js"]
 

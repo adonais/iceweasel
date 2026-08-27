@@ -231,7 +231,7 @@ add_task(async function test_null_title() {
 
 add_task(async function test_over_max_length_text() {
   let uri = "https://example.com/";
-  for (; uri.length < UrlbarUtils.MAX_TEXT_LENGTH; ) {
+  for (; uri.length < UrlbarShared.MAX_TEXT_LENGTH; ) {
     uri += "0123456789";
   }
 

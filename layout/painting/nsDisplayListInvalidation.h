@@ -172,7 +172,7 @@ class nsDisplaySVGEffectGeometry : public nsDisplayItemGeometry {
   gfxRect mBBox;
   gfxPoint mUserSpaceOffset;
   nsPoint mFrameOffsetToReferenceFrame;
-  bool mHandleOpacity;
+  bool mHandleOpacity = false;
 };
 
 class nsDisplayMasksAndClipPathsGeometry : public nsDisplaySVGEffectGeometry {

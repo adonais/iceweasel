@@ -50,6 +50,23 @@ const TOP_SITES_USER_VALUE_TEMP_PREF =
   "activationWindow.temp.topSitesUserValue";
 const TOP_STORIES_USER_VALUE_TEMP_PREF =
   "activationWindow.temp.topStoriesUserValue";
+// Browser-wide Nova gate. Lives off the activity-stream branch, so it is read
+// and observed directly here (not via the branch observer) and broadcast to
+// content to gate the theme picker in the customize panel.
+const BROWSER_NOVA_ENABLED_PREF = "browser.nova.enabled";
+
+/**
+ * @backward-compat { version 155 }
+ * The New Tab theme picker depends on the toolkit `theme-picker` custom element,
+ * its JSWindowActor pair (bug 2050531), and `toolkit/global/theme-picker.ftl` —
+ * all of which only exist in Firefox 155+. When newtab train-hops onto an older
+ * host these are absent (the element never upgrades, the actor is unregistered,
+ * and the ftl resource fails to load), so gate the whole feature off there.
+ * Remove this guard once 155 reaches Release.
+ */
+function isThemePickerHostSupported() {
+  return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "155.0a1") >= 0;
+}
 const PREF_DEFAULTS = [
   { type: "bool", key: "logowordmark.alwaysVisible", defaultValue: false },
   { type: "bool", key: "feeds.section.topstories", defaultValue: false },
@@ -570,6 +587,13 @@ export class PrefsFeed {
       "browser.topsites.useRemoteSetting"
     );
 
+    // Read the browser-wide Nova gate and observe it so later changes are
+    // broadcast to content (see observe()).
+    values.browserNovaEnabled =
+      isThemePickerHostSupported() &&
+      Services.prefs.getBoolPref(BROWSER_NOVA_ENABLED_PREF, false);
+    Services.prefs.addObserver(BROWSER_NOVA_ENABLED_PREF, this);
+
     // Add experiment values and default values
     values.featureConfig = lazy.NimbusFeatures.newtab.getAllVariables() || {};
     values.pocketConfig =
@@ -588,6 +612,10 @@ export class PrefsFeed {
     values.widgetsConfig =
       lazy.NimbusFeatures.newtabWidgets.getAllVariables() || {};
     values.trainhopConfig = this._getTrainhopConfig();
+    values.trainhopVersion =
+      globalThis.WebExtensionPolicy?.getByID("newtab@mozilla.org")?.version ??
+      null;
+    values.nimbusDebug = Services.prefs.getBoolPref("nimbus.debug", false);
     values.adsBackendConfig = this._getAdsBackendFeatures();
     for (const { type, key, defaultValue } of PREF_DEFAULTS) {
       if (type === "bool") {
@@ -635,6 +663,7 @@ export class PrefsFeed {
     if (this.geo === "") {
       Services.obs.removeObserver(this, lazy.Region.REGION_TOPIC);
     }
+    Services.prefs.removeObserver(BROWSER_NOVA_ENABLED_PREF, this);
   }
 
   /**
@@ -897,7 +926,7 @@ export class PrefsFeed {
     lazy.logConsole.log("Activation window exit complete");
   }
 
-  observe(subject, topic) {
+  observe(subject, topic, data) {
     switch (topic) {
       case lazy.Region.REGION_TOPIC:
         this.store.dispatch(
@@ -906,6 +935,21 @@ export class PrefsFeed {
             data: { name: "region", value: lazy.Region.home },
           })
         );
+        break;
+      case "nsPref:changed":
+        if (data === BROWSER_NOVA_ENABLED_PREF) {
+          this.store.dispatch(
+            ac.BroadcastToContent({
+              type: at.PREF_CHANGED,
+              data: {
+                name: "browserNovaEnabled",
+                value:
+                  isThemePickerHostSupported() &&
+                  Services.prefs.getBoolPref(BROWSER_NOVA_ENABLED_PREF, false),
+              },
+            })
+          );
+        }
         break;
     }
   }

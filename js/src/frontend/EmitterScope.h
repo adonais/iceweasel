@@ -15,9 +15,7 @@
 #include "frontend/NameAnalysisTypes.h"
 #include "frontend/NameCollections.h"
 #include "frontend/Stencil.h"
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-#  include "frontend/UsingEmitter.h"
-#endif
+#include "frontend/UsingEmitter.h"
 #include "vm/Opcodes.h"        // JSOp
 #include "vm/SharedStencil.h"  // GCThingIndex
 
@@ -47,12 +45,10 @@ class MOZ_STACK_CLASS EmitterScope : public Nestable<EmitterScope> {
   // chain, false if all bindings are stored in frame slots on the stack.
   bool hasEnvironment_;
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   mozilla::Maybe<UsingEmitter> usingEmitter_;
 
  private:
   BlockKind blockKind_ = BlockKind::Other;
-#endif
 
   // The number of enclosing environments. Used for error checking.
   uint16_t environmentChainLength_;
@@ -114,13 +110,11 @@ class MOZ_STACK_CLASS EmitterScope : public Nestable<EmitterScope> {
     return clearFrameSlotRange(bce, JSOp::Uninitialized, slotStart, slotEnd);
   }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   void setHasDisposables(BytecodeEmitter* bce) {
     if (!usingEmitter_.isSome()) {
       usingEmitter_.emplace(bce);
     }
   }
-#endif
 
  public:
   explicit EmitterScope(BytecodeEmitter* bce);
@@ -128,12 +122,8 @@ class MOZ_STACK_CLASS EmitterScope : public Nestable<EmitterScope> {
   void dump(BytecodeEmitter* bce);
 
   [[nodiscard]] bool enterLexical(BytecodeEmitter* bce, ScopeKind kind,
-                                  LexicalScope::ParserData* bindings
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-                                  ,
-                                  BlockKind blockKind = BlockKind::Other
-#endif
-  );
+                                  LexicalScope::ParserData* bindings,
+                                  BlockKind blockKind = BlockKind::Other);
   [[nodiscard]] bool enterClassBody(BytecodeEmitter* bce, ScopeKind kind,
                                     ClassBodyScope::ParserData* bindings);
   [[nodiscard]] bool enterNamedLambda(BytecodeEmitter* bce,
@@ -164,7 +154,6 @@ class MOZ_STACK_CLASS EmitterScope : public Nestable<EmitterScope> {
 
   bool hasEnvironment() const { return hasEnvironment_; }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
  private:
   // Disposable Scope here refers to any scope
   // with using bindings in it for now that is
@@ -185,7 +174,6 @@ class MOZ_STACK_CLASS EmitterScope : public Nestable<EmitterScope> {
   bool hasAsyncDisposables() const {
     return hasDisposables() && usingEmitter_->hasAwaitUsing();
   }
-#endif
 
   // The first frame slot used.
   uint32_t frameSlotStart() const {

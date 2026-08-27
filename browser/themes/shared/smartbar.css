@@ -277,7 +277,7 @@
   --multiline-editor-scrollbar-width: thin;
   --multiline-editor-border: none;
   --multiline-editor-focus-outline: none;
-  font-size: var(--font-size-large);
+  font-size: var(--font-size-root);
   padding: var(--space-xsmall);
 
   @media not (forced-colors) {
@@ -298,9 +298,12 @@
 
 /* Button container */
 .smartbar-button-container {
-  padding: var(--space-xsmall) var(--space-large) var(--space-medium);
+  padding: var(--space-xsmall) var(--space-large) var(--space-large);
   position: relative;
   display: flex;
+  /* Query container so the model-select and CTA buttons collapse based on the
+     smartbar's width rather than the window width (e.g. a narrow Ask sidebar). */
+  container: smartbar-controls / inline-size;
 }
 
 .smartbar-button-container input-model-select {

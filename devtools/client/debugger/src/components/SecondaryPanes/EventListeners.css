@@ -100,6 +100,7 @@
 
   /* When the filter input is focused, add the outline to the whole row, which contains
      the input and the clear button */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   &:has(.event-search-input:focus) {
     outline: var(--theme-focus-outline);
     outline-offset: -2px;

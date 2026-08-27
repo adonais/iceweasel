@@ -23,7 +23,8 @@ typedef struct PRCondVar PRCondVar;
 ** This may fail if memory is tight or if some operating system resource
 ** is low. In such cases, a NULL will be returned.
 */
-NSPR_API(PRCondVar*) PR_NewCondVar(PRLock *lock);
+NSPR_API(PRCondVar*)
+PR_NewCondVar(PRLock* lock);
 
 /*
 ** Destroy a condition variable. There must be no thread
@@ -31,7 +32,8 @@ NSPR_API(PRCondVar*) PR_NewCondVar(PRLock *lock);
 ** that the condvar is no longer in use.
 **
 */
-NSPR_API(void) PR_DestroyCondVar(PRCondVar *cvar);
+NSPR_API(void)
+PR_DestroyCondVar(PRCondVar* cvar);
 
 /*
 ** The thread that waits on a condition is blocked in a "waiting on
@@ -61,7 +63,8 @@ NSPR_API(void) PR_DestroyCondVar(PRCondVar *cvar);
 ** with the condition variable or the thread was interrupted (PR_Interrupt()).
 ** The particular reason can be extracted with PR_GetError().
 */
-NSPR_API(PRStatus) PR_WaitCondVar(PRCondVar *cvar, PRIntervalTime timeout);
+NSPR_API(PRStatus)
+PR_WaitCondVar(PRCondVar* cvar, PRIntervalTime timeout);
 
 /*
 ** Notify ONE thread that is currently waiting on 'cvar'. Which thread is
@@ -76,7 +79,8 @@ NSPR_API(PRStatus) PR_WaitCondVar(PRCondVar *cvar, PRIntervalTime timeout);
 ** Returns PR_FAILURE if the caller has not locked the lock associated
 ** with the condition variable.
 */
-NSPR_API(PRStatus) PR_NotifyCondVar(PRCondVar *cvar);
+NSPR_API(PRStatus)
+PR_NotifyCondVar(PRCondVar* cvar);
 
 /*
 ** Notify all of the threads waiting on the condition variable. The order
@@ -86,7 +90,8 @@ NSPR_API(PRStatus) PR_NotifyCondVar(PRCondVar *cvar);
 ** Returns PR_FAILURE if the caller has not locked the lock associated
 ** with the condition variable.
 */
-NSPR_API(PRStatus) PR_NotifyAllCondVar(PRCondVar *cvar);
+NSPR_API(PRStatus)
+PR_NotifyAllCondVar(PRCondVar* cvar);
 
 PR_END_EXTERN_C
 

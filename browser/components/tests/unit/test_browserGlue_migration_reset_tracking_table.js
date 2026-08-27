@@ -12,8 +12,8 @@ const CUSTOM_BLOCK_LIST_PREF =
 const TRACKING_TABLE_PREF = "urlclassifier.trackingTable";
 const BROWSER_VERSION = 155;
 
-const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"].getService(
-  Ci.nsIObserver
+const { ProfileDataUpgrader } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/ProfileDataUpgrader.sys.mjs"
 );
 
 add_setup(() => {
@@ -28,10 +28,9 @@ add_task(async function test_migration_reset_tracking_table() {
   // Set up user having level 2 tracking table
   Services.prefs.setBoolPref(CUSTOM_BLOCK_LIST_PREF, true);
   Services.prefs.setStringPref(TRACKING_TABLE_PREF, LEVEL_2_TRACKING_TABLE);
-  Services.prefs.setIntPref("browser.migration.version", BROWSER_VERSION);
 
   // Simulate the migration process
-  gBrowserGlue.observe(null, "browser-glue-test", "force-ui-migration");
+  ProfileDataUpgrader.upgrade(BROWSER_VERSION, BROWSER_VERSION + 1);
 
   // Check that the migration has reset the tracking table to level 1 and customBlockList is set to false
   Assert.ok(

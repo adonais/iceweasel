@@ -233,7 +233,6 @@ const JSClass PromiseCombinatorDataHolder::class_ = {
 
 // Specialized data holder for Promise.allKeyed and Promise.allSettledKeyed
 // that includes a slot for storing the keys array.
-#ifdef NIGHTLY_BUILD
 class PromiseCombinatorKeyedDataHolder : public PromiseCombinatorDataHolder {
   enum {
     // Inherits Slot_Promise, Slot_RemainingElements, Slot_ValuesArray,
@@ -268,7 +267,6 @@ const JSClass PromiseCombinatorKeyedDataHolder::class_ = {
     "PromiseCombinatorKeyedDataHolder",
     JSCLASS_HAS_RESERVED_SLOTS(SlotsCount),
 };
-#endif
 
 // Smart pointer to the "F.[[Values]]" part of the state of a Promise.all or
 // Promise.allSettled invocation, or the "F.[[Errors]]" part of the state of a
@@ -412,7 +410,6 @@ PromiseCombinatorDataHolder* PromiseCombinatorDataHolder::New(
   return dataHolder;
 }
 
-#ifdef NIGHTLY_BUILD
 PromiseCombinatorKeyedDataHolder* PromiseCombinatorKeyedDataHolder::New(
     JSContext* cx, JS::Handle<JSObject*> resultPromise,
     JS::Handle<ListObject*> keys, JS::Handle<ListObject*> values,
@@ -436,7 +433,6 @@ PromiseCombinatorKeyedDataHolder* PromiseCombinatorKeyedDataHolder::New(
   dataHolder->setFixedSlot(Slot_KeysList, ObjectValue(*keys));
   return dataHolder;
 }
-#endif
 
 namespace {
 // Generator used by PromiseObject::getID.
@@ -2668,18 +2664,15 @@ static bool PromiseReactionJob(JSContext* cx, HandleObject reactionObjIn) {
       // Step 1.d.ii.2. Let handlerResult be ThrowCompletion(argument).
       resolutionMode = RejectMode;
       handlerResult = argument;
-    }
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-    else if (handlerNum == PromiseHandler::AsyncIteratorDisposeAwaitFulfilled) {
+    } else if (handlerNum ==
+               PromiseHandler::AsyncIteratorDisposeAwaitFulfilled) {
       // Explicit Resource Management Proposal
       // 27.1.3.1 %AsyncIteratorPrototype% [ @@asyncDispose ] ( )
       // https://arai-a.github.io/ecma262-compare/?pr=3000&id=sec-%25asynciteratorprototype%25-%40%40asyncdispose
       //
       // Step 6.e.i. Return undefined.
       handlerResult = JS::UndefinedValue();
-    }
-#endif
-    else if (handlerNum == PromiseHandler::AsyncFromSyncIteratorClose) {
+    } else if (handlerNum == PromiseHandler::AsyncFromSyncIteratorClose) {
       MOZ_ASSERT(reaction->isAsyncFromSyncIterator());
 
       // 27.1.6.4 AsyncFromSyncIteratorContinuation
@@ -3728,7 +3721,6 @@ static bool Promise_static_all(JSContext* cx, unsigned argc, Value* vp) {
                                      "Argument of Promise.all");
 }
 
-#ifdef NIGHTLY_BUILD
 /**
  * Await Dictionary Proposal
  *
@@ -3812,7 +3804,6 @@ static bool Promise_static_allSettledKeyed(JSContext* cx, unsigned argc,
       "Receiver of Promise.allSettledKeyed call",
       "Argument of Promise.allSettledKeyed");
 }
-#endif
 
 [[nodiscard]] static bool PerformPromiseThen(
     JSContext* cx, Handle<PromiseObject*> promise, HandleValue onFulfilled_,
@@ -5402,7 +5393,6 @@ static void ThrowAggregateError(JSContext* cx,
   cx->setPendingException(error, stack);
 }
 
-#ifdef NIGHTLY_BUILD
 /**
  * Await Dictionary Proposal
  *
@@ -5916,7 +5906,6 @@ static bool PromiseAllSettledKeyedRejectElementFunction(JSContext* cx,
   return PromiseKeyedElementFunction(cx, argc, vp,
                                      processAllSettledRejectValue);
 }
-#endif
 
 /**
  * ES2022 draft rev d03c1ec6e235a5180fa772b6178727c17974cb14
@@ -6937,7 +6926,6 @@ template <typename T>
   return PerformPromiseThenWithReaction(cx, unwrappedPromise, reaction);
 }
 
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 // Explicit Resource Management Proposal
 // 27.1.3.1 %AsyncIteratorPrototype% [ @@asyncDispose ] ( )
 // Steps 6.c-g
@@ -6954,7 +6942,6 @@ template <typename T>
                        PromiseHandler::AsyncIteratorDisposeAwaitFulfilled,
                        PromiseHandler::Thrower, extra);
 }
-#endif
 
 [[nodiscard]] bool js::InternalAsyncGeneratorAwait(
     JSContext* cx, JS::Handle<AsyncGeneratorObject*> generator,
@@ -8318,81 +8305,16 @@ void PromiseObject::dumpOwnStringContent(js::GenericPrinter& out) const {}
 // This guarantees that any new job enqueued in the current turn will be
 // executed immediately after the current job.
 //
-// Currently we only support skipping jobs when the async function is resumed
-// at least once.
-[[nodiscard]] static bool IsTopMostAsyncFunctionCall(JSContext* cx) {
-  // If there are two async resumes on the stack we can exit early
-  // without doing any further frame inspection.
-  if (cx->asyncResumeDepth > 1) {
-    return false;
-  }
-
-  FrameIter iter(cx);
-
-  // The current frame should be the async function.
-  if (iter.done()) {
-    return false;
-  }
-
-  if (!iter.isFunctionFrame() && iter.isModuleFrame()) {
-    // The iterator is not a function frame, it is a module frame.
-    // The await cannot be skipped for modules. During InnerModuleEvaluation, it
-    // must yield execution so other modules in the same module graph can run.
-    return false;
-  }
-
-  MOZ_ASSERT(iter.calleeTemplate()->isAsync());
-
-#ifdef DEBUG
-  bool isGenerator = iter.calleeTemplate()->isGenerator();
-#endif
-
-  ++iter;
-
-  // The parent frame should be the `next` function of the generator that is
-  // internally called in AsyncFunctionResume resp. AsyncGeneratorResume.
-  if (iter.done()) {
-    return false;
-  }
-  // The initial call into an async function can happen from top-level code, so
-  // the parent frame isn't required to be a function frame. Contrary to that,
-  // the parent frame for an async generator function is always a function
-  // frame, because async generators can't directly fall through to an `await`
-  // expression from their initial call.
-  if (!iter.isFunctionFrame()) {
-    MOZ_ASSERT(!isGenerator);
-    return false;
-  }
-
-  // Always skip InterpretGeneratorResume if present.
-  JSFunction* fun = iter.calleeTemplate();
-  if (IsSelfHostedFunctionWithName(fun, cx->names().InterpretGeneratorResume)) {
-    ++iter;
-
-    if (iter.done()) {
-      return false;
-    }
-
-    MOZ_ASSERT(iter.isFunctionFrame());
-    fun = iter.calleeTemplate();
-  }
-
-  if (!IsSelfHostedFunctionWithName(fun, cx->names().AsyncFunctionNext) &&
-      !IsSelfHostedFunctionWithName(fun, cx->names().AsyncGeneratorNext)) {
-    return false;
-  }
-
-  ++iter;
-
-  // There should be no more frames.
-  if (iter.done()) {
-    MOZ_ASSERT(cx->asyncResumeDepth <= 1);
-    return true;
-  }
-
-  return false;
-}
-
+// The predicate is split across the JSOp::CanSkipAwait op and this function:
+//
+//  - The op calls js::CanSkipAwait iff the stack frame is the first frame of
+//    its activation. Checking this in JIT code is much cheaper than checking it
+//    here in C++.
+//
+//  - js::CanSkipAwait then requires the activation to have been entered to
+//    resume a suspended async function and to be the context's only activation.
+//
+// This lets us avoid an expensive frame iteration in non-debug builds.
 [[nodiscard]] bool js::CanSkipAwait(JSContext* cx, HandleValue val,
                                     bool* canSkip) {
   if (!cx->canSkipEnqueuingJobs) {
@@ -8400,10 +8322,23 @@ void PromiseObject::dumpOwnStringContent(js::GenericPrinter& out) const {}
     return true;
   }
 
-  if (!IsTopMostAsyncFunctionCall(cx)) {
+  // The op already established the stack frame is the first frame of its
+  // activation. Ensure the activation is a resume and the sole activation.
+  Activation* act = cx->activation();
+  if (!act->enteredForGeneratorResume() || act->prev()) {
     *canSkip = false;
     return true;
   }
+
+  // In debug builds, assert our JS caller is the only frame on the stack.
+#ifdef DEBUG
+  FrameIter iter(cx);
+  MOZ_ASSERT(!iter.done());
+  MOZ_ASSERT(iter.isFunctionFrame(), "CanSkipAwait is only used for functions");
+  MOZ_ASSERT(iter.calleeTemplate()->isAsync());
+  ++iter;
+  MOZ_ASSERT(iter.done());
+#endif
 
   // Primitive values cannot be 'thenables', so we can trivially skip the
   // await operation.
@@ -8763,10 +8698,8 @@ static const JSPropertySpec promise_properties[] = {
 static const JSFunctionSpec promise_static_methods[] = {
     JS_FN("all", Promise_static_all, 1, 0),
     JS_FN("allSettled", Promise_static_allSettled, 1, 0),
-#ifdef NIGHTLY_BUILD
     JS_FN("allKeyed", Promise_static_allKeyed, 1, 0),
     JS_FN("allSettledKeyed", Promise_static_allSettledKeyed, 1, 0),
-#endif
     JS_FN("any", Promise_static_any, 1, 0),
     JS_FN("race", Promise_static_race, 1, 0),
     JS_FN("reject", Promise_reject, 1, 0),

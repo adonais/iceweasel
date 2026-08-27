@@ -45,6 +45,10 @@ const DISALLOWED = {
     flag: Ci.nsIWebBrowserChrome.CHROME_SUPPRESS_ANIMATION,
     defaults_to: false,
   },
+  suppressinitialfullscreen: {
+    flag: Ci.nsIWebBrowserChrome.CHROME_SUPPRESS_INITIAL_FULLSCREEN,
+    defaults_to: false,
+  },
   extrachrome: {
     flag: Ci.nsIWebBrowserChrome.CHROME_EXTRA,
     defaults_to: false,
@@ -71,10 +75,6 @@ const DISALLOWED = {
   },
   resizable: {
     flag: Ci.nsIWebBrowserChrome.CHROME_WINDOW_RESIZE,
-    defaults_to: true,
-  },
-  status: {
-    flag: Ci.nsIWebBrowserChrome.CHROME_STATUSBAR,
     defaults_to: true,
   },
 };

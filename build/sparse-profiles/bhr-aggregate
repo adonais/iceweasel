@@ -1,0 +1,3 @@
+[include]
+path:taskcluster/scripts/bhr-aggregate.py
+path:toolkit/components/backgroundhangmonitor/aggregation

@@ -206,7 +206,7 @@ class Completion {
 
   // The JS::Result macros want to assign to an existing variable, so having a
   // default constructor is handy.
-  Completion() : variant(Terminate()) {}
+  Completion() = default;
 
   // Construct a completion from a specific variant.
   //
@@ -280,7 +280,7 @@ class Completion {
   struct BuildValueMatcher;
   struct ToResumeModeMatcher;
 
-  Variant variant;
+  Variant variant{Terminate()};
 };
 
 using WeakGlobalObjectSet =

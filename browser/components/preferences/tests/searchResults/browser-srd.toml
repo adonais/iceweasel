@@ -20,6 +20,8 @@ tags = "os_integration"
 
 ["browser_search_results_back_button.js"]
 
+["browser_search_results_fallback.js"]
+
 ["browser_search_subdialogs_within_preferences_4.js"]
 
 ["browser_search_subdialogs_within_preferences_5.js"]

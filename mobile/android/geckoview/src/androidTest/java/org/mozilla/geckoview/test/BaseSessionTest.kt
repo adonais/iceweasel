@@ -322,12 +322,6 @@ open class BaseSessionTest(
     fun GeckoSession.setHandlingUserInput(handlingUserInput: Boolean) =
         sessionRule.setHandlingUserInput(this, handlingUserInput)
 
-    fun GeckoSession.triggerCookieBannerDetected() =
-        sessionRule.triggerCookieBannerDetected(this)
-
-    fun GeckoSession.triggerCookieBannerHandled() =
-        sessionRule.triggerCookieBannerHandled(this)
-
     fun GeckoSession.triggerTranslationsOffer() =
         sessionRule.triggerTranslationsOffer(this)
 

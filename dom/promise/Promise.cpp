@@ -807,7 +807,12 @@ void Promise::ReportRejectedPromise(JSContext* aCx,
     } else {
       // Use the resolution site as the exception stack
       JS::ExceptionStack exnStack(aCx, unwrapped, resolutionSite);
-      if (!report.init(aCx, exnStack, JS::ErrorReportBuilder::NoSideEffects)) {
+      // This report only ends up in the console, so it's not observable by web
+      // content and we can afford to list the rejection value's own property
+      // names instead of reporting a bare "Object".
+      if (!report.init(
+              aCx, exnStack,
+              JS::ErrorReportBuilder::NoSideEffectsListPropertyNames)) {
         JS_ClearPendingException(aCx);
         return;
       }

@@ -9,7 +9,7 @@
 
 add_common_setup();
 
-requestLongerTimeout(2);
+requestLongerTimeout(3);
 
 async function testPressingKeys(sequence) {
   await withNewTab(REPORTABLE_PAGE_URL, async () => {
@@ -276,8 +276,11 @@ add_task(async function testBackButtons() {
         "KEY_Enter"
       );
 
-      if (menu.menuDescription == "Help Menu") {
-        ok(!rbs.backButton, "Help menu main panel has no back button");
+      if (!menu.showsBackButton) {
+        ok(
+          !rbs.backButton,
+          `${menu.menuDescription} main panel has no back button`
+        );
       } else {
         await rbs.tabTo(
           "#report-broken-site-popup-mainView .subviewbutton-back"

@@ -26,8 +26,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   WindowsRegistry: "resource://gre/modules/WindowsRegistry.sys.mjs",
-  WindowsVersionInfo:
-    "resource://gre/modules/components-utils/WindowsVersionInfo.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "fxAccounts", () => {
@@ -82,8 +80,8 @@ export var Policy = {
 var gActiveExperimentStartupBuffer = new Map();
 
 // For Powering arewegleanyet.com (See bug 1944592)
-// Legacy Count: 118
-// Glean Count: 118
+// Legacy Count: 116
+// Glean Count: 116
 
 var gGlobalEnvironment;
 function getGlobal() {
@@ -225,9 +223,6 @@ const DEFAULT_ENVIRONMENT_PREFS = new Map([
   ["app.support.baseURL", { what: RECORD_PREF_VALUE }],
   ["accessibility.browsewithcaret", { what: RECORD_PREF_VALUE }],
   ["accessibility.force_disabled", { what: RECORD_PREF_VALUE }],
-  ["app.normandy.test-prefs.bool", { what: RECORD_PREF_VALUE }],
-  ["app.normandy.test-prefs.integer", { what: RECORD_PREF_VALUE }],
-  ["app.normandy.test-prefs.string", { what: RECORD_PREF_VALUE }],
   ["app.shield.optoutstudies.enabled", { what: RECORD_PREF_VALUE }],
   ["app.update.interval", { what: RECORD_PREF_VALUE }],
   ["app.update.service.enabled", { what: RECORD_PREF_VALUE }],
@@ -1674,34 +1669,35 @@ EnvironmentCache.prototype = {
       Glean.systemOs.distroVersion.set(this._osData.distroVersion);
     } else if (AppConstants.platform === "win") {
       // The path to the "UBR" key, queried to get additional version details on Windows.
-      const WINDOWS_UBR_KEY_PATH =
+      const CURRENT_VERSION_PATH =
         "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
 
-      let versionInfo = lazy.WindowsVersionInfo.get({ throwOnError: false });
-      this._osData.servicePackMajor = versionInfo.servicePackMajor;
-      this._osData.servicePackMinor = versionInfo.servicePackMinor;
-      this._osData.windowsBuildNumber = versionInfo.buildNumber;
-      Glean.systemOs.servicePackMajor.set(this._osData.servicePackMajor);
-      Glean.systemOs.servicePackMinor.set(this._osData.servicePackMinor);
-      Glean.systemOs.windowsBuildNumber.set(this._osData.windowsBuildNumber);
-      // We only need the UBR if we're at or above Windows 10.
-      if (
-        typeof this._osData.version === "string" &&
-        Services.vc.compare(this._osData.version, "10") >= 0
-      ) {
-        // Query the UBR key and only add it to the environment if it's available.
-        // |readRegKey| doesn't throw, but rather returns 'undefined' on error.
-        let ubr = lazy.WindowsRegistry.readRegKey(
+      // To make sure the telemetry data is as accurate as possible, use the
+      // build number from the registry. This avoids a future compatibility shim
+      // giving us the wrong value, and we aren't changing behaviour depending
+      // on this so this doesn't circumvent any shim.
+      // See: https://randomascii.wordpress.com/2022/01/06/determinism-bugs-part-two/
+      // Its type is REG_SZ for some reason, so coerce it to a Number.
+      let build = Number(
+        lazy.WindowsRegistry.readRegKey(
           Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
-          WINDOWS_UBR_KEY_PATH,
-          "UBR",
+          CURRENT_VERSION_PATH,
+          "CurrentBuild",
           Ci.nsIWindowsRegKey.WOW64_64
-        );
-        if (Number.isInteger(ubr)) {
-          Glean.systemOs.windowsUbr.set(ubr);
-        }
-        this._osData.windowsUBR = ubr !== undefined ? ubr : null;
-      }
+        )
+      );
+      this._osData.windowsBuildNumber = Number.isInteger(build) ? build : null;
+      Glean.systemOs.windowsBuildNumber.set(this._osData.windowsBuildNumber);
+
+      // The UBR value is already a REG_DWORD, so don't coerce it.
+      let ubr = lazy.WindowsRegistry.readRegKey(
+        Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
+        CURRENT_VERSION_PATH,
+        "UBR",
+        Ci.nsIWindowsRegKey.WOW64_64
+      );
+      this._osData.windowsUBR = Number.isInteger(ubr) ? ubr : null;
+      Glean.systemOs.windowsUbr.set(ubr);
     }
 
     return this._osData;

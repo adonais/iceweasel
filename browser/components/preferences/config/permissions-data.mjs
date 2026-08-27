@@ -537,8 +537,7 @@ SettingGroupManager.registerGroups({
             control: "moz-box-button",
             l10nId: "permissions-localhost2",
             controlAttrs: {
-              ".iconSrc":
-                "chrome://browser/skin/notification-icons/local-host.svg",
+              ".iconSrc": "chrome://global/skin/icons/local-host.svg",
               "search-l10n-ids":
                 "permissions-remove.label,permissions-remove-all.label,permissions-site-localhost-window.title,permissions-site-localhost-desc,permissions-site-localhost-disable-label,permissions-site-localhost-disable-desc,",
             },

@@ -178,7 +178,6 @@ panel toolbarseparator {
 }
 
 panelmultiview {
-  align-items: flex-start;
   min-width: 0;
   min-height: 0;
 
@@ -424,7 +423,7 @@ menupopup[emptyplacesresult] > .hide-if-empty-places-result {
     position: absolute;
     background-image: url(chrome://browser/skin/success-animation.svg);
     background-repeat: no-repeat;
-    /* frames are 16px wide by 14px high */
+    /* frames are 16px wide by 16px high */
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     min-width: 304px;
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
@@ -502,8 +501,7 @@ menupopup[emptyplacesresult] > .hide-if-empty-places-result {
  * in the menubar, which isn't a descendant of #appMenu-popup.
  * Target it specifically in this rule to make it the same width
  * as if it was a standard panelview opened from the app menu. */
-#report-broken-site-popup-mainView[mainview],
-#PanelUI-fxa {
+#report-broken-site-popup-mainView[mainview] {
   width: 22.5em;
 }
 
@@ -804,8 +802,96 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   }
 }
 
-#PanelUI-fxa[showing-fxa-menu-message] #fxa-manage-account-button {
+/* When signed out with no menu message or update banner taking up the top of
+   the app menu, show the richer sign-in promo in place of the compact
+   "Sync and Save Data" sign-in row. */
+#appMenu-fxa-sign-in-promo {
   display: none;
+}
+
+/* FIXME(bug 2061145): Remove :has() usage, use showing-* selectors instead */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+:root[fxastatus="not_configured"]:not([fxadisabled="true"])
+  #appMenu-mainView:not([showing-fxa-menu-message], [showing-default-cta-menu-message]):not(:has(#appMenu-update-banner:not([hidden]))) {
+  & #appMenu-fxa-status2 {
+    display: none;
+  }
+
+  & #appMenu-fxa-sign-in-promo {
+    display: flex;
+  }
+}
+
+#PanelUI-fxa[showing-fxa-menu-message] #PanelUI-fxa-menu-manage-account-button,
+#PanelUI-fxa[showing-fxa-menu-message] #PanelUI-fxa-menu-sign-in-promo,
+#PanelUI-fxa[showing-fxa-menu-message] #PanelUI-fxa-menu-signed-out-card {
+  display: none;
+}
+
+#PanelUI-fxa-menu-sign-in-promo,
+#appMenu-fxa-sign-in-promo {
+  background-color: var(--promo-background-color-vibrant);
+  border-radius: var(--promo-border-radius);
+  color: var(--promo-message-text-color-vibrant);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding: 10px;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  gap: var(--dimension-8);
+  overflow: hidden;
+  margin: 0 var(--space-medium) var(--space-medium);
+
+  & .fxa-menu-sign-in-promo-image {
+    width: var(--icon-size-xlarge);
+    height: auto;
+    flex-shrink: 0;
+  }
+
+  & .fxa-menu-sign-in-promo-text {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    gap: var(--dimension-2);
+  }
+
+  & .fxa-menu-sign-in-promo-heading {
+    font-weight: var(--font-weight-heading);
+    font-size: var(--font-size-heading-medium);
+    margin: 0;
+  }
+
+  & .fxa-menu-sign-in-promo-message {
+    margin: 0;
+    font-size: var(--font-size-small);
+  }
+}
+
+#PanelUI-fxa-menu-signed-out-card {
+  gap: var(--space-medium);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding: var(--panel-subview-body-padding-block) var(--space-medium);
+  margin: var(--panel-padding-block) var(--panel-padding-block);
+
+  & .fxa-menu-signed-out-avatar {
+    width: var(--icon-size-small);
+    height: var(--icon-size-small);
+    flex-shrink: 0;
+    -moz-context-properties: fill;
+    fill: currentColor;
+  }
+
+  & .fxa-menu-signed-out-text {
+    min-width: 0;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    gap: var(--dimension-2);
+  }
+
+  & .fxa-menu-signed-out-email {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  & .fxa-menu-signed-out-message {
+    margin-block: 0;
+    font-size: var(--font-size-small);
+    color: var(--text-color-error);
+  }
 }
 
 :root:not([fxastatus="signedin"]) #PanelUI-fxa-menu-syncnow-button {
@@ -866,8 +952,12 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   align-self: center;
 }
 
-#appMenu-fxa-status2[fxastatus] > #appMenu-fxa-label2 > vbox > #appMenu-header-description,
-#appMenu-fxa-text {
+#appMenu-fxa-label2,
+#appMenu-fxa-label2 > vbox {
+  min-width: 0;
+}
+
+#appMenu-fxa-status2[fxastatus] > #appMenu-fxa-label2 > vbox > #appMenu-header-description {
   font-weight: var(--font-weight-semibold);
 }
 
@@ -876,7 +966,6 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   display: none;
 }
 
-#fxa-manage-account-button > vbox > label,
 #PanelUI-fxa-menu-syncnow-button > hbox > label,
 #PanelUI-remotetabs-syncnow > hbox > label,
 #appMenu-fxa-label2 > vbox > label {
@@ -894,18 +983,19 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 #PanelUI-fxa-menu-secure-sync-subpanel,
 #PanelUI-fxa-device-recent-tabs {
   height: fit-content;
+  /* FIXME: Why is !important needed here? */
   min-height: 0 !important;
 }
 
-.panel-viewcontainer:has(#PanelUI-fxa-menu-secure-sync-subpanel[visible], #PanelUI-fxa-device-recent-tabs[visible]) {
+/* FIXME(bug 2061145): We should track visible panel without using :has() */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+.panel-viewcontainer:has(#PanelUI-fxa-menu-secure-sync-subpanel[visible], #PanelUI-fxa-device-recent-tabs[visible], #PanelUI-profiles[visible]) {
+  /* FIXME: Why is !important needed here? */
   min-height: 0 !important;
 }
 
-#PanelUI-fxa-cta-menu,
-#PanelUI-fxa-menu-services {
-  .fxa-cta-button label {
-    margin: 0;
-  }
+#PanelUI-fxa-cta-menu .fxa-cta-button label {
+  margin: 0;
 }
 
 #appMenu-fxa-status2 {
@@ -1005,23 +1095,62 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 .fxa-menu-sync-status-off-card {
   gap: var(--space-medium);
   padding: var(--panel-menuitem-padding);
+  margin: var(--panel-menuitem-margin);
 
   > vbox {
     min-width: 0;
   }
+
+  /* The card's own gap handles spacing, so drop the icon's default margin. */
+  > .fxa-menu-sync-status-icon {
+    margin-inline-end: 0;
+  }
 }
 
 .fxa-menu-sync-status-title {
-  font-weight: var(--font-weight-semibold);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  margin: 0;
 }
 
 .fxa-menu-sync-status-description {
   color: var(--text-color-deemphasized);
   font-size: var(--font-size-small);
+  margin: 0;
 }
 
 .fxa-menu-sync-status-description.fxa-menu-sync-status-description-error {
   color: var(--text-color-error);
+}
+
+#PanelUI-fxa-menu-manage-account-button {
+  align-items: center;
+  border-radius: var(--border-radius-circle);
+
+  > vbox {
+    min-width: 0;
+  }
+
+  & .fxa-menu-manage-account-avatar {
+    width: var(--icon-size-xlarge);
+    height: var(--icon-size-xlarge);
+    flex-shrink: 0;
+    margin-inline-end: var(--space-medium);
+    border-radius: var(--border-radius-circle);
+    list-style-image: var(--avatar-image-url);
+    -moz-context-properties: fill;
+    fill: currentColor;
+  }
+
+  & .fxa-menu-manage-account-email {
+    font-weight: var(--font-weight-semibold);
+    margin-block: 0;
+  }
+
+  & .fxa-menu-manage-account-subtitle {
+    color: var(--text-color-deemphasized);
+    font-size: var(--font-size-small);
+    margin-block: 0;
+  }
 }
 
 /* Firefox Account Toolbar Panel */
@@ -1176,9 +1305,14 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   list-style-image: url(chrome://browser/skin/fxa/monitor.svg);
 }
 
-#PanelUI-fxa-menu-relay-button,
-#PanelUI-services-menu-relay-button {
+#PanelUI-fxa-menu-relay-button {
   list-style-image: url(chrome://browser/content/logos/relay-monochrome.svg);
+}
+
+.PanelUI-fxa-menu-share-firefox-button {
+  list-style-image: url(chrome://browser/content/logos/share-firefox.svg);
+  -moz-context-properties: fill;
+  fill: currentColor;
 }
 
 #PanelUI-fxa-menu-vpn-button {
@@ -1187,9 +1321,12 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   fill: currentColor;
 }
 
-#PanelUI-fxa-menu-create-profile-button,
-#appMenu-create-profile-button {
+#PanelUI-fxa-menu-create-profile-button {
   list-style-image: url("chrome://global/skin/icons/users.svg");
+
+  > .toolbarbutton-icon {
+    margin-inline-end: var(--space-xsmall);
+  }
 }
 
 #PanelUI-fxa-menu-create-profile-content {
@@ -1224,6 +1361,12 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   list-style-image: url("chrome://browser/skin/device-phone.svg");
   -moz-context-properties: fill;
   fill: currentColor;
+
+  /* Match the icon-to-text gap of the sync status button above it, whose icon
+     uses margin-inline-end: var(--space-medium). */
+  > .toolbarbutton-text {
+    padding-inline-start: var(--space-medium);
+  }
 }
 
 :root:not([fxastatus="signedin"]) #PanelUI-fxa-menu-connect-device-button {
@@ -1296,6 +1439,11 @@ panelmultiview[mainViewId="PanelUI-fxa"] #PanelUI-remotetabs-syncnow {
 
   &.signintosync {
     list-style-image: url("chrome://browser/skin/sync.svg");
+  }
+
+  /* Override the .subviewbutton > .toolbarbutton-icon { margin: 0 } reset. */
+  &.subviewbutton > .toolbarbutton-icon {
+    margin-inline-end: var(--space-xsmall);
   }
 }
 
@@ -1909,8 +2057,8 @@ toolbarbutton[itemtype="showinactivebutton"] {
     url(chrome://browser/skin/panic-panel/header.png),
     url(chrome://browser/skin/panic-panel/header@2x.png) 2x
   );
-  max-height: var(--size-item-xlarge);
-  width: var(--size-item-xlarge);
+  max-height: var(--icon-size-xxlarge);
+  width: var(--icon-size-xxlarge);
 }
 
 #panic-button-success-header {
@@ -2434,13 +2582,6 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 
 /* Report Broken Site panels */
 
-/* Hide the Report Broken Site menu item that
- * is on the App Menu's Help sub-menu.
- */
-#appMenu_help_reportBrokenSite {
-  display: none;
-}
-
 .report-broken-site-view {
   max-height: 80vh;
 
@@ -2797,18 +2938,14 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   min-height: 0 !important;
 }
 
-.panel-viewcontainer:has(#PanelUI-profiles[visible]) {
-  min-height: 0 !important;
-}
-
 /* ----- Profiles FxA panel ----- */
 
-/* Special case: hide the profiles menuitem if the FxA/Sync panel is shown as
- * a submenu of the app menu, rather than anchored to the FxA/Sync toolbar
- * button. */
+/* Special case: hide the profiles menuitem and its separator if the FxA/Sync
+ * panel is shown as a submenu of the app menu, rather than anchored to the
+ * FxA/Sync toolbar button. */
 #appMenu-popup
   panelmultiview[mainViewId="appMenu-mainView"]
-  :is(#PanelUI-fxa-menu-profiles-header-separator, #PanelUI-fxa-menu-profiles-header-label, #PanelUI-fxa-menu-profile-buttons) {
+  :is(#PanelUI-fxa-menu-profiles-header-label, #PanelUI-fxa-menu-profile-buttons, #PanelUI-fxa-menu-profiles-separator) {
   display: none;
 }
 

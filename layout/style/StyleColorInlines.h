@@ -9,7 +9,6 @@
 
 #include "mozilla/ServoStyleConsts.h"
 #include "nsColor.h"
-#include "nsStyleUtil.h"
 
 namespace mozilla {
 

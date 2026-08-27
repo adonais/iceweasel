@@ -5,25 +5,38 @@
 package org.mozilla.apilint
 
 import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.ProjectLayout
+import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Classpath
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.external.javadoc.StandardJavadocDocletOptions
+import java.io.File
 
+// `Javadoc` is cacheable, but Gradle does not inherit that to subclasses.
+@CacheableTask
 abstract class ApiCompatLintTask : Javadoc() {
     @get:OutputFile
     abstract val outputFile: RegularFileProperty
+
+    /**
+     * The doclet writes a source map beside [outputFile] which the lint tasks read, so it has to be
+     * declared: otherwise Gradle treats the task as complete, or restores it from the cache, with the
+     * map missing. Derive it with [apiMapFileFor] so the name stays in step with [outputFile].
+     */
+    @get:OutputFile
+    abstract val apiMapFile: RegularFileProperty
 
     @get:Input
     abstract val packageFilter: Property<String>
@@ -31,7 +44,12 @@ abstract class ApiCompatLintTask : Javadoc() {
     @get:Input
     abstract val skipClassesRegex: ListProperty<String>
 
-    @get:Input
+    /**
+     * Serves only to make the paths recorded in [apiMapFile] relative, so it stays out of the cache
+     * key: the outputs hold no absolute paths, and including this one would stop cache entries being
+     * shared between checkouts.
+     */
+    @get:Internal
     abstract val rootDir: Property<String>
 
     @get:InputFiles
@@ -42,13 +60,8 @@ abstract class ApiCompatLintTask : Javadoc() {
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val docletPath: RegularFileProperty
 
-    @get:OutputDirectory
-    abstract val javadocDestinationDir: DirectoryProperty
-
     @TaskAction
     override fun generate() {
-        destinationDir = javadocDestinationDir.get().asFile
-
         val opts = options as StandardJavadocDocletOptions
         opts.doclet = "org.mozilla.doclet.ApiDoclet"
         opts.docletpath = listOf(docletPath.get().asFile)
@@ -67,3 +80,10 @@ abstract class ApiCompatLintTask : Javadoc() {
         super.generate()
     }
 }
+
+/**
+ * The API map that the doclet writes when handed [apiFile]: it appends `.map` to the output name, and
+ * the lint tasks read it back, so both sides derive the path from here rather than repeating it.
+ */
+internal fun apiMapFileFor(layout: ProjectLayout, apiFile: Provider<RegularFile>): Provider<RegularFile> =
+    layout.file(apiFile.map { File("${it.asFile.path}.map") })

@@ -16,7 +16,7 @@ logger = PerfDocLogger()
 ON_TRY = "MOZ_AUTOMATION" in os.environ
 
 
-def save_file(file_content, path, extension="rst"):
+def save_file(file_content, path, extension="md"):
     """
     Saves data into a file.
 

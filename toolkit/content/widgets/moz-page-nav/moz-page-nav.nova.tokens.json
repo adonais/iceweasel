@@ -1,0 +1,79 @@
+{
+  "button": {
+    "background": {
+      "color": {
+        "hover": {
+          "value": "{button.background.color.hover}"
+        },
+        "active": {
+          "value": "{button.background.color.active}"
+        },
+        "selected": {
+          "value": "{color.accent.primary.@base}"
+        }
+      }
+    },
+    "border": {
+      "color": {
+        "@base": {
+          "value": {
+            "default": "{border.color.transparent}",
+            "forcedColors": "ButtonText"
+          }
+        }
+      },
+      "radius": {
+        "@base": {
+          "value": "{border.radius.circle}"
+        },
+        "focused": {
+          "value": "{border.radius.circle}"
+        }
+      }
+    },
+    "indicator": {
+      "background": {
+        "color": {
+          "value": "transparent"
+        }
+      },
+      "width": {
+        "value": "0"
+      }
+    },
+    "padding": {
+      "@base": {
+        "value": "{space.medium}"
+      },
+      "small": {
+        "value": "{space.medium}"
+      }
+    },
+    "text": {
+      "color": {
+        "selected": {
+          "value": "{button.text.color.primary.@base}"
+        }
+      }
+    }
+  },
+  "focus": {
+    "outline": {
+      "offset": {
+        "value": "{focus.outline.offset}"
+      }
+    },
+    "padding": {
+      "value": {
+        "default": "calc(var(--focus-outline-offset) + var(--focus-outline-width))"
+      }
+    }
+  },
+  "hr": {
+    "background": {
+      "color": {
+        "value": "{border.color.deemphasized.@base}"
+      }
+    }
+  }
+}

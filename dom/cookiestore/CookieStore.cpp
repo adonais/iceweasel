@@ -317,11 +317,13 @@ bool ValidateCookieNamePrefix(const nsAString& aName, const nsAString& aValue,
   return true;
 }
 
-void CookieStructToList(const nsTArray<CookieStruct>& aData,
-                        nsTArray<CookieListItem>& aResult) {
-  for (const CookieStruct& data : aData) {
+void CookieStoreGetItemsToList(const nsTArray<CookieStoreGetItem>& aData,
+                               nsTArray<CookieListItem>& aResult) {
+  aResult.SetCapacity(aData.Length());
+  for (const CookieStoreGetItem& data : aData) {
     CookieListItem* item = aResult.AppendElement();
-    CookieStore::CookieStructToItem(data, item);
+    item->mName.Construct(data.name());
+    item->mValue.Construct(data.value());
   }
 }
 
@@ -905,7 +907,7 @@ already_AddRefed<Promise> CookieStore::GetInternal(
               }
 
               nsTArray<CookieListItem> list;
-              CookieStructToList(aResult.ResolveValue(), list);
+              CookieStoreGetItemsToList(aResult.ResolveValue(), list);
 
               if (!aOnlyTheFirstMatch) {
                 promise->MaybeResolve(list);

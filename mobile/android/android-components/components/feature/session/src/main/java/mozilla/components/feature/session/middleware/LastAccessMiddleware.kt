@@ -16,7 +16,9 @@ import mozilla.components.lib.state.Store
 /**
  * [Middleware] that handles updating the [TabSessionState.lastAccess] when a tab is selected.
  */
-class LastAccessMiddleware : Middleware<BrowserState, BrowserAction> {
+class LastAccessMiddleware(
+    private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
+) : Middleware<BrowserState, BrowserAction> {
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,
@@ -73,6 +75,6 @@ class LastAccessMiddleware : Middleware<BrowserState, BrowserAction> {
     }
 
     private fun Store<BrowserState, BrowserAction>.dispatchUpdateActionForId(id: String) {
-        dispatch(LastAccessAction.UpdateLastAccessAction(id, System.currentTimeMillis()))
+        dispatch(LastAccessAction.UpdateLastAccessAction(id, currentTimeMillis()))
     }
 }

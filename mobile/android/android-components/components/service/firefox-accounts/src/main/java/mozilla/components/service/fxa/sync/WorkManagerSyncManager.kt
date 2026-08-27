@@ -24,8 +24,10 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import mozilla.appservices.fxaclient.FxaException
 import mozilla.appservices.sync15.SyncTelemetryPing
 import mozilla.appservices.syncmanager.ServiceStatus
+import mozilla.appservices.syncmanager.SyncAuthInfo
 import mozilla.appservices.syncmanager.SyncEngineSelection
 import mozilla.appservices.syncmanager.SyncParams
 import mozilla.appservices.syncmanager.SyncTelemetry
@@ -33,8 +35,9 @@ import mozilla.components.concept.storage.KeyProvider
 import mozilla.components.concept.sync.SyncConfig
 import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.service.fxa.FxaDeviceSettingsCache
-import mozilla.components.service.fxa.SyncAuthInfoCache
+import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.GlobalAccountManager
+import mozilla.components.service.fxa.manager.SCOPE_SYNC
 import mozilla.components.service.fxa.manager.SyncEnginesStorage
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.observer.Observable
@@ -246,7 +249,7 @@ internal class WorkManagerSyncDispatcher(
             .addTag(SyncWorkerTag.Common.name)
             .addTag(SyncWorkerTag.Debounce.name)
             .setBackoffCriteria(
-                BackoffPolicy.EXPONENTIAL,
+                BackoffPolicy.LINEAR,
                 SYNC_WORKER_BACKOFF_DELAY_MINUTES,
                 TimeUnit.MINUTES,
             )
@@ -271,15 +274,14 @@ internal class WorkManagerSyncDispatcher(
             .addTag(if (debounce) SyncWorkerTag.Debounce.name else SyncWorkerTag.Immediate.name)
             .setInitialDelay(delayMs, TimeUnit.MILLISECONDS)
             .setBackoffCriteria(
-                BackoffPolicy.EXPONENTIAL,
+                BackoffPolicy.LINEAR,
                 SYNC_WORKER_BACKOFF_DELAY_MINUTES,
                 TimeUnit.MINUTES,
             )
             .build()
     }
 
-    @VisibleForTesting
-    internal fun getWorkerData(
+    private fun getWorkerData(
         reason: SyncReason,
         customEngineSubset: List<SyncEngine> = listOf(),
     ): Data {
@@ -297,6 +299,9 @@ internal class WorkManagerSyncWorker(
 ) : CoroutineWorker(context, params) {
     private val logger = Logger("SyncWorker")
 
+    private val accountManager: FxaAccountManager
+        get() = GlobalAccountManager.requireAccountManager()
+
     @VisibleForTesting
     internal fun isDebounced(): Boolean {
         return params.tags.contains(SyncWorkerTag.Debounce.name)
@@ -308,13 +313,7 @@ internal class WorkManagerSyncWorker(
             return false
         }
 
-        return engineSyncTimestamp[engine]?.let {
-            (System.currentTimeMillis() - it) < SYNC_STAGGER_BUFFER_MS
-        } ?: false
-    }
-
-    private fun updateEngineSyncedTime(engine: String) {
-        engineSyncTimestamp[engine] = System.currentTimeMillis()
+        return engineSyncTimestamp[engine]?.let { isWithinStaggerBuffer(it) } ?: false
     }
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
@@ -335,7 +334,7 @@ internal class WorkManagerSyncWorker(
                 else -> throw IllegalStateException("Invalid syncable store: $it")
             }
 
-            updateEngineSyncedTime(engine.nativeName)
+            recordEngineSyncedTime(engine.nativeName)
             engine to checkNotNull(GlobalSyncableStoreProvider.getLazyStoreWithKey(engine)) {
                 "SyncableStore missing from GlobalSyncableStoreProvider: ${engine.nativeName}"
             }
@@ -391,8 +390,9 @@ internal class WorkManagerSyncWorker(
         // We need to know the reason we're syncing.
         val reason = params.inputData.getString(KEY_REASON)!!.toSyncReason()
 
-        // We need a cached "sync auth info" object.
-        val syncAuthInfo = SyncAuthInfoCache(context).getCached() ?: return Result.failure()
+        // We need a "sync auth info" object.
+        val syncAuthInfo =
+            getSyncAuthInfo() ?: return Result.failure()
 
         // We need any persisted state that we received from RustSyncManager in the past.
         // We should be able to pass a `null` value, but currently the library will crash.
@@ -445,7 +445,7 @@ internal class WorkManagerSyncWorker(
         val syncParams = SyncParams(
             reason = reason.toRustSyncReason(),
             engines = enginesToSync,
-            authInfo = syncAuthInfo.toNative(),
+            authInfo = syncAuthInfo,
             enabledChanges = enabledChanges,
             persistedState = currentSyncState,
             deviceSettings = deviceSettings,
@@ -494,7 +494,7 @@ internal class WorkManagerSyncWorker(
                 // in Fennec, but for very specific reasons that aren't relevant here. We could have
                 // a timestamp per store, or whatever we want here really.
                 // For now, we just update it every time we succeed to sync.
-                setLastSynced(context, System.currentTimeMillis())
+                setLastSynced(context)
                 Result.success()
             }
 
@@ -533,6 +533,34 @@ internal class WorkManagerSyncWorker(
         }
     }
 
+    /**
+     * Get sync auth info and notify the sync observers of any error
+     */
+    private suspend fun getSyncAuthInfo(): SyncAuthInfo? {
+        return try {
+            val account = accountManager.connectedAccount() ?: error("No connected account")
+            val token = account.getAccessToken(SCOPE_SYNC)
+                ?: error("Unable to retrieve the sync access token")
+            val tokenServerUrl = account.getTokenServerEndpointURL()
+                ?: error("Unable to retrieve the token server url")
+
+            val authKey = token.key ?: error("Access token unexpectedly without key")
+
+            SyncAuthInfo(
+                kid = authKey.kid,
+                fxaAccessToken = token.token,
+                syncKey = authKey.k,
+                tokenserverUrl = tokenServerUrl,
+            )
+        } catch (exception: FxaException.Forbidden) {
+            logger.error("Account is not authorized for the Sync scope", exception)
+            null
+        } catch (exception: IllegalStateException) {
+            logger.error("Error getting sync auth info", exception)
+            null
+        }
+    }
+
     companion object {
         @VisibleForTesting
         internal const val SYNC_STAGGER_BUFFER_MS = 5 * 1000L // 5 seconds.
@@ -547,6 +575,14 @@ private const val SYNC_LAST_SYNCED_KEY = "lastSynced"
 private const val SYNC_STATE_KEY = "persistedState"
 
 private const val SYNC_STARTUP_DELAY_MS = 5 * 1000L // 5 seconds.
+
+@VisibleForTesting
+internal fun isWithinStaggerBuffer(lastSyncedMs: Long, now: Long = System.currentTimeMillis()): Boolean =
+    (now - lastSyncedMs) < WorkManagerSyncWorker.SYNC_STAGGER_BUFFER_MS
+
+private fun recordEngineSyncedTime(engine: String, now: Long = System.currentTimeMillis()) {
+    WorkManagerSyncWorker.engineSyncTimestamp[engine] = now
+}
 
 fun getLastSynced(context: Context): Long {
     return context
@@ -568,12 +604,14 @@ internal fun getSyncState(context: Context): String? {
  * Saves the lastSyncedTime to the shared preferences
  *
  * @param context the context
- * @param lastSyncedTime - the last synced time in milliseconds
+ * @param lastSyncedTime - the last synced time in milliseconds. Defaults to the current time.
+ * @return the time that was stored.
  */
-fun setLastSynced(context: Context, lastSyncedTime: Long) {
+fun setLastSynced(context: Context, lastSyncedTime: Long = System.currentTimeMillis()): Long {
     context.getSharedPreferences(SYNC_STATE_PREFS_KEY, Context.MODE_PRIVATE).edit {
         putLong(SYNC_LAST_SYNCED_KEY, lastSyncedTime)
     }
+    return lastSyncedTime
 }
 
 internal fun setSyncState(context: Context, state: String) {

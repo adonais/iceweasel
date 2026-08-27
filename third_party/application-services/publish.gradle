@@ -11,10 +11,12 @@ def libProjectName = properties.libProjectName
 def libUrl = properties.libUrl
 def libVcsUrl = properties.libVcsUrl
 
-ext.configurePublish = {
-    def theGroupId = rootProject.config.componentsGroupId
-    def theArtifactId = project.ext.artifactId
-    def theDescription = project.ext.description
+// The `Arg` suffixes matter. Naming these `groupId`, `artifactId` or `description` shadows the
+// assignments to the publication down in `pom`, which then silently do nothing.
+ext.configurePublish = { groupIdArg = null, artifactIdArg = null, descriptionArg = null ->
+    def theGroupId = groupIdArg ?: rootProject.config.componentsGroupId
+    def theArtifactId = artifactIdArg ?: project.ext.artifactId
+    def theDescription = descriptionArg ?: project.ext.description
 
     // This is a little cludgey, but it seems unlikely to cause a problem, and
     // we are already doing it inside taskcluster.

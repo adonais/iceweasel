@@ -27,7 +27,6 @@ add_task(async function testHeadersLearnMoreLink() {
   await waitForDOM(document, "#responseHeaders, #requestHeaders", 2);
 
   testShowLearnMore(document);
-
   await teardown(monitor);
 });
 

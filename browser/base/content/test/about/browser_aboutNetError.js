@@ -245,7 +245,7 @@ add_task(async function checkDomainCorrectionReplacesLearnMoreLink() {
   info("Try loading a URI that should result in an error page");
   BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example/example2/",
     false
   );
@@ -310,7 +310,7 @@ add_task(async function checkDnsNotFoundLearnMoreLink() {
 
   BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://thisdomaindoesnotexist123456.test/",
     false
   );
@@ -466,7 +466,7 @@ add_task(async function test_tryAgainButtonAutofocus() {
 
   await BrowserTestUtils.withNewTab("about:blank", async function (browser) {
     let netErrorLoaded = BrowserTestUtils.waitForErrorPage(browser);
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
     await netErrorLoaded;
 

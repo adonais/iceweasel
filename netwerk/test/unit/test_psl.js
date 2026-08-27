@@ -8,7 +8,10 @@ function run_test() {
   var file = do_get_file("data/test_psl.txt");
   var uri = Services.io.newFileURI(file);
   var srvScope = {};
-  Services.scriptloader.loadSubScript(uri.spec, srvScope);
+  Services.scriptloader.loadSubScriptWithOptions(uri.spec, {
+    target: srvScope,
+    allowUnsafeURL: true,
+  });
 }
 
 // Exported to the loaded script

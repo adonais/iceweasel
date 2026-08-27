@@ -6,7 +6,6 @@ import { createFrame } from "./create";
 import { makeBreakpointServerLocationId } from "../../utils/breakpoint/index";
 
 import * as objectInspector from "resource://devtools/client/shared/components/object-inspector/index.js";
-const ResourceCommand = require("resource://devtools/shared/commands/resource/resource-command.js");
 
 let commands;
 let breakpoints;
@@ -134,23 +133,6 @@ function restart(thread, frameId) {
 
 function breakOnNext(thread) {
   return lookupThreadFront(thread).breakOnNext();
-}
-
-async function sourceContents(sourceActor) {
-  const { targetFront, sourceObject, id } = sourceActor;
-  switch (sourceObject.type) {
-    case ResourceCommand.TYPES.STYLESHEET: {
-      const stylesheetsFront = await targetFront.getFront("stylesheets");
-      const sourceStr = await stylesheetsFront.getText(id);
-      return { source: await sourceStr.string(), contentType: "text/css" };
-    }
-    case ResourceCommand.TYPES.SOURCE: {
-      const sourceFront = targetFront.threadFront.source({ actor: id });
-      const { source, contentType } = await sourceFront.source();
-      return { source, contentType };
-    }
-  }
-  return null;
 }
 
 async function updateStyleSheetContent(sourceActor, text, isTransitionEnabled) {
@@ -496,7 +478,6 @@ const clientCommands = {
   stepOver,
   restart,
   breakOnNext,
-  sourceContents,
   getSourceActorBreakpointPositions,
   getSourceActorBreakableLines,
   hasBreakpoint,

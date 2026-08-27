@@ -33,7 +33,7 @@ add_task(async function test_createConnection_and_proxy() {
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     // Note: this will not be loaded as the proxy will refuse the connection
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/"
   );
 
@@ -64,7 +64,7 @@ add_task(async function test_exclusion_and_proxy() {
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://localhost:" + server.identity.primaryPort
   );
   await BrowserTestUtils.removeTab(tab);
@@ -91,7 +91,7 @@ add_task(async function test_essential_exclusion() {
   filter.start();
 
   let response = await fetch(
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://localhost:" + server.identity.primaryPort
   );
   Assert.equal(response.status, 200, "Should successfully load the URL");
@@ -122,7 +122,7 @@ add_task(async function test_exclusion_manager() {
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://localhost:" + server.identity.primaryPort
   );
   await BrowserTestUtils.removeTab(tab);
@@ -139,7 +139,7 @@ add_task(async function test_channel_suspend_resume() {
   let tab = BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     // Note: this will not be loaded as the proxy will refuse the connection
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/"
   );
 
@@ -186,7 +186,7 @@ add_task(async function test_excluded_url_falls_back_to_global_proxy() {
   });
 
   using manager = withExceptionsManager();
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   manager.exclude("http://example.com");
 
   const filter = IPPChannelFilter.create();
@@ -198,7 +198,7 @@ add_task(async function test_excluded_url_falls_back_to_global_proxy() {
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/"
   );
   // The Global proxy should have gotten a connection.
@@ -225,7 +225,7 @@ add_task(async function channelfilter_proxiedChannels() {
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     // Note: this will not be loaded as the proxy will refuse the connection
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     "http://example.com/"
   );
   let { value, done } = await nextChannel;

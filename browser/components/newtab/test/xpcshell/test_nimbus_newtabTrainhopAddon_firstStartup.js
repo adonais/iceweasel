@@ -76,7 +76,6 @@ add_task(
     const { nimbusFeatureCleanup } = await setupNimbusTrainhopAddon({
       updateAddonVersion,
     });
-    assertTrainhopAddonVersionPref(updateAddonVersion);
 
     // Track whether firstStartupNewProfile was called
     let sandbox = sinon.createSandbox();
@@ -101,6 +100,7 @@ add_task(
     FirstStartup.init(true /* newProfile */);
 
     await submissionPromise;
+    assertTrainhopAddonVersionPref(updateAddonVersion);
 
     Assert.ok(
       firstStartupNewProfileSpy.calledOnce,
@@ -283,7 +283,6 @@ add_task(
     const { nimbusFeatureCleanup } = await setupNimbusTrainhopAddon({
       updateAddonVersion,
     });
-    assertTrainhopAddonVersionPref(updateAddonVersion);
 
     // Stub updateTrainhopAddonState to call init() in the middle of its execution
     let sandbox = sinon.createSandbox();
@@ -325,6 +324,7 @@ add_task(
 
     FirstStartup.init(true /* newProfile */);
     await submissionPromise;
+    assertTrainhopAddonVersionPref(updateAddonVersion);
 
     Assert.ok(
       updateTrainhopStarted,
@@ -361,6 +361,7 @@ add_task(
     await cancelPendingInstall(pendingInstall);
     sandbox.restore();
     await nimbusFeatureCleanup();
+    await AboutNewTabResourceMapping.updateTrainhopAddonState();
     assertTrainhopAddonVersionPref("");
     Services.prefs.clearUserPref(PREF_CATEGORY_TASKS);
   }
@@ -392,7 +393,6 @@ add_task(
     const { nimbusFeatureCleanup } = await setupNimbusTrainhopAddon({
       updateAddonVersion,
     });
-    assertTrainhopAddonVersionPref(updateAddonVersion);
 
     const firstStartupFeatureCleanup =
       await NimbusTestUtils.enrollWithFeatureConfig(

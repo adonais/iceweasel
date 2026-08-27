@@ -28,6 +28,8 @@ GeckoViewInputStream::Init(nsIURI* aUri) {
     return NS_ERROR_FILE_ACCESS_DENIED;
   }
 
+  MutexAutoLock lock(mMutex);
+
   mInstance =
       java::ContentInputStream::GetInstance(jni::StringParam(spec), false);
 
@@ -36,6 +38,16 @@ GeckoViewInputStream::Init(nsIURI* aUri) {
 
 NS_IMETHODIMP
 GeckoViewInputStream::Close() {
+  MutexAutoLock lock(mMutex);
+
+  if (mClosed) {
+    return NS_BASE_STREAM_CLOSED;
+  }
+
+  if (!mInstance) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
   mClosed = true;
   mInstance->Close();
 
@@ -44,6 +56,8 @@ GeckoViewInputStream::Close() {
 
 NS_IMETHODIMP
 GeckoViewInputStream::Available(uint64_t* aCount) {
+  MutexAutoLock lock(mMutex);
+
   if (mClosed) {
     return NS_BASE_STREAM_CLOSED;
   }
@@ -58,6 +72,8 @@ GeckoViewInputStream::Available(uint64_t* aCount) {
 
 NS_IMETHODIMP
 GeckoViewInputStream::StreamStatus() {
+  MutexAutoLock lock(mMutex);
+
   return mClosed ? NS_BASE_STREAM_CLOSED : NS_OK;
 }
 
@@ -70,6 +86,8 @@ NS_IMETHODIMP
 GeckoViewInputStream::ReadSegments(nsWriteSegmentFun writer, void* aClosure,
                                    uint32_t aCount, uint32_t* result) {
   NS_ASSERTION(result, "null ptr");
+
+  MutexAutoLock lock(mMutex);
 
   if (mClosed) {
     return NS_BASE_STREAM_CLOSED;
@@ -124,6 +142,8 @@ GeckoViewInputStream::IsNonBlocking(bool* aNonBlocking) {
 }
 
 bool GeckoViewInputStream::IsClosed() const {
+  MutexAutoLock lock(mMutex);
+
   if (!mInstance) {
     return true;
   }

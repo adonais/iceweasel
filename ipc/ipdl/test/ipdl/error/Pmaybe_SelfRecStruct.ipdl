@@ -1,0 +1,10 @@
+//error: struct `X' is only partially defined
+
+struct X {
+    X? x;
+};
+
+[ChildProc=any]
+protocol Pmaybe_SelfRecStruct {
+child: async Msg(X? aa);
+};

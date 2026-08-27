@@ -12,13 +12,16 @@ UNIFIED_SOURCES += [
 
 # This name confusion is a reflection of the 2 megazord parts. It should be
 # fixed after we land in m-c.
-SharedLibrary("megazord-so")
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+    SharedLibrary("megazord-so")
+else:
+    SharedLibrary("megazord-so", output_category="uniffi-target")
 SHARED_LIBRARY_NAME = "megazord"
 
 USE_LIBS += ["megazord", "mozpkix", "nspr"]
 
 # copy-pasta from other moz.build files.
-if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+if CONFIG["OS_TARGET"] == "Darwin":
     OS_LIBS += ["-framework CoreFoundation"]
 elif CONFIG["OS_TARGET"] == "WINNT":
     OS_LIBS += [

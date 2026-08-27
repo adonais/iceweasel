@@ -17,6 +17,7 @@
 #include "js/TypeDecls.h"
 #include "js/ValueArray.h"
 #include "vm/ArgumentsObject.h"
+#include "vm/GeneratorResumeKind.h"
 #include "vm/JSFunction.h"
 #include "vm/JSScript.h"
 #include "wasm/WasmDebugFrame.h"  // js::wasm::DebugFrame
@@ -263,11 +264,65 @@ enum MaybeConstruct { NO_CONSTRUCT = false, CONSTRUCT = true };
 
 /*****************************************************************************/
 
+// Layout of the "resume args": the extra Value slots passed by the caller when
+// resuming a generator or async function/module. For function frames, these
+// Values are passed after the formal arguments (numActualArgs is always 0 in
+// this case).
+//
+// Their presence is signaled by the frame's resuming-generator flag
+// (InterpreterFrame::RESUMING_GENERATOR for the C++ interpreter and
+// FrameDescriptor::IsResumingGenerator for the JITs). This flag is cleared by
+// JSOp::AfterYield and these slots must no longer be accessed after that point.
+//
+// The resumer stores the generator's resume index into ResumeIndexSlot and
+// then marks the generator running. Marking it running is the point where the
+// resume is committed, so it must be the last thing the resumer does before
+// control enters the callee's resume prologue.
+struct ResumeFrameArgs {
+  enum Slot : uint32_t {
+    ResumeValueSlot = 0,
+    GeneratorSlot,
+    ResumeKindSlot,
+    ResumeIndexSlot,
+    NumSlots
+  };
+
+  static constexpr size_t offsetOfSlot(uint32_t slot) {
+    MOZ_ASSERT(slot < NumSlots);
+    return slot * sizeof(Value);
+  }
+
+  static constexpr size_t offsetOfResumeValue() {
+    return offsetOfSlot(ResumeValueSlot);
+  }
+  static constexpr size_t offsetOfGenerator() {
+    return offsetOfSlot(GeneratorSlot);
+  }
+  static constexpr size_t offsetOfResumeKind() {
+    return offsetOfSlot(ResumeKindSlot);
+  }
+  static constexpr size_t offsetOfResumeIndex() {
+    return offsetOfSlot(ResumeIndexSlot);
+  }
+
+  static void init(Value* slots, Value resumeValue, Value generator,
+                   GeneratorResumeKind resumeKind, uint32_t resumeIndex) {
+    slots[ResumeValueSlot] = resumeValue;
+    slots[GeneratorSlot] = generator;
+    slots[ResumeKindSlot] = Int32Value(int32_t(resumeKind));
+    slots[ResumeIndexSlot] = Int32Value(int32_t(resumeIndex));
+  }
+};
+
 class InterpreterFrame {
   enum Flags : uint32_t {
     CONSTRUCTING = 0x1, /* frame is for a constructor invocation */
 
-    RESUMED_GENERATOR = 0x2, /* frame is for a resumed generator invocation */
+    /*
+     * Frame is currently resuming a suspended generator/async function. Set at
+     * the resume entry, cleared at the resume point (JSOp::AfterYield).
+     */
+    RESUMING_GENERATOR = 0x2,
 
     /* Function prologue state */
     HAS_INITIAL_ENV =
@@ -473,6 +528,17 @@ class InterpreterFrame {
     return argv_;
   }
 
+  // Base of the resume args (see ResumeFrameArgs) for a resumed generator/async
+  // frame.
+  Value* resumeArgs() {
+    MOZ_ASSERT(isResumingGenerator());
+    if (isFunctionFrame()) {
+      return argv() + numFormalArgs();
+    }
+    MOZ_ASSERT(isModuleFrame());
+    return reinterpret_cast<Value*>(this) - ResumeFrameArgs::NumSlots;
+  }
+
   /*
    * Arguments object
    *
@@ -662,8 +728,15 @@ class InterpreterFrame {
 
   bool isConstructing() const { return !!(flags_ & CONSTRUCTING); }
 
-  void setResumedGenerator() { flags_ |= RESUMED_GENERATOR; }
-  bool isResumedGenerator() const { return !!(flags_ & RESUMED_GENERATOR); }
+  void setResumingGenerator() {
+    MOZ_ASSERT(!isResumingGenerator());
+    flags_ |= RESUMING_GENERATOR;
+  }
+  void clearResumingGenerator() {
+    MOZ_ASSERT(isResumingGenerator());
+    flags_ &= ~RESUMING_GENERATOR;
+  }
+  bool isResumingGenerator() const { return !!(flags_ & RESUMING_GENERATOR); }
 
   /*
    * These two queries should not be used in general: the presence/absence of
@@ -753,8 +826,7 @@ class InterpreterRegs {
 
   void popInlineFrame() {
     pc = fp_->prevpc();
-    unsigned spForNewTarget =
-        fp_->isResumedGenerator() ? 0 : fp_->isConstructing();
+    unsigned spForNewTarget = fp_->isConstructing();
     // This code is called when resuming from async and generator code.
     // In the case of modules, we don't have arguments, so we can't use
     // numActualArgs, which asserts 'hasArgs'.
@@ -804,6 +876,10 @@ class InterpreterStack {
                                         MaybeConstruct constructing,
                                         Value** pargv);
 
+  inline InterpreterFrame* createGeneratorResumeFrame(
+      JSContext* cx, HandleFunction callee, HandleObject envChain,
+      InterpreterFrame* prev, jsbytecode* prevpc, Value* prevsp);
+
   void releaseFrame(InterpreterFrame* fp) {
     frameCount_--;
     allocator_.release(fp->mark_);
@@ -818,11 +894,18 @@ class InterpreterStack {
   // For execution of eval, module or global code.
   InterpreterFrame* pushExecuteFrame(JSContext* cx, HandleScript script,
                                      HandleObject envChain,
-                                     AbstractFramePtr evalInFrame);
+                                     AbstractFramePtr evalInFrame,
+                                     bool reserveResumeArgs = false);
 
   // Called to invoke a function.
   InterpreterFrame* pushInvokeFrame(JSContext* cx, const CallArgs& args,
                                     MaybeConstruct constructing);
+
+  // Push an entry frame for resuming a suspended generator or async
+  // function/module.
+  InterpreterFrame* pushGeneratorResumeFrame(JSContext* cx,
+                                             HandleFunction callee,
+                                             HandleObject envChain);
 
   // The interpreter can push light-weight, "inline" frames without entering a
   // new InterpreterActivation or recursively calling Interpret.
@@ -832,8 +915,9 @@ class InterpreterStack {
 
   void popInlineFrame(InterpreterRegs& regs);
 
-  bool resumeGeneratorCallFrame(JSContext* cx, InterpreterRegs& regs,
-                                HandleFunction callee, HandleObject envChain);
+  bool pushInlineGeneratorResumeFrame(JSContext* cx, InterpreterRegs& regs,
+                                      HandleFunction callee,
+                                      HandleObject envChain);
 
   inline void purge(JSRuntime* rt);
 

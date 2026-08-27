@@ -78,6 +78,96 @@ tasks:
         # For both Firefox and DevEdition, "firefox" is the correct string.
         product: firefox
 
+        # we do not have a non-production version of this to fetch; we always fetch
+        # prod even on try
+        locale-history-file: https://product-details.mozilla.org/1.0/firefox_history_locales.json
+
+        last-watershed:
+            by-release-type:
+                nightly:
+                    by-project:
+                        try:
+                            # try uses ftp.stage.mozaws.net, which has different
+                            # files available. it's not worth doing extensive
+                            # configuration to go as far back here, as there's
+                            # no "real" watersheds for this case. just choose
+                            # an old-ish buildid that works for all platforms
+                            buildid: "20250523180201"
+                            version: "140.0a1"
+                        default:
+                            by-locale:
+                                en-US:
+                                    by-build-platform:
+                                        mac.*:
+                                            buildid: "20240301094944"
+                                            version: "125.0a1"
+                                        win.*:
+                                            buildid: "20240525094144"
+                                            version: "128.0a1"
+                                        linux64-aarch64.*:
+                                            buildid: "20240416034733"
+                                            version: "127.0a1"
+                                        default:
+                                            buildid: "20170731100325"
+                                            version: "56.0a1"
+                                default:
+                                    # this is not the real watershed for all platforms
+                                    # but we don't have all locales available for older
+                                    # builds, so it's good enough
+                                    buildid: "20240525094144"
+                                    version: "128.0a1"
+                beta:
+                    by-project:
+                        try:
+                            # similar to nightly, on try we just choose
+                            # a version that works for all platforms
+                            by-shipping-product:
+                                firefox:
+                                    version: "137.0b10"
+                                devedition:
+                                    version: "138.0b6"
+                        default:
+                            by-build-platform:
+                                linux64-aarch64.*:
+                                    version: "136.0b6"
+                                mac.*:
+                                    version: "125.0b9"
+                                win.*:
+                                    # TODO: the real watershed here is 127.0
+                                    # switch it back when mar channel ID override support is added
+                                    version: "127.0b9"
+                                default:
+                                    # TODO: the real watershed here is 72.0
+                                    # switch it back when mar channel ID override support is added
+                                    version: "72.0b11"
+                release:
+                    by-project:
+                        try:
+                            version: "142.0"
+                        default:
+                            by-build-platform:
+                                linux64-aarch64.*:
+                                    version: "136.0b6"
+                                mac.*:
+                                    version: "109.0.1"
+                                win.*:
+                                    version: "127.0"
+                                default:
+                                    version: "72.0"
+                esr.*:
+                    by-project:
+                        try:
+                            version: "140.0esr"
+                        default:
+                            linux64-aarch64.*:
+                                version: "140.0esr"
+                            mac.*:
+                                version: "102.15.1esr"
+                            win.*:
+                                version: "115.12.0esr"
+                            default:
+                                version: "68.0"
+
         treeherder:
             symbol: UpInt({locale})
             kind: other
@@ -92,6 +182,7 @@ tasks:
             chain-of-trust: true
             max-run-time: 600
         run:
+            clone-with: hg
             using: run-task
             sparse-profile: "update-verify"
             cwd: "{checkout}"

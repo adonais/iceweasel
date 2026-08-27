@@ -7,10 +7,7 @@
  * typing a search engine domain.
  */
 
-import {
-  UrlbarProvider,
-  UrlbarUtils,
-} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -51,6 +48,7 @@ const VIEW_TEMPLATE = {
                   name: "learn_more",
                   tag: "a",
                   attributes: {
+                    "data-command": "learn_more",
                     "data-l10n-name": "learn-more-link",
                     selectable: true,
                   },
@@ -73,10 +71,10 @@ export class UrlbarProviderQuickSuggestContextualOptIn extends UrlbarProvider {
   }
 
   /**
-   * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
+   * @returns {Values<typeof lazy.UrlbarShared.PROVIDER_TYPE>}
    */
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
+    return lazy.UrlbarShared.PROVIDER_TYPE.HEURISTIC;
   }
 
   #shouldDisplayContextualOptIn(queryContext = null) {
@@ -258,12 +256,13 @@ export class UrlbarProviderQuickSuggestContextualOptIn extends UrlbarProvider {
   }
 
   onEngagement(queryContext, controller, details) {
-    this._handleCommand(details.element, controller, details.result);
+    // The clicked control's command rides `selType` (set from its data-command),
+    // so it crosses the actor boundary; `details.element` is content-only.
+    this._handleCommand(details.selType, controller, details.result);
   }
 
-  _handleCommand(element, controller, result, container) {
-    let commandName = element?.getAttribute("name");
-    switch (commandName) {
+  _handleCommand(command, controller, result, container) {
+    switch (command) {
       case "learn_more":
         controller.browserWindow.openHelpLink("firefox-suggest");
         break;
@@ -276,6 +275,11 @@ export class UrlbarProviderQuickSuggestContextualOptIn extends UrlbarProvider {
       default:
         return;
     }
+
+    // Picking one of these controls resolves the opt-in prompt, so close the
+    // view. elementPicked marks this as an engagement, so the zero-prefix
+    // telemetry and focus border are handled accordingly.
+    controller.view.close({ elementPicked: true });
 
     // Remove the result if it shouldn't be active anymore due to above
     // actions.
@@ -325,12 +329,14 @@ export class UrlbarProviderQuickSuggestContextualOptIn extends UrlbarProvider {
             l10n: {
               id: "urlbar-firefox-suggest-contextual-opt-in-allow",
             },
+            command: "allow",
             attributes: { primary: true, name: "allow" },
           },
           {
             l10n: {
               id: "urlbar-firefox-suggest-contextual-opt-in-dismiss",
             },
+            command: "dismiss",
             attributes: { name: "dismiss" },
           },
         ],

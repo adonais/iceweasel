@@ -748,6 +748,8 @@ class OptionsPanel extends EventEmitter {
 
     this.#focusLocalModeLastMapping = true;
     lazy.LocalModeMappings.createNewMapping(origin, path);
+
+    Glean.devtoolsLocalmodeMappings.addPermanentFromOptions.add(1);
   };
 
   /**

@@ -41,6 +41,8 @@ skip-if = [
 
 ["browser_test_focus_dialog.js"]
 
+["browser_test_focus_searchbar.js"]
+
 ["browser_test_focus_urlbar.js"]
 skip-if = [
   "os == 'win'", # Bug 1818994

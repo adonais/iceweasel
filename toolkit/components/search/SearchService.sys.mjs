@@ -449,6 +449,18 @@ export const SearchService = new (class SearchService {
   }
 
   /**
+   * An array of all installed search engines whose hidden attribute is false.
+   * The array is sorted either to the user requirements or the default order.
+   *
+   * @type {SearchEngine[]}
+   */
+  get visibleEngines() {
+    this.#ensureInitialized();
+    lazy.logConsole.debug("get visibleEngines: getting all visible engines");
+    return this.#sortedVisibleEngines;
+  }
+
+  /**
    * Returns the current list of application provided engines.
    */
   async getAppProvidedEngines() {

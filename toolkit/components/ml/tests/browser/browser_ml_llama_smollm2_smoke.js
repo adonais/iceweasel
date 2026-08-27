@@ -38,10 +38,7 @@ const SMOLLM2_OPTIONS = {
   modelFile: "smollm2-360m-instruct-q8_0.gguf",
   modelRevision: "main",
   modelHubUrlTemplate: "{model}/{revision}",
-  kvCacheDtype: "q8_0",
   numContext: 512,
-  numBatch: 512,
-  numUbatch: 512,
   useMmap: true,
   useMlock: false,
 };

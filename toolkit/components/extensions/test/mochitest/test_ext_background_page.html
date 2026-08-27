@@ -13,68 +13,26 @@
     <script type="text/javascript">
       "use strict";
 
-      /* eslint-disable mozilla/balanced-listeners */
-
       add_task(async function testAlertNotShownInBackgroundWindow() {
         let extension = ExtensionTestUtils.loadExtension({
           background: function () {
+            browser.test.assertEq(null, prompt(), "prompt() returns null");
+            browser.test.assertFalse(confirm(), "confirm() returns false");
             alert("I am an alert in the background.");
-
             browser.test.notifyPass("alertCalled");
           }
         });
 
-        let consoleOpened = loadChromeScript(() => {
-          const {sendAsyncMessage, assert} = this;
-          assert.ok(!Services.wm.getEnumerator("alert:alert").hasMoreElements(), "Alerts should not be present at the start of the test.");
-
-          Services.obs.addObserver(function observer() {
-            sendAsyncMessage("web-console-created");
-            Services.obs.removeObserver(observer, "web-console-created");
-          }, "web-console-created");
+        await SpecialPowers.spawnChrome([], () => {
+          Assert.ok(!Services.wm.getEnumerator("alert:alert").hasMoreElements(), "Alerts should not be present at the start of the test.");
         });
-        let opened = consoleOpened.promiseOneMessage("web-console-created");
-
-        consoleMonitor.start([
-          {
-            message: /alert\(\) is not supported in background windows/
-          }, {
-            message: /I am an alert in the background/
-          }
-        ]);
 
         await extension.startup();
         await extension.awaitFinish("alertCalled");
 
-        let chromeScript = loadChromeScript(async () => {
-          const {assert} = this;
-          assert.ok(!Services.wm.getEnumerator("alert:alert").hasMoreElements(), "Alerts should not be present after calling alert().");
+        await SpecialPowers.spawnChrome([], () => {
+          Assert.ok(!Services.wm.getEnumerator("alert:alert").hasMoreElements(), "Alerts should not be present after calling alert().");
         });
-        chromeScript.destroy();
-
-        await consoleMonitor.finished();
-
-        await opened;
-        consoleOpened.destroy();
-
-        chromeScript = loadChromeScript(async () => {
-          const {sendAsyncMessage} = this;
-          let {require} = ChromeUtils.importESModule("resource://devtools/shared/loader/Loader.sys.mjs");
-          require("devtools/client/framework/devtools-browser");
-          let {BrowserConsoleManager} = require("devtools/client/webconsole/browser-console-manager");
-
-          // And then double check that we have an actual browser console.
-          let haveConsole = !!BrowserConsoleManager.getBrowserConsole();
-
-          if (haveConsole) {
-            await BrowserConsoleManager.toggleBrowserConsole();
-          }
-          sendAsyncMessage("done", haveConsole);
-        });
-
-        let consoleShown = await chromeScript.promiseOneMessage("done");
-        ok(consoleShown, "console was shown");
-        chromeScript.destroy();
 
         await extension.unload();
       });

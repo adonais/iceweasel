@@ -11,6 +11,7 @@
 @import url(chrome://devtools/content/shared/widgets/filter-widget.css);
 @import url(chrome://devtools/content/shared/widgets/linear-widget.css);
 @import url(chrome://devtools/content/shared/widgets/spectrum.css);
+@import url(chrome://devtools/content/shared/components/MdnLink.css);
 /*
  * compatibility.css is primarily used by the Compatibility panel, so import it in a layer
  * to give it a lower importance than the rule here and mitigate styling mismatch.
@@ -107,6 +108,7 @@ strong {
 
 /* Tooltip: CSS variables tooltip */
 
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .tooltip-container:has(.devtools-tooltip-css-variable) {
   /* By default, in dark mode, the tooltip background color is lighter than the background
      color of the Rules view. Since we're using the same color than in the Rules view
@@ -127,10 +129,12 @@ strong {
   max-inline-size: min(500px, 100vw);
 
   /* If only the "top" section is displayed, to avoid smaller text (e.g. `10px`) to look unbalanced */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   .variable-value:not(:has(+ .variable-tooltip-section)) {
     text-align: center;
   }
   /* If there are other sections, add some space below the value */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   .variable-value:has(+ .variable-tooltip-section) {
     padding-block-end: var(--block-padding);
   }
@@ -229,6 +233,7 @@ strong {
 }
 
 /* Tooltip: query container info */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .tooltip-container:has(.devtools-tooltip-query-container) {
   /* By default, in dark mode, the tooltip background color is lighter than the background
      color of the Rules view. Since we're using the same color than in the Rules view
@@ -309,6 +314,7 @@ strong {
 }
 
 /* Tooltip: CSS explainers */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .tooltip-container:has(.devtools-tooltip-css-explainers) {
   /* By default, in dark mode, the tooltip background color is lighter than the background
      color of the Rules view. Since we're using the same color than in the Rules view
@@ -317,6 +323,7 @@ strong {
   --theme-arrowpanel-background: var(--theme-body-background);
 }
 
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .tooltip-container[type="doorhanger"] > .tooltip-panel:has(.devtools-tooltip-css-explainers) {
   --max-tooltip-width: 600px;
   max-width: var(--max-tooltip-width);

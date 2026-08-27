@@ -14,6 +14,10 @@ import {
 } from "moz-src:///browser/components/aiwindow/models/TokenStreamParser.sys.mjs";
 
 /**
+ * @typedef {import("moz-src:///browser/components/aiwindow/models/Utils.sys.mjs").InferenceParams} InferenceParams
+ */
+
+/**
  * @typedef {0 | 1 | 2 | 3} MessageRole
  */
 
@@ -27,7 +31,7 @@ export const MESSAGE_ROLE = Object.freeze({
   TOOL: 3,
 });
 
-const ROLE_LABEL = {
+export const ROLE_LABEL = {
   [MESSAGE_ROLE.SYSTEM]: "system",
   [MESSAGE_ROLE.USER]: "user",
   [MESSAGE_ROLE.ASSISTANT]: "assistant",
@@ -97,7 +101,7 @@ export class Conversation {
    * @param {string[]} [params.serpUrlsForAnonymousFetch]
    * @param {string} [params.feature]
    * @param {object} [params.engine]
-   * @param {object} [params.parameters]
+   * @param {InferenceParams} [params.parameters]
    * @param {SecurityProperties|object|null} [params.securityProperties]
    */
   constructor({
@@ -398,14 +402,15 @@ export class Conversation {
   /**
    * Execute one LLM call against this conversation's messages + parameters.
    *
-   * @param {object} opts - { fxAccountToken, responseFormat?, signal?, ... }
+   * @param {object} opts - { fxAccountToken, signal?, ... }
+   * @param {InferenceParams} [opts.inferenceParams]
    * @returns {Promise<object>}
    */
   async run(opts = {}) {
     return this.engine.run({
-      ...this.parameters,
       args: this.getMessagesInChatCompletionsFormat(),
       ...opts,
+      inferenceParams: { ...this.parameters, ...opts.inferenceParams },
     });
   }
 
@@ -413,13 +418,14 @@ export class Conversation {
    * Streaming variant — returns an AsyncGenerator.
    *
    * @param {object} opts - { fxAccountToken, signal?, chatId?, tools?, tool_choice?, streamOptions?, args? }
+   * @param {InferenceParams} [opts.inferenceParams]
    * @returns {AsyncGenerator}
    */
   runWithGenerator(opts = {}) {
     return this.engine.runWithGenerator({
-      ...this.parameters,
       args: this.getMessagesInChatCompletionsFormat(),
       ...opts,
+      inferenceParams: { ...this.parameters, ...opts.inferenceParams },
     });
   }
 

@@ -139,7 +139,13 @@ void DocumentOrShadowRoot::OnSetAdoptedStyleSheets(StyleSheet& aSheet,
   auto* shadow = ShadowRoot::FromNode(AsNode());
   MOZ_ASSERT((mKind == Kind::ShadowRoot) == !!shadow);
 
-  auto existingIndex = mAdoptedStyleSheets.LastIndexOf(&aSheet);
+  // Only scan for the existing index if the sheet is actually adopted already,
+  // which is the uncommon case.
+  auto existingIndex = mAdoptedStyleSheets.NoIndex;
+  if (aSheet.IsAdoptedBy(*this)) {
+    existingIndex = mAdoptedStyleSheets.LastIndexOf(&aSheet);
+    MOZ_ASSERT(existingIndex != mAdoptedStyleSheets.NoIndex);
+  }
   // Ensure it's in the backing array at the right index.
   mAdoptedStyleSheets.InsertElementAt(aIndex, &aSheet);
   if (existingIndex == mAdoptedStyleSheets.NoIndex) {
@@ -796,7 +802,7 @@ void DocumentOrShadowRoot::Unlink(DocumentOrShadowRoot* tmp) {
 
 /* https://dom.spec.whatwg.org/#dom-documentorshadowroot-customelementregistry
  */
-CustomElementRegistry* DocumentOrShadowRoot::GetCustomElementRegistry() {
+CustomElementRegistry* DocumentOrShadowRoot::GetCustomElementRegistry() const {
   // Step 1. If this is a document, then return this's custom element registry.
   if (mKind == Kind::Document) {
     if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
@@ -805,7 +811,7 @@ CustomElementRegistry* DocumentOrShadowRoot::GetCustomElementRegistry() {
         return registry;
       }
     }
-    Document* doc = AsNode().AsDocument();
+    const Document* doc = AsNode().AsDocument();
     nsPIDOMWindowInner* window = doc->GetInnerWindow();
     if (!window) {
       return nullptr;
@@ -817,7 +823,7 @@ CustomElementRegistry* DocumentOrShadowRoot::GetCustomElementRegistry() {
   MOZ_ASSERT(AsNode().IsShadowRoot());
 
   // Step 3. Return this's custom element registry.
-  ShadowRoot* root = ShadowRoot::FromNode(AsNode());
+  const ShadowRoot* root = ShadowRoot::FromNode(AsNode());
   MOZ_ASSERT(root);
   if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
     return root->GetCustomElementRegistry();

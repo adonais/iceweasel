@@ -22,7 +22,10 @@ add_task(async function () {
   for (const { title } of TARGET_PANES) {
     info("Check whether this pane is collapsed after clicking the title");
     await toggleCollapsibility(getDebugTargetPane(title, document));
-    assertDebugTargetCollapsed(getDebugTargetPane(title, document), title);
+    await assertDebugTargetCollapsed(
+      getDebugTargetPane(title, document),
+      title
+    );
 
     info("Check whether this pane is expanded after clicking the title again");
     await toggleCollapsibility(getDebugTargetPane(title, document));
@@ -32,31 +35,61 @@ add_task(async function () {
   await removeTab(tab);
 });
 
-async function assertDebugTargetCollapsed(paneEl, title) {
-  info("Check debug target is collapsed");
+/**
+ * Test that collapsibilities of DebugTargetPane on RuntimePage by keyboard interaction.
+ */
 
-  // check list height
-  const targetEl = paneEl.querySelector(".qa-debug-target-pane__collapsable");
-  is(targetEl.clientHeight, 0, "Height of list element is zero");
-  // check title
-  const titleEl = paneEl.querySelector(".qa-debug-target-pane-title");
-  const expectedTitle = `${title} (${
-    targetEl.querySelectorAll(".qa-debug-target-item").length
-  })`;
-  is(titleEl.textContent, expectedTitle, "Collapsed title is correct");
-}
+add_task(async function () {
+  prepareCollapsibilitiesTest();
 
-async function assertDebugTargetExpanded(paneEl, title) {
-  info("Check debug target is expanded");
+  const { document, tab, window } = await openAboutDebugging();
+  await selectThisFirefoxPage(document, window.AboutDebugging.store);
 
-  // check list height
-  const targetEl = paneEl.querySelector(".qa-debug-target-pane__collapsable");
-  await waitUntil(() => targetEl.clientHeight > 0);
-  ok(true, "Height of list element is greater than zero");
-  // check title
-  const titleEl = paneEl.querySelector(".qa-debug-target-pane-title");
-  const expectedTitle = `${title} (${
-    targetEl.querySelectorAll(".qa-debug-target-item").length
-  })`;
-  is(titleEl.textContent, expectedTitle, "Expanded title is correct");
+  info("Assert that the debug target panes are all expanded");
+  for (const { title } of TARGET_PANES) {
+    await assertDebugTargetExpanded(getDebugTargetPane(title, document), title);
+  }
+
+  const sectionHeadings = [
+    ...document.querySelectorAll(".qa-debug-target-pane-title"),
+  ];
+  const expectedTitles = [
+    "Tabs",
+    "Temporary Extensions",
+    "Extensions",
+    "Service Workers",
+    "Shared Workers",
+    "Other Workers",
+  ];
+
+  info("Focus on the first debug target pane title");
+  sectionHeadings[0].focus();
+
+  let index = 0;
+  while (index < sectionHeadings.length) {
+    info(
+      `Check that the "${expectedTitles[index]}" pane is collapsed after pressing the Enter key`
+    );
+    pressKey(window, "Enter");
+    assertDebugTargetCollapsed(
+      getDebugTargetPane(expectedTitles[index], document),
+      expectedTitles[index]
+    );
+    pressKey(window, "Tab");
+    index++;
+  }
+
+  await removeTab(tab);
+});
+
+const keyMappings = {
+  Enter: { code: "VK_RETURN" },
+  Tab: { code: "VK_TAB" },
+};
+
+function pressKey(win, keyName) {
+  const keyEvent = keyMappings[keyName];
+  const { code, modifiers } = keyEvent;
+  info(`The ${keyName} key is pressed`);
+  return EventUtils.synthesizeKey(code, modifiers || {}, win);
 }

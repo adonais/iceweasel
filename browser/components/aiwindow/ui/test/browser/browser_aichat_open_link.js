@@ -305,6 +305,23 @@ describe("aichat open link", () => {
       BrowserTestUtils.removeTab(newTab);
     });
 
+    it("should open about:smartwindowtasks links in a new tab", async () => {
+      const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
+
+      await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
+        content.document.dispatchEvent(
+          new content.CustomEvent("AIChatContent:OpenLink", {
+            bubbles: true,
+            detail: { url: "about:smartwindowtasks" },
+          })
+        );
+      });
+
+      const newTab = await newTabPromise;
+      Assert.ok(newTab, "A new tab should open for about:smartwindowtasks url");
+      BrowserTestUtils.removeTab(newTab);
+    });
+
     it("should switch to an existing about:preferences tab instead of opening a new one", async () => {
       const prefsTab = await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
@@ -412,6 +429,46 @@ describe("aichat open link", () => {
           `.message-assistant a[href="about:config"]`
         );
         Assert.ok(!link, "about:config link should have href stripped");
+        el.remove();
+      });
+    });
+
+    it("should render a localized message link via data-l10n-name", async () => {
+      await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
+        await content.customElements.whenDefined("ai-chat-message");
+
+        const el = content.document.createElement("ai-chat-message");
+        content.document.body.appendChild(el);
+
+        const elJS = el.wrappedJSObject || el;
+        // See note above: drive `role` via `data-message-role` (ARIA role
+        // collision; TODO rename the reactive property off `role`).
+        el.setAttribute("data-message-role", "assistant");
+        elJS.messageL10n = Cu.cloneInto(
+          {
+            id: "smartwindow-agent-monitor-watching",
+            args: { monitorName: "Example", schedule: "daily at 9:00 AM" },
+            link: { l10nName: "tasks", href: "about:smartwindowtasks" },
+          },
+          content
+        );
+
+        await ContentTaskUtils.waitForCondition(
+          () =>
+            el.shadowRoot?.querySelector(
+              `.message-assistant a[href="about:smartwindowtasks"]`
+            ),
+          "Localized message link should render with its href"
+        );
+
+        const link = el.shadowRoot.querySelector(
+          `.message-assistant a[href="about:smartwindowtasks"]`
+        );
+        Assert.ok(link, "Localized link keeps its href");
+        Assert.ok(
+          link.textContent.trim().length,
+          "Localized link text is filled from the l10n message"
+        );
         el.remove();
       });
     });

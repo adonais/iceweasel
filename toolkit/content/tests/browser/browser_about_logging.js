@@ -29,13 +29,15 @@ function clearLoggingPrefs() {
   }
 }
 
-function clearUploadedProfilesDB(content) {
-  return new Promise(resolve => {
-    const deleteRequest = content.indexedDB.deleteDatabase(
-      "aboutLoggingProfiles"
+async function clearUploadedProfilesDB() {
+  const { deleteUploadedProfile, getAllUploadedProfiles } =
+    ChromeUtils.importESModule(
+      "chrome://global/content/aboutLogging/profileStorage.mjs"
     );
-    deleteRequest.onsuccess = deleteRequest.onerror = resolve;
-  });
+
+  for (let profile of await getAllUploadedProfiles()) {
+    await deleteUploadedProfile(profile.id);
+  }
 }
 
 /**
@@ -588,6 +590,8 @@ add_task(async function testLogFileFound() {
 
 // Roughly test the Android-specific UI
 add_task(async function testAndroidUI() {
+  await clearUploadedProfilesDB();
+
   await SpecialPowers.pushPrefEnv({
     set: [
       ["toolkit.aboutLogging.uploadProfileToCloud", true],
@@ -710,7 +714,7 @@ add_task(async function testAndroidUI() {
       "The error is output to the user."
     );
 
-    await clearUploadedProfilesDB(content);
+    await clearUploadedProfilesDB();
   });
 });
 
@@ -764,6 +768,8 @@ add_task(async function testCopyToClipboard() {
 
 // Test the uploaded profiles functionality.
 add_task(async function testUploadedProfilesFeatures() {
+  await clearUploadedProfilesDB();
+
   await SpecialPowers.pushPrefEnv({
     set: [
       ["toolkit.aboutLogging.uploadProfileToCloud", true],
@@ -779,7 +785,6 @@ add_task(async function testUploadedProfilesFeatures() {
   });
 
   await BrowserTestUtils.withNewTab(PAGE, async browser => {
-    await clearUploadedProfilesDB(content);
     const document = browser.contentDocument;
     const window = browser.contentWindow;
 
@@ -791,6 +796,11 @@ add_task(async function testUploadedProfilesFeatures() {
         () => $("#uploaded-profiles-section"),
         "Uploaded profiles section should be present"
       );
+      await ContentTaskUtils.waitForCondition(
+        () => content.gUploadedProfilesManager,
+        "Uploaded profiles manager should be initialized"
+      );
+      await content.gUploadedProfilesManager.refresh();
 
       const section = $("#uploaded-profiles-section");
       Assert.ok(section, "Uploaded profiles section should exist");
@@ -1045,6 +1055,6 @@ add_task(async function testUploadedProfilesFeatures() {
       }
     );
 
-    await clearUploadedProfilesDB(content);
+    await clearUploadedProfilesDB();
   });
 });

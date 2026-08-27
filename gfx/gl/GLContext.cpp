@@ -2737,7 +2737,7 @@ void GLContext::OnImplicitMakeCurrentFailure(const char* const funcName) {
 }
 
 bool GLContext::CreateOffscreenDefaultFb(const gfx::IntSize& size) {
-  mOffscreenDefaultFb = MozFramebuffer::Create(this, size, 0, true);
+  mOffscreenDefaultFb = MozFramebuffer::Create(this, size, 0, true, true);
   return bool(mOffscreenDefaultFb);
 }
 

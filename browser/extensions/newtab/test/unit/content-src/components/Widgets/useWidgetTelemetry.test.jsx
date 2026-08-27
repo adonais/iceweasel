@@ -17,6 +17,7 @@ function TestComponent({
   widgetSize,
   legacyImpressionTypes,
   legacyUserEventType,
+  onImpression,
   showEl = true,
   onRender,
 }) {
@@ -26,6 +27,7 @@ function TestComponent({
     widgetSize,
     legacyImpressionTypes,
     legacyUserEventType,
+    onImpression,
   });
   onRender(telemetry);
   return showEl ? <div ref={telemetry.impressionRef} /> : null;
@@ -165,6 +167,47 @@ describe("useWidgetTelemetry", () => {
       const secondEl = wrapper.find("div").getDOMNode();
       assert.calledTwice(observerInstance.observe);
       assert.equal(observerInstance.observe.lastCall.args[0], secondEl);
+    });
+  });
+
+  describe("onImpression", () => {
+    it("invokes onImpression once when the impression fires", () => {
+      const onImpression = sandbox.spy();
+      const wrapper = mount(
+        <TestComponent
+          dispatch={dispatch}
+          widget={WEATHER_WIDGET}
+          widgetSize="medium"
+          onImpression={onImpression}
+          onRender={() => {}}
+        />
+      );
+      const observerInstance = observerStub.getCall(0).returnValue;
+      const el = wrapper.find("div").getDOMNode();
+
+      observerInstance.callback([{ isIntersecting: true, target: el }]);
+      observerInstance.callback([{ isIntersecting: true, target: el }]);
+
+      assert.calledOnce(onImpression);
+    });
+
+    it("also fires onImpression for a manual recordImpression", () => {
+      let telemetry;
+      const onImpression = sandbox.spy();
+      mount(
+        <TestComponent
+          dispatch={dispatch}
+          widget={WEATHER_WIDGET}
+          widgetSize="medium"
+          showEl={false}
+          onImpression={onImpression}
+          onRender={t => (telemetry = t)}
+        />
+      );
+
+      telemetry.recordImpression();
+
+      assert.calledOnce(onImpression);
     });
   });
 

@@ -68,7 +68,7 @@ class TerminatingFlowTextMarker
           "name",
           MS::InputType::CString,
           "Details",
-          MS::Format::String,
+          MS::Format::UniqueString,
       },
       {
           "terminatingFlow",
@@ -144,7 +144,7 @@ class FlowTextMarker : public BaseMarkerType<FlowTextMarker> {
           "name",
           MS::InputType::CString,
           "Details",
-          MS::Format::String,
+          MS::Format::UniqueString,
       },
       {
           "flow",
@@ -173,7 +173,7 @@ class FlowStackTextMarker : public BaseMarkerType<FlowStackTextMarker> {
           "name",
           MS::InputType::CString,
           "Details",
-          MS::Format::String,
+          MS::Format::UniqueString,
       },
       {
           "flow",

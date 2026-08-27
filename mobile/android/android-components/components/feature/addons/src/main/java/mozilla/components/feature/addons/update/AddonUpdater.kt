@@ -37,6 +37,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import mozilla.components.concept.engine.webextension.WebExtension
 import mozilla.components.concept.engine.webextension.isUnsupported
@@ -55,7 +56,6 @@ import mozilla.components.support.webextensions.WebExtensionSupport
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -668,7 +668,12 @@ internal class AddonUpdaterWorker @JvmOverloads constructor(
         // all the required state being initialized first.
         WebExtensionSupport.awaitInitialization()
 
-        return@withContext suspendCoroutine { continuation ->
+        return@withContext suspendCancellableCoroutine { continuation ->
+            continuation.invokeOnCancellation {
+                logger.info("Add-on update for $extensionId was cancelled.")
+                // cancel the in-progress addon update when the AddonManager exposes a cancellation API
+            }
+
             try {
                 val manager = GlobalAddonDependencyProvider.requireAddonManager()
 

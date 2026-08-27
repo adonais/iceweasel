@@ -19,15 +19,16 @@ add_task(async function test_element_picker() {
 
       let rect = await helper.getTestPageElementRect();
       let region = await helper.getSelectionRegionDimensions();
+      let contentDims = await helper.getContentDimensions();
 
       is(
         region.left,
-        rect.left,
+        rect.left - contentDims.scrollMinX,
         "The selected region left is the same as the element left"
       );
       is(
         region.right,
-        rect.right,
+        rect.right - contentDims.scrollMinX,
         "The selected region right is the same as the element right"
       );
       is(
@@ -39,6 +40,16 @@ add_task(async function test_element_picker() {
         region.bottom,
         rect.bottom,
         "The selected region bottom is the same as the element bottom"
+      );
+      is(
+        region.width,
+        rect.width,
+        "The selected region width is the same as the element width"
+      );
+      is(
+        region.height,
+        rect.height,
+        "The selected region height is the same as the element height"
       );
 
       mouse.click(10, 10);
@@ -70,10 +81,28 @@ add_task(async function test_element_pickerRTL() {
 
       let rect = await helper.getTestPageElementRect();
       let region = await helper.getSelectionRegionDimensions();
+      let contentDims = await helper.getContentDimensions();
 
-      info(`element rect: ${JSON.stringify(rect, null, 2)}`);
-      info(`selected region: ${JSON.stringify(region, null, 2)}`);
-
+      is(
+        region.left,
+        rect.left - contentDims.scrollMinX,
+        "The selected region left is the same as the element left"
+      );
+      is(
+        region.right,
+        rect.right - contentDims.scrollMinX,
+        "The selected region right is the same as the element right"
+      );
+      is(
+        region.top,
+        rect.top,
+        "The selected region top is the same as the element top"
+      );
+      is(
+        region.bottom,
+        rect.bottom,
+        "The selected region bottom is the same as the element bottom"
+      );
       is(
         region.width,
         rect.width,

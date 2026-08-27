@@ -9,6 +9,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 import {
+  ERROR_AUTH_ERROR,
   OAUTH_CLIENT_ID,
   SCOPE_PROFILE,
   SCOPE_PROFILE_WRITE,
@@ -231,5 +232,57 @@ export class FxAccountsOAuth {
       refreshToken: refresh_token,
       accessToken: access_token,
     };
+  }
+
+  /**
+   * Obtain an OAuth access token for the given scopes, minted from the stored
+   * session token.
+   *
+   * Note that access-token caching and in-flight de-duplication are handled by
+   * the caller (`FxAccountsInternal.getOAuthToken`).
+   *
+   * @param {object} accountState: The current AccountState
+   * @param {string[]|string} scopes: The requested scopes
+   * @param {number} [ttl]: Optional token time-to-live
+   * @returns {Promise<{token: string, expiresAt: number|null}>}
+   */
+  async getAccessToken(accountState, scopes, ttl) {
+    return this.#getAccessTokenWithSessionToken(accountState, scopes, ttl);
+  }
+
+  /**
+   * Obtain an OAuth access token minted directly from the session token.
+   *
+   * @param {object} accountState: The current AccountState
+   * @param {string[]|string} scopes: The requested scopes
+   * @param {number} [ttl]: Optional token time-to-live
+   * @returns {Promise<{token: string, expiresAt: number|null}>}
+   */
+  async #getAccessTokenWithSessionToken(accountState, scopes, ttl) {
+    const data = await accountState.getUserAccountData(["sessionToken"]);
+    if (!data || !data.sessionToken) {
+      throw new Error(ERROR_AUTH_ERROR);
+    }
+    const scopeString = this.#normalizeScopes(scopes).join(" ");
+    const result = await this.#fxaClient.accessTokenWithSessionToken(
+      data.sessionToken,
+      OAUTH_CLIENT_ID,
+      scopeString,
+      ttl
+    );
+    return {
+      token: result.access_token,
+      expiresAt: result.expires_in
+        ? Math.floor(Date.now() / 1000) + result.expires_in
+        : null,
+    };
+  }
+
+  // Normalizes scopes (accepting a space-separated string or an array) to a
+  // sorted, de-duplicated, lower-cased array.
+  #normalizeScopes(scopes) {
+    const arr = typeof scopes === "string" ? scopes.split(/\s+/) : scopes;
+    const set = new Set(arr.filter(Boolean).map(s => s.toLowerCase()));
+    return [...set].sort();
   }
 }

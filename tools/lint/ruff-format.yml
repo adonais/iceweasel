@@ -11,6 +11,7 @@ ruff-format:
     extensions:
         - build
         - configure
+        - md
         - mozbuild
         - py
     # Format Python inside dot-directories too (e.g. .agents, .claude skills).

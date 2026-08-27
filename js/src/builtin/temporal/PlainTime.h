@@ -25,7 +25,7 @@ class PlainTimeObject : public NativeObject {
   static const JSClass class_;
   static const JSClass& protoClass_;
 
-  static constexpr uint32_t PACKED_TIME_SLOT = 0;
+  JS_DEFINE_TYPED_SLOT(0, PACKED_TIME_SLOT, Double);
   static constexpr uint32_t SLOT_COUNT = 1;
 
   /**
@@ -33,7 +33,7 @@ class PlainTimeObject : public NativeObject {
    */
   Time time() const {
     auto packed = PackedTime{mozilla::BitwiseCast<uint64_t>(
-        getFixedSlot(PACKED_TIME_SLOT).toDouble())};
+        getFixedSlotTyped(PACKED_TIME_SLOT).toDouble())};
     return PackedTime::unpack(packed);
   }
 

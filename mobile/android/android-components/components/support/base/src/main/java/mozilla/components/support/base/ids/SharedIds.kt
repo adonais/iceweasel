@@ -18,11 +18,13 @@ private const val KEY_ID_PREFIX = "id."
  * @param fileName The shared preference file that should be used to save ID assignments.
  * @param idLifeTime The maximum time an ID can be unused until it is cleared.
  * @param offset The [Int] offset from which this instance should start providing IDs.
+ * @param now provider for the current time in milliseconds, injectable for testing.
  */
 internal class SharedIds(
     private val fileName: String,
     private val idLifeTime: Long,
     private val offset: Int = 0,
+    now: () -> Long = { System.currentTimeMillis() },
 ) {
     /**
      * Get a unique ID for the provided unique tag.
@@ -115,5 +117,5 @@ internal class SharedIds(
 
     fun clear(context: Context) { preferences(context).edit { clear() } }
 
-    internal var now: () -> Long = { System.currentTimeMillis() }
+    internal var now: () -> Long = now
 }

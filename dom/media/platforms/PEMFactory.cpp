@@ -74,7 +74,7 @@ static CodecType MediaCodecToCodecType(MediaCodec aCodec) {
 }
 
 void PEMFactory::InitGpuPEMs() {
-  if (!StaticPrefs::media_use_remote_encoder_video()) {
+  if (!StaticPrefs::media_use_remote_encoder_video_platform()) {
     return;
   }
 
@@ -115,7 +115,7 @@ void PEMFactory::InitGpuPEMs() {
 
 void PEMFactory::InitRddPEMs() {
 #ifdef MOZ_APPLEMEDIA
-  if (StaticPrefs::media_use_remote_encoder_video() &&
+  if (StaticPrefs::media_use_remote_encoder_video_platform() &&
       StaticPrefs::media_rdd_applemedia_enabled()) {
     RefPtr<PlatformEncoderModule> m(new AppleEncoderModule());
     mCurrentPEMs.AppendElement(m);
@@ -123,7 +123,7 @@ void PEMFactory::InitRddPEMs() {
 #endif
 
 #ifdef XP_WIN
-  if (StaticPrefs::media_use_remote_encoder_video() &&
+  if (StaticPrefs::media_use_remote_encoder_video_platform() &&
       StaticPrefs::media_wmf_enabled() &&
       StaticPrefs::media_rdd_wmf_enabled()) {
     mCurrentPEMs.AppendElement(new WMFEncoderModule());
@@ -131,14 +131,15 @@ void PEMFactory::InitRddPEMs() {
 #endif
 
 #ifdef MOZ_FFVPX_AUDIOONLY
-  if (StaticPrefs::media_use_remote_encoder_audio() &&
+  if (StaticPrefs::media_use_remote_encoder_audio_software() &&
       StaticPrefs::media_ffmpeg_encoder_enabled() &&
       !StaticPrefs::media_utility_process_enabled() &&
       StaticPrefs::media_rdd_ffvpx_enabled())
 #else
-  if (((StaticPrefs::media_use_remote_encoder_audio() &&
+  if (((StaticPrefs::media_use_remote_encoder_audio_software() &&
         !StaticPrefs::media_utility_process_enabled()) ||
-       StaticPrefs::media_use_remote_encoder_video()) &&
+       StaticPrefs::media_use_remote_encoder_video_software() ||
+       StaticPrefs::media_use_remote_encoder_video_platform()) &&
       StaticPrefs::media_ffmpeg_encoder_enabled() &&
       StaticPrefs::media_rdd_ffvpx_enabled())
 #endif
@@ -151,14 +152,15 @@ void PEMFactory::InitRddPEMs() {
 
 #ifdef MOZ_FFMPEG
 #  ifdef MOZ_FFVPX_AUDIOONLY
-  if (StaticPrefs::media_use_remote_encoder_audio() &&
+  if (StaticPrefs::media_use_remote_encoder_audio_software() &&
       StaticPrefs::media_ffmpeg_encoder_enabled() &&
       !StaticPrefs::media_utility_process_enabled() &&
       StaticPrefs::media_rdd_ffmpeg_enabled())
 #  else
-  if (((StaticPrefs::media_use_remote_encoder_audio() &&
+  if (((StaticPrefs::media_use_remote_encoder_audio_software() &&
         !StaticPrefs::media_utility_process_enabled()) ||
-       StaticPrefs::media_use_remote_encoder_video()) &&
+       StaticPrefs::media_use_remote_encoder_video_software() ||
+       StaticPrefs::media_use_remote_encoder_video_platform()) &&
       StaticPrefs::media_ffmpeg_encoder_enabled() &&
       StaticPrefs::media_rdd_ffmpeg_enabled())
 #  endif
@@ -174,7 +176,7 @@ void PEMFactory::InitRddPEMs() {
 }
 
 void PEMFactory::InitUtilityPEMs() {
-  if (StaticPrefs::media_use_remote_encoder_audio() &&
+  if (StaticPrefs::media_use_remote_encoder_audio_software() &&
       StaticPrefs::media_ffmpeg_encoder_enabled()) {
     if (RefPtr<PlatformEncoderModule> pem =
             FFVPXRuntimeLinker::CreateEncoder()) {
@@ -183,7 +185,7 @@ void PEMFactory::InitUtilityPEMs() {
   }
 
 #ifdef MOZ_FFMPEG
-  if (StaticPrefs::media_use_remote_encoder_audio() &&
+  if (StaticPrefs::media_use_remote_encoder_audio_software() &&
       StaticPrefs::media_ffmpeg_enabled()) {
     if (RefPtr<PlatformEncoderModule> pem =
             FFmpegRuntimeLinker::CreateEncoder()) {
@@ -200,7 +202,7 @@ void PEMFactory::InitUtilityPEMs() {
 }
 
 void PEMFactory::InitContentPEMs() {
-  if (StaticPrefs::media_use_remote_encoder_video() &&
+  if (StaticPrefs::media_use_remote_encoder_video_platform() &&
       StaticPrefs::media_gpu_process_encoder()) {
     if (RefPtr<PlatformEncoderModule> pem =
             RemoteEncoderModule::Create(RemoteMediaIn::GpuProcess)) {
@@ -208,8 +210,9 @@ void PEMFactory::InitContentPEMs() {
     }
   }
 
-  if ((StaticPrefs::media_use_remote_encoder_video() ||
-       StaticPrefs::media_use_remote_encoder_audio()) &&
+  if ((StaticPrefs::media_use_remote_encoder_video_platform() ||
+       StaticPrefs::media_use_remote_encoder_video_software() ||
+       StaticPrefs::media_use_remote_encoder_audio_software()) &&
       StaticPrefs::media_rdd_process_enabled()) {
     if (RefPtr<PlatformEncoderModule> pem =
             RemoteEncoderModule::Create(RemoteMediaIn::RddProcess)) {
@@ -217,7 +220,7 @@ void PEMFactory::InitContentPEMs() {
     }
   }
 
-  if (StaticPrefs::media_use_remote_encoder_audio() &&
+  if (StaticPrefs::media_use_remote_encoder_audio_software() &&
       StaticPrefs::media_utility_process_enabled()) {
 #ifdef MOZ_APPLEMEDIA
     if (RefPtr<PlatformEncoderModule> pem = RemoteEncoderModule::Create(
@@ -239,7 +242,7 @@ void PEMFactory::InitContentPEMs() {
     }
   }
 
-  if (!StaticPrefs::media_use_remote_encoder_video()) {
+  if (!StaticPrefs::media_use_remote_encoder_video_platform()) {
 #ifdef MOZ_APPLEMEDIA
     RefPtr<PlatformEncoderModule> m(new AppleEncoderModule());
     mCurrentPEMs.AppendElement(m);
@@ -257,11 +260,11 @@ void PEMFactory::InitContentPEMs() {
   }
 
 #ifdef MOZ_FFVPX_AUDIOONLY
-  if (!StaticPrefs::media_use_remote_encoder_audio() &&
+  if (!StaticPrefs::media_use_remote_encoder_audio_software() &&
       StaticPrefs::media_ffmpeg_encoder_enabled())
 #else
-  if ((!StaticPrefs::media_use_remote_encoder_audio() ||
-       !StaticPrefs::media_use_remote_encoder_video()) &&
+  if ((!StaticPrefs::media_use_remote_encoder_audio_software() ||
+       !StaticPrefs::media_use_remote_encoder_video_software()) &&
       StaticPrefs::media_ffmpeg_encoder_enabled())
 #endif
   {
@@ -273,12 +276,12 @@ void PEMFactory::InitContentPEMs() {
 
 #ifdef MOZ_FFMPEG
 #  ifdef MOZ_FFVPX_AUDIOONLY
-  if (!StaticPrefs::media_use_remote_encoder_audio() &&
+  if (!StaticPrefs::media_use_remote_encoder_audio_software() &&
       StaticPrefs::media_ffmpeg_enabled() &&
       StaticPrefs::media_ffmpeg_encoder_enabled())
 #  else
-  if ((!StaticPrefs::media_use_remote_encoder_audio() ||
-       !StaticPrefs::media_use_remote_encoder_video()) &&
+  if ((!StaticPrefs::media_use_remote_encoder_audio_software() ||
+       !StaticPrefs::media_use_remote_encoder_video_software()) &&
       StaticPrefs::media_ffmpeg_enabled() &&
       StaticPrefs::media_ffmpeg_encoder_enabled())
 #  endif

@@ -16,6 +16,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/modules/CanvasPermissionPromptHelper.sys.mjs",
   FilePickerCrashed: "resource:///modules/FilePickerCrashed.sys.mjs",
   PluginManager: "resource:///actors/PluginParent.sys.mjs",
+  SerialDeviceSharingHelper:
+    "moz-src:///browser/modules/SerialDeviceSharingHelper.sys.mjs",
   WebAuthnPromptHelper:
     "moz-src:///toolkit/modules/WebAuthnPromptHelper.sys.mjs",
 });
@@ -30,6 +32,8 @@ let gObservers = {
   "file-picker-crashed": ["FilePickerCrashed"],
   "gmp-plugin-crash": ["PluginManager"],
   "plugin-crashed": ["PluginManager"],
+
+  "serial-device-state-changed": ["SerialDeviceSharingHelper"],
 
   "webauthn-prompt": ["WebAuthnPromptHelper"],
 };

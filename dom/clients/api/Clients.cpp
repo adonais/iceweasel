@@ -83,7 +83,8 @@ already_AddRefed<Promise> Clients::Get(const nsAString& aClientID,
   innerPromise
       ->Then(
           target, __func__,
-          [outerPromise, holder, scope](const ClientOpResult& aResult) {
+          [outerPromise, holder,
+           scope = std::move(scope)](const ClientOpResult& aResult) {
             holder->Complete();
             NS_ENSURE_TRUE_VOID(holder->GetParentObject());
             if (ServiceWorkersStorageAllowedForClient(
@@ -163,7 +164,8 @@ already_AddRefed<Promise> Clients::MatchAll(const ClientQueryOptions& aOptions,
                           aOptions.mType, aOptions.mIncludeUncontrolled);
   StartClientManagerOp(
       &ClientManager::MatchAll, args, mGlobal,
-      [outerPromise, global, scope](const ClientOpResult& aResult) {
+      [outerPromise, global,
+       scope = std::move(scope)](const ClientOpResult& aResult) {
         nsTArray<RefPtr<Client>> clientList;
         bool storageDenied = false;
         for (const ClientInfoAndState& value :

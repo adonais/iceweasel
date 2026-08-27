@@ -1008,8 +1008,9 @@ var focusSearchBoxUsingShortcut = async function (panelWin, callback) {
   }
 };
 
-function getCookieId(name, domain, path, partitionKey = "") {
-  return `${name}${SEPARATOR_GUID}${domain}${SEPARATOR_GUID}${path}${SEPARATOR_GUID}${partitionKey}`;
+function getCookieId(name, domain, path, originAttributes = {}) {
+  const suffix = ChromeUtils.originAttributesToSuffix(originAttributes);
+  return `${name}${SEPARATOR_GUID}${domain}${SEPARATOR_GUID}${path}${SEPARATOR_GUID}${suffix}`;
 }
 
 function setPermission(url, permission) {

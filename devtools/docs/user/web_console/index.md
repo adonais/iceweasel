@@ -47,3 +47,17 @@ You open the Web Console from a menu or with a keyboard shortcut:
 - Press the {kbd}`Ctrl` + {kbd}`Shift` + {kbd}`K` ({kbd}`Cmd` + {kbd}`Opt` + {kbd}`K` on OS X) keyboard shortcut.
 
 The {doc}`Toolbox <../tools_toolbox/index>` appear at the bottom, left, or right of the browser window (depending on your docking settings), with the Web Console activated (it's just called **Console** in the {ref}`DevTools toolbar <tools-toolbox-toolbar>`
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+console_messages/index
+helpers/index
+invoke_getters_from_autocomplete/index
+remoting/index
+rich_output/index
+split_console/index
+the_command_line_interpreter/index
+ui_tour/index
+```

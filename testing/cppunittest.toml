@@ -41,6 +41,8 @@ run-if = [
   "os == 'win'",
 ]
 
+["TestCumulativeAverage"]
+
 ["TestDefineEnum"]
 
 ["TestDllBlocklistAssumptions"]

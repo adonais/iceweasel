@@ -45,6 +45,12 @@
       >
         <a slot="support-link" href="#learn-more">Learn more</a>
       </moz-promo>
+      <moz-promo
+        id="dismissablePromo"
+        heading="Dismissable"
+        message="This promo can be dismissed"
+        dismissable
+      ></moz-promo>
     </div>
     <pre id="test"></pre>
     <script class="testbody" type="application/javascript">
@@ -100,6 +106,108 @@
           "Test message",
           "Message is correctly rendered"
         );
+      });
+
+      // The promos under test are appended to the end of the page, which can
+      // leave the close button below the fold in a short window. Scroll it into
+      // view first, since synthesizeMouseAtCenter dispatches at the button's
+      // current coordinates without scrolling to it.
+      function clickCloseButton(mozPromo) {
+        mozPromo.closeButton.scrollIntoView({ block: "center" });
+        synthesizeMouseAtCenter(mozPromo.closeButton, {});
+      }
+
+      add_task(async function test_dismissable() {
+        const mozPromo = document.createElement("moz-promo");
+        document.getElementById("content").append(mozPromo);
+        await mozPromo.updateComplete;
+
+        ok(!mozPromo.closeButton, "Close button is hidden by default");
+
+        mozPromo.dismissable = true;
+        await mozPromo.updateComplete;
+        ok(mozPromo.closeButton, "Close button is shown when dismissable");
+        await SimpleTest.promiseWaitForCondition(
+          () => mozPromo.closeButton.ariaLabel == "Close",
+          "Waiting for the close button localization"
+        );
+        is(
+          mozPromo.closeButton.title,
+          "Close",
+          "Close button has a localized title"
+        );
+
+        mozPromo.dismissable = false;
+        await mozPromo.updateComplete;
+        ok(!mozPromo.closeButton, "Close button is hidden when disabled");
+        mozPromo.remove();
+      });
+
+      add_task(async function test_dismiss_event_removes_promo() {
+        const mozPromo = document.createElement("moz-promo");
+        mozPromo.dismissable = true;
+        document.getElementById("content").append(mozPromo);
+        await mozPromo.updateComplete;
+
+        let dismissEvent;
+        let dismissed = new Promise(resolve => {
+          document.addEventListener(
+            "promo:user-dismissed",
+            event => {
+              dismissEvent = event;
+              resolve();
+            },
+            { once: true }
+          );
+        });
+        clickCloseButton(mozPromo);
+        await dismissed;
+
+        ok(dismissEvent, "Dismiss event bubbles to the document");
+        ok(dismissEvent.bubbles, "Dismiss event is configured to bubble");
+        ok(dismissEvent.cancelable, "Dismiss event is cancelable");
+        ok(!mozPromo.isConnected, "Promo is removed after dismissal");
+      });
+
+      add_task(async function test_prevent_dismiss() {
+        const mozPromo = document.createElement("moz-promo");
+        mozPromo.dismissable = true;
+        document.getElementById("content").append(mozPromo);
+        await mozPromo.updateComplete;
+
+        let dismissed = new Promise(resolve => {
+          mozPromo.addEventListener(
+            "promo:user-dismissed",
+            event => {
+              event.preventDefault();
+              resolve();
+            },
+            { once: true }
+          );
+        });
+        clickCloseButton(mozPromo);
+        await dismissed;
+
+        ok(mozPromo.isConnected, "Canceled dismissal keeps the promo mounted");
+        mozPromo.remove();
+      });
+
+      add_task(async function test_keyboard_dismiss() {
+        const mozPromo = document.createElement("moz-promo");
+        mozPromo.dismissable = true;
+        document.getElementById("content").append(mozPromo);
+        await mozPromo.updateComplete;
+
+        let dismissed = new Promise(resolve => {
+          mozPromo.addEventListener("promo:user-dismissed", resolve, {
+            once: true,
+          });
+        });
+        mozPromo.closeButton.focus();
+        synthesizeKey("KEY_Enter");
+        await dismissed;
+
+        ok(!mozPromo.isConnected, "Keyboard activation dismisses the promo");
       });
 
       add_task(async function test_heading_and_message_display() {

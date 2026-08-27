@@ -1,0 +1,72 @@
+(mozilla-projects-nss-reference-fc-digestencryptupdate)=
+
+# FC_DigestEncryptUpdate
+
+## [Name](#name)
+
+:::{container}
+FC_DigestEncryptUpdate - continue a multi-part digest and encryption operation
+:::
+
+## [Syntax](#syntax)
+
+:::{container}
+
+```{code}
+CK_RV FC_DigestEncryptUpdate(
+  CK_SESSION_HANDLE hSession,
+  CK_BYTE_PTR pPart,
+  CK_ULONG ulPartLen,
+  CK_BYTE_PTR pEncryptedPart,
+  CK_ULONG_PTR pulEncryptedPartLen
+);
+```
+
+:::
+
+## [Parameters](#parameters)
+
+:::{container}
+`hSession`
+
+: [in] session handle.
+
+`pPart`
+
+: [in] pointer to the data part.
+
+`ulPartLen`
+
+: [in] length of data in bytes.
+
+`pEncryptedPart`
+
+: [in] pointer to the location which receives the digested and encrypted part or NULL.
+
+`pulEncryptedPartLen`
+
+: [in] pointer to the length of the encrypted part buffer.
+:::
+
+## [Description](#description)
+
+:::{container}
+`FC_DigestEncryptUpdate` continues a multi-part digest and encryption operation. After calling
+both `FC_DigestInit` and `FC_EncryptInit` to set up the operations this function may be
+called multiple times. The operation is finished by calls to `FC_DigestFinal` and
+`FC_EncryptFinal` in that order.
+
+A user must log into the token (to assume the NSS User role) before calling
+`FC_DigestEncryptUpdate`.
+:::
+
+## [Return value](#return_value)
+
+## [Examples](#examples)
+
+## [See also](#see_also)
+
+:::{container}
+
+- [NSC_DigestEncryptUpdate](/en-US/NSC_DigestEncryptUpdate)
+:::

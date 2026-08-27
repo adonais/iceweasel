@@ -27,14 +27,15 @@ add_task(async function share_firefox_link_opens_referrals_when_enabled() {
   ok(defaultDesc.hidden, "Default blurb is hidden when pref is enabled");
   ok(shareLink, "Share Firefox link element exists");
 
-  let tabPromise = BrowserTestUtils.waitForNewTab(gBrowser, "about:referrals");
   shareLink.click();
-  let tab = await tabPromise;
 
-  is(
-    tab.linkedBrowser.currentURI.displaySpec,
-    "about:referrals",
-    "Share Firefox opened about:referrals in a new tab"
+  await TestUtils.waitForCondition(
+    () =>
+      gBrowser.currentURI.displaySpec === "about:referrals" ||
+      gBrowser.currentURI.displaySpec.startsWith(
+        "https://www.firefox.com/invite"
+      ),
+    "Waiting for the referrals tab to be opened"
   );
 
   // The code pref is re-locked after generation, and a locked pref reads its
@@ -46,7 +47,7 @@ add_task(async function share_firefox_link_opens_referrals_when_enabled() {
     "A referral code was generated when opening the referrals tab"
   );
 
-  BrowserTestUtils.removeTab(tab);
+  gBrowser.removeTab(gBrowser.selectedTab);
   aboutDialog.close();
 
   Services.prefs.clearUserPref(REFERRAL_CODE_PREF);

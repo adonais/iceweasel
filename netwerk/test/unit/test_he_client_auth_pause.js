@@ -86,10 +86,38 @@ const gClientAuthDialogService = {
   },
 };
 
+// nsIPrompt implementation to handle protected authentication prompts and
+// password prompts from the test PKCS#11 module.
+var gPrompt = {
+  QueryInterface: ChromeUtils.generateQI(["nsIPrompt"]),
+
+  // This intentionally does not use arrow function syntax to avoid an issue
+  // where in the context of the arrow function, |this != gPrompt| due to
+  // how objects get wrapped when going across xpcom boundaries.
+  alert(_title, text) {
+    const EXPECTED_PROMPT_TEXT =
+      "Please authenticate to the token “Test PKCS11 Tokeñ 2 Label”. How to do so depends on the token (for example, using a fingerprint reader or entering a code with a keypad).";
+    equal(text, EXPECTED_PROMPT_TEXT, "expecting alert() to be called");
+  },
+
+  promptPassword(_dialogTitle, _text, password, _checkMsg) {
+    // The first token in the test module has a blank password by default.
+    password.value = "";
+    return true;
+  },
+};
+
+const gPromptFactory = {
+  QueryInterface: ChromeUtils.generateQI(["nsIPromptFactory"]),
+  getPrompt: () => gPrompt,
+};
+
 MockRegistrar.register(
   "@mozilla.org/security/ClientAuthDialogService;1",
   gClientAuthDialogService
 );
+
+MockRegistrar.register("@mozilla.org/prompter;1", gPromptFactory);
 
 function makeChan(uri, browserId) {
   let chan = NetUtil.newChannel({

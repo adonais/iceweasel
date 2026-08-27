@@ -10,6 +10,7 @@ import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.LintFix
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
@@ -60,6 +61,7 @@ class NoSystemCurrentTimeMillisDetector : Detector(), SourceCodeScanner {
             node,
             context.getLocation(node),
             MESSAGE,
+            dateTimeProviderQuickFix(),
         )
     }
 
@@ -87,13 +89,24 @@ class NoSystemCurrentTimeMillisDetector : Detector(), SourceCodeScanner {
                 if (isInjectableDefaultParameter(node.sourcePsi)) return
 
                 context.report(
-                    ISSUE_NO_SYSTEM_CURRENT_TIME_MILLIS,
-                    node,
-                    context.getLocation(node),
-                    MESSAGE,
+                    issue = ISSUE_NO_SYSTEM_CURRENT_TIME_MILLIS,
+                    scope = node,
+                    location = context.getLocation(node),
+                    message = MESSAGE,
+                    quickfixData = dateTimeProviderQuickFix(),
                 )
             }
         }
+
+    /**
+     * Not the only valid fix (any injectable default parameter satisfies the rule, see
+     * `isInjectableDefaultParameter`), but `DateTimeProvider` is the convention already used
+     * elsewhere in the codebase, so link it as one example rather than force it as the fix.
+     */
+    private fun dateTimeProviderQuickFix(): LintFix = fix()
+        .name("See DateTimeProvider for one way to make this injectable")
+        .url(DATE_TIME_PROVIDER_URL)
+        .build()
 
     @Suppress("ReturnCount")
     private fun isInjectableDefaultParameter(sourcePsi: PsiElement?): Boolean {
@@ -128,9 +141,14 @@ class NoSystemCurrentTimeMillisDetector : Detector(), SourceCodeScanner {
     companion object {
         private const val SYSTEM_CLASS = "java.lang.System"
         private const val METHOD_NAME = "currentTimeMillis"
+        private const val DATE_TIME_PROVIDER_URL =
+            "https://searchfox.org/mozilla-central/source/mobile/android/android-components/" +
+                "components/support/utils/src/main/java/mozilla/components/support/utils/DateTimeProvider.kt"
         private const val MESSAGE =
-            "`System.currentTimeMillis()` must be injectable. Only permitted as a default value " +
-                "of a parameter on a top-level function or on a class."
+            "`System.currentTimeMillis()` must be injectable. Move this call to a default value " +
+                "of a parameter on a top-level function or on a class, so callers can pass a fake " +
+                "clock in tests. `DateTimeProvider` is one existing convention for this (see the " +
+                "linked fix), but any injectable default parameter satisfies this rule."
 
         @JvmField
         val ISSUE_NO_SYSTEM_CURRENT_TIME_MILLIS: Issue = Issue.create(
@@ -143,6 +161,10 @@ class NoSystemCurrentTimeMillisDetector : Detector(), SourceCodeScanner {
                   - as a default value of a parameter on a function that is not declared inside a
                     class or object; or
                   - as a default value of a parameter on a class.
+
+                `DateTimeProvider` is one existing convention in this codebase for injecting time,
+                but it isn't the only way to satisfy this rule: any injectable default parameter
+                works, including a plain `() -> Long` lambda.
             """.trimIndent(),
             category = Category.CORRECTNESS,
             priority = 6,

@@ -231,13 +231,19 @@ Maybe<GLuint> NativeLayerMacSurfaceHandler::NextSurfaceAsFramebuffer(
         MOZ_RELEASE_ASSERT(
             sourceFBO,
             "GetFramebufferForSurface failed during HandlePartialUpdate.");
+
+        mSurfacePoolHandle->gl()->fBindFramebuffer(LOCAL_GL_READ_FRAMEBUFFER,
+                                                   *sourceFBO);
+        mSurfacePoolHandle->gl()->fBindFramebuffer(LOCAL_GL_DRAW_FRAMEBUFFER,
+                                                   *fbo);
+
         for (auto iter = copyRegion.RectIter(); !iter.Done(); iter.Next()) {
           gfx::IntRect r = iter.Get();
           if (mSurfaceIsFlipped) {
             r.y = mSize.height - r.YMost();
           }
-          mSurfacePoolHandle->gl()->BlitHelper()->BlitFramebufferToFramebuffer(
-              *sourceFBO, *fbo, r, r, LOCAL_GL_NEAREST);
+          mSurfacePoolHandle->gl()->BlitHelper()->BlitFramebuffer(
+              r, r, LOCAL_GL_NEAREST);
         }
       });
 

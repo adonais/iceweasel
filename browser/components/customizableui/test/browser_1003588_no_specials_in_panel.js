@@ -83,7 +83,10 @@ add_task(async function checkDragging() {
   let placementsWithSpecials = getAreaWidgetIds(startArea);
   let elementsToMove = [];
   for (let id of placementsWithSpecials) {
-    if (CustomizableUI.isSpecialWidget(id)) {
+    if (
+      CustomizableUI.isSpecialWidget(id) &&
+      !startingToolbarPlacements.includes(id)
+    ) {
       elementsToMove.push(id);
     }
   }

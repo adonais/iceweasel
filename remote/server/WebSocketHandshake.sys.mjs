@@ -9,7 +9,6 @@ const CC = Components.Constructor;
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  executeSoon: "chrome://remote/content/shared/Sync.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
   RemoteAgent: "chrome://remote/content/components/RemoteAgent.sys.mjs",
 });
@@ -265,7 +264,7 @@ async function createWebSocket(transport, input, output) {
   const transportProvider = {
     setListener(upgradeListener) {
       // onTransportAvailable callback shouldn't be called synchronously
-      lazy.executeSoon(() => {
+      Services.tm.dispatchToMainThread(() => {
         upgradeListener.onTransportAvailable(transport, input, output);
       });
     },

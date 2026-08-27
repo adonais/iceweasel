@@ -196,13 +196,13 @@ This section will display any user modified preferences which effect the
 performance or behavior of browser components which can impact WebRTC calls.
 When hovering over a preference path displayed in this section a clipboard
 icon will appear. Clicking that icon will copy the path to the clipboard. It
-can then be pasted into [about:config](about:config), to change or reset the
+can then be pasted into <about:config>, to change or reset the
 value to its default.
 
 :::{warning}
 Unexpected values in this section may be caused by installed extensions. It
 is best to test issues in a clean profile when possible using
-[about:profiles](about:profiles).
+<about:profiles>.
 :::
 
 #### Media Context
@@ -221,7 +221,7 @@ to bug reports.
 
 In the event of a WebRTC issue, the {code}`Enable WebRTC Log Preset` button is a very
 quick way to start logging. Pressing that button will open a new tab with
-[about:logging](about:logging) with the {code}`webrtc` preset selected. This
+<about:logging> with the {code}`webrtc` preset selected. This
 preset contains all {ref}`standard-logging-modules`. Logging
 will begin immediately. If one needs to change other log settings on that page
 one can customize them, and then press {code}`Start Logging`. This may be
@@ -257,9 +257,9 @@ variability in packet inter-arrival times. In order to smoothly play out
 of the incoming stream a receiver experiencing jitter will have to
 buffer (delay) incoming packets.
 
-**Using** [about:webrtc](about:webrtc) **to Diagnose Delay**
+**Using** <about:webrtc> **to Diagnose Delay**
 
-The key metrics in [about:webrtc](about:webrtc) are RTT (round-trip-time) and
+The key metrics in <about:webrtc> are RTT (round-trip-time) and
 jitter. They can be found in the RTP stats section of the
 PeerConnection. The PeerConnection informational blocks start out in a
 minimized state, and one will need to expand a block to find the RTP
@@ -530,10 +530,10 @@ MOZ_LOG="jsep:5,sdp:5,signaling:5,mtransport:5,nicer:5,RTCRtpReceiver:5,RTCRtpSe
 ### Enabling Call Stats History
 
 Call stats history is enabled by default in Nightly. To enable in
-release builds open [about:config](about:config), and change
+release builds open <about:config>, and change
 "media.aboutwebrtc.hist.enabled" to true. This will keep a history
 window of stats for a number of recent calls, allowing for inspection
-in [about:webrtc](about:webrtc) after a call has completed.
+in <about:webrtc> after a call has completed.
 
 (dumping-call-stats)=
 
@@ -541,10 +541,10 @@ in [about:webrtc](about:webrtc) after a call has completed.
 
 One can dump a JSON blob of call stats for an active call, or a recent
 call if call stats history is enabled. There are two buttons in
-[about:webrtc](about:webrtc) to do this, "Copy Report" and "Copy Report
+<about:webrtc> to do this, "Copy Report" and "Copy Report
 History". The former will create a copy of the most recent stats for the
 PeerConnection. The later will copy all the history of stats reports
-that [about:webrtc](about:webrtc) has accumulated for that PeerConnection, this
+that <about:webrtc> has accumulated for that PeerConnection, this
 can be up to several minutes of stats.
 
 (debugging-encrypted-packets)=
@@ -678,7 +678,7 @@ depending on network circumstances.
 
 :::{note}
 A list of media codecs with playback support are available in the Media
-section of [about:support#media](about:support#media) . Not all media
+section of <about:support#media> . Not all media
 codecs present and available to Firefox for playback are supported in WebRTC
 calls.
 :::
@@ -839,7 +839,7 @@ Safari, or Servo if one needs to compare behavior between browsers. This can be
 done directly through {code}`mach`, see [running tests in other browsers](/web-platform/index.html#running-tests-in-other-browsers)
 for more details.
 
-(mochitests)=
+(webrtc-mochitests)=
 
 ### Mochitests
 
@@ -927,14 +927,14 @@ Here is a list of helpful substring selectors for executing specific WebRTC gtes
      - :searchfox:`videoconduit_unittests.cpp <media/webrtc/signaling/gtest/videoconduit_unittests.cpp>`
 ```
 
-For more general information about gtests see the documentation [here](/gtest/index.html).
+For more general information about gtests see the documentation [here](/gtest/index.md).
 
 ### Fuzz Testing
 
 It is not common to need to run fuzz testing as it is run on a semi-continuous
 fashion in CI. It is more likely that one will need to respond to a bug filed
 by a fuzzing bot. If one is interested in fuzzing one should consult the
-excellent documentation available [here](/tools/fuzzing/index.html).
+excellent documentation available [here](/tools/fuzzing/index.md).
 
 (code-atlas)=
 

@@ -832,8 +832,7 @@ add_task(async function testReorderMainPane() {
   is(available.selectedItem.value, "en-US", "English is selected");
 
   let hebrew = availableLocales.find(item => item.value == "he");
-  hebrew.click();
-  available.menupopup.hidePopup();
+  await BrowserTestUtils.selectMenulistItem(hebrew);
 
   await TestUtils.waitForCondition(
     () => !messageBar.hidden,
@@ -900,8 +899,7 @@ add_task(async function testLiveLanguageReloading() {
   // French and English are both LTR languages.
   let french = availableLocales.find(item => item.value == "fr");
 
-  french.click();
-  available.menupopup.hidePopup();
+  await BrowserTestUtils.selectMenulistItem(french);
 
   is(
     Services.locale.appLocaleAsBCP47,
@@ -971,8 +969,7 @@ add_task(async function testLiveLanguageReloadingBidiOff() {
   // English is LTR and Hebrew is RTL.
   let hebrew = availableLocales.find(item => item.value == "he");
 
-  hebrew.click();
-  available.menupopup.hidePopup();
+  await BrowserTestUtils.selectMenulistItem(hebrew);
 
   await TestUtils.waitForCondition(
     () => !messageBar.hidden,
@@ -1050,8 +1047,7 @@ add_task(async function testLiveLanguageReloadingBidiOn() {
   // English is LTR and Hebrew is RTL.
   let hebrew = availableLocales.find(item => item.value == "he");
 
-  hebrew.click();
-  available.menupopup.hidePopup();
+  await BrowserTestUtils.selectMenulistItem(hebrew);
 
   is(messageBar.hidden, true, "The message bar is still hidden");
 

@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.addons
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.icu.text.ListFormatter
@@ -55,7 +54,6 @@ val logger = Logger("Addon")
  * @property detailUrl The link to the detail page for this [Addon].
  * @property incognito Indicates how the extension works with private browsing windows.
  */
-@SuppressLint("ParcelCreator")
 @Parcelize
 data class Addon(
     val id: String,
@@ -96,7 +94,6 @@ data class Addon(
      * @property name The name of the author.
      * @property url The link to the profile page of the author.
      */
-    @SuppressLint("ParcelCreator")
     @Parcelize
     data class Author(
         val name: String,
@@ -109,7 +106,6 @@ data class Addon(
      * @property average An average score from 1 to 5 of how users scored this add-on.
      * @property reviews The number of users that has scored this add-on.
      */
-    @SuppressLint("ParcelCreator")
     @Parcelize
     data class Rating(
         val average: Float,
@@ -122,7 +118,6 @@ data class Addon(
      * @property name The name of this permission.
      * @property granted Indicate if this permission is granted or not.
      */
-    @SuppressLint("ParcelCreator")
     @Parcelize
     data class Permission(
         val name: String,
@@ -135,7 +130,6 @@ data class Addon(
      * @property localizedName The localized name of the permission to show in the UI.
      * @property permission The [Permission] that was localized.
      */
-    @SuppressLint("ParcelCreator")
     @Parcelize
     data class LocalizedPermission(
         val localizedName: String,
@@ -159,7 +153,6 @@ data class Addon(
      * browsing pages, false otherwise.
      * @property icon the icon of the installed extension.
      */
-    @SuppressLint("ParcelCreator")
     @Parcelize
     data class InstalledState(
         val id: String,

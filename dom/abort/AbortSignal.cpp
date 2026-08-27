@@ -202,7 +202,7 @@ class AbortSignalTimeoutHandler final : public TimeoutHandler {
   AbortSignalTimeoutHandler(JSContext* aCx, AbortSignal* aSignal)
       : TimeoutHandler(aCx), mSignal(aSignal) {}
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(AbortSignalTimeoutHandler)
 
   // https://dom.spec.whatwg.org/#dom-abortsignal-timeout

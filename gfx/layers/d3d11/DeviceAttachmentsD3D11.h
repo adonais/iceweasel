@@ -67,7 +67,7 @@ class DeviceAttachmentsD3D11 final {
 
  private:
   explicit DeviceAttachmentsD3D11(ID3D11Device* device);
-  ~DeviceAttachmentsD3D11();
+  ~DeviceAttachmentsD3D11() = default;
 
   bool Initialize();
   bool CreateShaders();

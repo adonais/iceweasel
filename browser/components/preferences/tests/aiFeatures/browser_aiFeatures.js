@@ -89,4 +89,66 @@ describe("settings ai features", () => {
       });
     });
   });
+
+  describe("tab group suggestions visibility", () => {
+    it("hides the toggle when tab groups are disabled and shows it when enabled", async () => {
+      await SpecialPowers.pushPrefEnv({
+        set: [
+          ["browser.tabs.groups.enabled", true],
+          ["browser.preferences.aiControls.showUnavailable", true],
+        ],
+      });
+
+      await withPrefsPane("ai", async doc => {
+        let win = doc.documentGlobal;
+        const setting = win.Preferences.getSetting(
+          "aiControlSmartTabGroupsSelect"
+        );
+        const control = doc.getElementById("aiControlSmartTabGroupsSelect");
+        Assert.ok(
+          BrowserTestUtils.isVisible(control),
+          "Tab group suggestions control is visible when tab groups are enabled"
+        );
+
+        let settingChanged = waitForSettingChange(setting);
+        await SpecialPowers.pushPrefEnv({
+          set: [["browser.tabs.groups.enabled", false]],
+        });
+        await settingChanged;
+        await new Promise(r => win.requestAnimationFrame(r));
+        Assert.ok(
+          !BrowserTestUtils.isVisible(control),
+          "Tab group suggestions control is hidden when tab groups are disabled"
+        );
+
+        settingChanged = waitForSettingChange(setting);
+        await SpecialPowers.pushPrefEnv({
+          set: [["browser.tabs.groups.enabled", true]],
+        });
+        await settingChanged;
+        await new Promise(r => win.requestAnimationFrame(r));
+        Assert.ok(
+          BrowserTestUtils.isVisible(control),
+          "Tab group suggestions control is visible again when tab groups are re enabled"
+        );
+      });
+    });
+
+    it("is hidden on initial load when tab groups are already disabled", async () => {
+      await SpecialPowers.pushPrefEnv({
+        set: [
+          ["browser.tabs.groups.enabled", false],
+          ["browser.preferences.aiControls.showUnavailable", true],
+        ],
+      });
+
+      await withPrefsPane("ai", async doc => {
+        const control = doc.getElementById("aiControlSmartTabGroupsSelect");
+        Assert.ok(
+          !BrowserTestUtils.isVisible(control),
+          "Tab group suggestions control is hidden on initial render when tab groups are disabled"
+        );
+      });
+    });
+  });
 });

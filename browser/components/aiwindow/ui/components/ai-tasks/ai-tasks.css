@@ -1,0 +1,267 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* ===== Page Layout ===== */
+
+.page-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.page-container {
+  display: block;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  width: min(100%, 600px);
+  min-width: min-content;
+  margin-inline-start: 1px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ===== Modal Dialog ===== */
+
+.modal-wrapper {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  max-width: 600px;
+  width: 100%;
+  border: var(--card-border);
+  border-radius: var(--card-border-radius);
+  background-color: var(--card-background-color);
+  box-shadow: var(--card-box-shadow);
+  box-sizing: border-box;
+}
+
+.modal-container {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-medium);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: var(--space-medium);
+
+  p {
+    margin-top: 0;
+    margin-bottom: 0;
+    font-size: var(--font-size-small);
+  }
+}
+
+.modal-title {
+  font-size: var(--font-size-large);
+  margin-top: 0;
+  margin-bottom: var(--space-medium);
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-large);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-small);
+  margin-top: var(--space-large);
+}
+
+/* ===== Form Elements ===== */
+
+.form-row {
+  flex-direction: column;
+  display: flex;
+  gap: var(--space-xxsmall);
+}
+
+moz-input-url::part(label),
+moz-textarea::part(label),
+moz-input-text::part(label),
+.form-label {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-color-deemphasized);
+}
+
+.form-input {
+  width: 100%;
+}
+
+.form-input.error {
+  border-color: var(--border-color-error);
+  outline-color: var(--border-color-error);
+}
+
+.form-textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.form-helper-text {
+  font-size: var(--font-size-small);
+  margin-top: var(--space-small);
+  margin-bottom: var(--space-small);
+}
+
+.error-message {
+  color: var(--text-color-error);
+  font-size: var(--font-size-small);
+  margin-inline-start: var(--space-small);
+}
+
+/* ===== URL Pills ===== */
+
+.pages-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+}
+
+.page-pills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-small);
+  margin-bottom: var(--space-small);
+}
+
+.page-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xsmall);
+  max-width: 100%;
+  padding-block: var(--space-small);
+  padding-inline: var(--space-medium);
+  border: 1px solid var(--border-color-deemphasized);
+  border-radius: var(--border-radius-circle);
+  background: color-mix(in srgb, var(--background-color-information) 30%, transparent);
+  font-size: var(--font-size-small);
+}
+
+.page-pill-url {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-pill-remove {
+  width: var(--size-item-xsmall);
+  height: var(--size-item-xsmall);
+  padding: 0;
+  border: none;
+  flex: none;
+  cursor: pointer;
+  color: var(--text-color-deemphasized);
+  -moz-context-properties: fill;
+  fill: currentColor;
+  background-color: transparent;
+  background-image: url("chrome://global/skin/icons/close.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: var(--size-item-xsmall);
+}
+
+.page-pill-remove:hover {
+  color: var(--text-color);
+}
+
+.page-input-row {
+  display: flex;
+  align-items: end;
+  gap: var(--space-small);
+}
+
+.page-input-row .form-input {
+  flex: 1;
+}
+
+.add-page-btn {
+  flex-shrink: 0;
+  margin-bottom: var(--space-xsmall);
+}
+
+/* ===== Schedule Section ===== */
+
+.schedule-container {
+  display: flex;
+  gap: var(--space-medium);
+  align-items: flex-end;
+}
+
+.form-section-half {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+}
+
+.time-input {
+  padding: var(--space-small);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-small);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  background-color: var(--input-background);
+  font-size: var(--font-size-small);
+  font-family: inherit;
+  min-height: var(--size-item-small);
+}
+
+.time-input:focus {
+  outline: 2px solid var(--focus-outline-color);
+  outline-offset: 2px;
+  border-color: var(--border-color-interactive);
+}
+
+/* ===== Success Message ===== */
+
+.success-message-wrapper {
+  position: fixed;
+  top: var(--space-large);
+  right: var(--space-large);
+  z-index: 999;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.success-message {
+  min-width: var(--size-layout-small);
+  max-width: var(--size-layout-medium);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ===== Feature unavailable section ===== */
+.unavailable-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.unavailable-container {
+  text-align: center;
+}
+
+.title-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+}

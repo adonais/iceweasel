@@ -89,10 +89,19 @@ sealed class SummarizationState : State {
 
         /** User finished by dismissing the error screen. */
         data object ErrorDismissed : Finished()
+
+        /** User finished by navigating to the Mozilla account sign-in flow. */
+        data object NavigatedToSignIn : Finished()
     }
 
     /** User clicked Learn More in the shake consent screen. */
     data object LearnMoreAboutShakeConsent : SummarizationState()
+
+    /** User clicked Learn More to explore cloud-supported features. */
+    data object LearnMoreAboutCloudSupportedFeatures : SummarizationState()
+
+    /** The user must sign in before summarization can proceed. */
+    data object SignInRequired : SummarizationState()
 
     companion object {
         val initial: SummarizationState get() = Inert(false)

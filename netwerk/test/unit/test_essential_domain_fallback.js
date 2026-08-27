@@ -171,6 +171,26 @@ add_task(async function test_no_fallback_with_content_principal() {
   equal(req.status, 0x805a2ff4);
 });
 
+// A top level navigation started from the browser UI or from a privileged page
+// (the address bar, a link in about:addons) has a system triggering principal,
+// but it is still an ordinary content load and must not be redirected to the
+// fallback domain.
+add_task(async function test_no_fallback_for_document_load() {
+  Services.obs.notifyObservers(null, "net:cancel-all-connections");
+  Services.dns.clearCache(true);
+
+  override.clearOverrides();
+  override.addIPOverride("aus5.mozilla.org", "N/A");
+  override.addIPOverride("foo.example.com", "127.0.0.1");
+
+  let { req } = await openChannelPromise("https://aus5.mozilla.org/stuff", {
+    loadUsingSystemPrincipal: true,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
+    expectFailure: true,
+  });
+  equal(req.status, Cr.NS_ERROR_UNKNOWN_HOST);
+});
+
 add_task(async function test_fallback_on_connection_failure() {
   Services.obs.notifyObservers(null, "net:cancel-all-connections");
   Services.dns.clearCache(true);

@@ -19,11 +19,8 @@ add_task(async function test_enabled_migrator() {
     let selector = shadow.querySelector("#browser-profile-selector");
     EventUtils.synthesizeMouseAtCenter(selector, {}, prefsWin);
 
-    await new Promise(resolve => {
-      shadow
-        .querySelector("panel-list")
-        .addEventListener("shown", resolve, { once: true });
-    });
+    let panelList = shadow.querySelector("panel-list");
+    await waitForPanelListShown(panelList);
 
     let panelItem = shadow.querySelector(
       `panel-item[key="${InternalTestingProfileMigrator.key}"]`

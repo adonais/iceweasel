@@ -35,6 +35,7 @@ task-defaults:
             - target.maven.zip
     include-coverage: true
     run:
+        clone-with: hg
         pre-gradlew:
             - ["cd", "mobile/android/android-components"]
         using: gradlew
@@ -54,6 +55,7 @@ task-defaults:
 tasks:
     gecko:
         run:
+            clone-with: hg
             gradlew:
                 - ':components:samples-browser:assembleGecko'
                 - ':components:samples-browser:testGeckoDebugUnitTest'
@@ -61,6 +63,7 @@ tasks:
 
     system:
         run:
+            clone-with: hg
             gradlew: [':components:samples-browser:assembleSystem']
         treeherder:
             symbol: 'samples-browser-system(B)'

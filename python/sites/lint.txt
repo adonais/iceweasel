@@ -1,5 +1,4 @@
 requires-python:>=3.9
-# We need sphinx to avoid some rstcheck errors and warnings
 pypi:Sphinx==7.1.2
 pypi:alabaster==0.7.13
 pypi:codespell==2.4.2
@@ -13,8 +12,7 @@ pypi:pluggy==0.13.1
 pypi:psutil==5.9.4
 pypi:py==1.11.0
 pypi:pytz==2022.7.1
-pypi:rstcheck==6.2.5
-pypi:ruff==0.15.20
+pypi:ruff==0.16.0
 pypi:rumdl==0.1.91
 pypi:snowballstemmer==2.2.0
 pypi:sphinxcontrib-applehelp==1.0.4

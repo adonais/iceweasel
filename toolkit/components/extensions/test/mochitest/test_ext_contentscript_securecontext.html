@@ -24,7 +24,7 @@
       manifest: {
         content_scripts: [
           {
-            // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+            // eslint-disable-next-line sdl/no-insecure-url
             "matches": ["http://example.org/"],
             "js": ["content_script.js"]
           },
@@ -46,7 +46,7 @@
       },
     });
     await extension.startup();
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     const win = window.open("http://example.org/");
     await extension.awaitMessage("done");
     win.close();
@@ -58,7 +58,7 @@
       manifest: {
         content_scripts: [
           {
-            // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+            // eslint-disable-next-line sdl/no-insecure-url
             "matches": ["http://example.org/"],
             "js": ["content_script.js"]
           },
@@ -83,7 +83,7 @@
       }
     });
     await extension.startup();
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     const win = window.open("http://example.org/");
     await extension.awaitMessage("done");
     win.close();
@@ -95,7 +95,7 @@
       manifest: {
         content_scripts: [
           {
-            // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+            // eslint-disable-next-line sdl/no-insecure-url
             "matches": ["http://example.org/"],
             "js": ["content_script.js"]
           },
@@ -117,7 +117,7 @@
       },
     });
     await extension.startup();
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     const win = window.open("http://example.org/");
     await extension.awaitMessage("done");
     win.close();
@@ -129,7 +129,7 @@
       manifest: {
         content_scripts: [
           {
-            // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+            // eslint-disable-next-line sdl/no-insecure-url
             "matches": ["http://example.org/"],
             "js": ["content_script.js"]
           },
@@ -154,7 +154,7 @@
       }
     });
     await extension.startup();
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     const win = window.open("http://example.org/");
     await extension.awaitMessage("done");
     win.close();

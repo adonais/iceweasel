@@ -12,7 +12,7 @@ aparent (aParent).
 but detects mistakes like mozila
 """.lstrip()
 
-    path = create_temp_file(contents, "test_fix_temp.rst")
+    path = create_temp_file(contents, "test_fix_temp.md")
     lint([path], fix=True)
 
     assert fixed == 2
@@ -25,12 +25,12 @@ def test_lint_codespell(lint, paths):
     assert results[0].message == "informations ==> information"
     assert results[0].level == "error"
     assert results[0].lineno == 1
-    assert results[0].relpath == "ignore.rst"
+    assert results[0].relpath == "ignore.md"
 
     assert results[1].message == "mozila ==> mozilla"
     assert results[1].level == "error"
     assert results[1].lineno == 5
-    assert results[1].relpath == "ignore.rst"
+    assert results[1].relpath == "ignore.md"
 
 
 if __name__ == "__main__":

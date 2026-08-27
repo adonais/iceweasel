@@ -314,6 +314,13 @@
 }
 
 @media -moz-pref("browser.urlbar.trustPanel.featureGate") {
+  #urlbar {
+    /* The *tracker-count* animations trigger reflows, but those shouldn't affect
+     * elements outside the URL bar.
+     */
+    contain: layout;
+  }
+
   #tracking-protection-icon-container {
     display: none;
   }
@@ -330,7 +337,7 @@
   #trust-icon-container {
     padding-inline: var(--urlbar-icon-padding);
     border-radius: var(--urlbar-inner-border-radius);
-    -moz-context-properties: fill, fill-opacity;
+    -moz-context-properties: fill, fill-opacity, stroke;
 
     /* The urlbar will show insecure or secure icon by default depending
        on the state of the connection, the further clauses may override that. */
@@ -338,11 +345,203 @@
       list-style-image: url(chrome://browser/skin/trust-icon-insecure.svg);
       background-color: var(--urlbar-box-background-color);
       color: var(--urlbar-box-text-color);
+      stroke: var(--icon-color-critical);
     }
 
     &.secure {
       list-style-image: url(chrome://browser/skin/trust-icon-active.svg);
     }
+
+    /* Shield shown during the blocker check. Sets no color so it inherits the
+       same fill as .secure. */
+    &.scanning {
+      list-style-image: url(chrome://browser/skin/tracking-protection.svg);
+    }
+
+    &.has-blocked-trackers {
+      background-color: var(--urlbar-box-background-color);
+
+      /* Only the count text takes the box color, so the shield keeps its fill. */
+      #trust-icon-tracker-count-longform,
+      #trust-icon-tracker-count-shortform {
+        color: var(--urlbar-box-text-color);
+      }
+
+      #trust-icon-tracker-count-shortform {
+        margin-inline-start: var(--space-xxsmall);
+      }
+    }
+
+    /* Tighter padding for the collapsed count; the expanded pill keeps normal. */
+    &.has-blocked-trackers:not(.first-visit) {
+      padding-inline-end: var(--space-xsmall);
+    }
+
+    &:not(.has-blocked-trackers) {
+      #trust-icon-tracker-count-longform-wrapper,
+      #trust-icon-tracker-count-shortform-wrapper {
+        display: none;
+      }
+    }
+    /*
+     * We use nesting to group three different cases:
+     * - small screens/reduced motion (only show shortform tracker count)
+     * - first visit to a site (first a longform "x trackers blocked" pill visible, before collapsing to just a number)
+     * - later visits (just a pill with a number)
+     *
+     * Add to that that we need a wrapper to animate the width, and nesting quickly exceeds the default limit of 3.
+     * Since collapsing it wouldn't increase readability, we disable the lint rule here.
+     */
+    /* stylelint-disable max-nesting-depth */
+    &.has-blocked-trackers:not(.breached, .insecure) {
+      /* On smaller screens, we don't have enough space to show both the URL and the tracker count.
+         Prioritise the URL to avoid phishing and other attacks.
+      */
+      @media (width < 800px) {
+        #trust-icon-tracker-count-longform-wrapper {
+          /* Only show the shortform version on small screens. Note that we
+             can't use `display: none` on the longform version, because that
+             would restart the animation if the window width grows again.
+             Accessibility-wise, both versions are already superseded by the
+             aria-label of the containing #trust-icon-container anyway.
+           */
+          max-width: 0;
+          overflow: hidden;
+          box-sizing: border-box;
+          /* Also zero the padding so max-width: 0 can reach a true 0 width;
+             otherwise the leading digit shows as a sliver through the padding
+             band. !important is required because the first-visit intro
+             animation holds the padding, and animations outrank normal
+             declarations in the cascade. */
+          padding: 0 !important;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #trust-icon-tracker-count-longform-wrapper {
+          display: none;
+        }
+      }
+      /* After a site's first visit, we just show the number of blocked trackers (i.e. the short form) */
+      &:not(.first-visit) {
+        #trust-icon-tracker-count-longform-wrapper {
+          display: none;
+        }
+
+        #trust-icon-tracker-count-shortform-wrapper {
+          animation-name: show-shortform-tracker-count;
+          animation-duration: 230ms;
+          animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+          animation-fill-mode: forwards;
+          display: grid;
+          grid-template-columns: 0fr;
+          overflow: hidden;
+          white-space: nowrap;
+
+          #trust-icon-tracker-count-shortform {
+            min-width: 0;
+          }
+        }
+      }
+      /* On a site's first visit, we first show "x trackers blocked" (the long form) for a few seconds,
+         after which we transition to just the number of blocked trackers (the short form) */
+      &.first-visit {
+        @media (prefers-reduced-motion: no-preference) {
+          --initial-delay: 1000ms;
+          --longform-presence: 20s;
+          --collapse-duration: 230ms;
+          --shield-scale-down-duration: 60ms;
+          --shield-scale-up-duration: 260ms;
+
+          #trust-icon {
+            animation-name: scale-secure-shield-down, scale-secure-shield-up;
+            animation-duration: var(--shield-scale-down-duration), var(--shield-scale-up-duration);
+            animation-delay: var(--initial-delay), calc(var(--initial-delay) + var(--shield-scale-down-duration));
+            animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1), cubic-bezier(0.25, 1.08, 0.42, 1);
+            animation-fill-mode: none, forwards;
+            animation-play-state: paused;
+          }
+
+          #urlbar:focus-within & {
+            /* Don't play the "x trackers blocked" animation while the address bar is focused,
+               to prevent URL bar contents from moving out from under the user's cursor.
+             */
+            #trust-icon,
+            #trust-icon-tracker-count-longform-wrapper,
+            #trust-icon-tracker-count-shortform-wrapper {
+              animation-play-state: paused;
+            }
+          }
+
+          #trust-icon-tracker-count-longform-wrapper {
+            animation-name: show-longform-tracker-count, hide-longform-tracker-count;
+            animation-delay:
+              calc(var(--initial-delay) + var(--shield-scale-down-duration) + var(--shield-scale-up-duration)),
+              calc(var(--initial-delay) + var(--shield-scale-down-duration) + var(--shield-scale-up-duration) + var(--longform-presence));
+            animation-duration: var(--collapse-duration);
+            animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+            animation-fill-mode: both, forwards;
+            animation-play-state: paused;
+            min-width: 0;
+            /* Because we can't animate to width: auto, we wrap it in a single-cell grid
+              whose column width in `fr` units we *can* animate. See
+              https://chriscoyier.net/2022/12/21/things-css-could-still-use-heading-into-2023/#animate-to-auto
+              (Unfortunately, while this does still trigger a reflow, using a transform
+              would distort the text contents, which we don't want.)
+            */
+            display: grid;
+            overflow: hidden;
+            white-space: nowrap;
+
+            #trust-icon-tracker-count-longform {
+              margin: 0;
+              min-width: 0;
+            }
+          }
+          #trust-icon-tracker-count-shortform-wrapper {
+            animation-name: show-shortform-tracker-count;
+            animation-delay: calc(
+              var(--initial-delay) + var(--shield-scale-down-duration) + var(--shield-scale-up-duration) + var(--longform-presence) + var(--collapse-duration)
+            );
+            animation-duration: var(--collapse-duration);
+            animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+            animation-fill-mode: forwards;
+            animation-play-state: paused;
+            display: grid;
+            min-width: 0;
+            overflow: hidden;
+            padding-block: var(--space-xxsmall);
+            padding-inline: var(--space-xsmall);
+            white-space: nowrap;
+
+            #trust-icon-tracker-count-shortform {
+              margin: 0;
+              min-width: 0;
+            }
+          }
+
+          @media (width >= 800px) {
+            #trust-icon {
+              animation-play-state: running;
+              animation-fill-mode: none, both;
+            }
+
+            #trust-icon-tracker-count-longform-wrapper,
+            #trust-icon-tracker-count-shortform-wrapper {
+              animation-play-state: running;
+            }
+
+            /* Match the `from` keyframe of show-shortform-tracker-count so the
+               element starts fully hidden while the longform sequence plays. */
+            #trust-icon-tracker-count-shortform-wrapper {
+              grid-template-columns: 0fr;
+              opacity: 0;
+              padding: 0;
+            }
+          }
+        }
+      }
+    }
+    /* stylelint-enable max-nesting-depth */
 
     &.breached {
       /* position: relative is set on the container so that the absolutely-positioned
@@ -432,6 +631,100 @@
 
   #trust-icon-container:not(.insecure) > #trust-label {
     display: none;
+  }
+
+  #trust-icon-container.insecure,
+  #trust-icon-container.breached {
+    #trust-icon-tracker-count-longform-wrapper,
+    #trust-icon-tracker-count-shortform-wrapper {
+      display: none;
+    }
+  }
+}
+
+@keyframes scale-secure-shield-down {
+  from {
+    scale: 1;
+    list-style-image: url(chrome://browser/skin/tracking-protection.svg);
+  }
+
+  to {
+    scale: 0.75;
+    list-style-image: url(chrome://browser/skin/tracking-protection.svg);
+  }
+}
+
+@keyframes scale-secure-shield-up {
+  from {
+    scale: 0.75;
+    list-style-image: url(chrome://browser/skin/tracking-protection.svg);
+  }
+
+  99% {
+    scale: 1;
+    list-style-image: url(chrome://browser/skin/tracking-protection.svg);
+  }
+
+  to {
+    list-style-image: url(chrome://browser/skin/trust-icon-active.svg);
+  }
+}
+
+/*
+ * Tracker count animation choreography (only shown with more than 0 blocked trackers):
+ *
+ * - Longform tracker count expands in
+ * - Longform tracker count stays visible for a short period of time
+ * - Longform tracker count collapses to width 0
+ * - Shortform tracker count expands in
+ * - Shortform tracker count remains visble until next navigation
+ *
+ * Because we can't animate to width: auto, we wrap it in a single-cell grid
+ * whose column width in `fr` units we *can* animate. See
+ * https://chriscoyier.net/2022/12/21/things-css-could-still-use-heading-into-2023/#animate-to-auto
+ * (Unfortunately, while this does still trigger a reflow, using a transform
+ * would distort the text contents, which we don't want.)
+ */
+@keyframes show-longform-tracker-count {
+  from {
+    grid-template-columns: 0fr;
+    padding: 0;
+  }
+
+  to {
+    grid-template-columns: 1fr;
+    padding-block: var(--space-xxsmall);
+    padding-inline: var(--space-xsmall);
+  }
+}
+
+@keyframes hide-longform-tracker-count {
+  from {
+    grid-template-columns: 1fr;
+    opacity: 1;
+    padding-block: var(--space-xxsmall);
+    padding-inline: var(--space-xsmall);
+  }
+
+  to {
+    grid-template-columns: 0fr;
+    opacity: 0;
+    padding: 0;
+  }
+}
+
+@keyframes show-shortform-tracker-count {
+  from {
+    grid-template-columns: 0fr;
+    opacity: 0;
+    padding: 0;
+  }
+
+  to {
+    grid-template-columns: 1fr;
+    opacity: 1;
+    padding-block: var(--space-xxsmall);
+    padding-inline: var(--space-xsmall);
   }
 }
 

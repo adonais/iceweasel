@@ -935,6 +935,28 @@
         {
           "type": "object",
           "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["OPEN_ORGANIZE_TABS_PANEL"]
+            },
+            "data": {
+              "type": "object",
+              "properties": {
+                "source": {
+                  "type": "string",
+                  "description": "Identifies the surface that opened the panel, recorded as the `source` extra key on the panel's telemetry. Defaults to \"message\"."
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": ["type"],
+          "additionalProperties": false,
+          "description": "Opens the Smart Window \"Organize Tabs\" panel."
+        },
+        {
+          "type": "object",
+          "properties": {
             "data": {
               "anchor_id": {
                 "type": "string",
@@ -1017,6 +1039,51 @@
           "required": ["type"],
           "additionalProperties": false,
           "description": "Enrolls the user in IP Protection by initiating sign-in and entitlement."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The id of the icon to switch to, as listed in the CustomIconManager ICON_CATALOG. Unknown ids are ignored."
+                }
+              },
+              "required": ["id"],
+              "additionalProperties": false
+            },
+            "type": {
+              "type": "string",
+              "enum": ["SET_BROWSER_ICON"]
+            }
+          },
+          "required": ["data", "type"],
+          "additionalProperties": false,
+          "description": "Changes the browser icon using CustomIconManager. Windows only, and not supported on MSIX (packaged) builds."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["GET_REFERRAL_CODE"]
+            },
+            "data": {
+              "entrypoint": {
+                "type": "string",
+                "description": "An entrypoint name to add to the params of the created URL"
+              },
+              "where": {
+                "type": "string",
+                "description": "where to open the created URL, defaults to tab"
+              }
+            }
+          },
+          "required": ["type"],
+          "additionalProperties": false,
+          "description": "Gets the user's referral code or generates one if it doesn't exist, and opens about:referrals with the code as a param"
         }
       ]
     }

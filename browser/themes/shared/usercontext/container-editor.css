@@ -40,7 +40,12 @@
 
   @media -moz-pref("browser.nova.enabled") {
     .color-swatches .userContext-icon {
-      background-image: radial-gradient(circle 11px at center, var(--identity-stroke-color) 100%, transparent 100%);
+      background-image: none;
+      background-color: var(--identity-stroke-color);
+      border-radius: var(--border-radius-circle);
+      inline-size: var(--size-item-medium);
+      block-size: var(--size-item-medium);
+      margin: auto;
     }
   }
 }

@@ -2493,9 +2493,15 @@ sftk_mkPrivKey(SFTKObject *object, CK_KEY_TYPE key_type, CK_RV *crvp)
             } else if (key_type == CKK_EC) {
                 /* as no public key was provided during the import, we need to derive it here.
                  See: PK11_ImportAndReturnPrivateKey*/
-                (void)SECITEM_AllocItem(arena, &privKey->u.ec.publicValue, EC_GetPointSize(&privKey->u.ec.ecParams));
+                if (SECITEM_AllocItem(arena, &privKey->u.ec.publicValue,
+                                      EC_GetPointSize(&privKey->u.ec.ecParams)) == NULL) {
+                    crv = CKR_HOST_MEMORY;
+                    break;
+                }
+                PORT_Memset(privKey->u.ec.publicValue.data, 0, privKey->u.ec.publicValue.len);
                 rv = EC_DerivePublicKey(&privKey->u.ec.privateValue, &privKey->u.ec.ecParams, &privKey->u.ec.publicValue);
                 if (rv != SECSuccess) {
+                    crv = CKR_ATTRIBUTE_VALUE_INVALID;
                     break;
                 }
                 sftk_forceAttribute(object, CKA_NSS_DB, privKey->u.ec.publicValue.data, privKey->u.ec.publicValue.len);

@@ -213,8 +213,7 @@ wasmValidateText(`(component
 // ----------------------------------------------------------------------------
 // Ascribing other types to exports
 
-// Everything uses structural equality, so a type reference to a primitive is
-// equal to a raw primitive.
+// A type reference to a primitive is equal to a raw primitive.
 wasmValidateText(`(component
   (type s32)
   (import "f" (func $f (param "x" 0)))
@@ -224,8 +223,78 @@ wasmValidateText(`(component
   (export "g" (func $g) (func (param "x" 0)))
 )`);
 
+// Eq bounds to existing types are valid.
 wasmValidateText(`(component
   (type s32)
   (type s32)
   (export "t" (type 0) (type (eq 1)))
 )`);
+
+// This also works when imports are involved.
+wasmValidateText(`(component
+  (type (record (field "x" f32) (field "y" f32)))
+  (import "t1" (type (eq 0)))
+  (export "t0" (type 0))
+  (export "t00" (type 0) (type (eq 0)))
+  (export "t01" (type 0) (type (eq 1)))
+  (export "t02" (type 0) (type (eq 2)))
+  (export "t03" (type 0) (type (eq 3)))
+  (export "t10" (type 1) (type (eq 0)))
+  (export "t11" (type 1) (type (eq 1)))
+  (export "t12" (type 1) (type (eq 2)))
+  (export "t13" (type 1) (type (eq 3)))
+  (export "t20" (type 2) (type (eq 0)))
+  (export "t21" (type 2) (type (eq 1)))
+  (export "t22" (type 2) (type (eq 2)))
+  (export "t23" (type 2) (type (eq 3)))
+)`);
+
+// It's always valid to say you are (eq $yourself); this is the default.
+wasmValidateText(`(component
+  (type s32)
+  (export "t" (type 0) (type (eq 0)))
+)`);
+wasmValidateText(`(component
+  (type (resource (rep i32)))
+  (export "t" (type 0) (type (eq 0)))
+)`);
+wasmValidateText(`(component
+  (import "r" (type (sub resource)))
+  (export "r" (type 0) (type (eq 0)))
+)`);
+
+// You can ascribe the more-general (sub resource) type to a defined
+// resource type.
+wasmValidateText(`(component
+  (type $r (resource (rep i32)))
+  (export "r1" (type $r))
+  (export "r2" (type $r) (type (sub resource)))
+)`);
+
+// You can also do this to an imported resource type.
+wasmValidateText(`(component
+  (import "r" (type (sub resource)))
+  (export "r" (type 0) (type (sub resource)))
+)`);
+
+// If the ascribed type doesn't match, fail.
+wasmFailValidateText(`(component
+  (type s32)
+  (type $r (resource (rep i32)))
+  (export "r" (type $r) (type (eq 0)))
+)`, /did not match/);
+wasmFailValidateText(`(component
+  (type s32)
+  (type $r (resource (rep i32)))
+  (export "r" (type 0) (type (eq $r)))
+)`, /did not match/);
+wasmFailValidateText(`(component
+  (type s32)
+  (type $r (resource (rep i32)))
+  (export "r" (type 0) (type (sub resource)))
+)`, /did not match/);
+wasmFailValidateText(`(component
+  (type $r (resource (rep i32)))
+  (import "r1" (type (sub resource)))
+  (export "r2" (type 1) (type (eq 0)))
+)`, /did not match/);

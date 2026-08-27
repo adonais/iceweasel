@@ -162,6 +162,69 @@ add_task(async function test_force_installed_updates_disabled() {
   );
 });
 
+add_task(async function test_invalid_entry_does_not_discard_the_others() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      ExtensionSettings: {
+        "*": {
+          blocked_install_message: "Generic error message.",
+        },
+        "broken@mozilla.com": {
+          update_url: "not-a-valid-url",
+        },
+        "good@mozilla.com": {
+          blocked_install_message: "Good error message.",
+        },
+      },
+    },
+  });
+
+  equal(
+    Services.policies.getExtensionSettings("good@mozilla.com")
+      .blocked_install_message,
+    "Good error message.",
+    "A valid entry still applies alongside an invalid one."
+  );
+  equal(
+    Services.policies.getExtensionSettings("broken@mozilla.com")
+      .blocked_install_message,
+    "Generic error message.",
+    "The invalid entry is dropped and falls back to the generic one."
+  );
+});
+
+add_task(async function test_quoted_booleans_are_accepted() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      ExtensionSettings: {
+        "force@mozilla.com": {
+          installation_mode: "force_installed",
+          install_url: "https://example.com/test.xpi",
+          updates_disabled: "true",
+        },
+        "normal@mozilla.com": {
+          installation_mode: "normal_installed",
+          install_url: "https://example.com/test.xpi",
+          private_browsing: "false",
+        },
+      },
+    },
+  });
+
+  strictEqual(
+    Services.policies.getExtensionSettings("force@mozilla.com")
+      .updates_disabled,
+    true,
+    'updates_disabled: "true" is read as the boolean true'
+  );
+  strictEqual(
+    Services.policies.getExtensionSettings("normal@mozilla.com")
+      .private_browsing,
+    false,
+    'private_browsing: "false" is read as the boolean false'
+  );
+});
+
 add_task(async function test_addon_blocked() {
   await setupPolicyEngineWithJson({
     policies: {
@@ -967,9 +1030,8 @@ add_task(
     const updateURLValidationError = messages.find(
       msg =>
         msg.level == "error" &&
-        msg.arguments[0].includes(
-          "Invalid parameters specified for ExtensionSettings"
-        )
+        msg.arguments[0].includes(addonID) &&
+        msg.arguments[0].includes("update_url")
     );
     Assert.ok(
       updateURLValidationError,

@@ -44,4 +44,4 @@ Prefer use of "main" when it is accurate.
 
 [semantic linefeeds]: https://rhodesmill.org/brandon/2012/one-sentence-per-line/
 [reference link]: https://spec.commonmark.org/0.29/#reference-link
-[Telemetry]: /toolkit/components/telemetry/index.rst
+[Telemetry]: /toolkit/components/telemetry/index.md

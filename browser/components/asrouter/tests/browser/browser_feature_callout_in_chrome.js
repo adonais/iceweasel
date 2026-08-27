@@ -10,6 +10,9 @@ const { CustomizableUITestUtils } = ChromeUtils.importESModule(
 const { DefaultBrowserCheck } = ChromeUtils.importESModule(
   "moz-src:///browser/components/DefaultBrowserCheck.sys.mjs"
 );
+const { SpecialMessageActions } = ChromeUtils.importESModule(
+  "resource://messaging-system/lib/SpecialMessageActions.sys.mjs"
+);
 
 const PDF_TEST_URL =
   "https://example.com/browser/browser/extensions/newtab/test/browser/file_pdf.PDF";
@@ -1299,6 +1302,36 @@ add_task(async function test_triggeredTabBookmark_selector() {
     url: testURL,
   });
 
+  // Wait for the toolbar to rebuild and its visibility update to settle, then the item.
+  await TestUtils.waitForCondition(
+    async () => (await win.PlacesToolbarHelper.getIsEmpty()) === false,
+    "Waiting for the Bookmarks toolbar to be rebuilt and not empty"
+  );
+  if (
+    win.PlacesToolbarHelper._viewElt._placesView._updateNodesVisibilityTimer
+  ) {
+    await BrowserTestUtils.waitForEvent(
+      win,
+      "BookmarksToolbarVisibilityUpdated"
+    );
+  }
+  await TestUtils.waitForCondition(() => {
+    const item = [
+      ...win.document.querySelectorAll("#PlacesToolbarItems .bookmark-item"),
+    ].find(el => el._placesNode?.uri === testURL);
+    if (!item) {
+      return false;
+    }
+    const style = win.getComputedStyle(item);
+    const rect = item.getBoundingClientRect();
+    return (
+      style.visibility === "visible" &&
+      style.display !== "none" &&
+      rect.width > 0 &&
+      rect.height > 0
+    );
+  }, "Waiting for the triggered-tab bookmark item to render in the toolbar");
+
   const config = {
     win,
     location: "chrome",
@@ -1442,6 +1475,261 @@ add_task(async function test_triggeredTabBookmark_selector_fallback_overflow() {
   doc.querySelector(calloutCTASelector).click();
   await waitForCalloutRemoved(doc);
   placesToolbarItems.style.removeProperty("max-width");
+  sandbox.restore();
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_reused_callout_dispatches_with_current_browser() {
+  const message = {
+    id: "REUSED_CALLOUT_ACTION",
+    template: "feature_callout",
+    content: {
+      id: "REUSED_CALLOUT_ACTION",
+      template: "multistage",
+      screens: [
+        {
+          id: "REUSED_CALLOUT_ACTION_1",
+          anchors: [{ selector: "#PanelUI-menu-button" }],
+          content: {
+            position: "callout",
+            title: { raw: "Test title" },
+            primary_button: {
+              label: { raw: "Open Spotlight" },
+              action: {
+                type: "SHOW_SPOTLIGHT",
+                data: { content: { modal: "tab" } },
+                dismiss: true,
+              },
+            },
+          },
+        },
+      ],
+    },
+  };
+  const screenId = message.content.screens[0].id;
+
+  const sandbox = sinon.createSandbox();
+  const actionStub = sandbox.stub(SpecialMessageActions, "handleAction");
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  win.focus();
+  const doc = win.document;
+
+  const firstTab = await openURLInNewTab(win, "https://example.com/");
+  await FeatureCalloutBroker.showFeatureCallout(
+    firstTab.linkedBrowser,
+    structuredClone(message)
+  );
+  await waitForCalloutScreen(doc, screenId);
+  doc.querySelector(calloutCTASelector).click();
+  await waitForCalloutRemoved(doc);
+
+  Assert.equal(
+    actionStub.lastCall.args[1],
+    firstTab.linkedBrowser,
+    "First showing dispatches with the first tab's browser"
+  );
+
+  const secondTab = await openURLInNewTab(win, "https://example.org/");
+  await FeatureCalloutBroker.showFeatureCallout(
+    secondTab.linkedBrowser,
+    structuredClone(message)
+  );
+  await waitForCalloutScreen(doc, screenId);
+
+  actionStub.resetHistory();
+  doc.querySelector(calloutCTASelector).click();
+  await waitForCalloutRemoved(doc);
+
+  Assert.equal(
+    actionStub.lastCall.args[0].type,
+    "SHOW_SPOTLIGHT",
+    "Dispatched a SHOW_SPOTLIGHT action"
+  );
+  Assert.equal(
+    actionStub.lastCall.args[1],
+    secondTab.linkedBrowser,
+    "Reused callout dispatches with the current tab's browser, not the stale one"
+  );
+  Assert.equal(
+    actionStub.lastCall.args[1],
+    win.gBrowser.selectedBrowser,
+    "The browser handed to the action is the selected browser"
+  );
+
+  sandbox.restore();
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_triggerTab_selector_on_reused_callout() {
+  const message = {
+    id: "REUSED_CALLOUT_TRIGGER_TAB",
+    template: "feature_callout",
+    content: {
+      id: "REUSED_CALLOUT_TRIGGER_TAB",
+      template: "multistage",
+      screens: [
+        {
+          id: "REUSED_CALLOUT_TRIGGER_TAB_1",
+          anchors: [
+            {
+              selector:
+                "#tabbrowser-tabs:not([overflow]) %triggerTab%[visuallyselected]:not([pinned])",
+              panel_position: {
+                anchor_attachment: "bottomcenter",
+                callout_attachment: "topcenter",
+              },
+            },
+          ],
+          content: {
+            position: "callout",
+            title: { raw: "Anchored to the current tab" },
+            primary_button: {
+              label: { raw: "Done" },
+              action: { dismiss: true },
+            },
+          },
+        },
+      ],
+    },
+  };
+  const screenId = message.content.screens[0].id;
+
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  win.focus();
+  const doc = win.document;
+
+  const firstTab = await openURLInNewTab(win, "https://example.com/");
+  Assert.ok(
+    await FeatureCalloutBroker.showFeatureCallout(
+      firstTab.linkedBrowser,
+      structuredClone(message)
+    ),
+    "Callout shown in the first tab"
+  );
+  await waitForCalloutScreen(doc, screenId);
+  doc.querySelector(calloutCTASelector).click();
+  await waitForCalloutRemoved(doc);
+
+  const secondTab = await openURLInNewTab(win, "https://example.org/");
+  const shownAgain = await FeatureCalloutBroker.showFeatureCallout(
+    secondTab.linkedBrowser,
+    structuredClone(message)
+  );
+
+  Assert.ok(
+    shownAgain,
+    "Reused callout resolved %triggerTab% against the current tab"
+  );
+  if (shownAgain) {
+    await waitForCalloutScreen(doc, screenId);
+    doc.querySelector(calloutCTASelector).click();
+    await waitForCalloutRemoved(doc);
+  }
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_triggeredTabBookmark_selector_on_reused_callout() {
+  // Currently not supported on Linux, see Bug 1927472
+  if (AppConstants.platform === "linux") {
+    return;
+  }
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.toolbars.bookmarks.visibility", "always"]],
+  });
+  registerCleanupFunction(async () => {
+    await PlacesUtils.bookmarks.eraseEverything();
+    await SpecialPowers.popPrefEnv();
+  });
+
+  const firstURL = "https://example.com/";
+  const secondURL = "https://example.org/";
+
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "First",
+    url: firstURL,
+  });
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "Second",
+    url: secondURL,
+  });
+
+  const message = {
+    id: "REUSED_CALLOUT_TRIGGERED_TAB_BOOKMARK",
+    template: "feature_callout",
+    content: {
+      id: "REUSED_CALLOUT_TRIGGERED_TAB_BOOKMARK",
+      template: "multistage",
+      screens: [
+        {
+          id: "REUSED_CALLOUT_TRIGGERED_TAB_BOOKMARK_1",
+          anchors: [{ selector: "%triggeredTabBookmark%" }],
+          content: {
+            position: "callout",
+            title: { raw: "Anchored to the current tab's bookmark" },
+            primary_button: {
+              label: { raw: "Done" },
+              action: { dismiss: true },
+            },
+          },
+        },
+      ],
+    },
+  };
+  const screenId = message.content.screens[0].id;
+
+  const sandbox = sinon.createSandbox();
+  const getAnchorSpy = sandbox.spy(FeatureCallout.prototype, "_getAnchor");
+
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  win.focus();
+  const doc = win.document;
+
+  const firstTab = await openURLInNewTab(win, firstURL);
+  Assert.ok(
+    await FeatureCalloutBroker.showFeatureCallout(
+      firstTab.linkedBrowser,
+      structuredClone(message)
+    ),
+    "Callout shown in the first tab"
+  );
+  await waitForCalloutScreen(doc, screenId);
+
+  Assert.strictEqual(
+    getAnchorSpy.lastCall.returnValue?.element?._placesNode?.uri,
+    firstURL,
+    "First showing anchors to the first tab's bookmark"
+  );
+
+  doc.querySelector(calloutCTASelector).click();
+  await waitForCalloutRemoved(doc);
+
+  const secondTab = await openURLInNewTab(win, secondURL);
+  getAnchorSpy.resetHistory();
+  const shownAgain = await FeatureCalloutBroker.showFeatureCallout(
+    secondTab.linkedBrowser,
+    structuredClone(message)
+  );
+
+  Assert.ok(
+    shownAgain,
+    "Reused callout resolved %triggeredTabBookmark% against the current tab"
+  );
+  if (shownAgain) {
+    await waitForCalloutScreen(doc, screenId);
+
+    Assert.strictEqual(
+      getAnchorSpy.lastCall.returnValue?.element?._placesNode?.uri,
+      secondURL,
+      "Reused callout re-anchors to the second tab's bookmark"
+    );
+
+    doc.querySelector(calloutCTASelector).click();
+    await waitForCalloutRemoved(doc);
+  }
+
   sandbox.restore();
   await BrowserTestUtils.closeWindow(win);
 });

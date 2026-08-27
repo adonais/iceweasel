@@ -17,3 +17,7 @@ commit = '8fe7145d2'
 [[repos]]
 name = 'threads'
 commit = '979d0fcb9'
+
+[[repos]]
+name = 'wide-arithmetic'
+commit = '024d4ce1b'

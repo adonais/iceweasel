@@ -27,6 +27,7 @@ internal class EngineViewPresenter(
     private val engineView: EngineView,
     private val tabId: String?,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
 ) {
     private var scope: CoroutineScope? = null
     private var currentlyRenderedTabId: String? = null
@@ -96,7 +97,7 @@ internal class EngineViewPresenter(
         } else {
             // Since we render the tab again let's update its last access flag. In the future, we
             // may need more fine-grained flags to differentiate viewing from tab selection.
-            store.dispatch(LastAccessAction.UpdateLastAccessAction(tab.id, System.currentTimeMillis()))
+            store.dispatch(LastAccessAction.UpdateLastAccessAction(tab.id, currentTimeMillis()))
             currentlyRenderedTabId = tab.id
             engineView.render(engineSession)
         }
@@ -104,7 +105,7 @@ internal class EngineViewPresenter(
 
     private fun stampLastVisibleAt() {
         currentlyRenderedTabId?.let {
-            store.dispatch(LastAccessAction.UpdateLastVisibleAtAction(it, System.currentTimeMillis()))
+            store.dispatch(LastAccessAction.UpdateLastVisibleAtAction(it, currentTimeMillis()))
             currentlyRenderedTabId = null
         }
     }

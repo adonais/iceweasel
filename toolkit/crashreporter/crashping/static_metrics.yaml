@@ -1,0 +1,29 @@
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+$schema: moz://mozilla.org/schemas/glean/metrics/2-0-0
+$tags:
+  - 'Toolkit :: Crash Reporting'
+meta:
+  annotations:
+    description: The source crash annotations for this ping.
+    bugs:
+      - https://bugzilla.mozilla.org/2049744
+    data_reviews:
+      - https://bugzilla.mozilla.org/2049744
+    data_sensitivity:
+      - technical
+    expires: never
+    notification_emails:
+      - crash-reporting-wg@mozilla.org
+      - stability@mozilla.org
+    send_in_pings:
+      - crash
+    type: object
+    structure:
+      type: object
+      properties:
+        source:
+          type: string

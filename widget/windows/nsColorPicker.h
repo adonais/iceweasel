@@ -39,10 +39,10 @@ class AsyncColorChooser : public mozilla::Runnable {
 };
 
 class nsColorPicker final : public nsBaseColorPicker {
-  virtual ~nsColorPicker();
+  virtual ~nsColorPicker() = default;
 
  public:
-  nsColorPicker();
+  nsColorPicker() = default;
 
   NS_DECL_ISUPPORTS
 

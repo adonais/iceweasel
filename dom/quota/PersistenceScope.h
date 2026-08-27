@@ -35,10 +35,10 @@ class PersistenceScope {
 
   using DataType = Variant<Value, Set, Null>;
 
-  DataType mData;
+  DataType mData{Null{}};
 
  public:
-  PersistenceScope() : mData(Null()) {}
+  PersistenceScope() = default;
 
   bool operator==(const PersistenceScope& aOther) = delete;
 

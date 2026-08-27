@@ -24,7 +24,7 @@ async function waitForWindowReadyForPopupNotifications(win) {
 // tests to be run.
 /* global tests */
 function setup() {
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/").then(
     goNext
   );
@@ -121,7 +121,7 @@ function BasicNotification(testId) {
     },
   ];
   this.options = {
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     name: "http://example.com",
     eventCallback: eventName => {
       switch (eventName) {

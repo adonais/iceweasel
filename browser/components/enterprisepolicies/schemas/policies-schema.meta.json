@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "Meta-schema enforced by tests/xpcshell/test_policies_schema.js. Every policy must declare metadata that downstream tooling relies on.",
+  "type": "object",
+  "definitions": {
+    "compatEntry": {
+      "type": "object",
+      "required": ["version_added"],
+      "additionalProperties": false,
+      "properties": {
+        "version_added": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+){0,2}$"
+            },
+            {
+              "const": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  "properties": {
+    "properties": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "description",
+          "x-category",
+          "x-compatibility",
+          "examples"
+        ],
+        "properties": {
+          "description": {
+            "type": "string",
+            "minLength": 25
+          },
+          "x-category": {
+            "type": "string",
+            "minLength": 1
+          },
+          "x-compatibility": {
+            "type": "object",
+            "required": ["firefox", "firefox_esr", "firefox_enterprise"],
+            "additionalProperties": false,
+            "properties": {
+              "firefox": { "$ref": "#/definitions/compatEntry" },
+              "firefox_esr": { "$ref": "#/definitions/compatEntry" },
+              "firefox_enterprise": { "$ref": "#/definitions/compatEntry" }
+            }
+          },
+          "examples": {
+            "type": "array",
+            "minItems": 1
+          }
+        }
+      }
+    }
+  }
+}

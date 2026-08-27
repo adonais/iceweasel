@@ -58,7 +58,12 @@ class CookiesStorageActor extends BaseStorageActor {
     super.destroy();
   }
 
-  static UNIQUE_KEY_INDEXES = { name: 0, host: 1, path: 2, partitionKey: 3 };
+  static UNIQUE_KEY_INDEXES = {
+    name: 0,
+    host: 1,
+    path: 2,
+    originAttributesSuffix: 3,
+  };
 
   #getCookieUniqueKey(cookie) {
     return (
@@ -68,7 +73,7 @@ class CookiesStorageActor extends BaseStorageActor {
       SEPARATOR_GUID +
       cookie.path +
       SEPARATOR_GUID +
-      cookie.originAttributes.partitionKey
+      ChromeUtils.originAttributesToSuffix(cookie.originAttributes)
     );
   }
 
@@ -99,7 +104,7 @@ class CookiesStorageActor extends BaseStorageActor {
     return originAttributes;
   }
 
-  getCookiesFromHost(host) {
+  getOriginAttributesListFromHost(host) {
     // Gather originAttributes list from host
     const hostBrowsingContexts =
       this.storageActor.getBrowsingContextsFromHost(host);
@@ -113,8 +118,7 @@ class CookiesStorageActor extends BaseStorageActor {
       for (const bc of hostBrowsingContexts) {
         const { originAttributes } =
           bc.currentWindowGlobal.documentStoragePrincipal;
-        // The object is small, seems fine to stringify it to compute a unique key
-        const oaKey = JSON.stringify(originAttributes);
+        const oaKey = ChromeUtils.originAttributesToSuffix(originAttributes);
         if (!uniqueOriginAttributes.has(oaKey)) {
           originAttributesList.push(originAttributes);
           uniqueOriginAttributes.add(oaKey);
@@ -133,7 +137,9 @@ class CookiesStorageActor extends BaseStorageActor {
             ...originAttributes,
             partitionKey: bc.currentWindowGlobal.cookieJarSettings.partitionKey,
           };
-          const derivedOaKey = JSON.stringify(derivedOriginAttributes);
+          const derivedOaKey = ChromeUtils.originAttributesToSuffix(
+            derivedOriginAttributes
+          );
           if (!uniqueOriginAttributes.has(derivedOaKey)) {
             originAttributesList.push(derivedOriginAttributes);
             uniqueOriginAttributes.add(derivedOaKey);
@@ -146,6 +152,12 @@ class CookiesStorageActor extends BaseStorageActor {
       // fallback to the top window origin attributes.
       originAttributesList.push(this.getOriginAttributesFromHost(host));
     }
+
+    return originAttributesList;
+  }
+
+  getCookiesFromHost(host) {
+    const originAttributesList = this.getOriginAttributesListFromHost(host);
 
     // Local files have no host.
     if (host.startsWith("file:///")) {
@@ -172,7 +184,10 @@ class CookiesStorageActor extends BaseStorageActor {
 
   /**
    * Given a cookie object, figure out all the matching hosts from the page that
-   * the cookie belong to.
+   * the cookie belong to: the hosts whose cookie listing includes the cookie,
+   * ie the cookie's originAttributes match one of the host's
+   * (getOriginAttributesListFromHost). Cookies in a different jar, e.g. private
+   * browsing, container or other partition ones, are ignored.
    */
   getMatchingHosts(cookies) {
     if (!cookies) {
@@ -183,8 +198,22 @@ class CookiesStorageActor extends BaseStorageActor {
     }
     const hosts = new Set();
     for (const host of this.hosts) {
+      // A host can be backed by several jars at once, eg in the Browser
+      // Toolbox. Compare complete originAttributes via their canonical suffix,
+      // and filter out the undefined entries returned for privileged hosts
+      // which relate to no window.
+      const hostSuffixes = new Set(
+        this.getOriginAttributesListFromHost(host)
+          .filter(oa => oa !== undefined)
+          .map(oa => ChromeUtils.originAttributesToSuffix(oa))
+      );
       for (const cookie of cookies) {
-        if (this.isCookieAtHost(cookie, host)) {
+        if (
+          this.isCookieAtHost(cookie, host) &&
+          hostSuffixes.has(
+            ChromeUtils.originAttributesToSuffix(cookie.originAttributes)
+          )
+        ) {
           hosts.add(host);
         }
       }
@@ -495,12 +524,13 @@ class CookiesStorageActor extends BaseStorageActor {
     const origName = field === "name" ? oldValue : data.items.name;
     const origHost = field === "host" ? oldValue : data.items.host;
     const origPath = field === "path" ? oldValue : data.items.path;
-    // We can't use `data.items.partitionKey` as it's the formatted value and we need
-    // to check against the "raw" one. Its value can't be modified, so we don't need to
-    // look into oldValue.
-    const partitionKey =
+    // The cookie's jar is only in the uniqueKey: `data.items.partitionKey` is
+    // the formatted value, not the raw one, and same-named cookies from other
+    // jars can be in the same listing, eg in the Browser Toolbox. The jar
+    // can't be modified, so we don't need to look into oldValue.
+    const originAttributesSuffix =
       data.items.uniqueKey.split(SEPARATOR_GUID)[
-        CookiesStorageActor.UNIQUE_KEY_INDEXES.partitionKey
+        CookiesStorageActor.UNIQUE_KEY_INDEXES.originAttributesSuffix
       ];
     let cookie = null;
 
@@ -510,7 +540,8 @@ class CookiesStorageActor extends BaseStorageActor {
         nsiCookie.name === origName &&
         nsiCookie.host === origHost &&
         nsiCookie.path === origPath &&
-        nsiCookie.originAttributes.partitionKey === partitionKey
+        ChromeUtils.originAttributesToSuffix(nsiCookie.originAttributes) ===
+          originAttributesSuffix
       ) {
         cookie = {
           host: nsiCookie.host,
@@ -631,9 +662,10 @@ class CookiesStorageActor extends BaseStorageActor {
 
       opts.name = uniqueKeyParts[CookiesStorageActor.UNIQUE_KEY_INDEXES.name];
       opts.path = uniqueKeyParts[CookiesStorageActor.UNIQUE_KEY_INDEXES.path];
-      opts.partitionKey =
-        uniqueKeyParts[CookiesStorageActor.UNIQUE_KEY_INDEXES.partitionKey] ||
-        "";
+      opts.originAttributesSuffix =
+        uniqueKeyParts[
+          CookiesStorageActor.UNIQUE_KEY_INDEXES.originAttributesSuffix
+        ] || "";
     }
 
     const cookies = this.getCookiesFromHost(host);
@@ -645,7 +677,8 @@ class CookiesStorageActor extends BaseStorageActor {
         (!opts.path || cookie.path === opts.path) &&
         (!opts.uniqueKey ||
           // make sure to pick the cookie from the correct jar
-          cookie.originAttributes.partitionKey === opts.partitionKey) &&
+          ChromeUtils.originAttributesToSuffix(cookie.originAttributes) ===
+            opts.originAttributesSuffix) &&
         // for session cookie removal
         (!opts.session || (!cookie.expires && !cookie.maxAge))
       ) {
@@ -657,16 +690,6 @@ class CookiesStorageActor extends BaseStorageActor {
         );
       }
     }
-  }
-
-  removeCookie(host, name, originAttributes) {
-    if (name !== undefined) {
-      this._removeCookies(host, { name, originAttributes });
-    }
-  }
-
-  removeAllCookies(host, domain, originAttributes) {
-    this._removeCookies(host, { domain, originAttributes });
   }
 
   observe(subject, topic) {

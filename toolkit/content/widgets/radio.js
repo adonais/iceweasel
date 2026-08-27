@@ -271,7 +271,7 @@
       if (val) {
         alreadySelected = val.hasAttribute("selected");
         val.toggleAttribute("focused", focused);
-        val.setAttribute("selected", "true");
+        val.toggleAttribute("selected", true);
         this.setAttribute("value", val.value);
       } else {
         this.removeAttribute("value");

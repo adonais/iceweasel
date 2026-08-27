@@ -1,3 +1,5 @@
+// |jit-test| test-also=--no-avx
+
 // Checks if null dereference works.
 
 for (let [fieldType, signedness, defaultValue] of [

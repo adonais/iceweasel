@@ -60,9 +60,9 @@ WSListener.prototype = {
 add_task(async function test_dns_websocket_channel() {
   dnsRequestObserver.register();
 
-  var chan = Cc["@mozilla.org/network/protocol;1?name=ws"].createInstance(
-    Ci.nsIWebSocketChannel
-  );
+  var chan = Cc["@mozilla.org/network/protocol;1?name=ws"]
+    .getService(Ci.nsIWebSocketProtocolHandler)
+    .newWebSocketChannel();
 
   var uri = Services.io.newURI(url);
   chan.initLoadInfo(

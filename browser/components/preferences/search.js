@@ -29,7 +29,6 @@ const lazy = XPCOMUtils.declareLazy({
     onUpdate: () => window.gSearchPane._engineStore.notifyRebuildViews(),
   },
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UserSearchEngine:
     "moz-src:///toolkit/components/search/UserSearchEngine.sys.mjs",
@@ -492,8 +491,8 @@ class EngineView {
     this._localShortcutL10nNames = new Map();
 
     let getIDs = (suffix = "") =>
-      lazy.UrlbarUtils.LOCAL_SEARCH_MODES.map(mode => {
-        let name = lazy.UrlbarUtils.getResultSourceName(mode.source);
+      lazy.UrlbarShared.LOCAL_SEARCH_MODES.map(mode => {
+        let name = lazy.UrlbarShared.getResultSourceName(mode.source);
         return { id: `urlbar-search-mode-${name}${suffix}` };
       });
 
@@ -507,7 +506,7 @@ class EngineView {
       let localizedNames = await document.l10n.formatValues(localizedIDs);
       let englishNames = await englishSearchStrings.formatValues(englishIDs);
 
-      lazy.UrlbarUtils.LOCAL_SEARCH_MODES.forEach(({ source }, index) => {
+      lazy.UrlbarShared.LOCAL_SEARCH_MODES.forEach(({ source }, index) => {
         let localizedName = localizedNames[index];
         let englishName = englishNames[index];
 
@@ -679,7 +678,7 @@ class EngineView {
     if (index < engineCount) {
       return null;
     }
-    return lazy.UrlbarUtils.LOCAL_SEARCH_MODES[index - engineCount];
+    return lazy.UrlbarShared.LOCAL_SEARCH_MODES[index - engineCount];
   }
 
   /**
@@ -889,7 +888,7 @@ class EngineView {
 
   // nsITreeView
   get rowCount() {
-    let localModes = lazy.UrlbarUtils.LOCAL_SEARCH_MODES;
+    let localModes = lazy.UrlbarShared.LOCAL_SEARCH_MODES;
     if (!lazy.UrlbarPrefs.get("scotchBonnet.enableOverride")) {
       localModes = localModes.filter(
         mode => mode.source != lazy.UrlbarShared.RESULT_SOURCE.ACTIONS
@@ -993,7 +992,7 @@ class EngineView {
       // the icons in CSS.
       let shortcut = this._getLocalShortcut(index);
       if (shortcut) {
-        return lazy.UrlbarUtils.getResultSourceName(shortcut.source);
+        return lazy.UrlbarShared.getResultSourceName(shortcut.source);
       }
     }
     return "";

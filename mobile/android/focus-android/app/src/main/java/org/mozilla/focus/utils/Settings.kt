@@ -7,7 +7,6 @@ package org.mozilla.focus.utils
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.res.Configuration
-import androidx.annotation.VisibleForTesting
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import mozilla.components.concept.engine.Engine
@@ -16,10 +15,10 @@ import mozilla.components.support.ktx.android.content.PreferencesHolder
 import mozilla.components.support.ktx.android.content.booleanPreference
 import org.mozilla.focus.R
 import org.mozilla.focus.components.EngineProvider.NO_VALUE
-import org.mozilla.focus.cookiebanner.CookieBannerOption
 import org.mozilla.focus.nimbus.FocusNimbus
 import org.mozilla.focus.searchsuggestions.SearchSuggestionsPreferences
 import org.mozilla.focus.telemetry.GleanMetricsService
+import java.io.File
 
 /**
  * A simple wrapper for SharedPreferences that makes reading preference a little bit easier.
@@ -43,24 +42,6 @@ class Settings(
             getPreferenceKey(R.string.pref_key_open_links_in_external_app),
             false,
         )
-
-    /**
-     * Determines whether the call-for-reinforcement (CFR) message for the cookie banner
-     * should be displayed. Defaults to true.
-     */
-    var shouldShowCookieBannerCfr: Boolean
-        get() = preferences.getBoolean(
-            getPreferenceKey(R.string.pref_cfr_visibility_for_cookie_banner),
-            true,
-        )
-        set(value) {
-            preferences.edit {
-                putBoolean(
-                    getPreferenceKey(R.string.pref_cfr_visibility_for_cookie_banner),
-                    value,
-                )
-            }
-        }
 
     /**
      * Determines whether the call-for-reinforcement (CFR) message for tracking protection
@@ -413,53 +394,6 @@ class Settings(
     }
 
     /**
-     * This is needed for GUI Testing. If the value is not set in the sharePref
-     * the default value will be the one from Nimbus.
-     */
-    @VisibleForTesting
-    var isCookieBannerEnable: Boolean
-        get() = preferences.getBoolean(
-            getPreferenceKey(R.string.pref_key_cookie_banner_enabled),
-            FocusNimbus.features.cookieBanner.value().isCookieHandlingEnabled,
-        )
-        set(value) {
-            preferences.edit {
-                putBoolean(getPreferenceKey(R.string.pref_key_cookie_banner_enabled), value)
-            }
-        }
-
-    /**
-     * Saves the user's selected option for handling cookie banners.
-     */
-    fun saveCurrentCookieBannerOptionInSharePref(
-        cookieBannerOption: CookieBannerOption,
-    ) {
-        preferences.edit {
-            putString(
-                context.getString(R.string.pref_key_cookie_banner_settings),
-                context.getString(cookieBannerOption.prefKeyId),
-            )
-        }
-    }
-
-    /**
-     * Retrieves the user's currently selected option for handling cookie banners.
-     */
-    fun getCurrentCookieBannerOptionFromSharePref(): CookieBannerOption {
-        val optionValue = preferences.getString(
-            context.getString(R.string.pref_key_cookie_banner_settings),
-            context.getString(CookieBannerOption.CookieBannerRejectAll().prefKeyId),
-        )
-        return when (optionValue) {
-            context.getString(CookieBannerOption.CookieBannerDisabled().prefKeyId) ->
-                CookieBannerOption.CookieBannerDisabled()
-            context.getString(CookieBannerOption.CookieBannerRejectAll().prefKeyId) ->
-                CookieBannerOption.CookieBannerRejectAll()
-            else -> CookieBannerOption.CookieBannerDisabled()
-        }
-    }
-
-    /**
      * Determines whether the daily usage ping for telemetry is enabled.
      */
     var isDailyUsagePingEnabled by booleanPreference(
@@ -467,6 +401,34 @@ class Settings(
         default = GleanMetricsService.shouldTelemetryBeEnabledByDefault(context),
         persistDefaultIfNotExists = true,
     )
+
+    /**
+     * Indicates if the data left behind by the removed cookie banner feature has been deleted.
+     */
+    private var hasDeletedCookieBannerData by booleanPreference(
+        getPreferenceKey(R.string.pref_key_deleted_report_site_domains_datastore),
+        default = false,
+    )
+
+    /**
+     * Deletes the `report_site_domains_preferences` DataStore and the obsolete preferences left
+     * behind on existing installations after the cookie banner feature was removed.
+     */
+    fun deleteObsoleteCookieBannerDataIfNeeded() {
+        if (hasDeletedCookieBannerData) {
+            return
+        }
+
+        File(context.filesDir, "datastore/report_site_domains_preferences.preferences_pb").delete()
+        preferences.edit {
+            remove("pref_key_cookie_banner_enabled")
+            remove("pref_key_cookie_banner_settings")
+            remove("pref_key_cookie_banner_reject_all")
+            remove("pref_key_cookie_banner_disabled")
+            remove("pref_cfr_visibility_for_cookie_banner")
+        }
+        hasDeletedCookieBannerData = true
+    }
 
     private fun getPreferenceKey(resourceId: Int): String =
         context.getString(resourceId)

@@ -122,11 +122,6 @@ window.addEventListener("contextmenu", e => {
     `)
     );
     popup = document.documentElement.lastElementChild;
-    popup
-      .querySelector("#textbox-contextmenu-reveal-password")
-      .addEventListener("command", function () {
-        popup.triggerNode.revealPassword = !popup.triggerNode.revealPassword;
-      });
   }
 
   goUpdateGlobalEditMenuItems(true);
@@ -137,6 +132,10 @@ window.addEventListener("contextmenu", e => {
   let revealPassword = popup.querySelector(
     "#textbox-contextmenu-reveal-password"
   );
+  // Reassigned on every contextmenu so it acts on the current target.
+  revealPassword.oncommand = () => {
+    target.revealPassword = !target.revealPassword;
+  };
   revealPassword.hidden = !isPasswordInput;
   if (isPasswordInput) {
     if (target.revealPassword) {

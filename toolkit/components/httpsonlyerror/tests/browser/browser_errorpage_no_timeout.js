@@ -12,7 +12,7 @@ requestLongerTimeout(2);
 const TEST_PATH_HTTP = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
   // This needs to be insecure so it can be upgraded
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   "http://example.com"
 );
 const TEST_PATH_HTTPS = getRootDirectory(gTestPath).replace(

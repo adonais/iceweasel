@@ -18,6 +18,7 @@ p:first-of-type.auto-stylesheet-class-3,
 :root .auto-bold .auto-stylesheet-class-5 {
   font-size: 1em;
 
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   & .auto-stylesheet-nested-class-1,
   &:is(.auto-stylesheet-nested-class-2),
   &:has(.auto-stylesheet-nested-class-3) {

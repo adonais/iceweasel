@@ -7,6 +7,10 @@ const SHOW_SEARCH_PREF = "browser.newtabpage.activity-stream.showSearch";
 const SHOW_WEATHER_SYSTEM_PREF =
   "browser.newtabpage.activity-stream.system.showWeather";
 const SHOW_WEATHER_PREF = "browser.newtabpage.activity-stream.showWeather";
+// @nova-cleanup(remove-pref): Delete this const, the _nova task suffixes and the
+// classic test_weather_widget_visibility / test_weather_toggle_functionality
+// tasks; the _nova variants become the only ones. SHOW_WEATHER_PREF and
+// SHOW_WEATHER_SYSTEM_PREF go with them, and the NOVA_ prefixes drop.
 const NOVA_ENABLED_PREF = "browser.newtabpage.activity-stream.nova.enabled";
 const NOVA_SHOW_WEATHER_SYSTEM_PREF =
   "browser.newtabpage.activity-stream.widgets.system.weather.enabled";

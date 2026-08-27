@@ -8,4 +8,5 @@ DIRS += [
     "shared",
     "prog",
     "static",
+    "build-static-lib-archive",
 ]

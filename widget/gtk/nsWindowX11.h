@@ -18,7 +18,6 @@ class nsWindowX11 final : public nsWindow {
 
   void CreateNative() override;
   void DestroyNative() override;
-  void ConfigureToplevelWindowNative() override;
 
   bool ConfigureX11GLVisual();
 
@@ -34,6 +33,9 @@ class nsWindowX11 final : public nsWindow {
   Window GetX11Window();
 
   void NativeShow(bool aAction) override;
+  bool SendWorkspaceMoveRequest(int32_t workspaceID);
+
+  void OnMapNative() override;
 
   typedef enum {
     GTK_WIDGET_COMPOSITED_DEFAULT = 0,
@@ -52,6 +54,7 @@ class nsWindowX11 final : public nsWindow {
 
   bool mIsNativePointerLocked = false;
   mozilla::Maybe<Barriers> mNativePointerBarriers;
+  mozilla::Maybe<int32_t> mDeferredWorkspaceID;
 };
 
 }  // namespace mozilla::widget

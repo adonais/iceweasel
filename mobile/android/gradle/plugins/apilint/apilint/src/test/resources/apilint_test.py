@@ -38,7 +38,7 @@ for t in tests:
 
     if check_compat:
         sp.call([
-            "python3",
+            sys.executable,
             "src/main/resources/diff.py",
             "--existing",
             before_api,
@@ -48,7 +48,7 @@ for t in tests:
 
     json_file = "{}/{}-result.json".format(args.build_dir, t["test"])
     test = [
-        "python3",
+        sys.executable,
         "src/main/resources/apilint.py",
         "--result-json",
         json_file,

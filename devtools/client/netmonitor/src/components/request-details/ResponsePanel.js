@@ -173,10 +173,6 @@ class ResponsePanel extends Component {
    * as text/plain instead.
    */
   handleJSONResponse(mimeType, response) {
-    // @backward-compat { version 153 } Fx 153 started emitting "truncated" boolean
-    // on request to have a more reliable way to identify truncated requests.
-    // Once 153 is released, we can stop reading the pref and only use this flag.
-    const limit = Services.prefs.getIntPref("devtools.netmonitor.bodyLimit");
     const { request } = this.props;
 
     // Check if the response has been truncated, in which case no parse should
@@ -184,10 +180,7 @@ class ResponsePanel extends Component {
     //
     // Note that this logic isn't specific to JSON at all and is the generic handling
     // of truncated requests!
-    if (
-      request.truncated ||
-      (limit > 0 && limit <= request.responseContent.content.size)
-    ) {
+    if (request.truncated) {
       const result = {};
       result.error = RESPONSE_TRUNCATED;
       return result;

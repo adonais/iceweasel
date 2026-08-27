@@ -4,7 +4,6 @@
 
 package mozilla.components.browser.menu.view
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.PointF
 import android.os.Parcelable
@@ -473,7 +472,6 @@ abstract class StickyItemsLinearLayoutManager<T> constructor(
 /**
  * Save / restore existing [RecyclerView] state and scrolling position and offset.
  */
-@SuppressLint("ParcelCreator")
 @Parcelize
 @VisibleForTesting
 internal data class SavedState(

@@ -147,12 +147,14 @@ moz-button.history-menu-button {
 /* The chat-list submenu (recent chats + View all chats) uses 16px block
    padding per design; the plain action menus keep 8px. The separator's inline
    margin matches so the line aligns with the rows. */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .history-menu:has([data-l10n-id="aiwindow-history-menu-view-all-chats"]) {
   --panel-padding-block: var(--space-large);
   --panel-separator-padding: var(--panel-separator-padding-block) var(--space-large);
 }
 
 /* Its rows inset 16px inline to match, instead of the default 8px. */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
 .history-menu:has([data-l10n-id="aiwindow-history-menu-view-all-chats"]) panel-item::part(button) {
   margin-inline: var(--space-large);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */

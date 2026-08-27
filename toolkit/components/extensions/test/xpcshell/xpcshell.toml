@@ -151,9 +151,6 @@ skip-if = [
 ["test_ext_unknown_permissions.js"]
 
 ["test_ext_urlclassifier.js"]
-skip-if = [
-  "artifact", # Bug 2012613 - known limitation of FOG ping testing APIs
-]
 
 ["test_ext_webRequest_handlerBehaviorChanged.js"]
 

@@ -20,6 +20,7 @@ import {
   showPermissionsPrompt,
 } from "../aboutaddons-utils.mjs";
 import { gViewController } from "../view-controller.mjs";
+import { shouldShowNativeThemeCheckbox } from "./native-theme-colors-checkbox.mjs";
 
 const { AddonManager } = ChromeUtils.importESModule(
   "resource://gre/modules/AddonManager.sys.mjs"
@@ -174,6 +175,10 @@ export class AddonCard extends AboutAddonsHTMLElement {
               <span class="addon-description" tabindex="-1"></span>
             </div>
           </div>
+          <native-theme-colors-checkbox
+            class="native-theme-checkbox-list"
+            hidden
+          ></native-theme-colors-checkbox>
           <moz-message-bar
             class="update-postponed-bar"
             data-l10n-id="install-postponed-message2"
@@ -430,7 +435,10 @@ export class AddonCard extends AboutAddonsHTMLElement {
             (e.target === this.addonNameEl || !e.target.closest("a")) &&
             // moz-button handles its own click/toggle; exclude it here to
             // avoid navigating to the detail page when the menu is opened.
-            !e.target.classList.contains("more-options-button")
+            !e.target.classList.contains("more-options-button") &&
+            // Exclude the native theme checkbox so clicking it doesn't also
+            // navigate to the detail page.
+            !e.target.closest("native-theme-colors-checkbox")
           ) {
             e.preventDefault();
             gViewController.loadView(`detail/${this.addon.id}`);
@@ -525,6 +533,10 @@ export class AddonCard extends AboutAddonsHTMLElement {
     card.setAttribute("active", addon.isActive);
 
     card.querySelector("theme-preview").addon = addon;
+
+    // Set the visibility of the native theme colors checkbox.
+    card.querySelector(".native-theme-checkbox-list").hidden =
+      this.expanded || !shouldShowNativeThemeCheckbox(addon);
 
     // Set the icon.
     let iconEl = card.querySelector(".addon-icon");

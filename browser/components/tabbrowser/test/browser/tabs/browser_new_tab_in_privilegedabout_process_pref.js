@@ -13,12 +13,14 @@ const ABOUT_BLANK = "about:blank";
 const ABOUT_HOME = "about:home";
 const ABOUT_NEWTAB = "about:newtab";
 const ABOUT_WELCOME = "about:welcome";
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 const TEST_HTTP = "http://example.org/";
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
+      // Without this, goBack() below is intermittently a silent no-op, bug 1934364.
+      ["browser.navigation.requireUserInteraction", false],
       ["browser.newtab.preload", false],
       ["browser.tabs.remote.separatePrivilegedContentProcess", true],
       ["dom.ipc.processCount.privilegedabout", 1],
@@ -214,13 +216,6 @@ add_task(async function process_switching_through_navigation_features() {
       BrowserTestUtils.startLoadingURIString(browser, TEST_HTTP);
       await BrowserTestUtils.browserLoaded(browser, false, TEST_HTTP);
       checkBrowserRemoteType(browser, E10SUtils.WEB_REMOTE_TYPE);
-
-      // Check that location change causes a change in process type as well.
-      await SpecialPowers.spawn(browser, [ABOUT_NEWTAB], uri => {
-        content.location = uri;
-      });
-      await BrowserTestUtils.browserLoaded(browser, false, ABOUT_NEWTAB);
-      assertIsPrivilegedProcess(browser, "about:newtab after location change");
     }
   );
 

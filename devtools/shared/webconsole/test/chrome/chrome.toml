@@ -7,19 +7,26 @@ support-files = [
   "helper_serviceworker.js",
   "network_requests_iframe.html",
   "sandboxed_iframe.html",
+  "sandboxed_iframe_inner.html",
   "console-test-worker.js",
   "!/browser/base/content/test/general/browser_star_hsts.sjs",
 ]
 prefs = [
+  "devtools.chrome.enabled=true",
   "devtools.console.stdout.chrome=false",
-  "javascript.options.experimental.explicit_resource_management=true",
 ]
 
 ["test_basics.html"]
 
 ["test_cached_messages.html"]
+skip-if = [
+  "nova", # Bug 2058196
+]
 
 ["test_console_assert.html"]
+skip-if = [
+  "nova", # Bug 2058342
+]
 
 ["test_console_group_styling.html"]
 

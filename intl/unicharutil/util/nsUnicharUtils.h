@@ -75,21 +75,6 @@ class nsCaseInsensitiveStringArrayComparator {
 int32_t nsASCIICaseInsensitiveStringComparator(const char16_t*, const char16_t*,
                                                size_t, size_t);
 
-inline bool CaseInsensitiveFindInReadable(
-    const nsAString& aPattern, nsAString::const_iterator& aSearchStart,
-    nsAString::const_iterator& aSearchEnd) {
-  return FindInReadable(aPattern, aSearchStart, aSearchEnd,
-                        nsCaseInsensitiveStringComparator);
-}
-
-inline bool CaseInsensitiveFindInReadable(const nsAString& aPattern,
-                                          const nsAString& aHay) {
-  nsAString::const_iterator searchBegin, searchEnd;
-  return FindInReadable(aPattern, aHay.BeginReading(searchBegin),
-                        aHay.EndReading(searchEnd),
-                        nsCaseInsensitiveStringComparator);
-}
-
 #endif  // MOZILLA_INTERNAL_API
 
 int32_t CaseInsensitiveCompare(const char16_t* a, const char16_t* b,

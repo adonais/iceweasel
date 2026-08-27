@@ -80,12 +80,6 @@ const APIS = {
   IsFissionRunning() {
     return browser.test.isFissionRunning();
   },
-  TriggerCookieBannerDetected({ tab }) {
-    return browser.test.triggerCookieBannerDetected(tab.id);
-  },
-  TriggerCookieBannerHandled({ tab }) {
-    return browser.test.triggerCookieBannerHandled(tab.id);
-  },
   TriggerTranslationsOffer({ tab }) {
     return browser.test.triggerTranslationsOffer(tab.id);
   },

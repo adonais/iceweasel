@@ -231,6 +231,12 @@ public class TestRunnerActivity extends Activity {
         @Override
         public GeckoResult<GeckoSession> onNewTab(
             final WebExtension source, final WebExtension.CreateTabDetails details) {
+
+          // TODO bug 1372178: extensions cannot set (non-)privateness.
+          // NOTE: If we ever introduce support for private browsing in
+          // TestRunnerActivity, we need to have similar checks as
+          // GeckoWebExtension.kt (registerTabHandler, onNewTab).
+
           GeckoSessionSettings settings = null;
           if (details.cookieStoreId != null) {
             settings = new GeckoSessionSettings.Builder().contextId(details.cookieStoreId).build();

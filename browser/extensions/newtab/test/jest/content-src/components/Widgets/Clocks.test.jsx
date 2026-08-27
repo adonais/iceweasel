@@ -51,13 +51,31 @@ function WrapWithProvider({ children, state = INITIAL_STATE }) {
   return <Provider store={store}>{children}</Provider>;
 }
 
-function renderClocks(size = "large", state = mockState, dispatch = jest.fn()) {
+function renderClocks(
+  size = "large",
+  state = mockState,
+  dispatch = jest.fn(),
+  handleUserInteraction = jest.fn()
+) {
+  const stateWithSize = {
+    ...state,
+    Prefs: {
+      ...state.Prefs,
+      values: {
+        ...state.Prefs.values,
+        "widgets.clocks.size": size,
+      },
+    },
+  };
   const { container, unmount, rerender } = render(
-    <WrapWithProvider state={state}>
-      <Clocks dispatch={dispatch} size={size} />
+    <WrapWithProvider state={stateWithSize}>
+      <Clocks
+        dispatch={dispatch}
+        handleUserInteraction={handleUserInteraction}
+      />
     </WrapWithProvider>
   );
-  return { container, unmount, rerender, dispatch };
+  return { container, unmount, rerender, dispatch, handleUserInteraction };
 }
 
 const withClockZones = zones => ({
@@ -1974,6 +1992,63 @@ describe("<Clocks> (Widgets/Clocks)", () => {
           widget_size: "large",
         }),
       });
+    });
+  });
+
+  describe("handleUserInteraction", () => {
+    it("calls handleUserInteraction when the user toggles hour format", () => {
+      const handleUserInteraction = jest.fn();
+      const state = {
+        ...mockState,
+        Prefs: {
+          ...mockState.Prefs,
+          values: {
+            ...mockState.Prefs.values,
+            "widgets.clocks.hourFormat": "12",
+          },
+        },
+      };
+      const { container } = renderClocks(
+        "large",
+        state,
+        jest.fn(),
+        handleUserInteraction
+      );
+      const item = container.querySelector(
+        "panel-item[data-l10n-id='newtab-clock-widget-menu-switch-to-24h']"
+      );
+      fireEvent.click(item);
+      expect(handleUserInteraction).toHaveBeenCalledWith("clocks");
+    });
+    it("calls handleUserInteraction when the user adds a clock", () => {
+      const handleUserInteraction = jest.fn();
+      const { container } = renderClocks(
+        "large",
+        withClockZones([
+          { timeZone: "Europe/Berlin", label: null, labelColor: null },
+        ]),
+        jest.fn(),
+        handleUserInteraction
+      );
+      const addButton = container.querySelector(
+        "moz-button[data-l10n-id='newtab-clock-widget-button-add']"
+      );
+      fireEvent.click(addButton);
+      expect(handleUserInteraction).toHaveBeenCalledWith("clocks");
+    });
+    it("does NOT call handleUserInteraction when the user hides the widget", () => {
+      const handleUserInteraction = jest.fn();
+      const { container } = renderClocks(
+        "large",
+        mockState,
+        jest.fn(),
+        handleUserInteraction
+      );
+      const hideItem = container.querySelector(
+        "panel-item[data-l10n-id='newtab-widget-menu-hide']"
+      );
+      fireEvent.click(hideItem);
+      expect(handleUserInteraction).not.toHaveBeenCalled();
     });
   });
 });

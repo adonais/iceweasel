@@ -5,14 +5,12 @@
 #ifndef jit_PerfSpewer_h
 #define jit_PerfSpewer_h
 
-#include "mozilla/Maybe.h"
-
 #ifdef JS_ION_PERF
 #  include <stdio.h>
 #endif
+#include "jit/JitCodeSourceInfo.h"  // JitCodeSourceInfo, JitCodeSourceInfoVector
 #include "js/AllocPolicy.h"
 #include "js/ColumnNumber.h"
-#include "js/JitCodeAPI.h"
 #include "js/Vector.h"
 
 #ifdef JS_JITSPEW
@@ -33,6 +31,7 @@ struct CodeMetadata;
 
 namespace jit {
 
+class CompileRuntime;
 class JitCode;
 class BacktrackingAllocator;
 class CompilerFrameInfo;
@@ -42,18 +41,14 @@ class MIRGraph;
 class LInstruction;
 enum class CacheOp : uint16_t;
 
-using ProfilerJitCodeVector = Vector<JS::JitCodeRecord, 0, SystemAllocPolicy>;
-
-void ResetPerfSpewer(bool enabled);
-
-class AutoLockPerfSpewer {
-  mozilla::Maybe<AutoSuppressProfilerSampling> asps;
-
- public:
+struct AutoLockPerfSpewer {
   AutoLockPerfSpewer();
   ~AutoLockPerfSpewer();
 };
 
+// True iff a process-wide perf output mode (linux `perf` jitdump / Windows ETW)
+// is enabled. Excludes per-runtime gecko state. Use PerfSpewer::perfEnabled()
+// for that.
 bool PerfEnabled();
 
 class PerfSpewer {
@@ -76,6 +71,10 @@ class PerfSpewer {
   // The start offset that debugInfo_ is relative to.
   uint32_t startOffset_ = 0;
 
+  // Whether the runtime being compiled for had the gecko profiler enabled at
+  // startRecording time. False for runtime-less (wasm) compiles.
+  bool runtimeProfilingEnabled_ = false;
+
   // The generated IR file that we write into for IONPERF=ir. The move
   // constructors assert that this file has been closed/finished.
   FILE* irFile_ = nullptr;
@@ -95,20 +94,16 @@ class PerfSpewer {
 
   // Save the debugInfo_ vector to the JIT dump file.
   void saveDebugInfo(const char* filename, uintptr_t base,
-                     JS::JitCodeRecord* maybeProfilerRecord,
                      AutoLockPerfSpewer& lock);
 
   // Save the generated IR file, if any, and the debug info to the JIT dump
   // file.
   void saveJitCodeDebugInfo(JSScript* script, JitCode* code,
-                            JS::JitCodeRecord* maybeProfilerRecord,
                             AutoLockPerfSpewer& lock);
 
   // Save the generated IR file, if any, and the debug info to the JIT dump
   // file.
-  void saveWasmCodeDebugInfo(uintptr_t codeBase,
-                             JS::JitCodeRecord* maybeProfilerRecord,
-                             AutoLockPerfSpewer& lock);
+  void saveWasmCodeDebugInfo(uintptr_t codeBase, AutoLockPerfSpewer& lock);
 
   void saveJSProfile(JitCode* code, JS::UniqueChars& desc, JSScript* script);
   void saveWasmProfile(uintptr_t codeBase, size_t codeSize,
@@ -126,8 +121,18 @@ class PerfSpewer {
   // Mark the start code offset that this perf spewer is relative to.
   void markStartOffset(uint32_t offset) { startOffset_ = offset; }
 
+  // True iff this instance should record for any consumer: a process-wide perf
+  // mode or the captured runtime's gecko profiler.
+  bool perfEnabled() const;
+
+  // perfEnabled() restricted to per-instruction source data (excludes IR
+  // modes).
+  bool perfSrcEnabled() const;
+
   // Start recording. This may create a temp file if we're recording IR.
-  virtual void startRecording(const wasm::CodeMetadata* wasmCodeMeta = nullptr);
+  // `runtime` gates the per-runtime recording path; pass nullptr for wasm.
+  virtual void startRecording(CompileRuntime* runtime = nullptr,
+                              const wasm::CodeMetadata* wasmCodeMeta = nullptr);
 
   // Finish recording and get ready for saving to jitdump, but do not yet
   // write the debug info.
@@ -138,21 +143,28 @@ class PerfSpewer {
   static void Init();
 
   static void CollectJitCodeInfo(JS::UniqueChars& function_name, JitCode* code,
-                                 JS::JitCodeRecord* maybeProfilerRecord,
                                  AutoLockPerfSpewer& lock);
   static void CollectJitCodeInfo(JS::UniqueChars& function_name,
                                  void* code_addr, uint64_t code_size,
-                                 JS::JitCodeRecord* maybeProfilerRecord,
                                  AutoLockPerfSpewer& lock);
 
-  // Explicitly free heap memory allocated using the system allocator. This must
-  // be called when the PerfSpewer is allocated in a LifoAlloc, since the
+  // Tear down recording state: free heap memory allocated using the system
+  // allocator and clear the captured profiling state so recording stops. This
+  // must be called when the PerfSpewer is allocated in a LifoAlloc, since the
   // destructor won't be called when the LifoAlloc is freed.
   void reset() {
     endRecording();
     debugInfo_.clearAndFree();
     irFileName_ = JS::UniqueChars();
+    runtimeProfilingEnabled_ = false;
   }
+
+  // Build a (nativeOffset, line, column) table from the per-op recordings
+  // accumulated in debugInfo_ during compilation. It dedupes consecutive
+  // entries that share the same (line, column). Returns an empty vector
+  // when nothing was recorded (e.g. the profiler was off at compile time)
+  // or on allocation failure.
+  JitCodeSourceInfoVector extractSourceInfo() const;
 };
 
 void CollectPerfSpewerJitCodeProfile(JitCode* code, const char* msg);
@@ -179,6 +191,7 @@ class IonPerfSpewer : public PerfSpewer {
   IonPerfSpewer& operator=(IonPerfSpewer&&) = default;
 
   void startRecording(
+      CompileRuntime* runtime,
       const wasm::CodeMetadata* wasmCodeMeta = nullptr) override;
   void endRecording() override;
 

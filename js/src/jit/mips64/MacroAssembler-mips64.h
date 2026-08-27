@@ -128,20 +128,20 @@ class MacroAssemblerMIPS64 : public MacroAssemblerMIPSShared {
   void ma_dctz(Register rd, Register rs);
 
   // load
-  FaultingCodeOffset ma_load(Register dest, Address address,
-                             LoadStoreSize size = SizeWord,
-                             LoadStoreExtension extension = SignExtend);
+  FaultingCodeRange ma_load(Register dest, Address address,
+                            LoadStoreSize size = SizeWord,
+                            LoadStoreExtension extension = SignExtend);
 
   // store
-  FaultingCodeOffset ma_store(Register data, Address address,
-                              LoadStoreSize size = SizeWord,
-                              LoadStoreExtension extension = SignExtend);
-  FaultingCodeOffset ma_store(ImmWord imm, const BaseIndex& dest,
-                              LoadStoreSize size = SizeWord,
-                              LoadStoreExtension extension = SignExtend);
-  FaultingCodeOffset ma_store(ImmWord imm, Address address,
-                              LoadStoreSize size = SizeWord,
-                              LoadStoreExtension extension = SignExtend);
+  FaultingCodeRange ma_store(Register data, Address address,
+                             LoadStoreSize size = SizeWord,
+                             LoadStoreExtension extension = SignExtend);
+  FaultingCodeRange ma_store(ImmWord imm, const BaseIndex& dest,
+                             LoadStoreSize size = SizeWord,
+                             LoadStoreExtension extension = SignExtend);
+  FaultingCodeRange ma_store(ImmWord imm, Address address,
+                             LoadStoreSize size = SizeWord,
+                             LoadStoreExtension extension = SignExtend);
   // arithmetic based ops
   // add
   void ma_daddu(Register rd, Register rs, Imm32 imm);
@@ -220,10 +220,10 @@ class MacroAssemblerMIPS64 : public MacroAssemblerMIPSShared {
   void ma_mv(FloatRegister src, ValueOperand dest);
   void ma_mv(ValueOperand src, FloatRegister dest);
 
-  FaultingCodeOffset ma_ls(FloatRegister ft, Address address);
-  FaultingCodeOffset ma_ld(FloatRegister ft, Address address);
-  FaultingCodeOffset ma_sd(FloatRegister ft, Address address);
-  FaultingCodeOffset ma_ss(FloatRegister ft, Address address);
+  FaultingCodeRange ma_ls(FloatRegister ft, Address address);
+  FaultingCodeRange ma_ld(FloatRegister ft, Address address);
+  FaultingCodeRange ma_sd(FloatRegister ft, Address address);
+  FaultingCodeRange ma_ss(FloatRegister ft, Address address);
 
   void ma_pop(FloatRegister f);
   void ma_push(FloatRegister f);
@@ -706,30 +706,30 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
   void movePtr(wasm::SymbolicAddress imm, Register dest);
   void movePtr(ImmGCPtr imm, Register dest);
 
-  FaultingCodeOffset load8SignExtend(const Address& address, Register dest);
-  FaultingCodeOffset load8SignExtend(const BaseIndex& src, Register dest);
+  FaultingCodeRange load8SignExtend(const Address& address, Register dest);
+  FaultingCodeRange load8SignExtend(const BaseIndex& src, Register dest);
 
-  FaultingCodeOffset load8ZeroExtend(const Address& address, Register dest);
-  FaultingCodeOffset load8ZeroExtend(const BaseIndex& src, Register dest);
+  FaultingCodeRange load8ZeroExtend(const Address& address, Register dest);
+  FaultingCodeRange load8ZeroExtend(const BaseIndex& src, Register dest);
 
-  FaultingCodeOffset load16SignExtend(const Address& address, Register dest);
-  FaultingCodeOffset load16SignExtend(const BaseIndex& src, Register dest);
+  FaultingCodeRange load16SignExtend(const Address& address, Register dest);
+  FaultingCodeRange load16SignExtend(const BaseIndex& src, Register dest);
 
   template <typename S>
   void load16UnalignedSignExtend(const S& src, Register dest) {
     ma_load_unaligned(dest, src, SizeHalfWord, SignExtend);
   }
 
-  FaultingCodeOffset load16ZeroExtend(const Address& address, Register dest);
-  FaultingCodeOffset load16ZeroExtend(const BaseIndex& src, Register dest);
+  FaultingCodeRange load16ZeroExtend(const Address& address, Register dest);
+  FaultingCodeRange load16ZeroExtend(const BaseIndex& src, Register dest);
 
   template <typename S>
   void load16UnalignedZeroExtend(const S& src, Register dest) {
     ma_load_unaligned(dest, src, SizeHalfWord, ZeroExtend);
   }
 
-  FaultingCodeOffset load32(const Address& address, Register dest);
-  FaultingCodeOffset load32(const BaseIndex& address, Register dest);
+  FaultingCodeRange load32(const Address& address, Register dest);
+  FaultingCodeRange load32(const BaseIndex& address, Register dest);
   void load32(AbsoluteAddress address, Register dest);
   void load32(wasm::SymbolicAddress address, Register dest);
 
@@ -738,10 +738,10 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
     ma_load_unaligned(dest, src, SizeWord, SignExtend);
   }
 
-  FaultingCodeOffset load64(const Address& address, Register64 dest) {
+  FaultingCodeRange load64(const Address& address, Register64 dest) {
     return loadPtr(address, dest.reg);
   }
-  FaultingCodeOffset load64(const BaseIndex& address, Register64 dest) {
+  FaultingCodeRange load64(const BaseIndex& address, Register64 dest) {
     return loadPtr(address, dest.reg);
   }
 
@@ -750,8 +750,8 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
     ma_load_unaligned(dest.reg, src, SizeDouble, ZeroExtend);
   }
 
-  FaultingCodeOffset loadPtr(const Address& address, Register dest);
-  FaultingCodeOffset loadPtr(const BaseIndex& src, Register dest);
+  FaultingCodeRange loadPtr(const Address& address, Register dest);
+  FaultingCodeRange loadPtr(const BaseIndex& src, Register dest);
   void loadPtr(AbsoluteAddress address, Register dest);
   void loadPtr(wasm::SymbolicAddress address, Register dest);
 
@@ -764,13 +764,13 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
                             const BaseIndex& src, Register temp,
                             FloatRegister dest);
 
-  FaultingCodeOffset store8(Register src, const Address& address);
-  FaultingCodeOffset store8(Register src, const BaseIndex& address);
+  FaultingCodeRange store8(Register src, const Address& address);
+  FaultingCodeRange store8(Register src, const BaseIndex& address);
   void store8(Imm32 imm, const Address& address);
   void store8(Imm32 imm, const BaseIndex& address);
 
-  FaultingCodeOffset store16(Register src, const Address& address);
-  FaultingCodeOffset store16(Register src, const BaseIndex& address);
+  FaultingCodeRange store16(Register src, const Address& address);
+  FaultingCodeRange store16(Register src, const BaseIndex& address);
   void store16(Imm32 imm, const Address& address);
   void store16(Imm32 imm, const BaseIndex& address);
 
@@ -779,8 +779,8 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
     ma_store_unaligned(src, dest, SizeHalfWord);
   }
 
-  FaultingCodeOffset store32(Register src, const Address& address);
-  FaultingCodeOffset store32(Register src, const BaseIndex& address);
+  FaultingCodeRange store32(Register src, const Address& address);
+  FaultingCodeRange store32(Register src, const BaseIndex& address);
   void store32(Register src, AbsoluteAddress address);
   void store32(Imm32 src, const Address& address);
   void store32(Imm32 src, const BaseIndex& address);
@@ -797,10 +797,10 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
     storePtr(ImmWord(imm.value), address);
   }
 
-  FaultingCodeOffset store64(Register64 src, Address address) {
+  FaultingCodeRange store64(Register64 src, Address address) {
     return storePtr(src.reg, address);
   }
-  FaultingCodeOffset store64(Register64 src, const BaseIndex& address) {
+  FaultingCodeRange store64(Register64 src, const BaseIndex& address) {
     return storePtr(src.reg, address);
   }
 
@@ -810,13 +810,13 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
   }
 
   template <typename T>
-  FaultingCodeOffset storePtr(ImmWord imm, T address);
+  FaultingCodeRange storePtr(ImmWord imm, T address);
   template <typename T>
   void storePtr(ImmPtr imm, T address);
   template <typename T>
   void storePtr(ImmGCPtr imm, T address);
-  FaultingCodeOffset storePtr(Register src, const Address& address);
-  FaultingCodeOffset storePtr(Register src, const BaseIndex& address);
+  FaultingCodeRange storePtr(Register src, const Address& address);
+  FaultingCodeRange storePtr(Register src, const BaseIndex& address);
   void storePtr(Register src, AbsoluteAddress dest);
 
   void storeUnalignedFloat32(const wasm::MemoryAccessDesc& access,

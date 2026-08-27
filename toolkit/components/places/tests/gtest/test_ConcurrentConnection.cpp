@@ -139,14 +139,6 @@ TEST(test_ConcurrentConnection, test_setup)
   }
 }
 
-TEST(test_ConcurrentConnection, test_interrupt_no_connection)
-{
-  // Before Places initializes, mConn is null. MaybeInterrupt must be a no-op.
-  auto conn = ConcurrentConnection::GetInstance();
-  MOZ_DIAGNOSTIC_ASSERT(conn.isSome());
-  ConcurrentConnection::MaybeInterrupt();
-}
-
 TEST(test_ConcurrentConnection, test_database_not_present)
 {
   // Initialize ConcurrentConnection.

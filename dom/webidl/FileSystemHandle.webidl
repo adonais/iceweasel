@@ -13,11 +13,11 @@ interface FileSystemHandle {
   readonly attribute USVString name;
 
   /* https://whatpr.org/fs/10.html#api-filesystemhandle */
-  [NewObject]
+  [NewObject, UseCounter=PerOverload]
   Promise<undefined> move(USVString name);
-  [NewObject]
+  [NewObject, UseCounter=PerOverload]
   Promise<undefined> move(FileSystemDirectoryHandle parent);
-  [NewObject]
+  [NewObject, UseCounter=PerOverload]
   Promise<undefined> move(FileSystemDirectoryHandle parent, USVString name);
 
   [NewObject]

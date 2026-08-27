@@ -1087,6 +1087,16 @@ ImageTestCase PerfRgbAlphaLossyJXLTestCase() {
   return ImageTestCase("perf_srgb_alpha_lossy.jxl", "image/jxl",
                        IntSize(1000, 1000), TEST_CASE_IS_TRANSPARENT);
 }
+
+// Progressive (multi-pass) lossy RGBA encoding spanning more than one
+// 256px coded group; regression test for bug 2054317 (a group's already-
+// finalized modular alpha buffer being incorrectly re-flushed once later
+// passes for the same group arrive).
+ImageTestCase ProgressiveAlphaMultiGroupJXLTestCase() {
+  return ImageTestCase("progressive_alpha_multigroup.jxl", "image/jxl",
+                       IntSize(257, 64),
+                       TEST_CASE_IGNORE_OUTPUT | TEST_CASE_IS_TRANSPARENT);
+}
 #endif
 
 ImageTestCase ExifResolutionTestCase() {

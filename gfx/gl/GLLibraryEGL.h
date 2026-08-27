@@ -77,6 +77,8 @@ enum class EGLLibExtension {
   ANGLE_display_power_preference,
   ANGLE_platform_angle,
   ANGLE_platform_angle_d3d,
+  ANGLE_platform_angle_metal,
+  ANGLE_platform_angle_device_id,
   EXT_device_enumeration,
   EXT_device_query,
   EXT_platform_device,
@@ -110,7 +112,6 @@ enum class EGLExtension {
   ANGLE_stream_producer_d3d_texture,
   KHR_surfaceless_context,
   KHR_create_context_no_error,
-  MOZ_create_context_provoking_vertex_dont_care,
   EXT_swap_buffers_with_damage,
   KHR_swap_buffers_with_damage,
   EXT_buffer_age,
@@ -121,6 +122,9 @@ enum class EGLExtension {
   MESA_image_dma_buf_export,
   KHR_no_config_context,
   ANGLE_iosurface_client_buffer,
+  ANGLE_metal_commands_scheduled_sync,
+  ANGLE_metal_shared_event_sync,
+  ANGLE_wait_until_work_scheduled,
   Max
 };
 
@@ -149,6 +153,7 @@ class GLLibraryEGL final {
   PRLibrary* mEGLLibrary = nullptr;
   PRLibrary* mGLLibrary = nullptr;
   bool mIsANGLE = false;
+  bool mIsD3DANGLE = false;
   std::bitset<UnderlyingValue(EGLLibExtension::Max)> mAvailableExtensions;
   std::weak_ptr<EglDisplay> mDefaultDisplay;
   std::unordered_map<EGLDisplay, std::weak_ptr<EglDisplay>> mActiveDisplays;
@@ -176,6 +181,8 @@ class GLLibraryEGL final {
   std::shared_ptr<EglDisplay> CreateDisplay(const EGLCreateDisplayFlags& aFlags,
                                             nsACString* const out_failureId);
   std::shared_ptr<EglDisplay> CreateDisplay(ID3D11Device*);
+  std::shared_ptr<EglDisplay> CreateDisplayForMetalDevice(
+      uint64_t aMetalDeviceRegistryID);
   std::shared_ptr<EglDisplay> DefaultDisplay(nsACString* const out_failureId);
 
   bool IsExtensionSupported(EGLLibExtension aKnownExtension) const {
@@ -187,6 +194,7 @@ class GLLibraryEGL final {
   }
 
   bool IsANGLE() const { return mIsANGLE; }
+  bool IsD3DANGLE() const { return mIsD3DANGLE; }
 
   // -
   // PFN wrappers
@@ -223,6 +231,12 @@ class GLLibraryEGL final {
   const auto ret = mSymbols.X; \
   AFTER_CALL                   \
   return ret
+
+#define WRAP_VOID(X) \
+  PROFILE_CALL       \
+  BEFORE_CALL        \
+  mSymbols.X;        \
+  AFTER_CALL
 
  public:
   EGLDisplay fGetDisplay(void* display_id) const {
@@ -432,8 +446,13 @@ class GLLibraryEGL final {
     WRAP(fQuerySurfacePointerANGLE(dpy, surface, attribute, value));
   }
 
-  EGLSync fCreateSync(EGLDisplay dpy, EGLenum type,
-                      const EGLint* attrib_list) const {
+  EGLSync fCreateSyncEGL15(EGLDisplay dpy, EGLenum type,
+                           const EGLAttrib* attrib_list) const {
+    WRAP(fCreateSync(dpy, type, attrib_list));
+  }
+
+  EGLSync fCreateSyncKHR(EGLDisplay dpy, EGLenum type,
+                         const EGLint* attrib_list) const {
     WRAP(fCreateSyncKHR(dpy, type, attrib_list));
   }
 
@@ -563,9 +582,17 @@ class GLLibraryEGL final {
                                   external_only, num_modifiers));
   }
 
-#undef WRAP
+  // EGL_ANGLE_metal_shared_event_sync
+  void* fCopyMetalSharedEventANGLE(EGLDisplay dpy, EGLSync sync) const {
+    WRAP(fCopyMetalSharedEventANGLE(dpy, sync));
+  }
+
+  void fWaitUntilWorkScheduledANGLE(EGLDisplay dpy) const {
+    WRAP_VOID(fWaitUntilWorkScheduledANGLE(dpy));
+  }
 
 #undef WRAP
+#undef WRAP_VOID
 #undef PROFILE_CALL
 #undef BEFORE_CALL
 #undef AFTER_CALL
@@ -640,6 +667,8 @@ class GLLibraryEGL final {
                                                       EGLSurface surface,
                                                       EGLint attribute,
                                                       void** value);
+    EGLSync(GLAPIENTRY* fCreateSync)(EGLDisplay dpy, EGLenum type,
+                                     const EGLAttrib* attrib_list);
     EGLSync(GLAPIENTRY* fCreateSyncKHR)(EGLDisplay dpy, EGLenum type,
                                         const EGLint* attrib_list);
     EGLBoolean(GLAPIENTRY* fDestroySyncKHR)(EGLDisplay dpy, EGLSync sync);
@@ -719,6 +748,11 @@ class GLLibraryEGL final {
     EGLBoolean(GLAPIENTRY* fQueryDmaBufModifiersEXT)(
         EGLDisplay dpy, EGLint format, EGLint max_modifiers,
         uint64_t* modifiers, EGLBoolean* external_only, EGLint* num_modifiers);
+
+    // EGL_ANGLE_metal_shared_event_sync
+    void*(GLAPIENTRY* fCopyMetalSharedEventANGLE)(EGLDisplay dpy, EGLSync sync);
+
+    void(GLAPIENTRY* fWaitUntilWorkScheduledANGLE)(EGLDisplay dpy);
   } mSymbols = {};
 };
 
@@ -875,9 +909,18 @@ class EglDisplay final {
     return mLib->fQuerySurfacePointerANGLE(mDisplay, surface, attribute, value);
   }
 
-  EGLSync fCreateSync(EGLenum type, const EGLint* attrib_list) const {
+  // Core EGL 1.5 version. Note attrib_list is an array of EGLAttrib.
+  // Prefer eglCreateSyncKHR for wider compatibility, unless an attribute being
+  // provided must be an EGLAttrib.
+  EGLSync fCreateSyncEGL15(EGLenum type, const EGLAttrib* attrib_list) const {
+    MOZ_ASSERT(mLib->mSymbols.fCreateSync);
+    return mLib->fCreateSyncEGL15(mDisplay, type, attrib_list);
+  }
+
+  // EGL_KHR_fence_sync version. Note attrib_list is an array of EGLint.
+  EGLSync fCreateSyncKHR(EGLenum type, const EGLint* attrib_list) const {
     MOZ_ASSERT(IsExtensionSupported(EGLExtension::KHR_fence_sync));
-    return mLib->fCreateSync(mDisplay, type, attrib_list);
+    return mLib->fCreateSyncKHR(mDisplay, type, attrib_list);
   }
 
   EGLBoolean fDestroySync(EGLSync sync) const {
@@ -1001,6 +1044,17 @@ class EglDisplay final {
                                 EGLint* offsets) const {
     MOZ_ASSERT(IsExtensionSupported(EGLExtension::MESA_image_dma_buf_export));
     return mLib->fExportDMABUFImage(mDisplay, image, fds, strides, offsets);
+  }
+
+  // EGL_ANGLE_metal_shared_event_sync
+  void* fCopyMetalSharedEventANGLE(EGLSync sync) const {
+    MOZ_ASSERT(
+        IsExtensionSupported(EGLExtension::ANGLE_metal_shared_event_sync));
+    return mLib->fCopyMetalSharedEventANGLE(mDisplay, sync);
+  }
+
+  void fWaitUntilWorkScheduledANGLE() const {
+    return mLib->fWaitUntilWorkScheduledANGLE(mDisplay);
   }
 };
 

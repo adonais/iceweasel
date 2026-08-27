@@ -98,6 +98,15 @@ struct Http3ConnectionStatsParams {
   CopyableTArray<Http3ConnStats> stats;
 };
 
+struct SSLTokensCacheRecordInfo {
+  nsCString key;
+  int64_t expirationTime;
+  uint8_t overridableError;
+  bool restored;
+  uint64_t id;
+  CopyableTArray<uint8_t> compressedPayload;
+};
+
 }  // namespace net
 }  // namespace mozilla
 
@@ -128,6 +137,10 @@ DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::Http3ConnStats, packetsRx,
 
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::Http3ConnectionStatsParams,
                                   host, port, stats);
+
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::SSLTokensCacheRecordInfo, key,
+                                  expirationTime, overridableError, restored,
+                                  id, compressedPayload);
 
 }  // namespace IPC
 

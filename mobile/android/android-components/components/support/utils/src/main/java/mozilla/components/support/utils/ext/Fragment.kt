@@ -5,6 +5,7 @@
 package mozilla.components.support.utils.ext
 
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.DimenRes
 import androidx.fragment.app.Fragment
 
 /**
@@ -24,3 +25,17 @@ fun Fragment.requestInPlacePermissions(
         it.launch(permissionsToRequest)
     }
 }
+
+/**
+ * Returns the pixel size for the given dimension resource ID.
+ *
+ * This is a wrapper around `resources.getDimensionPixelSize`, reducing verbosity when accessing
+ * dimension values from a [Fragment].
+ *
+ * @param resId Resource ID of the dimension.
+ * @return The pixel size corresponding to the given dimension resource.
+ */
+@Suppress("Resources.GetDimensionPixelSizeInsteadOfPixelSizeFor")
+fun Fragment.pixelSizeFor(
+    @DimenRes resId: Int,
+) = resources.getDimensionPixelSize(resId)

@@ -18,9 +18,9 @@ origin:
   url: "https://gitlab.freedesktop.org/mesa/mesa"
   license: MIT
 
-  release: "e664082d3507d790ac31f721e8900417efd3a95b (2023-01-19T04:09:17.000+00:00)"
+  release: 780727e68adc62f446dc1df7bcaf86f20b6c03d1 (2026-07-26T12:46:51.000+00:00).
 
-  revision: "e664082d3507d790ac31f721e8900417efd3a95b"
+  revision: 780727e68adc62f446dc1df7bcaf86f20b6c03d1
   # The codebase does not provide a LICENSE file!
   # https://docs.mesa3d.org/license.html#license-copyright-information
   # license-file: LICENSE

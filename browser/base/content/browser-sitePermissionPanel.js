@@ -2,6 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+ChromeUtils.defineESModuleGetters(this, {
+  PermissionUI: "resource:///modules/PermissionUI.sys.mjs",
+  SerialDeviceSharingHelper:
+    "moz-src:///browser/modules/SerialDeviceSharingHelper.sys.mjs",
+});
+
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "SiteCategory",
@@ -977,7 +983,7 @@ var gPermissionPanel = {
       } else if (idNoSuffix === "xr") {
         gBrowser.updateBrowserSharing(browser, { xr: false });
       } else if (idNoSuffix === "serial") {
-        gSerialDeviceObserver.resetBrowserCount(browser);
+        SerialDeviceSharingHelper.resetBrowserCount(browser);
         gBrowser.updateBrowserSharing(browser, { serial: false });
         Services.obs.notifyObservers(
           browser.browsingContext,

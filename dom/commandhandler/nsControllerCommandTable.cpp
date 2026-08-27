@@ -14,14 +14,6 @@
 
 using mozilla::ControllerCommand;
 
-// this value is used to size the hash table. Just a sensible upper bound
-#define NUM_COMMANDS_LENGTH 32
-
-nsControllerCommandTable::nsControllerCommandTable()
-    : mCommandsTable(NUM_COMMANDS_LENGTH) {}
-
-nsControllerCommandTable::~nsControllerCommandTable() = default;
-
 void nsControllerCommandTable::RegisterCommand(const nsACString& aName,
                                                ControllerCommand* aCommand) {
   MOZ_DIAGNOSTIC_ASSERT(mMutable);

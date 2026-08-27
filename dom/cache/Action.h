@@ -45,7 +45,7 @@ class Action : public SafeRefCounted<Action> {
   };
 
   // virtual because deleted through base class pointer
-  virtual ~Action();
+  virtual ~Action() = default;
 
   // Execute operations on the target thread.  Once complete call
   // Resolver::Resolve().  This can be done sync or async.
@@ -85,7 +85,7 @@ class Action : public SafeRefCounted<Action> {
   MOZ_DECLARE_REFCOUNTED_TYPENAME(cache::Action)
 
  protected:
-  Action();
+  Action() = default;
 
   // Check if this Action has been canceled.  May be called from any thread,
   // but typically used from the target thread.
@@ -93,7 +93,7 @@ class Action : public SafeRefCounted<Action> {
 
  private:
   // Accessible from any thread.
-  Atomic<bool> mCanceled;
+  Atomic<bool> mCanceled{false};
 };
 
 }  // namespace mozilla::dom::cache

@@ -27,9 +27,6 @@ password-manager-update-login-add-username = Add username to saved password?
 password-manager-password-password-button-allow =
     .label = Update
     .accesskey = U
-password-manager-update-password-button-deny =
-    .label = Don’t update
-    .accesskey = D
 
 primary-password-prompt-message = Please enter your Primary Password.
 

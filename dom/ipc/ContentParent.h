@@ -24,6 +24,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/AudioSessionBinding.h"
 #include "mozilla/dom/JSProcessActorParent.h"
+#include "mozilla/dom/LoadedOriginSet.h"
 #include "mozilla/dom/MediaSessionBinding.h"
 #include "mozilla/dom/MessageManagerCallback.h"
 #include "mozilla/dom/PContentParent.h"
@@ -525,15 +526,6 @@ class ContentParent final : public PContentParent,
     return PContentParent::RecvPHalConstructor(aActor);
   }
 
-  mozilla::ipc::IPCResult RecvAttributionEvent(
-      const nsACString& aHost, PrivateAttributionImpressionType aType,
-      uint32_t aIndex, const nsAString& aAd, const nsACString& aTargetHost);
-  mozilla::ipc::IPCResult RecvAttributionConversion(
-      const nsACString& aHost, const nsAString& aTask, uint32_t aHistogramSize,
-      const Maybe<uint32_t>& aLookbackDays,
-      const Maybe<PrivateAttributionImpressionType>& aImpressionType,
-      const nsTArray<nsString>& aAds, const nsTArray<nsCString>& aSourceHosts);
-
   PHeapSnapshotTempFileHelperParent* AllocPHeapSnapshotTempFileHelperParent();
 
   PRemoteSpellcheckEngineParent* AllocPRemoteSpellcheckEngineParent();
@@ -658,11 +650,6 @@ class ContentParent final : public PContentParent,
   // documents, and javascript: URI response documents.
   nsresult AboutToLoadDocumentForChild(nsIChannel* aChannel);
 
-  // Send Blob URLs for this aPrincipal if they are not already known to this
-  // content process and mark the process to receive any new/revoked Blob URLs
-  // to this content process forever.
-  void TransmitBlobURLsForPrincipal(nsIPrincipal* aPrincipal);
-
   // Update a cache list of allowed domains to store cookies for the current
   // process. This method is called when PCookieServiceParent actor is not
   // available yet.
@@ -677,18 +664,7 @@ class ContentParent final : public PContentParent,
       nsIPrincipal* aPrincipal,
       const EnumSet<ValidatePrincipalOptions>& aOptions = {});
 
-  // This function is called in BrowsingContext immediately before IPC call to
-  // load a URI. If aURI is a BlobURL, this method transmits all BlobURLs for
-  // aURI's principal that were previously not transmitted. This allows for
-  // opening a locally created BlobURL in a new tab.
-  //
-  // The reason all previously untransmitted Blobs are transmitted is that the
-  // current BlobURL could contain html code, referring to another untransmitted
-  // BlobURL.
-  //
-  // Should eventually be made obsolete by broader design changes that only
-  // store BlobURLs in the parent process.
-  void TransmitBlobDataIfBlobURL(nsIURI* aURI, const OriginAttributes& aAttrs);
+  nsIDOMProcessParent* ProcessParent() override { return this; }
 
   void OnCompositorDeviceReset() override;
 
@@ -752,6 +728,8 @@ class ContentParent final : public PContentParent,
       nsIPrincipal* pLoadingPrincipal,
       const OriginAttributes& aOriginAttributes, uint64_t aInnerWindowId,
       const nsCString& aPartitionKey, BlobURLDataRequestResolver&& aResolver);
+
+  bool WasA11yEverActivated() const { return mWasA11yEverActivated; }
 
  protected:
   bool CheckBrowsingContextEmbedder(CanonicalBrowsingContext* aBC,
@@ -1472,6 +1450,8 @@ class ContentParent final : public PContentParent,
     return mThreadsafeHandle;
   }
 
+  LoadedOriginSet* LoadedOrigins() const;
+
   RemoteWorkerServiceParent* GetRemoteWorkerServiceParent() const {
     return mRemoteWorkerServiceActor;
   }
@@ -1581,6 +1561,8 @@ class ContentParent final : public PContentParent,
   // ClipboardContentAnalysis actor
   uint8_t mClipboardContentAnalysisCreated : 1;
 
+  bool mWasA11yEverActivated : 1 = false;
+
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   bool mBlockShutdownCalled;
 #endif
@@ -1618,15 +1600,6 @@ class ContentParent final : public PContentParent,
   nsTHashSet<nsCString> mActiveSecondaryPermissionKeys;
 
   nsTArray<nsCOMPtr<nsIPrincipal>> mCookieInContentListCache;
-
-  // This is intended to be a memory and time efficient means of determining
-  // whether an origin has ever existed in a process so that Blob URL broadcast
-  // doesn't need to transmit every Blob URL to every content process. False
-  // positives are acceptable because receiving a Blob URL does not grant access
-  // to its contents, and the act of creating/revoking a Blob is currently
-  // viewed as an acceptable side-channel leak. In the future bug 1491018 will
-  // moot the need for this structure.
-  nsTArray<uint64_t> mLoadedOriginHashes;
 
   UniquePtr<mozilla::ipc::CrashReporterHost> mCrashReporter;
 
@@ -1713,17 +1686,27 @@ class ThreadsafeContentParentHandle final {
   [[nodiscard]] UniqueThreadsafeContentParentKeepAlive TryAddKeepAlive(
       uint64_t aBrowserId = 0) MOZ_EXCLUDES(mMutex);
 
+  LoadedOriginSet* LoadedOrigins() const { return mLoadedOrigins; }
+
+  // Whenever receiving a Principal we need to validate that Principal case
+  // by case, where we grant individual callsites to customize the checks!
+  bool ValidatePrincipal(
+      nsIPrincipal* aPrincipal,
+      const EnumSet<ValidatePrincipalOptions>& aOptions = {});
+
  private:
   ThreadsafeContentParentHandle(ContentParent* aActor, ContentParentId aChildID,
                                 const nsACString& aRemoteType)
-      : mChildID(aChildID), mRemoteType(aRemoteType), mWeakActor(aActor) {}
+      : mChildID(aChildID),
+        mLoadedOrigins(MakeRefPtr<LoadedOriginSet>(aRemoteType)),
+        mWeakActor(aActor) {}
   ~ThreadsafeContentParentHandle() { MOZ_ASSERT(!mWeakActor); }
 
   mozilla::RecursiveMutex mMutex{"ContentParentIdentity"};
 
   const ContentParentId mChildID;
 
-  nsCString mRemoteType MOZ_GUARDED_BY(mMutex);
+  const RefPtr<LoadedOriginSet> mLoadedOrigins;
 
   // Keepalives for this browser, keyed by BrowserId. A BrowserId of `0` is used
   // for non-tab code keeping the process alive (such as for workers).

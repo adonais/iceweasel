@@ -1302,6 +1302,11 @@ html {
   min-height: 100vh;
 }
 
+.onboardingContainer:has(theme-picker) .content-tile {
+  max-width: 470px;
+  padding-bottom: var(--space-large);
+}
+
 .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content {
   padding-block: 40px 0;
 }
@@ -1530,6 +1535,12 @@ html {
 .onboardingContainer .main-content .no-steps .steps {
   display: none;
 }
+.onboardingContainer .screen.TOU_ONBOARDING_LOADING:focus-visible {
+  outline: none;
+}
+.onboardingContainer .screen.TOU_ONBOARDING_LOADING .main-content {
+  border-radius: 0;
+}
 .onboardingContainer .screen {
   display: flex;
   position: relative;
@@ -1564,7 +1575,6 @@ html {
 .onboardingContainer .screen[pos=center] {
   background-color: var(--background-color-overlay);
   min-width: 504px;
-  border-radius: var(--border-radius-xlarge, 16px);
 }
 .onboardingContainer .screen[pos=center].with-noodles {
   min-width: 610px;
@@ -1839,6 +1849,27 @@ html {
 }
 .onboardingContainer .screen:not([pos=split]) .secondary-cta.top button:hover {
   color: #E0E0E6;
+}
+.onboardingContainer .screen:not([pos=split]) .additional-cta.cta-link {
+  background: none;
+  padding: 0;
+  font-weight: normal;
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+  color: var(--link-color);
+}
+.onboardingContainer .screen:not([pos=split]) .additional-cta.cta-link:hover {
+  color: var(--link-color-hover);
+}
+.onboardingContainer .screen:not([pos=split]) .additional-cta.cta-link:active {
+  color: var(--link-color-active);
+}
+@media (prefers-contrast) {
+  .onboardingContainer .screen:not([pos=split]) .additional-cta.cta-link:active {
+    text-decoration: none;
+  }
 }
 .onboardingContainer .screen:not([pos=split]) migration-wizard {
   padding: 5px 60px;
@@ -2563,6 +2594,44 @@ html {
   width: 25%;
   max-height: 75%;
 }
+@media only screen and (width <= 1338px) {
+  .onboardingContainer .screen[pos=split][fullscreen]:has(theme-picker) {
+    height: 100%;
+  }
+  .onboardingContainer .screen[pos=split][fullscreen]:has(theme-picker) .section-main,
+  .onboardingContainer .screen[pos=split][fullscreen]:has(theme-picker) .section-secondary {
+    width: 100%;
+  }
+  .onboardingContainer .screen[pos=split][fullscreen]:has(theme-picker) .section-main {
+    height: 75%;
+    flex-grow: 1;
+    margin: 0;
+    display: flex;
+  }
+  .onboardingContainer .screen[pos=split][fullscreen]:has(theme-picker) .section-main[hide-secondary-section=responsive] {
+    height: 100%;
+  }
+  .onboardingContainer .screen[pos=split][fullscreen]:has(theme-picker) .section-main[hide-secondary-section=responsive] .main-content {
+    border-radius: 0;
+    padding: 0;
+    height: auto;
+  }
+  .onboardingContainer .screen[pos=split][fullscreen]:has(theme-picker) .section-main .main-content .action-buttons .secondary-cta {
+    inset-block-end: 0;
+    inset-inline-end: 0;
+  }
+  .onboardingContainer .screen[pos=split][fullscreen]:has(theme-picker) .section-main .main-content .main-content-inner {
+    padding-inline: 55px;
+    margin-inline: auto;
+  }
+  .onboardingContainer .screen[pos=split][fullscreen]:has(theme-picker) .section-secondary {
+    height: 250px;
+  }
+  .onboardingContainer .screen[pos=split][fullscreen]:has(theme-picker) .section-secondary .hero-image img {
+    width: 25%;
+    max-height: 75%;
+  }
+}
 @media only screen and (width <= 800px) {
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) {
     flex-direction: column;
@@ -2936,6 +3005,194 @@ html {
   border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
   margin: auto;
   margin-inline-start: 0;
+}
+@media only screen and (width <= 1338px) {
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) {
+    flex-direction: column;
+    min-height: 550px;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm]))::before {
+    width: 400px;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm]))[reverse-split] {
+    flex-direction: column;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm]))[reverse-split] .section-secondary {
+    border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
+    margin: auto;
+    margin-bottom: 0;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm]))[reverse-split] .section-secondary:dir(rtl) {
+    margin: auto;
+    margin-bottom: 0;
+    border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm]))[reverse-split] .section-main {
+    height: auto;
+    margin: auto;
+    margin-top: 0;
+    border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm]))[reverse-split] .section-main:dir(rtl) {
+    margin: auto;
+    margin-top: 0;
+    border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-secondary,
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main {
+    width: 400px;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-secondary {
+    --mr-secondary-position: center center / 75%;
+    border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
+    margin: auto;
+    margin-bottom: 0;
+    height: 100px;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-secondary .hero-image img {
+    margin: 6px 0;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-secondary .message-text {
+    margin-inline: auto;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-secondary h1 {
+    font-size: 35px;
+    text-align: center;
+    white-space: normal;
+    margin-inline: auto;
+    margin-block: 14px 6px;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-secondary:dir(rtl) {
+    margin: auto;
+    margin-bottom: 0;
+    border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-secondary.with-secondary-section-hidden {
+    display: none;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) migration-wizard::part(deck) {
+    min-width: 330px;
+    margin-inline: 36px;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main {
+    margin: auto;
+    margin-top: 0;
+    height: 450px;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main migration-wizard::part(buttons) {
+    flex-direction: column;
+    margin-inline: 46px;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main[hide-secondary-section=responsive] {
+    height: 550px;
+    margin: auto;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main[hide-secondary-section=responsive]:dir(rtl) {
+    margin: auto;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main[hide-secondary-section=responsive] .main-content {
+    padding: 50px 0 0;
+    border-radius: var(--border-radius-xlarge, 8px);
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main[hide-secondary-section=responsive] .main-content:dir(rtl) {
+    border-radius: var(--border-radius-xlarge, 8px);
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content {
+    border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
+    padding: 30px 0 0;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content .main-content-inner {
+    align-items: center;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content .logo-container {
+    text-align: center;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content .logo-container .brand-logo {
+    min-height: 25px;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content .logo-container .brand-logo, .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content .logo-container .brand-logo:dir(rtl) {
+    background-position: center;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content .logo-container .logo-alt {
+    width: inherit;
+    height: inherit;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content .welcome-text {
+    align-items: center;
+    text-align: center;
+    margin-inline: 0;
+    padding-inline: 30px;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content .welcome-text .spacer-bottom,
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content .welcome-text .spacer-top {
+    display: none;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content .action-buttons {
+    text-align: center;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content .action-buttons .checkbox-container {
+    display: none;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content .action-buttons .secondary-cta {
+    position: relative;
+    margin-block: 10px 0;
+    bottom: 0;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content .primary,
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content .secondary {
+    min-width: 240px;
+    margin-inline: 0;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content .steps {
+    padding-block: 0;
+    margin: 0;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .main-content .steps.progress-bar {
+    margin-inline: 0;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .additional-cta.cta-link {
+    align-self: center;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .dismiss-button,
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main .more-button {
+    top: -100px;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main:dir(rtl) {
+    margin: auto;
+    margin-top: 0;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker):where(:not([no-rdm])) .section-main:dir(rtl) .main-content {
+    border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker)[no-rdm] {
+    width: 800px;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker)[no-rdm][reverse-split] {
+    flex-direction: row-reverse;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker)[no-rdm][reverse-split] .section-main {
+    margin: auto;
+    margin-inline-end: 0;
+    border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker)[no-rdm][reverse-split] .section-main .main-content {
+    border-radius: inherit;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker)[no-rdm][reverse-split] .section-main:dir(rtl) {
+    border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
+    margin: auto;
+    margin-inline-end: 0;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker)[no-rdm][reverse-split] .section-secondary {
+    margin: auto;
+    margin-inline-start: 0;
+    border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
+  }
+  .onboardingContainer .screen[pos=split]:has(theme-picker)[no-rdm][reverse-split] .section-secondary:dir(rtl) {
+    border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
+    margin: auto;
+    margin-inline-start: 0;
+  }
 }
 @media only screen and (height <= 650px) and (800px <= width <= 990px) {
   .onboardingContainer .screen[pos=split]:where(:not([fullscreen])) .section-main .secondary-cta.top {
@@ -3887,7 +4144,7 @@ html {
 }
 .onboardingContainer .secondary-buttons-top-container {
   display: flex;
-  flex-direction: row-reverse;
+  flex-direction: row;
   position: fixed;
   top: 10px;
   inset-inline-end: 10px;
@@ -4162,6 +4419,7 @@ html {
 .onboardingContainer .dialog-initial .link-paragraph,
 .onboardingContainer .dialog-initial .multi-select-container,
 .onboardingContainer .dialog-initial migration-wizard,
+.onboardingContainer .dialog-initial theme-picker,
 .onboardingContainer .dialog-initial turn-on-scheduled-backups::part(form) {
   transition-delay: 0.9s;
 }
@@ -4177,7 +4435,8 @@ html {
 .onboardingContainer .screen:not(.dialog-initial) .tiles-single-select-section,
 .onboardingContainer .screen:not(.dialog-initial) .inline-image,
 .onboardingContainer .screen:not(.dialog-initial) .link-paragraph,
-.onboardingContainer .screen:not(.dialog-initial) .multi-select-container {
+.onboardingContainer .screen:not(.dialog-initial) .multi-select-container,
+.onboardingContainer .screen:not(.dialog-initial) theme-picker {
   transition-delay: 0.2s;
 }
 .onboardingContainer .screen:not(.dialog-initial) .primary,
@@ -4255,6 +4514,7 @@ html {
 .onboardingContainer.transition-in .screen .cta-link,
 .onboardingContainer.transition-in .screen .legal-paragraph,
 .onboardingContainer.transition-in .screen migration-wizard,
+.onboardingContainer.transition-in .screen theme-picker,
 .onboardingContainer.transition-in .screen turn-on-scheduled-backups::part(form),
 .onboardingContainer.transition-in .screen .tile-title-container,
 .onboardingContainer.transition-in .screen .steps[above-button]:not(.progress-bar) {
@@ -4354,6 +4614,7 @@ html {
 .onboardingContainer.transition-out .screen:not(.dialog-last) .inline-image,
 .onboardingContainer.transition-out .screen:not(.dialog-last) .link-paragraph,
 .onboardingContainer.transition-out .screen:not(.dialog-last) migration-wizard,
+.onboardingContainer.transition-out .screen:not(.dialog-last) theme-picker,
 .onboardingContainer.transition-out .screen:not(.dialog-last) turn-on-scheduled-backups::part(form) {
   opacity: 0;
   translate: 0 var(--translate);
@@ -4387,7 +4648,8 @@ html {
   transition-delay: 0.4s;
 }
 .onboardingContainer .inline-image,
-.onboardingContainer .link-paragraph {
+.onboardingContainer .link-paragraph,
+.onboardingContainer theme-picker {
   transition: var(--transition);
 }
 .onboardingContainer migration-wizard {

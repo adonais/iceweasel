@@ -28,6 +28,12 @@ const char* GetPingName(ping_entry_t aEntry);
  */
 Maybe<uint32_t> PingByNameLookup(const nsACString&);
 
+/**
+ * Get a ping's name given its id.
+ * If you have the full ping_entry_t, use GetPingName instead.
+ */
+const char* GetPingNameById(uint32_t aId);
+
 extern const ping_entry_t sPingByNameLookupEntries[{{num_pings}}];
 }  // namespace mozilla::glean
 #endif  // mozilla_GleanJSPingsLookup_h

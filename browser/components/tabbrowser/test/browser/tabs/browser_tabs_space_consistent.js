@@ -6,7 +6,7 @@ function getTabsTop(win) {
 }
 
 async function waitForWindowLayout(win) {
-  await new Promise(resolve => win.requestAnimationFrame(resolve));
+  await win.promiseDocumentFlushed(() => {});
 }
 
 add_task(async function test_tabs_space_consistent_normal_vs_private() {

@@ -21,6 +21,7 @@ import mozpack.path as mozpath
 import requests
 
 from mozbuild.base import MozbuildObject
+from mozbuild.vendor.host_base import TagNotFound
 from mozbuild.vendor.rewrite_mozbuild import (
     MozBuildRewriteException,
     add_file_to_moz_build_file,
@@ -180,7 +181,16 @@ class VendorManifest(MozbuildObject):
             # This case allows us to force-update a tag-tracking library to master
             new_revision, timestamp = self.source_host.upstream_commit("HEAD")
         elif ref_type == "tag":
-            new_revision, timestamp = self.source_host.upstream_tag(revision)
+            try:
+                new_revision, timestamp = self.source_host.upstream_tag(revision)
+            except TagNotFound:
+                # A tag-tracking library can be pinned to a specific commit hash
+                # (e.g. an untagged post-release fix on its release branch), which
+                # is not a tag; fall back to resolving it as a commit when the
+                # revision looks like a hash.
+                if not re.fullmatch(r"[0-9a-fA-F]{7,40}", revision):
+                    raise
+                new_revision, timestamp = self.source_host.upstream_commit(revision)
         else:
             new_revision, timestamp = self.source_host.upstream_commit(revision)
 
@@ -675,10 +685,17 @@ class VendorManifest(MozbuildObject):
             for r in replacements:
                 if r[0] in l:
                     print("Found " + l)
-                    replaced += 1
-                    yaml[i] = re.sub(r[0] + r" [v\.a-f0-9]+.*$", r[0] + r[1], yaml[i])
+                    # Replace the whole value, including any surrounding quotes
+                    # (e.g. revision: "v1.3.0"), and count the actual
+                    # substitution so a silent no-op fails the assert below
+                    # instead of leaving a stale field behind.
+                    yaml[i], count = re.subn(r[0] + r".*$", r[0] + r[1], yaml[i])
+                    replaced += count
 
-        assert len(replacements) == replaced
+        assert len(replacements) == replaced, (
+            f"update_yaml expected to update {len(replacements)} fields "
+            f"but updated {replaced} in {self.yaml_file}"
+        )
 
         with open(self.yaml_file, "wb") as f:
             f.write(("".join(yaml)).encode("utf-8"))
@@ -852,19 +869,18 @@ class VendorManifest(MozbuildObject):
 
         # If you edit this (especially for header files) you should double check
         # rewrite_mozbuild.py around 'assignment_type'
-        source_suffixes = [".cc", ".c", ".cpp", ".S", ".asm"]
-        header_suffixes = [".h", ".hpp"]
+        source_suffixes = (".cc", ".c", ".cpp", ".S", ".asm")
+        header_suffixes = (".h", ".hpp")
+        tracked_suffixes = source_suffixes + header_suffixes
 
         files_removed = self.repository.get_changed_files(diff_filter="D")
         files_added = self.repository.get_changed_files(diff_filter="A")
 
         # Filter the files added to just source files we track in moz.build files.
-        files_added = [
-            f for f in files_added if any([f.endswith(s) for s in source_suffixes])
-        ]
-        header_files_to_add = [
-            f for f in files_added if any([f.endswith(s) for s in header_suffixes])
-        ]
+        files_added = [f for f in files_added if f.endswith(source_suffixes)]
+        # Filter the files removed to just files we track in moz.build files.
+        files_removed = [f for f in files_removed if f.endswith(tracked_suffixes)]
+        header_files_to_add = [f for f in files_added if f.endswith(header_suffixes)]
         if add_to_exports:
             files_added += header_files_to_add
         elif header_files_to_add:
@@ -945,6 +961,12 @@ class VendorManifest(MozbuildObject):
                         os.path.abspath(patch),
                         "--no-backup-if-mismatch",
                         "--batch",
+                        # --forward makes patch skip (and exit nonzero on) a
+                        # patch that looks already-applied or reversed, rather
+                        # than silently applying its reverse. Without it,
+                        # re-vendoring after a local patch was upstreamed could
+                        # quietly undo the upstreamed change.
+                        "--forward",
                     ]
                     self.run_process(
                         args=script,

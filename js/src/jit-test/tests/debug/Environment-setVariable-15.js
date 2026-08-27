@@ -19,7 +19,7 @@ const unaliased = g.parseModule(`
   const x = 42;
   assertEq(x, 42);
 `);
-moduleLink(unaliased);
+moduleLoadAndLink(unaliased);
 moduleEvaluate(unaliased);
 
 const aliased = g.parseModule(`
@@ -30,5 +30,5 @@ const aliased = g.parseModule(`
     return x;
   }
 `);
-moduleLink(aliased);
+moduleLoadAndLink(aliased);
 moduleEvaluate(aliased);

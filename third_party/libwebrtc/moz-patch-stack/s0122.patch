@@ -1,25 +1,31 @@
-From: Andreas Pehrson <apehrson@mozilla.com>
-Date: Fri, 5 Dec 2025 11:12:00 +0000
-Subject: Bug 1931210 - Log SCK startCaptureWithCompletionHandler error code.
- r=jib
+From: Michael Froman <mfroman@mozilla.com>
+Date: Mon, 29 Dec 2025 13:18:00 -0600
+Subject: Bug 2006933 - (fix-932f274e86) don't include rtc_error.h, forward
+ declare RTCError
 
-Differential Revision: https://phabricator.services.mozilla.com/D268351
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/330a55d5a7ff5e7c694772810697fde59f0c742b
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/fb61f91d422c3d77545d0d10778314eb958fc8c6
 ---
- modules/desktop_capture/mac/screen_capturer_sck.mm | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ api/rtp_parameters.h | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/modules/desktop_capture/mac/screen_capturer_sck.mm b/modules/desktop_capture/mac/screen_capturer_sck.mm
-index 0691aba3e4..e429f2c635 100644
---- a/modules/desktop_capture/mac/screen_capturer_sck.mm
-+++ b/modules/desktop_capture/mac/screen_capturer_sck.mm
-@@ -588,7 +588,8 @@ void ScreenCapturerSck::StartWithFilter(SCContentFilter* __strong filter) {
-         // this handler.
-         permanent_error_ = true;
-         RTC_LOG(LS_ERROR) << "ScreenCapturerSck " << this
--                          << " Starting failed.";
-+                          << " Starting failed with error code " << error.code
-+                          << ".";
-       } else {
-         RTC_LOG(LS_INFO) << "ScreenCapturerSck " << this << " Capture started.";
-       }
+diff --git a/api/rtp_parameters.h b/api/rtp_parameters.h
+index 5b6a08140d..ceefad477a 100644
+--- a/api/rtp_parameters.h
++++ b/api/rtp_parameters.h
+@@ -36,7 +36,6 @@
+ #include "absl/strings/string_view.h"
+ #include "api/media_types.h"
+ #include "api/priority.h"
+-#include "api/rtc_error.h"
+ #include "api/rtp_header_extension_id.h"
+ #include "api/rtp_transceiver_direction.h"
+ #include "api/video/resolution.h"
+@@ -46,7 +45,7 @@
+ #include "rtc_base/system/rtc_export.h"
+ 
+ namespace webrtc {
+-
++class RTCError;
+ class StringBuilder;
+ 
+ struct RTC_EXPORT CodecParameterMap

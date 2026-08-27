@@ -24,6 +24,9 @@ const PREF_SELECTED_WALLPAPER =
 const PREF_WALLPAPERS_USER_ENABLED_MIGRATED =
   "browser.newtabpage.activity-stream.newtabWallpapers.user.enabled.migrated";
 
+const PREF_WALLPAPERS_CUSTOM_WALLPAPER_ENABLED =
+  "browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.enabled";
+
 function getWallpaperFeedForTest() {
   let feed = new WallpaperFeed();
 
@@ -206,10 +209,7 @@ add_task(async function test_updateWallpapers_category_order() {
   let sandbox = sinon.createSandbox();
   let feed = new WallpaperFeed();
   Services.prefs.setBoolPref(PREF_WALLPAPERS_ENABLED, true);
-  Services.prefs.setBoolPref(
-    "browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.enabled",
-    true
-  );
+  Services.prefs.setBoolPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_ENABLED, true);
 
   const records = [
     { category: "solid-colors", attachment: { location: "a" } },
@@ -250,9 +250,42 @@ add_task(async function test_updateWallpapers_category_order() {
   ]);
 
   Services.prefs.clearUserPref(PREF_WALLPAPERS_ENABLED);
-  Services.prefs.clearUserPref(
-    "browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.enabled"
+  Services.prefs.clearUserPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_ENABLED);
+  sandbox.restore();
+});
+
+add_task(async function test_updateWallpapers_empty_records() {
+  let sandbox = sinon.createSandbox();
+  let feed = new WallpaperFeed();
+  Services.prefs.setBoolPref(PREF_WALLPAPERS_ENABLED, true);
+  Services.prefs.setBoolPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_ENABLED, true);
+
+  sandbox.stub(feed, "RemoteSettings").returns({
+    get: () => [],
+    on: () => {},
+  });
+
+  feed.store = { dispatch: sinon.spy() };
+
+  info(
+    "WallpaperFeed.updateWallpapers should still dispatch custom-wallpaper " +
+      "category when remote settings returns no records"
   );
+
+  await feed.wallpaperSetup(false);
+
+  const categoryCall = feed.store.dispatch
+    .getCalls()
+    .find(call => call.args[0].type === actionTypes.WALLPAPERS_CATEGORY_SET);
+
+  Assert.ok(
+    categoryCall,
+    "Expected a WALLPAPERS_CATEGORY_SET dispatch call even with empty records"
+  );
+  Assert.deepEqual(categoryCall.args[0].data, ["custom-wallpaper"]);
+
+  Services.prefs.clearUserPref(PREF_WALLPAPERS_ENABLED);
+  Services.prefs.clearUserPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_ENABLED);
   sandbox.restore();
 });
 

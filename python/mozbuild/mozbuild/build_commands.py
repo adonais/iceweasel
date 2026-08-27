@@ -455,6 +455,9 @@ def resource_usage(command_context, address=None, port=None, browser=None, url=N
             )
             return 1
 
+        # Display the URL to trigger VSCode Remote to autoforward the port.
+        print(f"Hosting profile data server at {server.url}")
+
         server.add_resource_json_file("profile", str(profile))
 
     profiler_url = "https://profiler.firefox.com/from-url/" + quote(

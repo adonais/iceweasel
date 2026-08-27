@@ -75,6 +75,12 @@ class File final : public Blob {
       const ChromeFilePropertyBag& aBag, SystemCallerGuarantee aGuarantee,
       ErrorResult& aRv);
 
+  // ChromeOnly
+  static already_AddRefed<File> CreateFromNsIInputStream(
+      const GlobalObject& aGlobal, nsIInputStream* aInputStream, uint64_t aSize,
+      const ChromeFilePropertyBag& aBag, SystemCallerGuarantee aGuarantee,
+      ErrorResult& aRv);
+
   void GetName(nsAString& aFileName) const;
 
   int64_t GetLastModified(ErrorResult& aRv);

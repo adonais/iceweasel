@@ -34,7 +34,7 @@ const SUPPORTED_OPTIONS = {
   animationsPlayBackRateMultiplier: true,
   // Disable network request caching.
   cacheDisabled: true,
-  // Enable color scheme simulation.
+  // Enable color scheme emulation.
   colorSchemeSimulation: true,
   // Enable custom formatters
   customFormatters: true,
@@ -51,7 +51,7 @@ const SUPPORTED_OPTIONS = {
   networkBodyLimit: true,
   // Force a custom device pixel ratio (used in RDM). Set to null to restore origin ratio.
   overrideDPPX: true,
-  // Enable print simulation mode.
+  // Enable print emulation mode.
   printSimulationEnabled: true,
   // Override navigator.maxTouchPoints (used in RDM and doesn't apply if RDM isn't enabled)
   rdmPaneMaxTouchPoints: true,
@@ -59,6 +59,8 @@ const SUPPORTED_OPTIONS = {
   rdmPaneOrientation: true,
   // Enable allocation tracking, if set, contains an object defining the tracking configurations
   recordAllocations: true,
+  // Enable prefers-reduced-motion emulation.
+  reducedMotionEmulation: true,
   // Reload the page when the touch simulation state changes (only works alongside touchEventsOverride)
   reloadOnTouchSimulationToggle: true,
   // Restore focus in the page after closing DevTools.
@@ -271,7 +273,7 @@ class TargetConfigurationActor extends Actor {
           this._setAnimationsPlayBackRateMultiplier(value);
           break;
         case "colorSchemeSimulation":
-          this._setColorSchemeSimulation(value);
+          this._setColorSchemeEmulation(value);
           break;
         case "customUserAgent":
           this._setCustomUserAgent(value);
@@ -290,7 +292,10 @@ class TargetConfigurationActor extends Actor {
           this._setDPPXOverride(value);
           break;
         case "printSimulationEnabled":
-          this._setPrintSimulationEnabled(value);
+          this._setPrintEmulationEnabled(value);
+          break;
+        case "reducedMotionEmulation":
+          this._setReducedMotionEmulation(value);
           break;
         case "rdmPaneMaxTouchPoints":
           this._setRDMPaneMaxTouchPoints(value);
@@ -329,19 +334,25 @@ class TargetConfigurationActor extends Actor {
     }
 
     this._setServiceWorkersTestingEnabled(false);
-    this._setPrintSimulationEnabled(false);
+    this._setPrintEmulationEnabled(false);
     if (this._resetCacheDisabledOnDestroy) {
       this._setCacheDisabled(false);
     }
     this._setTabOffline(false);
 
-    // Restore the color scheme simulation only if it was explicitly updated
+    // Restore the color scheme emulation only if it was explicitly updated
     // by this actor. This will avoid side effects caused when destroying additional
     // targets (e.g. RDM target, WebExtension target, …).
     // TODO: We may want to review other configuration values to see if we should use
     // the same pattern (Bug 1701553).
-    if (this._resetColorSchemeSimulationOnDestroy) {
-      this._setColorSchemeSimulation(null);
+    if (this._resetColorSchemeEmulationOnDestroy) {
+      this._setColorSchemeEmulation(null);
+    }
+
+    // Restore the reduced motion emulation only if it was explicitly updated
+    // by this actor.
+    if (this._resetReducedMotionEmulationOnDestroy) {
+      this._setReducedMotionEmulation(null);
     }
 
     // Restore the user agent only if it was explicitly updated by this specific actor.
@@ -376,9 +387,9 @@ class TargetConfigurationActor extends Actor {
   }
 
   /**
-   * Disable or enable the print simulation.
+   * Disable or enable the print emulation.
    */
-  _setPrintSimulationEnabled(enabled) {
+  _setPrintEmulationEnabled(enabled) {
     const value = enabled ? "print" : "";
     if (this._browsingContext.mediumOverride != value) {
       this._browsingContext.mediumOverride = value;
@@ -386,13 +397,24 @@ class TargetConfigurationActor extends Actor {
   }
 
   /**
-   * Disable or enable the color-scheme simulation.
+   * Disable or enable the color-scheme emulation.
    */
-  _setColorSchemeSimulation(override) {
+  _setColorSchemeEmulation(override) {
     const value = override || "none";
     if (this._browsingContext.prefersColorSchemeOverride != value) {
       this._browsingContext.prefersColorSchemeOverride = value;
-      this._resetColorSchemeSimulationOnDestroy = true;
+      this._resetColorSchemeEmulationOnDestroy = true;
+    }
+  }
+
+  /**
+   * Disable or enable the reduced-motion emulation.
+   */
+  _setReducedMotionEmulation(override) {
+    const value = override || "none";
+    if (this._browsingContext.prefersReducedMotionOverride != value) {
+      this._browsingContext.prefersReducedMotionOverride = value;
+      this._resetReducedMotionEmulationOnDestroy = true;
     }
   }
 

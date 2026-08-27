@@ -557,7 +557,9 @@ export class PanelList extends HTMLElement {
     // from the user until alignment is set.
     this.setAttribute("showing", "true");
 
-    // Wait for a layout flush, then find the bounds.
+    // The rAF + setTimeout matches setAlign() so the submenu is laid out before
+    // its width is measured. Without the setTimeout the width can read as 0 and
+    // the overflow check picks the wrong side.
     let {
       anchorLeft,
       anchorWidth,
@@ -566,28 +568,30 @@ export class PanelList extends HTMLElement {
       panelWidth,
       clientWidth,
     } = await new Promise(resolve => {
-      requestAnimationFrame(() => {
-        // It's possible this is being used in a context where windowUtils is
-        // not available. In that case, fallback to using the element.
-        let getBounds = el =>
-          window.windowUtils
-            ? window.windowUtils.getBoundsWithoutFlushing(el)
-            : el.getBoundingClientRect();
-        // submenu item in the parent panel list
-        let anchorBounds = getBounds(this.lastAnchorNode);
-        let parentPanelBounds = getBounds(hostElement);
-        let panelBounds = getBounds(this);
-        let clientWidth = document.scrollingElement.clientWidth;
+      requestAnimationFrame(() =>
+        setTimeout(() => {
+          // It's possible this is being used in a context where windowUtils is
+          // not available. In that case, fallback to using the element.
+          let getBounds = el =>
+            window.windowUtils
+              ? window.windowUtils.getBoundsWithoutFlushing(el)
+              : el.getBoundingClientRect();
+          // submenu item in the parent panel list
+          let anchorBounds = getBounds(this.lastAnchorNode);
+          let parentPanelBounds = getBounds(hostElement);
+          let panelBounds = getBounds(this);
+          let clientWidth = document.scrollingElement.clientWidth;
 
-        resolve({
-          anchorLeft: anchorBounds.left,
-          anchorWidth: anchorBounds.width,
-          anchorTop: anchorBounds.top,
-          parentPanelTop: parentPanelBounds.top,
-          panelWidth: panelBounds.width,
-          clientWidth,
-        });
-      });
+          resolve({
+            anchorLeft: anchorBounds.left,
+            anchorWidth: anchorBounds.width,
+            anchorTop: anchorBounds.top,
+            parentPanelTop: parentPanelBounds.top,
+            panelWidth: panelBounds.width,
+            clientWidth,
+          });
+        }, 0)
+      );
     });
 
     let align = hostElement.getAttribute("align");
@@ -969,10 +973,14 @@ export class PanelItem extends HTMLElement {
         let [arrowOpenKey, arrowCloseKey] = this.setArrowKeyRTL();
         if (e.key === arrowOpenKey) {
           this.submenuPanel.show(e, e.target);
+          // Don't let the arrow key scroll the page, which would trigger the
+          // panel's scroll-hide listener and immediately close the submenu.
+          e.preventDefault();
           e.stopPropagation();
         }
         if (e.key === arrowCloseKey) {
           this.submenuPanel.hide(e, { force: true }, e.target);
+          e.preventDefault();
           e.stopPropagation();
         }
         break;

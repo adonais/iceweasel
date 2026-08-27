@@ -47,6 +47,11 @@ function run_test() {
     Ci.nsIFIPSUtils
   );
   ok(!fipsUtils.isFIPSEnabled, "FIPS should not be enabled");
+  strictEqual(
+    Glean.pkcs11.fipsEnabled.testGetValue(),
+    false,
+    "fips_enabled should have been recorded as false"
+  );
 
   let sdr = Cc["@mozilla.org/security/sdr;1"].getService(
     Ci.nsISecretDecoderRing

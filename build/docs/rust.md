@@ -50,7 +50,7 @@ To link Rust code into libraries other than libxul, create a directory with a
 `Cargo.toml` file for your crate, and a `moz.build` file that contains:
 
 ```python
-RustLibrary('crate_name')
+RustLibrary("crate_name")
 ```
 
 where `crate_name` matches the name from the `[package]` section of your
@@ -84,7 +84,7 @@ because it's shipped with Firefox) then add this rule to the `moz.build`
 file:
 
 ```python
-RUST_PROGRAMS = ['prog_name']
+RUST_PROGRAMS = ["prog_name"]
 ```
 
 where *prog_name* is the name of the executable as specified in the

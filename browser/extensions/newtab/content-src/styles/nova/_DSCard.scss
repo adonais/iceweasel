@@ -2,7 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-// @nova-cleanup(merge-styles): Move to components/DiscoveryStreamComponents/CardSections/_CardSections.scss
+// @nova-cleanup(merge-styles): Move to components/DiscoveryStreamComponents/CardSections/_CardSections.scss,
+// dropping the .nova-enabled scope from every selector.
+// These rules are imported last, so they beat the component SCSS on source
+// order alone. Folding them into a component file moves them earlier: any
+// classic declaration they were overriding at equal specificity must be deleted
+// outright, not just moved. Verify by diffing the compiled css/activity-stream.css
+// before and after -- the only rules that should disappear are classic ones.
+// Known case: the .ds-card.ds-spoc-rectangle.ds-spoc-rectangle rules below
+// duplicate a class only to tie the classic MREC specificity, so the classic
+// image sizing and radius in DSCard/_DSCard.scss must be deleted when folding.
 
 .nova-enabled .ds-card-grid:not(.ds-section-grid) .ds-card {
   &:not(.placeholder) {

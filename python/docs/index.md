@@ -298,3 +298,17 @@ If a Mach command's dependency conflicts with a vendored package, and that vendo
 isn't needed by Mach itself, then that vendored dependency should be moved from
 `python/sites/mach.txt` to its associated environment.
 :::
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+gecko_taskgraph
+mach
+marionette_driver
+mozbuild
+mozlint
+mozpack
+mozversioncontrol
+mozwebidlcodegen
+```

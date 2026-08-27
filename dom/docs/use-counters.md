@@ -30,6 +30,14 @@ extended attribute.
 bindings codegen and ensuring all the dependencies were correct proved to be
 rather difficult)
 
+If a method has more than one overload (the same name with different signatures),
+use `[UseCounter=PerOverload]` as the extended attribute.
+The codegen adds the argument type names to the counter name for each signature.
+For example, a method `move(USVString name)` gets the counter name
+`InterfaceName_move_USVString`.
+Add one entry in the `.conf` file for each overload.
+Use the format `method InterfaceName.methodName_ArgType1_ArgType2`.
+
 Then run `./mach gen-use-counter-metrics` and build as normal.
 
 ### CSS Properties

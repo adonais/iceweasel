@@ -1,0 +1,123 @@
+(mozilla-projects-nss-releases)=
+
+# Release Notes
+
+```{eval-rst}
+.. toctree::
+   :maxdepth: 0
+   :glob:
+   :hidden:
+
+   nss_3_127.md
+   nss_3_126.md
+   nss_3_125.md
+   nss_3_124.md
+   nss_3_123_1.md
+   nss_3_123.md
+   nss_3_122_2.md
+   nss_3_122_1.md
+   nss_3_122.md
+   nss_3_121.md
+   nss_3_120.md
+   nss_3_119_1.md
+   nss_3_119.md
+   nss_3_118_1.md
+   nss_3_118.md
+   nss_3_117.md
+   nss_3_116.md
+   nss_3_115_1.md
+   nss_3_115.md
+   nss_3_114_1.md
+   nss_3_114.md
+   nss_3_113.md
+   nss_3_112_5.md
+   nss_3_112_4.md
+   nss_3_112_3.md
+   nss_3_112_2.md
+   nss_3_112_1.md
+   nss_3_112.md
+   nss_3_111.md
+   nss_3_110.md
+   nss_3_109.md
+   nss_3_108.md
+   nss_3_107.md
+   nss_3_106.md
+   nss_3_105.md
+   nss_3_104.md
+   nss_3_103.md
+   nss_3_102_1.md
+   nss_3_102.md
+   nss_3_101_4.md
+   nss_3_101_3.md
+   nss_3_101_2.md
+   nss_3_101_1.md
+   nss_3_101.md
+   nss_3_100.md
+   nss_3_99.md
+   nss_3_98.md
+   nss_3_97.md
+   nss_3_96_1.md
+   nss_3_96.md
+   nss_3_95.md
+   nss_3_94.md
+   nss_3_93.md
+   nss_3_92.md
+   nss_3_91.md
+   nss_3_90_6.md
+   nss_3_90_5.md
+   nss_3_90_4.md
+   nss_3_90_3.md
+   nss_3_90_2.md
+   nss_3_90_1.md
+   nss_3_90.md
+   nss_3_89_1.md
+   nss_3_89.md
+   nss_3_88_1.md
+   nss_3_88.md
+   nss_3_87_1.md
+   nss_3_87.md
+   nss_3_86.md
+   nss_3_85.md
+   nss_3_84.md
+   nss_3_83.md
+   nss_3_82.md
+   nss_3_81.md
+   nss_3_80.md
+   nss_3_79_4.md
+   nss_3_79_3.md
+   nss_3_79_2.md
+   nss_3_79_1.md
+   nss_3_79.md
+   nss_3_78_1.md
+   nss_3_78.md
+   nss_3_77.md
+   nss_3_76_1.md
+   nss_3_76.md
+   nss_3_75.md
+   nss_3_74.md
+   nss_3_73_1.md
+   nss_3_73.md
+   nss_3_72_1.md
+   nss_3_72.md
+   nss_3_71.md
+   nss_3_70.md
+   nss_3_69_1.md
+   nss_3_69.md
+   nss_3_68_4.md
+   nss_3_68_3.md
+   nss_3_68_2.md
+   nss_3_68_1.md
+   nss_3_68.md
+   nss_3_67.md
+   nss_3_66.md
+   nss_3_65.md
+   nss_3_64.md
+```
+
+:::{note}
+**NSS 3.127** is the latest version of NSS.
+Complete release notes are available here: {ref}`mozilla_projects_nss_nss_3_127_release_notes`
+
+**NSS 3.112.5 (ESR)** is the latest ESR version of NSS.
+Complete release notes are available here: {ref}`mozilla_projects_nss_nss_3_112_5_release_notes`
+:::

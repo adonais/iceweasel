@@ -10,6 +10,7 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/dom/WebGPUBinding.h"
 #include "mozilla/gfx/FileHandleWrapper.h"
+#include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ImageDataSerializer.h"
@@ -286,7 +287,7 @@ extern void wgpu_parent_queue_submit(
 
 extern void wgpu_parent_create_swap_chain(
     WGPUWebGPUParentPtr aParent, WGPUDeviceId aDeviceId, WGPUQueueId aQueueId,
-    int32_t aWidth, int32_t aHeight, WGPUSurfaceFormat aFormat,
+    uint32_t aWidth, uint32_t aHeight, WGPUSurfaceFormat aFormat,
     const WGPUBufferId* aBufferIds, uintptr_t aBufferIdsLength,
     WGPURemoteTextureOwnerId aRemoteTextureOwnerId,
     bool aUseSharedTextureInSwapChain) {
@@ -1223,7 +1224,9 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
 
   const auto& lookup = mPresentationDataMap.find(aOwnerId);
   if (lookup == mPresentationDataMap.end()) {
-    MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+    // This can happen if `GPUCanvasContext.configure()` was called with an
+    // invalid configuration.
+    NS_WARNING("WebGPU reading back an invalid canvas");
     return IPC_OK();
   }
 
@@ -1411,7 +1414,7 @@ void WebGPUParent::PostSharedTexture(
   const auto& lookup = mPresentationDataMap.find(aOwnerId);
   if (lookup == mPresentationDataMap.end() || !mRemoteTextureOwner ||
       !mRemoteTextureOwner->IsRegistered(aOwnerId)) {
-    NS_WARNING("WebGPU presenting on a destroyed swap chain!");
+    NS_WARNING("WebGPU presenting on an invalid or destroyed swap chain!");
     return;
   }
 
@@ -1454,7 +1457,7 @@ void WebGPUParent::SwapChainPresent(
   const auto& lookup = mPresentationDataMap.find(aOwnerId);
   if (lookup == mPresentationDataMap.end() || !mRemoteTextureOwner ||
       !mRemoteTextureOwner->IsRegistered(aOwnerId)) {
-    NS_WARNING("WebGPU presenting on a destroyed swap chain!");
+    NS_WARNING("WebGPU presenting on an invalid or destroyed swap chain!");
     return;
   }
 
@@ -1614,9 +1617,8 @@ void WebGPUParent::SwapChainDrop(const layers::RemoteTextureOwnerId& aOwnerId,
                                  layers::RemoteTextureTxnType aTxnType,
                                  layers::RemoteTextureTxnId aTxnId) {
   const auto& lookup = mPresentationDataMap.find(aOwnerId);
-  MOZ_ASSERT(lookup != mPresentationDataMap.end());
   if (lookup == mPresentationDataMap.end()) {
-    NS_WARNING("WebGPU presenting on a destroyed swap chain!");
+    NS_WARNING("drop invalid or destroyed swap chain!");
     return;
   }
 
@@ -1786,7 +1788,7 @@ bool WebGPUParent::UseSharedTextureForSwapChain(
   auto ownerId = layers::RemoteTextureOwnerId{aSwapChainId._0};
   const auto& lookup = mPresentationDataMap.find(ownerId);
   if (lookup == mPresentationDataMap.end()) {
-    MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+    NS_WARNING("WebGPU presenting on an invalid or destroyed swap chain!");
     return false;
   }
 
@@ -1836,7 +1838,7 @@ bool WebGPUParent::EnsureSharedTextureForSwapChain(
   auto ownerId = layers::RemoteTextureOwnerId{aSwapChainId._0};
   const auto& lookup = mPresentationDataMap.find(ownerId);
   if (lookup == mPresentationDataMap.end()) {
-    MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+    gfxWarningOnce() << "invalid swap chain";
     return false;
   }
 
@@ -1878,7 +1880,7 @@ void WebGPUParent::EnsureSharedTextureForReadBackPresent(
   auto ownerId = layers::RemoteTextureOwnerId{aSwapChainId._0};
   const auto& lookup = mPresentationDataMap.find(ownerId);
   if (lookup == mPresentationDataMap.end()) {
-    MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+    gfxWarningOnce() << "invalid swap chain";
     return;
   }
 
@@ -1902,7 +1904,7 @@ void WebGPUParent::EnsureSharedTextureForReadBackPresent(
 
   texture->SetOwnerId(ownerId);
   std::shared_ptr<SharedTexture> shared(texture.release());
-  mSharedTextures[aTextureId] = shared;
+  mSharedTextures[aTextureId] = std::move(shared);
 }
 
 std::shared_ptr<SharedTexture> WebGPUParent::CreateSharedTexture(

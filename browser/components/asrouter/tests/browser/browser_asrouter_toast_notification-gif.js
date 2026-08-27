@@ -26,7 +26,7 @@ add_task(async function test_isNotAGifFile() {
     showAlert: showAlertStub,
   });
 
-  let message = await getMessage("TEST_TOAST_NOTIFICATION_GIF");
+  let message = await getMessage("TEST_TOAST_NOTIFICATION1");
   message.content.image_url = "chrome://branding/content/icon32.png";
 
   await ToastNotification.showToastNotification(message, sinon.stub());
@@ -70,7 +70,9 @@ add_task(async function test_gif_download_display_delete() {
     showAlert: showAlertStub,
   });
 
-  const message = await getMessage("TEST_TOAST_NOTIFICATION_GIF");
+  const message = await getMessage("TEST_TOAST_NOTIFICATION1");
+  message.content.image_url =
+    "chrome://activity-stream/content/data/content/assets/fox-doodle-waving.gif";
 
   await ToastNotification.showToastNotification(message, sinon.stub());
   Assert.ok(showAlertStub.called, "AlertsService init has been called.");

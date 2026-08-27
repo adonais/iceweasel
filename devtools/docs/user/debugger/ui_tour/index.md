@@ -1,4 +1,4 @@
-# UI Tour
+# Debugger UI tour
 
 This article is a quick tour of the main sections of the JavaScript Debugger's user interface. The UI is split vertically into three panels
 

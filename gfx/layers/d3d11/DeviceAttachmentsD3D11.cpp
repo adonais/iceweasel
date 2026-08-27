@@ -20,8 +20,6 @@ DeviceAttachmentsD3D11::DeviceAttachmentsD3D11(ID3D11Device* device)
       mInitialized(false),
       mDeviceReset(false) {}
 
-DeviceAttachmentsD3D11::~DeviceAttachmentsD3D11() {}
-
 /* static */
 RefPtr<DeviceAttachmentsD3D11> DeviceAttachmentsD3D11::Create(
     ID3D11Device* aDevice) {

@@ -19,7 +19,7 @@ runNetworkTest(function () {
   test.chain.append([
     async function PC_REMOTE_SET_LOCAL_OFFER(test) {
       const err = await test.pcRemote.setLocalDescriptionAndFail(test.pcLocal._latest_offer);
-      is(err.name, "InvalidModificationError", "Error is InvalidModificationError");
+      is(err.name, "InvalidStateError", "Error is InvalidStateError");
     }
   ]);
 

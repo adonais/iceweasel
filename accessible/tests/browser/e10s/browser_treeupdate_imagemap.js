@@ -24,7 +24,7 @@ async function testImageMap(browser, accDoc) {
     let mapNode = content.document.getElementById("map");
     areaElm.setAttribute(
       "href",
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       "http://www.bbc.co.uk/radio4/atoz/index.shtml#a"
     );
     areaElm.setAttribute("coords", "0,0,13,14");
@@ -49,7 +49,7 @@ async function testImageMap(browser, accDoc) {
     let mapNode = content.document.getElementById("map");
     areaElm.setAttribute(
       "href",
-      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      // eslint-disable-next-line sdl/no-insecure-url
       "http://www.bbc.co.uk/radio4/atoz/index.shtml#c"
     );
     areaElm.setAttribute("coords", "34,0,47,14");
@@ -148,7 +148,7 @@ async function testContainer(browser) {
     map.setAttribute("name", "atoz_map");
     map.setAttribute("id", "map");
 
-    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    // eslint-disable-next-line sdl/no-insecure-url
     area.setAttribute("href", "http://www.bbc.co.uk/radio4/atoz/index.shtml#b");
     area.setAttribute("coords", "17,0,30,14");
     area.setAttribute("alt", "b");

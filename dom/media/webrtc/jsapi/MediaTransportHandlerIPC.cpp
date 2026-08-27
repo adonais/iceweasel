@@ -455,7 +455,8 @@ mozilla::ipc::IPCResult MediaTransportChild::RecvOnStateChange(
     Maybe<dom::RTCErrorParams> error) {
   MutexAutoLock lock(mMutex);
   if (mUser) {
-    mUser->OnStateChange(transportId, state, std::move(remoteCerts), error);
+    mUser->OnStateChange(transportId, state, std::move(remoteCerts),
+                         std::move(error));
   }
   return ipc::IPCResult::Ok();
 }
@@ -465,7 +466,7 @@ mozilla::ipc::IPCResult MediaTransportChild::RecvOnRtcpStateChange(
     Maybe<dom::RTCErrorParams> error) {
   MutexAutoLock lock(mMutex);
   if (mUser) {
-    mUser->OnRtcpStateChange(transportId, state, error);
+    mUser->OnRtcpStateChange(transportId, state, std::move(error));
   }
   return ipc::IPCResult::Ok();
 }

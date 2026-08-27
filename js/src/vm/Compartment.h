@@ -116,9 +116,9 @@ class ObjectWrapperMap {
   class Ptr : public InnerMap::Ptr {
     friend class ObjectWrapperMap;
 
-    InnerMap* map;
+    InnerMap* map{nullptr};
 
-    Ptr() : map(nullptr) {}
+    Ptr() = default;
     Ptr(const InnerMap::Ptr& p, InnerMap& m) : InnerMap::Ptr(p), map(&m) {}
   };
 

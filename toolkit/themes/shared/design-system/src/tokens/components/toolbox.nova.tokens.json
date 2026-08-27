@@ -30,12 +30,6 @@
           "nativeTheme": "-moz-headerbartext",
           "default": "{text.color.@base}"
         }
-      },
-      "inactive": {
-        "value": {
-          "nativeTheme": "-moz-headerbarinactivetext",
-          "default": "{text.color.deemphasized}"
-        }
       }
     }
   }

@@ -167,6 +167,21 @@ add_task(async function test_touch_mode_menuitem() {
     set: [["browser.nova.enabled", false]],
   });
 
+  // browser.touchmode.auto's default tracks whether nova is enabled and is set
+  // once at startup (see CustomizableUI._setAutoTouchModeDefault). Re-derive it
+  // now that nova is forced off, so the "checked by default" and
+  // reset-to-default assertions below hold even when the browser started with
+  // nova enabled. Restore the default afterwards.
+  const defaultBranch = Services.prefs.getDefaultBranch("");
+  const originalAutoTouchDefault =
+    defaultBranch.getBoolPref(PREF_AUTO_TOUCH_MODE);
+  CustomizableUI.getTestOnlyInternalProp(
+    "CustomizableUIInternal"
+  )._setAutoTouchModeDefault();
+  registerCleanupFunction(() =>
+    defaultBranch.setBoolPref(PREF_AUTO_TOUCH_MODE, originalAutoTouchDefault)
+  );
+
   // OSX doesn't get touch mode for now.
   if (AppConstants.platform == "macosx") {
     is(

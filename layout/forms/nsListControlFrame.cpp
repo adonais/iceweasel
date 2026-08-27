@@ -426,19 +426,6 @@ nsresult nsListControlFrame::GetFrameName(nsAString& aResult) const {
 
 nscoord nsListControlFrame::GetBSizeOfARow() { return BSizeOfARow(); }
 
-bool nsListControlFrame::IsOptionInteractivelySelectable(int32_t aIndex) const {
-  auto& select = Select();
-  if (HTMLOptionElement* item = select.Item(aIndex)) {
-    return IsOptionInteractivelySelectable(&select, item);
-  }
-  return false;
-}
-
-bool nsListControlFrame::IsOptionInteractivelySelectable(
-    HTMLSelectElement* aSelect, HTMLOptionElement* aOption) {
-  return !aSelect->IsOptionDisabled(aOption) && aOption->GetPrimaryFrame();
-}
-
 nscoord nsListControlFrame::CalcFallbackRowBSize(float aFontSizeInflation) {
   RefPtr<nsFontMetrics> fontMet =
       nsLayoutUtils::GetFontMetricsForFrame(this, aFontSizeInflation);
@@ -457,23 +444,6 @@ nscoord nsListControlFrame::CalcIntrinsicBSize(nscoord aBSizeOfARow,
     mNumDisplayRows = 4;
   }
   return mNumDisplayRows * aBSizeOfARow;
-}
-
-//----------------------------------------------------------------------
-// Scroll helpers.
-//----------------------------------------------------------------------
-void nsListControlFrame::ScrollToIndex(int32_t aIndex) {
-  if (aIndex < 0) {
-    // XXX shouldn't we just do nothing if we're asked to scroll to
-    // kNothingSelected?
-    ScrollTo(nsPoint(0, 0), ScrollMode::Instant);
-  } else {
-    RefPtr<dom::HTMLOptionElement> option =
-        GetOption(AssertedCast<uint32_t>(aIndex));
-    if (option) {
-      ScrollToFrame(*option);
-    }
-  }
 }
 
 void nsListControlFrame::ScrollToFrame(dom::HTMLOptionElement& aOptElement) {

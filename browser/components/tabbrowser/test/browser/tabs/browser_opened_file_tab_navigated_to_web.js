@@ -1,5 +1,5 @@
 const TEST_FILE = "dummy_page.html";
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 const WEB_ADDRESS = "http://example.org/";
 
 // Test for bug 1321020.
@@ -38,7 +38,7 @@ add_task(async function () {
   let openedBrowser = openedTab.linkedBrowser;
 
   // Ensure that new file:// tab can be navigated to web content.
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   BrowserTestUtils.startLoadingURIString(openedBrowser, "http://example.org/");
   let href = await BrowserTestUtils.browserLoaded(
     openedBrowser,

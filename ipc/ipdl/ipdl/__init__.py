@@ -17,12 +17,11 @@ import sys
 from io import StringIO
 
 from ipdl.cgen import IPDLCodeGen
-from ipdl.lower import LowerToCxx, msgenums
-from ipdl.parser import Parser, ParseError
-from ipdl.type import TypeCheck
-from ipdl.checker import checkSyncMessage, checkFixedSyncMessages
-
+from ipdl.checker import checkFixedSyncMessages, checkSyncMessage
 from ipdl.cxx.cgen import CxxCodeGen
+from ipdl.lower import LowerToCxx, msgenums
+from ipdl.parser import ParseError, Parser
+from ipdl.type import TypeCheck
 
 
 def parse(specstring, filename="/stdin", includedirs=[], errout=sys.stderr):
@@ -66,11 +65,11 @@ def gencxx(ipdlfilename, ast, outheadersdir, outcppdir, segmentcapacitydict):
     def resolveCpp(cpp):
         return [cpp, os.path.join(outcppdir, cpp.name)]
 
-    for ast, filename in [resolveHeader(hdr) for hdr in headers] + [
+    for cxxast, filename in [resolveHeader(hdr) for hdr in headers] + [
         resolveCpp(cpp) for cpp in cpps
     ]:
         tempfile = StringIO()
-        CxxCodeGen(tempfile).cgen(ast)
+        CxxCodeGen(tempfile).cgen(cxxast)
         writeifmodified(tempfile.getvalue(), filename)
 
 

@@ -6,7 +6,7 @@
 //!
 //! Specification: https://drafts.csswg.org/css-images-4/#radial-gradients
 //!
-//! Radial gradients are rendered via cached render tasks and composited with the image brush.
+//! Radial gradients are rendered as quads with the gradient pattern (ps_quad_gradient).
 
 use api::{ExtendMode, GradientStop};
 use api::units::*;
@@ -62,10 +62,6 @@ impl PatternBuilder for RadialGradientTemplate {
         ctx: &PatternBuilderContext,
         state: &mut PatternBuilderState,
     ) -> Pattern {
-        // The scaling parameter is used to compensate for when we reduce the size
-        // of the render task for cached gradients. Here we aren't applying any.
-        let no_scale = DeviceVector2D::one();
-
         // RadialGradientTemplate stores the center point relative to the primitive
         // origin, but the shader works with start/end points in "proper" layout
         // coordinates (relative to the primitive's spatial node).
@@ -73,13 +69,11 @@ impl PatternBuilder for RadialGradientTemplate {
 
         radial_gradient_pattern(
             center,
-            no_scale,
             self.params.start_radius,
             self.params.end_radius,
             self.params.ratio_xy,
             self.extend_mode,
             &self.stops,
-            ctx.fb_config.is_software,
             state.frame_gpu_data,
         )
     }

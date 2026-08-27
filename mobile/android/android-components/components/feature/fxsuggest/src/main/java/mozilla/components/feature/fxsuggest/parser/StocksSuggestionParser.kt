@@ -4,7 +4,7 @@
 
 package mozilla.components.feature.fxsuggest.parser
 
-import mozilla.components.concept.awesomebar.AwesomeBar.StockItem
+import mozilla.components.feature.awesomebar.optimizedsuggestions.StockItem
 import mozilla.components.feature.fxsuggest.dto.PolygonPayloadDto
 import mozilla.components.feature.fxsuggest.dto.StockTickerDto
 

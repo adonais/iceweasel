@@ -30,13 +30,22 @@ from mach.decorators import Command, CommandArgument
 
 
 def _gcp_credentials_ok():
-    """Return True if usable Application Default Credentials are available."""
+    """Return True if usable Application Default Credentials are available.
+
+    Scopes must be requested explicitly: a service-account key (what the
+    TaskCluster cron uses, and what GOOGLE_APPLICATION_CREDENTIALS points at
+    when testing that path locally) comes back unscoped, and refreshing an
+    unscoped service account raises RefreshError. User credentials from
+    `gcloud auth application-default login` are already scoped and ignore this.
+    """
     import google.auth
     import google.auth.transport.requests
     from google.auth.exceptions import DefaultCredentialsError, RefreshError
 
     try:
-        creds, _ = google.auth.default()
+        creds, _ = google.auth.default(
+            scopes=["https://www.googleapis.com/auth/cloud-platform"]
+        )
         creds.refresh(google.auth.transport.requests.Request())
         return True
     except (DefaultCredentialsError, RefreshError):
@@ -103,6 +112,13 @@ def _run_gcloud_login():
     help="Run `gcloud auth application-default login` if GCP credentials are "
     "missing or expired, instead of just reporting it.",
 )
+@CommandArgument(
+    "--client-metrics",
+    action="store_true",
+    help="Also compute per-signature distinct affected-client counts via "
+    "HyperLogLog (with mergeable sketches for the cross-day roll-up). "
+    "Reads client_id locally; only aggregate counts and sketches are written.",
+)
 def bhr_aggregate(
     command_context,
     date,
@@ -112,6 +128,7 @@ def bhr_aggregate(
     output_tag,
     thread_filter,
     login,
+    client_metrics,
 ):
     if not 0 < sample_size <= 1:
         print(f"error: --sample-size must be in (0, 1], got {sample_size}")
@@ -157,6 +174,9 @@ def bhr_aggregate(
         billing_project=billing_project,
         output_dir=output_dir,
         output_tag=output_tag,
-        config_overrides={"thread_filter": thread_filter},
+        config_overrides={
+            "thread_filter": thread_filter,
+            "client_metrics": client_metrics,
+        },
     )
     return 0

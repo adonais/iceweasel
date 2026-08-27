@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Form Autofill Passport Demo Page (combined dates)</title>
+</head>
+<body>
+  <h1>Form Autofill Passport Demo Page (combined dates)</h1>
+  <!-- The issue/expiry dates are captured as a single combined field each
+       (e.g. an <input type="date"> value) rather than separate month/day/year
+       parts. -->
+  <form id="form">
+    <p><label>name: <input type="text" id="passport-name" name="passport-name" /></label></p>
+    <p><label>country: <input type="text" id="passport-country" name="passport-country" /></label></p>
+    <p><label>number: <input type="text" id="passport-number" name="passport-number" /></label></p>
+    <p><label>date of issue: <input type="text" id="passport-issue-date" name="passport-issue-date" /></label></p>
+    <p><label>passport expiry date: <input type="text" id="passport-expiry-date" name="passport-expiry-date" /></label></p>
+    <p>
+      <input type="submit"/>
+      <button type="reset">Reset</button>
+    </p>
+  </form>
+</body>
+</html>

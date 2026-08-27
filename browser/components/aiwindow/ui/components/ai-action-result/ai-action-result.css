@@ -8,6 +8,10 @@
   --ai-action-connector-width: var(--dimension-2);
   --ai-action-icon-fill-color: var(--color-violet-20);
   --ai-action-text-color: var(--color-violet-desaturated-50);
+  --ai-action-loading-gradient-start: var(--color-violet-50);
+  --ai-action-loading-gradient-mid: var(--color-violet-40);
+  --ai-action-loading-gradient-accent: var(--color-pink-40);
+  --ai-action-loading-gradient-highlight: var(--color-pink-30);
 }
 
 .action-result-wrapper {
@@ -15,7 +19,17 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-small);
-  padding: var(--space-small);
+  /* 4px top padding per design (24px margin above the card + 4px = 28px to the
+     label); see the margin rules in ai-chat-content.css. */
+  padding-block: var(--space-xsmall);
+  /* Ease the card in as it appears, softening the spinner -> shimmer handoff. */
+  animation: actionResultFadeIn 200ms ease-out;
+}
+
+@keyframes actionResultFadeIn {
+  from {
+    opacity: 0;
+  }
 }
 
 .action-result-header {
@@ -29,7 +43,9 @@
   display: flex;
   font: inherit;
   gap: var(--space-small);
-  padding: var(--space-medium) 0;
+  padding-block: var(--space-medium);
+  /* Zero the UA <button> inline padding so the label aligns to the edge. */
+  padding-inline: 0;
   text-align: start;
 }
 
@@ -60,21 +76,15 @@
   transform: rotate(-90deg);
 }
 
-.action-result-indicator,
 .action-result-dot {
-  background-position: center;
+  /* 16px slot with the 8px glyph left-aligned so it lines up with the
+     connector (which is centered on the left of the slot). */
+  background-position: left center;
   background-repeat: no-repeat;
   flex-shrink: 0;
   height: var(--icon-size);
   width: var(--icon-size);
-}
-
-.action-result-indicator {
-  background-image: url("chrome://browser/skin/smart-window-filled.svg");
-  background-size: contain;
-}
-
-.action-result-dot {
+  margin-inline-start: 1px;
   background-image: url("chrome://browser/skin/smart-window-dot.svg");
   background-size: var(--space-small) var(--space-small);
   fill: var(--ai-action-icon-fill-color);
@@ -87,7 +97,7 @@
   font-size: var(--font-size-small);
 }
 
-/* Embedded link: inherits the label color, deemphasized underline. */
+/* Embedded link: inherits the label color, underlined. */
 .action-result-label-link {
   color: inherit;
   text-decoration: underline;
@@ -96,6 +106,66 @@
   &:focus-visible {
     outline: var(--focus-outline);
     outline-offset: var(--focus-outline-offset);
+  }
+}
+
+/* While an action is in progress (or finishing its last sweep), paint the
+   gradient on the text (no spinner is shown here). */
+:host([shimmering]) .action-result-label,
+:host([settling]) .action-result-label {
+  background-image: linear-gradient(
+    90deg,
+    var(--ai-action-loading-gradient-start) 0%,
+    var(--ai-action-loading-gradient-mid) 22%,
+    var(--ai-action-loading-gradient-accent) 42%,
+    var(--ai-action-loading-gradient-highlight) 52%,
+    var(--ai-action-loading-gradient-mid) 72%,
+    var(--ai-action-loading-gradient-start) 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  color: transparent;
+}
+
+/* Sweep the gradient while actively loading. Once the action finishes, the
+   [settling] state stops this loop and a scripted one-shot animation drives the
+   final sweep to the end (see #finishCurrentSweep). */
+:host([shimmering]:not([settling])) .action-result-label {
+  animation: actionLogShimmer 2s ease-in-out infinite;
+}
+
+/* Once the sweep ends, ease the completed label in. */
+:host(:not([shimmering])) .action-result-label {
+  animation: actionResultFadeIn 150ms ease-out;
+}
+
+/* Travel exactly one background tile (200%) so the loop is seamless — a larger
+   sweep (e.g. -100% to 200%) lands mid-tile and snaps back on repeat. */
+@keyframes actionLogShimmer {
+  from {
+    background-position: 100% center;
+  }
+
+  to {
+    background-position: -100% center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .action-result-wrapper,
+  :host([shimmering]) .action-result-label,
+  :host(:not([shimmering])) .action-result-label {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  :host([shimmering]) .action-result-label {
+    background-image: none;
+    background-clip: unset;
+    color: var(--text-color);
+    animation: none;
   }
 }
 
@@ -110,25 +180,17 @@
 .action-result-expanded-row {
   position: relative;
 
-  &:first-child::before,
+  /* Connector line from each dot down through the chips and across the gap to
+     the next dot. Starts at the first dot (no line up to the removed icon). */
   &:not(:last-child)::after {
     background: var(--ai-action-connector-background-color);
-    content: "";
-    inset-inline-start: calc(var(--icon-size) / 2 - var(--ai-action-connector-width) / 2);
-    position: absolute;
-    width: var(--ai-action-connector-width);
-  }
-
-  /* Line from sparkle down to dot */
-  &:first-child::before {
-    bottom: 100%;
-    height: var(--icon-size);
-  }
-
-  /* Line from dot down through chips and across the gap */
-  &:not(:last-child)::after {
     bottom: calc(-1 * var(--space-small));
+    content: "";
+    /* Center on the dot: 1px margin + half the 8px dot width. */
+    inset-inline-start: calc(1px + var(--space-small) / 2 - var(--ai-action-connector-width) / 2);
+    position: absolute;
     top: calc(var(--icon-size) + var(--space-xxsmall));
+    width: var(--ai-action-connector-width);
   }
 }
 
@@ -140,7 +202,8 @@
 
 .action-result-chips {
   padding-block: var(--space-small);
-  padding-inline-start: calc(var(--icon-size) + var(--space-small));
+  /* Align with the row label: 1px dot margin + 16px dot slot + 8px header gap. */
+  padding-inline-start: calc(1px + var(--icon-size) + var(--space-small));
 }
 
 .action-result-summary {

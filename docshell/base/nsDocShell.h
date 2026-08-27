@@ -128,7 +128,6 @@ class nsDocShell final : public nsDocLoader,
     INTERNAL_LOAD_FLAGS_LOADURI_SETUP_FLAGS = 0xf,
 
     INTERNAL_LOAD_FLAGS_BYPASS_CLASSIFIER = 0x10,
-    INTERNAL_LOAD_FLAGS_FORCE_ALLOW_COOKIES = 0x20,
 
     // Whether the load should be treated as srcdoc load, rather than a URI one.
     INTERNAL_LOAD_FLAGS_IS_SRCDOC = 0x40,

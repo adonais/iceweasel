@@ -1,6 +1,0 @@
-[DEFAULT]
-run-if = [
-  "os != 'android'", # PPA is not supported on Android
-]
-
-["test_ppa.js"]

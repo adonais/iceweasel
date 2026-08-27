@@ -768,7 +768,7 @@ add_task(async function showLessFrequently() {
       searchString: input,
       expectedCountsByCall: {
         acknowledgeFeedback: 1,
-        invalidateResultMenuCommands: after.canShowLessFrequently ? 0 : 1,
+        updateResultMenuCommands: after.canShowLessFrequently ? 0 : 1,
       },
     });
 

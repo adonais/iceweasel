@@ -5,6 +5,7 @@
 
 BROWSER_CHROME_MANIFESTS += [
     "browser.toml",
+    "browserNova.toml",
     "hidpi/browser.toml",
     "io/browser.toml",
     "lowdpi/browser.toml",

@@ -1,5 +1,9 @@
-commit fc32f3e82cb9ec08885fdd306756b65116e8547a
-Author: Chengzhong Wu <cwu631@bloomberg.net>
-Date:   Mon Jun 8 10:18:03 2026 -0400
+commit defaaf1571cd13b183e3f505c6a06e8db316e593
+Author: Kevin Gibbons <bakkot@gmail.com>
+Date:   Mon Jul 27 15:45:06 2026 -0700
 
-    NewExpression does not allow member access in ImportCall
+    tests for Iterator.prototype.join (#4768)
+    
+    Fixes https://github.com/tc39/test262/issues/4697.
+    
+    Tested against [a polyfill](https://github.com/tc39/proposal-iterator-join/blob/c1498da49d963972b5f6bd286e17f129193485e4/polyfill.js).

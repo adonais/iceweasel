@@ -64,6 +64,8 @@ std::ostream& operator<<(std::ostream& aOut, const SurfaceFormat& aFormat) {
     Emit(SurfaceFormat::HSV);
     Emit(SurfaceFormat::Lab);
     Emit(SurfaceFormat::Depth);
+    Emit(SurfaceFormat::CMYK);
+    Emit(SurfaceFormat::InvertedCMYK);
     Emit(SurfaceFormat::UNKNOWN);
   }
 

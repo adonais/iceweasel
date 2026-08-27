@@ -4,8 +4,6 @@
 
 const lazy = {};
 
-import { UrlbarUtils } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
-
 ChromeUtils.defineESModuleGetters(lazy, {
   ConfigSearchEngine:
     "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
@@ -176,7 +174,7 @@ class _UrlbarSearchTermsPersistence {
       searchTerm = result.engine.searchTermFromResult(uri);
     }
 
-    if (!searchTerm || searchTerm.length > UrlbarUtils.MAX_TEXT_LENGTH) {
+    if (!searchTerm || searchTerm.length > lazy.UrlbarShared.MAX_TEXT_LENGTH) {
       return "";
     }
 

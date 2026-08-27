@@ -188,14 +188,15 @@ export class SidebarBookmarks extends SidebarPage {
   }
 
   #collectNodesFromList(list, nodes) {
-    for (const item of list.tabItems) {
+    for (const [index, item] of list.tabItems.entries()) {
       const isFolder = Array.isArray(item.children);
       if (isFolder) {
-        this.#collectNodesFromFolder(item, list, nodes);
+        this.#collectNodesFromFolder(item, index, list, nodes);
       } else {
         nodes.push({
           list,
           item,
+          index,
           type: item.url ? "row" : "separator",
           get domNode() {
             return list.shadowRoot.querySelector(
@@ -207,12 +208,13 @@ export class SidebarBookmarks extends SidebarPage {
     }
   }
 
-  #collectNodesFromFolder(folder, list, nodes) {
+  #collectNodesFromFolder(folder, index, list, nodes) {
     const isExpanded = this.#expandedFolderGuids.has(folder.guid);
     if (folder.children.length) {
       nodes.push({
         list,
         item: folder,
+        index,
         type: "folder",
         get domNode() {
           return list.shadowRoot.querySelector(
@@ -230,6 +232,7 @@ export class SidebarBookmarks extends SidebarPage {
       nodes.push({
         list,
         item: folder,
+        index,
         type: "empty-folder",
         get domNode() {
           return list.shadowRoot.querySelector(
@@ -1132,6 +1135,7 @@ export class SidebarBookmarks extends SidebarPage {
     if (this.searchQuery) {
       Glean.browserUiInteraction.sidebarBookmarks.search.add(1);
     }
+    this.treeView.resetActiveNode();
   }
 
   #searchBookmarks(node, query) {
@@ -1271,6 +1275,11 @@ export class SidebarBookmarks extends SidebarPage {
       queryRef.value,
       optionsRef.value
     );
+    node.isTagContainer =
+      !targetGuid &&
+      (optionsRef.value.resultType ===
+        Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT ||
+        queryRef.value.tags?.length === 1);
     const ancestorKeys = targetGuid ? new Set([targetGuid]) : new Set();
     try {
       node.children = await this.#runPlaceQueryAsync(
@@ -1391,9 +1400,10 @@ export class SidebarBookmarks extends SidebarPage {
     }
 
     const isTagContainer =
-      parentOptions.resultType ===
+      !this.#simpleFolderTargetGuid(queryRef.value, optionsRef.value) &&
+      (parentOptions.resultType ===
         Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT ||
-      queryRef.value.tags?.length === 1;
+        queryRef.value.tags?.length === 1);
     const key = guid || url;
     const node = {
       title,
@@ -1515,7 +1525,7 @@ export class SidebarBookmarks extends SidebarPage {
                 @fxview-tab-list-primary-action=${this.onPrimaryAction}
                 @fxview-tab-list-secondary-action=${this.onSecondaryAction}
                 @fxview-tab-list-middleclick-action=${this.onPrimaryAction}
-                @bookmark-folder-toggle=${this.#onFolderToggle}
+                @folder-toggle=${this.#onFolderToggle}
                 @bookmark-folder-middleclick=${({ detail }) =>
                   this.#openBookmarks([detail])}
               ></sidebar-bookmark-list>`

@@ -4969,8 +4969,9 @@ void nsWindow::SetInputRegion(const InputRegion& aInputRegion) {
     return;
   }
 
-  LOG("nsWindow::SetInputRegion(%d, %d)", aInputRegion.mFullyTransparent,
-      int(aInputRegion.mMargin));
+  int unscaledMargin = GetInputRegionMarginInGdkCoords();
+  LOG("nsWindow::SetInputRegion(%d, %d)", mInputRegion.mFullyTransparent,
+      unscaledMargin);
 
   cairo_rectangle_int_t rect = {0, 0, 0, 0};
   cairo_region_t* region = nullptr;
@@ -4980,11 +4981,11 @@ void nsWindow::SetInputRegion(const InputRegion& aInputRegion) {
     }
   });
 
-  if (aInputRegion.mFullyTransparent) {
+  if (mInputRegion.mFullyTransparent) {
     region = cairo_region_create_rectangle(&rect);
-  } else if (aInputRegion.mMargin != 0) {
+  } else if (unscaledMargin != 0) {
     DesktopIntRect inputRegion(DesktopIntPoint(), mLastSizeRequest);
-    inputRegion.Deflate(aInputRegion.mMargin);
+    inputRegion.Deflate(unscaledMargin);
     rect = {inputRegion.x, inputRegion.y, inputRegion.width,
             inputRegion.height};
     region = cairo_region_create_rectangle(&rect);
@@ -7393,34 +7394,12 @@ nsWindow* nsWindow::GetWindow(GdkWindow* window) {
 void nsWindow::OnMap() {
   LOG("nsWindow::OnMap");
 
-#ifdef MOZ_WAYLAND
-  if (AsWayland()) {
-    AsWayland()->MaybeCreatePipResources();
-  }
-#endif
+  mIsMapped = true;
 
-  {
-    mIsMapped = true;
+  RefreshScale(/* aRefreshScreen */ false);
 
-    RefreshScale(/* aRefreshScreen */ false);
-
-    if (mIsAlert) {
-      gdk_window_set_override_redirect(GetToplevelGdkWindow(), TRUE);
-    }
-  }
-
-#ifdef MOZ_X11
-  if (GdkIsX11Display()) {
-    // Make sure all changes are propagated to X server,
-    // we can fail otherwise to actually open/paint to the window.
-    XFlush(DefaultXDisplay());
-  }
-#endif
-
-  if (mIsDragPopup && GdkIsX11Display()) {
-    if (GtkWidget* parent = gtk_widget_get_parent(mShell)) {
-      gtk_widget_set_opacity(parent, 0.0);
-    }
+  if (mIsAlert) {
+    gdk_window_set_override_redirect(GetToplevelGdkWindow(), TRUE);
   }
 
   if (mWindowType == WindowType::Popup) {
@@ -7430,12 +7409,7 @@ void nsWindow::OnMap() {
 
   RefreshWindowClass();
 
-  if (GdkIsX11Display()) {
-    if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
-      remoteRenderer->SendResume();
-      remoteRenderer->SendForcePresent(wr::RenderReasons::WIDGET);
-    }
-  }
+  OnMapNative();
 
   LOG("  finished, GdkWindow %p XID 0x%lx\n", mGdkWindow, GetX11Window());
 }

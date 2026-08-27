@@ -104,6 +104,9 @@ enum class SurfaceFormat : int8_t {
   // machine endian.
   R16G16B16A16F,
 
+  CMYK,
+  InvertedCMYK,
+
   // This represents the unknown format.
   UNKNOWN,  // TODO: Replace uses with Maybe<SurfaceFormat>.
 
@@ -193,6 +196,12 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
       info.isYuv = false;
       break;
 
+    case SurfaceFormat::CMYK:
+    case SurfaceFormat::InvertedCMYK:
+      info.hasColor = true;
+      info.hasAlpha = false;
+      break;
+
     case SurfaceFormat::UNKNOWN:
       break;
   }
@@ -208,6 +217,8 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
     case SurfaceFormat::R8G8B8X8:
     case SurfaceFormat::X8R8G8B8:
     case SurfaceFormat::R16G16:
+    case SurfaceFormat::CMYK:
+    case SurfaceFormat::InvertedCMYK:
       info.bytesPerPixel = 4;
       break;
 
@@ -321,6 +332,8 @@ static inline int BytesPerPixel(SurfaceFormat aFormat) {
     case SurfaceFormat::R10G10B10A2_UINT32:
     case SurfaceFormat::R10G10B10X2_UINT32:
     case SurfaceFormat::R16G16:
+    case SurfaceFormat::CMYK:
+    case SurfaceFormat::InvertedCMYK:
       return 4;
     case SurfaceFormat::R16G16B16A16F:
       return 8;
@@ -370,6 +383,8 @@ inline bool IsOpaque(SurfaceFormat aFormat) {
     case SurfaceFormat::NV16:
     case SurfaceFormat::P210:
     case SurfaceFormat::YUY2:
+    case SurfaceFormat::CMYK:
+    case SurfaceFormat::InvertedCMYK:
       return true;
     case SurfaceFormat::B8G8R8A8:
     case SurfaceFormat::R8G8B8A8:

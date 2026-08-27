@@ -348,3 +348,181 @@ export class EditCreditCard extends EditAutofillForm {
     }
   }
 }
+
+export class EditPassport extends EditAutofillForm {
+  /**
+   * @param {object} elements - must contain `form`.
+   * @param {object} record - a passport record (may be empty for "add").
+   */
+  constructor(elements, record) {
+    super(elements);
+
+    Object.assign(this._elements, {
+      country: this._elements.form.querySelector("#passport-country"),
+      issueMonth: this._elements.form.querySelector(
+        "#passport-issue-date-month"
+      ),
+      issueDay: this._elements.form.querySelector("#passport-issue-date-day"),
+      issueYear: this._elements.form.querySelector("#passport-issue-date-year"),
+      expiryMonth: this._elements.form.querySelector(
+        "#passport-expiry-date-month"
+      ),
+      expiryDay: this._elements.form.querySelector("#passport-expiry-date-day"),
+      expiryYear: this._elements.form.querySelector(
+        "#passport-expiry-date-year"
+      ),
+    });
+
+    this.attachEventListeners();
+    this.loadRecord(record);
+  }
+
+  loadRecord(record) {
+    this._record = record;
+    this.generateMonths(this._elements.issueMonth);
+    this.generateMonths(this._elements.expiryMonth);
+    this.generateDays(this._elements.issueDay);
+    this.generateDays(this._elements.expiryDay);
+    this.generateYears(
+      this._elements.issueYear,
+      this._record?.["passport-issue-date-year"]
+    );
+    this.generateYears(
+      this._elements.expiryYear,
+      this._record?.["passport-expiry-date-year"]
+    );
+    super.loadRecord(record);
+    // moz-select populates its options from slotted <moz-option> children
+    // asynchronously, so a value assigned synchronously above is discarded
+    // once the options are processed. Re-apply the selected values after the
+    // elements have finished updating.
+    this.#applySelectValues(record);
+  }
+
+  async #applySelectValues(record) {
+    let selects = [
+      this._elements.country,
+      this._elements.issueMonth,
+      this._elements.issueDay,
+      this._elements.issueYear,
+      this._elements.expiryMonth,
+      this._elements.expiryDay,
+      this._elements.expiryYear,
+    ];
+    await Promise.all(selects.map(select => select.updateComplete));
+    for (let select of selects) {
+      let value = record?.[select.id];
+      select.value = value == undefined ? "" : value.toString();
+    }
+  }
+
+  #createOption(value, label) {
+    let option = document.createElement("moz-option");
+    option.setAttribute("value", value);
+    option.setAttribute("label", label);
+    return option;
+  }
+
+  generateMonths(select) {
+    // Clear the list
+    select.textContent = "";
+
+    // Empty month option
+    select.appendChild(this.#createOption("", ""));
+
+    for (let i = 1; i <= 12; i++) {
+      select.appendChild(
+        this.#createOption(i.toString(), i.toString().padStart(2, "0"))
+      );
+    }
+  }
+
+  generateDays(select) {
+    // Clear the list
+    select.textContent = "";
+
+    // Empty day option
+    select.appendChild(this.#createOption("", ""));
+
+    for (let i = 1; i <= 31; i++) {
+      select.appendChild(
+        this.#createOption(i.toString(), i.toString().padStart(2, "0"))
+      );
+    }
+  }
+
+  generateYears(select, storedYear) {
+    const count = 20;
+    const currentYear = new Date().getFullYear();
+
+    // Clear the list
+    select.textContent = "";
+
+    // Provide an empty year option
+    select.appendChild(this.#createOption("", ""));
+
+    // Pin a stored year that falls before the range (e.g. very old issue date).
+    if (storedYear && storedYear < currentYear - count) {
+      select.appendChild(
+        this.#createOption(storedYear.toString(), storedYear.toString())
+      );
+    }
+
+    // Include past years (for issue dates) and future years (for expiry dates).
+    for (let year = currentYear - count; year <= currentYear + count; year++) {
+      select.appendChild(this.#createOption(year.toString(), year.toString()));
+    }
+
+    // Pin a stored year that falls after the range (e.g. far-future expiry).
+    if (storedYear && storedYear > currentYear + count) {
+      select.appendChild(
+        this.#createOption(storedYear.toString(), storedYear.toString())
+      );
+    }
+  }
+
+  attachEventListeners() {
+    this._elements.form.addEventListener("change", this);
+    super.attachEventListeners();
+  }
+
+  /**
+   * Sets the required constraint on the number field's inner input element so
+   * that native constraint validation works when validateForm() is called.
+   */
+  setupValidation() {
+    if (this._validationSetup) {
+      return;
+    }
+    this._validationSetup = true;
+
+    let numberEl = this._elements.form.querySelector("#passport-number");
+    if (numberEl?.inputEl) {
+      numberEl.inputEl.required = true;
+    }
+  }
+
+  /**
+   * Validates each form field via its inner input element.
+   *
+   * @returns {boolean} True if all fields are valid.
+   */
+  validateForm() {
+    this.setupValidation();
+    let firstInvalidField = null;
+    for (let field of this._elements.form.elements) {
+      if (field.inputEl) {
+        const valid = field.inputEl.checkValidity();
+        field.toggleAttribute("invalid", !valid);
+        if (!valid && !firstInvalidField) {
+          firstInvalidField = field;
+        }
+      }
+    }
+    if (firstInvalidField) {
+      firstInvalidField.inputEl.reportValidity();
+      return false;
+    }
+    return true;
+  }
+}

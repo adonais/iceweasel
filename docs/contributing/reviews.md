@@ -50,18 +50,28 @@ Sometimes when publishing a patch, groups will automatically be added as blockin
 
 ## Choosing reviewers
 
+**Prefer a review group over an individual reviewer.** Groups spread the load across
+several people, so your patch is far less likely to sit waiting on someone who is on
+holiday, sick, or busy with another project. Only request a specific person when no group
+covers the code you are touching, or when someone is already the obvious owner of that
+change.
+
+- If your code fits into one of the [review groups](#review-groups) below, request review from that group.
 - If you have a mentor assigned on the bug you are fixing, the mentor can usually either also review or find a suitable reviewer on your behalf.
-- If you do not have a mentor, see if your code fits into one of the review groups below, and request review from that group.
 - Otherwise, try looking at the history of the file to see who has modified it recently (for example, `git log <modified-file>`).
 - Finally if you are still unable to identify someone, try asking in the [#introduction channel on Matrix](https://chat.mozilla.org/#/room/#introduction:mozilla.org).
 
 ## Getting attention
 
-Generally most reviews will happen within roughly a week. If, however, a reviewer doesn't respond within a week or so of the review request:
+We expect reviews to happen within a day or two, and most of them do.
+Requesting review from a [group](#review-groups) rather than an individual is the best way
+to get a quick answer, as any member of the group can pick the patch up.
 
-- Contact the reviewer directly (either via e-mail or on Matrix).
+If a reviewer hasn't responded after two or three days:
+
+- Ping the review group's channel, or contact the reviewer directly (either via e-mail or on Matrix).
 - Join developers on [Mozilla's Matrix server](https://chat.mozilla.org), and ask if anyone knows why a review may be delayed. Please link to the bug too.
-- If the review is still not addressed, mail the reviewer directly, asking if/when they'll have time to review the patch, or might otherwise be able to review it.
+- If the review is still not addressed after a week, request review from a group covering that code, or from another peer or the module owner listed in [mots](/mots/index.md).
 
 Remember that reviewers are human too, and may have complex reasons that prevent them from reviewing your patch in a timely manner. Be confident in reaching out to your reviewer, but be mindful of the [Mozilla Community Participation Guidelines](https://www.mozilla.org/en-US/about/governance/policies/participation/) while doing so.
 
@@ -135,6 +145,9 @@ For more information about the review process, see the {ref}`Code Review FAQ`.
    * - #gfx-reviewers
      - Graphics code
      - `Member list <https://phabricator.services.mozilla.com/project/members/122/>`__
+   * - #gtk-reviewers
+     - GTK/Linux-specific widget code (widget/gtk)
+     - `Member list <https://phabricator.services.mozilla.com/project/members/249/>`__
    * - #intermittent-reviewers
      - Test manifest changes
      - `Member list <https://phabricator.services.mozilla.com/project/members/110/>`__

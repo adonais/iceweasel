@@ -149,6 +149,11 @@ class Handle;
 
 #define PROFILE(isolate, event)
 
+#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && \
+    __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#  define V8_TARGET_LITTLE_ENDIAN 1
+#endif
+
 // Origin:
 // https://github.com/v8/v8/blob/855591a54d160303349a5f0a32fab15825c708d1/src/base/macros.h#L310-L319
 // ptrdiff_t is 't' according to the standard, but MSVC uses 'I'.
@@ -381,6 +386,12 @@ namespace bits {
 
 inline uint64_t CountTrailingZeros(uint64_t value) {
   return std::countr_zero(value);
+}
+
+template <typename T>
+inline constexpr unsigned CountLeadingZeros(T value) {
+  static_assert(std::is_unsigned_v<T>);
+  return std::countl_zero(value);
 }
 
 inline constexpr size_t RoundUpToPowerOfTwo32(size_t value) {
@@ -1096,7 +1107,7 @@ inline Handle<To> CheckedCast(Handle<From> value) {
 template <typename T>
 class MOZ_NONHEAP_CLASS MaybeHandle final {
  public:
-  MaybeHandle() : location_(nullptr) {}
+  MaybeHandle() = default;
 
   // Constructor for handling automatic up casting from Handle.
   // Ex. Handle<JSArray> can be passed when MaybeHandle<Object> is expected.
@@ -1122,7 +1133,7 @@ class MOZ_NONHEAP_CLASS MaybeHandle final {
   }
 
  private:
-  JS::Value* location_;
+  JS::Value* location_{nullptr};
 };
 
 // From v8/src/handles/handles-inl.h
@@ -1329,6 +1340,48 @@ class RegExpData : public HeapObject {
   }
 
   Tagged<String> escaped_source() const { return String(inner()->getSource()); }
+
+  // TODO: Support QuickCheck (bug 2060702)
+
+  // The first-character bitset covers the latin-1 range, one bit per character.
+  static constexpr int kQuickCheckBitsetChars = 256;
+  static constexpr int kQuickCheckBitsetBitsPerWord = 32;
+  static constexpr int kQuickCheckBitsetWords =
+      kQuickCheckBitsetChars / kQuickCheckBitsetBitsPerWord;
+
+  // Where |c| lives in the bitset: which word to load, and which bit to test
+  // in it.  For 'a' (97) that is word 3, bit 1.
+  static constexpr std::pair<int, uint32_t> QuickCheckBitsetBit(uint8_t c) {
+    return {c / kQuickCheckBitsetBitsPerWord,
+            uint32_t{1} << (c % kQuickCheckBitsetBitsPerWord)};
+  }
+
+  inline uint32_t quick_check_mask() const { return 0; }
+  inline void set_quick_check_mask(uint32_t value) {}
+
+  inline uint32_t quick_check_value() const { return 0; }
+  inline void set_quick_check_value(uint32_t value) {}
+
+  inline void set_quick_check_reject_bitset_word(int index, uint32_t value) {}
+
+  enum InternalFlag : uint32_t {
+    // Set if either quick-check filter was built.  Most regexps get neither,
+    // so this lets the exec path skip straight past both with one test
+    // instead of loading the subject and running the bitset check to find out.
+    kHasQuickCheck = 1 << 0,
+  };
+
+  inline uint32_t internal_flags() const { return 0; }
+  inline void set_internal_flags(uint32_t value) {}
+
+  inline void clear_quick_check() {}
+
+  // True iff the quick-check filters prove that no match can begin at
+  // |subject[index]|.  |subject| must be one-byte and flat.  Mirrored by
+  // RegExpExecInternal in builtins-regexp-gen.cc; keep the two in sync.
+  bool QuickCheckRejects(base::Vector<const uint8_t> subject, int index) const {
+    return false;
+  }
 
  private:
   js::RegExpShared* inner() const {

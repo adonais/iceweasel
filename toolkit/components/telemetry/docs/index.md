@@ -9,11 +9,11 @@ Mozilla’s newer telemetry framework and used in all Mozilla projects needing d
 Information which is gathered is called a probe in Desktop Telemetry or a metric in Glean.
 The data is being sent in so-called pings. When pings cannot be sent immediately, caching is implemented as well.
 
-In many cases, [Firefox on Glean (FOG)](../glean/index.html)
+In many cases, [Firefox on Glean (FOG)](../glean/index.md)
 (the Firefox Desktop integration of Glean) is to be preferred over Telemetry.
 If your data would benefit from being in Telemetry as well as Glean,
 please consult the documentation for the
-[Glean Interface For Firefox Telemetry (GIFFT)](../glean/user/gifft.html).
+[Glean Interface For Firefox Telemetry (GIFFT)](../glean/user/gifft.md).
 
 *Note:* Mozilla's [data collection policy](https://wiki.mozilla.org/Firefox/Data_Collection) documents the process and requirements that are applied here.
 
@@ -25,4 +25,5 @@ start/index
 concepts/index
 data/index
 internals/index
+obsolete/collection/index
 ```

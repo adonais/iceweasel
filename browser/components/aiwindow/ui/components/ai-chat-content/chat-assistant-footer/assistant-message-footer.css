@@ -2,32 +2,51 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+/* These tokens inherit into the applied-memories-button shadow tree, so its
+ * trigger can map them onto the same moz-button properties and end up looking
+ * exactly like the footer icon buttons. */
 :host {
   --chat-assistant-footer-button-padding: var(--space-xsmall);
+  --chat-assistant-footer-button-icon-fill: light-dark(var(--color-gray-70), var(--color-white));
+  --chat-assistant-footer-button-icon-fill-hover: var(--chat-assistant-footer-button-icon-fill);
+  --chat-assistant-footer-button-text-color-hover: var(--button-text-color-ghost);
   --chat-assistant-footer-button-bg-hover: rgba(191, 143, 204, 0.2);
   --chat-assistant-footer-button-bg-active: rgba(191, 143, 204, 0.26);
-  --chat-assistant-footer-button-border-hover: rgba(0, 0, 0, 0);
-  --chat-assistant-footer-button-border-active: rgba(0, 0, 0, 0);
+
+  @media -moz-pref("browser.nova.enabled") {
+    --chat-assistant-footer-button-text-color-hover: light-dark(var(--color-violet-90), var(--color-gray-0));
+    --chat-assistant-footer-button-icon-fill: var(--smartwindow-icon-color-accent-primary-desaturated);
+    --chat-assistant-footer-button-icon-fill-hover: var(--chat-assistant-footer-button-text-color-hover);
+    --chat-assistant-footer-button-bg-hover: light-dark(
+      color-mix(in srgb, var(--color-violet-desaturated-60) 16%, transparent),
+      color-mix(in srgb, var(--color-violet-40) 24%, transparent)
+    );
+    --chat-assistant-footer-button-bg-active: light-dark(
+      color-mix(in srgb, var(--color-violet-desaturated-60) 30%, transparent),
+      color-mix(in srgb, var(--color-violet-40) 36%, transparent)
+    );
+  }
 }
 
 .footer {
   position: relative;
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-xxsmall);
+  width: 100%;
 }
 
 moz-button.footer-icon-button {
-  @media not (forced-colors) {
-    --button-icon-fill: light-dark(var(--color-gray-70), var(--color-white));
-    --button-padding: var(--chat-assistant-footer-button-padding);
-    --button-background-color-ghost-hover: var(--chat-assistant-footer-button-bg-hover);
-    --button-border-color-ghost-hover: var(--chat-assistant-footer-button-border-hover);
-    --button-background-color-ghost-active: var(--chat-assistant-footer-button-bg-active);
-    --button-border-color-ghost-active: var(--chat-assistant-footer-button-border-active);
+  --button-padding: var(--chat-assistant-footer-button-padding);
 
-    @media -moz-pref("browser.nova.enabled") {
-      --button-icon-fill: var(--smartwindow-icon-color-accent-primary-desaturated);
+  @media not (forced-colors) {
+    --button-icon-fill: var(--chat-assistant-footer-button-icon-fill);
+    --button-background-color-ghost-hover: var(--chat-assistant-footer-button-bg-hover);
+    --button-background-color-ghost-active: var(--chat-assistant-footer-button-bg-active);
+
+    &:is(:hover, :active, :focus-visible) {
+      --button-icon-fill: var(--chat-assistant-footer-button-icon-fill-hover);
     }
   }
 }

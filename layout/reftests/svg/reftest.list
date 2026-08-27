@@ -639,3 +639,5 @@ fuzzy-if(winWidget||cocoaWidget,0-1,0-6050) == rect-no-backgrounds-print.html re
 
 == bad-arc.html bad-arc-ref.html
 pref(layout.disable-pixel-alignment,true) == mask-image-at-fractional-position.html mask-image-at-fractional-position-ref.html
+pref(layout.disable-pixel-alignment,true) fuzzy-if(winWidget,0-1,0-150) == mask-absolutely-positioned-child-gap.html mask-absolutely-positioned-child-gap-ref.html
+pref(layout.disable-pixel-alignment,true) pref(layout.css.devPixelsPerPx,"1.0") == mask-image-after-sibling-move.html mask-image-after-sibling-move-ref.html

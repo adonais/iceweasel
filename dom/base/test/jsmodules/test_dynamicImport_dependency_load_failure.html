@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+<title>Test import() when a dependency fails to load</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<script>
+  SimpleTest.waitForExplicitFinish();
+
+  // Modules push their name here when they are evaluated.
+  window.evaluatedModules = [];
+
+  let errorCount = 0;
+  window.onerror = () => {
+    errorCount++;
+  };
+
+  // In all of these cases the dynamically imported module script itself is
+  // fetched and compiled successfully, and only loading its dependencies
+  // fails. The import must reject, and the module must never be linked or
+  // evaluated, even though the load request ends up in the ScriptLoader's
+  // loaded list and is processed again by ProcessDynamicImport().
+  async function testDependencyLoadFailure(specifier, description) {
+    await import(specifier).then(
+      () => {
+        ok(false, `${description}: import() should not resolve`);
+      },
+      error => {
+        ok(error instanceof TypeError, `${description}: rejects with TypeError`);
+      }
+    );
+
+    // Give the errored request a chance to be processed again before checking
+    // that nothing was evaluated.
+    await new Promise(resolve => SimpleTest.executeSoon(resolve));
+
+    is(
+      window.evaluatedModules.join(),
+      "",
+      `${description}: no module should be evaluated`
+    );
+    is(errorCount, 0, `${description}: no error should be reported`);
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  async function testLoaded() {
+    await testDependencyLoadFailure(
+      "./import_404_evaluated.mjs",
+      "direct dependency fails to load"
+    );
+
+    // The module script of the previous case is now in the module map, but its
+    // dependency still fails to load.
+    await testDependencyLoadFailure(
+      "./import_404_evaluated.mjs",
+      "repeated import of the same module"
+    );
+
+    await testDependencyLoadFailure(
+      "./import_404_indirect.mjs",
+      "transitive dependency fails to load"
+    );
+
+    await testDependencyLoadFailure(
+      "./import_404_sibling.mjs",
+      "one of two dependencies fails to load"
+    );
+
+    SimpleTest.finish();
+  }
+</script>
+<body onload='testLoaded()'></body>

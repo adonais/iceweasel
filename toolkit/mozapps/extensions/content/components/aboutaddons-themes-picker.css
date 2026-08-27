@@ -1,0 +1,68 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  display: block;
+}
+
+moz-message-bar.picker-error-bar {
+  margin-block-end: var(--space-small);
+}
+
+moz-card::part(heading) {
+  margin: 0;
+  font-size: var(--font-size-large);
+  font-weight: var(--font-weight-bold);
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-medium);
+  padding: var(--space-small);
+}
+
+.theme-card {
+  --box-padding: 0;
+
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+theme-preview img {
+  display: block;
+  aspect-ratio: 680 / 92;
+  object-fit: cover;
+  /* Increasing the image width a bit over the full card size to avoid
+   * the preview image to leave a small white space between the theme
+   * preview image and the card border */
+  width: 101%;
+
+  /* Border bottom box to show more clearly where the preview images ends
+   * as shown in the UX specs (especially needed for Nova themes for which
+   * the toolbar color is exactly the same as the theme card background
+   * color). */
+  border-bottom: var(--border-width) solid var(--border-color-deemphasized);
+}
+
+.theme-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-small);
+  padding: var(--space-small) var(--space-medium);
+  /* Keep the card footer height unchanged on the theme card without a moz-button
+   * (the default theme when enabled doesn't have a Disable button because it can't
+   * be disabled, another theme should be enabled instead) */
+  flex: 1;
+}
+
+.theme-name {
+  font-size: var(--font-size-root);
+}
+
+.expand-toggle {
+  align-self: center;
+}

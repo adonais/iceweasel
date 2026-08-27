@@ -24,9 +24,7 @@ This is a complex test checking the internal "deferred doom" functionality in bo
 const kENTRYCOUNT = 10;
 
 function log_(msg) {
-  if (true) {
-    dump(">>>>>>>>>>>>> " + msg + "\n");
-  }
+  dump(">>>>>>>>>>>>> " + msg + "\n");
 }
 
 function run_test() {

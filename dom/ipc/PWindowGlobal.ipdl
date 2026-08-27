@@ -18,11 +18,13 @@ include protocol PDigitalCredential;
 include protocol PSerialManager;
 include protocol PWebAuthnTransaction;
 include protocol PWebIdentity;
+include protocol PPrefetchRecord;
 
 include DOMTypes;
 include ClientIPCTypes;
 include JSIPCValue;
 include NeckoChannelParams;
+include PrefetchIPCTypes;
 include SessionStoreTypes;
 include ModelContextTypes;
 
@@ -76,6 +78,7 @@ async protocol PWindowGlobal
 {
   manager PBrowser or PInProcess;
   manages PDigitalCredential;
+  manages PPrefetchRecord;
   manages PSerialManager;
   manages PWebAuthnTransaction;
   manages PWebIdentity;
@@ -251,6 +254,8 @@ parent:
   async NotifyAudioSessionTypeOverride(AudioSessionType aType);
 
   async PDigitalCredential();
+  // Spec: https://wicg.github.io/nav-speculation/prefetch.html#start-a-referrer-initiated-navigational-prefetch
+  async PPrefetchRecord(SpeculativePrefetchArgs args);
   async PSerialManager();
   async PWebAuthnTransaction();
   async PWebIdentity();

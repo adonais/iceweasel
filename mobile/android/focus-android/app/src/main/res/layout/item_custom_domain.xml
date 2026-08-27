@@ -33,10 +33,12 @@
         android:layout_gravity="center_vertical"
         app:srcCompat="@drawable/ic_reorder"
         android:importantForAccessibility="no"
-        android:paddingEnd="?android:attr/listPreferredItemPaddingStart" />
+        android:paddingEnd="?android:attr/listPreferredItemPaddingStart"
+        tools:ignore="RtlSymmetry" />
     <CheckBox
         android:id="@+id/checkbox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingEnd="?android:attr/listPreferredItemPaddingStart" />
+        android:paddingEnd="?android:attr/listPreferredItemPaddingStart"
+        tools:ignore="RtlSymmetry" />
 </LinearLayout>

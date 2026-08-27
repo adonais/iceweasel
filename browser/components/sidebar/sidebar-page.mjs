@@ -73,7 +73,8 @@ export class SidebarPage extends MozLitElement {
 
   #collectNodes({ children }, nodes) {
     for (const el of children) {
-      const isCard = el.localName === "moz-card" && el.type === "accordion";
+      const isCard =
+        el.localName === "moz-card" && el.getAttribute("type") === "accordion";
       const isTabList = !!el.tabItems;
 
       if (isCard) {
@@ -88,10 +89,11 @@ export class SidebarPage extends MozLitElement {
           this.#collectNodes(el, nodes);
         }
       } else if (isTabList) {
-        for (const item of el.tabItems) {
+        for (const [index, item] of el.tabItems.entries()) {
           nodes.push({
             list: el,
             item,
+            index,
             type: "row",
             get domNode() {
               return el.shadowRoot.querySelector(
@@ -228,18 +230,21 @@ export class SidebarPage extends MozLitElement {
         break;
       case "sidebar-history-context-open-in-window":
       case "sidebar-synced-tabs-context-open-in-window":
+      case "sidebar-opentabs-context-open-in-window":
         this.topWindow.openTrustedLinkIn(this.triggerNode.url, "window", {
           private: false,
         });
         break;
       case "sidebar-history-context-open-in-private-window":
       case "sidebar-synced-tabs-context-open-in-private-window":
+      case "sidebar-opentabs-context-open-in-private-window":
         this.topWindow.openTrustedLinkIn(this.triggerNode.url, "window", {
           private: true,
         });
         break;
       case "sidebar-history-context-copy-link":
       case "sidebar-synced-tabs-context-copy-link":
+      case "sidebar-opentabs-context-copy-link":
         lazy.BrowserUtils.copyLink(
           this.triggerNode.url,
           this.triggerNode.title

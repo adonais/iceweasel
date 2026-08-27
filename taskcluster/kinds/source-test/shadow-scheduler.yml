@@ -24,6 +24,7 @@ task-defaults:
     run-on-repo-type: [hg]
     run-on-projects: ['autoland-only']
     run:
+        clone-with: hg
         using: mach
         mach: taskgraph optimized -v --json -p task-id=$DECISION_TASK_ID --output-file /builds/worker/optimized-tasks.json
         sparse-profile: taskgraph

@@ -1,0 +1,26 @@
+From: Jonathan Kew <jkew@mozilla.com>
+Subject: Adjust pixman-arm-asm for Mozilla-specific build needs
+
+diff --git a/pixman/pixman-arm-asm.h b/pixman/pixman-arm-asm.h
+--- a/pixman/pixman-arm-asm.h
++++ b/pixman/pixman-arm-asm.h
+@@ -23,17 +23,19 @@
+  *
+  * Author:  Jeff Muizelaar (jeff@infidigm.net)
+  *
+  */
+ 
+ #ifndef PIXMAN_ARM_ASM_H
+ #define PIXMAN_ARM_ASM_H
+ 
++#ifdef HAVE_CONFIG_H
+ #include "pixman-config.h"
++#endif
+ 
+ /*
+  * References:
+  *  - https://developer.arm.com/documentation/101028/0012/5--Feature-test-macros
+  *  - https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst
+  */
+ #if defined(__ARM_FEATURE_BTI_DEFAULT) && __ARM_FEATURE_BTI_DEFAULT == 1
+   #define BTI_C hint 34  /* bti c: for calls, IE bl instructions */

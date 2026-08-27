@@ -12,6 +12,6 @@ const loggingPrefValue = browser.aboutConfigPrefs.getPref(
 
 const debugLog =
   loggingPrefValue !== true &&
-  browser.appConstants.getReleaseBranch() !== "release_or_beta"
+  ["beta", "nightly"].includes(browser.appConstants.getEffectiveUpdateChannel())
     ? console.debug
     : function () {};

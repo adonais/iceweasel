@@ -10,7 +10,7 @@ const urlPath = "/browser/netwerk/cookie/test/browser/file_empty.html";
 const baseDomain = "example.com";
 
 // eslint doesn't like http
-// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+// eslint-disable-next-line sdl/no-insecure-url
 const URL_INSECURE_COM = "http://" + baseDomain + urlPath;
 const URL_SECURE_COM = "https://" + baseDomain + urlPath;
 

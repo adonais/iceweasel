@@ -3,7 +3,7 @@
 
 "use strict";
 
-/* eslint-disable @microsoft/sdl/no-insecure-url */
+/* eslint-disable sdl/no-insecure-url */
 
 // Test that schemeless HTTPS-First doesn't try to upgrade redirected loads that
 // orginially did originate from the address bar (Bug 1937386). If it would

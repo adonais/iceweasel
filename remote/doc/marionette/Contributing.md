@@ -1,4 +1,4 @@
-# Contributing
+# Contributing to Marionette
 
 If you are new to open source or to Mozilla, you might like this
 [tutorial for new Marionette contributors](NewContributors.md).
@@ -31,8 +31,8 @@ By participating in this project, you agree to abide by the Mozilla
 [Community Participation Guidelines].  Here are some guidelines
 for contributing high-quality and actionable bugs and code.
 
-[_Marionette_]: ./index.rst
-[_geckodriver_]: /testing/geckodriver/index.rst
+[_Marionette_]: ./index.md
+[_geckodriver_]: /testing/geckodriver/index.md
 [_webdriver_]: https://searchfox.org/firefox-main/source/testing/webdriver/README.md
 [WebDriver protocol]: https://w3c.github.io/webdriver/webdriver-spec.html#protocol
 [Community Participation Guidelines]: https://www.mozilla.org/en-US/about/governance/policies/participation/
@@ -52,7 +52,7 @@ have a curated set of [good first bugs] you may consider attempting first.
 We have collected a lot of good advice for working on Marionette
 code in our [code style document], which we highly recommend you read.
 
-[ask questions]: index.rst#Communication
+[ask questions]: index.md#communication
 [mozilla-central]: https://searchfox.org/firefox-main/source/remote/marionette/
 [Remote Protocol :: Marionette]: https://bugzilla.mozilla.org/buglist.cgi?product=Remote%20Protocol&component=Marionette&resolution=---
 [Testing :: Marionette Client and Harness]: https://bugzilla.mozilla.org/buglist.cgi?product=Testing&component=Marionette%20Client%20and%20Harness&resolution=---

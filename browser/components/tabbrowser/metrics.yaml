@@ -27,8 +27,6 @@ browser.engagement:
       - dao@mozilla.com
       - rtestard@mozilla.com
     expires: never
-    no_lint:
-      - COMMON_PREFIX
 
   tab_reload_count:
     type: counter
@@ -45,8 +43,6 @@ browser.engagement:
       - dao@mozilla.com
       - rtestard@mozilla.com
     expires: never
-    no_lint:
-      - COMMON_PREFIX
 
   tab_explicit_unload:
     type: event
@@ -82,8 +78,6 @@ browser.engagement:
         description: Time to unload tabs (in ms)
         type: quantity
     expires: never
-    no_lint:
-      - COMMON_PREFIX
 
   tab_unload_to_reload:
     type: timing_distribution
@@ -101,8 +95,6 @@ browser.engagement:
     notification_emails:
       - tkikuchi@mozilla.com
     expires: never
-    no_lint:
-      - COMMON_PREFIX
 
 browser.ui.interaction:
   all_tabs_panel_dragstart_tab_event_count:
@@ -516,8 +508,6 @@ tabgroup:
         description: step and description of opt-in screen interaction
         type: string
     expires: never
-    no_lint:
-      - COMMON_PREFIX
 
   smart_tab_topic:
     type: event
@@ -569,8 +559,6 @@ tabgroup:
         description: The backend used for the ML Engine
         type: string
     expires: never
-    no_lint:
-      - COMMON_PREFIX
 
   smart_tab_suggest:
     type: event
@@ -617,8 +605,6 @@ tabgroup:
         description: The backend used for the ML Engine
         type: string
     expires: never
-    no_lint:
-      - COMMON_PREFIX
 
   smart_tab:
     type: event
@@ -638,8 +624,6 @@ tabgroup:
         description: whether the preference was enabled or disabled in any way
         type: boolean
     expires: never
-    no_lint:
-      - COMMON_PREFIX
 
   smart_tab_enabled:
     # metrics
@@ -659,8 +643,6 @@ tabgroup:
     expires: never
     send_in_pings:
       - metrics
-    no_lint:
-      - COMMON_PREFIX
 
 browser.tabswitch:
   update:
@@ -837,8 +819,6 @@ link.handling:
     data_sensitivity:
       - interaction
     expires: never
-    no_lint:
-      - COMMON_PREFIX
   open_next_to_active_tab_settings_change:
     type: event
     description: >
@@ -858,8 +838,6 @@ link.handling:
         description: >
           Whether the checkbox was toggled on or off.
         type: boolean
-    no_lint:
-      - COMMON_PREFIX
   open_from_external_app:
     type: event
     description: >
@@ -880,8 +858,6 @@ link.handling:
         description: >
           Whether the link was opened next to the active tab.
         type: boolean
-    no_lint:
-      - COMMON_PREFIX
 
 splitview:
   uri_count:
@@ -1067,6 +1043,31 @@ tab:
           The number of tabs involved in the action.
         type: quantity
     expires: never
+
+  stale_drag_recovery:
+    type: labeled_counter
+    description: >
+      Records how often the tab strip had to recover from a tab drag that never
+      ended, leaving the toolbar unusable. "session_live" means a drag session
+      was still current, i.e. the session outlived the drag; "session_ended"
+      means none was left, i.e. the end of the drag never reached the tab strip.
+      The "_after_drop" variants mean the drag was dropped and the drop
+      animation is what failed to leave moving-tab mode, so they measure a
+      Firefox shortcoming while the others measure a platform one.
+    bugs:
+      - https://bugzil.la/2061864
+    data_reviews:
+      - https://bugzil.la/2061864
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - dao@mozilla.com
+    expires: never
+    labels:
+      - "session_live"
+      - "session_live_after_drop"
+      - "session_ended"
+      - "session_ended_after_drop"
 
 performance.interaction:
   tab_switch_composite:

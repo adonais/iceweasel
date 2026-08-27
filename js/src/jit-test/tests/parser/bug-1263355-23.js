@@ -3,5 +3,5 @@ let m = parseModule(`
   minorgc();
   root.eval();
 `);
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m);

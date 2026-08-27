@@ -26,6 +26,14 @@ union NativeLayerCommand {
   CommandChangedSurface;
 };
 
+union SurfaceTransfer {
+  SurfaceTransferMacOS;
+};
+
+struct SurfaceTransferMacOS {
+  IOSurfacePort Surface;
+};
+
 struct CommandCreateLayer {
   uint64_t ID;
   IntSize Size;
@@ -63,7 +71,7 @@ struct CommandLayerInfo {
 
 struct CommandChangedSurface {
   uint64_t ID;
-  IOSurfacePort Surface;
+  SurfaceTransfer Transfer;
   bool IsDRM;
   bool IsHDR;
   IntSize Size;

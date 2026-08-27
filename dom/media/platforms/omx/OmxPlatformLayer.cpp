@@ -185,7 +185,7 @@ UniquePtr<OmxAudioConfig> ConfigForMime(const nsACString& aMimeType) {
 
 class OmxCommonVideoConfig : public OmxVideoConfig {
  public:
-  explicit OmxCommonVideoConfig() : OmxVideoConfig() {}
+  explicit OmxCommonVideoConfig() = default;
 
   OMX_ERRORTYPE Apply(OmxPlatformLayer& aOmx, const VideoInfo& aInfo) override {
     OMX_ERRORTYPE err = OMX_ErrorNone;

@@ -203,15 +203,19 @@ objects:
         description: The maximum number of lines allowed for the microsurvey text layout.
         type: Int
         default: 2
+      answer-ordering-type:
+        description: The way answers are ordered.
+        type: MicrosurveyOrdering
+        default: randomized
   MicrosurveyAnswer:
     description: Attributes relating to microsurvey content.
     fields:
       ordering:
         type: Int
         description: >
-          Used to sequence the answers top to bottom. E.g. 0 will be the first/top item, 1 will be next and so on.
-          Always set either ALL the provided answers ordering or NONE. If ALL answers are default, the the ordering
-          used will be the same as provided by the experiment.
+          Used when answer-ordering-type is pinned-randomized to sequence answers with ordering values
+          greater than 0 top to bottom. Answers with ordering values equal to 0 are shuffled below.
+          E.g. 1 will be the first/top item, 2 will be next, followed by randomized 0s.
         default: 0
       text:
         type: Text
@@ -226,3 +230,13 @@ enums:
         description: The next eligible message should be shown.
       show-none:
         description: The surface should show no message.
+  MicrosurveyOrdering:
+    description: An enum to determine how to order the microsurvey answers.
+    variants:
+      randomized:
+        description: The whole answer list is shuffled. Ordering values are ignored.
+      pinned-randomized:
+        description: >
+          Answers with an ordering value greater than 0 are pinned to the top, in ascending
+          order of that value. The remaining answers, with an ordering of 0, are shuffled below.
+          E.g. 1 will be the first/top item, 2 will be next, followed by randomized 0s.

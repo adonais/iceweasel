@@ -99,7 +99,7 @@ add_task(async function () {
   // Open the test page suitable to spawn all the expected JS Objects in a new tab
   //
   // nsHttpServer does not support https
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   const tab = await addTab("http://example.com");
 
   await JSObjectsTestUtils.runTest(

@@ -2,7 +2,7 @@
 
 This page explains how to test and debug Rust code in Firefox.
 
-The [build documentation](/build/buildsystem/rust.rst) explains how to add
+The [build documentation](/build/buildsystem/rust.md) explains how to add
 new Rust code to Firefox. The [code documentation](/writing-rust-code/index.md)
 explains how to write and work with Rust code in Firefox.
 
@@ -106,7 +106,7 @@ To restrict logging to child processes, use `RUST_LOG_CHILD` instead of
 Rust logging can also be forwarded to the [Gecko logger] for capture via
 `MOZ_LOG` and `MOZ_LOG_FILE`.
 
-[Gecko logger]: /xpcom/logging.rst
+[Gecko logger]: /xpcom/logging.md
 
 - When parsing modules from `MOZ_LOG`, modules containing `::` are considered
   to be Rust modules. To log everything in a top-level module like

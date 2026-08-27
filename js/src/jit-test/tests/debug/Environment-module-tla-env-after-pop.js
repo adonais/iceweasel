@@ -22,7 +22,7 @@ const m = g.parseModule(`
   debugger;
   await p;
 `);
-moduleLink(m);
+moduleLoadAndLink(m);
 
 // Run until `await p`.
 moduleEvaluate(m);

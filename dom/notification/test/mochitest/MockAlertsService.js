@@ -26,23 +26,37 @@ function mockServicesChromeScript() {
   let history = [];
 
   const mockAlertsService = {
-    showAlert(alert, listener) {
+    showAlert(alert, observer) {
+      this.showAlertWithCallbacks(alert, {
+        onAlertShow() {
+          observer.observe(null, "alertshow", alert.cookie);
+        },
+        onAlertClick(action) {
+          observer.observe(action, "alertclickcallback", alert.cookie);
+        },
+        onAlertFinished() {
+          observer.observe(null, "alertfinished", alert.cookie);
+        },
+      });
+    },
+
+    showAlertWithCallbacks(alert, callbacks) {
       activeNotifications[alert.name] = {
-        listener,
+        callbacks,
         cookie: alert.cookie,
         title: alert.title,
         image: alert.image,
       };
 
       // fake async alert show event
-      if (listener) {
+      if (callbacks) {
         setTimeout(() => {
           if (this.mockFailure) {
-            listener.observe(null, "alertfinished", alert.cookie);
+            callbacks.onAlertFinished();
             return;
           }
 
-          listener.observe(null, "alertshow", alert.cookie);
+          callbacks.onAlertShow();
           if (this.autoClick) {
             let subject;
             if (typeof this.autoClick === "string") {
@@ -50,7 +64,7 @@ function mockServicesChromeScript() {
                 ac => ac.action === this.autoClick
               )[0];
             }
-            listener.observe(subject, "alertclickcallback", alert.cookie);
+            callbacks.onAlertClick(subject);
           }
         }, 100);
       }
@@ -59,12 +73,8 @@ function mockServicesChromeScript() {
     closeAlert(name) {
       let alertNotification = activeNotifications[name];
       if (alertNotification) {
-        if (alertNotification.listener) {
-          alertNotification.listener.observe(
-            null,
-            "alertfinished",
-            alertNotification.cookie
-          );
+        if (alertNotification.callbacks) {
+          alertNotification.callbacks.onAlertFinished();
         }
         delete activeNotifications[name];
       }
@@ -100,8 +110,8 @@ function mockServicesChromeScript() {
   function clickNotifications(doClose) {
     // Until we need to close a specific notification, just click them all.
     for (let [name, notification] of Object.entries(activeNotifications)) {
-      let { listener, cookie } = notification;
-      listener.observe(null, "alertclickcallback", cookie);
+      let { callbacks } = notification;
+      callbacks.onAlertClick();
       if (doClose) {
         mockAlertsService.closeAlert(name);
       }

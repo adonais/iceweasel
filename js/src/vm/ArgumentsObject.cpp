@@ -79,7 +79,7 @@ void ArgumentsObject::MaybeForwardToCallObject(AbstractFramePtr frame,
                                                ArgumentsData* data) {
   JSScript* script = frame.script();
   if (frame.callee()->needsCallObject() && script->argsObjAliasesFormals()) {
-    obj->initFixedSlot(MAYBE_CALL_SLOT, ObjectValue(frame.callObj()));
+    obj->initFixedSlotTyped(MAYBE_CALL_SLOT, ObjectValue(frame.callObj()));
     for (PositionalFormalParameterIter fi(script); fi; fi++) {
       if (fi.closedOver()) {
         data->args.setElement(obj, fi.argumentSlot(),
@@ -98,7 +98,7 @@ void ArgumentsObject::MaybeForwardToCallObject(JSFunction* callee,
   JSScript* script = callee->nonLazyScript();
   if (callee->needsCallObject() && script->argsObjAliasesFormals()) {
     MOZ_ASSERT(callObj && callObj->is<CallObject>());
-    obj->initFixedSlot(MAYBE_CALL_SLOT, ObjectValue(*callObj));
+    obj->initFixedSlotTyped(MAYBE_CALL_SLOT, ObjectValue(*callObj));
     for (PositionalFormalParameterIter fi(script); fi; fi++) {
       if (fi.closedOver()) {
         data->args.setElement(obj, fi.argumentSlot(),
@@ -268,7 +268,7 @@ ArgumentsObject* ArgumentsObject::createTemplateObject(JSContext* cx,
     return nullptr;
   }
 
-  obj->initFixedSlot(ArgumentsObject::DATA_SLOT, PrivateValue(nullptr));
+  obj->initFixedSlotTyped(ArgumentsObject::DATA_SLOT, PrivateValue(nullptr));
   return obj;
 }
 
@@ -330,16 +330,16 @@ ArgumentsObject* ArgumentsObject::create(JSContext* cx, HandleFunction callee,
       AllocateCellBuffer<uint8_t>(cx, obj, numBytes));
   if (!data) {
     // Make the object safe for GC.
-    obj->initFixedSlot(DATA_SLOT, PrivateValue(nullptr));
+    obj->initFixedSlotTyped(DATA_SLOT, PrivateValue(nullptr));
     return nullptr;
   }
 
   new (data) ArgumentsData(numArgs);
 
-  obj->initReservedSlot(DATA_SLOT, PrivateValue(data));
-  obj->initFixedSlot(CALLEE_SLOT, ObjectValue(*callee));
-  obj->initFixedSlot(INITIAL_LENGTH_SLOT,
-                     Int32Value(numActuals << PACKED_BITS_COUNT));
+  obj->initReservedSlotTyped(DATA_SLOT, PrivateValue(data));
+  obj->initFixedSlotTyped(CALLEE_SLOT, ObjectValue(*callee));
+  obj->initFixedSlotTyped(INITIAL_LENGTH_SLOT,
+                          Int32Value(numActuals << PACKED_BITS_COUNT));
 
   // Copy [0, numActuals) into data->args.
   copy.copyActualArgs(obj, data->args, numActuals);
@@ -440,17 +440,17 @@ ArgumentsObject* ArgumentsObject::finishPure(
     // Make the object safe for GC. Don't report OOM, the slow path will
     // retry the allocation.
     cx->recoverFromOutOfMemory();
-    obj->initFixedSlot(DATA_SLOT, PrivateValue(nullptr));
+    obj->initFixedSlotTyped(DATA_SLOT, PrivateValue(nullptr));
     return nullptr;
   }
 
   new (data) ArgumentsData(numArgs);
 
-  obj->initFixedSlot(INITIAL_LENGTH_SLOT,
-                     Int32Value(numActuals << PACKED_BITS_COUNT));
-  obj->initFixedSlot(DATA_SLOT, PrivateValue(data));
-  obj->initFixedSlot(MAYBE_CALL_SLOT, UndefinedValue());
-  obj->initFixedSlot(CALLEE_SLOT, ObjectValue(*callee));
+  obj->initFixedSlotTyped(INITIAL_LENGTH_SLOT,
+                          Int32Value(numActuals << PACKED_BITS_COUNT));
+  obj->initFixedSlotTyped(DATA_SLOT, PrivateValue(data));
+  obj->initFixedSlotTyped(MAYBE_CALL_SLOT, UndefinedValue());
+  obj->initFixedSlotTyped(CALLEE_SLOT, ObjectValue(*callee));
 
   copy.copyActualArgs(obj, data->args, numActuals);
 
@@ -1023,7 +1023,7 @@ void ArgumentsObject::trace(JSTracer* trc, JSObject* obj) {
       TraceBufferEdge(trc, &buffer->rareData, "RareArgumentsData");
     }
     if (buffer != copiedBuffer) {
-      argsobj.setFixedSlot(DATA_SLOT, PrivateValue(buffer));
+      argsobj.setFixedSlotTyped(DATA_SLOT, PrivateValue(buffer));
     }
     buffer->args.trace(trc);
   }
@@ -1048,7 +1048,7 @@ size_t ArgumentsObject::objectMoved(JSObject* dst, JSObject* src) {
   Nursery::WasBufferMoved result =
       nursery.maybeMoveBufferOnPromotion(&data, dst, nDataBytes);
   if (result == Nursery::BufferMoved) {
-    ndst->initFixedSlot(DATA_SLOT, PrivateValue(data));
+    ndst->initFixedSlotTyped(DATA_SLOT, PrivateValue(data));
     nbytesTotal += nDataBytes;
   }
 

@@ -24,8 +24,6 @@ DocAccessibleWrap::DocAccessibleWrap(dom::Document* aDocument,
                                      PresShell* aPresShell)
     : DocAccessible(aDocument, aPresShell), mHWND(nullptr) {}
 
-DocAccessibleWrap::~DocAccessibleWrap() {}
-
 ////////////////////////////////////////////////////////////////////////////////
 // LocalAccessible
 

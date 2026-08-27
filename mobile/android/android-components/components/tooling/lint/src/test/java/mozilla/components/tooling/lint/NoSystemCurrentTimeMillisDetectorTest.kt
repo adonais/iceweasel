@@ -39,6 +39,12 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
             .run()
             .expectWarningCount(1)
             .expectContains("System.currentTimeMillis() must be injectable.")
+            .expectFixDiffs(
+                """
+                Show URL for src/my/pkg/MyClass.kt line 5: See DateTimeProvider for one way to make this injectable:
+                https://searchfox.org/mozilla-central/source/mobile/android/android-components/components/support/utils/src/main/java/mozilla/components/support/utils/DateTimeProvider.kt
+                """.trimIndent(),
+            )
     }
 
     @Test

@@ -1395,3 +1395,15 @@ for (const op of ["resource.new", "resource.drop", "resource.rep"]) {
     )
   `, /invalid type index/);
 }
+
+// resource.new and resource.rep require a defined resource type
+for (const op of ["resource.new", "resource.rep"]) {
+  wasmFailValidateText(`(component
+    (import "foo" (type (sub resource)))
+    (canon ${op} 0 (core func))
+  )`, /expected a defined resource type/);
+}
+wasmValidateText(`(component
+  (import "foo" (type (sub resource)))
+  (canon resource.drop 0 (core func))
+)`);

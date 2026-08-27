@@ -7,9 +7,17 @@
 
 #include "base/basictypes.h"
 #include "base/process_util.h"
+#include "nsLiteralString.h"
 #ifdef XP_UNIX
 #  include "mozilla/UniquePtrExtensions.h"
 #endif
+
+// Fixed signature recorded via the CrashSignatureOverrideForTesting annotation
+// when the parent deliberately crashes a child hanging at shutdown, so these
+// crashes group under one signature across platforms. Shared by the
+// platform-specific implementations.
+inline constexpr nsLiteralCString kShutdownHangCrashSignature =
+    "child process hang at shutdown"_ns;
 
 class ProcessWatcher {
  public:

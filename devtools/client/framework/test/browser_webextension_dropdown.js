@@ -126,7 +126,9 @@ function findExtensionPanel() {
   const win = Services.wm.getMostRecentWindow("devtools:toolbox");
   ok(win, "toolbox separate window exists");
 
-  const iframe = win.document.querySelector(".devtools-toolbox-window-iframe");
+  const iframe = win.document.querySelector(
+    ".devtools-toolbox-iframe.window-host"
+  );
   const deck = iframe.contentDocument.getElementById("toolbox-deck");
   for (const box of deck.childNodes) {
     if (box.id && box.id.startsWith("toolbox-panel-webext-devtools-panel")) {

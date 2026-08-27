@@ -38,9 +38,9 @@ data class AcornLayout(
      * A palette of tokens defining the borders of visual elements styled by the Acorn Design System.
      */
     object AcornBorder {
-        val thin: Dp = 1.dp
-        val normal: Dp = 2.dp
-        val thick: Dp = 4.dp
+        val default: Dp = 1.dp
+        val heavy: Dp = 2.dp
+        val heaviest: Dp = 4.dp
     }
 
     /**
@@ -88,7 +88,7 @@ private fun AcornLayoutPreview() {
                                 shape = MaterialTheme.shapes.small,
                             )
                             .border(
-                                width = AcornTheme.layout.border.normal,
+                                width = AcornTheme.layout.border.heavy,
                                 color = Color(
                                     red = color.red * 0.8f,
                                     green = color.green * 0.8f,

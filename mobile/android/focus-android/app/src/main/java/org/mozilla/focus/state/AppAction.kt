@@ -132,11 +132,6 @@ sealed class AppAction : Action {
     data class ShowStartBrowsingCfrChange(val value: Boolean) : AppAction()
 
     /**
-     * State of start Cookie Banner CFR has changed
-     */
-    data class ShowCookieBannerCfrChange(val value: Boolean) : AppAction()
-
-    /**
      * State of isPinningSupported has changed
      */
     data class UpdateIsPinningSupported(val value: Boolean) : AppAction()

@@ -38,7 +38,7 @@ function isoToMicroseconds(iso) {
  * @property {number} visitCount - Number of visits (defaults to 0).
  * @property {number} relevanceScore - Ranking score (semantic relevance or frecency fallback).
  * @property {string|null} thumbnail - og:image URL from moz_places.preview_image_url,
- *   or null when none is recorded or the row came from a Places history node.
+ *   or null when none is recorded.
  */
 
 /**
@@ -78,7 +78,8 @@ function buildHistoryRow(row, fromNode = false) {
     url = row.uri;
     visitCount = row.accessCount;
     frecency = row.frecency;
-    // nsINavHistoryResultNode doesn't expose preview_image_url.
+    // nsINavHistoryResultNode doesn't expose preview_image_url. We attempt to
+    // `backfillThumbnails()` from `moz_places`.
     thumbnail = null;
 
     // convert time to ISO format
@@ -333,7 +334,7 @@ async function searchBrowsingHistoryTimeRange({
  * @param {Array|object} tensor
  * @returns {Array|Float32Array}
  */
-function extractVectorFromTensor(tensor) {
+export function extractVectorFromTensor(tensor) {
   if (!tensor) {
     throw new Error("Unexpected empty tensor");
   }
@@ -469,6 +470,57 @@ async function searchBrowsingHistorySemantic({
   }
 
   return rows;
+}
+
+/**
+ * Set `thumbnail` on rows that came from Places history nodes.
+ *
+ * `nsINavHistoryResultNode` doesn’t expose `preview_image_url`, so rows built
+ * from a node always start with a `null` thumbnail. Without backfilling the
+ * history grid has no images for filtered queries.
+ *
+ * @param {HistoryRow[]} rows
+ * @returns {Promise<void>}
+ */
+async function backfillThumbnails(rows) {
+  const rowsMissingThumbnail = rows.filter(row => !row.thumbnail && row.url);
+  if (!rowsMissingThumbnail.length) {
+    return;
+  }
+
+  const rowsByUrl = Map.groupBy(rowsMissingThumbnail, row => row.url);
+  const urls = [...rowsByUrl.keys()];
+
+  try {
+    await lazy.PlacesUtils.withConnectionWrapper(
+      "SearchBrowsingHistory:backfillThumbnails",
+      async db => {
+        // Match indexed `url_hash` first.
+        const results = await db.executeCached(
+          `
+            SELECT DISTINCT p.url, p.preview_image_url
+            FROM carray(:urls) AS input
+            JOIN moz_places AS p
+              ON p.url_hash = hash(input.value)
+             AND p.url = input.value
+            WHERE p.preview_image_url NOT NULL
+          `,
+          { urls }
+        );
+
+        for (const result of results) {
+          const url = result.getResultByName("url");
+          const previewImageUrl = result.getResultByName("preview_image_url");
+          for (const row of rowsByUrl.get(url)) {
+            row.thumbnail = previewImageUrl;
+          }
+        }
+      }
+    );
+  } catch (error) {
+    // Don’t fail on backfilling thumbnails.
+    console.error("Error backfilling history thumbnails:", error);
+  }
 }
 
 /**
@@ -639,6 +691,9 @@ export async function searchBrowsingHistory({
           : "No browser history found in the requested time range.",
       };
     }
+
+    // Rows built from Places history nodes have no preview image.
+    await backfillThumbnails(rows);
 
     // Return as JSON string with metadata
     return {

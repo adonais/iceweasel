@@ -1306,8 +1306,8 @@ class PtrKind {
     AllocPage,
   };
 
-  Tag mTag;
-  uintptr_t mIndex;  // Only used if mTag == Tag::AllocPage.
+  Tag mTag = Tag::GuardPage;
+  uintptr_t mIndex = 0;  // Only used if mTag == Tag::AllocPage.
 
  protected:
   // Detect what a pointer points to. This constructor must be fast because it

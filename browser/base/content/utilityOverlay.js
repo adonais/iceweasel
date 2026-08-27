@@ -16,12 +16,15 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
+  ContainerCreationPanel:
+    "chrome://browser/content/usercontext/ContainerCreationPanel.mjs",
   ContextualIdentityService:
     "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
   ExtensionSettingsStore:
     "resource://gre/modules/ExtensionSettingsStore.sys.mjs",
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  Referrals: "resource:///modules/referrals/Referrals.sys.mjs",
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
   URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
 });
@@ -259,7 +262,10 @@ function createUserContextMenu(
       );
       menuitem.setAttribute("label", label);
     }
-    menuitem.setAttribute("command", "Browser:AddContainer");
+    menuitem.addEventListener("command", commandEvent => {
+      commandEvent.stopPropagation();
+      ContainerCreationPanel.open(window);
+    });
     docfrag.appendChild(menuitem);
   }
 
@@ -273,7 +279,10 @@ function createUserContextMenu(
       );
       menuitem.setAttribute("label", label);
     }
-    menuitem.setAttribute("command", "Browser:OpenAboutContainers");
+    menuitem.addEventListener("command", commandEvent => {
+      commandEvent.stopPropagation();
+      openPreferences("paneContainers");
+    });
     docfrag.appendChild(menuitem);
   }
 
@@ -393,6 +402,10 @@ function openAboutDialog() {
 
   var win = BrowserWindowTracker.getTopWindow() || window;
   win.openDialog("chrome://browser/content/aboutDialog.xhtml", "", features);
+}
+
+function openReferralsPage() {
+  Referrals.openReferralsTab(window, "help_menu");
 }
 
 async function openPreferences(paneID, extraArgs) {
@@ -517,6 +530,9 @@ function buildHelpMenu() {
 
   document.getElementById("troubleShooting").disabled =
     !Services.policies.isAllowed("aboutSupport");
+
+  document.getElementById("menu_referralsPage").hidden =
+    !Services.prefs.getBoolPref("browser.referrals.enabled");
 
   let supportMenu = Services.policies.getSupportMenu();
   if (supportMenu) {

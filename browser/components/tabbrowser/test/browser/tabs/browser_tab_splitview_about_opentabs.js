@@ -693,7 +693,7 @@ add_task(async function test_about_opentabs_reverts_to_newtab_when_no_tabs() {
 
 add_task(async function test_opentabs_search() {
   const tab1 = await addTab();
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   const tab2 = BrowserTestUtils.addTab(gBrowser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(tab2.linkedBrowser);
   const tab3 = BrowserTestUtils.addTab(gBrowser, "http://mochi.test:8888/");

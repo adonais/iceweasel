@@ -171,7 +171,7 @@ FOG supports messaging between the following types of child process and the pare
 * utility children (via `PUtilityProcess`)
 
 See
-[the process model docs](/dom/ipc/process_model.rst)
+[the process model docs](/dom/ipc/process_model.md)
 for more information about what that means.
 
 ### Adding Support for a new Process Type

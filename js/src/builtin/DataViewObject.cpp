@@ -1063,7 +1063,7 @@ bool DataViewObject::byteLengthGetterImpl(JSContext* cx, const CallArgs& args) {
   }
 
   // Step 7.
-  args.rval().set(NumberValue(*byteLength));
+  args.rval().setNumber(*byteLength);
   return true;
 }
 
@@ -1083,7 +1083,7 @@ bool DataViewObject::byteOffsetGetterImpl(JSContext* cx, const CallArgs& args) {
   }
 
   // Step 7.
-  args.rval().set(NumberValue(*byteOffset));
+  args.rval().setNumber(*byteOffset);
   return true;
 }
 

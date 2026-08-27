@@ -12,9 +12,9 @@
 
 #include <stddef.h>  // for size_t
 
+#include <algorithm>
 #include <new>  // for placement new
 #include <utility>
-#include <algorithm>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/OperatorNewExtensions.h"

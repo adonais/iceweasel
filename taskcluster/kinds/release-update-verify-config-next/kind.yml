@@ -26,6 +26,7 @@ task-defaults:
               path: /builds/worker/checkouts/gecko/update-verify.cfg
               type: file
     run:
+        clone-with: hg
         sparse-profile: mozharness
     treeherder:
         symbol: UVCnext

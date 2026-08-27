@@ -66,6 +66,7 @@ UNIFIED_SOURCES += [
     "/third_party/libwebrtc/modules/rtp_rtcp/source/remote_ntp_time_estimator.cc",
     "/third_party/libwebrtc/modules/rtp_rtcp/source/rtcp_nack_stats.cc",
     "/third_party/libwebrtc/modules/rtp_rtcp/source/rtcp_receiver.cc",
+    "/third_party/libwebrtc/modules/rtp_rtcp/source/rtp_depacketizer_sframe.cc",
     "/third_party/libwebrtc/modules/rtp_rtcp/source/rtp_descriptor_authentication.cc",
     "/third_party/libwebrtc/modules/rtp_rtcp/source/rtp_format.cc",
     "/third_party/libwebrtc/modules/rtp_rtcp/source/rtp_format_h264.cc",

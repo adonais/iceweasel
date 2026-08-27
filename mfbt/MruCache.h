@@ -9,8 +9,10 @@
 #include <type_traits>
 #include <utility>
 
-#include "mozilla/Attributes.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/HashFunctions.h"
+#include "mozilla/MathAlgorithms.h"
 
 namespace mozilla {
 
@@ -32,8 +34,9 @@ constexpr bool IsNotEmpty(const Value& aVal) {
 }  // namespace detail
 
 // Provides a most recently used cache that can be used as a layer on top of
-// a larger container where lookups can be expensive. The default size is 31,
-// which as a prime number provides a better distrubution of cached entries.
+// a larger container where lookups can be expensive. The size must be a power
+// of two; entries are indexed by the high bits of the scrambled hash (Fibonacci
+// hashing), so callers don't need to provide a well-distributed hash.
 //
 // Users are expected to provide a `Cache` class that defines two required
 // methods:
@@ -58,19 +61,10 @@ constexpr bool IsNotEmpty(const Value& aVal) {
 //        return aVal->mPtr == aKey;
 //      }
 //    };
-template <class Key, class Value, class Cache, size_t Size = 31>
+template <class Key, class Value, class Cache, size_t Size = 32>
 class MruCache {
-  // Best distribution is achieved with a prime number. Ideally the closest
-  // to a power of two will be the most efficient use of memory. This
-  // assertion is pretty weak, but should catch the common inclination to
-  // use a power-of-two.
-  static_assert(Size % 2 != 0, "Use a prime number");
-
-  // This is a stronger assertion but significantly limits the values to just
-  // those close to a power-of-two value.
-  // static_assert(Size == 7 || Size == 13 || Size == 31 || Size == 61 ||
-  //              Size == 127 || Size == 251 || Size == 509 || Size == 1021,
-  //              "Use a prime number less than 1024");
+  static_assert(Size >= 2 && (Size & (Size - 1)) == 0,
+                "Size must be a power of two");
 
  public:
   using KeyType = Key;
@@ -148,8 +142,13 @@ class MruCache {
   }
 
  private:
+  static constexpr uint32_t kShift = kHashNumberBits - CeilingLog2(Size);
+
   MOZ_ALWAYS_INLINE ValueType* RawEntry(const KeyType& aKey) {
-    return &mCache[Cache::Hash(aKey) % Size];
+    // Index using the high bits of the scrambled hash (Fibonacci hashing). This
+    // stays well-distributed even for the low-entropy hashes some callers
+    // provide, and avoids a modulo on this hot path.
+    return &mCache[ScrambleHashCode(Cache::Hash(aKey)) >> kShift];
   }
 
   ValueType mCache[Size] = {};

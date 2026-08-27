@@ -1,4 +1,4 @@
-# Data Collection
+# Normandy data collection
 
 This document describes the types of data that Normandy collects.
 

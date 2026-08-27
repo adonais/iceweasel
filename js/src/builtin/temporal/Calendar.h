@@ -98,11 +98,12 @@ class CalendarObject : public NativeObject {
   static const JSClass class_;
   static const JSClass& protoClass_;
 
-  static constexpr uint32_t IDENTIFIER_SLOT = 0;
+  JS_DEFINE_TYPED_SLOT(0, IDENTIFIER_SLOT, Int32);
   static constexpr uint32_t SLOT_COUNT = 1;
 
   CalendarId identifier() const {
-    return static_cast<CalendarId>(getFixedSlot(IDENTIFIER_SLOT).toInt32());
+    return static_cast<CalendarId>(
+        getFixedSlotTyped(IDENTIFIER_SLOT).toInt32());
   }
 
  private:

@@ -77,9 +77,7 @@ enum JSExnType {
   JSEXN_EVALERR,
   JSEXN_RANGEERR,
   JSEXN_REFERENCEERR,
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   JSEXN_SUPPRESSEDERR,
-#endif
   JSEXN_SYNTAXERR,
   JSEXN_TYPEERR,
   JSEXN_URIERR,
@@ -211,8 +209,8 @@ class JSErrorNotes {
                  js::ErrorArgumentsType argumentsType, va_list ap);
 
  public:
-  JSErrorNotes();
-  ~JSErrorNotes();
+  JSErrorNotes() = default;
+  ~JSErrorNotes() = default;
 
   // Add a note to the given position.
   bool addNoteASCII(JSContext* cx, const char* filename, unsigned sourceId,
@@ -356,7 +354,11 @@ struct MOZ_STACK_CLASS JS_PUBLIC_API ErrorReportBuilder {
   explicit ErrorReportBuilder(JSContext* cx);
   ~ErrorReportBuilder();
 
-  enum SniffingBehavior { WithSideEffects, NoSideEffects };
+  enum SniffingBehavior {
+    WithSideEffects,
+    NoSideEffects,
+    NoSideEffectsListPropertyNames
+  };
 
   /**
    * Generate a JSErrorReport from the provided thrown value.
@@ -382,6 +384,13 @@ struct MOZ_STACK_CLASS JS_PUBLIC_API ErrorReportBuilder {
    * But if the value of |sniffingBehavior| is |NoSideEffects|, these attempts
    * *will not* invoke any observable side effects.  The JSErrorReport will
    * simply contain fewer, less precise details.
+   *
+   * |NoSideEffectsListPropertyNames| behaves like |NoSideEffects|, except that
+   * a non-Error exception object is described by listing its own string-keyed
+   * property names, for instance |Object (code, message)| instead of the
+   * bare |Object|.  Callers must not use this for reports that are exposed to
+   * web content (such as |window.onerror| messages), because the resulting
+   * string depends on the object's shape.
    *
    * Unlike some functions involved in error handling, this function adheres
    * to the usual JSAPI return value error behavior.

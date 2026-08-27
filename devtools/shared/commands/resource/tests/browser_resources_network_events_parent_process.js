@@ -36,6 +36,8 @@ add_task(async function testParentProcessRequests() {
   // The test expects the main process commands instance to receive resources
   // for content process requests.
   await pushPref("devtools.browsertoolbox.scope", "everything");
+  // We use a commands object for the main process
+  await pushPref("devtools.chrome.enabled", true);
 
   const commands = await CommandsFactory.forMainProcess();
   await commands.targetCommand.startListening();

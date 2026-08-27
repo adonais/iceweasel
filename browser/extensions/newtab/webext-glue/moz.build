@@ -21,8 +21,30 @@ FINAL_TARGET_FILES += [
 ]
 FINAL_TARGET_FILES["webext-glue"] += [
     "background.js",
-    "metrics/**",
 ]
+
+# Bug 2057616: Generate New Tab's runtime Glean metrics/pings for train-hop
+# compatibility by diffing the local metrics.yaml/pings.yaml against the Beta
+# and Release channels, then package the result into the XPI.
+# See metrics/gen_runtime_metrics.py.
+if CONFIG["MOZ_APP_VERSION"]:
+    newtab_major_version = int(CONFIG["MOZ_APP_VERSION"].split(".")[0])
+    for channel, version_offset in (("beta", 1), ("release", 2)):
+        runtime_metrics_file = "runtime-metrics-%d.json" % (
+            newtab_major_version - version_offset
+        )
+        GENERATED_FILES += [runtime_metrics_file]
+        GENERATED_FILES[
+            runtime_metrics_file
+        ].script = "metrics/gen_runtime_metrics.py:generate"
+        GENERATED_FILES[runtime_metrics_file].inputs = [
+            "/browser/components/newtab/metrics.yaml",
+            "/browser/components/newtab/pings.yaml",
+        ]
+        GENERATED_FILES[runtime_metrics_file].flags = [channel]
+        FINAL_TARGET_FILES["webext-glue"].metrics += ["!" + runtime_metrics_file]
+else:
+    warning("New Tab runtime metrics not generated: MOZ_APP_VERSION is unavailable.")
 FINAL_TARGET_FILES.lib += [
     "../lib/**",
 ]
@@ -75,9 +97,58 @@ FINAL_TARGET_FILES.data.data.content["external-components"][
     "../../../components/asrouter/content/components/asrouter-newtab-message/ASRouterNewTabMessageParent.sys.mjs",
 ]
 
+# Bug 2059104: Generate New Tab's localized Fluent files at build time and
+# package them into the XPI. en-US always comes from the in-tree copy; every
+# other locale is packaged only for shipped train-hop builds, which set
+# NEWTAB_XPI_LOCALES in locales.configure. See locales/gen_locales.py.
 # This doesn't need to be in sync with the addon-jar.mn file, as the locales
 # are only included when we build newtab as an XPI.
-FINAL_TARGET_FILES += ["locales/**"]
+# @backward-compat { version 155 }: en-US is generated rather than copied
+# verbatim so copy_en_us can restore the homepage strings Bug 2048379 moved out
+# of newtab.ftl into preferences.ftl, for the pre-155 fallback. Once 155 reaches
+# Release, revert this to a plain FINAL_TARGET_FILES copy of newtab.ftl.
+en_us_newtab_ftl = "locales/en-US/browser/newtab/newtab.ftl"
+GENERATED_FILES += [en_us_newtab_ftl]
+GENERATED_FILES[en_us_newtab_ftl].script = "locales/gen_locales.py:copy_en_us"
+GENERATED_FILES[en_us_newtab_ftl].inputs = [
+    "/browser/locales/en-US/browser/newtab/newtab.ftl",
+    "/browser/locales/en-US/browser/preferences/preferences.ftl",
+]
+FINAL_TARGET_FILES.locales["en-US"].browser.newtab += ["!" + en_us_newtab_ftl]
+
+newtab_locales = CONFIG["NEWTAB_XPI_LOCALES"] or []
+
+GENERATED_FILES += ["supported-locales.json"]
+GENERATED_FILES[
+    "supported-locales.json"
+].script = "locales/gen_locales.py:supported_locales"
+GENERATED_FILES["supported-locales.json"].flags = ["en-US"] + newtab_locales
+FINAL_TARGET_FILES.locales += ["!supported-locales.json"]
+
+if newtab_locales:
+    GENERATED_FILES += ["l10n-clone.stamp"]
+    GENERATED_FILES["l10n-clone.stamp"].script = "locales/gen_locales.py:clone"
+    for locale in newtab_locales:
+        locale_ftl = "locales/%s/browser/newtab/newtab.ftl" % locale
+        GENERATED_FILES += [locale_ftl]
+        GENERATED_FILES[locale_ftl].script = "locales/gen_locales.py:copy_locale"
+        GENERATED_FILES[locale_ftl].flags = [locale]
+        GENERATED_FILES[locale_ftl].extra_deps = ["!l10n-clone.stamp"]
+        FINAL_TARGET_FILES.locales[locale].browser.newtab += ["!" + locale_ftl]
+
+    # Bake a locales report into the XPI (the en-US string set plus each
+    # locale's missing message IDs, tagged with the firefox-l10n revision) so a
+    # built XPI documents its own string state.
+    locales_report_deps = ["/browser/locales/en-US/browser/newtab/newtab.ftl"] + [
+        "!locales/%s/browser/newtab/newtab.ftl" % locale for locale in newtab_locales
+    ]
+    GENERATED_FILES += ["locales-report.json"]
+    GENERATED_FILES[
+        "locales-report.json"
+    ].script = "locales/gen_locales.py:locales_report"
+    GENERATED_FILES["locales-report.json"].flags = newtab_locales
+    GENERATED_FILES["locales-report.json"].extra_deps = locales_report_deps
+    FINAL_TARGET_FILES.locales += ["!locales-report.json"]
 
 if not CONFIG["RELEASE_OR_BETA"]:
     FINAL_TARGET_FILES.prerendered += [

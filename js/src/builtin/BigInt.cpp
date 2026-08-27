@@ -62,12 +62,12 @@ JSObject* BigIntObject::create(JSContext* cx, HandleBigInt bigInt) {
   if (!bn) {
     return nullptr;
   }
-  bn->initFixedSlot(PRIMITIVE_VALUE_SLOT, BigIntValue(bigInt));
+  bn->initFixedSlotTyped(PRIMITIVE_VALUE_SLOT, BigIntValue(bigInt));
   return bn;
 }
 
 BigInt* BigIntObject::unbox() const {
-  return getFixedSlot(PRIMITIVE_VALUE_SLOT).toBigInt();
+  return getFixedSlotTyped(PRIMITIVE_VALUE_SLOT).toBigInt();
 }
 
 static BigInt* ThisBigIntValue(const CallArgs& args) {

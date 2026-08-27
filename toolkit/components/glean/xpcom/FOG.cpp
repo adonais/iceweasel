@@ -319,12 +319,12 @@ FOG::TestGetExperimentData(const nsACString& aExperimentId, JSContext* aCx,
                            JS::MutableHandleValue aResult) {
 #ifdef MOZ_GLEAN_ANDROID
   NS_WARNING("Don't test experiments from Gecko in Android. Throwing.");
-  aResult.set(JS::UndefinedValue());
+  aResult.setUndefined();
   return NS_ERROR_FAILURE;
 #else
   MOZ_ASSERT(XRE_IsParentProcess());
   if (!glean::impl::fog_test_is_experiment_active(&aExperimentId)) {
-    aResult.set(JS::UndefinedValue());
+    aResult.setUndefined();
     return NS_OK;
   }
 
@@ -559,7 +559,7 @@ NS_IMETHODIMP
 FOG::TestGetAttribution(JSContext* aCx, JS::MutableHandleValue aResult) {
 #ifdef MOZ_GLEAN_ANDROID
   NS_WARNING("Don't test attribution from Gecko in Android. Throwing.");
-  aResult.set(JS::UndefinedValue());
+  aResult.setUndefined();
   return NS_ERROR_FAILURE;
 #else
   MOZ_ASSERT(XRE_IsParentProcess());
@@ -653,7 +653,7 @@ NS_IMETHODIMP
 FOG::TestGetDistribution(JSContext* aCx, JS::MutableHandleValue aResult) {
 #ifdef MOZ_GLEAN_ANDROID
   NS_WARNING("Don't test distribution from Gecko in Android. Throwing.");
-  aResult.set(JS::UndefinedValue());
+  aResult.setUndefined();
   return NS_ERROR_FAILURE;
 #else
   MOZ_ASSERT(XRE_IsParentProcess());

@@ -59,12 +59,14 @@ async function openSettingsPopup() {
 
   info("Waiting for notification...");
   let notification;
-  await TestUtils.waitForCondition(
-    () =>
-      (notification = gBrowser
-        .getNotificationBox()
-        .getNotificationWithValue("popup-blocked"))
-  );
+  await TestUtils.waitForCondition(() => {
+    const notificationBox = gBrowser.getNotificationBox();
+    notification = notificationBox.getNotificationWithValue("popup-blocked");
+    // appendNotification adds the element to the DOM before it awaits
+    // localization, so also wait for currentNotification to be set. Otherwise
+    // the menu item handlers throw when removing the notification.
+    return notification && notificationBox.currentNotification == notification;
+  });
 
   info("Clicking button...");
   const promise = BrowserTestUtils.waitForEvent(

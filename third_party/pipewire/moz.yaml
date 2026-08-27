@@ -12,8 +12,8 @@ origin:
 
   url: "https://pipewire.org/"
   license: MIT
-  release: version 1.4.2
-  revision: d20a1523b6770dfa93a270bdda5d7c800d7ec191
+  release: 1.6.8 (2026-07-09T12:25:35+02:00).
+  revision: 1.6.8
   license-file: COPYING
 
 vendoring:

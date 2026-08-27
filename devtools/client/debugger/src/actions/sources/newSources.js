@@ -414,6 +414,7 @@ export function newStyleSheetSources(styleSheetResources) {
     }
     dispatch({ type: "ADD_SOURCES", sources: styleSheets });
     dispatch(insertSourceActors(styleSheetActors));
+    await dispatch(checkNewSources(styleSheets));
     await dispatch(loadSourceMapsForSourceActors(styleSheetActors));
   };
 }

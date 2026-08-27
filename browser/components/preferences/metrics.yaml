@@ -384,8 +384,6 @@ aboutpreferences:
         description: Identifier for this tab.
         type: string
     telemetry_mirror: Aboutpreferences_Show_Initial
-    no_lint:
-      - COMMON_PREFIX
 
   show_click:
     type: event
@@ -400,8 +398,6 @@ aboutpreferences:
     expires: never
     extra_keys: *aboutpreferences_show_extra
     telemetry_mirror: Aboutpreferences_Show_Click
-    no_lint:
-      - COMMON_PREFIX
 
   show_hash:
     type: event
@@ -415,8 +411,6 @@ aboutpreferences:
     expires: never
     extra_keys: *aboutpreferences_show_extra
     telemetry_mirror: Aboutpreferences_Show_Hash
-    no_lint:
-      - COMMON_PREFIX
 
   change:
     type: event

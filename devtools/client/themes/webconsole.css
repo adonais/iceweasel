@@ -498,10 +498,15 @@
   cursor: default;
 }
 
-.message .learn-more-link {
+.message .webconsole-learn-more-link {
   user-select: none;
   color: var(--theme-link-color);
-  margin: 0 1ch;
+  font-style: normal;
+  white-space: nowrap;
+
+  &.learn-more-link {
+    --icon-color: var(--theme-link-color);
+  }
 }
 
 /* Hide the headers panel toolbar buttons in the console */
@@ -599,10 +604,6 @@ html #webconsole-notificationbox {
 .cm-s-mozilla a[class] {
   text-decoration: underline;
   text-decoration-skip-ink: none;
-}
-
-a.learn-more-link.webconsole-learn-more-link {
-  font-style: normal;
 }
 
 /*
@@ -934,6 +935,7 @@ a.learn-more-link.webconsole-learn-more-link {
   border: none;
   color: var(--theme-icon-dimmed-color);
   background: transparent;
+  user-select: none;
 }
 
 .collapse-button::before {

@@ -98,6 +98,7 @@ CycleCollectedJSContext::~CycleCollectedJSContext() {
   mPendingException = nullptr;
 
   mUncaughtRejections.reset();
+  mUncaughtRejectionIndices.Clear();
   mConsumedRejections.reset();
 
   mAboutToBeNotifiedRejectedPromises.Clear();
@@ -388,30 +389,29 @@ void CycleCollectedJSContext::PromiseRejectionTrackerCallback(
   uint64_t promiseID = JS::GetPromiseID(aPromise);
 
   if (state == JS::PromiseRejectionHandlingState::Unhandled) {
-    PromiseDebugging::AddUncaughtRejection(aPromise);
+    PromiseDebugging::AddUncaughtRejection(aPromise, promiseID);
     if (!aMutedErrors) {
       RefPtr<Promise> promise =
           Promise::CreateFromExisting(xpc::NativeGlobal(aPromise), aPromise);
+      size_t index = aboutToBeNotified.Length();
       aboutToBeNotified.AppendElement(promise);
-      unhandled.InsertOrUpdate(promiseID, std::move(promise));
+      unhandled.InsertOrUpdate(promiseID,
+                               PendingRejection{std::move(promise), index});
     }
   } else {
-    PromiseDebugging::AddConsumedRejection(aPromise);
-    for (size_t i = 0; i < aboutToBeNotified.Length(); i++) {
-      if (aboutToBeNotified[i] &&
-          aboutToBeNotified[i]->PromiseObj() == aPromise) {
-        // To avoid large amounts of memmoves, we don't shrink the vector
-        // here. Instead, we filter out nullptrs when iterating over the
-        // vector later.
-        aboutToBeNotified[i] = nullptr;
-        DebugOnly<bool> isFound = unhandled.Remove(promiseID);
-        MOZ_ASSERT(isFound);
-        return;
+    PromiseDebugging::AddConsumedRejection(aPromise, promiseID);
+    if (Maybe<PendingRejection> pending = unhandled.Extract(promiseID)) {
+      // The stored index outlives the array whenever AfterProcessMicrotasks
+      // hands it off, so only clear the slot if it still holds this promise.
+      // To avoid large amounts of memmoves, we don't shrink the vector here.
+      // Instead, we filter out nullptrs when iterating over the vector later.
+      if (pending->mIndex < aboutToBeNotified.Length() &&
+          aboutToBeNotified[pending->mIndex] == pending->mPromise) {
+        aboutToBeNotified[pending->mIndex] = nullptr;
       }
+      return;
     }
-    RefPtr<Promise> promise;
-    unhandled.Remove(promiseID, getter_AddRefs(promise));
-    if (!promise && !aMutedErrors) {
+    if (!aMutedErrors) {
       nsIGlobalObject* global = xpc::NativeGlobal(aPromise);
       if (nsCOMPtr<EventTarget> owner = do_QueryInterface(global)) {
         RootedDictionary<PromiseRejectionEventInit> init(aCx);
@@ -990,16 +990,18 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
       asyncStackSetter.emplace(aCx, allocStack, reason);
     }
 
+    // Inform the profiler about the flow for this microtask.
+    mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly> terminatingMarker;
+    MaybeGetFlowMarker(aMicroTask, terminatingMarker);
+
     {
+      mozilla::Maybe<AutoHandlingUserInputStatePusher> userInputStateSwitcher;
       // A new scope is used to make sure the UserInputState is reset before
       // potentially draining more microtasks.
-      bool propagate = ShouldPropagateUserInputEventHandlingState(aMicroTask);
-      AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
-
-      // Inform the profiler about the flow for this microtask.
-      mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly>
-          terminatingMarker;
-      MaybeGetFlowMarker(aMicroTask, terminatingMarker);
+      if (NS_IsMainThread()) {
+        bool propagate = ShouldPropagateUserInputEventHandlingState(aMicroTask);
+        userInputStateSwitcher.emplace(propagate);
+      }
 
       if (incumbentGlobal) {
         // https://wicg.github.io/scheduling-apis/#sec-patches-html-hostcalljobcallback
@@ -1103,8 +1105,11 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
         incumbentGlobal->SetWebTaskSchedulingState(peekedSchedulingState);
       }
 
-      bool propagate = ShouldPropagateUserInputEventHandlingState(aMicroTask);
-      AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
+      mozilla::Maybe<AutoHandlingUserInputStatePusher> userInputStateSwitcher;
+      if (NS_IsMainThread()) {
+        bool propagate = ShouldPropagateUserInputEventHandlingState(aMicroTask);
+        userInputStateSwitcher.emplace(propagate);
+      }
 
       // If this task fails we need cleanup code, which is in AutoJSAPI's
       // destructor to run, so abort execution.
@@ -1341,20 +1346,25 @@ NS_IMETHODIMP CycleCollectedJSContext::NotifyUnhandledRejections::Run() {
 
     // Notify observers only if still unhandled (matches old
     // FlushUncaughtRejectionsInternal behavior for observer consumers
-    // like PromiseTestUtils).
+    // like PromiseTestUtils). An observer returning true takes ownership of
+    // the rejection and suppresses the console report, as on the
+    // FlushUncaughtRejectionsInternal and Cancel() paths.
+    bool suppressReporting = false;
     if (!JS::GetPromiseIsHandled(promiseObj)) {
       auto& observers = cccx->mUncaughtRejectionObservers;
       for (size_t j = 0; j < observers.Length(); ++j) {
         RefPtr<UncaughtRejectionObserver> obs =
             static_cast<UncaughtRejectionObserver*>(observers[j].get());
-        obs->OnLeftUncaught(promiseObj, IgnoreErrors());
+        if (obs->OnLeftUncaught(promiseObj, IgnoreErrors())) {
+          suppressReporting = true;
+        }
       }
     }
 
     // Report to console regardless of handled state — this matches the
     // pre-existing behavior where FlushRejections reported before handling
     // could occur. Only preventDefault() suppresses the console report.
-    if (!defaultPrevented) {
+    if (!defaultPrevented && !suppressReporting) {
       JSAutoRealm ar(cccx->Context(), promiseObj);
       Promise::ReportRejectedPromise(cccx->Context(), promiseObj);
     }

@@ -32,6 +32,7 @@
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsString.h"
+#include "nsStyleUtil.h"
 
 namespace mozilla::dom {
 
@@ -531,19 +532,26 @@ void ViewTransition::CallUpdateCallback(ErrorResult& aRv) {
           // undefined.
           ucd->MaybeResolveWithUndefined();
         }
-        // Unlike other timings, this is not guaranteed to happen with clean
-        // layout, and Activate() needs to look at the frame tree to capture the
-        // new state, so we need to flush frames. Do it here so that we deal
-        // with other potential script execution skipping the transition or
-        // what not in a consistent way.
-        aVt->mDocument->FlushPendingNotifications(FlushType::Layout);
+
         if (aVt->mPhase == Phase::Done) {
           // "Skip a transition" step 8. We need to resolve "finished" after
           // update-callback-done.
           if (Promise* finished = aVt->GetFinished(aRv)) {
             finished->MaybeResolveWithUndefined();
           }
+          // Activate() is a no-op when done. So just skip the flush.
+          return;
         }
+
+        // Unlike other timings, this is not guaranteed to happen with clean
+        // layout, and Activate() needs to look at the frame tree to capture the
+        // new state, so we need to flush frames. Do it here so that we deal
+        // with other potential script execution skipping the transition or
+        // what not in a consistent way.
+        //
+        // Activate() is a no-op once we're done, and PerformPendingOperations()
+        // flushes after draining the queue.
+        aVt->mDocument->FlushPendingNotifications(FlushType::Layout);
         aVt->Activate();
       },
       [](JSContext*, JS::Handle<JS::Value> aReason, ErrorResult& aRv,
@@ -1133,7 +1141,11 @@ void ViewTransition::PerformPendingOperations() {
   // transitions are done before the old state for this transition is captured.
   // https://github.com/w3c/csswg-drafts/issues/11943
   RefPtr doc = mDocument;
-  doc->FlushViewTransitionUpdateCallbackQueue();
+  if (doc->FlushViewTransitionUpdateCallbackQueue()) {
+    // The update callbacks above run script, and both Setup() and HandleFrame()
+    // read the frame tree.
+    doc->FlushPendingNotifications(FlushType::Layout);
+  }
 
   switch (mPhase) {
     case Phase::PendingCapture:
@@ -1420,8 +1432,8 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
       // capturing of old content.
       if (RefPtr widget = ps->GetRootWidget()) {
         VT_LOG("ViewTransitions::CaptureOldState(), requesting composite");
-        ps->PaintAndRequestComposite(ps->GetRootFrame(),
-                                     widget->GetWindowRenderer(),
+        RefPtr<WindowRenderer> renderer = widget->GetWindowRenderer();
+        ps->PaintAndRequestComposite(ps->GetRootFrame(), renderer,
                                      PaintFlags::PaintCompositeOffscreen);
         VT_LOG("ViewTransitions::CaptureOldState(), requesting composite end");
       }

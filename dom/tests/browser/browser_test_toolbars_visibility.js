@@ -152,7 +152,7 @@ function testNonDefaultContentToolbarsFromChrome(toolbars) {
     !toolbars.personalbar,
     "personalbar shouldn't be visible when personalbar=no"
   );
-  // statusbar will report visible=true even when it's hidden because of bug#55820
+  // statusbar will report visible=true always on chrome.
   todo(!toolbars.statusbar, "statusbar shouldn't be visible when status=no");
   ok(
     toolbars.scrollbars,
@@ -179,7 +179,8 @@ function testNonDefaultChromeToolbars(toolbars) {
     !toolbars.personalbar,
     "personalbar should not be visible with personalbar=no"
   );
-  ok(!toolbars.statusbar, "statusbar should not be visible with status=no");
+  // See above.
+  todo(!toolbars.statusbar, "statusbar shouldn't be visible when status=no");
   ok(
     toolbars.scrollbars,
     "scrollbars should be visible even with scrollbars=no"

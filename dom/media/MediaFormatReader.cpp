@@ -401,7 +401,8 @@ void MediaFormatReader::DecoderFactory::DoCreateDecoder(Data& aData) {
            mOwner->mCrashHelper,
            CreateDecoderParams::UseNullDecoder(ownerData.mIsNullDecode),
            TrackType::kVideoTrack, std::move(onWaitingForKeyEvent),
-           CreateDecoderParams::VideoFrameRate(ownerData.mMeanRate.Mean()),
+           CreateDecoderParams::VideoFrameRate(
+               static_cast<float>(ownerData.mFrameRateEstimator.Rate())),
            OptionSet(ownerData.mHardwareDecodingDisabled
                          ? Option::HardwareDecoderNotAllowed
                          : Option::Default,
@@ -1631,6 +1632,9 @@ void MediaFormatReader::OnVideoDemuxCompleted(
   mVideo.mDemuxRequest.Complete();
   MOZ_ASSERT(mVideo.mQueuedSamples.IsEmpty());
   mVideo.mQueuedSamples = aSamples->GetMovableSamples();
+  for (const auto& sample : mVideo.mQueuedSamples) {
+    mVideo.mFrameRateEstimator.Observe(*sample);
+  }
   ScheduleUpdate(TrackInfo::kVideoTrack);
 }
 
@@ -2224,8 +2228,6 @@ void MediaFormatReader::HandleDemuxedSamples(
       mWorkingInfoChanged = true;
     }
 
-    decoder.mMeanRate.Reset();
-
     if (sample->mKeyframe) {
       if (samples.Length()) {
         decoder.mQueuedSamples = std::move(samples);
@@ -2240,10 +2242,6 @@ void MediaFormatReader::HandleDemuxedSamples(
       return;
     }
   }
-
-  // Calculate the average frame rate. The first frame will be accounted
-  // for twice.
-  decoder.mMeanRate.Update(sample->mDuration);
 
   if (!decoder.mDecoder) {
     // In Clear Lead situation, the `mInfo` could change from unencrypted to
@@ -2425,6 +2423,29 @@ void MediaFormatReader::Update(TrackType aTrack) {
   // Record number of frames decoded and parsed. Automatically update the
   // stats counters using the AutoNotifyDecoded stack-based class.
   FrameStatistics::AutoNotifyDecoded a(mFrameStats);
+  auto reportDecodedOutput = [&](MediaData* aOutput) {
+    decoder.mNumSamplesOutputTotal++;
+    if (aTrack != TrackType::kVideoTrack) {
+      return;
+    }
+    const uint64_t delta =
+        decoder.mNumSamplesOutputTotal - mLastReportedNumDecodedFrames;
+    a.mStats.mDecodedFrames += static_cast<uint32_t>(delta);
+    mLastReportedNumDecodedFrames = decoder.mNumSamplesOutputTotal;
+    if (!aOutput->mKeyframe) {
+      return;
+    }
+    const int64_t outputTime_us = aOutput->mTime.ToMicroseconds();
+    if (mPreviousDecodedKeyframeTime_us < outputTime_us) {
+      const uint64_t segment_us =
+          outputTime_us - mPreviousDecodedKeyframeTime_us;
+      a.mStats.mInterKeyframeSum_us += segment_us;
+      a.mStats.mInterKeyframeCount += 1;
+      a.mStats.mInterKeyFrameMax_us =
+          std::max(a.mStats.mInterKeyFrameMax_us, segment_us);
+    }
+    mPreviousDecodedKeyframeTime_us = outputTime_us;
+  };
 
   // Drop any frames found prior our internal seek target.
   while (decoder.mTimeThreshold && decoder.mOutput.Length()) {
@@ -2458,35 +2479,34 @@ void MediaFormatReader::Update(TrackType aTrack) {
 
   if (decoder.HasPromise()) {
     needOutput = true;
+    const TrackInfo* info = decoder.GetCurrentInfo();
+    if (aTrack == TrackType::kVideoTrack && info &&
+        info->mMediaTime.IsPositive()) {
+      while (decoder.mOutput.Length()) {
+        RefPtr<MediaData>& output = decoder.mOutput[0];
+        const TimeUnit endTime = output->GetEndTime();
+        if (!endTime.IsValid() || endTime >= mInfo.mStartTime) {
+          break;
+        }
+        LOG("Dropping video sample [{}, {}] before media start {} due to "
+            "edit-list pre-roll",
+            output->mTime.ToString().get(), endTime.ToString().get(),
+            mInfo.mStartTime.ToString().get());
+        decoder.mLastDecodedSampleTime =
+            Some(TimeInterval(output->mTime, endTime));
+        reportDecodedOutput(output);
+        decoder.mOutput.RemoveElementAt(0);
+        decoder.mSizeOfQueue -= 1;
+      }
+    }
     if (decoder.mOutput.Length()) {
       RefPtr<MediaData> output = decoder.mOutput[0];
       decoder.mOutput.RemoveElementAt(0);
       decoder.mSizeOfQueue -= 1;
       decoder.mLastDecodedSampleTime =
           Some(TimeInterval(output->mTime, output->GetEndTime()));
-      decoder.mNumSamplesOutputTotal++;
+      reportDecodedOutput(output);
       ReturnOutput(output, aTrack);
-      // We have a decoded sample ready to be returned.
-      if (aTrack == TrackType::kVideoTrack) {
-        uint64_t delta =
-            decoder.mNumSamplesOutputTotal - mLastReportedNumDecodedFrames;
-        a.mStats.mDecodedFrames = static_cast<uint32_t>(delta);
-        mLastReportedNumDecodedFrames = decoder.mNumSamplesOutputTotal;
-        if (output->mKeyframe) {
-          if (mPreviousDecodedKeyframeTime_us <
-              output->mTime.ToMicroseconds()) {
-            // There is a previous keyframe -> Record inter-keyframe stats.
-            uint64_t segment_us = output->mTime.ToMicroseconds() -
-                                  mPreviousDecodedKeyframeTime_us;
-            a.mStats.mInterKeyframeSum_us += segment_us;
-            a.mStats.mInterKeyframeCount += 1;
-            if (a.mStats.mInterKeyFrameMax_us < segment_us) {
-              a.mStats.mInterKeyFrameMax_us = segment_us;
-            }
-          }
-          mPreviousDecodedKeyframeTime_us = output->mTime.ToMicroseconds();
-        }
-      }
     } else if (decoder.HasFatalError()) {
       nsCString mimeType = decoder.GetCurrentInfo()->mMimeType;
       if (!mimeType.IsEmpty()) {
@@ -3397,14 +3417,16 @@ void MediaFormatReader::UpdateBuffered() {
     intervals = mVideo.mTimeRanges;
   }
 
-  if (intervals.IsEmpty() || intervals.GetStart() == TimeUnit::Zero()) {
-    // IntervalSet already starts at 0 or is empty, nothing to shift.
-    mBuffered = intervals;
-  } else {
+  if (!intervals.IsEmpty() && intervals.GetStart() != TimeUnit::Zero()) {
     LOG("Subtract start time for buffered range, startTime={}",
         mInfo.mStartTime.ToMicroseconds());
-    mBuffered = intervals.Shift(TimeUnit::Zero() - mInfo.mStartTime);
+    intervals = intervals.Shift(TimeUnit::Zero() - mInfo.mStartTime);
   }
+  if (!intervals.IsEmpty() && intervals.GetStart().IsNegative()) {
+    intervals = intervals.Intersection(TimeInterval(
+        TimeUnit::Zero(intervals.GetStart()), TimeUnit::FromInfinity()));
+  }
+  mBuffered = intervals;
 }
 
 layers::ImageContainer* MediaFormatReader::GetImageContainer() {
@@ -3506,7 +3528,7 @@ void MediaFormatReader::GetDebugInfo(dom::MediaFormatReaderDebugInfo& aInfo) {
       videoInfo.mDisplay.width < 0 ? 0 : videoInfo.mDisplay.width;
   aInfo.mVideoHeight =
       videoInfo.mDisplay.height < 0 ? 0 : videoInfo.mDisplay.height;
-  aInfo.mVideoRate = mVideo.mMeanRate.Mean();
+  aInfo.mVideoRate = mVideo.mFrameRateEstimator.Rate();
   aInfo.mVideoHardwareAccelerated = VideoIsHardwareAccelerated();
   aInfo.mVideoNumSamplesOutputTotal = mVideo.mNumSamplesOutputTotal;
   aInfo.mVideoNumSamplesSkippedTotal = mVideo.mNumSamplesSkippedTotal;
@@ -3557,7 +3579,18 @@ void MediaFormatReader::OnFirstDemuxCompleted(
 
   auto& decoder = GetDecoderData(aType);
   MOZ_ASSERT(decoder.mFirstDemuxedSampleTime.isNothing());
-  decoder.mFirstDemuxedSampleTime.emplace(aSamples->GetSamples()[0]->mTime);
+  TimeUnit firstDemuxedSampleTime = aSamples->GetSamples()[0]->mTime;
+  const TrackInfo* info = decoder.GetCurrentInfo();
+  if (firstDemuxedSampleTime.IsNegative() && info &&
+      info->mMediaTime.IsPositive()) {
+    const TimeUnit originalFirstDemuxedSampleTime = firstDemuxedSampleTime;
+    // Negative samples before positive media time are decode pre-roll.
+    firstDemuxedSampleTime = TimeUnit::Zero(firstDemuxedSampleTime);
+    LOG("Updated first demuxed sample time from {} to {} due to pre-roll",
+        originalFirstDemuxedSampleTime.ToString().get(),
+        firstDemuxedSampleTime.ToString().get());
+  }
+  decoder.mFirstDemuxedSampleTime.emplace(firstDemuxedSampleTime);
   MaybeResolveMetadataPromise();
 }
 

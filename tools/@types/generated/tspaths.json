@@ -217,6 +217,9 @@
       "chrome://browser/content/multilineeditor/multiline-editor.mjs": [
         "../../../browser/components/multilineeditor/multiline-editor.mjs"
       ],
+      "chrome://browser/content/multilineeditor/plugins/CommandsPlugin.mjs": [
+        "../../../browser/components/multilineeditor/plugins/CommandsPlugin.mjs"
+      ],
       "chrome://browser/content/multilineeditor/plugins/MentionsPlugin.mjs": [
         "../../../browser/components/multilineeditor/plugins/MentionsPlugin.mjs"
       ],
@@ -373,6 +376,9 @@
       "chrome://browser/content/urlbar/L10nCache.mjs": [
         "../../../browser/components/urlbar/content/L10nCache.mjs"
       ],
+      "chrome://browser/content/urlbar/SearchEngineStore.mjs": [
+        "../../../browser/components/urlbar/content/SearchEngineStore.mjs"
+      ],
       "chrome://browser/content/urlbar/SearchModeSwitcher.mjs": [
         "../../../browser/components/urlbar/content/SearchModeSwitcher.mjs"
       ],
@@ -391,6 +397,12 @@
       "chrome://browser/content/urlbar/UrlbarChildTelemetry.mjs": [
         "../../../browser/components/urlbar/content/UrlbarChildTelemetry.mjs"
       ],
+      "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs": [
+        "../../../browser/components/urlbar/content/UrlbarContentPrefs.mjs"
+      ],
+      "chrome://browser/content/urlbar/UrlbarContentURIUtils.mjs": [
+        "../../../browser/components/urlbar/content/UrlbarContentURIUtils.mjs"
+      ],
       "chrome://browser/content/urlbar/UrlbarEventBufferer.mjs": [
         "../../../browser/components/urlbar/content/UrlbarEventBufferer.mjs"
       ],
@@ -399,6 +411,9 @@
       ],
       "chrome://browser/content/urlbar/UrlbarParentControllerProxy.mjs": [
         "../../../browser/components/urlbar/content/UrlbarParentControllerProxy.mjs"
+      ],
+      "chrome://browser/content/urlbar/UrlbarQueryContext.mjs": [
+        "../../../browser/components/urlbar/content/UrlbarQueryContext.mjs"
       ],
       "chrome://browser/content/urlbar/UrlbarResult.mjs": [
         "../../../browser/components/urlbar/content/UrlbarResult.mjs"
@@ -532,8 +547,17 @@
       "chrome://global/content/elements/moz-promo.mjs": [
         "../../../toolkit/content/widgets/moz-promo/moz-promo.mjs"
       ],
+      "chrome://global/content/elements/moz-segmented-control.mjs": [
+        "../../../toolkit/content/widgets/moz-segmented-control/moz-segmented-control.mjs"
+      ],
+      "chrome://global/content/elements/moz-select.mjs": [
+        "../../../toolkit/content/widgets/moz-select/moz-select.mjs"
+      ],
       "chrome://global/content/elements/moz-support-link.mjs": [
         "../../../toolkit/content/widgets/moz-support-link/moz-support-link.mjs"
+      ],
+      "chrome://global/content/elements/moz-textarea.mjs": [
+        "../../../toolkit/content/widgets/moz-textarea/moz-textarea.mjs"
       ],
       "chrome://global/content/elements/moz-toggle.mjs": [
         "../../../toolkit/content/widgets/moz-toggle/moz-toggle.mjs"
@@ -798,6 +822,9 @@
       ],
       "chrome://mozapps/content/extensions/components/aboutaddons-themes-mode.mjs": [
         "../../../toolkit/mozapps/extensions/content/components/aboutaddons-themes-mode.mjs"
+      ],
+      "chrome://mozapps/content/extensions/components/aboutaddons-themes-picker.mjs": [
+        "../../../toolkit/mozapps/extensions/content/components/aboutaddons-themes-picker.mjs"
       ],
       "chrome://mozapps/content/extensions/components/addon-card.mjs": [
         "../../../toolkit/mozapps/extensions/content/components/addon-card.mjs"
@@ -1369,6 +1396,9 @@
       "resource:///actors/LinkPreviewChild.sys.mjs": [
         "../../../browser/components/genai/LinkPreviewChild.sys.mjs"
       ],
+      "resource:///actors/MigrationWizardChild.sys.mjs": [
+        "../../../browser/components/migration/MigrationWizardChild.sys.mjs"
+      ],
       "resource:///actors/PluginParent.sys.mjs": [
         "../../../browser/actors/PluginParent.sys.mjs"
       ],
@@ -1672,6 +1702,9 @@
       "resource:///modules/asrouter/MessagingExperimentConstants.sys.mjs": [
         "../../../browser/components/asrouter/modules/MessagingExperimentConstants.sys.mjs"
       ],
+      "resource:///modules/asrouter/MessagingTargetingConstants.sys.mjs": [
+        "../../../browser/components/asrouter/modules/MessagingTargetingConstants.sys.mjs"
+      ],
       "resource:///modules/asrouter/MomentsPageHub.sys.mjs": [
         "../../../browser/components/asrouter/modules/MomentsPageHub.sys.mjs"
       ],
@@ -1683,6 +1716,9 @@
       ],
       "resource:///modules/asrouter/PanelTestProvider.sys.mjs": [
         "../../../browser/components/asrouter/modules/PanelTestProvider.sys.mjs"
+      ],
+      "resource:///modules/asrouter/PreonboardingSplash.sys.mjs": [
+        "../../../browser/components/asrouter/modules/PreonboardingSplash.sys.mjs"
       ],
       "resource:///modules/asrouter/RemoteL10n.sys.mjs": [
         "../../../browser/components/asrouter/modules/RemoteL10n.sys.mjs"
@@ -1786,6 +1822,9 @@
       "resource:///modules/profiles/SelectableProfileService.sys.mjs": [
         "../../../browser/components/profiles/SelectableProfileService.sys.mjs"
       ],
+      "resource:///modules/referrals/Referrals.sys.mjs": [
+        "../../../browser/components/referrals/Referrals.sys.mjs"
+      ],
       "resource:///modules/sessionstore/GlobalState.sys.mjs": [
         "../../../browser/components/sessionstore/GlobalState.sys.mjs"
       ],
@@ -1842,30 +1881,6 @@
       ],
       "resource:///modules/sessionstore/TabStateFlusher.sys.mjs": [
         "../../../browser/components/sessionstore/TabStateFlusher.sys.mjs"
-      ],
-      "resource:///modules/syncedtabs/EventEmitter.sys.mjs": [
-        "../../../browser/components/syncedtabs/EventEmitter.sys.mjs"
-      ],
-      "resource:///modules/syncedtabs/SyncedTabsDeckComponent.sys.mjs": [
-        "../../../browser/components/syncedtabs/SyncedTabsDeckComponent.sys.mjs"
-      ],
-      "resource:///modules/syncedtabs/SyncedTabsDeckStore.sys.mjs": [
-        "../../../browser/components/syncedtabs/SyncedTabsDeckStore.sys.mjs"
-      ],
-      "resource:///modules/syncedtabs/SyncedTabsDeckView.sys.mjs": [
-        "../../../browser/components/syncedtabs/SyncedTabsDeckView.sys.mjs"
-      ],
-      "resource:///modules/syncedtabs/SyncedTabsListStore.sys.mjs": [
-        "../../../browser/components/syncedtabs/SyncedTabsListStore.sys.mjs"
-      ],
-      "resource:///modules/syncedtabs/TabListComponent.sys.mjs": [
-        "../../../browser/components/syncedtabs/TabListComponent.sys.mjs"
-      ],
-      "resource:///modules/syncedtabs/TabListView.sys.mjs": [
-        "../../../browser/components/syncedtabs/TabListView.sys.mjs"
-      ],
-      "resource:///modules/syncedtabs/util.sys.mjs": [
-        "../../../browser/components/syncedtabs/util.sys.mjs"
       ],
       "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs": [
         "../../../browser/components/taskbartabs/TaskbarTabs.sys.mjs"
@@ -2874,6 +2889,12 @@
       ],
       "resource://devtools/client/inspector/computed/computed.js": [
         "../../../devtools/client/inspector/computed/computed.js"
+      ],
+      "resource://devtools/client/inspector/emulation/actions/emulation.js": [
+        "../../../devtools/client/inspector/emulation/actions/emulation.js"
+      ],
+      "resource://devtools/client/inspector/emulation/actions/index.js": [
+        "../../../devtools/client/inspector/emulation/actions/index.js"
       ],
       "resource://devtools/client/inspector/extensions/actions/index.js": [
         "../../../devtools/client/inspector/extensions/actions/index.js"
@@ -5857,9 +5878,6 @@
       "resource://gre/modules/ContentRelevancyManager.sys.mjs": [
         "../../../toolkit/components/contentrelevancy/ContentRelevancyManager.sys.mjs"
       ],
-      "resource://gre/modules/ContextualIdentityService.sys.mjs": [
-        "../../../toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs"
-      ],
       "resource://gre/modules/CoveragePing.sys.mjs": [
         "../../../toolkit/components/telemetry/pings/CoveragePing.sys.mjs"
       ],
@@ -5868,9 +5886,6 @@
       ],
       "resource://gre/modules/CrashService.sys.mjs": [
         "../../../toolkit/components/crashes/CrashService.sys.mjs"
-      ],
-      "resource://gre/modules/CrashSubmit.sys.mjs": [
-        "../../../toolkit/crashreporter/CrashSubmit.sys.mjs"
       ],
       "resource://gre/modules/Credentials.sys.mjs": [
         "../../../services/fxaccounts/Credentials.sys.mjs"
@@ -6469,6 +6484,9 @@
       "resource://gre/modules/RemoteSettingsCrashPull.sys.mjs": [
         "../../../toolkit/components/crashes/RemoteSettingsCrashPull.sys.mjs"
       ],
+      "resource://gre/modules/RemoteWebNavigation.sys.mjs": [
+        "../../../toolkit/components/remotebrowserutils/RemoteWebNavigation.sys.mjs"
+      ],
       "resource://gre/modules/ResetProfile.sys.mjs": [
         "../../../toolkit/modules/ResetProfile.sys.mjs"
       ],
@@ -6702,9 +6720,6 @@
       ],
       "resource://gre/modules/components-utils/WindowsInstallsInfo.sys.mjs": [
         "../../../toolkit/components/utils/WindowsInstallsInfo.sys.mjs"
-      ],
-      "resource://gre/modules/components-utils/WindowsVersionInfo.sys.mjs": [
-        "../../../toolkit/components/utils/WindowsVersionInfo.sys.mjs"
       ],
       "resource://gre/modules/components-utils/mozjexl.sys.mjs": [
         "../../../toolkit/components/utils/mozjexl.sys.mjs"

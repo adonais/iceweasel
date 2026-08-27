@@ -117,6 +117,12 @@ class TooltipsOverlay {
   #isStarted = false;
   #view;
 
+  #compatibilityTooltipHelper;
+  #cssExplainersTooltipHelper;
+  #cssQueryContainerTooltipHelper;
+  #cssSelectorWarningsTooltipHelper;
+  #inactiveCssTooltipHelper;
+
   get isEditing() {
     for (const [, tooltip] of this.#instances) {
       if (typeof tooltip.isEditing == "function" && tooltip.isEditing()) {
@@ -140,13 +146,6 @@ class TooltipsOverlay {
     }
 
     this.#isStarted = true;
-
-    this.inactiveCssTooltipHelper = new InactiveCssTooltipHelper();
-    this.compatibilityTooltipHelper = new CssCompatibilityTooltipHelper();
-    this.cssExplainersTooltipHelper = new CssExplainersTooltipHelper();
-    this.cssQueryContainerTooltipHelper = new CssQueryContainerTooltipHelper();
-    this.cssSelectorWarningsTooltipHelper =
-      new CssSelectorWarningsTooltipHelper();
 
     // Instantiate the interactiveTooltip and preview tooltip when the
     // rule/computed view is hovered over in order to call
@@ -247,8 +246,14 @@ class TooltipsOverlay {
       tooltip.destroy();
     }
 
-    this.inactiveCssTooltipHelper.destroy();
-    this.compatibilityTooltipHelper.destroy();
+    if (this.#inactiveCssTooltipHelper) {
+      this.#inactiveCssTooltipHelper.destroy();
+      this.#inactiveCssTooltipHelper = null;
+    }
+    if (this.#compatibilityTooltipHelper) {
+      this.#compatibilityTooltipHelper.destroy();
+      this.#compatibilityTooltipHelper = null;
+    }
 
     this.#isStarted = false;
   }
@@ -437,7 +442,11 @@ class TooltipsOverlay {
       const nodeCompatibilityInfo =
         await this.#view.getNodeCompatibilityInfo(target);
 
-      await this.compatibilityTooltipHelper.setContent(
+      if (!this.#compatibilityTooltipHelper) {
+        this.#compatibilityTooltipHelper = new CssCompatibilityTooltipHelper();
+      }
+
+      await this.#compatibilityTooltipHelper.setContent(
         nodeCompatibilityInfo,
         this.getTooltip("interactiveTooltip")
       );
@@ -466,7 +475,10 @@ class TooltipsOverlay {
         return false;
       }
 
-      await this.inactiveCssTooltipHelper.setContent(
+      if (!this.#inactiveCssTooltipHelper) {
+        this.#inactiveCssTooltipHelper = new InactiveCssTooltipHelper();
+      }
+      await this.#inactiveCssTooltipHelper.setContent(
         nodeInfo.value,
         this.getTooltip("interactiveTooltip")
       );
@@ -485,7 +497,12 @@ class TooltipsOverlay {
         return false;
       }
 
-      await this.cssQueryContainerTooltipHelper.setContent(
+      if (!this.#cssQueryContainerTooltipHelper) {
+        this.#cssQueryContainerTooltipHelper =
+          new CssQueryContainerTooltipHelper();
+      }
+
+      await this.#cssQueryContainerTooltipHelper.setContent(
         nodeInfo.value,
         this.getTooltip("interactiveTooltip")
       );
@@ -507,7 +524,11 @@ class TooltipsOverlay {
         return false;
       }
 
-      await this.cssExplainersTooltipHelper.setContent(
+      if (!this.#cssExplainersTooltipHelper) {
+        this.#cssExplainersTooltipHelper = new CssExplainersTooltipHelper();
+      }
+
+      await this.#cssExplainersTooltipHelper.setContent(
         nodeInfo.value,
         this.getTooltip("interactiveTooltip")
       );
@@ -517,7 +538,12 @@ class TooltipsOverlay {
     }
 
     if (type === TOOLTIP_CSS_SELECTOR_WARNINGS) {
-      await this.cssSelectorWarningsTooltipHelper.setContent(
+      if (!this.#cssSelectorWarningsTooltipHelper) {
+        this.#cssSelectorWarningsTooltipHelper =
+          new CssSelectorWarningsTooltipHelper();
+      }
+
+      await this.#cssSelectorWarningsTooltipHelper.setContent(
         nodeInfo.value,
         this.getTooltip("interactiveTooltip")
       );

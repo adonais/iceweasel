@@ -14,7 +14,9 @@ namespace js {
 using JSONParseNode = JSString;
 
 class ParseRecordObject : public NativeObject {
-  enum { ParseNodeSlot, ValueSlot, SlotCount };
+  JS_DEFINE_TYPED_SLOT(0, PARSE_NODE_SLOT, String, Undefined);
+  static constexpr uint32_t VALUE_SLOT = 1;
+  static constexpr uint32_t SLOT_COUNT = 2;
 
  public:
   static const JSClass class_;
@@ -27,16 +29,16 @@ class ParseRecordObject : public NativeObject {
   // The source text that was parsed for this record. According to the spec, we
   // don't track this for objects and arrays, so it will be a null pointer.
   JSONParseNode* getParseNode() const {
-    const Value& slot = getReservedSlot(ParseNodeSlot);
+    const Value& slot = getReservedSlotTyped(PARSE_NODE_SLOT);
     return slot.isUndefined() ? nullptr : slot.toString();
   }
 
   // The original value corresponding to this record, used to determine if the
   // reviver function has modified it.
-  const Value& getValue() const { return getReservedSlot(ValueSlot); }
+  const Value& getValue() const { return getReservedSlot(VALUE_SLOT); }
 
   void setValue(JS::Handle<JS::Value> value) {
-    setReservedSlot(ValueSlot, value);
+    setReservedSlot(VALUE_SLOT, value);
   }
 
   bool hasValue() const { return !getValue().isUndefined(); }

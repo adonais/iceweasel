@@ -33,8 +33,6 @@ AsyncImagePipelineOp::AsyncImagePipelineOp(AsyncImagePipelineOp&&) = default;
 AsyncImagePipelineOp::AsyncImagePipelineOp(const AsyncImagePipelineOp&) =
     default;
 
-AsyncImagePipelineOps::~AsyncImagePipelineOps() = default;
-
 void AsyncImagePipelineOps::HandleOps(wr::TransactionBuilder& aTxn) {
   MOZ_ASSERT(!mList.empty());
 

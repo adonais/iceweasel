@@ -532,7 +532,7 @@ void L10nOverlays::TranslateElement(Element& aElement,
       nsContentUtils::ParseFragmentHTML(
           NS_ConvertUTF8toUTF16(aTranslation.mValue), fragment,
           nsGkAtoms::_template, kNameSpaceID_XHTML, false, true,
-          sanitizationFlags);
+          sanitizationFlags, mozilla::Nothing());
       if (NS_WARN_IF(aRv.Failed())) {
         return;
       }

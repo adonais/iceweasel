@@ -1,4 +1,4 @@
-# Testing
+# Android testing
 
 *This document is intended to explain which testing styles and technologies the Android teams at Mozilla use and why. It should be accessible to developers new to testing on Android.*
 

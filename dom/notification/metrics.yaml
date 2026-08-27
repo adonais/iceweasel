@@ -67,3 +67,67 @@ web_notification:
     notification_emails:
       - krosylight@mozilla.com
     expires: never
+  shown:
+    type: event
+    description: >
+      The event of a notification being shown to the user.
+    extra_keys:
+      site_category:
+        description: Category of the site that triggered the notification
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046221
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046221
+    notification_emails:
+      - krosylight@mozilla.com
+    expires: 165
+  clicked:
+    type: event
+    description: >
+      The event of a notification being clicked by the user.
+    extra_keys:
+      site_category:
+        description: Category of the site that triggered the notification
+        type: string
+      action:
+        description: How this click happened
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046221
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046221
+    notification_emails:
+      - krosylight@mozilla.com
+    expires: 165
+  ignored:
+    type: event
+    description: >
+      The event of a notification being ignored by the user, letting the
+      notification enter the notification center.
+    extra_keys:
+      site_category:
+        description: Category of the site that triggered the notification
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046221
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046221
+    notification_emails:
+      - krosylight@mozilla.com
+    expires: 165
+  dismissed:
+    type: event
+    description: >
+      The event of a notification being dismissed by the user.
+    extra_keys:
+      site_category:
+        description: Category of the site that triggered the notification
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046221
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046221
+    notification_emails:
+      - krosylight@mozilla.com
+    expires: 165

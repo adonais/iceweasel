@@ -1,0 +1,236 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>nsIDOMWindowUtils::sendQueryContentEvent w/QUERY_CARET_RECT test</title>
+<script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+<script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
+<link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css">
+<style>
+textarea {
+  position: absolute;
+  left: 0em;
+  top: 0em;
+  font-size: 13.3333px; /* 10pt */
+  font-family: monospace;
+  line-height: 20px;
+  letter-spacing: 0px;
+  overflow: hidden;
+  width:800px;
+  height:400px;
+}
+</style>
+
+<script type="application/javascript">
+  var SimpleTest = window.opener.SimpleTest;
+
+  function ok() { window.opener.ok.apply(window.opener, arguments); }
+  function done() { window.opener.done.apply(window.opener, arguments); }
+
+  function getSelection(aElement) {
+    // aElement is know to be a textarea.
+    return aElement.editor.selection;
+  }
+
+  SimpleTest.waitForFocus(async () => {
+    const domWinUtils = windowUtils;
+
+    const textarea = document.getElementById("text");
+
+    textarea.focus();
+
+    const textareaRect = textarea.getBoundingClientRect();
+    info(
+      `<textarea>.getBoundingClientRect()={x=${textareaRect.x}, y=${
+        textareaRect.y
+      }, width=${textareaRect.width}, height=${textareaRect.height}}`
+    );
+
+    const textareaRectInTopLevelWidget =
+      domWinUtils.sendQueryContentEvent(domWinUtils.QUERY_EDITOR_RECT, 0, 0, 0, 0);
+    info(
+      `editor rect={x=${textareaRectInTopLevelWidget.left}, y=${textareaRectInTopLevelWidget.top}, width=${
+        textareaRectInTopLevelWidget.width
+      }, height=${textareaRectInTopLevelWidget.height}}`
+    );
+
+    // Unfortunately, the result of query content event is relative to the
+    // client rect of the top level window. However, it seems that we cannot
+    // compute it from mozInnerScreenXY, etc. Therefore, let's use the editor
+    // rect to know the offset of this window.
+    const windowOffsetInTopLevelWidget = {
+      x: textareaRectInTopLevelWidget.left - textareaRect.x * devicePixelRatio,
+      y: textareaRectInTopLevelWidget.top - textareaRect.y * devicePixelRatio,
+    };
+    const topWindow = browsingContext.topChromeWindow;
+    info(
+      `window offset in the top level widget={x=${
+        windowOffsetInTopLevelWidget.x
+      }, y=${windowOffsetInTopLevelWidget.y} (devicePixelRatio=${
+        topWindow.devicePixelRatio
+      }, topWindow: {screenX: ${topWindow.screenX}, screenY: ${
+        topWindow.screenY
+      }, mozInnerScreenX: ${topWindow.mozInnerScreenX}, mozInnerScreenY: ${
+        topWindow.mozInnerScreenY
+      }}, window: {screenX: ${screenX}, screenY: ${screenY}, mozInnerScreenX: ${
+        mozInnerScreenX
+      }, mozInnerScreenY: ${mozInnerScreenY}})`
+    );
+
+    function testCaretPosition(aSummary, aDomWinUtils, aOffset, aExpected) {
+      const charRect = aDomWinUtils.sendQueryContentEvent(aDomWinUtils.QUERY_TEXT_RECT, aOffset, 1, 0, 0);
+      const caretRect = aDomWinUtils.sendQueryContentEvent(
+                  aDomWinUtils.QUERY_CARET_RECT,
+                  aOffset, 0, 0, 0);
+      aSummary = `${aSummary} (aOffset=${aOffset})`
+      ok(caretRect, `${aSummary}: sendQueryContentEvent() should return the result`);
+      ok(caretRect.succeeded, `${aSummary}: sendQueryContentEvent() should've succeeded`);
+      isfuzzy(
+        caretRect.left,
+        windowOffsetInTopLevelWidget.x + (textareaRect.x + aExpected.left) * devicePixelRatio,
+        Math.ceil(10 * topWindow.devicePixelRatio), // about 10px width
+        `${aSummary}: caretRect.left should be around the expected X-coordinate (expected left=${
+          aExpected.left
+        }, ratio=${devicePixelRatio}, textarea offset=${
+          textareaRect.x
+        }, window offset=${windowOffsetInTopLevelWidget.x}, charRect={x: ${charRect.left}, y: ${
+          charRect.top
+        }, width: ${charRect.width}, height: ${caretRect.height}})`
+      );
+      isfuzzy(
+        caretRect.top,
+        windowOffsetInTopLevelWidget.y + (textareaRect.y + aExpected.top) * devicePixelRatio,
+        Math.ceil(20 * topWindow.devicePixelRatio), // about 20px height
+        `${aSummary}: caretRect.top should be around the expected Y-coordinate (expected top=${
+          aExpected.top
+        }, ratio=${devicePixelRatio}, textarea offset=${
+          textareaRect.y
+        }, window offset=${windowOffsetInTopLevelWidget.y}, charRect={x: ${charRect.left}, y: ${
+          charRect.top
+        }, width: ${charRect.width}, height: ${caretRect.height}})`
+      );
+    }
+
+    {
+      const cp = document.caretPositionFromPoint(10 + textareaRect.x, 395 + textareaRect.y);
+      const offset = cp.offset;
+      textarea.selectionStart = textarea.selectionEnd = offset;
+      const summary = `Clicked at (10, 395)`;
+      is(
+        cp.offsetNode,
+        textarea,
+        `${summary}: caretPositionFromPoint() should return the <textarea>`
+      );
+
+      const selection = getSelection(text);
+
+      testCaretPosition(
+        summary + ", textarea.selectionStart",
+        domWinUtils,
+        textarea.selectionStart,
+        { left: 10, top: 395 },
+      );
+
+      testCaretPosition(
+        summary + ", textarea.selectionEnd",
+        domWinUtils,
+        textarea.selectionEnd,
+        { left: 10, top: 395 },
+      );
+
+      testCaretPosition(
+        summary + ", selection.anchorOffset",
+        domWinUtils,
+        selection.anchorOffset,
+        { left: 10, top: 395 },
+      );
+
+      testCaretPosition(
+        summary + ", selection.focusOffset",
+        domWinUtils,
+        selection.focusOffset,
+        { left: 10, top: 395 },
+      );
+    }
+
+    {
+      const cp = document.caretPositionFromPoint(395 + textareaRect.x, 395 + textareaRect.y);
+      const offset = cp.offset;
+      textarea.selectionStart = textarea.selectionEnd = offset;
+      const summary = `Clicked at (395, 395)`;
+      is(
+        cp.offsetNode,
+        textarea,
+        `${summary}: caretPositionFromPoint() should return the <textarea>`
+      );
+
+      const selection = getSelection(text);
+
+      testCaretPosition(
+        summary + ", textarea.selectionStart",
+        domWinUtils,
+        textarea.selectionStart,
+        { left: 395, top: 395 },
+      );
+
+      testCaretPosition(
+        summary + ", textarea.selectionEnd",
+        domWinUtils,
+        textarea.selectionEnd,
+        { left: 395, top: 395 },
+      );
+
+      testCaretPosition(
+        summary + ", selection.anchorOffset",
+        domWinUtils,
+        selection.anchorOffset,
+        { left: 395, top: 395 },
+      );
+
+      testCaretPosition(
+        summary + ", selection.focusOffset",
+        domWinUtils,
+        selection.focusOffset,
+        { left: 395, top: 395 },
+      );
+    }
+
+    done();
+  }, window);
+
+</script>
+
+<body>
+<textarea id="text" wrap="on">
+Alice was beginning to get very tired of sitting by her sister on the bank, 
+and of having nothing to do: once or twice she had peeped into the book 
+her sister was reading, but it had no pictures or conversations in it, 
+`and what is the use of a book,' thought Alice `without pictures or 
+conversation?'
+
+So she was considering in her own mind (as well as she could, for the 
+hot day made her feel very sleepy and stupid), whether the pleasure of 
+making a daisy-chain would be worth the trouble of getting up and 
+picking the daisies, when suddenly a White Rabbit with pink In another 
+moment down went Alice after it, never once considering how in the world
+she was to get out again. 
+
+The rabbit-hole went straight on like a tunnel for some way, and then 
+dipped suddenly down, so suddenly that Alice had not a moment to think 
+about stopping herself before she found herself falling down a very deep
+well.
+
+Either the well was very deep, or she fell very slowly, for she had 
+plenty of time as she went down to look about her and to wonder what was
+ going to happen next. First, she tried to look down and make out what 
+she was coming to, but it was too dark to see anything; then she looked 
+at the sides of the well, and noticed that they were filled with 
+cupboards and book-shelves; here and there she saw maps and pictures 
+hung upon pegs. She took down a jar from one of the shelves as she 
+passed; it was labelled `ORANGE MARMALADE', but to her great 
+disappointment it was empty: she did not like to drop the jar for fear 
+of killing somebody, so managed to put it into one of the cupboards as 
+she fell past it. 
+</textarea>
+<div id="container"></div>
+</body>
+</html>

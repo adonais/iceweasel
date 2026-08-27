@@ -123,13 +123,22 @@ class GamepadManager final : public nsIObserver {
                                              nsGlobalWindowInner* aWindow);
 
   bool SetGamepadByEvent(const GamepadChangeEvent& aEvent,
-                         nsGlobalWindowInner* aWindow = nullptr);
+                         nsGlobalWindowInner* aWindow = nullptr,
+                         bool aContainsUserGesture = false);
   // To avoid unintentionally causing the gamepad be activated.
   // Returns false if this gamepad hasn't been seen by this window
   // and the axis move data is less than AXIS_FIRST_INTENT_THRESHOLD_VALUE.
   bool AxisMoveIsFirstIntent(nsGlobalWindowInner* aWindow,
                              GamepadHandle aHandle,
                              const GamepadChangeEvent& aEvent);
+  // https://w3c.github.io/gamepad/#dfn-gamepad-user-gesture
+  // Returns true if applying |aEvent| to |aGamepad| is a gamepad user
+  // gesture: a button press transition, or an axis move crossing
+  // AXIS_FIRST_INTENT_THRESHOLD_VALUE. Must be called before the
+  // corresponding SetButton()/SetAxis() call overwrites |aGamepad|'s
+  // previous state, since it compares against that state.
+  bool EventContainsUserGesture(Gamepad* aGamepad,
+                                const GamepadChangeEvent& aEvent);
   bool MaybeWindowHasSeenGamepad(nsGlobalWindowInner* aWindow,
                                  GamepadHandle aHandle);
   // Returns true if we have already sent data from this gamepad

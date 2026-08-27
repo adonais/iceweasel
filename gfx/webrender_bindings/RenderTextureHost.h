@@ -101,6 +101,8 @@ class RenderTextureHost {
     return false;
   }
 
+  virtual void UnlockSWGLCompositeSurface() {}
+
   virtual RefPtr<layers::TextureSource> CreateTextureSource(
       layers::TextureSourceProvider* aProvider);
 

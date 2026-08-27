@@ -29,8 +29,14 @@ add_task(
       // of the time a Debugger.Source will only have a single Debugger.Script
       // associated with a given function, but in the context of explicitly
       // cloned JSScripts, this is not the case, and we need to handle that.
-      loadSubScript(SOURCE_URL, debuggee1);
-      loadSubScript(SOURCE_URL, debuggee2);
+      loadSubScriptWithOptions(SOURCE_URL, {
+        target: debuggee1,
+        allowUnsafeURL: true,
+      });
+      loadSubScriptWithOptions(SOURCE_URL, {
+        target: debuggee2,
+        allowUnsafeURL: true,
+      });
 
       await promise;
 

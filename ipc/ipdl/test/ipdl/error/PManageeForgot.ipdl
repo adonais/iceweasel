@@ -1,0 +1,12 @@
+//error: |manages| declaration in protocol `PForgottenManager' does not match any |manager| declaration in protocol `PManageeForgot'
+
+include protocol PForgottenManager;
+
+// See PForgottenManager. This includes PForgottenManager to ensure that
+// loading this file fails.
+
+[ChildProc=any]
+protocol PManageeForgot {
+child:
+    async __delete__();
+};

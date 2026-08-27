@@ -9,9 +9,6 @@
 namespace mozilla {
 
 template <typename Tag>
-ScrollGeneration<Tag>::ScrollGeneration() : mValue(0) {}
-
-template <typename Tag>
 ScrollGeneration<Tag>::ScrollGeneration(uint64_t aValue) : mValue(aValue) {}
 
 template <typename Tag>

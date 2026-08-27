@@ -21,7 +21,11 @@ using namespace mozilla::dom;
 
 // Column class that caches all the info about our column.
 nsTreeColumn::nsTreeColumn(nsTreeColumns* aColumns, dom::Element* aElement)
-    : mContent(aElement), mColumns(aColumns), mIndex(0), mPrevious(nullptr) {
+    : mContent(aElement),
+      mColumns(aColumns),
+      mIndex(0),
+      mTextAlignment(StyleTextAlign::Start),
+      mPrevious(nullptr) {
   NS_ASSERTION(aElement && aElement->NodeInfo()->Equals(nsGkAtoms::treecol,
                                                         kNameSpaceID_XUL),
                "nsTreeColumn's content must be a <xul:treecol>");

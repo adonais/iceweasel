@@ -96,10 +96,12 @@
     }
   }
 
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   .keypoints-header:has(+ .keypoints-content:not(.hidden))::before {
     transform: rotateZ(-180deg);
   }
 
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
   &:dir(rtl) .keypoints-header:has(+ .keypoints-content:not(.hidden))::before {
     transform: rotateZ(180deg);
   }

@@ -4,10 +4,13 @@
 
 :root {
   --grid-column-row-gap: 8px;
-  padding: calc(var(--focus-outline-width) + var(--focus-outline-offset));
   &[dialogroot] {
     background-color: var(--background-color-box);
   }
+}
+
+body {
+  padding: calc(var(--focus-outline-width) + var(--focus-outline-offset));
 }
 
 .persist-checkbox label {

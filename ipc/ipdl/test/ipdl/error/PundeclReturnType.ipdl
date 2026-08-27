@@ -1,0 +1,8 @@
+//error: argument typename `FARGLEGARGLE' of message `Msg' has not been declared
+
+[ChildProc=any]
+sync protocol PundeclReturnType {
+
+child:  sync Msg() returns (FARGLEGARGLE r);
+
+};

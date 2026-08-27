@@ -4,6 +4,7 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <CheckBox xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/checkbox"
     android:layout_width="match_parent"
     android:layout_height="@dimen/preference_row_height"
@@ -14,4 +15,5 @@
     android:paddingBottom="@dimen/preference_padding_top"
     android:paddingEnd="@dimen/preference_padding_horizontal"
     android:paddingStart="@dimen/preference_padding_horizontal"
-    android:paddingTop="@dimen/preference_padding_top" />
+    android:paddingTop="@dimen/preference_padding_top"
+    tools:ignore="Overdraw" />

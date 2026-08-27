@@ -1,4 +1,4 @@
-import { render, fireEvent } from "@testing-library/react";
+import { render, fireEvent, act } from "@testing-library/react";
 import { WrapWithProvider } from "test/jest/test-utils";
 import { Provider } from "react-redux";
 import { createStore, combineReducers } from "redux";
@@ -281,6 +281,28 @@ describe("<Widgets> row toggle", () => {
     });
   }
 
+  function startRowHeightAnimation() {
+    const { container, store } = renderWidgets(novaStateWith(false));
+    const widgetsContainer = container.querySelector("#widgets-container");
+    jest
+      .spyOn(widgetsContainer, "getBoundingClientRect")
+      .mockReturnValueOnce({ height: 40 })
+      .mockReturnValueOnce({ height: 80 });
+
+    // The click captures the pre-toggle height; the pref change round-trips
+    // from the main process as PREF_CHANGED, flipping rowExpanded and running
+    // the height animation effect.
+    fireEvent.click(container.querySelector(".widgets-row-toggle"));
+    act(() => {
+      store.dispatch({
+        type: at.PREF_CHANGED,
+        data: { name: "widgets.row.expanded", value: true },
+      });
+    });
+
+    return widgetsContainer;
+  }
+
   it("renders the toggle button when nova is enabled", () => {
     const { container } = renderWidgets(novaStateWith(false));
     expect(container.querySelector(".widgets-row-toggle")).toBeInTheDocument();
@@ -321,6 +343,62 @@ describe("<Widgets> row toggle", () => {
         data: expect.objectContaining({ action_value: "expand_row" }),
       })
     );
+  });
+
+  it("clears row height animation if transitionend does not fire", () => {
+    jest.useFakeTimers();
+    try {
+      const widgetsContainer = startRowHeightAnimation();
+
+      expect(widgetsContainer).toHaveClass("is-animating-height");
+      expect(widgetsContainer.style.height).toBe("80px");
+
+      act(() => {
+        jest.runOnlyPendingTimers();
+      });
+
+      expect(widgetsContainer).not.toHaveClass("is-animating-height");
+      expect(widgetsContainer.style.height).toBe("");
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("clears row height animation on transitionend", () => {
+    const widgetsContainer = startRowHeightAnimation();
+
+    expect(widgetsContainer).toHaveClass("is-animating-height");
+    expect(widgetsContainer.style.height).toBe("80px");
+
+    fireEvent.transitionEnd(widgetsContainer, { propertyName: "height" });
+
+    expect(widgetsContainer).not.toHaveClass("is-animating-height");
+    expect(widgetsContainer.style.height).toBe("");
+  });
+
+  it("skips the row height animation under prefers-reduced-motion", () => {
+    const originalMatchMedia = globalThis.matchMedia;
+    globalThis.matchMedia = () => ({ matches: true });
+    try {
+      const { container, store } = renderWidgets(novaStateWith(false));
+      const widgetsContainer = container.querySelector("#widgets-container");
+      const rectSpy = jest.spyOn(widgetsContainer, "getBoundingClientRect");
+
+      fireEvent.click(container.querySelector(".widgets-row-toggle"));
+      act(() => {
+        store.dispatch({
+          type: at.PREF_CHANGED,
+          data: { name: "widgets.row.expanded", value: true },
+        });
+      });
+
+      // The container is never measured, so the FLIP animation never starts.
+      expect(rectSpy).not.toHaveBeenCalled();
+      expect(widgetsContainer).not.toHaveClass("is-animating-height");
+      expect(widgetsContainer.style.height).toBe("");
+    } finally {
+      globalThis.matchMedia = originalMatchMedia;
+    }
   });
 });
 

@@ -36,6 +36,7 @@ try-xpcshell:
     treeherder:
         symbol: perftest(xpcshell)
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -58,6 +59,7 @@ webpagetest-firefox:
     scopes:
         - secrets:get:project/perftest/gecko/level-{level}/perftest-login
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -80,6 +82,7 @@ webpagetest-chrome:
     scopes:
         - secrets:get:project/perftest/gecko/level-{level}/perftest-login
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -97,6 +100,7 @@ try-browsertime:
     treeherder:
         symbol: perftest(bt)
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -116,6 +120,7 @@ browsertime-sample:
         cron: false
     run-on-projects: [mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -134,6 +139,7 @@ domcount:
         batch: false
         cron: false
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -157,6 +163,7 @@ service-worker:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -190,6 +197,7 @@ http3:
         # Disabled due to bug 1849400
         cron: false
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -214,6 +222,7 @@ busy-trr:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -315,6 +324,7 @@ livesites:
             default:
                 - [null, browsertime.waitTime=1000]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -340,6 +350,7 @@ controlled:
         batch: false
         cron: false
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -363,6 +374,7 @@ perfstats:
     attributes:
         cron: false
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -392,6 +404,7 @@ record-websites:
         - secrets:get:project/releng/gecko/build/level-{level}/conditioned-profiles
         - secrets:get:project/perftest/gecko/level-{level}/perftest-login
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -411,6 +424,7 @@ side-by-side:
         symbol: perftest(side-by-side)
         tier: 2
     run:
+        clone-with: hg
         using: run-task
         sparse-profile: perftest
         checkout: true
@@ -432,6 +446,7 @@ mwu-change-detector:
         symbol: perftest-detect(mwu)
         tier: 2
     run:
+        clone-with: hg
         using: run-task
         sparse-profile: perftest
         checkout: true
@@ -460,6 +475,7 @@ ml-perf:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -487,6 +503,7 @@ ml-summarizer-perf:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -511,6 +528,7 @@ ml-llama-summarizer-perf:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -558,6 +576,7 @@ ml-security-perf:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -585,6 +604,7 @@ ml-multi-perf:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -610,6 +630,7 @@ ml-perf-suggest-ft:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -635,6 +656,7 @@ ml-perf-suggest-inf:
         cron: false
     run-on-projects: []
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -650,6 +672,8 @@ ml-perf-autofill:
         fetch:
             - ort.jsep.wasm
             - mozilla-autofill
+            - mozilla-autofill-embed
+            - mozilla-autofill-head
     description: Run ML Autofill Model
     treeherder:
         symbol: perftest(ml-perf-autofill)
@@ -659,6 +683,7 @@ ml-perf-autofill:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -685,6 +710,7 @@ tr8ns-perf-tiny:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -710,6 +736,7 @@ tr8ns-perf-basememory:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -735,6 +762,7 @@ tr8ns-perf-base:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -759,6 +787,7 @@ ml-perf-smart-tab:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -786,6 +815,7 @@ ml-perf-smart-tab-cluster:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -815,6 +845,7 @@ ml-perf-speecht5-tts:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -837,6 +868,7 @@ perftest-accessibility:
         cron: false
     run-on-projects: [autoland, mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
@@ -886,6 +918,7 @@ perftest-places:
         cron: false
     run-on-projects: [mozilla-central]
     run:
+        clone-with: hg
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&

@@ -17,16 +17,14 @@
 // Adapted from
 // https://github.com/Microsoft/GSL/blob/3819df6e378ffccf0e29465afe99c3b324c2aa70/tests/Span_tests.cpp
 
+#include <type_traits>
+
 #include "gtest/gtest.h"
-
 #include "mozilla/Array.h"
+#include "mozilla/Range.h"
 #include "mozilla/Span.h"
-
 #include "nsString.h"
 #include "nsTArray.h"
-#include "mozilla/Range.h"
-
-#include <type_traits>
 
 #define SPAN_TEST(name) TEST(SpanTest, name)
 #define CHECK_THROW(a, b)

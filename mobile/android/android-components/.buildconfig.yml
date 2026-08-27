@@ -297,23 +297,49 @@ projects:
     publish: true
     upstream_dependencies:
     - components:browser-errorpages
+    - components:browser-icons
+    - components:browser-menu
+    - components:browser-menu2
+    - components:browser-session-storage
     - components:browser-state
+    - components:browser-storage-sync
+    - components:browser-tabstray
+    - components:browser-thumbnails
+    - components:browser-toolbar
     - components:compose-base
     - components:concept-awesomebar
     - components:concept-base
     - components:concept-engine
     - components:concept-fetch
+    - components:concept-menu
     - components:concept-storage
     - components:concept-storage-bookmarks
+    - components:concept-sync
+    - components:concept-tabstray
+    - components:concept-toolbar
+    - components:feature-awesomebar
+    - components:feature-search
+    - components:feature-session
+    - components:feature-tabs
+    - components:feature-top-sites
     - components:lib-publicsuffixlist
     - components:lib-state
+    - components:service-location
+    - components:service-merino-manifest
+    - components:support-appservices
     - components:support-base
+    - components:support-images
     - components:support-ktx
+    - components:support-locale
+    - components:support-remotesettings
     - components:support-test
     - components:support-utils
     - components:tooling-lint
+    - components:ui-autocomplete
     - components:ui-colors
     - components:ui-icons
+    - components:ui-tabcounter
+    - components:ui-widgets
   components:compose-base:
     description: A component containing base Composable components based on Acorn
       Design System.
@@ -1004,27 +1030,50 @@ projects:
     publish: true
     upstream_dependencies:
     - components:browser-errorpages
+    - components:browser-icons
+    - components:browser-menu
+    - components:browser-menu2
+    - components:browser-session-storage
     - components:browser-state
+    - components:browser-storage-sync
+    - components:browser-tabstray
+    - components:browser-thumbnails
+    - components:browser-toolbar
+    - components:compose-base
     - components:concept-awesomebar
     - components:concept-base
     - components:concept-engine
     - components:concept-fetch
+    - components:concept-menu
     - components:concept-storage
     - components:concept-storage-bookmarks
+    - components:concept-sync
+    - components:concept-tabstray
     - components:concept-toolbar
+    - components:feature-awesomebar
+    - components:feature-search
     - components:feature-session
+    - components:feature-tabs
+    - components:feature-top-sites
     - components:lib-publicsuffixlist
     - components:lib-state
+    - components:service-location
+    - components:service-merino-manifest
     - components:service-nimbus
     - components:support-appservices
     - components:support-base
+    - components:support-images
     - components:support-ktx
     - components:support-locale
     - components:support-remotesettings
     - components:support-test
     - components:support-utils
     - components:tooling-lint
+    - components:ui-autocomplete
+    - components:ui-colors
     - components:ui-icons
+    - components:ui-tabcounter
+    - components:ui-widgets
   components:feature-importer:
     description: A feature that handles importing bookmarks and passwords.
     path: components/feature/importer
@@ -2648,6 +2697,16 @@ projects:
     - components:support-ktx
     - components:support-test
     - components:support-utils
+    - components:tooling-lint
+  components:service-merino-weather:
+    description: A library for fetching weather forecasts from the Merino service.
+    path: components/service/merino-weather
+    publish: true
+    upstream_dependencies:
+    - components:concept-base
+    - components:concept-fetch
+    - components:support-base
+    - components:support-test
     - components:tooling-lint
   components:service-nimbus:
     description: A client-side experiment SDK

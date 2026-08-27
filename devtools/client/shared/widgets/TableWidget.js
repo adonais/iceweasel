@@ -1677,12 +1677,9 @@ class Column {
         ),
       ].map(cell => cell.clientHeight);
 
-      // Sort heights from smallest to largest
-      cellHeights.sort((a, b) => a - b);
-
       // Check for height mismatches
       for (let i = 1; i < cellHeights.length; i++) {
-        if (cellHeights[i] !== cellHeights[i - 1]) {
+        if (cellHeights[i] !== cellHeights[0]) {
           // Sync row heights only if necessary
           for (const rowId in this.items) {
             this.table.syncRowHeight(rowId);

@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :host {
-  --icon-height: var(--icon-size);
-  --icon-width: var(--icon-size);
+  --icon-height: var(--icon-size-large);
+  --icon-width: var(--icon-size-large);
 }
 
 .row-item {

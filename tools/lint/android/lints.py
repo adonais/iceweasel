@@ -162,6 +162,7 @@ def fenix_format(_paths, config, fix=None, **lintargs):
         os.path.join("mobile", "android", "fenix"),
         project_name="fenix",
         lint_tasks=[":fenix:lintDebug"],
+        disable_android_components_tasks=True,
         **lintargs,
     )
 
@@ -184,11 +185,20 @@ def focus_format(_paths, config, fix=None, **lintargs):
         os.path.join("mobile", "android", "focus-android"),
         project_name="focus-android",
         lint_tasks=[":focus-android:lint"],
+        disable_android_components_tasks=True,
         **lintargs,
     )
 
 
-def report_gradlew(config, fix, subdir, project_name, lint_tasks=[], **lintargs):
+def report_gradlew(
+    config,
+    fix,
+    subdir,
+    project_name,
+    lint_tasks=[],
+    disable_android_components_tasks=False,
+    **lintargs,
+):
     topsrcdir = lintargs["root"]
     topobjdir = lintargs["topobjdir"]
 
@@ -199,6 +209,8 @@ def report_gradlew(config, fix, subdir, project_name, lint_tasks=[], **lintargs)
     tasks = [ktlint_task, f":{project_name}:detekt"] + list(lint_tasks)
 
     extra_args = lintargs.get("extra_args") or []
+    if disable_android_components_tasks:
+        extra_args = extra_args + ["-PdisableAndroidComponentsTasks=true"]
 
     ret = gradle(
         lintargs["log"],

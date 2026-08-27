@@ -128,15 +128,15 @@ static PlainDateTimeObject* CreateTemporalDateTime(
   // Step 4.
   auto packedDate = PackedDate::pack(isoDateTime.date);
   auto packedTime = PackedTime::pack(isoDateTime.time);
-  object->initFixedSlot(PlainDateTimeObject::PACKED_DATE_SLOT,
-                        PrivateUint32Value(packedDate.value));
-  object->initFixedSlot(
+  object->initFixedSlotTyped(PlainDateTimeObject::PACKED_DATE_SLOT,
+                             PrivateUint32Value(packedDate.value));
+  object->initFixedSlotTyped(
       PlainDateTimeObject::PACKED_TIME_SLOT,
       DoubleValue(mozilla::BitwiseCast<double>(packedTime.value)));
 
   // Step 5.
-  object->initFixedSlot(PlainDateTimeObject::CALENDAR_SLOT,
-                        calendar.toSlotValue());
+  object->initFixedSlotTyped(PlainDateTimeObject::CALENDAR_SLOT,
+                             calendar.toSlotValue());
 
   // Step 6.
   return object;
@@ -166,15 +166,15 @@ PlainDateTimeObject* js::temporal::CreateTemporalDateTime(
   // Step 4.
   auto packedDate = PackedDate::pack(isoDateTime.date);
   auto packedTime = PackedTime::pack(isoDateTime.time);
-  object->initFixedSlot(PlainDateTimeObject::PACKED_DATE_SLOT,
-                        PrivateUint32Value(packedDate.value));
-  object->initFixedSlot(
+  object->initFixedSlotTyped(PlainDateTimeObject::PACKED_DATE_SLOT,
+                             PrivateUint32Value(packedDate.value));
+  object->initFixedSlotTyped(
       PlainDateTimeObject::PACKED_TIME_SLOT,
       DoubleValue(mozilla::BitwiseCast<double>(packedTime.value)));
 
   // Step 5.
-  object->initFixedSlot(PlainDateTimeObject::CALENDAR_SLOT,
-                        calendar.toSlotValue());
+  object->initFixedSlotTyped(PlainDateTimeObject::CALENDAR_SLOT,
+                             calendar.toSlotValue());
 
   // Step 6.
   return object;

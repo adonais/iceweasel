@@ -9,8 +9,8 @@ origin:
   description: A portable foreign-function interface library
   url: http://sourceware.org/libffi
 
-  release: v3.6.0 (2026-06-20T13:54:12Z).
-  revision: f6303b8b0dd6353c6a5bb4de2e855a13b86f22cf
+  release: v3.7.1 (2026-07-10T13:50:53Z).
+  revision: 5c1c43091ed611fdea774374355eb938c73a9157
 
   license: MIT
   license-file: LICENSE
@@ -31,6 +31,3 @@ vendoring:
     - LICENSE
     - README.md
     - fficonfig.h.in
-
-  patches:
-    - '../libffi-patches/*'

@@ -40,6 +40,20 @@ export class AIGroupedChipContainer extends MozLitElement {
     this.shadowRoot.querySelector("smartwindow-panel-list")?.hide();
   }
 
+  #onItemSelected(event) {
+    const url = event.detail?.id;
+    if (url) {
+      this.dispatchEvent(
+        new CustomEvent("AIChatContent:OpenLink", {
+          bubbles: true,
+          composed: true,
+          detail: { url, preferSwitchToTab: true },
+        })
+      );
+    }
+    this.#closeGroupedPanel();
+  }
+
   render() {
     const chipsGroups = [
       {
@@ -97,7 +111,7 @@ export class AIGroupedChipContainer extends MozLitElement {
         .groups=${chipsGroups}
         @shown=${() => (this.isPanelOpen = true)}
         @hidden=${() => (this.isPanelOpen = false)}
-        @item-selected=${() => this.#closeGroupedPanel()}
+        @item-selected=${e => this.#onItemSelected(e)}
       ></smartwindow-panel-list>
     `;
   }

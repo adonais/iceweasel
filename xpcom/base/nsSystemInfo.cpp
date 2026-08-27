@@ -2354,3 +2354,14 @@ nsSystemInfo::GetProcessInfo(JSContext* aCx, Promise** aResult) {
 
   return NS_OK;
 }
+
+NS_IMETHODIMP
+nsSystemInfo::IsWindows10BuildOrLater(uint32_t aBuildNumber, bool* aResult) {
+#ifdef XP_WIN
+  NS_ENSURE_ARG_POINTER(aResult);
+  *aResult = mozilla::IsWindows10BuildOrLater(aBuildNumber);
+  return NS_OK;
+#else
+  return NS_ERROR_NOT_AVAILABLE;
+#endif
+}

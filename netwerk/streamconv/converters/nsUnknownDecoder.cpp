@@ -496,7 +496,7 @@ void nsUnknownDecoder::DetermineContentType(nsIRequest* aRequest) {
                   testDataLen, sniffedType);
   {
     MutexAutoLock lock(mMutex);
-    mContentType = sniffedType;
+    mContentType = std::move(sniffedType);
     if (!mContentType.IsEmpty()) {
       return;
     }
@@ -637,7 +637,7 @@ bool nsUnknownDecoder::SniffURI(nsIRequest* aRequest) {
         result = mimeService->GetTypeFromURI(uri, type);
         if (NS_SUCCEEDED(result)) {
           MutexAutoLock lock(mMutex);
-          mContentType = type;
+          mContentType = std::move(type);
           return true;
         }
       }

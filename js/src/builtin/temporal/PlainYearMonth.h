@@ -28,20 +28,21 @@ class PlainYearMonthObject : public NativeObject {
   static const JSClass class_;
   static const JSClass& protoClass_;
 
-  static constexpr uint32_t PACKED_DATE_SLOT = 0;
-  static constexpr uint32_t CALENDAR_SLOT = 1;
+  JS_DEFINE_TYPED_SLOT(0, PACKED_DATE_SLOT, Int32);
+  JS_DEFINE_TYPED_SLOT(1, CALENDAR_SLOT, Int32);
   static constexpr uint32_t SLOT_COUNT = 2;
 
   /**
    * Extract the date fields from this PlainYearMonth object.
    */
   ISODate date() const {
-    auto packed = PackedDate{getFixedSlot(PACKED_DATE_SLOT).toPrivateUint32()};
+    auto packed =
+        PackedDate{getFixedSlotTyped(PACKED_DATE_SLOT).toPrivateUint32()};
     return PackedDate::unpack(packed);
   }
 
   CalendarValue calendar() const {
-    return CalendarValue(getFixedSlot(CALENDAR_SLOT));
+    return CalendarValue(getFixedSlotTyped(CALENDAR_SLOT));
   }
 
  private:

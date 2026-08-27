@@ -7,10 +7,10 @@
 #ifndef mozilla_PairHash_h
 #define mozilla_PairHash_h
 
+#include <utility>  // std::pair
+
 #include "mozilla/CompactPair.h"
 #include "mozilla/HashFunctions.h"
-
-#include <utility>  // std::pair
 
 namespace mozilla {
 

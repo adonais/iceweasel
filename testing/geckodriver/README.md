@@ -9,7 +9,7 @@ translates calls into the [Marionette remote protocol] by acting
 as a proxy between the local- and remote ends.
 
 [WebDriver protocol]: https://w3c.github.io/webdriver/#protocol
-[Marionette remote protocol]: https://firefox-source-docs.mozilla.org/testing/marionette/
+[Marionette remote protocol]: https://firefox-source-docs.mozilla.org/remote/marionette/
 [WebDriver]: https://developer.mozilla.org/en-US/docs/Web/WebDriver
 
 ## Installation

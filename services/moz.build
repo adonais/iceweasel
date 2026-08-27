@@ -25,9 +25,13 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
         "application-services/components/viaduct-necko",
     ]
 
-if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android" or CONFIG["MOZ_APPSERVICES_IN_TREE"]:
     DIRS += [
         "app-services-tools/embedded-uniffi-bindgen",
+    ]
+
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+    DIRS += [
         "app-services-tools/nimbus-fml",
     ]
 

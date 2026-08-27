@@ -1,0 +1,27 @@
+<!doctype html>
+<html reftest-zoom="1.25">
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: white; }
+  .bar { display: flex; margin-left: 100px; }
+  .slider { flex-shrink: 0; width: 40px; height: 40px; margin-left: -20px; }
+  .marker {
+    flex-shrink: 0;
+    width: 36px;
+    height: 40px;
+    background: black;
+    mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20'><rect width='20' height='20' fill='black'/></svg>");
+    mask-size: 20px 20px;
+    mask-position: calc(50% + 1px) 50%;
+    mask-repeat: no-repeat;
+  }
+</style>
+</head>
+<body>
+  <div class="bar">
+    <div class="slider"></div>
+    <div class="marker"></div>
+  </div>
+</body>
+</html>

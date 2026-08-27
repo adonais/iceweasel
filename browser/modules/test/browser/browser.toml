@@ -10,6 +10,9 @@ prefs = [
 ["browser_BrowserWindowTracker.js"]
 
 ["browser_BrowserWindowTracker_minimize.js"]
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2057872
+]
 
 ["browser_CrashFileCleaner.js"]
 run-if = [
@@ -83,6 +86,8 @@ https_first_disabled = true
 
 ["browser_UsageTelemetry_domains.js"]
 https_first_disabled = true
+
+["browser_UsageTelemetry_idleDaily.js"]
 
 ["browser_UsageTelemetry_interaction.js"]
 https_first_disabled = true

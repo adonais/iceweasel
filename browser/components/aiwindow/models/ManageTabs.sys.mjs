@@ -139,7 +139,7 @@ async function runManageTabsFlow(state, toolHandler) {
 
   const result = await toolHandler.takeUIAction(gatheredResult);
 
-  if (!result || !result.operationId) {
+  if (!result || !result.operationIds?.length) {
     lazy.ToolUITelemetry.recordBrowserActionComplete({
       ...state.baseTelemetryInfo,
       result: "error",
@@ -174,7 +174,7 @@ async function runManageTabsFlow(state, toolHandler) {
       properties: {
         confirmedData: {
           selectedTabs: gatheredResult.tabs,
-          operationId: result.operationId,
+          operationIds: result.operationIds,
           actionTimestamp: Date.now(),
           actionType: toolHandler.action,
         },
@@ -334,10 +334,17 @@ function makeGroupTabsToolHandler(rawLabel) {
       const label = await getLabel(gathered);
       const result = await lazy.ToolUI.createTabGroup({
         tabs: gathered.tabs,
+        tokenToKey: gathered.tabKeyByToken,
         window: gathered.topAIWin,
         label,
       });
-      return { ...result, label };
+      // Tab groups span a single window so `createTabGroup` returns at most one
+      // `group.id`.
+      return {
+        ...result,
+        operationIds: result?.group?.id ? [result.group.id] : [],
+        label,
+      };
     },
 
     getToolResults(result, gatheredResult) {

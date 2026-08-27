@@ -39,7 +39,7 @@ class MOZ_STACK_CLASS InitExprInterpreter {
  public:
   explicit InitExprInterpreter(JSContext* cx,
                                Handle<WasmInstanceObject*> instanceObj)
-      : features(FeatureArgs::build(cx, FeatureOptions())),
+      : features(instanceObj->instance().codeMeta().features()),
         stack(cx),
         instanceObj(cx, instanceObj),
         types(instanceObj->instance().codeMeta().types) {}

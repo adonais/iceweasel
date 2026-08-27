@@ -47,6 +47,7 @@
   margin-block: 0;
   align-items: center;
   gap: 8px;
+  font-weight: var(--font-weight);
 
   :host(.search-results) & {
     font-size: unset;
@@ -74,11 +75,23 @@
 
 .description {
   color: var(--text-color-deemphasized);
-  margin-block: 4px 15px;
+  margin-block: 8px 15px;
 }
 
 .description.secondary {
   margin-block-start: 16px;
+}
+
+/* Restore the legacy emphasized heading and tighter title spacing when the
+ * sidebar/Firefox View redesign is disabled. */
+@media not -moz-pref("browser.nova.enabled") {
+  .header {
+    font-weight: var(--font-weight-heading);
+  }
+
+  .description {
+    margin-block-start: 4px;
+  }
 }
 
 .main a {

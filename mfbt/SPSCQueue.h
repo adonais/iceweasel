@@ -7,14 +7,15 @@
 #ifndef mozilla_LockFreeQueue_h
 #define mozilla_LockFreeQueue_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/PodOperations.h"
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
 #include <limits>
 #include <memory>
 #include <type_traits>
+
+#include "mozilla/Assertions.h"
+#include "mozilla/PodOperations.h"
 #ifdef DEBUG
 #  include <thread>
 #endif

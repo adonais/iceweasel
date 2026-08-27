@@ -203,7 +203,7 @@ def perfdocs_sample():
         ) as tmpconfig_2, temp_file(
             "config_metrics.yml", tempdir=perfdocs_dir, content=SAMPLE_METRICS_CONFIG
         ) as tmpconfig_metrics, temp_file(
-            "index.rst",
+            "index.md",
             tempdir=perfdocs_dir,
             content="{metrics_rst_name}{documentation}",
         ) as tmpindex:

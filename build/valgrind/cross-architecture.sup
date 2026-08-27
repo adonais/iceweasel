@@ -117,15 +117,6 @@
 #################
 
 {
-   Bug 794369
-   Memcheck:Leak
-   fun:malloc
-   fun:moz_xmalloc
-   ...
-   fun:_ZN20mozJSComponentLoader10LoadModuleERN7mozilla12FileLocationE
-   ...
-}
-{
    Bug 794370
    Memcheck:Leak
    fun:malloc

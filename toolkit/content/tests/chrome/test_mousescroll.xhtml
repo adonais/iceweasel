@@ -153,6 +153,13 @@ function* testArrowScrollbox(id)
   var orient = scrollbox.getAttribute("orient");
   var orientIsHorizontal = (orient == "horizontal");
 
+  // Vertical arrowscrollboxes scroll natively, so how far a wheel event scrolls
+  // them is up to the platform. Those cases pass a predicate rather than an
+  // exact position.
+  function matches(aExpected, aPos) {
+    return typeof aExpected == "function" ? aExpected(aPos) : aPos == aExpected;
+  }
+
   function* helper(aStart, aDelta, aDeltaMode, aExpected)
   {
     var lineOrPageDelta = (aDeltaMode == WheelEvent.DOM_DELTA_PIXEL) ? aDelta / 10 : aDelta;
@@ -173,7 +180,7 @@ function* testArrowScrollbox(id)
                              { deltaMode: aDeltaMode, deltaY: aDelta,
                                lineOrPageDeltaY: lineOrPageDelta },
                              ()=>{
-                                if (getPos() == expected) {
+                                if (matches(expected, getPos())) {
                                   return true;
                                 }
                                 if (oldPos == getPos()) {
@@ -184,10 +191,10 @@ function* testArrowScrollbox(id)
                                 retry = 0;
                                 return false;
                              });
-      is(getPos(), expected,
+      ok(matches(expected, getPos()),
          "testArrowScrollbox(" + id +  "): vertical, starting " + aStart +
            " delta " + aDelta + " lineOrPageDelta " + lineOrPageDelta +
-           " aDeltaMode " + aDeltaMode);
+           " aDeltaMode " + aDeltaMode + ", got " + getPos());
     }
 
     scrollbox.scrollTo(aStart, aStart);
@@ -205,7 +212,7 @@ function* testArrowScrollbox(id)
                              { deltaMode: aDeltaMode, deltaX: aDelta,
                                lineOrPageDeltaX: lineOrPageDelta },
                              ()=>{
-                                if (getPos() == expected) {
+                                if (matches(expected, getPos())) {
                                   return true;
                                 }
                                 if (oldPos == getPos()) {
@@ -216,10 +223,10 @@ function* testArrowScrollbox(id)
                                 retry = 0;
                                 return false;
                              });
-      is(getPos(), expected,
+      ok(matches(expected, getPos()),
          "testArrowScrollbox(" + id +  "): horizontal, starting " + aStart +
            " delta " + aDelta + " lineOrPageDelta " + lineOrPageDelta +
-           " aDeltaMode " + aDeltaMode);
+           " aDeltaMode " + aDeltaMode + ", got " + getPos());
     }
   }
 
@@ -233,12 +240,18 @@ function* testArrowScrollbox(id)
   for (let deltaMode of deltaModes) {
     const start = 50;
     const delta = 1000;
-    let expectedNegative = 0;
-    let expectedPositive = scrollMax;
-    if (deltaMode == WheelEvent.DOM_DELTA_LINE) {
+    let expectedNegative, expectedPositive;
+    if (!orientIsHorizontal) {
+      // A single wheel event never scrolls further than one page.
+      expectedNegative = pos => pos >= 0 && pos < start;
+      expectedPositive = pos => pos > start && pos <= scrollMax;
+    } else if (deltaMode == WheelEvent.DOM_DELTA_LINE) {
       let maxDelta = Math.floor(Math.max(1, arrowscrollbox.scrollClientSize / line)) * line;
       expectedNegative = Math.max(0, start - maxDelta);
       expectedPositive = Math.min(scrollMax, start + maxDelta);
+    } else {
+      expectedNegative = 0;
+      expectedPositive = scrollMax;
     }
     yield* helper(start, -delta, deltaMode, expectedNegative);
     yield* helper(start,  delta, deltaMode, expectedPositive);

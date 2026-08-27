@@ -14,6 +14,7 @@ support-files = [
   "file_error_media.html",
   "file_iframe_media.html",
   "file_interrupt_blocks_start.html",
+  "file_live_stream.html",
   "file_named_media_session.html",
   "file_main_frame_with_multiple_child_session_frames.html",
   "file_multiple_audible_media.html",
@@ -26,9 +27,11 @@ support-files = [
   "file_web_audio.html",
   "file_web_speech.html",
   "head.js",
+  "live_stream.sjs",
   "../../../test/gizmo.mp4",
   "../../../test/gizmo-noaudio.webm",
   "../../../test/gizmo-short.mp4",
+  "../../../test/single-xing-header-no-content-length.mp3",
   "!/toolkit/components/pictureinpicture/tests/head.js",
   "../../../../../toolkit/content/tests/browser/silentAudioTrack.webm",
 ]
@@ -45,6 +48,8 @@ skip-if = [
 ]
 
 ["browser_audiosession_state_transitions.js"]
+
+["browser_audiosession_telemetry.js"]
 
 ["browser_audiosessiontype_compute.js"]
 
@@ -72,6 +77,8 @@ skip-if = [
 ["browser_media_control_captured_audio.js"]
 
 ["browser_media_control_keys_event.js"]
+
+["browser_media_control_live_stream.js"]
 
 ["browser_media_control_main_controller.js"]
 skip-if = [

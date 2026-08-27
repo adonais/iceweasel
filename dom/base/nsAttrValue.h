@@ -19,7 +19,6 @@
 #include "nsAtom.h"
 #include "nsCaseTreatment.h"
 #include "nsColor.h"
-#include "nsMargin.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
 #include "nsTArrayForwardDeclare.h"
@@ -47,14 +46,25 @@ class SVGStringList;
 class SVGTransformList;
 
 struct AttrAtomArray {
-  AtomArray mArray;
-  mutable bool mMayContainDuplicates = false;
+  const AtomArray& Array() const { return mArray; }
+
+  bool MayContain(const nsAtom* aAtom) const {
+    return mBloomFilter & GetBloomFilterBit(aAtom);
+  }
+
+  // NOTE(emilio): Must be in sync with atom_array_may_contain() in the rust
+  // side.
+  static uint32_t GetBloomFilterBit(const nsAtom* aAtom) {
+    return 1u << ((aAtom->hash() >> 27) & 31);
+  }
+
   UniquePtr<AttrAtomArray> CreateDeduplicatedCopyIfDifferent() const {
     if (!mMayContainDuplicates) {
       return nullptr;
     }
     return CreateDeduplicatedCopyIfDifferentImpl();
   }
+
   bool operator==(const AttrAtomArray& aOther) const {
     return mArray == aOther.mArray;
   }
@@ -64,8 +74,21 @@ struct AttrAtomArray {
            mArray.ShallowSizeOfExcludingThis(aMallocSizeOf);
   }
 
+  void Append(RefPtr<nsAtom> aAtom) {
+    if (!mArray.IsEmpty()) {
+      mMayContainDuplicates = true;
+    }
+    mBloomFilter |= GetBloomFilterBit(aAtom);
+    mArray.AppendElement(std::move(aAtom));
+  }
+
  private:
   UniquePtr<AttrAtomArray> CreateDeduplicatedCopyIfDifferentImpl() const;
+
+  AtomArray mArray;
+  // Minimal bloom filter for fast rejection of CSS class selectors.
+  uint32_t mBloomFilter = 0;
+  mutable bool mMayContainDuplicates = false;
 };
 
 namespace dom {

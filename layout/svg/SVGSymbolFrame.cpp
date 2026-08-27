@@ -30,7 +30,8 @@ void SVGSymbolFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   MOZ_ASSERT(aContent->IsSVGElement(nsGkAtoms::symbol),
              "Content is not an SVG 'symbol' element!");
 
-  if (!dom::SVGSymbolElement::FromNode(aContent)->CouldBeRendered()) {
+  if (!aParent->IsSVGUseFrame() ||
+      !dom::SVGSymbolElement::FromNode(aContent)->CouldBeRendered()) {
     AddStateBits(NS_FRAME_IS_NONDISPLAY);
   }
 

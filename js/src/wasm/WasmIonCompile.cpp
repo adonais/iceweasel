@@ -1756,9 +1756,10 @@ class FunctionCompiler {
     return load;
   }
 
-  void store(MDefinition* base, MemoryAccessDesc* access, MDefinition* v) {
+  [[nodiscard]] bool store(MDefinition* base, MemoryAccessDesc* access,
+                           MDefinition* v) {
     if (inDeadCode()) {
-      return;
+      return true;
     }
 
     MDefinition* memoryBase = maybeLoadMemoryBase(access->memoryIndex());
@@ -1769,9 +1770,10 @@ class FunctionCompiler {
     MInstruction* store =
         MWasmStore::New(alloc(), memoryBase, base, *access, v);
     if (!store) {
-      return;
+      return false;
     }
     curBlock_->add(store);
+    return true;
   }
 
   MDefinition* atomicCompareExchangeHeap(MDefinition* base,
@@ -1977,11 +1979,11 @@ class FunctionCompiler {
     return load;
   }
 
-  void storeLaneSimd128(uint32_t laneSize,
-                        const LinearMemoryAddress<MDefinition*>& addr,
-                        uint32_t laneIndex, MDefinition* src) {
+  [[nodiscard]] bool storeLaneSimd128(
+      uint32_t laneSize, const LinearMemoryAddress<MDefinition*>& addr,
+      uint32_t laneIndex, MDefinition* src) {
     if (inDeadCode()) {
-      return;
+      return true;
     }
     MemoryAccessDesc access(addr.memoryIndex, Scalar::Simd128, addr.align,
                             addr.offset, trapSiteDesc(),
@@ -1995,9 +1997,10 @@ class FunctionCompiler {
     MInstruction* store = MWasmStoreLaneSimd128::New(
         alloc(), memoryBase, base, access, laneSize, laneIndex, src);
     if (!store) {
-      return;
+      return false;
     }
     curBlock_->add(store);
+    return true;
   }
 #endif  // ENABLE_WASM_SIMD
 
@@ -2785,6 +2788,9 @@ class FunctionCompiler {
     // type. Each phi node has an operand for each of the returns of the
     // inlined function.
     for (uint32_t i = 0; i < calleeFuncType.results().length(); i++) {
+      if (!mirGen().ensureBallast()) {
+        return false;
+      }
       MPhi* phi = MPhi::New(alloc(), calleeFuncType.results()[i].toMIRType());
       if (!phi || !phi->reserveLength(calleeReturns.length())) {
         return false;
@@ -3653,6 +3659,9 @@ class FunctionCompiler {
     // Eagerly create a phi for all loop params. setLoopBackedge will remove
     // any that were not necessary.
     for (size_t i = 0; i < paramCount; i++) {
+      if (!mirGen().ensureBallast()) {
+        return false;
+      }
       MPhi* phi = MPhi::New(alloc(), loopParams[i]->type());
       if (!phi) {
         return false;
@@ -6985,8 +6994,7 @@ bool FunctionCompiler::emitStore(ValType resultType, Scalar::Type viewType) {
   MemoryAccessDesc access(addr.memoryIndex, viewType, addr.align, addr.offset,
                           trapSiteDesc(), hugeMemoryEnabled(addr.memoryIndex));
 
-  store(addr.base, &access, value);
-  return true;
+  return store(addr.base, &access, value);
 }
 
 bool FunctionCompiler::tryInlineUnaryBuiltin(SymbolicAddress callee,
@@ -7164,8 +7172,7 @@ bool FunctionCompiler::emitAtomicStore(ValType type, Scalar::Type viewType) {
   MemoryAccessDesc access(addr.memoryIndex, viewType, addr.align, addr.offset,
                           trapSiteDesc(), hugeMemoryEnabled(addr.memoryIndex),
                           Synchronization::Store());
-  store(addr.base, &access, value);
-  return true;
+  return store(addr.base, &access, value);
 }
 
 bool FunctionCompiler::emitWait(ValType type, uint32_t byteSize) {
@@ -7432,7 +7439,9 @@ bool FunctionCompiler::emitMemCopyInline(uint32_t memoryIndex, MDefinition* dst,
     MemoryAccessDesc access(memoryIndex, Scalar::Uint8, 1, offset,
                             trapSiteDesc(), hugeMemoryEnabled(memoryIndex));
     auto* value = loadedValues.popCopy();
-    store(dst, &access, value);
+    if (!store(dst, &access, value)) {
+      return false;
+    }
   }
 
   if (numCopies2) {
@@ -7441,7 +7450,9 @@ bool FunctionCompiler::emitMemCopyInline(uint32_t memoryIndex, MDefinition* dst,
     MemoryAccessDesc access(memoryIndex, Scalar::Uint16, 1, offset,
                             trapSiteDesc(), hugeMemoryEnabled(memoryIndex));
     auto* value = loadedValues.popCopy();
-    store(dst, &access, value);
+    if (!store(dst, &access, value)) {
+      return false;
+    }
   }
 
   for (uint32_t i = 0; i < numCopies4; i++) {
@@ -7450,7 +7461,9 @@ bool FunctionCompiler::emitMemCopyInline(uint32_t memoryIndex, MDefinition* dst,
     MemoryAccessDesc access(memoryIndex, Scalar::Uint32, 1, offset,
                             trapSiteDesc(), hugeMemoryEnabled(memoryIndex));
     auto* value = loadedValues.popCopy();
-    store(dst, &access, value);
+    if (!store(dst, &access, value)) {
+      return false;
+    }
   }
 
 #ifdef JS_64BIT
@@ -7460,7 +7473,9 @@ bool FunctionCompiler::emitMemCopyInline(uint32_t memoryIndex, MDefinition* dst,
     MemoryAccessDesc access(memoryIndex, Scalar::Int64, 1, offset,
                             trapSiteDesc(), hugeMemoryEnabled(memoryIndex));
     auto* value = loadedValues.popCopy();
-    store(dst, &access, value);
+    if (!store(dst, &access, value)) {
+      return false;
+    }
   }
 #endif
 
@@ -7471,7 +7486,9 @@ bool FunctionCompiler::emitMemCopyInline(uint32_t memoryIndex, MDefinition* dst,
     MemoryAccessDesc access(memoryIndex, Scalar::Simd128, 1, offset,
                             trapSiteDesc(), hugeMemoryEnabled(memoryIndex));
     auto* value = loadedValues.popCopy();
-    store(dst, &access, value);
+    if (!store(dst, &access, value)) {
+      return false;
+    }
   }
 #endif
 
@@ -7632,7 +7649,9 @@ bool FunctionCompiler::emitMemFillInline(uint32_t memoryIndex,
 
     MemoryAccessDesc access(memoryIndex, Scalar::Uint8, 1, offset,
                             trapSiteDesc(), hugeMemoryEnabled(memoryIndex));
-    store(start, &access, val);
+    if (!store(start, &access, val)) {
+      return false;
+    }
   }
 
   if (numCopies2) {
@@ -7640,7 +7659,9 @@ bool FunctionCompiler::emitMemFillInline(uint32_t memoryIndex,
 
     MemoryAccessDesc access(memoryIndex, Scalar::Uint16, 1, offset,
                             trapSiteDesc(), hugeMemoryEnabled(memoryIndex));
-    store(start, &access, val2);
+    if (!store(start, &access, val2)) {
+      return false;
+    }
   }
 
   for (uint32_t i = 0; i < numCopies4; i++) {
@@ -7648,7 +7669,9 @@ bool FunctionCompiler::emitMemFillInline(uint32_t memoryIndex,
 
     MemoryAccessDesc access(memoryIndex, Scalar::Uint32, 1, offset,
                             trapSiteDesc(), hugeMemoryEnabled(memoryIndex));
-    store(start, &access, val4);
+    if (!store(start, &access, val4)) {
+      return false;
+    }
   }
 
 #ifdef JS_64BIT
@@ -7657,7 +7680,9 @@ bool FunctionCompiler::emitMemFillInline(uint32_t memoryIndex,
 
     MemoryAccessDesc access(memoryIndex, Scalar::Int64, 1, offset,
                             trapSiteDesc(), hugeMemoryEnabled(memoryIndex));
-    store(start, &access, val8);
+    if (!store(start, &access, val8)) {
+      return false;
+    }
   }
 #endif
 
@@ -7667,7 +7692,9 @@ bool FunctionCompiler::emitMemFillInline(uint32_t memoryIndex,
 
     MemoryAccessDesc access(memoryIndex, Scalar::Simd128, 1, offset,
                             trapSiteDesc(), hugeMemoryEnabled(memoryIndex));
-    store(start, &access, val16);
+    if (!store(start, &access, val16)) {
+      return false;
+    }
   }
 #endif
 
@@ -8396,8 +8423,7 @@ bool FunctionCompiler::emitStoreLaneSimd128(uint32_t laneSize) {
     return false;
   }
 
-  storeLaneSimd128(laneSize, addr, laneIndex, src);
-  return true;
+  return storeLaneSimd128(laneSize, addr, laneIndex, src);
 }
 
 #endif  // ENABLE_WASM_SIMD

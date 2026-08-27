@@ -15,7 +15,7 @@ class NativeLayerCommandQueue {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NativeLayerCommandQueue)
 
-  NativeLayerCommandQueue();
+  NativeLayerCommandQueue() = default;
 
   void AppendCommand(mozilla::layers::NativeLayerCommand&& aCommand);
   void FlushToArray(nsTArray<mozilla::layers::NativeLayerCommand>& aQueue);
@@ -23,7 +23,8 @@ class NativeLayerCommandQueue {
  protected:
   ~NativeLayerCommandQueue() = default;
 
-  DataMutex<nsTArray<mozilla::layers::NativeLayerCommand>> mQueue;
+  DataMutex<nsTArray<mozilla::layers::NativeLayerCommand>> mQueue{
+      "NativeLayerCommandQueue"};
 };
 
 }  // namespace layers

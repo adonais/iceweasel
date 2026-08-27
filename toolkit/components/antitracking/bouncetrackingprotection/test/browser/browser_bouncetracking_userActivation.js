@@ -36,26 +36,6 @@ function getURL(origin) {
 }
 
 /**
- * Inserts an iframe element and resolves once the iframe has loaded.
- *
- * @param {*} browserOrBrowsingContext - Browser or BrowsingContext to insert the iframe into.
- * @param {string} url - URL to load in the iframe.
- * @returns {Promise<BrowsingContext>} Promise which resolves to the iframe's
- * BrowsingContext.
- */
-function insertIframeAndWaitForLoad(browserOrBrowsingContext, url) {
-  return SpecialPowers.spawn(browserOrBrowsingContext, [url], async url => {
-    let iframe = content.document.createElement("iframe");
-    iframe.src = url;
-    content.document.body.appendChild(iframe);
-    // Wait for it to load.
-    await ContentTaskUtils.waitForEvent(iframe, "load");
-
-    return iframe.browsingContext;
-  });
-}
-
-/**
  * Runs a test that spawns an iframe, interacts with it, and checks the BTP user
  * activation state.
  *

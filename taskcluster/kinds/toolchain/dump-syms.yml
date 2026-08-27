@@ -10,6 +10,7 @@ task-defaults:
     worker:
         max-run-time: 1800
     run:
+        clone-with: hg
         script: build-rust-based-toolchain.sh
         toolchain-artifact: public/build/dump_syms.tar.zst
     fetches:
@@ -20,6 +21,7 @@ linux64-dump_syms:
     treeherder:
         symbol: TL(dump_syms)
     run:
+        clone-with: hg
         arguments: ['x86_64-unknown-linux-gnu']
     fetches:
         toolchain:
@@ -43,6 +45,7 @@ macosx64-dump_syms:
         symbol: TM(dump_syms)
     worker-type: b-linux-docker-amd
     run:
+        clone-with: hg
         arguments: ['x86_64-apple-darwin']
     fetches:
         toolchain:
@@ -54,6 +57,7 @@ macosx64-aarch64-dump_syms:
     treeherder:
         symbol: TMA64(dump_syms)
     run:
+        clone-with: hg
         arguments: ['aarch64-apple-darwin']
     fetches:
         toolchain:
@@ -65,6 +69,7 @@ win64-dump_syms:
     treeherder:
         symbol: TW64(dump_syms)
     run:
+        clone-with: hg
         arguments: ['x86_64-pc-windows-msvc']
     fetches:
         toolchain:

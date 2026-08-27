@@ -53,17 +53,25 @@ async protocol PWebTransport
    * TODO: documentation
    */
   async Close(uint32_t code, nsCString reason);
-  async CreateUnidirectionalStream(int64_t? sendOrder)
+  async CreateUnidirectionalStream(int64_t sendOrder, uint64_t? sendGroupId)
       returns(UnidirectionalStreamResponse response);
-  async CreateBidirectionalStream(int64_t? sendOrder)
+  async CreateBidirectionalStream(int64_t sendOrder, uint64_t? sendGroupId)
       returns(BidirectionalStreamResponse response);
 
   /**
+   * Register a send group with a caller-provided ID
+   */
+  async CreateSendGroup(uint64_t groupId);
+
+  /**
   * IPC for sending webtransport datagrams
-  * @param expirationTime time at which the datagram expires
   * @param data represents the datagram to be transferred
+  * @param expirationTime time at which the datagram expires
+  * @param sendGroupId optional send group ID for prioritization (0 = null/default group)
+  * @param sendOrder send order for prioritization
   */
-  async OutgoingDatagram(uint8_t[] data, TimeStamp expirationTime)
+  async OutgoingDatagram(uint8_t[] data, TimeStamp expirationTime,
+                         uint64_t sendGroupId, int64_t sendOrder)
     returns(nsresult response);
 
   /**
@@ -81,7 +89,20 @@ async protocol PWebTransport
   /**
   * Set the sendOrder for an existing stream
   */
-  async SetSendOrder(uint64_t streamId, int64_t? sendOrder);
+  async SetSendOrder(uint64_t streamId, int64_t sendOrder);
+
+  /**
+  * Set the sendGroup for an existing stream
+  * @param streamId the stream to update
+  * @param groupId the send group ID to assign; 0 means no group (null sendGroup)
+  */
+  async SetSendGroup(uint64_t streamId, uint64_t groupId);
+
+  /**
+  * Export keying material for the WebTransport session
+  */
+  async ExportKeyingMaterial(uint8_t[] label, uint8_t[]? context)
+    returns(uint8_t[] keyingMaterial);
 
  child:
 
@@ -94,6 +115,13 @@ async protocol PWebTransport
   * @param data is the datagram received
   */
   async IncomingDatagram(uint8_t[] data, TimeStamp receivedTime);
+
+  /**
+  * Notify child of the negotiated protocol
+  */
+  async NegotiatedProtocol(nsCString subprotocol);
+
+  async Draining();
 
   async RemoteClosed(bool cleanly, uint32_t code, nsCString reason);
 

@@ -1,0 +1,100 @@
+<!DOCTYPE HTML>
+<html>
+<!--
+Test that decoding a JPEG XL image records the jxl.decode_result, jxl.hdr,
+jxl.animated and image_decode.speed_jxl Glean metrics, for both a successful
+decode and a failed one.
+-->
+<head>
+  <meta charset="utf-8">
+  <!-- Without this Android lays the page out at ~980px and scales it down to
+       the screen, which draws the image smaller than its intrinsic size. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test for JPEG XL decode telemetry</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/GleanTest.js"></script>
+  <script src="imgutils.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<script>
+
+// The metrics are recorded when the decode reaches a terminal state. For an
+// animation that is only after every frame has been decoded, which can happen
+// after the decode() promise has already settled, so poll rather than assume
+// the value is there. If it never arrives we let the harness time the test out.
+async function waitForValue(metric) {
+  while (true) {
+    let value = await metric.testGetValue();
+    if (value) {
+      return value;
+    }
+    await new Promise(requestAnimationFrame);
+  }
+}
+
+async function decodeJXL(src) {
+  clearAllImageCaches();
+  await GleanTest.testResetFOG();
+
+  let img = document.createElement("img");
+  // Display the image larger than its intrinsic size. Drawing a still image
+  // smaller than intrinsic makes it eligible for downscale during decode,
+  // which can decode it a second time at both the drawn size and intrinsic
+  // size and records the telemetry twice. The viewport meta above should
+  // already prevent that; this keeps it true even if the page ends up scaled
+  // down anyway.
+  img.width = 300;
+  img.height = 300;
+  img.src = src;
+  document.body.appendChild(img);
+  // decode() rejects for the corrupt image. Either way the decode reached a
+  // terminal state and recorded its telemetry.
+  await img.decode().catch(() => {});
+}
+
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({ set: [["image.jxl.enabled", true]] });
+  SimpleTest.registerCleanupFunction(() => clearAllImageCaches());
+});
+
+add_task(async function stillImage() {
+  // Small enough to fit any viewport without being downscaled; a downscale
+  // would decode it a second time and record the telemetry twice.
+  await decodeJXL("green.jxl");
+
+  is(await waitForValue(GleanTest.jxl.decodeResult.success), 1,
+     "recorded one successful decode");
+  is(await GleanTest.jxl.animated.absent.testGetValue() ?? 0, 1,
+     "recorded as not animated");
+  is(await GleanTest.jxl.hdr.absent.testGetValue() ?? 0, 1,
+     "recorded as not HDR");
+
+  // The speed is recorded by RasterImage once the decode completes, which can
+  // be after the decode_result above, so wait for it separately. Its value is
+  // wall clock derived, so only check that a sample was recorded.
+  let speed = await waitForValue(GleanTest.imageDecode.speedJxl);
+  is(speed.count, 1, "recorded one decode speed sample");
+});
+
+add_task(async function animatedImage() {
+  await decodeJXL("animation-1loop.jxl");
+
+  is(await waitForValue(GleanTest.jxl.decodeResult.success), 1,
+     "recorded one successful decode");
+  is(await GleanTest.jxl.animated.present.testGetValue() ?? 0, 1,
+     "recorded as animated");
+});
+
+add_task(async function corruptImage() {
+  await decodeJXL("corrupt.jxl");
+
+  is(await waitForValue(GleanTest.jxl.decodeResult.decode_error), 1,
+     "recorded one decode error");
+  is(await GleanTest.jxl.decodeResult.success.testGetValue() ?? 0, 0,
+     "did not record a success");
+});
+
+</script>
+</body>
+</html>

@@ -17,7 +17,6 @@ var { DefaultWeakMap } = ExtensionUtils;
 ChromeUtils.defineESModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   AddonManagerPrivate: "resource://gre/modules/AddonManager.sys.mjs",
-  DevToolsShim: "chrome://devtools-startup/content/DevToolsShim.sys.mjs",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -375,15 +374,6 @@ this.runtime = class extends ExtensionAPIPersistent {
 
           extension.uninstallURL = url;
           return Promise.resolve();
-        },
-
-        // This function is not exposed to the extension js code and it is only
-        // used by the alert function redefined into the background pages to be
-        // able to open the BrowserConsole from the main process.
-        openBrowserConsole() {
-          if (AppConstants.platform !== "android") {
-            DevToolsShim.openBrowserConsole();
-          }
         },
 
         async internalWakeupBackground() {

@@ -463,7 +463,8 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
 
   bool IsScoped() const { return mIsScoped; }
 
-  static already_AddRefed<CustomElementRegistry> GetScopedRegistry(nsINode&);
+  static already_AddRefed<CustomElementRegistry> GetScopedRegistry(
+      const nsINode&);
   static void SetScopedRegistry(nsINode&, CustomElementRegistry&);
   static void RemoveScopedRegistry(nsINode&);
   static bool IsInScopedRegistryMap(nsINode&);

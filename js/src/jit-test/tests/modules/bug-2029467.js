@@ -6,7 +6,7 @@ export { x as "not an identifier!" };
 `;
 let m = parseModule(src);
 registerModule("self", m);
-moduleLink(m);
+moduleLoadAndLink(m);
 moduleEvaluate(m).catch(e => print("err:", e));
 drainJobQueue();
 

@@ -12,8 +12,10 @@ import java.util.concurrent.TimeUnit
  * Returns a list of all sponsored content impressions (expressed in seconds from Epoch) in the
  * period between `now` down to [SponsoredContentFrequencyCaps.flightPeriod].
  */
-fun SponsoredContent.getCurrentFlightImpressions(): List<Long> {
-    val now = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis())
+fun SponsoredContent.getCurrentFlightImpressions(
+    currentTimeMillis: Long = System.currentTimeMillis(),
+): List<Long> {
+    val now = TimeUnit.MILLISECONDS.toSeconds(currentTimeMillis)
     return caps.currentImpressions.filter {
         now - it < caps.flightPeriod
     }
@@ -31,10 +33,12 @@ fun SponsoredContent.hasFlightImpressionsLimitReached(): Boolean {
  * Records a new impression and returns the [SponsoredContent] with the updated impressions
  * details. This only updates the in-memory data.
  */
-fun SponsoredContent.recordNewImpression(): SponsoredContent {
+fun SponsoredContent.recordNewImpression(
+    currentTimeMillis: Long = System.currentTimeMillis(),
+): SponsoredContent {
     return this.copy(
         caps = caps.copy(
-            currentImpressions = caps.currentImpressions + TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()),
+            currentImpressions = caps.currentImpressions + TimeUnit.MILLISECONDS.toSeconds(currentTimeMillis),
         ),
     )
 }

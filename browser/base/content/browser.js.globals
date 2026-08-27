@@ -40,7 +40,6 @@
   "PageProxyClickHandler",
   "OpenSearchManager",
   "CreateContainerTabMenu",
-  "gContainerCreation",
   "FillHistoryMenu",
   "toOpenWindowByType",
   "OpenBrowserWindow",
@@ -145,6 +144,7 @@
   "URILoadingHelper",
   "UrlbarPrefs",
   "UrlbarProviderSearchTips",
+  "UrlbarShared",
   "UrlbarTokenizer",
   "UrlbarUtils",
   "Weave",
@@ -237,5 +237,6 @@
   "ToolbarDropHandler",
   "ProfilesDatastoreService",
   "gTrustPanelHandler",
-  "ContentSharingUtils"
+  "ContentSharingUtils",
+  "Referrals"
 ]

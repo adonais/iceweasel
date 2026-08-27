@@ -175,6 +175,7 @@ bool nsDisplayFieldSetBorder::CreateWebRenderCommands(
           LayoutDeviceRect::FromAppUnits(legendRect, appUnitsPerDevPixel));
       region.mode = wr::ClipMode::ClipOut;
       region.radii = wr::EmptyBorderRadius();
+      region.inset = wr::EmptyLayoutSideOffsets();
 
       std::array<wr::WrClipId, 2> clips = {
           aBuilder.DefineRectClip(Nothing(), layoutRect),

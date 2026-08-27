@@ -84,7 +84,10 @@ add_task(async function test_edit_url() {
 async function waitforLoadURL() {
   let sandbox = sinon.createSandbox();
   let loadedUrl = await new Promise(resolve =>
-    sandbox.stub(gURLBar, "_loadURL").callsFake(resolve)
+    sandbox.stub(gURLBar.controller, "loadURL").callsFake(options => {
+      resolve(options.url);
+      return {};
+    })
   );
   sandbox.restore();
   return loadedUrl;

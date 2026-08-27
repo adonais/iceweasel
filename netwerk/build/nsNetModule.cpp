@@ -70,34 +70,8 @@ NS_IMPL_COMPONENT_FACTORY(net::nsHttpsHandler) {
   return handler.forget().downcast<nsIHttpProtocolHandler>();
 }
 
+// For WebSocketChannel::Shutdown() in nsNetShutdown().
 #include "WebSocketChannel.h"
-#include "WebSocketChannelChild.h"
-namespace mozilla::net {
-static already_AddRefed<BaseWebSocketChannel> WebSocketChannelConstructor(
-    bool aSecure) {
-  if (IsNeckoChild()) {
-    return MakeAndAddRef<WebSocketChannelChild>(aSecure);
-  }
-
-  if (aSecure) {
-    return MakeAndAddRef<WebSocketSSLChannel>();
-  }
-  return MakeAndAddRef<WebSocketChannel>();
-}
-
-#define WEB_SOCKET_HANDLER_CONSTRUCTOR(type, secure)          \
-  nsresult type##Constructor(REFNSIID aIID, void** aResult) { \
-    RefPtr<BaseWebSocketChannel> inst;                        \
-                                                              \
-    *aResult = nullptr;                                       \
-    inst = WebSocketChannelConstructor(secure);               \
-    return inst->QueryInterface(aIID, aResult);               \
-  }
-
-WEB_SOCKET_HANDLER_CONSTRUCTOR(WebSocketChannel, false)
-WEB_SOCKET_HANDLER_CONSTRUCTOR(WebSocketSSLChannel, true)
-#undef WEB_SOCKET_HANDLER_CONSTRUCTOR
-}  // namespace mozilla::net
 
 ///////////////////////////////////////////////////////////////////////////////
 

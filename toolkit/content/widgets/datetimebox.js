@@ -383,12 +383,8 @@ this.DateTimeBoxWidget = class {
     }
 
     if (this.mIsRTL) {
-      // Force the direction to be "ltr", so that the field stays in the
-      // same order even when it's empty (with placeholder). By using
-      // "embed", the text inside the element is still displayed based
-      // on its directionality.
+      // Set "embed" so that the field does not change order based on contents.
       field.style.unicodeBidi = "embed";
-      field.style.direction = "ltr";
     }
 
     return field;

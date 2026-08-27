@@ -93,12 +93,36 @@
           "properties": {
             "id": {
               "type": "string",
+              "enum": ["bookmarkAdded"]
+            }
+          },
+          "required": ["id"],
+          "additionalProperties": false,
+          "description": "Fires when the user adds a bookmark through any UI path. Bulk and non-interactive sources and tag operations are ignored, and it fires at most once per operation. Does not fire in private windows."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
               "enum": ["openBookmarkedURL"]
             }
           },
           "required": ["id"],
           "additionalProperties": false,
           "description": "Happens every time the user adds a bookmark from the URL bar star icon"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "enum": ["visitBookmarkedURL"]
+            }
+          },
+          "required": ["id"],
+          "additionalProperties": false,
+          "description": "Fires when the user navigates to a URL that is already bookmarked. Does not fire in private windows."
         },
         {
           "type": "object",
@@ -436,30 +460,6 @@
           "additionalProperties": false,
           "required": ["id"],
           "description": "Happens when the user resumes activity after n milliseconds of inactivity (keyboard/mouse interactions and audio playback all count as activity)"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "enum": ["cookieBannerDetected"]
-            }
-          },
-          "additionalProperties": false,
-          "required": ["id"],
-          "description": "Happens when Firefox detects a cookie consent banner that could otherwise be handled by Cookie Banner Handling"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "enum": ["cookieBannerHandled"]
-            }
-          },
-          "additionalProperties": false,
-          "required": ["id"],
-          "description": "Happens when Firefox automatically engages with a cookie consent banner"
         },
         {
           "type": "object",

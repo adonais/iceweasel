@@ -1,5 +1,3 @@
-(asyncshutdown)=
-
 # AsyncShutdown
 
 During shutdown of the process, subsystems are closed one after another. `AsyncShutdown` is a module dedicated to express shutdown-time dependencies between:

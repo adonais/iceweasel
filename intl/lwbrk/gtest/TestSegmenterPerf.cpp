@@ -88,9 +88,9 @@ static void TestSegmenterBench(const nsString& aStr, bool aIsJaOrZh,
   breakState.SetLength(aStr.Length());
 
   for (size_t i = 0; i < aCount; i++) {
-    LineBreaker::ComputeBreakPositions(
-        aStr.get(), aStr.Length(), WordBreakRule::Normal, LineBreakRule::Strict,
-        aIsJaOrZh, breakState.Elements());
+    LineBreaker::ComputeBreakPositions(aStr, WordBreakRule::Normal,
+                                       LineBreakRule::Strict, aIsJaOrZh,
+                                       breakState);
   }
 }
 

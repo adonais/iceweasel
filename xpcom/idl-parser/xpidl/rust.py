@@ -169,7 +169,7 @@ def attributeReturnType(a, getter):
     if a.notxpcom:
         if getter:
             return a.realtype.rustType("in").strip()
-        return "::libc::c_void"
+        return "()"
     return "::nserror::nsresult"
 
 

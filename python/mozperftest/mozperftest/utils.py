@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import contextlib
 import functools
+import glob
 import importlib
 import inspect
 import logging
@@ -788,3 +789,151 @@ def get_adb_device_or_emu(verbose=False):
                 return ADBDeviceFactory(verbose=True)
             else:
                 raise ADBError("No emulator started and android device not found")
+
+
+def _android_sdk_root():
+    """Return the fetched Android SDK root, or None if it is not set."""
+    return os.environ.get("ANDROID_SDK_ROOT") or os.environ.get("ANDROID_HOME")
+
+
+def _prepend_to_path(directory):
+    """Prepend an existing directory to the PATH environment variable, once."""
+    if not os.path.isdir(directory):
+        return
+    entries = os.environ.get("PATH", "").split(os.pathsep)
+    if directory not in entries:
+        os.environ["PATH"] = os.pathsep.join([directory, *entries])
+
+
+def get_adb_path():
+    """Return the path to the adb executable.
+
+    Prefer the SDK pointed to by ANDROID_SDK_ROOT/ANDROID_HOME, so adb is found
+    in automation where it is not on PATH; fall back to ``adb`` otherwise.
+    """
+    sdk_root = _android_sdk_root()
+    if sdk_root:
+        adb_path = os.path.join(sdk_root, "platform-tools", "adb")
+        if os.path.exists(adb_path):
+            return adb_path
+    return "adb"
+
+
+def ensure_adb_on_path():
+    """Put the fetched SDK's platform-tools on PATH so ``adb`` resolves by name.
+
+    Tests and tools spawned as subprocesses invoke ``adb`` directly; in
+    automation the SDK is fetched but not on PATH.
+    """
+    sdk_root = _android_sdk_root()
+    if sdk_root:
+        _prepend_to_path(os.path.join(sdk_root, "platform-tools"))
+
+
+def ensure_profgen_on_path():
+    """Put the fetched SDK's cmdline-tools bin on PATH so ``profgen`` resolves.
+
+    Installing a Fenix APK with its baseline profile shells out to ``profgen``,
+    which ships in a versioned ``cmdline-tools/<version>/bin`` directory of the
+    SDK rather than on PATH.
+    """
+    sdk_root = _android_sdk_root()
+    if not sdk_root:
+        return
+    for bin_dir in glob.glob(os.path.join(sdk_root, "cmdline-tools", "*", "bin")):
+        _prepend_to_path(bin_dir)
+
+
+def ensure_java_on_path():
+    """Set JAVA_HOME and put its bin on PATH from the fetched JDK.
+
+    ``profgen`` (used to extract Fenix baseline profiles) is a Java tool, so it
+    needs a JRE. In automation the JDK is fetched to ``MOZ_FETCHES_DIR/jdk`` but
+    is not on PATH and JAVA_HOME is unset. The macOS JDK nests the runtime under
+    ``<version>/Contents/Home``; other platforms use ``<version>`` directly.
+    """
+    fetches_dir = os.environ.get("MOZ_FETCHES_DIR")
+    if not fetches_dir:
+        return
+    candidates = glob.glob(
+        os.path.join(fetches_dir, "jdk", "*", "Contents", "Home")
+    ) + glob.glob(os.path.join(fetches_dir, "jdk", "*"))
+    for java_home in candidates:
+        if os.path.isfile(os.path.join(java_home, "bin", "java")):
+            os.environ["JAVA_HOME"] = java_home
+            _prepend_to_path(os.path.join(java_home, "bin"))
+            return
+
+
+def start_test_emulator(verbose=False):
+    """Start the Mozilla test emulator when no Android device is connected.
+
+    Intended as a fallback when connecting to a device fails. The emulator is
+    started unattended in automation (with software rendering, which headless
+    CI workers require) or after a prompt when run interactively.
+
+    Returns True if an emulator was started, False if none was (e.g. the
+    emulator or AVD is unavailable, or the user declined the prompt).
+    """
+    from mozdevice import ADBError
+    from mozrunner.devices.android_device import AndroidEmulator
+
+    emulator = None
+    for avd_type in ("arm64", "x86_64", "arm"):
+        candidate = AndroidEmulator(avd_type, verbose=verbose)
+        if candidate.is_available() and candidate.check_avd():
+            emulator = candidate
+            break
+    if emulator is None:
+        return False
+
+    interactive = not ON_TRY and sys.stdin is not None and sys.stdin.isatty()
+    if interactive:
+        response = input(
+            "No Android devices connected. Start an emulator? (Y/n) "
+        ).strip()
+        if response and not response.lower().startswith("y"):
+            return False
+    else:
+        # Use host GPU rendering: the macOS perf workers have
+        # a window server, and swiftshader_indirect produces a corrupt guest
+        # framebuffer that shows up as static in the screen recordings.
+        # These mirror emulator_extra_args in raptor's
+        # android_emulator_macosx_config.py; keep them in sync except -gpu, which
+        # differs by design (mozperftest records the guest framebuffer, raptor
+        # uses the Firefox window recorder).
+        os.environ.setdefault(
+            "MOZ_EMULATOR_COMMAND_ARGS",
+            "-gpu host -skip-adb-auth -verbose -show-kernel "
+            "-ranchu -selinux permissive -memory 3072 -cores 4 -skin 800x1280 "
+            "-no-snapstorage -no-snapshot -prop ro.test_harness=true",
+        )
+
+    print(f"Starting emulator running {emulator.get_avd_description()}...")
+    emulator.start()
+    if emulator.wait_for_start() is False:
+        raise ADBError("The Android emulator failed to start.")
+    return True
+
+
+def ensure_android_device(verbose=False):
+    """Make a usable Android device available, starting the emulator if needed.
+
+    Centralizes Android device readiness for mozperftest: it makes adb reachable
+    (see :func:`ensure_adb_on_path`) and, when no device is connected, starts the
+    Mozilla test emulator, unattended in automation or after a prompt
+    interactively (see :func:`start_test_emulator`). It does not open a
+    connection; the AndroidDevice layer owns the (logged) device connection.
+
+    :raises ADBError: when no device is connected and no emulator could be
+        started.
+    """
+    from mozdevice import ADBError, ADBHost
+
+    ensure_adb_on_path()
+    adb_path = get_adb_path()
+
+    adbhost = ADBHost(adb=adb_path, verbose=verbose)
+    ready_devices = [d for d in adbhost.devices() if d.get("state") == "device"]
+    if not ready_devices and not start_test_emulator(verbose=verbose):
+        raise ADBError("No Android device connected and no emulator could be started.")

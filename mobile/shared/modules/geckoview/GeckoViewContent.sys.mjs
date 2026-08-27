@@ -11,7 +11,6 @@ export class GeckoViewContent extends GeckoViewModule {
       "GeckoView:ClearMatches",
       "GeckoView:DisplayMatches",
       "GeckoView:FindInPage",
-      "GeckoView:HasCookieBannerRuleForBrowsingContextTree",
       "GeckoView:RestoreState",
       "GeckoView:ContainsFormData",
       "GeckoView:ProcessBackPressed",
@@ -25,6 +24,7 @@ export class GeckoViewContent extends GeckoViewModule {
       "GeckoView:IsPdfJs",
       "GeckoView:GetBrokenSiteReport",
       "GeckoView:GetWebCompatInfo",
+      "GeckoView:SendGleanBrokenSiteReport",
       "GeckoView:SendMoreWebCompatInfo",
     ]);
   }
@@ -53,9 +53,6 @@ export class GeckoViewContent extends GeckoViewModule {
     this.window.addEventListener("pagetitlechanged", this);
     this.window.addEventListener("pageinfo", this);
 
-    this.window.addEventListener("cookiebannerdetected", this);
-    this.window.addEventListener("cookiebannerhandled", this);
-
     Services.obs.addObserver(this, "oop-frameloader-crashed");
     Services.obs.addObserver(this, "ipc:content-shutdown");
   }
@@ -80,9 +77,6 @@ export class GeckoViewContent extends GeckoViewModule {
     this.window.removeEventListener("DOMWindowClose", this);
     this.window.removeEventListener("pagetitlechanged", this);
     this.window.removeEventListener("pageinfo", this);
-
-    this.window.removeEventListener("cookiebannerdetected", this);
-    this.window.removeEventListener("cookiebannerhandled", this);
 
     Services.obs.removeObserver(this, "oop-frameloader-crashed");
     Services.obs.removeObserver(this, "ipc:content-shutdown");
@@ -286,14 +280,14 @@ export class GeckoViewContent extends GeckoViewModule {
       case "GeckoView:GetWebCompatInfo":
         this._getWebCompatInfo(aCallback);
         break;
+      case "GeckoView:SendGleanBrokenSiteReport":
+        this._sendGleanBrokenSiteReport(aData, aCallback);
+        break;
       case "GeckoView:SendMoreWebCompatInfo":
         this._sendMoreWebCompatInfo(aData, aCallback);
         break;
       case "GeckoView:IsPdfJs":
         aCallback.onSuccess(this.isPdfJs);
-        break;
-      case "GeckoView:HasCookieBannerRuleForBrowsingContextTree":
-        this._hasCookieBannerRuleForBrowsingContextTree(aCallback);
         break;
       case "GeckoView:ProcessBackPressed":
         this._processBackPressed(aCallback);
@@ -352,14 +346,6 @@ export class GeckoViewContent extends GeckoViewModule {
             previewImageUrl: aEvent.detail.previewImageURL,
           });
         }
-        break;
-      case "cookiebannerdetected":
-        this.eventDispatcher.sendRequest(
-          "GeckoView:CookieBannerEvent:Detected"
-        );
-        break;
-      case "cookiebannerhandled":
-        this.eventDispatcher.sendRequest("GeckoView:CookieBannerEvent:Handled");
         break;
     }
   }
@@ -460,6 +446,22 @@ export class GeckoViewContent extends GeckoViewModule {
     }
   }
 
+  async _sendGleanBrokenSiteReport(aData, aCallback) {
+    try {
+      const actor =
+        this.browser.browsingContext.currentWindowGlobal.getActor(
+          "ReportBrokenSite"
+        );
+
+      actor.sendBrokenSiteReport(aData);
+      aCallback.onSuccess();
+    } catch (error) {
+      aCallback.onError(
+        `Cannot send broken site report via Glean, error: ${error}`
+      );
+    }
+  }
+
   async _sendMoreWebCompatInfo(aData, aCallback) {
     if (
       Cu.isInAutomation &&
@@ -487,13 +489,6 @@ export class GeckoViewContent extends GeckoViewModule {
 
   async _containsFormData(aCallback) {
     aCallback.onSuccess(await this.actor.containsFormData());
-  }
-
-  async _hasCookieBannerRuleForBrowsingContextTree(aCallback) {
-    const { browsingContext } = this.actor;
-    aCallback.onSuccess(
-      Services.cookieBanners.hasRuleForBrowsingContextTree(browsingContext)
-    );
   }
 
   _findInPage(aData, aCallback) {

@@ -538,6 +538,26 @@ add_task(async function test_publicSuffix() {
     });
 
     testApi({
+      hostname: "^.ck",
+      description: "wildcard rule *.ck should not match invalid domain ^.ck",
+      expect: {
+        isKnownSuffix: false,
+        getKnownSuffix: { throws: "Invalid hostname: ^.ck" },
+        getDomain: { throws: "Invalid hostname: ^.ck" },
+      },
+    });
+
+    testApi({
+      hostname: "*.ck",
+      description: "wildcard rule *.ck should not match invalid domain *.ck",
+      expect: {
+        isKnownSuffix: false,
+        getKnownSuffix: { throws: "Invalid hostname: *.ck" },
+        getDomain: { throws: "Invalid hostname: *.ck" },
+      },
+    });
+
+    testApi({
       hostname: "banana.ck",
       description: "wildcard rule *.ck, is eTLD",
       expect: {

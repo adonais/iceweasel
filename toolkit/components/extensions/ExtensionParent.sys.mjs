@@ -1163,6 +1163,11 @@ ParentAPIManager = {
             data,
             actor.browsingContext
           );
+          // TODO: make WindowContext a first-class member of BaseContext and
+          // use it here. For now, just set innerWindowID (already declared on
+          // BaseContext). This is used by notifyBackgroundScriptSuspendIgnored
+          // in ext-backgroundPage.js
+          context.innerWindowID = actor.manager.innerWindowId;
         } else if (envType == "devtools_parent") {
           context = new DevToolsExtensionPageContextParent(
             envType,

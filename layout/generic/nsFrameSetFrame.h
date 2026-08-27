@@ -187,8 +187,8 @@ class nsHTMLFramesetFrame final : public nsContainerFrame {
   bool mNeedFirstReflowWork = false;
   nscolor mParentBorderColor;
   int32_t mParentBorderWidth;
-  int32_t mPrevNeighborOrigSize;  // used during resize
-  int32_t mNextNeighborOrigSize;
+  int32_t mPrevNeighborOrigSize = 0;  // used during resize
+  int32_t mNextNeighborOrigSize = 0;
   int32_t mMinDrag;
   int32_t mChildCount;
 };

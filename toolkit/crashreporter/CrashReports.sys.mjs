@@ -23,9 +23,13 @@ export var CrashReports = {
         let file = entries.nextFile;
         let leaf = file.leafName;
         if (leaf.startsWith("bp-") && leaf.endsWith(".txt")) {
+          let date = lastModifiedOrNull(file);
+          if (date === null) {
+            continue;
+          }
           let entry = {
             id: leaf.slice(0, -4),
-            date: file.lastModifiedTime,
+            date,
             pending: false,
             ignored: false,
           };
@@ -47,9 +51,13 @@ export var CrashReports = {
           continue;
         }
         if (extension === ".dmp") {
+          let date = lastModifiedOrNull(file);
+          if (date === null) {
+            continue;
+          }
           let entry = {
             id,
-            date: file.lastModifiedTime,
+            date,
             pending: true,
             ignored: false,
           };
@@ -131,6 +139,20 @@ export var CrashReports = {
     });
   },
 };
+
+/**
+ * Returns the last-modified time of `file`, or null if it no longer exists.
+ */
+function lastModifiedOrNull(file) {
+  try {
+    return file.lastModifiedTime;
+  } catch (e) {
+    if (e.result === Cr.NS_ERROR_FILE_NOT_FOUND) {
+      return null;
+    }
+    throw e;
+  }
+}
 
 function CrashReports_pendingDir() {
   let pendingDir = Services.dirsvc.get("UAppData", Ci.nsIFile);

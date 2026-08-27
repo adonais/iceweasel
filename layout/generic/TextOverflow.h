@@ -154,12 +154,7 @@ class TextOverflow final {
   };
 
   LogicalRect GetLogicalScrollableOverflowRectRelativeToBlock(
-      nsIFrame* aFrame) const {
-    return LogicalRect(
-        mBlockWM,
-        aFrame->ScrollableOverflowRect() + aFrame->GetOffsetTo(mBlock),
-        mBlockSize);
-  }
+      nsIFrame* aFrame) const;
 
   /**
    * Examines frames on the line to determine whether we should draw a left
@@ -259,7 +254,7 @@ class TextOverflow final {
 
   LogicalRect mContentArea;
   nsDisplayListBuilder* mBuilder;
-  nsIFrame* mBlock;
+  nsBlockFrame* mBlock;
   ScrollContainerFrame* mScrollContainerFrame;
   nsDisplayList mMarkerList;
   nsSize mBlockSize;
@@ -275,10 +270,10 @@ class TextOverflow final {
     void Init(const StyleTextOverflowSide& aStyle) {
       mInitialized = false;
       mISize = 0;
-      mStyle = &aStyle;
+      mTextOverflowStyle = &aStyle;
       mIntrinsicISize = 0;
       mHasOverflow = false;
-      mHasBlockEllipsis = false;
+      mBlockEllipsis = nullptr;
       mActive = false;
       mEdgeAligned = false;
     }
@@ -290,28 +285,53 @@ class TextOverflow final {
 
     bool IsSuppressed(bool aInLineClampContext) const {
       if (aInLineClampContext) {
-        return !mHasBlockEllipsis;
+        return !HasBlockEllipsis();
       }
-      return mStyle->IsClip();
+      return mTextOverflowStyle->IsClip();
     }
-    bool IsNeeded() const { return mHasOverflow || mHasBlockEllipsis; }
+    bool IsNeeded() const { return mHasOverflow || HasBlockEllipsis(); }
     void Reset() {
       mHasOverflow = false;
-      mHasBlockEllipsis = false;
+      mBlockEllipsis = nullptr;
       mEdgeAligned = false;
+    }
+
+    bool HasBlockEllipsis() const {
+      if (!mBlockEllipsis || mBlockEllipsis->IsNoEllipsis()) {
+        return false;
+      }
+      return !mBlockEllipsis->IsString() ||
+             !mBlockEllipsis->AsString().AsAtom()->IsEmpty();
+    }
+
+    bool IsEllipsis() const {
+      if (mBlockEllipsis) {
+        return mBlockEllipsis->IsEllipsis();
+      }
+      return mTextOverflowStyle->IsEllipsis();
+    }
+
+    const StyleAtomString* String() const {
+      if (mBlockEllipsis) {
+        return mBlockEllipsis->IsString() ? &mBlockEllipsis->AsString()
+                                          : nullptr;
+      }
+      return mTextOverflowStyle->IsString() ? &mTextOverflowStyle->AsString()
+                                            : nullptr;
     }
 
     // The current width of the marker, the range is [0 .. mIntrinsicISize].
     nscoord mISize;
     // The intrinsic width of the marker.
     nscoord mIntrinsicISize;
-    // The text-overflow style for this side.  Ignored if we're rendering a
+    // The text-overflow style for this side. Ignored if we're rendering a
     // block ellipsis.
-    const StyleTextOverflowSide* mStyle;
+    const StyleTextOverflowSide* mTextOverflowStyle;
     // True if there is visible overflowing inline content on this side.
     bool mHasOverflow;
-    // True if this side has a block ellipsis (from -webkit-line-clamp).
-    bool mHasBlockEllipsis;
+    // The block ellipsis style for this side. Null when we're rendering a
+    // text-overflow.
+    const StyleBlockEllipsis* mBlockEllipsis = nullptr;
     // True if mISize and mIntrinsicISize have been setup from style.
     bool mInitialized;
     // True if the style is not text-overflow:clip on this side and the marker

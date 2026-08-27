@@ -19,6 +19,7 @@ import androidx.core.view.isVisible
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.browser.toolbar.R
 import mozilla.components.concept.toolbar.Toolbar
+import mozilla.components.support.ktx.android.view.pixelSizeFor
 
 /**
  * View displaying the URL and optionally the title of a website.
@@ -59,7 +60,7 @@ internal class OriginView @JvmOverloads constructor(
             }
         }
 
-        val fadingEdgeSize = resources.getDimensionPixelSize(
+        val fadingEdgeSize = pixelSizeFor(
             R.dimen.mozac_browser_toolbar_url_fading_edge_size,
         )
 
@@ -80,7 +81,7 @@ internal class OriginView @JvmOverloads constructor(
 
         setSingleLine()
 
-        val fadingEdgeSize = resources.getDimensionPixelSize(
+        val fadingEdgeSize = pixelSizeFor(
             R.dimen.mozac_browser_toolbar_url_fading_edge_size,
         )
 

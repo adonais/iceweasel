@@ -784,8 +784,8 @@ bool SharedArrayBufferObject::acceptRawBuffer(SharedArrayRawBuffer* buffer,
     return false;
   }
 
-  setFixedSlot(RAWBUF_SLOT, PrivateValue(buffer));
-  setFixedSlot(LENGTH_SLOT, PrivateValue(length));
+  setFixedSlotTyped(RAWBUF_SLOT, PrivateValue(buffer));
+  setFixedSlotTyped(LENGTH_SLOT, PrivateValue(length));
   MOZ_ASSERT(isInitialized());
   return true;
 }
@@ -796,12 +796,12 @@ void SharedArrayBufferObject::dropRawBuffer() {
   zoneFromAnyThread()->removeSharedMemory(rawBufferObject(), size,
                                           MemoryUse::SharedArrayRawBuffer);
   rawBufferObject()->dropReference();
-  setFixedSlot(RAWBUF_SLOT, UndefinedValue());
+  setFixedSlotTyped(RAWBUF_SLOT, UndefinedValue());
   MOZ_ASSERT(!isInitialized());
 }
 
 SharedArrayRawBuffer* SharedArrayBufferObject::rawBufferObject() const {
-  Value v = getFixedSlot(RAWBUF_SLOT);
+  Value v = getFixedSlotTyped(RAWBUF_SLOT);
   MOZ_ASSERT(!v.isUndefined());
   return reinterpret_cast<SharedArrayRawBuffer*>(v.toPrivate());
 }
@@ -815,7 +815,7 @@ void SharedArrayBufferObject::Finalize(JS::GCContext* gcx, JSObject* obj) {
 
   // Detect the case of failure during SharedArrayBufferObject creation,
   // which causes a SharedArrayRawBuffer to never be attached.
-  Value v = buf.getFixedSlot(RAWBUF_SLOT);
+  Value v = buf.getFixedSlotTyped(RAWBUF_SLOT);
   if (!v.isUndefined()) {
     buf.dropRawBuffer();
   }

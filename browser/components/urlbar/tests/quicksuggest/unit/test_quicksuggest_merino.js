@@ -292,9 +292,6 @@ add_task(async function timestamps() {
   let controller = UrlbarTestUtils.newMockController({
     input: {
       isPrivate: context.isPrivate,
-      onFirstResult() {
-        return false;
-      },
       getSearchSource() {
         return "dummy-search-source";
       },

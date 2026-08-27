@@ -245,8 +245,8 @@ void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
     // PDocAccessible::Printing for this purpose.
     ipcDoc->SendPrinting();
   } else if (XRE_IsParentProcess()) {
-    if (BrowsingContext* bc = aDoc->GetBrowsingContext()) {
-      PdfStructTreeBuilder::Init(bc);
+    if (dom::WindowContext* wc = aDoc->GetWindowContext()) {
+      PdfStructTreeBuilder::Init(wc);
     }
   }
 }

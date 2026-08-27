@@ -95,6 +95,8 @@ policy-DisableForgetButton = Prevent access to the Forget button.
 
 policy-DisableFormHistory = Don’t remember search and form history.
 
+policy-DisableLaunchOnLogin = Prevent { -brand-short-name } from launching automatically when the user logs in.
+
 policy-DisablePrimaryPasswordCreation = If true, a Primary Password can’t be created.
 
 policy-DisablePasswordReveal = Do not allow passwords to be revealed in saved logins.

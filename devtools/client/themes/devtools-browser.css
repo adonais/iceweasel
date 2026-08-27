@@ -9,6 +9,42 @@
 
 /* Set min-height to 29px as it matches the height of the .devtools-tabbar (/devtools/client/themes/toolbox.css#67)
  * This prevents the shrinking of the toolbox until it disappears. */
-.devtools-toolbox-bottom-iframe {
+.devtools-toolbox-iframe.bottom-host {
   min-height: 29px;
+}
+
+.devtools-toolbox-iframe {
+  z-index: var(--browser-container-z-index-devtools-toolbox);
+
+  @media not -moz-pref("browser.nova.enabled") {
+    /* borrowed from #sidebar */
+    outline: 0.5px solid var(--sidebar-border-color);
+  }
+}
+
+@media -moz-pref("browser.nova.enabled") {
+  .devtools-toolbox-iframe {
+    --nova-thick-border-width: 2px;
+    --nova-border-color: var(--chrome-content-separator-color);
+    --nova-border-shorthand: var(--nova-thick-border-width) solid var(--nova-border-color);
+
+    /* Docked to bottom: top border */
+    &.bottom-host {
+      border-block-start: var(--nova-border-shorthand);
+    }
+
+    /* Docked to right: left border */
+    &.side-host.docked-right {
+      /* we don't want to use logical properties here, as when in RTL, the toolbox is still
+       docked to the right side , and we want to update the actual left border */
+      border-left: var(--nova-border-shorthand);
+    }
+
+    /* Docked to left: right border */
+    &.side-host.docked-left {
+      /* we don't want to use logical properties here, as when in RTL, the toolbox is still
+       docked to the left side , and we want to update the actual right border */
+      border-right: var(--nova-border-shorthand);
+    }
+  }
 }

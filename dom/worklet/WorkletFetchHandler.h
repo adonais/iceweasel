@@ -22,7 +22,7 @@ class AddModuleThrowErrorRunnable;
 // and notifies the result of addModule back to |aWorklet|.
 class WorkletFetchHandler final : public nsISupports {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(WorkletFetchHandler)
 
   static already_AddRefed<Promise> AddModule(Worklet* aWorklet, JSContext* aCx,

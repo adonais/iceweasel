@@ -3,11 +3,6 @@
 
 "use strict";
 
-const TOPIC_BROWSERGLUE_TEST = "browser-glue-test";
-const TOPICDATA_BROWSERGLUE_TEST = "force-ui-migration";
-const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"].getService(
-  Ci.nsIObserver
-);
 const UI_VERSION = 157;
 const NIGHTLY_ONLY_DATA_MIGRATION = 158;
 
@@ -16,6 +11,9 @@ const { LoginHelper } = ChromeUtils.importESModule(
 );
 const { FormAutofillUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/shared/FormAutofillUtils.sys.mjs"
+);
+const { ProfileDataUpgrader } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/ProfileDataUpgrader.sys.mjs"
 );
 
 const CC_OLD_PREF = "extensions.formautofill.creditCards.reauth.optout";
@@ -33,24 +31,15 @@ function clearPrefs() {
   Services.prefs.clearUserPref("browser.startup.homepage_override.mstone");
 }
 
-function simulateUIMigration() {
-  gBrowserGlue.observe(
-    null,
-    TOPIC_BROWSERGLUE_TEST,
-    TOPICDATA_BROWSERGLUE_TEST
-  );
-}
-
 add_task(async function setup() {
   registerCleanupFunction(clearPrefs);
 });
 
 add_task(async function test_pref_migration_old_pref_os_auth_disabled() {
-  Services.prefs.setIntPref("browser.migration.version", UI_VERSION - 1);
   Services.prefs.setStringPref(CC_OLD_PREF, "off");
   Services.prefs.setStringPref(PASSWORDS_OLD_PREF, "off");
 
-  simulateUIMigration();
+  ProfileDataUpgrader.upgrade(UI_VERSION - 1, UI_VERSION);
 
   Assert.ok(
     !FormAutofillUtils.getOSAuthEnabled(),
@@ -64,11 +53,10 @@ add_task(async function test_pref_migration_old_pref_os_auth_disabled() {
 });
 
 add_task(async function test_pref_migration_old_pref_os_auth_enabled() {
-  Services.prefs.setIntPref("browser.migration.version", UI_VERSION - 1);
   Services.prefs.setStringPref(CC_OLD_PREF, "");
   Services.prefs.setStringPref(PASSWORDS_OLD_PREF, "");
 
-  simulateUIMigration();
+  ProfileDataUpgrader.upgrade(UI_VERSION - 1, UI_VERSION);
 
   Assert.ok(
     FormAutofillUtils.getOSAuthEnabled(),
@@ -82,16 +70,15 @@ add_task(async function test_pref_migration_old_pref_os_auth_enabled() {
 });
 
 add_task(async function test_pref_migration_real_pref_os_auth_disabled() {
-  Services.prefs.setIntPref(
-    "browser.migration.version",
-    NIGHTLY_ONLY_DATA_MIGRATION
-  );
   Services.prefs.setCharPref(
     "browser.startup.homepage_override.mstone",
     "127.0"
   );
 
-  simulateUIMigration();
+  ProfileDataUpgrader.upgrade(
+    NIGHTLY_ONLY_DATA_MIGRATION,
+    NIGHTLY_ONLY_DATA_MIGRATION + 1
+  );
 
   Assert.ok(
     !FormAutofillUtils.getOSAuthEnabled(),

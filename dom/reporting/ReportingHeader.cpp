@@ -10,6 +10,7 @@
 #include "js/GCAPI.h"
 #include "js/JSON.h"
 #include "js/PropertyAndElement.h"  // JS_GetElement
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -794,8 +795,21 @@ void ReportingHeader::RemoveOriginsFromHost(const nsAString& aHost) {
   NS_ConvertUTF16toUTF8 host(aHost);
 
   for (auto iter = mOrigins.Iter(); !iter.Done(); iter.Next()) {
+    // The key is an origin, but HasRootDomain() expects a host.
+    RefPtr<BasePrincipal> principal =
+        BasePrincipal::CreateContentPrincipal(iter.Key());
+    if (NS_WARN_IF(!principal)) {
+      continue;
+    }
+
+    nsAutoCString originHost;
+    nsresult rv = principal->GetHost(originHost);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      continue;
+    }
+
     bool hasRootDomain = false;
-    nsresult rv = tldService->HasRootDomain(iter.Key(), host, &hasRootDomain);
+    rv = tldService->HasRootDomain(originHost, host, &hasRootDomain);
     if (NS_WARN_IF(NS_FAILED(rv)) || !hasRootDomain) {
       continue;
     }

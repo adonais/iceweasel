@@ -11,11 +11,9 @@ import androidx.preference.Preference
 import androidx.preference.SwitchPreference
 import mozilla.components.lib.auth.canUseBiometricFeature
 import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.focus.GleanMetrics.CookieBanner
 import org.mozilla.focus.GleanMetrics.PrivacySettings
 import org.mozilla.focus.GleanMetrics.TrackingProtectionExceptions
 import org.mozilla.focus.R
-import org.mozilla.focus.cookiebanner.CookieBannerOption
 import org.mozilla.focus.engine.EngineSharedPreferencesListener
 import org.mozilla.focus.ext.requireComponents
 import org.mozilla.focus.ext.settings
@@ -68,21 +66,11 @@ class PrivacySecuritySettingsFragment :
             findPreference(getString(R.string.pref_key_performance_block_javascript)) as? SwitchPreference
         val webFontsPreference =
             findPreference(getString(R.string.pref_key_performance_block_webfonts)) as? SwitchPreference
-        val cookieBannerPreference = findPreference<Preference>(getString(R.string.pref_key_cookie_banner_settings))
 
         cookiesPreference?.onPreferenceChangeListener = engineSharedPreferencesListener
         safeBrowsingSwitchPreference?.onPreferenceChangeListener = engineSharedPreferencesListener
         javaScriptPreference?.onPreferenceChangeListener = engineSharedPreferencesListener
         webFontsPreference?.onPreferenceChangeListener = engineSharedPreferencesListener
-
-        cookieBannerPreference?.isVisible = requireContext().settings.isCookieBannerEnable
-        if (requireContext().settings.getCurrentCookieBannerOptionFromSharePref() ==
-            CookieBannerOption.CookieBannerDisabled()
-        ) {
-            cookieBannerPreference?.summary = getString(R.string.preferences_cookie_banner_summary_off)
-        } else {
-            cookieBannerPreference?.summary = getString(R.string.preferences_cookie_banner_summary_on)
-        }
     }
 
     override fun onResume() {
@@ -201,14 +189,6 @@ class PrivacySecuritySettingsFragment :
                     EngineSharedPreferencesListener.TrackerChanged.CONTENT.tracker,
                     requireContext().settings.shouldBlockOtherTrackers(),
                 )
-            resources.getString(R.string.pref_key_cookie_banner_settings) -> {
-                CookieBanner.visitedSetting.record(NoExtras())
-                requireComponents.appStore.dispatch(
-                    AppAction.OpenSettings(
-                        page = Screen.Settings.Page.CookieBanner,
-                    ),
-                )
-            }
             resources.getString(R.string.pref_key_site_permissions) ->
                 requireComponents.appStore.dispatch(
                     AppAction.OpenSettings(page = Screen.Settings.Page.SitePermissions),

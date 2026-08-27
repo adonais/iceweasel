@@ -5,12 +5,12 @@
 #ifndef mozilla_AtomicBitfields_h
 #define mozilla_AtomicBitfields_h
 
+#include <cstdint>      // IWYU pragma: keep(used within macro)
+#include <type_traits>  // IWYU pragma: keep(used within macro)
+
 #include "mozilla/Assertions.h"
 #include "mozilla/MacroArgs.h"
 #include "mozilla/MacroForEach.h"
-
-#include <cstdint>      // IWYU pragma: keep(used within macro)
-#include <type_traits>  // IWYU pragma: keep(used within macro)
 
 #ifdef __wasi__
 #  include "mozilla/WasiAtomic.h"

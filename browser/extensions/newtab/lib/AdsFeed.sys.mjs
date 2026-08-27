@@ -353,7 +353,12 @@ export class AdsFeed {
     }
 
     if (this.adsClient) {
-      return this._fetchWithAdsClient(supportedAdTypes, placements, returnData);
+      return this._fetchWithAdsClient(
+        supportedAdTypes,
+        placements,
+        state.Prefs.values,
+        returnData
+      );
     }
 
     const adsBackendConfig = state.Prefs.values?.adsBackendConfig || {};
@@ -440,12 +445,18 @@ export class AdsFeed {
    *
    * @param {Array} supportedAdTypes
    * @param {Array} placements
+   * @param {object} prefValues
    * @param {object} returnData
    * @returns {Promise<object>}
    */
-  async _fetchWithAdsClient(supportedAdTypes, placements, returnData) {
+  async _fetchWithAdsClient(
+    supportedAdTypes,
+    placements,
+    prefValues,
+    returnData
+  ) {
     const isTile = p => p.placement?.startsWith("newtab_tile_");
-    const options = lazy.AdsClient.requestOptions();
+    const options = lazy.AdsClient.requestOptions(prefValues);
 
     if (supportedAdTypes.tiles) {
       const requests = placements.filter(isTile).map(

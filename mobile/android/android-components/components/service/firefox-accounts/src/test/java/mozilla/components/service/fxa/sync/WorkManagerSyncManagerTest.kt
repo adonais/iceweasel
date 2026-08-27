@@ -99,6 +99,13 @@ class WorkManagerSyncManagerTest {
     }
 
     @Test
+    fun `isWithinStaggerBuffer is true just inside the buffer and false at or beyond it`() {
+        val now = 1_000_000L
+        assertTrue(isWithinStaggerBuffer(lastSyncedMs = now - (SYNC_STAGGER_BUFFER_MS - 1), now = now))
+        assertFalse(isWithinStaggerBuffer(lastSyncedMs = now - SYNC_STAGGER_BUFFER_MS, now = now))
+    }
+
+    @Test
     fun `GIVEN work is set to be debounced WHEN there is not a saved time stamp THEN work will not be debounced`() {
         `when`(mockTags.contains(SyncWorkerTag.Debounce.name)).thenReturn(true)
 

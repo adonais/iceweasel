@@ -5,6 +5,12 @@
 #ifndef SPA_PARAM_LATENCY_UTILS_H
 #define SPA_PARAM_LATENCY_UTILS_H
 
+#include <float.h>
+
+#include <spa/pod/builder.h>
+#include <spa/pod/parser.h>
+#include <spa/param/latency.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,12 +19,6 @@ extern "C" {
  * \addtogroup spa_param
  * \{
  */
-
-#include <float.h>
-
-#include <spa/pod/builder.h>
-#include <spa/pod/parser.h>
-#include <spa/param/latency.h>
 
 #ifndef SPA_API_LATENCY_UTILS
  #ifdef SPA_API_IMPL
@@ -44,28 +44,24 @@ spa_latency_info_compare(const struct spa_latency_info *a, const struct spa_late
 SPA_API_LATENCY_UTILS void
 spa_latency_info_combine_start(struct spa_latency_info *info, enum spa_direction direction)
 {
-	*info = SPA_LATENCY_INFO(direction,
-			.min_quantum = FLT_MAX,
-			.max_quantum = FLT_MIN,
-			.min_rate = INT32_MAX,
-			.max_rate = INT32_MIN,
-			.min_ns = INT64_MAX,
-			.max_ns = INT64_MIN);
+	*info = SPA_LATENCY_INFO_UNSET(direction);
 }
+
 SPA_API_LATENCY_UTILS void
 spa_latency_info_combine_finish(struct spa_latency_info *info)
 {
-	if (info->min_quantum == FLT_MAX)
+	struct spa_latency_info unset = SPA_LATENCY_INFO_UNSET(info->direction);
+	if (info->min_quantum == unset.min_quantum)
 		info->min_quantum = 0;
-	if (info->max_quantum == FLT_MIN)
+	if (info->max_quantum == unset.max_quantum)
 		info->max_quantum = 0;
-	if (info->min_rate == INT32_MAX)
+	if (info->min_rate == unset.min_rate)
 		info->min_rate = 0;
-	if (info->max_rate == INT32_MIN)
+	if (info->max_rate == unset.max_rate)
 		info->max_rate = 0;
-	if (info->min_ns == INT64_MAX)
+	if (info->min_ns == unset.min_ns)
 		info->min_ns = 0;
-	if (info->max_ns == INT64_MIN)
+	if (info->max_ns == unset.max_ns)
 		info->max_ns = 0;
 }
 

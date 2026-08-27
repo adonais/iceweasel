@@ -413,7 +413,15 @@ int strip_signature_block(const char* src, const char* dest) {
   indexLength = ntohl(indexLength);
 
   /* Consume the index and adjust each index by the difference */
+  if (((int64_t)indexLength) > realSizeOfSrcMAR) {
+    fprintf(stderr, "ERROR: Index length is larger than the file size.\n");
+    goto failure;
+  }
   indexBuf = malloc(indexLength);
+  if (!indexBuf) {
+    fprintf(stderr, "ERROR: Could not allocate buffer for index\n");
+    goto failure;
+  }
   if (fread(indexBuf, indexLength, 1, fpSrc) != 1) {
     fprintf(stderr, "ERROR: Could not read index\n");
     goto failure;
@@ -528,7 +536,15 @@ int extract_signature(const char* src, uint32_t sigIndex, const char* dest) {
     signatureLen = ntohl(signatureLen);
 
     /* Get the signature */
+    if (signatureLen > MAX_SIGNATURE_LENGTH) {
+      fprintf(stderr, "ERROR: signature length is too large\n");
+      goto failure;
+    }
     extractedSignature = malloc(signatureLen);
+    if (!extractedSignature) {
+      fprintf(stderr, "ERROR: could not allocate buffer for signature\n");
+      goto failure;
+    }
     if (fread(extractedSignature, signatureLen, 1, fpSrc) != 1) {
       fprintf(stderr, "ERROR: could not read signature\n");
       goto failure;
@@ -645,6 +661,10 @@ int import_signature(const char* src, uint32_t sigIndex,
 
   /* Read in the base64 encoded signature to import */
   passedInSignatureB64 = malloc(sizeOfBase64EncodedFile + 1);
+  if (!passedInSignatureB64) {
+    fprintf(stderr, "ERROR: could not allocate buffer for b64 sig file.\n");
+    goto failure;
+  }
   passedInSignatureB64[sizeOfBase64EncodedFile] = '\0';
   if (fread(passedInSignatureB64, sizeOfBase64EncodedFile, 1, fpSigFile) != 1) {
     fprintf(stderr, "ERROR: Could read b64 sig file.\n");
@@ -699,10 +719,17 @@ int import_signature(const char* src, uint32_t sigIndex,
     signatureLen = ntohl(signatureLen);
 
     /* Get the signature */
-    if (extractedMARSignature) {
-      free(extractedMARSignature);
+    free(extractedMARSignature);
+    extractedMARSignature = NULL;
+    if (signatureLen > MAX_SIGNATURE_LENGTH) {
+      fprintf(stderr, "ERROR: signature length is too large\n");
+      goto failure;
     }
     extractedMARSignature = malloc(signatureLen);
+    if (!extractedMARSignature) {
+      fprintf(stderr, "ERROR: could not allocate buffer for signature\n");
+      goto failure;
+    }
 
     if (sigIndex == i) {
       if (passedInSignatureLenRaw != signatureLen) {
@@ -1024,7 +1051,15 @@ int mar_repackage_and_sign(const char* NSSConfigDir,
   indexLength = ntohl(indexLength);
 
   /* Consume the index and adjust each index by signatureSectionLength */
+  if (((int64_t)indexLength) > realSizeOfSrcMAR) {
+    fprintf(stderr, "ERROR: Index length is larger than the file size.\n");
+    goto failure;
+  }
   indexBuf = malloc(indexLength);
+  if (!indexBuf) {
+    fprintf(stderr, "ERROR: Could not allocate buffer for index\n");
+    goto failure;
+  }
   if (fread(indexBuf, indexLength, 1, fpSrc) != 1) {
     fprintf(stderr, "ERROR: Could not read index\n");
     goto failure;

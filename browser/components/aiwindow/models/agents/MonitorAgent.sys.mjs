@@ -23,6 +23,7 @@ export {
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   MonitorStore:
     "moz-src:///browser/components/aiwindow/models/agents/MonitorStore.sys.mjs",
 });
@@ -34,8 +35,30 @@ ChromeUtils.defineLazyGetter(lazy, "log", () =>
   })
 );
 
+ChromeUtils.defineLazyGetter(
+  lazy,
+  "l10n",
+  () =>
+    new Localization(
+      ["preview/aiWindow.ftl", "toolkit/branding/brandings.ftl"],
+      true
+    )
+);
+
+const AlertNotification = Components.Constructor(
+  "@mozilla.org/alert-notification;1",
+  "nsIAlertNotification",
+  "initWithObject"
+);
+
 let gMonitors = null;
 let gLoadPromise = null;
+const gNotifiedRunIds = new Set();
+
+export const NOTIFICATION_ACTIONS = {
+  SNOOZE: "monitor-snooze",
+  DISMISS: "monitor-dismiss",
+};
 
 function monitorTelemetryExtra(monitor) {
   return {
@@ -80,7 +103,25 @@ export const MonitorAgent = {
     return Array.from(gMonitors.values(), monitor => monitor.toSerializable());
   },
 
-  async createMonitor({ prompt, watchUrls, pageTitle = "", schedule }) {
+  /**
+   * Creates a new monitor to watch specified URLs for condition changes.
+   *
+   * @param {object} options - Configuration for the new monitor
+   * @param {string} options.prompt - The condition to monitor for
+   * @param {string[]} options.watchUrls - Array of URLs to watch
+   * @param {string} [options.pageTitle=""] - Optional title for the monitor
+   * @param {object} options.schedule - Schedule configuration (type, hours, etc.)
+   * @param {string} [options.source="unknown"] - Source of monitor creation for telemetry (e.g., "in_line_chat", "about_page", "test")
+   * @returns {Promise<string>} The ID of the created monitor
+   * @throws {Error} If the maximum number of monitors has been reached
+   */
+  async createMonitor({
+    prompt,
+    watchUrls,
+    pageTitle = "",
+    schedule,
+    source = "unknown",
+  }) {
     await this._ensureLoaded();
     if (gMonitors.size >= TOTAL_NUM_MONITORS) {
       throw new Error(
@@ -102,7 +143,10 @@ export const MonitorAgent = {
       throw error;
     }
     monitor.scheduleNextRun();
-    Glean.smartWindow.monitorCreate.record(monitorTelemetryExtra(monitor));
+    const telemetryData = monitorTelemetryExtra(monitor);
+    telemetryData.source = source;
+    Glean.smartWindow.monitorCreate.record(telemetryData);
+    return monitor.id;
   },
 
   async updateMonitor(id, updates) {
@@ -189,6 +233,35 @@ export const MonitorAgent = {
     }
   },
 
+  /**
+   * Pauses or unpauses a monitor by toggling its enabled state.
+   *
+   * @param {string} id - The monitor ID
+   * @param {boolean} [pause] - Optional. If provided, sets enabled to !pause.
+   *                            If not provided, toggles the current enabled state.
+   * @returns {Promise<void>}
+   */
+  async pauseMonitor(id, pause) {
+    await this._ensureLoaded();
+    const monitor = gMonitors.get(id);
+    if (!monitor) {
+      throw new Error(`Monitor with id ${id} not found`);
+    }
+
+    // Determine the new enabled state
+    let newEnabledState;
+    if (pause === undefined) {
+      // Toggle current state
+      newEnabledState = !monitor.enabled;
+    } else {
+      // Set to opposite of pause (pause=true means enabled=false)
+      newEnabledState = !pause;
+    }
+
+    // Use updateMonitor to handle the state change
+    await this.updateMonitor(id, { enabled: newEnabledState });
+  },
+
   async deleteMonitor(id) {
     await this._ensureLoaded();
     const monitor = gMonitors.get(id);
@@ -253,6 +326,16 @@ export const MonitorAgent = {
     }
 
     gMonitors = monitors;
+
+    // Treat history that already exists at load time as "seen" so restoring
+    // monitors on startup doesn't replay old alerts as fresh notifications
+    for (const monitor of monitors.values()) {
+      for (const entry of monitor.history) {
+        if (entry.conditionMet) {
+          gNotifiedRunIds.add(entry.id);
+        }
+      }
+    }
   },
 
   async _saveAndNotify(monitor = null) {
@@ -265,12 +348,188 @@ export const MonitorAgent = {
       await lazy.MonitorStore.saveMonitors(Array.from(gMonitors.values()));
     }
     Services.obs.notifyObservers(null, MONITOR_AGENTS_CHANGED_TOPIC);
+
+    if (monitor) {
+      this._notifyIfConditionMet(monitor);
+    }
+  },
+
+  /**
+   * Shows a desktop notification every time a monitor run meets its condition.
+   * The notification carries two actions:
+   *  - "snooze": hold off checks until the next day.
+   *  - "dismiss": stop notifying while the monitor keeps running.
+   * Clicking the body opens the watched page.
+   *
+   * @param {Monitor} monitor - The monitor whose latest run just saved
+   */
+  _notifyIfConditionMet(monitor) {
+    if (monitor.notificationsMuted) {
+      return;
+    }
+
+    const entry = monitor.history.at(-1);
+    if (!entry || entry.status !== "success" || !entry.conditionMet) {
+      return;
+    }
+
+    if (gNotifiedRunIds.has(entry.id)) {
+      return;
+    }
+    gNotifiedRunIds.add(entry.id);
+
+    const [titleFallback, bodyFallback, snoozeTitle, dismissTitle] =
+      lazy.l10n.formatValuesSync([
+        "ai-tasks-monitor-notification-title",
+        "ai-tasks-monitor-notification-body",
+        "ai-tasks-monitor-notification-snooze",
+        "ai-tasks-monitor-notification-dismiss",
+      ]);
+    const title = monitor.title || titleFallback;
+    const text = entry.resultExplanation || bodyFallback;
+    const url = monitor.watchUrls[0];
+    const id = monitor.id;
+
+    try {
+      const alertsService = Cc["@mozilla.org/alerts-service;1"].getService(
+        Ci.nsIAlertsService
+      );
+      const observer = {
+        observe: (subject, topic) => {
+          if (topic !== "alertclickcallback") {
+            return;
+          }
+
+          // Notification body clicked.
+          if (!subject) {
+            if (url) {
+              // Record telemetry for opening URL
+              const telemetryData = {
+                ...monitorTelemetryExtra(monitor),
+                click_type: "open_url",
+              };
+              Glean.smartWindow.monitorNotificationClick.record(telemetryData);
+
+              this._openWatchedUrl(url);
+            }
+            return;
+          }
+
+          const action = subject.QueryInterface(Ci.nsIAlertAction).action;
+
+          if (action === NOTIFICATION_ACTIONS.SNOOZE) {
+            // Record telemetry for snooze action
+            const telemetryData = {
+              ...monitorTelemetryExtra(monitor),
+              click_type: "snooze",
+            };
+            Glean.smartWindow.monitorNotificationClick.record(telemetryData);
+
+            this.snoozeMonitor(id).catch(error =>
+              lazy.log.error("Failed to snooze monitor", error)
+            );
+            return;
+          }
+
+          if (action === NOTIFICATION_ACTIONS.DISMISS) {
+            // Record telemetry for dismiss action
+            const telemetryData = {
+              ...monitorTelemetryExtra(monitor),
+              click_type: "dismiss",
+            };
+            Glean.smartWindow.monitorNotificationClick.record(telemetryData);
+
+            this.muteMonitorNotifications(id).catch(error =>
+              lazy.log.error("Failed to mute monitor notifications", error)
+            );
+          }
+        },
+      };
+
+      const alert = new AlertNotification({
+        title,
+        text,
+        textClickable: true,
+        actions: [
+          { action: NOTIFICATION_ACTIONS.SNOOZE, title: snoozeTitle },
+          { action: NOTIFICATION_ACTIONS.DISMISS, title: dismissTitle },
+        ],
+      });
+
+      alertsService.showAlert(alert, observer);
+
+      // Record telemetry for notification being sent (after successful showAlert)
+      Glean.smartWindow.monitorNotificationSend.record(
+        monitorTelemetryExtra(monitor)
+      );
+    } catch (error) {
+      lazy.log.error("Failed to show monitor notification", error);
+    }
+  },
+
+  /**
+   * Opens a watched url from a notification click in a browser window.
+   * If the only window open is private or none is open at all
+   * a fresh window is open with the watched url.
+   *
+   * @param {string} url - The URL to open
+   */
+  _openWatchedUrl(url) {
+    const win = lazy.BrowserWindowTracker.getTopWindow({ private: false });
+    if (win) {
+      win.openTrustedLinkIn(url, "tab");
+      return;
+    }
+    const args = Cc["@mozilla.org/supports-string;1"].createInstance(
+      Ci.nsISupportsString
+    );
+    args.data = url;
+    lazy.BrowserWindowTracker.openWindow({ args });
+  },
+
+  /**
+   * Snoozes a monitor for roughly a day. Blacks out the next 24h and then
+   * resumes at the next time that matches the monitor's schedule
+   *
+   * @param {string} id - The monitor id
+   */
+  async snoozeMonitor(id) {
+    await this._ensureLoaded();
+    const monitor = gMonitors.get(id);
+    if (!monitor) {
+      return;
+    }
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+    const blackoutEnd = Date.now() + ONE_DAY_MS;
+    let next = monitor.schedule.getNextRunTime(monitor.lastRunTime);
+    for (let i = 0; next.getTime() < blackoutEnd && i < 400; i++) {
+      next = monitor.schedule.getNextRunTime(next.toISOString());
+    }
+    monitor.nextRunTime = next.toISOString();
+    monitor.scheduleNextRun();
+    await this._saveAndNotify(monitor);
+  },
+
+  /**
+   * Stops desktop notifications for a monitor
+   *
+   * @param {string} id - The monitor id
+   */
+  async muteMonitorNotifications(id) {
+    await this._ensureLoaded();
+    const monitor = gMonitors.get(id);
+    if (!monitor) {
+      return;
+    }
+    monitor.notificationsMuted = true;
+    await this._saveAndNotify(monitor);
   },
 
   _unloadForTesting() {
     this.uninit();
     gMonitors = null;
     gLoadPromise = null;
+    gNotifiedRunIds.clear();
   },
 
   async _resetForTesting() {

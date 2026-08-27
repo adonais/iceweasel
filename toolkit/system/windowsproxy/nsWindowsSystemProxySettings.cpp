@@ -32,8 +32,6 @@ nsWindowsSystemProxySettings::nsWindowsSystemProxySettings(
   mFunctions->Init();
 }
 
-nsWindowsSystemProxySettings::~nsWindowsSystemProxySettings() {}
-
 static void SetProxyResult(const char* aType, const nsACString& aHostPort,
                            nsACString& aResult) {
   aResult.AssignASCII(aType);

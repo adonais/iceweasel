@@ -2007,7 +2007,7 @@ export class CustomizeMode {
     let gUIDensity = win.gUIDensity;
     let panel = win.document.getElementById("customization-uidensity-menu");
 
-    gUIDensity.setUIDensity(mode);
+    Services.prefs.setIntPref(gUIDensity.uiDensityPref, mode);
 
     this.#onUIChange();
     panel.hidePopup();

@@ -35,8 +35,6 @@ RefPtr<IMFSampleWrapper> IMFSampleWrapper::Create(IMFSample* aVideoSample) {
 IMFSampleWrapper::IMFSampleWrapper(IMFSample* aVideoSample)
     : mVideoSample(aVideoSample) {}
 
-IMFSampleWrapper::~IMFSampleWrapper() {}
-
 void IMFSampleWrapper::ClearVideoSample() { mVideoSample = nullptr; }
 
 D3D11ZeroCopyTextureImage::D3D11ZeroCopyTextureImage(

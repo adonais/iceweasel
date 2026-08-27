@@ -1,0 +1,18 @@
+{
+  "label": "customers.extend",
+  "bugs": {
+    "2051291": {
+      "issue": "broken-login",
+      "matches": ["*://customers.extend.com/*"]
+    }
+  },
+  "css": {
+    "hide_preloader": ".extend-preloader { display: none !important; }"
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "css": ["hide_preloader"]
+    }
+  ]
+}

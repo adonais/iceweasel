@@ -26,7 +26,7 @@ class DeviceAttachmentsD3D11;
 class CompositorD3D11 : public Compositor {
  public:
   explicit CompositorD3D11(widget::CompositorWidget* aWidget);
-  virtual ~CompositorD3D11();
+  virtual ~CompositorD3D11() = default;
 
   CompositorD3D11* AsCompositorD3D11() override { return this; }
 

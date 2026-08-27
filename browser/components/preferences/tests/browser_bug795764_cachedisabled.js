@@ -39,12 +39,6 @@ async function runTest(win) {
   for (let element of elements) {
     let attributeValue = element.getAttribute("data-category");
 
-    // Ignore the cookie banner handling section, as it is currently preffed
-    // off by default (bug 1800679).
-    if (element.id === "cookieBannerHandlingGroup") {
-      continue;
-    }
-
     // IP Protection section is gated by browser.ipProtection.enabled
     if (element.id === "dataIPProtectionGroup" && !ipProtectionEnabled) {
       is_element_hidden(element, "Disabled ipProtection should be hidden");

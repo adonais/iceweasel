@@ -1053,10 +1053,10 @@ struct JSRuntime {
  public:
   js::RuntimeCaches& caches() { return caches_.ref(); }
 
-  // List of all the live wasm::Instances in the runtime. Equal to the union
+  // Set of all the live wasm::Instances in the runtime. Equal to the union
   // of all instances registered in all JS::Realms. Accessed from watchdog
   // threads for purposes of wasm::InterruptRunningCode().
-  js::ExclusiveData<js::wasm::InstanceVector> wasmInstances;
+  js::ExclusiveData<js::wasm::InstanceSet> wasmInstances;
 
   // The [[ModuleAsyncEvaluationCount]] field of agent records
   //

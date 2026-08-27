@@ -32,6 +32,10 @@
   justify-content: start;
 }
 
+/* Also declared on the container so the skeleton placeholder (a plain
+ * span) can inherit these tokens without needing the .sw-prompt-button
+ * class, which tests use to mean "a real, clickable prompt". */
+.sw-prompts-container,
 .sw-prompt-button {
   --button-background-color: light-dark(var(--color-violet-0), var(--color-gray-80));
   --button-background-color-active: light-dark(color-mix(in srgb, var(--color-violet-50) 25%, transparent), color-mix(in srgb, white 15%, transparent));
@@ -51,6 +55,83 @@
   position: relative;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   box-shadow: var(--smartwindow-shadow, var(--box-shadow-level-2));
+}
+
+.sw-prompt-favicons {
+  align-items: center;
+  display: inline-flex;
+  margin-inline-end: var(--space-xsmall);
+  vertical-align: middle;
+}
+
+.sw-prompt-favicon,
+.sw-prompt-favicon-overflow {
+  border-radius: var(--border-radius-xsmall);
+  height: var(--size-item-small);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  margin-inline-end: calc(-1 * var(--space-xxsmall));
+  width: var(--size-item-small);
+}
+
+.sw-prompt-favicons > :last-child {
+  margin-inline-end: 0;
+}
+
+.sw-prompt-favicon-overflow {
+  --sw-prompt-favicon-overflow-background-color: light-dark(var(--color-gray-20), var(--color-gray-70));
+
+  align-items: center;
+  background-color: var(--sw-prompt-favicon-overflow-background-color);
+  color: var(--text-color);
+  display: inline-flex;
+  font-size: var(--font-size-small);
+  justify-content: center;
+}
+
+/* A non-interactive placeholder pill shown while a starter's real
+ * content is still loading. */
+.sw-prompt-skeleton {
+  align-items: center;
+  background-color: var(--button-background-color);
+  border-radius: var(--button-border-radius);
+  display: inline-flex;
+  font-size: var(--button-font-size);
+  /* Reserve vertical space matching a real pill's text line. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  min-height: 1lh;
+  padding: var(--button-padding);
+}
+
+.sw-prompt-skeleton-text {
+  --sw-prompt-skeleton-fill-color: color-mix(in srgb, var(--button-text-color) 30%, transparent);
+
+  background-color: var(--sw-prompt-skeleton-fill-color);
+  border-radius: var(--border-radius-circle);
+  height: var(--size-item-xsmall);
+  overflow: hidden;
+  position: relative;
+  width: 6em;
+}
+
+.sw-prompt-skeleton-text::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, color-mix(in srgb, var(--button-text-color) 55%, transparent) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: sw-prompt-skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes sw-prompt-skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sw-prompt-skeleton-text::after {
+    animation: none;
+  }
 }
 
 /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens, stylelint-plugin-mozilla/no-base-design-tokens */
@@ -151,6 +232,10 @@
     }
   }
 
+  /* Custom properties are also declared on the container (not just
+   * .sw-prompt-button) so the skeleton placeholder pill can inherit them -
+   * see the base (non-Nova) declaration above for why. */
+  .sw-prompts-container,
   .sw-prompt-button {
     /* Note: Listing the Nova value of these tokens as a backup for consistency because some tokens do not currently exist, ex: "color-neutral" */
     --prompt-button-background-dark-color: var(--color-gray-70, #26272f);
@@ -169,7 +254,9 @@
     --button-text-color: var(--smartwindow-text-color-accent-primary);
     --button-text-color-hover: var(--smartwindow-text-color-accent-primary);
     --button-text-color-active: var(--smartwindow-text-color-accent-primary);
+  }
 
+  .sw-prompt-button {
     --focus-outline-offset: var(--dimension-2);
 
     outline: none;
@@ -194,7 +281,7 @@
       linear-gradient(#fff 0 0);
     mask-composite: exclude;
     pointer-events: none;
-    transition: all ease-out 500ms;
+    transition: all ease-out 200ms;
   }
 
   .sw-prompt-button::part(button)::before {
@@ -212,19 +299,49 @@
   }
 
   .sw-prompt-button.has-interacted:not(:hover, :focus, :active)::part(button)::after {
-    animation: hover-focus-fade-out 500ms ease-out forwards;
+    animation: hover-focus-fade-out 200ms ease-out forwards;
   }
 
   .sw-prompt-button:is(:hover, :focus)::part(button)::after {
-    animation: hover-focus-fade-in 500ms ease-in forwards;
+    animation: hover-focus-fade-in 200ms ease-in forwards;
   }
 
   .sw-prompt-button:active::part(button)::after {
-    animation: active-fade-in 500ms ease-in forwards;
+    animation: active-fade-in 200ms ease-in forwards;
     background-image: linear-gradient(400deg, var(--sw-prompt-gradient-violet) 40%, var(--sw-prompt-gradient-pink) 100%);
   }
 
   .sw-prompt-button::part(moz-button-label) {
     cursor: pointer;
+  }
+
+  /* Styles below apply only to the `resume` pill variant. :has() avoids a
+   * dedicated class since only these pills render a favicon cluster. The
+   * border/hover treatment is otherwise identical to a regular pill;
+   * only the favicon cluster differs. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+  .sw-prompt-button:has(.sw-prompt-favicons) {
+    --sw-prompt-fill-color: var(--prompt-button-background-color);
+  }
+
+  .sw-prompt-favicon,
+  .sw-prompt-favicon-overflow {
+    border: 1.5px solid var(--sw-prompt-fill-color);
+    border-radius: var(--border-radius-xsmall);
+    height: 14px;
+    margin-inline-end: -4px;
+    width: 14px;
+  }
+
+  /* contain avoids stretching non-square favicons; the matching
+   * background fills any letterboxed/transparent edges. fill/
+   * context-properties only affect the defaultFavicon.svg fallback (real
+   * site favicons don't use context-fill), giving it correct contrast in
+   * dark theme instead of rendering with the wrong color. */
+  .sw-prompt-favicon {
+    background-color: var(--sw-prompt-fill-color);
+    object-fit: contain;
+    -moz-context-properties: fill;
+    fill: var(--icon-color);
   }
 }

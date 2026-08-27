@@ -3,112 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-@depends("WINDOWSSDKDIR", winsysroot, target.abi, host.abi)
-def windows_sdk_dir(windows_sdk_dir, winsysroot, target_windows_abi, host_windows_abi):
-    if windows_sdk_dir:
-        return windows_sdk_dir
-
-    if target_windows_abi != "msvc" and host_windows_abi != "msvc":
-        return ()
-
-    if winsysroot:
-        return [os.path.join(winsysroot, "Windows Kits", "10")]
-
-    return set(
-        normalize_path(x[1])
-        for x in get_registry_values(
-            r"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots"
-            r"\KitsRoot*",
-            get_32_and_64_bit=True,
-        )
-    )
-
-
-@imports(_from="mozshellutil", _import="quote")
-def valid_windows_sdk_dir_result(value):
-    if value:
-        return "0x%04x in %s" % (value.version, quote(value.path))
-
-
-@depends(
-    target.abi,
-    host.abi,
-    windows_sdk_dir,
-    valid_windows_version,
-    "WINDOWSSDKDIR",
-)
-@checking("for Windows SDK", valid_windows_sdk_dir_result)
-@imports(_from="__builtin__", _import="Exception")
-@imports(_from="__builtin__", _import="open")
-def valid_windows_sdk_dir(
-    target_windows_abi,
-    host_windows_abi,
-    windows_sdk_dir,
-    target_version,
-    windows_sdk_dir_env,
-):
-    if target_windows_abi != "msvc" and host_windows_abi != "msvc":
-        return None
-    if windows_sdk_dir_env:
-        windows_sdk_dir_env = windows_sdk_dir_env[0]
-    sdks = {}
-    for d in windows_sdk_dir:
-        sdklist = get_sdk_dirs(d, "um")
-        for sdk in sdklist:
-            maxver = None
-            winsdkver = os.path.join(sdk.include, "um", "winsdkver.h")
-            with open(winsdkver) as fh:
-                for line in fh.readlines():
-                    if line.startswith("#define"):
-                        line = line.split(None, 2)
-                        assert line.pop(0) == "#define"
-                        if line.pop(0) == "WINVER_MAXVER":
-                            maxver = line.pop(0)
-                            break
-
-            if maxver:
-                try:
-                    maxver = int(maxver, 0)
-                except Exception:
-                    pass
-                else:
-                    sdks[d] = maxver, sdk
-                    break
-
-        if d == windows_sdk_dir_env and d not in sdks:
-            raise FatalCheckError(
-                "Error while checking the version of the SDK in "
-                "WINDOWSSDKDIR (%s). Please verify it contains a valid and "
-                "complete SDK installation." % windows_sdk_dir_env
-            )
-
-    valid_sdks = sorted(sdks, key=lambda x: sdks[x][0], reverse=True)
-    if valid_sdks:
-        biggest_version, sdk = sdks[valid_sdks[0]]
-    if not valid_sdks or biggest_version < target_version:
-        if windows_sdk_dir_env:
-            raise FatalCheckError(
-                "You are targeting Windows version 0x%04x, but your SDK only "
-                "supports up to version 0x%04x. Install and use an updated SDK, "
-                "or target a lower version using --with-windows-version. "
-                "Alternatively, try running the Windows SDK Configuration Tool "
-                "and selecting a newer SDK. See "
-                "https://developer.mozilla.org/En/Windows_SDK_versions for "
-                "details on fixing this." % (target_version, biggest_version)
-            )
-
-        raise FatalCheckError(
-            "Cannot find a Windows SDK for version >= 0x%04x." % target_version
-        )
-
-    return namespace(
-        path=sdk.path,
-        include=sdk.include,
-        lib=sdk.lib,
-        version=biggest_version,
-    )
-
-
 @imports(_from="mozshellutil", _import="quote")
 def valid_ucrt_sdk_dir_result(value):
     if value:
@@ -226,12 +120,9 @@ def include_path(vc_path, windows_sdk_dir, ucrt_sdk_dir):
             "Please install them." % windows_sdk_dir.path
         )
 
-    includes = []
-    include_env = os.environ.get("INCLUDE")
-    if include_env:
-        includes.append(include_env)
-    includes.extend(
-        (
+    configured_includes = [
+        normalize_path_list_entry(p)
+        for p in (
             os.path.join(vc_path, "include"),
             atlmfc_dir,
             os.path.join(windows_sdk_dir.include, "shared"),
@@ -240,7 +131,31 @@ def include_path(vc_path, windows_sdk_dir, ucrt_sdk_dir):
             cppwinrt_dir,
             os.path.join(ucrt_sdk_dir.include, "ucrt"),
         )
-    )
+    ]
+    # Bug 2040992: INCLUDE gets exported by make to subprocesses, so
+    # reentrant configure invocations (e.g. Gradle's :machConfigure) can
+    # see a different INCLUDE than the original ./mach configure. Since
+    # INCLUDE flows into autoconf.mk, capturing those differences would
+    # churn it between invocations from different entry points, which
+    # causes rebuilds through PP_TARGETS like .cargo/config.toml. So we
+    # skip entries already in the configured set, while preserving any
+    # extra entries the user added.
+    configured_set = set(configured_includes)
+    seen_extra_includes = set()
+    extra_includes = []
+    # INCLUDE is an MSVC/clang-cl variable and is always ";"-separated,
+    # regardless of the host OS. Do not use os.pathsep here: on a POSIX
+    # host (e.g. the Linux worker used for win64 cross-compiles) os.pathsep
+    # is ":", which would mis-parse and mis-serialize INCLUDE and prevent
+    # the compiler from finding the Windows SDK / CRT headers.
+    for p in os.environ.get("INCLUDE", "").split(";"):
+        normalized = normalize_path_list_entry(p)
+        if normalized and normalized not in configured_set:
+            if normalized in seen_extra_includes:
+                continue
+            seen_extra_includes.add(normalized)
+            extra_includes.append(normalized)
+    includes = extra_includes + configured_includes
     # Set in the environment for old-configure
     includes = ";".join(includes)
     os.environ["INCLUDE"] = includes
@@ -532,14 +447,19 @@ def win32_exe_default_ldflags_mingw(flags):
 
 
 with only_when(depends(c_compiler)(lambda c: c.type == "clang-cl")):
-    set_config("MSVC_C_RUNTIME_DLL", "vcruntime140.dll")
-    set_config(
-        "MSVC_C_RUNTIME_1_DLL",
-        "vcruntime140_1.dll",
-        when=depends(target)(lambda target: target.cpu != "x86"),
+    msvc_c_runtime_dll = dependable("vcruntime140.dll")
+    msvc_c_runtime_1_dll = depends(target)(
+        lambda target: "vcruntime140_1.dll" if target.cpu != "x86" else None
     )
-    set_config("MSVC_CXX_RUNTIME_DLL", "msvcp140.dll")
-    set_config("MSVC_CXX_RUNTIME_ATOMIC_WAIT_DLL", "msvcp140_atomic_wait.dll")
+    msvc_cxx_runtime_dll = dependable("msvcp140.dll")
+    msvc_cxx_runtime_atomic_wait_dll = dependable("msvcp140_atomic_wait.dll")
+
+    set_config("MSVC_C_RUNTIME_DLL", msvc_c_runtime_dll)
+    set_config("MSVC_C_RUNTIME_1_DLL", msvc_c_runtime_1_dll)
+    set_config("MSVC_CXX_RUNTIME_DLL", msvc_cxx_runtime_dll)
+    set_config(
+        "MSVC_CXX_RUNTIME_ATOMIC_WAIT_DLL", msvc_cxx_runtime_atomic_wait_dll
+    )
 
     # Disable warnings about using MSVC-specific secure CRT functions.
     set_define("_CRT_SECURE_NO_WARNINGS", True)

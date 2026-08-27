@@ -398,6 +398,24 @@ void ImageBridgeChild::ClearImagesInHost(ImageClient* aClient,
   task.Wait();
 }
 
+void ImageBridgeChild::WaitFlushTasks() {
+  MOZ_ASSERT(!InImageBridgeChildThread());
+
+  if (InImageBridgeChildThread()) {
+    NS_ERROR(
+        "ImageBridgeChild::WaitFlushTasks() is called on ImageBridge "
+        "thread.");
+    return;
+  }
+
+  SynchronousTask task("FlushTaskhWait Lock");
+  RefPtr<Runnable> runnable =
+      NS_NewRunnableFunction("ImageBridgeChild::FlushTaskhWait",
+                             [&]() { AutoCompleteTask complete(&task); });
+  GetThread()->Dispatch(runnable.forget());
+  task.Wait();
+}
+
 void ImageBridgeChild::SyncWithCompositor(const Maybe<uint64_t>& aWindowID) {
   if (NS_WARN_IF(InImageBridgeChildThread())) {
     MOZ_ASSERT_UNREACHABLE("Cannot call on ImageBridge thread!");

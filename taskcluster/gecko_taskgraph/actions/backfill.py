@@ -134,6 +134,7 @@ def backfill_action(parameters, graph_config, input, task_group_id, task_id):
     This action takes a task ID and schedules it on previous pushes (via support action).
     When 'slices' is 0 (default), standard backfill is used (all pushes).
     When 'slices' > 0, the gap of missing pushes is detected and the mode is chosen automatically.
+
       - small gaps: standard backfill
       - large gaps: sliced backfill (exact pivot pushes at n/N+1, 2n/N+1, ... for slices=N).
 

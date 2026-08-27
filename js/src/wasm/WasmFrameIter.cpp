@@ -633,8 +633,8 @@ static const unsigned PoppedFP = 4;
 static const unsigned PoppedFPJitEntry = 8;
 #elif defined(JS_CODEGEN_RISCV64)
 static const unsigned PushedRetAddr = 8;
-static const unsigned PushedFP = 16;
-static const unsigned SetFP = 20;
+static const unsigned PushedFP = 12;
+static const unsigned SetFP = 16;
 static const unsigned PoppedFP = 4;
 static const unsigned PoppedFPJitEntry = 8;
 #elif defined(JS_CODEGEN_NONE) || defined(JS_CODEGEN_WASM32)
@@ -682,6 +682,76 @@ void wasm::ClearExitFP(MacroAssembler& masm, Register activation) {
       Address(activation, JitActivation::offsetOfEncodedWasmExitReason()));
 }
 
+#ifndef JS_CODEGEN_ARM64
+static void GenerateCommonPrologue(MacroAssembler& masm, uint32_t* entry) {
+#  if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+  *entry = masm.currentOffset();
+
+  // The x86/x64 call instruction pushes the return address.
+  MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
+
+  masm.push(FramePointer);
+  MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
+
+  masm.moveStackPtrTo(FramePointer);
+  MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
+#  elif defined(JS_CODEGEN_ARM)
+  AutoForbidPoolsAndNops afp(&masm,
+                             /* number of instructions in scope = */ 3);
+
+  *entry = masm.currentOffset();
+
+  static_assert(BeforePushRetAddr == 0);
+
+  masm.push(lr);
+  MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
+
+  masm.push(FramePointer);
+  MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
+
+  masm.moveStackPtrTo(FramePointer);
+  MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
+#  elif defined(JS_CODEGEN_MIPS64)
+  *entry = masm.currentOffset();
+
+  masm.ma_push(ra);
+  MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
+
+  masm.ma_push(FramePointer);
+  MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
+
+  masm.moveStackPtrTo(FramePointer);
+  MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
+#  elif defined(JS_CODEGEN_LOONG64)
+  *entry = masm.currentOffset();
+
+  masm.ma_push(ra);
+  MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
+
+  masm.ma_push(FramePointer);
+  MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
+
+  masm.moveStackPtrTo(FramePointer);
+  MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
+#  elif defined(JS_CODEGEN_RISCV64)
+  AutoForbidPoolsAndNops afp(&masm, 4);
+
+  *entry = masm.currentOffset();
+
+  masm.addi(StackPointer, StackPointer, -int32_t(sizeof(intptr_t) * 2));
+
+  masm.sd(ra, StackPointer, sizeof(intptr_t));
+  MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
+
+  masm.sd(FramePointer, StackPointer, 0);
+  MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
+
+  masm.mv(FramePointer, StackPointer);
+  MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
+#  endif
+}
+#endif
+
 static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
   AutoCreatedBy acb(masm, "GenerateCallablePrologue");
   masm.setFramePushed(0);
@@ -692,43 +762,7 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
   // this requires AutoForbidPoolsAndNops to prevent a constant pool from being
   // randomly inserted between two instructions.
 
-#if defined(JS_CODEGEN_MIPS64)
-  {
-    *entry = masm.currentOffset();
-
-    masm.ma_push(ra);
-    MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
-    masm.ma_push(FramePointer);
-    MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
-    masm.moveStackPtrTo(FramePointer);
-    MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
-  }
-#elif defined(JS_CODEGEN_LOONG64)
-  {
-    *entry = masm.currentOffset();
-
-    masm.ma_push(ra);
-    MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
-    masm.ma_push(FramePointer);
-    MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
-    masm.moveStackPtrTo(FramePointer);
-    MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
-  }
-#elif defined(JS_CODEGEN_RISCV64)
-  {
-    // 2 instructions for each ma_push.
-    // 1 instruction for moveStackPtrTo.
-    AutoForbidPoolsAndNops afp(&masm, 5);
-
-    *entry = masm.currentOffset();
-    masm.ma_push(ra);
-    MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
-    masm.ma_push(FramePointer);
-    MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
-    masm.moveStackPtrTo(FramePointer);
-    MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
-  }
-#elif defined(JS_CODEGEN_ARM64)
+#ifdef JS_CODEGEN_ARM64
   {
     // We do not use the PseudoStackPointer.  However, we may be called in a
     // context -- compilation using Ion -- in which the PseudoStackPointer is
@@ -745,10 +779,12 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
 
     static_assert(Frame::callerFPOffset() == 0 &&
                   Frame::returnAddressOffset() == 8);
+
     masm.Stp(ARMRegister(FramePointer, 64), ARMRegister(lr, 64),
              MemOperand(sp, -(int64_t)sizeof(Frame), vixl::PreIndex));
     MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
     MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
+
     masm.Mov(ARMRegister(FramePointer, 64), sp);
     MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
 
@@ -756,27 +792,10 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
     masm.SetStackPointer64(stashedSPreg);
   }
 #else
-  {
-#  if defined(JS_CODEGEN_ARM)
-    AutoForbidPoolsAndNops afp(&masm,
-                               /* number of instructions in scope = */ 3);
-
-    *entry = masm.currentOffset();
-
-    static_assert(BeforePushRetAddr == 0);
-    masm.push(lr);
-#  else
-    *entry = masm.currentOffset();
-    // The x86/x64 call instruction pushes the return address.
-#  endif
-
-    MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
-    masm.push(FramePointer);
-    MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
-    masm.moveStackPtrTo(FramePointer);
-    MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
-  }
+  GenerateCommonPrologue(masm, entry);
 #endif
+
+  MOZ_ASSERT(masm.framePushed() == 0);
 }
 
 static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
@@ -1482,55 +1501,36 @@ void wasm::GenerateJitExitEpilogue(MacroAssembler& masm,
 
 void wasm::GenerateJitEntryPrologue(MacroAssembler& masm,
                                     CallableOffsets* offsets) {
+  MOZ_ASSERT(masm.framePushed() == 0);
+
   masm.haltingAlign(CodeAlignment);
 
+#ifdef JS_CODEGEN_ARM64
   {
     // Push the return address.
-#if defined(JS_CODEGEN_ARM)
     AutoForbidPoolsAndNops afp(&masm,
                                /* number of instructions in scope = */ 3);
     offsets->begin = masm.currentOffset();
-    static_assert(BeforePushRetAddr == 0);
-    masm.push(lr);
-#elif defined(JS_CODEGEN_MIPS64)
-    offsets->begin = masm.currentOffset();
-    masm.push(ra);
-#elif defined(JS_CODEGEN_LOONG64)
-    offsets->begin = masm.currentOffset();
-    masm.push(ra);
-#elif defined(JS_CODEGEN_RISCV64)
-    // Actually emits less instructions (maybe 5?), but reserving 10
-    // instructions definitely ensures no pool is placed in this scope.
-    AutoForbidPoolsAndNops afp(&masm, 10);
-    offsets->begin = masm.currentOffset();
-    masm.push(ra);
-#elif defined(JS_CODEGEN_ARM64)
-    AutoForbidPoolsAndNops afp(&masm,
-                               /* number of instructions in scope = */ 3);
-    offsets->begin = masm.currentOffset();
+
     static_assert(BeforePushRetAddr == 0);
     static_assert(JitFrameLayout::offsetOfCallerFramePtr() == 0);
     static_assert(JitFrameLayout::offsetOfReturnAddress() == 8);
+
     masm.Stp(ARMRegister(FramePointer, 64), ARMRegister(lr, 64),
              MemOperand(sp, -16, vixl::PreIndex));
-#else
-    // The x86/x64 call instruction pushes the return address.
-    offsets->begin = masm.currentOffset();
-#endif
     MOZ_ASSERT_IF(!masm.oom(),
                   PushedRetAddr == masm.currentOffset() - offsets->begin);
-    // Save jit frame pointer, so unwinding from wasm to jit frames is trivial.
-#if !defined(JS_CODEGEN_ARM64)
-    masm.Push(FramePointer);
-#endif
     MOZ_ASSERT_IF(!masm.oom(),
                   PushedFP == masm.currentOffset() - offsets->begin);
 
     masm.moveStackPtrTo(FramePointer);
     MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - offsets->begin);
   }
+#else
+  GenerateCommonPrologue(masm, &offsets->begin);
+#endif
 
-  masm.setFramePushed(0);
+  MOZ_ASSERT(masm.framePushed() == 0);
 }
 
 void wasm::GenerateJitEntryEpilogue(MacroAssembler& masm,

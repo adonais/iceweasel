@@ -69,6 +69,51 @@ export class PassportRecord {
     }
   }
 
+  /**
+   * Collapses the split name components (given/additional/family) into the
+   * combined `passport-name`, removing the components. Unlike normalizeFields,
+   * the date fields are left untouched, so their month/day/year components stay
+   * strings (as the capture doorhanger expects) rather than being coerced to
+   * numbers.
+   *
+   * @param {object} passport The passport object
+   */
+  static mergeNameComponents(passport) {
+    this.#normalizeNameFields(passport);
+  }
+
+  /**
+   * Splits any combined date field (e.g. `passport-issue-date`) into its
+   * `-month`/`-day`/`-year` string components. A form may capture an
+   * issue/expiry date as a single field (such as an `<input type="date">`)
+   * rather than separate parts, but the capture doorhanger only has per-part
+   * inputs; without this the date can neither be shown nor saved. The parsed
+   * components are kept as strings (as the doorhanger expects, like
+   * mergeNameComponents) rather than being coerced to numbers.
+   *
+   * @param {object} passport The passport object
+   */
+  static splitDateComponents(passport) {
+    for (const field of this.DATE_FIELDS) {
+      const parts = ["month", "day", "year"];
+      if (
+        !passport[field] ||
+        parts.some(part => passport[`${field}-${part}`])
+      ) {
+        continue;
+      }
+
+      const { month, day, year } = DateNormalizationUtils.parseISODate(
+        passport[field]
+      );
+      if (month && day && year) {
+        passport[`${field}-month`] = month;
+        passport[`${field}-day`] = day;
+        passport[`${field}-year`] = year;
+      }
+    }
+  }
+
   static #normalizeNameFields(passport) {
     if (
       !passport["passport-name"] &&

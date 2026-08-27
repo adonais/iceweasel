@@ -517,7 +517,7 @@ def asm_flags():
 #   when the warning flag is wanted.
 # - `check`, when not set, skips checking whether the flag is supported and
 #   adds it to the list of flags unconditionally. This is only meant for
-#   add_flag().
+#   add_asm_flag().
 @template
 def check_and_add_asm_flag(flag, when=None, check=True):
     return check_and_add_flags(
@@ -528,6 +528,15 @@ def check_and_add_asm_flag(flag, when=None, check=True):
         check=check,
         mode="assemble",
     )
+
+
+# Add the given flag to the list of asm flags for the build.
+# - `flag` is the flag (e.g. -nologo)
+# - `when` (optional) is a @depends function or option name conditioning
+#   when the flag is wanted.
+@template
+def add_asm_flag(flag, when=None):
+    check_and_add_asm_flag(flag, when, check=False)
 
 
 # Like the compilation checks above, but for linker flags.

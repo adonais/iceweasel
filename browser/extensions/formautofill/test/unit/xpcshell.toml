@@ -106,6 +106,8 @@ skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1729554
 ]
 
+["test_rustStoreShutdown.js"]
+
 ["test_savedFieldNames.js"]
 
 ["test_storage_remove.js"]

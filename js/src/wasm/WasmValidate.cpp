@@ -17,6 +17,7 @@
 #include "wasm/WasmValidate.h"
 
 #include "mozilla/CheckedInt.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Span.h"
 #include "mozilla/Utf8.h"
 
@@ -2750,6 +2751,12 @@ static bool DecodeTypeSection(Decoder& d, CodeMetadata* codeMeta) {
       return false;
     }
 
+    // Cancel the pending rec group if we return early due to a validation
+    // error, so that the bad group is not left in recGroups_ for ~TypeContext
+    // to hash during cleanup.
+    auto cancelRecGroup =
+        mozilla::MakeScopeExit([&] { codeMeta->types->cancelStartRecGroup(); });
+
     // First, iterate over the types, validate them and set super types.
     // Subtyping relationship will be checked in a second iteration.
     for (uint32_t recGroupTypeIndex = 0; recGroupTypeIndex < recGroupLength;
@@ -2898,6 +2905,7 @@ static bool DecodeTypeSection(Decoder& d, CodeMetadata* codeMeta) {
     }
 
     // Finish the recursion group, which will canonicalize the types.
+    cancelRecGroup.release();
     if (!codeMeta->types->endRecGroup()) {
       return false;
     }
@@ -5548,7 +5556,10 @@ enum class ComponentTypeBoundKindRaw : uint8_t {
 
 [[nodiscard]] static bool DecodeComponentExternDesc(Decoder& d,
                                                     MutableComponent c,
-                                                    ComponentExternDesc* desc) {
+                                                    ComponentExternDesc* desc,
+                                                    bool* isNewSubResource) {
+  *isNewSubResource = false;
+
   ComponentSort kind;
   if (!DecodeComponentSort(d, &kind, /*forExterndesc=*/true)) {
     return false;
@@ -5598,6 +5609,7 @@ enum class ComponentTypeBoundKindRaw : uint8_t {
             return false;
           }
           *desc = ComponentExternDesc::type(std::move(subResourceType));
+          *isNewSubResource = true;
         } break;
         default:
           return d.failf("invalid kind 0x%02x for type bound", kind);
@@ -6383,9 +6395,28 @@ enum class CanonDefKindRaw : uint8_t {
       if (c->types().length() <= resourceTypeIndex) {
         return d.failf("invalid type index %d", resourceTypeIndex);
       }
+
+      ComponentItem resourceTypeItem = c->types()[resourceTypeIndex];
       ComponentType resourceType = c->getType(resourceTypeIndex);
-      if (resourceType.kind() != ComponentTypeKind::Resource) {
-        return d.fail("expected a resource type");
+      switch (kind) {
+        case uint8_t(CanonDefKindRaw::ResourceNew):
+        case uint8_t(CanonDefKindRaw::ResourceRep): {
+          // resource.new and resource.rep require a resource type defined in
+          // this component.
+          if (resourceTypeItem.kind() != ComponentItem::ItemKind::Defined) {
+            return d.fail("expected a defined resource type");
+          }
+          if (resourceType.kind() != ComponentTypeKind::Resource) {
+            return d.fail("expected a resource type");
+          }
+        } break;
+        case uint8_t(CanonDefKindRaw::ResourceDrop): {
+          // resource.drop allows any resource type (including imported).
+          if (resourceType.kind() != ComponentTypeKind::Resource &&
+              resourceType.kind() != ComponentTypeKind::SubResource) {
+            return d.fail("expected a resource type");
+          }
+        } break;
       }
 
       // The values for the Kind enum are chosen to align with the binary
@@ -6471,7 +6502,8 @@ static bool DecodeComponentImport(Decoder& d, MutableComponent& c,
   }
 
   ComponentExternDesc externDesc;
-  if (!DecodeComponentExternDesc(d, c, &externDesc)) {
+  bool unused;
+  if (!DecodeComponentExternDesc(d, c, &externDesc, &unused)) {
     return false;
   }
   if (externDesc.sort() == ComponentSort::Type) {
@@ -6570,11 +6602,14 @@ enum class ComponentExportFlagsRaw : uint8_t {
   }
   if (hasExplicitExternDesc) {
     ComponentExternDesc explicitExternDesc;
-    if (!DecodeComponentExternDesc(d, c, &explicitExternDesc)) {
+    bool isNewSubResource;
+    if (!DecodeComponentExternDesc(d, c, &explicitExternDesc,
+                                   &isNewSubResource)) {
       return false;
     }
 
-    if (!ComponentExternDesc::matches(externDesc, explicitExternDesc)) {
+    if (!ComponentExternDesc::compatible(externDesc, explicitExternDesc,
+                                         isNewSubResource)) {
       return d.fail(
           "exported item's type did not match explicitly-provided type");
     }

@@ -17,8 +17,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  UrlbarProviderOpenTabs:
-    "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarProviderQuickSuggest:
     "moz-src:///browser/components/urlbar/UrlbarProviderQuickSuggest.sys.mjs",
   UrlbarSearchUtils:
@@ -29,8 +27,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 ChromeUtils.defineLazyGetter(lazy, "logger", () =>
   lazy.UrlbarShared.getLogger({ prefix: "MuxerUnifiedComplete" })
 );
-
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 const SEMANTIC_HISTORY_PROVIDER_NAME = "UrlbarProviderSemanticHistorySearch";
 
@@ -44,9 +40,7 @@ function makeMapKeyForTabResult(result) {
   return UrlbarUtils.tupleString(
     result.payload.url,
     result.type == lazy.UrlbarShared.RESULT_TYPE.TAB_SWITCH &&
-      lazy.UrlbarProviderOpenTabs.isNonPrivateUserContextId(
-        result.payload.userContextId
-      )
+      lazy.UrlbarShared.isNonPrivateUserContextId(result.payload.userContextId)
       ? result.payload.userContextId
       : undefined
   );
@@ -60,7 +54,7 @@ function makeMapKeyForTabResult(result) {
  * @returns {string} The stripped URL.
  */
 function stripUrlForDedupe(url) {
-  return UrlbarUtils.stripPrefixAndTrim(url, {
+  return lazy.UrlbarShared.stripPrefixAndTrim(url, {
     stripHttp: true,
     stripHttps: true,
     stripWww: true,
@@ -247,7 +241,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     // Add global suggestedIndex results.
     let globalSuggestedIndexResults = state.resultsByGroup.get(
-      UrlbarUtils.RESULT_GROUP.SUGGESTED_INDEX
+      lazy.UrlbarShared.RESULT_GROUP.SUGGESTED_INDEX
     );
     if (globalSuggestedIndexResults) {
       this._addSuggestedIndexResults(
@@ -268,7 +262,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
    * Search for group in rootGroup and return it.
    *
    * @param {object} rootGroup Root group definition.
-   * @param {Values<typeof UrlbarUtils.RESULT_GROUP>} group The group to search for.
+   * @param {Values<typeof lazy.UrlbarShared.RESULT_GROUP>} group The group to search for.
    * @returns {object|null} Group object from the root group. The
    *   SUGGESTED_INDEX group is not included in the rootGroup, so this
    *   will return null for it.
@@ -379,7 +373,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
           if (this._canAddResult(result, state)) {
             suggestedIndexResults ??= [];
             suggestedIndexResults.push(result);
-            const spanSize = UrlbarUtils.getSpanForResult(result);
+            const spanSize = lazy.UrlbarShared.getSpanForResult(result);
             span += spanSize;
             if (spanSize) {
               resultCount++;
@@ -693,7 +687,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
    * Adds results to a group using the results from its `RESULT_GROUP` in
    * `state.resultsByGroup`.
    *
-   * @param {Values<typeof UrlbarUtils.RESULT_GROUP>} groupConst
+   * @param {Values<typeof lazy.UrlbarShared.RESULT_GROUP>} groupConst
    *   The group's `RESULT_GROUP`.
    * @param {object} limits
    *   An object defining the group's limits as described in `_fillGroup`.
@@ -722,7 +716,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     // count here in that case. Other values of maxHistoricalSearchSuggestions
     // are ignored and we use the flex defined on the form history group.
     if (
-      groupConst == UrlbarUtils.RESULT_GROUP.FORM_HISTORY &&
+      groupConst == lazy.UrlbarShared.RESULT_GROUP.FORM_HISTORY &&
       !lazy.UrlbarPrefs.get("maxHistoricalSearchSuggestions")
     ) {
       // Create a new `limits` object so we don't modify the caller's.
@@ -843,8 +837,8 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
           trimSlash: true,
         };
         result.payload.dupedHeuristic =
-          UrlbarUtils.stripPrefixAndTrim(heuristicUrl, opts)[0] ==
-          UrlbarUtils.stripPrefixAndTrim(result.payload.url, opts)[0];
+          lazy.UrlbarShared.stripPrefixAndTrim(heuristicUrl, opts)[0] ==
+          lazy.UrlbarShared.stripPrefixAndTrim(result.payload.url, opts)[0];
         return !result.payload.dupedHeuristic;
       }
 
@@ -876,7 +870,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       result.type == lazy.UrlbarShared.RESULT_TYPE.URL &&
       result.payload.url
     ) {
-      let [strippedUrl, prefix] = UrlbarUtils.stripPrefixAndTrim(
+      let [strippedUrl, prefix] = lazy.UrlbarShared.stripPrefixAndTrim(
         result.payload.url,
         {
           stripHttp: true,
@@ -954,7 +948,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         let autofillHostname = new URL(
           state.context.heuristicResult.payload.url
         ).hostname;
-        let [autofillDomain] = UrlbarUtils.stripPrefixAndTrim(
+        let [autofillDomain] = lazy.UrlbarShared.stripPrefixAndTrim(
           autofillHostname,
           {
             stripWww: true,
@@ -969,7 +963,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
         // `searchUrlDomainWithoutSuffix` is the engine's domain with the public
         // suffix already stripped, for example "www.mozilla.".
-        let [engineDomain] = UrlbarUtils.stripPrefixAndTrim(
+        let [engineDomain] = lazy.UrlbarShared.stripPrefixAndTrim(
           result.payload.searchUrlDomainWithoutSuffix,
           {
             stripWww: true,
@@ -1177,18 +1171,13 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       lazy.UrlbarPrefs.get("deduplication.enabled") &&
       result.source == lazy.UrlbarShared.RESULT_SOURCE.HISTORY &&
       result.type == lazy.UrlbarShared.RESULT_TYPE.URL &&
-      !result.heuristic &&
-      result.payload.lastVisit
+      !result.heuristic
     ) {
       let { base, ref } = UrlbarUtils.extractRefFromUrl(result.payload.url);
       let baseAndTitle = `${base} ${result.payload.title}`;
       let topRef = state.baseAndTitleToTopRef.get(baseAndTitle);
 
-      let msSinceLastVisit = Date.now() - result.payload.lastVisit;
-      let daysSinceLastVisit = msSinceLastVisit / MS_PER_DAY;
-      let thresholdDays = lazy.UrlbarPrefs.get("deduplication.thresholdDays");
-
-      if (daysSinceLastVisit >= thresholdDays && ref != topRef) {
+      if (topRef !== undefined && ref != topRef) {
         return false;
       }
     }
@@ -1220,7 +1209,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     if (result.heuristic && this._canAddResult(result, state)) {
       state.maxHeuristicResultSpan = Math.max(
         state.maxHeuristicResultSpan,
-        UrlbarUtils.getSpanForResult(result)
+        lazy.UrlbarShared.getSpanForResult(result)
       );
     }
 
@@ -1233,7 +1222,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       !result.isSuggestedIndexRelativeToGroup &&
       this._canAddResult(result, state)
     ) {
-      let span = UrlbarUtils.getSpanForResult(result);
+      let span = lazy.UrlbarShared.getSpanForResult(result);
       if (result.providerName == "UrlbarProviderTabToSearch") {
         state.maxTabToSearchResultSpan = Math.max(
           state.maxTabToSearchResultSpan,
@@ -1258,7 +1247,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       result.payload.url &&
       (!result.heuristic || !lazy.UrlbarPrefs.get("experimental.hideHeuristic"))
     ) {
-      let [strippedUrl, prefix] = UrlbarUtils.stripPrefixAndTrim(
+      let [strippedUrl, prefix] = lazy.UrlbarShared.stripPrefixAndTrim(
         result.payload.url,
         {
           stripHttp: true,
@@ -1581,7 +1570,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
    *   otherwise.
    */
   #updateUsedLimits(result, limits, usedLimits, state) {
-    let span = UrlbarUtils.getSpanForResult(result);
+    let span = lazy.UrlbarShared.getSpanForResult(result);
     let newUsedSpan = usedLimits.availableSpan + span;
     if (limits.availableSpan < newUsedSpan) {
       // Adding the result would exceed the available span.
@@ -1602,7 +1591,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
   /**
    * Checks exposure eligibility and visibility for the given result.
    * If the result passes the exposure check, we set `result.exposureTelemetry`
-   * to the appropriate `UrlbarUtils.EXPOSURE_TELEMETRY` value.
+   * to the appropriate `UrlbarShared.EXPOSURE_TELEMETRY` value.
    *
    * @param {UrlbarResult} result
    *   The result.
@@ -1610,11 +1599,12 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
   #setExposureTelemetryProperty(result) {
     const exposureResults = lazy.UrlbarPrefs.get("exposureResults");
     if (exposureResults.size) {
-      const telemetryType = UrlbarUtils.searchEngagementTelemetryType(result);
+      const telemetryType =
+        lazy.UrlbarShared.searchEngagementTelemetryType(result);
       if (exposureResults.has(telemetryType)) {
         result.exposureTelemetry = lazy.UrlbarPrefs.get("showExposureResults")
-          ? UrlbarUtils.EXPOSURE_TELEMETRY.SHOWN
-          : UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN;
+          ? lazy.UrlbarShared.EXPOSURE_TELEMETRY.SHOWN
+          : lazy.UrlbarShared.EXPOSURE_TELEMETRY.HIDDEN;
       }
     }
   }

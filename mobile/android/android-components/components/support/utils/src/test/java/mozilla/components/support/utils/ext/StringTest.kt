@@ -48,4 +48,16 @@ class StringTest {
         // Example: "100%" encoded as "100%25" -> "100%" -> "100_"
         assertEquals("100_", "100%25".decodeIfNeeded())
     }
+
+    @Test
+    fun `withExtension should append extension if not empty`() {
+        assertEquals("file.txt", "file".withExtension("txt"))
+        assertEquals("file.tar.gz", "file.tar".withExtension("gz"))
+    }
+
+    @Test
+    fun `withExtension should return original string if extension is null or empty`() {
+        assertEquals("file", "file".withExtension(null))
+        assertEquals("file", "file".withExtension(""))
+    }
 }

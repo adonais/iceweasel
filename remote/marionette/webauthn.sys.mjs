@@ -169,6 +169,20 @@ webauthn.removeAllCredentials = function (authenticatorId) {
 };
 
 /**
+ * Check whether a virtual authenticator is stored in the Virtual Authenticator
+ * Database.
+ *
+ * @param {string} authenticatorId
+ *     The ID of the virtual authenticator to look up.
+ *
+ * @returns {boolean}
+ *     True if an authenticator with the given ID exists.
+ */
+webauthn.hasVirtualAuthenticator = function (authenticatorId) {
+  return lazy.webauthnService.hasVirtualAuthenticator(authenticatorId);
+};
+
+/**
  * Remove a virtual authenticator.
  *
  * @param {string} authenticatorId

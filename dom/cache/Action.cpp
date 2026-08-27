@@ -14,10 +14,6 @@ void Action::CancelOnInitiatingThread() {
   mCanceled = true;
 }
 
-Action::Action() : mCanceled(false) {}
-
-Action::~Action() = default;
-
 bool Action::IsCanceled() const { return mCanceled; }
 
 }  // namespace mozilla::dom::cache

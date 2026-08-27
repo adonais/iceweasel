@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import React, { useContext, useEffect, useRef } from "react";
+import React, { useContext, useEffect, useLayoutEffect, useRef } from "react";
 import { useDispatch, useSelector, batch } from "react-redux";
 import { BaseContext } from "content-src/lib/BaseContext";
 // Bug 2034542: these per-widget imports can be removed once the non-Nova render
@@ -30,6 +30,7 @@ import { WIDGET_ROW_COMPONENTS } from "./WidgetsComponentRegistry.jsx";
 import { WidgetWrapper } from "./WidgetWrapper";
 import { ErrorBoundary } from "content-src/components/ErrorBoundary/ErrorBoundary";
 import { useWidgetDnD } from "./useWidgetDnD.jsx";
+import { useReorderFlip } from "content-src/lib/useReorderFlip.jsx";
 
 const CONTAINER_ACTION_TYPES = {
   HIDE_ALL: "hide_all",
@@ -49,6 +50,9 @@ const PREF_WIDGETS_FEEDBACK_ENABLED = "widgets.feedback.enabled";
 const PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED = "widgets.hideAllToast.enabled";
 const WIDGETS_FEEDBACK_URL =
   "https://support.mozilla.org/kb/firefox-new-tab-widgets";
+// Safety net in case transitionend never fires. Keep this above the CSS
+// height transition duration (--widget-size-transition-duration, 180ms).
+const ROW_TOGGLE_HEIGHT_ANIMATION_FALLBACK_MS = 300;
 
 // resets timer to default values (exported for testing)
 // In practice, this logic runs inside a useEffect when
@@ -235,6 +239,7 @@ function Widgets() {
   const {
     effectiveOrder,
     draggedId,
+    previewOrder,
     previewOrderMap,
     handleDragStart,
     handleDragOver,
@@ -245,6 +250,21 @@ function Widgets() {
     widgetOrder,
     prefs,
     dispatch,
+  });
+
+  // Drives the FLIP reorder animation off the actual visual id sequence: the
+  // live preview order while dragging, otherwise the committed order. Keying
+  // off the sequence keeps the key stable across the drop/dragend re-renders so
+  // the last move's animation isn't cancelled. The dragged tile is excluded so
+  // it tracks the cursor instantly instead of being flung by its own (largest)
+  // inverse transform.
+  const flipKey = (previewOrder || effectiveOrder).join(",");
+  const widgetsContainerRef = useReorderFlip({
+    orderKey: flipKey,
+    resetKey: draggedId,
+    enabled: novaEnabled,
+    childSelector: "[data-widget-id]",
+    skipSelector: ".is-dragging",
   });
 
   const anyWidgetInRow =
@@ -275,6 +295,54 @@ function Widgets() {
 
   // track previous timerEnabled state to detect when it becomes disabled
   const prevTimerEnabledRef = useRef(timerEnabled);
+
+  const rowToggleFromHeightRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const fromHeight = rowToggleFromHeightRef.current;
+    rowToggleFromHeightRef.current = null;
+    const container = widgetsContainerRef.current;
+    if (fromHeight === null || !container) {
+      return undefined;
+    }
+    const toHeight = container.getBoundingClientRect().height;
+    if (fromHeight === toHeight) {
+      return undefined;
+    }
+    container.style.height = `${fromHeight}px`;
+    container.classList.add("is-animating-height");
+    // Commit the start height before transitioning to the target.
+    void container.offsetHeight;
+    container.style.height = `${toHeight}px`;
+
+    let fallbackTimer;
+    // Invoked from transitionend/transitioncancel (with an event), from the
+    // fallback timer, or as the effect cleanup (no event). Ignore events
+    // bubbling up from child widgets; the container only transitions height,
+    // so its own events need no propertyName check.
+    const finishRowHeightAnimation = e => {
+      if (e && e.target !== container) {
+        return;
+      }
+      globalThis.clearTimeout(fallbackTimer);
+      container.style.height = "";
+      container.classList.remove("is-animating-height");
+      container.removeEventListener("transitionend", finishRowHeightAnimation);
+      container.removeEventListener(
+        "transitioncancel",
+        finishRowHeightAnimation
+      );
+    };
+    container.addEventListener("transitionend", finishRowHeightAnimation);
+    container.addEventListener("transitioncancel", finishRowHeightAnimation);
+    fallbackTimer = globalThis.setTimeout(
+      finishRowHeightAnimation,
+      ROW_TOGGLE_HEIGHT_ANIMATION_FALLBACK_MS
+    );
+    return finishRowHeightAnimation;
+    // widgetsContainerRef is a stable ref from useReorderFlip; listed to satisfy
+    // exhaustive-deps, its identity never changes so only rowExpanded reruns this.
+  }, [rowExpanded, widgetsContainerRef]);
 
   // Reset timer when it becomes disabled
   useEffect(() => {
@@ -415,6 +483,13 @@ function Widgets() {
 
   function toggleRowExpanded() {
     const next = !rowExpanded;
+    const container = widgetsContainerRef.current;
+    const prefersReducedMotion = globalThis.matchMedia?.(
+      "(prefers-reduced-motion: reduce)"
+    )?.matches;
+    if (container && !prefersReducedMotion) {
+      rowToggleFromHeightRef.current = container.getBoundingClientRect().height;
+    }
     batch(() => {
       dispatch(ac.SetPref(PREF_WIDGETS_ROW_EXPANDED, next));
       dispatch(
@@ -480,6 +555,7 @@ function Widgets() {
           <moz-button
             id="toggle-widgets-size-button"
             className={`widgets-expand-button${isMaximized ? " is-maximized" : ""}`}
+            size="small"
             data-l10n-id={
               isMaximized
                 ? "newtab-widget-section-minimize"
@@ -620,6 +696,7 @@ function Widgets() {
         )}
         <div
           id="widgets-container"
+          ref={widgetsContainerRef}
           className={`widgets-container${isMaximized ? " is-maximized" : ""}`}
           data-row-collapsed={isCollapsed ? "" : undefined}
         >
@@ -750,7 +827,8 @@ function Widgets() {
         {novaEnabled && (
           <moz-button
             className="widgets-row-toggle"
-            type="default"
+            type="muted"
+            size="small"
             aria-expanded={rowExpanded}
             aria-controls="widgets-container"
             onClick={handleToggleRowExpandedClick}

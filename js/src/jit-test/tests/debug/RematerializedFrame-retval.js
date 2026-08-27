@@ -32,7 +32,7 @@ loadFile(lfLogBuffer);
 function loadFile(lfVarx) {
     try {
          let m = parseModule(lfVarx);
-         moduleLink(m);
+         moduleLoadAndLink(m);
          moduleEvaluate(m);
     } catch (lfVare) {}
 }

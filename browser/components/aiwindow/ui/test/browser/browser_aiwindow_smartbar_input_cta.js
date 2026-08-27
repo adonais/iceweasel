@@ -10,6 +10,7 @@
 ChromeUtils.defineESModuleGetters(this, {
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
@@ -112,10 +113,8 @@ add_task(async function test_search_with_locks_and_remembers_engine() {
 
   // Trigger 'chat' intent
   const query = "tell me a joke";
-  // Spaces are encoded as "+" in the search submission query string.
-  const expectedQuery = "q=tell+me+a+joke";
 
-  await stubLoadURL(browser, { captureURL: true });
+  await stubOpenSERP(browser);
   await typeInSmartbar(browser, query);
   await waitForSmartbarAction(browser, "chat");
   await selectSmartbarSearchEngine(browser);
@@ -129,14 +128,15 @@ add_task(async function test_search_with_locks_and_remembers_engine() {
   );
 
   await submitSmartbar(browser);
-  const searchResult = await getStubLoadURLResult(browser);
+  const searchResult = await getStubOpenSERPResult(browser);
   Assert.ok(
     searchResult.called,
     "Submitting after picking an engine should run a search even when the guess was 'chat'"
   );
-  Assert.ok(
-    searchResult.url.includes(expectedQuery),
-    `Search URL should contain "${expectedQuery}": ${searchResult.url}`
+  Assert.equal(
+    searchResult.terms,
+    query,
+    "Search terms should match the query"
   );
 
   await BrowserTestUtils.closeWindow(win);
@@ -203,7 +203,7 @@ add_task(async function test_smartbar_resets_after_submit() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
 
-  await stubLoadURL(browser);
+  await stubOpenSERP(browser);
   await typeInSmartbar(browser, "tell me about cats");
   await selectExplicitSmartbarAction(browser, "search");
   await waitForSmartbarAction(browser, "search");
@@ -309,13 +309,14 @@ add_task(
       },
       { skipUnload: true }
     );
+    const engineId = SearchService.getEngineByName(engineName);
 
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
     let extensionUnloaded = false;
 
     try {
-      await stubLoadURL(browser, { captureURL: true });
+      await stubOpenSERP(browser);
       await typeInSmartbar(browser, "kittens playing");
 
       // Wait for the freshly installed engine to appear in the CTA submenu.
@@ -370,18 +371,20 @@ add_task(
 
       await submitSmartbar(browser, { useButton: true });
 
-      const { called, url } = await getStubLoadURLResult(browser);
+      const searchResult = await getStubOpenSERPResult(browser);
       Assert.ok(
-        called,
+        searchResult.called,
         "Submitting after the engine vanished should still search"
       );
-      Assert.ok(
-        !url.includes("aiwindow-test-serp"),
-        `Should not use the removed engine: ${url}`
+      Assert.notEqual(
+        searchResult,
+        engineId,
+        `Should not use the removed engine`
       );
-      Assert.ok(
-        url.includes("kittens"),
-        `Default-engine search URL should contain the query: ${url}`
+      Assert.equal(
+        searchResult.terms,
+        "kittens playing",
+        `Search terms are correct`
       );
     } finally {
       if (!extensionUnloaded) {

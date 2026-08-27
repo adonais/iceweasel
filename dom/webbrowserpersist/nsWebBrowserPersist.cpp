@@ -2097,7 +2097,7 @@ nsresult nsWebBrowserPersist::CalculateUniqueFilename(
   // Add name to list of those already used
   nsAutoCString newFilepath(directory);
   newFilepath.Append(filename);
-  mFilenameList.AppendElement(newFilepath);
+  mFilenameList.AppendElement(std::move(newFilepath));
 
   // Update the uri accordingly since the filename changed.
   // Final sanity test
@@ -2175,7 +2175,7 @@ nsresult nsWebBrowserPersist::MakeFilenameFromURI(nsIURI* aURI,
     fileName.Append(char16_t('a'));  // 'a' is for arbitrary
   }
 
-  aFilename = fileName;
+  aFilename = std::move(fileName);
   return NS_OK;
 }
 
@@ -2788,7 +2788,7 @@ nsresult nsWebBrowserPersist::MakeAndStoreLocalFilenameInURIMap(
   data->mContentPolicyType = aContentPolicyType;
   data->mNeedsPersisting = aNeedsPersisting;
   data->mNeedsFixup = true;
-  data->mFilename = filename;
+  data->mFilename = std::move(filename);
   data->mSaved = false;
   data->mIsSubFrame = false;
   data->mDataPath = mCurrentDataPath;

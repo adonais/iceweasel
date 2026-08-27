@@ -9,6 +9,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   assert: "chrome://remote/content/shared/webdriver/Assert.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
+  isPrivilegedContext:
+    "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
   NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   WindowGlobalMessageHandler:
     "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.sys.mjs",
@@ -68,8 +70,12 @@ export class RootBiDiModule extends Module {
    * @param {string} navigableId
    *     Unique id of the browsing context.
    * @param {object=} options
-   * @param {boolean=} options.supportsChromeScope
-   *     If set to `true` chrome browsing contexts are supported
+   * @param {boolean=} options.skipPrivilegeCheck
+   *     If set to `true` the privileged scope check is skipped entirely,
+   *     allowing any browsing context without requiring system access.
+   *     Defaults to `false`.
+   * @param {boolean=} options.supportsPrivilegedScope
+   *     If set to `true` privileged browsing contexts are supported
    *     for the BiDi command. Defaults to `false`.
    *
    * @returns {BrowsingContext|null}
@@ -79,7 +85,8 @@ export class RootBiDiModule extends Module {
    *     If the browsing context cannot be found.
    */
   _getNavigable(navigableId, options = {}) {
-    const { supportsChromeScope = false } = options;
+    const { skipPrivilegeCheck = false, supportsPrivilegedScope = false } =
+      options;
 
     if (navigableId === null) {
       // The WebDriver BiDi specification expects `null` to be
@@ -89,12 +96,12 @@ export class RootBiDiModule extends Module {
 
     const context = lazy.NavigableManager.getBrowsingContextById(navigableId);
 
-    if (context && !context.isContent) {
+    if (!skipPrivilegeCheck && context && lazy.isPrivilegedContext(context)) {
       lazy.assert.hasSystemAccess();
 
-      if (!supportsChromeScope) {
+      if (!supportsPrivilegedScope) {
         throw new lazy.error.UnsupportedOperationError(
-          "The command does not support browsing contexts in privileged (chrome) scope"
+          "The command does not support browsing contexts in privileged scope"
         );
       }
     }

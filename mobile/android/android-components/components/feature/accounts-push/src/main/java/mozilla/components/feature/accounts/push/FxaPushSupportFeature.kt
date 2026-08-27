@@ -298,6 +298,7 @@ internal class AutoPushObserver(
 internal class VerificationDelegate(
     context: Context,
     private val disableRateLimit: Boolean = false,
+    private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
 ) : SharedPreferencesCache<VerificationState>(context) {
     override val logger: Logger = Logger(VerificationDelegate::class.java.simpleName)
     override val cacheKey: String = PREF_LAST_VERIFIED
@@ -319,7 +320,7 @@ internal class VerificationDelegate(
     internal var innerCount: Int = 0
 
     @VisibleForTesting
-    internal var innerTimestamp: Long = System.currentTimeMillis()
+    internal var innerTimestamp: Long = currentTimeMillis()
 
     init {
         getCached()?.let { cache ->
@@ -340,7 +341,7 @@ internal class VerificationDelegate(
         }
 
         // within time frame
-        val currentTime = System.currentTimeMillis()
+        val currentTime = currentTimeMillis()
         if ((currentTime - innerTimestamp) >= PERIODIC_INTERVAL_MILLISECONDS) {
             logger.info("Resetting. currentTime($currentTime) - $innerTimestamp < $PERIODIC_INTERVAL_MILLISECONDS")
             reset()
@@ -372,7 +373,7 @@ internal class VerificationDelegate(
 
     private fun reset() {
         logger.info("Resetting verification state.")
-        val timestamp = System.currentTimeMillis()
+        val timestamp = currentTimeMillis()
         innerCount = 0
         innerTimestamp = timestamp
 

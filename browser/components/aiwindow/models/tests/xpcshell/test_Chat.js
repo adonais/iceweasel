@@ -208,11 +208,11 @@ add_task(async function test_Chat_fetchWithHistory_streams_and_forwards_args() {
       pageUrl: new URL("https://www.firefox.com"),
       pageMeta: {},
     });
-    conversation.addSystemMessage(
-      SYSTEM_PROMPT_TYPE.TEXT,
-      "You are helpful",
-      0
-    );
+    conversation.setSystemMessage({
+      type: SYSTEM_PROMPT_TYPE.TEXT,
+      body: "You are helpful",
+      version: 0,
+    });
     conversation.addUserMessage("Hi there", "https://www.firefox.com", 0);
     conversation.addAssistantMessage("text", "");
 
@@ -291,7 +291,11 @@ add_task(async function test_Chat_fetchWithHistory_sends_compacted_args() {
       pageUrl: new URL("https://example.test"),
       pageMeta: {},
     });
-    conversation.addSystemMessage(SYSTEM_PROMPT_TYPE.TEXT, "sys", 0);
+    conversation.setSystemMessage({
+      type: SYSTEM_PROMPT_TYPE.TEXT,
+      body: "sys",
+      version: 0,
+    });
     conversation.addUserMessage("Read this", "https://example.test", 0);
     conversation.addAssistantMessage("text", "");
 
@@ -955,6 +959,229 @@ add_task(
 );
 
 add_task(
+  async function test_Chat_fetchWithHistory_search_the_web_emits_pending_tool_message() {
+    // Feature-gated handlers (search_the_web) do long-running internal work
+    // before returning, so the tool message is emitted up front with a
+    // placeholder body to render the pending action log row, then reconciled
+    // with the real result in place (no duplicate row). Use the handoff path
+    // (deterministic) and inspect the conversation from inside the run_search
+    // stub, which runs before the tool result is finalized.
+    const sb = sinon.createSandbox();
+    try {
+      let callCount = 0;
+      const fakeEngine = {
+        runWithGenerator(_options) {
+          callCount++;
+          async function* gen() {
+            if (callCount === 1) {
+              yield {
+                toolCalls: [
+                  {
+                    id: "call_search_pending_001",
+                    function: {
+                      name: "search_the_web",
+                      arguments: JSON.stringify({ query: "test query" }),
+                    },
+                  },
+                ],
+              };
+            } else {
+              yield { text: "Final answer." };
+            }
+          }
+          return gen();
+        },
+        getConfig() {
+          return {};
+        },
+      };
+
+      const conversation = new ChatConversation({
+        title: "search pending test",
+        description: "desc",
+        pageUrl: new URL("https://www.firefox.com"),
+        pageMeta: {},
+      });
+
+      // Capture the tool-message state while the tool is still running.
+      let pendingSnapshot = null;
+      const runSearchStub = sb.stub(RunSearch, "runSearch").callsFake(() => {
+        const toolMessages = conversation.messages.filter(
+          m => m.role === MESSAGE_ROLE.TOOL
+        );
+        pendingSnapshot = {
+          count: toolMessages.length,
+          body: toolMessages[0]?.content?.body,
+          name: toolMessages[0]?.content?.name,
+        };
+        return Promise.resolve("search result");
+      });
+      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+
+      const mockBrowser = {
+        documentGlobal: {
+          closed: false,
+          gBrowser: {
+            getTabForBrowser: () => ({ selected: true }),
+            selectedTab: null,
+          },
+        },
+      };
+      const origLazy = ChromeUtils.importESModule(
+        "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs"
+      );
+      const origOpenSidebar = origLazy.AIWindow.openSidebarAndContinue;
+      origLazy.AIWindow.openSidebarAndContinue = sb.stub().callsFake(() => {});
+
+      conversation.addUserMessage(
+        "Search for something",
+        "https://www.firefox.com",
+        0
+      );
+      conversation.addAssistantMessage("text", "");
+
+      setupConversationForChat(conversation, {
+        model: TEST_MODEL,
+        engine: fakeEngine,
+      });
+
+      // Force the handoff path so run_search (our probe) is invoked.
+      conversation._searchTheWebTurn = conversation.currentTurnIndex();
+
+      await Chat.fetchWithHistory({
+        conversation,
+        browsingContext: { embedderElement: mockBrowser },
+      });
+
+      Assert.ok(runSearchStub.calledOnce, "run_search ran once");
+      Assert.ok(
+        pendingSnapshot,
+        "run_search observed the conversation mid-tool-call"
+      );
+      Assert.equal(
+        pendingSnapshot.count,
+        1,
+        "A pending tool message exists before the tool result is finalized"
+      );
+      Assert.deepEqual(
+        pendingSnapshot.body,
+        { pending: true },
+        "The pending tool message carries a body marked pending"
+      );
+      Assert.equal(
+        pendingSnapshot.name,
+        "search_the_web",
+        "The pending tool message is labeled search_the_web"
+      );
+
+      const toolMessages = conversation.messages.filter(
+        m => m.role === MESSAGE_ROLE.TOOL
+      );
+      Assert.equal(
+        toolMessages.length,
+        1,
+        "Reconciliation updates the same row rather than duplicating it"
+      );
+      Assert.equal(
+        toolMessages[0].content.body,
+        "search result",
+        "The placeholder body is reconciled with the real tool result"
+      );
+
+      origLazy.AIWindow.openSidebarAndContinue = origOpenSidebar;
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+add_task(
+  async function test_Chat_fetchWithHistory_failed_tool_omits_action_log_name() {
+    // A tool that throws should not surface as a completed action-log step. The
+    // tool message is stored without a `name`, so ai-window.mjs drops the
+    // action-log event (getActionLogConfigForTool(undefined) -> show: false),
+    // preserving the pre-existing behavior of rendering nothing for a failed
+    // call. Only tools that showed a pending row up front carry a name on
+    // failure (so that row can resolve).
+    const sb = sinon.createSandbox();
+    try {
+      let callCount = 0;
+      const fakeEngine = {
+        runWithGenerator(_options) {
+          callCount++;
+          async function* gen() {
+            if (callCount === 1) {
+              yield {
+                toolCalls: [
+                  {
+                    id: "call_get_user_memories_err",
+                    function: {
+                      name: "get_user_memories",
+                      arguments: JSON.stringify({}),
+                    },
+                  },
+                ],
+              };
+            } else {
+              yield { text: "Final answer." };
+            }
+          }
+          return gen();
+        },
+        getConfig() {
+          return {};
+        },
+      };
+
+      sb.stub(toolFns, "getUserMemories").rejects(new Error("boom"));
+      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+
+      const conversation = new ChatConversation({
+        title: "failed tool",
+        description: "desc",
+        pageUrl: new URL("https://www.firefox.com"),
+        pageMeta: {},
+      });
+      conversation.addUserMessage(
+        "What memories have you saved about me?",
+        "https://www.firefox.com",
+        { memoriesEnabled: true }
+      );
+      conversation.addAssistantMessage("text", "");
+
+      setupConversationForChat(conversation, {
+        model: TEST_MODEL,
+        engine: fakeEngine,
+      });
+
+      await Chat.fetchWithHistory({ conversation });
+
+      const toolMessages = conversation.messages.filter(
+        msg => msg.role === MESSAGE_ROLE.TOOL
+      );
+      Assert.equal(
+        toolMessages.length,
+        1,
+        "The failed tool call still records a tool message"
+      );
+      Assert.ok(
+        String(toolMessages[0].content?.body?.error).includes(
+          "Tool execution failed"
+        ),
+        "The tool message body carries the execution error"
+      );
+      Assert.equal(
+        toolMessages[0].content?.name,
+        undefined,
+        "A failed non-pending tool omits name, so no action-log card renders"
+      );
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+add_task(
   async function test_Chat_fetchWithHistory_get_user_memories_called_when_memories_enabled() {
     const sb = sinon.createSandbox();
     try {
@@ -1138,11 +1365,11 @@ add_task(
         pageUrl: new URL("https://www.firefox.com"),
         pageMeta: {},
       });
-      conversation.addSystemMessage(
-        SYSTEM_PROMPT_TYPE.TEXT,
-        "You are helpful",
-        0
-      );
+      conversation.setSystemMessage({
+        type: SYSTEM_PROMPT_TYPE.TEXT,
+        body: "You are helpful",
+        version: 0,
+      });
       conversation.addUserMessage("Hi there", "https://www.firefox.com", 0);
       conversation.addAssistantMessage("text", "");
 

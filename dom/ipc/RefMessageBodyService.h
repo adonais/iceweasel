@@ -122,7 +122,7 @@ class RefMessageBodyService final {
 
  private:
   explicit RefMessageBodyService(const StaticMutexAutoLock& aProofOfLock);
-  ~RefMessageBodyService();
+  ~RefMessageBodyService() = default;
 
  protected:
   ::mozilla::ThreadSafeAutoRefCnt mRefCnt;

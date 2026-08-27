@@ -1,4 +1,4 @@
-# Telemetry
+# Content relevancy telemetry
 
 This document serves as a complementary doc for all the telemetry we collect for `contentrelevancy`.
 Note that we use FoG ([Firefox on Glean][FoG]) to record telemetry,

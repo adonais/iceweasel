@@ -28,7 +28,7 @@ const PREF_DISPLAY = "security.mixed_content.block_display_content";
 
 const HTTP_TEST_ROOT = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
-  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  // eslint-disable-next-line sdl/no-insecure-url
   "http://example.com"
 );
 

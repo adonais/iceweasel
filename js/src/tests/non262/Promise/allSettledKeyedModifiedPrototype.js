@@ -1,4 +1,4 @@
-// |reftest| shell-option(--enable-promise-allkeyed) skip-if(!Promise.hasOwnProperty('allSettledKeyed'))
+// |reftest| shell-option(--enable-promise-allkeyed) skip-if(!Promise.hasOwnProperty('allSettledKeyed')) skip-if(!xulRuntime.shell) -- needs drainJobQueue
 
 /*---
 feature: [Promise.allSettledKeyed]

@@ -8,6 +8,7 @@ import {
   parseMarkdown,
   CHAT_WRAPPER_ELEMENTS,
 } from "chrome://browser/content/aiwindow/modules/ChatMarkdownParser.mjs";
+import { dispatchClientError } from "chrome://browser/content/aiwindow/modules/ClientErrorTelemetry.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/ai-chat-card.mjs";
 // eslint-disable-next-line import/no-unassigned-import
@@ -82,6 +83,7 @@ export class AIChatMessage extends MozLitElement {
   static properties = {
     role: { type: String, reflect: true, attribute: "data-message-role" }, // "user" | "assistant"
     message: { type: String },
+    messageL10n: { type: Object, attribute: false },
     messageId: { type: String, reflect: true, attribute: "data-message-id" },
     complete: { type: Boolean, reflect: true },
     seenUrls: { type: Object, attribute: false },
@@ -636,9 +638,14 @@ export class AIChatMessage extends MozLitElement {
    * @param {Element} element the element in which to insert the parsed markdown.
    */
   #parseMarkdown(markdown, element) {
-    element.setHTML(parseMarkdown(markdown), {
-      sanitizer: AIChatMessage.#chatMessageSanitizer,
-    });
+    try {
+      element.setHTML(parseMarkdown(markdown), {
+        sanitizer: AIChatMessage.#chatMessageSanitizer,
+      });
+    } catch (error) {
+      dispatchClientError(this, error, "markdown");
+      throw error;
+    }
     // Pass messageId to table elements for copy functionality.
     if (this.messageId) {
       for (const table of element.querySelectorAll("ai-chat-table")) {
@@ -659,13 +666,18 @@ export class AIChatMessage extends MozLitElement {
   }
 
   /**
-   * Render the assistant message by parsing parsing the markdown and then manually
-   * unfurl any unseen links. This function is memoized based on the message contents
-   * and seen links Set to guard against unneccessary re-renders.
+   * Render the assistant message. Localized messages render from their l10n id
+   * via Fluent dom overlay otherwise the markdown is parsed and unseen links
+   * are unfurled. The markdown path is memoized on the message contents and
+   * seen links Set to guard against unnecessary re-renders.
    *
-   * @returns {HTMLElement}
+   * @returns {HTMLElement|import("chrome://global/content/vendor/lit.all.mjs").TemplateResult}
    */
   getAssistantMessage() {
+    if (this.messageL10n?.id) {
+      return this.#renderL10nMessage();
+    }
+
     if (this.message == this.#lastMessage && !this.#unfurledUrlsNeedUpdating) {
       // The message is the same and the seen URLs haven't changed.
       return this.#lastMessageElement;
@@ -720,6 +732,27 @@ export class AIChatMessage extends MozLitElement {
     this.parseUserMarkdown(this.message, messageElement);
 
     return messageElement;
+  }
+
+  /**
+   * Render a localized assistant message via Fluent dom overlay. The message
+   * text and any embedded '<a data-l10n-name>' link text come from the l10n id.
+   * The link's href is set here.
+   *
+   * @returns {import("chrome://global/content/vendor/lit.all.mjs").TemplateResult}
+   */
+  #renderL10nMessage() {
+    const { id, args, link } = this.messageL10n;
+    return html`<div class="message-assistant">
+      <span
+        data-l10n-id=${id}
+        data-l10n-args=${args ? JSON.stringify(args) : nothing}
+      >
+        ${link
+          ? html`<a data-l10n-name=${link.l10nName} href=${link.href}></a>`
+          : nothing}
+      </span>
+    </div>`;
   }
 
   render() {

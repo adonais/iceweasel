@@ -53,7 +53,8 @@ async function test(aTestFile) {
   let resolution = await getResolution();
   ok(resolution > 0,
      "The initial_resolution is " + resolution + ", which is some sane value");
-  let initial_resolution = resolution;
+  const initial_resolution = resolution;
+  const initial_scroll_offset = document.documentElement.scrollTop;
 
   let pos = await targetElementPosition();
   const iframe = document.querySelector("iframe");
@@ -75,6 +76,8 @@ async function test(aTestFile) {
   // Reset the scale to the initial one since in the `visible: overflow` case
   // the second double-tap doesn't restore to the initial scale.
   SpecialPowers.DOMWindowUtils.setResolutionAndScaleTo(initial_resolution);
+  // Restore the scroll offset as well.
+  document.documentElement.scrollTop = initial_scroll_offset;
   await promiseApzFlushedRepaints();
 
   // Now load the document in an OOP iframe.

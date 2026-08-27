@@ -25,7 +25,7 @@ task-defaults:
     run-on-repo-type: [hg]
     attributes:
         retrigger: true
-    use-python: default
+    use-python: system
     use-uv: true
     worker-type:
         by-test-platform:
@@ -328,8 +328,10 @@ tasks:
             - inc-origin-init
             - trainhop-beta
             - trainhop-release
-            - nova
-            - nova+vertical-tabs
+            - no-nova
+            - no-nova+vertical-tabs
+            - urlbar-ipc
+            - webrender-sw+urlbar-ipc
         run-on-projects:
             by-variant:
                 trainhop-beta:
@@ -386,23 +388,39 @@ tasks:
                         windows1.*-64.*(-shippable)?/.*: ['autoland', 'mozilla-central']
                         default: []
                 inc-origin-init: []
-                nova:
+                no-nova:
                     by-test-platform:
                         .*-artifact.*: []
                         .*-asan.*: []
                         .*-ccov.*: []
-                        linux.*64(-shippable)?/opt: ['mozilla-central']
+                        linux.*64(-shippable)?/opt: ['trunk']
+                        # limited testing pool
                         macosx1[45].*64(-shippable)?(-qr)?/opt: ['mozilla-central']
-                        windows11.*-64.*(-shippable)?/opt: ['mozilla-central']
+                        windows11.*-64.*(-shippable)?/opt: ['trunk']
                         default: []
-                nova+vertical-tabs:
+                no-nova+vertical-tabs:
                     by-test-platform:
                         .*-artifact.*: []
                         .*-asan.*: []
                         .*-ccov.*: []
-                        linux.*64(-shippable)?/opt: ['mozilla-central']
+                        linux.*64(-shippable)?/opt: ['trunk']
+                        macosx1[45].*64(-shippable)?(-qr)?/opt: ['trunk']
+                        windows11.*-64.*(-shippable)?/opt: ['trunk']
+                        default: []
+                urlbar-ipc:
+                    by-test-platform:
+                        .*-artifact.*: []
+                        .*-asan.*: []
+                        .*-ccov.*: []
                         macosx1[45].*64(-shippable)?(-qr)?/opt: ['mozilla-central']
-                        windows11.*-64.*(-shippable)?/opt: ['mozilla-central']
+                        windows11.*-64.*(-shippable)?/opt: ['autoland', 'mozilla-central']
+                        default: []
+                webrender-sw+urlbar-ipc:
+                    by-test-platform:
+                        .*-artifact.*: []
+                        .*-asan.*: []
+                        .*-ccov.*: []
+                        linux.*64(-shippable)?/opt: ['autoland', 'mozilla-central']
                         default: []
                 default:
                     by-test-platform:
@@ -625,6 +643,25 @@ tasks:
                 - tr8ns.T.esen.model
                 - tr8ns.T.esen.vocab
 
+    mochitest-browser-chrome-ml-models:
+        description: "Mochitest browser-chrome tests that download real ML models from model-hub.mozilla.org"
+        suite:
+            name: mochitest-browser-chrome-ml-models
+        treeherder-symbol: M(bc-ml)
+        schedules-component: mochitest-browser-chrome-ml-models
+        loopback-video: true
+        run-on-projects:
+            by-test-platform:
+                # Shippable Linux opt only. The `.*` glob previously also
+                # matched sanitizer variants (asan/tsan), which abort on
+                # upstream ggml UB in the native llama.cpp backend.
+                linux2404-64-shippable/opt: ['mozilla-central']
+                default: []
+        max-run-time: 1800
+        mozharness:
+            mochitest-flavor: browser
+        allow-software-gl-layers: false
+
     mochitest-chrome:
         description: "Mochitest chrome run"
         treeherder-symbol: M(c)
@@ -636,7 +673,7 @@ tasks:
             - webrender-sw+1proc
             - standalone
             - inc-origin-init
-            - nova
+            - no-nova
         run-on-projects:
             by-variant:
                 webrender-sw+1proc:
@@ -662,14 +699,14 @@ tasks:
                         windows.*-64-[^-/]+/opt: ['autoland']
                         default: []
                 inc-origin-init: []
-                nova:
+                no-nova:
                     by-test-platform:
                         .*-artifact.*: []
                         .*-asan.*: []
                         .*-ccov.*: []
-                        linux.*64(-shippable)?/opt: ['mozilla-central']
-                        macosx1[45].*64(-shippable)?(-qr)?/opt: ['mozilla-central']
-                        windows11.*-64.*(-shippable)?/opt: ['mozilla-central']
+                        linux.*64(-shippable)?/opt: ['trunk']
+                        macosx1[45].*64(-shippable)?(-qr)?/opt: ['trunk']
+                        windows11.*-64.*(-shippable)?/opt: ['trunk']
                         default: []
         chunks: dynamic
         default-chunks:

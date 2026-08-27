@@ -1,5 +1,5 @@
 "use strict";
-/* eslint-disable @microsoft/sdl/no-insecure-url */
+/* eslint-disable sdl/no-insecure-url */
 
 const URL_B =
   "http://example.com/tests/dom/security/test/https-first/file_bug_1725646_b.sjs";

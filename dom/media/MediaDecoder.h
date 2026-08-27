@@ -258,6 +258,10 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   // Return true if the stream is infinite.
   bool IsInfinite() const;
 
+  // Return true if the media resource is a live stream (i.e. its length is
+  // not known ahead of time, such as an internet radio broadcast).
+  bool IsLiveStream() const;
+
   // Return true if we are currently seeking in the media resource.
   // Call on the main thread only.
   bool IsSeeking() const;

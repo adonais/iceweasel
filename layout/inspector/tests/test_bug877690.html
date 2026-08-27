@@ -142,28 +142,19 @@ function do_test() {
   // Test property with "auto"
   var prop = "margin";
   var values = InspectorUtils.getCSSValuesForProperty(prop);
-  var expected = [...CSS_WIDE_KEYWORDS, "auto"];
-
-  if(SpecialPowers.getBoolPref("layout.css.anchor-positioning.enabled")) {
-    expected.push("anchor-size");
-  }
-
+  var expected = [...CSS_WIDE_KEYWORDS, "auto", "anchor-size"];
   ok(testValues(values, expected), "property margin's values.");
 
   var prop = "inset";
   var values = InspectorUtils.getCSSValuesForProperty(prop);
-  var expected = [...CSS_WIDE_KEYWORDS, "auto"];
-
-  if(SpecialPowers.getBoolPref("layout.css.anchor-positioning.enabled")) {
-    expected.push("anchor", "anchor-size");
-  }
-
+  var expected = [...CSS_WIDE_KEYWORDS, "auto", "anchor", "anchor-size"];
   ok(testValues(values, expected), "property inset's values.");
 
   var prop = "width";
   var values = InspectorUtils.getCSSValuesForProperty(prop);
   var expected = [
     "-moz-available",
+    "anchor-size",
     "auto",
     "fit-content",
     "max-content",
@@ -177,9 +168,6 @@ function do_test() {
   if(SpecialPowers.getBoolPref("layout.css.webkit-fill-available.enabled")) {
     expected.push("-webkit-fill-available");
   }
-  if(SpecialPowers.getBoolPref("layout.css.anchor-positioning.enabled")) {
-    expected.push("anchor-size");
-  }
 
   ok(testValues(values, expected), "property width's values.");
 
@@ -187,6 +175,7 @@ function do_test() {
   var values = InspectorUtils.getCSSValuesForProperty(prop);
   var expected = [
     "-moz-available",
+    "anchor-size",
     "none",
     "fit-content",
     "max-content",
@@ -199,9 +188,6 @@ function do_test() {
   }
   if(SpecialPowers.getBoolPref("layout.css.webkit-fill-available.enabled")) {
     expected.push("-webkit-fill-available");
-  }
-  if(SpecialPowers.getBoolPref("layout.css.anchor-positioning.enabled")) {
-    expected.push("anchor-size");
   }
 
   ok(testValues(values, expected), "property max-width's values.");
@@ -339,6 +325,7 @@ function do_test() {
   // Test for bug 1935181.
   var values = InspectorUtils.getCSSValuesForProperty("align-items");
   var expected = [
+    "anchor-center",
     "baseline",
     "center",
     "end",
@@ -355,10 +342,6 @@ function do_test() {
     "unsafe",
     ...CSS_WIDE_KEYWORDS,
   ];
-
-  if(SpecialPowers.getBoolPref("layout.css.anchor-positioning.enabled")) {
-    expected.push("anchor-center");
-  }
 
   ok(testValues(values, expected), "property align-items values.");
 

@@ -25,15 +25,19 @@ moz-card {
   align-items: center;
 }
 
-h3 {
+/* Outranks the `h3` rule that firefoxview.css imports. */
+.sticky-header h3 {
   color: var(--text-color);
+  font-size: var(--font-size-large);
+  font-weight: normal;
+  text-align: center;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  margin-block: calc(var(--size-item-large) * 3.375) var(--space-xxlarge);
+  margin-block: calc(var(--size-item-large) * 3.375) var(--space-medium);
   height: min-content;
 }
 
 moz-input-search {
-  margin-block-end: var(--space-large);
+  margin-block-end: var(--space-medium);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   width: var(--splitview-opentabs-card-width);
 }

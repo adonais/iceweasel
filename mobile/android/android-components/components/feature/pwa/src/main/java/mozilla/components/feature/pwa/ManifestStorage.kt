@@ -21,8 +21,13 @@ private const val MAXIMUM_WEBMANIFEST_COUNT = 3
  * @param context the application context this storage is associated with
  * @param activeThresholdMs a timeout in milliseconds after which the storage will consider a manifest
  *                      as unused. By default this is [ACTIVE_THRESHOLD_MS].
+ * @param currentTimeMillis provider for the current time in milliseconds, injectable for testing.
  */
-class ManifestStorage(context: Context, private val activeThresholdMs: Long = ACTIVE_THRESHOLD_MS) {
+class ManifestStorage(
+    context: Context,
+    private val activeThresholdMs: Long = ACTIVE_THRESHOLD_MS,
+    private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
+) {
 
     @VisibleForTesting
     internal var manifestDao = lazy { ManifestDatabase.get(context).manifestDao() }
@@ -57,7 +62,7 @@ class ManifestStorage(context: Context, private val activeThresholdMs: Long = AC
      */
     suspend fun hasRecentManifest(
         url: String,
-        @VisibleForTesting currentTimeMs: Long = System.currentTimeMillis(),
+        @VisibleForTesting currentTimeMs: Long = currentTimeMillis(),
     ): Boolean = withContext(IO) {
         manifestDao.value.hasRecentManifest(url, thresholdMs = currentTimeMs - activeThresholdMs) > 0
     }
@@ -70,7 +75,7 @@ class ManifestStorage(context: Context, private val activeThresholdMs: Long = AC
      */
     suspend fun recentManifestsCount(
         activeThresholdMs: Long = this.activeThresholdMs,
-        @VisibleForTesting currentTimeMs: Long = System.currentTimeMillis(),
+        @VisibleForTesting currentTimeMs: Long = currentTimeMillis(),
     ): Int = withContext(IO) {
         manifestDao.value.recentManifestsCount(thresholdMs = currentTimeMs - activeThresholdMs)
     }
@@ -116,7 +121,7 @@ class ManifestStorage(context: Context, private val activeThresholdMs: Long = AC
      * Save a Web App Manifest to disk.
      */
     suspend fun saveManifest(manifest: WebAppManifest) = withContext(IO) {
-        val entity = ManifestEntity(manifest, currentTime = System.currentTimeMillis())
+        val entity = ManifestEntity(manifest, currentTime = currentTimeMillis())
         manifestDao.value.insertManifest(entity)
     }
 
@@ -125,7 +130,7 @@ class ManifestStorage(context: Context, private val activeThresholdMs: Long = AC
      */
     suspend fun updateManifest(manifest: WebAppManifest) = withContext(IO) {
         manifestDao.value.getManifest(manifest.startUrl)?.let { existing ->
-            val update = existing.copy(manifest = manifest, updatedAt = System.currentTimeMillis())
+            val update = existing.copy(manifest = manifest, updatedAt = currentTimeMillis())
             manifestDao.value.updateManifest(update)
         }
     }
@@ -137,7 +142,7 @@ class ManifestStorage(context: Context, private val activeThresholdMs: Long = AC
      */
     suspend fun updateManifestUsedAt(manifest: WebAppManifest) = withContext(IO) {
         manifestDao.value.getManifest(manifest.startUrl)?.let { existing ->
-            val update = existing.copy(usedAt = System.currentTimeMillis())
+            val update = existing.copy(usedAt = currentTimeMillis())
             manifestDao.value.updateManifest(update)
 
             existing.scope?.let { scope ->

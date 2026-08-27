@@ -1,0 +1,36 @@
+[DEFAULT]
+subsuite = "ml-models"
+
+# Firefox's on-device ML component contacts several external services
+# during a real inference run: Remote Settings (engine metadata and
+# allow/deny lists), the Mozilla model hub (the model artifact itself),
+# and MLPA — Mozilla's cloud LLM service (for cloud-served completions).
+# Mochitest workers block non-local sockets by default, so this manifest
+# allowlists each host whose code path a test in this suite actually
+# exercises — Remote Settings and the model hub today, plus MLPA when a
+# test grows to cover cloud-LLM inference. The perftest side takes a
+# different approach to the same problem — see
+# python/mozperftest/mozperftest/system/ml_services.py.
+prefs = [
+  "network.socket.allowed_nonlocal_domains=firefox.settings.services.mozilla.com,firefox-settings-attachments.cdn.mozilla.net,content-signature-2.cdn.mozilla.net,model-hub.mozilla.org",
+  "services.settings.server=https://firefox.settings.services.mozilla.com/v2",
+  "browser.ml.enable=true",
+  "browser.ml.modelHubRootUrl=https://model-hub.mozilla.org/",
+  "browser.ml.logLevel=Error",
+]
+
+environment = ["MOZ_ALLOW_EXTERNAL_ML_HUB=true"]
+
+# Native llama.cpp shape matches browser_ml_native.js's skip-if: ASAN/TSAN
+# trip on upstream ggml undefined behavior (null-pointer arithmetic in
+# ggml_graph_nbytes during context init), and debug/verify/x86/android
+# don't ship or can't run the native backend.
+["browser_ml_smollm2_chat.js"]
+skip-if = [
+  "arch == 'x86'",
+  "asan",
+  "debug",
+  "os == 'android'",
+  "tsan",
+  "verify",
+]
