@@ -13,7 +13,6 @@ ChromeUtils.defineESModuleGetters(this, {
   BuiltInThemes: "resource:///modules/BuiltInThemes.sys.mjs",
   CFRMessageProvider:
     "resource://activity-stream/lib/CFRMessageProvider.sys.mjs",
-  ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   ExperimentFakes: "resource://testing-common/NimbusTestUtils.sys.mjs",
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",

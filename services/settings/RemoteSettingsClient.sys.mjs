@@ -562,7 +562,7 @@ export class RemoteSettingsClient extends EventEmitter {
       `${this.identifier} ${data.length} records before filtering.`
     );
 
-    if (verifySignature) {
+    if (this.verifySignature && verifySignature) {
       lazy.console.debug(
         `${this.identifier} verify signature of local data on read`
       );

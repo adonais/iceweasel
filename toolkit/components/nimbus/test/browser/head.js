@@ -32,6 +32,11 @@ add_setup(function () {
       return origAddExperiment(enrollment);
     });
 
+  registerCleanupFunction(ExperimentTestUtils.disableSignatureVerification());
+
+  // Ensure the inner callback runs after all other registered cleanup
+  // functions. This lets tests use registerCleanupFunction to clean up any
+  // stray enrollments.
   registerCleanupFunction(() => {
     sandbox.restore();
   });

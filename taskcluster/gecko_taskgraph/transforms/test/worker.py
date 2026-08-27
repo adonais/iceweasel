@@ -55,55 +55,55 @@ WINDOWS_WORKER_TYPES = {
     },
     "windows11-32-2009-mingwclang-qr": {
         "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
+        "virtual-with-gpu": "win10-64-2009-gpu",
     },
     "windows11-32-2009-qr": {
         "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
+        "virtual-with-gpu": "win10-64-2009-gpu",
     },
     "windows11-32-2009-shippable-qr": {
         "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
+        "virtual-with-gpu": "win10-64-2009-gpu",
     },
     "windows11-64-2009": {
         "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
+        "virtual-with-gpu": "win10-64-2009-gpu",
     },
     "windows11-64-2009-ccov": {
         "virtual": "win11-64-2009-ssd",
-        "virtual-with-gpu": "win11-64-2009-ssd-gpu",
+        "virtual-with-gpu": "win10-64-2009-gpu",
     },
     "windows11-64-2009-ccov-qr": {
         "virtual": "win11-64-2009-ssd",
-        "virtual-with-gpu": "win11-64-2009-ssd-gpu",
+        "virtual-with-gpu": "win10-64-2009-gpu",
     },
     "windows11-64-2009-devedition": {
         "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
+        "virtual-with-gpu": "win10-64-2009-gpu",
     },
     "windows11-64-2009-shippable": {
         "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
+        "virtual-with-gpu": "win10-64-2009-gpu",
     },
     "windows11-64-2009-qr": {
         "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
+        "virtual-with-gpu": "win10-64-2009-gpu",
     },
     "windows11-64-2009-shippable-qr": {
         "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
+        "virtual-with-gpu": "win10-64-2009-gpu",
     },
     "windows11-64-2009-devedition-qr": {
         "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
+        "virtual-with-gpu": "win10-64-2009-gpu",
     },
     "windows11-64-2009-asan-qr": {
         "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
+        "virtual-with-gpu": "win10-64-2009-gpu",
     },
     "windows11-64-2009-mingwclang-qr": {
         "virtual": "win11-64-2009",
-        "virtual-with-gpu": "win11-64-2009-gpu",
+        "virtual-with-gpu": "win10-64-2009-gpu",
     },
 }
 

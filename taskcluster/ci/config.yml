@@ -686,7 +686,7 @@ workers:
             implementation: generic-worker
             os: windows
             worker-type: '{alias}'
-        win11-64-2009(|-gpu|-ssd|-source|-ssd-gpu):
+        win11-64-2009(|-ssd|-source):
             provisioner: 'gecko-t'
             implementation: generic-worker
             os: windows

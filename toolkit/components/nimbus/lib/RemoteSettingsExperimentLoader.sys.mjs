@@ -187,6 +187,7 @@ export class _RemoteSettingsExperimentLoader {
         forceSync,
         // Throw instead of returning an empty list.
         emptyListFallback: false,
+        verifySignature: true,
       });
       lazy.log.debug(`Got ${recipes.length} recipes from Remote Settings`);
     } catch (e) {

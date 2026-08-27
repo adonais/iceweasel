@@ -289,6 +289,7 @@ class ModuleEntry(object):
         )
         self.singleton = data.get("singleton", False)
         self.overridable = data.get("overridable", False)
+        self.serializable = data.get("serializable", False)
 
         self.protocol_config = data.get("protocol_config", None)
 
@@ -371,12 +372,14 @@ class ModuleEntry(object):
           {cid},
           {contract_id},
           {processes},
+          {serializable},
         }}""".format(
             name=self.name,
             cid=self.cid.to_cxx(),
             cid_string=str(self.cid),
             contract_id=contract_id,
             processes=lower_processes(self.processes),
+            serializable="true" if self.serializable else "false",
         )
 
     # Generates the C++ code for a JSServiceEntry representing this module.

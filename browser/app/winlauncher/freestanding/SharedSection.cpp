@@ -45,7 +45,41 @@ bool AddString(mozilla::Span<wchar_t> aBuffer, const UNICODE_STRING& aStr) {
   return true;
 }
 
+// Windows before 8.1 silently ignores the security attributes of an unnamed
+// object, so the section has to be named for its DACL to take effect on the
+// versions this branch still supports.  See SharedMemory::CreateInternal
+// in shared_memory_win.cc for more.
+// The random portion of the name is used to avoid the linear search for an
+// unused name, in the expected case.  It is not needed for process security.
+// We check that the name hasn't been previously claimed (ERROR_ALREADY_EXISTS)
+// for that.  The random portion means there are 2^64 names possible, so some
+// must be free.
+constexpr wchar_t kSectionNamePrefix[] = L"MozLauncherSharedSection-";
+constexpr ULONG kSectionNameRandomBytes = 32;
+constexpr size_t kSectionNamePrefixLength =
+    sizeof(kSectionNamePrefix) / sizeof(wchar_t) - 1;
+constexpr size_t kSectionNameLength =
+    kSectionNamePrefixLength + kSectionNameRandomBytes * 2;
+
+void FormatSectionName(const UCHAR (&aBytes)[kSectionNameRandomBytes],
+                       wchar_t (&aName)[kSectionNameLength + 1]) {
+  constexpr wchar_t kHexDigits[] = L"0123456789abcdef";
+  wchar_t* out = aName;
+  for (size_t i = 0; i < kSectionNamePrefixLength; ++i) {
+    *out++ = kSectionNamePrefix[i];
+  }
+  for (ULONG i = 0; i < kSectionNameRandomBytes; ++i) {
+    *out++ = kHexDigits[aBytes[i] >> 4];
+    *out++ = kHexDigits[aBytes[i] & 0xf];
+  }
+  *out = L'\0';
+}
+
 }  // anonymous namespace
+
+// RtlGenRandom.
+extern "C" BOOLEAN WINAPI SystemFunction036(PVOID aRandomBuffer,
+                                            ULONG aRandomBufferLength);
 
 namespace mozilla {
 namespace freestanding {
@@ -151,12 +185,50 @@ LauncherVoidResult SharedSection::Init() {
       kSharedViewSize >= sizeof(Layout),
       "kSharedViewSize is too small to represent SharedSection::Layout.");
 
-  HANDLE section =
-      ::CreateFileMappingW(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0,
-                           kSharedViewSize, nullptr);
-  if (!section) {
+  // Create with an empty DACL to limit the duplicated handle's access rights.
+  SECURITY_DESCRIPTOR sd;
+  ACL dacl;
+  if (!::InitializeAcl(&dacl, sizeof(dacl), ACL_REVISION) ||
+      !::InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION) ||
+      !::SetSecurityDescriptorDacl(&sd, TRUE, &dacl, FALSE)) {
     return LAUNCHER_ERROR_FROM_LAST();
   }
+
+  SECURITY_ATTRIBUTES sa;
+  sa.nLength = sizeof(sa);
+  sa.lpSecurityDescriptor = &sd;
+  sa.bInheritHandle = FALSE;
+
+  UCHAR nameBytes[kSectionNameRandomBytes] = {};
+  // Use RtlGenRandom to fill with random bytes.  Ignore any errors -- they
+  // would simply mean that we start our search for a free name at zero.
+  (void)::SystemFunction036(nameBytes, sizeof(nameBytes));
+
+  wchar_t name[kSectionNameLength + 1];
+  HANDLE section;
+  while (true) {
+    FormatSectionName(nameBytes, name);
+
+    section = ::CreateFileMappingW(INVALID_HANDLE_VALUE, &sa, PAGE_READWRITE, 0,
+                                   kSharedViewSize, name);
+    const DWORD lastError = ::RtlGetLastWin32Error();
+    if (!section) {
+      return LAUNCHER_ERROR_FROM_WIN32(lastError);
+    }
+    if (lastError != ERROR_ALREADY_EXISTS) {
+      break;
+    }
+
+    // The name was taken, so the object we just opened is somebody else's.
+    // Try the next one, wrapping back to zero if needed.
+    ::CloseHandle(section);
+    for (ULONG i = kSectionNameRandomBytes; i-- > 0;) {
+      if (++nameBytes[i] != 0) {
+        break;
+      }
+    }
+  }
+
   Reset(section);
 
   // The initial contents of the pages in a file mapping object backed by

@@ -6,6 +6,8 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/ObjectUtils.jsm"
 );
 ChromeUtils.defineESModuleGetters(this, {
+  ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
+  ExperimentTestUtils: "resource://testing-common/NimbusTestUtils.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
 });
 ChromeUtils.defineModuleGetter(
@@ -43,6 +45,10 @@ async function getAboutWelcomeParent(browser) {
 async function setAboutWelcomeMultiStage(value = "") {
   return pushPrefs([ABOUT_WELCOME_OVERRIDE_CONTENT_PREF, value]);
 }
+
+add_setup(function setup() {
+  registerCleanupFunction(ExperimentTestUtils.disableSignatureVerification());
+});
 
 /**
  * Setup functions to test welcome UI

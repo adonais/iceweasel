@@ -15,6 +15,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   NormandyUtils: "resource://normandy/lib/NormandyUtils.sys.mjs",
   _ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
+  RemoteSettingsExperimentLoader:
+    "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs",
   _RemoteSettingsExperimentLoader:
     "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
@@ -178,6 +180,25 @@ export const ExperimentTestUtils = {
       for (const { featureId } of features) {
         delete lazy.NimbusFeatures[featureId];
       }
+    };
+  },
+
+  /**
+   * Temporarily disable signature verification for Remote Settings clients used
+   * by Nimbus.
+   *
+   * NB: This is only required for browser tests.
+   *
+   * @returns {() => void} A callback that will restore signature verification
+   * to its previous state.
+   */
+  disableSignatureVerification() {
+    const client = lazy.RemoteSettingsExperimentLoader.remoteSettingsClient;
+    const originalValue = client.verifySignature;
+
+    client.verifySignature = false;
+    return () => {
+      client.verifySignature = originalValue;
     };
   },
 };

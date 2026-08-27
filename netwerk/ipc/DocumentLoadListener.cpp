@@ -44,6 +44,7 @@
 #include "nsExternalHelperAppService.h"
 #include "nsHttpChannel.h"
 #include "nsIBrowser.h"
+#include "nsIContentPolicy.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIStreamConverterService.h"
 #include "nsIViewSourceChannel.h"
@@ -981,6 +982,15 @@ auto DocumentLoadListener::OpenObject(
        aLoadState->URI()->GetSpecOrDefault().get()));
 
   MOZ_ASSERT(!mIsDocumentLoad);
+
+  // The content policy type is child-controlled; object loads must only
+  // ever claim to be object or embed loads, as the parent bases
+  // type-keyed security decisions (cookies, third-party status) on it.
+  if (aContentPolicyType != nsIContentPolicy::TYPE_INTERNAL_OBJECT &&
+      aContentPolicyType != nsIContentPolicy::TYPE_INTERNAL_EMBED) {
+    *aRv = NS_ERROR_UNEXPECTED;
+    return nullptr;
+  }
 
   auto sandboxFlags = aLoadState->TriggeringSandboxFlags();
 
