@@ -5888,9 +5888,11 @@ ${
       return;
     }
 
-    let engineName = UrlbarPrefs.get(
-      "placeholderName" + (this.isPrivate ? ".private" : "")
-    );
+    // let engineName = UrlbarPrefs.get(
+    //   "placeholderName" + (this.isPrivate ? ".private" : "")
+    // );
+    // UrlbarPrefs causes Chinese search engine names to display garbled?
+    let engineName = Services.prefs.getStringPref("browser.urlbar.placeholderName" + (this.isPrivate ? ".private" : ""), "");
     if (engineName) {
       this._setPlaceholder(engineName);
     }
