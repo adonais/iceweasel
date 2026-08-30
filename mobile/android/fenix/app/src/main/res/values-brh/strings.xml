@@ -55,8 +55,6 @@
   <string name="open_in_app_cfr_positive_button_text">سیٹنگ اتے ان</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">خلاس</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">سیٹنگ اتے ان</string>
   <!-- Text for the negative action button to dismiss the dialog. -->
@@ -253,8 +251,6 @@
   <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">داسہ نہ</string>
   <!-- Marketing onboarding page title variant. “One last thing” refers to the final step or action in the onboarding process that we’re asking users to take before they can start using the browser. -->
   <string name="onboarding_marketing_title_1" tools:ignore="UnusedResources">اسہ گڈیکو گڑاس</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
   <!-- "Continue" onboarding button. -->
   <string name="nova_onboarding_continue_button">برجا</string>
   <!-- "Not now" onboarding button. -->
@@ -273,8 +269,6 @@
   <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">تہار</string>
   <!-- Notifications onboarding button. -->
   <string name="nova_onboarding_notifications_button">اعلاناتےملبو</string>
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">پٹبو</string>
   <!-- Text preview for larger sized widgets -->
@@ -631,8 +625,6 @@
   <string name="saved_login_hide_password">کلیت لوز اے ڈک</string>
   <!-- Title for recent search suggestions. -->
   <string name="recent_searches_header">زاتیاٹ پٹنگاک</string>
-  <!-- Translations feature -->
-
   <!-- Default dropdown option when initially selecting a language from the translations dialog language selection dropdown. -->
   <string name="translations_bottom_sheet_default_dropdown_selection">دووی اس گچین کر</string>
   <!-- Button text for the button that will take the user to a website to learn more about how translations works in the given app. %1$s is the name of the app (for example "Firefox"). -->
@@ -645,17 +637,10 @@
   <string name="download_language_header_preference">دووی تے ڈاونلوڈ کبو</string>
   <!-- All languages list item. When the user presses this item, they can download all languages. -->
   <string name="download_language_all_languages_item_preference">کل دوویک</string>
-  <!-- TextField Design System Component -->
-
   <!--
     Review prompt
 
     Title for a prompt asking the user about their experience using the app. %1$s is the name of the app (for example "Firefox").
   -->
   <string name="review_prompt_pre_prompt_header">%1$s نا باروٹ انت پارے؟</string>
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

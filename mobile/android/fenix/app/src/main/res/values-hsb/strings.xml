@@ -106,8 +106,6 @@
   <string name="open_in_app_cfr_positive_button_text">K nastajenjam</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Zaćisnyć</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Přistup ke kamerje trěbny. Wočińće nastajenja Android, podótkńće so zapiska Prawa a podótkńće so zapiska Dowolić.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -543,8 +541,6 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Zdźělće našim marketingowym partneram Mozilla, kak sće Firefox wotkrył a zo jón wužiwaće. Tute daty so ženje njepředawaja.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Zwolić a přehladowanje započeć</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
   <!-- "Continue" onboarding button. -->
   <string name="nova_onboarding_continue_button">Dale</string>
   <!-- "Continue browsing" onboarding button. -->
@@ -691,8 +687,6 @@
   <string name="nova_onboarding_app_icon_prompt_title" tools:ignore="UnusedResources">Wubjerće swójski nałoženski symbol</string>
   <!-- App icon onboarding body. -->
   <string name="nova_onboarding_app_icon_prompt_body" tools:ignore="UnusedResources">Dajće swojej startowej wobrazowce wosobinski raz.</string>
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!--
     Widget Picker
 
@@ -3067,6 +3061,8 @@
   <string name="ip_protection_menu_paused">Přestawka</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Zmylk</string>
+  <!-- Badge label shown in the VPN menu item when the user is eligible for the feature but needs to authenticate / authorize to enable it -->
+  <string name="ip_protection_menu_try_vpn_cta">Darmo testować</string>
   <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
   <string name="ip_protection_menu_auth_required">Wupruwujće jón</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
@@ -3115,6 +3111,8 @@
   <string name="ip_protection_onboarding_not_now_button">Nic nětko</string>
   <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
   <string name="ip_protection_connection_error_snackbar">Njeje móžno z VPN zwjazać. Spytajće za mało mjeńšin hišće raz.</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the VPN location has been reset due to the previously selected VPN location being no longer available. -->
+  <string name="ip_protection_location_selection_reset_snackbar">Wubrane stejnišćo VPN k dispoziciji njeje. Je so k doporučenemu stejnišću přešło.</string>
   <!--
     Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
     %1$d is the total monthly allowance in GB (for example "50").
@@ -3580,8 +3578,6 @@
   <string name="a11y_action_label_expand">pokazać</string>
   <!-- Action label for links to a website containing documentation about a wallpaper collection. Talkback will append this to say "Double tap to open link to learn more about this collection". -->
   <string name="a11y_action_label_wallpaper_collection_learn_more">wočińće wotkaz, zo byšće wjace wo tutej zběrce zhonił</string>
-  <!-- Translations feature -->
-
   <!--
     Translation request dialog
 
@@ -4265,8 +4261,6 @@
   <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Aktualizujće do 14. měrca, zo byšće přidatki a druhe funkcije dale wužiwał.</string>
   <!-- Push notification message about old Firefox version -->
   <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Někotre funkcije jutře hižo njebudu fungować.</string>
-  <!-- TextField Design System Component -->
-
   <!--
     Setup checklist feature
 
@@ -4425,8 +4419,6 @@
   <string name="settings_search_no_results_message">Snano druhe pytanje spytać?</string>
   <!-- Content Description for the button to open Settings Search (to search through settings). -->
   <string name="settings_search_button_content_description">Tłóčatko za pytanje nastajenjow</string>
-  <!-- ==== Terms of use pop up prompt ==== -->
-
   <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">Mamy aktualizaciju</string>
   <!--
@@ -4451,8 +4443,6 @@
   <string name="terms_of_use_prompt_accept">Akceptować</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">Pozdźišo dopomnić</string>
-  <!-- ==== Experiment strings. ==== -->
-
   <!-- A title for the popup prompt. -->
   <string name="terms_of_use_prompt_title_option_a" tools:ignore="UnusedResources">Wužiwanske wuměnjenja</string>
   <!--
@@ -4682,8 +4672,6 @@
   <string name="sports_widget_error_load_failed_description">Aktualizujće za mało mjeńšin hišće raz.</string>
   <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
   <string name="sports_widget_team_to_be_determined">Mustwo, kotrež so ma postajić</string>
-  <!-- ==== End of Terms of use popup prompt. ==== -->
-
   <!--
     Privacy notice homepage banner
 

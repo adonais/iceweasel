@@ -37,8 +37,6 @@
   <string name="open_in_app_cfr_positive_button_text">அமைவுகளுக்கு செல்</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">நிராகரி</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">படகருவிக்கு அணுகல் தேவை. ஆண்ட்ராய்டு அமைவுகளுக்குச் சென்று, அனுமதிகளைத் தட்டி, அனுமதி என்பதைத் தட்டவும்.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -125,10 +123,6 @@
   <string name="search_suggestions_onboarding_title">கமுக்க அமர்வுகளில் தேடல் பரிந்துரைகளை அனுமதிக்கவா?</string>
   <!-- Search suggestion onboarding hint description text, %s is the name of the app (for example "Firefox"). -->
   <string name="search_suggestions_onboarding_text">நீங்கள் முகவரி பட்டையில் உள்ளிடும் அனைத்தையும் %s உங்கள் இயல்புநிலை தேடுபொறியுடன் பகிர்ந்து கொள்ளும்.</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">தேடல்</string>
   <!-- Text preview for larger sized widgets -->
@@ -900,13 +894,4 @@
   <string name="synced_tabs_no_open_tabs">திறந்த கீற்றுகள் இல்லை</string>
   <!-- Confirmation dialog button text when top sites limit is reached. -->
   <string name="top_sites_max_limit_confirmation_button">சரி, புரிந்தது</string>
-  <!-- Translations feature -->
-
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

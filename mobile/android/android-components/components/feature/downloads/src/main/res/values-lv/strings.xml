@@ -7,6 +7,12 @@
 -->
 
 <resources>
+  <!-- Name of the "notification channel" used for displaying download notification. See https://developer.android.com/training/notify-user/channels -->
+  <string name="mozac_feature_downloads_notification_channel">Lejupielādes</string>
   <!-- Button that restarts the download after a failed attempt. -->
   <string name="mozac_feature_downloads_button_try_again">Mēģiniet vēlreiz</string>
+  <!-- Alert dialog confirmation before cancelling downloads, this is the title -->
+  <string name="mozac_feature_downloads_cancel_active_downloads_warning_content_title">Atcelt privātās lejupielādes?</string>
+  <!-- Alert dialog confirmation before cancelling downloads, this is the positive action. -->
+  <string name="mozac_feature_downloads_cancel_active_downloads_accept">Atcelt lejupielādes</string>
 </resources>

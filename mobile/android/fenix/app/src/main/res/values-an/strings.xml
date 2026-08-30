@@ -43,8 +43,6 @@
   <string name="open_in_app_cfr_positive_button_text">Ir ta los achustes</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Descartar</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">La camara precisa acceso. Ves ta los achustes d\'Android, toca \"permisos\" y toca \"permitir\".</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -181,10 +179,6 @@
   <string name="search_engine_suggestions_title">Mirar %s</string>
   <!-- Search engine suggestion description text -->
   <string name="search_engine_suggestions_description">Mirar directament d’a barra d’adrezas</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!--
     Search Widget
 
@@ -1080,13 +1074,4 @@
   <string name="synced_tabs_no_open_tabs">No i hai garra pestanya ubierta</string>
   <!-- Confirmation dialog button text when top sites limit is reached. -->
   <string name="top_sites_max_limit_confirmation_button">Vale, entendiu</string>
-  <!-- Translations feature -->
-
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

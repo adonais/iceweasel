@@ -106,8 +106,6 @@
   <string name="open_in_app_cfr_positive_button_text">Pojdi v nastavitve</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Zapri</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Potreben je dostop do kamere. Odprite nastavitve sistema Android in v dovoljenjih tapnite Dovoli.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -543,8 +541,6 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Sporočite Mozillinim tehnološkim partnerjem za trženje, kako ste odkrili Firefox in da ga uporabljate. Ti podatki se nikoli ne bodo prodali.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Strinjam se, začni z brskanjem</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
   <!-- "Continue" onboarding button. -->
   <string name="nova_onboarding_continue_button">Nadaljuj</string>
   <!-- "Continue browsing" onboarding button. -->
@@ -691,8 +687,6 @@
   <string name="nova_onboarding_app_icon_prompt_title" tools:ignore="UnusedResources">Izberite si ikono aplikacije</string>
   <!-- App icon onboarding body. -->
   <string name="nova_onboarding_app_icon_prompt_body" tools:ignore="UnusedResources">Dodajte domačemu zaslonu osebno noto.</string>
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!--
     Widget Picker
 
@@ -1133,6 +1127,8 @@
   <string name="extension_process_crash_dialog_retry_button_text" tools:ignore="UnusedResources">Poskusi znova zagnati razširitve</string>
   <!-- Button text on the extension crash dialog to prompt the user to continue with all extensions disabled. -->
   <string name="extension_process_crash_dialog_disable_extensions_button_text">Nadaljuj z onemogočenimi razširitvami</string>
+  <!-- Text shown in the snackbar action button that lets the user retry an add-on operation that just failed. -->
+  <string name="addon_failure_retry_action">Poskusi znova</string>
   <!--
     Account Preferences
 
@@ -3065,6 +3061,8 @@
   <string name="ip_protection_menu_paused">Začasno ustavljeno</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Napaka</string>
+  <!-- Badge label shown in the VPN menu item when the user is eligible for the feature but needs to authenticate / authorize to enable it -->
+  <string name="ip_protection_menu_try_vpn_cta">Preizkusite brezplačno</string>
   <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
   <string name="ip_protection_menu_auth_required">Preizkusite ga</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
@@ -3083,6 +3081,10 @@
   <string name="ip_protection_toolbar_pill_label">VPN je vklopljen</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description">VPN deluje.</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN turns off -->
+  <string name="ip_protection_toolbar_pill_label_off">VPN izključen</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has turned off -->
+  <string name="ip_protection_toolbar_pill_description_off">VPN je izključen.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Začnite</string>
   <!-- Label for the "connecting" state of the button that starts the browser VPN authentication or authorization flow on the settings screen -->
@@ -3109,6 +3111,8 @@
   <string name="ip_protection_onboarding_not_now_button">Ne zdaj</string>
   <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
   <string name="ip_protection_connection_error_snackbar">Povezava z VPN ni uspela. Poskusite znova čez nekaj minut.</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the VPN location has been reset due to the previously selected VPN location being no longer available. -->
+  <string name="ip_protection_location_selection_reset_snackbar">Izbrana lokacija VPN ni na voljo. Preklopljeno na priporočeno lokacijo.</string>
   <!--
     Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
     %1$d is the total monthly allowance in GB (for example "50").
@@ -3574,8 +3578,6 @@
   <string name="a11y_action_label_expand">razširite</string>
   <!-- Action label for links to a website containing documentation about a wallpaper collection. Talkback will append this to say "Double tap to open link to learn more about this collection". -->
   <string name="a11y_action_label_wallpaper_collection_learn_more">odprete povezavo s podrobnostmi o tej zbirki</string>
-  <!-- Translations feature -->
-
   <!--
     Translation request dialog
 
@@ -4259,8 +4261,6 @@
   <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Posodobite pred 14. marcem, da boste lahko še naprej uporabljali dodatke in druge funkcije.</string>
   <!-- Push notification message about old Firefox version -->
   <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Nekatere zmogljivosti bodo jutri prenehale delovati.</string>
-  <!-- TextField Design System Component -->
-
   <!--
     Setup checklist feature
 
@@ -4419,8 +4419,6 @@
   <string name="settings_search_no_results_message">Morda poskusite z drugačnim iskanjem?</string>
   <!-- Content Description for the button to open Settings Search (to search through settings). -->
   <string name="settings_search_button_content_description">Gumb za iskanje nastavitev</string>
-  <!-- ==== Terms of use pop up prompt ==== -->
-
   <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">Na voljo je posodobitev</string>
   <!--
@@ -4445,8 +4443,6 @@
   <string name="terms_of_use_prompt_accept">Sprejmi</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">Opomni me pozneje</string>
-  <!-- ==== Experiment strings. ==== -->
-
   <!-- A title for the popup prompt. -->
   <string name="terms_of_use_prompt_title_option_a" tools:ignore="UnusedResources">Pogoji uporabe</string>
   <!--
@@ -4676,8 +4672,6 @@
   <string name="sports_widget_error_load_failed_description">Poskusite znova čez nekaj minut.</string>
   <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
   <string name="sports_widget_team_to_be_determined">Ekipa še ni določena</string>
-  <!-- ==== End of Terms of use popup prompt. ==== -->
-
   <!--
     Privacy notice homepage banner
 

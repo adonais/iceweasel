@@ -83,8 +83,6 @@
   <string name="open_in_app_cfr_positive_button_text">Mine sätetesse</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Peida</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Vajalik on ligipääs kaamerale. Mine Androidi sätetesse, puuduta õigusi ja seejärel puuduta lubamise valikut.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -290,10 +288,6 @@
   <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Rohkem teavet</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Rohkem teavet</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!--
     Search Widget
 
@@ -1774,8 +1768,6 @@
   <string name="experiments_snackbar">Andmete saatmiseks luba telemeetria.</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">Mine sätetesse</string>
-  <!-- Translations feature -->
-
   <!--
     Translation request dialog
 
@@ -1918,8 +1910,6 @@
   <string name="debug_drawer_tab_tools_tab_quantity_empty_error">Tekstiväli on tühi</string>
   <!-- The continue button label -->
   <string name="micro_survey_continue_button_label" tools:ignore="UnusedResources">Jätka</string>
-  <!-- TextField Design System Component -->
-
   <!-- Label for the primary action button to unlock private tabs -->
   <string name="pbm_authentication_unlock">Ava</string>
   <!-- Title text instructing the user to unlock private tabs -->
@@ -1958,11 +1948,6 @@
   <string name="content_description_settings_search_clear_search">Tühjenda otsing</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Kustuta kõik</string>
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove">Eemalda</string>
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

@@ -77,8 +77,6 @@
   <string name="open_in_app_cfr_positive_button_text">Dir a Configuración</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Escartar</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">Dir a Configuración</string>
   <!-- Text for the negative action button to dismiss the dialog. -->
@@ -229,10 +227,6 @@
   <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Afáyate en Firefox</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
   <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Términos d\'usu de Mozilla</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">Buscar</string>
   <!-- Text preview for larger sized widgets -->
@@ -1325,8 +1319,6 @@
   <string name="other_default_search_engine_suggestion_header">Busca nel motor «%s»</string>
   <!-- Content description radio buttons with a link to more information -->
   <string name="radio_preference_info_content_description">Calca pa consiguir más detalles</string>
-  <!-- Translations feature -->
-
   <!--
     Translation request dialog
 
@@ -1416,11 +1408,4 @@
   <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Anueva enantes del 14 de marzu pa siguir usando los complementos y otres funciones.</string>
   <!-- Push notification message about old Firefox version -->
   <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Dalgunes funciones van dexar de funcionar mañana.</string>
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

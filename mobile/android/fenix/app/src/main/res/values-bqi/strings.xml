@@ -106,8 +106,6 @@
   <string name="open_in_app_cfr_positive_button_text">راو و سامووا</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">رڌ کردن</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">دسرسی و شؽواتگر ن اخو. و سامووا ٱندروید ریوین، ری موجوزا بزنین وو دیندا ری هشتن بزنین.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -543,8 +541,6 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">بارت آشنایی خوت وا Firefox وو یو ک و کارس اگیری ن وا هومکورووݩ بازارجۊری Mozilla یک رسۊوی کۊنین. ای داده یل هرگشت فوروهڌه نؽبۊن.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">نشووݩ داڌن مووافقت وو ناهاڌن پا گشتن</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
   <!-- "Continue" onboarding button. -->
   <string name="nova_onboarding_continue_button">رئڌن وا پؽش</string>
   <!-- "Continue browsing" onboarding button. -->
@@ -689,8 +685,6 @@
   <string name="nova_onboarding_app_icon_prompt_title" tools:ignore="UnusedResources">ی آیکون برنومه سفارشی پسند کۊنین</string>
   <!-- App icon onboarding body. -->
   <string name="nova_onboarding_app_icon_prompt_body" tools:ignore="UnusedResources">و بلگه ٱسلی خوتووݩ، ی شؽوات سیخومی بڌین.</string>
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!--
     Widget Picker
 
@@ -3051,6 +3045,8 @@
   <string name="ip_protection_menu_paused">واڌاشتن</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">ختا</string>
+  <!-- Badge label shown in the VPN menu item when the user is eligible for the feature but needs to authenticate / authorize to enable it -->
+  <string name="ip_protection_menu_try_vpn_cta">مۊفتی امتهووݩ کۊنین</string>
   <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
   <string name="ip_protection_menu_auth_required">امتهووس کوݩ</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
@@ -3099,6 +3095,8 @@
   <string name="ip_protection_onboarding_not_now_button">سکو ن</string>
   <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
   <string name="ip_protection_connection_error_snackbar">منپیز و VPN مومکن نؽ. چن دیقه دی ز نۊ امتهووݩ کۊنین.</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the VPN location has been reset due to the previously selected VPN location being no longer available. -->
+  <string name="ip_protection_location_selection_reset_snackbar">جاگه VPN پسند وابیڌه من دسرس نؽ. و جاگه پؽشنهاڌی جاگورو وابی.</string>
   <!--
     Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
     %1$d is the total monthly allowance in GB (for example "50").
@@ -3564,8 +3562,6 @@
   <string name="a11y_action_label_expand">بولند کردن</string>
   <!-- Action label for links to a website containing documentation about a wallpaper collection. Talkback will append this to say "Double tap to open link to learn more about this collection". -->
   <string name="a11y_action_label_wallpaper_collection_learn_more">سی قلوه ویر گرؽڌن زبار ای کتن، لینگ ن بۊگۊشین</string>
-  <!-- Translations feature -->
-
   <!--
     Translation request dialog
 
@@ -4233,8 +4229,6 @@
   <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">پؽش ز 14 مارس ورۊ رسۊوی کۊنین تا تا ترسته بۊین وردنی یل وو پوی ویژیی یل ن هی و کار بگیرین.</string>
   <!-- Push notification message about old Firefox version -->
   <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">ی قرد ز ویژیی یا سووه اواستن.</string>
-  <!-- TextField Design System Component -->
-
   <!--
     Setup checklist feature
 
@@ -4393,8 +4387,6 @@
   <string name="settings_search_no_results_message">پیتینیڌن دیری ن امتهووݩ کۊنین</string>
   <!-- Content Description for the button to open Settings Search (to search through settings). -->
   <string name="settings_search_button_content_description">دویمه پیتینیڌن سامووا</string>
-  <!-- ==== Terms of use pop up prompt ==== -->
-
   <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">ایما ی ورۊ رسۊوی داریم</string>
   <!--
@@ -4419,8 +4411,6 @@
   <string name="terms_of_use_prompt_accept">قوۊل کردن</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">دینداتر وا ویروم بیار</string>
-  <!-- ==== Experiment strings. ==== -->
-
   <!-- A title for the popup prompt. -->
   <string name="terms_of_use_prompt_title_option_a" tools:ignore="UnusedResources">شرتا و کار گرؽڌن</string>
   <!--
@@ -4650,8 +4640,6 @@
   <string name="sports_widget_error_load_failed_description">چن دیقه دی ز نۊ امتهووݩ کۊنین.</string>
   <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
   <string name="sports_widget_team_to_be_determined">تیم دیاری ابۊ</string>
-  <!-- ==== End of Terms of use popup prompt. ==== -->
-
   <!--
     Privacy notice homepage banner
 

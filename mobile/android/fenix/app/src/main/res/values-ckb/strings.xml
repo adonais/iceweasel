@@ -37,8 +37,6 @@
   <string name="open_in_app_cfr_positive_button_text">بڕۆ بۆ ڕێکخستن</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">پشتگوێخستن</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">داواکاری کامێرا چالاک کرا. بڕۆ بۆ ڕێکخستنەکانی ئاندرۆید، پەنجەبنێ بە دەسەڵاتەکان و ئینجا ڕێگەپێدان هەڵبژێرە.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -127,10 +125,6 @@
   <string name="search_engine_suggestions_title">بگەڕێ بۆ %s</string>
   <!-- Search engine suggestion description text -->
   <string name="search_engine_suggestions_description">ڕاستەوخۆ گەڕان بکە لە توڵی ناونیشانەوە</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">گەڕان</string>
   <!-- Text preview for larger sized widgets -->
@@ -973,13 +967,4 @@
   <string name="radio_preference_info_content_description">کرتە بکە بۆ زانیاری زیاتر</string>
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">بچۆ سەرەوە</string>
-  <!-- Translations feature -->
-
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

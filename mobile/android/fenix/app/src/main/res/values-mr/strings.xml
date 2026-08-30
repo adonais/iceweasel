@@ -23,8 +23,6 @@
   <string name="about_content" tools:ignore="BrandUsage">%1$s Mozilla द्वारा निर्मित केले गेले आहे.</string>
   <!-- Private Browsing -->
   <string name="private_browsing_common_myths">खाजगी ब्राउझिंग बद्दल सामान्य समजुती</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!--
     Home screen icons - Long press shortcuts
 
@@ -99,10 +97,6 @@
   <string name="search_suggestions_onboarding_title">खाजगी सत्रांमध्ये शोध प्रस्तावांना परवानगी द्यायची का?</string>
   <!-- Search suggestion onboarding hint description text, %s is the name of the app (for example "Firefox"). -->
   <string name="search_suggestions_onboarding_text">पत्ता पट्टी मध्ये आपण जे काही टाईप कराल ते सर्व %s आपल्या पूर्वनिर्धारित शोध इंजिन सह शेअर करेल.</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">शोधा</string>
   <!-- Text preview for larger sized widgets -->
@@ -790,13 +784,4 @@
   <string name="no_site_exceptions">कुठलेही अपवाद संकेतस्थळ नाहीत</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">काढून टाका</string>
-  <!-- Translations feature -->
-
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

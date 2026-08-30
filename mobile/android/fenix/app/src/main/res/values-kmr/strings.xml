@@ -81,8 +81,6 @@
   <string name="open_in_app_cfr_positive_button_text">Here sazkariyan</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Bigire</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Gihîna li kamerayê hewce ye. Here sazkariyên Androidê ji beşa destûran, destûrê bide.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -354,10 +352,6 @@
   <string name="onboarding_marketing_title_1" tools:ignore="UnusedResources">Tiştekî dawî</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Piştrast bike û dest bi gerê bike</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!--
     Widget Picker
 
@@ -1920,8 +1914,6 @@
   <string name="a11y_action_label_expand">fireh bike</string>
   <!-- Action label for links to a website containing documentation about a wallpaper collection. Talkback will append this to say "Double tap to open link to learn more about this collection". -->
   <string name="a11y_action_label_wallpaper_collection_learn_more">ji bo derbarê vê koleksiyonê de bêtir bizanî, girêdankê veke</string>
-  <!-- Translations feature -->
-
   <!--
     Translation request dialog
 
@@ -2191,11 +2183,4 @@
     Text shown as a label or tag to indicate a feature or area is still undergoing active development. Note that here "Beta" should not be translated, as it is used as an icon styled element.
   -->
   <string name="beta_feature">BETA</string>
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

@@ -17,8 +17,6 @@
   <string name="tab_tray_add_new_collection">ନୂଆ ସଂଗ୍ରହ ଯୋଡ଼ନ୍ତୁ</string>
   <!-- Label of editable text in create collection dialog for naming a new collection -->
   <string name="tab_tray_add_new_collection_name">ନାମ</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the negative action button to dismiss the Close Tabs Banner. -->
   <string name="tab_tray_close_tabs_banner_negative_button_text">ବରଖାସ୍ତ କରନ୍ତୁ</string>
   <!--
@@ -52,10 +50,6 @@
   <string name="a11y_selected_locale_content_description">ମନୋନୀତ ଭାଷା</string>
   <!-- Text for default locale item -->
   <string name="default_locale_text">ଡିଭାଇସ୍ ର ଭାଷାକୁ ଅନୁସରଣ କରନ୍ତୁ</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!--
     Search Widget
 
@@ -156,13 +150,4 @@
   <string name="saved_login_hide_password">ପାସ୍‍ୱାର୍ଡ଼ ଲୁଚାନ୍ତୁ</string>
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">କୌଣସି ସାଇଟ୍ ବ୍ୟତିକ୍ରମ ହୋଇନାହିଁ</string>
-  <!-- Translations feature -->
-
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

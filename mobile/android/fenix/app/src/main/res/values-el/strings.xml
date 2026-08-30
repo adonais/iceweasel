@@ -106,8 +106,6 @@
   <string name="open_in_app_cfr_positive_button_text">Μετάβαση στις ρυθμίσεις</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Απόρριψη</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Απαιτείται πρόσβαση στην κάμερα. Μεταβείτε στις Ρυθμίσεις Android, πατήστε «Δικαιώματα» και επιλέξτε «Να επιτρέπεται».</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -477,7 +475,7 @@
   <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
   <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Το Firefox νοιάζεται για το απόρρητό σας. Μάθετε περισσότερα στη %1$s μας.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
-  <string name="onboarding_term_of_service_line_two_link_text">Σημείωση απορρήτου</string>
+  <string name="onboarding_term_of_service_line_two_link_text">Δήλωση απορρήτου</string>
   <!-- Line three of the terms of service onboarding page. 'Firefox' and 'Mozilla' are intentionally hardcoded. %1$s is replaced by an active link using onboarding_term_of_service_line_three_link_text as text (“Manage”). -->
   <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">Για τη βελτίωση του προγράμματος περιήγησης, το Firefox στέλνει δεδομένα διάγνωσης και αλληλεπίδρασης στη Mozilla. %1$s</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
@@ -503,7 +501,7 @@
   -->
   <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Το Firefox νοιάζεται για το απόρρητό σας. Μάθετε περισσότερα στη %1$s μας.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
-  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">Σημείωση απορρήτου</string>
+  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">Δήλωση απορρήτου</string>
   <!--
     Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
@@ -543,8 +541,6 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Μοιραστείτε πώς ανακαλύψατε το Firefox και δηλώστε ότι το χρησιμοποιείτε στους συνεργάτες μάρκετινγκ της Mozilla. Αυτά τα δεδομένα δεν θα πωληθούν ποτέ.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Αποδοχή και έναρξη περιήγησης</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
   <!-- "Continue" onboarding button. -->
   <string name="nova_onboarding_continue_button">Συνέχεια</string>
   <!-- "Continue browsing" onboarding button. -->
@@ -570,7 +566,7 @@
   -->
   <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage">Το Firefox νοιάζεται για το απόρρητό σας. Μάθετε περισσότερα στη %1$s μας.</string>
   <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
-  <string name="nova_onboarding_tou_body_line_2_link_text">Σημείωση απορρήτου</string>
+  <string name="nova_onboarding_tou_body_line_2_link_text">Δήλωση απορρήτου</string>
   <!--
     Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
@@ -689,8 +685,6 @@
   <string name="nova_onboarding_app_icon_prompt_title" tools:ignore="UnusedResources">Επιλέξτε ένα προσαρμοσμένο εικονίδιο εφαρμογής</string>
   <!-- App icon onboarding body. -->
   <string name="nova_onboarding_app_icon_prompt_body" tools:ignore="UnusedResources">Δώστε μια προσωπική πινελιά στην αρχική σας οθόνη.</string>
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!--
     Widget Picker
 
@@ -1306,6 +1300,11 @@
   <string name="preference_light_theme">Ανοιχτόχρωμο</string>
   <!-- Preference for using dark theme -->
   <string name="preference_dark_theme">Σκοτεινό</string>
+  <!--
+    Preference for using the OLED theme. For localization, this can be translated as "True Black", "Maximum Darkness",
+    or "Full dark" if needed.
+  -->
+  <string name="preference_oled_theme">Απόλυτο μαύρο</string>
   <!-- Preference for using using dark or light theme automatically set by battery -->
   <string name="preference_auto_battery_theme">Ορισμός από εξοικονόμηση μπαταρίας</string>
   <!-- Preference for using following device theme -->
@@ -1452,6 +1451,8 @@
   <string name="preferences_inactive_tabs">Μετακίνηση παλαιών καρτελών στις ανενεργές</string>
   <!-- Title of inactive tabs preference -->
   <string name="preferences_inactive_tabs_title">Μετακίνηση των καρτελών που δεν έχουν προβληθεί για δύο εβδομάδες στην ενότητα «Ανενεργές».</string>
+  <!-- Title for the preference to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_feature">Ενεργοποίηση ομάδων καρτελών</string>
   <!--
     Privacy report
 
@@ -1696,6 +1697,14 @@
   <string name="ungroup_tab_group_confirmation_dialog_confirm">Κατάργηση ομαδοποίησης</string>
   <!-- Text shown on the cancel button in the Ungroup tab group confirmation dialog. -->
   <string name="ungroup_tab_group_confirmation_dialog_cancel">Ακύρωση</string>
+  <!-- Custom accessibility action to reorder a tab up rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_up">Μετακίνηση καρτέλας προς τα πάνω</string>
+  <!-- Custom accessibility action to reorder a tab left rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_left">Μετακίνηση καρτέλας προς τα αριστερά</string>
+  <!-- Custom accessibility action to reorder a tab right rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_right">Μετακίνηση καρτέλας προς τα δεξιά</string>
+  <!-- Custom accessibility action to reorder a tab down rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_down">Μετακίνηση καρτέλας προς τα κάτω</string>
   <!--
     Color labels for tab groups, used for accessibility and selection UI.
 
@@ -2816,7 +2825,7 @@
   <!-- About page link text to list of past crashes (like about:crashes on desktop) -->
   <string name="about_crashes">Καταρρεύσεις</string>
   <!-- About page link text to open privacy notice link -->
-  <string name="about_privacy_notice">Σημείωση απορρήτου</string>
+  <string name="about_privacy_notice">Δήλωση απορρήτου</string>
   <!-- About page link text to open know your rights link -->
   <string name="about_know_your_rights">Μάθετε τα δικαιώματά σας</string>
   <!-- About page link text to open terms of use link -->
@@ -3036,6 +3045,8 @@
   <string name="ip_protection_menu_paused">Σε παύση</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Σφάλμα</string>
+  <!-- Badge label shown in the VPN menu item when the user is eligible for the feature but needs to authenticate / authorize to enable it -->
+  <string name="ip_protection_menu_try_vpn_cta">Δωρεάν δοκιμή</string>
   <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
   <string name="ip_protection_menu_auth_required">Δοκιμή</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
@@ -3054,6 +3065,10 @@
   <string name="ip_protection_toolbar_pill_label">Ενεργό VPN</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description">Το VPN είναι ενεργό.</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN turns off -->
+  <string name="ip_protection_toolbar_pill_label_off">Ανενεργό VPN</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has turned off -->
+  <string name="ip_protection_toolbar_pill_description_off">Το VPN είναι ανενεργό.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Έναρξη</string>
   <!-- Label for the "connecting" state of the button that starts the browser VPN authentication or authorization flow on the settings screen -->
@@ -3080,6 +3095,8 @@
   <string name="ip_protection_onboarding_not_now_button">Όχι τώρα</string>
   <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
   <string name="ip_protection_connection_error_snackbar">Δεν ήταν δυνατή η σύνδεση στο VPN. Δοκιμάστε ξανά σε λίγα λεπτά.</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the VPN location has been reset due to the previously selected VPN location being no longer available. -->
+  <string name="ip_protection_location_selection_reset_snackbar">Η επιλεγμένη τοποθεσία VPN δεν είναι διαθέσιμη. Έγινε σύνδεση στην προτεινόμενη τοποθεσία.</string>
   <!--
     Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
     %1$d is the total monthly allowance in GB (for example "50").
@@ -3103,6 +3120,8 @@
   <string name="ip_protection_location_picker_title" tools:ignore="UnusedResources">Επιλογή τοποθεσίας VPN</string>
   <!-- Description for what it means to use the Recommended setting and let the app automatically pick the best server location. -->
   <string name="ip_protection_location_fastest_description" tools:ignore="BrandUsage">Το Firefox βρίσκει την πιο γρήγορη τοποθεσία</string>
+  <!-- Description for an unavailable VPN location in the location list. -->
+  <string name="ip_protection_location_unavailable_description">Μη διαθέσιμη</string>
   <!-- Error message shown when the selected browser VPN location is unavailable. -->
   <string name="ip_protection_location_unavailable" tools:ignore="UnusedResources">Η τοποθεσία δεν είναι διαθέσιμη. Επιλέξτε μια άλλη.</string>
   <!-- Snackbar (in-app pop-up notification) text shown when the previously selected browser VPN location is unavailable and the recommended location was used instead. -->
@@ -3543,8 +3562,6 @@
   <string name="a11y_action_label_expand">ανάπτυξη</string>
   <!-- Action label for links to a website containing documentation about a wallpaper collection. Talkback will append this to say "Double tap to open link to learn more about this collection". -->
   <string name="a11y_action_label_wallpaper_collection_learn_more">άνοιγμα συνδέσμου για περισσότερες πληροφορίες σχετικά με αυτήν τη συλλογή</string>
-  <!-- Translations feature -->
-
   <!--
     Translation request dialog
 
@@ -3995,7 +4012,7 @@
   -->
   <string name="micro_survey_survey_header_2">Συμπληρώστε την έρευνα</string>
   <!-- The privacy notice link -->
-  <string name="micro_survey_privacy_notice_2">Σημείωση απορρήτου</string>
+  <string name="micro_survey_privacy_notice_2">Δήλωση απορρήτου</string>
   <!-- The submit button label text -->
   <string name="micro_survey_submit_button_label">Υποβολή</string>
   <!-- The survey completion header -->
@@ -4212,8 +4229,6 @@
   <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Κάντε ενημέρωση πριν τις 14 Μαρτίου για να συνεχίσετε να χρησιμοποιείτε τα πρόσθετα και άλλες λειτουργίες.</string>
   <!-- Push notification message about old Firefox version -->
   <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Ορισμένες λειτουργίες θα σταματήσουν να λειτουργούν αύριο.</string>
-  <!-- TextField Design System Component -->
-
   <!--
     Setup checklist feature
 
@@ -4372,8 +4387,6 @@
   <string name="settings_search_no_results_message">Μήπως να δοκιμάσετε μια άλλη αναζήτηση;</string>
   <!-- Content Description for the button to open Settings Search (to search through settings). -->
   <string name="settings_search_button_content_description">Κουμπί αναζήτησης ρυθμίσεων</string>
-  <!-- ==== Terms of use pop up prompt ==== -->
-
   <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">Έχουμε μια ενημέρωση</string>
   <!--
@@ -4391,15 +4404,13 @@
   <!-- Terms of use link in the pop up prompt message that links to the terms of use -->
   <string name="terms_of_use_prompt_link_terms_of_use">Όροι χρήσης</string>
   <!-- Privacy notice link in the pop up prompt message that links to the privacy notice -->
-  <string name="terms_of_use_prompt_link_privacy_notice">Σημείωση απορρήτου</string>
+  <string name="terms_of_use_prompt_link_privacy_notice">Δήλωση απορρήτου</string>
   <!-- Learn more link in the pop up prompt message that links to a site with more information about the terms of use -->
   <string name="terms_of_use_prompt_link_learn_more">Μάθετε περισσότερα</string>
   <!-- Label for a button to accept the terms of use -->
   <string name="terms_of_use_prompt_accept">Αποδοχή</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">Υπενθύμιση αργότερα</string>
-  <!-- ==== Experiment strings. ==== -->
-
   <!-- A title for the popup prompt. -->
   <string name="terms_of_use_prompt_title_option_a" tools:ignore="UnusedResources">Όροι χρήσης</string>
   <!--
@@ -4629,8 +4640,6 @@
   <string name="sports_widget_error_load_failed_description">Δοκιμάστε να κάνετε ανανέωση σε λίγα λεπτά.</string>
   <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
   <string name="sports_widget_team_to_be_determined">Η ομάδα θα καθοριστεί</string>
-  <!-- ==== End of Terms of use popup prompt. ==== -->
-
   <!--
     Privacy notice homepage banner
 
@@ -4640,9 +4649,19 @@
   -->
   <string name="privacy_notice_updated_homepage_message" tools:ignore="BrandUsage,UnusedResources">Ενημερώσαμε τη %1$s μας ώστε να περιέχει τις πιο πρόσφατες λειτουργίες του Firefox. %2$s</string>
   <!-- The first active link used in privacy_notice_updated_homepage_message -->
-  <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Σημείωση απορρήτου</string>
+  <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Δήλωση απορρήτου</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Μάθετε περισσότερα</string>
+  <!--
+    Collections migration homepage card
+
+    Title shown on the collections to tab groups migration card on the homepage.
+  -->
+  <string name="collections_migration_homepage_banner_title">Οι συλλογές είναι πλέον ομάδες</string>
+  <!-- Message shown on the collections to tab groups migration card on the homepage. -->
+  <string name="collections_migration_homepage_card_message">Υπάρχει ένας πιο απλός τρόπος οργάνωσης των καρτελών σας</string>
+  <!-- Link text shown on the collections to tab groups migration card that opens the tab groups page in the tab manager. -->
+  <string name="collections_migration_homepage_card_link">Προβολή ομάδων καρτελών</string>
   <!-- Google Lens prototype related strings -->
   <string name="preferences_debug_settings_google_lens_integration">Ενεργοποίηση της ενσωμάτωσης του Google Lens</string>
   <!-- Lens image search button content description -->
@@ -4727,4 +4746,20 @@
   <string name="firefox_labs_feature_conflict">Η λειτουργία δεν είναι διαθέσιμη για δοκιμή.</string>
   <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
   <string name="firefox_labs_no_labs_available_description">Δεν υπάρχουν πειραματικές λειτουργίες αυτήν τη στιγμή</string>
+  <!-- Title of the Firefox Labs Sandboxing experiment. -->
+  <string name="firefox_labs_website_isolation_title" tools:ignore="UnusedResources">Απομόνωση ιστοτόπων</string>
+  <!-- Description of the Firefox Labs Sandboxing experiment. -->
+  <string name="firefox_labs_website_isolation_description" tools:ignore="UnusedResources">Ένα επιπλέον εμπόδιο μεταξύ των ιστοτόπων που προστατεύει τα δεδομένα σας σε όλες τις καρτέλες. Ενδέχεται να επηρεάσει τις επιδόσεις, τη σταθερότητα, τη συμβατότητα των ιστοτόπων και τον τρόπο αποθήκευσης του ιστορικού περιήγησης.</string>
+  <!--
+    PDF viewer toolbar and buttons
+
+    Content description for accessibility (used by screen readers): Description for the button that triggers the start of a signature workflow on the PDF displayed on the screen.
+  -->
+  <string name="pdf_tools_sign_content_description">Υπογραφή PDF</string>
+  <!-- Content description for accessibility (used by screen readers): Description of the button that downloads the PDF displayed on the screen to the user's device. -->
+  <string name="pdf_tools_download_content_description">Λήψη PDF</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that opens the printing dialogue window for the PDF displayed on the screen. -->
+  <string name="pdf_tools_print_content_description">Εκτύπωση PDF</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that opens the sharing options for the PDF being displayed on the screen. -->
+  <string name="pdf_tools_share_content_description">Κοινή χρήση PDF</string>
 </resources>

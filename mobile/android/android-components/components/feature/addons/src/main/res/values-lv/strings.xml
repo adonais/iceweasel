@@ -11,6 +11,8 @@
   <string name="mozac_feature_addons_permissions_declarative_net_request_description">Liegt saturu jebkurā lapā</string>
   <!-- Description for the "declarativeNetRequest" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_declarative_net_request_description_for_update">Liegt saturu jebkurā lapā.</string>
+  <!-- The developer website (Homepage) of the add-on. -->
+  <string name="mozac_feature_addons_home_page">Sākumlapa</string>
   <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_permissions_dialog_title_2">Pievienot %1$s</string>
   <!-- This is the title of a dialog that asks the users to grant optional permissions. %1$s is the add-on name. -->
@@ -27,6 +29,8 @@
   <string name="mozac_feature_addons_permissions_dialog_add">Pievienot</string>
   <!-- This is a button to allow the optional permissions requested by an add-on . -->
   <string name="mozac_feature_addons_permissions_dialog_allow">Atļaut</string>
+  <!-- Text link to learn more about permission requests on the add-on permissions dialog . -->
+  <string name="mozac_feature_addons_permissions_dialog_learn_more">Uzzināt vairāk</string>
   <!-- This is the title of page where all the add-ons are listed -->
   <string name="mozac_feature_addons_addons">Papildinājumi</string>
   <!-- Label for add-ons sub menu item for add-ons manager -->
@@ -39,4 +43,8 @@
   <string name="mozac_feature_addons_supported_checker_notification_content_two">Pievienot %1$s un %2$s %3$s</string>
   <!-- The content of the notification, this will be shown to the user when more than two newly supported add-ons are available. %1$s is the app name (in most cases Firefox). -->
   <string name="mozac_feature_addons_supported_checker_notification_content_more_than_two">Pievienot tos %1$s</string>
+  <!-- Text link to a sumo page for learning more about unsupported add-ons. -->
+  <string name="mozac_feature_addons_unsupported_learn_more">Uzzināt vairāk</string>
+  <!-- "Learn more" link displayed below an add-on status message. -->
+  <string name="mozac_feature_addons_status_learn_more">Uzzināt vairāk</string>
 </resources>

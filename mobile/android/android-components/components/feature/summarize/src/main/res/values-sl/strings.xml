@@ -51,6 +51,8 @@
   <string name="mozac_summarize_download_error_negative_button">Prekliči</string>
   <!-- Title for the error screen when page is too long to summarize -->
   <string name="mozac_summarize_content_too_long_error_title">Stran je predolga za povzetek</string>
+  <!-- Title for the error screen when the page content is behind a paywall -->
+  <string name="mozac_summarize_paywalled_content_error_title">Ni mogoče povzeti plačljive vsebine</string>
   <!-- Title for the info error screen -->
   <string name="mozac_summarize_info_error_title">Trenutno ni mogoče povzeti</string>
   <!-- Generic fallback message for the info error screen -->

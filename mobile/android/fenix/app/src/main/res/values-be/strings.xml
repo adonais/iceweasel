@@ -104,8 +104,6 @@
   <string name="open_in_app_cfr_positive_button_text">Перайсці ў налады</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Адхіліць</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Патрабуецца доступ да камеры. Перайдзіце ў налады Android, націсніце \"Дазволы\", і затым \"Дазволіць\".</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -488,8 +486,6 @@
   <string name="onboarding_marketing_title_1" tools:ignore="UnusedResources">Яшчэ адна рэч</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Пагадзіцца і пачаць прагляд</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
   <!-- "Continue" onboarding button. -->
   <string name="nova_onboarding_continue_button">Працягнуць</string>
   <!-- "Continue browsing" onboarding button. -->
@@ -556,13 +552,23 @@
   <!-- Marketing onboarding primary button text. -->
   <string name="nova_onboarding_marketing_primary_button_text_3">Так</string>
   <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text" tools:ignore="UnusedResources">Не, дзякуй</string>
+  <!-- Marketing onboarding secondary button text. -->
   <string name="nova_onboarding_marketing_secondary_button_text_2">Не</string>
   <!-- Notifications onboarding button. -->
   <string name="nova_onboarding_notifications_button">Уключыць апавяшчэнні</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Дадаць віджэт Firefox</string>
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+  <!-- App icon onboarding title. -->
+  <string name="nova_onboarding_app_icon_prompt_title" tools:ignore="UnusedResources">Выберыце ўласны значок праграмы</string>
+  <!-- App icon onboarding body. -->
+  <string name="nova_onboarding_app_icon_prompt_body" tools:ignore="UnusedResources">Надайце свайму хатняму экрану асабісты штрых.</string>
+  <!--
+    Widget Picker
 
+    Widget description for widget picker screen
+  -->
+  <string name="widget_picket_description">Пачаць хуткі пошук</string>
   <!--
     Search Widget
 
@@ -585,6 +591,12 @@
   <string name="preferences_category_general">Агульныя</string>
   <!-- Preference category for all links about Fenix -->
   <string name="preferences_category_about">Аб праграме</string>
+  <!-- Preference category for settings related to changing the default search engine -->
+  <string name="preferences_category_select_default_search_engine_2">Прадвызначаная пошукавая для звычайнага аглядання</string>
+  <!-- Preference category for settings related to changing the private browsing search engine -->
+  <string name="preferences_category_select_private_search_engine">Прадвызначаная пошукавая для прыватнага аглядання</string>
+  <!-- Option to set the private browsing mode to use the normal default search engine -->
+  <string name="search_engine_use_default">Ужываць тую ж пошукавую сістэму, што і для звычайнага аглядання</string>
   <!-- Preference for settings related to managing search shortcuts for the quick search menu -->
   <string name="preferences_manage_search_shortcuts_2">Кіраванне альтэрнатыўнымі пошукавымі сістэмамі</string>
   <!-- Summary for preference for settings related to managing search shortcuts for the quick search menu -->
@@ -597,6 +609,8 @@
   <string name="preferences_search">Пошук</string>
   <!-- Preference for settings related to Search engines -->
   <string name="preferences_search_engines">Пошукавыя сістэмы</string>
+  <!-- Settings item to add a search widget on the device's homescreen. -->
+  <string name="preferences_add_search_widget_from_settings">Віджэт хатняга экрана</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">Прапановы ад пошукавых сістэм</string>
   <!-- Preference Category for settings related to Search address bar -->
@@ -692,6 +706,10 @@
   <string name="preferences_show_voice_search">Паказваць галасавы пошук</string>
   <!-- Preference title for switch preference to show search suggestions also in private mode -->
   <string name="preferences_show_search_suggestions_in_private">Паказаць у прыватных сеансах</string>
+  <!-- Preference title for switch preference to show trending search suggestions -->
+  <string name="preferences_show_trending_search_suggestions">Паказваць папулярныя прапановы</string>
+  <!-- Preference title for switch preference to show recent search suggestions -->
+  <string name="preferences_show_recent_search_suggestions">Паказваць апошнія пошукі</string>
   <!-- Preference title for switch preference to show a clipboard suggestion when searching -->
   <string name="preferences_show_clipboard_suggestions">Паказваць прапановы з буфера абмену</string>
   <!-- Preference title for switch preference to suggest browsing history when searching -->
@@ -746,6 +764,7 @@
   <string name="preferences_downloads_delete_from_device_description">Файл выдалены з вашай прылады і з гісторыі сцягванняў</string>
   <string name="preferences_downloads_remove_from_download_history">Прыбраць з гісторыі сцягванняў</string>
   <string name="preferences_downloads_remove_from_download_history_description">Файл выдалены з гісторыі сцягванняў, але ўсё яшчэ захоўваецца на вашай прыладзе</string>
+  <string name="preferences_downloads_ask_when_to_delete_files">Пытацца пры выдаленні файлаў</string>
   <!-- Preference for downloads -->
   <string name="preferences_downloads_2">Налады сцягвання</string>
   <!-- Preference for enabling gecko engine logs -->
@@ -762,12 +781,18 @@
   <string name="notifications_allowed_summary">Дазволена</string>
   <!-- Summary for notification preference indicating notifications are not allowed -->
   <string name="notifications_not_allowed_summary">Не дазволена</string>
+  <!-- Summary for local network access preference indicating access is allowed -->
+  <string name="local_network_access_allowed_summary">Дазволена</string>
+  <!-- Summary for local network access preference indicating access is not allowed -->
+  <string name="local_network_access_not_allowed_summary">Не дазволена</string>
   <!--
     Add-on Permissions
 
     The title of the origin permission option allowing a user to enable the extension to run on all sites
   -->
   <string name="addons_permissions_allow_for_all_sites">Дазволіць для ўсіх сайтаў</string>
+  <!-- The text shown when an extension does not require permissions -->
+  <string name="addons_does_not_require_permissions">Гэта пашырэнне не патрабуе якіх-небудзь дазволаў.</string>
   <!-- The description of data collection permissions listed in the addon's permissions screen.  %1$s is a formatted list of permissions. -->
   <string name="addons_permissions_required_data_collection_description_2">Распрацоўшчык сцвярджае, што гэта пашырэнне збірае: %1$s</string>
   <!-- The description of the "none" data collection permission, when the extension doesn't collect anything according to the developer. -->
@@ -909,6 +934,8 @@
   <string name="alternative_app_icon_group_gradients">Градыенты</string>
   <!-- Title for the "Featured" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
   <string name="alternative_app_icon_group_featured">Рэкамендаваныя</string>
+  <!-- Title to show in alert when user selects an alternative app icon -->
+  <string name="restart_warning_dialog_title">Змяніць значок праграмы?</string>
   <!-- Dialog button text for confirming the possible app restart and new icon selection -->
   <string name="restart_warning_dialog_button_positive_2">Змяніць значок</string>
   <!-- Dialog button text for cancelling app icon change -->
@@ -933,6 +960,8 @@
   <string name="extension_process_crash_dialog_retry_button_text" tools:ignore="UnusedResources">Паспрабаваць перазапусціць пашырэнні</string>
   <!-- Button text on the extension crash dialog to prompt the user to continue with all extensions disabled. -->
   <string name="extension_process_crash_dialog_disable_extensions_button_text">Працягнуць з адключанымі пашырэннямі</string>
+  <!-- Text shown in the snackbar action button that lets the user retry an add-on operation that just failed. -->
+  <string name="addon_failure_retry_action">Паўтарыць</string>
   <!--
     Account Preferences
 
@@ -1305,6 +1334,11 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Рэдагаваць групу</string>
   <string name="create_tab_group_save_button">Захаваць</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Група %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
   <string name="create_tab_group_name_label">Назва</string>
   <!-- Label for adding to a new tab group. -->
@@ -2770,8 +2804,6 @@
   <string name="a11y_action_label_expand">разгарнуць</string>
   <!-- Action label for links to a website containing documentation about a wallpaper collection. Talkback will append this to say "Double tap to open link to learn more about this collection". -->
   <string name="a11y_action_label_wallpaper_collection_learn_more">адкрыйце спасылку, каб даведацца больш аб гэтай калекцыі</string>
-  <!-- Translations feature -->
-
   <!--
     Translation request dialog
 
@@ -3169,8 +3201,6 @@
   <string name="certificate_warning_push_notification_update_recommended_title" tools:ignore="UnusedResources">Рэкамендуецца абнавіць</string>
   <!-- Push notification title about old Firefox version. Note: The word "Firefox" should NOT be translated. -->
   <string name="certificate_warning_push_notification_pnw2_title" tools:ignore="BrandUsage,UnusedResources">Вы карыстаецеся састарэлай версіяй Firefox</string>
-  <!-- TextField Design System Component -->
-
   <!-- Title for the setup checklist feature when the state is 'completed' -->
   <string name="setup_checklist_title_state_completed">Віншуем!</string>
   <!--
@@ -3215,8 +3245,6 @@
   <string name="settings_search_clear_recent_searches_message">Ачысціць усё</string>
   <!-- Section header for recent search results -->
   <string name="settings_search_recent_searches_section_header">Нядаўнія вынікі пошуку</string>
-  <!-- ==== Terms of use pop up prompt ==== -->
-
   <!-- Terms of use link in the pop up prompt message that links to the terms of use -->
   <string name="terms_of_use_prompt_link_terms_of_use">Умовы выкарыстання</string>
   <!-- Privacy notice link in the pop up prompt message that links to the privacy notice -->
@@ -3227,8 +3255,6 @@
   <string name="terms_of_use_prompt_accept">Прыняць</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">Нагадаць пазней</string>
-  <!-- ==== Experiment strings. ==== -->
-
   <!-- A title for the popup prompt. -->
   <string name="terms_of_use_prompt_title_option_a" tools:ignore="UnusedResources">Умовы выкарыстання</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
@@ -3289,8 +3315,6 @@
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">Паглядзець вынікі</string>
   <!-- Sports widget general group stage label in the soccer tournament. -->
   <string name="sports_widget_group_stage">Групавы этап</string>
-  <!-- ==== End of Terms of use popup prompt. ==== -->
-
   <!-- The first active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Паведамленне аб прыватнасці</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->

@@ -106,8 +106,6 @@
   <string name="open_in_app_cfr_positive_button_text">Ugrás a beállításokhoz</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Eltüntetés</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Kamera-hozzáférés szükséges. Ugorjon az Android beállításokhoz, koppintson az engedélyekre, majd az engedélyezésre.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -543,8 +541,6 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Ossza meg a Mozilla marketinges partnereivel, hogy miként fedezte fel, és hogyan használja a Firefoxot. Ezeket az adatokat sosem adjuk el.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Elfogadás, és a böngészés megkezdése</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
   <!-- "Continue" onboarding button. -->
   <string name="nova_onboarding_continue_button">Folytatás</string>
   <!-- "Continue browsing" onboarding button. -->
@@ -689,8 +685,6 @@
   <string name="nova_onboarding_app_icon_prompt_title" tools:ignore="UnusedResources">Válasszon egy egyéni alkalmazásikont</string>
   <!-- App icon onboarding body. -->
   <string name="nova_onboarding_app_icon_prompt_body" tools:ignore="UnusedResources">Tegye személyessé kezdőképernyőjét.</string>
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!--
     Widget Picker
 
@@ -1131,6 +1125,8 @@
   <string name="extension_process_crash_dialog_retry_button_text" tools:ignore="UnusedResources">Kiegészítők újraindításának megpróbálása</string>
   <!-- Button text on the extension crash dialog to prompt the user to continue with all extensions disabled. -->
   <string name="extension_process_crash_dialog_disable_extensions_button_text">Folytatás letiltott kiegészítőkkel</string>
+  <!-- Text shown in the snackbar action button that lets the user retry an add-on operation that just failed. -->
+  <string name="addon_failure_retry_action">Újra</string>
   <!--
     Account Preferences
 
@@ -1304,6 +1300,11 @@
   <string name="preference_light_theme">Világos</string>
   <!-- Preference for using dark theme -->
   <string name="preference_dark_theme">Sötét</string>
+  <!--
+    Preference for using the OLED theme. For localization, this can be translated as "True Black", "Maximum Darkness",
+    or "Full dark" if needed.
+  -->
+  <string name="preference_oled_theme">Legsötétebb</string>
   <!-- Preference for using using dark or light theme automatically set by battery -->
   <string name="preference_auto_battery_theme">Energiagazdálkodás által beállítva</string>
   <!-- Preference for using following device theme -->
@@ -1450,6 +1451,8 @@
   <string name="preferences_inactive_tabs">Régi lapok áthelyezése az inaktívak közé</string>
   <!-- Title of inactive tabs preference -->
   <string name="preferences_inactive_tabs_title">Azok a lapok, melyeket két hete nem nézett meg, átkerülnek az inaktív részbe.</string>
+  <!-- Title for the preference to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_feature">Lapcsoportok engedélyezése</string>
   <!--
     Privacy report
 
@@ -1694,6 +1697,14 @@
   <string name="ungroup_tab_group_confirmation_dialog_confirm">Csoportbontás</string>
   <!-- Text shown on the cancel button in the Ungroup tab group confirmation dialog. -->
   <string name="ungroup_tab_group_confirmation_dialog_cancel">Mégse</string>
+  <!-- Custom accessibility action to reorder a tab up rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_up">Lap mozgatása felfelé</string>
+  <!-- Custom accessibility action to reorder a tab left rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_left">Lap mozgatása balra</string>
+  <!-- Custom accessibility action to reorder a tab right rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_right">Lap mozgatása jobbra</string>
+  <!-- Custom accessibility action to reorder a tab down rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_down">Lap mozgatása lefelé</string>
   <!--
     Color labels for tab groups, used for accessibility and selection UI.
 
@@ -3034,6 +3045,8 @@
   <string name="ip_protection_menu_paused">Szünetel</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Hiba</string>
+  <!-- Badge label shown in the VPN menu item when the user is eligible for the feature but needs to authenticate / authorize to enable it -->
+  <string name="ip_protection_menu_try_vpn_cta">Próbálja ki ingyen</string>
   <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
   <string name="ip_protection_menu_auth_required">Próbálja ki</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
@@ -3052,6 +3065,10 @@
   <string name="ip_protection_toolbar_pill_label">VPN be</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description">A VPN aktív.</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN turns off -->
+  <string name="ip_protection_toolbar_pill_label_off">VPN kikapcsolva</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has turned off -->
+  <string name="ip_protection_toolbar_pill_description_off">A VPN ki van kapcsolva.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Kezdő lépések</string>
   <!-- Label for the "connecting" state of the button that starts the browser VPN authentication or authorization flow on the settings screen -->
@@ -3078,6 +3095,8 @@
   <string name="ip_protection_onboarding_not_now_button">Most nem</string>
   <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
   <string name="ip_protection_connection_error_snackbar">Nem sikerült a VPN-hez kapcsolódni. Próbálja újra néhány perc múlva.</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the VPN location has been reset due to the previously selected VPN location being no longer available. -->
+  <string name="ip_protection_location_selection_reset_snackbar">A kiválasztott VPN-hely nem érhető el. Átváltva az ajánlott helyre.</string>
   <!--
     Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
     %1$d is the total monthly allowance in GB (for example "50").
@@ -3101,6 +3120,8 @@
   <string name="ip_protection_location_picker_title" tools:ignore="UnusedResources">Válassza ki a VPN helyét</string>
   <!-- Description for what it means to use the Recommended setting and let the app automatically pick the best server location. -->
   <string name="ip_protection_location_fastest_description" tools:ignore="BrandUsage">A Firefox megkeresi a leggyorsabb helyet</string>
+  <!-- Description for an unavailable VPN location in the location list. -->
+  <string name="ip_protection_location_unavailable_description">Nem érhető el</string>
   <!-- Error message shown when the selected browser VPN location is unavailable. -->
   <string name="ip_protection_location_unavailable" tools:ignore="UnusedResources">A hely nem érhető el. Válasszon másik helyet.</string>
   <!-- Snackbar (in-app pop-up notification) text shown when the previously selected browser VPN location is unavailable and the recommended location was used instead. -->
@@ -3541,8 +3562,6 @@
   <string name="a11y_action_label_expand">kibontás</string>
   <!-- Action label for links to a website containing documentation about a wallpaper collection. Talkback will append this to say "Double tap to open link to learn more about this collection". -->
   <string name="a11y_action_label_wallpaper_collection_learn_more">hivatkozás megnyitása, hogy többet tudjon meg a gyűjteményről</string>
-  <!-- Translations feature -->
-
   <!--
     Translation request dialog
 
@@ -4210,8 +4229,6 @@
   <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Frissítsen március 14. előtt, hogy továbbra is használhassa a kiegészítőket és az egyéb funkciókat.</string>
   <!-- Push notification message about old Firefox version -->
   <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Néhány funkció holnaptól nem fog működni.</string>
-  <!-- TextField Design System Component -->
-
   <!--
     Setup checklist feature
 
@@ -4370,8 +4387,6 @@
   <string name="settings_search_no_results_message">Próbáljon meg egy másik keresést?</string>
   <!-- Content Description for the button to open Settings Search (to search through settings). -->
   <string name="settings_search_button_content_description">Beállítások keresése gomb</string>
-  <!-- ==== Terms of use pop up prompt ==== -->
-
   <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">Van egy hírünk</string>
   <!--
@@ -4396,8 +4411,6 @@
   <string name="terms_of_use_prompt_accept">Elfogadás</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">Figyelmeztetés később</string>
-  <!-- ==== Experiment strings. ==== -->
-
   <!-- A title for the popup prompt. -->
   <string name="terms_of_use_prompt_title_option_a" tools:ignore="UnusedResources">Felhasználási feltételek</string>
   <!--
@@ -4627,8 +4640,6 @@
   <string name="sports_widget_error_load_failed_description">Próbálja meg néhány perc múlva frissíteni.</string>
   <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
   <string name="sports_widget_team_to_be_determined">A csapat még meghatározásra vár</string>
-  <!-- ==== End of Terms of use popup prompt. ==== -->
-
   <!--
     Privacy notice homepage banner
 
@@ -4739,4 +4750,16 @@
   <string name="firefox_labs_website_isolation_title" tools:ignore="UnusedResources">Webhelyek elkülönítése</string>
   <!-- Description of the Firefox Labs Sandboxing experiment. -->
   <string name="firefox_labs_website_isolation_description" tools:ignore="UnusedResources">További védelem a webhelyek között, amely segít megvédeni az adatait a lapok között. Befolyásolhatja a teljesítményt, a stabilitást, a webhely-kompatibilitást, és a böngészési előzmények mentési módját.</string>
+  <!--
+    PDF viewer toolbar and buttons
+
+    Content description for accessibility (used by screen readers): Description for the button that triggers the start of a signature workflow on the PDF displayed on the screen.
+  -->
+  <string name="pdf_tools_sign_content_description">PDF aláírása</string>
+  <!-- Content description for accessibility (used by screen readers): Description of the button that downloads the PDF displayed on the screen to the user's device. -->
+  <string name="pdf_tools_download_content_description">PDF letöltése</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that opens the printing dialogue window for the PDF displayed on the screen. -->
+  <string name="pdf_tools_print_content_description">PDF nyomtatása</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that opens the sharing options for the PDF being displayed on the screen. -->
+  <string name="pdf_tools_share_content_description">PDF megosztása</string>
 </resources>

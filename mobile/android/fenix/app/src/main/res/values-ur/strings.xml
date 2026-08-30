@@ -37,8 +37,6 @@
   <string name="open_in_app_cfr_positive_button_text">سیٹنگز پر جائیں</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">برخاست کریں</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">کیمرے تک رسائی کی ضرورت ہے۔ Android کی ترتیبات پر جائیں ، اجازتیں ٹیپ کریں ، اور اجازت پر ٹیپ کریں۔</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -162,10 +160,6 @@
   <string name="search_engine_suggestions_title">%s تلاش کریں</string>
   <!-- Search engine suggestion description text -->
   <string name="search_engine_suggestions_description">ایڈریس بار سے براہ راست تلاش کریں</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">تلاش کریں</string>
   <!-- Text preview for larger sized widgets -->
@@ -1116,13 +1110,4 @@
   <string name="radio_preference_info_content_description">تفصیلات کے لیے کلک کریں</string>
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">اوپر جائیں</string>
-  <!-- Translations feature -->
-
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

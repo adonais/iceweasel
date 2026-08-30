@@ -31,8 +31,6 @@
   <string name="tab_tray_close_multiselect_content_description">મલ્ટિસિલેક્ટ મોડમાંથી બહાર નીકળો</string>
   <!-- Private Browsing -->
   <string name="private_browsing_common_myths">ખાનગી બ્રાઉઝિંગ વિશે સામાન્ય માન્યતાઓ</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!--
     Home screen icons - Long press shortcuts
 
@@ -103,10 +101,6 @@
   <string name="search_suggestions_onboarding_title">ખાનગી સત્રોમાં શોધ સૂચનોને મંજૂરી આપીએ?</string>
   <!-- Search suggestion onboarding hint description text, %s is the name of the app (for example "Firefox"). -->
   <string name="search_suggestions_onboarding_text">%s એ એડ્રેસ બારમાં તમે લખો છો તે બધું તમારા ડિફોલ્ટ શોધ એંજિનથી શેર કરશે.</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">શોધો</string>
   <!-- Text preview for larger sized widgets -->
@@ -711,13 +705,4 @@
   <string name="search_add_custom_engine_error_missing_template">તે તપાસણી કરો કે શોધ શબ્દમાળા ઉદાહરણ ફોર્મેટ સાથે મેળ ખાય છે</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">તેને મંજૂરી આપવા માટે:</string>
-  <!-- Translations feature -->
-
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>
