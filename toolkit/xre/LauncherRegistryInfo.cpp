@@ -675,6 +675,7 @@ LauncherResult<bool> LauncherRegistryInfo::ClearLauncherCrashTimestamp() {
                                  ResolveLauncherCrashTimestampValueName());
 }
 
+#if !defined(TT_MEMUTIL)
 LauncherResult<std::wstring>
 LauncherRegistryInfo::BuildDefaultBlocklistFilename() {
   // These flags are chosen to avoid I/O, see bug 1363398.
@@ -707,8 +708,17 @@ LauncherRegistryInfo::BuildDefaultBlocklistFilename() {
 
   return defaultBlocklistPath;
 }
+#endif
 
 LauncherResult<std::wstring> LauncherRegistryInfo::GetBlocklistFileName() {
+#if defined(_MSC_VER) && defined(TT_MEMUTIL)
+  std::wstring defaultBlocklistPath = {};
+  wchar_t *profd = _wgetenv(L"MOZ_APP_DATA");
+  if (profd) {
+    defaultBlocklistPath = profd;
+    defaultBlocklistPath.append(L"\\" MOZ_APP_VENDOR L"\\" MOZ_APP_BASENAME L"\\blocklist-v1");
+  }
+#else
   LauncherResult<Disposition> disposition = Open();
   if (disposition.isErr()) {
     return disposition.propagateErr();
@@ -736,6 +746,7 @@ LauncherResult<std::wstring> LauncherRegistryInfo::GetBlocklistFileName() {
   if (writeResult.isErr()) {
     return writeResult.propagateErr();
   }
+#endif
 
   return defaultBlocklistPath;
 }

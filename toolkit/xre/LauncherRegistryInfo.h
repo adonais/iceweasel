@@ -72,7 +72,9 @@ class LauncherRegistryInfo final {
   LauncherVoidResult WriteLauncherCrashTimestamp(uint64_t aValue);
   LauncherResult<Maybe<uint64_t>> GetLauncherCrashTimestamp();
   LauncherResult<bool> ClearLauncherCrashTimestamp();
+#if !defined(TT_MEMUTIL)
   LauncherResult<std::wstring> BuildDefaultBlocklistFilename();
+#endif
 
   const std::wstring& ResolveLauncherValueName();
   const std::wstring& ResolveBrowserValueName();
