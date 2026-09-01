@@ -92,8 +92,6 @@
   <string name="open_in_app_cfr_positive_button_text">Көйләүләргә күчү</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Яшерү</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Камера куллануга рөхсәт кирәк. Android көйләүләренә кереп, \"рөхсәтләр\" дигән битне ачып, \"рөхсәт итү\" дигәнгә басыгыз.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -328,8 +326,6 @@
   <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">Дәвам итү</string>
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Дәвам итү</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
   <!-- Toolbar selection onboarding "bottom" option label. -->
   <string name="nova_onboarding_toolbar_selection_bottom_label">Аста</string>
   <!-- Theme selection onboarding "automatic" option label. -->
@@ -344,8 +340,6 @@
   <string name="nova_onboarding_notifications_button">Искәртүләрне кабызу</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Firefox виджетын өстәү</string>
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!--
     Search Widget
 
@@ -2008,8 +2002,6 @@
   <string name="a11y_action_label_collapse">төрү</string>
   <!-- Action label for elements that can be expanded if interacting with them. Talkback will append this to say "Double tap to expand". -->
   <string name="a11y_action_label_expand">җәю</string>
-  <!-- Translations feature -->
-
   <!--
     Translation request dialog
 
@@ -2376,8 +2368,6 @@
     Homepage card button to open Google Play Store. "Update" is a verb.
   -->
   <string name="certificate_warning_homepage_card_update_now_button" tools:ignore="UnusedResources">Хәзер яңарту</string>
-  <!-- TextField Design System Component -->
-
   <!--
     ===== Setup checklist feature: Task titles =====
 
@@ -2392,18 +2382,12 @@
   <string name="pbm_authentication_unlock">Ачу</string>
   <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
   <string name="private_tab_cfr_negative">Юк, рәхмәт</string>
-  <!-- ==== Terms of use pop up prompt ==== -->
-
   <!-- Terms of use link in the pop up prompt message that links to the terms of use -->
   <string name="terms_of_use_prompt_link_terms_of_use">Куллану шартлары</string>
   <!-- Learn more link in the pop up prompt message that links to a site with more information about the terms of use -->
   <string name="terms_of_use_prompt_link_learn_more">Күбрәк белү</string>
   <!-- Label for a button to accept the terms of use -->
   <string name="terms_of_use_prompt_accept">Кабул итү</string>
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
-
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Күбрәк белү</string>
 </resources>

@@ -17,8 +17,6 @@
   <string name="tab_tray_add_new_collection_name">Isem</string>
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">Ddu ɣer tisɣal</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">Ddu ɣer tisɣal</string>
   <!--
@@ -56,10 +54,6 @@
   <string name="search_suggestions_onboarding_do_not_allow_button">Ad ur ssirig</string>
   <!-- Search engine suggestion title text. %s is the name of the suggested engine. -->
   <string name="search_engine_suggestions_title">Rzu %s</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">Rzu</string>
   <!-- Text preview for larger sized widgets -->
@@ -320,13 +314,4 @@
   <string name="voice_search_explainer">ssiwel dɣi</string>
   <!-- Title text displayed in the rename top site dialog. -->
   <string name="top_sites_rename_dialog_title">Isem</string>
-  <!-- Translations feature -->
-
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

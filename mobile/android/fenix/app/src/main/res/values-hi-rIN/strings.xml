@@ -49,8 +49,6 @@
   <string name="open_in_app_cfr_positive_button_text">सेटिंग पर जाएं</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">खारिज</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">सेटिंग पर जाएं</string>
   <!-- Text for the negative action button to dismiss the dialog. -->
@@ -167,10 +165,6 @@
   <string name="search_engine_suggestions_title">%s खोजें</string>
   <!-- Search engine suggestion description text -->
   <string name="search_engine_suggestions_description">सीधे पता बार से खोजें</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">खोजें</string>
   <!-- Text preview for larger sized widgets -->
@@ -1104,13 +1098,4 @@
   <string name="radio_preference_info_content_description">अधिक जानकारी के लिए क्लिक करें</string>
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">ऊपर जाएँ</string>
-  <!-- Translations feature -->
-
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

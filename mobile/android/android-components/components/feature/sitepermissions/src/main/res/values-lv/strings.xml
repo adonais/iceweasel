@@ -23,4 +23,6 @@
   <string name="mozac_feature_sitepermissions_media_key_system_access_title">Atļaut %1$s atskaņot DRM pārvaldītu saturu?</string>
   <!-- Text for a negative button in the storage access permission request dialog. This button will not give access to this permission. -->
   <string name="mozac_feature_sitepermissions_storage_access_not_allow">Liegt</string>
+  <!-- Clickable text that will open a new tab navigating the user to online documentation about specific features. -->
+  <string name="mozac_feature_sitepermissions_learn_more_title">Uzzināt vairāk</string>
 </resources>

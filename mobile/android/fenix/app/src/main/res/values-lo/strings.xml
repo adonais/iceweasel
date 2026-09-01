@@ -100,8 +100,6 @@
   <string name="open_in_app_cfr_positive_button_text">ໄປທີ່ການຕັ້ງຄ່າ</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">ຍົກເລີກ</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">ຕ້ອງການເຂົ້ານຳໃຊ້ກ້ອງ. ໄປທີ່ການຕັ້ງຄ່າ Android ແຕະໃສ່ ສິດ ແລະ ແຕະໃສ່ ອະນຸຍາດ</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -477,8 +475,6 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">ແບ່ງປັນວິທີທີ່ທ່ານຄົ້ນພົບ Firefox, ແລະ ທີ່ທ່ານໃຊ້ມັນ, ກັບຄູ່ຮ່ວມການຕະຫຼາດຂອງ Mozilla. ຂໍ້ມູນນີ້ບໍ່ເຄີຍຖືກຂາຍ.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">ຕົກລົງເຫັນດີ ແລະ ເລີ່ມຊອກຫາ</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
   <!-- "Continue" onboarding button. -->
   <string name="nova_onboarding_continue_button">ສືບຕໍ່</string>
   <!-- "Not now" onboarding button. -->
@@ -543,8 +539,6 @@
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">ແບ່ງປັນວິທີທີ່ເຈົ້າຄົ້ນພົບ Firefox ແລະ ວິທີທີ່ເຈົ້າໃຊ້ມັນກັບຄູ່ຮ່ວມງານດ້ານການຕະຫຼາດຂອງ Mozilla. ຂໍ້ມູນນີ້ບໍ່ເຄີຍຖືກຂາຍ. %1$s</string>
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!--
     Widget Picker
 
@@ -2618,8 +2612,6 @@
   <string name="a11y_action_label_expand">ຂະຫຍາຍອອກ</string>
   <!-- Action label for links to a website containing documentation about a wallpaper collection. Talkback will append this to say "Double tap to open link to learn more about this collection". -->
   <string name="a11y_action_label_wallpaper_collection_learn_more">ເປີດລິ້ງເພື່ອສຶກສາເພີ່ມເຕີມກ່ຽວກັບຄໍເລັກຊັນນີ້</string>
-  <!-- Translations feature -->
-
   <!-- Text that links to additional information about the Firefox translations feature. -->
   <string name="translations_bottom_sheet_info_message_learn_more">ຮຽນຮູ້ເພີ່ມເຕີມ</string>
   <!-- Button text on the translations dialog to dismiss the dialog and return to the browser. -->
@@ -2712,13 +2704,6 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">ທ່ານພໍໃຈກັບປະສົບການການຄົ້ນຫາໃນ Firefox ຫຼາຍປານໃດ?</string>
   <!-- The title of the button for deleting in the debug drawer all addresses. -->
   <string name="debug_drawer_delete_all_addresses">ລຶບທີ່ຢູ່ທັງໝົດ</string>
-  <!-- TextField Design System Component -->
-
   <!-- The title of the search widget task for the setup checklist -->
   <string name="setup_checklist_task_search_widget_2">ສຳຫຼວດ widget ຄົ້ນຫາ</string>
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

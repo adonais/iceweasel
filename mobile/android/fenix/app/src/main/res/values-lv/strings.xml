@@ -9,8 +9,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!-- Label of button in create collection dialog for creating a new collection -->
   <string name="tab_tray_add_new_collection">Pievienot jaunu krājumu</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!--
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
@@ -20,6 +18,10 @@
   <string name="browser_menu_add_to_homescreen">Pievienot sākuma ekrānam</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
   <string name="browser_menu_add_app_to_homescreen">Pievienot lietotni sākuma ekrānam</string>
+  <!-- Browser menu button that goes to the homepage screen -->
+  <string name="browser_menu_homepage">Sākumlapa</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Uzzināt vairāk</string>
   <!-- Title for the block AI enhancements toggle -->
   <string name="ai_controls_block_ai_title">Liegt MI uzlabojumus</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
@@ -29,27 +31,42 @@
   <!-- Button in the search suggestions onboarding that allows search suggestions in private sessions -->
   <string name="search_suggestions_onboarding_allow_button">Atļaut</string>
   <!-- Search suggestion onboarding hint title text -->
-  <string name="search_suggestions_onboarding_title">Atļaut meklēšanas ieteikumus privātās sesijās?</string>
+  <string name="search_suggestions_onboarding_title">Atļaut meklēšanas ieteikumus privātajās sesijās?</string>
   <!-- Search suggestion onboarding hint description text, %s is the name of the app (for example "Firefox"). -->
   <string name="search_suggestions_onboarding_text">%s kopīgos visu adreses joslā ievadīto ar noklusējuma meklētāju.</string>
   <!-- Menu option in the search selector menu to open the search settings -->
   <string name="search_settings_menu_item">Meklēšanas iestatījumi</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
+  <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
+  <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Uzzināt vairāk</string>
+  <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Uzzināt vairāk</string>
+  <!-- "Set to default" onboarding button. -->
+  <string name="nova_onboarding_set_to_default_button">Iestatīt kā noklusējuma pārlūku</string>
+  <!-- Marketing onboarding body link text. -->
+  <string name="nova_onboarding_marketing_body_link_text_1">Uzzināt vairāk</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Pievienot Firefox logrīku</string>
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
+  <!-- Preference for settings related to Search engines suggestions -->
+  <string name="preferences_search_engines_suggestions">Ieteikumi no meklētājiem</string>
+  <!-- Preference for settings related to changing the default browser -->
+  <string name="preferences_set_as_default_browser">Iestatīt kā noklusējuma pārlūku</string>
   <!-- Preference for adding private browsing shortcut -->
   <string name="preferences_add_private_browsing_shortcut">Pievienot privātās pārlūkošanas īsceļu</string>
+  <!-- Text displayed that links to website containing documentation about "HTTPS-Only" mode -->
+  <string name="preferences_http_only_learn_more">Uzzināt vairāk</string>
   <!-- Preference for accessibility -->
   <string name="preferences_accessibility">Piekļūstamība</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Adrešu joslas atrašanās vieta</string>
+  <!-- Preference for customizing the home screen -->
+  <string name="preferences_home_2">Sākumlapa</string>
   <!-- Title of a menu option allowing to change the shortcut button shown in the toolbar -->
   <string name="toolbar_shortcut_menu_edit_option">Labot īsceļu</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Pielāgot</string>
+  <!-- Preference title for choosing an app to handle downloads -->
+  <string name="preferences_choose_app_for_downloads">Pārvaldīt lejupielādes ar citu lietotni</string>
+  <!-- Preference category for deleting or removing downloads -->
+  <string name="preferences_category_delete_or_remove_downloads">Izdzēst vai noņemt lejupielādes</string>
   <!--
     Add-on Permissions
 
@@ -62,17 +79,35 @@
   <string name="browser_menu_customize_homepage">Pielāgot sākumlapu</string>
   <!-- Snackbar label for action to retry downloading the wallpaper -->
   <string name="wallpaper_download_error_snackbar_action">Mēģināt vēlreiz</string>
+  <!-- Text displayed that links to website containing documentation about the "Limited Edition" wallpapers. -->
+  <string name="wallpaper_learn_more">Uzzināt vairāk</string>
   <!-- Error message snackbar shown after the user tried to apply the new icon but the Android OS threw an error while updating existing app shortcuts (e.g. private mode shortcut) -->
   <string name="shortcuts_update_error">Lietotnes ikonas atjaunināšana neizdevās. Jānoņem esošās saīsnes un jāmēģina vēlreiz.</string>
   <!-- Text shown in the snackbar action button that lets the user retry an add-on operation that just failed. -->
   <string name="addon_failure_retry_action">Atkārtot</string>
+  <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
+  <string name="exceptions_empty_message_learn_more_link">Uzzināt vairāk</string>
   <!-- Add bookmark shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_add_bookmark">Pievienot grāmatzīmi</string>
+  <!-- Homepage shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_homepage">Sākumlapa</string>
   <!--
     Preference for using the OLED theme. For localization, this can be translated as "True Black", "Maximum Darkness",
     or "Full dark" if needed.
   -->
   <string name="preference_oled_theme">Vistumšākais</string>
+  <!--
+    Library
+
+    Option in Library to open Downloads page
+  -->
+  <string name="library_downloads">Lejupielādes</string>
+  <!-- Option for always opening the homepage when re-opening the app -->
+  <string name="opening_screen_homepage">Sākumlapa</string>
+  <!-- Summary for homepage preference indicating always opening the homepage when re-opening the app -->
+  <string name="opening_screen_homepage_summary">Atvērt sākumlapā</string>
+  <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
+  <string name="opening_screen_after_four_hours_of_inactivity_summary">Atvērt sākumlapā pēc četrām stundām</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Iespējot ciļņu kopas</string>
   <!--
@@ -83,6 +118,10 @@
   <string name="preferences_privacy_report">Privātuma atskaite</string>
   <!-- Title of the privacy report preference that allows a user to enable or disable the feature -->
   <string name="preferences_privacy_report_title">Iespējot privātuma atskaiti</string>
+  <!-- Learn more link for studies, links to an article for more information about studies. -->
+  <string name="studies_learn_more">Uzziniet vairāk</string>
+  <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+  <string name="remote_improvements_learn_more">Uzzināt vairāk</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_tab">Pievienot cilni</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
@@ -91,6 +130,8 @@
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Pievienot krājumam</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
   <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Pievienot kopai</string>
+  <!-- Title text displayed for a homepage tab in the tabs tray. -->
+  <string name="tab_tray_homepage_tab">Sākumlapa</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Pievienot</string>
   <!-- Content Description for "New tab group" panel. -->
@@ -105,8 +146,19 @@
   <string name="custom_accessibility_action_reorder_tab_right">Pārvietot cilni pa labi</string>
   <!-- Custom accessibility action to reorder a tab down rather than dragging. -->
   <string name="custom_accessibility_action_reorder_tab_down">Pārvietot cilni lejup</string>
+  <!-- Text shown when no download exists -->
+  <string name="download_empty_message_2">Vēl nav nevienas lejupielādes</string>
+  <!-- Content description for the toolbar "Navigate to Downloads Settings" button -->
+  <string name="download_navigate_settings_description">Pāriet uz lejupielāžu iestatījumiem</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">Vai tiešām izdzēst atlasītos vienumus?</string>
+  <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
+  <string name="download_search_placeholder">Meklēt lejupielādes</string>
+  <!-- The button text for navigating to the SUMO link to learn more about reporting a broken site. -->
+  <string name="webcompat_reporter_learn_more">Uzzināt vairāk</string>
+  <string name="unsubmitted_crash_dialog_learn_more">Uzzināt vairāk</string>
+  <!-- Unsubmitted crash dialog button to open a web page with more details on the feature and privacy policy -->
+  <string name="unsubmitted_crash_requested_by_devs_learn_more">Uzzināt vairāk</string>
   <!--
     Bookmarks
 
@@ -129,16 +181,33 @@
   <string name="quick_setting_option_autoplay_blocked">Liegt skaņu un video</string>
   <!-- Button to add new collection for the "select collection" step of the collection creator -->
   <string name="create_collection_add_new_collection">Pievienot jaunu krājumu</string>
+  <!-- Toast shown when the QR code is successfully saved to Downloads -->
+  <string name="qr_code_download_success">Kvadrātkods saglabāts lejupielāžu mapē</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">Bezsaistē</string>
+  <!-- Confirmation dialog button -->
+  <string name="sync_confirmation_button">Sapratu</string>
+  <!--
+    Text shown in the notification that pops up to remind the user to set fenix as default browser.
+    The app name is in the text, due to limitations with localizing Nimbus experiments
+  -->
+  <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Padarīt Firefox par noklusējuma pārlūku</string>
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">Vai tiešām izdzēst %1$s?</string>
+  <!-- Title for the downloads item in Delete browsing data -->
+  <string name="preferences_delete_browsing_data_downloads">Lejupielādes</string>
+  <!-- Text displayed that links to website about enhanced tracking protection -->
+  <string name="preference_enhanced_tracking_protection_explanation_learn_more">Uzzināt vairāk</string>
+  <!-- Learn more text for the enhanced tracking protection options to fix issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_learn_more">Uzzināt vairāk</string>
   <!--
     Dialog that appears after user tries to uncheck the baseline exceptions preference under Strict or Custom tracking protection
 
     Title for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection
   -->
   <string name="preference_enhanced_tracking_protection_allow_list_dialog_title">Vai tiešām izslēgt labojumus?</string>
+  <!-- Used as text for the link in `preference_doh_title`, points to documentation about "DNS over HTTPS" -->
+  <string name="preference_doh_learn_more">Uzzināt vairāk</string>
   <!-- Content description for the "Add Site" button -->
   <string name="preference_doh_add_site_description">Pievienot vietni</string>
   <!-- Add button text for provider textfield under "DNS over HTTPS" -->
@@ -153,10 +222,20 @@
   <string name="preferences_logins_add_login_2">Pievienot paroli</string>
   <!-- Content description, used by tools like screenreaders, to press on the add new login button. -->
   <string name="saved_logins_add_new_login_button_content_description">Pievienot jaunu pieteikšanās vienumu</string>
+  <!-- Text that links to additional information about the Email Masks -->
+  <string name="preferences_email_masks_suggest_learn_more">Uzzināt vairāk</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Uzzināt vairāk</string>
+  <!-- Badge label shown in the VPN menu item when the user is eligible for the feature but needs to authenticate / authorize to enable it -->
+  <string name="ip_protection_menu_try_vpn_cta">Izmēģini bez maksas</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN turns off -->
   <string name="ip_protection_toolbar_pill_label_off">VPN izslēgts</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has turned off -->
   <string name="ip_protection_toolbar_pill_description_off">VPN ir izslēgts.</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link_promo">Uzzināt vairāk</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the VPN location has been reset due to the previously selected VPN location being no longer available. -->
+  <string name="ip_protection_location_selection_reset_snackbar">Atlasītā VPN atrašanās vieta nav pieejama. Pārslēgts uz ieteicamo atrašanās vietu.</string>
   <!-- Description for an unavailable VPN location in the location list. -->
   <string name="ip_protection_location_unavailable_description">Nepieejams</string>
   <!-- Preference option for adding a card -->
@@ -201,8 +280,14 @@
   <string name="homepage_shortcuts_add_to_homepage">Pievienot sākumlapai</string>
   <!-- Label for the "Add website" button in the "Add to homepage" bottom sheet. -->
   <string name="homepage_shortcuts_add_website">Pievienot tīmekļvietni</string>
-  <!-- Translations feature -->
+  <!-- Confirmation dialog button text when top sites limit is reached. -->
+  <string name="top_sites_max_limit_confirmation_button">Labi, sapratu</string>
+  <!--
+    Default browser experiment
 
+    Default browser card title
+  -->
+  <string name="default_browser_experiment_card_title">Nomainīt noklusējuma pārlūku</string>
   <!-- Button text on the translations dialog when a translation error appears. -->
   <string name="translations_bottom_sheet_positive_button_error">Mēģināt vēlreiz</string>
   <!-- The title of the warning card informs the user that a translation could not be completed. -->
@@ -221,8 +306,12 @@
     The description of the Add-ons Tools in the Debug Drawer
   -->
   <string name="debug_drawer_addons_tools_title">Papildinājumu rīki</string>
-  <!-- TextField Design System Component -->
+  <!--
+    ===== Setup checklist feature: Task titles =====
 
+    The title of the default browser task for the setup checklist
+  -->
+  <string name="setup_checklist_task_default_browser">Iestatīt kā noklusējuma pārlūku</string>
   <!--
     Settings Search Strings
 
@@ -233,14 +322,8 @@
   <string name="settings_search_recent_searches_section_header">Neseni meklēšanas iznākumi</string>
   <!-- Content Description for the button to open Settings Search (to search through settings). -->
   <string name="settings_search_button_content_description">Iestatījumu meklēšanas poga</string>
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description">Jāpārbauda savienojums ar internetu un jāmēģina vēlreiz.</string>
-  <!-- ==== End of Terms of use popup prompt. ==== -->
-
   <!--
     Collections migration homepage card
 

@@ -65,8 +65,6 @@
   <string name="private_browsing_common_myths">Gnáthmhiotais maidir le brabhsáil phríobháideach</string>
   <!-- Text to be announced by the accessibility service to inform the user that the private browsing mode is currently active. -->
   <string name="private_browsing_a11y_session_announcement">Seisiún brabhsála príobháidí</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!--
     Home screen icons - Long press shortcuts
 
@@ -193,10 +191,6 @@
   <string name="search_suggestions_onboarding_title">Ceadaigh moltaí cuardaigh i seisiúin phríobháideacha?</string>
   <!-- Search suggestion onboarding hint description text, %s is the name of the app (for example "Firefox"). -->
   <string name="search_suggestions_onboarding_text">Comhroinneann %s gach uile rud a chuireann tú isteach sa mbarra suímh leis an inneall cuardaigh réamhshocraithe.</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">Cuardach</string>
   <!-- Text preview for larger sized widgets -->
@@ -804,13 +798,4 @@
   <string name="homepage_shortcuts_show_all_content_description">Taispeáin gach aicearra</string>
   <!-- Title for the "Popular sites" section in the "Add to homepage" bottom sheet. -->
   <string name="homepage_shortcuts_popular_sites">Suíomhanna ardéilimh</string>
-  <!-- Translations feature -->
-
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

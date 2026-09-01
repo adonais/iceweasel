@@ -65,8 +65,6 @@
   <string name="open_in_app_cfr_positive_button_text">o lukin e lipu wile</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">o weka</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">o lukin e lipu wile</string>
   <!-- Text for the negative action button to dismiss the dialog. -->
@@ -305,10 +303,6 @@
   <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">ilo Firefox li wile awen e len sina. o lukin e %1$s</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
   <string name="onboarding_term_of_service_line_two_link_text">toki lawa pi len sona</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!--
     Search Widget
 
@@ -1360,8 +1354,6 @@
   <string name="pocket_stories_sponsor_indication">jan li pana e mani tawa lipu ni</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">o lukin e nasin ilo</string>
-  <!-- Translations feature -->
-
   <!--
     Translation request dialog
 
@@ -1378,17 +1370,10 @@
   <string name="translations_bottom_sheet_translate_from">toki tan</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_description">linja toki li len ala.</string>
-  <!-- TextField Design System Component -->
-
   <!--
     ===== Setup checklist feature: Task titles =====
 
     The title of the default browser task for the setup checklist
   -->
   <string name="setup_checklist_task_default_browser">o open e lipu ale kepeken ilo alasa ni</string>
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

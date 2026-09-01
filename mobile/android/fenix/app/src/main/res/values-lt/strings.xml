@@ -76,8 +76,6 @@
   <string name="open_in_app_cfr_positive_button_text">Eiti į nustatymus</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Paslėpti</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Reikia kameros prieigos. Eikite į „Android“ nustatymus, bakstelėkite „leidimus“, tada bakstelėkite „leisti“.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -284,8 +282,6 @@
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Sužinoti daugiau</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">Atlikta</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
   <!-- "Continue" onboarding button. -->
   <string name="nova_onboarding_continue_button">Tęsti</string>
   <!-- "Continue browsing" onboarding button. -->
@@ -298,8 +294,6 @@
   <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Pasiruoškite laisvei</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
   <string name="nova_onboarding_tou_subtitle">Sparti, saugi ir jūsų neišduos. Naršymas tapo geresnis.</string>
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">Ieškoti</string>
   <!-- Text preview for larger sized widgets -->
@@ -1313,13 +1307,4 @@
   <string name="radio_preference_info_content_description">Spustelėkite čia, jeigu norite daugiau informacijos</string>
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">Pereiti aukštyn</string>
-  <!-- Translations feature -->
-
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

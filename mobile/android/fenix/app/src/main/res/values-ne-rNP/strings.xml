@@ -37,8 +37,6 @@
   <string name="open_in_app_cfr_positive_button_text">सेटिङ्गहरुमा जानुहोस्</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">खारेज गर्नुहोस्</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">क्यामरा पहुँच आवश्यक छ। एन्ड्रोइड सेटिङ्गहरूमा जानुहोस्, अनुमतिमा ट्याप गर्नुहोस्, र अनुमति दिन ट्याप गर्नुहोस्।</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -127,10 +125,6 @@
   <string name="search_engine_suggestions_title">%s खोज्नुहोस्</string>
   <!-- Search engine suggestion description text -->
   <string name="search_engine_suggestions_description">ठेगाना पट्टीबाट सिधै खोज्नुहोस्</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">खोजी गर्नुहोस्</string>
   <!-- Text preview for larger sized widgets -->
@@ -419,13 +413,4 @@
   <string name="tabs_tray_select_tabs">ट्याबहरु छान्नुहोस्</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button. Closes the current session when pressed -->
   <string name="close_tab">ट्याब बन्द गर्नुहोस्</string>
-  <!-- Translations feature -->
-
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

@@ -37,8 +37,6 @@
   <string name="open_in_app_cfr_positive_button_text">Adto sa settings</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">i-Dismiss</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Kinahanglan ug camera access. Adto sa Android settings, i-tap and permissions, ug i-tap ang allow.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -155,10 +153,6 @@
   <string name="search_engine_suggestions_title">Pangitaon %1$s</string>
   <!-- Search engine suggestion description text -->
   <string name="search_engine_suggestions_description">Pangitaa pinaagi sa address bar</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">i-Search</string>
   <!-- Text preview for larger sized widgets -->
@@ -275,13 +269,4 @@
   <string name="exceptions_empty_message_description">Ang mga exception mopalong sa tracking protection sa mga piniling mga site.</string>
   <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
   <string name="exceptions_empty_message_learn_more_link">Dugang pagtuon</string>
-  <!-- Translations feature -->
-
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

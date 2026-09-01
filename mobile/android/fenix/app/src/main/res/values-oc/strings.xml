@@ -94,8 +94,6 @@
   <string name="open_in_app_cfr_positive_button_text">Anar als paramètres</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Ignorar</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Accès a la camèra necessari. Anatz als paramètres Android, tocatz Autorizacions puèi Autorizar.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -439,8 +437,6 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Partejatz cossí avètz descobèrt Firefox e que l’utilizatz, amb los partenaris marketing de Mozilla. Aquestas donadas son pas jamai vendudas.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Acceptar e començar de navegar</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
   <!-- "Continue" onboarding button. -->
   <string name="nova_onboarding_continue_button">Contunhar</string>
   <!-- "Not now" onboarding button. -->
@@ -465,8 +461,6 @@
   <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage,UnusedResources">Ajudar Firefox</string>
   <!-- Notifications onboarding button. -->
   <string name="nova_onboarding_notifications_button">Activar las notificacions</string>
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!--
     Widget Picker
 
@@ -2724,8 +2718,6 @@
   <string name="a11y_action_label_expand">desplegar</string>
   <!-- Action label for links to a website containing documentation about a wallpaper collection. Talkback will append this to say "Double tap to open link to learn more about this collection". -->
   <string name="a11y_action_label_wallpaper_collection_learn_more">dobrir lo ligam per ne saber mai tocant aquesta colleccion</string>
-  <!-- Translations feature -->
-
   <!--
     Translation request dialog
 
@@ -3284,8 +3276,6 @@
   <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Realizatz la mesa a jorn abans loe 14 de març per téner d’utilizar vòstres moduls complementaris e d’autras foncionalitats.</string>
   <!-- Push notification message about old Firefox version -->
   <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">D’unas foncionalitats quitaràn de foncionar deman.</string>
-  <!-- TextField Design System Component -->
-
   <!--
     Setup checklist feature
 
@@ -3408,8 +3398,6 @@
   <string name="settings_search_clear_recent_searches_message">Tot escafar</string>
   <!-- Section header for recent search results -->
   <string name="settings_search_recent_searches_section_header">Resultats de recèrca recents</string>
-  <!-- ==== Terms of use pop up prompt ==== -->
-
   <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">I a de nòu</string>
   <!-- Terms of use link in the pop up prompt message that links to the terms of use -->
@@ -3422,8 +3410,6 @@
   <string name="terms_of_use_prompt_accept">Acceptar</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">Lo me remembrar mai tard</string>
-  <!-- ==== Experiment strings. ==== -->
-
   <!--
     Copy for the Terms of Use popup prompt body line two.
     %1$s is the string terms_of_use_prompt_body_line_two_alternative_link ("here") that is a link to the Terms of Use
@@ -3435,8 +3421,6 @@
   <string name="sports_widget_close_content_description">Tampar</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
   <string name="sports_widget_more_options_content_description">Mai d’opcions</string>
-  <!-- ==== End of Terms of use popup prompt. ==== -->
-
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Ne saber mai</string>
 </resources>

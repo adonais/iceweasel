@@ -77,8 +77,6 @@
   <string name="open_in_app_cfr_positive_button_text">Magpunta sa Settings</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Alisin</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Kailangan ng camera access. Pumunta sa Android settings, i-tap ang permiso, at i-tap ang payagan.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -338,10 +336,6 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Ibahagi kung paano mo natuklasan ang Firefox, na ginagamit mo ito kaakibat ang mga marketing partner ng Mozilla. Ang data na ito ay di-kailanman ibebenta.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Sumang-ayon at magsimulang mag-browse</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!--
     Widget Picker
 
@@ -2209,8 +2203,6 @@
   <string name="a11y_action_label_expand">palawigin</string>
   <!-- Action label for links to a website containing documentation about a wallpaper collection. Talkback will append this to say "Double tap to open link to learn more about this collection". -->
   <string name="a11y_action_label_wallpaper_collection_learn_more">buksan ang link para matuto pa tungkol sa koleksyong ito</string>
-  <!-- Translations feature -->
-
   <!--
     Translation request dialog
 
@@ -2724,8 +2716,6 @@
   <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Mag-update bago mag-Marso 14 para patuloy na makagamit ng mga add-on at ibang mga feature.</string>
   <!-- Push notification message about old Firefox version -->
   <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">May ilang mga feature na titigil nang gumana bukas.</string>
-  <!-- TextField Design System Component -->
-
   <!--
     Setup checklist feature
 
@@ -2840,9 +2830,4 @@
   <string name="private_tab_cfr_negative">Salamat na lang</string>
   <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
   <string name="private_tab_cfr_positive">I-lock ang mga tab</string>
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

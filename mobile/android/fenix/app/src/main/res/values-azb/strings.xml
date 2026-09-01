@@ -75,8 +75,6 @@
   <string name="open_in_app_cfr_positive_button_text">تنظیم‌لره گئدین</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">باغلا</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">کامئرا ال چاتماسی لازیم.اندروید تنظیم‌لرینه گئدین، ایجازه‌لره توخونون و ایجازه وئرین.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -274,10 +272,6 @@
     Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
   <string name="onboarding_home_content_description_close_button">باغلا</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!--
     Search Widget
 
@@ -1838,8 +1832,6 @@
   <string name="a11y_action_label_expand">گئنیش‌لت</string>
   <!-- Action label for links to a website containing documentation about a wallpaper collection. Talkback will append this to say "Double tap to open link to learn more about this collection". -->
   <string name="a11y_action_label_wallpaper_collection_learn_more">بو مجموعه موْردینده آرتیق بیلمک اوچون باغلانتی‌نی آچین</string>
-  <!-- Translations feature -->
-
   <!--
     Translation request dialog
 
@@ -1858,11 +1850,4 @@
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">فایرفاکس‌دا پرینتی یاخچیلاشدیرماغا کمک ائدین. یالنیز بیر ثانیه چکیر.</string>
   <!-- Text shown in the survey title for printing microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_survey_printing_title" tools:ignore="BrandUsage,UnusedResources">فایرفاکس‌دا پرینت‌دن نه قدر راضیسینیز؟</string>
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

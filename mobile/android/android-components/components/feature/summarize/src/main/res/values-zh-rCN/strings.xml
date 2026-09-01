@@ -51,6 +51,8 @@
   <string name="mozac_summarize_download_error_negative_button">取消</string>
   <!-- Title for the error screen when page is too long to summarize -->
   <string name="mozac_summarize_content_too_long_error_title">页面太长，无法生成摘要</string>
+  <!-- Title for the error screen when the page content is behind a paywall -->
+  <string name="mozac_summarize_paywalled_content_error_title">内容受付费墙限制，无法生成摘要</string>
   <!-- Title for the info error screen -->
   <string name="mozac_summarize_info_error_title">目前无法生成摘要</string>
   <!-- Generic fallback message for the info error screen -->

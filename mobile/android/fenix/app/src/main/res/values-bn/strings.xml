@@ -37,8 +37,6 @@
   <string name="open_in_app_cfr_positive_button_text">সেটিং এ যাও</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">বাতিল</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">সেটিং এ যাও</string>
   <!-- Text for the negative action button to dismiss the dialog. -->
@@ -119,10 +117,6 @@
   <string name="search_suggestions_onboarding_title">ব্যক্তিগত সেশনে অনুসন্ধানের পরামর্শ দেওয়ার অনুমতি দেবেন?</string>
   <!-- Search suggestion onboarding hint description text, %s is the name of the app (for example "Firefox"). -->
   <string name="search_suggestions_onboarding_text">ঠিকানা বারে টাইপ করা সবকিছ %s আপনার ডিফল্ট অনুসন্ধান ইঞ্জিনের মাধ্যমে আপনার সাথে শেয়ার করবে।</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">অনুসন্ধান করুন</string>
   <!-- Text preview for larger sized widgets -->
@@ -793,13 +787,4 @@
   <string name="confirm_clear_permissions_site">আপনি কি নিশ্চিত যে আপনি এই সাইটের জন্য সব অনুমতি সাফ করতে চান?</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">মুছে ফেলুন</string>
-  <!-- Translations feature -->
-
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

@@ -13,8 +13,6 @@
   <string name="tab_tray_add_new_collection">Nambah koleksi anyar</string>
   <!-- Label of editable text in create collection dialog for naming a new collection -->
   <string name="tab_tray_add_new_collection_name">Aran</string>
-  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
-
   <!-- Text for the positive action button to go to Settings for auto close tabs. -->
   <string name="tab_tray_close_tabs_banner_positive_button_text">Cingak opsi</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
@@ -23,10 +21,6 @@
   <string name="search_engine_suggestions_title">Rereh %s</string>
   <!-- Menu option in the search selector menu to open the search settings -->
   <string name="search_settings_menu_item">Rereh piranti</string>
-  <!-- ==== Project "Nova" onboarding strings ==== -->
-
-  <!-- ==== End of Project "Nova" onboarding strings ==== -->
-
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">Rereh</string>
   <!-- Text preview for larger sized widgets -->
@@ -39,13 +33,4 @@
   <string name="preferences_search">Rereh</string>
   <!-- Text for the menu button to edit a search engine -->
   <string name="search_engine_edit">Uah</string>
-  <!-- Translations feature -->
-
-  <!-- TextField Design System Component -->
-
-  <!-- ==== Terms of use pop up prompt ==== -->
-
-  <!-- ==== Experiment strings. ==== -->
-
-  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>
