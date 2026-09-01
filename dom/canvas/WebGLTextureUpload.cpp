@@ -1132,6 +1132,7 @@ void WebGLTexture::TexImage(uint32_t level, GLenum respecFormat,
         driverUnpackInfo->unpackType);
     mContext->ErrorInvalidOperation("%s", dui.BeginReading());
     gfxCriticalError() << mContext->FuncName() << ": " << dui.BeginReading();
+    Truncate();
     return;
   }
 
