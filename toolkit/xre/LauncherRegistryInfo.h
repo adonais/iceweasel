@@ -71,7 +71,9 @@ class LauncherRegistryInfo final {
   LauncherResult<Maybe<DWORD>> GetSavedImageTimestamp();
   LauncherResult<Maybe<uint64_t>> GetLauncherStartTimestamp();
   LauncherResult<Maybe<uint64_t>> GetBrowserStartTimestamp();
+#if !defined(TT_MEMUTIL)
   LauncherResult<std::wstring> BuildDefaultBlocklistFilename();
+#endif
 
   const std::wstring& ResolveLauncherValueName();
   const std::wstring& ResolveBrowserValueName();
