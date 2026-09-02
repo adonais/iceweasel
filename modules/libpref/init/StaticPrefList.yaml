@@ -17007,11 +17007,7 @@
 
 - name: network.http.happy_eyeballs_enabled
   type: RelaxedAtomicBool
-#if defined(ANDROID)
   value: @IS_NIGHTLY_BUILD@
-#else
-  value: true
-#endif
   mirror: always
 
 # When true, Happy Eyeballs is also used for requests carrying an HTTP
