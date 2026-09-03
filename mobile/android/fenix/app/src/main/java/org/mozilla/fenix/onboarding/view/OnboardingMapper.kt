@@ -135,12 +135,14 @@ private fun TermsOfServiceData.toOnboardingTermsOfService() = with(this) {
     )
 }
 
-private fun MarketingData.toOnboardingMarketingData() = OnboardingMarketingData(
-    marketingCardVariant = marketingCardVariant,
-    bodyOneText = bodyLineOneText,
-    bodyOneLinkText = bodyLineOneLinkText,
-    bodyTwoText = bodyLineTwoText,
-)
+private fun MarketingData.toOnboardingMarketingData() =
+    OnboardingMarketingData(
+        marketingCardVariant = marketingCardVariant,
+        bodyOneText = bodyLineOneText,
+        bodyOneLinkText = bodyLineOneLinkText,
+        bodyTwoText = bodyLineTwoText,
+        bodyThreeText = bodyLineThreeText,
+    )
 
 private fun CustomizationToolbarData.toOnboardingCustomizeToolbar() = with(this) {
     ToolbarOption(

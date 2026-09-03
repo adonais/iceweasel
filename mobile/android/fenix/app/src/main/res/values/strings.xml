@@ -576,7 +576,7 @@
     <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources" >Share how you discovered Firefox, and that you use it, with Mozilla’s marketing partners. This data is never sold. %1$s</string>
 
     <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
-    <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Share how you discovered Firefox, and that you use it, with Mozilla’s marketing partners. This data is never sold.</string>
+    <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage,UnusedResources">Share how you discovered Firefox, and that you use it, with Mozilla’s marketing partners. This data is never sold.</string>
 
     <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
     <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage,UnusedResources">You can help us reach more people by allowing Mozilla to inform the channels where we promote Firefox that you’re a Firefox user.</string>
