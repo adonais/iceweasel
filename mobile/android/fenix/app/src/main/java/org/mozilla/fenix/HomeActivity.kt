@@ -95,6 +95,7 @@ import org.mozilla.fenix.GleanMetrics.SplashScreen
 import org.mozilla.fenix.GleanMetrics.StartOnHome
 import org.mozilla.fenix.addons.ExtensionsProcessDisabledBackgroundController
 import org.mozilla.fenix.addons.ExtensionsProcessDisabledForegroundController
+import org.mozilla.fenix.automation.AutomatedLaunch
 import org.mozilla.fenix.bindings.ExternalAppLinkStatusBinding
 import org.mozilla.fenix.bindings.HomepageTabBinding
 import org.mozilla.fenix.bindings.SummarizeToolbarHighlightBinding
@@ -167,7 +168,6 @@ import org.mozilla.fenix.pbmlock.PrivateBrowsingLockFeature
 import org.mozilla.fenix.perf.DefaultStartupPathProvider
 import org.mozilla.fenix.perf.MarkersActivityLifecycleCallbacks
 import org.mozilla.fenix.perf.MarkersFragmentLifecycleCallbacks
-import org.mozilla.fenix.perf.Performance
 import org.mozilla.fenix.perf.PerformanceInflater
 import org.mozilla.fenix.perf.ProfilerMarkers
 import org.mozilla.fenix.perf.StartupPathProvider
@@ -475,7 +475,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
         binding = ActivityHomeBinding.inflate(layoutInflater)
 
-        Performance.processIntentIfPerformanceTest(intent, this)
+        AutomatedLaunch.processIntentIfPerformanceTestOrAutomation(intent, this)
 
         // Persist or clear a Glean debug view tag across restarts (Nightly/Debug only).
         DefaultGleanDebugToolsStorage.persistDebugViewTagIfRequested(intent, components.settings)

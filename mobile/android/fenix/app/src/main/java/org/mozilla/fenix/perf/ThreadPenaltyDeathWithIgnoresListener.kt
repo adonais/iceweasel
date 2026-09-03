@@ -31,7 +31,7 @@ private const val PLATFORM_PREFERENCE_CLASS = "androidx.preference.Preference"
  */
 @RequiresApi(Build.VERSION_CODES.P)
 class ThreadPenaltyDeathWithIgnoresListener(
-    private val logger: Logger = Performance.logger,
+    private val logger: Logger = PerformanceLogger.logger,
     private val manufacturerChecker: ManufacturerChecker = BuildManufacturerChecker(),
 ) : StrictMode.OnThreadViolationListener {
 
