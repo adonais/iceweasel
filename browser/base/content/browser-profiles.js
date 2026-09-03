@@ -715,7 +715,7 @@ var gProfiles = {
           let { themeBg, themeFg } = profile.theme;
           btn.style.setProperty("--appmenu-profiles-theme-bg", themeBg);
           btn.style.setProperty("--appmenu-profiles-theme-fg", themeFg);
-          btn.setAttribute("image", await profile.getAvatarURL(24));
+          btn.setAttribute("image", await profile.getAvatarURL(16));
           profilesList.appendChild(btn);
           hasOtherProfiles = true;
         }
