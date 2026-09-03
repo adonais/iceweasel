@@ -14633,6 +14633,20 @@
   value: false
   mirror: always
 
+# Maximum size of the cookie database write-ahead log before sqlite
+# checkpoints it. Only read at database initialization.
+- name: network.cookie.db.maxWalBytes
+  type: uint32_t
+  value: 524288 # 512KiB
+  mirror: always
+
+# Extra amount the cookie database write-ahead log is allowed to grow past
+# network.cookie.db.maxWalBytes before being truncated back.
+- name: network.cookie.db.journalOverheadBytes
+  type: uint32_t
+  value: 524288 # 512KiB
+  mirror: always
+
 # The string to return to the server as the 'workstation' that the user is
 # using. Bug 1046421 notes that the previous default of the system hostname
 # could be used for user fingerprinting.
