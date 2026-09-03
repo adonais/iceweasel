@@ -600,11 +600,8 @@ export class IPProtectionPanel {
       lazy.IPPProxyManager.refreshUsage();
     }
 
-    // Only check default browser on panel open if not premium to limit calls to the Shell Service
-    const isPremium = this.state.isPremium ? true : this.isPremium;
-
     this.setState({
-      isPremium,
+      isPremium: this.isPremium,
       isSiteExceptionsEnabled: this.isExceptionsFeatureEnabled,
       bandwidthWarning: this.#shouldShowBandwidthWarning(),
     });

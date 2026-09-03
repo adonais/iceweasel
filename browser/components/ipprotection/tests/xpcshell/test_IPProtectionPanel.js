@@ -489,6 +489,54 @@ add_task(async function test_showing_refreshes_usage_when_paused() {
 });
 
 /**
+ * Tests that opening the panel reads the isPremium getter on panel open.
+ */
+add_task(async function test_showing_checks_is_premium_once() {
+  let ipProtectionPanel = new IPProtectionPanel();
+  ipProtectionPanel.panel = new FakeIPProtectionPanelView();
+
+  // Check that the state is set on panel open
+  let premiumValue = true;
+  let isPremiumSpy = sinon.spy(() => premiumValue);
+  let isPremiumStub = sinon
+    .stub(IPProtectionPanel.prototype, "isPremium")
+    .get(isPremiumSpy);
+
+  ipProtectionPanel.showing(ipProtectionPanel.panel);
+
+  Assert.equal(
+    isPremiumSpy.callCount,
+    1,
+    "isPremium should be read when the panel opens"
+  );
+  Assert.equal(
+    ipProtectionPanel.state.isPremium,
+    true,
+    "isPremium state should be set from the getter"
+  );
+
+  // Checks that the state is re-set on panel open if it was previously true
+  premiumValue = false;
+  ipProtectionPanel.showing(ipProtectionPanel.panel);
+
+  Assert.equal(
+    isPremiumSpy.callCount,
+    2,
+    "isPremium should be read once more on the second panel open"
+  );
+  Assert.equal(
+    ipProtectionPanel.state.isPremium,
+    false,
+    "isPremium state should follow the getter when it changes between opens"
+  );
+
+  isPremiumStub.restore();
+  ipProtectionPanel.uninit();
+  Services.prefs.clearUserPref("browser.ipProtection.everOpenedPanel");
+  Services.prefs.clearUserPref("browser.ipProtection.openedPanelWithLocation");
+});
+
+/**
  * Tests that showLocationButtonBadge is true when the dismissed pref is not set.
  */
 add_task(async function test_location_badge_initial_state_pref_unset() {
