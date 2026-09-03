@@ -2712,6 +2712,16 @@ void ProgramD3D::defineUniformBase(const gl::Shader *shader,
     }
 
     const ShaderD3D *shaderD3D = GetImplAs<ShaderD3D>(shader);
+
+    // The uniform ended up as unreferenced during HLSL generation, so it has no register.
+    if (!shaderD3D->hasUniform(uniform.name))
+    {
+        UniformEncodingVisitorD3D visitor(shader->getType(), HLSLRegisterType::None, &stubEncoder,
+                                          uniformMap);
+        sh::TraverseShaderVariable(uniform, false, &visitor);
+        return;
+    }
+
     unsigned int startRegister = shaderD3D->getUniformRegister(uniform.name);
     ShShaderOutput outputType  = shaderD3D->getCompilerOutputType();
     sh::HLSLBlockEncoder encoder(sh::HLSLBlockEncoder::GetStrategyFor(outputType), true);
