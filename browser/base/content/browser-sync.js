@@ -602,6 +602,8 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
    * device is still appended so the list never shows fewer devices than the
    * tabs engine knows about (e.g. when the cached device list is stale or not
    * yet fetched).
+   *
+   * The current device gets excluded.
    */
   async _getMergedDeviceList() {
     let clients = await SyncedTabs.getTabClients();
@@ -623,12 +625,16 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
     let merged = [];
     let matchedClients = new Set();
     for (let device of devices) {
+      let client = clientByFxaId.get(device.id);
+      if (client) {
+        // Record the client even when the device is skipped below, so the pass
+        // over unmatched clients doesn't add it back.
+        matchedClients.add(client);
+      }
       if (device.isCurrentDevice) {
         continue;
       }
-      let client = clientByFxaId.get(device.id);
       if (client) {
-        matchedClients.add(client);
         merged.push(client);
       } else if (fxAccounts.commands.sendTab.isDeviceCompatible(device)) {
         merged.push({
