@@ -126,7 +126,7 @@ var gProfiles = {
     );
     profilesButton.setAttribute(
       "image",
-      await SelectableProfileService.currentProfile.getAvatarURL(24)
+      await SelectableProfileService.currentProfile.getAvatarURL(16)
     );
   },
 
@@ -205,7 +205,7 @@ var gProfiles = {
       let { themeBg, themeFg } = profile.theme;
       btn.style.setProperty("--appmenu-profiles-theme-bg", themeBg);
       btn.style.setProperty("--appmenu-profiles-theme-fg", themeFg);
-      let avatarURL = await profile.getAvatarURL(24);
+      let avatarURL = await profile.getAvatarURL(16);
       btn.setAttribute("image", avatarURL);
       container.appendChild(btn);
     }
@@ -265,7 +265,7 @@ var gProfiles = {
 
         let icon = document.createXULElement("image");
         icon.classList.add("toolbarbutton-icon");
-        icon.setAttribute("src", await profile.getAvatarURL(24));
+        icon.setAttribute("src", await profile.getAvatarURL(16));
         btn.appendChild(icon);
 
         let labelVbox = document.createXULElement("vbox");
@@ -292,7 +292,7 @@ var gProfiles = {
         btn.appendChild(checkIcon);
       } else {
         btn.setAttribute("label", profile.name);
-        btn.setAttribute("image", await profile.getAvatarURL(24));
+        btn.setAttribute("image", await profile.getAvatarURL(16));
       }
 
       list.appendChild(btn);
