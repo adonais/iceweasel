@@ -4711,9 +4711,8 @@ delta = "0.11.0 -> 0.12.0"
 [[audits.minidump-writer]]
 who = "Chris Martin <marti4d@live.ca>"
 criteria = "safe-to-deploy"
-delta = "0.12.0 -> 0.12.0@git:45f5459790d264098346343f0ad58d008c386fa5"
+delta = "0.12.0 -> 0.12.0@git:ee5b9d59d85bea1d4c6845f6b854e04fe204adf2"
 importable = false
-notes = "The crate is maintained by Mozilla staff, and I am the primary author of this diff"
 
 [[audits.miniz_oxide]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"

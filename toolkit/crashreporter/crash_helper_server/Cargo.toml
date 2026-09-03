@@ -28,7 +28,7 @@ android_logger = "0.12"
 
 [target."cfg(any(target_os = \"android\", target_os = \"linux\"))".dependencies]
 nix = { version = "0.30", features = ["process", "poll", "socket", "uio"] }
-minidump-writer = { git = "https://github.com/rust-minidump/minidump-writer.git", rev = "45f5459790d264098346343f0ad58d008c386fa5" }
+minidump-writer = { git = "https://github.com/rust-minidump/minidump-writer.git", rev = "ee5b9d59d85bea1d4c6845f6b854e04fe204adf2" }
 rust_minidump_writer_linux = { path = "../rust_minidump_writer_linux" }
 
 [target."cfg(target_os = \"windows\")".dependencies]
