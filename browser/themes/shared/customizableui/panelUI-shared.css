@@ -837,7 +837,6 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   padding: 10px;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   gap: var(--dimension-8);
-  overflow: hidden;
   margin: 0 var(--space-medium) var(--space-medium);
 
   & .fxa-menu-sign-in-promo-image {
