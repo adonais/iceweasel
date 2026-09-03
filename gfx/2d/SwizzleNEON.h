@@ -151,7 +151,7 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> UnpremultiplyReverse_SIMD(
 }
 
 template <class Arch>
-  requires std::same_as<Arch, xsimd::neon> || std::same_as<Arch, xsimd::neon64>
+  requires std::same_as<Arch, xsimd::neon64>
 static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> LoadRemainderRGB_SIMD(
     const uint8_t* aSrc, size_t aLength) {
   // Load aLength (1-4) packed RGB pixels (3-12 bytes) without reading past the
