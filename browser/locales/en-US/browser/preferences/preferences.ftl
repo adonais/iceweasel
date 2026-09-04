@@ -3000,6 +3000,7 @@ mouse_gestures_update_title = Version Check
 mouse_gestures_update_err = Error connecting to update server!
 mouse_gestures_update_laster = You are already using the latest version!
 mouse_gestures_update_new = A new version is available on the server!
+mouse_gestures_update_new2 = The server has released a new version, go download it?
 mouse_gestures_nocache_exit = Restart browser (clear userChrome.js cache)
 mouse_gestures_download_dir = Open download directory
 mouse_gestures_aria2_webui = Open Aria2 WebUI
