@@ -54,20 +54,18 @@ function iniValue(sec, key) {
   return false;
 }
 
+function existOtherPath(names) {
+  let dst = Services.dirsvc.get("UChrm", Ci.nsIFile);
+  dst.append(AppConstants.platform === "win" ? "uc" : "SubScript");
+  dst.append(names);
+  return dst.exists()
+}
+
 function existScript(names) {
-  try {
-    let target = Services.dirsvc.get("UChrm", Ci.nsIFile);
-    if (AppConstants.platform === "win") {
-      target.append("SubScript");
-    } else {
-      target.append("uc");
-    }
-    target.append(names);
-    if (target.exists()) {
-      return true;
-    }
-  } catch (e) {}
-  return false;
+  let target = Services.dirsvc.get("UChrm", Ci.nsIFile);
+  target.append(AppConstants.platform === "win" ? "SubScript" : "uc");
+  target.append(names);
+  return target.exists() ? true : existOtherPath(names);
 }
 
 function showIceMessage(n) {
