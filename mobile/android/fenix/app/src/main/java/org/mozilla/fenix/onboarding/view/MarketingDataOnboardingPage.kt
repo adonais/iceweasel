@@ -41,12 +41,15 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.LinkText
@@ -118,9 +121,8 @@ fun MarketingDataOnboardingPage(
                             .padding(start = startPadding, end = FirefoxTheme.layout.space.static400),
                         verticalArrangement = Arrangement.spacedBy(36.dp),
                     ) {
-                        val title = getTitleForVariant(state)
                         Text(
-                            text = title,
+                            text = state.title,
                             textAlign = TextAlign.Start,
                             style = FirefoxTheme.typography.headline6,
                         )
@@ -236,17 +238,6 @@ private fun getImageResourceForVariant(state: OnboardingPageState): Int {
         )
     } ?: state.imageRes
     return imageResource
-}
-
-@Composable
-private fun getTitleForVariant(state: OnboardingPageState): String {
-    val title = state.marketingData?.let {
-        titleCopyForVariant(
-            defaultString = state.title,
-            marketingCardVariant = it.marketingCardVariant,
-        )
-    } ?: state.title
-    return title
 }
 
 @Composable
@@ -384,19 +375,19 @@ private fun TreatmentCContent(
     marketingData: OnboardingMarketingData,
     onMarketingDataLearnMoreClick: () -> Unit,
 ) {
-    val bodyCopyRes = bodyCopyForVariant(marketingData.marketingCardVariant)
-    val bodyCopy = stringResource(bodyCopyRes)
-    val linkCopy = stringResource(R.string.nova_onboarding_marketing_body_link_text_1)
+    val lineOne = marketingData.bodyOneText
+    val lineOneLink = marketingData.bodyOneLinkText
 
     LinkText(
-        text = bodyCopy.updateFirstPlaceholder(linkCopy),
-        linkTextStates = listOf(
-            LinkTextState(
-                text = linkCopy,
-                url = "",
-                onClick = { onMarketingDataLearnMoreClick() },
+        text = lineOne.updateFirstPlaceholder(lineOneLink),
+        linkTextStates =
+            listOf(
+                LinkTextState(
+                    text = lineOneLink,
+                    url = "",
+                    onClick = { onMarketingDataLearnMoreClick() },
+                ),
             ),
-        ),
         linkTextDecoration = TextDecoration.Underline,
         style = FirefoxTheme.typography.body2,
         textAlign = TextAlign.Start,
@@ -404,17 +395,27 @@ private fun TreatmentCContent(
 
     Spacer(Modifier.height(16.dp))
 
-    Text(
-        text = stringResource(R.string.nova_onboarding_marketing_body_line_two),
-        style = FirefoxTheme.typography.body2,
-        textAlign = TextAlign.Start,
-    )
-    Text(
-        text = stringResource(R.string.nova_onboarding_marketing_body_line_three),
-        fontWeight = FontWeight.Bold,
-        style = FirefoxTheme.typography.body2,
-        textAlign = TextAlign.Start,
-    )
+    val lineTwo = marketingData.bodyTwoText
+    val lineThree = marketingData.bodyThreeText
+
+    if (!lineTwo.isNullOrBlank() && !lineThree.isNullOrBlank()) {
+        Text(
+            text = buildTextWithBoldedEnding(lineTwo, lineThree),
+            style = FirefoxTheme.typography.body2,
+            textAlign = TextAlign.Start,
+        )
+    }
+}
+
+private fun buildTextWithBoldedEnding(
+    firstLine: String,
+    secondLine: String,
+): AnnotatedString = buildAnnotatedString {
+    append(firstLine)
+    append(' ')
+    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+        append(secondLine)
+    }
 }
 
 @Composable
@@ -447,69 +448,147 @@ private fun imageResourceForVariant(
         -> R.drawable.ic_kit_heart
 }
 
-@Composable
-private fun titleCopyForVariant(
-    defaultString: String,
-    marketingCardVariant: MarketingCardVariant,
-) = when (marketingCardVariant) {
-    MarketingCardVariant.DEFAULT -> defaultString
-    MarketingCardVariant.TREATMENT_C,
-        -> stringResource(R.string.onboarding_marketing_redesign_title)
-}
-
-private fun bodyCopyForVariant(marketingCardVariant: MarketingCardVariant) =
-    when (marketingCardVariant) {
-        MarketingCardVariant.DEFAULT -> R.string.nova_onboarding_marketing_body_2
-        MarketingCardVariant.TREATMENT_C -> R.string.nova_onboarding_marketing_body_7
-    }
-
-private class BodyResourcePreviewProvider : PreviewParameterProvider<MarketingCardVariant> {
-    override val values = sequenceOf(
-        MarketingCardVariant.DEFAULT,
-        MarketingCardVariant.TREATMENT_C,
-    )
-
-    override fun getDisplayName(index: Int): String {
-        return values.elementAt(index).name
-    }
-}
-
 // Uncomment @FlexibleWindowLightDarkPreview below to review changes across multiple screen sizes.
 // @FlexibleWindowLightDarkPreview
 
 // Use @PreviewLightDark by default for preview rendering performance and easier preview navigation.
 @PreviewLightDark
 @Composable
-private fun MarketingDataOnboardingPagePreview(
-    @PreviewParameter(BodyResourcePreviewProvider::class) variant: MarketingCardVariant,
-) {
+private fun MarketingDataOnboardingPagePreviewDefault() {
     FirefoxTheme {
         MarketingDataOnboardingPage(
-            state = OnboardingPageState(
-                imageRes = R.drawable.nova_onboarding_marketing,
-                title = stringResource(id = R.string.nova_onboarding_marketing_title),
-                description = "", // NB: not used
-                primaryButton = Action(
-                    text = stringResource(id = R.string.nova_onboarding_continue_button),
-                    onClick = {},
+            state =
+                OnboardingPageState(
+                    imageRes = R.drawable.nova_onboarding_marketing,
+                    title = stringResource(id = R.string.nova_onboarding_marketing_title),
+                    description = "", // NB: not used
+                    primaryButton =
+                        Action(
+                            text = stringResource(id = R.string.nova_onboarding_continue_button),
+                            onClick = {},
+                        ),
+                    secondaryButton =
+                        Action(
+                            text = stringResource(id = R.string.nova_onboarding_marketing_secondary_button_text),
+                            onClick = {},
+                        ),
+                    marketingData =
+                        OnboardingMarketingData(
+                            marketingCardVariant = MarketingCardVariant.DEFAULT,
+                            bodyOneText = stringResource(id = R.string.nova_onboarding_marketing_body),
+                            bodyOneLinkText = stringResource(id = R.string.nova_onboarding_marketing_body_link_text),
+                        ),
                 ),
-                secondaryButton = Action(
-                    text = "", // NB: value should be set in the secondaryButtonCopyForVariant function
-                    onClick = {},
-                ),
-                marketingData = OnboardingMarketingData(
-                    marketingCardVariant = variant,
-                    bodyOneText = stringResource(id = R.string.nova_onboarding_marketing_body),
-                    bodyOneLinkText = stringResource(id = R.string.nova_onboarding_marketing_body_link_text),
-                    bodyTwoText = "", // NB: not used
-                ),
-            ),
             onMarketingDataLearnMoreClick = {},
             onMarketingOptInToggle = {},
             onMarketingDataContinueClick = {},
             onMarketingDataSkipClick = {},
         )
     }
+}
+
+// Treatment C previews
+
+@Composable
+private fun MarketingDataOnboardingPageTreatmentCPreview(
+    title: String,
+    bodyOneText: String,
+    bodyOneLinkText: String,
+    bodyTwoText: String,
+    bodyThreeText: String,
+) {
+    FirefoxTheme {
+        MarketingDataOnboardingPage(
+            state =
+                OnboardingPageState(
+                    imageRes = R.drawable.nova_onboarding_marketing,
+                    title = title,
+                    description = "", // NB: not used
+                    primaryButton =
+                        Action(
+                            text = stringResource(id = R.string.nova_onboarding_continue_button),
+                            onClick = {},
+                        ),
+                    secondaryButton =
+                        Action(
+                            text = stringResource(id = R.string.nova_onboarding_marketing_secondary_button_text),
+                            onClick = {},
+                        ),
+                    marketingData =
+                        OnboardingMarketingData(
+                            marketingCardVariant = MarketingCardVariant.TREATMENT_C,
+                            bodyOneText = bodyOneText,
+                            bodyOneLinkText = bodyOneLinkText,
+                            bodyTwoText = bodyTwoText,
+                            bodyThreeText = bodyThreeText,
+                        ),
+                ),
+            onMarketingDataLearnMoreClick = {},
+            onMarketingOptInToggle = {},
+            onMarketingDataContinueClick = {},
+            onMarketingDataSkipClick = {},
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun MarketingDataOnboardingPagePreviewTreatmentCEnglish() {
+    MarketingDataOnboardingPageTreatmentCPreview(
+        title = stringResource(R.string.onboarding_marketing_redesign_title),
+        bodyOneText = stringResource(R.string.nova_onboarding_marketing_body_7),
+        bodyOneLinkText = stringResource(R.string.nova_onboarding_marketing_body_link_text_1),
+        bodyTwoText = stringResource(R.string.nova_onboarding_marketing_body_line_two),
+        bodyThreeText = stringResource(R.string.nova_onboarding_marketing_body_line_three),
+    )
+}
+
+// The below locales use tailored copy outside on translations that will be provided by Nimbus
+
+@Preview(name = "es", locale = "es")
+@Composable
+private fun MarketingDataOnboardingPagePreviewTreatmentCSpanish() {
+    MarketingDataOnboardingPageTreatmentCPreview(
+        title = "Ayude a Firefox a crecer",
+        bodyOneText =
+            "Firefox puede llegar a más personas si permite que Mozilla indique a la plataforma desde la que " +
+                $$"llegó que usted usa Firefox. %1$s",
+        bodyOneLinkText = "Más información",
+        bodyTwoText = "Firefox es independiente y defiende una web abierta y libre de monopolios tecnológicos.",
+        bodyThreeText = "Su permiso ayuda a que más personas elijan Firefox.",
+    )
+}
+
+@Preview(name = "fr", locale = "fr")
+@Composable
+private fun MarketingDataOnboardingPagePreviewTreatmentCFrench() {
+    MarketingDataOnboardingPageTreatmentCPreview(
+        title = "Soutenez Firefox",
+        bodyOneText =
+            "Aidez-nous à faire découvrir Firefox à encore plus de personnes. Autorisez Mozilla à informer " +
+                $$"la plateforme par laquelle vous êtes arrivé que vous utilisez Firefox. %1$s",
+        bodyOneLinkText = "En savoir plus",
+        bodyTwoText =
+            "Firefox est indépendant et défend un Web ouvert, plutôt que de le laisser aux mains des " +
+                "géants de la tech.",
+        bodyThreeText = "Votre soutien nous aide à renforcer Firefox.",
+    )
+}
+
+@Preview(name = "de", locale = "de")
+@Composable
+private fun MarketingDataOnboardingPagePreviewTreatmentCGerman() {
+    MarketingDataOnboardingPageTreatmentCPreview(
+        title = "Deine Hilfe für Firefox",
+        bodyOneText =
+            "Hilf uns, noch mehr Menschen für Firefox zu gewinnen. Erlaube Mozilla, der Plattform, " +
+                $$"über die du zu uns gekommen bist, mitzuteilen, dass du Firefox nutzt. %1$s",
+        bodyOneLinkText = "Mehr erfahren",
+        bodyTwoText =
+            "Firefox ist unabhängig und setzt sich für ein offenes Web ein, statt es den " +
+                "Tech-Giganten zu überlassen.",
+        bodyThreeText = "Mit deiner Zustimmung hilfst du uns dabei und stärkst Firefox.",
+    )
 }
 
 private fun String.updateFirstPlaceholder(text: String) = replace($$"%1$s", text)

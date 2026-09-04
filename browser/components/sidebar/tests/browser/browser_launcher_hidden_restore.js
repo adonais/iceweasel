@@ -66,6 +66,64 @@ add_task(
   }
 );
 
+add_task(async function test_restored_launcher_visibility_wins() {
+  // Regression test for bug 2065431: in "hide-sidebar" mode, loading state with
+  // no panel open used to force the launcher hidden unconditionally, discarding
+  // the visibility that session store (or an adopted window) had just handed us.
+  // A launcher the user revealed with the toolbar button was therefore hidden
+  // again on every restart. Restored visibility now wins, and the mode's default
+  // only applies when there was no restored visibility to go on.
+  //
+  // updateUIState is what session restore and window adoption call, so passing
+  // state to it directly is how we exercise those paths without a restart. The
+  // end-to-end restart case is covered by
+  // tests/marionette/test_default_launcher_visible.py.
+  Assert.equal(
+    SidebarController.sidebarRevampVisibility,
+    "hide-sidebar",
+    "These cases only make sense in hide-sidebar mode"
+  );
+  await SidebarTestUtils.ensureLauncherHidden(window);
+
+  // Restored visible: what the user revealed survives, rather than the mode
+  // default clobbering it. This is the regression itself.
+  await SidebarController.updateUIState({
+    launcherVisible: true,
+    launcherExpanded: true,
+    command: "",
+    panelOpen: false,
+  });
+  await SidebarController.waitUntilStable();
+  Assert.ok(
+    !sidebarLauncher.hidden,
+    "Restored visible launcher stays visible in hide-sidebar mode"
+  );
+
+  // Restored hidden: the fix must not over-correct into always showing the
+  // launcher once some state has been restored.
+  await SidebarController.updateUIState({
+    launcherVisible: false,
+    command: "",
+    panelOpen: false,
+  });
+  await SidebarController.waitUntilStable();
+  Assert.ok(
+    sidebarLauncher.hidden,
+    "Restored hidden launcher is still honored"
+  );
+
+  // No launcherVisible in the restored state at all (e.g. a profile that
+  // predates it being saved): the mode's default of hidden still applies, even
+  // though the launcher happens to be visible right now.
+  await SidebarTestUtils.ensureLauncherVisible(window);
+  await SidebarController.updateUIState({ command: "", panelOpen: false });
+  await SidebarController.waitUntilStable();
+  Assert.ok(
+    sidebarLauncher.hidden,
+    "Launcher falls back to hidden when nothing was restored"
+  );
+});
+
 add_task(
   async function test_launcher_hidden_restored_after_panel_switch_and_close() {
     // When the launcher is initially hidden, after opening a couple of sidebar panels

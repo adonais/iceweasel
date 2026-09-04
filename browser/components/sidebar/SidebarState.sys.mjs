@@ -304,10 +304,18 @@ export class SidebarState {
       // show() is async, so make sure we return its promise here
       return this.#controller.showInitially(this.command);
     }
-    if (["hide-sidebar", "hide-launcher"].includes(this.revampVisibility)) {
-      // No panel is open, so the launcher stays hidden as these modes intend. A
-      // new or restored window can otherwise inherit a visible launcher state,
-      // which shouldn't carry over here.
+    if (this.launcherHiddenWithPanel) {
+      // "hide-launcher" replaces the launcher with the panel header switcher,
+      // so it never shows regardless of what was restored.
+      this.launcherVisible = false;
+    } else if (
+      !hasPreviousVisibleState &&
+      this.revampVisibility === "hide-sidebar"
+    ) {
+      // No panel is open and the state we were handed didn't say whether the
+      // launcher was visible, so fall back to hidden as this mode intends. An
+      // explicitly restored or adopted visibility wins over that default,
+      // otherwise a launcher the user revealed would be lost on every restart.
       this.launcherVisible = false;
     }
     return this.#controller.hide();

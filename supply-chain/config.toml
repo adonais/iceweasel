@@ -251,7 +251,7 @@ audit-as-crates-io = false
 [policy.peek-poke-derive]
 audit-as-crates-io = false
 
-[policy."process-backend:0.0.0@git:45f5459790d264098346343f0ad58d008c386fa5"]
+[policy."process-backend:0.0.0@git:ee5b9d59d85bea1d4c6845f6b854e04fe204adf2"]
 audit-as-crates-io = false
 notes = """
 This was originally intended to be a minidump-writer internal crate (and thus

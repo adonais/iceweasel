@@ -63,10 +63,10 @@ class StartupReportFullyDrawn {
         // - the difference in timing is minimal (< 7ms on Pixel 2)
         // - if we compare against another app using a preDrawListener, as we are with Fennec, it
         // should be comparable
-        view.doOnPreDraw { activity.reportFullyDrawnSafe(Performance.logger) }
+        view.doOnPreDraw { activity.reportFullyDrawnSafe(PerformanceLogger.logger) }
     }
 
     private fun attachReportFullyDrawn(activity: Activity) {
-        activity.reportFullyDrawnSafe(Performance.logger)
+        activity.reportFullyDrawnSafe(PerformanceLogger.logger)
     }
 }

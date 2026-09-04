@@ -92,7 +92,8 @@ data class OnboardingMarketingData(
     val marketingCardVariant: MarketingCardVariant,
     val bodyOneText: String,
     val bodyOneLinkText: String,
-    val bodyTwoText: String,
+    val bodyTwoText: String? = null,
+    val bodyThreeText: String? = null,
 )
 
 /**

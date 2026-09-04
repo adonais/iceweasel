@@ -2198,6 +2198,98 @@ add_task(async function test_device_list_shows_all_account_devices() {
 });
 
 /**
+ * The current device is never listed, whether or not it has a Sync tab-client.
+ * Other account devices sharing a name are still listed.
+ */
+add_task(async function test_device_list_excludes_this_device() {
+  await promiseSyncReady();
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(UIState, "get").returns({
+    status: UIState.STATUS_SIGNED_IN,
+    syncEnabled: true,
+  });
+  sandbox.stub(SyncedTabs, "isConfiguredToSyncTabs").get(() => false);
+
+  const SEND_TAB = {
+    "https://identity.mozilla.com/cmd/open-uri": "encrypted-payload",
+  };
+  let devices = [
+    {
+      id: "dev-current",
+      name: "This Device",
+      isCurrentDevice: true,
+      lastAccessTime: Date.now(),
+      availableCommands: SEND_TAB,
+    },
+    {
+      // A secondary profile on this machine, so it shares the generated name.
+      id: "dev-second-profile",
+      name: "This Device",
+      isCurrentDevice: false,
+      lastAccessTime: Date.now(),
+      availableCommands: SEND_TAB,
+    },
+    {
+      id: "dev-other",
+      name: "Laptop",
+      isCurrentDevice: false,
+      lastAccessTime: Date.now(),
+      availableCommands: SEND_TAB,
+    },
+  ];
+  // The current device has a Sync tab-client, so it is reachable both through
+  // the device loop and through the pass over unmatched clients.
+  let clients = [
+    {
+      id: "client-current",
+      name: "This Device",
+      lastModified: Date.now(),
+      tabs: [],
+    },
+    { id: "client-other", name: "Laptop", lastModified: Date.now(), tabs: [] },
+  ];
+  sandbox.stub(fxAccounts.device, "recentDeviceList").get(() => devices);
+  sandbox.stub(SyncedTabs, "getTabClients").resolves(clients);
+  sandbox
+    .stub(Weave.Service.clientsEngine, "getClientFxaDeviceId")
+    .callsFake(clientId => {
+      switch (clientId) {
+        case "client-current":
+          return "dev-current";
+        case "client-other":
+          return "dev-other";
+      }
+      return null;
+    });
+
+  gSync.updateAllUI({
+    status: UIState.STATUS_SIGNED_IN,
+    syncEnabled: true,
+    email: "foo@bar.com",
+  });
+  await openFxaPanel();
+
+  let panelview = PanelMultiView.getViewNode(document, "PanelUI-fxa");
+  let devicesList = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-devices-list"
+  );
+  await panelview.syncedTabsPanelList._doUpdateDeviceList();
+
+  Assert.deepEqual(
+    Array.from(
+      devicesList.querySelectorAll(".PanelUI-fxa-menu-device-entry"),
+      e => e.getAttribute("label")
+    ).sort(),
+    ["Laptop", "This Device"],
+    "This device is excluded even though it has a Sync tab-client, but the second profile sharing its name is still shown"
+  );
+
+  await closeFxaPanel();
+  sandbox.restore();
+});
+
+/**
  * When a device does not support the sendTab command, the
  * "Send Current Page to This Device" button is hidden in the recent tabs panel.
  */

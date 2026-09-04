@@ -837,7 +837,6 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   padding: 10px;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   gap: var(--dimension-8);
-  overflow: hidden;
   margin: 0 var(--space-medium) var(--space-medium);
 
   & .fxa-menu-sign-in-promo-image {
@@ -1677,8 +1676,9 @@ panelview .toolbarbutton-1,
   fill: var(--appmenu-profiles-theme-bg);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   stroke: var(--appmenu-profiles-theme-fg);
-  width: var(--icon-size-large);
-  height: var(--icon-size-large);
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+  margin-inline-end: var(--space-xsmall);
 }
 
 /* Adjust the Zoom toolbaritem padding to have its height the same as other toolbarbuttons,

@@ -55,7 +55,7 @@ features:
               secondary-button-label: nova_onboarding_marketing_secondary_button_text
               extra-data:
                 marketing-data:
-                  body-line-one-text: nova_onboarding_marketing_body
+                  body-line-one-text: nova_onboarding_marketing_body_2
                   body-line-one-link-text: nova_onboarding_marketing_body_link_text
 
   continuous-onboarding:
@@ -242,6 +242,10 @@ objects:
       body-line-two-text:
         type: Text
         description: The text for line two of the body.
+        default: ""
+      body-line-three-text:
+        type: Text
+        description: The text for line three of the body.
         default: ""
 
 enums:

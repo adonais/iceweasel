@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.privatemode.notification
 
+import android.app.ForegroundServiceStartNotAllowedException
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.PendingIntent.FLAG_ONE_SHOT
@@ -29,6 +30,7 @@ import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.selector.privateTabs
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.feature.privatemode.R
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.android.NotificationsDelegate
@@ -59,6 +61,8 @@ abstract class AbstractPrivateNotificationService(
 
     abstract val store: BrowserStore
     abstract val notificationsDelegate: NotificationsDelegate
+
+    protected open val crashReporter: CrashReporting? = null
 
     /**
      * Customizes the private browsing notification.
@@ -134,7 +138,7 @@ abstract class AbstractPrivateNotificationService(
             }
 
             withContext(mainDispatcher) {
-                startForeground(notificationId, notification)
+                tryStartForeground(notificationId, notification)
             }
         }
 
@@ -152,6 +156,23 @@ abstract class AbstractPrivateNotificationService(
                 .collect {
                     notifyLocaleChanged()
                 }
+        }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private fun tryStartForeground(notificationId: Int, notification: Notification) {
+        try {
+            startForeground(notificationId, notification)
+        } catch (e: Exception) {
+            if (SDK_INT >= Build.VERSION_CODES.S && e is ForegroundServiceStartNotAllowedException) {
+                // similar to https://bugzilla.mozilla.org/show_bug.cgi?id=1802620 we prefer to catch this.
+                // see https://bugzilla.mozilla.org/show_bug.cgi?id=2065344#c7 and linked conversations for more
+                // details.
+                crashReporter?.submitCaughtException(e)
+                return
+            } else {
+                throw e
+            }
         }
     }
 
