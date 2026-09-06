@@ -58,7 +58,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     ]
     if CONFIG["MOZ_LAUNCHER_PROCESS"]:
         EXPORTS.mozilla += [
-            "DllPrefetchExperimentRegistryInfo.h",
+            "LauncherRegistryInfo.h",
         ]
         UNIFIED_SOURCES += [
             "LauncherRegistryInfo.cpp",
@@ -68,7 +68,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     ]
     if CONFIG['MOZ_BRANDING_DIRECTORY'] != 'browser/branding/iceweasel':
         EXPORTS.mozilla += [
-            "LauncherRegistryInfo.h",
+            "DllPrefetchExperimentRegistryInfo.h",
         ]
         UNIFIED_SOURCES += [
             "DllPrefetchExperimentRegistryInfo.cpp",
