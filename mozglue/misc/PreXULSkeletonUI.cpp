@@ -1823,23 +1823,24 @@ static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
 
   UniquePtr<wchar_t[]> binPath = MOZ_TRY(GetBinaryPath());
 
-  std::wstring regProgressName =
-      GetRegValueName(binPath.get(), sProgressSuffix);
-  auto progressResult = ReadRegUint(regKey, regProgressName);
-  if (!progressResult.isErr() &&
-      progressResult.unwrap() !=
-          static_cast<uint32_t>(PreXULSkeletonUIProgress::Completed)) {
-    return Err(PreXULSkeletonUIError::CrashedOnce);
-  }
-
-  MOZ_TRY(
-      WriteRegUint(regKey, regProgressName,
-                   static_cast<uint32_t>(PreXULSkeletonUIProgress::Started)));
-  auto writeCompletion = MakeScopeExit([&] {
-    (void)WriteRegUint(
-        regKey, regProgressName,
-        static_cast<uint32_t>(PreXULSkeletonUIProgress::Completed));
-  });
+  // Who can tell me the meaning of this code?
+  // std::wstring regProgressName =
+  //     GetRegValueName(binPath.get(), sProgressSuffix);
+  // auto progressResult = ReadRegUint(regKey, regProgressName);
+  // if (!progressResult.isErr() &&
+  //     progressResult.unwrap() !=
+  //         static_cast<uint32_t>(PreXULSkeletonUIProgress::Completed)) {
+  //   return Err(PreXULSkeletonUIError::CrashedOnce);
+  // }
+  // 
+  // MOZ_TRY(
+  //     WriteRegUint(regKey, regProgressName,
+  //                  static_cast<uint32_t>(PreXULSkeletonUIProgress::Started)));
+  // auto writeCompletion = MakeScopeExit([&] {
+  //   (void)WriteRegUint(
+  //       regKey, regProgressName,
+  //       static_cast<uint32_t>(PreXULSkeletonUIProgress::Completed));
+  // });
 
   MOZ_TRY(GetSkeletonUILock());
 
