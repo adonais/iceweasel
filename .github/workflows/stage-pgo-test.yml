@@ -1,0 +1,238 @@
+name: Iceweasel use
+on: 
+  repository_dispatch:
+    types: [pgo_use_test]
+env:
+  APP_NAME: Iceweasel
+  MOZ_FETCHES_DIR: /builds/worker/fetches
+  MOZBUILD_DOWNLOAD: /builds/worker/fetches/download
+  PGO_USE_TEST: 1
+
+jobs:
+  fx_win_build:
+    name: PGO use for win32
+    runs-on: ubuntu-22.04
+    timeout-minutes: 480
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        ref: iceweasel_release
+
+    - uses: yxl0756/gha-cleanup@v1
+      with:
+        remove-browsers: true
+        verbose: true
+
+    - name: clean rustc
+      id: env_clean
+      run: |
+        if [ -d "/home/runner/.cargo" ]; then rm -rf /home/runner/.cargo; fi
+        if [ -d "/home/runner/.rustup" ]; then rm -rf /home/runner/.rustup; fi
+        if [ -d "/home/runner/.mozbuild" ]; then rm -rf /home/runner/.mozbuild; fi
+      shell: bash
+
+    - name: mkdir and setenv
+      id: env_mkdir
+      run: |
+        sudo mkdir -p "$MOZ_FETCHES_DIR"
+        sudo chown runner:runner -R "$MOZ_FETCHES_DIR"
+        mkdir -p "$MOZBUILD_DOWNLOAD"
+        cd "$GITHUB_WORKSPACE"
+        m_ver=`cat browser/config/version_display.txt`
+        echo MY_VER=$m_ver>>$GITHUB_ENV
+        mkdir "/home/runner/.mozbuild"
+      shell: bash
+
+    - name: system dependencies
+      run: |
+        set -x
+        sudo apt update --fix-missing
+        sudo apt update
+        # for uninstall/helper.exe
+        sudo apt install -y nsis
+      shell: bash
+
+    - name: download Tools
+      id: env_download
+      run: |
+        cd "$MOZBUILD_DOWNLOAD"
+        # mozilla compiler toolchain
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/cbindgen.tar.xz?viasf=1 -O cbindgen.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download cbindgen failed
+          exit 255
+        fi
+        tar Jxf cbindgen.tar.xz -C "/home/runner/.mozbuild"
+        chmod -R 755 "/home/runner/.mozbuild/cbindgen"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/nasm.tar.xz?viasf=1 -O nasm.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download nasm failed
+          exit 255
+        fi
+        tar Jxf nasm.tar.xz -C "/home/runner/.mozbuild"
+        chmod -R 755 "/home/runner/.mozbuild/nasm"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/rust-size.tar.xz?viasf=1 -O rust-size.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download rust-size failed
+          exit 255
+        fi
+        tar Jxf rust-size.tar.xz -C "/home/runner/.mozbuild"
+        chmod -R 755 "/home/runner/.mozbuild/rust-size"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/winchecksec.tar.xz?viasf=1 -O winchecksec.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download winchecksec failed
+          exit 255
+        fi
+        tar Jxf winchecksec.tar.xz -C "/home/runner/.mozbuild"
+        chmod -R 755 "/home/runner/.mozbuild/winchecksec"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/dump_syms.tar.xz?viasf=1 -O dump_syms.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download dump_syms failed
+          exit 255
+        fi
+        tar Jxf dump_syms.tar.xz -C "/home/runner/.mozbuild"
+        chmod -R 755 "/home/runner/.mozbuild/dump_syms"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/dxc.tar.xz?viasf=1 -O dxc.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download dxc failed
+          exit 255
+        fi
+        tar Jxf dxc.tar.xz -C "/home/runner/.mozbuild"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/7zz.tar.xz?viasf=1 -O 7zz.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download 7zz failed
+          exit 255
+        fi
+        tar Jxf 7zz.tar.xz -C "$MOZ_FETCHES_DIR"
+        chmod -R 755 "$MOZ_FETCHES_DIR/7zz"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/sccache.tar.xz?viasf=1 -O sccache.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download sccache failed
+          exit 255
+        fi
+        tar Jxf sccache.tar.xz -C "$MOZ_FETCHES_DIR"
+        chmod -R 755 "$MOZ_FETCHES_DIR/sccache"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/clang21.tar.xz?viasf=1 -O clang.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download clang failed
+          exit 255
+        fi
+        tar Jxf clang.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/diasdk2026.tar.xz?viasf=1 -O diasdk.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download diasdk2026 failed
+          exit 255
+        fi
+        tar Jxf diasdk.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/upcheck.tar.xz?viasf=1 -O upcheck.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download upcheck failed
+          exit 255
+        fi
+        tar Jxf upcheck.tar.xz -C "$MOZ_FETCHES_DIR/clang"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/onnxruntime.tar.xz?viasf=1 -O onnxruntime.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download onnxruntime failed
+          exit 255
+        fi
+        tar Jxf onnxruntime.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/rust194.tar.xz?viasf=1 -O rust.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download rust194 failed
+          exit 255
+        fi
+        tar Jxf rust.tar.xz -C "$MOZ_FETCHES_DIR"
+        chmod -R 755 "$MOZ_FETCHES_DIR/rust"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/vs2026.tar.xz?viasf=1 -O vs.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download vs2026 failed
+          exit 255
+        fi
+        tar Jxf vs.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/windows-rs.tar.xz?viasf=1 -O windows-rs.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download windows-rs failed
+          exit 255
+        fi
+        tar Jxf windows-rs.tar.xz -C "$MOZ_FETCHES_DIR"
+        git clone --branch release --depth=1 https://github.com/adonais/iceweasel-l10n.git "$MOZ_FETCHES_DIR/l10n"
+        if [ $? -ne 0 ]; then
+          echo Download l10n failed
+          exit 255
+        fi
+        chmod -R 755 "$MOZ_FETCHES_DIR/l10n"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/wine.tar.xz?viasf=1 -O wine.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download wine failed
+          exit 255
+        fi
+        tar Jxf wine.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/winsdk2026.tar.xz?viasf=1 -O winsdk.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download winsdk26100 failed
+          exit 255
+        fi
+        tar Jxf winsdk.tar.xz -C "$MOZ_FETCHES_DIR"
+        chmod -R 755 "$MOZ_FETCHES_DIR/vs"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/winappsdk-x64.tar.xz?viasf=1 -O winappsdk-x64.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download winappsdk-x64 failed
+          exit 255
+        fi
+        tar Jxf winappsdk-x64.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/upx.tar.xz?viasf=1 -O upx.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download upx failed
+          exit 255
+        fi
+        tar Jxf upx.tar.xz -C "$MOZ_FETCHES_DIR"
+        chmod -R 755 "$MOZ_FETCHES_DIR/upx-win64"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/profdata.tar.xz?viasf=1 -O profdata.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download profdata failed
+          exit 255
+        fi
+        tar Jxf profdata.tar.xz -C "$MOZ_FETCHES_DIR"
+        cd "$MOZ_FETCHES_DIR"
+        ls -la
+        rm -rf "$MOZBUILD_DOWNLOAD"
+      shell: bash
+
+    - name: set swap-space
+      uses: yxl0756/set-swap-space@master
+      with:
+        swap-size-gb: 10
+
+    - name: start building libportable
+      id: libportable_building
+      run: |
+        cd "$MOZ_FETCHES_DIR"
+        git clone --depth=1 https://github.com/adonais/libportable.git
+        cd libportable
+        chmod +x ./build
+        ./build PGO_USE=1
+        ./build install
+        cd "$MOZ_FETCHES_DIR"
+        rm -rf libportable
+      shell: bash
+
+    - name: start building win64
+      timeout-minutes: 180
+      id: win64_building
+      run: |
+        df -hT
+        cd "$GITHUB_WORKSPACE"
+        chmod +x ./fx_pgo_use.sh
+        ./fx_pgo_use.sh 64
+        echo MY_BITS64=win64>>$GITHUB_ENV
+        cd "$GITHUB_WORKSPACE/../obju64-release/dist"
+        mv "${APP_NAME}-${MY_VER}.en-US.win64.7z" "$MOZ_FETCHES_DIR/${APP_NAME}-v${MY_VER}.l10n_win64_pgo.7z"
+        mv "$GITHUB_WORKSPACE/release_notes.md" "$MOZ_FETCHES_DIR/release_notes.md"
+        ls -la "$MOZ_FETCHES_DIR"
+      shell: bash
+
+    - uses: yxl0756/upload-artifact@v7
+      with:
+        path: ${{ env.MOZ_FETCHES_DIR }}/${{ env.APP_NAME }}-v${{ env.MY_VER }}.l10n_${{ env.MY_BITS64 }}_pgo.7z
+        name: Iceweasel v${{ env.MY_VER }}
+        compression-level: 0

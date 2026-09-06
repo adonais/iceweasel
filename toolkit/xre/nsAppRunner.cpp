@@ -1674,7 +1674,7 @@ nsXULAppInfo::GetProcessStartupShortcut(nsAString& aShortcut) {
   return NS_ERROR_NOT_AVAILABLE;
 }
 
-#if defined(XP_WIN) && defined(MOZ_LAUNCHER_PROCESS)
+#if defined(XP_WIN) && !defined(TT_MEMUTIL) && defined(MOZ_LAUNCHER_PROCESS)
 // Forward declaration
 void SetupLauncherProcessPref();
 
@@ -1683,7 +1683,10 @@ static Maybe<LauncherRegistryInfo::EnabledState> gLauncherProcessState;
 
 NS_IMETHODIMP
 nsXULAppInfo::GetLauncherProcessState(uint32_t* aResult) {
-#if defined(XP_WIN) && defined(MOZ_LAUNCHER_PROCESS)
+#if defined(TT_MEMUTIL)
+  *aResult = static_cast<uint32_t>(0);
+  return NS_OK;
+#elif defined(XP_WIN) && defined(MOZ_LAUNCHER_PROCESS)
   SetupLauncherProcessPref();
 
   if (!gLauncherProcessState) {
@@ -2467,7 +2470,7 @@ static void SetupSkeletonUIPrefs() {
 
 #  endif  // defined(MOZ_DEFAULT_BROWSER_AGENT)
 
-#  if defined(MOZ_LAUNCHER_PROCESS)
+#  if defined(MOZ_LAUNCHER_PROCESS) && !defined(TT_MEMUTIL)
 
 static void OnLauncherPrefChanged(const char* aPref, void* aData) {
   mozilla::LauncherRegistryInfo launcherRegInfo;
@@ -6260,10 +6263,11 @@ nsresult XREMain::XRE_mainRun() {
           PREF_WIN_REGISTER_APPLICATION_RESTART);
 #  if !defined(TT_MEMUTIL)
       SetupAlteredPrefetchPref();
-#  endif
+
 #  if defined(MOZ_LAUNCHER_PROCESS)
       SetupLauncherProcessPref();
 #  endif  // defined(MOZ_LAUNCHER_PROCESS)
+#  endif  // defined(TT_MEMUTIL)
 #  if defined(MOZ_DEFAULT_BROWSER_AGENT)
 #    if defined(MOZ_BACKGROUNDTASKS)
       // The backgroundtask profile is not a browsing profile, let alone the new

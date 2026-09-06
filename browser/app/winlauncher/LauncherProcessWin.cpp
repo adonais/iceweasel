@@ -321,7 +321,7 @@ static mozilla::Maybe<bool> RunAsLauncherProcess(int& argc, wchar_t** argv) {
 #endif  // defined(MOZ_LAUNCHER_PROCESS)
   bool runAsLauncher = DoLauncherProcessChecks(argc, argv);
 
-#if defined(MOZ_LAUNCHER_PROCESS)
+#if !defined(TT_MEMUTIL) && defined(MOZ_LAUNCHER_PROCESS)
   bool forceLauncher =
       runAsLauncher &&
       mozilla::CheckArg(argc, argv, "force-launcher", nullptr,
@@ -386,7 +386,7 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[]) {
   Maybe<std::wstring> blocklistFileName = Nothing();
 #endif  // defined(MOZ_LAUNCHER_PROCESS)
   if (!runAsLauncher || !runAsLauncher.value()) {
-#if defined(MOZ_LAUNCHER_PROCESS)
+#if !defined(TT_MEMUTIL) && defined(MOZ_LAUNCHER_PROCESS)
     // Update the registry as Browser
     LauncherVoidResult commitResult = regInfo.Commit();
     if (commitResult.isErr()) {
@@ -464,7 +464,7 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[]) {
     deelevationStatus = DeelevationStatus::Unknown;
   }
 
-#if defined(MOZ_LAUNCHER_PROCESS)
+#if !defined(TT_MEMUTIL) && defined(MOZ_LAUNCHER_PROCESS)
   // Update the registry as Launcher
   LauncherVoidResult commitResult = regInfo.Commit();
   if (commitResult.isErr()) {

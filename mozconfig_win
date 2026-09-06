@@ -73,6 +73,10 @@ elif test "$ICEWEASEL_BITS" = "32"; then
   export MOZ_WINDOWS_APP_SDK_DIR="/builds/worker/fetches/winappsdk-i686-pc-windows-msvc"
 fi
 
+if test "$PGO_USE_TEST" = "1"; then
+  export MOZ_APP_REMOTINGNAME=Iceweasel
+fi
+
 # enable clang plugins
 #ac_add_options --enable-clang-plugin
 #ac_add_options --enable-mozsearch-plugin
