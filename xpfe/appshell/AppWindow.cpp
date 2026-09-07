@@ -1802,8 +1802,8 @@ nsresult AppWindow::MaybeSaveEarlyWindowPersistentValues(
 #  if defined(MOZ_DEFAULT_BROWSER_AGENT)
     if (!settings.springs.append(spring)) {
       return NS_ERROR_FAILURE;
-#  endif
     }
+#  endif
   }
 
 #  if defined(MOZ_DEFAULT_BROWSER_AGENT)

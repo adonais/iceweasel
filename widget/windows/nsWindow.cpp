@@ -1062,8 +1062,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
                          reinterpret_cast<LONG_PTR>(
                              WinUtils::NonClientDpiScalingDefWindowProcW));
     }
-  }
 #endif
+ }
 
   if (!mWnd) {
     mWnd =
