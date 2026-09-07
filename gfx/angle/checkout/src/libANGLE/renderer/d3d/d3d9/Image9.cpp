@@ -389,7 +389,8 @@ angle::Result Image9::setManagedSurface(Context9 *context9, IDirect3DSurface9 *s
     surface->GetDesc(&desc);
     ASSERT(desc.Pool == D3DPOOL_MANAGED);
 
-    if ((GLsizei)desc.Width == mWidth && (GLsizei)desc.Height == mHeight)
+    if ((GLsizei)desc.Width == mWidth && (GLsizei)desc.Height == mHeight &&
+        desc.Format == mD3DFormat)
     {
         if (mSurface)
         {

@@ -2533,6 +2533,10 @@ void CanvasRenderingContext2D::SetFilter(const nsACString& aFilter,
     CurrentState().filterString = aFilter;
     CurrentState().filterChain = std::move(filterChain);
     if (mCanvasElement) {
+      if (CurrentState().autoSVGFiltersObserver) {
+        SVGObserverUtils::DetachFromCanvasContext(
+            CurrentState().autoSVGFiltersObserver);
+      }
       CurrentState().autoSVGFiltersObserver =
           SVGObserverUtils::ObserveFiltersForCanvasContext(
               this, mCanvasElement, CurrentState().filterChain.AsSpan());

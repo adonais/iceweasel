@@ -133,7 +133,7 @@ HTMLImageElement::HTMLImageElement(
 HTMLImageElement::~HTMLImageElement() { nsImageLoadingContent::Destroy(); }
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(HTMLImageElement, nsGenericHTMLElement,
-                                   mResponsiveSelector)
+                                   mResponsiveSelector, mForm)
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(HTMLImageElement,
                                              nsGenericHTMLElement,
@@ -796,9 +796,6 @@ void HTMLImageElement::SetForm(HTMLFormElement* aForm) {
 }
 
 void HTMLImageElement::ClearForm(bool aRemoveFromForm) {
-  NS_ASSERTION((mForm != nullptr) == HasFlag(ADDED_TO_FORM),
-               "Form control should have had flag set correctly");
-
   if (!mForm) {
     return;
   }

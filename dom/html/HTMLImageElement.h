@@ -368,9 +368,9 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   // Override for nsImageLoadingContent.
   nsIContent* AsContent() override { return this; }
 
-  // This is a weak reference that this element and the HTMLFormElement
+  // This is a strong reference that this element and the HTMLFormElement
   // cooperate in maintaining.
-  HTMLFormElement* mForm;
+  RefPtr<HTMLFormElement> mForm;
 
   // Created when we're tracking responsive image state
   RefPtr<ResponsiveImageSelector> mResponsiveSelector;

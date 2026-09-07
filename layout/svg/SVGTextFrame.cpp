@@ -2779,7 +2779,7 @@ void SVGTextFrame::ReflowSVGNonDisplayText() {
 
   // We had a style change, so we mark this frame as dirty so that the next
   // time it is painted, we reflow the anonymous block frame.
-  this->MarkSubtreeDirty();
+  MarkSubtreeDirty();
 
   // Finally, we need to actually reflow the anonymous block frame and update
   // mPositions, in case we are being reflowed immediately after a DOM
@@ -4978,8 +4978,8 @@ void SVGTextFrame::MaybeReflowAnonymousBlockChild() {
     return;
   }
 
-  NS_ASSERTION(!kid->HasAnyStateBits(NS_FRAME_IN_REFLOW),
-               "should not be in reflow when about to reflow again");
+  MOZ_ASSERT(!kid->HasAnyStateBits(NS_FRAME_IN_REFLOW),
+             "should not be in reflow when about to reflow again");
 
   if (IsSubtreeDirty()) {
     if (HasAnyStateBits(NS_FRAME_IS_DIRTY)) {

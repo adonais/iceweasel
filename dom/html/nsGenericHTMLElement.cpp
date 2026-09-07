@@ -1796,9 +1796,6 @@ void nsGenericHTMLFormElement::ClearForm(bool aRemoveFromForm,
   MOZ_ASSERT(IsFormAssociatedElement());
 
   HTMLFormElement* form = GetFormInternal();
-  NS_ASSERTION((form != nullptr) == HasFlag(ADDED_TO_FORM),
-               "Form control should have had flag set correctly");
-
   if (!form) {
     return;
   }
@@ -2567,8 +2564,12 @@ nsGenericHTMLFormControlElement::~nsGenericHTMLFormControlElement() {
   NS_ASSERTION(!mForm, "mForm should be null at this point!");
 }
 
-NS_IMPL_ISUPPORTS_INHERITED(nsGenericHTMLFormControlElement,
-                            nsGenericHTMLFormElement, nsIFormControl)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(nsGenericHTMLFormControlElement,
+                                   nsGenericHTMLFormElement, mForm)
+
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(nsGenericHTMLFormControlElement,
+                                             nsGenericHTMLFormElement,
+                                             nsIFormControl)
 
 nsINode* nsGenericHTMLFormControlElement::GetScopeChainParent() const {
   return mForm ? mForm : nsGenericHTMLElement::GetScopeChainParent();

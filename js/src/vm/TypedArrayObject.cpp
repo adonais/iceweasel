@@ -765,6 +765,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
   static TypedArrayObject* fromBufferSameCompartment(
       JSContext* cx, HandleArrayBufferObjectMaybeShared buffer,
       uint64_t byteOffset, uint64_t lengthIndex, HandleObject proto) {
+    cx->releaseCheck(buffer);
     // Steps 5-8.
     size_t length = 0;
     if (!computeAndCheckLength(cx, buffer, byteOffset, lengthIndex, &length)) {

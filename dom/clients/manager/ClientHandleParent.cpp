@@ -51,8 +51,7 @@ bool ClientHandleParent::DeallocPClientHandleOpParent(
 IPCResult ClientHandleParent::RecvPClientHandleOpConstructor(
     PClientHandleOpParent* aActor, const ClientOpConstructorArgs& aArgs) {
   auto actor = static_cast<ClientHandleOpParent*>(aActor);
-  actor->Init(std::move(const_cast<ClientOpConstructorArgs&>(aArgs)));
-  return IPC_OK();
+  return actor->Init(std::move(const_cast<ClientOpConstructorArgs&>(aArgs)));
 }
 
 ClientHandleParent::ClientHandleParent()

@@ -472,6 +472,13 @@ angle::Result TextureStorage9_Cube::findRenderTarget(const gl::Context *context,
 
     ASSERT(index.getType() == gl::TextureType::CubeMap &&
            gl::IsCubeMapFaceTarget(index.getTarget()));
+
+    if (index.getLevelIndex() != 0)
+    {
+        *outRT = nullptr;
+        return angle::Result::Continue;
+    }
+
     const size_t renderTargetIndex = index.cubeMapFaceIndex();
 
     *outRT = mRenderTarget[renderTargetIndex];
@@ -489,6 +496,10 @@ angle::Result TextureStorage9_Cube::getRenderTarget(const gl::Context *context,
 
     ASSERT(index.getType() == gl::TextureType::CubeMap &&
            gl::IsCubeMapFaceTarget(index.getTarget()));
+
+    ANGLE_CHECK_HR(GetImplAs<Context9>(context), index.getLevelIndex() == 0,
+                   "Cube map render targets are only supported for level 0", E_INVALIDARG);
+
     const size_t renderTargetIndex = index.cubeMapFaceIndex();
 
     if (mRenderTarget[renderTargetIndex] == nullptr && isRenderTarget())
