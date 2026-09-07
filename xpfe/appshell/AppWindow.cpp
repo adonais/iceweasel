@@ -71,9 +71,7 @@
 #include "mozilla/EventDispatcher.h"
 
 #ifdef XP_WIN
-#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
 #  include "mozilla/PreXULSkeletonUI.h"
-#  endif
 #  include "mozilla/WindowsVersion.h"
 #  include "nsIWindowsUIUtils.h"
 #endif

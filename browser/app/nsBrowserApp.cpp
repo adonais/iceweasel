@@ -545,7 +545,7 @@ int main(int argc, char* argv[], char* envp[]) {
 
   int result = do_main(argc, argv, envp);
 
-#if defined(XP_WIN)
+#if defined(XP_WIN) && defined(MOZ_DEFAULT_BROWSER_AGENT)
   CleanupProcessRuntime();
 #endif
 

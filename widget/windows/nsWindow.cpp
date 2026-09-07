@@ -95,9 +95,7 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/MouseEvents.h"
-#if defined(MOZ_DEFAULT_BROWSER_AGENT)
 #include "mozilla/PreXULSkeletonUI.h"
-#endif
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScopeExit.h"
