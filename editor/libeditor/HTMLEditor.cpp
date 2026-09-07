@@ -4031,11 +4031,12 @@ Result<CaretPoint, nsresult> HTMLEditor::DeleteTextWithTransaction(
 }
 
 Result<InsertTextResult, nsresult> HTMLEditor::ReplaceTextWithTransaction(
-    dom::Text& aTextNode, const ReplaceWhiteSpacesData& aData) {
+    dom::Text& aTextNode, const ReplaceWhiteSpacesData& aData,
+    InsertTextFor aPurpose) {
   Result<InsertTextResult, nsresult> insertTextResultOrError =
       ReplaceTextWithTransaction(aTextNode, aData.mReplaceStartOffset,
-                                 aData.ReplaceLength(),
-                                 aData.mNormalizedString);
+                                 aData.ReplaceLength(), aData.mNormalizedString,
+                                 aPurpose);
   if (MOZ_UNLIKELY(insertTextResultOrError.isErr()) ||
       aData.mNewOffsetAfterReplace > aTextNode.TextDataLength()) {
     return insertTextResultOrError;
@@ -4049,7 +4050,7 @@ Result<InsertTextResult, nsresult> HTMLEditor::ReplaceTextWithTransaction(
 
 Result<InsertTextResult, nsresult> HTMLEditor::ReplaceTextWithTransaction(
     Text& aTextNode, uint32_t aOffset, uint32_t aLength,
-    const nsAString& aStringToInsert) {
+    const nsAString& aStringToInsert, InsertTextFor aPurpose) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aLength > 0 || !aStringToInsert.IsEmpty());
 
@@ -4066,9 +4067,9 @@ Result<InsertTextResult, nsresult> HTMLEditor::ReplaceTextWithTransaction(
 
   if (!aLength) {
     Result<InsertTextResult, nsresult> insertTextResult =
-        InsertTextWithTransaction(aStringToInsert,
-                                  EditorDOMPoint(&aTextNode, aOffset),
-                                  InsertTextTo::ExistingTextNodeIfAvailable);
+        InsertTextWithTransaction(
+            aStringToInsert, EditorDOMPoint(&aTextNode, aOffset),
+            InsertTextTo::ExistingTextNodeIfAvailable, aPurpose);
     NS_WARNING_ASSERTION(insertTextResult.isOk(),
                          "HTMLEditor::InsertTextWithTransaction() failed");
     return insertTextResult;
@@ -4152,18 +4153,18 @@ Result<InsertTextResult, nsresult> HTMLEditor::ReplaceTextWithTransaction(
 Result<InsertTextResult, nsresult>
 HTMLEditor::InsertOrReplaceTextWithTransaction(
     const EditorDOMPoint& aPointToInsert,
-    const NormalizedStringToInsertText& aData) {
+    const NormalizedStringToInsertText& aData, InsertTextFor aPurpose) {
   MOZ_ASSERT(aPointToInsert.IsInContentNodeAndValid());
   MOZ_ASSERT_IF(aData.ReplaceLength(), aPointToInsert.IsInTextNode());
 
   Result<InsertTextResult, nsresult> insertTextResultOrError =
       !aData.ReplaceLength()
           ? InsertTextWithTransaction(aData.mNormalizedString, aPointToInsert,
-                                      InsertTextTo::SpecifiedPoint)
+                                      InsertTextTo::SpecifiedPoint, aPurpose)
           : ReplaceTextWithTransaction(
                 MOZ_KnownLive(*aPointToInsert.ContainerAs<Text>()),
                 aData.mReplaceStartOffset, aData.ReplaceLength(),
-                aData.mNormalizedString);
+                aData.mNormalizedString, aPurpose);
   if (MOZ_UNLIKELY(insertTextResultOrError.isErr())) {
     NS_WARNING(!aData.ReplaceLength()
                    ? "HTMLEditor::InsertTextWithTransaction() failed"
@@ -4202,7 +4203,7 @@ HTMLEditor::InsertOrReplaceTextWithTransaction(
 
 Result<InsertTextResult, nsresult> HTMLEditor::InsertTextWithTransaction(
     const nsAString& aStringToInsert, const EditorDOMPoint& aPointToInsert,
-    InsertTextTo aInsertTextTo) {
+    InsertTextTo aInsertTextTo, InsertTextFor aPurpose) {
   if (NS_WARN_IF(!aPointToInsert.IsSet())) {
     return Err(NS_ERROR_INVALID_ARG);
   }
@@ -4214,7 +4215,7 @@ Result<InsertTextResult, nsresult> HTMLEditor::InsertTextWithTransaction(
   }
 
   return EditorBase::InsertTextWithTransaction(aStringToInsert, aPointToInsert,
-                                               aInsertTextTo);
+                                               aInsertTextTo, aPurpose);
 }
 
 Result<EditorDOMPoint, nsresult> HTMLEditor::PrepareToInsertLineBreak(
