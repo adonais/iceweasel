@@ -74,6 +74,7 @@ elif test "$ICEWEASEL_BITS" = "32"; then
 fi
 
 if test "$PGO_USE_TEST" = "1"; then
+  ac_add_options --with-app-basename=Iceweasel
   export MOZ_APP_REMOTINGNAME=Iceweasel
 fi
 
