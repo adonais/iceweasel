@@ -341,6 +341,7 @@ void NotificationController::DropMutationEvent(AccTreeMutationEvent* aEvent) {
     MOZ_ASSERT(hideEvent);
 
     if (hideEvent->NeedsShutdown()) {
+      mDocument->UncacheChildrenInSubtree(aEvent->GetAccessible());
       mDocument->ShutdownChildrenInSubtree(aEvent->GetAccessible());
     }
   } else {
