@@ -1595,6 +1595,7 @@ static void ConvertWindowSize(nsIAppWindow* aWin, const nsAtom* aAttr,
 nsresult AppWindow::GetPersistentValue(const nsAtom* aAttr, nsAString& aValue) {
   if (!XRE_IsParentProcess()) {
     // The XULStore is only available in the parent process.
+    MOZ_ASSERT_UNREACHABLE("AppWindow in child process?");
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -1676,6 +1677,10 @@ nsresult AppWindow::GetDocXulStoreKeys(nsString& aUriSpec,
 nsresult AppWindow::MaybeSaveEarlyWindowPersistentValues(
     const LayoutDeviceIntRect& aRect) {
 #ifdef XP_WIN
+  if (!ShouldSavePersistentValues()) {
+    return NS_OK;
+  }
+
   nsAutoString uri;
   nsAutoString windowElementId;
   nsresult rv = GetDocXulStoreKeys(uri, windowElementId);
@@ -1722,6 +1727,8 @@ nsresult AppWindow::MaybeSaveEarlyWindowPersistentValues(
   // ship the skeleton UI to all users, we should strongly consider a more
   // robust solution than this. The vertical position of the urlbar will be
   // fixed.
+  //
+  // FIXME: Looks like this never happened :(
   nsAutoString attributeValue;
   urlbarEl->GetAttribute(u"breakout-extend"_ns, attributeValue);
   // Scale down the urlbar if it is focused
@@ -1841,19 +1848,32 @@ nsresult AppWindow::MaybeSaveEarlyWindowPersistentValues(
   return NS_OK;
 }
 
-nsresult AppWindow::SetPersistentValue(const nsAtom* aAttr,
-                                       const nsAString& aValue) {
+bool AppWindow::ShouldSavePersistentValues() const {
+  if (mChromeFlags & nsIWebBrowserChrome::CHROME_NO_PERSISTENCE) {
+    return false;
+  }
+  if (!mWindow || mWindow->SizeMode() == nsSizeMode_Fullscreen) {
+    return false;
+  }
+  return true;
+}
+
+void AppWindow::MaybeSetPersistentValue(const nsAtom* aAttr,
+                                        const nsAString& aValue) {
   if (!XRE_IsParentProcess()) {
     // The XULStore is only available in the parent process.
-    return NS_ERROR_UNEXPECTED;
+    MOZ_ASSERT_UNREACHABLE("AppWindow in child process?");
+    return;
   }
-
+  if (!ShouldSavePersistentValues()) {
+    return;
+  }
   nsAutoString uri;
   nsAutoString windowElementId;
   nsresult rv = GetDocXulStoreKeys(uri, windowElementId);
 
   if (NS_FAILED(rv) || windowElementId.IsEmpty()) {
-    return rv;
+    return;
   }
 
   nsAutoString maybeConvertedValue(aValue);
@@ -1867,17 +1887,17 @@ nsresult AppWindow::SetPersistentValue(const nsAtom* aAttr,
   if (!mLocalStore) {
     mLocalStore = do_GetService("@mozilla.org/xul/xulstore;1");
     if (NS_WARN_IF(!mLocalStore)) {
-      return NS_ERROR_NOT_INITIALIZED;
+      return;
     }
   }
 
-  return mLocalStore->SetValue(
-      uri, windowElementId, nsDependentAtomString(aAttr), maybeConvertedValue);
+  mLocalStore->SetValue(uri, windowElementId, nsDependentAtomString(aAttr),
+                        maybeConvertedValue);
 }
 
 void AppWindow::MaybeSavePersistentPositionAndSize(
     PersistentAttributes aAttributes, Element& aRootElement,
-    const nsAString& aPersistString, bool aShouldPersist) {
+    const nsAString& aPersistString) {
   if ((aAttributes & PersistentAttributes{PersistentAttribute::Position,
                                           PersistentAttribute::Size})
           .isEmpty()) {
@@ -1912,17 +1932,13 @@ void AppWindow::MaybeSavePersistentPositionAndSize(
       sizeString.Truncate();
       sizeString.AppendInt(NSToIntRound(rect.X() / posScale.scale));
       aRootElement.SetAttr(nsGkAtoms::screenX, sizeString, IgnoreErrors());
-      if (aShouldPersist) {
-        (void)SetPersistentValue(nsGkAtoms::screenX, sizeString);
-      }
+      MaybeSetPersistentValue(nsGkAtoms::screenX, sizeString);
     }
     if (aPersistString.Find(u"screenY") >= 0) {
       sizeString.Truncate();
       sizeString.AppendInt(NSToIntRound(rect.Y() / posScale.scale));
       aRootElement.SetAttr(nsGkAtoms::screenY, sizeString, IgnoreErrors());
-      if (aShouldPersist) {
-        (void)SetPersistentValue(nsGkAtoms::screenY, sizeString);
-      }
+      MaybeSetPersistentValue(nsGkAtoms::screenY, sizeString);
     }
   }
 
@@ -1933,26 +1949,22 @@ void AppWindow::MaybeSavePersistentPositionAndSize(
       sizeString.Truncate();
       sizeString.AppendInt(NSToIntRound(innerRect.Width() / sizeScale.scale));
       aRootElement.SetAttr(nsGkAtoms::width, sizeString, IgnoreErrors());
-      if (aShouldPersist) {
-        (void)SetPersistentValue(nsGkAtoms::width, sizeString);
-      }
+      MaybeSetPersistentValue(nsGkAtoms::width, sizeString);
     }
     if (aPersistString.Find(u"height") >= 0) {
       sizeString.Truncate();
       sizeString.AppendInt(NSToIntRound(innerRect.Height() / sizeScale.scale));
       aRootElement.SetAttr(nsGkAtoms::height, sizeString, IgnoreErrors());
-      if (aShouldPersist) {
-        (void)SetPersistentValue(nsGkAtoms::height, sizeString);
-      }
+      MaybeSetPersistentValue(nsGkAtoms::height, sizeString);
     }
   }
 
-  (void)MaybeSaveEarlyWindowPersistentValues(rect);
+  MaybeSaveEarlyWindowPersistentValues(rect);
 }
 
 void AppWindow::MaybeSavePersistentMiscAttributes(
     PersistentAttributes aAttributes, Element& aRootElement,
-    const nsAString& aPersistString, bool aShouldPersist) {
+    const nsAString& aPersistString) {
   if (!aAttributes.contains(PersistentAttribute::Misc)) {
     return;
   }
@@ -1968,8 +1980,8 @@ void AppWindow::MaybeSavePersistentMiscAttributes(
       sizeString.Assign(SIZEMODE_NORMAL);
     }
     aRootElement.SetAttr(nsGkAtoms::sizemode, sizeString, IgnoreErrors());
-    if (aShouldPersist && aPersistString.Find(u"sizemode") >= 0) {
-      (void)SetPersistentValue(nsGkAtoms::sizemode, sizeString);
+    if (aPersistString.Find(u"sizemode") >= 0) {
+      MaybeSetPersistentValue(nsGkAtoms::sizemode, sizeString);
     }
   }
   aRootElement.SetBoolAttr(nsGkAtoms::tiled, mWindow->IsTiled());
@@ -1995,11 +2007,10 @@ void AppWindow::SavePersistentAttributes(
     return;
   }
 
-  bool shouldPersist = mWindow->SizeMode() != nsSizeMode_Fullscreen;
   MaybeSavePersistentPositionAndSize(aAttributes, *docShellElement,
-                                     persistString, shouldPersist);
+                                     persistString);
   MaybeSavePersistentMiscAttributes(aAttributes, *docShellElement,
-                                    persistString, shouldPersist);
+                                    persistString);
   mPersistentAttributesDirty -= aAttributes;
 }
 
@@ -2275,20 +2286,8 @@ void AppWindow::EnableParent(bool aEnable) {
   }
 }
 
-void AppWindow::ApplyChromeFlags() {
-  nsCOMPtr<dom::Element> root = GetWindowDOMElement();
-  if (!root) {
-    return;
-  }
-
-  if (mChromeFlags & nsIWebBrowserChrome::CHROME_NO_PERSISTENCE) {
-    root->SetAttribute(u"persist"_ns, u""_ns, IgnoreErrors());
-  }
-}
-
 NS_IMETHODIMP
 AppWindow::BeforeStartLayout() {
-  ApplyChromeFlags();
   // Ordering here is important, loading width/height values in
   // LoadPersistentWindowState() depends on the customtitlebar attribute (since
   // we need to translate outer to inner sizes).
@@ -2351,6 +2350,8 @@ void AppWindow::LoadPersistentWindowState() {
   loadValue(nsGkAtoms::screenY);
   loadValue(nsGkAtoms::width);
   loadValue(nsGkAtoms::height);
+  // FIXME: We should probably not restore the sizemode attribute if it doesn't
+  // match our actual widget-side state, or if mIgnoreXULSize and co is set.
   loadValue(nsGkAtoms::sizemode);
 }
 
@@ -2970,7 +2971,6 @@ void AppWindow::OnChromeLoaded() {
   nsresult rv = EnsureContentTreeOwner();
 
   if (NS_SUCCEEDED(rv)) {
-    ApplyChromeFlags();
     SyncAttributesToWidget();
     if (RefPtr ps = GetPresShell()) {
       // Sync window properties now, before showing the window.
