@@ -393,13 +393,6 @@ const CONFIG_PANES = Object.freeze({
     l10nId: "preferences-profiles-group-header",
     groupIds: ["profilePane"],
   },
-  permissionsData: {
-    l10nId: "permissions-data-section",
-    iconSrc: "chrome://browser/skin/permissions.svg",
-    groupIds: ["permissions", "dataCollection"],
-    module: "chrome://browser/content/preferences/config/permissions-data.mjs",
-    visible: () => srdSectionEnabled("permissionsData"),
-  },
   personalizeSmartWindow: {
     parent: "ai",
     l10nId: "ai-window-personalize-header",
@@ -630,6 +623,13 @@ function init_all() {
         module: "chrome://browser/content/preferences/config/browser-icon.mjs",
       });
     }
+
+    SettingPaneManager.registerPane("permissionsData", {
+      l10nId: "permissions-data-section",
+      iconSrc: "chrome://browser/skin/permissions.svg",
+      groupIds: Services.prefs.getBoolPref("browser.telemetry.group.enabled", false) ? ["permissions", "dataCollection"] : ["permissions"],
+      module: "chrome://browser/content/preferences/config/permissions-data.mjs",
+    });
   } else {
     NimbusFeatures.moreFromMozilla.recordExposureEvent({ once: true });
     if (NimbusFeatures.moreFromMozilla.getVariable("enabled")) {
