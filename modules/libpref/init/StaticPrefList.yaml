@@ -13700,7 +13700,7 @@
   # acceleration for decoding.
 -   name: media.navigator.mediadatadecoder_av1_enabled
     type: RelaxedAtomicBool
-    value: true
+    value: false
     mirror: always
 
 #if defined(MOZ_WIDGET_GTK)
