@@ -35,7 +35,6 @@ EXPORTS.mozilla.glue += [
 if CONFIG["OS_ARCH"] == "WINNT":
     EXPORTS.mozilla += [
         "GetKnownFolderPath.h",
-        "PreXULSkeletonUI.h",
         "StackWalk_windows.h",
         "StackWalkThread.h",
         "WindowsDpiAwareness.h",
@@ -106,6 +105,13 @@ if CONFIG["OS_ARCH"] == "WINNT":
             "PreXULSkeletonUI.cpp",
         ]
 
+    if CONFIG["MOZ_DEFAULT_BROWSER_AGENT"]:
+        EXPORTS.mozilla += [
+            "PreXULSkeletonUI.h",
+        ]
+        SOURCES += [
+            "PreXULSkeletonUI.cpp",
+        ]
 if CONFIG["OS_ARCH"] == "WINNT":
     SOURCES += [
         "ConditionVariable_futex.cpp",

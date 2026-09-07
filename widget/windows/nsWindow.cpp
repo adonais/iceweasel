@@ -95,7 +95,9 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/MouseEvents.h"
+#if defined(MOZ_DEFAULT_BROWSER_AGENT)
 #include "mozilla/PreXULSkeletonUI.h"
+#endif
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScopeExit.h"
@@ -1030,6 +1032,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   if (aInitData.mWindowType == WindowType::TopLevel && !aParent &&
       !sFirstTopLevelWindowCreated) {
     sFirstTopLevelWindowCreated = true;
+#if defined(MOZ_DEFAULT_BROWSER_AGENT)
     mWnd = ConsumePreXULSkeletonUIHandle();
     if (mWnd) {
       MOZ_ASSERT(desiredStyles.style == kPreXULSkeletonUIWindowStyle,
@@ -1062,6 +1065,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
                              WinUtils::NonClientDpiScalingDefWindowProcW));
     }
   }
+#endif
 
   if (!mWnd) {
     mWnd =
@@ -1639,6 +1643,7 @@ nsWindow* nsWindow::GetParentWindowBase(bool aIncludeOwner) {
  **************************************************************/
 
 void nsWindow::Show(bool aState) {
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   if (aState && mIsShowingPreXULSkeletonUI) {
     // The first time we decide to actually show the window is when we decide
     // that we've taken over the window from the skeleton UI, and we should
@@ -1678,6 +1683,7 @@ void nsWindow::Show(bool aState) {
       TaskbarConcealer::OnWindowMaximized(this, /* aForce = */ true);
     }
   }
+#  endif
 
   MOZ_ASSERT_IF(mWindowType == WindowType::Popup,
                 ChooseWindowClass(mWindowType) == kClassNameDropShadow);
@@ -1991,6 +1997,7 @@ void nsWindow::Move(const DesktopPoint& aTopLeft) {
     return;
   }
 
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   // Normally, when the skeleton UI is disabled, we resize+move the window
   // before showing it in order to ensure that it restores to the correct
   // position when the user un-maximizes it. However, when we are using the
@@ -2022,6 +2029,7 @@ void nsWindow::Move(const DesktopPoint& aTopLeft) {
     VERIFY(::SetWindowPlacement(mWnd, &pl));
     return;
   }
+#  endif
 
   mBounds.MoveTo(topLeft);
 
@@ -2083,6 +2091,7 @@ void nsWindow::Resize(const DesktopSize& aSize, bool aRepaint) {
     return;
   }
 
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   // Refer to the comment above a similar check in nsWindow::Move
   if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
     WINDOWPLACEMENT pl = {sizeof(WINDOWPLACEMENT)};
@@ -2094,6 +2103,7 @@ void nsWindow::Resize(const DesktopSize& aSize, bool aRepaint) {
     mResizeState = NOT_RESIZING;
     return;
   }
+#  endif
 
   // Set cached value for lightweight and printing
   bool wasLocking = mAspectRatio != 0.0;
@@ -2146,6 +2156,7 @@ void nsWindow::Resize(const DesktopRect& aRect, bool aRepaint) {
     return;
   }
 
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   // Refer to the comment above a similar check in nsWindow::Move
   if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
     WINDOWPLACEMENT pl = {sizeof(WINDOWPLACEMENT)};
@@ -2169,6 +2180,7 @@ void nsWindow::Resize(const DesktopRect& aRect, bool aRepaint) {
     VERIFY(::SetWindowPlacement(mWnd, &pl));
     return;
   }
+#  endif
 
   // Set cached value for lightweight and printing
   mBounds = LayoutDeviceIntRect(topLeft, size);
@@ -2221,6 +2233,7 @@ static UINT GetCurrentShowCmd(HWND aWnd) {
 
 // Maximize, minimize or restore the window.
 void nsWindow::SetSizeMode(nsSizeMode aMode) {
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   // If we are still displaying a maximized pre-XUL skeleton UI, ignore the
   // noise of sizemode changes. Once we have "shown" the window for the first
   // time (called nsWindow::Show(true), even though the window is already
@@ -2228,6 +2241,7 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
   if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
     return;
   }
+#  endif
 
   mFrameState->EnsureSizeMode(aMode);
 }
@@ -8375,9 +8389,11 @@ void nsWindow::GetCompositorWidgetInitData(
 bool nsWindow::SynchronouslyRepaintOnResize() { return false; }
 
 void nsWindow::MaybeDispatchInitialFocusEvent() {
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   if (mIsShowingPreXULSkeletonUI && ::GetActiveWindow() == mWnd) {
     DispatchFocusToTopLevelWindow(true);
   }
+#  endif
 }
 
 already_AddRefed<nsIWidget> nsIWidget::CreateTopLevelWindow() {
@@ -8892,7 +8908,9 @@ void nsWindow::FrameState::CheckInvariant() const {
 }
 
 void nsWindow::FrameState::ConsumePreXULSkeletonState(bool aWasMaximized) {
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   mSizeMode = aWasMaximized ? nsSizeMode_Maximized : nsSizeMode_Normal;
+#  endif
 }
 
 void nsWindow::FrameState::EnsureSizeMode(nsSizeMode aMode,

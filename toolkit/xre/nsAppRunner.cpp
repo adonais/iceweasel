@@ -115,7 +115,9 @@
 #  include <math.h>
 #  include "cairo/cairo-features.h"
 #  include "detect_win32k_conflicts.h"
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
 #  include "mozilla/PreXULSkeletonUI.h"
+#  endif
 #  if !defined(TT_MEMUTIL)
 #    include "mozilla/DllPrefetchExperimentRegistryInfo.h"
 #  endif
@@ -2371,6 +2373,7 @@ static void SetupAlteredPrefetchPref() {
 }
 #endif
 
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
 static LazyLogModule gSkeletonLog("PreXULSkeletonUI");
 #  define SKELETON_LOG(str, ...) \
     MOZ_LOG(gSkeletonLog, LogLevel::Debug, (str, ##__VA_ARGS__))
@@ -2424,6 +2427,7 @@ static void ReflectSkeletonUIPrefToRegistry(const char* aPref, void* aData) {
   }
 }
 #  undef SKELETON_LOG
+#  endif  // MOZ_DEFAULT_BROWSER_AGENT
 
 class ShowProfileSelectorObserver final : public nsIObserver {
  public:
@@ -2444,7 +2448,9 @@ ShowProfileSelectorObserver::Observe(nsISupports* aSubject, const char* aTopic,
   (void)aSubject;
   (void)aData;
   if (!strcmp(aTopic, "profile-show-selector-changed")) {
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
     ReflectSkeletonUIPrefToRegistry(nullptr, nullptr);
+#  endif
   }
 
   return NS_OK;

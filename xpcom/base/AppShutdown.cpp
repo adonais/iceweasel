@@ -6,7 +6,9 @@
 #ifdef XP_WIN
 #  include <windows.h>
 
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
 #  include "mozilla/PreXULSkeletonUI.h"
+#  endif
 #else
 #  include <unistd.h>
 #endif
@@ -166,7 +168,9 @@ void AppShutdown::MaybeDoRestart() {
     if (sSavedProfLDEnvVar && !EnvHasValue("XRE_PROFILE_LOCAL_PATH")) {
       SetEnvironmentVariableW(L"XRE_PROFILE_LOCAL_PATH", sSavedProfLDEnvVar);
     }
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
     (void)NotePreXULSkeletonUIRestarting();
+#  endif
 #else
     if (sSavedProfDEnvVar && !EnvHasValue("XRE_PROFILE_PATH")) {
       PR_SetEnv(sSavedProfDEnvVar);

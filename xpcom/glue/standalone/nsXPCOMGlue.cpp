@@ -41,7 +41,9 @@ using LibHandleResult = ::mozilla::Result<LibHandleType, DLErrorType>;
 #if defined(XP_WIN)
 #  include <mbstring.h>
 
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
 #  include "mozilla/PreXULSkeletonUI.h"
+#  endif
 
 static LibHandleResult GetLibHandle(pathstr_t aDependentLib) {
   LibHandleType libHandle =
@@ -312,7 +314,7 @@ static XPCOMGlueLoadResult XPCOMGlueLoad(
       return Err(AsVariant(readDependentCBResult.unwrapErr()));
     }
 
-#  ifdef XP_WIN
+#  if defined(XP_WIN) && defined(MOZ_DEFAULT_BROWSER_AGENT)
     // We call PollPreXULSkeletonUIEvents here in order to not get flagged by
     // Windows as nonresponsive. In order to not be flagged as such, we seem to
     // simply need to respond to *a* message every few seconds. The halfway
