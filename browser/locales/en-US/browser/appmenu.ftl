@@ -178,7 +178,7 @@ fxa-menu-all-devices-panel =
     .title = All Devices
 
 fxa-menu-get-firefox-mobile =
-    .label = Get { -brand-product-name } for Android or iOS
+    .label = Get Firefox for Android or iOS
 
 fxa-menu-secure-sync-subpanel =
     .title = Secure sync
