@@ -2,6 +2,9 @@
 # for brower
 . $topsrcdir/browser/config/mozconfig
 ac_add_options --with-app-name=Iceweasel
+if test "$PGO_USE_TEST" = "1"; then
+  ac_add_options --with-app-basename=Iceweasel
+fi
 
 # Specify target directory
 mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/../$MYOBJ_DIR
@@ -71,10 +74,6 @@ if test "$ICEWEASEL_BITS" = "64"; then
   export MOZ_WINDOWS_APP_SDK_DIR="/builds/worker/fetches/winappsdk-x86_64-pc-windows-msvc"
 elif test "$ICEWEASEL_BITS" = "32"; then
   export MOZ_WINDOWS_APP_SDK_DIR="/builds/worker/fetches/winappsdk-i686-pc-windows-msvc"
-fi
-
-if test "$PGO_USE_TEST" = "1"; then
-  export MOZ_APP_REMOTINGNAME=Iceweasel
 fi
 
 # enable clang plugins
