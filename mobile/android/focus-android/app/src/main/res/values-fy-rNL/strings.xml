@@ -7,39 +7,17 @@
 -->
 
 <resources xmlns:tools="http://schemas.android.com/tools">
-  <!--
-    #######################################################################################
-
-    ## Put only strings into this file that should be translated. Move all other strings ##
-
-    ## into a separate file like strings_references.xml                                  ##
-
-    #######################################################################################
-  -->
-
   <!-- Label used for buttons, e.g. in dialogs -->
   <string name="action_cancel">Annulearje</string>
-  <!-- Label used for buttons, e.g. in dialogs -->
-  <string name="action_ok">OK</string>
   <string name="action_save">Bewarje</string>
   <!-- This text is shown in the URL bar when it's empty -->
   <string name="urlbar_hint">Fier sykterm of adres yn</string>
-  <string name="teaser">Automatysk privee sneupe.\nSneupe. Wiskje. Werhelje.</string>
-  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
-  <string name="feedback_erase">Jo sneupskiednis is wiske.</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">Navigaasjeskiednis wiske</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">Jo sneupskiednis fan de ljepblêden is wiske.</string>
-  <!--
-    This label is shown below the URL bar as soon as the user enters text. Clicking the label will perform a search.
-    %1$s is the text typed by the user.
-  -->
-  <string name="search_hint">Sykje nei %1$s</string>
   <!-- Menu item: Share the currently visible page -->
   <string name="menu_share">Diele…</string>
-  <!-- Menu item: Report an issue on the current site -->
-  <string name="menu_report_site_issue">Websiteprobleem rapportearje</string>
   <!--
     Menu item: Switch to another browser to open the currently visible page. %1$s will be
     replaced with the name of the browser like: "Open in Firefox" or "Open in Chrome". Some
@@ -64,23 +42,6 @@
   <string name="menu_about">Oer</string>
   <string name="menu_help">Help</string>
   <string name="menu_terms_of_use">Brûkersbetingsten</string>
-  <!--
-    Menu item: This is the label for a menu entry that shows how many trackers have been blocked
-    for the currently loaded website. The number of blocked trackers is shown below this label.
-    Next to this label is a switch that allows the user to temporarily enable / disable the
-    blocking of trackers for the current browsing session - for example if the current website
-    doesn't work correctly with blocked content.
-  -->
-  <string name="menu_trackers_blocked_title">Trackers blokkearre</string>
-  <!--
-    Menu item: This is the subtitle for the Trackers blocked menu entry that shows how many
-    trackers have been blocked for the currently loaded website.
-  -->
-  <string name="menu_trackers_blocked_subtitle">Dit útskeakelje kin problemen mei websites ferhelpe</string>
-  <!-- Menu item: This is the label for turning off content blocking for the current website. -->
-  <string name="menu_content_blocking">Ynhâldsblokkearring</string>
-  <!-- This is the subtitle content blocking toggle -->
-  <string name="menu_content_blocking_subtitle">Utskeakelje, om problemen mei guon websites te ferhelpen</string>
   <!--
     This is a small text at the bottom of the menu shown in a "custom tab" for branding purposes.
     See https://github.com/mozilla-mobile/focus-android/issues/2106
@@ -122,13 +83,6 @@
     This is the label for this shortcut. Android recommends a maximum length of 10 characters.
   -->
   <string name="shortcut_erase_and_open_short_label">Wiskje &amp; iepenje</string>
-  <!--
-    The same as 'shortcut_erase_short_label' but more descriptive. The launcher shows this
-    instead of the short title when it has enough space. Android recommends a maximum length
-    of 25 characters.
-    %1$s will be replaced by the app name (e.g. Firefox Focus)
-  -->
-  <string name="shortcut_erase_and_open_long_label">Wiskje en %1$s iepenje</string>
   <!--
     These labels are selected per variant through manifestPlaceholders in build.gradle, so
     UnusedResources does not see the ones for the variants it is not analyzing.
@@ -190,8 +144,6 @@
   <string name="preference_category_general">Algemien</string>
   <!-- Preference summary for General Settings category; the two things users can find in this category -->
   <string name="preference_general_summary2">Standertbrowser, taal</string>
-  <!-- Preference category for settings about sending usage data -->
-  <string name="preference_category_data_collection_use">Gegevenssamling en gebrûk</string>
   <string name="preference_category_search">Sykje</string>
   <!-- Title of "switch" preference that enables/disables search suggestions -->
   <string name="preference_show_search_suggestions">Syksuggesties krije</string>
@@ -200,8 +152,6 @@
     %1$s will be replaced by the app name (e.g. Firefox Focus)
   -->
   <string name="preference_show_search_suggestions_summary">%1$s sil wat jo yn de adresbalke yntype nei jo sykmasine stjoere</string>
-  <!-- This label is shown below the name of the default search engine in settings -->
-  <string name="preference_search_engine_default">Standert</string>
   <!-- This label is shown above the currently selected search engine in settings -->
   <string name="preference_search_engine_label">Sykmasine</string>
   <!-- Text that is shown below a "switch" preference that is enabled. -->
@@ -224,22 +174,12 @@
     %s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
   -->
   <string name="preference_autocomplete_user_list_summary2">Skeakelje dit yn om %s automatysk jo favorite URL’s oanfolje te litten.</string>
-  <!-- Preference category: Manage (user-defined) sites -->
-  <string name="preference_category_autocomplete_manage_sites">Websites beheare</string>
   <!-- Item in autocomplete settings that will open a new preference screen for adding and removing URLs to the user-defined list -->
   <string name="preference_autocomplete_subitem_manage_sites">Websites beheare</string>
   <!-- Action at the bottom of the list of custom autocomplete URLs that will open a new screen to add a new URL to the list. -->
   <string name="preference_autocomplete_action_add">+ Oanpaste URL tafoegje</string>
-  <!-- Explanation text above the list of custom autocomplete URLs. -->
-  <string name="preference_autocomplete_explanation_text">Jo list foar automatysk oanfoljen:</string>
-  <!-- Action at the bottom of the list of custom autocomplete URLs that will open a new screen to add a new URL to the list. -->
-  <string name="preference_autocomplete_action_add2">URL tafoegje</string>
   <!-- Title of the screen for adding custom autocomplete URLs. -->
   <string name="preference_autocomplete_title_add">Oanpaste URL tafoegje</string>
-  <!-- Label for the button to quick add custom autocomplete URLs. -->
-  <string name="custom_autocomplete_quick_add">Oanpaste URL tafoegje</string>
-  <!-- Label for the button to quick add the current URL to the custom autocomplete list -->
-  <string name="add_custom_autocomplete_label">Keppeling foar automatysk oanfolje tafoegje</string>
   <!-- Preference category for settings about cookies and site data -->
   <string name="preference_category_cookies">Cookies en websitegegevens</string>
   <!-- Preference category for settings about data choices -->
@@ -248,16 +188,12 @@
   <string name="preference_autocomplete_title_remove">Oanpaste URL’s fuortsmite</string>
   <!-- A link to SUMO at autocomplete settings. -->
   <string name="preference_autocomplete_learn_more">Mear ynfo</string>
-  <!-- Preference summary: Custom (user-defined) autocomplete URLs. -->
-  <string name="preference_autocomplete_custom_summary">Eigen URL’s foar automatysk oanfoljen tafoegje en beheare.</string>
   <!-- Label for the "custom autocomplete URL" input field -->
   <string name="preference_autocomplete_add_title">Ta te foegjen URL</string>
   <!-- "Hint" text for the "custom autocomplete URL" input field. Shown when the field is empty. -->
   <string name="preference_autocomplete_add_hint">Plak of fier URL yn</string>
   <!-- Example how a custom domain autocomplete URL be added (e.g. without http://) -->
   <string name="preference_autocomplete_add_example2" tools:ignore="BrandUsage">Foarbyld: mozilla.org</string>
-  <!-- To be removed once the new hint has been translated -->
-  <string name="preference_autocomplete_add_example">Foarbyld: example.com</string>
   <!-- Confirmation "snackbar" shown after a new custom autocomplete URL has been added. -->
   <string name="preference_autocomplete_add_confirmation">Nije oanpaste URL tafoege.</string>
   <!-- Menu item to remove existing autocomplete URLs. -->
@@ -272,7 +208,6 @@
     is using the system default language.
   -->
   <string name="preference_language_systemdefault">Systeemstandert</string>
-  <string name="preference_category_privacy">Privacy</string>
   <string name="preference_privacy_block_ads">Advertinsjetrackers blokkearje</string>
   <string name="preference_privacy_block_ads_summary">Guon advertinsjes folgje websitebesiten, sels as jo net op de advertinsjes klikke</string>
   <string name="preference_privacy_block_analytics">Analysetrackers blokkearje</string>
@@ -313,7 +248,6 @@
   -->
   <string name="preference_privacy_stealth_summary">Websiden ferstopje by wikseljen fan apps en meitsjen fan skermôfdrukken blokkearje.</string>
   <string name="preference_category_security">Befeiliging</string>
-  <string name="preference_category_performance">Prestaasjes</string>
   <string name="preference_performance_block_webfonts">Weblettertypen blokkearje</string>
   <!-- This text is shown below the setting for disabling web fonts. Some websites use icons/images from a font and those do not show up if fonts are blocked. -->
   <string name="preference_performance_block_webfonts_summary">Kin ta ûntbrekkende piktogrammen of ôfbyldingen liede</string>
@@ -336,7 +270,6 @@
   <!-- Preference switch for daily usage ping data collection -->
   <string name="preference_daily_usage_ping_title">Ping foar deistich gebrûk</string>
   <string name="preference_daily_usage_ping_description" tools:ignore="BrandUsage">Dit helpt Mozilla om aktive brûkers te skatten.</string>
-  <string name="preference_daily_usage_ping_learn_more">Mear ynfo</string>
   <!-- In-app link (in settings) to Focus privacy notice. -->
   <string name="preference_privacy_notice">Privacyferklearring</string>
   <!-- In-app link (in settings) to Focus licensing information. -->
@@ -350,16 +283,9 @@
   <!-- Item in Preferences that shows the about page. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
   <string name="preference_about">Oer %1$s</string>
   <!-- Header for the list of installed search engines -->
-  <string name="preference_search_installed_search_engines">Ynstallearre sykmasinen</string>
-  <!-- Header for the list of installed search engines -->
   <string name="preference_choose_search_engine">Sykmasine kieze</string>
   <!-- Action for restoring the default list of search engines -->
   <string name="preference_search_restore">Standert-sykmasinen opnij ynstelle</string>
-  <!--
-    Action for adding an additional search engine to the list.
-    The "+" is used to emphasize that this is an "add" action
-  -->
-  <string name="preference_search_add2">+ In oare sykmasine tafoegje</string>
   <string name="preference_search_remove_title">Sykmasinen fuortsmite</string>
   <string name="preference_search_remove">Fuortsmite</string>
   <!-- Action for dding an additional search engine to the list -->
@@ -378,8 +304,6 @@
   <string name="search_add_error_duplicate_name">Dizze namme wurdt al troch in ynstallearre sykmasine brûkt.</string>
   <string name="search_add_error_empty_search">Fier syksterm yn</string>
   <string name="search_add_error_format">Kontrolearje oft sykterm oan foarbyldnotaasje foldocht</string>
-  <!-- Content description (not visible, for screen readers etc.): Clear text in URL bar -->
-  <string name="content_description_clear_input">Ynfier wiskje</string>
   <!--
     Content description (not visible, for screen readers etc.): Clicking on the website overlay
     while in typing mode will dismiss and go back to the browser. This text will be read when the
@@ -391,34 +315,6 @@
     history and go back to the home screen.
   -->
   <string name="content_description_erase">Navigaasjeskiednis wiskje</string>
-  <!--
-    If the user has multiple tabs open we will show an addition "floating action button" showing how many tabs are open.
-    This string is not displayed and read only by screenreaders. %1$s will be replaced with the number of open tabs. This
-    button will only be visible when there is more than one tab open (>= 2).
-  -->
-  <string name="content_description_tab_counter">Iepen ljepblêden: %1$s</string>
-  <!--
-    Content description (not visible, for screen readers etc.): Lock icon showed in the URL bar for
-    https pages..
-  -->
-  <string name="content_description_lock">Befeilige ferbining</string>
-  <!--
-    This text is not visible. Instead it will be read by the accessibility service once we start
-    loading a website
-  -->
-  <string name="accessibility_announcement_loading">Lade</string>
-  <!--
-    This text is not visible. Instead it will be read by the accessibility service once we
-    finished loading a website
-  -->
-  <string name="accessibility_announcement_loading_finished">Website laden</string>
-  <!-- Content description (not visible, for screen readers etc.): "Three dot" menu button. -->
-  <string name="content_description_menu">Mear opsjes</string>
-  <!--
-    Content description (not visible, for screen readers etc.): "Three dot" menu button used
-    on home screen
-  -->
-  <string name="indicator_content_description_menu">Knop foar mear opsjes</string>
   <!-- Content description (not visible, for screen readers etc.): Navigate forward (browsing history) -->
   <string name="content_description_forward">Foarút blêdzje</string>
   <!-- Content description (not visible, for screen readers etc.): Reload current website -->
@@ -427,34 +323,6 @@
   <string name="content_description_back">Werom blêdzje</string>
   <!-- Content description (not visible, for screen readers etc.): Stop loading the current website. This button will turn into the refresh button once loading has been completed (see content_description_reload) -->
   <string name="content_description_stop">Laden fan website stopje</string>
-  <!-- Content description (not visible, for screen readers etc.): Custom Tab exit button - closes the custom tab and returns to the previous app. -->
-  <string name="content_description_customtab_exit">Tebek nei foarige app</string>
-  <!--
-    Content description (not visible, for screen readers etc.): This is the description for the ImageView in the menu that displays
-    the number of trackers blocked for the current session
-  -->
-  <string name="content_description_trackers_blocked">Oantal blokkearre trackers</string>
-  <!--
-    Content description (not visible, for screen readers etc.): This is the description for the switch in the menu that temporarily disables/enables
-    content blocking for the current session
-  -->
-  <string name="content_description_blocking_switch">Trackers blokkearje</string>
-  <string name="your_rights">Jo rjochten</string>
-  <string name="external_app_prompt_title">Keppeling yn oare app iepenje</string>
-  <!--
-    This string is shown when the user has clicked a link that needs to be opened in a different app.
-    %2$s is the external app name, %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
-  -->
-  <string name="external_app_prompt">Jo kinne %1$s ferlitte om dizze keppeling yn %2$s te iepenjen.</string>
-  <!-- This text is the title of a dialog shown if no app could be found for a custom link protocol. -->
-  <string name="external_app_prompt_no_app_title">Fyn in app dy’t dizze keppeling iepenje kin</string>
-  <!--
-    This text is shown in a dialog if no app could be found for a custom link protocol. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar") and %2$s is the name of
-    the app store installed on the device (usually that's Google Play).
-  -->
-  <string name="external_app_prompt_no_app">Gjin inkelde app op jo apparaat kin dizze keppeling iepenje. Jo kinne %1$s ferlitte en %2$s iepenje om in geskikte app te finen.</string>
-  <!-- This label is shown above a list of apps that can be used to open a given link -->
-  <string name="external_multiple_apps_matched_exit">Priveenavigaasje ôfslute?</string>
   <!-- Snackbar that will be displayed after a download has completed. %1$s is the file name. -->
   <string name="download_snackbar_finished">%1$s is foltôge</string>
   <!-- Snackbar action to immediately open the successfully downloaded file. -->
@@ -514,33 +382,16 @@
   <string name="onboarding_second_screen_skip_button_text">Oerslaan</string>
   <!-- First run tour (Default browser): Title -->
   <string name="firstrun_defaultbrowser_title">Fergrutsje jo privacy</string>
-  <!-- First run tour (Default browser): Text. -->
-  <string name="firstrun_defaultbrowser_text2">Bring priveenavigaasje nei in heger nivo. Blokkearje advertinsjes en oare ynhâld dy’t jo op websites folgje kinne en laadtiden fan siden ferlingje.</string>
   <!-- First run tour (Search): Title -->
   <string name="firstrun_search_title">Sykje op jo manier</string>
-  <!-- First run tour (Search): Text -->
-  <string name="firstrun_search_text">Op syk nei wat oars? Kies in oare standertsykmasine yn Ynstellingen.</string>
   <!-- First run tour (Shortcut): Title -->
   <string name="firstrun_shortcut_title">Foegje keppelingen ta oan jo startskerm</string>
-  <!-- First run tour (Shortcut): Text. %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
-  <string name="firstrun_shortcut_text">Kear fluch werom nei jo favorite websites yn %1$s. Selektearje gewoanwei ‘Tafoegje oan startskerm’ fan it %1$s-menu út.</string>
   <!-- First run tour (Privacy): Title -->
   <string name="firstrun_privacy_title">Meitsje privacy gewoan</string>
-  <!-- First run tour (Privacy): Text. %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
-  <string name="firstrun_privacy_text">Stel %1$s yn as jo standertbrowser en ûnderfyn de foardielen fan priveenavigaasje as jo websiden iepenje fan oare apps út.</string>
-  <string name="firstrun_close_button">OK, begrepen!</string>
-  <string name="firstrun_skip_button">Oerslaan</string>
-  <string name="firstrun_next_button">Folgjende</string>
-  <!-- Indicator that no trackers are being blocked because content blocking is disabled; normally shows the number of blocked trackers -->
-  <string name="content_blocking_disabled">-</string>
   <!-- Label of the action that will add the current website to the home screen (shown in the confirmation dialog). -->
   <string name="dialog_addtohomescreen_action_add">Tafoegje</string>
-  <!-- Label of the action that will add the current website to the home screen (shown in the confirmation dialog). -->
-  <string name="dialog_addtohomescreen_action_yes">JA</string>
   <!-- Label of the action that will close the dialog and not add anything to the home screen (shown in the confirmation dialog). -->
   <string name="dialog_addtohomescreen_action_cancel">Annulearje</string>
-  <!-- Label of the action that will close the dialog and not add anything to the home screen (shown in the confirmation dialog). -->
-  <string name="dialog_addtohomescreen_action_no">NEE</string>
   <!--
     When enhanced tracking protection is disabled for the current session then we will show this warning in the "Add to home screen" dialog to
     let the user know that the shortcut will always be opened with enhanced tracking protection disabled.
@@ -562,8 +413,6 @@
     * To see how this string will look like in Android's UI, see: https://github.com/mozilla-mobile/focus-android/issues/863#issuecomment-324105723
   -->
   <string name="notification_browsing_session_channel_description">Mei notifikaasjes kinne jo fia ien tik jo %1$s-sesje wiskje. Jo hoege de app net te iepenjen of te sjen wat der yn jo browser aktyf is.</string>
-  <!-- Label for a button in the "tabs tray" to erase the browsing history (closes all tabs and removes associated data). -->
-  <string name="tabs_tray_action_erase">Navigaasjeskiednis wiskje</string>
   <!-- Label for the option in the Focus "tabs tray" to clos the other tabs except the current tab. -->
   <string name="tabs_tray_action_erase_other">Oare ljepblêden slute</string>
   <!-- Label for the option in the Focus "tabs tray" to add a new tab. -->
@@ -573,21 +422,6 @@
     item in the list of browsers. Clicking it will open the app store installed on the device (usually that's Google Play).
   -->
   <string name="download_firefox" tools:ignore="BrandUsage">Firefox downloade</string>
-  <!-- Text shown in prompts for GeckoView -->
-  <string name="gv_prompt_username_hint">Brûkersnamme</string>
-  <string name="gv_prompt_password_hint">Wachtwurd</string>
-  <string name="gv_prompt_clear">Wiskje</string>
-  <!--
-    Text shown in Security Information Popup
-
-    Text to denote secure or insecure connection
-  -->
-  <string name="security_popup_secure_connection">Befeilige ferbining</string>
-  <string name="security_popup_insecure_connection">Net-befeilige ferbining</string>
-  <!-- %1$s will be replaced with organization that granted the SSL certificate -->
-  <string name="security_popup_security_verified">Ferifiearre troch: %1$s</string>
-  <!-- Content Description of Security Icon in toolbar -->
-  <string name="site_security_icon_content_description">Sidefeilichheid</string>
   <!--
     Text shown in Security Information Popup
 
@@ -608,28 +442,6 @@
   <string name="preference_autocomplete_duplicate_url_error">URL bestiet al</string>
   <!-- Label for the Find in page button -->
   <string name="find_in_page">Sykje op side</string>
-  <!-- Watermark/Hint for the find in page input field -->
-  <string name="find_in_page_input">Sykje op side</string>
-  <!--
-    String to show the number of results found in the page and the position
-    the user is at. %1$d is the position, %2$d is the total number of
-    results.
-  -->
-  <string name="find_in_page_result">%1$d/%2$d</string>
-  <!--
-    String to be read by the accessibility service presenting the number of
-    results found in the page and the position the user is at. %1$d is the
-    position, %2$d is the total number of results.
-  -->
-  <string name="accessibility_find_in_page_result">%1$d fan %2$d</string>
-  <!-- String to be read by the accessibility service when focusing the next result button -->
-  <string name="accessibility_next_result">Folgjende resultaat fine</string>
-  <!-- String to be read by the accessibility service when focusing the previous result button -->
-  <string name="accessibility_previous_result">Foarige resultaat fine</string>
-  <!-- String to be read by the accessibility service when focusing the dismiss button in the "find in page" UI -->
-  <string name="accessibility_dismiss_find_in_page">Sykje op side slute</string>
-  <!-- Checkbox menu item text to request desktop site -->
-  <string name="preference_performance_request_desktop_site">Desktopwebsite opfreegje</string>
   <!-- Checkbox menu item text to request desktop site -->
   <string name="preference_performance_request_desktop_site2">Desktopwebsite</string>
   <!-- Displayed after a user long presses on the URL in a custom tab to copy the URL -->
@@ -642,56 +454,6 @@
   <string name="preference_category_advanced">Avansearre</string>
   <!-- Preference for site permissions -->
   <string name="preference_site_permissions">Websitemachtigingen</string>
-  <!-- Preference for cookie banner. The name of the item from settings screen and the title of the cookie banner screen. -->
-  <string name="preferences_cookie_banner">Reduksje fan cookiebanners</string>
-  <!-- Preference summary for the cookie banner. If the cookie banner option is not disabled. -->
-  <string name="preferences_cookie_banner_summary_on">Oan</string>
-  <!-- Preference summary for the cookie banner. If the cookie banner option is disabled. -->
-  <string name="preferences_cookie_banner_summary_off">Ut</string>
-  <!-- Title preference inside Cookie banner reduction screen. Here you can set the cookie banner option to disabled or reject_all. -->
-  <string name="cookie_banner_reject_all_option_title">Reduksje fan cookiebanners</string>
-  <!-- Preference summary inside Cookie banner reduction screen. Here you can set the cookie banner option to disabled or reject_all. -->
-  <string name="cookie_banner_reject_all_option_summary">Sjoch minder banners troch, wannear mooglik, cookiefersiken automatysk te wegerjen.</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically, this is shown as part of the protections panel with the tracking protection toggle. -->
-  <string name="cookie_banner_exception_item_title">Reduksje fan cookiebanners</string>
-  <!-- Text for indicating cookie banner handling is on this site, this is shown as part of the protections panel with the tracking protection toggle. -->
-  <string name="cookie_banner_exception_item_description_state_on">OAN foar dizze website</string>
-  <!-- Text for indicating cookie reducer is not supported on the current site, this is shown as part of the protections panel with the tracking protection toggle. -->
-  <string name="cookie_banner_exception_site_not_supported">Website wurdt op dit stuit net stipe</string>
-  <!-- Text for indicating cookie banner handling is off this site, this is shown as part of the protections panel with the tracking protection toggle. -->
-  <string name="cookie_banner_exception_item_description_state_off">ÚT foar dizze website</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically, this is shown when the user enters in details after he clicks on the item from protection panel. -->
-  <string name="cookie_banner_exception_panel_switch_title">Reduksje fan cookiebanners</string>
-  <!-- Text for indicating cookie banner handling is off this site, this is shown when the user enters in details after he clicks on the item from protection panel. -->
-  <string name="cookie_banner_exception_panel_switch_state_off">ÚT foar dizze website</string>
-  <!-- Text for indicating cookie banner handling is on this site, this is shown when the user enters in details after he clicks on the item from protection panel. -->
-  <string name="cookie_banner_exception_panel_switch_state_on">OAN foar dizze website</string>
-  <!-- Title text for a detail explanation indicating cookie banner handling is on this site, this is shown as part of the cookie banner panel in the toolbar. %1$s is a shortened URL of the current site. -->
-  <string name="cookie_banner_exception_panel_title_state_on_for_site">Reduksje fan cookiebanners ynskeakelje foar %1$s?</string>
-  <!-- Title text for a detail explanation indicating cookie banner handling is off this site, this is shown as part of the cookie banner panel in the toolbar. %1$s is a shortened URL of the current site. -->
-  <string name="cookie_banner_exception_panel_title_state_off_for_site">Reduksje fan cookiebanners útskeakelje foar %1$s?</string>
-  <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is on for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
-  <string name="cookie_banner_exception_panel_description_state_on_for_site">%1$s wisket de cookies foar dizze website en fernijt de side. As alle cookies wiske wurde, wurde jo mooglik ôfmeld of wurde winkelweintsjes lege.</string>
-  <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is off for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
-  <string name="cookie_banner_exception_panel_description_state_off_for_site2">%1$s kin probearje om cookiefersiken automatysk te wegerjen.</string>
-  <!-- Long text for a detail explanation indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner panel in the toolbar. -->
-  <string name="cookie_banner_exception_panel_description_site_is_not_supported">Dizze website wurdt op it stuit net stipe troch Reduksje fan cookiebanners. Wolle jo ús team freegje om dizze website te beoardielen en yn de takomst stipe ta te foegjen?</string>
-  <!-- Text for cancel button indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner panel in the toolbar. -->
-  <string name="cookie_banner_exception_panel_site_is_not_supported_cancel_button">Annulearje</string>
-  <!-- Text for request support button indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner panel in the toolbar. -->
-  <string name="cookie_banner_exception_panel_site_is_not_supported_request_support_button">Stipe oanfreegje</string>
-  <!-- Label for the snackBar, after the user reports with success a website where cookie banner reducer did not work -->
-  <string name="cookie_banner_report_a_site_snackbar_label">Fersyk om te websitestipe yntsjinne.</string>
-  <!-- Label for cookie banner item from tracking protection, after the user reports with success a website where cookie banner reducer did not work -->
-  <string name="cookie_banner_the_site_was_reported">Fersyk om te websitestipe yntsjinne.</string>
-  <!--
-    Contextual Feature Recommendation Popups
-
-    CFR for Cookie Banner (Banner Info Message). %1$s will be replaced by the app name, %2$s will be an active link using the string cfr_cookie_banner_link as text.
-  -->
-  <string name="cfr_cookie_banner">%1$s probearret cookiefersiken ôf te wizen om ferfelende cookiebanners fuort te heljen.\n\nBehear foarkarren foar cookiebanners yn %2$s.</string>
-  <!-- CFR for Cookie Banner (Banner Info Message). This string is used as text for a link in cfr_cookie_banner and takes the user to the app settings. -->
-  <string name="cfr_cookie_banner_link">ynstellingen</string>
   <!-- Preference for autoplay -->
   <string name="preference_autoplay">Automatysk ôfspylje</string>
   <!-- Heading for the instructions to allow a permission -->
@@ -738,23 +500,8 @@
   <string name="biometric_prompt_title">Befêstigje it gebrûk fan jo fingerôfdruk</string>
   <!-- Subtitle text for biometric prompt pop-up -->
   <string name="biometric_prompt_subtitle">Jo kinne jo fingerôfdruk brûke om mei jo aktuele app-sesje troch te gean.</string>
-  <!--
-    Button for the fingerprint authentication dialog box that is shown to the user when sharing a link to the app
-    while the user has biometric authentication enabled. When pressed, the user's previous session is cleared, and the shared link is opened.
-  -->
-  <string name="biometric_auth_open_link_new_session">Keppeling iepenje yn nije sesje</string>
   <!-- Description for the fingerprint authentication image. Used for accessibility purposes. -->
   <string name="biometric_auth_image_description">Fingerôfdrukpiktogram</string>
-  <!--
-    Error text displayed when the user's fingerprint cannot be recognized upon re-entering the app.
-    This is displayed during the authentication flow as the app launches.
-  -->
-  <string name="biometric_auth_not_recognized_error">Fingerôfdruk net werkend. Probearje it opnij.</string>
-  <!--
-    Error text displayed when the user's fingerprint moved too quickly upon re-entering the app
-    This is displayed during the authentication flow as the app launches.
-  -->
-  <string name="biometric_auth_moved_too_quickly">Finger te fluch beweegd. Probearje it opnij.</string>
   <!-- Title for the prompt to enable search suggestions -->
   <string name="enable_search_suggestion_title2">Syksuggestjes toane?</string>
   <!--
@@ -770,42 +517,6 @@
   <string name="no_suggestions_message">Guon sykmasinen kinne gjin suggestjes toane.</string>
   <!-- Button to dismiss the message displayed  when using a search engine that doesn't provide suggestions -->
   <string name="dismiss_no_suggestions_prompt_button">Fuortsmite</string>
-  <!-- Tips displayed on the home view -->
-
-  <!--
-    Tip displayed on home view explaining how to disable tracking protection
-    The new line here must be kept as the second half of the string is clickable for the user.
-  -->
-  <string name="tip_disable_tracking_protection">Wurket in website net goed?\nProbearje Beskerming tsjin folgjen út te skeakeljen</string>
-  <!--
-    Tip displayed on home view explaining how to add sites to homescreen
-    %1$s is replaced with a line break in the application.
-  -->
-  <string name="tip_add_to_homescreen">Tagong ta de meastbesochte websites mei ien tik%1$s Menu &gt; Tafoegje oan startskerm</string>
-  <!--
-    Tip displayed on home view explaining how to make Focus the default browser
-    %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
-    The new line here must be kept as the second half of the string is clickable for the user.
-  -->
-  <string name="tip_set_default_browser">Alle keppelingen yn %1$s iepenje\nStel %1$s yn as jo standertbrowser</string>
-  <!--
-    Tip displayed on home view explaining how to add a custom autocomplete URL
-    The new line here must be kept as the second half of the string is clickable for the user.
-  -->
-  <string name="tip_autocomplete_url">URL’s foar meastbrûkte websites automatysk oanfolje\nHâld jo finger op in URL yn de adresbalke</string>
-  <!--
-    Tip displayed on home view explaining how to add a custom autocomplete URL
-    The new line here must be kept as the second half of the string is clickable for the user.
-  -->
-  <string name="tip_open_in_new_tab">In keppeling yn in nij ljepblêd iepenje\nHâld jo finger op in keppeling op in side</string>
-  <!-- Tip displayed on home view explaining how to add a custom autocomplete URL -->
-  <string name="tip_disable_tips2">Tips op startscherm útskeakelje</string>
-  <!-- Label for the snackbar when a user opens a new tab -->
-  <string name="new_tab_opened_snackbar">Nij ljepblêd iepene</string>
-  <!-- Label for the button in the snackbar that switches to the newly opened tab -->
-  <string name="open_new_tab_snackbar">Wikselje</string>
-  <!-- Preference for switching to a new tab immediately after opening -->
-  <string name="preference_open_new_tab">Wikselje daliks nei keppeling yn nij ljepblêd</string>
   <!-- Preference title for safe browsing which when enabled, blocks dangerous or deceptive webpages that may include phishing or malware -->
   <string name="preference_safe_browsing_title">Potinsjeel gefaarlike en misliedende websites blokkearje</string>
   <!-- Preference summary for safe browsing which when enabled, blocks dangerous or deceptive webpages that may include phishing or malware -->
@@ -824,10 +535,6 @@
   <string name="preference_exceptions_remove_all_button_label">Alle websites fuortsmite</string>
   <!-- Title for Preference screen for cookie blocking for exceptions tracking protection -->
   <string name="preference_block_cookies_title">Cookies blokkearje</string>
-  <!-- Message for Preference screen for cookie blocking for exceptions tracking protection -->
-  <string name="preference_category_block_cookies">Wolle jo cookies blokkearje?</string>
-  <!-- Title for the tab crash report screen -->
-  <string name="tab_crash_report_title">Ljepblêd ferûngelokke</string>
   <!-- Headline for the tab crash report screen -->
   <string name="tab_crash_report_headline">Sorry, wy hawwe in probleem mei dit ljepblêd.</string>
   <!-- Subtitle for the tab crash report screen -->
@@ -836,8 +543,6 @@
   <string name="tab_crash_report_close_tab_button_label">Ljepblêd slute</string>
   <!-- Label for the checkbox to send the tab crash report to Mozilla -->
   <string name="crash_report_send_crash_label" tools:ignore="BrandUsage">Ungelokrapport nei Mozilla ferstjoere</string>
-  <!-- Tracking protection bottom sheet -->
-
   <!-- Label for the total number of trackers blocked. %s is the app install date. -->
   <string name="trackers_count_note">Trackers blokkearre sûnt %s</string>
   <!-- Category of trackers (content) that can be blocked by Enhanced Tracking Protection. -->
@@ -922,8 +627,6 @@
     CFR for Toolbar Shield Icon (Banner Info Message)
   -->
   <string name="cfr_for_toolbar_shield_icon2">Hebbes! Wy hawwe dizze website stoppe om jo te bespionearjen. Tik op elk momint op it skyld om te sjen wat wy blokkearje.</string>
-  <!-- Content description (not visible, for screen readers etc.): Button that closes the CFR popup -->
-  <string name="cfr_close_button_description">Pop-up slute</string>
   <!--
     Tool Tip for: Privacy and Security Settings Screen  task : https://github.com/mozilla-mobile/focus-android/issues/6211
 
@@ -936,8 +639,6 @@
   <string name="tool_tip_dismiss_button_content_description">Slute</string>
   <!-- CFR for Toolbar Delete Icon (Banner Info Message) -->
   <string name="cfr_for_toolbar_delete_icon2">Tik hjir om alles fuort te smiten – skiednis, cookies, alles – en in farske start te meitsjen op in nij ljepblêd.</string>
-  <!-- Promote SearchWidget Dialog -->
-
   <!--
     Content description (not visible, for screen readers etc.): This is the description for the
     close button from promote search widget dialog.

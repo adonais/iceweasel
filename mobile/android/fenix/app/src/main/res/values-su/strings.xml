@@ -341,8 +341,6 @@
   <string name="preferences_add_private_browsing_shortcut">Tambahan tarabas nyungsi nyamuni</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">Mode HTTPS-Hungkul</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">Cookie Banner Blocker dina panyungsian pribadi</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">Otomatis nyoba nyambung ka loka maké protokol énkripsi HTTPS pikeun ngaronjatkeun kaamanan.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -1442,12 +1440,8 @@
   <string name="add_to_homescreen_cancel">Bolay</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Tambah</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Teruskeun ka loka</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Ngaran takulan</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Anjeun bisa kalawan gampang nambahkeun ieu raramatloka kana layar Tepas ponsél pikeun aksés instan sarta maluruh leuwih gancang kawas muka aplikasi.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">Kecap sandi</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->

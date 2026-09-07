@@ -782,8 +782,6 @@
   <string name="add_to_homescreen_cancel">ரத்து</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">சேர்</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">தளத்திற்குத் தொடர்</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">குறுக்குவழி பெயர்</string>
   <!-- Preference option for asking to save passwords in Fenix -->

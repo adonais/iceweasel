@@ -512,8 +512,6 @@
   <string name="preferences_https_only_title">حالت فقط-Https</string>
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">استفاده از قفل صفحه برای پنهان کردن زبانه‌ها در مرور خصوصی</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">مسدودکننده برنمای کلوچک در مرور خصوصی</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">به طور خودکار برای افزایش امنیت تلاش می‌کند با استفاده از شیوه‌نامهٔ رمزگذاری HTTPS به پایگاه‌ها متصل شود.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -1279,8 +1277,6 @@
   <string name="webcompat_reporter_preview_report">گزارش پیش‌نمایش</string>
   <!-- The title shown at the top of the WebCompat Report preview panel. This appears after the user taps the “Preview” button before sending a report. -->
   <string name="webcompat_reporter_preview_bottom_sheet_header">پیش‌نمایش گزارش</string>
-  <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
-  <string name="webcompat_reporter_preview_bottom_sheet_send">ارسال</string>
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
@@ -2004,12 +2000,8 @@
   <string name="add_to_homescreen_cancel">لغو</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">افزودن</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">ادامه به این پایگاه اینترنتی</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">نام میانبر</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">به‌راحتی می‌توانید این وبگاه را به صفحهٔ خانگی تلفن خود اضافه کنید تا بی‌درنگ به آن دسترسی داشته باشید و همچون کار با یک برنامه مرور سریع‌تری را تجربه کنید.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">گذرواژه‌ها</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->

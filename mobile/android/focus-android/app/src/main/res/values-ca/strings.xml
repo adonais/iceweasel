@@ -7,39 +7,17 @@
 -->
 
 <resources xmlns:tools="http://schemas.android.com/tools">
-  <!--
-    #######################################################################################
-
-    ## Put only strings into this file that should be translated. Move all other strings ##
-
-    ## into a separate file like strings_references.xml                                  ##
-
-    #######################################################################################
-  -->
-
   <!-- Label used for buttons, e.g. in dialogs -->
   <string name="action_cancel">Cancel·la</string>
-  <!-- Label used for buttons, e.g. in dialogs -->
-  <string name="action_ok">D\'acord</string>
   <string name="action_save">Desa</string>
   <!-- This text is shown in the URL bar when it's empty -->
   <string name="urlbar_hint">Escriviu una cerca o adreça</string>
-  <string name="teaser">Navegació privada automàtica.\nNavegueu. Esborreu. Torneu-hi.</string>
-  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
-  <string name="feedback_erase">S\'ha esborrat l\'historial de navegació.</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">S’ha esborrat l’historial de navegació</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">S\'ha esborrat l\'historial de navegació de la pestanya.</string>
-  <!--
-    This label is shown below the URL bar as soon as the user enters text. Clicking the label will perform a search.
-    %1$s is the text typed by the user.
-  -->
-  <string name="search_hint">Cerca %1$s</string>
   <!-- Menu item: Share the currently visible page -->
   <string name="menu_share">Comparteix…</string>
-  <!-- Menu item: Report an issue on the current site -->
-  <string name="menu_report_site_issue">Informa d\'un problema amb el lloc</string>
   <!--
     Menu item: Switch to another browser to open the currently visible page. %1$s will be
     replaced with the name of the browser like: "Open in Firefox" or "Open in Chrome". Some
@@ -64,23 +42,6 @@
   <string name="menu_about">Quant a</string>
   <string name="menu_help">Ajuda</string>
   <string name="menu_terms_of_use">Condicions d’ús</string>
-  <!--
-    Menu item: This is the label for a menu entry that shows how many trackers have been blocked
-    for the currently loaded website. The number of blocked trackers is shown below this label.
-    Next to this label is a switch that allows the user to temporarily enable / disable the
-    blocking of trackers for the current browsing session - for example if the current website
-    doesn't work correctly with blocked content.
-  -->
-  <string name="menu_trackers_blocked_title">Elements blocats</string>
-  <!--
-    Menu item: This is the subtitle for the Trackers blocked menu entry that shows how many
-    trackers have been blocked for the currently loaded website.
-  -->
-  <string name="menu_trackers_blocked_subtitle">Si es desactiva, pot ser que s\'arreglin problemes amb alguns llocs</string>
-  <!-- Menu item: This is the label for turning off content blocking for the current website. -->
-  <string name="menu_content_blocking">Bloqueig de contingut</string>
-  <!-- This is the subtitle content blocking toggle -->
-  <string name="menu_content_blocking_subtitle">Desactiveu-ho per arreglar problemes amb alguns llocs</string>
   <!--
     This is a small text at the bottom of the menu shown in a "custom tab" for branding purposes.
     See https://github.com/mozilla-mobile/focus-android/issues/2106
@@ -122,13 +83,6 @@
     This is the label for this shortcut. Android recommends a maximum length of 10 characters.
   -->
   <string name="shortcut_erase_and_open_short_label">Esborra i obre</string>
-  <!--
-    The same as 'shortcut_erase_short_label' but more descriptive. The launcher shows this
-    instead of the short title when it has enough space. Android recommends a maximum length
-    of 25 characters.
-    %1$s will be replaced by the app name (e.g. Firefox Focus)
-  -->
-  <string name="shortcut_erase_and_open_long_label">Esborra i obre el %1$s</string>
   <!--
     These labels are selected per variant through manifestPlaceholders in build.gradle, so
     UnusedResources does not see the ones for the variants it is not analyzing.
@@ -190,8 +144,6 @@
   <string name="preference_category_general">General</string>
   <!-- Preference summary for General Settings category; the two things users can find in this category -->
   <string name="preference_general_summary2">Navegador per defecte, llengua</string>
-  <!-- Preference category for settings about sending usage data -->
-  <string name="preference_category_data_collection_use">Ús i recollida de dades</string>
   <string name="preference_category_search">Cerca</string>
   <!-- Title of "switch" preference that enables/disables search suggestions -->
   <string name="preference_show_search_suggestions">Mostra suggeriments de cerca</string>
@@ -200,8 +152,6 @@
     %1$s will be replaced by the app name (e.g. Firefox Focus)
   -->
   <string name="preference_show_search_suggestions_summary">El %1$s enviarà al motor de cerca tot allò que escriviu a la barra d\'adreces</string>
-  <!-- This label is shown below the name of the default search engine in settings -->
-  <string name="preference_search_engine_default">Per defecte</string>
   <!-- This label is shown above the currently selected search engine in settings -->
   <string name="preference_search_engine_label">Motor de cerca</string>
   <!-- Text that is shown below a "switch" preference that is enabled. -->
@@ -224,22 +174,12 @@
     %s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
   -->
   <string name="preference_autocomplete_user_list_summary2">Activeu-ho per fer que el %s empleni automàticament els vostres URL preferits.</string>
-  <!-- Preference category: Manage (user-defined) sites -->
-  <string name="preference_category_autocomplete_manage_sites">Gestiona els llocs</string>
   <!-- Item in autocomplete settings that will open a new preference screen for adding and removing URLs to the user-defined list -->
   <string name="preference_autocomplete_subitem_manage_sites">Gestiona els llocs</string>
   <!-- Action at the bottom of the list of custom autocomplete URLs that will open a new screen to add a new URL to the list. -->
   <string name="preference_autocomplete_action_add">+ Afegeix un URL personalitzat</string>
-  <!-- Explanation text above the list of custom autocomplete URLs. -->
-  <string name="preference_autocomplete_explanation_text">La vostra llista d’emplenament automàtic:</string>
-  <!-- Action at the bottom of the list of custom autocomplete URLs that will open a new screen to add a new URL to the list. -->
-  <string name="preference_autocomplete_action_add2">Afegeix un URL</string>
   <!-- Title of the screen for adding custom autocomplete URLs. -->
   <string name="preference_autocomplete_title_add">URL personalitzat nou</string>
-  <!-- Label for the button to quick add custom autocomplete URLs. -->
-  <string name="custom_autocomplete_quick_add">Afegeix URL personalitzat</string>
-  <!-- Label for the button to quick add the current URL to the custom autocomplete list -->
-  <string name="add_custom_autocomplete_label">Afegeix l\'enllaç a l\'emplenament automàtic</string>
   <!-- Preference category for settings about cookies and site data -->
   <string name="preference_category_cookies">Galetes i dades dels llocs</string>
   <!-- Preference category for settings about data choices -->
@@ -248,16 +188,12 @@
   <string name="preference_autocomplete_title_remove">Elimina URL personalitzats</string>
   <!-- A link to SUMO at autocomplete settings. -->
   <string name="preference_autocomplete_learn_more">Més informació</string>
-  <!-- Preference summary: Custom (user-defined) autocomplete URLs. -->
-  <string name="preference_autocomplete_custom_summary">Afegiu i gestioneu els URL d\'emplenament automàtic personalitzats.</string>
   <!-- Label for the "custom autocomplete URL" input field -->
   <string name="preference_autocomplete_add_title">URL per afegir</string>
   <!-- "Hint" text for the "custom autocomplete URL" input field. Shown when the field is empty. -->
   <string name="preference_autocomplete_add_hint">Enganxeu o escriviu un URL</string>
   <!-- Example how a custom domain autocomplete URL be added (e.g. without http://) -->
   <string name="preference_autocomplete_add_example2" tools:ignore="BrandUsage">Exemple: mozilla.org</string>
-  <!-- To be removed once the new hint has been translated -->
-  <string name="preference_autocomplete_add_example">Exemple: example.com</string>
   <!-- Confirmation "snackbar" shown after a new custom autocomplete URL has been added. -->
   <string name="preference_autocomplete_add_confirmation">S\'ha afegit un URL personalitzat nou.</string>
   <!-- Menu item to remove existing autocomplete URLs. -->
@@ -272,7 +208,6 @@
     is using the system default language.
   -->
   <string name="preference_language_systemdefault">Valor per defecte del sistema</string>
-  <string name="preference_category_privacy">Privadesa</string>
   <string name="preference_privacy_block_ads">Bloca els elements de seguiment de publicitat</string>
   <string name="preference_privacy_block_ads_summary">Alguns anuncis fan el seguiment de les visites als llocs, fins i tot si no feu clic als anuncis</string>
   <string name="preference_privacy_block_analytics">Bloca els elements de seguiment d\'anàlisi</string>
@@ -313,7 +248,6 @@
   -->
   <string name="preference_privacy_stealth_summary">Amaga les pàgines web en canviar d\'aplicacions i bloca les captures de pantalles.</string>
   <string name="preference_category_security">Seguretat</string>
-  <string name="preference_category_performance">Rendiment</string>
   <string name="preference_performance_block_webfonts">Bloca tipus de lletra web</string>
   <!-- This text is shown below the setting for disabling web fonts. Some websites use icons/images from a font and those do not show up if fonts are blocked. -->
   <string name="preference_performance_block_webfonts_summary">Pot fer que no es vegin algunes icones o imatges</string>
@@ -336,7 +270,6 @@
   <!-- Preference switch for daily usage ping data collection -->
   <string name="preference_daily_usage_ping_title">Ping d’ús diari</string>
   <string name="preference_daily_usage_ping_description" tools:ignore="BrandUsage">Això ajuda a Mozilla a estimar els usuaris actius.</string>
-  <string name="preference_daily_usage_ping_learn_more">Més informació</string>
   <!-- In-app link (in settings) to Focus privacy notice. -->
   <string name="preference_privacy_notice">Avís de privadesa</string>
   <!-- In-app link (in settings) to Focus licensing information. -->
@@ -350,16 +283,9 @@
   <!-- Item in Preferences that shows the about page. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
   <string name="preference_about">Quant al %1$s</string>
   <!-- Header for the list of installed search engines -->
-  <string name="preference_search_installed_search_engines">Motors de cerca instal·lats</string>
-  <!-- Header for the list of installed search engines -->
   <string name="preference_choose_search_engine">Trieu un motor de cerca</string>
   <!-- Action for restoring the default list of search engines -->
   <string name="preference_search_restore">Restaura els motors de cerca per defecte</string>
-  <!--
-    Action for adding an additional search engine to the list.
-    The "+" is used to emphasize that this is an "add" action
-  -->
-  <string name="preference_search_add2">+ Afegeix un altre motor de cerca</string>
   <string name="preference_search_remove_title">Elimina motors de cerca</string>
   <string name="preference_search_remove">Elimina</string>
   <!-- Action for dding an additional search engine to the list -->
@@ -378,8 +304,6 @@
   <string name="search_add_error_duplicate_name">Ja hi ha un motor de cerca instal·lat amb aquest nom.</string>
   <string name="search_add_error_empty_search">Escriviu una cadena de cerca</string>
   <string name="search_add_error_format">Comproveu que la cadena de cerca coincideixi amb el format d\'exemple</string>
-  <!-- Content description (not visible, for screen readers etc.): Clear text in URL bar -->
-  <string name="content_description_clear_input">Esborra l\'entrada</string>
   <!--
     Content description (not visible, for screen readers etc.): Clicking on the website overlay
     while in typing mode will dismiss and go back to the browser. This text will be read when the
@@ -391,34 +315,6 @@
     history and go back to the home screen.
   -->
   <string name="content_description_erase">Esborra l\'historial de navegació</string>
-  <!--
-    If the user has multiple tabs open we will show an addition "floating action button" showing how many tabs are open.
-    This string is not displayed and read only by screenreaders. %1$s will be replaced with the number of open tabs. This
-    button will only be visible when there is more than one tab open (>= 2).
-  -->
-  <string name="content_description_tab_counter">Pestanyes obertes: %1$s</string>
-  <!--
-    Content description (not visible, for screen readers etc.): Lock icon showed in the URL bar for
-    https pages..
-  -->
-  <string name="content_description_lock">Connexió segura</string>
-  <!--
-    This text is not visible. Instead it will be read by the accessibility service once we start
-    loading a website
-  -->
-  <string name="accessibility_announcement_loading">S\'està carregant…</string>
-  <!--
-    This text is not visible. Instead it will be read by the accessibility service once we
-    finished loading a website
-  -->
-  <string name="accessibility_announcement_loading_finished">S\'ha carregat el lloc web</string>
-  <!-- Content description (not visible, for screen readers etc.): "Three dot" menu button. -->
-  <string name="content_description_menu">Més opcions</string>
-  <!--
-    Content description (not visible, for screen readers etc.): "Three dot" menu button used
-    on home screen
-  -->
-  <string name="indicator_content_description_menu">Botó de més opcions</string>
   <!-- Content description (not visible, for screen readers etc.): Navigate forward (browsing history) -->
   <string name="content_description_forward">Navega cap endavant</string>
   <!-- Content description (not visible, for screen readers etc.): Reload current website -->
@@ -427,34 +323,6 @@
   <string name="content_description_back">Vés enrere</string>
   <!-- Content description (not visible, for screen readers etc.): Stop loading the current website. This button will turn into the refresh button once loading has been completed (see content_description_reload) -->
   <string name="content_description_stop">Atura la càrrega del lloc web</string>
-  <!-- Content description (not visible, for screen readers etc.): Custom Tab exit button - closes the custom tab and returns to the previous app. -->
-  <string name="content_description_customtab_exit">Torna a l\'aplicació anterior</string>
-  <!--
-    Content description (not visible, for screen readers etc.): This is the description for the ImageView in the menu that displays
-    the number of trackers blocked for the current session
-  -->
-  <string name="content_description_trackers_blocked">Nombre d\'elements blocats</string>
-  <!--
-    Content description (not visible, for screen readers etc.): This is the description for the switch in the menu that temporarily disables/enables
-    content blocking for the current session
-  -->
-  <string name="content_description_blocking_switch">Bloca els elements de seguiment</string>
-  <string name="your_rights">Els vostres drets</string>
-  <string name="external_app_prompt_title">Obre l\'enllaç en una altra aplicació</string>
-  <!--
-    This string is shown when the user has clicked a link that needs to be opened in a different app.
-    %2$s is the external app name, %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
-  -->
-  <string name="external_app_prompt">Podeu sortir del %1$s per obrir aquest enllaç amb el %2$s.</string>
-  <!-- This text is the title of a dialog shown if no app could be found for a custom link protocol. -->
-  <string name="external_app_prompt_no_app_title">Cerca una aplicació que pugui obrir aquest enllaç</string>
-  <!--
-    This text is shown in a dialog if no app could be found for a custom link protocol. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar") and %2$s is the name of
-    the app store installed on the device (usually that's Google Play).
-  -->
-  <string name="external_app_prompt_no_app">No hi ha cap aplicació en el dispositiu que pugui obrir aquest enllaç. Podeu sortir del %1$s per cercar al %2$s una aplicació que pugui obrir-lo.</string>
-  <!-- This label is shown above a list of apps that can be used to open a given link -->
-  <string name="external_multiple_apps_matched_exit">Voleu sortir de la navegació privada?</string>
   <!-- Snackbar that will be displayed after a download has completed. %1$s is the file name. -->
   <string name="download_snackbar_finished">%1$s ha acabat</string>
   <!-- Snackbar action to immediately open the successfully downloaded file. -->
@@ -514,33 +382,16 @@
   <string name="onboarding_second_screen_skip_button_text">Omet</string>
   <!-- First run tour (Default browser): Title -->
   <string name="firstrun_defaultbrowser_title">Potencieu la privadesa</string>
-  <!-- First run tour (Default browser): Text. -->
-  <string name="firstrun_defaultbrowser_text2">Porteu la navegació privada a un altre nivell. Bloqueu anuncis i altre contingut que us fan el seguiment i alenteixen la càrrega de les pàgines.</string>
   <!-- First run tour (Search): Title -->
   <string name="firstrun_search_title">Cerqueu com vulgueu</string>
-  <!-- First run tour (Search): Text -->
-  <string name="firstrun_search_text">Busqueu una altra cosa? Trieu un altre motor de cerca per defecte als Paràmetres.</string>
   <!-- First run tour (Shortcut): Title -->
   <string name="firstrun_shortcut_title">Afegiu dreceres a la pantalla d\'inici</string>
-  <!-- First run tour (Shortcut): Text. %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
-  <string name="firstrun_shortcut_text">Retorneu ràpidament als vostres llocs preferits amb el %1$s. Trieu «Afegeix a pantalla d\'inici» en el menú del %1$s.</string>
   <!-- First run tour (Privacy): Title -->
   <string name="firstrun_privacy_title">Feu de la privadesa un hàbit</string>
-  <!-- First run tour (Privacy): Text. %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
-  <string name="firstrun_privacy_text">Definiu el %1$s com a navegador per defecte i gaudiu de navegació privada en obrir pàgines web des d\'altres aplicacions.</string>
-  <string name="firstrun_close_button">Entesos</string>
-  <string name="firstrun_skip_button">Omet</string>
-  <string name="firstrun_next_button">Següent</string>
-  <!-- Indicator that no trackers are being blocked because content blocking is disabled; normally shows the number of blocked trackers -->
-  <string name="content_blocking_disabled">-</string>
   <!-- Label of the action that will add the current website to the home screen (shown in the confirmation dialog). -->
   <string name="dialog_addtohomescreen_action_add">Afegeix</string>
-  <!-- Label of the action that will add the current website to the home screen (shown in the confirmation dialog). -->
-  <string name="dialog_addtohomescreen_action_yes">SÍ</string>
   <!-- Label of the action that will close the dialog and not add anything to the home screen (shown in the confirmation dialog). -->
   <string name="dialog_addtohomescreen_action_cancel">Cancel·la</string>
-  <!-- Label of the action that will close the dialog and not add anything to the home screen (shown in the confirmation dialog). -->
-  <string name="dialog_addtohomescreen_action_no">NO</string>
   <!--
     When enhanced tracking protection is disabled for the current session then we will show this warning in the "Add to home screen" dialog to
     let the user know that the shortcut will always be opened with enhanced tracking protection disabled.
@@ -562,8 +413,6 @@
     * To see how this string will look like in Android's UI, see: https://github.com/mozilla-mobile/focus-android/issues/863#issuecomment-324105723
   -->
   <string name="notification_browsing_session_channel_description">Les notificacions permeten esborrar la sessió del %1$s amb un sol toc. No cal ni obrir l\'aplicació ni mostrar el contingut del navegador.</string>
-  <!-- Label for a button in the "tabs tray" to erase the browsing history (closes all tabs and removes associated data). -->
-  <string name="tabs_tray_action_erase">Esborra l\'historial de navegació</string>
   <!-- Label for the option in the Focus "tabs tray" to clos the other tabs except the current tab. -->
   <string name="tabs_tray_action_erase_other">Tanca les altres pestanyes</string>
   <!-- Label for the option in the Focus "tabs tray" to add a new tab. -->
@@ -573,21 +422,6 @@
     item in the list of browsers. Clicking it will open the app store installed on the device (usually that's Google Play).
   -->
   <string name="download_firefox" tools:ignore="BrandUsage">Baixa el Firefox</string>
-  <!-- Text shown in prompts for GeckoView -->
-  <string name="gv_prompt_username_hint">Nom d\'usuari</string>
-  <string name="gv_prompt_password_hint">Contrasenya</string>
-  <string name="gv_prompt_clear">Esborra</string>
-  <!--
-    Text shown in Security Information Popup
-
-    Text to denote secure or insecure connection
-  -->
-  <string name="security_popup_secure_connection">Connexió segura</string>
-  <string name="security_popup_insecure_connection">Connexió insegura</string>
-  <!-- %1$s will be replaced with organization that granted the SSL certificate -->
-  <string name="security_popup_security_verified">Verificat per: %1$s</string>
-  <!-- Content Description of Security Icon in toolbar -->
-  <string name="site_security_icon_content_description">Seguretat del lloc</string>
   <!--
     Text shown in Security Information Popup
 
@@ -608,28 +442,6 @@
   <string name="preference_autocomplete_duplicate_url_error">L\'URL ja existeix</string>
   <!-- Label for the Find in page button -->
   <string name="find_in_page">Cerca a la pàgina</string>
-  <!-- Watermark/Hint for the find in page input field -->
-  <string name="find_in_page_input">Cerca a la pàgina</string>
-  <!--
-    String to show the number of results found in the page and the position
-    the user is at. %1$d is the position, %2$d is the total number of
-    results.
-  -->
-  <string name="find_in_page_result">%1$d/%2$d</string>
-  <!--
-    String to be read by the accessibility service presenting the number of
-    results found in the page and the position the user is at. %1$d is the
-    position, %2$d is the total number of results.
-  -->
-  <string name="accessibility_find_in_page_result">%1$d de %2$d</string>
-  <!-- String to be read by the accessibility service when focusing the next result button -->
-  <string name="accessibility_next_result">Cerca el següent resultat</string>
-  <!-- String to be read by the accessibility service when focusing the previous result button -->
-  <string name="accessibility_previous_result">Cerca el resultat anterior</string>
-  <!-- String to be read by the accessibility service when focusing the dismiss button in the "find in page" UI -->
-  <string name="accessibility_dismiss_find_in_page">Tanca la cerca</string>
-  <!-- Checkbox menu item text to request desktop site -->
-  <string name="preference_performance_request_desktop_site">Mostra el lloc d\'escriptori</string>
   <!-- Checkbox menu item text to request desktop site -->
   <string name="preference_performance_request_desktop_site2">Lloc d’escriptori</string>
   <!-- Displayed after a user long presses on the URL in a custom tab to copy the URL -->
@@ -642,56 +454,6 @@
   <string name="preference_category_advanced">Avançat</string>
   <!-- Preference for site permissions -->
   <string name="preference_site_permissions">Permisos dels llocs</string>
-  <!-- Preference for cookie banner. The name of the item from settings screen and the title of the cookie banner screen. -->
-  <string name="preferences_cookie_banner">Reducció de bàners de galetes</string>
-  <!-- Preference summary for the cookie banner. If the cookie banner option is not disabled. -->
-  <string name="preferences_cookie_banner_summary_on">Activada</string>
-  <!-- Preference summary for the cookie banner. If the cookie banner option is disabled. -->
-  <string name="preferences_cookie_banner_summary_off">Desactivada</string>
-  <!-- Title preference inside Cookie banner reduction screen. Here you can set the cookie banner option to disabled or reject_all. -->
-  <string name="cookie_banner_reject_all_option_title">Reducció de bàners de galetes</string>
-  <!-- Preference summary inside Cookie banner reduction screen. Here you can set the cookie banner option to disabled or reject_all. -->
-  <string name="cookie_banner_reject_all_option_summary">Vegeu menys bàners rebutjant automàticament les sol·licituds de galetes, quan sigui possible.</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically, this is shown as part of the protections panel with the tracking protection toggle. -->
-  <string name="cookie_banner_exception_item_title">Reducció de bàners de galetes</string>
-  <!-- Text for indicating cookie banner handling is on this site, this is shown as part of the protections panel with the tracking protection toggle. -->
-  <string name="cookie_banner_exception_item_description_state_on">Activada en aquest lloc</string>
-  <!-- Text for indicating cookie reducer is not supported on the current site, this is shown as part of the protections panel with the tracking protection toggle. -->
-  <string name="cookie_banner_exception_site_not_supported">Aquest lloc no és compatible ara per ara</string>
-  <!-- Text for indicating cookie banner handling is off this site, this is shown as part of the protections panel with the tracking protection toggle. -->
-  <string name="cookie_banner_exception_item_description_state_off">Desactivada en aquest lloc</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically, this is shown when the user enters in details after he clicks on the item from protection panel. -->
-  <string name="cookie_banner_exception_panel_switch_title">Reducció de bàners de galetes</string>
-  <!-- Text for indicating cookie banner handling is off this site, this is shown when the user enters in details after he clicks on the item from protection panel. -->
-  <string name="cookie_banner_exception_panel_switch_state_off">Desactivada en aquest lloc</string>
-  <!-- Text for indicating cookie banner handling is on this site, this is shown when the user enters in details after he clicks on the item from protection panel. -->
-  <string name="cookie_banner_exception_panel_switch_state_on">Activada en aquest lloc</string>
-  <!-- Title text for a detail explanation indicating cookie banner handling is on this site, this is shown as part of the cookie banner panel in the toolbar. %1$s is a shortened URL of the current site. -->
-  <string name="cookie_banner_exception_panel_title_state_on_for_site">Voleu activar la reducció de bàners de galetes per a %1$s?</string>
-  <!-- Title text for a detail explanation indicating cookie banner handling is off this site, this is shown as part of the cookie banner panel in the toolbar. %1$s is a shortened URL of the current site. -->
-  <string name="cookie_banner_exception_panel_title_state_off_for_site">Voleu desactivar la reducció de bàners de galetes per a %1$s?</string>
-  <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is on for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
-  <string name="cookie_banner_exception_panel_description_state_on_for_site">El %1$s esborrarà les galetes d’aquest lloc i actualitzarà la pàgina. En esborrar totes les galetes, pot ser que se us tanquin les sessions o que se us buidin els carros de la compra.</string>
-  <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is off for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
-  <string name="cookie_banner_exception_panel_description_state_off_for_site2">El %1$s pot intentar rebutjar automàticament les sol·licituds de galetes.</string>
-  <!-- Long text for a detail explanation indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner panel in the toolbar. -->
-  <string name="cookie_banner_exception_panel_description_site_is_not_supported">Actualment, aquest lloc web no és compatible amb la Reducció de bàners de galetes. Voleu que el nostre equip ho revisi i el faci compatible en el futur?</string>
-  <!-- Text for cancel button indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner panel in the toolbar. -->
-  <string name="cookie_banner_exception_panel_site_is_not_supported_cancel_button">Cancel·la</string>
-  <!-- Text for request support button indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner panel in the toolbar. -->
-  <string name="cookie_banner_exception_panel_site_is_not_supported_request_support_button">Sol·licita que sigui compatible</string>
-  <!-- Label for the snackBar, after the user reports with success a website where cookie banner reducer did not work -->
-  <string name="cookie_banner_report_a_site_snackbar_label">S’ha enviat la sol·licitud per a fer que aquest lloc sigui compatible.</string>
-  <!-- Label for cookie banner item from tracking protection, after the user reports with success a website where cookie banner reducer did not work -->
-  <string name="cookie_banner_the_site_was_reported">S’ha enviat la sol·licitud per a fer que aquest lloc sigui compatible.</string>
-  <!--
-    Contextual Feature Recommendation Popups
-
-    CFR for Cookie Banner (Banner Info Message). %1$s will be replaced by the app name, %2$s will be an active link using the string cfr_cookie_banner_link as text.
-  -->
-  <string name="cfr_cookie_banner">El %1$s intenta rebutjar les sol·licituds de galetes per tancar els molestos bàners de galetes.\n\nGestioneu les preferències dels bàners de galetes en els %2$s.</string>
-  <!-- CFR for Cookie Banner (Banner Info Message). This string is used as text for a link in cfr_cookie_banner and takes the user to the app settings. -->
-  <string name="cfr_cookie_banner_link">paràmetres</string>
   <!-- Preference for autoplay -->
   <string name="preference_autoplay">Reproducció automàtica</string>
   <!-- Heading for the instructions to allow a permission -->
@@ -738,23 +500,8 @@
   <string name="biometric_prompt_title">Confirmeu mitjançant l’empremta digital</string>
   <!-- Subtitle text for biometric prompt pop-up -->
   <string name="biometric_prompt_subtitle">Podeu utilitzar l’empremta digital per continuar la sessió actual de l’aplicació.</string>
-  <!--
-    Button for the fingerprint authentication dialog box that is shown to the user when sharing a link to the app
-    while the user has biometric authentication enabled. When pressed, the user's previous session is cleared, and the shared link is opened.
-  -->
-  <string name="biometric_auth_open_link_new_session">Obre l’enllaç en una sessió nova</string>
   <!-- Description for the fingerprint authentication image. Used for accessibility purposes. -->
   <string name="biometric_auth_image_description">Icona d\'empremta digital</string>
-  <!--
-    Error text displayed when the user's fingerprint cannot be recognized upon re-entering the app.
-    This is displayed during the authentication flow as the app launches.
-  -->
-  <string name="biometric_auth_not_recognized_error">No s\'ha reconegut l\'empremta digital. Torneu-ho a provar.</string>
-  <!--
-    Error text displayed when the user's fingerprint moved too quickly upon re-entering the app
-    This is displayed during the authentication flow as the app launches.
-  -->
-  <string name="biometric_auth_moved_too_quickly">El dit s\'ha mogut massa ràpid. Torneu-ho a provar.</string>
   <!-- Title for the prompt to enable search suggestions -->
   <string name="enable_search_suggestion_title2">Voleu que es mostrin suggeriments de cerca?</string>
   <!--
@@ -770,42 +517,6 @@
   <string name="no_suggestions_message">No tots els motors de cerca poden mostrar suggeriments.</string>
   <!-- Button to dismiss the message displayed  when using a search engine that doesn't provide suggestions -->
   <string name="dismiss_no_suggestions_prompt_button">Tanca</string>
-  <!-- Tips displayed on the home view -->
-
-  <!--
-    Tip displayed on home view explaining how to disable tracking protection
-    The new line here must be kept as the second half of the string is clickable for the user.
-  -->
-  <string name="tip_disable_tracking_protection">El lloc té un comportament inesperat?\nProveu de desactivar la protecció contra el seguiment</string>
-  <!--
-    Tip displayed on home view explaining how to add sites to homescreen
-    %1$s is replaced with a line break in the application.
-  -->
-  <string name="tip_add_to_homescreen">Accediu amb un sol toc als llocs que més utilitzeu%1$s Menú &gt; Afegeix a pantalla d\'inici</string>
-  <!--
-    Tip displayed on home view explaining how to make Focus the default browser
-    %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
-    The new line here must be kept as the second half of the string is clickable for the user.
-  -->
-  <string name="tip_set_default_browser">Obriu tots els enllaços amb el %1$s\nDefiniu el %1$s com a navegador per defecte</string>
-  <!--
-    Tip displayed on home view explaining how to add a custom autocomplete URL
-    The new line here must be kept as the second half of the string is clickable for the user.
-  -->
-  <string name="tip_autocomplete_url">Emplenament automàtic dels URL dels llocs que més utilitzeu\nManteniu premut qualsevol URL de la barra d\'adreces</string>
-  <!--
-    Tip displayed on home view explaining how to add a custom autocomplete URL
-    The new line here must be kept as the second half of the string is clickable for the user.
-  -->
-  <string name="tip_open_in_new_tab">Obriu un enllaç en una pestanya nova\nManteniu premut qualsevol enllaç de la pàgina</string>
-  <!-- Tip displayed on home view explaining how to add a custom autocomplete URL -->
-  <string name="tip_disable_tips2">Desactiva els consells de la pantalla d\'inici</string>
-  <!-- Label for the snackbar when a user opens a new tab -->
-  <string name="new_tab_opened_snackbar">S\'ha obert una pestanya nova</string>
-  <!-- Label for the button in the snackbar that switches to the newly opened tab -->
-  <string name="open_new_tab_snackbar">Vés-hi</string>
-  <!-- Preference for switching to a new tab immediately after opening -->
-  <string name="preference_open_new_tab">En obrir un enllaç en una pestanya nova, vés-hi immediatament</string>
   <!-- Preference title for safe browsing which when enabled, blocks dangerous or deceptive webpages that may include phishing or malware -->
   <string name="preference_safe_browsing_title">Bloca els llocs potencialment perillosos i maliciosos</string>
   <!-- Preference summary for safe browsing which when enabled, blocks dangerous or deceptive webpages that may include phishing or malware -->
@@ -824,10 +535,6 @@
   <string name="preference_exceptions_remove_all_button_label">Elimina tots els llocs web</string>
   <!-- Title for Preference screen for cookie blocking for exceptions tracking protection -->
   <string name="preference_block_cookies_title">Bloca les galetes</string>
-  <!-- Message for Preference screen for cookie blocking for exceptions tracking protection -->
-  <string name="preference_category_block_cookies">Voleu blocar les galetes?</string>
-  <!-- Title for the tab crash report screen -->
-  <string name="tab_crash_report_title">La pestanya ha fallat</string>
   <!-- Headline for the tab crash report screen -->
   <string name="tab_crash_report_headline">S\'ha produït un problema amb aquesta pestanya.</string>
   <!-- Subtitle for the tab crash report screen -->
@@ -836,8 +543,6 @@
   <string name="tab_crash_report_close_tab_button_label">Tanca la pestanya</string>
   <!-- Label for the checkbox to send the tab crash report to Mozilla -->
   <string name="crash_report_send_crash_label" tools:ignore="BrandUsage">Envia un informe de fallada a Mozilla</string>
-  <!-- Tracking protection bottom sheet -->
-
   <!-- Label for the total number of trackers blocked. %s is the app install date. -->
   <string name="trackers_count_note">Elements de seguiment blocats des del %s</string>
   <!-- Category of trackers (content) that can be blocked by Enhanced Tracking Protection. -->
@@ -922,8 +627,6 @@
     CFR for Toolbar Shield Icon (Banner Info Message)
   -->
   <string name="cfr_for_toolbar_shield_icon2">Enxampats! Hem impedit que aquest lloc us espiï. Toqueu l’escut en qualsevol moment per veure què hem blocat.</string>
-  <!-- Content description (not visible, for screen readers etc.): Button that closes the CFR popup -->
-  <string name="cfr_close_button_description">Tanca la finestra emergent</string>
   <!--
     Tool Tip for: Privacy and Security Settings Screen  task : https://github.com/mozilla-mobile/focus-android/issues/6211
 
@@ -936,8 +639,6 @@
   <string name="tool_tip_dismiss_button_content_description">Descarta</string>
   <!-- CFR for Toolbar Delete Icon (Banner Info Message) -->
   <string name="cfr_for_toolbar_delete_icon2">Toqueu aquí per eliminar-ho tot (historial, galetes, tot!) i tornar a començar en una pestanya nova.</string>
-  <!-- Promote SearchWidget Dialog -->
-
   <!--
     Content description (not visible, for screen readers etc.): This is the description for the
     close button from promote search widget dialog.

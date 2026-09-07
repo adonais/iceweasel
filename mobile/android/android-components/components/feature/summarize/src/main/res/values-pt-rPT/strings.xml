@@ -52,7 +52,7 @@
   <!-- Title for the error screen when page is too long to summarize -->
   <string name="mozac_summarize_content_too_long_error_title">A página é demasiado extensa para ser resumida</string>
   <!-- Title for the error screen when the page content is behind a paywall -->
-  <string name="mozac_summarize_paywalled_content_error_title">Não é possível resumir o conteúdo pago</string>
+  <string name="mozac_summarize_paywalled_content_error_title">Não é possível resumir conteúdo pago</string>
   <!-- Title for the info error screen -->
   <string name="mozac_summarize_info_error_title">Não é possível resumir neste momento</string>
   <!-- Generic fallback message for the info error screen -->
@@ -96,9 +96,9 @@
   <!-- Accessibility label for the action of the thumbs up button. This will be interpolated into a longer message, equivalent to "Double tap to [rate summary as good]" in English. Structure and phrasing vary by target language: using an infinitive/dictionary form of the verb is recommended. -->
   <string name="mozac_feature_summarize_feedback_good_click_label">avaliar resumo como bom</string>
   <!-- Content description for the thumbs down button used to rate a generated summary as unhelpful -->
-  <string name="mozac_feature_summarize_feedback_bad_content_description">Resumo errado</string>
+  <string name="mozac_feature_summarize_feedback_bad_content_description">Mau resumo</string>
   <!-- Accessibility label for the action of the thumbs down button. This will be interpolated into a longer message, equivalent to "Double tap to [rate summary as bad]" in English. Structure and phrasing vary by target language: using an infinitive/dictionary form of the verb is recommended. -->
-  <string name="mozac_feature_summarize_feedback_bad_click_label">avaliar resumo como errado</string>
+  <string name="mozac_feature_summarize_feedback_bad_click_label">avaliar resumo como mau</string>
   <!-- Accessibility state of the thumbs up or thumbs down button the user picked, announced when the rating is submitted and whenever that button is focused afterwards. Buttons the user did not pick have no state. -->
   <string name="mozac_feature_summarize_feedback_state_submitted">Avaliação submetida</string>
   <!-- Title for the page summary AI controllable feature -->
@@ -110,7 +110,7 @@
   <!-- Title for the Mozilla account sign-in screen, shown when summarization results in a connection failure. -->
   <string name="mozac_summarize_fxa_sign_in_title">Iniciar sessão para resumir</string>
   <!-- Message on the sign-in screen, inviting the user to continue with an existing Mozilla account or create a new one -->
-  <string xmlns:ns0="http://schemas.android.com/tools" name="mozac_summarize_fxa_sign_in_message" ns0:ignore="BrandUsage">Utilize a sua conta Mozilla para continuar ou crie uma para começar.</string>
+  <string xmlns:ns0="http://schemas.android.com/tools" name="mozac_summarize_fxa_sign_in_message" ns0:ignore="BrandUsage">Use a sua conta Mozilla para continuar ou crie uma para começar.</string>
   <!-- Label for the button that starts the sign-in flow -->
   <string name="mozac_summarize_fxa_sign_in_button_positive">Iniciar sessão</string>
 </resources>

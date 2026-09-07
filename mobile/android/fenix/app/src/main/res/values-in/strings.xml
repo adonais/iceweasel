@@ -31,6 +31,8 @@
   <string name="history_search_hint">Riwayat pencarian</string>
   <!-- Placeholder text shown in search bar when using bookmarks search -->
   <string name="bookmark_search_hint">Cari markah</string>
+  <!-- Content description for the toolbar back button while searching bookmarks -->
+  <string name="bookmark_close_search_description">Kembali dan tutup pencarian</string>
   <!-- Placeholder text shown in search bar when using tabs search -->
   <string name="tab_search_hint">Cari tab</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
@@ -143,6 +145,12 @@
   <string name="home_screen_shortcut_passwords">Sandi</string>
   <!-- Shortcut action to open uninstall survey -->
   <string name="home_screen_shortcut_uninstall_survey">Mengapa hapus aplikasi?</string>
+  <!--
+    Recent Tabs
+
+    Header text on the homescreen for continuing to browse the most recent browser tab
+  -->
+  <string name="recent_tabs_header_2">Lanjutkan</string>
   <!--
     Recent Tabs
 
@@ -608,7 +616,7 @@
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Bagikan bagaimana Anda menemukan Firefox, dan bahwa Anda menggunakannya, dengan mitra pemasaran Mozilla. Data ini tidak pernah dijual. %1$s</string>
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
-  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Bagikan bagaimana Anda menemukan Firefox, dan bahwa Anda menggunakannya, dengan mitra pemasaran Mozilla. Data ini tidak pernah dijual.</string>
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage,UnusedResources">Bagikan bagaimana Anda menemukan Firefox, dan bahwa Anda menggunakannya, dengan mitra pemasaran Mozilla. Data ini tidak pernah dijual.</string>
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
   <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage,UnusedResources">Anda dapat membantu kami menjangkau lebih banyak orang dengan mengizinkan Mozilla untuk menginformasikan saluran tempat kami mempromosikan Firefox bahwa Anda adalah pengguna Firefox.</string>
   <!--
@@ -680,6 +688,8 @@
   <string name="nova_onboarding_customize_prompt_positive_button" tools:ignore="UnusedResources">Mulai ubahsuai</string>
   <!-- App icon onboarding title. -->
   <string name="nova_onboarding_app_icon_prompt_title" tools:ignore="UnusedResources">Pilih ikon aplikasi kustom</string>
+  <!-- App icon onboarding body. -->
+  <string name="nova_onboarding_app_icon_prompt_body" tools:ignore="UnusedResources">Berikan sentuhan pribadi pada layar beranda Anda.</string>
   <!--
     Widget Picker
 
@@ -708,8 +718,12 @@
   <string name="preferences_category_general">Umum</string>
   <!-- Preference category for all links about Fenix -->
   <string name="preferences_category_about">Tentang</string>
+  <!-- Preference category for settings related to changing the default search engine -->
+  <string name="preferences_category_select_default_search_engine_2">Mesin pencari baku penjelajahan normal</string>
   <!-- Preference category for settings related to changing the private browsing search engine -->
   <string name="preferences_category_select_private_search_engine">Mesin pencari bawaan penjelajahan pribadi</string>
+  <!-- Option to set the private browsing mode to use the normal default search engine -->
+  <string name="search_engine_use_default">Gunakan mesin pencari yang sama seperti penjelajahan normal</string>
   <!-- Preference for settings related to managing search shortcuts for the quick search menu -->
   <string name="preferences_manage_search_shortcuts_2">Kelola mesin pencari alternatif</string>
   <!-- Summary for preference for settings related to managing search shortcuts for the quick search menu -->
@@ -763,8 +777,6 @@
   <string name="preferences_pbm_lock_screen_title">Gunakan kunci layar untuk menyembunyikan tab dalam penjelajahan pribadi</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_3">Lihat tab dengan sidik jari, PIN, atau face unlock Anda. Mengaktifkan ini juga mencegah tangkapan layar dan berbagi.</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">Pemblokir Spanduk Kuki dalam penjelajahan pribadi</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">Secara otomatis mencoba terhubung ke situs menggunakan protokol enkripsi HTTPS untuk meningkatkan keamanan.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -809,6 +821,8 @@
   <string name="preferences_toolbar_shortcut">Pintasan bilah alat</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_toolbar_select_shortcut">Pilih pintasan</string>
+  <!-- Title of a menu option allowing to change the shortcut button shown in the toolbar -->
+  <string name="toolbar_shortcut_menu_edit_option">Edit pintasan</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_gestures">Gestur</string>
   <!-- Preference for settings related to visual options -->
@@ -863,6 +877,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Saran dari %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Dapatkan rekomendasi dari web yang terkait dengan pencarian Anda</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards" tools:ignore="BrandUsage">Dapatkan saran dari Mozilla saat Anda mengetik</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Berbagi tautan</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -892,8 +908,12 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Anda tidak memiliki izin untuk menggunakan folder ini. Coba pilih yang lain.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Kelola unduhan dengan aplikasi lain</string>
+  <!-- Preference category for deleting or removing downloads -->
+  <string name="preferences_category_delete_or_remove_downloads">Hapus atau singkirkan unduhan</string>
   <string name="preferences_downloads_delete_from_device">Hapus dari perangkat</string>
+  <string name="preferences_downloads_delete_from_device_description">Berkas dihapus dari perangkat Anda dan disingkirkan dari riwayat unduhan</string>
   <string name="preferences_downloads_remove_from_download_history">Hapus dari riwayat unduhan</string>
+  <string name="preferences_downloads_remove_from_download_history_description">Berkas dihapus dari riwayat unduhan Anda, tetapi masih tersimpan di perangkat Anda</string>
   <string name="preferences_downloads_ask_when_to_delete_files">Tanya sebelum hapus berkas</string>
   <!-- Preference for downloads -->
   <string name="preferences_downloads_2">Pengaturan Unduhan</string>
@@ -911,6 +931,12 @@
   <string name="notifications_allowed_summary">Diizinkan</string>
   <!-- Summary for notification preference indicating notifications are not allowed -->
   <string name="notifications_not_allowed_summary">Tidak diizinkan</string>
+  <!-- Preference for local network access / nearby devices in Android 17 -->
+  <string name="preferences_local_network_access">Akses Jaringan Lokal / Perangkat di Sekitar</string>
+  <!-- Summary for local network access preference indicating access is allowed -->
+  <string name="local_network_access_allowed_summary">Diizinkan</string>
+  <!-- Summary for local network access preference indicating access is not allowed -->
+  <string name="local_network_access_not_allowed_summary">Tidak diizinkan</string>
   <!--
     Add-on Permissions
 
@@ -955,6 +981,8 @@
     Title for the customize home screen section with privacy report.
   -->
   <string name="customize_toggle_privacy_report">Laporan privasi</string>
+  <!-- Title for a customize home screen section. Continue is a section that displays the most recent browser tab, so users can continue browsing where they left off. -->
+  <string name="customize_toggle_continue">Lanjutkan</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Lompat kembali</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -970,12 +998,10 @@
   <string name="customize_toggle_pocket_sponsored">Konten bersponsor</string>
   <!-- Title for the opening wallpaper settings screen -->
   <string name="customize_wallpapers">Wallpaper</string>
-  <!-- Label for the menu item that opens the wallpaper settings screen. -->
-  <string name="browser_menu_change_wallpaper">Ubah gambar latar</string>
+  <!-- Label for the menu item that opens the customize homepage settings screen. -->
+  <string name="browser_menu_customize_homepage">Sesuaikan laman beranda</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Pintasan bersponsor</string>
-  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
-  <string name="customize_toggle_world_cup">Piala Dunia</string>
   <!--
     Wallpapers
 
@@ -1100,6 +1126,8 @@
   <string name="extension_process_crash_dialog_retry_button_text" tools:ignore="UnusedResources">Cobalah memulai ulang ekstensi</string>
   <!-- Button text on the extension crash dialog to prompt the user to continue with all extensions disabled. -->
   <string name="extension_process_crash_dialog_disable_extensions_button_text">Lanjutkan dengan ekstensi yang dinonaktifkan</string>
+  <!-- Text shown in the snackbar action button that lets the user retry an add-on operation that just failed. -->
+  <string name="addon_failure_retry_action">Coba Lagi</string>
   <!--
     Account Preferences
 
@@ -1273,6 +1301,11 @@
   <string name="preference_light_theme">Terang</string>
   <!-- Preference for using dark theme -->
   <string name="preference_dark_theme">Gelap</string>
+  <!--
+    Preference for using the OLED theme. For localization, this can be translated as "True Black", "Maximum Darkness",
+    or "Full dark" if needed.
+  -->
+  <string name="preference_oled_theme">Paling Gelap</string>
   <!-- Preference for using using dark or light theme automatically set by battery -->
   <string name="preference_auto_battery_theme">Diatur oleh Penghemat Baterai</string>
   <!-- Preference for using following device theme -->
@@ -1419,6 +1452,16 @@
   <string name="preferences_inactive_tabs">Pindahkan tab lama menjadi nonaktif</string>
   <!-- Title of inactive tabs preference -->
   <string name="preferences_inactive_tabs_title">Tab yang belum Anda lihat selama dua minggu dipindahkan ke bagian nonaktif.</string>
+  <!-- Title for the preference to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_feature">Aktifkan Grup Tab</string>
+  <!--
+    Privacy report
+
+    Category header of a preference that allows a user to enable or disable the privacy report feature
+  -->
+  <string name="preferences_privacy_report">Laporan privasi</string>
+  <!-- Title of the privacy report preference that allows a user to enable or disable the feature -->
+  <string name="preferences_privacy_report_title">Aktifkan laporan privasi</string>
   <!--
     Studies
 
@@ -1457,6 +1500,13 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Tab Pribadi Terbuka: %1$s. Ketuk untuk beralih tab.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="other">%1$d grup tab terbuka. Ketuk untuk beralih tab.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1536,6 +1586,18 @@
   <string name="pwa_site_controls_title_private">%1$s (Mode Privat)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Buka pencarian tab</string>
+  <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
+  <string name="tab_group_onboarding_item_title">Buat grup tab</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+  <string name="tab_group_onboarding_grid_item_description">Seret satu tab ke tab lainnya untuk mengelompokkannya.</string>
+  <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+  <string name="tab_group_onboarding_list_item_description">Pilih beberapa tab untuk membuat grup.</string>
+  <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
+  <string name="tab_group_onboarding_item_dismiss_content_description">Tutup pengenalan grup tab</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Coba grup tab untuk lebih sedikit menggulir, lebih banyak melakukan</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Pilih tab untuk membuat grup. Mereka disimpan di sini, siap saat Anda siap.</string>
   <!--
     Tab Group
 
@@ -1545,6 +1607,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Edit grup</string>
   <string name="create_tab_group_save_button">Simpan</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Grup baru, ciutkan tuas seret</string>
   <!--
     Default tab group name when creating a tab group
     %d is the number of existing tab groups + 1.
@@ -1552,12 +1616,83 @@
   <string name="create_tab_group_form_default_name">Grup %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
   <string name="create_tab_group_name_label">Nama grup tab</string>
+  <!-- Title for adding more tabs to a tab group. -->
+  <string name="add_to_tab_group_title">Tambahkan ke</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Tambahkan ke grup tab, ciutkan tuas seret</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Tambahkan ke grup tab baru</string>
+  <!-- Label for adding to a new tab group. -->
+  <string name="add_to_new_tab_group_title">Grup tab baru</string>
+  <plurals name="tab_group_tabs_count_subtitle">
+    <!--
+      Subtitle for the number of tabs in a tab group.
+      %1$d is the number of tabs in a tab group.
+    -->
+    <item quantity="other">%1$d tab</item>
+  </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="other">Tambahkan ke grup tab %1$s, %2$d tab, warna %3$s</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Lihat grup tab, ciutkan tuas seret</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="other">Grup tab %1$s dengan %2$d tab, warna %3$s</item>
+  </plurals>
+  <!-- Title for the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_title">Hapus grup tab?</string>
+  <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_body">Ini akan menghapus grup secara permanen.</string>
+  <!-- Text shown on the confirm button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_confirm">Hapus grup</string>
+  <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_cancel">Batal</string>
   <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
   <string name="close_tab_and_delete_group_confirmation_dialog_title">Tutup tab dan hapus grup?</string>
   <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
   <string name="close_tab_and_delete_group_confirmation_dialog_body">Ini akan menghapus grup secara permanen.</string>
   <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
   <string name="close_tab_and_delete_group_confirmation_dialog_confirm">Hapus grup</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">Batal</string>
+  <!-- Content description for the three dot button next to a tab group" -->
+  <string name="tab_group_three_dot_button_content_description">Opsi lainnya</string>
+  <!-- Text shown on the edit button for a tab group on the three dot menu -->
+  <string name="tab_group_three_dot_menu_edit">Sunting</string>
+  <!-- Text shown on the ungroup button for a tab group on the three dot menu -->
+  <string name="tab_group_three_dot_menu_ungroup">Pisahkan grup</string>
+  <!-- Text shown on the delete button for a tab group on the three dot menu -->
+  <string name="tab_group_three_dot_menu_delete">Hapus</string>
+  <!-- Text shown on the share button for a tab group on the three dot menu -->
+  <string name="tab_group_three_dot_menu_share">Bagikan</string>
+  <!-- Text shown on the close button for a tab group on the three dot menu -->
+  <string name="tab_group_three_dot_menu_close">Tutup</string>
+  <!-- Title for the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_title">Pisahkan grup tab?</string>
+  <!-- Text shown in the body of the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_body">Tab akan tetap terbuka di perangkat ini, tetapi grup akan dihapus.</string>
+  <!-- Text shown on the Don't Ask Again checkbox button in the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_dont_ask_again">Jangan tanyakan lagi</string>
+  <!-- Text shown on the confirm button in the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_confirm">Pisahkan grup</string>
+  <!-- Text shown on the cancel button in the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_cancel">Batal</string>
+  <!-- Custom accessibility action to reorder a tab up rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_up">Pindahkan tab ke atas</string>
+  <!-- Custom accessibility action to reorder a tab left rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_left">Pindahkan tab ke kiri</string>
+  <!-- Custom accessibility action to reorder a tab right rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_right">Pindahkan tab ke kanan</string>
+  <!-- Custom accessibility action to reorder a tab down rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_down">Pindahkan tab ke bawah</string>
   <!--
     Color labels for tab groups, used for accessibility and selection UI.
 
@@ -1570,6 +1705,16 @@
   <string name="tab_group_color_red">Merah</string>
   <!-- Tab group color: Pink -->
   <string name="tab_group_color_pink">Merah Muda</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Ungu</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Biru</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Sian</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Hijau</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Abu-abu</string>
   <!--
     History
 
@@ -1646,6 +1791,10 @@
     This button will dismiss the dialog.
   -->
   <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Batal</string>
+  <plurals name="downloads_delete_dialog_title">
+    <!-- Title for the download deletion confirmation dialog. The message changes depending on how many files are selected. %d is the number of files to be deleted. -->
+    <item quantity="other">Hapus %d berkas?</item>
+  </plurals>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Hapus</string>
   <!-- Content description for the toolbar "Navigate back" button -->
@@ -1677,6 +1826,14 @@
   <string name="download_delete_multi_select_dialog_confirm">Hapus</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Batal</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
+  <string name="download_delete_dialog_from_device">Hapus dari perangkat</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
+  <string name="download_delete_dialog_from_history">Hanya hapus dari riwayat unduhan</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the negative action. -->
+  <string name="download_delete_dialog_cancel">Batal</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the positive action. -->
+  <string name="download_delete_dialog_confirm">Konfirmasi</string>
   <!-- Title for the alert dialog confirmation before renaming a download item. -->
   <string name="download_rename_dialog_title">Ganti nama berkas</string>
   <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
@@ -1690,6 +1847,8 @@
   <string name="download_rename_error_exists_error">Berkas bernama “%s” sudah ada di lokasi ini</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">Nama berkas tidak boleh menggunakan “/”</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">Nama yang Anda masukkan hanya mengubah huruf besar atau kecil. Coba nama berkas yang berbeda.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Tidak dapat mengganti nama berkas</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -1798,18 +1957,32 @@
   <string name="webcompat_reporter_label_url">URL</string>
   <!-- The error message of the URL text field when an invalid URL has been entered. -->
   <string name="webcompat_reporter_url_error_invalid">Masukkan URL yang valid</string>
+  <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
+  <string name="webcompat_reporter_label_whats_broken_3">Apa yang tidak berfungsi?</string>
+  <!-- Content description for the icon button that clears the selected broken site reason in the WebCompat Reporter. -->
+  <string name="webcompat_reporter_clear_reason_content_description">Kosongkan alasan yang dipilih</string>
+  <!-- The error message of the description when the user selects "Something else" as the reason, but left the description empty or too short. -->
+  <string name="webcompat_reporter_description_error">Harap masukkan minimal 10 karakter</string>
+  <!-- The label/title of a mandatory field in the Web Compat Reporter feature for adding additional information. -->
+  <string name="webcompat_reporter_label_mandatory_description">Jelaskan masalahnya secara rinci untuk membantu kami menyelidiki masalah ini</string>
+  <!-- The label/title of a optional field in the Web Compat Reporter feature for adding additional information. -->
+  <string name="webcompat_reporter_label_optional_description">Jelaskan masalah secara rinci untuk membantu kami menyelidiki masalah (opsional)</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">Batal</string>
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send_report">Kirim laporan</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
   <string name="webcompat_reporter_success_snackbar_text_2">Laporan terkirim</string>
+  <!-- Placeholder text for the description field to prompt the user on what they should type. -->
+  <string name="webcompat_reporter_problem_description_placeholder_text_2">Apa yang terjadi? Apa yang Anda harapkan terjadi? Berikan langkah-langkah untuk mereproduksi masalah.</string>
+  <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
+  <string name="webcompat_reporter_etp_checkbox_text_2">Kirim daftar item yang diblokir oleh perlindungan pelacakan</string>
   <!-- The button text for the preview report button to view a preview of the report. -->
   <string name="webcompat_reporter_preview_report">Pratinjau Laporan</string>
   <!-- The title shown at the top of the WebCompat Report preview panel. This appears after the user taps the “Preview” button before sending a report. -->
   <string name="webcompat_reporter_preview_bottom_sheet_header">Pratinjauan Laporan</string>
-  <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
-  <string name="webcompat_reporter_preview_bottom_sheet_send">Kirim</string>
+  <!-- Title for the Edit URL confirmation dialog in the WebCompatReporter -->
+  <string name="webcompat_reporter_edit_url_dialog_title">Edit URL situs web</string>
   <!-- Text shown on the save button for the Edit URL confirmation dialog in the WebCompatReporter. -->
   <string name="webcompat_reporter_edit_url_dialog_save">Simpan</string>
   <!-- Text shown on the dismiss button for the Edit URL confirmation dialog in the WebCompatReporter. -->
@@ -1834,6 +2007,8 @@
   <string name="webcompat_reporter_reason_turn_off_adblocker">Situs minta untuk mematikan pemblokir iklan</string>
   <!-- Broken site reason text for browser isn’t supported or blocked -->
   <string name="webcompat_reporter_reason_notsupported_2">Peramban diblokir atau tidak didukung</string>
+  <!-- Broken site reason text for the site being deceptive -->
+  <string name="webcompat_reporter_reason_site_is_deceptive">Situs ini menyesatkan</string>
   <!-- Broken site reason text for something else -->
   <string name="webcompat_reporter_reason_other">Lainnya</string>
   <!--
@@ -1925,6 +2100,12 @@
   <string name="bookmark_sort_menu_a_to_z">Urut berdasarkan A hingga Z</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Urut berdasarkan Z hingga A</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Impor dari berkas</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Tidak dapat mengimpor markah. Coba lagi.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Markah yang diimpor</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -1973,8 +2154,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">Tutup folder: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Tutup markah</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Impor dari berkas</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Belum ada markah</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Satukan semua markah favorit Anda</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Markah dalam folder: %s</string>
   <!-- Text for the button to navigate to sync authentication -->
@@ -1985,6 +2170,10 @@
   <string name="bookmark_select_folder_new_folder_button_title">Folder baru</string>
   <!-- Bookmark snackbar message for moving a single item. %1$s is the title of the item being moved and %2$s is the new parent folder of the bookmark -->
   <string name="bookmark_moved_single_item">Dipindahkan %1$s ke %2$s</string>
+  <!-- Text for bookmark search page when there are no results. -->
+  <string name="bookmark_no_search_results">Tidak ditemukan kecocokan.</string>
+  <!-- Additional text for bookmark search page when there are no results. -->
+  <string name="bookmark_no_search_results_additional_text">Coba pencarian lain!</string>
   <!--
     Site Permissions
 
@@ -2150,6 +2339,24 @@
   <string name="menu_print">Cetak</string>
   <!-- Sub-header in the dialog to share a link to another sync device -->
   <string name="share_device_subheader">Kirim ke peranti</string>
+  <!-- Content description for the drag handle that dismisses the Send to Device bottom sheet -->
+  <string name="send_to_devices_bottom_sheet_close_content_description">Tutup Kirim ke Perangkat</string>
+  <!-- Text for the QR code action in the native share sheet -->
+  <string name="share_qr_code">Kode QR</string>
+  <!-- Title shown in the QR code display screen -->
+  <string name="qr_code_display_title">Kode QR</string>
+  <!-- Content description for the close button in the QR code display screen -->
+  <string name="qr_code_display_close">Tutup</string>
+  <!-- Heading on the QR code display screen -->
+  <string name="qr_code_display_share_nearby">Bagikan tautan di sekitar</string>
+  <!-- Body text on the QR code display screen instructing the user to have others scan the code -->
+  <string name="qr_code_display_instructions">Untuk membagikan tautan ini dengan orang-orang di sekitar, minta mereka memindai kode QR di bawah ini.</string>
+  <!-- Label for the download button on the QR code display screen -->
+  <string name="qr_code_display_download">Unduh</string>
+  <!-- Toast shown when the QR code is successfully saved to Downloads -->
+  <string name="qr_code_download_success">Kode QR disimpan ke Unduhan</string>
+  <!-- Toast shown when saving the QR code to Downloads fails -->
+  <string name="qr_code_download_failure">Gagal menyimpan Kode QR</string>
   <!-- Sub-header in the dialog to share a link to an app from the full list -->
   <string name="share_link_all_apps_subheader">Semua tindakan</string>
   <!-- Sub-header in the dialog to share a link to an app from the most-recent sorted list -->
@@ -2162,6 +2369,10 @@
   <string name="sync_sign_in">Masuk ke Sync</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Kirim ke semua peranti</string>
+  <!-- Text displayed when no other sync devices are available for link sharing -->
+  <string name="sync_no_devices_available">Tidak ada perangkat yang tersedia</string>
+  <!-- Text displayed when no other sync devices are available for link sharing. -->
+  <string name="sync_no_devices_available_description">Perangkat apa pun yang masuk dan menyinkronkan ke akun ini akan muncul di sini.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Sambungkan ulang ke Sync</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
@@ -2186,6 +2397,20 @@
   <string name="sent_from_firefox_template" tools:ignore="UnusedResources">%1$s\n\nDikirim dari %2$s Coba peramban seluler: %3$s</string>
   <!-- A short message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
   <string name="sent_from_firefox_template_short" tools:ignore="UnusedResources">%1$s\n\nDikirim dari %2$s 🦊 %3$s</string>
+  <!-- Send tab to synced devices: Authentication error title - Message asking the user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_title">Masuk kembali untuk mengirim tab antar perangkat</string>
+  <!-- Send tab to synced devices: Authentication error button - Allows user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_button">Masuk</string>
+  <!-- Send tab to synced devices: Authentication error button - Allows user to remove the currently connected account -->
+  <string name="sync_send_tab_error_auth_remove_account">Hapus akun</string>
+  <!-- Send tab to synced devices: Empty state title - Displayed when the user has no synced devices -->
+  <string name="sync_send_tab_empty_state_title">Tidak ada perangkat yang tersambung</string>
+  <!-- Send tab to synced devices: Empty state message - Displayed when the user has no synced devices -->
+  <string name="sync_send_tab_empty_state_description" tools:ignore="BrandUsage">Untuk mengirimkan tab, masuk ke Firefox minimal pada satu peranti lain.</string>
+  <!-- Send tab to synced devices: Connectivity Error title -->
+  <string name="sync_send_tab_error_connection_title">Periksa koneksi Internet Anda</string>
+  <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
+  <string name="sync_send_tab_error_connection_text">Kemudian coba kirim ulang tab Anda.</string>
   <!--
     Notifications
 
@@ -2208,6 +2433,18 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Jadikan Firefox sebagai peramban baku Anda</string>
   <!--
+    Privacy report notification
+
+    Name of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app.
+  -->
+  <string name="notification_privacy_report_channel_name">Laporan privasi</string>
+  <!-- Description of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_channel_description">%1$s menunjukkan berapa banyak pelacak yang diblokir saat Anda menjelajah.</string>
+  <!-- Body text for the weekly privacy report notification for when trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_body_has_trackers">Lanjutkan menjelajah. %1$s akan terus memblokir.</string>
+  <!-- Headline text of the weekly privacy report notification for when no trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_headline_no_trackers">%1$s memblokir pelacak saat Anda menjelajah. Anda akan melihatnya di sini.</string>
+  <!--
     Survey
 
     Text shown in the fullscreen message that pops up to ask user to take a short survey.
@@ -2218,6 +2455,8 @@
   <string name="preferences_take_survey">Ikuti Survei</string>
   <!-- Preference for not taking the short survey. -->
   <string name="preferences_not_take_survey">Tidak, Terima kasih</string>
+  <!-- Error message shown in a Toast when the system fails to trigger the device uninstallation prompt. -->
+  <string name="uninstall_survey_error_failed">Gagal membuka prompt pencopotan sistem, silakan gunakan tindakan pencopotan sistem secara langsung.</string>
   <!--
     Snackbar
 
@@ -2372,6 +2611,18 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s melindungi Anda dari banyak pelacak umum yang mengikuti apa yang Anda lakukan daring.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Pelajari lebih lanjut</string>
+  <plurals name="trackers_blocked_count_2">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="other">%d pelacak diblokir</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Anda terlindungi</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">Bantu menangkap pelacak</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Standar (baku)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2617,12 +2868,8 @@
   <string name="add_to_homescreen_cancel">Batal</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Tambah</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Lanjutkan ke situs web</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Nama pintasan</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Anda dapat dengan mudah menambahkan situs web ini ke layar Beranda perangkat Anda untuk mendapatkan akses instan dan penjelajahan lebih cepat seperti menggunakan aplikasi.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">Sandi</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->
@@ -2735,6 +2982,8 @@
   <string name="saved_logins_sort_strategy_last_used">Terakhir digunakan</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Menu urutkan kata sandi</string>
+  <!-- Label for button to import passwords from file. -->
+  <string name="passwords_import_menu_button">Impor dari berkas</string>
   <!--
     Email Masks
 
@@ -2753,6 +3002,142 @@
   <string name="email_masks_max_free_tier_reached">Anda telah menggunakan 5 topeng surel gratis, jadi kami memilih satu untuk Anda gunakan kembali.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Topeng surel tidak tersedia saat ini. Coba lagi dalam beberapa menit.</string>
+  <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">VPN bawaan</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Content description for the browser VPN settings screen top bar back button -->
+  <string name="ip_protection_navigate_back_button_content_description">Navigasi balik</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">VPN bawaan %s</string>
+  <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
+  <string name="ip_protection_promo_body_2">Jelajahi internet dengan perlindungan tambahan yang menyembunyikan lokasi Anda, bahkan saat menggunakan Wi-Fi publik. %s</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Pelajari lebih lanjut</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Batas data bulanan</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">%1$.1f GB dari %2$.1f GB tersisa</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Setel ulang ke %1$.0f GB pada tanggal pertama setiap bulan.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Lokasi</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Direkomendasikan</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Nyala</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Mati</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Menyambungkan…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Dijeda</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Galat</string>
+  <!-- Badge label shown in the VPN menu item when the user is eligible for the feature but needs to authenticate / authorize to enable it -->
+  <string name="ip_protection_menu_try_vpn_cta">Coba gratis</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">Cobalah</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Buka pengaturan VPN</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">Batas %1$d GB tercapai</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">Anda telah menghabiskan seluruh kuota data VPN sebesar %1$d GB. Akses akan dipulihkan bulan depan.</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label">VPN hidup</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description">VPN aktif.</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN turns off -->
+  <string name="ip_protection_toolbar_pill_label_off">VPN mati</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has turned off -->
+  <string name="ip_protection_toolbar_pill_description_off">VPN mati.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Memulai</string>
+  <!-- Label for the "connecting" state of the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_connecting">Menyambungkan…</string>
+  <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_onboarding_card_headline">Coba VPN bawaan %s</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">%1$s dengan menyembunyikan lokasi Anda, bahkan di Wi-Fi publik. Dapatkan %2$d GB gratis setiap bulan.</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">Jelajahi dengan perlindungan ekstra</string>
+  <!--
+    The body of the VPN onboarding card for a promotion that provides unlimited data bandwidth for a certain time.
+    %1$s is a localized date (for example "Jun 9") indicating the end of the promotional period.
+    %2$s is a link using ip_protection_onboarding_body_link_promo (“Learn more”) as text. It links to a support article about VPN on Firefox.
+  -->
+  <string name="ip_protection_onboarding_body_promo">Aktifkan untuk membuat penjelajahan Anda lebih pribadi dan lebih sulit dilacak. Coba sekarang untuk mendapatkan bandwidth tak terbatas melalui %1$s. %2$s</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link_promo">Pelajari lebih lanjut</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">Jangan sekarang</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
+  <string name="ip_protection_connection_error_snackbar">Tidak dapat tersambung ke VPN. Coba lagi dalam beberapa menit.</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the VPN location has been reset due to the previously selected VPN location being no longer available. -->
+  <string name="ip_protection_location_selection_reset_snackbar">Lokasi VPN yang dipilih tidak tersedia. Beralih ke lokasi yang disarankan.</string>
+  <!--
+    Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_snackbar">Kuota data VPN sebesar %1$d GB telah habis. Akses akan dipulihkan bulan depan.</string>
+  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
+  <string name="ip_protection_data_limit_reached_snackbar_action">Pengaturan</string>
+  <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
+  <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Nyalakan VPN agar aktivitas penjelajahan Anda lebih privat dan sulit dilacak.</string>
+  <!-- Title shown on the browser VPN settings screen for location selection section. -->
+  <string name="ip_protection_location_title" tools:ignore="UnusedResources">Lokasi</string>
+  <!-- Label for the Recommended server location option which is automatically selected by the browser. -->
+  <string name="ip_protection_recommended_location" tools:ignore="UnusedResources">Disarankan</string>
+  <!-- Headline for the card that promotes the standalone Mozilla VPN product. -->
+  <string name="ip_protection_mozilla_vpn_upsell_headline" tools:ignore="UnusedResources,BrandUsage">Lindungi lebih banyak dengan Mozilla VPN</string>
+  <!-- Body for the card that promotes the standalone Mozilla VPN product. -->
+  <string name="ip_protection_mozilla_vpn_upsell_body" tools:ignore="UnusedResources">Pilih dari 300+ lokasi dan lindungi semua aplikasi Anda hingga di 5 perangkat.</string>
+  <!-- Label for the button that takes the user to get the standalone Mozilla VPN product. -->
+  <string name="ip_protection_mozilla_vpn_upsell_button" tools:ignore="UnusedResources,BrandUsage">Dapatkan VPN Mozilla</string>
+  <!-- Title for the browser VPN location picker screen. -->
+  <string name="ip_protection_location_picker_title" tools:ignore="UnusedResources">Pilih lokasi VPN</string>
+  <!-- Description for what it means to use the Recommended setting and let the app automatically pick the best server location. -->
+  <string name="ip_protection_location_fastest_description" tools:ignore="BrandUsage">Firefox menemukan lokasi tercepat</string>
+  <!-- Description for an unavailable VPN location in the location list. -->
+  <string name="ip_protection_location_unavailable_description">Tidak tersedia</string>
+  <!-- Error message shown when the selected browser VPN location is unavailable. -->
+  <string name="ip_protection_location_unavailable" tools:ignore="UnusedResources">Lokasi tidak tersedia. Pilih lokasi lain.</string>
+  <!-- Snackbar (in-app pop-up notification) text shown when the previously selected browser VPN location is unavailable and the recommended location was used instead. -->
+  <string name="ip_protection_location_unavailable_recommended_snackbar" tools:ignore="UnusedResources">Lokasi VPN yang dipilih tidak tersedia. Tersambung ke lokasi yang disarankan.</string>
+  <!-- Title for the card shown to the user when we are unable to fetch server locations -->
+  <string name="ip_protection_locations_unavailable_title">Lokasi tidak tersedia</string>
+  <!-- Description for the card shown to the user when we are unable to fetch server locations -->
+  <string name="ip_protection_locations_unavailable_description">Beralih ke lokasi yang disarankan.</string>
+  <!-- Title for the browser VPN location selection screen (displayed in the app bar) -->
+  <string name="ip_protection_locations_title">Pilih lokasi VPN</string>
+  <!-- Content description for the browser VPN location selection screen top bar back button -->
+  <string name="ip_protection_locations_navigate_back_button_content_description">Navigasi balik</string>
   <!--
     Autofill
 
@@ -3036,6 +3421,26 @@
     which navigates the user to a screen displaying all the shortcuts.
   -->
   <string name="homepage_shortcuts_show_all_content_description">Tampilkan semua pintasan</string>
+  <!--
+    Label for the button in the shortcuts home screen section that expands the section to show
+    every shortcut.
+  -->
+  <string name="homepage_shortcuts_show_all">Tampilkan semua</string>
+  <!--
+    Label for the button in the shortcuts home screen section that collapses the section back
+    to showing only the first shortcuts.
+  -->
+  <string name="homepage_shortcuts_show_less">Tampilkan lebih sedikit</string>
+  <!-- Label for the "Add shortcut" button displayed as a tile. -->
+  <string name="homepage_shortcuts_add_shortcut">Tambahkan pintasan</string>
+  <!-- Title for the "Add to homepage" bottom sheet. -->
+  <string name="homepage_shortcuts_add_to_homepage">Tambahkan ke beranda</string>
+  <!-- Label for the "Add website" button in the "Add to homepage" bottom sheet. -->
+  <string name="homepage_shortcuts_add_website">Tambahkan situs web</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Masukkan URL Situs Web</string>
+  <!-- Title for the "Popular sites" section in the "Add to homepage" bottom sheet. -->
+  <string name="homepage_shortcuts_popular_sites">Situs populer</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Batas pintasan tercapai</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3132,6 +3537,8 @@
     Header text for a section on the home screen.
   -->
   <string name="pocket_stories_header_2">Cerita</string>
+  <!-- Header text for the Stories screen. -->
+  <string name="stories_screen_text_news">Berita</string>
   <!--
     Context description text for the "Discover more" button in the stories home screen section
     which navigates the user to a screen displaying more stories.
@@ -3201,6 +3608,8 @@
   <string name="translation_error_could_not_translate_warning_text">Terjadi masalah saat menerjemahkan. Silakan coba lagi.</string>
   <!-- The title of the warning card informs the user that the list of languages cannot be loaded. -->
   <string name="translation_error_could_not_load_languages_warning_text">Tidak bisa memuat bahasa. Periksa sambungan internet Anda dan coba lagi.</string>
+  <!-- The title of the warning card informs the user that translations from a language are not supported yet. %1$s is the name of the source language. -->
+  <string name="translation_error_language_not_supported_warning_text_2">Maaf, kami belum mendukung terjemahan dari bahasa %1$s.</string>
   <!-- Snackbar title shown if the user closes the Translation Request dialogue and a translation is in progress. -->
   <string name="translation_in_progress_snackbar">Menerjemahkan…</string>
   <!--
@@ -3254,6 +3663,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Jangan pernah terjemahkan situs ini</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Unduh bahasa</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Terjemahan</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Semua terjemahan tetap pribadi di perangkat Anda.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Pelajari lebih lanjut</string>
   <!--
     Automatic translation preference screen
 
@@ -3411,6 +3826,18 @@
     %s is the name of the app (for example "Firefox").
   -->
   <string name="protection_panel_banner_protected_title">%s waspada</string>
+  <plurals name="protection_panel_banner_protected_blocked_trackers_description">
+    <!--
+      Description text for the protection panel banner when privacy dashboard is enabled.
+      %1$d is the number of trackers blocked.
+    -->
+    <item quantity="other">%1$d pelacak diblokir di situs ini.</item>
+  </plurals>
+  <!--
+    Description text for the protection panel banner when privacy dashboard is enabled.
+    and there are no trackers blocked.
+  -->
+  <string name="protection_panel_banner_protected_no_blocked_trackers_description">Anda terlindungi.</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->
   <string name="protection_panel_etp_toggle_label">Perlindungan Pelacakan yang Ditingkatkan</string>
   <!-- Toggle if Enhanced Tracking Protection is turned on -->
@@ -3432,6 +3859,55 @@
   <string name="protection_panel_privacy_and_security_settings_2">Pengaturan Privasi</string>
   <!-- Title text for the protection panel permissions section. -->
   <string name="protection_panel_permissions_title">Hak Akses</string>
+  <plurals name="trackers_blocked_panel_total_num_trackers_blocked_2">
+    <!--
+      Text for displaying the total number of trackers blocked in the trackers blocked panel.
+      %1$d is a placeholder for the number of trackers blocked.
+    -->
+    <item quantity="other">%1$d pelacak diblokir di situs ini</item>
+  </plurals>
+  <plurals name="trackers_blocked_panel_num_social_media_trackers">
+    <!--
+      Text for displaying in the trackers blocked panel the total number of blocked social media trackers.
+      %1$d is a placeholder for the number of social media trackers blocked.
+    -->
+    <item quantity="other">%1$d pelacak media sosial</item>
+  </plurals>
+  <plurals name="trackers_blocked_panel_num_cross_site_cookies">
+    <!--
+      Text for displaying in the trackers blocked panel the total number of blocked cross-site tracking cookies.
+      %1$d is a placeholder for the number of cross-site tracking cookies blocked.
+    -->
+    <item quantity="other">%1$d kuki pelacakan lintas situs</item>
+  </plurals>
+  <plurals name="trackers_blocked_panel_num_cryptominers">
+    <!--
+      Text for displaying in the trackers blocked panel the total number of blocked cryptomining scripts.
+      %1$d is a placeholder for the number of cryptominers blocked.
+    -->
+    <item quantity="other">%1$d penambang kripto</item>
+  </plurals>
+  <plurals name="trackers_blocked_panel_num_fingerprinters">
+    <!--
+      Text for displaying in the trackers blocked panel the total number of blocked fingerprinter scripts.
+      %1$d is a placeholder for the number of fingerprinters blocked.
+    -->
+    <item quantity="other">%1$d pengumpul sidik jari</item>
+  </plurals>
+  <plurals name="trackers_blocked_panel_num_trackers_2">
+    <!--
+      Text for displaying in the trackers blocked panel the total number of blocked generic tracking scripts.
+      %1$d is a placeholder for the number of trackers blocked.
+    -->
+    <item quantity="other">%1$d konten pelacakan</item>
+  </plurals>
+  <plurals name="trackers_blocked_panel_num_trackers_blocked_this_week_2">
+    <!--
+      Text for displaying the number of trackers blocked this week in the trackers blocked panel.
+      %1$d is a placeholder for the number of trackers blocked this week.
+    -->
+    <item quantity="other">%1$d pelacak diblokir minggu ini</item>
+  </plurals>
   <!--
     Description text for a dialog confirming whether the user wants to delete all data for current site.
     %s is a placeholder for the base domain of website.
@@ -3452,6 +3928,8 @@
     %s is a placeholder for the name of the certificate authority that issued the certificate.
   -->
   <string name="connection_security_panel_verified_by">Diverifikasi oleh %s</string>
+  <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the protections dashboard to the bottom of the screen and close it. -->
+  <string name="tracker_protections_dashboard_close_handlebar_content_description">Tutup dasbor</string>
   <!--
     Text for the connection security panel when the site uses a QWAC.
     %s is a placeholder for the organization for which the certificate was issued.
@@ -3575,6 +4053,26 @@
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Seberapa puaskah Anda dengan pengalaman sinkronisasi di Firefox?</string>
   <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Bantu kami meningkatkan Firefox. Mana yang paling menggambarkan pengalaman Anda sejauh ini?</string>
+  <!--
+    Uninstall Survey
+
+    Title text for the uninstall survey dialog, asking the user for the reason they are removing the app
+  -->
+  <string name="microsurvey_uninstall_survey_title">Umpan balik Anda penting. Mengapa Anda mencopot pemasangan?</string>
+  <!-- Uninstall survey answer option -->
+  <string name="uninstall_survey_option_1_v2">Lambat atau tidak dapat diandalkan</string>
+  <!-- Uninstall survey answer option -->
+  <string name="uninstall_survey_option_2_v2">Situs web tidak berjalan semestinya</string>
+  <!-- Uninstall survey answer option -->
+  <string name="uninstall_survey_option_3_v2">Kurang fitur yang saya perlukan</string>
+  <!-- Uninstall survey answer option -->
+  <string name="uninstall_survey_option_4_v2">Video, unduhan, atau media tidak berfungsi</string>
+  <!-- Uninstall survey answer option -->
+  <string name="uninstall_survey_option_5_v2">Sulit digunakan atau dirancang dengan buruk</string>
+  <!-- Uninstall survey answer option -->
+  <string name="uninstall_survey_option_6_v2">Masalah privasi atau keamanan</string>
+  <!-- Button label shown at the bottom of the uninstall survey -->
+  <string name="uninstall_survey_button_label">Kirim masukan dan copot pemasangan</string>
   <!--
     Accessibility
 
@@ -3931,4 +4429,128 @@
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Pemberitahuan Privasi</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Pelajari lebih lanjut</string>
+  <!--
+    Collections migration homepage card
+
+    Title shown on the collections to tab groups migration card on the homepage.
+  -->
+  <string name="collections_migration_homepage_banner_title">Koleksi sekarang menjadi grup</string>
+  <!-- Message shown on the collections to tab groups migration card on the homepage. -->
+  <string name="collections_migration_homepage_card_message">Ada cara yang lebih sederhana untuk menjaga tab Anda terorganisir</string>
+  <!-- Link text shown on the collections to tab groups migration card that opens the tab groups page in the tab manager. -->
+  <string name="collections_migration_homepage_card_link">Lihat grup tab saya</string>
+  <!-- Google Lens prototype related strings -->
+  <string name="preferences_debug_settings_google_lens_integration">Fungsikan Integrasi Google Lens</string>
+  <!-- Lens image search button content description -->
+  <string name="lens_search_content_description">Cari lewat gambar</string>
+  <!-- Content description for the gallery picker button in the Lens camera screen -->
+  <string name="content_description_gallery">Pilih dari galeri untuk dikirim ke Google Lens</string>
+  <!-- Content description for the shutter button in the Lens camera screen -->
+  <string name="content_description_take_photo">Ambil foto dan kirim ke Google Lens</string>
+  <!-- Image context menu entry that sends the long-pressed image to Google Lens -->
+  <string name="context_menu_open_image_with_google_lens">Cari dengan Google Lens</string>
+  <!-- Toast shown when the user denies the camera permission requested by the Lens camera screen -->
+  <string name="lens_camera_permission_denied">Izin ditolak</string>
+  <!--
+    Title shown at the top of the camera screen, next to the close button, telling the
+    user that the photo they capture will be sent to Google Lens for a visual search.
+  -->
+  <string name="lens_camera_title_lens">Google Lens</string>
+  <!--
+    Title shown at the top of the camera screen, next to the close button, telling the
+    user that the camera is being used to scan a QR code.
+  -->
+  <string name="lens_camera_title_qr">Kode QR</string>
+  <!-- Title for the Google Lens Search Settings page feature toggle -->
+  <string name="search_settings_google_lens_title">Fungsikan pencarian Google Lens</string>
+  <!-- Description for the Google Lens Search Settings page feature toggle -->
+  <string name="search_settings_google_lens_description">Kirim gambar dan foto ke Google untuk melakukan penelusuran visual.</string>
+  <!-- Caption shown under the Google Lens toggle clarifying when the feature is available -->
+  <string name="preferences_google_lens_availability_caption">Hanya tersedia saat Google diaktifkan di atas dan merupakan mesin pencari aktif Anda saat menjelajah.</string>
+  <!-- Content description for the Google Lens half of the camera mode toggle -->
+  <string name="lens_camera_mode_lens">Google Lens</string>
+  <!-- Content description for the QR scanner half of the camera mode toggle -->
+  <string name="lens_camera_mode_qr">Pemindai QR</string>
+  <!-- Toast shown when the user picks an image from the gallery in QR mode but no QR code is found in it -->
+  <string name="lens_camera_qr_no_code_found">Kode QR tidak ditemukan dalam gambar</string>
+  <!-- Title of the bottom sheet shown the first time the user opens the Google Lens camera screen -->
+  <string name="lens_opt_out_title">Cari dengan Google Lens</string>
+  <!-- Description of the bottom sheet shown the first time the user opens the Google Lens camera screen -->
+  <string name="lens_opt_out_description">Pilih gambar atau gunakan kamera Anda untuk mendapatkan hasil dengan Google Lens.</string>
+  <!-- Text of the link in the first-run Google Lens bottom sheet that opens the Search settings page -->
+  <string name="lens_opt_out_settings_link">Pengaturan Google Lens</string>
+  <!-- Button in the first-run Google Lens bottom sheet that dismisses it and starts the camera -->
+  <string name="lens_opt_out_try_it_now_button">Cobalah sekarang</string>
+  <!-- Button in the first-run Google Lens bottom sheet that leaves Google Lens without using it -->
+  <string name="lens_opt_out_not_now_button">Jangan sekarang</string>
+  <!--
+    Firefox Labs
+
+    Firefox Labs is the name of a screen in Settings to allow users to learn about
+    experimental and in-development features, and turn those features on and off.
+    The "Labs" portion can be localized, "Firefox" must be treated as a brand and kept
+    in English.
+  -->
+  <string name="firefox_labs_title" tools:ignore="BrandUsage">Firefox Labs</string>
+  <!-- Banner title text on the Firefox Labs screen. -->
+  <string name="firefox_labs_banner_title_2">Coba fitur eksperimental kami!</string>
+  <!--
+    Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
+    Text will appear under the Firefox Labs banner title.
+  -->
+  <string name="firefox_labs_experimental_description">Mereka sedang dalam pengembangan dan berevolusi yang dapat memengaruhi cara kerja %s.</string>
+  <!-- The link text shown when a feedback URL for a Firefox Labs feature is available. The feedback URL page will allow users to provide opinions and suggestions. -->
+  <string name="firefox_labs_share_feedback">Beri umpan balik</string>
+  <!-- Content description for the share feedback link on a Firefox Labs feature. This text will be used by screen readers to provide more context on the feedback link. %s is the name of the Firefox Labs feature. -->
+  <string name="firefox_labs_share_feedback_content_description">Bagikan umpan balik untuk %s.</string>
+  <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
+  <string name="firefox_labs_restore_default_button_text">Pulihkan baku</string>
+  <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
+  <string name="firefox_labs_feature_dialog_title">Mulai ulang diperlukan</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the positive button when toggling "on" and "off" experimental features. This prompts the user to confirm that they want to restart the app. -->
+  <string name="firefox_labs_dialog_restart_button">Mulai Ulang</string>
+  <!-- The text on the dialog on the Firefox Labs screen for the negative button when toggling "on" and "off" experimental features. This is used to cancel the action and return to the previous screen. -->
+  <string name="firefox_labs_dialog_cancel_button">Batal</string>
+  <!-- The title used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. -->
+  <string name="firefox_labs_restore_defaults_dialog_title">Mulai ulang diperlukan</string>
+  <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_restore_defaults_dialog_message">Untuk memulihkan baku, mulai ulang %s.</string>
+  <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "on" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_feature_enable_dialog_message">Untuk mengaktifkan fitur ini, mulai ulang %s.</string>
+  <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "off" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+  <string name="firefox_labs_feature_disable_dialog_message">Untuk mematikan fitur ini, mulai ulang %s.</string>
+  <!-- Helper text shown beneath a Firefox Labs item when it is blocked from being turned on. -->
+  <string name="firefox_labs_feature_conflict">Fitur tidak tersedia untuk dicoba.</string>
+  <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
+  <string name="firefox_labs_no_labs_available_description">Tidak ada fitur eksperimental untuk dicoba sekarang</string>
+  <!-- Title of the Firefox Labs Sandboxing experiment. -->
+  <string name="firefox_labs_website_isolation_title" tools:ignore="UnusedResources">Isolasi situs web</string>
+  <!-- Description of the Firefox Labs Sandboxing experiment. -->
+  <string name="firefox_labs_website_isolation_description" tools:ignore="UnusedResources">Penghalang ekstra antar situs web yang membantu melindungi data Anda lintas tab. Dapat memengaruhi kinerja, stabilitas, kompatibilitas situs web, dan bagaimana riwayat penjelajahan disimpan.</string>
+  <!--
+    PDF viewer toolbar and buttons
+
+    Content description for accessibility (used by screen readers): Description for the button that triggers the start of a signature workflow on the PDF displayed on the screen.
+  -->
+  <string name="pdf_tools_sign_content_description">Tandatangani PDF</string>
+  <!-- Content description for accessibility (used by screen readers): Description of the button that downloads the PDF displayed on the screen to the user's device. -->
+  <string name="pdf_tools_download_content_description">Unduh PDF</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that opens the printing dialogue window for the PDF displayed on the screen. -->
+  <string name="pdf_tools_print_content_description">Cetak PDF</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that opens the sharing options for the PDF being displayed on the screen. -->
+  <string name="pdf_tools_share_content_description">Bagikan PDF</string>
+  <!--
+    PDF viewer add a signature dialog
+
+    The title of the dialog for adding a signature to a PDF.
+  -->
+  <string name="pdf_tools_signature_title">Tambahkan tanda tangan</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that closes the dialog for adding a signature to a PDF. -->
+  <string name="pdf_tools_signature_close_content_description">Tutup panel tanda tangan PDF</string>
+  <!-- The placeholder text shown in the empty text input field where users can enter the signature they wish to add to a PDF. -->
+  <string name="pdf_tools_signature_placeholder">Ketik tanda tangan</string>
+  <!-- The text for the button that erases the text the user entered in the "add a signature" field. -->
+  <string name="pdf_tools_signature_clear_button">Bersihkan</string>
+  <!-- The text for the button that adds the signature the user has typed to the PDF. -->
+  <string name="pdf_tools_signature_add_button">Tambah</string>
 </resources>

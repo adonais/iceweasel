@@ -610,7 +610,7 @@
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">ᱟᱢ ᱪᱮᱫ ᱞᱮᱠᱟ Firefox ᱮᱢ ᱧᱟᱢ ᱠᱮᱫᱟ, ᱟᱨ ᱚᱱᱟ ᱮᱢ ᱵᱮᱵᱷᱟᱨ ᱮᱫᱟ, Mozilla ᱨᱮᱱ ᱢᱟᱨᱠᱮᱴᱤᱝ ᱵᱷᱟᱜᱫᱟᱨ ᱠᱚ ᱥᱟᱶ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾ ᱱᱚᱶᱟ ᱰᱟᱴᱟ ᱫᱚ ᱛᱤᱥ ᱦᱚᱸ ᱵᱟᱝ ᱟᱠᱷᱨᱤᱧ ᱟᱠᱟᱱᱟ ᱾%1$s</string>
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
-  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">ᱟᱢ ᱪᱮᱫ ᱞᱮᱠᱟ Firefox ᱮᱢ ᱧᱟᱢ ᱠᱮᱫᱟ, ᱟᱨ ᱚᱱᱟ ᱮᱢ ᱵᱮᱵᱷᱟᱨ ᱮᱫᱟ, Mozilla ᱨᱮᱱ ᱢᱟᱨᱠᱮᱴᱤᱝ ᱵᱷᱟᱜᱫᱟᱨ ᱠᱚ ᱥᱟᱶ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾ ᱱᱚᱶᱟ ᱰᱟᱴᱟ ᱫᱚ ᱛᱤᱥ ᱦᱚᱸ ᱵᱟᱝ ᱟᱠᱷᱨᱤᱧ ᱟᱠᱟᱱᱟ ᱾</string>
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage,UnusedResources">ᱟᱢ ᱪᱮᱫ ᱞᱮᱠᱟ Firefox ᱮᱢ ᱧᱟᱢ ᱠᱮᱫᱟ, ᱟᱨ ᱚᱱᱟ ᱮᱢ ᱵᱮᱵᱷᱟᱨ ᱮᱫᱟ, Mozilla ᱨᱮᱱ ᱢᱟᱨᱠᱮᱴᱤᱝ ᱵᱷᱟᱜᱫᱟᱨ ᱠᱚ ᱥᱟᱶ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾ ᱱᱚᱶᱟ ᱰᱟᱴᱟ ᱫᱚ ᱛᱤᱥ ᱦᱚᱸ ᱵᱟᱝ ᱟᱠᱷᱨᱤᱧ ᱟᱠᱟᱱᱟ ᱾</string>
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
   <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage,UnusedResources">ᱟᱢ ᱟᱞᱮ Firefox ᱵᱮᱵᱷᱟᱨᱤᱭᱟᱹ ᱠᱟᱱᱟᱢ ᱚᱱᱟ ᱪᱮᱱᱮᱞ ᱠᱚ ᱵᱟᱰᱟᱭ ᱚᱪᱚ ᱞᱟᱹᱜᱤᱫ Mozilla ᱟᱱᱩᱢᱟᱛ ᱮᱢ ᱠᱟᱛᱮ ᱟᱢ ᱵᱟᱹᱲᱛᱤ ᱦᱚᱲ ᱴᱷᱮᱱ ᱥᱮᱴᱮᱨᱚᱜ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱮᱢ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱾</string>
   <!--
@@ -773,8 +773,6 @@
   <string name="preferences_pbm_lock_screen_title">ᱯᱨᱟᱭᱣᱮᱴ ᱵᱽᱨᱟᱣᱩᱡᱤᱝ ᱨᱮ ᱴᱮᱵᱽ ᱩᱠᱩ ᱞᱟᱹᱜᱤᱫ ᱥᱠᱨᱤᱱ ᱞᱚᱠ ᱵᱮᱵᱷᱟᱨ ᱢᱮ</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_3">ᱟᱢᱟᱜ ᱠᱟᱹᱴᱩᱵ ᱪᱤᱛᱟᱹᱨ, ᱯᱤᱱ, ᱵᱟᱝᱠᱷᱟᱱ ᱪᱮᱦᱨᱟ ᱚᱱᱞᱚᱠ ᱥᱟᱶ ᱴᱮᱵᱽ ᱧᱮᱞ ᱢᱮ ᱾ ᱱᱚᱣᱟ ᱪᱟᱹᱞᱩ ᱠᱷᱟᱱ ᱥᱠᱨᱤᱱ ᱠᱮᱯᱪᱚᱨ ᱟᱨ ᱦᱟᱹᱴᱤᱧ ᱦᱚᱸ ᱵᱟᱝ ᱦᱩᱭᱩᱜᱼᱟ ᱾</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">ᱯᱨᱟᱭᱣᱮᱴ ᱵᱽᱨᱟᱣᱡᱤᱝ ᱨᱮ ᱠᱩᱠᱤ ᱵᱮᱱᱚᱨ ᱟᱠᱚᱴᱤᱭᱟᱹ</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">ᱵᱮᱰᱷᱟᱣ ᱠᱟᱱᱟ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱞᱟᱹᱜᱤᱫ ᱛᱮ HTTPS ᱫᱟᱱᱟᱝ ᱵᱮᱵᱷᱟᱨ ᱛᱮ ᱥᱟᱭᱤᱴ ᱠᱚ ᱥᱟᱞᱟᱜ ᱟᱡ ᱛᱮ ᱡᱩᱲᱟᱹᱣ ᱵᱤᱲᱟᱹᱣ ᱾</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -996,12 +994,8 @@
   <string name="customize_wallpapers">ᱠᱟᱸᱛᱷᱪᱤᱛᱟᱹᱨ</string>
   <!-- Label for the menu item that opens the customize homepage settings screen. -->
   <string name="browser_menu_customize_homepage">ᱚᱲᱟᱜᱥᱟᱦᱴᱟ ᱠᱩᱥᱤᱛᱮ ᱫᱚᱦᱚᱭ ᱢᱮ</string>
-  <!-- Label for the menu item that opens the wallpaper settings screen. -->
-  <string name="browser_menu_change_wallpaper">ᱠᱟᱸᱛᱪᱷᱟᱯᱟ ᱵᱚᱫᱚᱞ ᱢᱮ</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">ᱠᱟᱹᱢᱤᱼᱤᱡ ᱠᱷᱟᱴᱚ ᱢᱟᱪᱷᱟ ᱠᱚ</string>
-  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
-  <string name="customize_toggle_world_cup">ᱡᱮᱜᱮᱛ ᱠᱚᱯ</string>
   <!--
     Wallpapers
 
@@ -1644,16 +1638,6 @@
     <item quantity="two">%1$s ᱴᱮᱵᱽ ᱜᱟᱫᱮᱞ ᱨᱮ ᱥᱮᱞᱮᱫ ᱢᱮ, %2$d ᱴᱮᱵᱽ ᱠᱤᱱ, ᱨᱚᱝ %3$s</item>
     <item quantity="other">%1$s ᱴᱮᱵᱽ ᱜᱟᱫᱮᱞ ᱨᱮ ᱥᱮᱞᱮᱫ ᱢᱮ, %2$d ᱴᱮᱵᱽ ᱠᱚ, ᱨᱚᱝ %3$s</item>
   </plurals>
-  <plurals name="share_tab_group_button_content_description">
-    <!--
-      Content Description for share tab group button.
-      %1$s is the name of the tab group.
-      %2$d is the number of tabs in a tab group.
-    -->
-    <item quantity="one">%1$s ᱴᱮᱵᱽ ᱜᱟᱫᱮᱞ ᱥᱟᱶ %2$d ᱴᱮᱵᱽ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾</item>
-    <item quantity="two">%1$s ᱴᱮᱵᱽ ᱜᱟᱫᱮᱞ ᱠᱤᱱ ᱥᱟᱶ %2$d ᱴᱮᱵᱽ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾</item>
-    <item quantity="other">%1$s ᱴᱮᱵᱽ ᱜᱟᱫᱮᱞ ᱠᱚ ᱥᱟᱶ %2$d ᱴᱮᱵᱽ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾</item>
-  </plurals>
   <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
   <string name="tab_group_sheet_dismiss_description">ᱴᱮᱵᱽ ᱜᱟᱫᱮᱞ ᱧᱮᱞ ᱢᱮ, ᱰᱨᱮᱜᱽ ᱦᱮᱱᱰᱮᱞ ᱨᱟᱹᱯᱩᱫ ᱢᱮ</string>
   <plurals name="expanded_tab_group_header_description">
@@ -2001,8 +1985,6 @@
   <string name="webcompat_reporter_preview_report">ᱠᱷᱚᱵᱚᱨ ᱧᱮᱞ ᱫᱩᱦᱲᱟᱹ</string>
   <!-- The title shown at the top of the WebCompat Report preview panel. This appears after the user taps the “Preview” button before sending a report. -->
   <string name="webcompat_reporter_preview_bottom_sheet_header">ᱧᱮᱞ ᱵᱤᱲᱟᱹᱣ ᱠᱷᱚᱵᱚᱨ ᱢᱮ</string>
-  <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
-  <string name="webcompat_reporter_preview_bottom_sheet_send">ᱠᱩᱞ ᱢᱮ</string>
   <!-- Title for the Edit URL confirmation dialog in the WebCompatReporter -->
   <string name="webcompat_reporter_edit_url_dialog_title">ᱣᱮᱵᱽᱥᱟᱭᱤᱴ URL ᱥᱟᱥᱟᱯᱲᱟᱣ ᱢᱮ</string>
   <!-- Text shown on the save button for the Edit URL confirmation dialog in the WebCompatReporter. -->
@@ -2866,12 +2848,8 @@
   <string name="add_to_homescreen_cancel">ᱵᱟᱹᱰᱨᱟᱹ</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">ᱥᱮᱞᱮᱫᱽ ᱢᱮ</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">ᱣᱮᱵᱥᱟᱭᱤᱴ ᱛᱮ ᱞᱟᱦᱟᱜ ᱢᱮ</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">ᱠᱷᱟᱴᱚᱢᱟᱪᱷᱟ ᱧᱩᱛᱩᱢ</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">ᱟᱢ ᱞᱚᱜᱚᱱ ᱵᱽᱨᱟᱣᱩᱡᱽ ᱟᱨ ᱮᱯ ᱞᱮᱠᱷᱟᱱ ᱢᱟᱨᱠᱷᱤ ᱤᱫᱤ ᱞᱟᱹᱜᱤᱫ ᱣᱮᱵᱥᱟᱭᱤᱴ ᱫᱚ ᱥᱟᱫᱷᱚᱱ ᱨᱮᱭᱟᱜ ᱚᱲᱟᱜ ᱥᱠᱨᱤᱱ ᱨᱮ ᱥᱮᱞᱮᱫᱽ ᱫᱟᱲᱮᱟᱜᱼᱟᱢ ᱾</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">ᱫᱟᱱᱟᱝ ᱥᱟᱵᱟᱫᱽ ᱠᱚ</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->
@@ -3041,8 +3019,6 @@
   <string name="ip_protection_location_section">ᱡᱟᱭᱜᱟ</string>
   <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
   <string name="ip_protection_location_recommended_label">ᱵᱟᱛᱟᱣᱟᱜ</string>
-  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
-  <string name="ip_protection_location_recommended_description">ᱟᱢ ᱞᱟᱹᱜᱤᱫ ᱡᱷᱚᱛᱚ ᱠᱷᱚᱱ ᱩᱥᱟᱹᱨᱟ VPN ᱴᱷᱟᱶ ᱵᱟᱪᱷᱟᱣ ᱟᱭ ᱾</string>
   <!-- Badge label shown in the menu item when the browser VPN is active -->
   <string name="preferences_ip_protection_on">ᱪᱟᱹᱞᱩ</string>
   <!-- Badge label shown in the menu item when the browser VPN is off -->
@@ -3138,10 +3114,6 @@
   <string name="ip_protection_locations_title">VPN ᱴᱷᱟᱶ ᱵᱟᱪᱷᱟᱣ ᱢᱮ</string>
   <!-- Content description for the browser VPN location selection screen top bar back button -->
   <string name="ip_protection_locations_navigate_back_button_content_description">ᱯᱟᱹᱪᱷᱞᱟᱹᱥᱮᱱ ᱪᱟᱞᱟᱜ ᱢᱮ</string>
-  <!-- Title for the card shown to the user when we are unable to fetch server locations -->
-  <string name="ip_protection_location_unavailable_title" tools:ignore="UnusedResources">ᱞᱟᱦᱟ ᱨᱮᱱᱟᱜ ᱴᱷᱟᱶ ᱵᱟᱝ ᱧᱟᱢᱚᱜ ᱠᱟᱱᱟ</string>
-  <!-- Description for the card shown to the user when we are unable to fetch server locations -->
-  <string name="ip_protection_location_unavailable_recommended_description" tools:ignore="UnusedResources">ᱥᱚᱞᱦᱟ ᱟᱠᱟᱱ ᱴᱷᱟᱶ ᱥᱟᱶ ᱡᱚᱯᱲᱟᱣ ᱢᱮᱱᱟᱜᱼᱟ ᱾</string>
   <!--
     Autofill
 
@@ -4437,221 +4409,6 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">ᱟᱢ ᱵᱟᱹᱲᱛᱤ ᱪᱮᱫ ᱫᱟᱲᱮᱭᱟᱜᱼᱟᱢ %1$s᱾</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">ᱱᱚᱰᱮ</string>
-  <!--
-    Sports widget
-
-    Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
-  -->
-  <string name="sports_widget_country_selector_title">ᱟᱢᱟᱜ ᱫᱚᱞ ᱯᱟᱧᱡᱟᱭ ᱢᱮ</string>
-  <!-- Section header for the North America region in the sports widget country selector. -->
-  <string name="sports_widget_confederation_north_america">ᱠᱚᱸᱭᱮ ᱟᱢᱮᱨᱤᱠᱟ</string>
-  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_africa">ᱟᱯᱷᱨᱤᱠᱟ</string>
-  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_asia">ᱮᱥᱤᱭᱟ</string>
-  <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
-  <string name="sports_widget_confederation_concacaf">CONCACAF</string>
-  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_europe">ᱭᱩᱨᱚᱯ</string>
-  <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_oceania">ᱚᱥᱮᱱᱤᱭᱟ</string>
-  <!-- Section header for the South America confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_south_america">ᱮᱛᱚᱢ ᱟᱢᱮᱨᱤᱠᱟ</string>
-  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_england">ᱤᱝᱞᱟᱸᱰ</string>
-  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_scotland">ᱥᱠᱚᱴᱞᱮᱸᱰ</string>
-  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
-  <string name="sports_widget_match_live">ᱞᱟᱭᱤᱵᱷ</string>
-  <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
-  <string name="sports_widget_champions_title">᱒᱐᱒᱖ ᱣᱟᱨᱞᱰ ᱠᱚᱯ ᱪᱮᱢᱯᱤᱭᱚᱱᱥ</string>
-  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
-  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">ᱨᱚᱱᱚᱨ ᱚᱯᱷ</string>
-  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
-  <string name="sports_widget_third_place_title">ᱛᱮᱥᱟᱨ ᱡᱟᱭᱜᱟ</string>
-  <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_32">ᱨᱟᱣᱱᱰ 32</string>
-  <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_16">16 ᱨᱟᱣᱱᱰ</string>
-  <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
-  <string name="sports_widget_quarter_final">ᱠᱣᱟᱴᱟᱨ-ᱯᱷᱟᱭᱱᱟᱞ</string>
-  <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
-  <string name="sports_widget_semi_final">ᱥᱮᱢᱤ-ᱯᱷᱟᱭᱱᱟᱞ</string>
-  <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
-  <string name="sports_widget_final">ᱯᱷᱟᱭᱱᱟᱞ</string>
-  <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final">ᱠᱟᱸᱥᱟ ᱯᱷᱟᱭᱱᱟᱞ</string>
-  <!-- Sports widget error card message shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed" tools:ignore="UnusedResources">ᱠᱷᱮᱞ ᱵᱟᱯᱟᱰᱟᱭ ᱫᱚ ᱱᱤᱛᱚᱜ ᱵᱟᱝ ᱧᱟᱢᱚᱜ ᱠᱟᱱᱟ ᱾ ᱛᱤᱱᱟᱹᱜ ᱜᱟᱱ ᱴᱤᱯᱤᱡ ᱛᱟᱭᱚᱢ ᱨᱤᱯᱷᱨᱮᱥᱤᱝ ᱨᱮᱭᱟᱜ ᱠᱩᱨᱩᱢᱩᱴᱩᱭ ᱢᱮ ᱾</string>
-  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
-  <string name="sports_widget_error_connection_interrupted" tools:ignore="UnusedResources">ᱡᱚᱯᱲᱟᱣ ᱛᱟᱲᱟᱜ ᱮᱱᱟ — ᱞᱟᱭᱤᱵᱽ ᱦᱟᱹᱞᱤᱭᱟᱹᱠ ᱠᱚ ᱵᱚᱸᱫ ᱮᱱᱟ ᱾</string>
-  <!-- Sports widget action label to refresh match data after an error. -->
-  <string name="sports_widget_error_refresh">ᱱᱟᱶᱟ ᱟᱹᱨᱩ</string>
-  <!-- Sports widget group stage label for group A in the soccer tournament. -->
-  <string name="sports_widget_group_a">ᱫᱳᱞ A</string>
-  <!-- Sports widget group stage label for group B in the soccer tournament. -->
-  <string name="sports_widget_group_b">ᱫᱳᱞ B</string>
-  <!-- Sports widget group stage label for group C in the soccer tournament. -->
-  <string name="sports_widget_group_c">ᱫᱳᱞ C</string>
-  <!-- Sports widget group stage label for group D in the soccer tournament. -->
-  <string name="sports_widget_group_d">ᱫᱳᱞ D</string>
-  <!-- Sports widget group stage label for group E in the soccer tournament. -->
-  <string name="sports_widget_group_e">ᱫᱳᱞ E</string>
-  <!-- Sports widget group stage label for group F in the soccer tournament. -->
-  <string name="sports_widget_group_f">ᱫᱳᱞ F</string>
-  <!-- Sports widget group stage label for group G in the soccer tournament. -->
-  <string name="sports_widget_group_g">ᱫᱳᱞ G</string>
-  <!-- Sports widget group stage label for group H in the soccer tournament. -->
-  <string name="sports_widget_group_h">ᱫᱳᱞ H</string>
-  <!-- Sports widget group stage label for group I in the soccer tournament. -->
-  <string name="sports_widget_group_i">ᱫᱳᱞ I</string>
-  <!-- Sports widget group stage label for group J in the soccer tournament. -->
-  <string name="sports_widget_group_j">ᱫᱳᱞ J</string>
-  <!-- Sports widget group stage label for group K in the soccer tournament. -->
-  <string name="sports_widget_group_k">ᱫᱳᱞ K</string>
-  <!-- Sports widget group stage label for group L in the soccer tournament. -->
-  <string name="sports_widget_group_l">ᱫᱳᱞ L</string>
-  <!-- Sports widget button label to see match results. -->
-  <string name="sports_widget_see_results" tools:ignore="UnusedResources">ᱛᱮᱞᱟᱠᱚ ᱧᱮᱞ ᱢᱮ</string>
-  <!-- Sports widget button label to view details of a soccer match results. -->
-  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">ᱢᱮᱲᱟᱣ ᱠᱟᱱ ᱵᱤᱵᱨᱚᱬ ᱫᱮᱠᱷᱟᱣ ᱢᱮ</string>
-  <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">ᱡᱚᱲᱟᱣ ᱢᱮᱲᱟᱣ ᱠᱚ</string>
-  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
-  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱ</string>
-  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_suffix">(ᱯᱩᱨᱟᱹ ᱚᱠᱛᱚ)</string>
-  <!-- Sports widget match status to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_2">ᱯᱩᱨᱟᱹ ᱚᱠᱛᱚ</string>
-  <!--
-    Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
-    meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
-    It’s playfully related to Firefox in that “tabs” are a browser feature.
-    It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
-    or tracking in a technical sense; the meaning is about staying informed.
-  -->
-  <string name="sports_widget_card_title">ᱣᱟᱨᱞᱰ ᱠᱟᱯ ᱨᱮ ᱴᱮᱵᱽ ᱫᱚᱦᱚ ᱠᱟᱜ ᱢᱮ</string>
-  <!-- Sports widget card description shown below the title on the homepage entry point. -->
-  <string name="sports_widget_card_description">ᱞᱟᱭᱤᱵᱽ ᱢᱮᱪ ᱟᱯᱰᱮᱴ ᱟᱨ ᱟᱭᱢᱟ ᱧᱟᱢ ᱢᱮ ᱾</string>
-  <!-- Sports widget menu item to change the selected team. -->
-  <string name="sports_widget_change_team">ᱫᱚᱞ ᱵᱚᱫᱚᱞ ᱢᱮ</string>
-  <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
-  <string name="sports_widget_get_custom_wallpaper">ᱠᱟᱥᱴᱚᱢ ᱣᱟᱞᱯᱮᱯᱟᱨ ᱧᱟᱢ ᱢᱮ</string>
-  <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove">ᱚᱪᱚᱜᱽ ᱢᱮ</string>
-  <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-  <string name="sports_widget_still_want_to_follow">ᱱᱤᱛ ᱦᱚᱸ ᱥᱟᱶ ᱯᱟᱧᱡᱟ ᱥᱟᱱᱟᱭᱮᱫ ᱢᱮᱭᱟ ?</string>
-  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team">ᱣᱟᱨᱞᱰ ᱠᱟᱯ ᱥᱟᱶ ᱛᱟᱦᱮᱱ ᱞᱟᱹᱜᱤᱫ ᱮᱴᱟᱜ ᱴᱤᱢ ᱵᱟᱪᱷᱟᱣ ᱢᱮ ᱾</string>
-  <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-  <string name="sports_widget_follow_another_team">ᱮᱴᱟᱜ ᱫᱚᱞ ᱯᱟᱧᱡᱟᱭ ᱢᱮ</string>
-  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
-  <string name="sports_widget_countdown_to_world_cup">ᱡᱮᱜᱮᱫ ᱠᱚᱯ ᱨᱮᱭᱟᱜ ᱞᱮᱠᱷᱟ ᱦᱤᱥᱟᱹᱵ</string>
-  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
-  <string name="sports_widget_view_schedule">ᱥᱮᱰᱭᱩᱞ ᱧᱮᱞ ᱢᱮ</string>
-  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
-  <string name="sports_widget_skip">ᱟᱲᱟᱜ</string>
-  <!-- Sports widget match status label shown during halftime of a match. -->
-  <string name="sports_widget_halftime" tools:ignore="UnusedResources">ᱛᱟᱞᱟᱚᱠᱛᱚ</string>
-  <!-- Sports widget match status label shown during extra time of a match. -->
-  <string name="sports_widget_extra_time">ᱵᱟᱹᱲᱛᱤ ᱚᱠᱛᱚ</string>
-  <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties">ᱯᱮᱱᱟᱞᱴᱤ</string>
-  <!--
-    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
-    if there is an equivalent single character for your language, use that (e.g. T for German).
-    Your translation will be automatically truncated at 2 characters to avoid layout issues.
-  -->
-  <string name="sports_widget_countdown_days">ᱫ</string>
-  <!--
-    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
-    if there is an equivalent single character for your language, use that (e.g. S for German).
-    Your translation will be automatically truncated at 2 characters to avoid layout issues.
-  -->
-  <string name="sports_widget_countdown_hours">ᱴ</string>
-  <!--
-    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
-    if there is an equivalent single character for your language, use that.
-    Your translation will be automatically truncated at 2 characters to avoid layout issues
-  -->
-  <string name="sports_widget_countdown_minutes">ᱴᱤ</string>
-  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
-  <string name="sports_widget_close_team_selection_sheet_content_description">ᱫᱚᱞ ᱵᱟᱪᱷᱟᱣ ᱥᱤᱴ ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
-  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
-  <string name="sports_widget_close_content_description">ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
-  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
-  <string name="sports_widget_more_options_content_description">ᱰᱷᱮᱨ ᱮᱴᱟᱜᱟᱜ</string>
-  <!--
-    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
-    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
-  -->
-  <string name="sports_widget_countdown_remaining_content_description">ᱛᱟᱲᱟᱢ ᱚᱠᱛᱚ ᱾ ᱢᱟᱦᱟᱸ: %1$d ᱾ ᱴᱟᱲᱟᱝ: %2$d ᱾ ᱴᱤᱯᱤᱡ: %3$d ᱾</string>
-  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
-  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">ᱡᱮᱜᱮᱫ ᱠᱟᱯ ᱥᱟᱭᱤᱴ ᱨᱮ ᱥᱮᱱᱚᱜ ᱢᱮ</string>
-  <!--
-    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
-    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
-  -->
-  <string name="sports_widget_upcoming_match_content_description">ᱦᱤᱡᱩᱜ ᱠᱟᱱ: %1$s ᱵᱚᱱᱟᱢ %2$s, %3$s %4$s ᱴᱷᱮᱱ</string>
-  <!--
-    Content description (for accessibility, not displayed) announcing a soccer match.
-    %1$s is the home team name, %2$s is the away team name, %3$s is trailing context
-    (e.g. formatted score "1 - 2 (Full time)", upcoming match info "Jun 19 5:00 PM",
-    or a match status like "Full time").
-  -->
-  <string name="sports_widget_match_content_description">%1$s ᱵᱚᱱᱟᱢ %2$s, %3$s</string>
-  <!--
-    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
-    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
-    or Final represented by sports_widget_final).
-  -->
-  <string name="sports_widget_live_game_content_description">%s, ᱞᱟᱭᱤᱵᱽ ᱠᱷᱮᱞ</string>
-  <!--
-    Content description (for accessibility, not displayed) announcing a live score.
-    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
-    and %5$s is the match elapsed time (e.g. 72 minutes).
-  -->
-  <string name="sports_widget_live_score_content_description">%1$s %2$d, %3$s %4$d, %5$s, ᱞᱟᱭᱤᱵ</string>
-  <!--
-    Content description (for accessibility, not displayed) announcing the elapsed minutes of a live match.
-    %1$s is the clock value, which may be a plain number (e.g. "72") or include extra time (e.g. "90+3").
-  -->
-  <string name="sports_widget_match_elapsed_minutes">ᱴᱤᱯᱤᱡ ᱨᱮ ᱯᱟᱨᱚᱢᱮᱱ ᱚᱠᱛᱚ: %1$s</string>
-  <!--
-    Content description (for accessibility, not displayed) for a paginated item.
-    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
-    %2$d is the current page number, and %3$d is the total number of pages.
-  -->
-  <string name="sports_widget_page_position_content_description">%1$s, ᱥᱟᱦᱴᱟ %3$d ᱠᱷᱚᱱ %2$d</string>
-  <!--
-    Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
-    %1$d is the current page number, and %2$d is the total number of pages.
-  -->
-  <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">ᱡᱮᱜᱮᱫ ᱠᱟᱯ ᱢᱩᱪᱟᱹᱫ ᱛᱟᱞᱟ, ᱥᱟᱦᱴᱟ %2$d ᱠᱷᱚᱱ %1$d</string>
-  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
-  <string name="sports_widget_final_results_content_description">ᱡᱮᱜᱮᱫ ᱠᱟᱯ ᱨᱮᱭᱟᱜ ᱢᱩᱪᱟᱹᱫ ᱛᱮᱞᱟ</string>
-  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
-  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">ᱚᱲᱟᱜ ᱠᱷᱚᱱ ᱡᱮᱜᱮᱫ ᱠᱚᱯ ᱚᱪᱚᱜᱽ ᱢᱮ</string>
-  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
-  <string name="sports_widget_team_followed_title">ᱯᱟᱧᱡᱟ: %s</string>
-  <!-- Description shown on the sports widget immediately after the user has followed a team -->
-  <string name="sports_widget_team_followed_description">ᱴᱩᱱᱟᱢᱮᱱᱴ ᱥᱮᱴᱮᱨᱚᱜ ᱥᱟᱶ ᱥᱟᱶᱛᱮ ᱢᱮᱪ ᱵᱟᱯᱟᱰᱟᱭ ᱞᱟᱹᱜᱤᱫ ᱫᱚᱦᱲᱟ ᱧᱮᱞ ᱢᱮ ᱾</string>
-  <!-- Sports widget match status label shown during first half of a match. -->
-  <string name="sports_widget_first_half" tools:ignore="UnusedResources">ᱯᱩᱭᱞᱩ ᱟᱫᱷᱟ</string>
-  <!-- Sports widget match status label shown during second half of a match. -->
-  <string name="sports_widget_second_half" tools:ignore="UnusedResources">ᱫᱚᱥᱟᱨ ᱦᱟᱯ</string>
-  <!-- Sports widget error card title shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_title">ᱧᱮᱞᱚᱜ ᱠᱟᱱᱟ ᱟᱢ ᱚᱯᱷᱞᱟᱭᱤᱱ ᱢᱮᱱᱟᱢᱟ ᱾</string>
-  <!-- Sports widget error card description shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_description">ᱟᱢᱟᱜ ᱤᱱᱴᱚᱨᱱᱮᱴ ᱡᱩᱲᱟᱹᱣ ᱧᱮᱞ ᱢᱮ ᱟᱨ ᱫᱩᱦᱲᱟᱹ ᱪᱮᱥᱴᱟᱭ ᱢᱮ ᱾</string>
-  <!-- Sports widget general group stage label in the soccer tournament. -->
-  <string name="sports_widget_group_stage">ᱜᱟᱫᱮᱞ ᱥᱴᱮᱡᱽ</string>
-  <!-- Sports widget error card title shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed_title">ᱠᱷᱮᱞ ᱵᱟᱯᱟᱰᱟᱭ ᱫᱚ ᱱᱤᱛᱚᱜ ᱵᱟᱝ ᱧᱟᱢᱚᱜ ᱠᱟᱱᱟ ᱾</string>
-  <!-- Sports widget error card description shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed_description">ᱛᱤᱱᱟᱹᱜ ᱜᱟᱱ ᱴᱤᱯᱤᱡ ᱛᱟᱭᱚᱢ ᱨᱤᱯᱷᱨᱮᱥᱤᱝ ᱨᱮᱭᱟᱜ ᱠᱩᱨᱩᱢᱩᱴᱩᱭ ᱢᱮ ᱾</string>
-  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
-  <string name="sports_widget_team_to_be_determined">ᱫᱚᱞ ᱴᱷᱟᱹᱣᱠᱟᱹ ᱦᱩᱭᱩᱜᱼᱟ</string>
   <!--
     Privacy notice homepage banner
 

@@ -1184,12 +1184,8 @@
   <string name="add_to_homescreen_cancel">Pociep</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Przidej</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Idź dalij do stōny</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Miano ôd skrōtu</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Idzie leko przidać ta strōna na dōmowy ekran swojij masziny, coby mieć snadny dostymp i gibcyj przeglōndać internet choby bez aplikacyjo.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">Hasła</string>
   <!-- Preference option for asking to save passwords in Fenix -->

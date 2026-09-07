@@ -1095,12 +1095,8 @@
   <string name="add_to_homescreen_cancel">Encaboxar</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Amestar</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Siguir col sitiu web</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Nome del atayu</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Pues amestar fácilmente esti sitiu web a la pantalla d\'Aniciu del preséu p\'acceder aína a elli como si fore una aplicación nativa.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">Contraseñes</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->

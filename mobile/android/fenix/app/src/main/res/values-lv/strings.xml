@@ -7,8 +7,16 @@
 -->
 
 <resources xmlns:tools="http://schemas.android.com/tools">
+  <!-- Content description for the toolbar back button while searching bookmarks -->
+  <string name="bookmark_close_search_description">Doties atpakaļ un aizvērt meklēšanu</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
   <string name="tab_tray_add_new_collection">Pievienot jaunu krājumu</string>
+  <!--
+    Recent Tabs
+
+    Header text on the homescreen for continuing to browse the most recent browser tab
+  -->
+  <string name="recent_tabs_header_2">Turpināt</string>
   <!--
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
@@ -63,6 +71,8 @@
   <string name="toolbar_shortcut_menu_edit_option">Labot īsceļu</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Pielāgot</string>
+  <!-- Preference for open links in third party apps always open in apps option -->
+  <string name="preferences_open_links_in_apps_always">Vienmēr</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Pārvaldīt lejupielādes ar citu lietotni</string>
   <!-- Preference category for deleting or removing downloads -->
@@ -75,6 +85,8 @@
   <string name="addons_permissions_allow_for_all_sites">Atļaut visām vietnēm</string>
   <!-- The title of the required permissions section from addon's permissions screen. -->
   <string name="addons_permissions_heading_required_permissions">Nepieciešamās atļaujas:</string>
+  <!-- Title for a customize home screen section. Continue is a section that displays the most recent browser tab, so users can continue browsing where they left off. -->
+  <string name="customize_toggle_continue">Turpināt</string>
   <!-- Label for the menu item that opens the customize homepage settings screen. -->
   <string name="browser_menu_customize_homepage">Pielāgot sākumlapu</string>
   <!-- Snackbar label for action to retry downloading the wallpaper -->
@@ -179,6 +191,8 @@
   <string name="preference_option_autoplay_blocked3">Liegt skaņu un video</string>
   <!-- Label for site specific setting that indicates that all video and audio autoplay is blocked -->
   <string name="quick_setting_option_autoplay_blocked">Liegt skaņu un video</string>
+  <!-- Preference for altering the default browsing mode. When enabled, the desktop site will always be requested. -->
+  <string name="preference_feature_desktop_mode_default">Vienmēr pieprasīt vietnes darbvirsmas versiju</string>
   <!-- Button to add new collection for the "select collection" step of the collection creator -->
   <string name="create_collection_add_new_collection">Pievienot jaunu krājumu</string>
   <!-- Toast shown when the QR code is successfully saved to Downloads -->
@@ -187,11 +201,37 @@
   <string name="sync_offline">Bezsaistē</string>
   <!-- Confirmation dialog button -->
   <string name="sync_confirmation_button">Sapratu</string>
+  <!-- Send tab to synced devices: Authentication error title - Message asking the user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_title">Piesakies atkal, lai sūtītu cilnes starp ierīcēm</string>
+  <!-- Send tab to synced devices: Authentication error button - Allows user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_button">Pieteikties</string>
+  <!-- Send tab to synced devices: Authentication error button - Allows user to remove the currently connected account -->
+  <string name="sync_send_tab_error_auth_remove_account">Noņemt kontu</string>
+  <!-- Send tab to synced devices: Empty state title - Displayed when the user has no synced devices -->
+  <string name="sync_send_tab_empty_state_title">Nav savienota neviena ierīce</string>
+  <!-- Send tab to synced devices: Empty state message - Displayed when the user has no synced devices -->
+  <string name="sync_send_tab_empty_state_description" tools:ignore="BrandUsage">Lai nosūtītu cilni, jāpiesakās Firefox vismaz vienā citā ierīcē.</string>
+  <!-- Send tab to synced devices: Connectivity Error title -->
+  <string name="sync_send_tab_error_connection_title">Jāpārbauda savienojums ar internetu</string>
+  <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
+  <string name="sync_send_tab_error_connection_text">Tad cilni jāmēģina nosūtīt atkārtoti.</string>
   <!--
     Text shown in the notification that pops up to remind the user to set fenix as default browser.
     The app name is in the text, due to limitations with localizing Nimbus experiments
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Padarīt Firefox par noklusējuma pārlūku</string>
+  <!--
+    Privacy report notification
+
+    Name of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app.
+  -->
+  <string name="notification_privacy_report_channel_name">Privātuma atskaite</string>
+  <!-- Description of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_channel_description">%1$s parāda, cik izsekotāju tika aizturēti pārlūkošanas laikā.</string>
+  <!-- Body text for the weekly privacy report notification for when trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_body_has_trackers">Turpini pārlūkot! %1$s turpinās aizturēt.</string>
+  <!-- Headline text of the weekly privacy report notification for when no trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_headline_no_trackers">%1$s aiztur izsekotājus, kamēr Tu pārlūko. Tie būs redzami šeit.</string>
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">Vai tiešām izdzēst %1$s?</string>
   <!-- Title for the downloads item in Delete browsing data -->
@@ -294,6 +334,12 @@
   <string name="translation_error_could_not_translate_warning_text">Tulkošanas laikā radās sarežģījums. Lūgums mēģināt vēlreiz.</string>
   <!-- The title of the warning card informs the user that the list of languages cannot be loaded. -->
   <string name="translation_error_could_not_load_languages_warning_text">Nevarēja ielādēt valodas. Jāpārbauda savienojums ar internetu un jāmēģina vēlreiz.</string>
+  <!--
+    Unified Trust Panel
+
+    Title text for the protection panel banner when the site is not secure.
+  -->
+  <string name="protection_panel_banner_not_secure_title">Šajā vietnē jāuzmanās</string>
   <!-- The button text to add tabs to the active tab group in the tab creation tool. -->
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_active">Pievienot izmantotajām cilnēm</string>
   <!-- The button text to add tabs to the inactive tab group in the tab creation tool. -->
@@ -322,8 +368,6 @@
   <string name="settings_search_recent_searches_section_header">Neseni meklēšanas iznākumi</string>
   <!-- Content Description for the button to open Settings Search (to search through settings). -->
   <string name="settings_search_button_content_description">Iestatījumu meklēšanas poga</string>
-  <!-- Sports widget error card description shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_description">Jāpārbauda savienojums ar internetu un jāmēģina vēlreiz.</string>
   <!--
     Collections migration homepage card
 
@@ -350,4 +394,18 @@
   <string name="pdf_tools_print_content_description">Drukāt PDF</string>
   <!-- Content description for accessibility (used by screen readers): Description for the button that opens the sharing options for the PDF being displayed on the screen. -->
   <string name="pdf_tools_share_content_description">Kopīgot PDF</string>
+  <!--
+    PDF viewer add a signature dialog
+
+    The title of the dialog for adding a signature to a PDF.
+  -->
+  <string name="pdf_tools_signature_title">Pievienot parakstu</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that closes the dialog for adding a signature to a PDF. -->
+  <string name="pdf_tools_signature_close_content_description">Aizvērt PDF parakstu paneli</string>
+  <!-- The placeholder text shown in the empty text input field where users can enter the signature they wish to add to a PDF. -->
+  <string name="pdf_tools_signature_placeholder">Ievadīt parakstu</string>
+  <!-- The text for the button that erases the text the user entered in the "add a signature" field. -->
+  <string name="pdf_tools_signature_clear_button">Notīrīt</string>
+  <!-- The text for the button that adds the signature the user has typed to the PDF. -->
+  <string name="pdf_tools_signature_add_button">Pievienot</string>
 </resources>

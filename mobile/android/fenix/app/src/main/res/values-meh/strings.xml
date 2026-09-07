@@ -329,8 +329,6 @@
   <string name="preferences_add_private_browsing_shortcut">Tee a kivu ñama nu jika yu\'unu</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">Ntu xini HTTPS</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">Bloqueador de anuncios de cookies nu jika yu\'u</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">Intentar conectarse automáticamente a sitios que utilizan el protocolo de encriptación HTTPS para mayor seguridad.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -1341,12 +1339,8 @@
   <string name="add_to_homescreen_cancel">Nkuvi-ka</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Tee</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Kaka nuu web</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Sivɨ acceso ñama</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Kuvi tee noo´o nuu web ya´a nuu kajie´e saa kuvi kivɨnu ñama jee nanukunu ñama.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">Contraseñas</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->

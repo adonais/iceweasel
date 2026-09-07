@@ -7,35 +7,13 @@
 -->
 
 <resources xmlns:tools="http://schemas.android.com/tools">
-  <!--
-    #######################################################################################
-
-    ## Put only strings into this file that should be translated. Move all other strings ##
-
-    ## into a separate file like strings_references.xml                                  ##
-
-    #######################################################################################
-  -->
-
   <!-- Label used for buttons, e.g. in dialogs -->
   <string name="action_cancel">Batal</string>
-  <!-- Label used for buttons, e.g. in dialogs -->
-  <string name="action_ok">OKÉ</string>
   <string name="action_save">Simpen</string>
   <!-- This text is shown in the URL bar when it's empty -->
   <string name="urlbar_hint">Golèk utawa lebokaké alamat</string>
-  <string name="teaser">Dlajahan pribadi otomatis.\nDlajah. Busak. Balèni.</string>
-  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
-  <string name="feedback_erase">Riwayat dlajahan sampéyan wis dibusak.</string>
-  <!--
-    This label is shown below the URL bar as soon as the user enters text. Clicking the label will perform a search.
-    %1$s is the text typed by the user.
-  -->
-  <string name="search_hint">Golèk %1$s</string>
   <!-- Menu item: Share the currently visible page -->
   <string name="menu_share">Dumké…</string>
-  <!-- Menu item: Report an issue on the current site -->
-  <string name="menu_report_site_issue">Lapur Masalah Situs</string>
   <!--
     Menu item: Switch to another browser to open the currently visible page. %1$s will be
     replaced with the name of the browser like: "Open in Firefox" or "Open in Chrome". Some
@@ -55,23 +33,6 @@
   <string name="menu_settings">Setèlan</string>
   <string name="menu_about">Ngenani</string>
   <string name="menu_help">Pitulung</string>
-  <!--
-    Menu item: This is the label for a menu entry that shows how many trackers have been blocked
-    for the currently loaded website. The number of blocked trackers is shown below this label.
-    Next to this label is a switch that allows the user to temporarily enable / disable the
-    blocking of trackers for the current browsing session - for example if the current website
-    doesn't work correctly with blocked content.
-  -->
-  <string name="menu_trackers_blocked_title">Palacak kablokir</string>
-  <!--
-    Menu item: This is the subtitle for the Trackers blocked menu entry that shows how many
-    trackers have been blocked for the currently loaded website.
-  -->
-  <string name="menu_trackers_blocked_subtitle">Matèni iki bisa ndandani sawetara masalah situs</string>
-  <!-- Menu item: This is the label for turning off content blocking for the current website. -->
-  <string name="menu_content_blocking">Blokir kontèn</string>
-  <!-- This is the subtitle content blocking toggle -->
-  <string name="menu_content_blocking_subtitle">Patèni kanggo ndandani sawetara situs</string>
   <!--
     This is a small text at the bottom of the menu shown in a "custom tab" for branding purposes.
     See https://github.com/mozilla-mobile/focus-android/issues/2106
@@ -146,21 +107,13 @@
     is using the system default language.
   -->
   <string name="preference_language_systemdefault">Gawan sistem</string>
-  <string name="preference_category_privacy">Privasi</string>
   <string name="preference_privacy_category_cookies">Blokir kuki</string>
   <string name="preference_performance_block_javascript">Blokir JavaScript</string>
   <string name="preference_category_mozilla" tools:ignore="BrandUsage">Mozilla</string>
   <!-- Item in Preferences that shows the about page. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
   <string name="preference_about">Ngenani %1$s</string>
-  <!-- Header for the list of installed search engines -->
-  <string name="preference_search_installed_search_engines">Mesin panggolèk sing wis dipasang</string>
   <!-- Action for restoring the default list of search engines -->
   <string name="preference_search_restore">Mulihaké mesin panggolèk standar</string>
-  <!--
-    Action for adding an additional search engine to the list.
-    The "+" is used to emphasize that this is an "add" action
-  -->
-  <string name="preference_search_add2">+Tambah mesin panggolèk liyané</string>
   <string name="preference_search_remove_title">Busak mesin panggolèk</string>
   <string name="preference_search_remove">Busak</string>
   <!-- Clickable action text that shows when user long-presses on a search engine search field (this is similar to paste or copy when long-pressing a text field) -->
@@ -173,14 +126,6 @@
     overlay if focused. See https://github.com/mozilla-mobile/focus-android/issues/50
   -->
   <string name="content_description_dismiss_input">Singkirké</string>
-  <!--
-    This text is not visible. Instead it will be read by the accessibility service once we start
-    loading a website
-  -->
-  <string name="accessibility_announcement_loading">Ngamot</string>
-  <string name="firstrun_close_button">Oké, mudheng!</string>
-  <!-- Indicator that no trackers are being blocked because content blocking is disabled; normally shows the number of blocked trackers -->
-  <string name="content_blocking_disabled">-</string>
   <!-- Label of the action that will close the dialog and not add anything to the home screen (shown in the confirmation dialog). -->
   <string name="dialog_addtohomescreen_action_cancel">Mbatalake</string>
   <!--
@@ -188,37 +133,7 @@
     item in the list of browsers. Clicking it will open the app store installed on the device (usually that's Google Play).
   -->
   <string name="download_firefox" tools:ignore="BrandUsage">Undhuh Firefox</string>
-  <!-- Text shown in prompts for GeckoView -->
-  <string name="gv_prompt_username_hint">Jeneng Panganggo</string>
-  <string name="gv_prompt_password_hint">Tembung wadi</string>
-  <string name="gv_prompt_clear">Busak</string>
-  <!--
-    Text shown in Security Information Popup
-
-    Text to denote secure or insecure connection
-  -->
-  <string name="security_popup_secure_connection">Sambungan aman</string>
-  <string name="security_popup_insecure_connection">Sambungan ora aman</string>
   <string name="preference_autocomplete_duplicate_url_error">URL wis ana</string>
   <!-- Label for the Find in page button -->
   <string name="find_in_page">Golèki ing kaca</string>
-  <!-- Watermark/Hint for the find in page input field -->
-  <string name="find_in_page_input">Golekì ing kaca</string>
-  <!--
-    String to show the number of results found in the page and the position
-    the user is at. %1$d is the position, %2$d is the total number of
-    results.
-  -->
-  <string name="find_in_page_result">%1$d / %2$d</string>
-  <!--
-    String to be read by the accessibility service presenting the number of
-    results found in the page and the position the user is at. %1$d is the
-    position, %2$d is the total number of results.
-  -->
-  <string name="accessibility_find_in_page_result">%1$d saka %2$d</string>
-  <!-- Tips displayed on the home view -->
-
-  <!-- Tracking protection bottom sheet -->
-
-  <!-- Promote SearchWidget Dialog -->
 </resources>

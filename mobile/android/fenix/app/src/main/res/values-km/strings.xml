@@ -1558,8 +1558,6 @@
   <string name="preference_doh_exceptions_add_site">អាសយដ្ឋានវេប</string>
   <!-- Cancel button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_cancel">បោះបង់</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">បន្តទៅអាសយដ្ឋានវេប</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">ពាក្យ​សម្ងាត់</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->

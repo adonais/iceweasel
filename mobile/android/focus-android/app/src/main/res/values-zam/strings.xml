@@ -7,39 +7,17 @@
 -->
 
 <resources xmlns:tools="http://schemas.android.com/tools">
-  <!--
-    #######################################################################################
-
-    ## Put only strings into this file that should be translated. Move all other strings ##
-
-    ## into a separate file like strings_references.xml                                  ##
-
-    #######################################################################################
-  -->
-
   <!-- Label used for buttons, e.g. in dialogs -->
   <string name="action_cancel">B-láɁ=y</string>
-  <!-- Label used for buttons, e.g. in dialogs -->
-  <string name="action_ok">ăɁ</string>
   <string name="action_save">Mb-lòɁ sóg</string>
   <!-- This text is shown in the URL bar when it's empty -->
   <string name="urlbar_hint">KwàɁn kó wiɁ</string>
-  <string name="teaser">Wí lút tá. KwàɁn. Tedónt. Bí-ré.</string>
-  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
-  <string name="feedback_erase">Mté dont na ré ko wíl.</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">Ndó bíy</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">Ndó bíy sá.</string>
-  <!--
-    This label is shown below the URL bar as soon as the user enters text. Clicking the label will perform a search.
-    %1$s is the text typed by the user.
-  -->
-  <string name="search_hint">KwàɁn lô %1$s</string>
   <!-- Menu item: Share the currently visible page -->
   <string name="menu_share">Tă~làz…</string>
-  <!-- Menu item: Report an issue on the current site -->
-  <string name="menu_report_site_issue">Gús KwàɁn m-xâc</string>
   <!--
     Menu item: Switch to another browser to open the currently visible page. %1$s will be
     replaced with the name of the browser like: "Open in Firefox" or "Open in Chrome". Some
@@ -63,14 +41,6 @@
   <string name="menu_settings">Thús kùey</string>
   <string name="menu_about">Chò nàk ná</string>
   <string name="menu_help">Lì ché</string>
-  <!--
-    Menu item: This is the label for a menu entry that shows how many trackers have been blocked
-    for the currently loaded website. The number of blocked trackers is shown below this label.
-    Next to this label is a switch that allows the user to temporarily enable / disable the
-    blocking of trackers for the current browsing session - for example if the current website
-    doesn't work correctly with blocked content.
-  -->
-  <string name="menu_trackers_blocked_title">TòɁw-ná lô men dè-kè</string>
   <!--
     This is a small text at the bottom of the menu shown in a "custom tab" for branding purposes.
     See https://github.com/mozilla-mobile/focus-android/issues/2106
@@ -106,13 +76,6 @@
     This is the label for this shortcut. Android recommends a maximum length of 10 characters.
   -->
   <string name="shortcut_erase_and_open_short_label">Tòb bí &amp; mb-šàlɁ</string>
-  <!--
-    The same as 'shortcut_erase_short_label' but more descriptive. The launcher shows this
-    instead of the short title when it has enough space. Android recommends a maximum length
-    of 25 characters.
-    %1$s will be replaced by the app name (e.g. Firefox Focus)
-  -->
-  <string name="shortcut_erase_and_open_long_label">Tòb bí ner mb-šàlɁ %1$s</string>
   <!--
     These labels are selected per variant through manifestPlaceholders in build.gradle, so
     UnusedResources does not see the ones for the variants it is not analyzing.
@@ -159,8 +122,6 @@
   <!-- Preference category for General Settings -->
   <string name="preference_category_general">Ré=tá</string>
   <string name="preference_category_search">KwàɁn</string>
-  <!-- This label is shown below the name of the default search engine in settings -->
-  <string name="preference_search_engine_default">b-šèn=ná</string>
   <!-- Text that is shown below a "switch" preference that is enabled. -->
   <string name="preference_state_on">Blá Kìy</string>
   <!-- Text that is shown below a "switch" preference that is disabled. -->
@@ -171,8 +132,6 @@
   <string name="preference_autocomplete_action_add">m-tób tùs kùe URL</string>
   <!-- Title of the screen for adding custom autocomplete URLs. -->
   <string name="preference_autocomplete_title_add">M-tób tùs kùe URL</string>
-  <!-- Label for the button to quick add custom autocomplete URLs. -->
-  <string name="custom_autocomplete_quick_add">M-tòb URL</string>
   <!-- Preference category for settings about cookies and site data -->
   <string name="preference_category_cookies">Cookies ner kwàɁn mb-šèn=lû</string>
   <!-- Preference category for settings about data choices -->
@@ -187,8 +146,6 @@
   <string name="preference_autocomplete_add_hint">Lí chop ó m-tòb URL</string>
   <!-- Example how a custom domain autocomplete URL be added (e.g. without http://) -->
   <string name="preference_autocomplete_add_example2" tools:ignore="BrandUsage">\"VáɁ: mozilla.org \"</string>
-  <!-- To be removed once the new hint has been translated -->
-  <string name="preference_autocomplete_add_example">M-tòb: sálépágina.com</string>
   <!-- Confirmation "snackbar" shown after a new custom autocomplete URL has been added. -->
   <string name="preference_autocomplete_add_confirmation">Dób lá URL kùb.</string>
   <!-- Menu item to remove existing autocomplete URLs. -->
@@ -203,7 +160,6 @@
     is using the system default language.
   -->
   <string name="preference_language_systemdefault">Kó díed lenɁ</string>
-  <string name="preference_category_privacy">Ngyé-n cho wiɁ</string>
   <string name="preference_privacy_block_ads">TòɁw-ná lô men dè-kè</string>
   <string name="preference_privacy_block_analytics">TòɁw-ná lô men dè-kè</string>
   <string name="preference_privacy_block_social">TòɁw-ná lô men dè-kè</string>
@@ -221,7 +177,6 @@
     and prevents the user from taking screenshots or casting the app to other displays.
   -->
   <string name="preference_privacy_secure_mode">Yìz</string>
-  <string name="preference_category_performance">Sà dè kèy sín</string>
   <string name="preference_performance_block_webfonts">TòɁw letr Internet</string>
   <string name="preference_performance_block_javascript">TòɁw lô JavaScript</string>
   <!--
@@ -239,15 +194,8 @@
   <string name="preference_privacy_notice">M-bláb kùe</string>
   <!-- Item in Preferences that shows the about page. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
   <string name="preference_about">Cho nak kùe %1$s</string>
-  <!-- Header for the list of installed search engines -->
-  <string name="preference_search_installed_search_engines">Tob yìb kwàɁn</string>
   <!-- Action for restoring the default list of search engines -->
   <string name="preference_search_restore">bí~rè sá nák ahɁ</string>
-  <!--
-    Action for adding an additional search engine to the list.
-    The "+" is used to emphasize that this is an "add" action
-  -->
-  <string name="preference_search_add2">M-tòb tá thîb yìb kwàɁn</string>
   <string name="preference_search_remove_title">Kìb yíb kúan</string>
   <string name="preference_search_remove">Kíb</string>
   <!-- Clickable action text that shows when user long-presses on a search engine search field (this is similar to paste or copy when long-pressing a text field) -->
@@ -260,8 +208,6 @@
   <string name="search_add_confirmation">Dób lá yíʔb-kwàɁn.</string>
   <string name="search_add_error_empty_name">KwàɁn sá lé yíʔb-kwàɁn</string>
   <string name="search_add_error_empty_search">KwàɁn sá lé dìzh</string>
-  <!-- Content description (not visible, for screen readers etc.): Clear text in URL bar -->
-  <string name="content_description_clear_input">Tòmbî tòlô</string>
   <!--
     Content description (not visible, for screen readers etc.): Clicking on the website overlay
     while in typing mode will dismiss and go back to the browser. This text will be read when the
@@ -273,29 +219,6 @@
     history and go back to the home screen.
   -->
   <string name="content_description_erase">Tób bí lô góš</string>
-  <!--
-    If the user has multiple tabs open we will show an addition "floating action button" showing how many tabs are open.
-    This string is not displayed and read only by screenreaders. %1$s will be replaced with the number of open tabs. This
-    button will only be visible when there is more than one tab open (>= 2).
-  -->
-  <string name="content_description_tab_counter">Lô nó-šàlɁ: %1$s</string>
-  <!--
-    Content description (not visible, for screen readers etc.): Lock icon showed in the URL bar for
-    https pages..
-  -->
-  <string name="content_description_lock">Mgéy sín</string>
-  <!--
-    This text is not visible. Instead it will be read by the accessibility service once we start
-    loading a website
-  -->
-  <string name="accessibility_announcement_loading">Mdé láɁ ní</string>
-  <!--
-    This text is not visible. Instead it will be read by the accessibility service once we
-    finished loading a website
-  -->
-  <string name="accessibility_announcement_loading_finished">Lô nó-šàlɁ</string>
-  <!-- Content description (not visible, for screen readers etc.): "Three dot" menu button. -->
-  <string name="content_description_menu">Wì kó ták lìl</string>
   <!-- Content description (not visible, for screen readers etc.): Navigate forward (browsing history) -->
   <string name="content_description_forward">Gûa sìs nêd</string>
   <!-- Content description (not visible, for screen readers etc.): Reload current website -->
@@ -304,29 +227,6 @@
   <string name="content_description_back">Bì-rè nêd</string>
   <!-- Content description (not visible, for screen readers etc.): Stop loading the current website. This button will turn into the refresh button once loading has been completed (see content_description_reload) -->
   <string name="content_description_stop">B-láɁ mdé láɁ=y</string>
-  <!-- Content description (not visible, for screen readers etc.): Custom Tab exit button - closes the custom tab and returns to the previous app. -->
-  <string name="content_description_customtab_exit">Bí-ré app</string>
-  <!--
-    Content description (not visible, for screen readers etc.): This is the description for the switch in the menu that temporarily disables/enables
-    content blocking for the current session
-  -->
-  <string name="content_description_blocking_switch">TòɁw-ná lô men dè-kè</string>
-  <string name="your_rights">Ko nákin niél</string>
-  <string name="external_app_prompt_title">Mb-šàlɁ nêt (n̆eza) lenɁ tá thîb app</string>
-  <!--
-    This string is shown when the user has clicked a link that needs to be opened in a different app.
-    %2$s is the external app name, %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
-  -->
-  <string name="external_app_prompt">Tàk rûl trè %1$s zá tàk mb-šàlɁ nêd ré lenɁ %2$s.</string>
-  <!-- This text is the title of a dialog shown if no app could be found for a custom link protocol. -->
-  <string name="external_app_prompt_no_app_title">KwàɁn app kó tàk mb-šàlɁ nêd ré</string>
-  <!--
-    This text is shown in a dialog if no app could be found for a custom link protocol. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar") and %2$s is the name of
-    the app store installed on the device (usually that's Google Play).
-  -->
-  <string name="external_app_prompt_no_app">Niè thîb app tàk mb-šàlɁ nêd ré. Tàk rûl trè %1$s zá tàk mb-šàlɁ nêd ré lenɁ %2$s.</string>
-  <!-- This label is shown above a list of apps that can be used to open a given link -->
-  <string name="external_multiple_apps_matched_exit">¿Mb-ròɁ gá?</string>
   <!-- Snackbar that will be displayed after a download has completed. %1$s is the file name. -->
   <string name="download_snackbar_finished">%1$s tèlôy</string>
   <!-- Snackbar action to immediately open the successfully downloaded file. -->
@@ -334,25 +234,14 @@
   <string name="error_hostLookup_title">Ngyé-n yìb rè</string>
   <!-- First run tour (Default browser): Title -->
   <string name="firstrun_defaultbrowser_title">M-tób kì ko lùt ta wí</string>
-  <!-- First run tour (Default browser): Text. -->
-  <string name="firstrun_defaultbrowser_text2">Lleva la navegación privada a otro nivel. Bloquea anuncios publicitarios y otro tipo de contenido que puede rastrearte a través de los sitios y ralentizar el tiempo de descarga de las páginas.</string>
   <!-- First run tour (Search): Title -->
   <string name="firstrun_search_title">Kò kwàʔn lû, nêb lû</string>
-  <!-- First run tour (Search): Text -->
-  <string name="firstrun_search_text">¿Buscas algo diferente? Elige otro motor de búsqueda predeterminado en Ajustes.</string>
   <!-- First run tour (Shortcut): Title -->
   <string name="firstrun_shortcut_title">Agrega atajos a la pantalla principal</string>
   <!-- First run tour (Privacy): Title -->
   <string name="firstrun_privacy_title">Acostúmbrate a la privacidad</string>
-  <string name="firstrun_close_button">ăɁ, gùa!</string>
-  <string name="firstrun_skip_button">B-láɁ=y</string>
-  <string name="firstrun_next_button">Tá thîb vá</string>
-  <!-- Indicator that no trackers are being blocked because content blocking is disabled; normally shows the number of blocked trackers -->
-  <string name="content_blocking_disabled">-</string>
   <!-- Label of the action that will add the current website to the home screen (shown in the confirmation dialog). -->
   <string name="dialog_addtohomescreen_action_add">M-tòb</string>
-  <!-- Label of the action that will add the current website to the home screen (shown in the confirmation dialog). -->
-  <string name="dialog_addtohomescreen_action_yes">ăɁ</string>
   <!-- Label of the action that will close the dialog and not add anything to the home screen (shown in the confirmation dialog). -->
   <string name="dialog_addtohomescreen_action_cancel">B-láɁ=y</string>
   <!--
@@ -363,34 +252,12 @@
     * To see how this string will look like in Android's UI, see: https://github.com/mozilla-mobile/focus-android/issues/863#issuecomment-324105723
   -->
   <string name="notification_browsing_session_channel_name">Lút ta níe kúe</string>
-  <!-- Label for a button in the "tabs tray" to erase the browsing history (closes all tabs and removes associated data). -->
-  <string name="tabs_tray_action_erase">Tób bí lô góš</string>
   <!--
     If the user decides to open the current page in another browser and if Firefox is not installed then we show this
     item in the list of browsers. Clicking it will open the app store installed on the device (usually that's Google Play).
   -->
   <string name="download_firefox" tools:ignore="BrandUsage">B-là Firefox</string>
-  <!-- Text shown in prompts for GeckoView -->
-  <string name="gv_prompt_username_hint">Chó lèl</string>
-  <string name="gv_prompt_password_hint">Contraseñ</string>
-  <string name="gv_prompt_clear">Tòb-bì</string>
-  <!--
-    Text shown in Security Information Popup
-
-    Text to denote secure or insecure connection
-  -->
-  <string name="security_popup_secure_connection">Bès-tá m-dób kîy</string>
-  <string name="security_popup_insecure_connection">WíɁ bès-tá</string>
-  <!-- %1$s will be replaced with organization that granted the SSL certificate -->
-  <string name="security_popup_security_verified">WíɁ=y: %1$s</string>
-  <!-- Content Description of Security Icon in toolbar -->
-  <string name="site_security_icon_content_description">Zá nî-éy</string>
   <string name="preference_autocomplete_duplicate_url_error">URL šò=là</string>
   <!-- Label used for the "YES button" for the prompt to enable search suggestions -->
   <string name="enable_search_suggestions_yes">ăɁ</string>
-  <!-- Tips displayed on the home view -->
-
-  <!-- Tracking protection bottom sheet -->
-
-  <!-- Promote SearchWidget Dialog -->
 </resources>

@@ -372,8 +372,6 @@
   <string name="preferences_add_private_browsing_shortcut">පෞද්. පිරික්සුම් කෙටිමඟක් යොදන්න</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">HTTPS-පමණි ප්‍රකාරය</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">පෞද්. පිරික්සීමෙහි දත්තකඩ පතාක අවහිරය</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">ඉහළ ආරක්‍ෂාවක් සඳහා HTTPS සංකේතන කෙටුම්පත භාවිතයෙන් අඩවි වෙත ස්වයංක්‍රීයව සම්බන්ධ වීමට තැත් කරයි.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -1485,12 +1483,8 @@
   <string name="add_to_homescreen_cancel">අවලංගු</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">එකතු</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">අඩවියට යන්න</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">කෙටිමඟ නාමය</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">ඔබට ක්‍ෂණික ප්‍රවේශයක් ලබා ගැනීමට සහ යෙදුමක වැනි අත්දැකීමක් සමඟින් වේගයෙන් පිරික්සීමට මෙම අඩවිය ඔබගේ උපාංගයේ මුල් තිරයට පහසුවෙන් එක් කළ හැකිය.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">මුරපද</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->

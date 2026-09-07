@@ -539,8 +539,6 @@
   <string name="preferences_pbm_lock_screen_title">Koristite zaključavanje ekrana da sakrijete tabove u privatnom pregledavanju</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_3">Pregledajte tabove otiskom prsta, PIN-om ili otključavanjem licem. Uključivanje ove opcije također sprječava snimanje i dijeljenje ekrana.</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">Smanjivanje pojavljivanja dijaloga kolačića u privatnom pretraživanju</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">Automatski pokušava da se poveže na stranice koristeći HTTPS protokol za šifrovanje radi povećane sigurnosti.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -2193,12 +2191,8 @@
   <string name="add_to_homescreen_cancel">Otkaži</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Dodaj</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Nastavi na web stranicu</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Naziv prečice</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Ovu web stranicu možete lahko dodati na Početni ekran uređaja za brz pristup istoj i da surfate brže s iskustvom sličnom aplikaciji.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">Lozinke</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->

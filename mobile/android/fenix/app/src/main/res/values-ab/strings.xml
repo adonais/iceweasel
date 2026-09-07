@@ -355,8 +355,6 @@
   <string name="preferences_add_private_browsing_shortcut">Ихатәу алаԥшхгара аҿацә ацҵатәуп</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">”HTTPS мацара” арежим</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">Акукиқәа рдырраҭара аблокатор хатә ԥшаараҿы</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">Ашәарҭадара аизырҳаразы HTTPS ашифртә протокол ахархәарала автоматла асаитқәа рыҽрыдҳәалара аҽазышәара.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -1470,12 +1468,8 @@
   <string name="add_to_homescreen_cancel">Аԥыхра</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Ацҵара</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Асаит ахь ахынҳәра</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Аҿацә ахьӡ</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Иаразнактәи анеиразы ари асаит шәхыхәҭа ахатә екран иацшәҵар шәылшоит.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">Амаӡажәақәа</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->

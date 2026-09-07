@@ -1028,8 +1028,6 @@
   <string name="add_to_homescreen_cancel">రద్దుచేయి</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">చేర్చు</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">వెబ్‌సైట్‌కు కొనసాగు</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">సత్వరమార్గం పేరు</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->

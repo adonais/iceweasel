@@ -714,8 +714,6 @@
   <string name="add_to_homescreen_cancel">Anulla</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Azonzi</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Vanni a-o scito</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Nomme scorsaieu</string>
   <!-- Preference option for asking to save passwords in Fenix -->

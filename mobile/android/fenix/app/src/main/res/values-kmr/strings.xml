@@ -1580,12 +1580,8 @@
   <string name="add_to_homescreen_cancel">Betal bike</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Tevlî bike</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Li malperê berdewam bike</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Navê kurterêyê</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Tu dikarî vê malperê bi hêsanî li ekrana Destpêkê ya cîhaza xwe zêde bikî ku ji wir zûtir bigihîjî wê û wê wekî sepanekê bi kar bînî.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">Şîfre</string>
   <!-- Preference option for asking to save passwords in Fenix -->

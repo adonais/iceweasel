@@ -358,8 +358,6 @@
   <string name="preferences_add_private_browsing_shortcut">نجی براؤزنگ شاٹ کٹ شامل کرو</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">ایچ ٹی ٹی پی ایس ــ صرف موڈ</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">نجی براؤزنگ وِچ کوکی بینر بلاکر</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">خودکار طور تے ودھدی ہوئی حفاظت کیتے ایچ ٹی ٹی پی ایس خفیہ کاری پروٹوکول ورتندے ہوئے سائٹاں کوں کنکٹ کرݨ دی کوشش کریندے۔</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -1485,12 +1483,8 @@
   <string name="add_to_homescreen_cancel">منسوخ</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">شامل کرو</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">ویب سائٹ تے جاری رکھو</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">شارٹ کٹ ناں</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">تساں ایں ویب سائٹ کوں آسانی نال آپݨی ڈیوائس دی ہوم سکرین وچ شامل کر سڳدے ہو تاں جو فوری رسائی حاصل تھیوے تے ایپ جیہے تجربے نال تیزی نال براؤز کرو۔</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">پاس ورڈز</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->

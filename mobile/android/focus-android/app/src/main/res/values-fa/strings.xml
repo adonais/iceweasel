@@ -7,39 +7,17 @@
 -->
 
 <resources xmlns:tools="http://schemas.android.com/tools">
-  <!--
-    #######################################################################################
-
-    ## Put only strings into this file that should be translated. Move all other strings ##
-
-    ## into a separate file like strings_references.xml                                  ##
-
-    #######################################################################################
-  -->
-
   <!-- Label used for buttons, e.g. in dialogs -->
   <string name="action_cancel">لغو</string>
-  <!-- Label used for buttons, e.g. in dialogs -->
-  <string name="action_ok">تایید</string>
   <string name="action_save">ذخیره</string>
   <!-- This text is shown in the URL bar when it's empty -->
   <string name="urlbar_hint">جست‌وجو کنید یا آدرسی را وارد کنید</string>
-  <string name="teaser">مرور ناشناس خودکار.\nمرور کنید. پاک کنید. تکرار کنید.</string>
-  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
-  <string name="feedback_erase">تاریخچهٔ مرور شما پاک شد.</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">تاریخچهٔ مرور، پاک شد</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">تاریخچه زبانه‌های مرورگر پاک شده است.</string>
-  <!--
-    This label is shown below the URL bar as soon as the user enters text. Clicking the label will perform a search.
-    %1$s is the text typed by the user.
-  -->
-  <string name="search_hint">جست‌وجو برای %1$s</string>
   <!-- Menu item: Share the currently visible page -->
   <string name="menu_share">هم‌رسانی…</string>
-  <!-- Menu item: Report an issue on the current site -->
-  <string name="menu_report_site_issue">گزارش مشکل در پایگاه</string>
   <!--
     Menu item: Switch to another browser to open the currently visible page. %1$s will be
     replaced with the name of the browser like: "Open in Firefox" or "Open in Chrome". Some
@@ -63,23 +41,6 @@
   <string name="menu_settings">تنظیمات</string>
   <string name="menu_about">درباره</string>
   <string name="menu_help">راهنما</string>
-  <!--
-    Menu item: This is the label for a menu entry that shows how many trackers have been blocked
-    for the currently loaded website. The number of blocked trackers is shown below this label.
-    Next to this label is a switch that allows the user to temporarily enable / disable the
-    blocking of trackers for the current browsing session - for example if the current website
-    doesn't work correctly with blocked content.
-  -->
-  <string name="menu_trackers_blocked_title">ردیاب‌های مسدود شده</string>
-  <!--
-    Menu item: This is the subtitle for the Trackers blocked menu entry that shows how many
-    trackers have been blocked for the currently loaded website.
-  -->
-  <string name="menu_trackers_blocked_subtitle">خاموش کردن این ممکن است بتواند تعدادی از مشکلات این سایت را حل کند</string>
-  <!-- Menu item: This is the label for turning off content blocking for the current website. -->
-  <string name="menu_content_blocking">مسدود کردن محتوا</string>
-  <!-- This is the subtitle content blocking toggle -->
-  <string name="menu_content_blocking_subtitle">خاموش کردن برای حل مشکل چند سایت</string>
   <!--
     This is a small text at the bottom of the menu shown in a "custom tab" for branding purposes.
     See https://github.com/mozilla-mobile/focus-android/issues/2106
@@ -115,13 +76,6 @@
     This is the label for this shortcut. Android recommends a maximum length of 10 characters.
   -->
   <string name="shortcut_erase_and_open_short_label">پاک کردن و بازکردن</string>
-  <!--
-    The same as 'shortcut_erase_short_label' but more descriptive. The launcher shows this
-    instead of the short title when it has enough space. Android recommends a maximum length
-    of 25 characters.
-    %1$s will be replaced by the app name (e.g. Firefox Focus)
-  -->
-  <string name="shortcut_erase_and_open_long_label">پاک کردن و باز کردن %1$s</string>
   <!--
     These labels are selected per variant through manifestPlaceholders in build.gradle, so
     UnusedResources does not see the ones for the variants it is not analyzing.
@@ -177,8 +131,6 @@
   <string name="preference_category_general">عمومی</string>
   <!-- Preference summary for General Settings category; the two things users can find in this category -->
   <string name="preference_general_summary2">مرورگر پیش‌فرض، زبان</string>
-  <!-- Preference category for settings about sending usage data -->
-  <string name="preference_category_data_collection_use">گردآوری داده و موارد استفاده</string>
   <string name="preference_category_search">جست‌وجو</string>
   <!-- Title of "switch" preference that enables/disables search suggestions -->
   <string name="preference_show_search_suggestions">دریافت پیشنهادات جست‌وجو</string>
@@ -187,8 +139,6 @@
     %1$s will be replaced by the app name (e.g. Firefox Focus)
   -->
   <string name="preference_show_search_suggestions_summary">%1$s چیزی که شما در نوار آدرس وارد می‌کنید را برای موتور جست‌وجو شما ارسال خواهد کرد</string>
-  <!-- This label is shown below the name of the default search engine in settings -->
-  <string name="preference_search_engine_default">پیش‌فرض</string>
   <!-- This label is shown above the currently selected search engine in settings -->
   <string name="preference_search_engine_label">موتور جست‌وجو</string>
   <!-- Text that is shown below a "switch" preference that is enabled. -->
@@ -211,22 +161,12 @@
     %s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
   -->
   <string name="preference_autocomplete_user_list_summary2">فعال کردن %s برای تکمیل خودکار URLهای محبوب شما.</string>
-  <!-- Preference category: Manage (user-defined) sites -->
-  <string name="preference_category_autocomplete_manage_sites">مدیریت سایت‌ها</string>
   <!-- Item in autocomplete settings that will open a new preference screen for adding and removing URLs to the user-defined list -->
   <string name="preference_autocomplete_subitem_manage_sites">مدیریت سایت‌ها</string>
   <!-- Action at the bottom of the list of custom autocomplete URLs that will open a new screen to add a new URL to the list. -->
   <string name="preference_autocomplete_action_add">+ افزودن نشانی سفارشی</string>
-  <!-- Explanation text above the list of custom autocomplete URLs. -->
-  <string name="preference_autocomplete_explanation_text">فهرست تکمیل خودکار شما:</string>
-  <!-- Action at the bottom of the list of custom autocomplete URLs that will open a new screen to add a new URL to the list. -->
-  <string name="preference_autocomplete_action_add2">افزودن آدرس اینترنتی</string>
   <!-- Title of the screen for adding custom autocomplete URLs. -->
   <string name="preference_autocomplete_title_add">افزودن نشانی سفارشی</string>
-  <!-- Label for the button to quick add custom autocomplete URLs. -->
-  <string name="custom_autocomplete_quick_add">افزودن نشانی سفارشی</string>
-  <!-- Label for the button to quick add the current URL to the custom autocomplete list -->
-  <string name="add_custom_autocomplete_label">افزودن پیوند به تکمیل خودکار</string>
   <!-- Preference category for settings about cookies and site data -->
   <string name="preference_category_cookies">کوکی‌ها و داده‌های پایگاه</string>
   <!-- Preference category for settings about data choices -->
@@ -235,16 +175,12 @@
   <string name="preference_autocomplete_title_remove">حذف نشانی‌های سفارشی</string>
   <!-- A link to SUMO at autocomplete settings. -->
   <string name="preference_autocomplete_learn_more">بیشتر بدانید</string>
-  <!-- Preference summary: Custom (user-defined) autocomplete URLs. -->
-  <string name="preference_autocomplete_custom_summary">افزودن و مدیریت تکمیل خودکار نشانی‌های سفارشی.</string>
   <!-- Label for the "custom autocomplete URL" input field -->
   <string name="preference_autocomplete_add_title">نشانی برای افزودن</string>
   <!-- "Hint" text for the "custom autocomplete URL" input field. Shown when the field is empty. -->
   <string name="preference_autocomplete_add_hint">جای‌گذاری یا ورود نشانی</string>
   <!-- Example how a custom domain autocomplete URL be added (e.g. without http://) -->
   <string name="preference_autocomplete_add_example2" tools:ignore="BrandUsage">مثال: mozilla.org</string>
-  <!-- To be removed once the new hint has been translated -->
-  <string name="preference_autocomplete_add_example">مثال: example.com</string>
   <!-- Confirmation "snackbar" shown after a new custom autocomplete URL has been added. -->
   <string name="preference_autocomplete_add_confirmation">نشانی سفارشی جدید اضافه شد</string>
   <!-- Menu item to remove existing autocomplete URLs. -->
@@ -259,7 +195,6 @@
     is using the system default language.
   -->
   <string name="preference_language_systemdefault">پیش‌فرض سیستم</string>
-  <string name="preference_category_privacy">حریم خصوصی</string>
   <string name="preference_privacy_block_ads">مسدود کردن ردیاب‌های تبلیغاتی</string>
   <string name="preference_privacy_block_ads_summary">برخی از تبلیغ‌ها بازدیدهای سایت را دنبال می‌کنند، حتّی اگر شما روی تبلیغ‌ها کلیک نکنید</string>
   <string name="preference_privacy_block_analytics">مسدود کردن ردیاب‌های آماری</string>
@@ -300,7 +235,6 @@
   -->
   <string name="preference_privacy_stealth_summary">هنگام تعویض برنامه‌ها صفحه‌های وب را مخفی و گرفتن تصاویر صفحه را مسدود کن.</string>
   <string name="preference_category_security">امنیت</string>
-  <string name="preference_category_performance">کارایی</string>
   <string name="preference_performance_block_webfonts">مسدود کردن قلم‌های وب</string>
   <!-- This text is shown below the setting for disabling web fonts. Some websites use icons/images from a font and those do not show up if fonts are blocked. -->
   <string name="preference_performance_block_webfonts_summary">ممکن است باعث بارگیری نشدن برخی از شمایل‌ها و تصاویر بشود</string>
@@ -320,7 +254,6 @@
   <string name="preference_mozilla_telemetry_summary">اطلاعات بیشتر</string>
   <!-- %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
   <string name="preference_mozilla_telemetry_summary2" tools:ignore="BrandUsage">موزیلا تلاش می‌کند تنها اطلاعاتی که برای بهینه‌سازی %1$s برای همه به آنها نیاز دارد را جمع‌آوری کند.</string>
-  <string name="preference_daily_usage_ping_learn_more">اطلاعات بیشتر</string>
   <!-- In-app link (in settings) to Focus privacy notice. -->
   <string name="preference_privacy_notice">نکات حریم‌خصوصی</string>
   <!-- Link to Focus Crash reports list. -->
@@ -328,16 +261,9 @@
   <!-- Item in Preferences that shows the about page. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
   <string name="preference_about">درباره %1$s</string>
   <!-- Header for the list of installed search engines -->
-  <string name="preference_search_installed_search_engines">موتورهای جست‌وجو نصب شده</string>
-  <!-- Header for the list of installed search engines -->
   <string name="preference_choose_search_engine">انتخاب موتور جست‌وجو</string>
   <!-- Action for restoring the default list of search engines -->
   <string name="preference_search_restore">بازآوری موتورهای جست‌وجو پیش‌فرض</string>
-  <!--
-    Action for adding an additional search engine to the list.
-    The "+" is used to emphasize that this is an "add" action
-  -->
-  <string name="preference_search_add2">+ افزودن یک موتور جستجوی دیگر</string>
   <string name="preference_search_remove_title">حذف موتورهای جست‌وجو</string>
   <string name="preference_search_remove">حذف</string>
   <!-- Action for dding an additional search engine to the list -->
@@ -356,8 +282,6 @@
   <string name="search_add_error_duplicate_name">پیش از این یک موتور جستجوی نصب شده از این نام استفاده می‌کند.</string>
   <string name="search_add_error_empty_search">رشتهٔ جست‌وجو را وارد کنید</string>
   <string name="search_add_error_format">بررسی کنید که رشته جست‌وجو با شکل و قالب نمونهٔ ارائه شده مطابقت دارد</string>
-  <!-- Content description (not visible, for screen readers etc.): Clear text in URL bar -->
-  <string name="content_description_clear_input">پاک کردن وروردی</string>
   <!--
     Content description (not visible, for screen readers etc.): Clicking on the website overlay
     while in typing mode will dismiss and go back to the browser. This text will be read when the
@@ -369,34 +293,6 @@
     history and go back to the home screen.
   -->
   <string name="content_description_erase">حذف تاریخچه مرور</string>
-  <!--
-    If the user has multiple tabs open we will show an addition "floating action button" showing how many tabs are open.
-    This string is not displayed and read only by screenreaders. %1$s will be replaced with the number of open tabs. This
-    button will only be visible when there is more than one tab open (>= 2).
-  -->
-  <string name="content_description_tab_counter">زبانه‌های باز: %1$s</string>
-  <!--
-    Content description (not visible, for screen readers etc.): Lock icon showed in the URL bar for
-    https pages..
-  -->
-  <string name="content_description_lock">اتصال امن</string>
-  <!--
-    This text is not visible. Instead it will be read by the accessibility service once we start
-    loading a website
-  -->
-  <string name="accessibility_announcement_loading">در حال بارگیری</string>
-  <!--
-    This text is not visible. Instead it will be read by the accessibility service once we
-    finished loading a website
-  -->
-  <string name="accessibility_announcement_loading_finished">وب‌سایت بارگیری شد</string>
-  <!-- Content description (not visible, for screen readers etc.): "Three dot" menu button. -->
-  <string name="content_description_menu">گزینه‌های بیشتر</string>
-  <!--
-    Content description (not visible, for screen readers etc.): "Three dot" menu button used
-    on home screen
-  -->
-  <string name="indicator_content_description_menu">دکمه‌ی گزینه‌های بیشتر</string>
   <!-- Content description (not visible, for screen readers etc.): Navigate forward (browsing history) -->
   <string name="content_description_forward">حرکت به جلو</string>
   <!-- Content description (not visible, for screen readers etc.): Reload current website -->
@@ -405,34 +301,6 @@
   <string name="content_description_back">بازگشت به عقب</string>
   <!-- Content description (not visible, for screen readers etc.): Stop loading the current website. This button will turn into the refresh button once loading has been completed (see content_description_reload) -->
   <string name="content_description_stop">توقف بارگیری وب‌سایت</string>
-  <!-- Content description (not visible, for screen readers etc.): Custom Tab exit button - closes the custom tab and returns to the previous app. -->
-  <string name="content_description_customtab_exit">بازگشت به برنامهٔ قبل</string>
-  <!--
-    Content description (not visible, for screen readers etc.): This is the description for the ImageView in the menu that displays
-    the number of trackers blocked for the current session
-  -->
-  <string name="content_description_trackers_blocked">تعداد دنبال کننده‌های مسدود شده</string>
-  <!--
-    Content description (not visible, for screen readers etc.): This is the description for the switch in the menu that temporarily disables/enables
-    content blocking for the current session
-  -->
-  <string name="content_description_blocking_switch">مسدود کردن ردیاب‌ها</string>
-  <string name="your_rights">حقوق شما</string>
-  <string name="external_app_prompt_title">باز کردن پیوند در برنامه‌ای دیگر</string>
-  <!--
-    This string is shown when the user has clicked a link that needs to be opened in a different app.
-    %2$s is the external app name, %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
-  -->
-  <string name="external_app_prompt">می‌توانید از %1$s خارج شوید تا پیوند را در %2$s باز کنید.</string>
-  <!-- This text is the title of a dialog shown if no app could be found for a custom link protocol. -->
-  <string name="external_app_prompt_no_app_title">برنامه‌ای برای باز کردن پیوند پیدا کنید</string>
-  <!--
-    This text is shown in a dialog if no app could be found for a custom link protocol. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar") and %2$s is the name of
-    the app store installed on the device (usually that's Google Play).
-  -->
-  <string name="external_app_prompt_no_app">هیچکدام از برنامه‌های روی دستگاه شما امکان باز کردن این پیوند را ندارند. می‌توانید از %1$s خارج شوید تا در %2$s برای برنامه‌ای که بتواند اینکار را انجام دهد جست‌وجو کنید.</string>
-  <!-- This label is shown above a list of apps that can be used to open a given link -->
-  <string name="external_multiple_apps_matched_exit">از مرور ناشناس خارج می‌شوید؟</string>
   <!-- Snackbar that will be displayed after a download has completed. %1$s is the file name. -->
   <string name="download_snackbar_finished">%1$s پایان‌یافته است</string>
   <!-- Snackbar action to immediately open the successfully downloaded file. -->
@@ -458,33 +326,16 @@
   <string name="onboarding_second_screen_subtitle_one">برای حفظ حریم خصوصی بیشتر، وقتی برنامه را می بندید، سابقه شما را پاک می کنیم.</string>
   <!-- First run tour (Default browser): Title -->
   <string name="firstrun_defaultbrowser_title">قدرت حریم‌شخصی خود را افزایش دهید</string>
-  <!-- First run tour (Default browser): Text. -->
-  <string name="firstrun_defaultbrowser_text2">مرور خصوصی را به سطحی بالاتر ببرید. تبلیغات و دیگر محتواهایی را مسدود کنید که می‌توانند شما را در سراسر سایت‌ها ردیابی و زمان‌های بارگذاری صفحه را خراب کنند.</string>
   <!-- First run tour (Search): Title -->
   <string name="firstrun_search_title">جستجوی شما، به روش شما</string>
-  <!-- First run tour (Search): Text -->
-  <string name="firstrun_search_text">به دنبال چیز متفاوتی هستید؟ موتور جستجوی پیش‌فرض دیگری را در تنظیمات انتخاب کنید.</string>
   <!-- First run tour (Shortcut): Title -->
   <string name="firstrun_shortcut_title">میان‌برها را به صفحه خانگی خود اضافه کنید</string>
-  <!-- First run tour (Shortcut): Text. %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
-  <string name="firstrun_shortcut_text">در %1$s به سرعت به سایت‌های محبوب خود برگردید. فقط «افزودن به صفحه خانگی» را از منوی %1$s انتخاب کنید.</string>
   <!-- First run tour (Privacy): Title -->
   <string name="firstrun_privacy_title">حفظ حریم خصوصی را به یک عادت تبدیل کنید</string>
-  <!-- First run tour (Privacy): Text. %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
-  <string name="firstrun_privacy_text">%1$s را به عنوان مرورگر پیش‌فرض خود انتخاب کنید و وقتی از اپ‌های دیگر صفحه‌های وب را باز می‌کنید از مزایای مرور خصوصی بهره‌مند شوید.</string>
-  <string name="firstrun_close_button">باشه، گرفتم!</string>
-  <string name="firstrun_skip_button">رد کردن</string>
-  <string name="firstrun_next_button">بعدی</string>
-  <!-- Indicator that no trackers are being blocked because content blocking is disabled; normally shows the number of blocked trackers -->
-  <string name="content_blocking_disabled">-</string>
   <!-- Label of the action that will add the current website to the home screen (shown in the confirmation dialog). -->
   <string name="dialog_addtohomescreen_action_add">افزودن</string>
-  <!-- Label of the action that will add the current website to the home screen (shown in the confirmation dialog). -->
-  <string name="dialog_addtohomescreen_action_yes">بله</string>
   <!-- Label of the action that will close the dialog and not add anything to the home screen (shown in the confirmation dialog). -->
   <string name="dialog_addtohomescreen_action_cancel">انصراف</string>
-  <!-- Label of the action that will close the dialog and not add anything to the home screen (shown in the confirmation dialog). -->
-  <string name="dialog_addtohomescreen_action_no">خیر</string>
   <!--
     When enhanced tracking protection is disabled for the current session then we will show this warning in the "Add to home screen" dialog to
     let the user know that the shortcut will always be opened with enhanced tracking protection disabled.
@@ -506,53 +357,14 @@
     * To see how this string will look like in Android's UI, see: https://github.com/mozilla-mobile/focus-android/issues/863#issuecomment-324105723
   -->
   <string name="notification_browsing_session_channel_description">اعلان‌ها امکان پاک کردن اطلاعات نشستِ %1$s را با یک ضربه به شما می‌دهند. لازم نیست که برنامه را باز کنید یا ببینید که چه چیزی در مرورگر در حال اجراست.</string>
-  <!-- Label for a button in the "tabs tray" to erase the browsing history (closes all tabs and removes associated data). -->
-  <string name="tabs_tray_action_erase">پاک کردن تاریخچهٔ مرور</string>
   <!--
     If the user decides to open the current page in another browser and if Firefox is not installed then we show this
     item in the list of browsers. Clicking it will open the app store installed on the device (usually that's Google Play).
   -->
   <string name="download_firefox" tools:ignore="BrandUsage">دریافت فایرفاکس</string>
-  <!-- Text shown in prompts for GeckoView -->
-  <string name="gv_prompt_username_hint">نام کاربری</string>
-  <string name="gv_prompt_password_hint">گذرواژه</string>
-  <string name="gv_prompt_clear">پاک کردن</string>
-  <!--
-    Text shown in Security Information Popup
-
-    Text to denote secure or insecure connection
-  -->
-  <string name="security_popup_secure_connection">اتصال امن</string>
-  <string name="security_popup_insecure_connection">اتصال ناامن</string>
-  <!-- %1$s will be replaced with organization that granted the SSL certificate -->
-  <string name="security_popup_security_verified">تایید شده توسط:%1$s</string>
-  <!-- Content Description of Security Icon in toolbar -->
-  <string name="site_security_icon_content_description">امنیت پایگاه اینترنتی</string>
   <string name="preference_autocomplete_duplicate_url_error">نشانی قبلاً وجود دارد</string>
   <!-- Label for the Find in page button -->
   <string name="find_in_page">یافتن در صفحه</string>
-  <!-- Watermark/Hint for the find in page input field -->
-  <string name="find_in_page_input">پیدا کردن در صفحه</string>
-  <!--
-    String to show the number of results found in the page and the position
-    the user is at. %1$d is the position, %2$d is the total number of
-    results.
-  -->
-  <string name="find_in_page_result">%1$d/%2$d</string>
-  <!--
-    String to be read by the accessibility service presenting the number of
-    results found in the page and the position the user is at. %1$d is the
-    position, %2$d is the total number of results.
-  -->
-  <string name="accessibility_find_in_page_result">%1$d از %2$d</string>
-  <!-- String to be read by the accessibility service when focusing the next result button -->
-  <string name="accessibility_next_result">پیدا کردن نتیجه بعدی</string>
-  <!-- String to be read by the accessibility service when focusing the previous result button -->
-  <string name="accessibility_previous_result">پیدا کردن نتیجه قبلی</string>
-  <!-- String to be read by the accessibility service when focusing the dismiss button in the "find in page" UI -->
-  <string name="accessibility_dismiss_find_in_page">رد کردن پیدا کردن در این صفحه</string>
-  <!-- Checkbox menu item text to request desktop site -->
-  <string name="preference_performance_request_desktop_site">درخواست نسخه رومیزی پایگاه</string>
   <!-- Checkbox menu item text to request desktop site -->
   <string name="preference_performance_request_desktop_site2">نسخه‌ی میزکار پایگاه اینترنتی</string>
   <!-- Displayed after a user long presses on the URL in a custom tab to copy the URL -->
@@ -563,10 +375,6 @@
   <string name="preferences_open_links_in_apps">باز کردن پیوندها در برنامه‌ها</string>
   <!-- Title of Advanced Setting category -->
   <string name="preference_category_advanced">پیشرفته</string>
-  <!-- Text for request support button indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner panel in the toolbar. -->
-  <string name="cookie_banner_exception_panel_site_is_not_supported_request_support_button">درخواست پشتیبانی</string>
-  <!-- CFR for Cookie Banner (Banner Info Message). This string is used as text for a link in cfr_cookie_banner and takes the user to the app settings. -->
-  <string name="cfr_cookie_banner_link">تنظیمات</string>
   <!-- Preference for autoplay -->
   <string name="preference_autoplay">پخش خودکار</string>
   <!-- Button label that take the user to the Android App setting -->
@@ -577,23 +385,8 @@
   <string name="preference_phone_feature_notification">آگاه‌سازی</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">اشکال زدایی از طریق USB/Wi-Fi</string>
-  <!--
-    Button for the fingerprint authentication dialog box that is shown to the user when sharing a link to the app
-    while the user has biometric authentication enabled. When pressed, the user's previous session is cleared, and the shared link is opened.
-  -->
-  <string name="biometric_auth_open_link_new_session">باز کردن پیوند در یک نشست تازه</string>
   <!-- Description for the fingerprint authentication image. Used for accessibility purposes. -->
   <string name="biometric_auth_image_description">نشانه اثرانگشت</string>
-  <!--
-    Error text displayed when the user's fingerprint cannot be recognized upon re-entering the app.
-    This is displayed during the authentication flow as the app launches.
-  -->
-  <string name="biometric_auth_not_recognized_error">اثرانگشت شناسایی نشد. مجددا تلاش کنید.</string>
-  <!--
-    Error text displayed when the user's fingerprint moved too quickly upon re-entering the app
-    This is displayed during the authentication flow as the app launches.
-  -->
-  <string name="biometric_auth_moved_too_quickly">انگشت خیلی سریع حرکت کرد. مجدد تلاش کنید.</string>
   <!-- Title for the prompt to enable search suggestions -->
   <string name="enable_search_suggestion_title2">پیشنهادهای جست‌وجو نمایش داده شوند؟</string>
   <!--
@@ -609,42 +402,6 @@
   <string name="no_suggestions_message">تعدادی از موتورهای ‌جست‌وجو امکان نمایش پیشنهادات را ندارند.</string>
   <!-- Button to dismiss the message displayed  when using a search engine that doesn't provide suggestions -->
   <string name="dismiss_no_suggestions_prompt_button">رد کردن</string>
-  <!-- Tips displayed on the home view -->
-
-  <!--
-    Tip displayed on home view explaining how to disable tracking protection
-    The new line here must be kept as the second half of the string is clickable for the user.
-  -->
-  <string name="tip_disable_tracking_protection">سایت رفتار غیرمنتظره‌ای دارد؟\nمحافظت از دنبال کردن را خاموش کنید</string>
-  <!--
-    Tip displayed on home view explaining how to add sites to homescreen
-    %1$s is replaced with a line break in the application.
-  -->
-  <string name="tip_add_to_homescreen">با اشاره یک انگشت به سایت های پربازدید خود دسترسی داشته باشید%1$s فهرست&gt; اضافه کردن به صفحه خانگی</string>
-  <!--
-    Tip displayed on home view explaining how to make Focus the default browser
-    %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
-    The new line here must be kept as the second half of the string is clickable for the user.
-  -->
-  <string name="tip_set_default_browser">بازکردن هر پیوندی در %1$s\nتنظیم%1$s به عنوان مرورگر پیش فرض</string>
-  <!--
-    Tip displayed on home view explaining how to add a custom autocomplete URL
-    The new line here must be kept as the second half of the string is clickable for the user.
-  -->
-  <string name="tip_autocomplete_url">پرکردن خودکارURLs برای سایت های پربازدید شما\nنگاه داشتن بیشتر انگشت بر روی هر URL در نوار آدرس برای انجام این کار</string>
-  <!--
-    Tip displayed on home view explaining how to add a custom autocomplete URL
-    The new line here must be kept as the second half of the string is clickable for the user.
-  -->
-  <string name="tip_open_in_new_tab">بازکردن یک پیوند در زبانه جدید\nنگاه داشتن بیشتر انگشت برای باز کردن پیوند در صفحه</string>
-  <!-- Tip displayed on home view explaining how to add a custom autocomplete URL -->
-  <string name="tip_disable_tips2">خاموش کردن نکات راهنما بر روی صفحه آغازین</string>
-  <!-- Label for the snackbar when a user opens a new tab -->
-  <string name="new_tab_opened_snackbar">زبانه‌ي جدیدی باز شده است</string>
-  <!-- Label for the button in the snackbar that switches to the newly opened tab -->
-  <string name="open_new_tab_snackbar">تعویض</string>
-  <!-- Preference for switching to a new tab immediately after opening -->
-  <string name="preference_open_new_tab">تعویض بلافاصله پیوند در زبانه‌های جدید</string>
   <!-- Preference title for safe browsing which when enabled, blocks dangerous or deceptive webpages that may include phishing or malware -->
   <string name="preference_safe_browsing_title">مسدود سازی خطرات بالقوه و سایت‌های فریبنده</string>
   <!-- Preference summary for safe browsing which when enabled, blocks dangerous or deceptive webpages that may include phishing or malware -->
@@ -661,10 +418,6 @@
   <string name="preference_exceptions_remove_all_button_label">حذف تمام سایت‌ها</string>
   <!-- Title for Preference screen for cookie blocking for exceptions tracking protection -->
   <string name="preference_block_cookies_title">مسدود کردن کوکی‌ها</string>
-  <!-- Message for Preference screen for cookie blocking for exceptions tracking protection -->
-  <string name="preference_category_block_cookies">آیا می‌خواهید کوکی‌ها را مسدود کنید؟</string>
-  <!-- Title for the tab crash report screen -->
-  <string name="tab_crash_report_title">زبانه خراب شد</string>
   <!-- Headline for the tab crash report screen -->
   <string name="tab_crash_report_headline">متاسفیم. با این زبانه مشکل داریم.</string>
   <!-- Subtitle for the tab crash report screen -->
@@ -673,8 +426,6 @@
   <string name="tab_crash_report_close_tab_button_label">بستن زبانه</string>
   <!-- Label for the checkbox to send the tab crash report to Mozilla -->
   <string name="crash_report_send_crash_label" tools:ignore="BrandUsage">ارسال گزارش ازکارافتادگی به Mozilla</string>
-  <!-- Tracking protection bottom sheet -->
-
   <!-- Label for the total number of trackers blocked. %s is the app install date. -->
   <string name="trackers_count_note">ردیاب‌های مسدود شده از %s</string>
   <!-- Category of trackers (content) that can be blocked by Enhanced Tracking Protection. -->
@@ -734,8 +485,6 @@
     Content description (not visible, for screen readers etc.): Button that closes a tab n the sessions list
   -->
   <string name="close_tab">بستن زبانه</string>
-  <!-- Promote SearchWidget Dialog -->
-
   <!--
     Content description (not visible, for screen readers etc.): This is the description for the
     close button from promote search widget dialog.

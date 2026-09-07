@@ -148,6 +148,12 @@
   <!--
     Recent Tabs
 
+    Header text on the homescreen for continuing to browse the most recent browser tab
+  -->
+  <string name="recent_tabs_header_2">Continuar</string>
+  <!--
+    Recent Tabs
+
     Header text for jumping back into the recent tab in the home screen
   -->
   <string name="recent_tabs_header">Regressar</string>
@@ -610,7 +616,7 @@
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Partilhe como descobriu e que utiliza o Firefox, com os parceiros de marketing da Mozilla. Estes dados nunca são vendidos. %1$s</string>
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
-  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Partilhe como descobriu o Firefox e que o utiliza, com os parceiros de marketing da Mozilla. Estes dados nunca são vendidos.</string>
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage,UnusedResources">Partilhe como descobriu o Firefox e que o utiliza, com os parceiros de marketing da Mozilla. Estes dados nunca são vendidos.</string>
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
   <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage,UnusedResources">Pode ajudar-nos a chegar a mais pessoas permitindo que a Mozilla informe os canais onde promovemos o Firefox que é um utilizador do Firefox.</string>
   <!--
@@ -772,8 +778,6 @@
   <string name="preferences_pbm_lock_screen_title">Utilize o bloqueio de ecrã para ocultar separadores na navegação privada</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_3">Consulte separadores utilizando a sua impressão digital, PIN ou reconhecimento facial. Ao ativar esta opção, também impede a captura e partilha do ecrã.</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">Bloqueador de faixas de cookies na navegação privada</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">Automaticamente tenta conectar-se a sites utilizando o protocolo de encriptação HTTPS para uma melhor segurança.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -929,7 +933,7 @@
   <!-- Summary for notification preference indicating notifications are not allowed -->
   <string name="notifications_not_allowed_summary">Não permitido</string>
   <!-- Preference for local network access / nearby devices in Android 17 -->
-  <string name="preferences_local_network_access">Acesso à rede local / Dispositivos nas proximidades</string>
+  <string name="preferences_local_network_access">Acesso à Rede Local / Dispositivos Próximos</string>
   <!-- Summary for local network access preference indicating access is allowed -->
   <string name="local_network_access_allowed_summary">Permitido</string>
   <!-- Summary for local network access preference indicating access is not allowed -->
@@ -978,6 +982,8 @@
     Title for the customize home screen section with privacy report.
   -->
   <string name="customize_toggle_privacy_report">Relatório de privacidade</string>
+  <!-- Title for a customize home screen section. Continue is a section that displays the most recent browser tab, so users can continue browsing where they left off. -->
+  <string name="customize_toggle_continue">Continuar</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Regressar</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -995,12 +1001,8 @@
   <string name="customize_wallpapers">Fundos</string>
   <!-- Label for the menu item that opens the customize homepage settings screen. -->
   <string name="browser_menu_customize_homepage">Personalizar página inicial</string>
-  <!-- Label for the menu item that opens the wallpaper settings screen. -->
-  <string name="browser_menu_change_wallpaper">Alterar fundo</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Atalhos patrocinados</string>
-  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
-  <string name="customize_toggle_world_cup">Mundial de Futebol</string>
   <!--
     Wallpapers
 
@@ -1126,7 +1128,7 @@
   <!-- Button text on the extension crash dialog to prompt the user to continue with all extensions disabled. -->
   <string name="extension_process_crash_dialog_disable_extensions_button_text">Continuar com as extensões desativadas</string>
   <!-- Text shown in the snackbar action button that lets the user retry an add-on operation that just failed. -->
-  <string name="addon_failure_retry_action">Voltar a tentar</string>
+  <string name="addon_failure_retry_action">Tentar novamente</string>
   <!--
     Account Preferences
 
@@ -1452,7 +1454,7 @@
   <!-- Title of inactive tabs preference -->
   <string name="preferences_inactive_tabs_title">Os separadores que não acedeu há duas semanas são movidos para a secção inativos.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
-  <string name="preferences_tab_groups_feature">Ativar grupos de separadores</string>
+  <string name="preferences_tab_groups_feature">Ativar Grupos de Separadores</string>
   <!--
     Privacy report
 
@@ -1640,15 +1642,6 @@
     <item quantity="one">Adicionar ao grupo de separadores %1$s, %2$d separador, cor %3$s</item>
     <item quantity="other">Adicionar ao grupo de separadores %1$s, %2$d separadores, cor %3$s</item>
   </plurals>
-  <plurals name="share_tab_group_button_content_description">
-    <!--
-      Content Description for share tab group button.
-      %1$s is the name of the tab group.
-      %2$d is the number of tabs in a tab group.
-    -->
-    <item quantity="one">Partilhar o grupo de separadores %1$s com %2$d separador.</item>
-    <item quantity="other">Partilhar o grupo de separadores %1$s com %2$d separadores.</item>
-  </plurals>
   <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
   <string name="tab_group_sheet_dismiss_description">Ver grupo de separadores, botão de arrasto de colapso</string>
   <plurals name="expanded_tab_group_header_description">
@@ -1690,7 +1683,7 @@
   <!-- Title for the Ungroup tab group confirmation dialog. -->
   <string name="ungroup_tab_group_confirmation_dialog_title">Desagrupar grupo de separadores?</string>
   <!-- Text shown in the body of the Ungroup tab group confirmation dialog. -->
-  <string name="ungroup_tab_group_confirmation_dialog_body">Os separadores irão permanecer abertos neste dispositivo, mas o grupo será eliminado.</string>
+  <string name="ungroup_tab_group_confirmation_dialog_body">Os separadores irão permanecer abertos neste dispositivo, mas o grupo será apagado.</string>
   <!-- Text shown on the Don't Ask Again checkbox button in the Ungroup tab group confirmation dialog. -->
   <string name="ungroup_tab_group_confirmation_dialog_dont_ask_again">Não perguntar novamente</string>
   <!-- Text shown on the confirm button in the Ungroup tab group confirmation dialog. -->
@@ -1977,9 +1970,9 @@
   <!-- The error message of the description when the user selects "Something else" as the reason, but left the description empty or too short. -->
   <string name="webcompat_reporter_description_error">Introduza pelo menos 10 caracteres</string>
   <!-- The label/title of a mandatory field in the Web Compat Reporter feature for adding additional information. -->
-  <string name="webcompat_reporter_label_mandatory_description">Descreva o problema em detalhes para nos ajudar a investigar o problema</string>
+  <string name="webcompat_reporter_label_mandatory_description">Descreva o problema detalhadamente para ajudar-nos a investigar a situação</string>
   <!-- The label/title of a optional field in the Web Compat Reporter feature for adding additional information. -->
-  <string name="webcompat_reporter_label_optional_description">Descreva detalhadamente o problema para nos ajudar a investigar a situação (opcional)</string>
+  <string name="webcompat_reporter_label_optional_description">Descreva detalhadamente o problema para ajudar-nos a investigar a situação (opcional)</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">Cancelar</string>
   <!-- The button text for the send button to submit the provided form data. -->
@@ -1994,8 +1987,6 @@
   <string name="webcompat_reporter_preview_report">Pré-visualizar relatório</string>
   <!-- The title shown at the top of the WebCompat Report preview panel. This appears after the user taps the “Preview” button before sending a report. -->
   <string name="webcompat_reporter_preview_bottom_sheet_header">Pré-visualização de relatório</string>
-  <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
-  <string name="webcompat_reporter_preview_bottom_sheet_send">Enviar</string>
   <!-- Title for the Edit URL confirmation dialog in the WebCompatReporter -->
   <string name="webcompat_reporter_edit_url_dialog_title">Editar URL do site</string>
   <!-- Text shown on the save button for the Edit URL confirmation dialog in the WebCompatReporter. -->
@@ -2186,7 +2177,7 @@
   <!-- Bookmark snackbar message for moving a single item. %1$s is the title of the item being moved and %2$s is the new parent folder of the bookmark -->
   <string name="bookmark_moved_single_item">%1$s movido para %2$s</string>
   <!-- Text for bookmark search page when there are no results. -->
-  <string name="bookmark_no_search_results">Nenhum resultado encontrado.</string>
+  <string name="bookmark_no_search_results">Nenhuma correspondência encontrada.</string>
   <!-- Additional text for bookmark search page when there are no results. -->
   <string name="bookmark_no_search_results_additional_text">Tentar outra pesquisa!</string>
   <!--
@@ -2412,6 +2403,20 @@
   <string name="sent_from_firefox_template" tools:ignore="UnusedResources">%1$s\n\nEnviado do %2$s 🦊 Experimente o navegador móvel: %3$s</string>
   <!-- A short message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
   <string name="sent_from_firefox_template_short" tools:ignore="UnusedResources">%1$s\n\nEnviado do %2$s 🦊 %3$s</string>
+  <!-- Send tab to synced devices: Authentication error title - Message asking the user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_title">Iniciar sessão novamente para enviar separadores entre dispositivos</string>
+  <!-- Send tab to synced devices: Authentication error button - Allows user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_button">Iniciar sessão</string>
+  <!-- Send tab to synced devices: Authentication error button - Allows user to remove the currently connected account -->
+  <string name="sync_send_tab_error_auth_remove_account">Remover conta</string>
+  <!-- Send tab to synced devices: Empty state title - Displayed when the user has no synced devices -->
+  <string name="sync_send_tab_empty_state_title">Sem dispositivos associados</string>
+  <!-- Send tab to synced devices: Empty state message - Displayed when the user has no synced devices -->
+  <string name="sync_send_tab_empty_state_description" tools:ignore="BrandUsage">Para enviar um separador, inicie sessão no Firefox em pelo menos um outro dispositivo.</string>
+  <!-- Send tab to synced devices: Connectivity Error title -->
+  <string name="sync_send_tab_error_connection_title">Verifique a sua ligação à internet</string>
+  <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
+  <string name="sync_send_tab_error_connection_text">Depois tente reenviar o seu separador.</string>
   <!--
     Notifications
 
@@ -2433,6 +2438,18 @@
     The app name is in the text, due to limitations with localizing Nimbus experiments
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Torne o Firefox no seu navegador predefinido</string>
+  <!--
+    Privacy report notification
+
+    Name of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app.
+  -->
+  <string name="notification_privacy_report_channel_name">Relatório de privacidade</string>
+  <!-- Description of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_channel_description">%1$s mostra quantos rastreadores foram bloqueados enquanto navegava.</string>
+  <!-- Body text for the weekly privacy report notification for when trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_body_has_trackers">Continuar a navegar. %1$s irá continuar a bloquear.</string>
+  <!-- Headline text of the weekly privacy report notification for when no trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_headline_no_trackers">%1$s bloqueia rastreadores enquanto navega. Irá vê-los aqui.</string>
   <!--
     Survey
 
@@ -2858,12 +2875,8 @@
   <string name="add_to_homescreen_cancel">Cancelar</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Adicionar</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Continuar para o site</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Nome do atalho</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Pode adicionar facilmente este site ao ecrã inicial do seu dispositivo para ter acesso instantâneo e navegar mais rápido, com uma experiência semelhante ao de uma aplicação.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">Palavras-passe</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->
@@ -3033,8 +3046,6 @@
   <string name="ip_protection_location_section">Localização</string>
   <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
   <string name="ip_protection_location_recommended_label">Recomendada</string>
-  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
-  <string name="ip_protection_location_recommended_description">Seleciona a localização da VPN mais rápida para si.</string>
   <!-- Badge label shown in the menu item when the browser VPN is active -->
   <string name="preferences_ip_protection_on">Ligada</string>
   <!-- Badge label shown in the menu item when the browser VPN is off -->
@@ -3096,7 +3107,7 @@
   <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
   <string name="ip_protection_connection_error_snackbar">Não foi possível ligar à VPN. Tente novamente dentro de alguns minutos.</string>
   <!-- Snackbar (in-app pop-up notification) text to signal the VPN location has been reset due to the previously selected VPN location being no longer available. -->
-  <string name="ip_protection_location_selection_reset_snackbar">Localização da VPN selecionada indisponível. Mudado para a localização recomendada.</string>
+  <string name="ip_protection_location_selection_reset_snackbar">Localização da VPN selecionada indisponível. Mudada para a localização recomendada.</string>
   <!--
     Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
     %1$d is the total monthly allowance in GB (for example "50").
@@ -3133,11 +3144,7 @@
   <!-- Title for the browser VPN location selection screen (displayed in the app bar) -->
   <string name="ip_protection_locations_title">Escolher a localização da VPN</string>
   <!-- Content description for the browser VPN location selection screen top bar back button -->
-  <string name="ip_protection_locations_navigate_back_button_content_description">Navegar de volta</string>
-  <!-- Title for the card shown to the user when we are unable to fetch server locations -->
-  <string name="ip_protection_location_unavailable_title" tools:ignore="UnusedResources">A localização anterior está indisponível</string>
-  <!-- Description for the card shown to the user when we are unable to fetch server locations -->
-  <string name="ip_protection_location_unavailable_recommended_description" tools:ignore="UnusedResources">Ligada à localização recomendada.</string>
+  <string name="ip_protection_locations_navigate_back_button_content_description">Navegar para trás</string>
   <!--
     Autofill
 
@@ -3865,7 +3872,7 @@
       Text for displaying the total number of trackers blocked in the trackers blocked panel.
       %1$d is a placeholder for the number of trackers blocked.
     -->
-    <item quantity="one">%1$d rastreadores bloqueados neste site</item>
+    <item quantity="one">%1$d rastreador bloqueado neste site</item>
     <item quantity="other">%1$d rastreadores bloqueados neste site</item>
   </plurals>
   <plurals name="trackers_blocked_panel_num_social_media_trackers">
@@ -3881,7 +3888,7 @@
       Text for displaying in the trackers blocked panel the total number of blocked cross-site tracking cookies.
       %1$d is a placeholder for the number of cross-site tracking cookies blocked.
     -->
-    <item quantity="one">%1$d cookies de monitorização entre sites</item>
+    <item quantity="one">%1$d cookie de monitorização entre sites</item>
     <item quantity="other">%1$d cookies de monitorização entre sites</item>
   </plurals>
   <plurals name="trackers_blocked_panel_num_cryptominers">
@@ -3889,7 +3896,7 @@
       Text for displaying in the trackers blocked panel the total number of blocked cryptomining scripts.
       %1$d is a placeholder for the number of cryptominers blocked.
     -->
-    <item quantity="one">%1$d cripto-mineradores</item>
+    <item quantity="one">%1$d cripto-minerador</item>
     <item quantity="other">%1$d cripto-mineradores</item>
   </plurals>
   <plurals name="trackers_blocked_panel_num_fingerprinters">
@@ -3897,7 +3904,7 @@
       Text for displaying in the trackers blocked panel the total number of blocked fingerprinter scripts.
       %1$d is a placeholder for the number of fingerprinters blocked.
     -->
-    <item quantity="one">%1$d identificadores digitais</item>
+    <item quantity="one">%1$d identificador digital</item>
     <item quantity="other">%1$d identificadores digitais</item>
   </plurals>
   <plurals name="trackers_blocked_panel_num_trackers_2">
@@ -3906,14 +3913,14 @@
       %1$d is a placeholder for the number of trackers blocked.
     -->
     <item quantity="one">%1$d conteúdo de monitorização</item>
-    <item quantity="other">%1$d conteúdo de monitorização</item>
+    <item quantity="other">%1$d conteúdos de monitorização</item>
   </plurals>
   <plurals name="trackers_blocked_panel_num_trackers_blocked_this_week_2">
     <!--
       Text for displaying the number of trackers blocked this week in the trackers blocked panel.
       %1$d is a placeholder for the number of trackers blocked this week.
     -->
-    <item quantity="one">%1$d rastreadores bloqueados esta semana</item>
+    <item quantity="one">%1$d rastreador bloqueado esta semana</item>
     <item quantity="other">%1$d rastreadores bloqueados esta semana</item>
   </plurals>
   <!--
@@ -4074,9 +4081,9 @@
   <!-- Uninstall survey answer option -->
   <string name="uninstall_survey_option_3_v2">Funcionalidades em falta que preciso</string>
   <!-- Uninstall survey answer option -->
-  <string name="uninstall_survey_option_4_v2">Vídeos, transferências ou media não funcionaram</string>
+  <string name="uninstall_survey_option_4_v2">Vídeos, transferências ou multimédia não funcionaram</string>
   <!-- Uninstall survey answer option -->
-  <string name="uninstall_survey_option_5_v2">É difícil de utilizar ou mal desenhado</string>
+  <string name="uninstall_survey_option_5_v2">É difícil de usar ou está mal desenhado</string>
   <!-- Uninstall survey answer option -->
   <string name="uninstall_survey_option_6_v2">Preocupações com a privacidade ou segurança</string>
   <!-- Button label shown at the bottom of the uninstall survey -->
@@ -4426,221 +4433,6 @@
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">aqui</string>
   <!--
-    Sports widget
-
-    Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
-  -->
-  <string name="sports_widget_country_selector_title">Siga a sua equipa</string>
-  <!-- Section header for the North America region in the sports widget country selector. -->
-  <string name="sports_widget_confederation_north_america">América do Norte</string>
-  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_africa">África</string>
-  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_asia">Ásia</string>
-  <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
-  <string name="sports_widget_confederation_concacaf">CONCACAF</string>
-  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_europe">Europa</string>
-  <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_oceania">Oceânia</string>
-  <!-- Section header for the South America confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_south_america">América do Sul</string>
-  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_england">Inglaterra</string>
-  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_scotland">Escócia</string>
-  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
-  <string name="sports_widget_match_live">EM DIRETO</string>
-  <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
-  <string name="sports_widget_champions_title">Campeões do Mundial de 2026</string>
-  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
-  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Vice-campeões</string>
-  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
-  <string name="sports_widget_third_place_title">3.º lugar</string>
-  <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_32">Fase dos 32-avos</string>
-  <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_16">Oitavos de final</string>
-  <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
-  <string name="sports_widget_quarter_final">Quartos de final</string>
-  <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
-  <string name="sports_widget_semi_final">Meias-finais</string>
-  <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
-  <string name="sports_widget_final">Final</string>
-  <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final">Final de Bronze</string>
-  <!-- Sports widget error card message shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed" tools:ignore="UnusedResources">A informação do jogo não está disponível de momento. Tente atualizar dentro de alguns minutos.</string>
-  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
-  <string name="sports_widget_error_connection_interrupted" tools:ignore="UnusedResources">Ligação interrompida — as atualizações em direto foram suspensas.</string>
-  <!-- Sports widget action label to refresh match data after an error. -->
-  <string name="sports_widget_error_refresh">Atualizar</string>
-  <!-- Sports widget group stage label for group A in the soccer tournament. -->
-  <string name="sports_widget_group_a">Grupo A</string>
-  <!-- Sports widget group stage label for group B in the soccer tournament. -->
-  <string name="sports_widget_group_b">Grupo B</string>
-  <!-- Sports widget group stage label for group C in the soccer tournament. -->
-  <string name="sports_widget_group_c">Grupo C</string>
-  <!-- Sports widget group stage label for group D in the soccer tournament. -->
-  <string name="sports_widget_group_d">Grupo D</string>
-  <!-- Sports widget group stage label for group E in the soccer tournament. -->
-  <string name="sports_widget_group_e">Grupo E</string>
-  <!-- Sports widget group stage label for group F in the soccer tournament. -->
-  <string name="sports_widget_group_f">Grupo F</string>
-  <!-- Sports widget group stage label for group G in the soccer tournament. -->
-  <string name="sports_widget_group_g">Grupo G</string>
-  <!-- Sports widget group stage label for group H in the soccer tournament. -->
-  <string name="sports_widget_group_h">Grupo H</string>
-  <!-- Sports widget group stage label for group I in the soccer tournament. -->
-  <string name="sports_widget_group_i">Grupo I</string>
-  <!-- Sports widget group stage label for group J in the soccer tournament. -->
-  <string name="sports_widget_group_j">Grupo J</string>
-  <!-- Sports widget group stage label for group K in the soccer tournament. -->
-  <string name="sports_widget_group_k">Grupo K</string>
-  <!-- Sports widget group stage label for group L in the soccer tournament. -->
-  <string name="sports_widget_group_l">Grupo L</string>
-  <!-- Sports widget button label to see match results. -->
-  <string name="sports_widget_see_results" tools:ignore="UnusedResources">Ver resultados</string>
-  <!-- Sports widget button label to view details of a soccer match results. -->
-  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Ver detalhes do jogo</string>
-  <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Jogos relacionados</string>
-  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
-  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Brevemente</string>
-  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_suffix">(Tempo regulamentar)</string>
-  <!-- Sports widget match status to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_2">Tempo regulamentar</string>
-  <!--
-    Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
-    meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
-    It’s playfully related to Firefox in that “tabs” are a browser feature.
-    It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
-    or tracking in a technical sense; the meaning is about staying informed.
-  -->
-  <string name="sports_widget_card_title">Mantenha os separadores do Mundial de Futebol</string>
-  <!-- Sports widget card description shown below the title on the homepage entry point. -->
-  <string name="sports_widget_card_description">Obtenha atualizações dos jogos em direto e muito mais.</string>
-  <!-- Sports widget menu item to change the selected team. -->
-  <string name="sports_widget_change_team">Alterar equipa</string>
-  <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
-  <string name="sports_widget_get_custom_wallpaper">Obter um fundo personalizado</string>
-  <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove">Remover</string>
-  <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-  <string name="sports_widget_still_want_to_follow">Ainda pretende acompanhar?</string>
-  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team">Escolha outra equipa para acompanhar o Mundial de Futebol.</string>
-  <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-  <string name="sports_widget_follow_another_team">Seguir outra equipa</string>
-  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
-  <string name="sports_widget_countdown_to_world_cup">Contagem regressiva para o Mundial de Futebol</string>
-  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
-  <string name="sports_widget_view_schedule">Ver programa</string>
-  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
-  <string name="sports_widget_skip">Ignorar</string>
-  <!-- Sports widget match status label shown during halftime of a match. -->
-  <string name="sports_widget_halftime" tools:ignore="UnusedResources">Primeira parte</string>
-  <!-- Sports widget match status label shown during extra time of a match. -->
-  <string name="sports_widget_extra_time">Prolongamento</string>
-  <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties">Grandes penalidades</string>
-  <!--
-    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
-    if there is an equivalent single character for your language, use that (e.g. T for German).
-    Your translation will be automatically truncated at 2 characters to avoid layout issues.
-  -->
-  <string name="sports_widget_countdown_days">D</string>
-  <!--
-    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
-    if there is an equivalent single character for your language, use that (e.g. S for German).
-    Your translation will be automatically truncated at 2 characters to avoid layout issues.
-  -->
-  <string name="sports_widget_countdown_hours">H</string>
-  <!--
-    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
-    if there is an equivalent single character for your language, use that.
-    Your translation will be automatically truncated at 2 characters to avoid layout issues
-  -->
-  <string name="sports_widget_countdown_minutes">M</string>
-  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
-  <string name="sports_widget_close_team_selection_sheet_content_description">Fechar folha de seleção da equipa</string>
-  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
-  <string name="sports_widget_close_content_description">Fechar</string>
-  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
-  <string name="sports_widget_more_options_content_description">Mais opções</string>
-  <!--
-    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
-    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
-  -->
-  <string name="sports_widget_countdown_remaining_content_description">Tempo remanescente. Dias: %1$d. Horas: %2$d. Minutos: %3$d.</string>
-  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
-  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Ir para o site do Mundial de Futebol</string>
-  <!--
-    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
-    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
-  -->
-  <string name="sports_widget_upcoming_match_content_description">Brevemente: %1$s vs %2$s, %3$s às %4$s</string>
-  <!--
-    Content description (for accessibility, not displayed) announcing a soccer match.
-    %1$s is the home team name, %2$s is the away team name, %3$s is trailing context
-    (e.g. formatted score "1 - 2 (Full time)", upcoming match info "Jun 19 5:00 PM",
-    or a match status like "Full time").
-  -->
-  <string name="sports_widget_match_content_description">%1$s contra %2$s, %3$s</string>
-  <!--
-    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
-    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
-    or Final represented by sports_widget_final).
-  -->
-  <string name="sports_widget_live_game_content_description">%s, jogo em direto</string>
-  <!--
-    Content description (for accessibility, not displayed) announcing a live score.
-    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
-    and %5$s is the match elapsed time (e.g. 72 minutes).
-  -->
-  <string name="sports_widget_live_score_content_description">%1$s %2$d, %3$s %4$d, %5$s, em direto</string>
-  <!--
-    Content description (for accessibility, not displayed) announcing the elapsed minutes of a live match.
-    %1$s is the clock value, which may be a plain number (e.g. "72") or include extra time (e.g. "90+3").
-  -->
-  <string name="sports_widget_match_elapsed_minutes">Tempo decorrido em minutos: %1$s</string>
-  <!--
-    Content description (for accessibility, not displayed) for a paginated item.
-    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
-    %2$d is the current page number, and %3$d is the total number of pages.
-  -->
-  <string name="sports_widget_page_position_content_description">%1$s, página %2$d de %3$d</string>
-  <!--
-    Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
-    %1$d is the current page number, and %2$d is the total number of pages.
-  -->
-  <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Resultados finais do Mundial, página %1$d de %2$d</string>
-  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
-  <string name="sports_widget_final_results_content_description">Resultados finais da copa do mundo</string>
-  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
-  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Remover o Mundial da página inicial</string>
-  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
-  <string name="sports_widget_team_followed_title">A seguir: %s</string>
-  <!-- Description shown on the sports widget immediately after the user has followed a team -->
-  <string name="sports_widget_team_followed_description">Volte mais tarde para obter informações sobre os jogos à medida que o campeonato se aproxima.</string>
-  <!-- Sports widget match status label shown during first half of a match. -->
-  <string name="sports_widget_first_half" tools:ignore="UnusedResources">Primeira parte</string>
-  <!-- Sports widget match status label shown during second half of a match. -->
-  <string name="sports_widget_second_half" tools:ignore="UnusedResources">Segunda parte</string>
-  <!-- Sports widget error card title shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_title">Parece que está offline.</string>
-  <!-- Sports widget error card description shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_description">Verifique a sua ligação à Internet e tente novamente.</string>
-  <!-- Sports widget general group stage label in the soccer tournament. -->
-  <string name="sports_widget_group_stage">Fase de grupos</string>
-  <!-- Sports widget error card title shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed_title">A informação da correspondência não está disponível neste momento.</string>
-  <!-- Sports widget error card description shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed_description">Tente atualizar em alguns minutos.</string>
-  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
-  <string name="sports_widget_team_to_be_determined">Equipa a determinar</string>
-  <!--
     Privacy notice homepage banner
 
     A message we show the user on the homepage when there is a new version of the privacy notice. 'Firefox' is intentionally hardcoded.
@@ -4685,9 +4477,9 @@
   -->
   <string name="lens_camera_title_qr">Código QR</string>
   <!-- Title for the Google Lens Search Settings page feature toggle -->
-  <string name="search_settings_google_lens_title">Ativar a pesquisa Google Ler mais</string>
+  <string name="search_settings_google_lens_title">Ativar pesquisa Google Lens</string>
   <!-- Description for the Google Lens Search Settings page feature toggle -->
-  <string name="search_settings_google_lens_description">Envia imagens e fotos para a Google para pesquisa visual.</string>
+  <string name="search_settings_google_lens_description">Envia imagens e fotos para o Google para pesquisa visual.</string>
   <!-- Caption shown under the Google Lens toggle clarifying when the feature is available -->
   <string name="preferences_google_lens_availability_caption">Disponível apenas quando o Google está ativado acima e é o seu motor de pesquisa ativo enquanto navega.</string>
   <!-- Content description for the Google Lens half of the camera mode toggle -->
@@ -4697,11 +4489,11 @@
   <!-- Toast shown when the user picks an image from the gallery in QR mode but no QR code is found in it -->
   <string name="lens_camera_qr_no_code_found">A imagem não contém nenhum código QR</string>
   <!-- Title of the bottom sheet shown the first time the user opens the Google Lens camera screen -->
-  <string name="lens_opt_out_title">Encontre com o Google Ler mais</string>
+  <string name="lens_opt_out_title">Encontre-o com o Google Lens</string>
   <!-- Description of the bottom sheet shown the first time the user opens the Google Lens camera screen -->
-  <string name="lens_opt_out_description">Escolha uma imagem ou utilize a sua câmara para obter resultados com o Google Ler mais.</string>
+  <string name="lens_opt_out_description">Escolha uma imagem ou use a sua câmara para obter resultados com o Google Lens.</string>
   <!-- Text of the link in the first-run Google Lens bottom sheet that opens the Search settings page -->
-  <string name="lens_opt_out_settings_link">Definições do Google Ler mais</string>
+  <string name="lens_opt_out_settings_link">Definições do Google Lens</string>
   <!-- Button in the first-run Google Lens bottom sheet that dismisses it and starts the camera -->
   <string name="lens_opt_out_try_it_now_button">Experimentar agora</string>
   <!-- Button in the first-run Google Lens bottom sheet that leaves Google Lens without using it -->
@@ -4749,7 +4541,7 @@
   <!-- Title of the Firefox Labs Sandboxing experiment. -->
   <string name="firefox_labs_website_isolation_title" tools:ignore="UnusedResources">Isolamento de sites</string>
   <!-- Description of the Firefox Labs Sandboxing experiment. -->
-  <string name="firefox_labs_website_isolation_description" tools:ignore="UnusedResources">Uma barreira extra entre sites que ajuda a proteger os seus dados entre separadores. Pode afetar o desempenho, estabilidade, compatibilidade do site e como o histórico de navegação é guardado.</string>
+  <string name="firefox_labs_website_isolation_description" tools:ignore="UnusedResources">Uma barreira extra entre sites que ajuda a proteger os seus dados entre separadores. Pode afetar o desempenho, estabilidade, compatibilidade do site, e como o histórico de navegação é guardado.</string>
   <!--
     PDF viewer toolbar and buttons
 
@@ -4762,4 +4554,18 @@
   <string name="pdf_tools_print_content_description">Imprimir PDF</string>
   <!-- Content description for accessibility (used by screen readers): Description for the button that opens the sharing options for the PDF being displayed on the screen. -->
   <string name="pdf_tools_share_content_description">Partilhar PDF</string>
+  <!--
+    PDF viewer add a signature dialog
+
+    The title of the dialog for adding a signature to a PDF.
+  -->
+  <string name="pdf_tools_signature_title">Adicionar uma assinatura</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that closes the dialog for adding a signature to a PDF. -->
+  <string name="pdf_tools_signature_close_content_description">Fechar painel de assinatura PDF</string>
+  <!-- The placeholder text shown in the empty text input field where users can enter the signature they wish to add to a PDF. -->
+  <string name="pdf_tools_signature_placeholder">Escrever assinatura</string>
+  <!-- The text for the button that erases the text the user entered in the "add a signature" field. -->
+  <string name="pdf_tools_signature_clear_button">Limpar</string>
+  <!-- The text for the button that adds the signature the user has typed to the PDF. -->
+  <string name="pdf_tools_signature_add_button">Adicionar</string>
 </resources>

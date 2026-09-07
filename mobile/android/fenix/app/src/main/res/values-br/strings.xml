@@ -427,8 +427,6 @@
   <string name="preferences_add_private_browsing_shortcut">Ouzhpennañ ur verradenn merdeiñ prevez</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">Mod HTTPS-hepken</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">Stanker banniel an toupinoù er merdeiñ prevez</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">Klask kennaskañ ent emgefreek gant ar c’homenad HTTPS evit muioc’h a surentez.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -1827,12 +1825,8 @@
   <string name="add_to_homescreen_cancel">Nullañ</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Ouzhpennañ</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Kenderc’hel etrezek al lec’hienn</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Anv ar verradenn</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Gallout a rit ouzhpennañ al lec’hienn-mañ da bennbajenn ho trevnad evit mont war-eeun ha merdeiñ primoc’h evel ma vefe un arload.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">Gerioù-tremen</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->

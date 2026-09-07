@@ -409,8 +409,6 @@
   <string name="preferences_add_private_browsing_shortcut">Хосусый гизү ярлыгын өстәү</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">Тик-HTTPS режимы</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">Хосусый гизү режимындагы куки баннерларын тыючы</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">Хәвефсезлекне арттыру өчен сайтларга HTTPS кулланып автоматик рәвештә тоташырга тырыша.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -1598,8 +1596,6 @@
   <string name="add_to_homescreen_cancel">Баш тарту</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Өстәү</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Вебсайтка үтү</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Ярлык исеме</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->

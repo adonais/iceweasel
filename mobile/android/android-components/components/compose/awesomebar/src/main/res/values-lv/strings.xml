@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources>
+  <!-- Description for the button to share the highlighted awesomebar element (URL, search query, etc.) -->
+  <string name="mozac_browser_awesomebar_share_website_details">Kopīgot</string>
+  <!-- Description for the button to copy the highlighted awesomebar element (URL, search query, etc.) -->
+  <string name="mozac_browser_awesomebar_copy_website_details">Ievietot starpliktuvē</string>
+  <!-- Description for the button to edit the highlighted awesomebar element (URL, search query, etc.) -->
+  <string name="mozac_browser_awesomebar_edit_website_details">Labot URL</string>
+  <!--
+    Description for the highlighted awesomebar element, which represents the current webpage - clicking it reloads the webpage.
+    This will be interpolated into a longer message, equivalent to "Double tap to [reload the current page]" in English. Structure and phrasing vary by target language: using an infinitive/dictionary form of the verb is recommended.
+  -->
+  <string name="mozac_browser_awesomebar_reload_website">pārlādēt pašreizējo lapu</string>
+</resources>

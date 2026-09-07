@@ -640,8 +640,6 @@
   <string name="preferences_https_only_title">HTTPS-മാത്രം രീതി</string>
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">സ്വകാര്യ തിരച്ചിലിൽ ടാബുകളെ മറയ്ക്കാൻ വേണ്ടി പ്രതലത്താഴു് ഉപയോഗിക്കുക</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">സ്വകാര്യ തിരച്ചിലിൽ കുക്കീ പൊന്തുവരൽ തടയൽ</string>
   <!-- Summary of https only preference if https only is set to off -->
   <string name="preferences_https_only_off">അണച്ചതു്</string>
   <!-- Summary of https only preference if https only is set to on in all tabs -->
@@ -828,8 +826,6 @@
   <string name="customize_toggle_pocket_sponsored">പണം കൊണ്ടു് പ്രസരിപ്പിച്ച കഥകൾ</string>
   <!-- Title for the opening wallpaper settings screen -->
   <string name="customize_wallpapers">ചുവർകടലാസുകൾ</string>
-  <!-- Label for the menu item that opens the wallpaper settings screen. -->
-  <string name="browser_menu_change_wallpaper">ചുവൎക്കടലാസു മാറ്റുക</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">പണം കൊണ്ടു് പ്രസരിപ്പിച്ച കുറുക്കുവഴികൾ</string>
   <!--
@@ -1675,8 +1671,6 @@
   <string name="webcompat_reporter_success_snackbar_text_2">അറിയിപ്പയച്ചു</string>
   <!-- The title shown at the top of the WebCompat Report preview panel. This appears after the user taps the “Preview” button before sending a report. -->
   <string name="webcompat_reporter_preview_bottom_sheet_header">റിപ്പോർട്ട് മുൻകാഴ്ച</string>
-  <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
-  <string name="webcompat_reporter_preview_bottom_sheet_send">അയയ്ക്കുക</string>
   <!-- Title for the Edit URL confirmation dialog in the WebCompatReporter -->
   <string name="webcompat_reporter_edit_url_dialog_title">വെബ്ബിടക്കണ്ണി തിരുത്തുക</string>
   <!-- Text shown on the save button for the Edit URL confirmation dialog in the WebCompatReporter. -->
@@ -2481,12 +2475,8 @@
   <string name="add_to_homescreen_cancel">റദ്ദാക്കുക</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">ചേർക്കൂ</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">വെബ്‌സൈറ്റിലേക്ക് തുടരുക</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">കുറുക്കുവഴിയുടെ പേര്</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">പെട്ടെന്ന് ലഭ്യമാവാനും ഒരു ആപ്പ്-പോലുള്ള അനുഭവത്തോടെ വേഗത്തിൽ പരതുകാൻ ഈ വെബ്സ്ഥാനത്തിനു് താങ്കളുടെ ഫോണിന്റെ പൂമുഖത്തേക്ക് എളുപ്പത്തിൽ ചേർക്കാവുന്നതാണ്.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">ഒളിവാക്കുകൾ</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->
@@ -3827,48 +3817,6 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">%1$s-ൽ താങ്ങൾക്കു കൂടുതലറിയാം.</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">ഇവിടെ</string>
-  <!-- Section header for the North America region in the sports widget country selector. -->
-  <string name="sports_widget_confederation_north_america">വടക്കേ അമേരിക്ക</string>
-  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_africa">ആഫ്രിക്ക</string>
-  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_asia">ഏഷ്യ</string>
-  <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
-  <string name="sports_widget_confederation_concacaf">കോൺകാഫ്</string>
-  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_europe">യൂറോപ്പ്</string>
-  <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_oceania">ഓഷ്യാനിയ</string>
-  <!-- Section header for the South America confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_south_america">തെക്കേ അമേരിക്ക</string>
-  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_england">ഇംഗ്ലണ്ട്</string>
-  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_scotland">സ്കോട്ലാണ്ട്</string>
-  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
-  <string name="sports_widget_match_live">തത്സമയം</string>
-  <!-- Sports widget button label to see match results. -->
-  <string name="sports_widget_see_results" tools:ignore="UnusedResources">ഫലങ്ങൾ കാണുക</string>
-  <!-- Sports widget button label to view details of a soccer match results. -->
-  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">കളി വിവരങ്ങൾ കാണുക</string>
-  <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">ബന്ധപ്പെട്ട പൊരുത്തങ്ങൾ</string>
-  <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove">മാറ്റുക</string>
-  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
-  <string name="sports_widget_skip">ഒഴിവാക്കുക</string>
-  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
-  <string name="sports_widget_close_content_description">അടയ്ക്കുക</string>
-  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
-  <string name="sports_widget_more_options_content_description">കൂടുതൽ സാധ്യതകൾ</string>
-  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
-  <string name="sports_widget_team_followed_title">പിന്തുടരുന്നു: %s</string>
-  <!-- Sports widget match status label shown during first half of a match. -->
-  <string name="sports_widget_first_half" tools:ignore="UnusedResources">ഒന്നാമ്പകുതി</string>
-  <!-- Sports widget match status label shown during second half of a match. -->
-  <string name="sports_widget_second_half" tools:ignore="UnusedResources">രണ്ടാമ്പകുതി</string>
-  <!-- Sports widget error card title shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_title">താങ്ങൾ നിലവിൽ തത്സമയമല്ലെന്നു തോന്നുന്നു.</string>
   <!-- The first active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">സ്വകാര്യത അറിയിപ്പു്</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->

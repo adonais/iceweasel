@@ -51,6 +51,8 @@
   <string name="mozac_summarize_download_error_negative_button">Batal</string>
   <!-- Title for the error screen when page is too long to summarize -->
   <string name="mozac_summarize_content_too_long_error_title">Laman terlalu panjang untuk diringkas</string>
+  <!-- Title for the error screen when the page content is behind a paywall -->
+  <string name="mozac_summarize_paywalled_content_error_title">Tidak dapat meringkas konten berbayar</string>
   <!-- Title for the info error screen -->
   <string name="mozac_summarize_info_error_title">Tidak dapat meringkas sekarang</string>
   <!-- Generic fallback message for the info error screen -->
@@ -89,6 +91,16 @@
   <string name="mozac_feature_summarize_summary_model">Ringkasan oleh %1$s</string>
   <!-- Disclaimer message -->
   <string name="mozac_feature_summarize_disclaimer_message">AI bisa membuat kesalahan</string>
+  <!-- Content description for the thumbs up button used to rate a generated summary as helpful -->
+  <string name="mozac_feature_summarize_feedback_good_content_description">Ringkasan yang bagus</string>
+  <!-- Accessibility label for the action of the thumbs up button. This will be interpolated into a longer message, equivalent to "Double tap to [rate summary as good]" in English. Structure and phrasing vary by target language: using an infinitive/dictionary form of the verb is recommended. -->
+  <string name="mozac_feature_summarize_feedback_good_click_label">menilai ringkasan sebagai bagus</string>
+  <!-- Content description for the thumbs down button used to rate a generated summary as unhelpful -->
+  <string name="mozac_feature_summarize_feedback_bad_content_description">Ringkasan buruk</string>
+  <!-- Accessibility label for the action of the thumbs down button. This will be interpolated into a longer message, equivalent to "Double tap to [rate summary as bad]" in English. Structure and phrasing vary by target language: using an infinitive/dictionary form of the verb is recommended. -->
+  <string name="mozac_feature_summarize_feedback_bad_click_label">menilai ringkasan sebagai buruk</string>
+  <!-- Accessibility state of the thumbs up or thumbs down button the user picked, announced when the rating is submitted and whenever that button is focused afterwards. Buttons the user did not pick have no state. -->
+  <string name="mozac_feature_summarize_feedback_state_submitted">Peringkat dikirim</string>
   <!-- Title for the page summary AI controllable feature -->
   <string name="mozac_ai_controls_page_summary_title">Ringkasan laman</string>
   <!-- Description for the page summary AI controllable feature -->
@@ -97,4 +109,8 @@
   <string name="mozac_summarize_error_dissmiss">Tutup</string>
   <!-- Title for the Mozilla account sign-in screen, shown when summarization results in a connection failure. -->
   <string name="mozac_summarize_fxa_sign_in_title">Masuk untuk meringkas</string>
+  <!-- Message on the sign-in screen, inviting the user to continue with an existing Mozilla account or create a new one -->
+  <string xmlns:ns0="http://schemas.android.com/tools" name="mozac_summarize_fxa_sign_in_message" ns0:ignore="BrandUsage">Gunakan akun Mozilla Anda untuk melanjutkan atau buat akun untuk memulai.</string>
+  <!-- Label for the button that starts the sign-in flow -->
+  <string name="mozac_summarize_fxa_sign_in_button_positive">Masuk</string>
 </resources>

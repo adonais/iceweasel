@@ -1161,12 +1161,8 @@
   <string name="add_to_homescreen_cancel">Biykarlaw</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Qosıw</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Saytqa qaytıw</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Operativ buyrıq ataması</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Tez kiriw ushın bul sayttı qurılmańız tiykarǵı ekranına qoyıwıńız múmkin.</string>
   <!-- Preference option for asking to save passwords in Fenix -->
   <string name="preferences_passwords_save_logins_ask_to_save">Saqlawdı soraw</string>
   <!-- Preference option for never saving passwords in Fenix -->

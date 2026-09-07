@@ -663,8 +663,6 @@
   <string name="preferences_pbm_lock_screen_title">Përdor kyçje ekrani për fshehje skedash në shfletim privat</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_3">Shihni skeda përmes shkyçjeje me shenjave tuajat të gishtave, PIN, ose fytyrë. Aktivizimi i kësaj pengon gjithashtu fotografim dhe ndarje të ekranit me të tjerë.</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">Bllokues Banderolash Cooki-esh në shfletim privat</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">Përpiqet automatikisht të lidhet me sajtet duke përdorur protokollin HTTPS të fshehtëzimit, për më tepër siguri.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -1671,8 +1669,6 @@
   <string name="webcompat_reporter_preview_report">Bëni Paraparje të Raportimit</string>
   <!-- The title shown at the top of the WebCompat Report preview panel. This appears after the user taps the “Preview” button before sending a report. -->
   <string name="webcompat_reporter_preview_bottom_sheet_header">Paraparje Raportimi</string>
-  <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
-  <string name="webcompat_reporter_preview_bottom_sheet_send">Dërgoje</string>
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
@@ -2476,12 +2472,8 @@
   <string name="add_to_homescreen_cancel">Anuloje</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Shtoje</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Vazhdoni te sajti</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Emër shkurtoreje</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Këtë sajt mund ta shtoni lehtë te skena Kreu e pajisjes tuaj, që ta hapni në çast dhe të shfletoni më shpejt, si të ish aplikacion.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">Fjalëkalime</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->

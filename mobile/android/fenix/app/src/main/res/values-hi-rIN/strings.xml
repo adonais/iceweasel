@@ -932,8 +932,6 @@
   <string name="add_to_homescreen_cancel">रद्द करें</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">जोड़ें</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">वेबसाइट जारी रखें</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">शॉर्टकट नाम</string>
   <!-- Preference option for asking to save passwords in Fenix -->

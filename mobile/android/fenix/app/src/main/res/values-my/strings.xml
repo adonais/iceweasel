@@ -925,12 +925,8 @@
   <string name="add_to_homescreen_cancel">ပယ်​ဖျက်ပါ</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">ထည့်ရန်</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">ဝက်ဘ်ဆိုက် သို့ ဆက်ရန်</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">ဖြတ်လမ်းနာမည်</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">အက်ပ်ကဲ့သို့ အတွေ့အကြုံရရှိရန်နှင့် လျင်မြန်စွာ အသုံးပြုနိုင်ရန် ယခု ဝက်ဘ်ဆိုက် ကို သင့် ကိရိယာ၏ အဖွင့် စာမျက်နှာတွင် အလွယ်တကူ ထားရှိနိုင်သည်။</string>
   <!-- Preference option for asking to save passwords in Fenix -->
   <string name="preferences_passwords_save_logins_ask_to_save">သိမ်းဆည်းရန်တောင်းပါ</string>
   <!-- Preference option for never saving passwords in Fenix -->

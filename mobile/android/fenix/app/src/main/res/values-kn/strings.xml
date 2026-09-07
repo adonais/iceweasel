@@ -720,8 +720,6 @@
   <string name="add_to_homescreen_cancel">ರದ್ದು ಮಾಡು</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">ಸೇರಿಸು</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">ಜಾಲತಾಣಕ್ಕೆ ಮುಂದುವರೆಯಿರಿ</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">ಶಾರ್ಟ್ಕಟ್ ಹೆಸರು</string>
   <!-- Preference option for asking to save passwords in Fenix -->

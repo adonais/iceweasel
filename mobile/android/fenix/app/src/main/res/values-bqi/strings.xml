@@ -148,6 +148,12 @@
   <!--
     Recent Tabs
 
+    Header text on the homescreen for continuing to browse the most recent browser tab
+  -->
+  <string name="recent_tabs_header_2">رئڌن وا پؽش</string>
+  <!--
+    Recent Tabs
+
     Header text for jumping back into the recent tab in the home screen
   -->
   <string name="recent_tabs_header">وورگرتین و من</string>
@@ -610,7 +616,7 @@
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">بارت آشنایی خوت وا Firefox وو یو ک و کارس اگیری ن وا هومکورووݩ بازارجۊری Mozilla یک رسۊوی کۊنین. ای داده یل هرگشت فوروهڌه نؽبۊن. %1$s</string>
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
-  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">بارت آشنایی خوت وا Firefox وو یو ک و کارس اگیری ن وا هومکورووݩ بازارجۊری Mozilla یک رسۊوی کۊنین. ای داده یل هرگشت فوروهڌه نؽبۊن.</string>
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage,UnusedResources">بارت آشنایی خوت وا Firefox وو یو ک و کارس اگیری ن وا هومکورووݩ بازارجۊری Mozilla یک رسۊوی کۊنین. ای داده یل هرگشت فوروهڌه نؽبۊن.</string>
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
   <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage,UnusedResources">ایسا ترین وا هشتن Mozilla سی وارسۊوی و تورگه یلی ک من هونووݩ Firefox ن تبلیغ اکۊنیم، و ری یو ک ایسا منتور Firefox هڌین، و ایما هیاری بڌین تا و آڌوما قلوه ای دسرسی داشته بۊیم.</string>
   <!--
@@ -772,8 +778,6 @@
   <string name="preferences_pbm_lock_screen_title">و کار گرؽڌن چفت بلگه سی بؽڌار کردن بلگه یل من گشتن سیخومی</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_3">وا جا کلک، پین یا تشخیس ری، بلگه یل ن بنیرین. رۊشن کردن ای گۊزینه، ز زفت کردن وو یک رسۊوی بلگه گۊشی هم جلاوگری اکونه.</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">مسدۊد کوݩ بنر کۊکی من گشتن سیخومی</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">و جۊر خوتکار سی قلوه کردن ٱمنیت قپ ریت اکونه تا وا و کار گرؽڌن بارت رزم ناهاڌن HTTPS و وبگه یل منپیز بۊ.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -978,6 +982,8 @@
     Title for the customize home screen section with privacy report.
   -->
   <string name="customize_toggle_privacy_report">گوزارش هریم سیخومی</string>
+  <!-- Title for a customize home screen section. Continue is a section that displays the most recent browser tab, so users can continue browsing where they left off. -->
+  <string name="customize_toggle_continue">رئڌن وا پؽش</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">وورگرتین و من</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -995,12 +1001,8 @@
   <string name="customize_wallpapers">کاقز دیواری یل</string>
   <!-- Label for the menu item that opens the customize homepage settings screen. -->
   <string name="browser_menu_customize_homepage">سفارشی کردن بلگه هووه</string>
-  <!-- Label for the menu item that opens the wallpaper settings screen. -->
-  <string name="browser_menu_change_wallpaper">آلشت کاقز دیواری</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">ره نهنگا هؽزگرووݩ</string>
-  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
-  <string name="customize_toggle_world_cup">جام جهۊوی</string>
   <!--
     Wallpapers
 
@@ -1640,15 +1642,6 @@
     <item quantity="one">ٱووردن و بونکۊ بلگه %1$s، بلگه %2$d، رنگ %3$s</item>
     <item quantity="other">ٱووردن و بونکۊ بلگه %1$s، بلگه %2$d، رنگ %3$s</item>
   </plurals>
-  <plurals name="share_tab_group_button_content_description">
-    <!--
-      Content Description for share tab group button.
-      %1$s is the name of the tab group.
-      %2$d is the number of tabs in a tab group.
-    -->
-    <item quantity="one">بونکۊ بلگه %1$s ن وا %2$d بلگه یک رسوۊی کۊنین.</item>
-    <item quantity="other">بونکۊ بلگه %1$s ن وا %2$d بلگه یک رسوۊی کۊنین.</item>
-  </plurals>
   <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
   <string name="tab_group_sheet_dismiss_description">نیشتن بونکۊ بلگه، جم کردن دسته کشیڌن</string>
   <plurals name="expanded_tab_group_header_description">
@@ -1826,7 +1819,7 @@
   <string name="download_resume_action">ز سر گرؽڌن</string>
   <!-- Content description for retry download action button on the downloads screen -->
   <string name="download_retry_action">قپ ریت دووارته</string>
-  <string name="download_clear_search_description">پاک کردن</string>
+  <string name="download_clear_search_description">روفتن</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">یک رسۊوی نشۊوی اینترنتی</string>
   <!-- Text for the button to share the download file -->
@@ -1994,8 +1987,6 @@
   <string name="webcompat_reporter_preview_report">پؽش نشووݩ گوزارش</string>
   <!-- The title shown at the top of the WebCompat Report preview panel. This appears after the user taps the “Preview” button before sending a report. -->
   <string name="webcompat_reporter_preview_bottom_sheet_header">پؽش نشووݩ گوزارش</string>
-  <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
-  <string name="webcompat_reporter_preview_bottom_sheet_send">فشناڌن</string>
   <!-- Title for the Edit URL confirmation dialog in the WebCompatReporter -->
   <string name="webcompat_reporter_edit_url_dialog_title">آلشت نشۊوی وبگه</string>
   <!-- Text shown on the save button for the Edit URL confirmation dialog in the WebCompatReporter. -->
@@ -2198,19 +2189,19 @@
   <!-- Label that indicates that this option it the recommended one -->
   <string name="phone_feature_recommended">پؽشنهاڌ وابیڌه</string>
   <!-- Button label for clearing all the information of site permissions -->
-  <string name="clear_permissions">پاک کردن موجوزا</string>
+  <string name="clear_permissions">روفتن موجوزا</string>
   <!-- Text for the OK button on Clear permissions dialog -->
   <string name="clear_permissions_positive">خا</string>
   <!-- Text for the cancel button on Clear permissions dialog -->
   <string name="clear_permissions_negative">لقو</string>
   <!-- Button label for clearing a site permission -->
-  <string name="clear_permission">پاک کردن موجوز</string>
+  <string name="clear_permission">روفتن موجوز</string>
   <!-- Text for the OK button on Clear permission dialog -->
   <string name="clear_permission_positive">خا</string>
   <!-- Text for the cancel button on Clear permission dialog -->
   <string name="clear_permission_negative">لقو</string>
   <!-- Button label for clearing all the information on all sites -->
-  <string name="clear_permissions_on_all_sites">پاک کردن هشتنا من پوی وبگه یل</string>
+  <string name="clear_permissions_on_all_sites">روفتن هشتنا من پوی وبگه یل</string>
   <!-- Preference for altering video and audio autoplay for all websites -->
   <string name="preference_browser_feature_autoplay">پشک خوتکار</string>
   <!-- Preference for local device access for all websites -->
@@ -2412,6 +2403,20 @@
   <string name="sent_from_firefox_template" tools:ignore="UnusedResources">%1$s\n\nز %2$s فشناڌه وابیڌه 🦊 گشت گر هومره ن امتهووݩ کۊنین: %3$s</string>
   <!-- A short message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
   <string name="sent_from_firefox_template_short" tools:ignore="UnusedResources">%1$s\n\nز %2$s فشناڌه وابیڌه 🦊 %3$s</string>
+  <!-- Send tab to synced devices: Authentication error title - Message asking the user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_title">سی فشناڌن بلگه یل منجا دسگایل، دووارته و من سیستوم بیاین</string>
+  <!-- Send tab to synced devices: Authentication error button - Allows user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_button">و من ٱووڌن</string>
+  <!-- Send tab to synced devices: Authentication error button - Allows user to remove the currently connected account -->
+  <string name="sync_send_tab_error_auth_remove_account">پاک کردن هساو</string>
+  <!-- Send tab to synced devices: Empty state title - Displayed when the user has no synced devices -->
+  <string name="sync_send_tab_empty_state_title">هیچ دسگایی منپیز نؽ</string>
+  <!-- Send tab to synced devices: Empty state message - Displayed when the user has no synced devices -->
+  <string name="sync_send_tab_empty_state_description" tools:ignore="BrandUsage">سی فشناڌن ی بلگه، ٱقلن وا ز من ی دسگا دیر و من Firefox بیاین.</string>
+  <!-- Send tab to synced devices: Connectivity Error title -->
+  <string name="sync_send_tab_error_connection_title">منپیز اینترنت خوتووݩ ن واجۊری کۊنین</string>
+  <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
+  <string name="sync_send_tab_error_connection_text">دیندا قپ ریت کۊنین بلگه خوتووݩ ن دووارته بفشنین.</string>
   <!--
     Notifications
 
@@ -2433,6 +2438,18 @@
     The app name is in the text, due to limitations with localizing Nimbus experiments
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">‏Firefox ن گشت گر پؽش فرزتووݩ بۊکۊنین</string>
+  <!--
+    Privacy report notification
+
+    Name of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app.
+  -->
+  <string name="notification_privacy_report_channel_name">گوزارش هریم سیخومی</string>
+  <!-- Description of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_channel_description">%1$s نشووݩ اده ک منجا گشتن ایسا، چند رڌجۊر مسدۊد وابیڌنه.</string>
+  <!-- Body text for the weekly privacy report notification for when trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_body_has_trackers">گشتن ن وا پؽش بوورین. %1$s همچونووݩ مسدۊد امهنن.</string>
+  <!-- Headline text of the weekly privacy report notification for when no trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_headline_no_trackers">%1$s مجال گشتن ایسا، رڌجۊرا ن مسدۊد اکونه. هونووݩ ن ایچو ابینین.</string>
   <!--
     Survey
 
@@ -2722,7 +2739,7 @@
   <!-- Category of trackers (redirect trackers) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_redirect_trackers_title">رڌجۊرا آلشت تور</string>
   <!-- Description of redirect tracker cookies that can be blocked by Enhanced Tracking Protection -->
-  <string name="etp_redirect_trackers_description">کۊکیا سامووݩ وابیڌه و دست آلشت تور و وبگه یل رڌجۊری اشناخته بیڌه ن پاک اکونه.</string>
+  <string name="etp_redirect_trackers_description">کۊکیا سامووݩ وابیڌه و دست آلشت تور و وبگه یل رڌجۊری اشناخته بیڌه ن ارۊفنه.</string>
   <!-- Preference for fingerprinting protection for the custom protection settings -->
   <string name="etp_suspected_fingerprinters_title">جا کلکا مشکۊک</string>
   <!-- Description of fingerprinters that can be blocked by fingerprinting protection -->
@@ -2858,12 +2875,8 @@
   <string name="add_to_homescreen_cancel">لقو</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">ٱووردن</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">رئڌن وا پؽش و ای وبگه اینترنتی</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">نوم ره نهنگ</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">و آسۊوی ترین ای وبگه ن و بلگه هووه تیلیفووݩ خوتووݩ یارین تا هر سا دلتووݩ خاست وس دسرسی داشته بۊین وو کار وا ی برنومه گشت گر زیتری ن سیتووݩ داره.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">رزما</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->
@@ -3033,8 +3046,6 @@
   <string name="ip_protection_location_section">جاگه</string>
   <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
   <string name="ip_protection_location_recommended_label">پؽشنهاڌ وابیڌه</string>
-  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
-  <string name="ip_protection_location_recommended_description">زل ترین جاگه VPN ن سی ایسا پسند اکونه.</string>
   <!-- Badge label shown in the menu item when the browser VPN is active -->
   <string name="preferences_ip_protection_on">رۊشن</string>
   <!-- Badge label shown in the menu item when the browser VPN is off -->
@@ -3134,10 +3145,6 @@
   <string name="ip_protection_locations_title">پسند جاگه VPN</string>
   <!-- Content description for the browser VPN location selection screen top bar back button -->
   <string name="ip_protection_locations_navigate_back_button_content_description">وورگشتن و عقب</string>
-  <!-- Title for the card shown to the user when we are unable to fetch server locations -->
-  <string name="ip_protection_location_unavailable_title" tools:ignore="UnusedResources">جاگه پؽشی من دسرس نؽ</string>
-  <!-- Description for the card shown to the user when we are unable to fetch server locations -->
-  <string name="ip_protection_location_unavailable_recommended_description" tools:ignore="UnusedResources">و جاگه پؽشنهاڌ وابیڌه منپیز وابی.</string>
   <!--
     Autofill
 
@@ -3345,7 +3352,7 @@
   <!-- Third step for the allowing a permission (%1$s is the permission name, for example "Camera"). -->
   <string name="phone_feature_blocked_step_feature"><![CDATA[3. آلشت <b>%1$s</b> ن و ON آلشت بڌین]]></string>
   <!-- Label to clear site data -->
-  <string name="clear_site_data">پاک کردن کۊکیا وو داده یل وبگه</string>
+  <string name="clear_site_data">روفتن کۊکیا وو داده یل وبگه</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for all sites -->
   <string name="confirm_clear_permissions_on_all_sites">اخۊین ک پوی دسرسیا ن من پوی وبگه یل پاک کۊنین؟</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for a site -->
@@ -3920,9 +3927,9 @@
     Description text for a dialog confirming whether the user wants to delete all data for current site.
     %s is a placeholder for the base domain of website.
   -->
-  <string name="clear_site_data_dialog_description"><![CDATA[پاک کردن کۊکیا وو داده یل وبگه سی <b>%s</b> گاشڌ ایسا ن ز وبگه یل و در کونه یا سبدا استیڌنا ایسا ن پتی کونه.]]></string>
+  <string name="clear_site_data_dialog_description"><![CDATA[روفتن کۊکیا وو داده یل وبگه سی <b>%s</b> گاشڌ ایسا ن ز وبگه یل و در کونه یا سبدا استیڌنا ایسا ن پتی کونه.]]></string>
   <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
-  <string name="clear_site_data_dialog_positive_button_text">پاک کردن</string>
+  <string name="clear_site_data_dialog_positive_button_text">روفتن</string>
   <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
   <string name="clear_site_data_dialog_negative_button_text">لقو</string>
   <!-- Text for the connection security panel when the site is secure. -->
@@ -4426,221 +4433,6 @@
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">ایچو</string>
   <!--
-    Sports widget
-
-    Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
-  -->
-  <string name="sports_widget_country_selector_title">و دین کردن تیم</string>
-  <!-- Section header for the North America region in the sports widget country selector. -->
-  <string name="sports_widget_confederation_north_america">آمریکای شومالی</string>
-  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_africa">آفریقا</string>
-  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_asia">آسیا</string>
-  <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
-  <string name="sports_widget_confederation_concacaf">كونكاكاف</string>
-  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_europe">اۊرۊپا</string>
-  <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_oceania">اوقیانۊسیه</string>
-  <!-- Section header for the South America confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_south_america">آمریکای جۊنۊبی</string>
-  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_england">انگلستووݩ</string>
-  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_scotland">اسکاتلند</string>
-  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
-  <string name="sports_widget_match_live">زنده</string>
-  <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
-  <string name="sports_widget_champions_title">قئرمووا جام جهۊوی 2026</string>
-  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
-  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">نایب قئرمووا</string>
-  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
-  <string name="sports_widget_third_place_title">مقام سووم</string>
-  <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_32">دور 32</string>
-  <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_16">دور 16</string>
-  <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
-  <string name="sports_widget_quarter_final">مرهله ی چاروم دیندایی</string>
-  <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
-  <string name="sports_widget_semi_final">نیمه دیندایی</string>
-  <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
-  <string name="sports_widget_final">فینال</string>
-  <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final">فینال بورونز</string>
-  <!-- Sports widget error card message shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed" tools:ignore="UnusedResources">دووسمندیا موسابقه سکو من دسرس نؽڌ. چن دیقه دی بلگه ن وانۊ کۊنین.</string>
-  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
-  <string name="sports_widget_error_connection_interrupted" tools:ignore="UnusedResources">منپیز قت وابی — ورۊ رسۊویا زنده واستان.</string>
-  <!-- Sports widget action label to refresh match data after an error. -->
-  <string name="sports_widget_error_refresh">وانۊ کردن</string>
-  <!-- Sports widget group stage label for group A in the soccer tournament. -->
-  <string name="sports_widget_group_a">بونکۊ A</string>
-  <!-- Sports widget group stage label for group B in the soccer tournament. -->
-  <string name="sports_widget_group_b">بونکۊ B</string>
-  <!-- Sports widget group stage label for group C in the soccer tournament. -->
-  <string name="sports_widget_group_c">بونکۊ C</string>
-  <!-- Sports widget group stage label for group D in the soccer tournament. -->
-  <string name="sports_widget_group_d">بونکۊ D</string>
-  <!-- Sports widget group stage label for group E in the soccer tournament. -->
-  <string name="sports_widget_group_e">بونکۊ E</string>
-  <!-- Sports widget group stage label for group F in the soccer tournament. -->
-  <string name="sports_widget_group_f">بونکۊ F</string>
-  <!-- Sports widget group stage label for group G in the soccer tournament. -->
-  <string name="sports_widget_group_g">بونکۊ G</string>
-  <!-- Sports widget group stage label for group H in the soccer tournament. -->
-  <string name="sports_widget_group_h">بونکۊ H</string>
-  <!-- Sports widget group stage label for group I in the soccer tournament. -->
-  <string name="sports_widget_group_i">بونکۊ I</string>
-  <!-- Sports widget group stage label for group J in the soccer tournament. -->
-  <string name="sports_widget_group_j">بونکۊ J</string>
-  <!-- Sports widget group stage label for group K in the soccer tournament. -->
-  <string name="sports_widget_group_k">بونکۊ K</string>
-  <!-- Sports widget group stage label for group L in the soccer tournament. -->
-  <string name="sports_widget_group_l">بونکۊ L</string>
-  <!-- Sports widget button label to see match results. -->
-  <string name="sports_widget_see_results" tools:ignore="UnusedResources">نیشتن نتیجه یل</string>
-  <!-- Sports widget button label to view details of a soccer match results. -->
-  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">نیشتن جۊزعیات موسابقه</string>
-  <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">موسابقات مورتبت</string>
-  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
-  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">آینده</string>
-  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_suffix">(پوی مجال)</string>
-  <!-- Sports widget match status to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_2">پوی مجال</string>
-  <!--
-    Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
-    meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
-    It’s playfully related to Firefox in that “tabs” are a browser feature.
-    It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
-    or tracking in a technical sense; the meaning is about staying informed.
-  -->
-  <string name="sports_widget_card_title">جام جهۊوی ن وا ویر جمعی و دین کۊنین</string>
-  <!-- Sports widget card description shown below the title on the homepage entry point. -->
-  <string name="sports_widget_card_description">ورۊ رسۊویا زنده موسابقات وو مووردا قلوه ن بگیرین.</string>
-  <!-- Sports widget menu item to change the selected team. -->
-  <string name="sports_widget_change_team">آلشت کردن تیم</string>
-  <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
-  <string name="sports_widget_get_custom_wallpaper">گرؽڌن کاقز دیواری سفارشی</string>
-  <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove">پاک کردن</string>
-  <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-  <string name="sports_widget_still_want_to_follow">هنی هم اخۊین ایما ن و دین کۊنین؟</string>
-  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team">تیم دیری ن پسند کۊنین تا ز جام جهۊوی عقب نمهنین.</string>
-  <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-  <string name="sports_widget_follow_another_team">و دین کردن ی تیم دی</string>
-  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
-  <string name="sports_widget_countdown_to_world_cup">شومارش چواسه سی جام جهۊوی</string>
-  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
-  <string name="sports_widget_view_schedule">نیشتن برنومه زمووی</string>
-  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
-  <string name="sports_widget_skip">گوم زیڌن</string>
-  <!-- Sports widget match status label shown during halftime of a match. -->
-  <string name="sports_widget_halftime" tools:ignore="UnusedResources">نیمه ٱول</string>
-  <!-- Sports widget match status label shown during extra time of a match. -->
-  <string name="sports_widget_extra_time">مجال ازافه</string>
-  <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties">جریمه یل</string>
-  <!--
-    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
-    if there is an equivalent single character for your language, use that (e.g. T for German).
-    Your translation will be automatically truncated at 2 characters to avoid layout issues.
-  -->
-  <string name="sports_widget_countdown_days">D</string>
-  <!--
-    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
-    if there is an equivalent single character for your language, use that (e.g. S for German).
-    Your translation will be automatically truncated at 2 characters to avoid layout issues.
-  -->
-  <string name="sports_widget_countdown_hours">H</string>
-  <!--
-    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
-    if there is an equivalent single character for your language, use that.
-    Your translation will be automatically truncated at 2 characters to avoid layout issues
-  -->
-  <string name="sports_widget_countdown_minutes">M</string>
-  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
-  <string name="sports_widget_close_team_selection_sheet_content_description">بستن بلگه پسند تیم</string>
-  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
-  <string name="sports_widget_close_content_description">بستن</string>
-  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
-  <string name="sports_widget_more_options_content_description">گۊزینه یل قلوه</string>
-  <!--
-    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
-    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
-  -->
-  <string name="sports_widget_countdown_remaining_content_description">مجال باقی منده. رۊز: %1$d. ساعت: %2$d. دیقه: %3$d.</string>
-  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
-  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">و وبگه جام جهۊوی ریوین</string>
-  <!--
-    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
-    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
-  -->
-  <string name="sports_widget_upcoming_match_content_description">پؽش ری: %1$s ری و ری %2$s، %3$s ری و ری %4$s</string>
-  <!--
-    Content description (for accessibility, not displayed) announcing a soccer match.
-    %1$s is the home team name, %2$s is the away team name, %3$s is trailing context
-    (e.g. formatted score "1 - 2 (Full time)", upcoming match info "Jun 19 5:00 PM",
-    or a match status like "Full time").
-  -->
-  <string name="sports_widget_match_content_description">%1$s ری و ری %2$s، %3$s</string>
-  <!--
-    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
-    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
-    or Final represented by sports_widget_final).
-  -->
-  <string name="sports_widget_live_game_content_description">%s، بازی زنده</string>
-  <!--
-    Content description (for accessibility, not displayed) announcing a live score.
-    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
-    and %5$s is the match elapsed time (e.g. 72 minutes).
-  -->
-  <string name="sports_widget_live_score_content_description">%1$s %2$d، %3$s %4$d، %5$s، زنده</string>
-  <!--
-    Content description (for accessibility, not displayed) announcing the elapsed minutes of a live match.
-    %1$s is the clock value, which may be a plain number (e.g. "72") or include extra time (e.g. "90+3").
-  -->
-  <string name="sports_widget_match_elapsed_minutes">زمووݩ گوڌشته و دیقه: %1$s</string>
-  <!--
-    Content description (for accessibility, not displayed) for a paginated item.
-    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
-    %2$d is the current page number, and %3$d is the total number of pages.
-  -->
-  <string name="sports_widget_page_position_content_description">%1$s، بلگه %2$d ز %3$d</string>
-  <!--
-    Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
-    %1$d is the current page number, and %2$d is the total number of pages.
-  -->
-  <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">نتیجه یل فینال جام جهۊوی، بلگه %1$d ز %2$d</string>
-  <!-- Content description (for accessibility, not displayed) for the World Cup final results page. -->
-  <string name="sports_widget_final_results_content_description">نتیجه یل دیندایی جام جهۊوی</string>
-  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
-  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">پاک کردن جام جهۊوی ز هووه</string>
-  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
-  <string name="sports_widget_team_followed_title">هونی و دین ابۊ: %s</string>
-  <!-- Description shown on the sports widget immediately after the user has followed a team -->
-  <string name="sports_widget_team_followed_description">وا نهنگ وابیڌن و زمووݩ موسابقات، سی گرؽڌن دووسمندیا قلوه زبار موسابقه، دووارته و وبگه سر بزنین.</string>
-  <!-- Sports widget match status label shown during first half of a match. -->
-  <string name="sports_widget_first_half" tools:ignore="UnusedResources">نیمه ٱول</string>
-  <!-- Sports widget match status label shown during second half of a match. -->
-  <string name="sports_widget_second_half" tools:ignore="UnusedResources">نیمه دویوم</string>
-  <!-- Sports widget error card title shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_title">منی آفلاین هڌین.</string>
-  <!-- Sports widget error card description shown when the user is offline. -->
-  <string name="sports_widget_error_connection_offline_description">منپیز اینترنت خوتووݩ ن واجۊری کۊنین وو دووارته امتهووݩ کۊنین.</string>
-  <!-- Sports widget general group stage label in the soccer tournament. -->
-  <string name="sports_widget_group_stage">مرهله بونکۊیی</string>
-  <!-- Sports widget error card title shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed_title">دووسمندیا موسابقه سکو من دسرس نؽ.</string>
-  <!-- Sports widget error card description shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed_description">چن دیقه دی ز نۊ امتهووݩ کۊنین.</string>
-  <!-- Content description (for accessibility, not displayed) for teams which have not yet been determined in the match schedule. -->
-  <string name="sports_widget_team_to_be_determined">تیم دیاری ابۊ</string>
-  <!--
     Privacy notice homepage banner
 
     A message we show the user on the homepage when there is a new version of the privacy notice. 'Firefox' is intentionally hardcoded.
@@ -4762,4 +4554,18 @@
   <string name="pdf_tools_print_content_description">چاپ PDF</string>
   <!-- Content description for accessibility (used by screen readers): Description for the button that opens the sharing options for the PDF being displayed on the screen. -->
   <string name="pdf_tools_share_content_description">یک رسۊوی PDF</string>
+  <!--
+    PDF viewer add a signature dialog
+
+    The title of the dialog for adding a signature to a PDF.
+  -->
+  <string name="pdf_tools_signature_title">ی امزا ازاف کۊنین</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that closes the dialog for adding a signature to a PDF. -->
+  <string name="pdf_tools_signature_close_content_description">بستن پنل امزای PDF</string>
+  <!-- The placeholder text shown in the empty text input field where users can enter the signature they wish to add to a PDF. -->
+  <string name="pdf_tools_signature_placeholder">نوع امزا</string>
+  <!-- The text for the button that erases the text the user entered in the "add a signature" field. -->
+  <string name="pdf_tools_signature_clear_button">روفتن</string>
+  <!-- The text for the button that adds the signature the user has typed to the PDF. -->
+  <string name="pdf_tools_signature_add_button">ٱووردن</string>
 </resources>

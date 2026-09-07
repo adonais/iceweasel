@@ -522,8 +522,6 @@
   <string name="preferences_https_only_title">Askar HTTPS-Only</string>
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">Seqdec asekkeṛ n ugdil i tuffra n waccaren deg tunigin tusligt</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">Amsewḥal n uɣerrac n yinagan n tuqqna deg tunigin tusligt</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">Ɛreḍ ad teqqneḍ s wudem awurman ɣer yismal s useqdec n uneggaf n uwgelhen HTTPS i tɣellist ɛlayen.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -2109,12 +2107,8 @@
   <string name="add_to_homescreen_cancel">Sefsex</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Rnu</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Kemmel ɣer usmel web</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Isem n unegzum</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Tzemreḍ s sshal ad ternuḍ asmel-a web ɣer ugdil agejdan n yibenk-inek·inem i wakken ad tesɛuḍ anekcum askudan d tunigin taruradt s termt i icuban asnas.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">Awalen uffiren</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->

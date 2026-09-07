@@ -1114,12 +1114,8 @@
   <string name="add_to_homescreen_cancel">Bekor qilish</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Qoʻshish</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Saytga oʻting</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Yorliq nomi</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Tez kirish uchun ushbu saytni qurilmangizning bosh ekraniga osongina qoʻshishingiz mumkin.</string>
   <!-- Preference option for asking to save passwords in Fenix -->
   <string name="preferences_passwords_save_logins_ask_to_save">Saqlash soʻralsin</string>
   <!-- Preference option for never saving passwords in Fenix -->

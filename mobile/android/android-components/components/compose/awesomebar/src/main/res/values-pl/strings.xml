@@ -8,7 +8,7 @@
 
 <resources>
   <!-- Description for the button to accept the search suggestion and continue editing the search. -->
-  <string name="mozac_browser_awesomebar_edit_suggestion">Przyjmij i\u00a0modyfikuj podpowiedź</string>
+  <string name="mozac_browser_awesomebar_edit_suggestion">Przyjmij i edytuj podpowiedź</string>
   <!-- Description for the button to remove the search suggestion from the displayed results. -->
   <string name="mozac_browser_awesomebar_remove_suggestion">Usuń podpowiedź</string>
   <!--
@@ -23,4 +23,15 @@
   <string name="mozac_browser_awesomebar_stock_suggestion_increase">Wzrost o\u00a0%s procent</string>
   <!-- Description for the stock suggestion card when the stock is the same. -->
   <string name="mozac_browser_awesomebar_stock_suggestion_no_change">Bez zmian</string>
+  <!-- Description for the button to share the highlighted awesomebar element (URL, search query, etc.) -->
+  <string name="mozac_browser_awesomebar_share_website_details">Udostępnij</string>
+  <!-- Description for the button to copy the highlighted awesomebar element (URL, search query, etc.) -->
+  <string name="mozac_browser_awesomebar_copy_website_details">Kopiuj</string>
+  <!-- Description for the button to edit the highlighted awesomebar element (URL, search query, etc.) -->
+  <string name="mozac_browser_awesomebar_edit_website_details">Edytuj adres</string>
+  <!--
+    Description for the highlighted awesomebar element, which represents the current webpage - clicking it reloads the webpage.
+    This will be interpolated into a longer message, equivalent to "Double tap to [reload the current page]" in English. Structure and phrasing vary by target language: using an infinitive/dictionary form of the verb is recommended.
+  -->
+  <string name="mozac_browser_awesomebar_reload_website">odświeżyć bieżącą stronę</string>
 </resources>

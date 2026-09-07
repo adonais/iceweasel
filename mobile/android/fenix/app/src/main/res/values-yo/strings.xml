@@ -1062,12 +1062,8 @@
   <string name="add_to_homescreen_cancel">Parẹ́</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Ṣàfikún</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Tẹ̀síwájú sí ojú òpó wẹ́ẹ̀bù</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Orúkọ ọ̀nà-àbùjá</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">O lè fi ẃéíbusaìtì yí kún Síkíríìnì àkọ́ọ́kàn rẹ nírọ̀rùn láti ní ààyè lẹ́sẹ̀kẹsẹ̀ àti láti ṣe ìwádìí ní ìyára pẹ̀lú ìrírí tó jọ ti áàpù.</string>
   <!-- Preference option for asking to save passwords in Fenix -->
   <string name="preferences_passwords_save_logins_ask_to_save">Bèrè láti fipamọ́</string>
   <!-- Preference option for never saving passwords in Fenix -->

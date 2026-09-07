@@ -1182,8 +1182,6 @@
   <string name="add_to_homescreen_cancel">o weka</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">o pana</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">o lukin e lipu</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">nimi open</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->

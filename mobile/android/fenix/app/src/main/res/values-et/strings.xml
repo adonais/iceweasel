@@ -1406,12 +1406,8 @@
   <string name="add_to_homescreen_cancel">Loobu</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Lisa</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Mine veebilehele</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Otsetee nimi</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Sa võid lisada selle lehe oma seadme avaekraanile, et pääseda sellele kiirelt ligi ja kasutada seda äpi sarnase kasutuskogemusega.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">Paroolid</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->
@@ -1948,6 +1944,4 @@
   <string name="content_description_settings_search_clear_search">Tühjenda otsing</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Kustuta kõik</string>
-  <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove">Eemalda</string>
 </resources>

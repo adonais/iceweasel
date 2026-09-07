@@ -610,7 +610,7 @@
   -->
   <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">شارك معلومات حول كيفية اكتشافك واستخدامك لـ Firefox مع شركاء Mozilla التسويقيين. نحن لا نبيع هذه البيانات أبداً. %1$s</string>
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
-  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">شارك معلومات حول كيفية اكتشافك واستخدامك لـ Firefox مع شركاء Mozilla التسويقيين. نحن لا نبيع هذه البيانات أبدًا.</string>
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage,UnusedResources">شارك معلومات حول كيفية اكتشافك واستخدامك لـ Firefox مع شركاء Mozilla التسويقيين. نحن لا نبيع هذه البيانات أبدًا.</string>
   <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
   <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage,UnusedResources">يمكنك مساعدتنا في الوصول إلى المزيد من الأشخاص من خلال السماح لـ Mozilla بإبلاغ القنوات التي نروج فيها لمتصفح Firefox بأنك مستخدم لمتصفح Firefox.</string>
   <!--
@@ -771,8 +771,6 @@
   <string name="preferences_pbm_lock_screen_title">استخدم قفل الشاشة لإخفاء التبويبات في التصفح الخاص</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_3">افتح التبويبات بالبصمة أو الرقم التعريفي الشخصي أو التعرف على الوجه. تفعيل هذه الميزة يمنع أيضًا تصوير الشاشة أو مشاركتها.</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">مانع ملفات تعريف الارتباط في التصفح الخاص</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">يحاول الاتصال بالمواقع تلقائيا باستعمال بروتوكول التعمية HTTPS لمزيد من الأمان.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -992,8 +990,6 @@
   <string name="customize_toggle_pocket_sponsored">قصص مموّلة</string>
   <!-- Title for the opening wallpaper settings screen -->
   <string name="customize_wallpapers">الخلفيات</string>
-  <!-- Label for the menu item that opens the wallpaper settings screen. -->
-  <string name="browser_menu_change_wallpaper">غيّر الخلفية</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">الاختصارات المموّلة</string>
   <!--
@@ -1638,19 +1634,6 @@
     <item quantity="many">أضف إلى مجموعة لسان %1$s، %2$d لسانًا، اللون %3$s</item>
     <item quantity="other">أضف إلى مجموعة لسان %1$s، %2$d لسان، اللون %3$s</item>
   </plurals>
-  <plurals name="share_tab_group_button_content_description">
-    <!--
-      Content Description for share tab group button.
-      %1$s is the name of the tab group.
-      %2$d is the number of tabs in a tab group.
-    -->
-    <item quantity="zero">لا مشاركة مجموعة ألسنة</item>
-    <item quantity="one">شارك مجموعة لسان %1$s مع لسان واحد</item>
-    <item quantity="two">شارك مجموعة لسان %1$s مع لسانين</item>
-    <item quantity="few">شارك مجموعة لسان %1$s مع %2$d ألسنة</item>
-    <item quantity="many">شارك مجموعة لسان %1$s مع %2$d لسانًا</item>
-    <item quantity="other">شارك مجموعة لسان %1$s مع %2$d لسان</item>
-  </plurals>
   <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
   <string name="tab_group_sheet_dismiss_description">اعرض مجموعة اللسان، اطوِ مقبض السحب</string>
   <plurals name="expanded_tab_group_header_description">
@@ -1992,8 +1975,6 @@
   <string name="webcompat_reporter_preview_report">معاينة التقرير</string>
   <!-- The title shown at the top of the WebCompat Report preview panel. This appears after the user taps the “Preview” button before sending a report. -->
   <string name="webcompat_reporter_preview_bottom_sheet_header">معاينة التقرير</string>
-  <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
-  <string name="webcompat_reporter_preview_bottom_sheet_send">إرسال</string>
   <!-- Title for the Edit URL confirmation dialog in the WebCompatReporter -->
   <string name="webcompat_reporter_edit_url_dialog_title">حرّر URL الموقع</string>
   <!-- Text shown on the save button for the Edit URL confirmation dialog in the WebCompatReporter. -->
@@ -2847,12 +2828,8 @@
   <string name="add_to_homescreen_cancel">إلغاء</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">إضافة</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">تابِع نحو الموقع</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">اسم الاختصار</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">يمكنك إضافة هذا الموقع إلى شاشة البداية في الجهاز لتصل إليه بسرعة وتتصفحه كأي تطبيق آخر.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">كلمات المرور</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->
@@ -3020,8 +2997,6 @@
   <string name="ip_protection_location_section">الموقع</string>
   <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
   <string name="ip_protection_location_recommended_label">يُنصح به</string>
-  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
-  <string name="ip_protection_location_recommended_description">يختار لك أسرع موقع VPN.</string>
   <!-- Badge label shown in the menu item when the browser VPN is active -->
   <string name="preferences_ip_protection_on">مفعّل</string>
   <!-- Badge label shown in the menu item when the browser VPN is off -->
@@ -4297,36 +4272,6 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">يمكنك معرفة المزيد %1$s.</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">هنا</string>
-  <!--
-    Sports widget
-
-    Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
-  -->
-  <string name="sports_widget_country_selector_title">تابع فريقك</string>
-  <!-- Section header for the North America region in the sports widget country selector. -->
-  <string name="sports_widget_confederation_north_america">أمريكا الشمالية</string>
-  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_africa">أفريقيا</string>
-  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_asia">آسيا</string>
-  <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
-  <string name="sports_widget_confederation_concacaf">كونكاكاف</string>
-  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_europe">أوروبا</string>
-  <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_oceania">أوقيانوسيا</string>
-  <!-- Section header for the South America confederation group in the sports widget country selector. -->
-  <string name="sports_widget_confederation_south_america">أمريكا الجنوبية</string>
-  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_england">إنجلترا</string>
-  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_scotland">اسكتلندا</string>
-  <!-- Sports widget menu item to remove the widget from the homepage. -->
-  <string name="sports_widget_remove">أزِل</string>
-  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
-  <string name="sports_widget_close_content_description">أغلق</string>
-  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
-  <string name="sports_widget_more_options_content_description">خيارات إضافية</string>
   <!--
     Privacy notice homepage banner
 

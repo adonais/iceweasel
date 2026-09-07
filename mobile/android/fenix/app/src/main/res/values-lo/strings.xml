@@ -618,8 +618,6 @@
   <string name="preferences_pbm_lock_screen_title">ໃຊ້ການລັອກໜ້າຈໍເພື່ອເຊື່ອງແຖບໃນຜົນການຄົ້ນຫາສ່ວນຕົວ</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_3">ເບິ່ງແຖບທີ່ມີລາຍນິ້ວມື, PIN ຫຼື ການປົດລັອກດ້ວຍໜ້າຂອງທ່ານ. ການເປີດອັນນີ້ຍັງປ້ອງກັນການຈັບພາບໜ້າຈໍ ແລະ ການແບ່ງປັນ.</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">Cookie Banner Blocker ໃນຜົນການຄົ້ນຫາສ່ວນຕົວ</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">ພະຍາຍາມເຊື່ອມຕໍ່ຫາເວັບໄຊໂດຍອັດຕະໂນມັດໂດຍໃຊ້ໂປຣໂຕຄໍການເຂົ້າລະຫັດ HTTPS ເພື່ອຄວາມປອດໄພທີ່ເພີ່ມຂຶ້ນ.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -2246,12 +2244,8 @@
   <string name="add_to_homescreen_cancel">ຍົກເລີກ</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">ເພີ່ມ</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">ດຳເນີນການຕໍ່ໄປທີ່ເວັບໄຊທ</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">ຊື່ທາງລັດ</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">ທ່ານສາມາດເພີ່ມເວັບໄຊທ໌ນີ້ໃສ່ໜ້າຈໍຫຼັກຂອງອຸປະກອນທ່ານໄດ້ຢ່າງງ່າຍດາຍເພື່ອໃຫ້ເຂົ້າເຖິງທັນທີ ແລະທ່ອງເວັບໄວຂຶ້ນດ້ວຍປະສົບການທີ່ຄ້າຍຄືກັບແອັບ.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">ລະຫັດຜ່ານ</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->

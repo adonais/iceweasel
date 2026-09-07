@@ -1099,12 +1099,8 @@
   <string name="add_to_homescreen_cancel">Atsisakyti</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Įtraukti</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Eiti į svetainę</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Leistuko pavadinimas</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Galite lengvai pridėti šią svetainę į savo įrenginio pradžios ekraną, kad turėtumėte greitą priėjimą ir naršytumėte sparčiau, tarsi naudodamiesi programa.</string>
   <!-- Preference option for asking to save passwords in Fenix -->
   <string name="preferences_passwords_save_logins_ask_to_save">Pasiūlyti įrašyti</string>
   <!-- Preference option for never saving passwords in Fenix -->

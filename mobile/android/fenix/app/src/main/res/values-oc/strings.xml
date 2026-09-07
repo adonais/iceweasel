@@ -542,8 +542,6 @@
   <string name="preferences_pbm_lock_screen_title">Utilizar lo verrolhatge d’ecran per amagar los onglets en navegacion privada.</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_3">Accedissètz a vòstres onglets gràcias a vòstra emprenta digitala, vòstre còde PIN o la reconeissença faciala. L’activacion d’aquesta foncionalitat blòca tanben la captura e lo partiment d’ecran.</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">Blocador de bandièras de cookies en navegacion privada</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">Ensajar automaticament de se connectar als sites amb lo chiframent HTTPS per una seguretat melhorada.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -1437,8 +1435,6 @@
   <string name="webcompat_reporter_preview_report">Visualizar lo rapòrt</string>
   <!-- The title shown at the top of the WebCompat Report preview panel. This appears after the user taps the “Preview” button before sending a report. -->
   <string name="webcompat_reporter_preview_bottom_sheet_header">Apercebut del raport</string>
-  <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
-  <string name="webcompat_reporter_preview_bottom_sheet_send">Enviar</string>
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
@@ -2210,12 +2206,8 @@
   <string name="add_to_homescreen_cancel">Anullar</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Apondre</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Contunhar cap al site web</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Nom de l’acorchi</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Podètz facilament apondre aqueste site a l’ecran d’acuèlh de vòstre periferic per i accedir dirèctament e i navegar coma se foguèsse una aplicacion.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">Senhals</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->
@@ -3417,10 +3409,6 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">Ne podètz saber mai %1$s.</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">aicí</string>
-  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
-  <string name="sports_widget_close_content_description">Tampar</string>
-  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
-  <string name="sports_widget_more_options_content_description">Mai d’opcions</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Ne saber mai</string>
 </resources>

@@ -337,8 +337,6 @@
   <string name="preferences_add_private_browsing_shortcut">نجی براؤز کرن شارٹ‌کٹ جوڑو</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">سرف HTTPS ڈھنگ</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">نجی براؤز کرن وچ کوکی جھنڈا روکو</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">وادھا کیتی سرکھیا لئی HTTPS انکرپشن پروٹوکال ورت کے سائیٹاں نال کنیکٹ کرن دی آپݨے آپ کوشش کرو۔</string>
   <!-- Summary of https only preference if https only is set to off -->

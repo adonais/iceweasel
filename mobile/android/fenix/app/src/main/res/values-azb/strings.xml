@@ -339,8 +339,6 @@
   <string name="preferences_add_private_browsing_shortcut">گیزلی مورور شورتکاتینی آرتیر</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">یالنیز HTTPS حالتی</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">گیزلی موروردا کوکی بنر مسدود ائلینی</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">داها چوْخ گوونلیک اوچون HTTPS رمزله‌مه پروْتوکولوُندان ایستیفاده ائده‌رک سایتلارا اوْتوماتیک قوْشوُلماغا چالیْشیر.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -1422,12 +1420,8 @@
   <string name="add_to_homescreen_cancel">لغو</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">اکله</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">سایتا ادامه وئر</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">شورتکات آدیْ</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">You can easily add this website to your device’s Home screen to have instant access and browse faster with an app-like experience.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">رمز‌لر</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->

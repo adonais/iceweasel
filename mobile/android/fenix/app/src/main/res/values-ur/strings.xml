@@ -924,8 +924,6 @@
   <string name="add_to_homescreen_cancel">منسوخ کریں</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">شامل کریں</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">ویب سائٹ پر جاری رکھیں</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">شارٹکٹ کے نام</string>
   <!-- Preference option for asking to save passwords in Fenix -->

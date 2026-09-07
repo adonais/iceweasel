@@ -50,7 +50,7 @@
 
     For more info take a look here https://developer.mozilla.org/en-US/docs/Web/API/Window/prompt
   -->
-  <string name="mozac_feature_prompts_content_description_input_label">Etiqueta para ingresar un campo de entrada de texto</string>
+  <string name="mozac_feature_prompts_content_description_input_label">Etiqueta para introducir un campo de entrada de texto</string>
   <!-- Title of a color picker dialog, this text is shown above a color picker. -->
   <string name="mozac_feature_prompts_choose_a_color">Elegir un color</string>
   <!-- Text of a confirm button in dialog requesting to open a new window. -->
@@ -174,6 +174,8 @@
   <string name="mozac_feature_prompts_manage_address">Administrar direcciones</string>
   <!-- Text for the title of a save address dialog. -->
   <string name="mozac_feature_prompts_save_address_prompt_title">¿Guardar dirección?</string>
+  <!-- Text for the title of an update address dialog, shown when the address adds information to an already saved address. -->
+  <string name="mozac_feature_prompts_update_address_prompt_title">¿Actualizar dirección?</string>
   <!--
     Federated Credential Management prompts
 

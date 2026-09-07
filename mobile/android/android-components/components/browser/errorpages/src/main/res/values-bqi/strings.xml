@@ -78,7 +78,7 @@
   <!-- The document title and heading of the error page shown when the browser prevents loading a website on a restricted port. -->
   <string name="mozac_browser_errorpages_port_blocked_title">درگه و دلیلا ٱمنیتی مئدۊد وابیڌه</string>
   <!-- The error message shown when the browser prevents loading a website on a restricted port. -->
-  <string name="mozac_browser_errorpages_port_blocked_message"><![CDATA[<p>نشۊوی درخاست دیاریه (سی مسال<q>mozilla.org:80</q>سی پورت 80 و ری mozilla.org) پورتی ن و کار اگره ک من هالت عادی و عونوان کاربوردی <em>و غیر</em> ز وبگشتن و کار اروه. گشت گر سی زفت کردن وو ٱمنیت ایسا ای درخاست ن لقو کرد.</p>]]></string>
+  <string name="mozac_browser_errorpages_port_blocked_message"><![CDATA[<p>نشۊوی درخاست دیاریه (سی مسال<q>mozilla.org:80</q>سی پورت 80 و ری mozilla.org) پورتی ن و کار اگره ک من هالت عادی و عونوان کاربوردی <em>و غیر</em> ز وب گشتن و کار اروه. گشت گر سی زفت کردن وو ٱمنیت ایسا ای درخاست ن لقو کرد.</p>]]></string>
   <!-- The document title and heading of the error page shown when the Internet connection is disrupted while loading a website. -->
   <string name="mozac_browser_errorpages_net_reset_title">منپیز ز نۊ ره اۊفتا</string>
   <!-- The error message shown when the Internet connection is disrupted while loading a website. -->

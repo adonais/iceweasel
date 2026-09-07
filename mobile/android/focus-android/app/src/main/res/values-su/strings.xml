@@ -7,39 +7,17 @@
 -->
 
 <resources xmlns:tools="http://schemas.android.com/tools">
-  <!--
-    #######################################################################################
-
-    ## Put only strings into this file that should be translated. Move all other strings ##
-
-    ## into a separate file like strings_references.xml                                  ##
-
-    #######################################################################################
-  -->
-
   <!-- Label used for buttons, e.g. in dialogs -->
   <string name="action_cancel">Bolay</string>
-  <!-- Label used for buttons, e.g. in dialogs -->
-  <string name="action_ok">HEUG</string>
   <string name="action_save">Teundeun</string>
   <!-- This text is shown in the URL bar when it's empty -->
   <string name="urlbar_hint">Paluruh atawa asupkeun alamat</string>
-  <string name="teaser">Langlangan nyamuni otomatis.\nLanglang. Pupus. Deui.</string>
-  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
-  <string name="feedback_erase">Jujutan langlangan nyamuni anjeun geus dipupus.</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">Data langlangan diberesihan</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">Jujutan langlangan tab geus dipupus.</string>
-  <!--
-    This label is shown below the URL bar as soon as the user enters text. Clicking the label will perform a search.
-    %1$s is the text typed by the user.
-  -->
-  <string name="search_hint">Paluruh %1$s</string>
   <!-- Menu item: Share the currently visible page -->
   <string name="menu_share">Bagikeun…</string>
-  <!-- Menu item: Report an issue on the current site -->
-  <string name="menu_report_site_issue">Laporkeun Masalah Loka</string>
   <!--
     Menu item: Switch to another browser to open the currently visible page. %1$s will be
     replaced with the name of the browser like: "Open in Firefox" or "Open in Chrome". Some
@@ -63,23 +41,6 @@
   <string name="menu_settings">Setélan</string>
   <string name="menu_about">Ngeunaan</string>
   <string name="menu_help">Pitulung</string>
-  <!--
-    Menu item: This is the label for a menu entry that shows how many trackers have been blocked
-    for the currently loaded website. The number of blocked trackers is shown below this label.
-    Next to this label is a switch that allows the user to temporarily enable / disable the
-    blocking of trackers for the current browsing session - for example if the current website
-    doesn't work correctly with blocked content.
-  -->
-  <string name="menu_trackers_blocked_title">Palacak dipeungpeuk</string>
-  <!--
-    Menu item: This is the subtitle for the Trackers blocked menu entry that shows how many
-    trackers have been blocked for the currently loaded website.
-  -->
-  <string name="menu_trackers_blocked_subtitle">Mareuman ieu bisa menerkeun sababaraha masalah loka</string>
-  <!-- Menu item: This is the label for turning off content blocking for the current website. -->
-  <string name="menu_content_blocking">Meungpeuk Kontén</string>
-  <!-- This is the subtitle content blocking toggle -->
-  <string name="menu_content_blocking_subtitle">Pareuman pikeun menerkeun sababaraha loka</string>
   <!--
     This is a small text at the bottom of the menu shown in a "custom tab" for branding purposes.
     See https://github.com/mozilla-mobile/focus-android/issues/2106
@@ -121,13 +82,6 @@
     This is the label for this shortcut. Android recommends a maximum length of 10 characters.
   -->
   <string name="shortcut_erase_and_open_short_label">Pupus &amp; buka</string>
-  <!--
-    The same as 'shortcut_erase_short_label' but more descriptive. The launcher shows this
-    instead of the short title when it has enough space. Android recommends a maximum length
-    of 25 characters.
-    %1$s will be replaced by the app name (e.g. Firefox Focus)
-  -->
-  <string name="shortcut_erase_and_open_long_label">Pupus jeung buka %1$s</string>
   <!--
     These labels are selected per variant through manifestPlaceholders in build.gradle, so
     UnusedResources does not see the ones for the variants it is not analyzing.
@@ -187,8 +141,6 @@
   <string name="preference_category_general">Umum</string>
   <!-- Preference summary for General Settings category; the two things users can find in this category -->
   <string name="preference_general_summary2">Panyungsi, basa baku</string>
-  <!-- Preference category for settings about sending usage data -->
-  <string name="preference_category_data_collection_use">Pangumpulan &amp; Pamakéan Data</string>
   <string name="preference_category_search">Paluruh</string>
   <!-- Title of "switch" preference that enables/disables search suggestions -->
   <string name="preference_show_search_suggestions">Cokot bongbolongan maluruh</string>
@@ -197,8 +149,6 @@
     %1$s will be replaced by the app name (e.g. Firefox Focus)
   -->
   <string name="preference_show_search_suggestions_summary">%1$s bakal ngirim naon anu diketikkeun dina bilah alamat kana mesin pamaluruh anjeun</string>
-  <!-- This label is shown below the name of the default search engine in settings -->
-  <string name="preference_search_engine_default">Baku</string>
   <!-- This label is shown above the currently selected search engine in settings -->
   <string name="preference_search_engine_label">Mesin pamaluruh</string>
   <!-- Text that is shown below a "switch" preference that is enabled. -->
@@ -221,22 +171,12 @@
     %s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
   -->
   <string name="preference_autocomplete_user_list_summary2">Hurungkeun sangkan %s otomatis ngalengkepan URLs karesep anjeun.</string>
-  <!-- Preference category: Manage (user-defined) sites -->
-  <string name="preference_category_autocomplete_manage_sites">Kokolakeun loka</string>
   <!-- Item in autocomplete settings that will open a new preference screen for adding and removing URLs to the user-defined list -->
   <string name="preference_autocomplete_subitem_manage_sites">Kokolakeun loka</string>
   <!-- Action at the bottom of the list of custom autocomplete URLs that will open a new screen to add a new URL to the list. -->
   <string name="preference_autocomplete_action_add">+ Tambah URL sakahayang</string>
-  <!-- Explanation text above the list of custom autocomplete URLs. -->
-  <string name="preference_autocomplete_explanation_text">Daptar otokumplit anjeun:</string>
-  <!-- Action at the bottom of the list of custom autocomplete URLs that will open a new screen to add a new URL to the list. -->
-  <string name="preference_autocomplete_action_add2">Tambah URL</string>
   <!-- Title of the screen for adding custom autocomplete URLs. -->
   <string name="preference_autocomplete_title_add">Tambah URL sakahayang</string>
-  <!-- Label for the button to quick add custom autocomplete URLs. -->
-  <string name="custom_autocomplete_quick_add">Tambah URL sakahayang</string>
-  <!-- Label for the button to quick add the current URL to the custom autocomplete list -->
-  <string name="add_custom_autocomplete_label">Tambahkeun tutumbu kana autokumplit</string>
   <!-- Preference category for settings about cookies and site data -->
   <string name="preference_category_cookies">Data Réréméh jeung Loka</string>
   <!-- Preference category for settings about data choices -->
@@ -245,16 +185,12 @@
   <string name="preference_autocomplete_title_remove">Piceun URL sakahayang</string>
   <!-- A link to SUMO at autocomplete settings. -->
   <string name="preference_autocomplete_learn_more">Lenyepan</string>
-  <!-- Preference summary: Custom (user-defined) autocomplete URLs. -->
-  <string name="preference_autocomplete_custom_summary">Tambah jeung atur URL otokumplit sakahayang.</string>
   <!-- Label for the "custom autocomplete URL" input field -->
   <string name="preference_autocomplete_add_title">URL tambahkeuneun</string>
   <!-- "Hint" text for the "custom autocomplete URL" input field. Shown when the field is empty. -->
   <string name="preference_autocomplete_add_hint">Terapkeun atawa asupkeun URL</string>
   <!-- Example how a custom domain autocomplete URL be added (e.g. without http://) -->
   <string name="preference_autocomplete_add_example2" tools:ignore="BrandUsage">Conto: mozilla.org</string>
-  <!-- To be removed once the new hint has been translated -->
-  <string name="preference_autocomplete_add_example">Conto: example.com</string>
   <!-- Confirmation "snackbar" shown after a new custom autocomplete URL has been added. -->
   <string name="preference_autocomplete_add_confirmation">URL sakahayang anyar geus ditambahkeun.</string>
   <!-- Menu item to remove existing autocomplete URLs. -->
@@ -269,7 +205,6 @@
     is using the system default language.
   -->
   <string name="preference_language_systemdefault">Baku sistem</string>
-  <string name="preference_category_privacy">Privasi</string>
   <string name="preference_privacy_block_ads">Peungpeuk palacak iklan</string>
   <string name="preference_privacy_block_ads_summary">Sababaraha iklan ngalacak anjangan loka, najan anjeun teu ngaklik iklanna</string>
   <string name="preference_privacy_block_analytics">Peungpeuk palacak analitik</string>
@@ -310,7 +245,6 @@
   -->
   <string name="preference_privacy_stealth_summary">Sumputkeun kaca raramat nalika mindahkeun app sarta meungpeuk nyokot téwakan layar.</string>
   <string name="preference_category_security">Kaamanan</string>
-  <string name="preference_category_performance">Kinerja</string>
   <string name="preference_performance_block_webfonts">Peungpeuk aksara Raramat</string>
   <!-- This text is shown below the setting for disabling web fonts. Some websites use icons/images from a font and those do not show up if fonts are blocked. -->
   <string name="preference_performance_block_webfonts_summary">Matak leungit ikon atawa gambar</string>
@@ -341,16 +275,9 @@
   <!-- Item in Preferences that shows the about page. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
   <string name="preference_about">Ngeunaan %1$s</string>
   <!-- Header for the list of installed search engines -->
-  <string name="preference_search_installed_search_engines">Mesin pamaluruh nu dipasang</string>
-  <!-- Header for the list of installed search engines -->
   <string name="preference_choose_search_engine">Pilih mesin pamaluruh</string>
   <!-- Action for restoring the default list of search engines -->
   <string name="preference_search_restore">Pasang deui mesin pamaluruh baku</string>
-  <!--
-    Action for adding an additional search engine to the list.
-    The "+" is used to emphasize that this is an "add" action
-  -->
-  <string name="preference_search_add2">+ Tambah mesin pamaluruh séjén</string>
   <string name="preference_search_remove_title">Piceun mesin pamaluruh</string>
   <string name="preference_search_remove">Piceun</string>
   <!-- Action for dding an additional search engine to the list -->
@@ -369,8 +296,6 @@
   <string name="search_add_error_duplicate_name">Mesin pamaluruh nu kapasang geus aya kalawan ngaran nu sarupa.</string>
   <string name="search_add_error_empty_search">Asupkeun string pamaluruhan</string>
   <string name="search_add_error_format">Pariksa yén string pamaluruhan akur jeung format Conto</string>
-  <!-- Content description (not visible, for screen readers etc.): Clear text in URL bar -->
-  <string name="content_description_clear_input">Bersihan asupan</string>
   <!--
     Content description (not visible, for screen readers etc.): Clicking on the website overlay
     while in typing mode will dismiss and go back to the browser. This text will be read when the
@@ -382,34 +307,6 @@
     history and go back to the home screen.
   -->
   <string name="content_description_erase">Beresihan jujutan langlangan</string>
-  <!--
-    If the user has multiple tabs open we will show an addition "floating action button" showing how many tabs are open.
-    This string is not displayed and read only by screenreaders. %1$s will be replaced with the number of open tabs. This
-    button will only be visible when there is more than one tab open (>= 2).
-  -->
-  <string name="content_description_tab_counter">Tab muka: %1$s</string>
-  <!--
-    Content description (not visible, for screen readers etc.): Lock icon showed in the URL bar for
-    https pages..
-  -->
-  <string name="content_description_lock">Sambungan aman</string>
-  <!--
-    This text is not visible. Instead it will be read by the accessibility service once we start
-    loading a website
-  -->
-  <string name="accessibility_announcement_loading">Ngamuat</string>
-  <!--
-    This text is not visible. Instead it will be read by the accessibility service once we
-    finished loading a website
-  -->
-  <string name="accessibility_announcement_loading_finished">Raramatloka wéb geus dimuat</string>
-  <!-- Content description (not visible, for screen readers etc.): "Three dot" menu button. -->
-  <string name="content_description_menu">Pilihan séjén</string>
-  <!--
-    Content description (not visible, for screen readers etc.): "Three dot" menu button used
-    on home screen
-  -->
-  <string name="indicator_content_description_menu">Tombol pilihan lianna</string>
   <!-- Content description (not visible, for screen readers etc.): Navigate forward (browsing history) -->
   <string name="content_description_forward">Maju</string>
   <!-- Content description (not visible, for screen readers etc.): Reload current website -->
@@ -418,34 +315,6 @@
   <string name="content_description_back">Mundur</string>
   <!-- Content description (not visible, for screen readers etc.): Stop loading the current website. This button will turn into the refresh button once loading has been completed (see content_description_reload) -->
   <string name="content_description_stop">Eureunan ngamuat raramatloka</string>
-  <!-- Content description (not visible, for screen readers etc.): Custom Tab exit button - closes the custom tab and returns to the previous app. -->
-  <string name="content_description_customtab_exit">Balik deui ka aplikasi saméméhna</string>
-  <!--
-    Content description (not visible, for screen readers etc.): This is the description for the ImageView in the menu that displays
-    the number of trackers blocked for the current session
-  -->
-  <string name="content_description_trackers_blocked">Jumlah palacak nu dipeungpeuk</string>
-  <!--
-    Content description (not visible, for screen readers etc.): This is the description for the switch in the menu that temporarily disables/enables
-    content blocking for the current session
-  -->
-  <string name="content_description_blocking_switch">Peungpeuk palacak</string>
-  <string name="your_rights">Hak Anjeun</string>
-  <string name="external_app_prompt_title">Buka tutumbu di aplikasi séjén</string>
-  <!--
-    This string is shown when the user has clicked a link that needs to be opened in a different app.
-    %2$s is the external app name, %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
-  -->
-  <string name="external_app_prompt">Anjeun bisa ninggalkeun %1$s pikeun muka ieu tutumbu di %2$s.</string>
-  <!-- This text is the title of a dialog shown if no app could be found for a custom link protocol. -->
-  <string name="external_app_prompt_no_app_title">Téangan aplikasi nu bisa muka tutumbu</string>
-  <!--
-    This text is shown in a dialog if no app could be found for a custom link protocol. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar") and %2$s is the name of
-    the app store installed on the device (usually that's Google Play).
-  -->
-  <string name="external_app_prompt_no_app">Euweuh aplikasi nu bisa muka ieu tutumbu. Anjeun bisa ninggalkeun %1$s pikeun maluruh aplikasi nu bisa di %2$s.</string>
-  <!-- This label is shown above a list of apps that can be used to open a given link -->
-  <string name="external_multiple_apps_matched_exit">Tutup Langlangan Nyamuni?</string>
   <!-- Snackbar that will be displayed after a download has completed. %1$s is the file name. -->
   <string name="download_snackbar_finished">%1$s anggeus</string>
   <!-- Snackbar action to immediately open the successfully downloaded file. -->
@@ -481,33 +350,16 @@
   <string name="onboarding_second_screen_skip_button_text">Liwat</string>
   <!-- First run tour (Default browser): Title -->
   <string name="firstrun_defaultbrowser_title">Bedaskeun salindungan anjeun</string>
-  <!-- First run tour (Default browser): Text. -->
-  <string name="firstrun_defaultbrowser_text2">Cokot langlangan nyalindung ka undakan saterusna. Peungpeuk iklan jeung kontén lianna nu bisa ngalacak anjeun di sakuliah loka sarta ngalaunan waktu muka kaca.</string>
   <!-- First run tour (Search): Title -->
   <string name="firstrun_search_title">Pamaluruhan anjeun, cara anjeun</string>
-  <!-- First run tour (Search): Text -->
-  <string name="firstrun_search_text">Néangan nu béda? Pilih mesin pamaluruhan baku séjénna di Setélan.</string>
   <!-- First run tour (Shortcut): Title -->
   <string name="firstrun_shortcut_title">Tambah takulan ka layar tepas</string>
-  <!-- First run tour (Shortcut): Text. %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
-  <string name="firstrun_shortcut_text">Sakocepat balik deui kana loka karesep anjeun %1$s . Pilih baé \"Tambahkeun ka layar Tepas\" tina menu %1$s.</string>
   <!-- First run tour (Privacy): Title -->
   <string name="firstrun_privacy_title">Matuhkeun salindungan</string>
-  <!-- First run tour (Privacy): Text. %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
-  <string name="firstrun_privacy_text">Setél %1$s jadi panyungsi baku sarta cokot kauntungan langlangan nyalindung sawaktu anjeun muka kaca raramat ti aplikasi séjén.</string>
-  <string name="firstrun_close_button">Okéh, ngarti!</string>
-  <string name="firstrun_skip_button">Liwat</string>
-  <string name="firstrun_next_button">Tuluy</string>
-  <!-- Indicator that no trackers are being blocked because content blocking is disabled; normally shows the number of blocked trackers -->
-  <string name="content_blocking_disabled">-</string>
   <!-- Label of the action that will add the current website to the home screen (shown in the confirmation dialog). -->
   <string name="dialog_addtohomescreen_action_add">Tambah</string>
-  <!-- Label of the action that will add the current website to the home screen (shown in the confirmation dialog). -->
-  <string name="dialog_addtohomescreen_action_yes">ENYA</string>
   <!-- Label of the action that will close the dialog and not add anything to the home screen (shown in the confirmation dialog). -->
   <string name="dialog_addtohomescreen_action_cancel">Bolay</string>
-  <!-- Label of the action that will close the dialog and not add anything to the home screen (shown in the confirmation dialog). -->
-  <string name="dialog_addtohomescreen_action_no">MOAL</string>
   <!--
     When enhanced tracking protection is disabled for the current session then we will show this warning in the "Add to home screen" dialog to
     let the user know that the shortcut will always be opened with enhanced tracking protection disabled.
@@ -529,8 +381,6 @@
     * To see how this string will look like in Android's UI, see: https://github.com/mozilla-mobile/focus-android/issues/863#issuecomment-324105723
   -->
   <string name="notification_browsing_session_channel_description">Iber pikeun ngahapus rintakan %1$s anjeun sakali tap. Anjeun teu kudu muka appna atawa nempo naon anu keur jalan dina panyungsi anjeun.</string>
-  <!-- Label for a button in the "tabs tray" to erase the browsing history (closes all tabs and removes associated data). -->
-  <string name="tabs_tray_action_erase">Pupus jujutan langlangan</string>
   <!-- Label for the option in the Focus "tabs tray" to clos the other tabs except the current tab. -->
   <string name="tabs_tray_action_erase_other">Tutup tab séjén</string>
   <!--
@@ -538,46 +388,9 @@
     item in the list of browsers. Clicking it will open the app store installed on the device (usually that's Google Play).
   -->
   <string name="download_firefox" tools:ignore="BrandUsage">Undeur Firefox</string>
-  <!-- Text shown in prompts for GeckoView -->
-  <string name="gv_prompt_username_hint">Sandiasma</string>
-  <string name="gv_prompt_password_hint">Kecap sandi</string>
-  <string name="gv_prompt_clear">Beresihan</string>
-  <!--
-    Text shown in Security Information Popup
-
-    Text to denote secure or insecure connection
-  -->
-  <string name="security_popup_secure_connection">Sambungan aman</string>
-  <string name="security_popup_insecure_connection">Sambungan teu aman</string>
-  <!-- %1$s will be replaced with organization that granted the SSL certificate -->
-  <string name="security_popup_security_verified">Dipéripikasi ku: %1$s</string>
-  <!-- Content Description of Security Icon in toolbar -->
-  <string name="site_security_icon_content_description">Kaamanan Loka</string>
   <string name="preference_autocomplete_duplicate_url_error">URL geus aya</string>
   <!-- Label for the Find in page button -->
   <string name="find_in_page">Téangan dina Kaca</string>
-  <!-- Watermark/Hint for the find in page input field -->
-  <string name="find_in_page_input">Téangan dina Kaca</string>
-  <!--
-    String to show the number of results found in the page and the position
-    the user is at. %1$d is the position, %2$d is the total number of
-    results.
-  -->
-  <string name="find_in_page_result">%1$d/%2$d</string>
-  <!--
-    String to be read by the accessibility service presenting the number of
-    results found in the page and the position the user is at. %1$d is the
-    position, %2$d is the total number of results.
-  -->
-  <string name="accessibility_find_in_page_result">%1$d ti %2$d</string>
-  <!-- String to be read by the accessibility service when focusing the next result button -->
-  <string name="accessibility_next_result">Téang hasil séjén</string>
-  <!-- String to be read by the accessibility service when focusing the previous result button -->
-  <string name="accessibility_previous_result">Téang hasil saméméhna</string>
-  <!-- String to be read by the accessibility service when focusing the dismiss button in the "find in page" UI -->
-  <string name="accessibility_dismiss_find_in_page">Tutup téangan dina kaca</string>
-  <!-- Checkbox menu item text to request desktop site -->
-  <string name="preference_performance_request_desktop_site">Pénta loka déstop</string>
   <!-- Checkbox menu item text to request desktop site -->
   <string name="preference_performance_request_desktop_site2">Loka déstop</string>
   <!-- Displayed after a user long presses on the URL in a custom tab to copy the URL -->
@@ -590,56 +403,6 @@
   <string name="preference_category_advanced">Leuwih lengkep</string>
   <!-- Preference for site permissions -->
   <string name="preference_site_permissions">Idin loka</string>
-  <!-- Preference for cookie banner. The name of the item from settings screen and the title of the cookie banner screen. -->
-  <string name="preferences_cookie_banner">Kurangan Spanduk Réréméh</string>
-  <!-- Preference summary for the cookie banner. If the cookie banner option is not disabled. -->
-  <string name="preferences_cookie_banner_summary_on">Hurung</string>
-  <!-- Preference summary for the cookie banner. If the cookie banner option is disabled. -->
-  <string name="preferences_cookie_banner_summary_off">Pareum</string>
-  <!-- Title preference inside Cookie banner reduction screen. Here you can set the cookie banner option to disabled or reject_all. -->
-  <string name="cookie_banner_reject_all_option_title">Kurangan Spanduk Réréméh</string>
-  <!-- Preference summary inside Cookie banner reduction screen. Here you can set the cookie banner option to disabled or reject_all. -->
-  <string name="cookie_banner_reject_all_option_summary">Kurangan spanduk ku otomatis nolak rekés réréméh, lamun bisa.</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically, this is shown as part of the protections panel with the tracking protection toggle. -->
-  <string name="cookie_banner_exception_item_title">Reduksi Spanduk Réréméh</string>
-  <!-- Text for indicating cookie banner handling is on this site, this is shown as part of the protections panel with the tracking protection toggle. -->
-  <string name="cookie_banner_exception_item_description_state_on">Hurungkeun jang ieu loka</string>
-  <!-- Text for indicating cookie reducer is not supported on the current site, this is shown as part of the protections panel with the tracking protection toggle. -->
-  <string name="cookie_banner_exception_site_not_supported">Kiwari loka teu didukung</string>
-  <!-- Text for indicating cookie banner handling is off this site, this is shown as part of the protections panel with the tracking protection toggle. -->
-  <string name="cookie_banner_exception_item_description_state_off">Pareum jang ieu loka</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically, this is shown when the user enters in details after he clicks on the item from protection panel. -->
-  <string name="cookie_banner_exception_panel_switch_title">Reduksi Spanduk Réréméh</string>
-  <!-- Text for indicating cookie banner handling is off this site, this is shown when the user enters in details after he clicks on the item from protection panel. -->
-  <string name="cookie_banner_exception_panel_switch_state_off">Pareum jang ieu loka</string>
-  <!-- Text for indicating cookie banner handling is on this site, this is shown when the user enters in details after he clicks on the item from protection panel. -->
-  <string name="cookie_banner_exception_panel_switch_state_on">Hurungkeun jang ieu loka</string>
-  <!-- Title text for a detail explanation indicating cookie banner handling is on this site, this is shown as part of the cookie banner panel in the toolbar. %1$s is a shortened URL of the current site. -->
-  <string name="cookie_banner_exception_panel_title_state_on_for_site">Hurungkeun Reduksi Spanduk Réréméh pikeun %1$s?</string>
-  <!-- Title text for a detail explanation indicating cookie banner handling is off this site, this is shown as part of the cookie banner panel in the toolbar. %1$s is a shortened URL of the current site. -->
-  <string name="cookie_banner_exception_panel_title_state_off_for_site">Pareuman Reduksi Spanduk Réréméh pikeun %1$s?</string>
-  <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is on for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
-  <string name="cookie_banner_exception_panel_description_state_on_for_site">%1$s bakal mupus réréméh ieu loka tur muka ulang kacana. Ngaberesihan sadaya réréméh bisa ngaluarkeun anjeun atanapi ngosongkeun karanjang balanja.</string>
-  <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is off for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
-  <string name="cookie_banner_exception_panel_description_state_off_for_site2">%1$s bisa nyoba sacara otomatis nolak rekés réréméh.</string>
-  <!-- Long text for a detail explanation indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner panel in the toolbar. -->
-  <string name="cookie_banner_exception_panel_description_site_is_not_supported">Kiwari ieu loka teu didukung ku Reduksi Spanduk Réréméh. Anjeun rék rekés tim kami pikeun nénjo ieu raramatloka sarta nambahkeun pangrojong ka hareupna?</string>
-  <!-- Text for cancel button indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner panel in the toolbar. -->
-  <string name="cookie_banner_exception_panel_site_is_not_supported_cancel_button">Bolay</string>
-  <!-- Text for request support button indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner panel in the toolbar. -->
-  <string name="cookie_banner_exception_panel_site_is_not_supported_request_support_button">Rekés dukungan</string>
-  <!-- Label for the snackBar, after the user reports with success a website where cookie banner reducer did not work -->
-  <string name="cookie_banner_report_a_site_snackbar_label">Rekés ka loka dukungan geus dikirim.</string>
-  <!-- Label for cookie banner item from tracking protection, after the user reports with success a website where cookie banner reducer did not work -->
-  <string name="cookie_banner_the_site_was_reported">Rekés ka loka dukungan geus dikirim.</string>
-  <!--
-    Contextual Feature Recommendation Popups
-
-    CFR for Cookie Banner (Banner Info Message). %1$s will be replaced by the app name, %2$s will be an active link using the string cfr_cookie_banner_link as text.
-  -->
-  <string name="cfr_cookie_banner">%1$s nyobaan nolak rekés réréméh pikeun ngudar spanduk réréméh anu ngaganggu.\n\nKokolakeun préperénsi spanduk réréméh dina %2$s.</string>
-  <!-- CFR for Cookie Banner (Banner Info Message). This string is used as text for a link in cfr_cookie_banner and takes the user to the app settings. -->
-  <string name="cfr_cookie_banner_link">setélan</string>
   <!-- Preference for autoplay -->
   <string name="preference_autoplay">Otomaén</string>
   <!-- Heading for the instructions to allow a permission -->
@@ -686,23 +449,8 @@
   <string name="biometric_prompt_title">Kompirmasi maké Sidik Ramo Anjeun</string>
   <!-- Subtitle text for biometric prompt pop-up -->
   <string name="biometric_prompt_subtitle">Anjeun bisa maké sidik ramo pikeun neruskeun rintakan aplikasi ayeuna.</string>
-  <!--
-    Button for the fingerprint authentication dialog box that is shown to the user when sharing a link to the app
-    while the user has biometric authentication enabled. When pressed, the user's previous session is cleared, and the shared link is opened.
-  -->
-  <string name="biometric_auth_open_link_new_session">Buka Tutumbu dina Rintakan Anyar</string>
   <!-- Description for the fingerprint authentication image. Used for accessibility purposes. -->
   <string name="biometric_auth_image_description">Ikon sidik ramo</string>
-  <!--
-    Error text displayed when the user's fingerprint cannot be recognized upon re-entering the app.
-    This is displayed during the authentication flow as the app launches.
-  -->
-  <string name="biometric_auth_not_recognized_error">Sidik ramo teu dipikawanoh. Pecakan deui.</string>
-  <!--
-    Error text displayed when the user's fingerprint moved too quickly upon re-entering the app
-    This is displayed during the authentication flow as the app launches.
-  -->
-  <string name="biometric_auth_moved_too_quickly">Napelkeun ramona téréh teuing. Pecakan deui.</string>
   <!-- Title for the prompt to enable search suggestions -->
   <string name="enable_search_suggestion_title2">Témbongkeun bongbolongan maluruh?</string>
   <!--
@@ -718,42 +466,6 @@
   <string name="no_suggestions_message">Sababaraha mesin panyungsi teu bisa némbongkeun saran.</string>
   <!-- Button to dismiss the message displayed  when using a search engine that doesn't provide suggestions -->
   <string name="dismiss_no_suggestions_prompt_button">Tutup</string>
-  <!-- Tips displayed on the home view -->
-
-  <!--
-    Tip displayed on home view explaining how to disable tracking protection
-    The new line here must be kept as the second half of the string is clickable for the user.
-  -->
-  <string name="tip_disable_tracking_protection">Lokana ngaco?\nCoba pareuman Salindung Palacak</string>
-  <!--
-    Tip displayed on home view explaining how to add sites to homescreen
-    %1$s is replaced with a line break in the application.
-  -->
-  <string name="tip_add_to_homescreen">Hontal aksés sakali toél ka loka-loka anu pangmindengna dianjangan%1$s Menu &gt; Tambahkeun ka layar Tepas</string>
-  <!--
-    Tip displayed on home view explaining how to make Focus the default browser
-    %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
-    The new line here must be kept as the second half of the string is clickable for the user.
-  -->
-  <string name="tip_set_default_browser">Buka sakur tutumbu di %1$s\nSetél %1$s minangka panyungsi baku</string>
-  <!--
-    Tip displayed on home view explaining how to add a custom autocomplete URL
-    The new line here must be kept as the second half of the string is clickable for the user.
-  -->
-  <string name="tip_autocomplete_url">Otokumplit URLs pikeun loka anu mindeng dianjangan\nPencét lila URL dina bilah alamat</string>
-  <!--
-    Tip displayed on home view explaining how to add a custom autocomplete URL
-    The new line here must be kept as the second half of the string is clickable for the user.
-  -->
-  <string name="tip_open_in_new_tab">Muka hiji tutumbu dina hiji tab anyar\nPencét lila tutumbu dina kacana</string>
-  <!-- Tip displayed on home view explaining how to add a custom autocomplete URL -->
-  <string name="tip_disable_tips2">Pareuman tips dina layar mimiti</string>
-  <!-- Label for the snackbar when a user opens a new tab -->
-  <string name="new_tab_opened_snackbar">Tab anyar dibuka</string>
-  <!-- Label for the button in the snackbar that switches to the newly opened tab -->
-  <string name="open_new_tab_snackbar">Gilir</string>
-  <!-- Preference for switching to a new tab immediately after opening -->
-  <string name="preference_open_new_tab">Geuwat gilir ka tutumbu di tab anyar</string>
   <!-- Preference title for safe browsing which when enabled, blocks dangerous or deceptive webpages that may include phishing or malware -->
   <string name="preference_safe_browsing_title">Meungpeuk loka pibahyaeun jeung titipu</string>
   <!-- Preference summary for safe browsing which when enabled, blocks dangerous or deceptive webpages that may include phishing or malware -->
@@ -772,10 +484,6 @@
   <string name="preference_exceptions_remove_all_button_label">Piceun sakabéh raramatloka</string>
   <!-- Title for Preference screen for cookie blocking for exceptions tracking protection -->
   <string name="preference_block_cookies_title">Peungpeuk Réréméh</string>
-  <!-- Message for Preference screen for cookie blocking for exceptions tracking protection -->
-  <string name="preference_category_block_cookies">Badé meungpeuk réréméh?</string>
-  <!-- Title for the tab crash report screen -->
-  <string name="tab_crash_report_title">Tab Ruksak</string>
   <!-- Headline for the tab crash report screen -->
   <string name="tab_crash_report_headline">Hampura. Aya masalah dina ieu tab.</string>
   <!-- Subtitle for the tab crash report screen -->
@@ -784,8 +492,6 @@
   <string name="tab_crash_report_close_tab_button_label">Tutup Tab</string>
   <!-- Label for the checkbox to send the tab crash report to Mozilla -->
   <string name="crash_report_send_crash_label" tools:ignore="BrandUsage">Kirim laporan nu ruksak ka Mozilla</string>
-  <!-- Tracking protection bottom sheet -->
-
   <!-- Label for the total number of trackers blocked. %s is the app install date. -->
   <string name="trackers_count_note">Palacak diblokir ti %s</string>
   <!-- Category of trackers (content) that can be blocked by Enhanced Tracking Protection. -->
@@ -870,8 +576,6 @@
     CFR for Toolbar Shield Icon (Banner Info Message)
   -->
   <string name="cfr_for_toolbar_shield_icon2">Beunang siah! Kami ngeureunan ieu loka tina moncorong anjeun. Toél taméng iraha baé pikeun nempo naon baé anu geus dipeungpeuk.</string>
-  <!-- Content description (not visible, for screen readers etc.): Button that closes the CFR popup -->
-  <string name="cfr_close_button_description">Tutup popup</string>
   <!--
     Tool Tip for: Privacy and Security Settings Screen  task : https://github.com/mozilla-mobile/focus-android/issues/6211
 
@@ -884,8 +588,6 @@
   <string name="tool_tip_dismiss_button_content_description">Tutup</string>
   <!-- CFR for Toolbar Delete Icon (Banner Info Message) -->
   <string name="cfr_for_toolbar_delete_icon2">Toél di dieu pikeun mupus sakabéhna — jujutan, réréméh, sadayana — sarta mitembeyan dina hiji tab anyar.</string>
-  <!-- Promote SearchWidget Dialog -->
-
   <!--
     Content description (not visible, for screen readers etc.): This is the description for the
     close button from promote search widget dialog.

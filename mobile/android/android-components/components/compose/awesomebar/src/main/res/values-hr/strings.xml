@@ -23,4 +23,15 @@
   <string name="mozac_browser_awesomebar_stock_suggestion_increase">Poraslo za %s posto</string>
   <!-- Description for the stock suggestion card when the stock is the same. -->
   <string name="mozac_browser_awesomebar_stock_suggestion_no_change">Bez promjene</string>
+  <!-- Description for the button to share the highlighted awesomebar element (URL, search query, etc.) -->
+  <string name="mozac_browser_awesomebar_share_website_details">Dijeli</string>
+  <!-- Description for the button to copy the highlighted awesomebar element (URL, search query, etc.) -->
+  <string name="mozac_browser_awesomebar_copy_website_details">Kopiraj</string>
+  <!-- Description for the button to edit the highlighted awesomebar element (URL, search query, etc.) -->
+  <string name="mozac_browser_awesomebar_edit_website_details">Uredi URL</string>
+  <!--
+    Description for the highlighted awesomebar element, which represents the current webpage - clicking it reloads the webpage.
+    This will be interpolated into a longer message, equivalent to "Double tap to [reload the current page]" in English. Structure and phrasing vary by target language: using an infinitive/dictionary form of the verb is recommended.
+  -->
+  <string name="mozac_browser_awesomebar_reload_website">ponovo učitaj trenutačnu stranicu</string>
 </resources>

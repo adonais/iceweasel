@@ -413,8 +413,6 @@
   <string name="preferences_https_only_title">HTTPS-Only Mode</string>
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">Gumamit ng screen lock para maitago ang mga tab sa pribadong pag-browse</string>
-  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">Cookie Banner Blocker sa pribadong pag-browse</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">Kusang sumusubok kumonekta sa mga site gamit ang HTTPS encryption protocol para sa karagdagang seguridad.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -1786,12 +1784,8 @@
   <string name="add_to_homescreen_cancel">Ikansela</string>
   <!-- Add button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_add">Idagdag</string>
-  <!-- Continue to website button text for the first-time Add to Homescreen dialog -->
-  <string name="add_to_homescreen_continue">Magpatuloy sa website</string>
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Pangalan ng shortcut</string>
-  <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Madali lang maidagdag ang website na ito sa Home screen ng iyong device para agarang ma-access at ma-browse na parang app lamang.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">Mga password</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->
