@@ -2126,7 +2126,7 @@ permissions-addon-exceptions2 =
 
 # The search keyword isn't shown to users but is used to find relevant settings in about:preferences.
 data-collection =
-    .label = { -brand-short-name } data collection and use
+    .label = { -vendor-short-name } data collection and use
     .description = We strive to provide you with choices and collect only the minimal data necessary to improve { -brand-product-name } for everyone.
     .searchkeywords = telemetry
 data-collection-link = View Privacy Notice
@@ -2145,7 +2145,7 @@ data-collection-health-report-disabled =
     .description = Data reporting is disabled for this build configuration.
 data-collection-run-studies =
     .label = Allow { -brand-short-name } to run feature studies
-    .description = { -brand-short-name } randomly selects users to test features, which helps improve quality for everyone.
+    .description = { -vendor-short-name } randomly selects users to test features, which helps improve quality for everyone.
 data-collection-studies-link =
     .label = View { -brand-short-name } studies
 data-collection-backlogged-crash-reports =
@@ -2161,7 +2161,7 @@ backup-multi-profile-warning-message =
     .message = To make sure this change is included in your backups, open each profile and choose “Backup now” in Settings.
 
 nimbus-rollouts =
-    .label = Allow { -brand-short-name } to improve features, performance, and stability between updates
+    .label = Allow { -vendor-short-name } to improve features, performance, and stability between updates
     .description = Changes will be rolled out remotely.
 addon-recommendations3 =
     .label = Allow personalized extension recommendations

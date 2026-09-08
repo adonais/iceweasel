@@ -1014,7 +1014,7 @@ pref("browser.theme.forced-colors-override.enabled", true);
 
 // Pref to control whether or not Private Browsing windows show up
 // as separate icons in the Windows taskbar.
-pref("browser.privateWindowSeparation.enabled", true);
+pref("browser.privateWindowSeparation.enabled", false);
 
 // Controls visibility of the privacy segmentation preferences section.
 pref("browser.privacySegmentation.preferences.show", false);

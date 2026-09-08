@@ -1245,7 +1245,6 @@ nsWindowsShellService::CreateShortcut(nsIFile* aBinary,
                                       const nsAString& aShortcutFolder,
                                       const nsAString& aShortcutRelativePath,
                                       JSContext* aCx, dom::Promise** aPromise) {
-#ifndef TT_MEMUTIL
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
@@ -1305,7 +1304,6 @@ nsWindowsShellService::CreateShortcut(nsIFile* aBinary,
       NS_DISPATCH_EVENT_MAY_BLOCK);
 
   promise.forget(aPromise);
-#endif
   return NS_OK;
 }
 
