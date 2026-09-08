@@ -247,7 +247,9 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
 
   TableUpdateArray mTableUpdates;
 
-  uint32_t mUpdateWaitSec = 0;
+  // The minimum time to wait before requesting each table again, accumulated
+  // across all the streams of the current update.
+  nsTArray<TableWaitDuration> mUpdateWaits;
 
   // Stores the last results that triggered a table update.
   ConstCacheResultArray mLastResults;

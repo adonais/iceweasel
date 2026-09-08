@@ -91,8 +91,9 @@ add_test(function test_update() {
   // Download some updates, and don't continue until the downloads are done.
   function updateSuccess(aEvent) {
     // Timeout of n:1000 is constructed in processUpdateRequest above and
-    // passed back in the callback in nsIUrlClassifierStreamUpdater on success.
-    Assert.equal("1000", aEvent);
+    // passed back in the callback in nsIUrlClassifierStreamUpdater on success,
+    // as a "table:seconds" pair.
+    Assert.equal("goog-downloadwhite-digest256:1000", aEvent);
     info("All data processed");
     run_next_test();
   }

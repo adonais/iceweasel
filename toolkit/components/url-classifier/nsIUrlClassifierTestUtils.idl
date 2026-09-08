@@ -32,6 +32,19 @@ interface nsIUrlClassifierTestUtils : nsISupports {
   ACString makeUpdateResponseV5_32b(in ACString aName, in ACString aFullHash);
 
   /**
+   * Make an update response for the V5 protocol holding one hash list per
+   * given name, each carrying its own minimum wait duration. The lists hold no
+   * hashes. This is used for testing the per-list update scheduling.
+   *
+   * @param aNames The server side names of the lists.
+   * @param aWaitSeconds The minimum wait duration of each list, in seconds.
+   *
+   * @returns A string that contains the update response.
+   */
+  ACString makeUpdateResponseV5WithWaitDurations(in Array<ACString> aNames,
+                                                 in Array<uint32_t> aWaitSeconds);
+
+  /**
    * Make find full hash response for the V5 protocol. This is used for testing.
    *
    * @param aFullHash The full hash.

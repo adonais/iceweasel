@@ -71,6 +71,22 @@ ProtocolParser::ProtocolParser() : mUpdateStatus(NS_OK), mUpdateWaitSec(0) {}
 
 ProtocolParser::~ProtocolParser() = default;
 
+nsTArray<TableWaitDuration> ProtocolParser::TakeUpdateWaits() {
+  // V5: the response carries a duration per hash list, so hand over the ones
+  // that were parsed.
+  if (!mUpdateWaits.IsEmpty()) {
+    return std::move(mUpdateWaits);
+  }
+
+  // V2 and V4: the response carries a single duration, which applies to every
+  // table we asked for.
+  nsTArray<TableWaitDuration> waits(mRequestedTables.Length());
+  for (const auto& table : mRequestedTables) {
+    waits.AppendElement(TableWaitDuration{table, mUpdateWaitSec});
+  }
+  return waits;
+}
+
 nsresult ProtocolParser::Begin(const nsACString& aTable,
                                const nsTArray<nsCString>& aUpdateTables) {
   // ProtocolParser objects should never be reused.
@@ -79,6 +95,7 @@ nsresult ProtocolParser::Begin(const nsACString& aTable,
   MOZ_ASSERT(mForwards.IsEmpty());
   MOZ_ASSERT(mRequestedTables.IsEmpty());
   MOZ_ASSERT(mTablesToReset.IsEmpty());
+  MOZ_ASSERT(mUpdateWaits.IsEmpty());
 
   if (!aTable.IsEmpty()) {
     SetCurrentTable(aTable);
@@ -1210,13 +1227,15 @@ nsresult ProtocolParserProtobufV5::ProcessOneResponse(
   }
 
   const auto& minWaitDuration = aHashList.minimum_wait_duration();
-  mUpdateWaitSec =
+  uint32_t waitSec =
       minWaitDuration.seconds() + minWaitDuration.nanos() / 1000000000;
+  mUpdateWaits.AppendElement(TableWaitDuration{nsCString(aListName), waitSec});
 
   PARSER_LOG(("==== V5 Update for list '%s' ====",
               PromiseFlatCString(aListName).get()));
   PARSER_LOG(("* newVersion: %s\n", version.get()));
   PARSER_LOG(("* isFullUpdate: %s\n", (!isPartialUpdate ? "yes" : "no")));
+  PARSER_LOG(("* minimumWaitDuration: %u sec\n", waitSec));
 
   return NS_OK;
 }

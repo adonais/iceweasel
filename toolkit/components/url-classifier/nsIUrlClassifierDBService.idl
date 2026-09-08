@@ -53,10 +53,16 @@ interface nsIUrlClassifierUpdateObserver : nsISupports {
   /**
    * The update has completed successfully.
    *
-   * @param requestedTimeout The number of seconds that the caller should
-   *                         wait before trying to update again.
-   **/
-  void updateSuccess(in unsigned long requestedTimeout);
+   * @param tables The tables that the server returned a minimum wait
+   *        duration for.
+   * @param waitSeconds The number of seconds the client should wait before
+   *        requesting the table at the same index in |tables| again. Protocols
+   *        that carry a single response-level duration (V2 and V4) report the
+   *        same value for every requested table, while V5 reports the
+   *        per-list duration the server sent for each hash list.
+   */
+  void updateSuccess(in Array<ACString> tables,
+                     in Array<unsigned long> waitSeconds);
 };
 
 /**

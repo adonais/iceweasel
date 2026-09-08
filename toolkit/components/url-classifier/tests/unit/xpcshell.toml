@@ -36,6 +36,9 @@ tags = "remote-settings"
 ["test_listmanager.js"]
 run-sequentially = ["true"] # fails 85% of the time in parallel
 
+["test_listmanager_v5_update_timing.js"]
+run-sequentially = ["true"] # shares the list manager singleton
+
 ["test_malwaretable_pref.js"]
 
 ["test_partial.js"]
