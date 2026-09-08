@@ -1084,6 +1084,7 @@ STATIC_ATOMS = [
     Atom("preload", "preload"),
     Atom("preserve", "preserve"),
     Atom("preserveSpace", "preserve-space"),
+    Atom("preserveundohistory", "preserveundohistory"),
     Atom("preventdefault", "preventdefault"),
     Atom("previewDiv", "preview-div"),
     Atom("primary", "primary"),

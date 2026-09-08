@@ -1,0 +1,28 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Test for bug 2069367</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/EventUtils.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css">
+</head>
+<body>
+<input id="with-attribute" preserveundohistory="">
+<script>
+SimpleTest.waitForExplicitFinish();
+
+SimpleTest.waitForFocus(() => {
+  let input = document.getElementById("with-attribute");
+  input.focus();
+  input.value = "abc";
+  input.value = "def";
+  let ctrl = navigator.platform.startsWith("Mac") ? { metaKey: true }
+                                                  : { ctrlKey: true };
+  synthesizeKey("z", ctrl);
+  isnot(input.value, "abc",
+        "preserveundohistory has no effect in a content document");
+  SimpleTest.finish();
+});
+</script>
+</body>
+</html>

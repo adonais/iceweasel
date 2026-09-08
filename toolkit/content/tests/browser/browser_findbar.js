@@ -527,6 +527,59 @@ add_task(async function test_preservestate_on_reload() {
   }
 });
 
+/**
+ * A value setter drops the find field's undo history unless the input carries
+ * preserveundohistory, and reopening the findbar with a page selection sets
+ * the value (bug 2069367).
+ */
+add_task(async function test_undo_across_selection_prefill() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["accessibility.typeaheadfind.prefillwithselection", true]],
+  });
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_PAGE_URI
+  );
+
+  await gFindBarPromise;
+  let findBar = gFindBar;
+  const TYPED = "letter";
+
+  let opened = BrowserTestUtils.waitForEvent(findBar, "findbaropen");
+  await EventUtils.synthesizeKey("f", { accelKey: true });
+  await opened;
+
+  EventUtils.sendString(TYPED);
+  is(findBar._findField.value, TYPED, "The string was typed.");
+
+  let closed = BrowserTestUtils.waitForEvent(findBar, "findbarclose");
+  await EventUtils.synthesizeKey("KEY_Escape");
+  await closed;
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
+    content.getSelection().selectAllChildren(content.document.body);
+  });
+
+  opened = BrowserTestUtils.waitForEvent(findBar, "findbaropen");
+  await EventUtils.synthesizeKey("f", { accelKey: true });
+  await opened;
+  await TestUtils.waitForCondition(
+    () => findBar._findField.value != TYPED,
+    "the page selection prefills the field"
+  );
+
+  await EventUtils.synthesizeKey("z", { accelKey: true });
+  is(findBar._findField.value, TYPED, "Undo restored the typed string.");
+
+  closed = BrowserTestUtils.waitForEvent(findBar, "findbarclose");
+  await EventUtils.synthesizeKey("KEY_Escape");
+  await closed;
+
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});
+
 function promiseGetMatchCount(findbar) {
   return new Promise(resolve => {
     let resultListener = {

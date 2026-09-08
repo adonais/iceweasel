@@ -171,6 +171,7 @@ ${
                       dir="auto"
                       aria-autocomplete="both"
                       inputmode="mozAwesomebar"
+                      preserveundohistory=""
                       data-l10n-id="smartbar-placeholder"/>
         </moz-input-box>
         <html:smartwindow-panel-list></html:smartwindow-panel-list>

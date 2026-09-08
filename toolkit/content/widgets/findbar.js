@@ -34,7 +34,7 @@
       return `
       <hbox anonid="findbar-container" class="findbar-container" flex="1" align="center">
         <hbox anonid="findbar-textbox-wrapper" align="stretch">
-          <html:input anonid="findbar-textbox" class="findbar-textbox" />
+          <html:input anonid="findbar-textbox" class="findbar-textbox" preserveundohistory="" />
           <toolbarbutton anonid="find-previous" class="findbar-find-previous tabbable"
             data-l10n-attrs="tooltiptext" data-l10n-id="findbar-previous" disabled="true" />
           <toolbarbutton anonid="find-next" class="findbar-find-next tabbable"
