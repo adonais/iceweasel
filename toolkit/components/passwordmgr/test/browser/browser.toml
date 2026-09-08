@@ -151,11 +151,6 @@ support-files = [
   "subtst_notifications_8.html",
 ]
 
-["browser_doorhanger_keyboard.js"]
-skip-if = [
-  "a11y_checks", # Bugs 1858041, 1854454 and 1824058 for causing intermittent crashes
-]
-
 ["browser_doorhanger_multipage_form.js"]
 
 ["browser_doorhanger_password_edits.js"]
