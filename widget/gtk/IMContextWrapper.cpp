@@ -347,6 +347,24 @@ class MOZ_STACK_CLASS IMContextWrapper::AutoHandlingCompositionSignalHelper {
     return mIMContextWrapper.mHandlingKeyEvent && !mTemporarilySetEvent;
   }
 
+  /**
+   * Return true if the owner should not dispatch eKeyDown for handling a commit
+   * event without composing state anymore.
+   */
+  [[nodiscard]] bool ShouldNotDispatchKeyEvents() const {
+    // If the owner is NOT handling the event during a call of
+    // gtk_im_context_filter_keypress(), we may need to dispatch another
+    // eKeyDown event for IME which consumes the keyboard events such as
+    // Wayland.
+    return IsCallingGtkIMContextFilterKeypress() &&
+           // Otherwise, i.e., if the commit occurs during a call of
+           // gtk_im_context_filter_keypress() and we've already dispatched
+           // eKeyDown for the handling key event, we should not dispatch
+           // another eKeyDown for web apps which count the `keydown` events,
+           // e.g., typing apps.
+           mIMContextWrapper.mKeyboardEventWasDispatched;
+  }
+
   [[nodiscard]] bool EditorMayHandleKeyPressEventAsTextInput() const {
     return mIMContextWrapper.mHandlingKeyEvent &&
            mIMContextWrapper.mHandlingKeyEvent->type == GDK_KEY_PRESS &&
@@ -1211,11 +1229,13 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
   // the caller should've stopped handling the event if preceding eKeyDown
   // event was consumed.
   if (aKeyboardEventWasDispatched) {
+    MOZ_ASSERT(mGraphemeClusterFallbackToKeyEvent.IsVoid());
     return KeyHandlingState::eNotHandledButEventDispatched;
   }
   if (!mKeyboardEventWasDispatched) {
     return KeyHandlingState::eNotHandled;
   }
+  MOZ_ASSERT(mGraphemeClusterFallbackToKeyEvent.IsVoid());
   return mKeyboardEventWasConsumed
              ? KeyHandlingState::eNotHandledButEventConsumed
              : KeyHandlingState::eNotHandledButEventDispatched;
@@ -2018,15 +2038,15 @@ void IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
       "{} OnCommitCompositionNative(aContext={}), "
       "current context={}, active context={}, utf8CommitString=\"{}\", "
       "mHandlingKeyEvent={}, mPendingKeyEvents.CountOfPendingEvents()={}, "
-      "IsComposingOn(aContext)={}, editorMayTreatKeyPressAsTypingText={}",
+      "IsComposingOn(aContext)={}, EditorMayTreatKeyPressAsTypingText={}, "
+      "ShouldNotDispatchKeyEvents()={}",
       static_cast<void*>(this), static_cast<void*>(aContext),
       static_cast<void*>(GetCurrentContext()),
       static_cast<void*>(GetActiveContext()), utf8CommitString,
       static_cast<void*>(mHandlingKeyEvent),
-      mPendingKeyEvents.CountOfPendingEvents(),
-      TrueOrFalse(IsComposingOn(aContext)),
-      TrueOrFalse(
-          signalHandlerHelper.EditorMayHandleKeyPressEventAsTextInput()));
+      mPendingKeyEvents.CountOfPendingEvents(), IsComposingOn(aContext),
+      signalHandlerHelper.EditorMayHandleKeyPressEventAsTextInput(),
+      signalHandlerHelper.ShouldNotDispatchKeyEvents());
 
   if (!IsComposingOn(aContext)) {
     // If we are not in composition and committing with empty string,
@@ -2043,7 +2063,13 @@ void IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
     }
 
     if (KeymapWrapper::StringHasOnlyOneGraphemeCluster(utf16CommitString) &&
-        aContext == GetCurrentContext()) {
+        aContext == GetCurrentContext() &&
+        // Some IME may cancel composition and then commit composition without
+        // another composing state. In this case, we've already dispatched a
+        // processed keydown event. So, we should not dispatch another keydown
+        // event followed by a printable keypress event in such case. Anyway,
+        // we cannot do that via OnKeyEvent().
+        !signalHandlerHelper.ShouldNotDispatchKeyEvents()) {
       // If IME inserts commit string for the current key press event or for the
       // immediate preceding key press event without composing state, the IME
       // must want to work as a keyboard layout. Then, if and only if the commit
