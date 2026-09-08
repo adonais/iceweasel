@@ -372,6 +372,33 @@ class MOZ_STACK_CLASS IMContextWrapper::AutoHandlingCompositionSignalHelper {
                mIMContextWrapper.mHandlingKeyEvent->state);
   }
 
+  /**
+   * Return true if the handling event may be intended to use a shortcut key or
+   * an access key.
+   */
+  [[nodiscard]] bool MaybeShortcutOrAccessKeyPress(
+      const gchar* aUTF8CommitString) const {
+    // If the handling key event is a GDK_KEY_PRESS and Ctrl, Alt or Meta DOM
+    // modifier is pressed, the user may intent to use a shortcut key or an
+    // access key.
+    if (!mIMContextWrapper.mHandlingKeyEvent ||
+        mIMContextWrapper.mHandlingKeyEvent->type != GDK_KEY_PRESS ||
+        KeymapWrapper::EditorMayHandleKeyPressEventAsTextInput(
+            mIMContextWrapper.mHandlingKeyEvent->state)) {
+      return false;
+    }
+    // Let's consider the key press is a shortcut key or a access key if the
+    // commit string matches with the introduced character by the event.
+    char keyval_utf8[8];  // should have at least 6 bytes of space
+    gint keyval_utf8_len;
+    guint32 keyval_unicode;
+    keyval_unicode =
+        gdk_keyval_to_unicode(mIMContextWrapper.mHandlingKeyEvent->keyval);
+    keyval_utf8_len = g_unichar_to_utf8(keyval_unicode, keyval_utf8);
+    keyval_utf8[keyval_utf8_len] = '\0';
+    return !strcmp(aUTF8CommitString, keyval_utf8);
+  }
+
  private:
   IMContextWrapper& mIMContextWrapper;
   GUniquePtr<GdkEventKey> mTemporarilySetEvent;
@@ -2070,12 +2097,25 @@ void IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
         // event followed by a printable keypress event in such case. Anyway,
         // we cannot do that via OnKeyEvent().
         !signalHandlerHelper.ShouldNotDispatchKeyEvents()) {
-      // If IME inserts commit string for the current key press event or for the
-      // immediate preceding key press event without composing state, the IME
-      // must want to work as a keyboard layout. Then, if and only if the commit
-      // string is a grapheme character, we should treat it as a key press for
-      // avoiding to behave as IME.
-      if (signalHandlerHelper.EditorMayHandleKeyPressEventAsTextInput()) {
+      const bool editorMayHandleKeyPressAsTextInput =
+          signalHandlerHelper.EditorMayHandleKeyPressEventAsTextInput();
+      const bool treatAsNormalKeyPress = [&]() {
+        // If IME inserts commit string for the current key press event or for
+        // the immediate preceding key press event without composing state, the
+        // IME must want to work as a keyboard layout. Then, if and only if the
+        // commit string is a grapheme character, we should treat it as a key
+        // press for avoiding to behave as IME.
+        if (editorMayHandleKeyPressAsTextInput) {
+          return true;
+        }
+        // When user uses Super key as a shortcut key modifier by the pref, we
+        // should dispatch eKeyDown event to perform the shortcut key since if
+        // we dispatch a composition event or a commit event instead, the global
+        // key handler cannot this input as a shortcut.
+        return signalHandlerHelper.MaybeShortcutOrAccessKeyPress(
+            utf8CommitString);
+      }();
+      if (treatAsNormalKeyPress) {
         // If the commit composition is generated synchronously for the key
         // press, we should use the normal keyboard event dispatching path.
         if (signalHandlerHelper.IsCallingGtkIMContextFilterKeypress()) {
@@ -2106,7 +2146,7 @@ void IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
             return;
           }
         }
-      } else if (!mHandlingKeyEvent) {
+      } else if (!mHandlingKeyEvent && editorMayHandleKeyPressAsTextInput) {
         // Wayland text-input protocol without GDK key event (bug 2010538).
         // When we receive a grapheme cluster commit without a key event,
         // dispatch synthesized keydown/keypress/keyup events.
