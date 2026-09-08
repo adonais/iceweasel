@@ -47,6 +47,7 @@ class PointerLockManager final {
 
   // Set/release pointer lock remote target. Should only be called in parent
   // process.
+  MOZ_CAN_RUN_SCRIPT
   static bool SetLockedRemoteTarget(dom::BrowserParent* aBrowserParent);
   static void ReleaseLockedRemoteTarget(dom::BrowserParent* aBrowserParent);
 

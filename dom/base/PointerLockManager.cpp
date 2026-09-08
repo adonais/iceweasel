@@ -317,6 +317,28 @@ bool PointerLockManager::SetLockedRemoteTarget(BrowserParent* aBrowserParent) {
     return sLockedRemoteTarget == aBrowserParent;
   }
 
+  RefPtr<Element> element =
+      aBrowserParent->TopLevelBrowserParent()->GetOwnerElement();
+  if (NS_WARN_IF(!element)) {
+    return false;
+  }
+
+  nsPresContext* presContext = element->OwnerDoc()->GetPresContext();
+  if (NS_WARN_IF(!presContext)) {
+    return false;
+  }
+
+  nsIWidget* widget = nsContentUtils::WidgetForContent(element);
+  if (NS_WARN_IF(!widget)) {
+    return false;
+  }
+
+  if (nsCOMPtr<nsIDragService> dragService =
+          do_GetService("@mozilla.org/widget/dragservice;1")) {
+    dragService->Suppress();
+  }
+  presContext->EventStateManager()->StopTrackingDragGesture(true);
+
   sLockedRemoteTarget = aBrowserParent;
   return true;
 }
@@ -327,6 +349,11 @@ void PointerLockManager::ReleaseLockedRemoteTarget(
   MOZ_ASSERT(XRE_IsParentProcess());
   if (sLockedRemoteTarget == aBrowserParent) {
     sLockedRemoteTarget = nullptr;
+
+    if (nsCOMPtr<nsIDragService> dragService =
+            do_GetService("@mozilla.org/widget/dragservice;1")) {
+      dragService->Unsuppress();
+    }
   }
 }
 
