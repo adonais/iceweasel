@@ -377,6 +377,10 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   // tried to start a drag.
   void StopTrackingDragGesture(bool aClearInChildProcesses);
 
+  dom::BrowserParent* GetTrackingDragGestureTopLevelRemoteTarget() const {
+    return mGestureDownTopLevelRemoteTarget;
+  }
+
  protected:
   /*
    * If aTargetFrame's widget has a cached cursor value, resets the cursor
@@ -1179,6 +1183,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   // as the target in most cases but not always - for example when dragging
   // an <area> of an image map this is the image. (bug 289667)
   nsCOMPtr<nsIContent> mGestureDownFrameOwner;
+  RefPtr<dom::BrowserParent> mGestureDownTopLevelRemoteTarget;
   // Data associated with a drag started in a content process.
   RefPtr<dom::RemoteDragStartData> mGestureDownDragStartData;
   // State of keys when the original gesture-down happened

@@ -709,6 +709,8 @@ class BrowserParent final : public PBrowserParent,
   // Called when the BrowserParent is being destroyed or entering bfcache.
   void Deactivated();
 
+  BrowserParent* TopLevelBrowserParent();
+
  protected:
   friend BrowserBridgeParent;
   friend BrowserHost;
@@ -727,6 +729,7 @@ class BrowserParent final : public PBrowserParent,
   mozilla::ipc::IPCResult RecvPaintWhileInterruptingJSNoOp(
       const LayersObserverEpoch& aEpoch);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvSetDimensions(mozilla::DimensionRequest aRequest,
                                             const double& aScale);
 
@@ -746,6 +749,7 @@ class BrowserParent final : public PBrowserParent,
   mozilla::ipc::IPCResult RecvMaybeFireEmbedderLoadEvents(
       EmbedderElementEventType aFireEventAtEmbeddingElement);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvRequestPointerLock(
       RequestPointerLockResolver&& aResolve);
   mozilla::ipc::IPCResult RecvReleasePointerLock();

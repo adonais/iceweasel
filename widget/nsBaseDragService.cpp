@@ -973,6 +973,8 @@ nsBaseDragService::Unsuppress() {
   return NS_OK;
 }
 
+bool nsBaseDragService::GetIsSuppressed() { return mSuppressLevel > 0; }
+
 NS_IMETHODIMP
 nsBaseDragService::UserCancelled() {
   mUserCancelled = true;

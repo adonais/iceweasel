@@ -1918,6 +1918,8 @@ void EventStateManager::BeginTrackingDragGesture(nsPresContext* aPresContext,
     if (!mGestureDownFrameOwner) {
       mGestureDownFrameOwner = mGestureDownContent;
     }
+    mGestureDownTopLevelRemoteTarget =
+        BrowserParent::GetFrom(mGestureDownContent);
   }
   mGestureModifiers = inDownEvent->mModifiers;
   mGestureDownButtons = inDownEvent->mButtons;
@@ -1951,6 +1953,7 @@ void EventStateManager::BeginTrackingRemoteDragGesture(
       TextControlElement::FromNodeOrNull(
           aContent->GetClosestNativeAnonymousSubtreeRootParentOrHost());
   mGestureDownDragStartData = aDragStartData;
+  mGestureDownTopLevelRemoteTarget = BrowserParent::GetFrom(aContent);
 }
 
 //
@@ -1970,6 +1973,8 @@ void EventStateManager::StopTrackingDragGesture(bool aClearInChildProcesses) {
   // still happening. Inform any child processes with active drags that the drag
   // should be stopped.
   if (aClearInChildProcesses) {
+    mGestureDownTopLevelRemoteTarget = nullptr;
+
     nsCOMPtr<nsIDragService> dragService =
         do_GetService("@mozilla.org/widget/dragservice;1");
     if (dragService) {
