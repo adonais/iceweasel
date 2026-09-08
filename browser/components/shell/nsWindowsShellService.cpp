@@ -1665,7 +1665,6 @@ static bool HasPinnableShortcutImpl(const nsAString& aAppUserModelId,
 NS_IMETHODIMP nsWindowsShellService::HasPinnableShortcut(
     const nsAString& aAppUserModelId, const bool aPrivateBrowsing,
     JSContext* aCx, dom::Promise** aPromise) {
-#ifndef TT_MEMUTIL
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
@@ -1703,7 +1702,6 @@ NS_IMETHODIMP nsWindowsShellService::HasPinnableShortcut(
       NS_DISPATCH_EVENT_MAY_BLOCK);
 
   promise.forget(aPromise);
-#endif
   return NS_OK;
 }
 
