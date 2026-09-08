@@ -23,4 +23,10 @@
   <string name="mozac_browser_awesomebar_stock_suggestion_increase">Rast za %s %%</string>
   <!-- Description for the stock suggestion card when the stock is the same. -->
   <string name="mozac_browser_awesomebar_stock_suggestion_no_change">Brez spremembe</string>
+  <!-- Description for the button to share the highlighted awesomebar element (URL, search query, etc.) -->
+  <string name="mozac_browser_awesomebar_share_website_details">Deli</string>
+  <!-- Description for the button to copy the highlighted awesomebar element (URL, search query, etc.) -->
+  <string name="mozac_browser_awesomebar_copy_website_details">Kopiraj</string>
+  <!-- Description for the button to edit the highlighted awesomebar element (URL, search query, etc.) -->
+  <string name="mozac_browser_awesomebar_edit_website_details">Uredi URL</string>
 </resources>

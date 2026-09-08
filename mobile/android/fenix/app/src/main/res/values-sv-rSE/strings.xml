@@ -4377,7 +4377,7 @@
 
     Title of Settings Search. "Search" is a verb here
   -->
-  <string name="settings_search_title">Sökinställningar</string>
+  <string name="settings_search_title">Sök inställningar</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to clear the search field for settings search -->
   <string name="content_description_settings_search_clear_search">Rensa sökning</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to navigate back to the Settings page from the Settings Search screen. -->
