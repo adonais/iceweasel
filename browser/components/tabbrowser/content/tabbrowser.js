@@ -3390,10 +3390,6 @@
         );
       }
 
-      if (!UserInteraction.running("browser.tabs.opening", window)) {
-        UserInteraction.start("browser.tabs.opening", "initting", window);
-      }
-
       // If we're opening a foreground tab, set the owner by default.
       ownerTab ??= inBackground ? null : this.selectedTab;
 
@@ -4227,7 +4223,6 @@
       this.tabContainer._unlockTabSizing();
 
       if (!animate) {
-        UserInteraction.update("browser.tabs.opening", "not-animated", window);
         t.setAttribute("fadein", "true");
 
         // Call _handleNewTab asynchronously as it needs to know if the
@@ -4239,8 +4234,6 @@
           0,
           this.tabContainer
         );
-      } else {
-        UserInteraction.update("browser.tabs.opening", "animated", window);
       }
 
       return t;

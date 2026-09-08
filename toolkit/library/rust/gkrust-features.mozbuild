@@ -57,7 +57,7 @@ if CONFIG["MOZ_WEBRTC"]:
 # We need to tell Glean it is being built with Gecko.
 gkrust_features += ["glean_with_gecko"]
 
-if not CONFIG["MOZILLA_OFFICIAL"]:
+if not CONFIG["MOZILLA_OFFICIAL"] or CONFIG["MOZ_BRANDING_DIRECTORY"] == "browser/branding/iceweasel":
     gkrust_features += ["glean_disable_upload"]
 
 if CONFIG["MOZ_ENABLE_DBUS"]:

@@ -693,7 +693,7 @@ TelemetryImpl::GetCanRecordBase(bool* ret) {
 
 NS_IMETHODIMP
 TelemetryImpl::SetCanRecordBase(bool canRecord) {
-#ifndef FUZZING
+#if 0
   if (canRecord != mCanRecordBase) {
     TelemetryHistogram::SetCanRecordBase(canRecord);
     TelemetryScalar::SetCanRecordBase(canRecord);
@@ -719,7 +719,7 @@ TelemetryImpl::GetCanRecordExtended(bool* ret) {
 
 NS_IMETHODIMP
 TelemetryImpl::SetCanRecordExtended(bool canRecord) {
-#ifndef FUZZING
+#if 0
   if (canRecord != mCanRecordExtended) {
     TelemetryHistogram::SetCanRecordExtended(canRecord);
     TelemetryScalar::SetCanRecordExtended(canRecord);
@@ -745,7 +745,7 @@ TelemetryImpl::GetCanRecordPrereleaseData(bool* ret) {
 NS_IMETHODIMP
 TelemetryImpl::GetIsOfficialTelemetry(bool* ret) {
 #if defined(MOZILLA_OFFICIAL) && defined(MOZ_TELEMETRY_REPORTING) && \
-    !defined(DEBUG)
+    !defined(TT_MEMUTIL) && !defined(DEBUG)
   *ret = true;
 #else
   *ret = false;
@@ -762,7 +762,7 @@ already_AddRefed<nsITelemetry> TelemetryImpl::CreateTelemetryInstance() {
   }
 
   bool useTelemetry = false;
-#ifndef FUZZING
+#if 0
   if (XRE_IsParentProcess() || XRE_IsContentProcess() || XRE_IsGPUProcess() ||
       XRE_IsRDDProcess() || XRE_IsSocketProcess() || XRE_IsUtilityProcess()) {
     useTelemetry = true;
